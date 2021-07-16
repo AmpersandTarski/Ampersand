@@ -66,8 +66,6 @@ createFspec recipe =
     let pContext
           = case recipe of
               Standard  -> userScript
-              -- the following option, Grind, generates population for an atlas.
-              -- It assumes that the database is fit to receive that population, as RAP does.
               Grind     -> do userScr   <- userScript
                               userFspc  <- pCtx2Fspec env userScr
                               return (grind transformersFormalAmpersand userFspc)
@@ -77,10 +75,6 @@ createFspec recipe =
                               let two    = grind transformersPrototypeContext oneFspec
                               pcScript  <- prototypeContextScript
                               return (one `mergeContexts` two `mergeContexts` pcScript)
-              -- The option 'RAP' generates a database that is fit to receive metamodels, so an Atlas is possible.
-              -- 
-              -- 
-              -- The 'makeAtlas' button in RAP uses the 'Grind' option to populate the metamodel.
               RAP       -> do rapPCtx   <- userScript
                               faScript  <- formalAmpersandScript
                               let one    = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript

@@ -202,10 +202,14 @@ instance HasDaemonOpts DaemonOpts where
 -- | An enumeration type for building an FSpec in some common way
 data Recipe = 
     Standard  -- ^ Plain way of building. No fancy stuff. 
-  | Grind     -- ^ To test the grinding process in isolation
+  | Grind     -- ^ Generates population for an atlas.
+              --   It assumes that the database is fit to receive that population, as RAP does.
   | Prototype -- ^ A recipe to build a prototyping environment.
   | RAP       -- ^ A recipe to build a Repository for Ampersand Projects (RAP)
+              --   The option 'RAP' generates a database that is fit to receive metamodels, so an Atlas is possible.
+              --   The 'makeAtlas' button in RAP uses the 'Grind' option to populate the metamodel.
     deriving (Show, Enum, Bounded)
+
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
