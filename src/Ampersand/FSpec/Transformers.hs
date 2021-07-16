@@ -581,8 +581,8 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , purp         <- purposes fSpec vw
         ]
       )
-     ,("qConjunct"             , "Quad"             , "Conjunct"
-      , Set.fromList [Uni]
+     ,("qConjuncts"            , "Quad"             , "Conjunct"
+      , Set.empty
       , [(dirtyId quad, dirtyId conj)
         | quad <- vquads fSpec
         , conj <- NE.toList (qConjuncts quad)
