@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional designs is a core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.

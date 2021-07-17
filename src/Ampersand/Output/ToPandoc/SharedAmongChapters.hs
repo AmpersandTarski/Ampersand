@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
     , module Text.Pandoc

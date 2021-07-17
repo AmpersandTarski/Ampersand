@@ -1,6 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where

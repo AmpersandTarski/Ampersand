@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Test.Regression 
   ( regressionTest
   )

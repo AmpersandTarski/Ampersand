@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
     isFuzzyOrigin, maybeOrdering, sortWithOrigins,

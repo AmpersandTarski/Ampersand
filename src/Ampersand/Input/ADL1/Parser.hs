@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)

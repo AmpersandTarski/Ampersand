@@ -1,6 +1,6 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.CreateFspec
   ( Recipe(..)
 --  , BuildStep(Grind)

@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Basics.PandocExtended
    ( PandocFormat(..)
    , Markup(..)

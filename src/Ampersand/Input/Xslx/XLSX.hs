@@ -1,5 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where

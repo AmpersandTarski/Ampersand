@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.MetaModels
   ( MetaModel(..)
   , pCtx2Fspec

@@ -1,6 +1,6 @@
 ﻿{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Test.Parser.ArbitraryTree () where
 
 import           Ampersand.Basics

@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Generate a configuration file for a new project.
 module Ampersand.Commands.Init

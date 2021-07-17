@@ -1,5 +1,5 @@
 ﻿{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, doGenMetaModel, copyCustomizations) where
 
 import           Ampersand.ADL1

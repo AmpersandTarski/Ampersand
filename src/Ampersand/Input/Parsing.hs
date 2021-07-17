@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.

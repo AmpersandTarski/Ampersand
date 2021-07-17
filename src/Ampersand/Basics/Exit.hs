@@ -1,4 +1,4 @@
-﻿{-# LANGUAGE OverloadedStrings #-}
+﻿
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | This module contains a datastructure for exceptions that
 --   can be thrown by Ampersand.

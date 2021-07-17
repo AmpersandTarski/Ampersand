@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.SQL
   ( SqlQuery(..)
   , placeHolderSQL

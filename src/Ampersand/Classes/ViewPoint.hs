@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where

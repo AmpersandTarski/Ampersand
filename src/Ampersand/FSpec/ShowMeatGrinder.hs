@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DuplicateRecordFields#-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( grind

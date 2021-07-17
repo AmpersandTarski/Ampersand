@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where

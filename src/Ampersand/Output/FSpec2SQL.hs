@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries,databaseStructureSql)
 where

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import           Ampersand.ADL1

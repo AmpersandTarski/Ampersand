@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Generate a prototype from a project.
 module Ampersand.Commands.Devoutput

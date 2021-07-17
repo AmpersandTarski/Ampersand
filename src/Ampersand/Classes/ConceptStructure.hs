@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import           Ampersand.ADL1

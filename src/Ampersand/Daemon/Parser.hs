@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Reads a project and parses it
 module Ampersand.Daemon.Parser (
     parseProject

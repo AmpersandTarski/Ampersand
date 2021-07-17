@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.ToPandoc.ChapterIntroduction
    (chpIntroduction)

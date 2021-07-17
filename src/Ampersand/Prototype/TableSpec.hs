@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 
 module Ampersand.Options.LogLevelParser where
 

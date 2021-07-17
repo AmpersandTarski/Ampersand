@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Clean a project.
 module Ampersand.Commands.ExportAsADL
