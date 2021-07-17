@@ -4,9 +4,9 @@ module Ampersand.Options.ProtoOptsParser
 where
 
 import           Options.Applicative.Builder.Extra
-import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
 import           Ampersand.Misc.Defaults (defaultDirPrototype)
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
@@ -14,28 +14,23 @@ import           Options.Applicative
 
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
-protoOptsParser = 
-   ( \forceReinstall 
-        outputLanguage fSpecGenOpts 
-        dirPrototype dirCustomizations 
-        
-        zwolleVersion generateFrontend generateBackend generateMetamodel -> ProtoOpts
-            { xforceReinstallFramework = forceReinstall
-            , x1OutputLanguage = outputLanguage
-            , x1fSpecGenOpts = fSpecGenOpts
-            , xdirPrototype = dirPrototype 
-            , xdirCustomizations = dirCustomizations
-            , xzwolleVersion = zwolleVersion
-            , xgenerateFrontend = generateFrontend
-            , xgenerateBackend = generateBackend
-            , xgenerateMetamodel = generateMetamodel
-            }) 
-  <$> forceReinstallP
-  <*> outputLanguageP <*> fSpecGenOptsParser False
-  <*> optional dirPrototypeP <*> optional dirCustomizationsP
-  <*> zwolleVersionP 
-  <*> generateFrontendP <*> generateBackendP <*> generateMetamodelP
-
+protoOptsParser = standardToProtoType <$> 
+   ( ProtoOpts
+       <$> forceReinstallP
+       <*> outputLanguageP
+       <*> fSpecGenOptsParser False
+       <*> optional dirPrototypeP
+       <*> optional dirCustomizationsP
+       <*> zwolleVersionP 
+       <*> generateFrontendP
+       <*> generateBackendP
+       <*> generateMetamodelP
+   )
+  where standardToProtoType :: ProtoOpts -> ProtoOpts
+        standardToProtoType opts 
+           = case view recipeNameL opts of
+               Standard -> set recipeNameL Prototype opts
+               _        -> opts
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
         ( long "force-reinstall-framework"
