@@ -1,20 +1,14 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Ampersand.Options.ProofOptsParser 
-   (proofOptsParser)
-where
 
-import           Ampersand.Basics
-import           Ampersand.Misc.HasClasses (ProofOpts (..))
-import           Options.Applicative
-import           Ampersand.Options.FSpecGenOptsParser
+module Ampersand.Options.ProofOptsParser (proofOptsParser) where
+
+import Ampersand.Basics
+import Ampersand.Misc.HasClasses (ProofOpts (..))
+import Ampersand.Options.FSpecGenOptsParser
+import Options.Applicative
 
 -- | Command-line parser for ProofOpts.
 proofOptsParser :: Parser ProofOpts
-proofOptsParser = 
-     ( \fSpecGenOpts -> ProofOpts
-       { x6fSpecGenOpts = fSpecGenOpts
-       }
-     ) <$> fSpecGenOptsParser False
-
-
-
+proofOptsParser =
+  ProofOpts
+    <$> fSpecGenOptsParser False

@@ -1,18 +1,13 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Ampersand.Options.ValidateOptsParser 
-   (validateOptsParser)
-where
 
-import           Options.Applicative
-import           Ampersand.Misc.HasClasses (ValidateOpts (..))
-import           Ampersand.Options.ProtoOptsParser
+module Ampersand.Options.ValidateOptsParser (validateOptsParser) where
 
--- | Command-line parser for ProofOpts.
+import Ampersand.Misc.HasClasses (ValidateOpts (..))
+import Ampersand.Options.ProtoOptsParser
+import Options.Applicative
+
+-- | Command-line parser for ValidateOpts.
 validateOptsParser :: Parser ValidateOpts
-validateOptsParser= 
-     ( \fSpecGenOpts -> ValidateOpts
-       { protoOpts = fSpecGenOpts
-       }
-     ) <$> protoOptsParser
-
-
+validateOptsParser =
+  ValidateOpts
+    <$> protoOptsParser
