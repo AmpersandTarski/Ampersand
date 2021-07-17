@@ -22,6 +22,8 @@ class HasFSpecGenOpts a where
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
   recipeNameL :: Lens' a Recipe
   recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
+  allowInvariantViolationsL :: Lens' a Bool
+  allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
@@ -63,10 +65,6 @@ class (HasRootFile a) => HasDirPrototype a where
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
 
-class HasAllowInvariantViolations a where
-  allowInvariantViolationsL :: Lens' a Bool
-instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
-  allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 class HasGenerateFrontend a where
   generateFrontendL :: Lens' a Bool
 instance HasGenerateFrontend ProtoOpts where
@@ -94,7 +92,7 @@ class HasRootFile a where
       (fatal "Cannot determine the directory of the script that is being compiled")
       takeDirectory
     . view rootFileL
-instance (HasFSpecGenOpts a) => HasRootFile a where
+instance HasFSpecGenOpts a => HasRootFile a where
   rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x { xrootFile = y })
 
 class HasOutputLanguage a where
