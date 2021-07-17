@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Ampersand.Options.PopulationOptsParser (populationOptsParser) where
 

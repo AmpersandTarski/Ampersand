@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Ampersand.Options.Utils where
 
 import Ampersand.Basics

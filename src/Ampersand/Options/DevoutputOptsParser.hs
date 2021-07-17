@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Ampersand.Options.DevoutputOptsParser (devoutputOptsParser) where
 
 import Ampersand.Basics

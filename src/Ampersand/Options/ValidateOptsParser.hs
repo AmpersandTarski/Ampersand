@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Ampersand.Options.ValidateOptsParser (validateOptsParser) where
 
 import Ampersand.Misc.HasClasses (ValidateOpts (..))

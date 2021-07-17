@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Ampersand.Options.FSpecGenOptsParser (fSpecGenOptsParser, defFSpecGenOpts) where
 

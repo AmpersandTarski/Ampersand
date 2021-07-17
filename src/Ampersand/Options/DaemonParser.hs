@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Ampersand.Options.DaemonParser where
 

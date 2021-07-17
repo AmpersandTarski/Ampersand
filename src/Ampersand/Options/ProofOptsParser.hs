@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Ampersand.Options.ProofOptsParser (proofOptsParser) where
 
 import Ampersand.Basics

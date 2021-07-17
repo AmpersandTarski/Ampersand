@@ -1,6 +1,4 @@
-﻿{-# LANGUAGE NoImplicitPrelude #-}
-
-module Ampersand.Options.ProtoOptsParser (protoOptsParser) where
+﻿module Ampersand.Options.ProtoOptsParser (protoOptsParser) where
 
 import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)

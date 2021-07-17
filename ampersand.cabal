@@ -552,6 +552,7 @@ library
       src/
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints
   build-depends:
       HStringTemplate ==0.8.*
@@ -614,6 +615,7 @@ executable ampPreProc
       app/AmpPreProc
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*
@@ -679,6 +681,7 @@ executable ampersand
       app/Ampersand
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
@@ -744,6 +747,7 @@ test-suite ampersand-test
       app/Test
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*

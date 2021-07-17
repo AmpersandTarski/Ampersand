@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Ampersand.Options.UmlOptsParser (umlOptsParser) where
 
 import Ampersand.Basics
