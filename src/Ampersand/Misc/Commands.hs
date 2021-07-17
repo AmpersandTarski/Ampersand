@@ -340,18 +340,14 @@ mkAction theAction opts
 doOrDie :: (HasLogFunc env, HasFSpecGenOpts env) =>
              (FSpec -> RIO env b) -> RIO env b
 doOrDie theAction = do
-   env <- ask
-   let recipe = view recipeNameL env
-   mFSpec <- createFspec recipe
+   mFSpec <- createFspec
    case mFSpec of
      Checked a ws -> do
-       showWarnings ws
+       mapM_ (logWarn . displayShow) ws
        theAction a
      Errors err -> exitWith . NoValidFSpec
                  . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
                  . NE.toList . fmap tshow $ err
-   where
-     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 
 data Command = 
         Check

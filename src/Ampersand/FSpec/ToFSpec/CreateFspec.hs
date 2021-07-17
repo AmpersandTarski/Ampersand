@@ -55,9 +55,10 @@ import           Ampersand.Misc.HasClasses
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec :: (HasFSpecGenOpts env, HasLogFunc env) => 
-               Recipe -> RIO env (Guarded FSpec)
-createFspec recipe =
+               RIO env (Guarded FSpec)
+createFspec =
  do env <- ask
+    let recipe = view recipeNameL env
     userScript <- do
          rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
          snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
