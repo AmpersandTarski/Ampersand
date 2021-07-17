@@ -1,0 +1,90 @@
+ADL_V2          ::= ContextDef
+ContextDef      ::= 'CONTEXT' Id IncludeStatement* LanguageRef? TextMarkup?
+                  ( Meta         |
+                    PatternDef   |
+                    ProcessDef   |
+                    RuleDef      |
+                    RelationDef  |
+                    ConceptDef   |
+                    GenDef       |
+                    ViewDef      |
+                    InterfaceDef |
+                    Plug         |
+                    Purpose      |
+                    Population   |
+                    Themes
+                   )* 'ENDCONTEXT'
+IncludeStatement ::= 'INCLUDE' FilePath
+LanguageRef     ::= 'IN' ('DUTCH' | 'ENGLISH')
+TextMarkup      ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
+Meta            ::= 'META' String String
+PatternDef      ::= 'PATTERN' Id
+                  ( RuleDef      |
+                    GenDef       |
+                    RelationDef  |
+                    RoleRule     |
+                    ConceptDef   |
+                    RoleRelation |
+                    ViewDef      |
+                    Purpose      |
+                    Population
+                  )* 'ENDPATTERN'
+RuleDef         ::= 'RULE' (Id ':')? Term Meaning*
+                    ('MESSAGE' LanguageRef? TextMarkup? (String | Expl))* 
+                    ('VIOLATION' (ViolElement (',' ViolElement)* )?
+ViolElement     ::= 'TXT' String | 'SRC' Term | 'TGT' Term
+RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->' | '<-' | ('[' (('0'| '1') '..' ('1'|'*') | '1' | '*')? '-' (('0'| '1') '..' ('1'|'*') | '1' | '*')? ']'  ) ) ConceptRef) |
+                     (RELATION Id Sign))
+                    'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String String*)? Meaning? ('=' Content )? ('DEFINE' ('SRC' | 'TGT') String)? '.'?
+Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
+                         (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP'))*
+                       )? ']'
+ConceptDef      ::= 'CONCEPT' Id 'MEANING' LanguageRef? TextMarkup? ('REF' String)? Expl
+GenDef          ::= 'CLASSIFY' Id 'ISA' Id
+ViewDef         ::= 'VIEW' Id ConceptRef '(' ViewSegment (',' ViewSegment)* ')' |
+                    'VIEW' Id ConceptRef 'DEFAULT'? ('(' ViewSegment (',' ViewSegment)* ')'?) HTMLview 'ENDVIEW'
+ViewSegment     ::= Id ':' ( term | string )
+InterfaceDef    ::= 'INTERFACE' 'API'? Id
+                    ('(' RelSign (',' RelSign)* ')')?
+                    ('FOR' Id (',' Id)* )?
+                    ':' Term SubInterface
+SubInterface    ::= 'BOX' ('<' ('FORM' | 'TABLE' | 'TABS') '>')? Box
+Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
+Purpose         ::= 'PURPOSE'
+                    ('CONCEPT'  Id       |
+                     'RELATION' Id Sign? |
+                     'RULE'      Id      |
+                     'VIEW'      Id      |
+                     'PATTERN'   Id      |
+                     'INTERFACE' Id      |
+                     'CONTEXT'   Id
+                    )
+                    LanguageRef?
+                    TextMarkup?
+                    ('REF' String)? Expl
+Expl            ::= '{+' String '-}'
+Population      ::= 'POPULATION' RelSign 'CONTAINS' RelContent |
+                    'POPULATION' Id 'CONTAINS' CptContent 
+RoleRule        ::= 'ROLE' Id (',' Id)* 'MAINTAINS' Id (',' Id)*
+Meaning         ::= 'MEANING' LanguageRef? TextMarkup? Expl
+Term            ::= Trm1 (( '=' | '|-') Trm1)?
+Trm1            ::= Trm2 (( '/\' | '\/') Trm2)*
+Trm2            ::= Trm3 ('-' Trm3)?
+Trm3            ::= Trm4 (( '\' | '/') Trm4)?
+Trm4            ::= (Trm5 (';' Trm5)* ) |
+                    (Trm5 ('!' Trm5)* ) |
+                    Trm5
+Trm5            ::= '-'? Trm6 |
+                    Trm6  ( Sign | '~' | '*' | '+')
+Trm6            ::= RelationRef | 
+                    '('   Term   ')'
+RelationRef     ::= 'I' | 'V' | Varid | Atom
+RelSign         ::= RelationRef Sign?
+Sign            ::= '[' ConceptRef ( '*' ConceptRef)? ']'
+ConceptRef      ::= 'ONE' | Id
+# obsolete:
+#   LabelProps  ::= Id ('{' Id (',' Id)* '}')* ':'
+ObjDef          ::= Id Term SubInterface?
+Box             ::= 'BOX' '[' ObjDef (',' ObjDef)* ']'
+RelContent      ::= '[' (('(' Value ',' Value ')') (',' ('(' Value ',' Value ')') )*)? ']'
+CptContent      ::= '[' (Value (',' Value )*)? ']'

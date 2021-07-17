@@ -491,8 +491,8 @@ pObjDef = pBoxItem <$> currPos
                    <*> pMaybe pCruds
                    <*> pMaybe (pChevrons $ asText pConid) --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
-          where obj ctx mCrud mView msub =
-                  P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
+      where obj ctx mCrud mView msub =
+               P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
                         , pos       = fatal "This should have been filled in promptly."
                         , obj_ctx   = ctx
                         , obj_crud  = mCrud
@@ -502,7 +502,7 @@ pObjDef = pBoxItem <$> currPos
     pTxt :: AmpParser P_BoxItemTermPrim
     pTxt = obj <$ pKey "TXT"
                <*> asText pDoubleQuotedString
-          where obj txt = 
+      where obj txt = 
                   P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
                         , pos      = fatal "This should have been filled in promptly."
                         , obj_txt  = txt
