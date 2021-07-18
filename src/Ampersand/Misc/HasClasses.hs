@@ -8,13 +8,14 @@ import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)
 import RIO.FilePath
 import qualified RIO.List as L
+import qualified RIO.Text as T
 
 class HasOptions a where
   showOptions :: HasLogFunc env => a -> RIO env ()
   showOptions opts = mapM_ showOpt . L.sortOn fst . optsList $ opts
     where showOpt :: HasLogFunc env => (Text,Text) -> RIO env ()
           showOpt (key,value) = 
-            logDebug . display $ key <>": "<> value
+            logDebug . display $ key <>" "<> value
   optsList :: a -> [(Text,Text)] -- A tuple containing the 'key' and the value of the options.   
   {-# MINIMAL optsList #-}
 instance (HasOptions a, HasOptions b) => HasOptions (a,b) where
@@ -113,8 +114,6 @@ class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
 instance HasOutputLanguage ProtoOpts where
   languageL = lens x1OutputLanguage (\x y -> x { x1OutputLanguage = y })
-instance HasOutputLanguage DaemonOpts where
-  languageL = lens x2OutputLanguage (\x y -> x { x2OutputLanguage = y })
 instance HasOutputLanguage DocOpts where
   languageL = lens x3OutputLanguage (\x y -> x { x3OutputLanguage = y })
 instance HasOutputLanguage UmlOpts where
@@ -196,8 +195,7 @@ instance HasTestOpts TestOpts where
 
 -- | Options for @ampersand daemon@.
 data DaemonOpts = DaemonOpts
-  { x2OutputLanguage :: !(Maybe Lang)
-  , xdaemonConfig :: !FilePath
+  { xdaemonConfig :: !FilePath
    -- ^ The path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
   , x2fSpecGenOpts :: !FSpecGenOpts
   , xshowWarnings :: !Bool -- ^ Enable/disable show of warnings (if any).
@@ -205,11 +203,10 @@ data DaemonOpts = DaemonOpts
   }
 instance HasOptions DaemonOpts where
   optsList opts =
-     [ ("x2OutputLanguage", tshow $ x2OutputLanguage opts)
-     , ("xdaemonConfig", tshow $ xdaemonConfig opts)
+     [ ("--daemonconfig", tshow $ xdaemonConfig opts)
      ] <>
      optsList (x2fSpecGenOpts opts) <>
-     [ ("xshowWarnings", tshow $ xshowWarnings opts)
+     [ ("--[no-]warnings", tshow $ xshowWarnings opts)
      ]
 
 class (HasFSpecGenOpts a) => HasDaemonOpts a where
@@ -245,14 +242,18 @@ data FSpecGenOpts = FSpecGenOpts
 } deriving Show
 instance HasOptions FSpecGenOpts where
   optsList opts =
-     [ ("xrootFile", tshow $ xrootFile opts)
-     , ("xsqlBinTables", tshow $ xsqlBinTables opts)
-     , ("xgenInterfaces", tshow $ xgenInterfaces opts)
-     , ("xnamespace", tshow $ xnamespace opts)
-     , ("xdefaultCrud", tshow $ xdefaultCrud opts)
-     , ("xtrimXLSXCells", tshow $ xtrimXLSXCells opts)
-     , ("xrecipe", tshow $ xrecipe opts)
-     , ("xallowInvariantViolations", tshow $ xallowInvariantViolations opts)
+     [ ("AMPERSAND_SCRIPT", maybe "" T.pack $ xrootFile opts)
+     , ("--sql-bin-tables", tshow $ xsqlBinTables opts)
+     , ("--interfaces", tshow $ xgenInterfaces opts)
+     , ("--namespace", tshow $ xnamespace opts)
+     , ("--crud-defaults", let (c,r,u,d) = xdefaultCrud opts
+                               f :: Bool -> Text -> Text
+                               f b = (if b then T.toUpper else T.toLower)  
+                           in mconcat [f c "c", f r "r",f u "u",f d "d"]
+       )
+     , ("--[no-]trim-cellvalues", tshow $ xtrimXLSXCells opts)
+     , ("--build-recipe", tshow $ xrecipe opts)
+     , ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts)
      ]
 
 data FSpecFormat =
@@ -288,7 +289,7 @@ data InputOutputOpts = InputOutputOpts
 instance HasOptions InputOutputOpts where
   optsList opts =
      optsList (x4fSpecGenOpts opts) <>
-     [ ("x4outputFile", tshow $ x4outputFile opts)
+     [ ("OUTPUTDIRECTORY", tshow $ x4outputFile opts)
      ]
 
 -- | Options for @ampersand proto@.
@@ -306,16 +307,16 @@ data ProtoOpts = ProtoOpts
   } deriving Show
 instance HasOptions ProtoOpts where
   optsList opts =
-     [ ("xforceReinstallFramework", tshow $ xforceReinstallFramework opts)
-     , ("x1OutputLanguage", tshow $ x1OutputLanguage opts)
+     [ ("--force-reinstall-framework", tshow $ xforceReinstallFramework opts)
+     , ("--language", tshow $ x1OutputLanguage opts)
      ] <>
      optsList (x1fSpecGenOpts opts) <>
-     [ ("xdirPrototype", tshow $ xdirPrototype opts)
-     , ("xdirCustomizations", tshow $ xdirCustomizations opts)
-     , ("xzwolleVersion", tshow $ xzwolleVersion opts)
-     , ("xgenerateFrontend", tshow $ xgenerateFrontend opts)
-     , ("xgenerateBackend", tshow $ xgenerateBackend opts)
-     , ("xgenerateMetamodel", tshow $ xgenerateMetamodel opts)
+     [ ("--proto-dir", maybe "" tshow $ xdirPrototype opts)
+     , ("--customizations", maybe "" (T.intercalate "; " . fmap T.pack) $ xdirCustomizations opts)
+     , ("--prototype-framework-version", tshow $ xzwolleVersion opts)
+     , ("--[no-]frontend", tshow $ xgenerateFrontend opts)
+     , ("--[no-]backend", tshow $ xgenerateBackend opts)
+     , ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
      ]
 
 -- | Options for @ampersand documentation@.
@@ -337,16 +338,19 @@ data DocOpts = DocOpts
    } deriving Show
 instance HasOptions DocOpts where
   optsList opts =
-     [ ("xblackWhite", tshow $ xblackWhite opts)
-     , ("xchapters", tshow $ xchapters opts)
-     , ("xgenGraphics", tshow $ xgenGraphics opts)
-     , ("xfspecFormat", tshow $ xfspecFormat opts)
+     [ ("--blackWhite", tshow $ xblackWhite opts)
+     ] <> 
+     fmap chapters [minBound ..] <>
+     [ ("--[no-]graphics", tshow $ xgenGraphics opts)
+     , ("--format", tshow $ xfspecFormat opts)
      ] <>
      optsList (x3fSpecGenOpts opts) <>
-     [ ("x3OutputLanguage", tshow $ x3OutputLanguage opts)
-     , ("xgenLegalRefs", tshow $ xgenLegalRefs opts)
+     [ ("--language", tshow $ x3OutputLanguage opts)
+     , ("--[no-]legal-refs", tshow $ xgenLegalRefs opts)
      ]
-
+    where
+      chapters :: Chapter -> (Text,Text)
+      chapters chp = ("--[no-]"<> tshow chp,tshow $ chp `elem` xchapters opts)
 data PopulationOutputFormat =
     XLSX
   | JSON
@@ -360,7 +364,7 @@ data PopulationOpts = PopulationOpts
 instance HasOptions PopulationOpts where
   optsList opts =
      optsList (x5fSpecGenOpts opts) <>
-     [ ("xoutputFormat", tshow $ xoutputFormat opts)
+     [ ("--output-format", tshow $ xoutputFormat opts)
      ]
 
 instance HasPopulationOpts PopulationOpts where
@@ -389,7 +393,7 @@ data UmlOpts = UmlOpts
 instance HasOptions UmlOpts where
   optsList opts =
      optsList (x7fSpecGenOpts opts) <>
-     [ ("x4OutputLanguage", tshow $ x4OutputLanguage opts)
+     [ ("--language", tshow $ x4OutputLanguage opts)
      ]
 
 -- | Options for @ampersand validate@
@@ -410,7 +414,7 @@ data DevOutputOpts = DevOutputOpts
 instance HasOptions DevOutputOpts where
   optsList opts =
      optsList (x8fSpecGenOpts opts) <>
-     [ ("x5outputFile", tshow $ x5outputFile opts)
+     [ ("OUTPUTDIRECTORY", tshow $ x5outputFile opts)
      ]
 
 newtype TestOpts = TestOpts
@@ -418,7 +422,7 @@ newtype TestOpts = TestOpts
    } deriving Show
 instance HasOptions TestOpts where
   optsList opts =
-     [ ("rootTestDir", tshow $ rootTestDir opts)
+     [ ("TESTDIRECTORY", tshow $ rootTestDir opts)
      ]
 data Chapter = Intro
              | SharedLang
