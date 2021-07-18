@@ -17,6 +17,10 @@ class HasOptions a where
             logDebug . display $ key <>": "<> value
   optsList :: a -> [(Text,Text)] -- A tuple containing the 'key' and the value of the options.   
   {-# MINIMAL optsList #-}
+instance (HasOptions a, HasOptions b) => HasOptions (a,b) where
+  optsList (a,b) = optsList a <> optsList b
+--instance (HasOptions a, Foldable f, Functor f) => HasOptions (f a) where
+--  optsList xs = concat . toList . fmap optsList $ xs
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -30,8 +34,8 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  recipeNameL :: Lens' a Recipe
-  recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
+  recipeL :: Lens' a Recipe
+  recipeL = fSpecGenOptsL . lens xrecipe (\x y -> x { xrecipe = y })
   allowInvariantViolationsL :: Lens' a Bool
   allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 instance HasFSpecGenOpts FSpecGenOpts where
@@ -59,17 +63,17 @@ instance HasFSpecGenOpts ProtoOpts where
 class (HasRootFile a) => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
   getTemplateDir :: a -> FilePath
-  getTemplateDir x = 
+  getTemplateDir x =
     getDirPrototype x </> "templates"
   getAppDir :: a -> FilePath
   getAppDir x =
     getDirPrototype x </> "public" </> "app" </> "project"
   getGenericsDir :: a -> FilePath
-  getGenericsDir x = 
-    getDirPrototype x </> "generics" 
+  getGenericsDir x =
+    getDirPrototype x </> "generics"
   getMetamodelDir :: a -> FilePath
-  getMetamodelDir x = 
-    getDirPrototype x </> "metamodel" 
+  getMetamodelDir x =
+    getDirPrototype x </> "metamodel"
   getDirPrototype :: a -> FilePath
   getDirPrototype x = fromMaybe defaultDirPrototype . view dirPrototypeL $ x
 instance HasDirPrototype ProtoOpts where
@@ -91,13 +95,13 @@ instance HasGenerateMetamodel ProtoOpts where
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> FilePath
-  baseName  = 
-    maybe 
+  baseName  =
+    maybe
       (fatal "Cannot determine the basename of the script that is being compiled")
       takeBaseName
     . view rootFileL
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
-  dirSource = 
+  dirSource =
     maybe
       (fatal "Cannot determine the directory of the script that is being compiled")
       takeDirectory
@@ -151,7 +155,7 @@ instance HasDocumentOpts DocOpts where
 class HasBlackWhite a where
   blackWhiteL :: Lens' a Bool    -- only use black/white in graphics
 instance HasBlackWhite DocOpts where
-  blackWhiteL = lens xblackWhite (\x y -> x { xblackWhite = y }) 
+  blackWhiteL = lens xblackWhite (\x y -> x { xblackWhite = y })
 
 class HasOutputFile a where
   outputfileL :: Lens' a FilePath
@@ -159,8 +163,8 @@ instance HasOutputFile InputOutputOpts where
   outputfileL = lens x4outputFile (\x y -> x { x4outputFile = y })
 
 class HasVersion a where
-  preVersionL :: Lens' a Text 
-  postVersionL :: Lens' a Text 
+  preVersionL :: Lens' a Text
+  postVersionL :: Lens' a Text
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
@@ -171,7 +175,7 @@ instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
 instance HasProtoOpts ValidateOpts where
-   protoOptsL = lens protoOpts (\x y -> x { protoOpts = y }) 
+   protoOptsL = lens protoOpts (\x y -> x { protoOpts = y })
 class HasDevoutputOpts env where
    devoutputOptsL :: Lens' env DevOutputOpts
 class HasInitOpts env where
@@ -200,7 +204,7 @@ data DaemonOpts = DaemonOpts
 
   }
 instance HasOptions DaemonOpts where
-  optsList opts = 
+  optsList opts =
      [ ("x2OutputLanguage", tshow $ x2OutputLanguage opts)
      , ("xdaemonConfig", tshow $ xdaemonConfig opts)
      ] <>
@@ -217,7 +221,7 @@ instance HasDaemonOpts DaemonOpts where
   {-# INLINE daemonOptsL #-}
 
 -- | An enumeration type for building an FSpec in some common way
-data Recipe = 
+data Recipe =
     Standard  -- ^ Plain way of building. No fancy stuff. 
   | Grind     -- ^ Generates population for an atlas.
               --   It assumes that the database is fit to receive that population, as RAP does.
@@ -234,29 +238,29 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
-  , xrecipeName :: !Recipe 
+  , xrecipe :: !Recipe
   -- ^ Which recipe for generating code?
   , xallowInvariantViolations :: !Bool
   -- ^ Should invariant violations be ignored?
 } deriving Show
 instance HasOptions FSpecGenOpts where
-  optsList opts = 
+  optsList opts =
      [ ("xrootFile", tshow $ xrootFile opts)
      , ("xsqlBinTables", tshow $ xsqlBinTables opts)
      , ("xgenInterfaces", tshow $ xgenInterfaces opts)
      , ("xnamespace", tshow $ xnamespace opts)
      , ("xdefaultCrud", tshow $ xdefaultCrud opts)
      , ("xtrimXLSXCells", tshow $ xtrimXLSXCells opts)
-     , ("xrecipeName", tshow $ xrecipeName opts)
+     , ("xrecipe", tshow $ xrecipe opts)
      , ("xallowInvariantViolations", tshow $ xallowInvariantViolations opts)
      ]
-    
-data FSpecFormat = 
+
+data FSpecFormat =
          FPandoc
        | Fasciidoc
        | Fcontext
        | Fdocbook
-       | Fdocx 
+       | Fdocx
        | Fhtml
        | Fman
        | Fmarkdown
@@ -282,7 +286,7 @@ data InputOutputOpts = InputOutputOpts
    , x4outputFile :: !FilePath --relative path 
    }
 instance HasOptions InputOutputOpts where
-  optsList opts = 
+  optsList opts =
      optsList (x4fSpecGenOpts opts) <>
      [ ("x4outputFile", tshow $ x4outputFile opts)
      ]
@@ -301,7 +305,7 @@ data ProtoOpts = ProtoOpts
    , xgenerateMetamodel :: !Bool
   } deriving Show
 instance HasOptions ProtoOpts where
-  optsList opts = 
+  optsList opts =
      [ ("xforceReinstallFramework", tshow $ xforceReinstallFramework opts)
      , ("x1OutputLanguage", tshow $ x1OutputLanguage opts)
      ] <>
@@ -332,7 +336,7 @@ data DocOpts = DocOpts
    -- ^ enable/disable generation of legal references in the documentation
    } deriving Show
 instance HasOptions DocOpts where
-  optsList opts = 
+  optsList opts =
      [ ("xblackWhite", tshow $ xblackWhite opts)
      , ("xchapters", tshow $ xchapters opts)
      , ("xgenGraphics", tshow $ xgenGraphics opts)
@@ -344,17 +348,17 @@ instance HasOptions DocOpts where
      ]
 
 data PopulationOutputFormat =
-    XLSX 
+    XLSX
   | JSON
   deriving (Show, Enum, Bounded)
 -- | Options for @ampersand population@
 data PopulationOpts = PopulationOpts
    { x5fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
-   , xoutputFormat :: !PopulationOutputFormat 
+   , xoutputFormat :: !PopulationOutputFormat
    } deriving Show
 instance HasOptions PopulationOpts where
-  optsList opts = 
+  optsList opts =
      optsList (x5fSpecGenOpts opts) <>
      [ ("xoutputFormat", tshow $ xoutputFormat opts)
      ]
@@ -369,7 +373,7 @@ newtype ProofOpts = ProofOpts
    -- ^ Options required to build the fSpec
    } deriving Show
 instance HasOptions ProofOpts where
-  optsList opts = 
+  optsList opts =
      optsList (x6fSpecGenOpts opts)
 
 -- | Options for @ampersand init@
@@ -383,7 +387,7 @@ data UmlOpts = UmlOpts
    -- ^ Language of the output document
    } deriving Show
 instance HasOptions UmlOpts where
-  optsList opts = 
+  optsList opts =
      optsList (x7fSpecGenOpts opts) <>
      [ ("x4OutputLanguage", tshow $ x4OutputLanguage opts)
      ]
@@ -394,7 +398,7 @@ newtype ValidateOpts = ValidateOpts
    -- ^ Options required to build the fSpec
    } deriving Show
 instance HasOptions ValidateOpts where
-  optsList opts = 
+  optsList opts =
      optsList (protoOpts opts)
 
 -- | Options for @ampersand devoutput@
@@ -404,7 +408,7 @@ data DevOutputOpts = DevOutputOpts
    , x5outputFile :: !FilePath --relative path  
    } deriving Show
 instance HasOptions DevOutputOpts where
-  optsList opts = 
+  optsList opts =
      optsList (x8fSpecGenOpts opts) <>
      [ ("x5outputFile", tshow $ x5outputFile opts)
      ]
@@ -413,7 +417,7 @@ newtype TestOpts = TestOpts
    { rootTestDir :: FilePath --relative path to directory containing test scripts
    } deriving Show
 instance HasOptions TestOpts where
-  optsList opts = 
+  optsList opts =
      [ ("rootTestDir", tshow $ rootTestDir opts)
      ]
 data Chapter = Intro
@@ -421,5 +425,5 @@ data Chapter = Intro
              | Diagnosis
              | ConceptualAnalysis
              | DataAnalysis
-             deriving (Eq, Show, Enum, Bounded) 
+             deriving (Eq, Show, Enum, Bounded)
 

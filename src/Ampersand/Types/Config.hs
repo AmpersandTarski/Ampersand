@@ -60,6 +60,11 @@ data Runner = Runner
   } deriving Show
 instance Show LogFunc where show _ = "<LogFunc>"
 instance Show ProcessContext where show _ = "<ProcessContext>"  
+instance HasOptions Runner where
+  optsList r = optsList (runnerGlobalOpts r)
+            <> [ ("runnerUseColor", tshow $ runnerUseColor r)
+               , ("runnerTermWidth", tshow $ runnerUseColor r)
+               ]
 
 -- | Class for environment values which have a 'Runner'.
 class (HasProcessContext env, HasLogFunc env) => HasRunner env where

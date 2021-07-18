@@ -153,7 +153,9 @@ commandLineHandler currentDir _progName args = complicatedOptions
         addCommand'' cmd title constr parser =
             addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts parser
           where constr' opts = do
-                  showOptions opts
+                  runner <- ask 
+                  logDebug .display $ shortVersion appVersion <> " runs with the following settings:"
+                  showOptions (runner,opts)
                   constr opts
 
 
