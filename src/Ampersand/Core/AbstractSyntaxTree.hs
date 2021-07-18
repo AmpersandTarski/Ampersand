@@ -381,11 +381,11 @@ data Interface = Ifc
      -- ^ All roles for which an interface is available (empty means: available for all roles)
     , ifcObj :: !ObjectDef
      -- ^ NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
-    , ifcControls :: ![Conjunct]
+    , ifcConjuncts :: ![Conjunct]
      -- ^ All conjuncts that must be evaluated after a transaction
     , ifcPos :: !Origin
      -- ^ The position in the file (filename, line- and column number)
-    , ifcPrp :: !Text
+    , ifcPurpose :: !Text
      -- ^ The purpose of the interface
     } deriving Show
 

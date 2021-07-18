@@ -23,8 +23,8 @@ protoOptsParser =
             <*> zwolleVersionP
             <*> generateFrontendP
             <*> generateBackendP
-            <*> generateMetamodelP
             <*> frontendVersionP
+            <*> generateMetamodelP
         )
   where
     standardToProtoType :: ProtoOpts -> ProtoOpts
