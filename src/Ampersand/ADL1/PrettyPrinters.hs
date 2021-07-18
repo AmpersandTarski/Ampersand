@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
@@ -100,8 +100,8 @@ instance Pretty P_Context where
                <+\> perline pops
                <+\> text "ENDCONTEXT"
              
-instance Pretty Meta where
-    pretty (Meta _ nm val) =
+instance Pretty MetaData where
+    pretty (MetaData _ nm val) =
         text "META" <+> quote nm <+> quote val
 
 instance Pretty P_RoleRule where

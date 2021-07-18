@@ -1,5 +1,5 @@
 ﻿{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.HasClasses
 
@@ -20,8 +20,10 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  recipeNameL :: Lens' a KnownRecipe
+  recipeNameL :: Lens' a Recipe
   recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
+  allowInvariantViolationsL :: Lens' a Bool
+  allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
@@ -57,24 +59,26 @@ class HasProtoOpts a => HasDirPrototype a where
   getGenericsDir :: a -> FilePath
   getGenericsDir x = 
     getDirPrototype x </> "generics" 
+  getMetamodelDir :: a -> FilePath
+  getMetamodelDir x = 
+    getDirPrototype x </> "metamodel" 
   getDirPrototype :: a -> FilePath
   getDirPrototype x = fromMaybe defaultDirPrototype . view dirPrototypeL $ x
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
 
-class HasAllowInvariantViolations a where
-  allowInvariantViolationsL :: Lens' a Bool
-instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
-  allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 class HasGenerateFrontend a where
   generateFrontendL :: Lens' a Bool
 instance HasGenerateFrontend ProtoOpts where
   generateFrontendL = lens xgenerateFrontend (\x y -> x { xgenerateFrontend = y })
-
 class HasGenerateBackend a where
   generateBackendL :: Lens' a Bool
 instance HasGenerateBackend ProtoOpts where
   generateBackendL = lens xgenerateBackend (\x y -> x { xgenerateBackend = y })
+class HasGenerateMetamodel a where
+  generateMetamodelL :: Lens' a Bool
+instance HasGenerateMetamodel ProtoOpts where
+  generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
 
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
@@ -90,7 +94,7 @@ class HasRootFile a where
       (fatal "Cannot determine the directory of the script that is being compiled")
       takeDirectory
     . view rootFileL
-instance (HasFSpecGenOpts a) => HasRootFile a where
+instance HasFSpecGenOpts a => HasRootFile a where
   rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x { xrootFile = y })
 
 class HasOutputLanguage a where
@@ -198,13 +202,16 @@ instance HasDaemonOpts DaemonOpts where
   {-# INLINE daemonOptsL #-}
 
 -- | An enumeration type for building an FSpec in some common way
-data KnownRecipe = 
-    Standard -- ^ Plain way of building. No fancy stuff. 
-  | Prototype -- ^ Userscript grinded with prototype metamodel
-  | RAP -- ^ Merge the metamodel of FormalAmpersand to your script
-  | AtlasComplete    -- ^ A recipe to build an FSpec containing a selfcontained Atlas. 
-  | AtlasPopulation  -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
+data Recipe = 
+    Standard  -- ^ Plain way of building. No fancy stuff. 
+  | Grind     -- ^ Generates population for an atlas.
+              --   It assumes that the database is fit to receive that population, as RAP does.
+  | Prototype -- ^ A recipe to build a prototyping environment.
+  | RAP       -- ^ A recipe to build a Repository for Ampersand Projects (RAP)
+              --   The option 'RAP' generates a database that is fit to receive metamodels, so an Atlas is possible.
+              --   The 'makeAtlas' button in RAP uses the 'Grind' option to populate the metamodel.
     deriving (Show, Enum, Bounded)
+
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
@@ -212,8 +219,8 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
-  , xrecipeName :: !KnownRecipe 
-  -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
+  , xrecipeName :: !Recipe 
+  -- ^ Which recipe for generating code? Standard, Prototype, or Atlas? 
   , xallowInvariantViolations :: !Bool
   -- ^ Should invariant violations be ignored?
 } deriving Show
@@ -262,6 +269,7 @@ data ProtoOpts = ProtoOpts
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
    , xfrontendVersion :: !FrontendVersion
+   , xgenerateMetamodel :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.

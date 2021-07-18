@@ -6,8 +6,8 @@ CONTEXT SpecEdit IN ENGLISH
 -}
 
 PURPOSE CONTEXT SpecEdit {+ Simple context for testing edit operations on narrowed relations +}
--- This script contains W-expressions, such as I[Orange];I[Lime];I[Citrus];I[Lemon]. These must be caught by the type checker,
--- because it is predictable that there can never be any population in a W-expression.
+-- This script contains W-terms, such as I[Orange];I[Lime];I[Citrus];I[Lemon]. These must be caught by the type checker,
+-- because it is predictable that there can never be any population in a W-term.
 -- NOTE: these are currently not guaranteed to be empty, as mutual exclusion for CLASSIFY is not enforced (strangeLemon is an example)
 
 CONCEPT Fruit "Most general concept"
@@ -59,9 +59,9 @@ BOX [ "Person atom" : I
     , "(I [Orange];citrusOwnedBy)~" : (I[Orange];citrusOwnedBy)~
     , "(citrusOwnedBy~);I[Orange]" : (citrusOwnedBy~);I[Orange]
     , "ownsLimes;I[Orange]" : ownsLimes;I[Orange]
-    , "^ expression" : ownsLimes;I[Citrus];I[Lemon] -- Should fail
+    , "^ term" : ownsLimes;I[Citrus];I[Lemon] -- Should fail
      -- It's more of a '^' than a 'W' (ownsLimes; Eps Lime [Lime*Citrus]; I[Citrus]; Eps Lemon [Citrus*Lemon]; I[Lemon]), but it will also always be empty.
-     -- NOTE: like W expressions, these are currently not guaranteed to be empty, as mutual exclusion for CLASSIFY is not enforced (strangeLemon is an example)
+     -- NOTE: like W terms, these are currently not guaranteed to be empty, as mutual exclusion for CLASSIFY is not enforced (strangeLemon is an example)
     ]
 
 INTERFACE Lime (limeProperties) : I[Lime]
@@ -92,7 +92,7 @@ dummyLimorange :: Limorange * Limorange =
 POPULATION ownsLimes[Person*Lime] CONTAINS
   [ ("martijn", "lime1")
   ; ("martijn", "limorange1") 
-  ; ("martijn", "strangeLemon")     -- causes ^ expression to be non-empty
+  ; ("martijn", "strangeLemon")     -- causes ^ term to be non-empty
   ]
   
 POPULATION ownsCitrus[Person*Citrus] CONTAINS
@@ -100,7 +100,7 @@ POPULATION ownsCitrus[Person*Citrus] CONTAINS
   ; ("martijn", "orange1")
   ; ("martijn", "orange2")
   ; ("martijn", "limorange1") 
-  ; ("martijn", "strangeLemon")    -- causes W expression to be non-empty
+  ; ("martijn", "strangeLemon")    -- causes W term to be non-empty
   ]
 
 POPULATION ownsLimoranges[Person*Limorange] CONTAINS

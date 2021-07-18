@@ -24,7 +24,7 @@ in the view definition at line 11:21 in file ARM20-Test2wrong.adl:
    The source of expID is "Verwachting".
    Each instance of Verwachting is a Criterium.
    Your VIEW definition does not specify how to view instances of Criterium that are not Verwachting.
-   In order to view every Criterium, you must replace expID by an expression whose source concept is equal to or more generic than Criterium.
+   In order to view every Criterium, you must replace expID by an term whose source concept is equal to or more generic than Criterium.
    
 TODO: the condensed type graph does NOT show this mistake!!!!  (observation by SJ on July 23rd, 2013). Please fix ASAP...
 -}

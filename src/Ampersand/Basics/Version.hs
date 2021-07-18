@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | This module contains Version of Ampersand
 module Ampersand.Basics.Version 
        ( VersionInfo(..)

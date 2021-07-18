@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where
@@ -63,7 +63,7 @@ uniqueButNotTooLong txt =
                           -- in a field that is normally 255 long. We store the
                           -- prefix of the string but make sure we still have space
                           -- left over for the hash. While theoretically this is a 
-                          -- crappy solution, in practice this will prove to be well 
+                          -- crappy solution, in practice this will prove to be good 
                           -- enough.
   
 

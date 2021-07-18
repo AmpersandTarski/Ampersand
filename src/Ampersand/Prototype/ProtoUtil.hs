@@ -1,6 +1,6 @@
-﻿{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile

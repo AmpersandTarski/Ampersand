@@ -4,7 +4,7 @@ CONTEXT PrototypeFramework IN ENGLISH
     CONCEPT PF_NavMenuItem ""
         REPRESENT PF_NavMenuItem TYPE OBJECT
   
-    RELATION label[PF_NavMenuItem*PF_Label] [UNI,TOT] 
+    RELATION label[PF_NavMenuItem*PF_Label] [UNI] 
         MEANING "The human readable text that represents the navbar item and is shown to the user"
         CONCEPT PF_Label ""
         REPRESENT PF_Label TYPE ALPHANUMERIC

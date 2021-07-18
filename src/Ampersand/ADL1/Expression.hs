@@ -154,29 +154,15 @@ isFlipped _        = False
 isFitForCrudC :: Expression -> Bool
 isFitForCrudC expr = 
    case expr of 
-     EDcD{}   -> True
      EFlp e   -> isFitForCrudC e
      EBrk e   -> isFitForCrudC e
-     EEps _ _ -> False
-     EDcI{}   -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
-     EMp1{}   -> False
-     EDcV{}   -> True
      ECps( EEps _ _ , e        ) -> isFitForCrudC e
      ECps( e        , EEps _ _ ) -> isFitForCrudC e
      ECps( _        , _        ) -> True
-     EEqu{}   -> True
-     EInc{}   -> True
-     EIsc{}   -> True
-     EUni{}   -> True
-     EDif{}   -> True
-     ELrs{}   -> True
-     ERrs{}   -> True
-     EDia{}   -> True
-     ERad{}   -> True
-     EPrd{}   -> True
-     EKl0{}   -> True
-     EKl1{}   -> True
-     ECpl{}   -> True
+     EEps _ _ -> False
+     EMp1{}   -> False
+     _        -> True
+     -- EDcI{} -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
 -- | Function to determine that the expression
 --   could be used to read the population of its target concept
 isFitForCrudR :: Expression -> Bool
@@ -189,27 +175,11 @@ isFitForCrudU expr =
      EDcD{}   -> True
      EFlp e   -> isFitForCrudU e
      EBrk e   -> isFitForCrudU e
-     EEps _ _ -> False
-     EDcI{}   -> False
-     EMp1{}   -> False
-     EDcV{}   -> False
      ECps ( EEps _ _ , e        ) -> isFitForCrudU e
      ECps ( e        , EEps _ _ ) -> isFitForCrudU e
      ECps ( e        , EDcI{}   ) -> isFitForCrudU e
      ECps ( _        , _        ) -> False
-     EEqu{}   -> False
-     EInc{}   -> False
-     EIsc{}   -> False
-     EUni{}   -> False
-     EDif{}   -> False
-     ELrs{}   -> False
-     ERrs{}   -> False
-     EDia{}   -> False
-     ERad{}   -> False
-     EPrd{}   -> False
-     EKl0{}   -> False
-     EKl1{}   -> False
-     ECpl{}   -> False
+     _        -> False
 -- | Function to determine that the expression is simple, that it
 --   could be used to update the population of a relation
 isFitForCrudD :: Expression -> Bool
@@ -250,45 +220,6 @@ insParentheses = insPar 0
      insPar _  (EFlp e)     = EFlp (insPar 10 e)
      insPar _  (ECpl e)     = ECpl (insPar 10 e)
      insPar i  (EBrk e)     = insPar i e
-     insPar _ x@EDcD{}      = x  
-     insPar _ x@EDcI{}      = x  
-     insPar _ x@EEps{}      = x  
-     insPar _ x@EDcV{}      = x  
-     insPar _ x@EMp1{}      = x  
+     insPar _ x             = x  -- x@EDcD{} or EDcI{} or EEps{} or EDcV{} or EMp1{}
      foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
      foldr1 fun nonempty = foldr fun (NE.last nonempty) (NE.init nonempty)
-{-
-   insPar 0 (r/\s/\t/\x/\y |- p)
-=
-   wrap 0 0 (insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p)
-=
-   insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p
-=
-   wrap 1 2 (foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ]) |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-[r,s,t,x,y] ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 r,insPar 3 s,insPar 3 t,insPar 3 x,insPar 3 y] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [r,s,t,x,y] |- p   where f x y = EIsc (x,y)
-=
-   r/\s/\t/\x/\y |- p
-
-   insPar 0 (r;s;t;x;y |- p)
-=
-   wrap 0 0 (insPar 1 (r;s;t;x;y) |- insPar 1 p)
-=
-   insPar 1 (r;s;t;x;y) |- insPar 1 p
-=
-   wrap 1 8 (insPar 8 r ; insPar 8 (s;t;x;y)) |- p
-=
-   r; insPar 8 (s;t;x;y) |- p
-=
-   r; wrap 8 8 (insPar 8 s; insPar 8 (t;x;y)) |- p
-=
-   r; insPar 8 s; insPar 8 (t;x;y) |- p
-=
-   r; s; insPar 8 (t;x;y) |- p
--}

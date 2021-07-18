@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.ADL1.Rule 
   ( consequent, antecedent, hasantecedent
   , isPropertyRule, rulefromProp

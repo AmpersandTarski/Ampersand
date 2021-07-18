@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Reads a project and parses it
 module Ampersand.Daemon.Parser (
     parseProject
@@ -16,7 +16,7 @@ import           Ampersand.Types.Config
 import           Ampersand.Misc.HasClasses (HasRootFile(..),rootFileL, HasDaemonOpts(..), showWarningsL)
 
 -- | parseProject will try to parse a file. If it succeeds, it will 
---   also parse all INCLUDED files transitive. Any of these parses could
+--   also parse all INCLUDED files transitively. Any of these parses could
 --   fail. It will return a tuple containing the Loads and a list of 
 --   the filepaths that are read. 
 parseProject :: (HasDaemonOpts env, HasRunner env) => 

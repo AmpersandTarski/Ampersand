@@ -17,5 +17,5 @@ BOX [ "Sinterklaas moet hier altijd" : V[SESSION*Idee] ]
 ENDCONTEXT
 
 {-
-This issue is about the sql implementation of expressions containing singleton expressions. 
+This issue is about the sql implementation of terms containing singleton terms. 
 -}

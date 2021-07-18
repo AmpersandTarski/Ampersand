@@ -18,7 +18,7 @@ ENDCONTEXT
 {- This test case has originated from a bug chase in DemoLamicieCode702.
 It produced the error message:
 Prototype: !fatal 430 (module Core.AbstractSyntaxTree) Ampersand v3.0.1.1270:1271M
-  Cannot unite (with operator "\/") expression
+  Cannot unite (with operator "\/") term
    EFlp (EDcD RELATION z [A*B])
    with EUni (ECpl (EDcD RELATION m [A*A]),ECpl (EDcD RELATION b [A*A])).
 

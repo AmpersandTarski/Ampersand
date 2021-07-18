@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.SQL
   ( SqlQuery(..)
   , placeHolderSQL
@@ -127,7 +127,7 @@ selectExpr :: FSpec    -- current context
 -- The other operators, EEqu ( = ), EInc ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), ERrs ( \ ), and EDia ( <> ), have been implemented in terms of the previous ones,
 -- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
 -- Special cases are treated up front, so they will overrule the more general cases.
--- That allows more efficient code while retaining correctness and completeness as much as possible.
+-- That allows more efficient code while retaining completeness.
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr 
@@ -140,10 +140,10 @@ selectExpr fSpec expr
 maybeSpecialCase :: FSpec -> Expression -> Maybe BinQueryExpr
 maybeSpecialCase fSpec expr = 
   case expr of 
-    EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) )) 
+    EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))   -- I[A] /\ -(r;r~)
       | r == r'   -> Just 
                    . traceComment
-                         [ "case: EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) ))"
+                         [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))"
                          , "  this is an optimized case for: "<>name r<>showSign r<>" [TOT]."
                          ]
                    $ 
@@ -164,8 +164,12 @@ maybeSpecialCase fSpec expr =
                               , bseWhr = Just whereClause
                               }
       | otherwise -> Nothing
-    EIsc (ECpl (ECps (EDcD r,EFlp (EDcD r')) ),EDcI a ) 
-                  -> maybeSpecialCase fSpec $ EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) ))
+    EIsc (ECpl (ECps (EDcD r,EFlp (EDcD r')) ),EDcI a )   -- -(r;r~) /\ I[A]
+      | r == r'   -> maybeSpecialCase fSpec $ EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))
+      | otherwise -> Nothing
+    EDif (EDcI a, ECps (EDcD r,EFlp (EDcD r')))   -- I[A] - r;r~
+      | r == r'   -> maybeSpecialCase fSpec $ EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))
+      | otherwise -> Nothing
     EIsc (expr1 , ECpl expr2)
                   -> go False expr1 expr2
     EIsc (ECpl expr1 , expr2)
@@ -460,25 +464,28 @@ nonSpecialSelectExpr fSpec expr=
                        }
                                  
     ECps{}  ->
+{-  We treat the ECps expressions as poles-and-fences, with at least two fences.
+    Imagine subexpressions as "fences".
+    The source and target of a "fence" are the "poles" between which that "fence" is mounted.
+    The "outer poles" correspond to the source and target of the entire expression.
+    We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
+    the pole holds the constraints of the connection of the fence to the previous fence.
+    Only pole 0 has no previous fence, so there are no constraints. 
+    In general, at some pole i, the constraint is that fence(i-1).trg=fence i.src
+    However, there are exceptions for the expressions V and Mp1 (and possibly I??).
+    For V, we do not calculate V, and we also pose no restrictions at the pole. 
+    For Mp1, we do not calculate Mp1, but we do pose a restriction at the pole.  
+    
+    In "poles and fences" metaphor, we create the FROM-clause directly from the "fences".
+    We create the WHERE-clause from the "poles" between "fences".
+    To prevent name conflicts in SQL, each calculated subexpression is aliased in SQL by a unique the fenceName. ".
+-}
        let es   = exprCps2list expr
            hes  = NE.head es
            tles = NE.tail es in
        case tles of
-          []-> traceComment ["case: ECps{}"] $ selectExpr fSpec hes -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
-{-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
-    We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
-    the pole holds the constraints of the connection of the fence to the previous fence. Only pole 0 has no previous 
-    fence, so ther are no constraints. 
-    In general, at some pole i, the constraint is that fence(i-1).trg=fencei.src
-    However, there are exceptions for the expressions V and Mp1 (and possibly I??).
-    For V, we don not calculate V, and we also pose no restrictions at the pole. 
-    For Mp1, we do not calculate Mp1, but we do pose a restriction at the pole.  
-    
-    Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
-    In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
-    The "outer poles" correspond to the source and target of the entire expression.
-    To prevent name conflicts in SQL, each calculated subexpression is aliased in SQL by a unique the fenceName. ".
--}
+          []-> traceComment ["case: ECps{}"] $ selectExpr fSpec hes -- Even though this case cannot occur,
+          -- it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
 {- TODO: Check these assumptions:
      1) We assume that: let exprCps2list = [e0, e1, ... , en],
                              for all i: 0<=i< n the following is true:
@@ -1061,20 +1068,14 @@ setDistinct bqe
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
 sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
 
--- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
+-- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . T.unpack . name . sqlConceptPlug fSpec
--- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
-sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
-sqlConceptPlug fSpec c 
-             = case lookupCpt fSpec c of
-                 []   ->  fatal ("A_Concept \""<>tshow c<>"\" does not occur in fSpec.")
-                 (plug,_):_ -> plug
+sqlConcept fSpec = QName . T.unpack . name . getConceptTableFor fSpec
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
-             = case [name f |f<-NE.toList $ plugAttributes (sqlConceptPlug fSpec c)
+             = case [name f |f<-NE.toList $ plugAttributes (getConceptTableFor fSpec c)
                     , c'<-Set.elems $ concs f,c==c'] of
                 [] -> fatal ("A_Concept \""<>tshow c<>"\" does not occur in its plug in fSpec \""<>name fSpec<>"\"")
                 h:_ -> QName . T.unpack $ h

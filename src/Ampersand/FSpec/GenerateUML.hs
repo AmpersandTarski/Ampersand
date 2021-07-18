@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import           Ampersand.Basics

@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Basics.Prelude
   ( module RIO
   , readUTF8File

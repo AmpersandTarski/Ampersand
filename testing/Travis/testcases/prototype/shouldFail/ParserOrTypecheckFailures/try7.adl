@@ -13,7 +13,7 @@ ENDPATTERN
 ENDCONTEXT
 
 {-
-   Purpose: This script that there are three types of rules: an equivalence, an implication, and an expression.
+   Purpose: This script that there are three types of rules: an equivalence, an implication, and an term.
             It also shows that the equivalence cannot be used inside another rule, which holds for the implication as well.
    Result: FAIL
    Reason: the rule on line 10 will not parse.

@@ -1,7 +1,6 @@
-﻿{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE ConstraintKinds #-}
+﻿{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Generate a prototype from a project.
 module Ampersand.Commands.Proto
@@ -13,13 +12,22 @@ module Ampersand.Commands.Proto
 import           Ampersand.Basics
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.GenFramework (doGenFrontend, doGenBackend, copyCustomizations)
+import           Ampersand.Prototype.GenFrontend
 import           Ampersand.Types.Config
 import qualified RIO.Text as T
 import           System.Directory
 -- | Builds a prototype of the current project.
---
-proto :: (Show env, HasRunner env, HasFSpecGenOpts env, HasDirCustomizations env, HasZwolleVersion env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env) 
+proto :: ( Show env
+         , HasRunner env
+         , HasFSpecGenOpts env
+         , HasDirCustomizations env
+         , HasZwolleVersion env
+         , HasProtoOpts env
+         , HasDirPrototype env
+         , HasGenerateFrontend env
+         , HasGenerateBackend env
+         , HasGenerateMetamodel env
+         ) 
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
@@ -27,14 +35,17 @@ proto fSpec = do
     logDebug "Generating prototype..."
     liftIO $ createDirectoryIfMissing True dirPrototype
     generateFrontend <- view generateFrontendL
-    generateBackend <- view generateBackendL
     if generateFrontend 
      then do doGenFrontend fSpec
      else do logDebug "  Skipping generating frontend files"
+    generateBackend <- view generateBackendL
     if generateBackend
       then do doGenBackend fSpec
       else do logDebug "  Skipping generating backend files"
+    generateMetamodel <- view generateMetamodelL
+    if generateMetamodel
+      then do doGenMetaModel fSpec
+      else do logDebug "  Skipping generating metamodel.adl"
     copyCustomizations
     dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
     logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-

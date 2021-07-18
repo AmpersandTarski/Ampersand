@@ -1,6 +1,6 @@
-{-# LANGUAGE TupleSections #-}
+﻿{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
@@ -13,23 +13,80 @@ module Ampersand.Input.Parsing (
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
-import           Ampersand.ADL1
-import           Ampersand.Basics
-import           Ampersand.Core.ShowPStruct
-import           Ampersand.Input.ADL1.CtxError
+import Ampersand.ADL1
+    ( Origin(Origin), mergeContexts, P_Context, Term, TermPrim )
+import Ampersand.Basics
+    ( snd,
+      otherwise,
+      map,
+      ($),
+      Eq((==)),
+      Monad((>>=), return),
+      Applicative(pure),
+      Foldable(elem, foldr),
+      Traversable(mapM, sequence),
+      Semigroup((<>)),
+      Bool(False),
+      Maybe(..),
+      Either(Left, Right),
+      tshow,
+      (.),
+      Text,
+      fatal,
+      FilePath,
+      SomeException,
+      (<$>),
+      isJust,
+      reverse,
+      (&&),
+      (||),
+      decodeUtf8,
+      readFileUtf8,
+      writeFileUtf8,
+      logDebug,
+      logInfo,
+      catch,
+      MonadIO(liftIO),
+      Display(display),
+      HasLogFunc,
+      RIO )
+import Ampersand.Core.ShowPStruct ( showP )
+import Ampersand.Input.ADL1.CtxError
+    ( addWarnings,
+      lexerError2CtxError,
+      lexerWarning2Warning,
+      mkErrorReadingINCLUDE,
+      whenCheckedM,
+      CtxError(PE),
+      Guarded(..) )
 import Ampersand.Input.ADL1.Lexer ( initPos, Token(tokPos), lexer )
-import           Ampersand.Input.ADL1.Parser
-import           Ampersand.Input.Archi.ArchiAnalyze
-import           Ampersand.Input.PreProcessor
-import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Input.ADL1.Parser
+    ( AmpParser, pContext, pRule, Include(..) )
+import Ampersand.Input.Archi.ArchiAnalyze ( archi2PContext )
+import Ampersand.Input.PreProcessor
+    ( preProcess, processFlags, PreProcDefine )
+import Ampersand.Input.Xslx.XLSX ( parseXlsxFile )
+import Ampersand.Misc.HasClasses ( HasFSpecGenOpts )
+import Ampersand.Prototype.StaticFiles_Generated
+    ( getStaticFileContent,
+      FileKind(PrototypeContext, FormalAmpersand) )
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           System.Directory
-import           System.FilePath
+import System.Directory
+    ( canonicalizePath, doesFileExist, getCurrentDirectory )
+import System.FilePath
+    ( takeDirectory,
+      (</>),
+      equalFilePath,
+      joinDrive,
+      joinPath,
+      normalise,
+      pathSeparators,
+      splitDrive,
+      splitPath,
+      takeExtension )
 import           Text.Parsec.Prim (runP)
 
 
@@ -133,7 +190,7 @@ parseSingleADL pc
          | -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
            extension == ".xlsx" = do 
               popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-              return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+              return ((,[]) <$> popFromExcel)  -- An Excel file does not contain include files
          | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
            extension == ".archimate" = do 
               ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
@@ -143,9 +200,7 @@ parseSingleADL pc
                          writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
                          logInfo "ArchiMetaModel.adl written"
                     Errors _ -> pure ()
-              return ((,) <$> ctxFromArchi
-                          <*> pure [] -- ArchiMate file cannot contain include files
-                         )
+              return ((,[]) <$> ctxFromArchi)  -- An Archimate file does not contain include files
          | otherwise = do
               mFileContents
                     <- case pcFileKind pc of
@@ -211,29 +266,6 @@ parseSingleADL pc
                catchInvalidXlsx m = catch m f
                  where f :: SomeException -> RIO env a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "<>tshow exception)
-
--- | To enable roundtrip testing, all data can be exported.
--- For this purpose mkContextOfPopsOnly exports the population only
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =

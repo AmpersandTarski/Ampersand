@@ -23,68 +23,28 @@ tested-with:
 extra-source-files:
     LICENSE
     ReleaseNotes.md
-    AmpersandData/FormalAmpersand/ADLTool.adl
-    AmpersandData/FormalAmpersand/admin_interfaces.ifc
     AmpersandData/FormalAmpersand/AST.adl
     AmpersandData/FormalAmpersand/AST.docadl
-    AmpersandData/FormalAmpersand/AST.ifc
-    AmpersandData/FormalAmpersand/AST.xlsx
-    AmpersandData/FormalAmpersand/Atoms.adl
-    AmpersandData/FormalAmpersand/Atoms.docadl
-    AmpersandData/FormalAmpersand/Atoms.ifc
-    AmpersandData/FormalAmpersand/Atoms.xlsx
-    AmpersandData/FormalAmpersand/AtomsAsShouldBe.adl
-    AmpersandData/FormalAmpersand/AtomsWithRepr.adl
-    AmpersandData/FormalAmpersand/Authorisation.adl
     AmpersandData/FormalAmpersand/Concepts.adl
+    AmpersandData/FormalAmpersand/Concepts.docadl
     AmpersandData/FormalAmpersand/Conjuncts.adl
     AmpersandData/FormalAmpersand/Conjuncts.docadl
     AmpersandData/FormalAmpersand/Contexts.adl
     AmpersandData/FormalAmpersand/Contexts.docadl
-    AmpersandData/FormalAmpersand/Contexts.ifc
-    AmpersandData/FormalAmpersand/Contexts.xlsx
-    AmpersandData/FormalAmpersand/ContextsTry.xlsx
     AmpersandData/FormalAmpersand/Documentation.adl
-    AmpersandData/FormalAmpersand/DomainAnalysis.adl
-    AmpersandData/FormalAmpersand/DomainAnalysis.ifc
-    AmpersandData/FormalAmpersand/Enforcements.adl
-    AmpersandData/FormalAmpersand/Expressions.adl
-    AmpersandData/FormalAmpersand/Expressions.docadl
-    AmpersandData/FormalAmpersand/Expressions.ifc
-    AmpersandData/FormalAmpersand/Expressions.xlsx
     AmpersandData/FormalAmpersand/FormalAmpersand.adl
-    AmpersandData/FormalAmpersand/FSpec.adl
     AmpersandData/FormalAmpersand/Generics.adl
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
-    AmpersandData/FormalAmpersand/Interfaces_WIP.adl
-    AmpersandData/FormalAmpersand/IS.adl
-    AmpersandData/FormalAmpersand/IS.docadl
-    AmpersandData/FormalAmpersand/IS.ifc
-    AmpersandData/FormalAmpersand/IS.pop
-    AmpersandData/FormalAmpersand/Login.adl
-    AmpersandData/FormalAmpersand/Login.xlsx
     AmpersandData/FormalAmpersand/MinimalAST.xlsx
-    AmpersandData/FormalAmpersand/Modules.adl
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt
     AmpersandData/FormalAmpersand/Relations.adl
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
-    AmpersandData/FormalAmpersand/Rules.ifc
-    AmpersandData/FormalAmpersand/student_AST_interfaces.ifc
-    AmpersandData/FormalAmpersand/Tables.adl
-    AmpersandData/FormalAmpersand/Tables.docadl
-    AmpersandData/FormalAmpersand/Tables.ifc
-    AmpersandData/FormalAmpersand/Tables.xlsx
-    AmpersandData/FormalAmpersand/TypeChecking.adl
-    AmpersandData/FormalAmpersand/TypeChecking.docadl
-    AmpersandData/FormalAmpersand/TypeChecking.ifc
-    AmpersandData/FormalAmpersand/Views.adl
-    AmpersandData/FormalAmpersand/Views.docadl
-    AmpersandData/FormalAmpersand/Views.ifc
-    AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/FormalAmpersand/Terms.adl
+    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
@@ -257,8 +217,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceRefCheck.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceTest1.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142Fail.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142TooGeneric.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue163.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue181.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue726.adl
@@ -323,6 +281,8 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue1026.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.xlsx
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142TooGeneric.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldSucceed/Issue148.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue152.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue174.adl
@@ -595,6 +555,7 @@ library
       src/
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints
   build-depends:
       HStringTemplate ==0.8.*
@@ -657,6 +618,7 @@ executable ampPreProc
       app/AmpPreProc
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*
@@ -722,6 +684,7 @@ executable ampersand
       app/Ampersand
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
@@ -787,6 +750,7 @@ test-suite ampersand-test
       app/Test
   default-extensions:
       NoImplicitPrelude
+      OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*

@@ -1,6 +1,6 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.Motivations 
    ( Motivated (purposesOf),
      HasMeaning(meaning,meanings))

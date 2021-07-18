@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
     , module Text.Pandoc
@@ -35,7 +35,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , printConcept
     )
 where
-import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.ADL1 hiding (MetaData)
 import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
@@ -240,7 +240,6 @@ refStuff x  =
                    }
   where (relation , rule  , expression , pattern' , theme) =
           ("relation","rule" ,"expression","pattern","theme")
-
 
 
 data ThemeContent =
