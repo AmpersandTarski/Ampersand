@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
     , smallerConcepts, largerConcepts, sortSpecific2Generic

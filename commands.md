@@ -103,10 +103,10 @@ even more complex than it already was.
   * ***--help*** Now gives information about the level where it is called:
     * `ampersand --help` gives help about the commands and global options.
     * `ampersand <command> --help` gives information about the command-specific options.
-  * We used to have the possibility to fiddle around with the formal ampersand metamodel. This
-    has been generalized, and we now have another metamodel as well, called PrototypeContext. The
-    latter is used during the generation of prototypes. This is still an experimental feature.
-    * ***--add-semantic-metamodel, --meta-tables*** Changed to `--build-recipe RECIPE`.
+  * We used to have FormalAmpersand together with an experimental feature called PrototypeContext to fiddle around with the metamodel.
+    PrototypeContext and FormalAmpersand lived alongside. Both had to be consistent with the meatgrinder.
+    Now, both are substituted by a single metamodel. The compiler generates it from the meatgrinder, so it matches the meatgrinder by definition.
+  * ***--add-semantic-metamodel, --meta-tables*** Changed to `--build-recipe RECIPE`.
           All relations, views, idents etc. from the specified metamodel will be
           available for use in your model. These artefacts do not have to
           be declared explicitly in your own model.
@@ -154,7 +154,7 @@ even more complex than it already was.
   
 ## working with meta-models
 
-We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
+We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options have been removed:
 
 * ***--gen-as-rap-model***
           Generate populations for use in RAP3.

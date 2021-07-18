@@ -7,7 +7,7 @@
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
- , Meta(..)
+ , MetaData(..)
  , Origin(..)
  , Pattern(..) 
  , PairView(..)
@@ -15,7 +15,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Rule(..), Rules
  , RuleOrigin(..)
  , Relation(..), Relations, showRel
- , IdentityDef(..)
+ , IdentityRule(..)
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
@@ -56,7 +56,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
-    ( Meta(..)
+    ( MetaData(..)
     , Role(..)
     , P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
@@ -82,27 +82,27 @@ import qualified RIO.Text as T
 import           RIO.Time
 
 data A_Context
-   = ACtx{ ctxnm :: Text           -- ^ The name of this context
-         , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctxlang :: Lang           -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context.
-         , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
-         , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
-         , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
-         , ctxcdsOutPats :: [AConceptDef]  -- ^ The concept definitions defined outside the patterns of this context.
-         , ctxcds :: [AConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
+   = ACtx{ ctxnm :: Text                  -- ^ The name of this context
+         , ctxpos :: [Origin]             -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctxlang :: Lang                -- ^ The default language used in this context.
+         , ctxmarkup :: PandocFormat      -- ^ The default markup format for free text in this context.
+         , ctxpats :: [Pattern]           -- ^ The patterns defined in this context
+         , ctxrs :: Rules                 -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctxds :: Relations             -- ^ The relations that are declared in this context, outside the scope of patterns
+         , ctxpopus :: [Population]       -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
+         , ctxcdsOutPats :: [AConceptDef] -- ^ The concept definitions defined outside the patterns of this context.
+         , ctxcds :: [AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxks :: [IdentityRule]        -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxreprs :: A_Concept -> TType
-         , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [AClassify]          -- ^ The specialization statements defined in this context, outside the scope of patterns
-         , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
-         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
-         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
-         , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
+         , ctxvs :: [ViewDef]             -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctxgs :: [AClassify]           -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgenconcs :: [[A_Concept]]   -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
+         , ctxifcs :: [Interface]         -- ^ The interfaces defined in this context
+         , ctxps :: [Purpose]             -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
+         , ctxmetas :: [MetaData]         -- ^ used for Pandoc authors (and possibly other things)
          , ctxInfo :: ContextInfo
-         } deriving (Typeable)              --deriving (Show) -- voor debugging
+         } deriving (Typeable)
 instance Show A_Context where
   show = T.unpack . name
 instance Eq A_Context where
@@ -123,7 +123,7 @@ data Pattern
            , ptcds :: [AConceptDef]     -- ^ The concept definitions that are declared in this pattern
            , ptrps :: [Representation]  -- ^ The concept definitions that are declared in this pattern
            , ptups :: [Population]      -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityDef]     -- ^ The identity definitions defined in this pattern
+           , ptids :: [IdentityRule]    -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]         -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]         -- ^ The purposes of elements defined in this pattern
            }   deriving (Typeable)      -- Show for debugging purposes
@@ -276,21 +276,21 @@ instance HasSignature Relation where
 instance Traced Relation where
   origin = decfpos
 
-data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+data IdentityRule = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                       , idLbl :: Text        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , idPat :: Maybe Text  -- ^ if defined within a pattern, then the name of that pattern.
                       , identityAts :: NE.NonEmpty IdentitySegment  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Show)
-instance Named IdentityDef where
+instance Named IdentityRule where
   name = idLbl
-instance Traced IdentityDef where
+instance Traced IdentityRule where
   origin = idPos
-instance Unique IdentityDef where
+instance Unique IdentityRule where
   showUnique = name
-instance Ord IdentityDef where
+instance Ord IdentityRule where
   compare a b = name a `compare` name b
-instance Eq IdentityDef where
+instance Eq IdentityRule where
   a == b = compare a b == EQ
 newtype IdentitySegment = IdentityExp 
          { segment :: ObjectDef
@@ -376,9 +376,9 @@ data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type
                      , ifcname ::     Text        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
+                     , ifcConjuncts :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
-                     , ifcPrp ::      Text        -- The purpose of the interface
+                     , ifcPurpose ::      Text        -- The purpose of the interface
                      } deriving Show
 
 instance Eq Interface where
@@ -445,7 +445,7 @@ instance Eq BoxTxt where
  a == b = compare a b == EQ
 data ObjectDef = 
     ObjectDef { objnm    :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-           , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , objPos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
            , objmView :: Maybe Text   -- ^ The view that should be used for this object
@@ -454,7 +454,7 @@ data ObjectDef =
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
-  origin = objpos
+  origin = objPos
 instance Unique ObjectDef where
   showUnique = tshow
 instance Ord ObjectDef where

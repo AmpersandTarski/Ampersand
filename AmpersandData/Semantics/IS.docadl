@@ -78,12 +78,12 @@ For our purposes, we work with the idea that truth requires a context.} in the r
 +}
 CONCEPT State "A state is the set of facts that populates an information system at a particular moment in time. The current state is the state of the system at the current moment in time."
 
-PURPOSE CONCEPT Expression
+PURPOSE CONCEPT Term
 {+If we want to talk to people, we use statements in natural language.
 If we want a computer to understand us, we use statements in a formal language.
-The latter type of statement is called {\em expression}.
+The latter type of statement is called {\em term}.
 +}
-CONCEPT Expression "An expression is a statement in a formal language."
+CONCEPT Term "An term is a statement in a formal language."
 
 PURPOSE CONCEPT Query
 {+Note that the word {\em statement} is used both in natural language and in formal language.
@@ -95,14 +95,14 @@ Queries are meant to produce statements from the current state of an information
 +}
 CONCEPT Query "A query is a computation that yields a set of statements from a state."
 
-PURPOSE RELATION characteristic[Rule*Expression]
-{+In order to maintain rules, each rule is associated with one expression. That expression is called the {\em characteristic} expression of the rule.
+PURPOSE RELATION characteristic[Rule*Term]
+{+In order to maintain rules, each rule is associated with one term. That term is called the {\em characteristic} term of the rule.
 +}
-PURPOSE RELATION exp[Query*Expression]
-{+Queries exist for the purpose of evaluating an expression in a given context.
+PURPOSE RELATION exp[Query*Term]
+{+Queries exist for the purpose of evaluating an term in a given context.
 +}
-PURPOSE RELATION signature[Expression*Expression]
-{+For the purpose of defining truth, every expression has a signature. That signature itself is an expression too.
+PURPOSE RELATION signature[Term*Term]
+{+For the purpose of defining truth, every term has a signature. That signature itself is an term too.
 +}
 PURPOSE RELATION state[Query*State]
 {+When talking about the state on which the query has been executed,
@@ -137,7 +137,7 @@ PURPOSE RULE "def sat"
 
 PURPOSE RULE "def true"
 {+In order to define the notion of truth formally, we must introduce a technical definition.
-As the signature of an expression defines the truth, we call that expression true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
+As the signature of an term defines the truth, we call that term true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
 +}
 
 --PURPOSE PATTERN "Documentation"
@@ -169,7 +169,7 @@ That helps to get consensus about the correct wording of statements made from th
 PURPOSE RELATION meaning[Rule*NatLang]
 {+The meaning of a rule is described in natural language for two reasons.
 The first is to discuss the rule with its owner and stakeholders, because they must vouch for the correct wording of that rule.
-The second is to verify the meaning with the expression of that rule, which is part of the formal review.
+The second is to verify the meaning with the term of that rule, which is part of the formal review.
 +}
 PURPOSE RELATION purpose[Rule*NatLang]
 {+The purpose of a rule is described to document why it exists.

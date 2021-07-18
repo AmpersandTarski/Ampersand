@@ -6,7 +6,7 @@ MEANING "De persoon 'Sinterklaas' bestaat niet."
 ENDCONTEXT
 
 {- This test is all about the question of what is in the initial population. 
-Are singletons, mentioned in expressions only, part of that population?
+Are singletons, mentioned in terms only, part of that population?
 
 Currently, a singleton is part of the initial population. In this case, a prototype cannot be generated, 
 It gives the following error message:

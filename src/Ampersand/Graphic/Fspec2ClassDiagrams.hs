@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 

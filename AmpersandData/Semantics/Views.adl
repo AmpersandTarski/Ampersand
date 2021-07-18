@@ -8,6 +8,7 @@ PATTERN Views
     VIOLATION (TXT "{EX} DelAtom;View;", SRC I) -- all links in other relations in which the atom occurs are deleted as well.
     ROLE ExecEngine MAINTAINS "TOTdefault"
 
+{-  maintain a property to state whether a concept has a view.
     RELATION hasView[Concept*Concept] -- hasView = default[View*Concept]~;default[View*Concept]/\I
     ROLE ExecEngine MAINTAINS "ins hasView", "del hasView"
     RULE "ins hasView" : default[View*Concept]~;default[View*Concept]/\I |- hasView[Concept*Concept]
@@ -16,6 +17,7 @@ PATTERN Views
     RULE "del hasView" : hasView[Concept*Concept] |- default[View*Concept]~;default[View*Concept]/\I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX}_; DelPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
+-}
 
     RELATION viewBy[Concept*Concept] -- viewBy[Concept*Concept] = isaStar;hasView[Concept*Concept] - isaPlus
     ROLE ExecEngine MAINTAINS "ins viewBy", "del viewBy"

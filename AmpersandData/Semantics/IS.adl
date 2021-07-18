@@ -5,14 +5,14 @@ INCLUDE "IS.pop"
 
 
 PATTERN "Information Systems"
-RELATION characteristic[Rule*Expression] [UNI,TOT] PRAGMA "The characteristic expression of rule ``" "'' is "
-MEANING "Every rule has a {\\em characteristic expression}, which is meant to remain true across changing states. We say that a rule is true whenever its characteristic expression can be evaluated to true."
-RELATION exp[Query*Expression] [UNI,TOT]
-MEANING "Each query evaluates a given expression in a given state, and produces a number of facts as a result."
-RELATION signature[Expression*Expression] [UNI,TOT,TRN]
-MEANING "Every expression has a signature (sometimes called type)."
+RELATION characteristic[Rule*Term] [UNI,TOT] PRAGMA "The characteristic term of rule ``" "'' is "
+MEANING "Every rule has a {\\em characteristic term}, which is meant to remain true across changing states. We say that a rule is true whenever its characteristic term can be evaluated to true."
+RELATION exp[Query*Term] [UNI,TOT]
+MEANING "Each query evaluates a given term in a given state, and produces a number of facts as a result."
+RELATION signature[Term*Term] [UNI,TOT,TRN]
+MEANING "Every term has a signature (sometimes called type)."
 RELATION state[Query*State] [UNI,TOT]
-MEANING "Every query operates on a state, in which expressions can be evaluated."
+MEANING "Every query operates on a state, in which terms can be evaluated."
 RELATION true[Query*Query] [PROP]
 MEANING "In order to say that a query has produced `true' as a result, we will call that query  `true'."
 RELATION result[Query*Statement]
@@ -24,16 +24,16 @@ MEANING "Each state except the initial state will have a predecessor. Two states
 RELATION equivalued[Query*Query] [RFX,TRN,ASY]
 MEANING "We shall use the word equivalued to indicate that executing two queries in the same state has produced identical results."
 
-CLASSIFY Expression ISA Statement
+CLASSIFY Term ISA Statement
 
 RULE "def equivalued" : equivalued = state;state~ /\ result<>result~
 MEANING "Two queries are called equivalued if they produce exactly the same facts from the same state."
 
 RULE "def sat" : sat = state~;true;exp;characteristic~
-MEANING "For a rule $r$ to satisfy a state $s$ means: the query that executes the rule expression of rule $r$ yields true."
+MEANING "For a rule $r$ to satisfy a state $s$ means: the query that executes the rule term of rule $r$ yields true."
 
 RULE "def true" : true = exp;signature;exp~;equivalued
-MEANING "A query is true if it is equivalued with a query of the signature of its expression. I.e. its execution yields the same set of facts as does the signature executed on the same state."
+MEANING "A query is true if it is equivalued with a query of the signature of its term. I.e. its execution yields the same set of facts as does the signature executed on the same state."
 
 IDENT query : Query(exp, state)
 

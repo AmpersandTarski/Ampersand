@@ -19,7 +19,7 @@ ENDCONTEXT
    Purpose: This script shows that a type conflict (between A and B) can be resolved
             by defining an intersection type D.
             Besides, it shows that the type checker can choose the right type for 
-            subexpression t, which is t[B*Y] (line 6)
+            subterm t, which is t[B*Y] (line 6)
    Result: PASS
    Reason: the type on ; is inferred as I[D]
 -}

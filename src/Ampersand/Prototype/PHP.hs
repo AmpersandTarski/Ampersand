@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
          , createTempDatabase

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Classes.Relational
    ( HasProps(..)
    , Relational(..)

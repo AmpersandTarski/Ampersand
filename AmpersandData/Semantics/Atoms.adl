@@ -1,6 +1,12 @@
 CONTEXT AST IN ENGLISH 
 INCLUDE "Concepts.adl"
 
+PATTERN Pairs
+    RELATION in[Pair*Relation] [UNI,TOT]
+    RELATION lAtom[Pair*Atom] [UNI,TOT]
+    RELATION rAtom[Pair*Atom] [UNI,TOT]
+ENDPATTERN
+
 PATTERN Atoms
     RULE "Identifiability of concepts": name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")

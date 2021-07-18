@@ -18,8 +18,6 @@ PATTERN Documentation
     MEANING "The meanings of a rule."
     RELATION purpose[Rule * Purpose]
     MEANING "The purposes of a rule."
-    RELATION purpose[Identity * Purpose]
-    MEANING "The purposes of an identity."
     RELATION purpose[View * Purpose]
     MEANING "The purposes of a view."
     RELATION purpose[Concept * Purpose]

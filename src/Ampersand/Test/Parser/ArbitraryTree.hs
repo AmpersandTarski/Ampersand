@@ -1,6 +1,6 @@
 ﻿{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Test.Parser.ArbitraryTree () where
 
 import           Ampersand.Basics
@@ -121,9 +121,9 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
     arbitrary = PCtx
        <$> identifier   -- name
-       <*> arbitrary  -- pos
-       <*> arbitrary  -- lang
-       <*> arbitrary  -- markup
+       <*> arbitrary -- pos
+       <*> arbitrary -- lang
+       <*> arbitrary -- markup
        <*> arbitrary -- patterns
        <*> arbitrary -- rules
        <*> arbitrary -- relations
@@ -138,8 +138,8 @@ instance Arbitrary P_Context where
        <*> arbitrary -- populations
        <*> arbitrary -- generic meta information
 
-instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
+instance Arbitrary MetaData where
+    arbitrary = MetaData <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 identifier

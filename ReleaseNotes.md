@@ -265,6 +265,8 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
 * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
 
+* FormalAmpersand.adl and PrototypeContext.adl are no longer used by the compiler. The metamodel is derived from the transformers, so the correspondence between the metamodel and the transformers is 100%. By definition.
+* There is a new option under "proto" called "metamodel", which is meant to show the metamodel to the user.
 ## v3.8.1 (20 january 2017)
 
 * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.

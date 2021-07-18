@@ -44,9 +44,9 @@ There may be multiple messages to support multiple languages
 +}
 PURPOSE RELATION sign[Rule*Signature]  -- Haskell: rrtyp ::    Signature
 {+  +}
-PURPOSE RELATION formalExpression[Rule*Expression]
-{+ The expression to be kept true must be registered, because it formalizes the semantics of this rule.
-The consequences this rule has for the information system are derived from this expression.
+PURPOSE RELATION formalTerm[Rule*Term]
+{+ The term to be kept true must be registered, because it formalizes the semantics of this rule.
+The consequences this rule has for the information system are derived from this term.
  +}
 
 ENDCONTEXT

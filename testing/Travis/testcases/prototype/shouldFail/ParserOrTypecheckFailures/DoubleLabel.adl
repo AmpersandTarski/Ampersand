@@ -8,13 +8,13 @@ INTERFACE Overview : I[ONE]
 ENDCONTEXT
 
 {- 
-   Purpose: to examine the error message caused by multiple instances of the same attribute.
+   Purpose: to examine the error message caused by multiple instances of the same field.
    Result: FAIL
-   Reason: Attribute names in interfaces must be unique, because they are being referred to.
+   Reason: Field names in interfaces must be unique, because they are being referred to.
    
    Message:
    The interface named "Overview" contains errors:
-   line 3:11, file "DoubleLabel.adl": Different attributes have the same name:
+   line 3:11, file "DoubleLabel.adl": Different fields have the same name:
       (Unknown origin)      "l" : V[ONE*ONE]
       (Unknown origin)      "l" : V[ONE*ONE]
 -}

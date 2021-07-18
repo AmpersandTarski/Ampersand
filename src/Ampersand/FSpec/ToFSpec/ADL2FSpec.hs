@@ -1,5 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where
@@ -56,7 +56,7 @@ makeFSpec env context
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
               , allUsedDecls = bindedRelationsIn context
-              , vrels        = calculatedDecls
+              , vrels        = relsDefdInContext
               , allConcepts  = fSpecAllConcepts
               , cptTType     = representationOf contextinfo
               , fsisa        = L.nub . concatMap genericAndSpecifics . gens $ context
@@ -70,7 +70,7 @@ makeFSpec env context
               , conceptDefs  = ctxcds context
               , fSexpls      = Set.fromList $ ctxps context <> concatMap ptxps (patterns context)
               , metas        = ctxmetas context
-              , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
+              , crudInfo     = mkCrudInfo fSpecAllConcepts relsDefdInContext fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> Set.map apLeft 
                                                . pairsinexpr 
@@ -148,7 +148,7 @@ makeFSpec env context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcControls = makeIfcControls Set.empty allConjs
+           = ifc{ ifcConjuncts = makeifcConjuncts Set.empty allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
@@ -182,6 +182,8 @@ makeFSpec env context
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
      allQuads = quadsOfRules env allrules 
+     relsDefdInContext :: Relations
+     relsDefdInContext = relsDefdIn context
      
      allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
@@ -196,29 +198,6 @@ makeFSpec env context
          UserDefined  -> True
          Multiplicity -> False
          Identity     -> False
-     calcProps :: Relation -> Relation
-     calcProps d = d{decprps_calc = Just calculated}
-         where calculated = decprps d `Set.union` (if d `elem` totals      then Set.singleton Tot else Set.empty)
-                                      `Set.union` (if d `elem` surjectives then Set.singleton Sur else Set.empty)
-     calculatedDecls :: Relations
-     calculatedDecls = Set.map calcProps (relsDefdIn context)
-  -- determine relations that are total (as many as possible, but not necessarily all)
-     totals      = [ d |       EDcD d  <- totsurs ]
-     surjectives = [ d | EFlp (EDcD d) <- totsurs ]
-     totsurs :: [Expression]
-     totsurs = []
---      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
---                     . filter (not . isSignal . qRule)
---                     $ allQuads -- all quads for invariant rules
---                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
---                 , let antc = conjNF env (foldr (./\.) (EDcV (sign (NE.head (antcs dnf)))) (antcs dnf))
---                 , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
---                 , cons<- case conss dnf of
---                            []   -> []
---                            h:tl -> NE.toList $ fmap exprCps2list (h NE.:| tl)
---            -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
---                 , rel<-NE.init cons<>[flp r | r<-NE.tail cons]
---                 ]
   -- Lookup view by id in fSpec.
      lookupView' :: Text -> ViewDef
      lookupView'  viewId =
@@ -255,7 +234,7 @@ makeFSpec env context
      --------------
      allplugs = genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
-                | p <- uniqueNames [] (makeGeneratedSqlPlugs env context calcProps)
+                | p <- uniqueNames [] (makeGeneratedSqlPlugs env context)
                 ]
      qlfname x = if T.null ns then x else "ns"<>ns<>x
        where ns = view namespaceL env
@@ -311,14 +290,14 @@ makeFSpec env context
               Set.filter isTot toconsider 
                 `Set.union`
              (Set.map flp . Set.filter (not.isTot) . Set.filter isSur $ toconsider)
-       where toconsider = Set.map EDcD calculatedDecls
+       where toconsider = Set.map EDcD relsDefdInContext
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
      dRels = Set.elems $
               Set.filter isInj toconsider
                 `Set.union`
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
-       where toconsider = Set.map EDcD calculatedDecls
+       where toconsider = Set.map EDcD relsDefdInContext
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths,maxInjPaths :: [NE.NonEmpty Expression]
      maxTotPaths = map (NE.:|[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -344,7 +323,7 @@ makeFSpec env context
             recur es = 
                [ ObjectDef
                      { objnm   = showA t
-                     , objpos  = orig
+                     , objPos  = orig
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
@@ -382,16 +361,16 @@ makeFSpec env context
              , ifcObj      = let orig = Origin "generated object: step 4a - default theme" in
                              ObjectDef
                                  { objnm   = name c
-                                 , objpos  = orig
+                                 , objPos  = orig
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box orig c (simpleBoxHeader orig) . map BxExpr $ NE.toList objattributes
                                  }
                                
-             , ifcControls = makeIfcControls params allConjs
+             , ifcConjuncts = makeifcConjuncts params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
-             , ifcPrp      = "Interface " <>name c<>" has been generated by Ampersand."
+             , ifcPurpose      = "Interface " <>name c<>" has been generated by Ampersand."
              , ifcRoles    = []
              }
         | (c, objattributes) <- mapMaybe f $ eqCl (source . NE.head) plugPaths
@@ -405,15 +384,15 @@ makeFSpec env context
              , ifcObj      = let orig = Origin "generated object: step 4b" in
                              ObjectDef
                                  { objnm   = nm
-                                 , objpos  = orig
+                                 , objPos  = orig
                                  , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box orig ONE (simpleBoxHeader orig) $ [BxExpr att]
                                  }
-             , ifcControls = ifcControls ifcc
+             , ifcConjuncts = ifcConjuncts ifcc
              , ifcPos      = ifcPos      ifcc
-             , ifcPrp      = ifcPrp      ifcc
+             , ifcPurpose      = ifcPurpose      ifcc
              , ifcRoles    = []
              }
         | ifcc<-step4a
@@ -426,7 +405,7 @@ makeFSpec env context
                      h:_ -> h
               att = ObjectDef
                         { objnm    = name c
-                        , objpos   = Origin "generated attribute object: step 4b"
+                        , objPos   = Origin "generated attribute object: step 4b"
                         , objExpression   = EDcV (Sign ONE c)
                         , objcrud  = fatal "No default crud in generated interface."
                         , objmView = Nothing
@@ -437,8 +416,8 @@ makeFSpec env context
      --END: making interfaces
      ----------------------
 
-makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
-makeIfcControls params allConjs
+makeifcConjuncts :: Relations -> [Conjunct] -> [Conjunct]
+makeifcConjuncts params allConjs
  = [ conj 
    | conj<-allConjs
    , (not.null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rc_conjunct conj))
@@ -499,7 +478,7 @@ tblcontents ci ps plug
                                 [ "There is an attempt to populate multiple values into "
                                 , "     the row of table `"<>name plug<>"`, where id = "<>tshow(showValADL a)<>":"
                                 , "     Values to be inserted in field `"<>name att<>"` are: "<>tshow (map (showValADL . apRight) ps')
-                                ] --this has happend before due to:
+                                ] --this has happened before due to:
                                   --    when using --dev flag
                                   --  , when there are violations
                                   --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)

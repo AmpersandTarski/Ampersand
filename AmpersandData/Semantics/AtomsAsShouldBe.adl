@@ -1,0 +1,108 @@
+CONTEXT AST IN ENGLISH 
+INCLUDE "Concepts.adl"
+INCLUDE "Atoms.xlsx"
+
+PATTERN Pairs
+    RELATION in[Pair*Relation] [UNI,TOT]
+    RELATION lAtom[Pair*Atom] [UNI,TOT]
+    RELATION rAtom[Pair*Atom] [UNI,TOT]
+ENDPATTERN
+
+PATTERN "Compute sources, targets, and populations"
+    RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
+    RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
+
+    ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
+    RULE isaRelInsSrc: source;isaStar~ |- sources
+    VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+    RULE isaRelInsTgt: target;isaStar~ |- targets
+    VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+    RULE isaRelDelSrc: sources |- source;isaStar~
+    VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+    RULE isaRelDelTgt: targets |- target;isaStar~
+    VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+
+    RELATION pop[Atom*Concept]
+    MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
+
+    PURPOSE RULE specialization
+    {+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+    If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+    +}
+    RULE specialization : pop;genspc~;gengen |- pop
+    MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
+    ROLE ExecEngine MAINTAINS insPop, delPop
+    RULE insPop : lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar |- pop
+    VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+    RULE delPop : pop |- lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar
+    VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+ENDPATTERN
+
+INTERFACE Overzicht : "_SESSION"[SESSION]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
+      BOX<TABLE sortable>
+           [ relation   : I[Relation]
+           , name       : name
+           , source     : source
+           , target     : target
+           , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<TABLE sortable>
+           [ id      : I[Concept]
+           , name    : name
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , atoms   : pop~ cRud
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX <TABLE>
+           [ Pair : I 
+           , lAtom : lAtom
+           , rAtom : rAtom
+           , in : in[Pair*Relation]
+           , field : pair~
+           ]
+    ]
+
+ROLE ExecEngine MAINTAINS InsConcept, DelConcept
+RULE InsConcept : I[ConceptName] |- name~;I[Concept];name
+VIOLATION (TXT "{EX} InsPair;name;Concept;", SRC I, TXT ";ConceptName;", SRC I)
+RULE DelConcept : I[Concept] |- name;I[ConceptName];name~
+VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I
+          , TXT "{EX} DelAtom;Concept;", SRC I
+          )
+
+--VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+REPRESENT Atom TYPE ALPHANUMERIC
+-- VIEW Concept : Concept(name)   -- already in Concepts.adl
+VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
+-- VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")   -- already in Terms.adl
+
+INTERFACE ConceptWithSiblings(name[Concept*ConceptName],isa) : I[Concept]
+BOX [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+BOX [ "relation(s)"  : in[Pair*Relation]
+     , lAtom         : lAtom
+     , rAtom         : rAtom
+     ]
+
+INTERFACE Relation(name[Relation*RelationName],source,target) : I[Relation]
+BOX  [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+ENDCONTEXT

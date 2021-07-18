@@ -3,13 +3,13 @@ CONTEXT RAP IN ENGLISH LATEX
 INTERFACE ruleOverview : I[ONE]
 BOX [ rules : V[ONE*Rule]
       BOX [ rule : I
-          , expression : characteristic
+          , term : characteristic
           ]
     ]
 
 INTERFACE newRule (characteristic, meaning["Rule"*"NatLang"], purpose["Rule"*"NatLang"]): I[Rule]
 BOX [ rule : I
-    , expression : characteristic
+    , term : characteristic
     ]
 
 ENDCONTEXT 

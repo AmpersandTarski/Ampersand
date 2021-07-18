@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureTyp(..), imagePathRelativeToDirOutput)
 where

@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
