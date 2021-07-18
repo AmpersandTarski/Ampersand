@@ -148,11 +148,13 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   (testOptsParser ".")
      where
         -- addCommand hiding global options
-        addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
+        addCommand'' :: HasOptions a => Command -> String -> (a -> RIO Runner ()) -> Parser a
                     -> AddCommand
-        addCommand'' cmd title constr =
-            addCommand (map toLower . show $ cmd) title globalFooter constr (\_ gom -> gom) globalOpts
-
+        addCommand'' cmd title constr parser =
+            addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts parser
+          where constr' opts = do
+                  showOptions opts
+                  constr opts
 
 
 
@@ -274,6 +276,9 @@ addCommand' cmd title footerStr constr commonParser inner =
                       (info (constr <$> inner <*> commonParser)
                             (progDesc title <> footer footerStr))))
 
+-- | The Options parser type
+--type OptParser a = (RIO Runner ()) (Writer (Mod CommandFields ((RIO Runner (),a))) ()
+-- P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
 
 -- | Generate a complicated options parser.
 complicatedParser

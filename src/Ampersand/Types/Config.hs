@@ -79,6 +79,14 @@ data GlobalOpts = GlobalOpts
     , globalTermWidth    :: !(Maybe Int) -- ^ Terminal width override
     , globalOutputDir    :: !FilePath -- ^ Relative path where output should be written to
     } deriving (Show)
+instance HasOptions GlobalOpts where
+  optsList opts = 
+     [ ("globalLogLevel", tshow $ globalLogLevel opts)
+     , ("globalTimeInLog", tshow $ globalTimeInLog opts)
+     , ("globalTerminal", tshow $ globalTerminal opts)
+     , ("globalTermWidth", tshow $ globalTermWidth opts)
+     , ("globalOutputDir", tshow $ globalOutputDir opts)
+     ]
 instance HasDirOutput GlobalOpts where
   dirOutputL = lens globalOutputDir (\x y -> x { globalOutputDir = y })
 instance HasDirOutput Runner where

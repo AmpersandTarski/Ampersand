@@ -7,6 +7,16 @@ where
 import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)
 import RIO.FilePath
+import qualified RIO.List as L
+
+class HasOptions a where
+  showOptions :: HasLogFunc env => a -> RIO env ()
+  showOptions opts = mapM_ showOpt . L.sortOn fst . optsList $ opts
+    where showOpt :: HasLogFunc env => (Text,Text) -> RIO env ()
+          showOpt (key,value) = 
+            logDebug . display $ key <>": "<> value
+  optsList :: a -> [(Text,Text)] -- A tuple containing the 'key' and the value of the options.   
+  {-# MINIMAL optsList #-}
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -189,6 +199,15 @@ data DaemonOpts = DaemonOpts
   , xshowWarnings :: !Bool -- ^ Enable/disable show of warnings (if any).
 
   }
+instance HasOptions DaemonOpts where
+  optsList opts = 
+     [ ("x2OutputLanguage", tshow $ x2OutputLanguage opts)
+     , ("xdaemonConfig", tshow $ xdaemonConfig opts)
+     ] <>
+     optsList (x2fSpecGenOpts opts) <>
+     [ ("xshowWarnings", tshow $ xshowWarnings opts)
+     ]
+
 class (HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
   daemonConfigL :: Lens' a FilePath
@@ -216,11 +235,22 @@ data FSpecGenOpts = FSpecGenOpts
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
   , xrecipeName :: !Recipe 
-  -- ^ Which recipe for generating code? Standard, Prototype, or Atlas? 
+  -- ^ Which recipe for generating code?
   , xallowInvariantViolations :: !Bool
   -- ^ Should invariant violations be ignored?
 } deriving Show
-
+instance HasOptions FSpecGenOpts where
+  optsList opts = 
+     [ ("xrootFile", tshow $ xrootFile opts)
+     , ("xsqlBinTables", tshow $ xsqlBinTables opts)
+     , ("xgenInterfaces", tshow $ xgenInterfaces opts)
+     , ("xnamespace", tshow $ xnamespace opts)
+     , ("xdefaultCrud", tshow $ xdefaultCrud opts)
+     , ("xtrimXLSXCells", tshow $ xtrimXLSXCells opts)
+     , ("xrecipeName", tshow $ xrecipeName opts)
+     , ("xallowInvariantViolations", tshow $ xallowInvariantViolations opts)
+     ]
+    
 data FSpecFormat = 
          FPandoc
        | Fasciidoc
@@ -251,6 +281,11 @@ data InputOutputOpts = InputOutputOpts
    { x4fSpecGenOpts :: !FSpecGenOpts
    , x4outputFile :: !FilePath --relative path 
    }
+instance HasOptions InputOutputOpts where
+  optsList opts = 
+     optsList (x4fSpecGenOpts opts) <>
+     [ ("x4outputFile", tshow $ x4outputFile opts)
+     ]
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
@@ -265,6 +300,19 @@ data ProtoOpts = ProtoOpts
    , xgenerateBackend :: !Bool
    , xgenerateMetamodel :: !Bool
   } deriving Show
+instance HasOptions ProtoOpts where
+  optsList opts = 
+     [ ("xforceReinstallFramework", tshow $ xforceReinstallFramework opts)
+     , ("x1OutputLanguage", tshow $ x1OutputLanguage opts)
+     ] <>
+     optsList (x1fSpecGenOpts opts) <>
+     [ ("xdirPrototype", tshow $ xdirPrototype opts)
+     , ("xdirCustomizations", tshow $ xdirCustomizations opts)
+     , ("xzwolleVersion", tshow $ xzwolleVersion opts)
+     , ("xgenerateFrontend", tshow $ xgenerateFrontend opts)
+     , ("xgenerateBackend", tshow $ xgenerateBackend opts)
+     , ("xgenerateMetamodel", tshow $ xgenerateMetamodel opts)
+     ]
 
 -- | Options for @ampersand documentation@.
 data DocOpts = DocOpts
@@ -283,6 +331,18 @@ data DocOpts = DocOpts
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
    } deriving Show
+instance HasOptions DocOpts where
+  optsList opts = 
+     [ ("xblackWhite", tshow $ xblackWhite opts)
+     , ("xchapters", tshow $ xchapters opts)
+     , ("xgenGraphics", tshow $ xgenGraphics opts)
+     , ("xfspecFormat", tshow $ xfspecFormat opts)
+     ] <>
+     optsList (x3fSpecGenOpts opts) <>
+     [ ("x3OutputLanguage", tshow $ x3OutputLanguage opts)
+     , ("xgenLegalRefs", tshow $ xgenLegalRefs opts)
+     ]
+
 data PopulationOutputFormat =
     XLSX 
   | JSON
@@ -293,6 +353,12 @@ data PopulationOpts = PopulationOpts
    -- ^ Options required to build the fSpec
    , xoutputFormat :: !PopulationOutputFormat 
    } deriving Show
+instance HasOptions PopulationOpts where
+  optsList opts = 
+     optsList (x5fSpecGenOpts opts) <>
+     [ ("xoutputFormat", tshow $ xoutputFormat opts)
+     ]
+
 instance HasPopulationOpts PopulationOpts where
    populationOptsL = id
    outputFormatL = populationOptsL . lens xoutputFormat (\x y -> x { xoutputFormat = y })
@@ -302,6 +368,10 @@ newtype ProofOpts = ProofOpts
    { x6fSpecGenOpts :: FSpecGenOpts
    -- ^ Options required to build the fSpec
    } deriving Show
+instance HasOptions ProofOpts where
+  optsList opts = 
+     optsList (x6fSpecGenOpts opts)
+
 -- | Options for @ampersand init@
 data InitOpts = InitOpts
    deriving Show
@@ -312,20 +382,40 @@ data UmlOpts = UmlOpts
    , x4OutputLanguage :: !(Maybe Lang)
    -- ^ Language of the output document
    } deriving Show
+instance HasOptions UmlOpts where
+  optsList opts = 
+     optsList (x7fSpecGenOpts opts) <>
+     [ ("x4OutputLanguage", tshow $ x4OutputLanguage opts)
+     ]
+
 -- | Options for @ampersand validate@
 newtype ValidateOpts = ValidateOpts
    { protoOpts :: ProtoOpts
    -- ^ Options required to build the fSpec
    } deriving Show
+instance HasOptions ValidateOpts where
+  optsList opts = 
+     optsList (protoOpts opts)
+
 -- | Options for @ampersand devoutput@
 data DevOutputOpts = DevOutputOpts
    { x8fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
    , x5outputFile :: !FilePath --relative path  
    } deriving Show
+instance HasOptions DevOutputOpts where
+  optsList opts = 
+     optsList (x8fSpecGenOpts opts) <>
+     [ ("x5outputFile", tshow $ x5outputFile opts)
+     ]
+
 newtype TestOpts = TestOpts
    { rootTestDir :: FilePath --relative path to directory containing test scripts
    } deriving Show
+instance HasOptions TestOpts where
+  optsList opts = 
+     [ ("rootTestDir", tshow $ rootTestDir opts)
+     ]
 data Chapter = Intro
              | SharedLang
              | Diagnosis
