@@ -60,6 +60,8 @@ data Runner = Runner
   } deriving Show
 instance Show LogFunc where show _ = "<LogFunc>"
 instance Show ProcessContext where show _ = "<ProcessContext>"  
+instance HasOptions Runner where
+  optsList = optsList . runnerGlobalOpts
 
 -- | Class for environment values which have a 'Runner'.
 class (HasProcessContext env, HasLogFunc env) => HasRunner env where
@@ -79,6 +81,20 @@ data GlobalOpts = GlobalOpts
     , globalTermWidth    :: !(Maybe Int) -- ^ Terminal width override
     , globalOutputDir    :: !FilePath -- ^ Relative path where output should be written to
     } deriving (Show)
+instance HasOptions GlobalOpts where
+  optsList opts = 
+     [ ("--verbosity", case globalLogLevel opts of
+                                    LevelDebug -> "debug"
+                                    LevelInfo -> "info"
+                                    LevelWarn -> "warn"
+                                    LevelError -> "error"
+                                    LevelOther x -> x
+       )
+     , ("--[no-]time-in-log", tshow $ globalTimeInLog opts)
+     , ("--[no-]terminal", tshow $ globalTerminal opts)
+     , ("--terminal-width", tshow $ globalTermWidth opts)
+     , ("--output-dir", tshow $ globalOutputDir opts)
+     ]
 instance HasDirOutput GlobalOpts where
   dirOutputL = lens globalOutputDir (\x y -> x { globalOutputDir = y })
 instance HasDirOutput Runner where

@@ -4,7 +4,6 @@ module Ampersand.Options.DaemonParser where
 import Ampersand.Basics
 import Ampersand.Misc.HasClasses
 import Ampersand.Options.FSpecGenOptsParser
-import Ampersand.Options.Utils
 import Options.Applicative
 import Options.Applicative.Builder.Extra (boolFlags)
 
@@ -12,8 +11,7 @@ import Options.Applicative.Builder.Extra (boolFlags)
 daemonOptsParser :: Parser DaemonOpts
 daemonOptsParser =
   DaemonOpts
-    <$> outputLanguageP
-    <*> strOption
+    <$> strOption
       ( long "daemonconfig"
           <> metavar "CONFIGFILE"
           <> value ".ampersand"
