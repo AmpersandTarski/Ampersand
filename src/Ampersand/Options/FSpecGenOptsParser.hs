@@ -161,7 +161,7 @@ defFSpecGenOpts rootAdl =
       xnamespace = "",
       xdefaultCrud = (True, True, True, True),
       xtrimXLSXCells = True,
-      xrecipeName = Standard,
+      xrecipe = Standard,
       xallowInvariantViolations = False
     }
     

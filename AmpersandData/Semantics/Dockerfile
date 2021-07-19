@@ -30,7 +30,6 @@ COPY . /usr/local/project/
 # Generate prototype application from folder
 RUN ampersand proto /usr/local/project/Interfaces.adl \
   --proto-dir /var/www \
-  --build-recipe Prototype \
   --verbose
 
 # Copy customizations into generated application

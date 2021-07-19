@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+
+* [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+
 ## v4.2.0 ( 16 July 2021)
 
 * In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.

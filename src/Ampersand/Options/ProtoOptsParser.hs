@@ -29,8 +29,8 @@ protoOptsParser =
   where
     standardToProtoType :: ProtoOpts -> ProtoOpts
     standardToProtoType opts =
-      case view recipeNameL opts of
-        Standard -> set recipeNameL Prototype opts
+      case view recipeL opts of
+        Standard -> set recipeL Prototype opts
         _ -> opts
 
     forceReinstallP :: Parser Bool
