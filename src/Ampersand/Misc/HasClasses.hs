@@ -324,6 +324,7 @@ instance HasOptions ProtoOpts where
      , ("--prototype-framework-version", tshow $ xzwolleVersion opts)
      , ("--[no-]frontend", tshow $ xgenerateFrontend opts)
      , ("--[no-]backend", tshow $ xgenerateBackend opts)
+     , ("--frontend-version", tshow $ xfrontendVersion opts)
      , ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
      ]
 
