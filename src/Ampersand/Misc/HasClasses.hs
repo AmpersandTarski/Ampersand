@@ -145,8 +145,10 @@ class HasOutputLanguage a => HasDocumentOpts a where
   fspecFormatL = documentOptsL . lens xfspecFormat (\x y -> x { xfspecFormat = y })
   genLegalRefsL :: Lens' a Bool   -- Generate a table of legal references in Natural Language chapter
   genLegalRefsL = documentOptsL . lens xgenLegalRefs (\x y -> x { xgenLegalRefs = y })
-  genGraphicsL :: Lens' a Bool -- Generate graphics during generation of functional design document.
+  genGraphicsL :: Lens' a Bool -- Generate graphics. Useful for generating text and graphics separately.
   genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x { xgenGraphics = y })
+  genTextL :: Lens' a Bool -- Generate text. Useful for generating text and graphics separately.
+  genTextL = documentOptsL . lens xgenText (\x y -> x { xgenText = y })
 
 instance HasDocumentOpts DocOpts where
   documentOptsL = id
@@ -326,7 +328,9 @@ data DocOpts = DocOpts
    , xchapters :: ![Chapter]
    -- ^ a list containing all chapters that are required to be in the generated documentation
    , xgenGraphics :: !Bool
-   -- ^ enable/disable generation of graphics while generating documentation
+   -- ^ enable/disable generation of graphics. Used to generate text and graphics in separation.
+   , xgenText :: !Bool
+   -- ^ enable/disable generation of text. Used to generate text and graphics in separation.
    , xfspecFormat :: !FSpecFormat
    -- ^ the format of the documentation 
    , x3fSpecGenOpts :: !FSpecGenOpts
@@ -342,6 +346,7 @@ instance HasOptions DocOpts where
      ] <> 
      fmap chapters [minBound ..] <>
      [ ("--[no-]graphics", tshow $ xgenGraphics opts)
+     , ("--[no-]text", tshow $ xgenText opts)
      , ("--format", tshow $ xfspecFormat opts)
      ] <>
      optsList (x3fSpecGenOpts opts) <>
