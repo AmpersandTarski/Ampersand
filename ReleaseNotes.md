@@ -3,6 +3,7 @@
 ## Unreleased
 
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+* Allow multiple files to be declared as root files. The extra files will be handled as if they were INCLUDEd in the first one.
 
 ## v4.2.0 ( 16 July 2021)
 
