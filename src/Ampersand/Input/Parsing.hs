@@ -5,7 +5,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-      parseFileTransitive
+      parseFilesTransitive
     , parseFormalAmpersand
     , parsePrototypeContext
     , parseRule
@@ -16,40 +16,6 @@ module Ampersand.Input.Parsing (
 import Ampersand.ADL1
     ( Origin(Origin), mergeContexts, P_Context, Term, TermPrim )
 import Ampersand.Basics
-    ( snd,
-      otherwise,
-      map,
-      ($),
-      Eq((==)),
-      Monad((>>=), return),
-      Applicative(pure),
-      Foldable(elem, foldr),
-      Traversable(mapM, sequence),
-      Semigroup((<>)),
-      Bool(False),
-      Maybe(..),
-      Either(Left, Right),
-      tshow,
-      (.),
-      Text,
-      fatal,
-      FilePath,
-      SomeException,
-      (<$>),
-      isJust,
-      reverse,
-      (&&),
-      (||),
-      decodeUtf8,
-      readFileUtf8,
-      writeFileUtf8,
-      logDebug,
-      logInfo,
-      catch,
-      MonadIO(liftIO),
-      Display(display),
-      HasLogFunc,
-      RIO )
 import Ampersand.Core.ShowPStruct ( showP )
 import Ampersand.Input.ADL1.CtxError
     ( addWarnings,
@@ -66,7 +32,7 @@ import Ampersand.Input.Archi.ArchiAnalyze ( archi2PContext )
 import Ampersand.Input.PreProcessor
     ( preProcess, processFlags, PreProcDefine )
 import Ampersand.Input.Xslx.XLSX ( parseXlsxFile )
-import Ampersand.Misc.HasClasses ( HasFSpecGenOpts )
+import Ampersand.Misc.HasClasses ( HasFSpecGenOpts,Roots(..) )
 import Ampersand.Prototype.StaticFiles_Generated
     ( getStaticFileContent,
       FileKind(PrototypeContext, FormalAmpersand) )
@@ -89,17 +55,20 @@ import System.FilePath
       takeExtension )
 import           Text.Parsec.Prim (runP)
 
-
-
--- | Parse an Ampersand file and all transitive includes
-parseFileTransitive :: (HasFSpecGenOpts env, HasLogFunc env) =>
-            FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
+-- | Parse Ampersand files and all transitive includes
+parseFilesTransitive :: (HasFSpecGenOpts env, HasLogFunc env) =>
+            Roots
          -> RIO env ([ParseCandidate], Guarded P_Context) -- ^ A tuple containing a list of parsed files and the The resulting context
-parseFileTransitive fp = do 
+parseFilesTransitive xs = do -- parseFileTransitive . NE.head . getRoots --TODO Fix this, to also take the tail files into account. 
     curDir <- liftIO getCurrentDirectory
-    canonical <- liftIO $ canonicalizePath fp
-    parseThing' ParseCandidate
-       { pcBasePath  = Just curDir
+    canonical <- liftIO . mapM canonicalizePath . getRoots $ xs
+    let candidates = map (mkCandidate curDir) canonical 
+
+    parseThings candidates
+  where
+    mkCandidate :: FilePath -> FilePath -> ParseCandidate
+    mkCandidate curdir canonical = ParseCandidate
+       { pcBasePath  = Just curdir
        , pcOrigin    = Nothing
        , pcFileKind  = Nothing
        , pcCanonical = canonical
@@ -125,14 +94,14 @@ parsePrototypeContext = parseThing ParseCandidate
 
 parseThing :: (HasFSpecGenOpts env, HasLogFunc env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
-parseThing pc = snd <$> parseThing' pc 
+parseThing pc = snd <$> parseThings [pc] 
 
-parseThing' :: (HasFSpecGenOpts env, HasLogFunc env) =>
-               ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
-parseThing' pc = do
-  results <- parseADLs [] [pc]
+parseThings :: (HasFSpecGenOpts env, HasLogFunc env) =>
+               [ParseCandidate] -> RIO env ([ParseCandidate], Guarded P_Context) 
+parseThings pcs = do
+  results <- parseADLs [] pcs
   case results of 
-     Errors err    -> return ([pc], Errors err)
+     Errors err    -> return (pcs, Errors err)
      Checked xs ws -> return ( candidates
                              , Checked mergedContexts ws
                              )
