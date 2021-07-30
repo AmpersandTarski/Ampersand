@@ -93,20 +93,23 @@ class HasGenerateMetamodel a where
 instance HasGenerateMetamodel ProtoOpts where
   generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
 
+-- | A type to denote the root file(s) to be parsed for the creation of an Fspec
+newtype Roots = Roots {getRoots :: [FilePath]
+                      -- ^ Normally this should be a non-empty list. However, the daemon command is an exception to
+                      --   this. The command `ampersand daemon` expects no script name. The script name(s) will be 
+                      --   configured by means of the `.ampersand` configuration file.  
+                      }
+instance Show Roots where
+  show = L.intercalate ", " . getRoots
 class HasRootFile a where
-  rootFileL :: Lens' a (Maybe FilePath)
+  rootFileL :: Lens' a Roots
   baseName :: a -> FilePath
-  baseName  =
-    maybe
-      (fatal "Cannot determine the basename of the script that is being compiled")
-      takeBaseName
-    . view rootFileL
+  baseName x = case getRoots . view rootFileL $ x of
+    [] ->  fatal "Cannot determine the basename of the script that is being compiled"
+    (h:_) -> takeBaseName h
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
-  dirSource =
-    maybe
-      (fatal "Cannot determine the directory of the script that is being compiled")
-      takeDirectory
-    . view rootFileL
+  dirSource = takeDirectory . baseName
+
 instance HasFSpecGenOpts a => HasRootFile a where
   rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x { xrootFile = y })
 
@@ -231,7 +234,7 @@ data Recipe =
     deriving (Show, Enum, Bounded)
 
 data FSpecGenOpts = FSpecGenOpts
-  { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
+  { xrootFile :: !Roots  --relative paths. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
   , xgenInterfaces :: !Bool -- 
   , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -244,7 +247,7 @@ data FSpecGenOpts = FSpecGenOpts
 } deriving Show
 instance HasOptions FSpecGenOpts where
   optsList opts =
-     [ ("AMPERSAND_SCRIPT", maybe "" T.pack $ xrootFile opts)
+     [ ("AMPERSAND_SCRIPT", tshow $ xrootFile opts)
      , ("--sql-bin-tables", tshow $ xsqlBinTables opts)
      , ("--interfaces", tshow $ xgenInterfaces opts)
      , ("--namespace", tshow $ xnamespace opts)

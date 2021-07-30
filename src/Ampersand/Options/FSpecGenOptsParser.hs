@@ -3,7 +3,7 @@
 module Ampersand.Options.FSpecGenOptsParser (fSpecGenOptsParser, defFSpecGenOpts) where
 
 import Ampersand.Basics
-import Ampersand.Misc.HasClasses (FSpecGenOpts (..), Recipe (..))
+import Ampersand.Misc.HasClasses (FSpecGenOpts (..), Recipe (..), Roots (Roots))
 -- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import Options.Applicative
 import Options.Applicative.Builder.Extra
@@ -16,10 +16,7 @@ fSpecGenOptsParser ::
   Parser FSpecGenOpts
 fSpecGenOptsParser isForDaemon =
   FSpecGenOpts
-    <$> ( if isForDaemon
-            then pure Nothing -- The rootfile should come from the daemon config file.
-            else Just <$> rootFileP
-        )
+    <$> rootsP
     <*> sqlBinTablesP
     <*> genInterfacesP
     <*> namespaceP
@@ -28,6 +25,10 @@ fSpecGenOptsParser isForDaemon =
     <*> knownRecipeP
     <*> allowInvariantViolationsP
   where
+    rootsP :: Parser Roots
+    rootsP = if isForDaemon
+            then pure $ Roots [] -- The rootfile should come from the daemon config file.
+            else Roots <$> some rootFileP
     
     rootFileP :: Parser FilePath
     rootFileP =
@@ -152,10 +153,10 @@ fSpecGenOptsParser isForDaemon =
               )
         )
 
-defFSpecGenOpts :: FilePath -> FSpecGenOpts
+defFSpecGenOpts :: [FilePath] -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
-    { xrootFile = Just rootAdl,
+    { xrootFile = Roots rootAdl,
       xsqlBinTables = False,
       xgenInterfaces = False,
       xnamespace = "",

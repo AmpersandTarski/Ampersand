@@ -60,8 +60,8 @@ createFspec =
  do env <- ask
     let recipe = view recipeL env
     userScript <- do
-         rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
-         snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
+         rootFiles <- view rootFileL
+         snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
     formalAmpersandScript  <- parseFormalAmpersand
     prototypeContextScript <- parsePrototypeContext
     let pContext
