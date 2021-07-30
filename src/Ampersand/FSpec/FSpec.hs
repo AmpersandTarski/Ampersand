@@ -421,7 +421,7 @@ defOutputLang = ctxlang . originalContext
 emptyFSpec :: FSpec
 emptyFSpec = FSpec { fsName = ""
                    -- The name of the specification, taken from the Ampersand script
-                   , originalContext = undefined         
+                   , originalContext = fatal "Don't ask for the original context in the empty FSpec."
                    -- the original context. (for showA)  
                    , fspos =        []                 
                    -- The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
@@ -431,13 +431,13 @@ emptyFSpec = FSpec { fsName = ""
                    -- All interfaces defined in the Ampersand script
                    , interfaceG =   []              
                    -- All interfaces derived from the basic ontology (the Lonneker interface)
-                   , roleInterfaces  = undefined 
+                   , roleInterfaces  = fatal "Don't ask for the role-interface constraints in the empty FSpec."
                    -- All interfaces defined in the Ampersand script, for use by a specific Role
                    , fDeriveProofs = mempty                  
                    -- The proofs in Pandoc format
                    , fRoleRuls =    []            
                    -- the relation saying which roles maintain which rules.
-                   , fMaintains =   undefined
+                   , fMaintains =  fatal "Don't ask for the maintainer roles in the empty FSpec."
                    , fRoles =       []
                    -- All roles mentioned in this context, numbered.
                    , fallRules =    Set.empty
@@ -457,14 +457,14 @@ emptyFSpec = FSpec { fsName = ""
                                                               --   one relation for each signal.
                    , allConcepts =  Set.empty
                    -- All concepts in the fSpec
-                   , cptTType = undefined
+                   , cptTType = fatal "Don't ask for the concept-TType relation in the empty FSpec."
                    , vIndices =     []            
                    -- All keys that apply in the entire FSpec
                    , vviews =       []                
                    -- All views that apply in the entire FSpec
-                   , getDefaultViewForConcept = undefined
-                   , getAllViewsForConcept = undefined
-                   , lookupView = undefined         
+                   , getDefaultViewForConcept = fatal "Don't ask for the default views in the empty FSpec."
+                   , getAllViewsForConcept = fatal "Don't ask for the views in the empty FSpec."
+                   , lookupView = fatal "Don't ask for the lookupView in the empty FSpec."
                    -- Lookup view by id in fSpec.
                    , vgens =        []              
                    -- All gens that apply in the entire FSpec
@@ -488,13 +488,13 @@ emptyFSpec = FSpec { fsName = ""
                    -- All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
                    , metas =        []                   
                    -- All meta relations from the entire context
-                   , crudInfo =     undefined                 
+                   , crudInfo =     fatal "Don't ask for crud information in the empty FSpec."                 
                    -- Information for CRUD matrices 
-                   , atomsInCptIncludingSmaller = undefined
+                   , atomsInCptIncludingSmaller = fatal "Don't ask for atoms in the empty FSpec."
                    -- All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
-                   , atomsBySmallestConcept = undefined
+                   , atomsBySmallestConcept = fatal "Don't ask for atoms in the empty FSpec."
                    -- All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
-                   , tableContents = undefined
+                   , tableContents = fatal "Don't ask for table contents in the empty FSpec."
                    -- tableContents is meant to compute the contents of an entity table.
                    --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than Text.
                    -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
@@ -502,18 +502,18 @@ emptyFSpec = FSpec { fsName = ""
                    --                         we may see empty attributes. (NULL values in database terminology)
                    -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
                    -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
-                   , pairsInExpr = undefined
-                   , applyViolText = undefined
+                   , pairsInExpr = fatal "Don't ask for pairs from expressions in the empty FSpec."
+                   , applyViolText = fatal "Don't ask for the function applyViolText in the empty FSpec."
                    , initialConjunctSignals = [] 
                    -- All conjuncts that have process-rule violations.
                    , allViolations =  []   
                    -- All invariant rules with violations.
                    , allExprs =      Set.empty
                    -- All expressions in the fSpec
-                   , fcontextInfo   = undefined 
+                   , fcontextInfo   = fatal "Don't ask for the original context in the empty FSpec." 
                    , ftypologies   = []
-                   , typologyOf = undefined
-                   , largestConcept = undefined
-                   , specializationsOf = undefined
-                   , generalizationsOf = undefined
+                   , typologyOf = fatal "Don't ask for typologies in the empty FSpec."
+                   , largestConcept = fatal "Don't ask for the largest concept in the empty FSpec."
+                   , specializationsOf = fatal "Don't ask for specializations in the empty FSpec."
+                   , generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec."
                    }

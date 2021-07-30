@@ -3,6 +3,8 @@
 ## Unreleased
 
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+* [Issue #1196](https://github.com/AmpersandTarski/Ampersand/issues/1196) Allow multiple files on the command line.
+   d The second to last files are handled as if they were INCLUDEd in the first one.
 
 ## v4.2.0 ( 16 July 2021)
 
