@@ -50,7 +50,7 @@ foldl = foldl'
 
 -- Redefine undefined to ensure that it isn't accidentally used. 
 undefined :: a
-{-# WARNING undefined "Please do not leave undefined in your code. Please consider to use fatal" #-}
+{-# WARNING undefined "Undefined statement left in code. Why not use fatal?" #-}
 undefined = WarnAbout.undefined 
 
 -- Functions copied from stack
