@@ -93,7 +93,12 @@ class HasGenerateMetamodel a where
 instance HasGenerateMetamodel ProtoOpts where
   generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
 
-newtype Roots = Roots {getRoots :: [FilePath]}
+-- | A type to denote the root file(s) to be parsed for the creation of an Fspec
+newtype Roots = Roots {getRoots :: [FilePath]
+                      -- ^ Normally this should be a non-empty list. However, the daemon command is an exception to
+                      --   this. The command `ampersand daemon` expects no script name. The script name(s) will be 
+                      --   configured by means of the `.ampersand` configuration file.  
+                      }
 instance Show Roots where
   show = L.intercalate ", " . getRoots
 class HasRootFile a where
