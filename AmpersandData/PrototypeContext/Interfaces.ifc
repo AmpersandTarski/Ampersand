@@ -1,11 +1,16 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    INTERFACE "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <TABLE sortable>
+    -- The following population is required because RELATION label[PF_Interface*PF_Label] must be total.
+    -- That declaration is found in Interfaces.adl
+    POPULATION label[PF_Interface*PF_Label] CONTAINS
+     [ ("List_32_all_32_interfaces", "List_32_all_32_interfaces") ]
+    INTERFACE "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <TABLE sortable sortBy="Label" order="asc">
         [ "Interface"       : I             cRud
         , "Label"           : label         cRud
         , "Is public"       : isPublic      cRud
         , "Is API"          : isAPI         cRud
         , "Nav items"       : ifc~          cRud
+        , "For roles"       : pf_ifcRoles   cRud
         ]
 
     INTERFACE "Edit interface" FOR Administrator : I[PF_Interface] BOX

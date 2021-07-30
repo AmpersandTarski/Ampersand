@@ -21,6 +21,7 @@ docOptsParser =
     <$> blackWhiteP
     <*> chaptersP
     <*> genGraphicsP
+    <*> genTextP
     <*> fSpecFormatP
     <*> fSpecGenOptsParser False
     <*> outputLanguageP
@@ -123,6 +124,14 @@ docOptsParser =
         True
         "graphics"
         "generation of graphics before generating the document."
+        mempty
+
+    genTextP :: Parser Bool
+    genTextP =
+      boolFlags
+        True
+        "text"
+        "generation the document file."
         mempty
 
     blackWhiteP :: Parser Bool

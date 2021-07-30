@@ -91,7 +91,7 @@ data A_Context
          , ctxds :: Relations             -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]       -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcdsOutPats :: [AConceptDef] -- ^ The concept definitions defined outside the patterns of this context.
-         , ctxcds :: [AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxcds :: [AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns
          , ctxks :: [IdentityRule]        -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxreprs :: A_Concept -> TType
@@ -851,6 +851,8 @@ instance Eq A_Concept where
 
 -}
   
+instance Unique AConceptDef where
+  showUnique = tshow . name
 instance Unique A_Concept where
   showUnique = tshow
 instance Hashable A_Concept where

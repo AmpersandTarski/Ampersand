@@ -95,20 +95,23 @@ class HasGenerateMetamodel a where
 instance HasGenerateMetamodel ProtoOpts where
   generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
 
+-- | A type to denote the root file(s) to be parsed for the creation of an Fspec
+newtype Roots = Roots {getRoots :: [FilePath]
+                      -- ^ Normally this should be a non-empty list. However, the daemon command is an exception to
+                      --   this. The command `ampersand daemon` expects no script name. The script name(s) will be 
+                      --   configured by means of the `.ampersand` configuration file.  
+                      }
+instance Show Roots where
+  show = L.intercalate ", " . getRoots
 class HasRootFile a where
-  rootFileL :: Lens' a (Maybe FilePath)
+  rootFileL :: Lens' a Roots
   baseName :: a -> FilePath
-  baseName  =
-    maybe
-      (fatal "Cannot determine the basename of the script that is being compiled")
-      takeBaseName
-    . view rootFileL
+  baseName x = case getRoots . view rootFileL $ x of
+    [] ->  fatal "Cannot determine the basename of the script that is being compiled"
+    (h:_) -> takeBaseName h
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
-  dirSource =
-    maybe
-      (fatal "Cannot determine the directory of the script that is being compiled")
-      takeDirectory
-    . view rootFileL
+  dirSource = takeDirectory . baseName
+
 instance HasFSpecGenOpts a => HasRootFile a where
   rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x { xrootFile = y })
 
@@ -147,8 +150,10 @@ class HasOutputLanguage a => HasDocumentOpts a where
   fspecFormatL = documentOptsL . lens xfspecFormat (\x y -> x { xfspecFormat = y })
   genLegalRefsL :: Lens' a Bool   -- Generate a table of legal references in Natural Language chapter
   genLegalRefsL = documentOptsL . lens xgenLegalRefs (\x y -> x { xgenLegalRefs = y })
-  genGraphicsL :: Lens' a Bool -- Generate graphics during generation of functional design document.
+  genGraphicsL :: Lens' a Bool -- Generate graphics. Useful for generating text and graphics separately.
   genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x { xgenGraphics = y })
+  genTextL :: Lens' a Bool -- Generate text. Useful for generating text and graphics separately.
+  genTextL = documentOptsL . lens xgenText (\x y -> x { xgenText = y })
 
 instance HasDocumentOpts DocOpts where
   documentOptsL = id
@@ -233,7 +238,7 @@ data Recipe =
     deriving (Show, Enum, Bounded)
 
 data FSpecGenOpts = FSpecGenOpts
-  { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
+  { xrootFile :: !Roots  --relative paths. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
   , xgenInterfaces :: !Bool -- 
   , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -246,7 +251,7 @@ data FSpecGenOpts = FSpecGenOpts
 } deriving Show
 instance HasOptions FSpecGenOpts where
   optsList opts =
-     [ ("AMPERSAND_SCRIPT", maybe "" T.pack $ xrootFile opts)
+     [ ("AMPERSAND_SCRIPT", tshow $ xrootFile opts)
      , ("--sql-bin-tables", tshow $ xsqlBinTables opts)
      , ("--interfaces", tshow $ xgenInterfaces opts)
      , ("--namespace", tshow $ xnamespace opts)
@@ -335,7 +340,9 @@ data DocOpts = DocOpts
    , xchapters :: ![Chapter]
    -- ^ a list containing all chapters that are required to be in the generated documentation
    , xgenGraphics :: !Bool
-   -- ^ enable/disable generation of graphics while generating documentation
+   -- ^ enable/disable generation of graphics. Used to generate text and graphics in separation.
+   , xgenText :: !Bool
+   -- ^ enable/disable generation of text. Used to generate text and graphics in separation.
    , xfspecFormat :: !FSpecFormat
    -- ^ the format of the documentation 
    , x3fSpecGenOpts :: !FSpecGenOpts
@@ -351,6 +358,7 @@ instance HasOptions DocOpts where
      ] <> 
      fmap chapters [minBound ..] <>
      [ ("--[no-]graphics", tshow $ xgenGraphics opts)
+     , ("--[no-]text", tshow $ xgenText opts)
      , ("--format", tshow $ xfspecFormat opts)
      ] <>
      optsList (x3fSpecGenOpts opts) <>

@@ -53,7 +53,7 @@ PATTERN Context
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Context] [UNI]      -- ^ all multiplicityrules the user has declared within this context including the patterns it contains.
     RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
-    -- Use context[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a multiplicity rule, or identity rule
+    -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a multiplicity rule, or identity rule
   
     MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
     RELATION context[Pattern*Context] [UNI]     -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
@@ -66,17 +66,6 @@ PATTERN Context
     RULE "rule declared outside pattern" : ctxrs[Rule*Context] |- udefrules[Rule*Context]
     MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
     VIOLATION (TXT "{EX} InsPair;udefrules;Rule;", SRC I, TXT ";Context;", TGT I)
-
-    PURPOSE RULE "all rules Ins"
-    {+It is convenient to have one relation to contain all rules in a context. TODO: delete rules from context[Rule*Context].
-    +}
-    ROLE ExecEngine MAINTAINS "all rules Ins", "all rules Del"
-    RULE "all rules Ins" : udefrules[Rule*Context] \/ multrules \/ identityRules |- context[Rule*Context]
-    MEANING "All rules in a context consist of the user-defined rules, the multiplicity rules, and the identity rules."
-    VIOLATION (TXT "{EX} InsPair;context;Rule;", SRC I, TXT ";Context;", TGT I)
-    RULE "all rules Del" : context[Rule*Context] |- udefrules[Rule*Context] \/ multrules \/ identityRules
-    MEANING "All rules in a context consist of the user-defined rules, the multiplicity rules, and the identity rules."
-    VIOLATION (TXT "{EX} DelPair;context;Rule;", SRC I, TXT ";Context;", TGT I)
 
     PURPOSE RULE "relation declared outside pattern"
     {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
@@ -174,6 +163,7 @@ PATTERN Patterns
       VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
 
 
+    RELATION allRules[Rule*Context] []          -- ^ all rules in the context, i.e. all user defined rules, multiplicity rules, and identity rules.
     RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.
@@ -184,7 +174,7 @@ PATTERN Patterns
     MEANING "The relations that are declared in a pattern."
 
     ROLE ExecEngine MAINTAINS "Remove rule atom"
-    RULE "Remove rule atom" : I[Rule]- (patRules~;I[Pattern];patRules\/context;I[Context];context~) |- -V
+    RULE "Remove rule atom" : I[Rule] - allRules;I[Context];allRules~ |- -V
     MEANING "A rule without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
