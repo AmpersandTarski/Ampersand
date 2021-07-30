@@ -3,6 +3,7 @@
 ## Unreleased
 
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+* [Issue RAP #123](https://github.com/AmpersandTarski/RAP/issues/123) To enhance the Atlas in RAP to an acceptable minimal level, some changes in Ampersand are required.
 
 ## v4.2.0 ( 16 July 2021)
 

@@ -5,6 +5,11 @@ CONTEXT PrototypeFramework IN ENGLISH
     --[ADMIN INTERFACES to adapt the menus]--------------------------------------------------------
     INTERFACE "Edit navigation menu" FOR Administrator: "_SESSION";V[SESSION*PF_NavMenu] INTERFACE "Edit menu item"
     
+    -- The following population is required because RELATION label[PF_Interface*PF_Label] must be total.
+    -- That declaration is found in Interfaces.adl
+    POPULATION label[PF_Interface*PF_Label] CONTAINS
+     [ ("Edit_32_navigation_32_menu", "Edit_32_navigation_32_menu") ]
+
     INTERFACE "Edit menu item" FOR Administrator: I[PF_NavMenuItem] cRud BOX
         [ "Label"        : label
         , "Parent"       : isSubItemOf              cRUd
@@ -29,5 +34,4 @@ CONTEXT PrototypeFramework IN ENGLISH
         , "url"             : url
         , "parent"          : isSubItemOf
         ]
-
 ENDCONTEXT
