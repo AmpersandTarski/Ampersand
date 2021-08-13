@@ -81,7 +81,7 @@ addRelations pCtx = enrichedContext
                                          -- popRelations are derived from P_Populations only.
     declaredRelations = mergeRels (ctx_ds pCtx<>concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
-    --   (SJ20210603: We do not add multiplicity properties because that might add violations that a user cannot fix.)
+    --   (SJ20210603: We do not add properties because that might add violations that a user cannot fix.)
     popRelations 
      = [ rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx<>[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
@@ -99,7 +99,6 @@ addRelations pCtx = enrichedContext
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
-    --   Multiplicity properties are added to constrain the population without introducing violations.
     (genericRelations, genericPopulations)
      = recur [] popRelations pops invGen
        where

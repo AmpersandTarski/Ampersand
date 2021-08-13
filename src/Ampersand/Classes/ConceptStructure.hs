@@ -75,7 +75,7 @@ instance ConceptStructure A_Context where
                       , (expressionsIn . ctxrs) ctx
                       , (expressionsIn . ctxvs) ctx
                       , (expressionsIn . identityRules) ctx
-                      , (expressionsIn . multrules) ctx
+                      , (expressionsIn . proprules) ctx
                       ]
 
 instance ConceptStructure IdentityRule where

@@ -18,15 +18,15 @@ class Language a where
                                      --   i.e. one relation for each GEN and one for each signal rule.
                                      --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are
                                      --   used in a.)
-  udefrules :: a -> Rules           -- ^ all user defined rules that are maintained within this viewpoint,
-                                     --   which are not multiplicity- and not identity rules.
-  multrules :: a -> Rules           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = Set.fromList $ 
+  udefrules :: a -> Rules            -- ^ all user defined rules that are maintained within this viewpoint,
+                                     --   which are not property- and not identity rules.
+  proprules :: a -> Rules            -- ^ all property rules that are maintained within this viewpoint.
+  proprules x   = Set.fromList $ 
                  [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = Set.fromList . map ruleFromIdentity $ identities x
   allRules :: a -> Rules
-  allRules x = udefrules x `Set.union` multrules x `Set.union` identityRules x
+  allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x
   identities :: a -> [IdentityRule]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [AClassify]               -- ^ all generalizations that are valid within this viewpoint

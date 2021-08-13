@@ -28,7 +28,7 @@ data Transformer = Transformer
       { tRel :: Text  -- name of relation
       , tSrc :: Text  -- name of source
       , tTrg :: Text  -- name of target
-      , mults :: Props -- multiplicity constraints
+      , mults :: Props -- property constraints
       , tPairs :: [PAtomPair]-- the population of this relation from the user's script.
       }
 
@@ -54,8 +54,8 @@ dirtyId = DirtyId . idWithoutType
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
 toTransformer :: (Text, Text, Text, Props, [ (PopAtom,PopAtom)] ) -> Transformer
-toTransformer (rel,src,tgt,multiplicities,tuples)
- = Transformer rel src tgt multiplicities tuples'
+toTransformer (rel,src,tgt,props,tuples)
+ = Transformer rel src tgt props tuples'
    where
      tuples' :: [PAtomPair]
      tuples' = map popAtomPair2PAtomPair tuples
@@ -458,18 +458,18 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.empty
       , []  --TODO
       )
-     ,("multrules"             , "Rule"                  , "Context"
+     ,("proprules"             , "PropertyRule"                  , "Context"
       , Set.empty
       , [ (dirtyId rul, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
-        , rul            <- Set.elems $ multrules ctx
+        , rul            <- Set.elems $ proprules ctx
         ]
       )
-     ,("multrules"             , "Rule"                  , "Pattern"
+     ,("proprules"             , "Rule"                  , "Pattern"
       , Set.empty
       , [ (dirtyId rul, dirtyId pat)
         | pat::Pattern <- instanceList fSpec
-        , rul          <- Set.elems $ multrules pat
+        , rul          <- Set.elems $ proprules pat
         ]
       )
      ,("name"                  , "Concept"               , "ConceptName"

@@ -202,7 +202,7 @@ Relations that are neither univalent nor injective are administered separately i
 +}
 
 PURPOSE RELATION prop[Relation*Property]
-{+Multiplicity properties of relations have consequences for the way Ampersand generates database tables.
+{+Properties UNI and INJ have consequences for the way Ampersand generates database tables.
 For this reason, Ampersand keeps these properties in the system.
 +}
 RELATION prop[Relation*Property]

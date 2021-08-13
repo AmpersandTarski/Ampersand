@@ -50,10 +50,10 @@ PATTERN Context
     RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
     RELATION udefrules[Rule*Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
-                                                --   which are not multiplicity- and not identity rules. See ViewPoint.hs
-    RELATION multrules[Rule*Context] [UNI]      -- ^ all multiplicityrules the user has declared within this context including the patterns it contains.
+                                                --   which are not property- and not identity rules. See ViewPoint.hs
+    RELATION proprules[Rule*Context] [UNI]      -- ^ all property rules the user has declared within this context including the patterns it contains.
     RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
-    -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a multiplicity rule, or identity rule
+    -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a property rule, or identity rule
   
     MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
     RELATION context[Pattern*Context] [UNI]     -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
@@ -163,10 +163,10 @@ PATTERN Patterns
       VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
 
 
-    RELATION allRules[Rule*Context] []          -- ^ all rules in the context, i.e. all user defined rules, multiplicity rules, and identity rules.
+    RELATION allRules[Rule*Context] []          -- ^ all rules in the context, i.e. all user defined rules, property rules, and identity rules.
     RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
-                                                --   which are not multiplicity- and not identity rules. See ViewPoint.hs
-    RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.
+                                                --   which are not property- and not identity rules. See ViewPoint.hs
+    RELATION proprules[Rule*Pattern] []         -- ^ all property rules the user has declared within a pattern.
     RELATION identityRules[Rule*Pattern] []     -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
     RELATION patRules[Pattern*Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
     MEANING "The user-defined rules in a pattern."
