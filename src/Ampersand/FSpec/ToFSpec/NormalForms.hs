@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.NormalForms
   ( conjNF
   , cfProof

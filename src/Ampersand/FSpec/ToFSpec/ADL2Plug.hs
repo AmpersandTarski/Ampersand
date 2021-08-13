@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,typologies
@@ -29,18 +29,15 @@ attributesOfConcept fSpec c
 
 makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) 
        => env -> A_Context 
-              -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context calcProps = conceptTables <> linkTables
+makeGeneratedSqlPlugs env context = conceptTables <> linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls :: Relations
-    calculatedDecls = Set.map calcProps . relsDefdIn $ context 
-    (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
+    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (typologies context)
     makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
       TblSQL
@@ -70,7 +67,6 @@ makeGeneratedSqlPlugs env context calcProps = conceptTables <> linkTables
                         in if T.toLower nm `elem` map (T.toLower . snd) names -- case insencitive compare, because SQL needs that.
                            then tryInsert x (n+1) names
                            else (x,nm):names
-
 
           tableKey = tyroot typ
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
@@ -158,35 +154,35 @@ makeGeneratedSqlPlugs env context calcProps = conceptTables <> linkTables
             , rsSrcAtt    = if isStoredFlipped dcl then trgAtt else srcAtt
             , rsTrgAtt    = if isStoredFlipped dcl then srcAtt else trgAtt
             }
-       --the expr for the source of r
-       srcExpr
+       --the expr for the domain of r
+       domExpr
         | isTot bindedExp = EDcI (source bindedExp)
         | isSur bindedExp = EDcI (target bindedExp)
         | otherwise = EDcI (source bindedExp) ./\. (bindedExp .:. flp bindedExp)
-       --the expr for the target of r
-       trgExpr
+       --the expr for the codomain of r
+       codExpr
         | not (isTot bindedExp) && isSur bindedExp = flp bindedExp
         | otherwise                                =     bindedExp
-       srcAtt = Att { attName = T.concat["Src" | isEndo dcl]<>(unquote . name . source) trgExpr
-                    , attExpr = srcExpr
-                    , attType = repr . source $ srcExpr
-                    , attUse  = if suitableAsKey . repr . source $ srcExpr
-                                then ForeignKey (target srcExpr)
+       srcAtt = Att { attName = T.concat["Src" | isEndo dcl]<>(unquote . name . source) codExpr
+                    , attExpr = domExpr
+                    , attType = repr (source domExpr)
+                    , attUse  = if suitableAsKey . repr . source $ domExpr
+                                then ForeignKey (source domExpr)
                                 else PlainAttr
-                    , attNull = False  -- false for link tables. This was 'isTot trgExpr' (was this a mistake?)
+                    , attNull = False  -- false for link tables. This was 'isTot codExpr' (was this a mistake?)
                     , attDBNull = False
-                    , attUniq = isUni trgExpr
+                    , attUniq = isUni codExpr
                     , attFlipped = isStoredFlipped dcl
                     }
-       trgAtt = Att { attName = T.concat["Tgt" | isEndo dcl]<>(unquote . name . target) trgExpr
-                    , attExpr = trgExpr
-                    , attType = repr . target $ trgExpr
-                    , attUse  = if suitableAsKey . repr . target $ trgExpr
-                                then ForeignKey (target trgExpr)
+       trgAtt = Att { attName = T.concat["Tgt" | isEndo dcl]<>(unquote . name . target) codExpr
+                    , attExpr = codExpr
+                    , attType = repr (target domExpr)
+                    , attUse  = if suitableAsKey . repr . target $ codExpr
+                                then ForeignKey (target codExpr)
                                 else PlainAttr
-                    , attNull = isSur trgExpr
+                    , attNull = isSur codExpr
                     , attDBNull = False  -- false for link tables
-                    , attUniq = isInj trgExpr
+                    , attUniq = isInj codExpr
                     , attFlipped = isStoredFlipped dcl
                     }
 
@@ -215,27 +211,20 @@ makeGeneratedSqlPlugs env context calcProps = conceptTables <> linkTables
     isStoredFlipped = snd . wayToStore env
 
 -- | this function tells how a given relation is to be stored. If stored
---   in a concept table, it returns that concept. It allways returns a boolean
---   telling wether or not the relation is stored flipped.
+--   in a concept table, it returns that concept. It returns a boolean
+--   that tells wether or not the relation is stored flipped.
 wayToStore :: (HasFSpecGenOpts env) => env -> Relation -> (Maybe A_Concept,Bool)
-wayToStore env dcl = 
-   if view sqlBinTablesL env 
-   then (Nothing, False)
-   else case (isInj d, isUni d) of
-            (True   , False  ) -> inConceptTableFlipped
-            (_      , True   ) -> inConceptTablePlain
-            (False  , False  ) -> inLinkTable --Will become a link-table
+wayToStore env dcl 
+  | view sqlBinTablesL env = (Nothing, False) -- binary tables only
+  | isUni (EDcD dcl)       = (Just $ source d, False) -- to concept table, plain
+  | isInj (EDcD dcl)       = (Just $ target d, True) -- to concept table, flipped
+  | otherwise              = (Nothing, not (isTot d) && isSur d) -- to link-table
+                                 -- The order of columns in a linked table could
+                                 -- potentially speed up queries, in cases where
+                                 -- the relation is TOT or SUR. In that case there
+                                 -- should be no need to look in the concept table,
+                                 -- for all atoms are in the first colum of the link table
   where d = EDcD dcl
-        inConceptTablePlain   = (Just $ source d,False)
-        inConceptTableFlipped = (Just $ target d, True)
-        inLinkTable = ( Nothing
-                      , -- The order of columns in a linked table could
-                        -- potentially speed up queries, in cases where
-                        -- the relation is TOT or SUR. In that case there
-                        -- should be no need to look in the concept table,
-                        -- for all atoms are in the first colum of the link table
-                        not (isTot d) && isSur d
-                      )
 
 unquote :: Text -> Text
 unquote str =
@@ -263,10 +252,6 @@ suitableAsKey st =
     Float            -> False
     Object           -> True
     TypeOfOne        -> fatal "ONE has no key at all. does it?"
-
- 
-
-
 
 typologies :: A_Context -> [Typology]
 typologies context = 

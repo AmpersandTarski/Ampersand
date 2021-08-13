@@ -1,5 +1,5 @@
 ﻿{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue
   , aConcept2pConcept
@@ -102,7 +102,7 @@ aRelation2pNamedRel dcl = PNamedRel
   , p_mbSign = Just . aSign2pSign $ decsgn dcl
   }
  
-aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
+aIdentityDef2pIdentityDef :: IdentityRule -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
  P_Id { pos    = idPos iDef
       , ix_lbl = idLbl iDef
@@ -148,7 +148,7 @@ aInterface2pInterface ifc =
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (BxExpr (ifcObj ifc))
        , pos        = origin ifc
-       , ifc_Prp    = ifcPrp ifc
+       , ifc_Prp    = ifcPurpose ifc
        }
 
 

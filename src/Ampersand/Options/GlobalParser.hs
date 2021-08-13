@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Ampersand.Options.GlobalParser

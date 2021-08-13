@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.ADL1.P2A_Converters
     ( pCtx2aCtx
     , pCpt2aCpt
@@ -603,7 +603,7 @@ pCtx2aCtx env
               obj crud (e,sr) s
                 = ( BxExpr
                     ObjectDef { objnm = nm
-                           , objpos = orig
+                           , objPos = orig
                            , objExpression = e
                            , objcrud = crud
                            , objmView = mView
@@ -790,9 +790,9 @@ pCtx2aCtx env
                                   , ifcname = name pIfc
                                   , ifcRoles = ifc_Roles pIfc
                                   , ifcObj = o
-                                  , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                                  , ifcConjuncts = []  -- to be enriched in Adl2fSpec with rules to be checked
                                   , ifcPos = origin pIfc
-                                  , ifcPrp = ifc_Prp pIfc
+                                  , ifcPurpose = ifc_Prp pIfc
                                   }
                       tt -> Errors . pure
                             . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o) $ tt
@@ -862,7 +862,7 @@ pCtx2aCtx env
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
-      -> P_IdentDef -> Guarded IdentityDef
+      -> P_IdentDef -> Guarded IdentityRule
     pIdentity2aIdentity ci mPat pidt
      = case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
            P_Id { ix_lbl = lbl
@@ -1077,7 +1077,7 @@ pDecl2aDecl ::
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
   -> P_Relation -> Guarded Relation
-pDecl2aDecl cptMap env defLanguage defFormat pd
+pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
  = let (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
        dcl = Relation
                  { decnm   = dec_nm pd
@@ -1090,7 +1090,7 @@ pDecl2aDecl cptMap env defLanguage defFormat pd
                  , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
                  , decfpos = origin pd
                  , decusr  = True
-                 , decpat  = env
+                 , decpat  = maybePatName
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
    in checkEndoProps >> pure dcl

@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Basics.Auxiliaries 
         ( eqClass,eqClassNE,
           eqCl,eqClNE,

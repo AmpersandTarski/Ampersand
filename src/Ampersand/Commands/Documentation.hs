@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Commands.Documentation
     (doGenDocument)
 where
@@ -27,5 +27,7 @@ doGenDocument fSpec = do
     genGraphics <- view genGraphicsL
     when (genGraphics && fspecFormat /=FPandoc) $
       mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
-    writepandoc fSpec thePandoc
+    genText <- view genTextL
+    when genText $
+      writepandoc fSpec thePandoc
         

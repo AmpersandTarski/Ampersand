@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToJSON.Relations 
   (Relationz)
 where

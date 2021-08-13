@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import           Ampersand.ADL1
@@ -78,7 +78,7 @@ instance ConceptStructure A_Context where
                       , (expressionsIn . multrules) ctx
                       ]
 
-instance ConceptStructure IdentityDef where
+instance ConceptStructure IdentityRule where
   concs identity = Set.singleton (idCpt identity) 
                     `Set.union` 
                    (concs . fmap segment . identityAts $ identity)

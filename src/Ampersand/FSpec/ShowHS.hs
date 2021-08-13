@@ -1,6 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
@@ -16,7 +16,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time
-import           Text.Pandoc hiding (Meta)
+import           Text.Pandoc
 
 fSpec2Haskell :: (HasFSpecGenOpts env) =>
        env -> UTCTime -> FSpec -> Text
@@ -28,7 +28,7 @@ fSpec2Haskell env now fSpec
         , "where"
         , ""
         , "import Ampersand"
-        , "import Text.Pandoc hiding (Meta)"
+        , "import Text.Pandoc hiding (MetaData)"
         , ""
         , "main :: IO ()"
         , "main = do env <- getOptions"
@@ -179,35 +179,43 @@ instance ShowHS Conjunct where
 instance ShowHSName FSpec where
  showHSName fSpec = haskellIdentifier ("fSpc_"<>name fSpec)
 
+showRoleInterfaces :: FSpec -> Text
+showRoleInterfaces fSpec
+ = case map fst (fRoles fSpec) of
+     [] -> "[]"
+     rs -> T.intercalate "," [ "("<>name r<>","<>name ifc<>")" | r<-rs, ifc<-roleInterfaces fSpec r]
+
 instance ShowHS FSpec where
  showHS env indent fSpec
   = T.intercalate (indent <>"     ")
-        [ "FSpec{ fsName        = " <> tshow (name fSpec)
-        , wrap ", fspos         = " indentA (showHS env) (fspos fSpec)
-        , wrap ", plugInfos     = " indentA (\_->showHS env (indentA<>"  ")) (plugInfos  fSpec)
-        ,      ", interfaceS    = interfaceS'"
-        ,      ", interfaceG    = interfaceG'"
-        ,      ", fRoleRuls     = " <>showHS env indentA (fRoleRuls fSpec)
-        , wrap ", fRoles        = " indentA (showHS env)       (map fst (fRoles fSpec))
-        , wrap ", vrules        = " indentA (const showHSName) (Set.elems $ vrules fSpec)
-        , wrap ", grules        = " indentA (const showHSName) (Set.elems $ grules fSpec)
-        , wrap ", invariants    = " indentA (const showHSName) (Set.elems $ invariants fSpec)
-        , wrap ", fallRules     = " indentA (const showHSName) (Set.elems $ fallRules fSpec)
-        , wrap ", allUsedDecls  = " indentA (const showHSName) (Set.elems $ allUsedDecls fSpec)
-        , wrap ", vrels         = " indentA (const showHSName) (Set.elems $ vrels fSpec)
-        , wrap ", allConcepts   = " indentA (const showHSName) (Set.elems $ allConcepts fSpec)
-        , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
-        , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
-        , wrap ", vgens         = " indentA (showHS env)       (vgens fSpec)
-        , wrap ", fsisa         = " indentA (const showHSName) (fsisa fSpec)
-        , wrap ", allConjuncts  = " indentA (const showHSName) (allConjuncts fSpec)
-        , wrap ", vquads        = " indentA (const showHSName) (vquads fSpec)
-        , wrap ", vpatterns     = " indentA (const showHSName) (vpatterns fSpec)
-        , wrap ", conceptDefs   = " indentA (showHS env)       (conceptDefs fSpec)
-        , wrap ", fSexpls       = " indentA (showHS env)       (Set.elems (fSexpls fSpec))
-        ,      ", metas         = allMetas"
-        , wrap ", allViolations = " indentA showViolatedRule   (allViolations fSpec)
-        , wrap ", allExprs      = " indentA (showHS env)       (Set.elems (allExprs fSpec))
+        [ "FSpec{ fsName          = " <> tshow (name fSpec)
+        ,      ", originalContext = " <> tshow (name (originalContext fSpec))
+        , wrap ", fspos           = " indentA (showHS env) (fspos fSpec)
+        , wrap ", plugInfos       = " indentA (\_->showHS env (indentA<>"  ")) (plugInfos  fSpec)
+        ,      ", interfaceS      = interfaceS'"
+        ,      ", interfaceG      = interfaceG'"
+        ,      ", roleInterfaces  = "<>showRoleInterfaces fSpec
+        ,      ", fRoleRuls       = " <>showHS env indentA (fRoleRuls fSpec)
+        , wrap ", fRoles          = " indentA (showHS env)       (map fst (fRoles fSpec))
+        , wrap ", vrules          = " indentA (const showHSName) (Set.elems $ vrules fSpec)
+        , wrap ", grules          = " indentA (const showHSName) (Set.elems $ grules fSpec)
+        , wrap ", invariants      = " indentA (const showHSName) (Set.elems $ invariants fSpec)
+        , wrap ", fallRules       = " indentA (const showHSName) (Set.elems $ fallRules fSpec)
+        , wrap ", allUsedDecls    = " indentA (const showHSName) (Set.elems $ allUsedDecls fSpec)
+        , wrap ", vrels           = " indentA (const showHSName) (Set.elems $ vrels fSpec)
+        , wrap ", allConcepts     = " indentA (const showHSName) (Set.elems $ allConcepts fSpec)
+        , wrap ", vIndices        = " indentA (const showHSName) (vIndices fSpec)
+        , wrap ", vviews          = " indentA (const showHSName) (vviews fSpec)
+        , wrap ", vgens           = " indentA (showHS env)       (vgens fSpec)
+        , wrap ", fsisa           = " indentA (const showHSName) (fsisa fSpec)
+        , wrap ", allConjuncts    = " indentA (const showHSName) (allConjuncts fSpec)
+        , wrap ", vquads          = " indentA (const showHSName) (vquads fSpec)
+        , wrap ", vpatterns       = " indentA (const showHSName) (vpatterns fSpec)
+        , wrap ", conceptDefs     = " indentA (showHS env)       (conceptDefs fSpec)
+        , wrap ", fSexpls         = " indentA (showHS env)       (Set.elems (fSexpls fSpec))
+        ,      ", metas           = allMetas"
+        , wrap ", allViolations   = " indentA showViolatedRule   (allViolations fSpec)
+        , wrap ", allExprs        = " indentA (showHS env)       (Set.elems (allExprs fSpec))
         , "}"
         ] <>
     indent<>"where"<>
@@ -283,7 +291,7 @@ instance ShowHS FSpec where
      T.concat [indent<>" "<>showHSName x<>indent<>"  = "<>showHS env (indent<>"    ") x
           <> indent<>"    "<>showAtomsOfConcept x |x<-L.sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)]<>"\n"
     )
-        where indentA = indent <>"                       "
+        where indentA = indent <>"                         "
               indentB = indent <>"             "
               showAtomsOfConcept c =
                            "-- atoms: [ "<> T.intercalate indentC strs<>"]"
@@ -304,8 +312,8 @@ instance ShowHS FSpec where
                       indent'<>" )"
                      ]
 
-instance ShowHS Meta where
- showHS f i (Meta pos' nm val) = "Meta ("<>showHS f i pos' <> ") " <> " " <> tshow nm <> " " <> tshow val
+instance ShowHS MetaData where
+ showHS f i (MetaData pos' nm val) = "MetaData ("<>showHS f i pos' <> ") " <> " " <> tshow nm <> " " <> tshow val
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"<>name p)-- TODO
@@ -434,10 +442,10 @@ instance ShowHS Rule where
 instance ShowHS Meaning where
   showHS env indent (Meaning x) = "Meaning " <> showHS env (indent<>"        ") x
 
-instance ShowHSName IdentityDef where
+instance ShowHSName IdentityRule where
  showHSName identity = haskellIdentifier ("identity_"<>name identity)
 
-instance ShowHS IdentityDef where
+instance ShowHS IdentityRule where
  showHS env indent identity
   = "Id ("<>showHS env "" (idPos identity)<>") "<>tshow (idLbl identity)<>" ("<>showHSName (idCpt identity)<>")"
     <>indent<>"  [ "<>T.intercalate (indent<>"  , ") (NE.toList . fmap (showHS env indent) $ identityAts identity)<>indent<>"  ]"
@@ -522,9 +530,9 @@ instance ShowHS Interface where
         [ "Ifc { ifcname   = " <> tshow(ifcname ifc)
         , "    , ifcRoles  = " <> tshow(ifcRoles ifc)
         , "    , ifcObj"<>indent<>"       = " <> showHS env (indent<>"         ") (ifcObj ifc)
-        , wrap "    , ifcControls = " (indent<>"                  ") (const showHSName) (ifcControls ifc)
+        , wrap "    , ifcConjuncts = " (indent<>"                  ") (const showHSName) (ifcConjuncts ifc)
         , "    , ifcPos    = " <> showHS env "" (ifcPos ifc)
-        , "    , ifcPrp    = " <> tshow(ifcPrp ifc)
+        , "    , ifcPurpose    = " <> tshow(ifcPurpose ifc)
         ]<>indent<>"    }"
 instance ShowHS BoxItem where
  showHS env indent obj =

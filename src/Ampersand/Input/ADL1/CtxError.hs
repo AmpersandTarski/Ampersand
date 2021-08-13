@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , Warning

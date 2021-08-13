@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 -- | Generate a prototype from a project.
 module Ampersand.Commands.Test

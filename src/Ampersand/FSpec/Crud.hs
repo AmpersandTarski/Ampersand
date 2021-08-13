@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.Crud (CrudInfo(..), getCrudObjectsForInterface, mkCrudInfo) where
 
 import           Ampersand.Basics

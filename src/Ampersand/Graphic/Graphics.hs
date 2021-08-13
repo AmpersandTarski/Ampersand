@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureTyp(..), imagePathRelativeToDirOutput)
 where
@@ -135,16 +135,17 @@ makePicture env fSpec pr =
 
 -- | pictureFileName is used in the filename of the picture.
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
+--   File names are urlEncoded to cater for the entire alphabet.
 pictureFileName :: PictureTyp -> FilePath
 pictureFileName pr = toBaseFileName $
      case pr of
       PTClassDiagram      -> "Classification"
       PTLogicalDM         -> "LogicalDataModel"
       PTTechnicalDM       -> "TechnicalDataModel"
-      PTCDConcept cpt     -> "CDConcept"<>name cpt
-      PTDeclaredInPat pat -> "RelationsInPattern"<>name pat
-      PTCDPattern pat     -> "CDPattern"<>name pat
-      PTCDRule r          -> "CDRule"<>name r
+      PTCDConcept cpt     -> "CDConcept"<>urlEncodedName (name cpt)
+      PTDeclaredInPat pat -> "RelationsInPattern"<>urlEncodedName (name pat)
+      PTCDPattern pat     -> "CDPattern"<>urlEncodedName (name pat)
+      PTCDRule r          -> "CDRule"<>urlEncodedName (name r)
 
 -- | conceptualStructure produces a uniform structure,
 --   so the transformation to .dot-format can be done with one function.

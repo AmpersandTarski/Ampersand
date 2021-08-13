@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 

@@ -3,7 +3,7 @@ CONTEXT RAP IN ENGLISH LATEX
    Each concept of the RAP metamodel has its own section, where sections are separated by comments -}
 INCLUDE "AST.adl"
 INCLUDE "Atoms.docadl"
---INCLUDE "Expressions.docadl"
+--INCLUDE "Terms.docadl"
 INCLUDE "Rules.docadl"
 
 -- Context
@@ -88,23 +88,23 @@ The problem of identifying which persons have been using an information system c
 about log-in, users and sessions.
 +}
 
--- Expression
-PATTERN Expressions
-PURPOSE PATTERN Expressions
-{+The rules that govern expressions are brought together in one pattern,
-in order to formalize expressions and determine their meaning.
+-- Term
+PATTERN Terms
+PURPOSE PATTERN Terms
+{+The rules that govern terms are brought together in one pattern,
+in order to formalize terms and determine their meaning.
 +}
-CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
-REPRESENT Expression TYPE ALPHANUMERIC
-PURPOSE CONCEPT Expression
+CONCEPT Term "An term is a relation algebraic term, denoted in Ampersand syntax"
+REPRESENT Term TYPE ALPHANUMERIC
+PURPOSE CONCEPT Term
 {+
 Ampersand uses relation algebra to formalize phrases.
-The formalized phrases are called expressions.
-An Ampersand professional uses expressions to calculate with language and to specify information systems and business processes.
+The formalized phrases are called terms.
+An Ampersand professional uses terms to calculate with language and to specify information systems and business processes.
 \subsubsection*{Explanation}
-An expression combines relations with operators.
+An term combines relations with operators.
 That results in new relations, the population of which can be calculated from the constituent parts.
-This is similar to arithmetic, where for instance the result of expression $(3+5)\times 2$ can be calculated from the constituent numbers.
+This is similar to arithmetic, where for instance the result of term $(3+5)\times 2$ can be calculated from the constituent numbers.
 In Ampersand, you calculate with relations rather than numbers.
 \subsubsection*{Example}
 The problem of identifying which persons have been using an information system can be solved by making rules

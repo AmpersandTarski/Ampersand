@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(

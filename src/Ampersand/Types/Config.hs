@@ -1,5 +1,5 @@
 ﻿{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Ampersand.Types.Config
   ( 
@@ -60,6 +60,8 @@ data Runner = Runner
   } deriving Show
 instance Show LogFunc where show _ = "<LogFunc>"
 instance Show ProcessContext where show _ = "<ProcessContext>"  
+instance HasOptions Runner where
+  optsList = optsList . runnerGlobalOpts
 
 -- | Class for environment values which have a 'Runner'.
 class (HasProcessContext env, HasLogFunc env) => HasRunner env where
@@ -79,6 +81,20 @@ data GlobalOpts = GlobalOpts
     , globalTermWidth    :: !(Maybe Int) -- ^ Terminal width override
     , globalOutputDir    :: !FilePath -- ^ Relative path where output should be written to
     } deriving (Show)
+instance HasOptions GlobalOpts where
+  optsList opts = 
+     [ ("--verbosity", case globalLogLevel opts of
+                                    LevelDebug -> "debug"
+                                    LevelInfo -> "info"
+                                    LevelWarn -> "warn"
+                                    LevelError -> "error"
+                                    LevelOther x -> x
+       )
+     , ("--[no-]time-in-log", tshow $ globalTimeInLog opts)
+     , ("--[no-]terminal", tshow $ globalTerminal opts)
+     , ("--terminal-width", tshow $ globalTermWidth opts)
+     , ("--output-dir", tshow $ globalOutputDir opts)
+     ]
 instance HasDirOutput GlobalOpts where
   dirOutputL = lens globalOutputDir (\x y -> x { globalOutputDir = y })
 instance HasDirOutput Runner where
@@ -117,10 +133,6 @@ extendWith ext inner = do
     runRIO env1 $ do -- extendWith ext $ inner
       env2 <- ask
       runRIO (ExtendedRunner env2 ext) inner
---extendWith :: a -> RIO (ExtendedRunner a) b -> RIO Runner b
---extendWith opts inner = do
---   env <- ask
---   runRIO (ExtendedRunner env opts) inner
 
 data ExtendedRunner a = ExtendedRunner
    { eRunner :: !Runner
@@ -128,31 +140,33 @@ data ExtendedRunner a = ExtendedRunner
    } deriving Show
 cmdOptsL :: Lens' (ExtendedRunner a) a
 cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })
-instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
+instance HasOutputLanguage a => HasOutputLanguage (ExtendedRunner a) where
   languageL = cmdOptsL . languageL
-instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
+instance HasFSpecGenOpts a => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
-instance (HasDocumentOpts a) => HasDocumentOpts (ExtendedRunner a) where
+instance HasDocumentOpts a => HasDocumentOpts (ExtendedRunner a) where
   documentOptsL = cmdOptsL . documentOptsL
-instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
+instance HasDaemonOpts a => HasDaemonOpts (ExtendedRunner a) where 
   daemonOptsL = cmdOptsL . daemonOptsL
-instance (HasTestOpts a) => HasTestOpts (ExtendedRunner a) where 
+instance HasTestOpts a => HasTestOpts (ExtendedRunner a) where 
   testOptsL = cmdOptsL . testOptsL
-instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
+instance HasDirCustomizations a => HasDirCustomizations (ExtendedRunner a) where
   dirCustomizationsL = cmdOptsL . dirCustomizationsL
-instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
+instance HasZwolleVersion a => HasZwolleVersion (ExtendedRunner a) where
   zwolleVersionL = cmdOptsL . zwolleVersionL
-instance (HasGenerateFrontend a) => HasGenerateFrontend (ExtendedRunner a) where
+instance HasGenerateFrontend a => HasGenerateFrontend (ExtendedRunner a) where
   generateFrontendL = cmdOptsL . generateFrontendL
-instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where
+instance HasGenerateBackend a => HasGenerateBackend (ExtendedRunner a) where
   generateBackendL = cmdOptsL . generateBackendL
+instance HasGenerateMetamodel a => HasGenerateMetamodel (ExtendedRunner a) where
+  generateMetamodelL = cmdOptsL . generateMetamodelL
 instance (HasFSpecGenOpts a, HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
-instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
+instance HasProtoOpts a => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
-instance (HasPopulationOpts a) => HasPopulationOpts (ExtendedRunner a) where
+instance HasPopulationOpts a => HasPopulationOpts (ExtendedRunner a) where
   populationOptsL = cmdOptsL . populationOptsL
-instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
+instance HasOutputFile a => HasOutputFile (ExtendedRunner a) where
   outputfileL = cmdOptsL . outputfileL
 
 instance HasRunner (ExtendedRunner a) where

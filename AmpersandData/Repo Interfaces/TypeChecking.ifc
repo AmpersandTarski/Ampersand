@@ -3,15 +3,6 @@ INCLUDE "TypeChecking.adl"
 INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"
 
-INTERFACE Contexts (valid,relations) : "_SESSION"
-BOX <TABS>
-    [ "" : V[SESSION*Context]
-      BOX [ context        : I
-           , "valid rules"  : valid~
-           , relations      : relations
-           ]
-    ]
-
 INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]

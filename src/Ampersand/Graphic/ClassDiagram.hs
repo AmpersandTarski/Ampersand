@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),

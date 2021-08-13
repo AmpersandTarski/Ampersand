@@ -13,7 +13,7 @@ import Ampersand.Core.ParseTree (
          , P_Concept(..)
          , P_Sign(..)
          , P_Context(..), mergeContexts
-         , Meta(..)
+         , MetaData(..)
          , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
@@ -41,7 +41,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Expression(..)
          , AClassify(..)
          , RuleOrigin(..)
-         , IdentityDef(..)
+         , IdentityRule(..)
          , IdentitySegment(..)
          , ViewDef(..)
          , ViewSegment(..)

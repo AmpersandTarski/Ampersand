@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import           Ampersand.Graphic.ClassDiagram

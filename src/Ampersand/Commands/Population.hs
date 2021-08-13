@@ -1,7 +1,6 @@
-﻿{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE ConstraintKinds #-}
+﻿{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Generate an .xlsx file containing the population from a project.
 module Ampersand.Commands.Population

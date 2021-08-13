@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)
@@ -59,7 +59,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
        , [s | CIncl s<-ces] -- the INCLUDE filenames
        )
 
-    --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
+    --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta <$> pMeta           <|>
                       CPat  <$> pPatternDef     <|>
@@ -77,7 +77,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CPop  <$> pPopulation     <|>
                       CIncl <$> pIncludeStatement
 
-data ContextElement = CMeta Meta
+data ContextElement = CMeta MetaData
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy [PClassify]
@@ -114,9 +114,9 @@ pTextMarkup = ReST     <$ pKey "REST"     <|>
               LaTeX    <$ pKey "LATEX"    <|>
               Markdown <$ pKey "MARKDOWN"
 
---- Meta ::= 'META' Text Text
-pMeta :: AmpParser Meta
-pMeta = Meta <$> currPos <* pKey "META" <*> asText pDoubleQuotedString <*> asText pDoubleQuotedString
+--- MetaData ::= 'META' Text Text
+pMeta :: AmpParser MetaData
+pMeta = MetaData <$> currPos <* pKey "META" <*> asText pDoubleQuotedString <*> asText pDoubleQuotedString
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' 
 pPatternDef  :: AmpParser P_Pattern

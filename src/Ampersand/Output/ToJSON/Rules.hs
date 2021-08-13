@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-} 
 {-# LANGUAGE MultiParamTypeClasses #-} 
-{-# LANGUAGE OverloadedStrings #-} 
+ 
 module Ampersand.Output.ToJSON.Rules 
   (Rulez)
 where

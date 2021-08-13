@@ -1,0 +1,76 @@
+CONTEXT "Messaging"
+
+RELATION originatesFrom[Conjunct*Rule] [TOT] -- This rule is copied from FormalAmpersand
+
+-- The following stuff is not (yet) in FormalAmpersand
+RELATION context[Session*DataSpace] [UNI,TOT]
+RELATION context[Service*DataSpace] [UNI,TOT]
+RELATION context[SatComputation*DataSpace] [UNI,TOT]
+RELATION context[Action*DataSpace] [UNI,TOT]
+RELATION compatible[DataSpace*MsgType]
+RELATION inst[Message*MsgType] [UNI,TOT]
+RELATION produced[Service*Message] [INJ,SUR]
+RELATION produces[Service*Stream]
+RELATION consumed[Service*Message]
+RELATION consumes[Service*Stream]
+RELATION log[Event*Stream] [UNI]
+MEANING "Every event that occurs is logged on one specific stream."
+RELATION on[Interface*Service] [UNI,TOT]
+RELATION type[Widget*EventType] [UNI,TOT]
+RELATION type[Stream*MsgType] [UNI,TOT]
+RELATION in[Widget*Interface] [UNI,TOT]
+RELATION reaction[EventType*CodeFragment] [UNI,TOT]
+RELATION reaction[Rule*CodeFragment] [UNI,TOT]
+RELATION exec[Action*CodeFragment] [UNI,TOT]
+RELATION trig[Event*Conjunct]
+RELATION trig[Violation*Action] [UNI]
+RELATION conjunct[SatComputation*Conjunct] [UNI]
+RELATION compBy[Violation*SatComputation] [UNI,TOT]
+RELATION occured[Event*Session] [UNI,TOT]
+
+CLASSIFY Message ISA Event
+PATTERN "Stream Type System"
+    PURPOSE RULE "Type checking of produced streams"
+    {+ We want statically typed streams. So, every stream has a type. The type checker must check for compatibility and generate appropriate error messages upon failure.
+    +}
+    RULE "Type checking of produced streams" :
+         context~;produces;type |- compatible
+    MEANING "The type of every stream must be compatible with the context of a service that produces it."
+    RULE "Type checking of consumed streams" :
+         context~;consumes;type |- compatible
+    MEANING "The type of every stream must be compatible with the context of a service that consumes it."
+
+    PURPOSE RULE "Type checking of consumed messages"
+    {+ This relation allows the type checker to determine that there is precisely one match for every frame.
+    If not, the compiler must signal a mistake and refrain from generating code.
+    +}
+    RULE "Type checking of produced messages" :
+         produced;log |- produces
+    MEANING "A message can be produced only by a service that produces the MsgType of that message."
+    RULE "Type checking of consumed messages" :
+         consumed;log |- consumes
+    MEANING "A message can be consumed only by a service that consumes the MsgType of that message."
+ENDPATTERN
+
+PATTERN "Evaluation of actions"
+    PURPOSE RULE "Evaluate whether a conjunct is satisfied"
+    {+ This rule tells when the exec-engine must kick in. +}
+    RULE "Evaluate whether a conjunct is satisfied" :
+         trig~;occured;context |- conjunct~;context
+    MEANING "A sat-computation is required if an event occurs that triggers (i.e. may violate) a conjunct."
+
+    PURPOSE RULE "Evaluate which actions to take"
+    {+ This rule specifies which actions are triggered. +}
+    RULE "Evaluate which actions to take" :
+         compBy;conjunct |- trig;exec;reaction~;originatesFrom~
+    MEANING "Every violation triggers the action specified by the rules in which the conjunct occurs."
+
+    PURPOSE RULE "Take action on a widget event"
+    {+ This rule specifies which actions are triggered. +}
+    RULE "Take action on a widget event" :
+         reaction;exec~;context |- type~;in;on;I[Service];context
+    MEANING "An event that has the type of a widget causes an action in that context."
+ENDPATTERN
+
+
+ENDCONTEXT

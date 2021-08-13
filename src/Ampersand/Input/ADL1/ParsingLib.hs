@@ -156,7 +156,7 @@ pCrudString = check (\case
     testCrud s = 
        if and $ [ not (null s)
                 , L.nub caps == caps
-                ] ++ map (`elem` "CRUD") caps 
+                ] ++ map (`elem` ['C','R','U','D'] ) caps 
           then Just s
           else Nothing
       where caps = map toUpper s

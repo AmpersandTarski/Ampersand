@@ -1,5 +1,11 @@
 ﻿# Release notes of Ampersand
 
+## v4.3.0 ( 13 August 2021)
+
+* [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+* [Issue RAP #123](https://github.com/AmpersandTarski/RAP/issues/123) To enhance the Atlas in RAP to an acceptable minimal level, some changes in Ampersand are required.
+* [Issue #1196](https://github.com/AmpersandTarski/Ampersand/issues/1196) Allow multiple files on the command line. The second to last files are handled as if they were INCLUDEd in the first one.
+
 ## v4.2.0 ( 16 July 2021)
 
 * In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.
@@ -265,6 +271,8 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
 * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
 
+* FormalAmpersand.adl and PrototypeContext.adl are no longer used by the compiler. The metamodel is derived from the transformers, so the correspondence between the metamodel and the transformers is 100%. By definition.
+* There is a new option under "proto" called "metamodel", which is meant to show the metamodel to the user.
 ## v3.8.1 (20 january 2017)
 
 * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
