@@ -458,18 +458,34 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.empty
       , []  --TODO
       )
-     ,("proprules"             , "PropertyRule"                  , "Context"
+     ,("proprules"             , "PropertyRule"          , "Context"
       , Set.empty
       , [ (dirtyId rul, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
         ]
       )
-     ,("proprules"             , "Rule"                  , "Pattern"
+     ,("proprules"             , "PropertyRule"          , "Pattern"
       , Set.empty
       , [ (dirtyId rul, dirtyId pat)
         | pat::Pattern <- instanceList fSpec
         , rul          <- Set.elems $ proprules pat
+        ]
+      )
+     ,("propertyRule"          , "Relation"              , "PropertyRule"
+      , Set.fromList [Sur]
+      , [ (dirtyId rul, dirtyId rel)
+        | ctx::A_Context <- instanceList fSpec
+        , rul            <- Set.elems $ proprules ctx
+        , Just (_,rel)   <- [rrdcl rul]
+        ]
+      )
+     ,("declaredthrough"       , "PropertyRule"          , "Property"
+      , Set.fromList [Tot]
+      , [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
+        | ctx::A_Context <- instanceList fSpec
+        , rul            <- Set.elems $ proprules ctx
+        , Just (prop,_)  <- [rrdcl rul]
         ]
       )
      ,("name"                  , "Concept"               , "ConceptName"
