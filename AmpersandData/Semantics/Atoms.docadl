@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH LATEX
+CONTEXT FormalAmpersand IN ENGLISH LATEX
 INCLUDE "Atoms.adl"
 
 -- RJ: Ik maak duidelijk onderscheid tussen een 'representation' (bijv. een foto van een tomaat) 

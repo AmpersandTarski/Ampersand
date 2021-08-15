@@ -14,7 +14,7 @@ import qualified RIO.Text as T
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
---         the class diagram and multiplicity rules are printed
+--         the class diagram and property rules are printed
 chpDataAnalysis :: (HasDirOutput env, HasDocumentOpts env)
    => env -> FSpec -> (Blocks,[Picture])
 chpDataAnalysis env fSpec = (theBlocks, thePictures)

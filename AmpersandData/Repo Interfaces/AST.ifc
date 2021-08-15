@@ -1,4 +1,4 @@
-CONTEXT "AST Interface" IN ENGLISH
+CONTEXT "FormalAmpersand Interface" IN ENGLISH
 
 --INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
 --BOX <TABLE sortable hideEmptyTable>
@@ -41,7 +41,7 @@ BOX <TABS>
              )  INTERFACE IsaTree 
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
-  , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
+  , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : context[Rule*Context]~ INTERFACE "Rule"
@@ -144,7 +144,7 @@ BOX [ "context" : context[IsE*Context]
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
-BOX [ "declared in context" : declaredIn[Relation*Context]
+BOX [ "declared in context" : relsDefdIn[Relation*Context]
     , "decMean" : decMean[Relation*Meaning]
     , "decprL" : decprL[Relation*String]
     , "decprM" : decprM[Relation*String]

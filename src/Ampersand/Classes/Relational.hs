@@ -42,7 +42,7 @@ isSESSION cpt =
              PlainConcept{} -> "SESSION" `elem` aliases cpt
              ONE            -> False              
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
--- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
+-- but tries to derive the most obvious constraints as well. The more property constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
 properties' :: Expression -> Props
@@ -69,7 +69,7 @@ properties' expr = case expr of
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
-instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
+instance Relational Expression where        -- TODO: see if we can find more property constraints...
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
  --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.

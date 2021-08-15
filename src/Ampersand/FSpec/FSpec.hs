@@ -67,7 +67,7 @@ data FSpec = FSpec { fsName ::       Text
                    , vrules ::       Rules                   
                    -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       Rules                   
-                   -- ^ All rules that are generated: multiplicity rules and identity rules
+                   -- ^ All rules that are generated: property rules and identity rules
                    , invariants ::   Rules                   
                    -- ^ All invariant rules
                    , signals ::      Rules                   
@@ -444,7 +444,7 @@ emptyFSpec = FSpec { fsName = ""
                    , vrules =       Set.empty                   
                    -- All user defined rules that apply in the entire FSpec
                    , grules =       Set.empty                   
-                   -- All rules that are generated: multiplicity rules and identity rules
+                   -- All rules that are generated: property rules and identity rules
                    , invariants =   Set.empty                   
                    -- All invariant rules
                    , signals =      Set.empty                   

@@ -196,7 +196,7 @@ makeFSpec env context
      isUserDefined rul =
        case r_usr rul of
          UserDefined  -> True
-         Multiplicity -> False
+         Propty -> False
          Identity     -> False
   -- Lookup view by id in fSpec.
      lookupView' :: Text -> ViewDef
@@ -272,7 +272,7 @@ makeFSpec env context
      --making interfaces
      -------------------
      -- interfaces (type BoxItem) can be generated from a basic ontology. That is: they can be derived from a set
-     -- of relations together with multiplicity constraints. That is what interfaceG does.
+     -- of relations together with property constraints. That is what interfaceG does.
      -- This is meant to help a developer to build his own list of interfaces, by providing a set of interfaces that works.
      -- The developer may relabel attributes by names of his own choice.
      -- This is easier than to invent a set of interfaces from scratch.

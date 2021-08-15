@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- The comments for this script can be found in DomainAnalysis.docadl
 INCLUDE "Atoms.adl"
 

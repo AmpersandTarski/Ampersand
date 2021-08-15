@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH 
+﻿CONTEXT FormalAmpersand IN ENGLISH 
 INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : "_SESSION"[SESSION]

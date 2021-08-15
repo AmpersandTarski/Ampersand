@@ -1,6 +1,6 @@
-CONTEXT Multiplicities IN ENGLISH
+CONTEXT Properties IN ENGLISH
 
--- Declares a relation for each of the 16 possible combinations of multiplicities
+-- Declares a relation for each of the 16 possible combinations of properties
 
 -- dummy relations to force class generation in logical data model
 RELATION sut[S_ut*X] [UNI]     

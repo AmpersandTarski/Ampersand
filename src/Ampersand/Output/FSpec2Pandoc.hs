@@ -15,7 +15,7 @@ import           Text.Pandoc.CrossRef
 --The third chapter is intended for the analyst. It contains all the rules mentioned in
 --natural language in the second chapter. It presents the trace from natural language
 --to the formal rule.
---The fourth chapter presents a datamodel together with all the multiplicity rules.
+--The fourth chapter presents a datamodel together with all the property rules.
 -- by datasets and rules.
 --Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept,
 --also called the theme. Functionalities defined on the theme by one or more plugs are
