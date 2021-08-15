@@ -292,9 +292,9 @@ uniqueNames nameclass = uniqueBy name
                       []   -> pure ()
                       x:xs -> Errors . fmap messageFor $ x NE.:| xs
       where
-        messageFor aap = CTXE (origin $ NE.head aap)
-                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) (NE.head aap)<>", however, is used at:"
-                         <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) aap)
+        messageFor x = CTXE (origin $ NE.head x)
+                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) (NE.head x)<>", however, is used at:"
+                         <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
                          <>  "."
                          )
         moreThanOne = not . null . NE.tail
