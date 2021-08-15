@@ -285,19 +285,19 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
 --   provide a more meaningful error message.
 uniqueNames :: (Named a, Traced a) =>
                      Text -> [a] -> Guarded ()
-uniqueNames nameclass = uniqueBy name
+uniqueNames nameclass = uniqueBy name messageFor
   where
-    uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
-    uniqueBy fun a = case (filter moreThanOne . NE.groupAllWith fun) a of
+    messageFor x = CTXE (origin $ NE.head x)
+      ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) (NE.head x)<>", however, is used at:"
+      <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
+      <>  "."
+      )
+uniqueBy :: Ord b => (a -> b) -> (NonEmpty a -> CtxError) -> [a] -> Guarded ()
+uniqueBy fun messageFor a = case (filter moreThanOne . NE.groupAllWith fun) a of
                       []   -> pure ()
                       x:xs -> Errors . fmap messageFor $ x NE.:| xs
-      where
-        messageFor x = CTXE (origin $ NE.head x)
-                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) (NE.head x)<>", however, is used at:"
-                         <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
-                         <>  "."
-                         )
-        moreThanOne = not . null . NE.tail
+  where
+    moreThanOne = not . null . NE.tail
 
 checkNoDoubleLables :: Origin -> [ViewSegment] -> Guarded ()
 checkNoDoubleLables orig segments = addWarnings warnings $ pure()
