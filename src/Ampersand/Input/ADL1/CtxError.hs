@@ -281,10 +281,11 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
              EFlp e' -> showA' e'
              _ -> ""
 -- | Rules, identity statements, view definitions, interfaces, and box labels
---   need unique names. The `nameclass` ("rule", "interface", etc.) is used to
+--   need unique names. 
+uniqueNames :: (Named a, Traced a) => Text -- ^ The `nameclass` ("rule", "interface", etc.) is used to
 --   provide a more meaningful error message.
-uniqueNames :: (Named a, Traced a) =>
-                     Text -> [a] -> Guarded ()
+  -> [a] -- ^ List of things that need to have unique names.
+  -> Guarded ()
 uniqueNames nameclass = uniqueBy name messageFor
   where
     messageFor x = CTXE (origin $ NE.head x)
@@ -292,7 +293,11 @@ uniqueNames nameclass = uniqueBy name messageFor
       <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
       <>  "."
       )
-uniqueBy :: Ord b => (a -> b) -> (NonEmpty a -> CtxError) -> [a] -> Guarded ()
+-- | Helper function to check for uniqueness.
+uniqueBy :: Ord b => (a -> b) -- ^ user supplied function to project something out of each element
+  -> (NonEmpty a -> CtxError) -- ^ user supplied function to generate the error for a nonempty list
+  -> [a] -- ^ List of things that need to have some unique property
+  -> Guarded ()
 uniqueBy fun messageFor a = case (filter moreThanOne . NE.groupAllWith fun) a of
                       []   -> pure ()
                       x:xs -> Errors . fmap messageFor $ x NE.:| xs
