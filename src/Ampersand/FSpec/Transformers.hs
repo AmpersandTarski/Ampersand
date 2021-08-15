@@ -221,7 +221,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , cdf::AConceptDef <- instanceList fSpec
         ]
       )
-     ,("relsDefdIn"            , "Relation"              , "Context"
+     ,("relsDefdIn"            , "Relation"              , "Context"   ---contains ALL relations defined in this context
       , Set.fromList [Uni,Tot]
       , [ (dirtyId rel, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
@@ -474,7 +474,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
       , Set.fromList [Sur]
-      , [ (dirtyId rul, dirtyId rel)
+      , [ (dirtyId rel, dirtyId rul)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
         , Just (_,rel)   <- [rrdcl rul]

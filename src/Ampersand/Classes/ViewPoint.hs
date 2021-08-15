@@ -13,7 +13,7 @@ import qualified RIO.Set as Set
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
 
 class Language a where
-  relsDefdIn :: a -> Relations   -- ^ all relations that are declared in the scope of this viewpoint.
+  relsDefdIn :: a -> Relations       -- ^ all relations that are declared in the scope of this viewpoint.
                                      --   These are user defined relations and all generated relarations,
                                      --   i.e. one relation for each GEN and one for each signal rule.
                                      --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are

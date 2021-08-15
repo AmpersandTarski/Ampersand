@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH 
+CONTEXT FormalAmpersand IN ENGLISH 
 
 PATTERN Concepts
     RELATION name[Concept*ConceptName] [UNI,SUR]

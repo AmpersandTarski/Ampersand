@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH
+CONTEXT FormalAmpersand IN ENGLISH
 INCLUDE "Atoms.docadl"
 INCLUDE "Views.adl"
 
