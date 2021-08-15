@@ -288,18 +288,17 @@ uniqueNames :: (Named a, Traced a) =>
 uniqueNames nameclass = uniqueBy name
   where
     uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
-    uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
+    uniqueBy fun a = case (filter moreThanOne . NE.groupAllWith fun) a of
                       []   -> pure ()
                       x:xs -> Errors . fmap messageFor $ x NE.:| xs
       where
-        messageFor (x:xs) = CTXE (origin x)
-                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) x<>", however, is used at:"
-                         <>  T.intercalate "\n    " (map (tshow . origin) (x:xs))
+        messageFor aap = CTXE (origin $ NE.head aap)
+                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) (NE.head aap)<>", however, is used at:"
+                         <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) aap)
                          <>  "."
                          )
-        messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
-        moreThanOne (_:_:_) = True
-        moreThanOne  _      = False
+        moreThanOne = not . null . NE.tail
+
 checkNoDoubleLables :: Origin -> [ViewSegment] -> Guarded ()
 checkNoDoubleLables orig segments = addWarnings warnings $ pure()
    where
