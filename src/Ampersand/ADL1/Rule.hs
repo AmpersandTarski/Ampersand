@@ -40,9 +40,9 @@ rulefromProp prp d =
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
+        , rrdcl = Just (prp,d)         -- For traceability and transformers: The original property and relation.
         , rrpat = decpat d      
-        , r_usr = Multiplicity
+        , r_usr = Propty
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where

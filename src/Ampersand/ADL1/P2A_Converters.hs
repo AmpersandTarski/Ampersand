@@ -524,7 +524,7 @@ pCtx2aCtx env
               , vd_ats  = pvs   -- view segments
               }
      = do segments <- traverse typeCheckViewSegment (zip [0..] pvs)
-          checkNoDoubleLables orig segments
+          uniqueLables orig segments
           let avd = Vd { vdpos  = orig
                        , vdlbl  = lbl
                        , vdcpt  = pCpt2aCpt (conceptMap ci) cpt

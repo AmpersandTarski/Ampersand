@@ -32,7 +32,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkCrudWarning
   , mkBoxRowsnhWarning
   , mkCaseProblemWarning
-  , checkNoDoubleLables
+  , uniqueLables
   , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedM
@@ -59,7 +59,6 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
 import           Data.Typeable
-import           GHC.Exts (groupWith)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           Text.Parsec
@@ -281,38 +280,42 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
              EFlp e' -> showA' e'
              _ -> ""
 -- | Rules, identity statements, view definitions, interfaces, and box labels
---   need unique names. The `nameclass` ("rule", "interface", etc.) is used to
---   provide a more meaningful error message.
-uniqueNames :: (Named a, Traced a) =>
-                     Text -> [a] -> Guarded ()
-uniqueNames nameclass = uniqueBy name
+--   need unique names. 
+uniqueNames :: (Named a, Traced a) => 
+     Text -- ^ The `nameclass` ("rule", "interface", etc.) is used to
+          --   provide a more meaningful error message.
+  -> [a] -- ^ List of things that need to have unique names.
+  -> Guarded ()
+uniqueNames nameclass = uniqueBy name messageFor
   where
-    uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
-    uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
+    messageFor x = CTXE (origin $ NE.head x)
+      ("Every "<>nameclass<>" must have a unique name. "<>(tshow . name) (NE.head x)<>", however, is used at:"
+      <>  T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
+      <>  "."
+      )
+uniqueLables :: Origin -> [ViewSegment] -> Guarded ()
+uniqueLables orig = uniqueBy vsmlabel messageFor . filter hasLabel
+  where
+    hasLabel = isJust . vsmlabel
+    messageFor :: NonEmpty ViewSegment -> CtxError
+    messageFor x = CTXE (origin $ NE.head x) .
+       T.intercalate "\n    " $
+       [ "The label `"<>lable<>"` occurs "<>tshow (NE.length x)<>" times"
+       ,"in the VIEW statement defined at: "
+       ,"   "<>tshow orig<>"."
+       ]
+      where lable = fromMaybe "" (vsmlabel $ NE.head x)
+
+-- | Helper function to check for uniqueness.
+uniqueBy :: Ord b => (a -> b) -- ^ user supplied function to project something out of each element
+  -> (NonEmpty a -> CtxError) -- ^ user supplied function to generate the error for a nonempty list
+  -> [a] -- ^ List of things that need to have some unique property
+  -> Guarded ()
+uniqueBy fun messageFor a = case (filter moreThanOne . NE.groupAllWith fun) a of
                       []   -> pure ()
                       x:xs -> Errors . fmap messageFor $ x NE.:| xs
-      where
-        messageFor (x:xs) = CTXE (origin x)
-                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) x<>", however, is used at:"
-                         <>  T.intercalate "\n    " (map (tshow . origin) (x:xs))
-                         <>  "."
-                         )
-        messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
-        moreThanOne (_:_:_) = True
-        moreThanOne  _      = False
-checkNoDoubleLables :: Origin -> [ViewSegment] -> Guarded ()
-checkNoDoubleLables orig segments = addWarnings warnings $ pure()
-   where
-        warnings = mapMaybe toWarning . groupWith vsmlabel $ segments
-        toWarning :: [ViewSegment] -> Maybe Warning
-        toWarning [] = Nothing 
-        toWarning (h:tl) = case (vsmlabel h,tl) of
-             (Just l,_:_)  -> Just . Warning orig . T.intercalate "\n" $ 
-                   ["The label `"<>l<>"` occurs "<>tshow (length (h:tl))<>" times"
-                   ,"in the VIEW statement defined at: "
-                   ,"   "<>tshow orig<>"."
-                   ]
-             _ -> Nothing 
+  where
+    moreThanOne = not . null . NE.tail
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <> showA (explObj p)

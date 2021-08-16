@@ -18,7 +18,7 @@ CONTEXT RAP IN ENGLISH
 
     PURPOSE RULE "Remove relation atom"
     {+Because every relation must be declared somewhere, the relation must be removed when its declaration ceases to exist.
-    A relation can be declared by multiple patterns, so as long as one of these declarations exist, the relation remains extant.
+    A relation can be declared by multiple patterns, so as long as one of these declarations exist, the relation remains in existence.
     +}
 
     PURPOSE RULE "self-sustained rules"

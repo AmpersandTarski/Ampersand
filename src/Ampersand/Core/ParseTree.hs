@@ -219,7 +219,7 @@ instance Show TType where
 data P_Relation =
       P_Relation { dec_nm :: Text    -- ^ the name of the relation
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
-            , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+            , dec_prps :: Props     -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
             , dec_pragma :: [Text]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.

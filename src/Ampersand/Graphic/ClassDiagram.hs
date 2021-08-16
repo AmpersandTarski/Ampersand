@@ -41,10 +41,10 @@ data Multiplicities = Mult MinValue MaxValue deriving Show
 
 data Association    = OOAssoc  { assSrc ::     Text           -- ^ source: the name of the source class
                                , assSrcPort :: Text           -- ^ the name of the attribute in the source class
-                               , asslhm ::     Multiplicities   -- ^ left hand side multiplicities
+                               , asslhm ::     Multiplicities   -- ^ left hand side properties
                                , asslhr ::     Text           -- ^ left hand side role
                                , assTgt ::     Text           -- ^ target: the name of the target class
-                               , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
+                               , assrhm ::     Multiplicities   -- ^ right hand side properties
                                , assrhr ::     Text           -- ^ right hand side role
                                , assmdcl ::    Maybe Relation -- ^ the relations that caused this association , if any.
                                } deriving Show

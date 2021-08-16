@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH 
+﻿CONTEXT FormalAmpersand IN ENGLISH 
 INCLUDE "TypeChecking.adl"
 INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"

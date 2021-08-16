@@ -80,7 +80,7 @@ parseFormalAmpersand = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification"
        , pcFileKind  = Just FormalAmpersand
-       , pcCanonical = "AST.adl"
+       , pcCanonical = "FormalAmpersand.adl"
        , pcDefineds  = Set.empty
        }
 parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
