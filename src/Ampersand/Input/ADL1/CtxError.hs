@@ -62,7 +62,6 @@ import           Data.Typeable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           Text.Parsec
-import Ampersand.ADL1 (ViewSegment(vsmlabel))
 
 data CtxError = CTXE Origin Text -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE ParseError
