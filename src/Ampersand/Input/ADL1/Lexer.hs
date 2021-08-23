@@ -84,13 +84,15 @@ keywords  = L.nub $
                 [ "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
                 , "SERVICE"
-                -- Depreciated keywords:
+                -- Enforce statement:
+                , "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
                 ]
 
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
-              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
+              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", ".",
+              ":=", ">:",":<"  ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]

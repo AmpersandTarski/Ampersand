@@ -7,6 +7,8 @@ module Ampersand.Core.ParseTree (
    , MetaData(..)
    , P_RoleRule(..)
    , Role(..)
+   , P_Enforce(..)
+   , EnforceOperator(..)
    , P_Pattern(..)
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
@@ -23,7 +25,6 @@ module Ampersand.Core.ParseTree (
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
-
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
    , P_Concept(..), P_Sign(..)
@@ -79,6 +80,16 @@ data MetaData = MetaData { pos :: Origin
               } deriving (Show)
 instance Traced MetaData where
   origin = pos
+
+data EnforceOperator = 
+      IsSuperSet Origin 
+    | IsSubSet Origin
+    | IsSameSet Origin
+data P_Enforce a = P_Enforce
+     { pos :: !Origin
+     , enfRel :: !P_NamedRel
+     , enfOp  :: !EnforceOperator
+     , enfExpr :: !(Term a)}
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
