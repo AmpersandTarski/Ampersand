@@ -91,8 +91,9 @@ keywords  = L.nub $
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
-              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", ".",
-              ":=", ">:",":<"  ]
+              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."
+              , ":=", ">:",":<"
+            ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]
