@@ -159,7 +159,7 @@ mainLexer p cs@(c:s)
                tokt | iskeyword name'' = LexKeyword name''
                     | otherwise   = LexSafeID name''
            in returnToken tokt p mainLexer p' s'
-     | isOperatorBegin c
+     | prefixIsOperator cs  
          = let (name', s') = getOp cs
            in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
@@ -198,11 +198,9 @@ isSymbol c = c `elem` symbols
 isOperator :: String -> Bool
 isOperator str = str `elem` operators
 
-isOperatorBegin :: Char -> Bool
-isOperatorBegin c = c `elem` mapMaybe head operators
-   where head :: [a] -> Maybe a
-         head (a:_) = Just a
-         head []    = Nothing
+prefixIsOperator :: String -> Bool
+prefixIsOperator str = any (`L.isPrefixOf` str) operators
+
 
 -- | Tells if a character is valid as character in an identifier. Because there are
 --   different rules for the first character of an identifier and the rest of the
