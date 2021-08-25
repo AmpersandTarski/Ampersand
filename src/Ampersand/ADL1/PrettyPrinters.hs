@@ -114,7 +114,7 @@ instance Pretty Role where
     pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _) =
+    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
           text "PATTERN"
           <+>  quoteConcept nm
           <+\> perline rls
@@ -127,6 +127,7 @@ instance Pretty P_Pattern where
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
+          <+\> perline enfs
           <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where

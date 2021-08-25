@@ -146,6 +146,7 @@ pPatternDef
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]<>concat [p | Pd (_,p)<-pes]
              , pt_end = end
+             , pt_enfs = [e | Penf e<-pes]
              }
 
 -- PatElem used by PATTERN

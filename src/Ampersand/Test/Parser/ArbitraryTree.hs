@@ -150,7 +150,7 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> identifier  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
     arbitrary = P_Relation 

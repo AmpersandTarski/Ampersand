@@ -66,7 +66,7 @@ data P_Context
          , ctx_ps ::     ![PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   ![P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
          , ctx_metas ::  ![MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         , ctx_enfs ::   ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this context
+         , ctx_enfs ::   ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this context, outside the scope of patterns
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
@@ -118,19 +118,20 @@ instance Unique Role where
  showUnique = name
 
 data P_Pattern
-   = P_Pat { pos ::      Origin            -- ^ the starting position in the file in which this pattern was declared.
-           , pt_nm ::    Text            -- ^ Name of this pattern
-           , pt_rls ::   [P_Rule TermPrim] -- ^ The user defined rules in this pattern
-           , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
-           , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_cds ::   [PConceptDef]    -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
-           , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
-           , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
-           , pt_xps ::   [PPurpose]        -- ^ The purposes of elements defined in this pattern
-           , pt_pop ::   [P_Population]    -- ^ The populations that are local to this pattern
-           , pt_end ::   Origin            -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pos ::      !Origin            -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm ::    !Text            -- ^ Name of this pattern
+           , pt_rls ::   ![P_Rule TermPrim] -- ^ The user defined rules in this pattern
+           , pt_gns ::   ![PClassify]       -- ^ The generalizations defined in this pattern
+           , pt_dcs ::   ![P_Relation]      -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: ![P_RoleRule]      -- ^ The assignment of roles to rules.
+           , pt_cds ::   ![PConceptDef]    -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: ![Representation]  -- ^ The type into which concepts is represented
+           , pt_ids ::   ![P_IdentDef]      -- ^ The identity definitions defined in this pattern
+           , pt_vds ::   ![P_ViewDef]       -- ^ The view definitions defined in this pattern
+           , pt_xps ::   ![PPurpose]        -- ^ The purposes of elements defined in this pattern
+           , pt_pop ::   ![P_Population]    -- ^ The populations that are local to this pattern
+           , pt_end ::   !Origin            -- ^ the end position in the file in which this pattern was declared.
+           , pt_enfs ::  ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this pattern
            } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where

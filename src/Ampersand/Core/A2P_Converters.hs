@@ -74,6 +74,7 @@ aPattern2pPattern pat =
        , pt_xps   = mapMaybe aPurpose2pPurpose . ptxps $ pat
        , pt_pop   = map aPopulation2pPopulation . ptups $ pat
        , pt_end   = ptend pat
+       , pt_enfs  = [] --TODO: get the enforcements from the A_structure
        }
 
 aRule2pRule :: Rule -> P_Rule TermPrim
