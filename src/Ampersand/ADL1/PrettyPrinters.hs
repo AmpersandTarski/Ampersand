@@ -12,7 +12,7 @@ import           RIO.Char (toUpper)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
+import qualified RIO.Text.Partial as Partial(replace)
 import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
@@ -44,6 +44,11 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
               escape x = replace' x (T.intersperse ' ' x)
+              replace' :: Text -> Text -> Text -> Text
+              replace' needle replacement haystack 
+                 | T.null needle = fatal "Empty needle."
+                 | otherwise = -- replace is now safe to use, because we have a non-empty needle
+                               Partial.replace needle replacement haystack
 
 isId :: Text -> Bool
 isId xs = 
@@ -396,8 +401,4 @@ instance Pretty PAtomValue where
        ScriptDateTime _ x -> text . show $ x
 
 
-replace' :: Text -> Text -> Text -> Text
-replace' needle replacement haystack 
-   | T.null needle = fatal "Empty needle."
-   | otherwise = Partial.replace needle replacement haystack
 
