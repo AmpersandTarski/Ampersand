@@ -80,7 +80,7 @@ separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -98,6 +98,7 @@ instance Pretty P_Context where
                <+\> perline gs
                <+\> perline ifcs
                <+\> perline pops
+               <+\> perline enfs
                <+\> text "ENDCONTEXT"
              
 instance Pretty MetaData where
@@ -206,6 +207,15 @@ instance Pretty (P_Rule TermPrim) where
                 viol
            where rName = if T.null nm then empty
                          else maybeQuote nm <> text ":"
+instance Pretty (P_Enforce TermPrim) where
+    pretty (P_Enforce _ rel op expr) =
+        text "ENFORCE" <+> pretty rel <+> pretty op <~>
+        expr
+instance Pretty EnforceOperator where
+    pretty op = case op of
+        IsSuperSet _ -> text ">:"
+        IsSubSet _   -> text ":<"
+        IsSameSet _  -> text ":="
 
 instance Pretty PConceptDef where
     pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser

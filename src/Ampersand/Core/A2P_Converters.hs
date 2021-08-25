@@ -46,6 +46,7 @@ aCtx2pCtx ctx =
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
       , ctx_metas  = ctxmetas ctx
+      , ctx_enfs   = [] --TODO See what benefit it has to have enformcement statements in the A-structure. 
       }
 
 aConcDef2pConcDef :: AConceptDef -> PConceptDef

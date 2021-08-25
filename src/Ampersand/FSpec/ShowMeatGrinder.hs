@@ -45,6 +45,7 @@ metaModel mmLabel =
       , ctx_ps     = []
       , ctx_pops   = []
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where
     transformers = case mmLabel of
@@ -73,6 +74,7 @@ grind transformers userFspec =
       , ctx_ps     = []
       , ctx_pops   = map transformer2pop filtered
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where
     filtered :: [Transformer]

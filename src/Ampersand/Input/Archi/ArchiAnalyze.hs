@@ -126,6 +126,7 @@ mkArchiContext [archiRepo] pops = pure
       , ctx_ps     = archiPurps
       , ctx_pops   = archiPops
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where -- vwAts picks quadruples that belong to one view, to assemble a pattern for that view.
         vwAts :: ArchiObj -> [(P_Population,P_Relation,Maybe Text,PPurpose)]

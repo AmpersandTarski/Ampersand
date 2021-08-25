@@ -55,6 +55,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_ps     = [e | CPrp e<-ces]                     -- The purposes defined in this context, outside the scope of patterns
             , ctx_pops   = [p | CPop p<-ces] <> concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
+            , ctx_enfs   = [x | CEnf x <- ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
        )

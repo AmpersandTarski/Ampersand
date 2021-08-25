@@ -49,23 +49,24 @@ import           Data.Traversable
 import           Data.Typeable (typeOf)
 
 data P_Context
-   = PCtx{ ctx_nm ::     Text             -- ^ The name of this context
-         , ctx_pos ::    [Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Maybe Lang         -- ^ The language specified on the top-level context. If omitted, English will be the default.
-         , ctx_markup :: Maybe PandocFormat -- ^ The default markup format for free text in this context
-         , ctx_pats ::   [P_Pattern]        -- ^ The patterns defined in this context
-         , ctx_rs ::     [P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctx_ds ::     [P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
-         , ctx_cs ::     [PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
-         , ctx_ks ::     [P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctx_rrules :: [P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
-         , ctx_reprs ::  [Representation]
-         , ctx_vs ::     [P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
-         , ctx_ifcs ::   [P_Interface]      -- ^ The interfaces defined in this context
-         , ctx_ps ::     [PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
-         , ctx_metas ::  [MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+   = PCtx{ ctx_nm ::     !Text             -- ^ The name of this context
+         , ctx_pos ::    ![Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctx_lang ::   !(Maybe Lang)         -- ^ The language specified on the top-level context. If omitted, English will be the default.
+         , ctx_markup :: !(Maybe PandocFormat) -- ^ The default markup format for free text in this context
+         , ctx_pats ::   ![P_Pattern]        -- ^ The patterns defined in this context
+         , ctx_rs ::     ![P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_ds ::     ![P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
+         , ctx_cs ::     ![PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctx_ks ::     ![P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctx_rrules :: ![P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+         , ctx_reprs ::  ![Representation]
+         , ctx_vs ::     ![P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     ![PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_ifcs ::   ![P_Interface]      -- ^ The interfaces defined in this context
+         , ctx_ps ::     ![PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
+         , ctx_pops ::   ![P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
+         , ctx_metas ::  ![MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+         , ctx_enfs ::   ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this context
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
@@ -84,12 +85,14 @@ instance Traced MetaData where
 data EnforceOperator = 
       IsSuperSet Origin 
     | IsSubSet Origin
-    | IsSameSet Origin
+    | IsSameSet Origin 
+    deriving (Show)
+
 data P_Enforce a = P_Enforce
      { pos :: !Origin
      , enfRel :: !P_NamedRel
      , enfOp  :: !EnforceOperator
-     , enfExpr :: !(Term a)}
+     , enfExpr :: !(Term a)} deriving (Show)
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
@@ -955,6 +958,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_ps     = fromContextsKeepDoubles ctx_ps
       , ctx_pops   = mergePops (ctx_pops ctx1<>ctx_pops ctx2)
       , ctx_metas  = fromContextsKeepDoubles ctx_metas
+      , ctx_enfs   = fromContextsKeepDoubles ctx_enfs
       }
     where
       -- NOTE:
