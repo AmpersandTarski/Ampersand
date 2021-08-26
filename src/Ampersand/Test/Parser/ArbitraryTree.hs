@@ -240,7 +240,11 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
         <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_Enforce a) where
-    arbitrary = P_Enforce <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Enforce <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary `suchThat` (not . isForRulesOnly)
+      where isForRulesOnly :: Term a1 -> Bool 
+            isForRulesOnly PEqu{} = True
+            isForRulesOnly PInc{} = True
+            isForRulesOnly _ = False
 
 instance Arbitrary EnforceOperator where
     arbitrary = oneof 
