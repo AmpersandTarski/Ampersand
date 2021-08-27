@@ -130,7 +130,7 @@ instance Disambiguatable P_ViewD where
                         )
    where constraints = Cnstr [MustBe (pCpt2aCpt cptMap c)] []
 instance Disambiguatable P_Enforce where
-  disambInfo cptMap (P_Enforce orig pRel op term) i = fatal "@sjcjoosten, zou jij hier naar kunnen kijken? Het idee is dat: source(pRel) `matches` source(term) && target(pRel) `matches` target(term). Zie ook P2AConverters.hs, regel 880."
+  disambInfo _cptMap (P_Enforce _orig _pRel _op _term) _i = fatal "@sjcjoosten, zou jij hier naar kunnen kijken? Het idee is dat: source(pRel) `matches` source(term) && target(pRel) `matches` target(term). Zie ook P2AConverters.hs, regel 880."
 instance Disambiguatable P_ViewSegment where
   disambInfo cptMap (P_ViewSegment a b c) i = (P_ViewSegment a b c', r)
     where (c', r) = disambInfo cptMap c i

@@ -870,14 +870,14 @@ pCtx2aCtx env
     typeCheckEnforce :: ContextInfo ->
                  Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Enforce (TermPrim, DisambPrim) -> Guarded AEnforce
-    typeCheckEnforce ci mPat P_Enforce { pos = pos'
+    typeCheckEnforce ci _mPat P_Enforce { pos = pos'
                                        , penfRel = pRel
                                        , penfOp =  oper
                                        , penfExpr= x
                                        }
-     = do (expr,(srcBounded,tgtBounded)) <- typecheckTerm ci x
+     = do (expr,(_srcBounded,_tgtBounded)) <- typecheckTerm ci x
           rel <- namedRel2Decl (conceptMap ci) (declDisambMap ci) pRel
-          -- TODO: Make sure sources and targets match. @sjcjoosten, could you please help me out on this? (Zie ook Disambiguate.hs, regel 133)
+          fatal "TODO: Make sure sources and targets match. @sjcjoosten, could you please help me out on this? (Zie ook Disambiguate.hs, regel 133)"
           return AEnforce { pos=pos' 
                           , enfRel=rel
                           , enfOp=oper
