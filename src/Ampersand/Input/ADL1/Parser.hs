@@ -181,7 +181,7 @@ data PatElem = Pr (P_Rule TermPrim)
 pEnforce :: AmpParser (P_Enforce TermPrim)
 pEnforce = P_Enforce <$> currPos
                  <*  pKey "ENFORCE"
-                 <*> pNamedRel
+                 <*> (PNamedR <$> pNamedRel)
                  <*> pEnforceOperator
                  <*> pTerm
      where

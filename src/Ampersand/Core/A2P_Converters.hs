@@ -53,7 +53,7 @@ aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
 aEnforce2pEnforce (AEnforce orig rel op expr) =
   P_Enforce
     { pos = orig,
-      penfRel = aRelation2pNamedRel rel,
+      penfRel = PNamedR . aRelation2pNamedRel $ rel,
       penfOp = op,
       penfExpr = aExpression2pTermPrim expr
     }
