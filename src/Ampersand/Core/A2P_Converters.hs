@@ -46,8 +46,17 @@ aCtx2pCtx ctx =
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
       , ctx_metas  = ctxmetas ctx
-      , ctx_enfs   = [] --TODO See what benefit it has to have enformcement statements in the A-structure. 
+      , ctx_enfs   = map aEnforce2pEnforce . ctxEnforces $ ctx 
       }
+
+aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
+aEnforce2pEnforce (AEnforce orig rel op expr) =
+  P_Enforce
+    { pos = orig,
+      penfRel = aRelation2pNamedRel rel,
+      penfOp = op,
+      penfExpr = aExpression2pTermPrim expr
+    }
 
 aConcDef2pConcDef :: AConceptDef -> PConceptDef
 aConcDef2pConcDef aCd =
@@ -68,7 +77,7 @@ aPattern2pPattern pat =
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
        , pt_RRuls = map aRoleRule2pRoleRule . ptrrs $ pat
        , pt_cds   = map aConcDef2pConcDef (ptcds pat)
-       , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
+       , pt_Reprs = ptrps pat
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
        , pt_vds   = map aViewDef2pViewDef . ptvds $ pat
        , pt_xps   = mapMaybe aPurpose2pPurpose . ptxps $ pat

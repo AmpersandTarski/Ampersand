@@ -12,6 +12,7 @@ import Ampersand.Core.ParseTree (
          , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
+         , P_Enforce(..)
          , P_Context(..), mergeContexts
          , MetaData(..)
          , P_RoleRule(..)
@@ -56,6 +57,8 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Relation(..), Relations, getExpressionRelation, showRel
          , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
+         , Representation(..)
+         , AEnforce(..)
          , AConceptDef(..)
          , Conjunct(..)
          , PAtomValue(..)
