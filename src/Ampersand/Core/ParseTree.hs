@@ -90,10 +90,14 @@ data EnforceOperator =
 
 data P_Enforce a = P_Enforce
      { pos :: !Origin
-     , enfRel :: !P_NamedRel
-     , enfOp  :: !EnforceOperator
-     , enfExpr :: !(Term a)} deriving (Show)
-
+     , penfRel :: !P_NamedRel
+     , penfOp  :: !EnforceOperator
+     , penfExpr :: !(Term a)} deriving (Show)
+instance Functor P_Enforce where fmap = fmapDefault
+instance Foldable P_Enforce where foldMap = foldMapDefault
+instance Traversable P_Enforce where
+  traverse f (P_Enforce orig rel op expr)  =
+    P_Enforce orig rel op <$> traverse f expr
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
