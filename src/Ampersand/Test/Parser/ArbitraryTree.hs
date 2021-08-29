@@ -239,12 +239,18 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
         <*> arbitrary
         <*> arbitrary
 
-instance Arbitrary a => Arbitrary (P_Enforce a) where
-    arbitrary = P_Enforce <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary `suchThat` (not . isForRulesOnly)
-      where isForRulesOnly :: Term a1 -> Bool 
+instance Arbitrary (P_Enforce TermPrim) where
+    arbitrary = P_Enforce <$> arbitrary 
+                          <*> arbitrary `suchThat` isNamedRelation
+                          <*> arbitrary
+                          <*> arbitrary `suchThat` (not . isForRulesOnly)
+      where isForRulesOnly :: Term TermPrim -> Bool 
             isForRulesOnly PEqu{} = True
             isForRulesOnly PInc{} = True
             isForRulesOnly _ = False
+            isNamedRelation :: TermPrim -> Bool
+            isNamedRelation PNamedR{} = True 
+            isNamedRelation _ = False
 
 instance Arbitrary EnforceOperator where
     arbitrary = oneof 
