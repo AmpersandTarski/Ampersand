@@ -12,7 +12,7 @@ import Ampersand.Core.ParseTree (
          , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
-         , P_Enforce(..)
+         , P_Enforce(..), EnforceOperator(..)
          , P_Context(..), mergeContexts
          , MetaData(..)
          , P_RoleRule(..)

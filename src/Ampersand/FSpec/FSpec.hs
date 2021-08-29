@@ -139,6 +139,7 @@ data FSpec = FSpec { fsName ::       Text
                    , largestConcept :: A_Concept -> A_Concept
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
+                   , allEnforces :: [AEnforce]
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = originalContext f == originalContext f'
@@ -164,13 +165,14 @@ instance Hashable FSpec where
         composeHash s fun = s `hashWithSalt` fun fSpec 
 
 instance Language FSpec where
-  relsDefdIn = relsDefdIn.originalContext
-  udefrules  = udefrules.originalContext
-  identities = identities.originalContext
-  viewDefs   = viewDefs.originalContext
-  gens       = gens.originalContext
-  patterns   = patterns.originalContext
-
+  relsDefdIn = relsDefdIn . originalContext
+  udefrules  = udefrules . originalContext
+  identities = identities . originalContext
+  viewDefs   = viewDefs . originalContext
+  enforces   = enforces . originalContext
+  gens       = gens . originalContext
+  patterns   = patterns . originalContext
+  udefRoleRules = udefRoleRules . originalContext
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
                  , atmVal   :: AAtomValue
@@ -202,29 +204,6 @@ instance ConceptStructure FSpec where
   concs         = allConcepts
   expressionsIn = allExprs 
 
-
---type Attributes = [Attribute]
---data Attribute  = Attr { fld_name :: Text        -- The name of this attribute
---                       , fld_sub :: Attributes        -- all sub-attributes
---                       , fld_expr :: Expression    -- The expression by which this attribute is attached to the interface
---                       , fld_rel :: Relation      -- The relation to which the database table is attached.
---                       , fld_editable :: Bool          -- can this attribute be changed by the user of this interface?
---                       , fld_list :: Bool          -- can there be multiple values in this attribute?
---                       , fld_must :: Bool          -- is this attribute obligatory?
---                       , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
---                       , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
---                       , fld_insAble :: Bool          -- can the user insert in this attribute?
---                       , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this attribute
---                       , fld_delAble :: Bool          -- can the user delete this attribute?
---                       , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this attribute
---                       }
-
-{- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
- - "The properties of the Interface Operation component are as follows:
- - ...
- - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
- - ..."
--}
 
 instance Named FSpec where
   name = fsName
@@ -516,4 +495,5 @@ emptyFSpec = FSpec { fsName = ""
                    , largestConcept = fatal "Don't ask for the largest concept in the empty FSpec."
                    , specializationsOf = fatal "Don't ask for specializations in the empty FSpec."
                    , generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec."
+                   , allEnforces = []
                    }

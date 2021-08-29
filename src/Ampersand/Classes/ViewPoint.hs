@@ -1,6 +1,6 @@
 
 module Ampersand.Classes.ViewPoint 
-   (Language(..)) 
+   (Language(..),enforce2Rules) 
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..),Identity)
@@ -19,19 +19,22 @@ class Language a where
                                      --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are
                                      --   used in a.)
   udefrules :: a -> Rules            -- ^ all user defined rules that are maintained within this viewpoint,
-                                     --   which are not property- and not identity rules.
+                                     --   which are not property-, enforce- and not identity rules.
   proprules :: a -> Rules            -- ^ all property rules that are maintained within this viewpoint.
   proprules x   = Set.fromList $ 
                  [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
-  identityRules x    = Set.fromList . map ruleFromIdentity $ identities x
+  identityRules x  = Set.fromList . map ruleFromIdentity $ identities x
+  enforceRules  :: a -> Rules       -- all enforce rules that are maintained within this viewpoint.
+  enforceRules x = Set.fromList . concatMap enforce2Rules . enforces $ x
   allRules :: a -> Rules
-  allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x
+  allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x
   identities :: a -> [IdentityRule]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
+  enforces :: a -> [AEnforce]        -- all Enforce statements that are defined in a
   gens :: a -> [AClassify]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
-
+  udefRoleRules :: a -> [A_RoleRule] -- ^ all user defined RoleRules that are maintained within this viewpoint
 ruleFromIdentity :: IdentityRule -> Rule
 ruleFromIdentity identity
  = mkKeyRule $
@@ -64,15 +67,19 @@ instance (Eq a,Language a) => Language [a] where
   udefrules   = Set.unions . map udefrules 
   identities  =       concatMap identities
   viewDefs    =       concatMap viewDefs
+  enforces    =       concatMap enforces
   gens        = L.nub . concatMap gens
   patterns    =       concatMap patterns
+  udefRoleRules =     concatMap udefRoleRules
 instance (Eq a,Language a) => Language (Set.Set a) where
   relsDefdIn  = Set.unions . map relsDefdIn . Set.elems
   udefrules   = Set.unions . map udefrules  . Set.elems
   identities  = L.nub . concatMap identities  . Set.elems
   viewDefs    = L.nub . concatMap viewDefs    . Set.elems
+  enforces    = L.nub . concatMap enforces    . Set.elems
   gens        = L.nub . concatMap gens        . Set.elems
   patterns    = L.nub . concatMap patterns    . Set.elems
+  udefRoleRules = L.nub . concatMap udefRoleRules . Set.elems
   
 instance Language A_Context where
   relsDefdIn context = uniteRels ( relsDefdIn (patterns context)
@@ -90,14 +97,47 @@ instance Language A_Context where
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
   identities   context =       concatMap identities (ctxpats context) <> ctxks context
   viewDefs     context =       concatMap viewDefs   (ctxpats context) <> ctxvs context
-  gens         context = L.nub $ concatMap gens       (ctxpats context) <> ctxgs context
+  enforces     context =       concatMap enforces   (ctxpats context) <> ctxEnforces context
+  gens         context = L.nub $ concatMap gens     (ctxpats context) <> ctxgs context
   patterns             =       ctxpats
-
+  udefRoleRules context =      concatMap udefRoleRules (ctxpats context) <> ctxrrules context
 instance Language Pattern where
   relsDefdIn     = ptdcs
   udefrules      = ptrls   -- all user defined rules in this pattern
   identities     = ptids
   viewDefs       = ptvds
+  enforces       = ptenfs
   gens           = ptgns
   patterns   pat = [pat]
+  udefRoleRules  = ptrrs
 
+enforce2Rules :: AEnforce -> [Rule]
+enforce2Rules (AEnforce orig rel op expr mPat) = 
+    case op of
+                IsSuperSet{} -> [insPair] 
+                IsSubSet{}   -> [delPair]
+                IsSameSet{}  -> [insPair, delPair]
+  where insPair = theRule "ins" "InsPair" (EInc (EDcD rel, expr))
+        delPair = theRule "del" "DelPair" (EInc (expr, EDcD rel))
+        theName txt = "Compute `"<>name rel --TODO: Fix. This needs to show the name and full signature, to avoid name conflicts of rules. There should be a function to show that somewhere.
+                        <>"` by "<>txt  
+        viol :: Text -> Maybe (PairView Expression)
+        viol txt = Just . PairView $ 
+            PairViewText orig ("{EX} "<>txt<>";"<>name rel<>";"<>name (source rel)<>";")
+            NE.:| 
+            [ PairViewExp orig Src expr
+            , PairViewText orig (";"<>name (target rel)<>";")
+            , PairViewExp orig Tgt expr
+            ]
+        theRule namePart violPart fExpr =
+            Ru { rrnm=theName namePart
+               , formalExpression=fExpr
+               , rrfps =orig
+               , rrmean =[]
+               , rrmsg  =[]
+               , rrviol =viol violPart
+               , rrdcl=Nothing
+               , rrpat=mPat
+               , r_usr=Enforce
+               , isSignal=True
+               }

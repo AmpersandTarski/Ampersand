@@ -253,7 +253,7 @@ pCtx2aCtx env
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations   <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
-      enforces    <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
+      enforces'   <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
@@ -274,7 +274,7 @@ pCtx2aCtx env
                      , ctxps = purposes
                      , ctxmetas = p_metas
                      , ctxInfo = contextInfo
-                     , ctxEnforces = enforces
+                     , ctxEnforces = enforces'
                      }
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx                 -- Check whether all purposes refer to existing objects
@@ -822,7 +822,7 @@ pCtx2aCtx env
          <*> traverse pure (pt_Reprs ppat)
          <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
        where
-        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces
+        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces'
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
@@ -836,7 +836,7 @@ pCtx2aCtx env
                    , ptids = keys'
                    , ptvds = views'
                    , ptxps = xpls
-                   , ptenfs = enforces
+                   , ptenfs = enforces'
                    }
     pRul2aRul :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
@@ -871,7 +871,7 @@ pCtx2aCtx env
                      -> Maybe Text -- name of pattern the enforce is defined in (if any)
                      -> P_Enforce (TermPrim, DisambPrim) 
                      -> Guarded AEnforce
-    typeCheckEnforce ci _mPat P_Enforce { pos = pos'
+    typeCheckEnforce ci mPat P_Enforce { pos = pos'
                                        , penfRel = pRel
                                        , penfOp =  oper
                                        , penfExpr= x
@@ -883,6 +883,7 @@ pCtx2aCtx env
                           , enfRel=rel
                           , enfOp=oper
                           , enfExpr=expr
+                          , enfPatName=mPat
                           }
          (o,dx) -> cannotDisambiguate o dx 
           

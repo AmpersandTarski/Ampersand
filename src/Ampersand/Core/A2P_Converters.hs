@@ -22,6 +22,7 @@ module Ampersand.Core.A2P_Converters (
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
+import Ampersand.Classes
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -50,7 +51,7 @@ aCtx2pCtx ctx =
       }
 
 aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
-aEnforce2pEnforce (AEnforce orig rel op expr) =
+aEnforce2pEnforce (AEnforce orig rel op expr _) =
   P_Enforce
     { pos = orig,
       penfRel = PNamedR . aRelation2pNamedRel $ rel,
@@ -75,7 +76,7 @@ aPattern2pPattern pat =
        , pt_rls   = map aRule2pRule . Set.elems . ptrls $ pat
        , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
-       , pt_RRuls = map aRoleRule2pRoleRule . ptrrs $ pat
+       , pt_RRuls = map aRoleRule2pRoleRule . udefRoleRules $ pat
        , pt_cds   = map aConcDef2pConcDef (ptcds pat)
        , pt_Reprs = ptrps pat
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat

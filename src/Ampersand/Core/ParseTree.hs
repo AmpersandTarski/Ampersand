@@ -86,7 +86,7 @@ data EnforceOperator =
       IsSuperSet Origin 
     | IsSubSet Origin
     | IsSameSet Origin 
-    deriving (Show)
+    deriving (Show,Eq)
 
 data P_Enforce a = P_Enforce
      { pos :: !Origin

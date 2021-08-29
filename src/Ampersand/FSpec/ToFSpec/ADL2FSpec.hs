@@ -94,6 +94,7 @@ makeFSpec env context
               , largestConcept = getLargestConcept 
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
+              , allEnforces = fSpecAllEnforces
               }
    where           
      getLargestConcept cpt = case largerConcepts (gens context) cpt of
@@ -141,7 +142,7 @@ makeFSpec env context
      conjunctViolations :: Conjunct -> AAtomPairs
      conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
      contextinfo = ctxInfo context
-
+     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
      fSpecAllConcepts = concs context
      fSpecAllInterfaces :: [Interface]
      fSpecAllInterfaces = map enrichIfc (ctxifcs context)
@@ -195,9 +196,10 @@ makeFSpec env context
           forThisRule x = name r `elem` arRules x
      isUserDefined rul =
        case r_usr rul of
-         UserDefined  -> True
-         Propty -> False
-         Identity     -> False
+         UserDefined -> True
+         Propty      -> False
+         Identity    -> False
+         Enforce     -> False
   -- Lookup view by id in fSpec.
      lookupView' :: Text -> ViewDef
      lookupView'  viewId =
@@ -487,3 +489,4 @@ tblcontents ci ps plug
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = "FORM", btKeys = []}
+

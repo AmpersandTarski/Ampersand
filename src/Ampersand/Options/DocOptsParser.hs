@@ -29,14 +29,14 @@ docOptsParser =
   where
     chaptersP :: Parser [Chapter]
     chaptersP =
-      aap
+      parse
         <$> chapterParser Intro
         <*> chapterParser SharedLang
         <*> chapterParser Diagnosis
         <*> chapterParser ConceptualAnalysis
         <*> chapterParser DataAnalysis
       where
-        aap intro sharedlang diagnosis conceptualanalysis dataanalysis
+        parse intro sharedlang diagnosis conceptualanalysis dataanalysis
           | length x /= length [c :: Chapter | c <- [minBound ..]] =
             --To fix this: make sure all chapters are handled in this function.
             fatal "Not all chapters are implemented thru options."
