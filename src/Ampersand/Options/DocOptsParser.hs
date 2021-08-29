@@ -29,14 +29,14 @@ docOptsParser =
   where
     chaptersP :: Parser [Chapter]
     chaptersP =
-      parse
+      build
         <$> chapterParser Intro
         <*> chapterParser SharedLang
         <*> chapterParser Diagnosis
         <*> chapterParser ConceptualAnalysis
         <*> chapterParser DataAnalysis
       where
-        parse intro sharedlang diagnosis conceptualanalysis dataanalysis
+        build intro sharedlang diagnosis conceptualanalysis dataanalysis
           | length x /= length [c :: Chapter | c <- [minBound ..]] =
             --To fix this: make sure all chapters are handled in this function.
             fatal "Not all chapters are implemented thru options."
@@ -46,7 +46,7 @@ docOptsParser =
             ([], ys) -> case [minBound ..] L.\\ ys of
               [] ->
                 exitWith $
-                  PosAndNegChaptersSpecified
+                  PosA ndNegChaptersSpecified
                     ["Are you kidding? do you realy want an empty document?"]
               cs -> cs -- All chapters exept ys
             (xs, ys) ->
