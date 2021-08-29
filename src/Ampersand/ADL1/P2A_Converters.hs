@@ -265,7 +265,7 @@ pCtx2aCtx env
                      , ctxcdsOutPats = allConceptDefsOutPats
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
-                     , ctxrrules = allRoleRules
+                     , ctxrrules = udefRoleRules'
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
                      , ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens
@@ -862,7 +862,7 @@ pCtx2aCtx env
                     , rrdcl = Nothing
                     , rrpat = mPat
                     , r_usr = UserDefined
-                    , isSignal = not . any (\x -> nm `elem` arRules x) $ allRoleRules
+                    , isSignal = not . any (\x -> nm `elem` arRules x) $ udefRoleRules'
                     }
     pEnforce2aEnforce :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
                       -> P_Enforce TermPrim -> Guarded AEnforce
@@ -952,8 +952,8 @@ pCtx2aCtx env
     allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) p_conceptdefs
     allConceptDefs :: [AConceptDef]
     allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs<>concatMap pt_cds p_patterns)
-    allRoleRules :: [A_RoleRule]
-    allRoleRules = map pRoleRule2aRoleRule
+    udefRoleRules' :: [A_RoleRule]
+    udefRoleRules' = map pRoleRule2aRoleRule
                       (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept

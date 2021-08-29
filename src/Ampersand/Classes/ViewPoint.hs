@@ -35,6 +35,8 @@ class Language a where
   gens :: a -> [AClassify]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   udefRoleRules :: a -> [A_RoleRule] -- ^ all user defined RoleRules that are maintained within this viewpoint
+  allRoleRules :: a -> [A_RoleRule ]
+  allRoleRules x = udefRoleRules x <> (concatMap roleRuleFromEnforceRule . enforces $ x)
 ruleFromIdentity :: IdentityRule -> Rule
 ruleFromIdentity identity
  = mkKeyRule $
@@ -111,6 +113,13 @@ instance Language Pattern where
   patterns   pat = [pat]
   udefRoleRules  = ptrrs
 
+roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
+roleRuleFromEnforceRule = map mkRoleRule . enforce2Rules
+  where mkRoleRule rul = 
+          A_RoleRule { arPos= origin rul
+                     , arRoles= Role "ExecEngine" NE.:| []
+                     , arRules= name rul NE.:| []
+                     }
 enforce2Rules :: AEnforce -> [Rule]
 enforce2Rules (AEnforce orig rel op expr mPat) = 
     case op of

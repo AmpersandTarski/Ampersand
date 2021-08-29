@@ -46,7 +46,7 @@ docOptsParser =
             ([], ys) -> case [minBound ..] L.\\ ys of
               [] ->
                 exitWith $
-                  PosA ndNegChaptersSpecified
+                  PosAndNegChaptersSpecified
                     ["Are you kidding? do you realy want an empty document?"]
               cs -> cs -- All chapters exept ys
             (xs, ys) ->
