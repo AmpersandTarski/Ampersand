@@ -97,8 +97,10 @@ instance Functor P_Enforce where fmap = fmapDefault
 instance Foldable P_Enforce where foldMap = foldMapDefault
 instance Traversable P_Enforce where
   traverse f (P_Enforce orig rel op expr)  =
-    P_Enforce orig rel op <$> traverse f expr
-    
+    (\r e -> P_Enforce orig r op e) <$> f rel
+                                    <*> traverse f expr
+
+
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
@@ -467,8 +469,8 @@ instance Traced (P_SubIfc a) where
 instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 instance Traversable P_BoxItem where
- traverse f (P_BxExpr nm pos' ctx mCrud mView msub)
-  = (\ctx' msub'-> P_BxExpr nm pos' ctx' mCrud mView msub') 
+ traverse f (P_BxExpr nm orig ctx mCrud mView msub)
+  = (\ctx' msub'-> P_BxExpr nm orig ctx' mCrud mView msub') 
        <$> traverse f ctx
        <*> traverse (traverse f) msub
  traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)

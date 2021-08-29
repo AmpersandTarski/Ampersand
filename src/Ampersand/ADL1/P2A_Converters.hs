@@ -879,7 +879,6 @@ pCtx2aCtx env
       = case pRel of
          (_,Known (EDcD rel))
            -> do (expr,(_srcBounded,_tgtBounded)) <- typecheckTerm ci x
-                 fatal "TODO: Make sure sources and targets match. @sjcjoosten, could you please help me out on this? (Zie ook Disambiguate.hs, regel 133)"
                  return AEnforce { pos=pos' 
                           , enfRel=rel
                           , enfOp=oper
