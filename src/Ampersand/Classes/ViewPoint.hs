@@ -126,8 +126,8 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
                 IsSuperSet{} -> [insPair] 
                 IsSubSet{}   -> [delPair]
                 IsSameSet{}  -> [insPair, delPair]
-  where insPair = theRule "ins" "InsPair" (EInc (EDcD rel, expr))
-        delPair = theRule "del" "DelPair" (EInc (expr, EDcD rel))
+  where insPair = theRule "ins" "InsPair" (EInc (expr, EDcD rel))
+        delPair = theRule "del" "DelPair" (EInc (EDcD rel, expr))
         theName txt = "Compute `"<>name rel --TODO: Fix. This needs to show the name and full signature, to avoid name conflicts of rules. There should be a function to show that somewhere.
                         <>"` by "<>txt  
         viol :: Text -> Maybe (PairView Expression)
