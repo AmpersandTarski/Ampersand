@@ -123,28 +123,27 @@ roleRuleFromEnforceRule = map mkRoleRule . enforce2Rules
 enforce2Rules :: AEnforce -> [Rule]
 enforce2Rules (AEnforce orig rel op expr mPat) = 
     case op of
-                IsSuperSet{} -> [insPair] 
-                IsSubSet{}   -> [delPair]
-                IsSameSet{}  -> [insPair, delPair]
-  where insPair = theRule "ins" "InsPair" (EInc (expr, EDcD rel))
-        delPair = theRule "del" "DelPair" (EInc (EDcD rel, expr))
-        theName txt = "Compute `"<>name rel --TODO: Fix. This needs to show the name and full signature, to avoid name conflicts of rules. There should be a function to show that somewhere.
-                        <>"` by "<>txt  
-        viol :: Text -> Maybe (PairView Expression)
-        viol txt = Just . PairView $ 
-            PairViewText orig ("{EX} "<>txt<>";"<>name rel<>";"<>name (source rel)<>";")
-            NE.:| 
-            [ PairViewExp orig Src expr
-            , PairViewText orig (";"<>name (target rel)<>";")
-            , PairViewExp orig Tgt expr
-            ]
-        theRule namePart violPart fExpr =
-            Ru { rrnm=theName namePart
+      IsSuperSet{} -> [insPair] 
+      IsSubSet{}   -> [delPair]
+      IsSameSet{}  -> [insPair, delPair]
+  where insPair = theRule "InsPair" (EInc (expr, bindedRel)) expr
+        delPair = theRule "DelPair" (EInc (bindedRel, expr)) bindedRel
+        theName txt = "Compute "<>showRel rel<>" using "<>txt  
+        bindedRel = EDcD rel
+        theRule command fExpr atomsComeFrom =
+            Ru { rrnm=theName command
                , formalExpression=fExpr
                , rrfps =orig
                , rrmean =[]
                , rrmsg  =[]
-               , rrviol =viol violPart
+               , rrviol =Just . PairView $ 
+                   PairViewText orig ("{EX} "<>command<>";")
+                   NE.:| 
+                   [ PairViewText orig $ name rel<>";"<>name (source rel)<>";"
+                   , PairViewExp orig Src atomsComeFrom
+                   , PairViewText orig $ ";"<>name (target rel)<>";"
+                   , PairViewExp orig Tgt atomsComeFrom
+                   ]
                , rrdcl=Nothing
                , rrpat=mPat
                , r_usr=Enforce
