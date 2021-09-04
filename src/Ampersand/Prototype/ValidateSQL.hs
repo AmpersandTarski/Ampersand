@@ -16,7 +16,7 @@ with the results from Haskell-based Ampersand rule evaluator.
 
 validateRulesSQL :: (HasLogFunc env) => FSpec ->  RIO env [Text]
 validateRulesSQL fSpec = do
-    case filter (not . isSignal . fst) (allViolations fSpec) of
+    case filter (not . isSignal fSpec . fst) (allViolations fSpec) of
        []    -> return()
        viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     hSetBuffering stdout NoBuffering

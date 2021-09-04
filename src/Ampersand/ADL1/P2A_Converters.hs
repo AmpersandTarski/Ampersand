@@ -862,7 +862,6 @@ pCtx2aCtx env
                     , rrdcl = Nothing
                     , rrpat = mPat
                     , r_usr = UserDefined
-                    , isSignal = not . any (\x -> nm `elem` arRules x) $ udefRoleRules'
                     }
     pEnforce2aEnforce :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
                       -> P_Enforce TermPrim -> Guarded AEnforce

@@ -202,7 +202,6 @@ data Rule =
         , rrdcl ::    Maybe (Prop,Relation)       -- ^ The property, if this rule originates from a property on a Relation
         , rrpat ::    Maybe Text                  -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
-        , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable
 instance Eq Rule where
   a == b = compare a b == EQ

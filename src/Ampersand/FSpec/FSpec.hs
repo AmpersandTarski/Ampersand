@@ -140,6 +140,7 @@ data FSpec = FSpec { fsName ::       Text
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    , allEnforces :: [AEnforce]
+                   , isSignal :: Rule -> Bool
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = originalContext f == originalContext f'
@@ -392,7 +393,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
 violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
 violationsOfInvariants fSpec 
   = [(r,vs) |(r,vs) <- allViolations fSpec
-            , not (isSignal r)
+            , not (isSignal fSpec r)
     ]
 defOutputLang :: FSpec -> Lang
 defOutputLang = ctxlang . originalContext
@@ -496,4 +497,5 @@ emptyFSpec = FSpec { fsName = ""
                    , specializationsOf = fatal "Don't ask for specializations in the empty FSpec."
                    , generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec."
                    , allEnforces = []
+                   , isSignal = fatal "Don't ask for isSignal in an empty FSpec."
                    }

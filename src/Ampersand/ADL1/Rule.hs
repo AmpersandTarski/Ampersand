@@ -43,7 +43,6 @@ rulefromProp prp d =
         , rrdcl = Just (prp,d)         -- For traceability and transformers: The original property and relation.
         , rrpat = decpat d      
         , r_usr = Propty
-        , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
         nm = tshow prp<>" "<>showDcl
