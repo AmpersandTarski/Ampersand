@@ -126,23 +126,22 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
       IsSuperSet{} -> [insPair] 
       IsSubSet{}   -> [delPair]
       IsSameSet{}  -> [insPair, delPair]
-  where insPair = theRule "InsPair" (EInc (expr, bindedRel)) expr
-        delPair = theRule "DelPair" (EInc (bindedRel, expr)) bindedRel
-        theName txt = "Compute "<>showRel rel<>" using "<>txt  
+  where insPair = mkRule "InsPair" (EInc (expr, bindedRel)) 
+        delPair = mkRule "DelPair" (EInc (bindedRel, expr)) 
         bindedRel = EDcD rel
-        theRule command fExpr atomsComeFrom =
-            Ru { rrnm=theName command
+        mkRule command fExpr =
+            Ru { rrnm="Compute "<>showRel rel<>" using "<> command
                , formalExpression=fExpr
                , rrfps =orig
                , rrmean =[]
                , rrmsg  =[]
                , rrviol =Just . PairView $ 
-                   PairViewText orig ("{EX} "<>command<>";")
+                     PairViewText orig ("{EX} "<>command<>";")
                    NE.:| 
                    [ PairViewText orig $ name rel<>";"<>name (source rel)<>";"
-                   , PairViewExp orig Src atomsComeFrom
+                   , PairViewExp orig Src (EDcI (source rel))
                    , PairViewText orig $ ";"<>name (target rel)<>";"
-                   , PairViewExp orig Tgt atomsComeFrom
+                   , PairViewExp orig Tgt (EDcI (target rel))
                    ]
                , rrdcl=Nothing
                , rrpat=mPat
