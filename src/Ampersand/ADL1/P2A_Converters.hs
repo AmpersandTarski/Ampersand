@@ -859,9 +859,8 @@ pCtx2aCtx env
                     , rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings
                     , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrdcl = Nothing
                     , rrpat = mPat
-                    , r_usr = UserDefined
+                    , rrkind = UserDefined
                     }
     pEnforce2aEnforce :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
                       -> P_Enforce TermPrim -> Guarded AEnforce

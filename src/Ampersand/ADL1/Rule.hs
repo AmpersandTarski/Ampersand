@@ -30,7 +30,9 @@ consequent r
      x           -> x
 
 isPropertyRule :: Rule -> Bool
-isPropertyRule = isJust . rrdcl 
+isPropertyRule r= case rrkind r of
+  Propty{} -> True
+  _ -> False 
 -- rulefromProp specifies a rule that defines property prp of relation d.
 rulefromProp :: Prop -> Relation -> Rule
 rulefromProp prp d =
@@ -40,9 +42,8 @@ rulefromProp prp d =
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrdcl = Just (prp,d)         -- For traceability and transformers: The original property and relation.
         , rrpat = decpat d      
-        , r_usr = Propty
+        , rrkind = Propty prp d
         }
        where
         nm = tshow prp<>" "<>showDcl

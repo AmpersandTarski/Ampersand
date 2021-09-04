@@ -192,14 +192,23 @@ makeFSpec env context
      
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . ctxrrules $ context
+       = case rrkind r of
+          UserDefined -> rolesFromScript
+          Propty prp dcl 
+            | prp == Uni && isUni (EDcD dcl) -> [] --Enforced by the database
+            | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
+            | otherwise -> rolesFromScript
+          Identity -> []
+          Enforce -> [Role "ExecEngine"]
+         
          where
+          rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x
      isUserDefined rul =
-       case r_usr rul of
+       case rrkind rul of
          UserDefined -> True
-         Propty      -> False
+         Propty _ _  -> False
          Identity    -> False
          Enforce     -> False
   -- Lookup view by id in fSpec.

@@ -41,7 +41,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , HasSignature(..)
          , Expression(..)
          , AClassify(..)
-         , RuleOrigin(..)
+         , RuleKind(..)
          , IdentityRule(..)
          , IdentitySegment(..)
          , ViewDef(..)

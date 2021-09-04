@@ -430,11 +430,12 @@ instance ShowHS Rule where
      ,"  , rrmean = " <> showHS env (indent<>"             ") (rrmean r)
      ,"  , rrmsg  = " <> showHS env "" (rrmsg  r)
      ,"  , rrviol = " <> showHS env "" (rrviol r)
-     ,"  , rrdcl  = " <> case rrdcl r of
-                           Just (p,d) -> "Just ("<>showHSName p<>", "<>showHSName d<>" )"
-                           Nothing    -> "Nothing"
      ,"  , rrpat  = " <> tshow (rrpat  r)
-     ,"  , r_usr  = " <> tshow (r_usr  r)
+     ,"  , rrkind  = " <> (case rrkind r of
+                            Propty prp rel -> "Propty "<>showHSName prp<>", "<>showHSName rel
+                            x -> tshow x
+                         )
+    
      ,"  }"
      ]
 
