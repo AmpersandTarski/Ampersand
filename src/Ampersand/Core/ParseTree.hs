@@ -304,26 +304,10 @@ instance Traced PAtomPair where
 instance Flippable PAtomPair where
   flp pr = pr{ppLeft = ppRight pr
              ,ppRight = ppLeft pr}
---data PSingleton
---  = PSingleton { pos :: Origin
---               , psRaw  :: Text
---               , psInterprets :: [PAtomValue]
---               }
---instance Show PSingleton where
--- show = psRaw
---instance Eq PSingleton where
---   a == b = compare a b == EQ
---instance Ord PSingleton where
--- compare a b = compare (psRaw a) (psRaw b)
---instance Traced PSingleton where
--- origin = pos
---type PSingleton = PAtomValue
+
 makePSingleton :: Text -> PAtomValue
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
---   PSingleton { psOrig =Origin "ParseTree.hs"
---              , psRaw = s
---              , psInterprets = fatal "Probably no need to make something up..."
---              }
+
 data PAtomValue
   = PSingleton Origin Text (Maybe PAtomValue)
   | ScriptString Origin Text -- string from script char to enquote with when printed
@@ -335,6 +319,7 @@ data PAtomValue
   | ScriptDate Origin Day
   | ScriptDateTime Origin UTCTime
    deriving (Typeable, Data)
+
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
   case pav of
@@ -490,15 +475,6 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
 
---instance Named TermPrim where
--- name e = case e of
---   PI _        -> "I"
---   Pid _ _     -> "I"
---   Patm _ s _  -> s
---   PVee _      -> "V"
---   Pfull _ _ _ -> "V"
---   PNamedR r   -> name r
---
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
@@ -814,12 +790,6 @@ newtype ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
 --              | ViewHtmlTemplateInline Text -- Future extension
                   deriving (Eq, Ord, Show)
 
-{- Future extension:
-data ViewText = ViewTextTemplateFile Text
-              | ViewTextTemplateInline Text
-                  deriving (Eq, Ord, Show)
--}
-
 instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
 instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault
 instance Traversable P_ViewSegmtPayLoad where
@@ -827,9 +797,6 @@ instance Traversable P_ViewSegmtPayLoad where
  traverse _ (P_ViewText a) = pure (P_ViewText a)
 
 
--- PPurpose is a parse-time constructor. It contains the name of the object it explains.
--- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
---                       Constructor      name          RefID  Explanation
 data PRef2Obj = PRef2ConceptDef Text
               | PRef2Relation P_NamedRel
               | PRef2Rule Text
