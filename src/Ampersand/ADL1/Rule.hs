@@ -34,7 +34,7 @@ isPropertyRule r= case rrkind r of
   Propty{} -> True
   _ -> False 
 -- rulefromProp specifies a rule that defines property prp of relation d.
-rulefromProp :: Prop -> Relation -> Rule
+rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp d =
      Ru { rrnm  = tshow prp<>" "<>showDcl
         , formalExpression = rExpr
@@ -62,7 +62,6 @@ rulefromProp prp d =
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Prop -> fatal "Prop should have been converted by the parser"
         meanings prop = map (Meaning . markup) [English,Dutch]
           where 
             markup lang = Markup lang (string2Blocks ReST $ f lang)
@@ -86,7 +85,6 @@ rulefromProp prp d =
                     Inj-> "Each " <>t<>" may only have one "<>s<>"" <>" in the relation "<>name d
                     Tot ->"Every "<>s<>" must have a "      <>t<>"" <>" in the relation "<>name d
                     Sur ->"Every "<>t<>" must have a "      <>s<>"" <>" in the relation "<>name d
-                    Prop -> fatal "Prop should have been converted by the parser"
                 Dutch ->
                   case prop of
                     Sym-> explByFullName lang
@@ -98,10 +96,9 @@ rulefromProp prp d =
                     Inj-> "Elke "<>t<>" mag slechts één "<>s<>   " hebben" <>" in de relatie "<>name d
                     Tot-> "Elke "<>s<>" dient één "      <>t<>" te hebben" <>" in de relatie "<>name d
                     Sur-> "Elke "<>t<>" dient een "      <>s<>" te hebben" <>" in de relatie "<>name d
-                    Prop -> fatal "Prop should have been converted by pattern the parser"
             explByFullName lang = showDcl<>" is "<>propFullName False lang prop
 
-propFullName :: Bool -> Lang -> Prop -> Text
+propFullName :: Bool -> Lang -> AProp -> Text
 propFullName isAdjective lang prop =
   case lang of 
     English ->
@@ -115,7 +112,6 @@ propFullName isAdjective lang prop =
           Sur-> "surjective"
           Inj-> "injective"
           Tot-> "total"
-          Prop -> fatal "Prop should have been converted by the parser"
     Dutch -> (if isAdjective then snd else fst) $
         case prop of
           Sym-> ("symmetrisch"    ,"symmetrische")
@@ -127,4 +123,3 @@ propFullName isAdjective lang prop =
           Sur-> ("surjectief"     ,"surjectieve")
           Inj-> ("injectief"      ,"injectieve")
           Tot-> ("totaal"         ,"totale")
-          Prop -> fatal "Prop should have been converted by the parser"

@@ -10,7 +10,7 @@ import           Ampersand.Basics
 import qualified RIO.Set as Set
 
 class HasProps r where
-    properties :: r -> Props
+    properties :: r -> AProps
 class Relational r where
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
@@ -45,7 +45,7 @@ isSESSION cpt =
 -- but tries to derive the most obvious constraints as well. The more property constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-properties' :: Expression -> Props
+properties' :: Expression -> AProps
 properties' expr = case expr of
      EDcD dcl   -> properties dcl
      EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
@@ -176,7 +176,7 @@ instance Relational Expression where        -- TODO: see if we can find more pro
  isAsy r = Asy `elem` properties' r
 
 -- Not to be exported:
-isTotSur :: Prop -> Expression -> Bool 
+isTotSur :: AProp -> Expression -> Bool 
 isTotSur prop expr 
   = case expr of
       EEqu (_,_) -> False
@@ -206,7 +206,7 @@ isTotSur prop expr
   where
     todo = prop `elem` properties' expr
 
-isUniInj :: Prop -> Expression -> Bool 
+isUniInj :: AProp -> Expression -> Bool 
 isUniInj prop expr 
   = case expr of
       EEqu (_,_) -> False

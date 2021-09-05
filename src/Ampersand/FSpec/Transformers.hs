@@ -28,7 +28,7 @@ data Transformer = Transformer
       { tRel :: Text  -- name of relation
       , tSrc :: Text  -- name of source
       , tTrg :: Text  -- name of target
-      , mults :: Props -- property constraints
+      , mults :: AProps -- property constraints
       , tPairs :: [PAtomPair]-- the population of this relation from the user's script.
       }
 
@@ -53,7 +53,7 @@ dirtyId :: Unique a => a -> PopAtom
 dirtyId = DirtyId . idWithoutType
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
-toTransformer :: (Text, Text, Text, Props, [ (PopAtom,PopAtom)] ) -> Transformer
+toTransformer :: (Text, Text, Text, AProps, [ (PopAtom,PopAtom)] ) -> Transformer
 toTransformer (rel,src,tgt,props,tuples)
  = Transformer rel src tgt props tuples'
    where

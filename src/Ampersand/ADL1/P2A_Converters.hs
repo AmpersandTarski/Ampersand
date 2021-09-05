@@ -28,6 +28,7 @@ import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
+
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
 pConcToType p = UserConcept (name p)
@@ -1107,7 +1108,7 @@ pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
        dcl = Relation
                  { decnm   = dec_nm pd
                  , decsgn  = decSign
-                 , decprps = dec_prps pd
+                 , decprps = Set.fromList . concatMap pProp2aProps $ dec_prps pd
                  , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
                  , decprL  = prL
                  , decprM  = prM
@@ -1121,17 +1122,28 @@ pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
    in checkEndoProps >> pure dcl
 
  where
+  pProp2aProps :: PProp -> [AProp]
+  pProp2aProps p = case p of 
+    P_Uni -> [Uni ]
+    P_Inj -> [Inj ]
+    P_Sur -> [Sur ]
+    P_Tot -> [Tot ]
+    P_Sym -> [Sym ]
+    P_Asy -> [Asy ]
+    P_Trn -> [Trn ]
+    P_Rfx -> [Rfx ]
+    P_Irf -> [Irf ]
+    P_Prop ->[Sym, Asy]
+
   decSign = pSign2aSign cptMap (dec_sign pd)
   checkEndoProps :: Guarded ()
   checkEndoProps
-    | source decSign == target decSign
+    | source decSign == target decSign && null xs
                 = pure ()
-    | Set.null xs
-                = pure ()
-    | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.elems xs)
-   where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `Set.intersection` dec_prps pd
-
-
+    | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.toList xs)
+   where xs =  Set.filter isEndoProp $ dec_prps pd
+         isEndoProp :: PProp -> Bool 
+         isEndoProp p = p `elem` [P_Prop, P_Sym,P_Asy,P_Trn,P_Rfx,P_Irf]
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x

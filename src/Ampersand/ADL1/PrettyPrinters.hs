@@ -138,9 +138,8 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
     pretty (P_Relation nm sign prps pragma mean _) =
         text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
-        where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
-                    | null prps                       = empty
-                    | otherwise                       = text ("["++(L.intercalate ",". map show . Set.toList) prps ++ "]") -- do not prettyprint list of properties.
+        where props | null prps                       = empty
+                    | otherwise                       = text ("["++(L.intercalate ",". map show) (Set.toList prps) ++ "]") -- do not prettyprint list of properties.
               pragmas | T.null (T.concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
@@ -377,7 +376,7 @@ instance Pretty P_Markup where
 instance Pretty PandocFormat where
     pretty = text . map toUpper . show
 
-instance Pretty Prop where
+instance Pretty PProp where
     pretty = text . map toUpper . show
 
 instance Pretty PAtomPair where

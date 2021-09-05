@@ -116,7 +116,7 @@ addRelations pCtx = enrichedContext
              = L.unzip
                [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
                           , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
-                                       in Set.fromList ([Uni |test Uni]<>[Tot |test Tot]<>[Inj |test Inj]<>[Sur |test Sur])
+                                       in Set.fromList ([P_Uni |test P_Uni]<>[P_Tot |test P_Tot]<>[P_Inj |test P_Inj]<>[P_Sur |test P_Sur])
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
                  , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations

@@ -388,7 +388,7 @@ instance Arbitrary P_Markup where
 instance Arbitrary PandocFormat where
     arbitrary = elements [minBound..]
 
-instance Arbitrary Prop where
+instance Arbitrary PProp where
     arbitrary = elements [minBound..]
 
 

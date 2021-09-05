@@ -33,7 +33,7 @@ module Ampersand.Core.ParseTree (
 
    , P_Markup(..)
 
-   , Prop(..), Props
+   , PProp(..), PProps
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -82,10 +82,10 @@ data MetaData = MetaData { pos :: Origin
 instance Traced MetaData where
   origin = pos
 
-data EnforceOperator = 
-      IsSuperSet Origin 
+data EnforceOperator =
+      IsSuperSet Origin
     | IsSubSet Origin
-    | IsSameSet Origin 
+    | IsSameSet Origin
     deriving (Show,Eq)
 
 data P_Enforce a = P_Enforce
@@ -149,7 +149,7 @@ instance Ord P_Pattern where
                         , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
-     x -> x  
+     x -> x
 instance Eq P_Pattern where
   a == b = compare a b == EQ
 instance Named P_Pattern where
@@ -180,7 +180,7 @@ instance Ord PConceptDef where
                         , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
-     x -> x  
+     x -> x
 instance Eq PConceptDef where
   a == b = compare a b == EQ
 instance Unique PConceptDef where
@@ -238,16 +238,22 @@ instance Show TType where
     Float             ->   "FLOAT"
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
-data P_Relation =
-      P_Relation { dec_nm :: Text    -- ^ the name of the relation
-            , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
-            , dec_prps :: Props     -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
-            , dec_pragma :: [Text]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-                                      -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-            , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-            , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-            } deriving (Show) --For QuickCheck error messages only!
-
+data P_Relation = P_Relation
+  { -- | the name of the relation
+    dec_nm :: !Text,
+    -- | the type. Parser must guarantee it is not empty.
+    dec_sign :: !P_Sign,
+    -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf, Prop)
+    dec_prps :: !PProps,
+    -- | Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+    dec_pragma :: ![Text],
+    -- | the optional meaning of a relation, possibly more than one for different languages.
+    dec_Mean :: ![PMeaning],
+    -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+    pos :: !Origin
+  }
+  deriving (Show) --For QuickCheck error messages only!
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
 --   However, in the parser, we need to distinguish between two relations with the same name and signature when they are in different locations.
@@ -272,7 +278,7 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
     fun rels
      = P_Relation { dec_nm     = name r0
              , dec_sign   = dec_sign r0
-             , dec_prps   = Set.unions (fmap dec_prps rels)
+             , dec_prps   =  Set.unions (dec_prps <$> NE.toList rels)
              , dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
                               []  -> dec_pragma r0
                               h:_ -> dec_pragma h
@@ -341,7 +347,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
-  
+
 instance Eq PAtomValue where
   a == b = compare a b == EQ
 
@@ -470,7 +476,7 @@ instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 instance Traversable P_BoxItem where
  traverse f (P_BxExpr nm orig ctx mCrud mView msub)
-  = (\ctx' msub'-> P_BxExpr nm orig ctx' mCrud mView msub') 
+  = (\ctx' msub'-> P_BxExpr nm orig ctx' mCrud mView msub')
        <$> traverse f ctx
        <*> traverse (traverse f) msub
  traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)
@@ -540,7 +546,7 @@ data PairViewSegment a =
 instance Eq (PairViewSegment a) where
  p1 == p2 = compare p1 p2 == EQ
 instance Ord (PairViewSegment a) where
- compare a b = fromMaybe 
+ compare a b = fromMaybe
     (fatal . T.intercalate "\n" $
        ["P_Rule a should have a non-fuzzy Origin."
        , tshow (origin a)
@@ -573,7 +579,7 @@ instance Traversable PairView where
 instance Functor PairView where fmap = fmapDefault
 instance Foldable PairView where foldMap = foldMapDefault
 
-data P_Rule a  = P_Rule 
+data P_Rule a  = P_Rule
         { pos ::  Origin            -- ^ Position in the Ampersand file
         , rr_nm ::   Text            -- ^ Name of this rule
         , rr_exp ::  Term a            -- ^ The rule expression
@@ -589,7 +595,7 @@ instance Ord (P_Rule a) where
                         , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
-     x -> x  
+     x -> x
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
   a == b = compare a b == EQ
 instance Traced (P_Rule a) where
@@ -669,15 +675,15 @@ data P_SubIfc a
               | P_InterfaceRef { pos :: !Origin
                                , si_isLink :: !Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: !Text  -- Name of the interface that is reffered to
-                               } 
+                               }
                 deriving (Show)
 
 -- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
 data BoxHeader = BoxHeader
     { pos :: !Origin
-    , btType :: !Text  
+    , btType :: !Text
     -- ^ Type of the HTML template that is used for rendering
-    , btKeys :: [TemplateKeyValue] 
+    , btKeys :: [TemplateKeyValue]
     -- ^ Key-value pairs 
     } deriving (Show,Data)
 
@@ -740,7 +746,7 @@ instance Ord (P_IdentDf a) where
                         , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
-instance Eq (P_IdentDf a) where 
+instance Eq (P_IdentDf a) where
   a == b = compare a b == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
@@ -788,7 +794,7 @@ instance Foldable P_ViewD where foldMap = foldMapDefault
 instance Traversable P_ViewD where
  traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
-data P_ViewSegment a = 
+data P_ViewSegment a =
      P_ViewSegment { vsm_labl :: Maybe Text
                    , pos :: Origin
                    , vsm_load :: P_ViewSegmtPayLoad a
@@ -799,7 +805,7 @@ instance Functor P_ViewSegment where fmap = fmapDefault
 instance Foldable P_ViewSegment where foldMap = foldMapDefault
 instance Traversable P_ViewSegment where
  traverse fn (P_ViewSegment a b c) = P_ViewSegment a b <$> traverse fn c
-data P_ViewSegmtPayLoad a  
+data P_ViewSegmtPayLoad a
                     = P_ViewExp  { vs_expr :: Term a }
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
@@ -863,7 +869,7 @@ instance Ord PPurpose where --Required for merge of P_Contexts
                             ])
                          (maybeOrdering (origin a) (origin b))
      x -> x
-           
+
 instance Eq PPurpose where --Required for merge of P_Contexts
   a == b = compare a b == EQ
 
@@ -909,40 +915,39 @@ instance Eq PClassify where
 instance Traced PClassify where
  origin = pos
 
-type Props = Set.Set Prop
-
-data Prop      = Uni          -- ^ univalent
-               | Inj          -- ^ injective
-               | Sur          -- ^ surjective
-               | Tot          -- ^ total
-               | Sym          -- ^ symmetric
-               | Asy          -- ^ antisymmetric
-               | Trn          -- ^ transitive
-               | Rfx          -- ^ reflexive
-               | Irf          -- ^ irreflexive
-               | Prop         -- ^ PROP keyword, the parser must replace this by [Sym, Asy]. It may not occur in the A-structure.
+type PProps = Set PProp
+data PProp = P_Uni  -- ^ univalent
+           | P_Inj  -- ^ injective
+           | P_Sur  -- ^ surjective
+           | P_Tot  -- ^ total
+           | P_Sym  -- ^ symmetric
+           | P_Asy  -- ^ antisymmetric
+           | P_Trn  -- ^ transitive
+           | P_Rfx  -- ^ reflexive
+           | P_Irf  -- ^ irreflexive
+           | P_Prop -- ^ PROP keyword, the parser must replace this by [Sym, Asy]. 
                  deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
 
-instance Show Prop where
- show Uni = "UNI"
- show Inj = "INJ"
- show Sur = "SUR"
- show Tot = "TOT"
- show Sym = "SYM"
- show Asy = "ASY"
- show Trn = "TRN"
- show Rfx = "RFX"
- show Irf = "IRF"
- show Prop = "PROP"
+instance Show PProp where
+ show P_Uni = "UNI"
+ show P_Inj = "INJ"
+ show P_Sur = "SUR"
+ show P_Tot = "TOT"
+ show P_Sym = "SYM"
+ show P_Asy = "ASY"
+ show P_Trn = "TRN"
+ show P_Rfx = "RFX"
+ show P_Irf = "IRF"
+ show P_Prop = "PROP"
 
-instance Unique Prop where
+instance Unique PProp where
  showUnique = tshow
 
-instance Flippable Prop where
- flp Uni = Inj
- flp Tot = Sur
- flp Sur = Tot
- flp Inj = Uni
+instance Flippable PProp where
+ flp P_Uni = P_Inj
+ flp P_Tot = P_Sur
+ flp P_Sur = P_Tot
+ flp P_Inj = P_Uni
  flp x = x
 
 mergeContexts :: P_Context -> P_Context -> P_Context
@@ -975,26 +980,26 @@ mergeContexts ctx1 ctx2 =
       -- not know a proper origin of some element. Sometimes the origin
       -- is used to distinquish between two elements. That is not 
       -- usefull here, and might lead to information lost.
-      fromContextsKeepDoubles :: (P_Context -> [a]) -> [a]         
-      fromContextsKeepDoubles fun = concatMap fun contexts          
+      fromContextsKeepDoubles :: (P_Context -> [a]) -> [a]
+      fromContextsKeepDoubles fun = concatMap fun contexts
       contexts = [ctx1,ctx2]
       fromContextsRemoveDoubles :: Ord b => (P_Context -> [b]) -> [b]
-      fromContextsRemoveDoubles f = 
+      fromContextsRemoveDoubles f =
          Set.toList . Set.unions . map (Set.fromList . f) $ contexts
       mergePops :: [P_Population] -> [P_Population]
       mergePops = map mergePopsSameType . NE.groupBy groupCondition
          where
              groupCondition :: P_Population -> P_Population -> Bool
-             groupCondition a b = 
+             groupCondition a b =
                case (a,b) of
-                 (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b 
+                 (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b
                                            && p_tgt a == p_tgt b
                                            && sameNamedRels (p_nmdr a) (p_nmdr b)
                  (P_CptPopu{},P_CptPopu{}) -> p_cpt a == p_cpt b
                  _  -> False
                where
                  sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool
-                 sameNamedRels x y = p_nrnm x == p_nrnm y 
+                 sameNamedRels x y = p_nrnm x == p_nrnm y
                                   && p_mbSign x == p_mbSign y
              mergePopsSameType :: NE.NonEmpty P_Population -> P_Population
              mergePopsSameType (h :| tl) = case h of

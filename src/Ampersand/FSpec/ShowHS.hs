@@ -624,7 +624,7 @@ instance ShowHS A_Concept where
                     PlainConcept{} -> "PlainConcept "<>tshow (name c)
                     ONE -> "ONE"
 
-instance ShowHSName Prop where
+instance ShowHSName AProp where
  showHSName Uni = "Uni"
  showHSName Inj = "Inj"
  showHSName Sur = "Sur"
@@ -634,9 +634,8 @@ instance ShowHSName Prop where
  showHSName Trn = "Trn"
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
- showHSName Prop = "Prop"
 
-instance ShowHS Prop where
+instance ShowHS AProp where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where

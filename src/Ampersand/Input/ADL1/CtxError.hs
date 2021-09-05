@@ -333,7 +333,7 @@ mkUndeclaredError entity objDef ref =
        "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (obj_nm objDef)
     _       -> fatal "Unexpected use of mkUndeclaredError."
 
-mkEndoPropertyError :: Origin -> [Prop] -> CtxError
+mkEndoPropertyError :: Origin -> [PProp] -> CtxError
 mkEndoPropertyError orig ps =
   CTXE orig msg
   where 

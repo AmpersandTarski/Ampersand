@@ -272,14 +272,14 @@ pRelationDef = reorder <$> currPos
                       rel = PNamedRel pos' nm (Just sign)
 
 --- RelationNew ::= 'RELATION' Varid Signature
-pRelationNew :: AmpParser (Text,P_Sign,Props)
+pRelationNew :: AmpParser (Text,P_Sign,PProps)
 pRelationNew = (,,) <$  pKey "RELATION"
                     <*> asText pVarid
                     <*> pSign
                     <*> return Set.empty
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
-pRelationOld :: AmpParser (Text,P_Sign,Props)
+pRelationOld :: AmpParser (Text,P_Sign,PProps)
 pRelationOld = relOld <$> asText pVarid
                       <*  pOperator "::"
                       <*> pConceptRef
@@ -288,42 +288,42 @@ pRelationOld = relOld <$> asText pVarid
             where relOld nm src fun tgt = (nm,P_Sign src tgt,fun)
 
 --- Props ::= '[' PropList? ']'
-pProps :: AmpParser (Set.Set Prop)
+pProps :: AmpParser (Set.Set PProp)
 pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
-  where pProp :: AmpParser Prop
+  where pProp :: AmpParser PProp
         pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
-        normalizeProps :: [Prop] -> Props
+        normalizeProps :: [PProp] -> PProps
         normalizeProps = conv.rep . Set.fromList
             where -- replace PROP by SYM, ASY
-                  rep :: Props -> Props
+                  rep :: PProps -> PProps
                   rep ps 
-                    | Prop `elem` ps = Set.fromList [Sym, Asy] `Set.union` (Prop `Set.delete` ps)
+                    | P_Prop `elem` ps = Set.fromList [P_Sym, P_Asy] `Set.union` (P_Prop `Set.delete` ps)
                     | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
-                  conv :: Props -> Props
+                  conv :: PProps -> PProps
                   conv ps = ps `Set.union`
-                    if Sym `elem` ps && Asy `elem` ps 
-                    then Set.fromList [Uni,Inj]
+                    if P_Sym `elem` ps && P_Asy `elem` ps 
+                    then Set.fromList [P_Uni,P_Inj]
                     else Set.empty
 
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
-pFun :: AmpParser Props
+pFun :: AmpParser PProps
 pFun  =  Set.empty               <$ pOperator "*"  <|>
-        Set.fromList [Uni,Tot] <$ pOperator "->" <|>
-        Set.fromList [Sur,Inj] <$ pOperator "<-" <|>
+        Set.fromList [P_Uni,P_Tot] <$ pOperator "->" <|>
+        Set.fromList [P_Sur,P_Inj] <$ pOperator "<-" <|>
         pBrackets pMults
         --- Mults ::= Mult '-' Mult
-  where pMults :: AmpParser Props
-        pMults = Set.union <$> optSet (pMult (Sur,Inj))
+  where pMults :: AmpParser PProps
+        pMults = Set.union <$> optSet (pMult (P_Sur,P_Inj))
                            <*  pDash
-                           <*> optSet (pMult (Tot,Uni))
+                           <*> optSet (pMult (P_Tot,P_Uni))
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-        pMult :: (Prop,Prop) -> AmpParser Props
+        pMult :: (PProp,PProp) -> AmpParser PProps
         pMult (ts,ui) = Set.union <$> (Set.empty    <$ pZero   <|> Set.singleton ts <$ try pOne)
                                   <*  pOperator ".."
                                   <*> (Set.singleton ui <$ try pOne <|> (Set.empty   <$ pOperator "*" )) <|>
