@@ -241,7 +241,7 @@ mkTypeMismatchError o rel sot typ
             <>"relation you wish to populate ("<>name rel<>showWithAliases (sign rel)<>" found at "<>tshow (origin rel)<>")."
 
 
-cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
+cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded a
 cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
   where
     message = 

@@ -55,11 +55,12 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_ps     = [e | CPrp e<-ces]                     -- The purposes defined in this context, outside the scope of patterns
             , ctx_pops   = [p | CPop p<-ces] <> concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
+            , ctx_enfs   = [x | CEnf x <- ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
        )
 
-    --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
+    --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta <$> pMeta           <|>
                       CPat  <$> pPatternDef     <|>
@@ -75,7 +76,8 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       Cifc  <$> pInterface      <|>
                       CPrp  <$> pPurpose        <|>
                       CPop  <$> pPopulation     <|>
-                      CIncl <$> pIncludeStatement
+                      CIncl <$> pIncludeStatement <|>
+                      CEnf  <$> pEnforce
 
 data ContextElement = CMeta MetaData
                     | CPat P_Pattern
@@ -91,6 +93,7 @@ data ContextElement = CMeta MetaData
                     | CPrp PPurpose
                     | CPop P_Population
                     | CIncl Include    -- an INCLUDE statement
+                    | CEnf (P_Enforce TermPrim)
 
 data Include = Include Origin FilePath [Text]
 --- IncludeStatement ::= 'INCLUDE' Text
@@ -143,10 +146,11 @@ pPatternDef
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]<>concat [p | Pd (_,p)<-pes]
              , pt_end = end
+             , pt_enfs = [e | Penf e<-pes]
              }
 
 -- PatElem used by PATTERN
---- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population
+--- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population | Enforce
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
@@ -158,7 +162,8 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pk <$> pIndex            <|>
            Pv <$> pViewDef          <|>
            Pe <$> pPurpose          <|>
-           Pp <$> pPopulation
+           Pp <$> pPopulation       <|>
+           Penf <$> pEnforce
 
 data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
@@ -170,7 +175,29 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pv P_ViewDef
              | Pe PPurpose
              | Pp P_Population
+             | Penf (P_Enforce TermPrim)
 
+--- Enforce ::= 'ENFORCE' Relation (':=' | ':<' | '>:' ) Expression
+pEnforce :: AmpParser (P_Enforce TermPrim)
+pEnforce = P_Enforce <$> currPos
+                 <*  pKey "ENFORCE"
+                 <*> (PNamedR <$> pNamedRel)
+                 <*> pEnforceOperator
+                 <*> pTerm
+     where
+        pEnforceOperator :: AmpParser EnforceOperator
+        pEnforceOperator = fun <$> currPos
+                               <*> (T.pack <$>
+                                     (   pOperator ":="
+                                     <|> pOperator ":<"
+                                     <|> pOperator ">:"
+                                   ) )
+            where fun orig op = (case op of
+                                   ":=" -> IsSameSet
+                                   ":<" -> IsSubSet
+                                   ">:" -> IsSuperSet
+                                   _ -> fatal $ "This operator is not known: "<>op
+                                ) orig
 --- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
 pClassify :: AmpParser [PClassify]   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos

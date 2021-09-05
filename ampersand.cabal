@@ -149,7 +149,10 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/Bug434.adl
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
-    testing/Travis/testcases/Check/Issue1063.adl
+    testing/Travis/testcases/Check/EnforceTest1.adl
+    testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
+    testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
+    testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl

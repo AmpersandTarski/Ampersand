@@ -237,7 +237,7 @@ pCtx2aCtx env
       , ctx_ps     = p_purposes
       , ctx_pops   = p_pops
       , ctx_metas  = p_metas
-      }
+      , ctx_enfs   = p_enfs}
  = do contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
   --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
@@ -252,7 +252,8 @@ pCtx2aCtx env
       interfaces  <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations   <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      enforces'   <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
@@ -264,7 +265,7 @@ pCtx2aCtx env
                      , ctxcdsOutPats = allConceptDefsOutPats
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
-                     , ctxrrules = allRoleRules
+                     , ctxrrules = udefRoleRules'
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
                      , ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens
@@ -273,6 +274,7 @@ pCtx2aCtx env
                      , ctxps = purposes
                      , ctxmetas = p_metas
                      , ctxInfo = contextInfo
+                     , ctxEnforces = enforces'
                      }
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx                 -- Check whether all purposes refer to existing objects
@@ -818,8 +820,9 @@ pCtx2aCtx env
          <*> traverse (pure.pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
          <*> traverse (pure.pRoleRule2aRoleRule) (pt_RRuls ppat)
          <*> traverse pure (pt_Reprs ppat)
+         <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
        where
-        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations
+        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces'
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
@@ -833,6 +836,7 @@ pCtx2aCtx env
                    , ptids = keys'
                    , ptvds = views'
                    , ptxps = xpls
+                   , ptenfs = enforces'
                    }
     pRul2aRul :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
@@ -855,11 +859,32 @@ pCtx2aCtx env
                     , rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings
                     , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrdcl = Nothing
                     , rrpat = mPat
-                    , r_usr = UserDefined
-                    , isSignal = not . any (\x -> nm `elem` arRules x) $ allRoleRules
+                    , rrkind = UserDefined
                     }
+    pEnforce2aEnforce :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
+                      -> P_Enforce TermPrim -> Guarded AEnforce
+    pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+    typeCheckEnforce :: ContextInfo
+                     -> Maybe Text -- name of pattern the enforce is defined in (if any)
+                     -> P_Enforce (TermPrim, DisambPrim) 
+                     -> Guarded AEnforce
+    typeCheckEnforce ci mPat P_Enforce { pos = pos'
+                                       , penfRel = pRel
+                                       , penfOp =  oper
+                                       , penfExpr= x
+                                       } 
+      = case pRel of
+         (_,Known (EDcD rel))
+           -> do (expr,(_srcBounded,_tgtBounded)) <- typecheckTerm ci x
+                 return AEnforce { pos=pos' 
+                          , enfRel=rel
+                          , enfOp=oper
+                          , enfExpr=expr
+                          , enfPatName=mPat
+                          }
+         (o,dx) -> cannotDisambiguate o dx 
+          
     pIdentity2aIdentity ::
          ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
       -> P_IdentDef -> Guarded IdentityRule
@@ -925,8 +950,8 @@ pCtx2aCtx env
     allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) p_conceptdefs
     allConceptDefs :: [AConceptDef]
     allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs<>concatMap pt_cds p_patterns)
-    allRoleRules :: [A_RoleRule]
-    allRoleRules = map pRoleRule2aRoleRule
+    udefRoleRules' :: [A_RoleRule]
+    udefRoleRules' = map pRoleRule2aRoleRule
                       (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept

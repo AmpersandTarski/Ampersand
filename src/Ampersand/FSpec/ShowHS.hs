@@ -304,7 +304,7 @@ instance ShowHS FSpec where
               showViolatedRule :: Text -> (Rule,AAtomPairs) -> Text
               showViolatedRule indent' (r,ps)
                  = T.intercalate indent'
-                     [        " ( "<>showHSName r<>" -- This is "<>(if isSignal r then "a process rule." else "an invariant")<>
+                     [        " ( "<>showHSName r<>
                       indent'<>" , "<> wrap "" (indent'<>"   ") 
                                                (let showPair _ p = "( "<> (tshow.showValADL.apLeft) p<>", "<>(tshow.showValADL.apRight) p<>")"
                                                 in showPair
@@ -430,12 +430,12 @@ instance ShowHS Rule where
      ,"  , rrmean = " <> showHS env (indent<>"             ") (rrmean r)
      ,"  , rrmsg  = " <> showHS env "" (rrmsg  r)
      ,"  , rrviol = " <> showHS env "" (rrviol r)
-     ,"  , rrdcl  = " <> case rrdcl r of
-                           Just (p,d) -> "Just ("<>showHSName p<>", "<>showHSName d<>" )"
-                           Nothing    -> "Nothing"
      ,"  , rrpat  = " <> tshow (rrpat  r)
-     ,"  , r_usr  = " <> tshow (r_usr  r)
-     ,"  , isSignal = " <> tshow (isSignal  r)
+     ,"  , rrkind  = " <> (case rrkind r of
+                            Propty prp rel -> "Propty "<>showHSName prp<>", "<>showHSName rel
+                            x -> tshow x
+                         )
+    
      ,"  }"
      ]
 

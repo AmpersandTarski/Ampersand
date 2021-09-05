@@ -63,6 +63,7 @@ mkContextOfPops pops = addRelations
       , ctx_ps     = []
       , ctx_pops   = pops
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
 
 -- | addRelations is meant to enrich a population to a P_Context

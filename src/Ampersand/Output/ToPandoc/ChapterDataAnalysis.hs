@@ -400,12 +400,12 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
        , mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ rule
        , printMeaning outputLang' rule
        , para (showMath rule)
-       , if isSignal rule
+       , if isSignal fSpec rule
          then mempty
          else case rrviol rule of
                 Nothing  -> mempty
                 Just sgmts ->
-                    para (if isSignal rule
+                    para (if isSignal fSpec rule
                           then (text.l)(NL "Een overtreding van deze regel wordt gesignaleerd door middel van de melding: "
                                        ,EN "Violations of this rule are reported with the following message: "
                                        )
