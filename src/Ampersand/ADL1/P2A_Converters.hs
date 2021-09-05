@@ -1138,7 +1138,9 @@ pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
   decSign = pSign2aSign cptMap (dec_sign pd)
   checkEndoProps :: Guarded ()
   checkEndoProps
-    | source decSign == target decSign && null xs
+    | source decSign == target decSign
+                = pure ()
+    | null xs
                 = pure ()
     | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.toList xs)
    where xs =  Set.filter isEndoProp $ dec_prps pd
