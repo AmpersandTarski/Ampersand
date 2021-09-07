@@ -61,7 +61,7 @@ chpDiagnosis env fSpec
                           ,EN " does not define any roles. ")
               )
     | otherwise =
-        case filter isSignal . Set.elems $ ruls of
+        case filter (isSignal fSpec) . Set.elems $ ruls of
           []   -> para (   (emph.str.upCap.name) fSpec
                         <> (str.l) (NL " kent geen procesregels. "
                                    ,EN " does not define any process rules. ")
@@ -90,7 +90,7 @@ chpDiagnosis env fSpec
                   
      where
                   
-      ruls = Set.filter isSignal . vrules $ fSpec                  
+      ruls = Set.filter (isSignal fSpec) . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f _ _ = mempty
 
@@ -458,7 +458,7 @@ chpDiagnosis env fSpec
               <> ", " <> (str.name.target.formalExpression) r <> (str.showValADL.apRight) p
               <> ")"
       popwork :: [(Rule,AAtomPairs)]
-      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
+      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal fSpec r]
 
   violationReport :: Blocks
   violationReport =
@@ -478,21 +478,21 @@ chpDiagnosis env fSpec
      <> bulletList (map showViolatedRule invariantViolations)
      <> bulletList (map showViolatedRule processViolations)
     where
-         (processViolations,invariantViolations) = L.partition (isSignal.fst) (allViolations fSpec)
+         (processViolations,invariantViolations) = L.partition (isSignal fSpec . fst) (allViolations fSpec)
          showViolatedRule :: (Rule,AAtomPairs) -> Blocks
          showViolatedRule (r,ps)
              =    (para.emph)
                       (  (str.l) (NL "Regel ", EN "Rule ")
                        <>(str.name) r
                       )
-               <> para(  (if isSignal r 
+               <> para(  (if isSignal fSpec r 
                           then (str.l) (NL "Totaal aantal taken: "        ,EN "Total number of work items: ")
                           else (str.l) (NL "Totaal aantal overtredingen: ",EN "Total number of violations: ")
                          )
                        <>(str.tshow.length) ps
                       )
                <> legacyTable -- Caption
-                        (if isSignal r
+                        (if isSignal fSpec r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
                              <> commaPandocOr outputLang' (map (str.name) (rolesOf r))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")

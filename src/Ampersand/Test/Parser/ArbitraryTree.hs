@@ -121,22 +121,11 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
     arbitrary = PCtx
        <$> identifier   -- name
-       <*> arbitrary -- pos
-       <*> arbitrary -- lang
-       <*> arbitrary -- markup
-       <*> arbitrary -- patterns
-       <*> arbitrary -- rules
-       <*> arbitrary -- relations
-       <*> arbitrary -- concepts
-       <*> arbitrary -- identities
-       <*> arbitrary -- role rules
-       <*> arbitrary -- representation
-       <*> arbitrary -- views
-       <*> arbitrary -- gen definitions
-       <*> arbitrary -- interfaces
-       <*> arbitrary -- purposes
-       <*> arbitrary -- populations
-       <*> arbitrary -- generic meta information
+       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+       <*> arbitrary
 
 instance Arbitrary MetaData where
     arbitrary = MetaData <$> arbitrary <*> safeStr <*> safeStr
@@ -161,7 +150,7 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> identifier  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
     arbitrary = P_Relation 
@@ -250,6 +239,26 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
         <*> arbitrary
         <*> arbitrary
 
+instance Arbitrary (P_Enforce TermPrim) where
+    arbitrary = P_Enforce <$> arbitrary 
+                          <*> arbitrary `suchThat` isNamedRelation
+                          <*> arbitrary
+                          <*> arbitrary `suchThat` (not . isForRulesOnly)
+      where isForRulesOnly :: Term TermPrim -> Bool 
+            isForRulesOnly PEqu{} = True
+            isForRulesOnly PInc{} = True
+            isForRulesOnly _ = False
+            isNamedRelation :: TermPrim -> Bool
+            isNamedRelation PNamedR{} = True 
+            isNamedRelation _ = False
+
+instance Arbitrary EnforceOperator where
+    arbitrary = oneof 
+       [ IsSuperSet <$> arbitrary
+       , IsSubSet   <$> arbitrary
+       , IsSameSet  <$> arbitrary
+       ]
+    
 instance Arbitrary PConceptDef where
   arbitrary =
     PConceptDef <$> arbitrary <*> identifier <*> arbitrary

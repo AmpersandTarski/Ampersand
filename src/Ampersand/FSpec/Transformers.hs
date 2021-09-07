@@ -477,7 +477,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , [ (dirtyId rel, dirtyId rul)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
-        , Just (_,rel)   <- [rrdcl rul]
+        , Propty _ rel   <- [rrkind rul]
         ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
@@ -485,7 +485,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
-        , Just (prop,_)  <- [rrdcl rul]
+        , Propty prop _  <- [rrkind rul]
         ]
       )
      ,("name"                  , "Concept"               , "ConceptName"

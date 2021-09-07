@@ -37,7 +37,7 @@ makeFSpec env context
                                     , view genInterfacesL env]  -- generated interfaces
               , fDeriveProofs = deriveProofs env context 
               , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- Set.elems allrules
+                                   | rule <- Set.elems (allRules context)
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
@@ -45,11 +45,11 @@ makeFSpec env context
                                                  <> concatMap ifcRoles               (ctxifcs context )
                                                  )
                                    ) [0..] 
-              , fallRules    = allrules
-              , vrules       = Set.filter      isUserDefined  allrules
-              , grules       = Set.filter (not.isUserDefined) allrules
-              , invariants   = Set.filter (not.isSignal)      allrules
-              , signals      = Set.filter      isSignal       allrules
+              , fallRules    = allRules context
+              , vrules       = Set.filter      isUserDefined  (allRules context)
+              , grules       = Set.filter (not.isUserDefined) (allRules context)
+              , invariants   = Set.filter (not.fIsSignal)      (allRules context)
+              , signals      = Set.filter      fIsSignal       (allRules context)
               , allConjuncts = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
@@ -81,7 +81,7 @@ makeFSpec env context
               , pairsInExpr  = pairsinexpr
               , applyViolText = apply_viol_text
               , allViolations  = [ (r,vs)
-                                 | r <- Set.elems allrules
+                                 | r <- Set.elems (allRules context)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context `Set.union` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
@@ -94,15 +94,20 @@ makeFSpec env context
               , largestConcept = getLargestConcept 
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
+              , allEnforces = fSpecAllEnforces
+              , isSignal = fIsSignal
               }
    where           
+     fIsSignal :: Rule -> Bool
+     fIsSignal = not . null . maintainersOf
+        
      getLargestConcept cpt = case largerConcepts (gens context) cpt of
                               [] -> cpt
                               x:_ -> getLargestConcept x
      handleType :: A_Concept -> A_Concept -> Expression
      handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> Rules
-     fMaintains' role' = Set.filter f allrules
+     fMaintains' role' = Set.filter f (allRules context)
         where f rule = role' `elem` maintainersOf rule
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
@@ -141,7 +146,7 @@ makeFSpec env context
      conjunctViolations :: Conjunct -> AAtomPairs
      conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
      contextinfo = ctxInfo context
-
+     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
      fSpecAllConcepts = concs context
      fSpecAllInterfaces :: [Interface]
      fSpecAllInterfaces = map enrichIfc (ctxifcs context)
@@ -170,7 +175,7 @@ makeFSpec env context
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context<>concatMap ptups (patterns context)       
-     allConjs = makeAllConjs env allrules
+     allConjs = makeAllConjs env (allRules context)
      fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
      fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
@@ -181,23 +186,31 @@ makeFSpec env context
                where 
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
-     allQuads = quadsOfRules env allrules 
+     allQuads = quadsOfRules env (allRules context) 
      relsDefdInContext :: Relations
      relsDefdInContext = relsDefdIn context
      
-     allrules = Set.map setIsSignal (allRules context)
-        where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . ctxrrules $ context
+       = case rrkind r of
+          UserDefined -> rolesFromScript
+          Propty prp dcl 
+            | prp == Uni && isUni (EDcD dcl) -> [] --Enforced by the database
+            | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
+            | otherwise -> rolesFromScript
+          Identity -> []
+          Enforce -> [Role "ExecEngine"]
+         
          where
+          rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x
      isUserDefined rul =
-       case r_usr rul of
-         UserDefined  -> True
-         Propty -> False
-         Identity     -> False
+       case rrkind rul of
+         UserDefined -> True
+         Propty _ _  -> False
+         Identity    -> False
+         Enforce     -> False
   -- Lookup view by id in fSpec.
      lookupView' :: Text -> ViewDef
      lookupView'  viewId =
@@ -487,3 +500,4 @@ tblcontents ci ps plug
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = "FORM", btKeys = []}
+

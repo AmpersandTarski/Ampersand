@@ -394,7 +394,7 @@ dpRule' env fSpec = dpR
                                      ) <>
                                (bulletList  . map (plain . showRef) . Set.elems $ rds)
            )
-         <> plain (if isSignal r
+         <> plain (if isSignal fSpec r
                    then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
                           , EN "Activities that are defined by this rule are finished when: ")
                    else l (NL "De regel luidt: ", EN "This means: ")
