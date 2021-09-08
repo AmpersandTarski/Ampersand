@@ -30,7 +30,7 @@ class Relational r where
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
 instance HasProps Relation where
-    properties d = fromMaybe (decprps d) (decprps_calc d)
+    properties = decprps
 
 -- | Is the concept the ONE and only? (universal singleton) 
 isONE :: A_Concept -> Bool

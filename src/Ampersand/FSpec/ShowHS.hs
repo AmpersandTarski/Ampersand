@@ -586,9 +586,6 @@ instance ShowHS Relation where
                      ["Relation { decnm   = " <> tshow (decnm d)
                      ,"         , decsgn  = " <> showHS env "" (sign d)
                      ,"         , decprps = " <> showL(map (showHS env "") (Set.elems $ decprps d))
-                     ,"         , decprps_calc = " <> case decprps_calc d of
-                                                 Nothing -> "Nothing"
-                                                 Just ps -> "Just "<>showL(map (showHS env "") (Set.elems ps))
                      ,"         , decprL  = " <> tshow (decprL d)
                      ,"         , decprM  = " <> tshow (decprM d)
                      ,"         , decprR  = " <> tshow (decprR d)

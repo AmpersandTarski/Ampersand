@@ -86,14 +86,13 @@ instance Language A_Context where
                                 `Set.union` ctxds context)
      where
       -- relations with the same name, but different properties (decprps,pragma,etc.) may exist and need to be united
-      -- decprps and decprps_calc are united, all others are taken from the head.
+      -- decprps are united, all others are taken from the head.
       uniteRels :: Relations -> Relations
       uniteRels ds = Set.fromList .
         map fun . eqClass (==) $ Set.elems ds
          where fun :: NE.NonEmpty Relation -> Relation
                fun rels = (NE.head rels) {decprps = Set.unions . fmap decprps $ rels
-                                          ,decprps_calc = Nothing -- Calculation is only done in ADL2Fspc.
-                                          }
+                                         }
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
   identities   context =       concatMap identities (ctxpats context) <> ctxks context
   viewDefs     context =       concatMap viewDefs   (ctxpats context) <> ctxvs context

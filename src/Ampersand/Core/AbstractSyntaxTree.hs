@@ -300,9 +300,7 @@ type Relations = Set.Set Relation
 data Relation = Relation
       { decnm :: Text              -- ^ the name of the relation
       , decsgn :: Signature          -- ^ the source and target concepts of the relation
-       --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
       , decprps :: AProps            -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
-      , decprps_calc :: Maybe AProps -- ^ the calculated and user defined properties. Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
       , decprL :: Text             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM :: Text             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR :: Text

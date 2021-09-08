@@ -1112,7 +1112,6 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd
         { decnm   = dec_nm pd
         , decsgn  = decSign
         , decprps = Set.fromList . concat $ propLists
-        , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
         , decprL  = prL
         , decprM  = prM
         , decprR  = prR
