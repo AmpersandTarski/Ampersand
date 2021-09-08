@@ -1,5 +1,7 @@
 ﻿# Release notes of Ampersand
 
+## v4.4.0 ( 10 September August 2021)
+
 * PR #1201 changes to Transformers.hs for the new RAP release.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
 * [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
