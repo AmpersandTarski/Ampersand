@@ -48,7 +48,7 @@ keywords  = L.nub $
                 , "CONCEPT"
                 -- Keywords for Relation-statements
                 , "RELATION", "PRAGMA", "MEANING"
-                , "ASY", "INJ", "IRF", "RFX", "SUR", "SYM", "TOT", "TRN", "UNI", "EVALPHP"
+                , "ASY", "INJ", "IRF", "RFX", "SUR", "SYM", "TOT", "TRN", "UNI", "PROP", "VALUE", "EVALPHP"
                 , "POPULATION", "CONTAINS"
                 -- Keywords for rules
                 , "RULE", "MESSAGE", "VIOLATION", "TXT"

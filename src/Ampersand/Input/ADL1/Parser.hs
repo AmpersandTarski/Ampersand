@@ -291,13 +291,14 @@ pRelationOld = relOld <$> asText pVarid
 pProps :: AmpParser (Set.Set PProp)
 pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- PropList ::= Prop (',' Prop)*
-        --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
+        --- Prop ::= 'UNI' | 'INJ' | 'SUR' PropDefault? | 'TOT' PropDefault? | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser PProp
         pProp = choice $
            [ p <$ pKey (show p) | p <- [P_Uni, P_Inj, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf, P_Prop]
            ] <>
            [ P_Tot <$ pKey "TOT" <*> pMaybe pPropDefault
            , P_Sur <$ pKey "SUR" <*> pMaybe pPropDefault]
+        --- PropDefault ::= 'VALUE' AtomValue | 'EVALPHP' DoubleQuotedString
            where pPropDefault :: AmpParser PPropDefault
                  pPropDefault = choice
                    [ PDefAtom  <$ pKey "VALUE" <*> pAtomValue
