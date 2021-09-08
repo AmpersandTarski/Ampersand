@@ -388,7 +388,7 @@ instance Pretty PProp where
 instance Pretty PPropDefault where
     pretty x = case x of
       PDefAtom pav -> text "VALUE "<+>pretty pav
-      PDefEvalPHP txt -> text "EVALPHP" <+> text (show txt)
+      PDefEvalPHP txt -> text "EVALPHP " <+> text (show txt)
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 
                        <~> text "," <+> pretty r 

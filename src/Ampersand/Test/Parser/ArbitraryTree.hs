@@ -397,7 +397,7 @@ instance Arbitrary PProp where
                       ]
 instance Arbitrary PPropDefault where
     arbitrary = oneof [ PDefAtom <$> arbitrary
-                      , PDefEvalPHP <$> arbitrary
+                      , PDefEvalPHP <$> safeStr
                       ]
 
 noOne :: Foldable t => t P_Concept -> Bool
