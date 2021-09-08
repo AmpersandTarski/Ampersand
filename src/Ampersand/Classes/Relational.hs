@@ -45,8 +45,8 @@ isSESSION cpt =
 -- but tries to derive the most obvious constraints as well. The more property constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-properties' :: Expression -> AProps
-properties' expr = case expr of
+instance HasProps Expression where
+  properties expr = case expr of
      EDcD dcl   -> properties dcl
      EDcI{}     -> Set.fromList [Uni,Tot Nothing,Inj,Sur Nothing,Sym,Asy,Trn,Rfx]
      EEps a sgn -> Set.fromList $ [Tot Nothing| a == source sgn]++[Sur Nothing | a == target sgn] ++ [Uni,Inj]
@@ -59,13 +59,13 @@ properties' expr = case expr of
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
-     EBrk f     -> properties' f
-     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot Nothing,Inj,Sur Nothing]) (properties' l `Set.intersection` properties' r)
+     EBrk f     -> properties f
+     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot Nothing,Inj,Sur Nothing]) (properties l `Set.intersection` properties r)
      EPrd (l,r) -> Set.fromList $ [Tot Nothing | isTot l]++[Sur Nothing | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
-     EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
-     ECpl e'    -> Set.singleton Sym `Set.intersection` properties' e'
-     EFlp e'    -> Set.map flp $ properties' e'
+     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
+     EFlp e'    -> Set.map flp $ properties e'
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
@@ -169,11 +169,11 @@ instance Relational Expression where        -- TODO: see if we can find more pro
  isUni = isUniInj Uni
  isInj = isUniInj Inj
  
- isRfx r = Rfx `elem` properties' r
- isIrf r = Irf `elem` properties' r
- isTrn r = Trn `elem` properties' r
- isSym r = Sym `elem` properties' r
- isAsy r = Asy `elem` properties' r
+ isRfx r = Rfx `elem` properties r
+ isIrf r = Irf `elem` properties r
+ isTrn r = Trn `elem` properties r
+ isSym r = Sym `elem` properties r
+ isAsy r = Asy `elem` properties r
 
 -- Not to be exported:
 isTotSur :: AProp -> Expression -> Bool 
@@ -204,7 +204,7 @@ isTotSur prop expr
       EBrk e     -> isTotSur prop e
       EMp1{}     -> True
   where
-    todo = prop `elem` properties' expr
+    todo = prop `elem` properties expr
 
 isUniInj :: AProp -> Expression -> Bool 
 isUniInj prop expr 
@@ -231,4 +231,4 @@ isUniInj prop expr
       EBrk e     -> isUniInj prop e
       EMp1{}     -> True
   where
-    todo = prop `elem` properties' expr
+    todo = prop `elem` properties expr
