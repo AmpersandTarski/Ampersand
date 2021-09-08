@@ -9,7 +9,6 @@ import           Ampersand.Basics hiding ((<$>),view)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           RIO.Char (toUpper)
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial(replace)
@@ -139,7 +138,7 @@ instance Pretty P_Relation where
     pretty (P_Relation nm sign prps pragma mean _) =
         text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props | null prps                       = empty
-                    | otherwise                       = text ("["++(L.intercalate ",". map show) (Set.toList prps) ++ "]") -- do not prettyprint list of properties.
+                    | otherwise                       = pretty $ Set.toList prps
               pragmas | T.null (T.concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
@@ -377,8 +376,19 @@ instance Pretty PandocFormat where
     pretty = text . map toUpper . show
 
 instance Pretty PProp where
-    pretty = text . map toUpper . show
-
+    pretty p = case p of
+      P_Sur m_ppd -> text "SUR" <> doShow m_ppd
+      P_Tot m_ppd -> text "SUR" <> doShow m_ppd
+      _ -> text . map toUpper . show $ p
+      where
+        doShow :: Maybe PPropDefault -> Doc
+        doShow x = case x of  
+          Nothing -> mempty
+          Just ppd -> text " "<+> pretty ppd
+instance Pretty PPropDefault where
+    pretty x = case x of
+      PDefAtom pav -> text "VALUE "<+>pretty pav
+      PDefEvalPHP txt -> text "EVALPHP" <+> text (show txt)
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 
                        <~> text "," <+> pretty r 
