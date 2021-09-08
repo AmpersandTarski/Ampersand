@@ -140,20 +140,20 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Term"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [arg expr]
         ]
       )
      ,("asMarkdown"            , "Markup"                , "Text"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId mrk,(PopAlphaNumeric . P.stringify . amPandoc) mrk)
         | mrk::Markup <- instanceList fSpec
         ]
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [bindedRel expr]
@@ -167,7 +167,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("rc_conjunct"           , "Conjunct"              , "Term"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId conj, dirtyId (rc_conjunct conj))
         | conj::Conjunct <- instanceList fSpec
         ]
@@ -180,49 +180,49 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("context"               , "Interface"             , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ifc,dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , ifc::Interface <- ctxifcs ctx
         ]
       )
      ,("context"               , "Isa"                   , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId isa, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("context"               , "IsE"                   , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ise, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , ise@IsE{} <- instanceList fSpec
         ]
       )
      ,("context"               , "Pattern"               , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId pat, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , pat::Pattern   <- instanceList fSpec
         ]
       )
      ,("context"               , "Population"            , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId pop, dirtyId ctx)
         | ctx::A_Context  <- instanceList fSpec
         , pop::Population <- instanceList fSpec
         ]
       )
      ,("ctxcds"                , "ConceptDef"            , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId cdf, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , cdf::AConceptDef <- instanceList fSpec
         ]
       )
      ,("relsDefdIn"            , "Relation"              , "Context"   ---contains ALL relations defined in this context
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rel, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , rel::Relation  <- Set.elems $ relsDefdIn ctx
@@ -286,14 +286,14 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , []  --TODO
       )
      ,("fieldIn"               , "FieldDef"             , "ObjectDef"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId fld, dirtyId obj)
         | obj::ObjectDef <- instanceList fSpec
         , fld <- fields obj
         ]
      )
      ,("first"                 , "BinaryTerm"            , "Term"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [first expr]
@@ -306,25 +306,25 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("gengen"                , "Isa"                   , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ ( dirtyId isa, dirtyId (gengen isa))
         | isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept"
-      , Set.fromList [Tot]
+      , Set.fromList [Tot Nothing]
       , [ ( dirtyId ise, dirtyId cpt)
         | ise@IsE{} <- instanceList fSpec
         , cpt <- NE.toList $ genrhs ise]
       )
      ,("genspc"                , "IsE"                   , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ ( dirtyId ise, dirtyId (genspc ise))
         | ise@IsE{} <- instanceList fSpec
         ]
       )
      ,("genspc"                , "Isa"                   , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ ( dirtyId isa, dirtyId (genspc isa))
         | isa@Isa{} <- instanceList fSpec
         ]
@@ -355,7 +355,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , []  --TODO
       )
      ,("ifcObj"                , "Interface"             , "ObjectDef"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ifc, dirtyId (ifcObj ifc))
         | ifc::Interface <- instanceList fSpec
         ]
@@ -411,7 +411,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("label"                 , "FieldDef"              , "FieldName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId fld, PopAlphaNumeric (name obj))
         | obj::ObjectDef <- instanceList fSpec
         , fld <- fields obj
@@ -436,13 +436,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("markup"            , "Meaning"               , "Markup"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId mean, dirtyId . ameaMrk $ mean)
         | mean::Meaning <- Set.toList . meaningInstances $ fSpec
         ]
       )
      ,("markup"            , "Purpose"               , "Markup"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId purp, dirtyId . explMarkup $ purp)
         | purp::Purpose <- Set.toList . purposeInstances $ fSpec
         ]
@@ -473,7 +473,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
-      , Set.fromList [Sur]
+      , Set.fromList [Sur Nothing]
       , [ (dirtyId rel, dirtyId rul)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
@@ -481,7 +481,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
-      , Set.fromList [Tot]
+      , Set.fromList [Tot Nothing]
       , [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
         | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ proprules ctx
@@ -495,31 +495,31 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("name"                  , "Context"               , "ContextName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ctx, (PopAlphaNumeric . name) ctx)
         | ctx::A_Context <- instanceList fSpec
         ]
       )
      ,("name"                  , "Interface"             , "InterfaceName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ifc, (PopAlphaNumeric . name) ifc)
         | ifc::Interface <- instanceList fSpec
         ]
       )
      ,("name"                  , "ObjectDef"             , "ObjectName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId obj, (PopAlphaNumeric . name) obj)
         | obj::ObjectDef <- instanceList fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId pat,(PopAlphaNumeric . name) pat)
         | pat::Pattern <- instanceList fSpec
         ]
       )
      ,("name"                  , "Relation"              , "RelationName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rel,(PopAlphaNumeric . name) rel)
         | rel::Relation <- instanceList fSpec
         ]
@@ -531,13 +531,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("name"                  , "Rule"                  , "RuleName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rul,(PopAlphaNumeric . name) rul)
         | rul::Rule <- instanceList fSpec
         ]
       )
      ,("name"                  , "ViewDef"              , "ViewDefName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . name $ vd)
         | vd::ViewDef <- instanceList fSpec
         ]
@@ -557,14 +557,14 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, PopAlphaNumeric . tshow $ op)
         | expr::Expression <- instanceList fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, PopAlphaNumeric . tshow $ op)
         | expr::Expression <- instanceList fSpec
         , Just op <- [unaryOp expr]
@@ -652,13 +652,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]  --TODO
       )
      ,("qDcl"                  , "Quad"             , "Relation"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId quad, dirtyId (qDcl quad))
         | quad <- vquads fSpec
         ]  --TODO
       )
      ,("qRule"                 , "Quad"             , "Rule"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId quad, dirtyId (qRule quad))
         | quad <- vquads fSpec
         ]  --TODO
@@ -678,7 +678,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("second"                , "BinaryTerm"            , "Term"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [second expr]
@@ -709,58 +709,58 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , []  --TODO
       )
      ,("showADL"               , "Term"                  , "ShowADL"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, PopAlphaNumeric (showA expr))
         | expr::Expression <- instanceList fSpec
         ]
       )
      ,("sign"                  , "Term"                  , "Signature"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId (sign expr))
         | expr::Expression <- instanceList fSpec
         ]
       )
      ,("sign"                  , "Relation"              , "Signature"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rel, dirtyId (sign rel))
         | rel::Relation <- instanceList fSpec
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [singleton expr]
         ]
       )
      ,("source"                , "Relation"              , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rel, dirtyId (source rel))
         | rel::Relation <- instanceList fSpec
         ]
       )
      ,("src"                   , "Signature"             , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId sgn, dirtyId (source sgn))
         | sgn::Signature <- instanceList fSpec
         ]
       )
      ,("srcOrTgt"              , "PairViewSegment"       , "SourceOrTarget"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , []  --TODO
       )
      ,("target"                , "Relation"              , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId rel, dirtyId (target rel))
         | rel::Relation <- instanceList fSpec
         ]
       )
      ,("text"                  , "PairViewSegment"       , "String"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , []  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId sgn, dirtyId (target sgn))
         | sgn::Signature <- instanceList fSpec
         ]
@@ -811,28 +811,28 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just (x::A_Concept) <- [userCpt expr]
         ]
       )
      ,("userSrc"               , "V"                     , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [userSrc expr]
         ]
       )
      ,("userTgt"               , "V"                     , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [userTgt expr]
         ]
       )
      ,("vdats"                 , "ViewDef"              , "ViewSegment"
-      , Set.fromList [Inj,Sur]
+      , Set.fromList [Inj,Sur Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow $ vs)
         | vd::ViewDef <- instanceList fSpec
         , vs <- vdats vd
@@ -852,7 +852,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("vdIsDefault"           , "ViewDef"              , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec
         ]
@@ -865,7 +865,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("versionInfo"           , "Context"               , "AmpersandVersion"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId ctx,PopAlphaNumeric (longVersion appVersion))
         | ctx::A_Context <- instanceList fSpec
         ]

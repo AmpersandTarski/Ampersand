@@ -48,8 +48,8 @@ isSESSION cpt =
 properties' :: Expression -> AProps
 properties' expr = case expr of
      EDcD dcl   -> properties dcl
-     EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
+     EDcI{}     -> Set.fromList [Uni,Tot Nothing,Inj,Sur Nothing,Sym,Asy,Trn,Rfx]
+     EEps a sgn -> Set.fromList $ [Tot Nothing| a == source sgn]++[Sur Nothing | a == target sgn] ++ [Uni,Inj]
      EDcV sgn   -> Set.fromList $ 
                  --NOT totaal
                  --NOT surjective
@@ -60,8 +60,8 @@ properties' expr = case expr of
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
      EBrk f     -> properties' f
-     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot,Inj,Sur]) (properties' l `Set.intersection` properties' r)
-     EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
+     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot Nothing,Inj,Sur Nothing]) (properties' l `Set.intersection` properties' r)
+     EPrd (l,r) -> Set.fromList $ [Tot Nothing | isTot l]++[Sur Nothing | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
      EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
      EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
      ECpl e'    -> Set.singleton Sym `Set.intersection` properties' e'
@@ -163,8 +163,8 @@ instance Relational Expression where        -- TODO: see if we can find more pro
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
  isFunction r   = isUni r && isTot r
                  
- isTot = isTotSur Tot
- isSur = isTotSur Sur
+ isTot = isTotSur (Tot Nothing)
+ isSur = isTotSur (Sur Nothing)
  
  isUni = isUniInj Uni
  isInj = isUniInj Inj
@@ -197,8 +197,8 @@ isTotSur prop expr
       EDcD d     -> prop `elem` properties d
       EDcI{}     -> True
       EEps c sgn -> case prop of
-                      Tot -> c == source sgn
-                      Sur -> c == target sgn
+                      Tot _ -> c == source sgn
+                      Sur _ -> c == target sgn
                       _   -> fatal $ "isTotSur must not be called with "<>tshow prop
       EDcV{}     -> todo
       EBrk e     -> isTotSur prop e

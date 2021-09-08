@@ -34,6 +34,7 @@ module Ampersand.Core.ParseTree (
    , P_Markup(..)
 
    , PProp(..), PProps
+   , PPropDefault(..)
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -219,7 +220,7 @@ data TType
   | Date | DateTime
   | Boolean | Integer | Float | Object
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Eq, Ord, Typeable, Enum, Bounded)
+     deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
 instance Unique TType where
  showUnique = tshow
 instance Show TType where
@@ -883,23 +884,38 @@ instance Traced PClassify where
  origin = pos
 
 type PProps = Set PProp
-data PProp = P_Uni  -- ^ univalent
-           | P_Inj  -- ^ injective
-           | P_Sur  -- ^ surjective
-           | P_Tot  -- ^ total
-           | P_Sym  -- ^ symmetric
-           | P_Asy  -- ^ antisymmetric
-           | P_Trn  -- ^ transitive
-           | P_Rfx  -- ^ reflexive
-           | P_Irf  -- ^ irreflexive
-           | P_Prop -- ^ PROP keyword, the parser must replace this by [Sym, Asy]. 
-                 deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
+data PProp
+  = -- | univalent
+    P_Uni
+  | -- | injective
+    P_Inj
+  | -- | surjective
+    P_Sur (Maybe PPropDefault)
+  | -- | total
+    P_Tot (Maybe PPropDefault)
+  | -- | symmetric
+    P_Sym
+  | -- | antisymmetric
+    P_Asy
+  | -- | transitive
+    P_Trn
+  | -- | reflexive
+    P_Rfx
+  | -- | irreflexive
+    P_Irf
+  | -- | PROP keyword, the parser must replace this by [Sym, Asy].
+    P_Prop
+  deriving (Eq, Ord, Typeable, Data)
 
 instance Show PProp where
  show P_Uni = "UNI"
  show P_Inj = "INJ"
- show P_Sur = "SUR"
- show P_Tot = "TOT"
+ show (P_Sur x) = "SUR"<>case x of 
+                    Nothing -> mempty
+                    Just d  -> " "<>show d
+ show (P_Tot x) = "TOT"<>case x of 
+                    Nothing -> mempty
+                    Just d  -> " "<>show d
  show P_Sym = "SYM"
  show P_Asy = "ASY"
  show P_Trn = "TRN"
@@ -912,11 +928,14 @@ instance Unique PProp where
 
 instance Flippable PProp where
  flp P_Uni = P_Inj
- flp P_Tot = P_Sur
- flp P_Sur = P_Tot
+ flp (P_Tot x) = P_Sur x
+ flp (P_Sur x) = P_Tot x
  flp P_Inj = P_Uni
  flp x = x
-
+data PPropDefault =
+    PDefAtom !PAtomValue
+  | PDefEvalPHP !Text
+  deriving (Eq, Ord, Data, Show)
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
   PCtx{ ctx_nm     = case (filter (not.T.null) . map ctx_nm) contexts of

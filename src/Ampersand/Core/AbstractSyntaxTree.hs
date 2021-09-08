@@ -17,6 +17,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , AEnforce(..)
  , Relation(..), Relations, showRel
  , AProp(..), AProps
+ , APropDefault(..)
  , IdentityRule(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -244,22 +245,35 @@ instance Ord Conjunct where
   compare = compare `on` rc_id
 
 type AProps = Set.Set AProp
-data AProp     = Uni          -- ^ univalent
-               | Inj          -- ^ injective
-               | Sur          -- ^ surjective
-               | Tot          -- ^ total
-               | Sym          -- ^ symmetric
-               | Asy          -- ^ antisymmetric
-               | Trn          -- ^ transitive
-               | Rfx          -- ^ reflexive
-               | Irf          -- ^ irreflexive
-                 deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
-
+data AProp
+  = -- | univalent
+    Uni
+  | -- | injective
+    Inj
+  | -- | surjective
+    Sur (Maybe APropDefault)
+  | -- | total
+    Tot (Maybe APropDefault)
+  | -- | symmetric
+    Sym
+  | -- | antisymmetric
+    Asy
+  | -- | transitive
+    Trn
+  | -- | reflexive
+    Rfx
+  | -- | irreflexive
+    Irf
+  deriving (Eq, Ord, Data, Typeable)
 instance Show AProp where
  show Uni = "UNI"
  show Inj = "INJ"
- show Sur = "SUR"
- show Tot = "TOT"
+ show (Sur x) = "SUR"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
+ show (Tot x) = "TOT"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
  show Sym = "SYM"
  show Asy = "ASY"
  show Trn = "TRN"
@@ -271,11 +285,15 @@ instance Unique AProp where
 
 instance Flippable AProp where
  flp Uni = Inj
- flp Tot = Sur
- flp Sur = Tot
+ flp (Tot x) = Sur x
+ flp (Sur x) = Tot x
  flp Inj = Uni
  flp x = x
 
+data APropDefault =
+    ADefAtom !AAtomValue
+  | ADefEvalPHP !Text
+  deriving (Eq, Ord, Show, Data)
 
 
 type Relations = Set.Set Relation
@@ -622,7 +640,7 @@ data AAtomValue
   | AAVDateTime { aavtyp :: TType
                 , aadatetime ::  UTCTime
                 }
-  | AtomValueOfONE deriving (Eq,Ord, Show)
+  | AtomValueOfONE deriving (Eq,Ord, Show, Data)
 
 instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (tshow.aavhash) pop

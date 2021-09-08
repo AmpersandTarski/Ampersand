@@ -119,13 +119,17 @@ aProps2Pprops aps
      aProp2pProp p = case p of
        Uni -> P_Uni
        Inj -> P_Inj
-       Sur -> P_Sur
-       Tot -> P_Tot
+       Sur x -> P_Sur (aPropDef2pPropDef <$> x)
+       Tot x -> P_Tot (aPropDef2pPropDef <$> x)
        Sym -> P_Sym
        Asy -> P_Asy
        Trn -> P_Trn
        Rfx -> P_Rfx
        Irf -> P_Irf
+     aPropDef2pPropDef :: APropDefault -> PPropDefault
+     aPropDef2pPropDef x = case x of 
+        ADefAtom val    -> PDefAtom $ aAtomValue2pAtomValue val
+        ADefEvalPHP txt -> PDefEvalPHP txt
 aRelation2pNamedRel :: Relation -> P_NamedRel
 aRelation2pNamedRel dcl = PNamedRel
   { pos      = decfpos dcl

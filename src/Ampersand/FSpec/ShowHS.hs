@@ -432,7 +432,7 @@ instance ShowHS Rule where
      ,"  , rrviol = " <> showHS env "" (rrviol r)
      ,"  , rrpat  = " <> tshow (rrpat  r)
      ,"  , rrkind  = " <> (case rrkind r of
-                            Propty prp rel -> "Propty "<>showHSName prp<>", "<>showHSName rel
+                            Propty prp rel -> "Propty "<>showHS env "" prp<>", "<>showHSName rel
                             x -> tshow x
                          )
     
@@ -627,8 +627,8 @@ instance ShowHS A_Concept where
 instance ShowHSName AProp where
  showHSName Uni = "Uni"
  showHSName Inj = "Inj"
- showHSName Sur = "Sur"
- showHSName Tot = "Tot"
+ showHSName Sur{} = "Sur"
+ showHSName Tot{} = "Tot"
  showHSName Sym = "Sym"
  showHSName Asy = "Asy"
  showHSName Trn = "Trn"
@@ -636,7 +636,15 @@ instance ShowHSName AProp where
  showHSName Irf = "Irf"
 
 instance ShowHS AProp where
- showHS _ _ = showHSName
+  showHS env indent prp = indent <> showHSName prp <> 
+      case prp of
+        Sur d -> " "<> showHS env indent d
+        Tot d -> " "<> showHS env indent d
+        _ -> mempty
+instance ShowHS APropDefault where
+  showHS _ _ d = case d of
+    ADefAtom aav -> "ADefAtom " <> tshow aav
+    ADefEvalPHP txt -> "ADefEvalPHP "<> tshow txt 
 
 instance ShowHS FilePos where
  showHS _ _ = tshow

@@ -98,9 +98,9 @@ data ContextElement = CMeta MetaData
 data Include = Include Origin FilePath [Text]
 --- IncludeStatement ::= 'INCLUDE' Text
 pIncludeStatement :: AmpParser Include
-pIncludeStatement = 
+pIncludeStatement =
       Include <$> currPos
-              <*  pKey "INCLUDE" 
+              <*  pKey "INCLUDE"
               <*> pDoubleQuotedString
               <*> (pBrackets (asText pDoubleQuotedString `sepBy` pComma) <|> return [])
 
@@ -209,8 +209,8 @@ pClassify = fun <$> currPos
                where
                  fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
                  fun p lhs (isISA ,rhs) = NE.toList $ fmap f lhs
-                   where 
-                     f s = PClassify 
+                   where
+                     f s = PClassify
                              { pos      = p
                              , specific = s
                              , generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
@@ -245,7 +245,7 @@ pRuleDef =  P_Rule <$> currPos
                  pPairView :: AmpParser (PairView (Term TermPrim))
                  pPairView = PairView <$> pParens (pPairViewSegment `sepBy1` pComma)
                    --    where f xs = PairView {ppv_segs = xs}
-                             
+
                  --- PairViewSegmentList ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' Text
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
@@ -264,7 +264,7 @@ pRelationDef = reorder <$> currPos
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) prop pragma meanings prs =
                     (P_Relation nm sign props pragma meanings pos', map pair2pop prs)
-                    where 
+                    where
                       props = prop `Set.union` fun
                       pair2pop :: PAtomPair -> P_Population
                       pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
@@ -293,18 +293,27 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser PProp
-        pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
+        pProp = choice $
+           [ p <$ pKey (show p) | p <- [P_Uni, P_Inj, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf, P_Prop]
+           ] <>
+           [ P_Tot <$ pKey "TOT" <*> pMaybe pPropDefault
+           , P_Sur <$ pKey "SUR" <*> pMaybe pPropDefault]
+           where pPropDefault :: AmpParser PPropDefault
+                 pPropDefault = choice
+                   [ PDefAtom  <$ pKey "VALUE" <*> pAtomValue
+                   , PDefEvalPHP <$ pKey "EVALPHP" <*> (T.pack <$> pDoubleQuotedString)
+                   ]
         normalizeProps :: [PProp] -> PProps
         normalizeProps = conv.rep . Set.fromList
             where -- replace PROP by SYM, ASY
                   rep :: PProps -> PProps
-                  rep ps 
+                  rep ps
                     | P_Prop `elem` ps = Set.fromList [P_Sym, P_Asy] `Set.union` (P_Prop `Set.delete` ps)
                     | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
                   conv :: PProps -> PProps
                   conv ps = ps `Set.union`
-                    if P_Sym `elem` ps && P_Asy `elem` ps 
+                    if P_Sym `elem` ps && P_Asy `elem` ps
                     then Set.fromList [P_Uni,P_Inj]
                     else Set.empty
 
@@ -312,14 +321,14 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser PProps
 pFun  =  Set.empty               <$ pOperator "*"  <|>
-        Set.fromList [P_Uni,P_Tot] <$ pOperator "->" <|>
-        Set.fromList [P_Sur,P_Inj] <$ pOperator "<-" <|>
+        Set.fromList [P_Uni ,P_Tot Nothing ] <$ pOperator "->" <|>
+        Set.fromList [P_Sur Nothing ,P_Inj ] <$ pOperator "<-" <|>
         pBrackets pMults
         --- Mults ::= Mult '-' Mult
   where pMults :: AmpParser PProps
-        pMults = Set.union <$> optSet (pMult (P_Sur,P_Inj))
+        pMults = Set.union <$> optSet (pMult (P_Sur Nothing ,P_Inj))
                            <*  pDash
-                           <*> optSet (pMult (P_Tot,P_Uni))
+                           <*> optSet (pMult (P_Tot Nothing ,P_Uni))
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
@@ -339,11 +348,11 @@ pConceptDef       = PConceptDef <$> currPos
                        <*> many pMeaning
     where
       pPCDDef2 :: AmpParser PCDDef
-      pPCDDef2 = 
+      pPCDDef2 =
             (PCDDefLegacy <$> (asText pDoubleQuotedString <?> "concept definition (string)")
                           <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
             )
-        <|> (PCDDefNew <$> pMeaning)     
+        <|> (PCDDefNew <$> pMeaning)
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
 pRepresentation
@@ -417,10 +426,10 @@ pFancyViewDef  = mkViewDef <$> currPos
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pDoubleQuotedString
 --- ViewSegmentLoad ::= Term | 'TXT' Text
-pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
+pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)
 pViewSegmentLoad = P_ViewExp  <$> pTerm
                <|> P_ViewText <$ pKey "TXT" <*> asText pDoubleQuotedString
-            
+
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
 pViewSegment labelIsOptional
@@ -442,11 +451,11 @@ pViewDefLegacy = P_Vd <$> currPos
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
-pInterface = lbl <$> currPos                                       
+pInterface = lbl <$> currPos
                  <*> pInterfaceIsAPI
                  <*> pADLid
                  <*> pMaybe pParams
-                 <*> pMaybe pRoles 
+                 <*> pMaybe pRoles
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons $ asText pConid)  -- The view that should be used for this object
@@ -474,29 +483,29 @@ pInterface = lbl <$> currPos
 --- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
-            <|> P_InterfaceRef <$> currPos 
-                               <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey 
+            <|> P_InterfaceRef <$> currPos
+                               <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey
                                <*> pADLid
   where pBoxHeader :: AmpParser BoxHeader
-        pBoxHeader = 
+        pBoxHeader =
               build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
         build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
         build o x = BoxHeader o typ keys
-          where (typ,keys) = case x of 
-                               Nothing -> ("FORM",[]) 
-                               Just (boxtype, atts) -> (boxtype,atts)       
+          where (typ,keys) = case x of
+                               Nothing -> ("FORM",[])
+                               Just (boxtype, atts) -> (boxtype,atts)
         pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
         pBoxSpecification = pChevrons $
                                 (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
                                 <*> many pTemplateKeyValue
-         
+
         anyKeyWord :: AmpParser String
         anyKeyWord = case map pKey keywords of
                        [] -> fatal "We should have keywords. We always have."
                        h:tl -> foldr (<|>) h tl
         pTemplateKeyValue :: AmpParser TemplateKeyValue
-        pTemplateKeyValue = 
-          TemplateKeyValue 
+        pTemplateKeyValue =
+          TemplateKeyValue
                  <$> currPos
                  <*> asText (pVarid <|> pConid <|> anyKeyWord)
                  <*> optional (id <$ pOperator "=" <*> asText pDoubleQuotedString)
@@ -506,13 +515,13 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
 pObjDef :: AmpParser P_BoxItemTermPrim
 pObjDef = pBoxItem <$> currPos
                    <*> pLabel
-                   <*> (pObj <|> pTxt) 
+                   <*> (pObj <|> pTxt)
   where
     --build p lable fun = pBoxItem p lable <$> fun
     pBoxItem :: Origin -> Text -> P_BoxItemTermPrim -> P_BoxItemTermPrim
     pBoxItem p nm fun = fun{ pos    = p
                            , obj_nm = nm}
-      
+
     pObj :: AmpParser P_BoxItemTermPrim
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
@@ -529,7 +538,7 @@ pObjDef = pBoxItem <$> currPos
     pTxt :: AmpParser P_BoxItemTermPrim
     pTxt = obj <$ pKey "TXT"
                <*> asText pDoubleQuotedString
-      where obj txt = 
+      where obj txt =
                   P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
                         , pos      = fatal "This should have been filled in promptly."
                         , obj_txt  = txt
@@ -705,10 +714,10 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
 pSingleton :: AmpParser PAtomValue
-pSingleton = value2PAtomValue <$> currPos <*> 
+pSingleton = value2PAtomValue <$> currPos <*>
                  (             pAtomValInPopulation True
                   <|> pBraces (pAtomValInPopulation False)
-                 ) 
+                 )
 pAtomValue :: AmpParser PAtomValue
 pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation False
 

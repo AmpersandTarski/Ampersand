@@ -48,10 +48,8 @@ keywords  = L.nub $
                 , "CONCEPT"
                 -- Keywords for Relation-statements
                 , "RELATION", "PRAGMA", "MEANING"
-                ] ++
-                [map toUpper $ show x | x::PProp <-[minBound..]
-                ] ++ 
-                [ "POPULATION", "CONTAINS"
+                , "ASY", "INJ", "IRF", "RFX", "SUR", "SYM", "TOT", "TRN", "UNI", "EVALPHP"
+                , "POPULATION", "CONTAINS"
                 -- Keywords for rules
                 , "RULE", "MESSAGE", "VIOLATION", "TXT"
                 ] ++
