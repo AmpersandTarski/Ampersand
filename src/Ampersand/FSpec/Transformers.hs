@@ -312,7 +312,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept"
-      , Set.fromList [Tot]
+      , Set.fromList [Tot]  -- it is Tot by definition, because genrhs is a NonEmpty.
       , [ ( dirtyId ise, dirtyId cpt)
         | ise@IsE{} <- instanceList fSpec
         , cpt <- NE.toList $ genrhs ise]
@@ -402,11 +402,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("isa"                   , "Concept"               , "Concept"
       , Set.empty
-      , [ ( dirtyId gCpt, dirtyId (genspc ise))
+      , [ ( dirtyId (genspc ise), dirtyId gCpt)
         | ise@IsE{} <- instanceList fSpec
         , gCpt <- NE.toList $ genrhs ise
         ] ++
-        [ ( dirtyId (genspc isa), dirtyId (genspc isa))
+        [ ( dirtyId (genspc isa), dirtyId (gengen isa))
         | isa@Isa{} <- instanceList fSpec
         ]
       )
