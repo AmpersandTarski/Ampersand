@@ -126,6 +126,7 @@ mkArchiContext [archiRepo] pops = pure
       , ctx_ps     = archiPurps
       , ctx_pops   = archiPops
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where -- vwAts picks quadruples that belong to one view, to assemble a pattern for that view.
         vwAts :: ArchiObj -> [(P_Population,P_Relation,Maybe Text,PPurpose)]
@@ -172,19 +173,20 @@ mkArchiContext [archiRepo] pops = pure
         archiPurps = (map NE.head . eqClass samePurp)    --  The relations that are declared in this pattern
                       [ purp | (_,_,_,purp)<-leftovers ]
         pats
-         = [ P_Pat { pos =      OriginUnknown     -- the starting position in the file in which this pattern was declared.
-                   , pt_nm =    viewName vw       -- Name of this pattern
-                   , pt_rls =   []                -- The user defined rules in this pattern
-                   , pt_gns =   []                -- The generalizations defined in this pattern
-                   , pt_dcs =   sortDecls rels    -- The relations that are declared in this pattern
-                   , pt_RRuls = []                -- The assignment of roles to rules.
-                   , pt_cds =   []                -- The concept definitions defined in this pattern
-                   , pt_Reprs = []                -- The type into which concepts is represented
-                   , pt_ids =   []                -- The identity definitions defined in this pattern
-                   , pt_vds =   []                -- The view definitions defined in this pattern
-                   , pt_xps =   purps             -- The purposes of elements defined in this pattern
-                   , pt_pop =   sortRelPops popus -- The populations that are local to this pattern
-                   , pt_end =   OriginUnknown     -- the end position in the file in which this pattern was declared.
+         = [ P_Pat { pos =      OriginUnknown
+                   , pt_nm =    viewName vw
+                   , pt_rls =   []
+                   , pt_gns =   []
+                   , pt_dcs =   sortDecls rels
+                   , pt_RRuls = []
+                   , pt_cds =   []
+                   , pt_Reprs = []
+                   , pt_ids =   []
+                   , pt_vds =   []
+                   , pt_xps =   purps
+                   , pt_pop =   sortRelPops popus
+                   , pt_end =   OriginUnknown
+                   , pt_enfs =  []
                    }
            | folder<-allFolders archiRepo
            , vw@View{}<-fldObjs folder

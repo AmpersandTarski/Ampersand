@@ -252,7 +252,7 @@ FALSE
 {- ... -}
 FALSE
 
-Multiplicities
+Properties
 
 \[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
 FALSE

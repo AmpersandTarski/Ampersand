@@ -7,6 +7,8 @@ module Ampersand.Core.ParseTree (
    , MetaData(..)
    , P_RoleRule(..)
    , Role(..)
+   , P_Enforce(..)
+   , EnforceOperator(..)
    , P_Pattern(..)
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
@@ -23,7 +25,6 @@ module Ampersand.Core.ParseTree (
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
-
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
    , P_Concept(..), P_Sign(..)
@@ -48,23 +49,24 @@ import           Data.Traversable
 import           Data.Typeable (typeOf)
 
 data P_Context
-   = PCtx{ ctx_nm ::     Text             -- ^ The name of this context
-         , ctx_pos ::    [Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Maybe Lang         -- ^ The language specified on the top-level context. If omitted, English will be the default.
-         , ctx_markup :: Maybe PandocFormat -- ^ The default markup format for free text in this context
-         , ctx_pats ::   [P_Pattern]        -- ^ The patterns defined in this context
-         , ctx_rs ::     [P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctx_ds ::     [P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
-         , ctx_cs ::     [PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
-         , ctx_ks ::     [P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctx_rrules :: [P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
-         , ctx_reprs ::  [Representation]
-         , ctx_vs ::     [P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
-         , ctx_ifcs ::   [P_Interface]      -- ^ The interfaces defined in this context
-         , ctx_ps ::     [PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
-         , ctx_metas ::  [MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+   = PCtx{ ctx_nm ::     !Text             -- ^ The name of this context
+         , ctx_pos ::    ![Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctx_lang ::   !(Maybe Lang)         -- ^ The language specified on the top-level context. If omitted, English will be the default.
+         , ctx_markup :: !(Maybe PandocFormat) -- ^ The default markup format for free text in this context
+         , ctx_pats ::   ![P_Pattern]        -- ^ The patterns defined in this context
+         , ctx_rs ::     ![P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_ds ::     ![P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
+         , ctx_cs ::     ![PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctx_ks ::     ![P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctx_rrules :: ![P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+         , ctx_reprs ::  ![Representation]
+         , ctx_vs ::     ![P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     ![PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_ifcs ::   ![P_Interface]      -- ^ The interfaces defined in this context
+         , ctx_ps ::     ![PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
+         , ctx_pops ::   ![P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
+         , ctx_metas ::  ![MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+         , ctx_enfs ::   ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this context, outside the scope of patterns
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
@@ -79,6 +81,25 @@ data MetaData = MetaData { pos :: Origin
               } deriving (Show)
 instance Traced MetaData where
   origin = pos
+
+data EnforceOperator = 
+      IsSuperSet Origin 
+    | IsSubSet Origin
+    | IsSameSet Origin 
+    deriving (Show,Eq)
+
+data P_Enforce a = P_Enforce
+     { pos :: !Origin
+     , penfRel :: !a
+     , penfOp  :: !EnforceOperator
+     , penfExpr :: !(Term a)} deriving (Show)
+instance Functor P_Enforce where fmap = fmapDefault
+instance Foldable P_Enforce where foldMap = foldMapDefault
+instance Traversable P_Enforce where
+  traverse f (P_Enforce orig rel op expr)  =
+    (\r e -> P_Enforce orig r op e) <$> f rel
+                                    <*> traverse f expr
+
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
@@ -104,19 +125,20 @@ instance Unique Role where
  showUnique = name
 
 data P_Pattern
-   = P_Pat { pos ::      Origin            -- ^ the starting position in the file in which this pattern was declared.
-           , pt_nm ::    Text            -- ^ Name of this pattern
-           , pt_rls ::   [P_Rule TermPrim] -- ^ The user defined rules in this pattern
-           , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
-           , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_cds ::   [PConceptDef]    -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
-           , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
-           , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
-           , pt_xps ::   [PPurpose]        -- ^ The purposes of elements defined in this pattern
-           , pt_pop ::   [P_Population]    -- ^ The populations that are local to this pattern
-           , pt_end ::   Origin            -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pos ::      !Origin            -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm ::    !Text            -- ^ Name of this pattern
+           , pt_rls ::   ![P_Rule TermPrim] -- ^ The user defined rules in this pattern
+           , pt_gns ::   ![PClassify]       -- ^ The generalizations defined in this pattern
+           , pt_dcs ::   ![P_Relation]      -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: ![P_RoleRule]      -- ^ The assignment of roles to rules.
+           , pt_cds ::   ![PConceptDef]    -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: ![Representation]  -- ^ The type into which concepts is represented
+           , pt_ids ::   ![P_IdentDef]      -- ^ The identity definitions defined in this pattern
+           , pt_vds ::   ![P_ViewDef]       -- ^ The view definitions defined in this pattern
+           , pt_xps ::   ![PPurpose]        -- ^ The purposes of elements defined in this pattern
+           , pt_pop ::   ![P_Population]    -- ^ The populations that are local to this pattern
+           , pt_end ::   !Origin            -- ^ the end position in the file in which this pattern was declared.
+           , pt_enfs ::  ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this pattern
            } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
@@ -219,7 +241,7 @@ instance Show TType where
 data P_Relation =
       P_Relation { dec_nm :: Text    -- ^ the name of the relation
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
-            , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+            , dec_prps :: Props     -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
             , dec_pragma :: [Text]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
@@ -447,8 +469,8 @@ instance Traced (P_SubIfc a) where
 instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 instance Traversable P_BoxItem where
- traverse f (P_BxExpr nm pos' ctx mCrud mView msub)
-  = (\ctx' msub'-> P_BxExpr nm pos' ctx' mCrud mView msub') 
+ traverse f (P_BxExpr nm orig ctx mCrud mView msub)
+  = (\ctx' msub'-> P_BxExpr nm orig ctx' mCrud mView msub') 
        <$> traverse f ctx
        <*> traverse (traverse f) msub
  traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)
@@ -944,6 +966,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_ps     = fromContextsKeepDoubles ctx_ps
       , ctx_pops   = mergePops (ctx_pops ctx1<>ctx_pops ctx2)
       , ctx_metas  = fromContextsKeepDoubles ctx_metas
+      , ctx_enfs   = fromContextsKeepDoubles ctx_enfs
       }
     where
       -- NOTE:

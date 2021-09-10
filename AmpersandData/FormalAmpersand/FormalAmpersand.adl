@@ -1,9 +1,17 @@
-CONTEXT RAP3 IN ENGLISH LATEX
+CONTEXT FormalAmpersand IN ENGLISH LATEX
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
+INCLUDE "Concepts.adl"
+-- INCLUDE "Conjuncts.adl"
+INCLUDE "Contexts.adl"
+INCLUDE "Documentation.adl"
+INCLUDE "Generics.adl"
+INCLUDE "Interfaces.adl"
+--INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must violate an invariant
+INCLUDE "Relations.adl"
+INCLUDE "Rules.adl"
+-- INCLUDE "Tables.adl"
+INCLUDE "Terms.adl"
+--INCLUDE "Views.adl"
 
-INCLUDE "AST.adl" 
-{-
-PURPOSE CONTEXT FormalAmpersand
-{+Formal Ampersand is the specification of Ampersand in Ampersand. It's main purpose is to act as a reference to the language. 
-+}
 
 ENDCONTEXT

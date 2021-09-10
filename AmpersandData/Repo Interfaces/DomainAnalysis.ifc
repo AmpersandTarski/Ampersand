@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH 
+﻿CONTEXT FormalAmpersand IN ENGLISH 
 INCLUDE "DomainAnalysis.adl"
 INCLUDE "Terms.adl"
 INCLUDE "Braga.xslx"

@@ -8,7 +8,7 @@ BOX <TABS>
       BOX<TABLE sortable>
            [ context        : I
            , "valid rules"  : valid[Rule*Context]~
-           , relations      : declaredIn[Relation*Context]~
+           , relations      : relsDefdIn[Relation*Context]~
            ]
     ]
 
@@ -35,11 +35,11 @@ BOX <TABS>
                 ( -(genspc[Isa*Concept]~;genspc[Isa*Concept]))) 
          -- INTERFACE IsaTree 
   , "Concepts" : context[Concept*Context]~
-  , "Relations" : declaredIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
+  , "Relations" : relsDefdIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
        BOX<TABLE sortable>
            [ relation   : I
-           , "declared in pattern" : declaredIn[Relation*Pattern]
-           , "declared in context" : declaredIn[Relation*Context]
+           , "declared in pattern" : declaredIn
+           , "declared in context" : relsDefdIn
            ]
   , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]

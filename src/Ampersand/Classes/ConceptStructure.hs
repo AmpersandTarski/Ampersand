@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
+module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
@@ -13,7 +13,7 @@ class ConceptStructure a where
   expressionsIn ::     a -> Expressions -- ^ The set of all expressions within data structure a
   bindedRelationsIn :: a -> Relations   -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
   bindedRelationsIn = Set.map theBindedRel . Set.filter isBindedRelation . primsMentionedIn
-    where 
+    where
       isBindedRelation :: Expression -> Bool
       isBindedRelation expr =
         case expr of
@@ -67,6 +67,7 @@ instance ConceptStructure A_Context where
               , (concs . ctxps) ctx
               , (concs . ctxrs) ctx
               , (concs . ctxvs) ctx
+              , (concs . ctxEnforces) ctx
               ]
   expressionsIn ctx = Set.unions
                       [ (expressionsIn . ctxifcs) ctx
@@ -75,18 +76,22 @@ instance ConceptStructure A_Context where
                       , (expressionsIn . ctxrs) ctx
                       , (expressionsIn . ctxvs) ctx
                       , (expressionsIn . identityRules) ctx
-                      , (expressionsIn . multrules) ctx
-                      ]
+                      , (expressionsIn . proprules) ctx
+                      , (expressionsIn . ctxEnforces) ctx]
 
 instance ConceptStructure IdentityRule where
-  concs identity = Set.singleton (idCpt identity) 
-                    `Set.union` 
+  concs identity = Set.singleton (idCpt identity)
+                    `Set.union`
                    (concs . fmap segment . identityAts $ identity)
   expressionsIn = expressionsIn . fmap segment . identityAts
- 
+
 instance ConceptStructure ViewDef where
   concs         vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)
   expressionsIn vd = expressionsIn (vdats vd)
+
+instance ConceptStructure AEnforce where
+  concs         enf = concs (enfRel enf) `Set.union` concs (enfExpr enf)
+  expressionsIn enf = expressionsIn (enfExpr enf)
 
 instance ConceptStructure ViewSegment where
   concs  = concs . vsmLoad
@@ -146,15 +151,17 @@ instance ConceptStructure Pattern where
               , (concs . ptups) pat
               , (concs . ptids) pat
               , (concs . ptxps) pat
+              , (concs . ptenfs) pat
               ]
   expressionsIn p = Set.unions
                      [ (expressionsIn . ptrls) p
                      , (expressionsIn . ptids) p
                      , (expressionsIn . ptvds) p
+                     , (expressionsIn . ptenfs) p
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs . expressionsIn 
+  concs         = concs . expressionsIn
   expressionsIn ifc = Set.unions
        [expressionsIn . BxExpr        . ifcObj $ ifc
        ,expressionsIn . objExpression . ifcObj $ ifc]
@@ -192,7 +199,7 @@ instance ConceptStructure ExplObj where
   concs (ExplPattern _)     = Set.empty {-beware of loops...-}
   concs (ExplInterface _)   = Set.empty {-beware of loops...-}
   concs (ExplContext _)     = Set.empty {-beware of loops...-}
-  
+
   expressionsIn _ = Set.empty
 
 instance ConceptStructure (PairViewSegment Expression) where
