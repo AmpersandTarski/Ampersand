@@ -79,7 +79,7 @@ instance JSON Relation RelationJson where
             toText :: APropDefault -> Text
             toText d = case d of 
               ADefAtom aav -> tshow aav
-              ADefEvalPHP txt -> "{EX}{php}"<>txt
+              ADefEvalPHP txt -> "{php}"<>txt
 instance JSON Relation RelTableInfo where
  fromAmpersand env fSpec dcl = RelTableInfo
   { rtiJSONname    = name plug
