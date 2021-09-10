@@ -536,7 +536,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rul::Rule <- instanceList fSpec
         ]
       )
-     ,("name"                  , "ViewDef"              , "ViewDefName"
+     ,("name"                  , "View"              , "ViewDefName"
       , Set.fromList [Uni,Tot]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . name $ vd)
         | vd::ViewDef <- instanceList fSpec
@@ -831,33 +831,33 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , Just x <- [userTgt expr]
         ]
       )
-     ,("vdats"                 , "ViewDef"              , "ViewSegment"
+     ,("vdats"                 , "View"              , "ViewSegment"
       , Set.fromList [Inj,Sur]
       , [ (dirtyId vd, PopAlphaNumeric . tshow $ vs)
         | vd::ViewDef <- instanceList fSpec
         , vs <- vdats vd
         ]
       )
-     ,("vdcpt"                 , "ViewDef"              , "Concept"
+     ,("vdcpt"                 , "View"              , "Concept"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec, vdIsDefault vd
         ]
       )
-     ,("vdhtml"                , "ViewDef"              , "Concept"
+     ,("vdhtml"                , "View"              , "Concept"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow $ html)
         | vd::ViewDef <- instanceList fSpec
         , Just html <- [vdhtml vd]
         ]
       )
-     ,("vdIsDefault"           , "ViewDef"              , "Concept"
+     ,("vdIsDefault"           , "View"              , "Concept"
       , Set.fromList [Uni,Tot]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec
         ]
       )
-     ,("vdpos"                 , "ViewDef"              , "Origin"
+     ,("vdpos"                 , "View"              , "Origin"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . origin $ vd)
         | vd::ViewDef <- instanceList fSpec
