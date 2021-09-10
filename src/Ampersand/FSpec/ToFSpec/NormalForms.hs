@@ -547,7 +547,6 @@ rTerm2expr term
             { decnm   = nm
             , decsgn  = sgn
             , decprps = fatal "Illegal RTerm in rTerm2expr"
-            , decprps_calc = Nothing
             , decprL  = fatal "Illegal RTerm in rTerm2expr"
             , decprM  = fatal "Illegal RTerm in rTerm2expr"
             , decprR  = fatal "Illegal RTerm in rTerm2expr"
@@ -1029,7 +1028,6 @@ delta sgn
               { decnm   = T.pack "Delta"
               , decsgn  = sgn
               , decprps = Set.empty
-              , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""
               , decprR  = ""
