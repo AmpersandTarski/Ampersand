@@ -1,0 +1,5 @@
+testCmds:
+  - command: ampersand validate --verbose
+    exitcode: 10
+  - command: ampersand proto --verbose
+    exitcode: 10
