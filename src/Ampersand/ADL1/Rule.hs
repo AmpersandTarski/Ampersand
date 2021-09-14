@@ -1,5 +1,5 @@
 
-module Ampersand.ADL1.Rule 
+module Ampersand.ADL1.Rule
   ( consequent, antecedent, hasantecedent
   , isPropertyRule, rulefromProp
   , propFullName
@@ -8,6 +8,7 @@ where
 
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
+import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
 hasantecedent r
@@ -32,20 +33,30 @@ consequent r
 isPropertyRule :: Rule -> Bool
 isPropertyRule r= case rrkind r of
   Propty{} -> True
-  _ -> False 
+  _ -> False
 -- rulefromProp specifies a rule that defines property prp of relation d.
 rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp d =
      Ru { rrnm  = tshow prp<>" "<>showDcl
         , formalExpression = rExpr
-        , rrfps = PropertyRule nm (origin d)
+        , rrfps = propOrig
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
-        , rrviol = Nothing
-        , rrpat = decpat d      
+        , rrviol = violation
+        , rrpat = decpat d
         , rrkind = Propty prp d
         }
        where
+        violation :: Maybe (PairView Expression)
+        violation = case prp of
+           Sur (Just x) -> defViol x
+           Tot (Just x) -> defViol x
+           _ -> Nothing
+          where defViol :: APropDefault  -> Maybe (PairView Expression)
+                defViol _ = Just . PairView $
+                     PairViewText propOrig "Michiel? TODO"
+                   NE.:| []
+        propOrig = PropertyRule nm (origin d)
         nm = tshow prp<>" "<>showDcl
         showDcl = showRel d
         r:: Expression
@@ -63,10 +74,10 @@ rulefromProp prp d =
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
         meanings prop = map (Meaning . markup) [English,Dutch]
-          where 
+          where
             markup lang = Markup lang (string2Blocks ReST $ f lang)
             f lang = showDcl<>" is "<>propFullName False lang prop
-         
+
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
             s= name (source d)
@@ -100,7 +111,7 @@ rulefromProp prp d =
 
 propFullName :: Bool -> Lang -> AProp -> Text
 propFullName isAdjective lang prop =
-  case lang of 
+  case lang of
     English ->
         case prop of
           Sym-> "symmetric"
