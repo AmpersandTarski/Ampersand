@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        4.3.0
+version:        4.4.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -104,20 +104,25 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldFail/Issue1127.adl
     testing/Sentinel/Tests/ShouldFail/Issue1127.xlsx
     testing/Sentinel/Tests/ShouldFail/Issue298.adl
+    testing/Sentinel/Tests/ShouldFail/Issue335.adl
+    testing/Sentinel/Tests/ShouldFail/Issue406.adl
+    testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
+    testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/Session.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
-    testing/Sentinel/Tests/ShouldSucceed/Bug335_Kl0Kl1.adl
+    testing/Sentinel/Tests/ShouldFail/testinfo.yaml
     testing/Sentinel/Tests/ShouldSucceed/Bug337_FatalONE.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue166.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue166_2.adl
     testing/Sentinel/Tests/ShouldSucceed/Issue233.adl
     testing/Sentinel/Tests/ShouldSucceed/Issue280.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue335.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue406.adl
     testing/Sentinel/Tests/ShouldSucceed/Issue751.adl
     testing/Sentinel/Tests/ShouldSucceed/Issue853.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/testinfo.yaml
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
+    testing/Sentinel/Tests/ShouldSucceed/testinfo.yaml
     testing/Sentinel/Tests/ShouldSucceed/Ticket580.adl
-    testing/Sentinel/Tests/ShouldSucceed/ViewAnnotationCheck.adl
+    testing/StillUnsupported/Bug335_Kl0Kl1.adl
+    testing/StillUnsupported/Issue166.adl
+    testing/StillUnsupported/Issue166_2.adl
     testing/Travis/README.md
     testing/Travis/testcases/Bugs/Current/Other/testinfo.yaml
     testing/Travis/testcases/Bugs/Current/SQL/ARM20-Test8.adl
@@ -149,7 +154,10 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/Bug434.adl
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
-    testing/Travis/testcases/Check/Issue1063.adl
+    testing/Travis/testcases/Check/EnforceTest1.adl
+    testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
+    testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
+    testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl

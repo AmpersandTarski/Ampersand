@@ -11,6 +11,7 @@ module Ampersand.Core.A2P_Converters (
   , aIdentityDef2pIdentityDef
   , aObjectDef2pObjectDef
   , aRelation2pRelation
+  , aProps2Pprops
   , aPopulation2pPopulation
   , aRule2pRule
   , aSign2pSign
@@ -22,6 +23,7 @@ module Ampersand.Core.A2P_Converters (
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
+import Ampersand.Classes
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -46,7 +48,17 @@ aCtx2pCtx ctx =
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
       , ctx_metas  = ctxmetas ctx
+      , ctx_enfs   = map aEnforce2pEnforce . ctxEnforces $ ctx 
       }
+
+aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
+aEnforce2pEnforce (AEnforce orig rel op expr _) =
+  P_Enforce
+    { pos = orig,
+      penfRel = PNamedR . aRelation2pNamedRel $ rel,
+      penfOp = op,
+      penfExpr = aExpression2pTermPrim expr
+    }
 
 aConcDef2pConcDef :: AConceptDef -> PConceptDef
 aConcDef2pConcDef aCd =
@@ -65,14 +77,15 @@ aPattern2pPattern pat =
        , pt_rls   = map aRule2pRule . Set.elems . ptrls $ pat
        , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
-       , pt_RRuls = map aRoleRule2pRoleRule . ptrrs $ pat
+       , pt_RRuls = map aRoleRule2pRoleRule . udefRoleRules $ pat
        , pt_cds   = map aConcDef2pConcDef (ptcds pat)
-       , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
+       , pt_Reprs = ptrps pat
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
        , pt_vds   = map aViewDef2pViewDef . ptvds $ pat
        , pt_xps   = mapMaybe aPurpose2pPurpose . ptxps $ pat
        , pt_pop   = map aPopulation2pPopulation . ptups $ pat
        , pt_end   = ptend pat
+       , pt_enfs  = map aEnforce2pEnforce . ptenfs $ pat
        }
 
 aRule2pRule :: Rule -> P_Rule TermPrim
@@ -89,12 +102,34 @@ aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
  P_Relation { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
-       , dec_prps   = decprps dcl
+       , dec_prps   = aProps2Pprops $ decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
        , dec_Mean   = map aMeaning2pMeaning (decMean dcl)
        , pos   = decfpos dcl
        }
 
+aProps2Pprops :: AProps -> Set PProp
+aProps2Pprops aps
+  |    P_Sym `elem` xs
+    && P_Asy `elem` xs = Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
+  | otherwise = xs
+   where 
+     xs = Set.map aProp2pProp aps
+     aProp2pProp :: AProp -> PProp
+     aProp2pProp p = case p of
+       Uni -> P_Uni
+       Inj -> P_Inj
+       Sur x -> P_Sur (aPropDef2pPropDef <$> x)
+       Tot x -> P_Tot (aPropDef2pPropDef <$> x)
+       Sym -> P_Sym
+       Asy -> P_Asy
+       Trn -> P_Trn
+       Rfx -> P_Rfx
+       Irf -> P_Irf
+     aPropDef2pPropDef :: APropDefault -> PPropDefault
+     aPropDef2pPropDef x = case x of 
+        ADefAtom val    -> PDefAtom $ aAtomValue2pAtomValue val
+        ADefEvalPHP txt -> PDefEvalPHP txt
 aRelation2pNamedRel :: Relation -> P_NamedRel
 aRelation2pNamedRel dcl = PNamedRel
   { pos      = decfpos dcl

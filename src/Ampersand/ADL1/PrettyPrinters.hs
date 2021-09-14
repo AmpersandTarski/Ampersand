@@ -9,10 +9,9 @@ import           Ampersand.Basics hiding ((<$>),view)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           RIO.Char (toUpper)
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
+import qualified RIO.Text.Partial as Partial(replace)
 import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
@@ -44,6 +43,11 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
               escape x = replace' x (T.intersperse ' ' x)
+              replace' :: Text -> Text -> Text -> Text
+              replace' needle replacement haystack 
+                 | T.null needle = fatal "Empty needle."
+                 | otherwise = -- replace is now safe to use, because we have a non-empty needle
+                               Partial.replace needle replacement haystack
 
 isId :: Text -> Bool
 isId xs = 
@@ -80,7 +84,7 @@ separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -98,6 +102,7 @@ instance Pretty P_Context where
                <+\> perline gs
                <+\> perline ifcs
                <+\> perline pops
+               <+\> perline enfs
                <+\> text "ENDCONTEXT"
              
 instance Pretty MetaData where
@@ -113,7 +118,7 @@ instance Pretty Role where
     pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _) =
+    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
           text "PATTERN"
           <+>  quoteConcept nm
           <+\> perline rls
@@ -126,14 +131,14 @@ instance Pretty P_Pattern where
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
+          <+\> perline enfs
           <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
     pretty (P_Relation nm sign prps pragma mean _) =
         text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
-        where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
-                    | null prps                       = empty
-                    | otherwise                       = text ("["++(L.intercalate ",". map show . Set.toList) prps ++ "]") -- do not prettyprint list of properties.
+        where props | null prps                       = empty
+                    | otherwise                       = pretty $ Set.toList prps
               pragmas | T.null (T.concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
@@ -206,6 +211,15 @@ instance Pretty (P_Rule TermPrim) where
                 viol
            where rName = if T.null nm then empty
                          else maybeQuote nm <> text ":"
+instance Pretty (P_Enforce TermPrim) where
+    pretty (P_Enforce _ rel op expr) =
+        text "ENFORCE" <+> pretty rel <+> pretty op <~>
+        expr
+instance Pretty EnforceOperator where
+    pretty op = case op of
+        IsSuperSet _ -> text ">:"
+        IsSubSet _   -> text ":<"
+        IsSameSet _  -> text ":="
 
 instance Pretty PConceptDef where
     pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
@@ -361,9 +375,20 @@ instance Pretty P_Markup where
 instance Pretty PandocFormat where
     pretty = text . map toUpper . show
 
-instance Pretty Prop where
-    pretty = text . map toUpper . show
-
+instance Pretty PProp where
+    pretty p = case p of
+      P_Sur m_ppd -> text "SUR" <> doShow m_ppd
+      P_Tot m_ppd -> text "SUR" <> doShow m_ppd
+      _ -> text . map toUpper . show $ p
+      where
+        doShow :: Maybe PPropDefault -> Doc
+        doShow x = case x of  
+          Nothing -> mempty
+          Just ppd -> text " "<+> pretty ppd
+instance Pretty PPropDefault where
+    pretty x = case x of
+      PDefAtom pav -> text "VALUE "<+>pretty pav
+      PDefEvalPHP txt -> text "EVALPHP " <+> text (show txt)
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 
                        <~> text "," <+> pretty r 
@@ -385,8 +410,4 @@ instance Pretty PAtomValue where
        ScriptDateTime _ x -> text . show $ x
 
 
-replace' :: Text -> Text -> Text -> Text
-replace' needle replacement haystack 
-   | T.null needle = fatal "Empty needle."
-   | otherwise = Partial.replace needle replacement haystack
 

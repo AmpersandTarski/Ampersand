@@ -1,7 +1,11 @@
 ﻿# Release notes of Ampersand
 
+## v4.4.0 ( 10 September August 2021)
+
 * PR #1201 changes to Transformers.hs for the new RAP release.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
+* [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
+
 ## v4.3.0 ( 13 August 2021)
 
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
@@ -44,9 +48,9 @@
 * [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
 * **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 
 This breaking change presented an opportunity to rename the built-in templates to more self explaining template names:
-  * ROWS -> BOX <FORM>
-  * COLS -> BOX <TABLE>
-  * TABS -> BOX <TABS>
+  * ROWS -> BOX \<FORM\>
+  * COLS -> BOX \<TABLE\>
+  * TABS -> BOX \<TABS\>
 * Update default prototype framework version to v1.6.0, which includes new templates as described above
 
 ## v4.0.2 (17 july 2020)
@@ -71,7 +75,6 @@ This breaking change presented an opportunity to rename the built-in templates t
 * [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/1054) Ampersand daemon now also reports type errors
 * [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/1063) Return violations of invariants with standard check
 * [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
-
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
 * Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
 * Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
@@ -272,9 +275,9 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #624](https://github.com/AmpersandTarski/Ampersand/issues/624) New feature: ExecEngine can merge atoms to fix violations of univalence and other identity violations.
 * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
 * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
-
 * FormalAmpersand.adl and PrototypeContext.adl are no longer used by the compiler. The metamodel is derived from the transformers, so the correspondence between the metamodel and the transformers is 100%. By definition.
 * There is a new option under "proto" called "metamodel", which is meant to show the metamodel to the user.
+
 ## v3.8.1 (20 january 2017)
 
 * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
@@ -347,21 +350,21 @@ It has taken some time since the last release. This release has some major work 
 ## v3.5.2 (10 juni 2016)
 
 * Work on meatgrinder (still experimental!)
-* Bug fix: Issue with SQL query [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152)
-* Bug fix: minor issue with SQL query [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436)
-* Bug fix: Nontermination of functional document generator. [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231)
-* SQL query performance improvements: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217)
+* [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152) Issue with SQL query 
+* [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436) Fix minor issue with SQL query
+* [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231) Fix nontermination of functional document generator.
+* [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217) SQL query performance improvements.
 * Back end performance: Postpone calculation of view and label for Atoms untill really needed (e.g. in interfaces)
 * Added frontend switch to turn on/off auto saving changes
 
 ## v3.5.1 (17 may 2016)
 
 * Minor enhancement of generation of Logical Data Model
-* More consisten use of views in interface definitions: [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416)
+* [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416) More consisten use of views in interface definitions.
 * Re-enabled output format for `--fSpec=asciidoc`
 * Added depth parameter in API resources call (?depth=\<int\>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
 * Added this release notes file.
-* Bug fixes: [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413)
+* [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413) Bugfix
 
 ## v3.5.0 (28 apr 2016)
 

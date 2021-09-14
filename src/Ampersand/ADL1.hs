@@ -9,9 +9,9 @@ import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
-         , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
+         , P_Enforce(..), EnforceOperator(..)
          , P_Context(..), mergeContexts
          , MetaData(..)
          , P_RoleRule(..)
@@ -19,7 +19,8 @@ import Ampersand.Core.ParseTree (
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
          , P_Rule(..),Role(..)
-         , Prop(..),Props
+         , PProp(..)
+         , PPropDefault(..)
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
@@ -40,7 +41,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , HasSignature(..)
          , Expression(..)
          , AClassify(..)
-         , RuleOrigin(..)
+         , RuleKind(..)
          , IdentityRule(..)
          , IdentitySegment(..)
          , ViewDef(..)
@@ -54,8 +55,12 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Interface(..), getInterfaceByName
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
+         , AProp(..), AProps
+         , APropDefault(..)
          , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
+         , Representation(..)
+         , AEnforce(..)
          , AConceptDef(..)
          , Conjunct(..)
          , PAtomValue(..)

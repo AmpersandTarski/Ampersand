@@ -126,6 +126,7 @@ mkArchiContext [archiRepo] pops = pure
       , ctx_ps     = archiPurps
       , ctx_pops   = archiPops
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where -- vwAts picks quadruples that belong to one view, to assemble a pattern for that view.
         vwAts :: ArchiObj -> [(P_Population,P_Relation,Maybe Text,PPurpose)]
@@ -172,19 +173,20 @@ mkArchiContext [archiRepo] pops = pure
         archiPurps = (map NE.head . eqClass samePurp)    --  The relations that are declared in this pattern
                       [ purp | (_,_,_,purp)<-leftovers ]
         pats
-         = [ P_Pat { pos =      OriginUnknown     -- the starting position in the file in which this pattern was declared.
-                   , pt_nm =    viewName vw       -- Name of this pattern
-                   , pt_rls =   []                -- The user defined rules in this pattern
-                   , pt_gns =   []                -- The generalizations defined in this pattern
-                   , pt_dcs =   sortDecls rels    -- The relations that are declared in this pattern
-                   , pt_RRuls = []                -- The assignment of roles to rules.
-                   , pt_cds =   []                -- The concept definitions defined in this pattern
-                   , pt_Reprs = []                -- The type into which concepts is represented
-                   , pt_ids =   []                -- The identity definitions defined in this pattern
-                   , pt_vds =   []                -- The view definitions defined in this pattern
-                   , pt_xps =   purps             -- The purposes of elements defined in this pattern
-                   , pt_pop =   sortRelPops popus -- The populations that are local to this pattern
-                   , pt_end =   OriginUnknown     -- the end position in the file in which this pattern was declared.
+         = [ P_Pat { pos =      OriginUnknown
+                   , pt_nm =    viewName vw
+                   , pt_rls =   []
+                   , pt_gns =   []
+                   , pt_dcs =   sortDecls rels
+                   , pt_RRuls = []
+                   , pt_cds =   []
+                   , pt_Reprs = []
+                   , pt_ids =   []
+                   , pt_vds =   []
+                   , pt_xps =   purps
+                   , pt_pop =   sortRelPops popus
+                   , pt_end =   OriginUnknown
+                   , pt_enfs =  []
                    }
            | folder<-allFolders archiRepo
            , vw@View{}<-fldObjs folder
@@ -388,13 +390,13 @@ instance MetaArchi ArchiRepo where
   typeMap _ archiRepo
    = typeMap Nothing (archFolders archiRepo)
   grindArchi env archiRepo
-   = [ translateArchiElem "name" ("ArchiRepo","Text") Nothing (Set.singleton Uni)
+   = [ translateArchiElem "name" ("ArchiRepo","Text") Nothing (Set.singleton P_Uni)
         [(archRepoId archiRepo, archRepoName archiRepo)]
      ] <>
-     [ translateArchiElem "purpose" ("ArchiRepo","Text") Nothing (Set.singleton Uni)
+     [ translateArchiElem "purpose" ("ArchiRepo","Text") Nothing (Set.singleton P_Uni)
         [(archRepoId archiRepo, archPurpVal purp) | purp<-archPurposes archiRepo]
      | (not.null.archPurposes) archiRepo ] <>
-     [ translateArchiElem "propOf" ("Property", "ArchiRepo") Nothing (Set.singleton Uni) [(propid, archRepoId archiRepo)]
+     [ translateArchiElem "propOf" ("Property", "ArchiRepo") Nothing (Set.singleton P_Uni) [(propid, archRepoId archiRepo)]
      | prop<-archProperties archiRepo, Just propid<-[archPropId prop]] <>
      concatMap (grindArchi env) (archFolders archiRepo)  <> 
      (concatMap (grindArchi env) . archProperties) archiRepo
@@ -419,28 +421,28 @@ instance MetaArchi ArchiObj where
    = Map.fromList [(viewId diagram, "View") | (not.T.null.viewName) diagram] <>
      typeMap (Just (viewName diagram)) (viewProps diagram)
   grindArchi env@(_,_,maybeViewname) element@Element{}
-   = [ translateArchiElem "name" (elemType element,"Text") maybeViewname (Set.singleton Uni) [(elemId element, elemName element)]
+   = [ translateArchiElem "name" (elemType element,"Text") maybeViewname (Set.singleton P_Uni) [(elemId element, elemName element)]
      | (not . T.null . elemName) element] <>
-     [ translateArchiElem "docu" (elemType element,"Text") maybeViewname (Set.singleton Uni) [(elemId element, elemDocu element)] -- documentation in the XML-tag
+     [ translateArchiElem "docu" (elemType element,"Text") maybeViewname (Set.singleton P_Uni) [(elemId element, elemDocu element)] -- documentation in the XML-tag
      | (not . T.null . elemDocu) element] <>
-     [ translateArchiElem "docu" (elemType element,"Text") maybeViewname (Set.singleton Uni) [(elemId element, archDocuVal eldo)] -- documentation with <documentation/> tags.
+     [ translateArchiElem "docu" (elemType element,"Text") maybeViewname (Set.singleton P_Uni) [(elemId element, archDocuVal eldo)] -- documentation with <documentation/> tags.
      | eldo<-elemDocus element] <>
-     [ translateArchiElem "propOf" ("Property", "ArchiObject") maybeViewname (Set.singleton Uni) [(propid, elemId element)]
+     [ translateArchiElem "propOf" ("Property", "ArchiObject") maybeViewname (Set.singleton P_Uni) [(propid, elemId element)]
      | prop<-elemProps element, Just propid<-[archPropId prop]] <>
      (concatMap (grindArchi env).elemProps) element
   grindArchi env@(_,typeLookup,maybeViewname) relation@Relationship{}
    = [ translateArchiElem relLabel (xType,yType) maybeViewname Set.empty [(relSrc relation,relTgt relation)]] <>
-     [ translateArchiElem "name" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, relLabel)]] <>
-     [ translateArchiElem "type" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, relTyp)]] <>
-     [ translateArchiElem "source" ("Relationship",xType) maybeViewname (Set.singleton Uni) [(relId relation, relSrc relation)]] <>
-     [ translateArchiElem "target" ("Relationship",yType) maybeViewname (Set.singleton Uni) [(relId relation, relTgt relation)]] <>
-     [ translateArchiElem "docu" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, relDocu relation)] -- documentation in the XML-tag
+     [ translateArchiElem "name" ("Relationship","Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relLabel)]] <>
+     [ translateArchiElem "type" ("Relationship","Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relTyp)]] <>
+     [ translateArchiElem "source" ("Relationship",xType) maybeViewname (Set.singleton P_Uni) [(relId relation, relSrc relation)]] <>
+     [ translateArchiElem "target" ("Relationship",yType) maybeViewname (Set.singleton P_Uni) [(relId relation, relTgt relation)]] <>
+     [ translateArchiElem "docu" ("Relationship","Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relDocu relation)] -- documentation in the XML-tag
      | (not . T.null . relDocu) relation] <>
-     [ translateArchiElem "docu" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, archDocuVal reldo)] -- documentation with <documentation/> tags.
+     [ translateArchiElem "docu" ("Relationship","Text") maybeViewname (Set.singleton P_Uni) [(relId relation, archDocuVal reldo)] -- documentation with <documentation/> tags.
      | reldo<-relDocus relation] <>
-     [ translateArchiElem "accessType" ("Relationship","AccessType") maybeViewname (Set.singleton Uni) [(relId relation, relAccTp relation)]
+     [ translateArchiElem "accessType" ("Relationship","AccessType") maybeViewname (Set.singleton P_Uni) [(relId relation, relAccTp relation)]
      | (not . T.null . relAccTp) relation] <>
-     [ translateArchiElem "propOf" ("Property", "Relationship") maybeViewname (Set.singleton Uni) [(propid, relId relation)]
+     [ translateArchiElem "propOf" ("Property", "Relationship") maybeViewname (Set.singleton P_Uni) [(propid, relId relation)]
      | prop<-relProps relation, Just propid<-[archPropId prop]] <>
      (concatMap (grindArchi env).relProps) relation
      where
@@ -458,17 +460,17 @@ instance MetaArchi ArchiObj where
                     Just str -> str
                     Nothing -> fatal ("No Archi-object found for Archi-identifier "<>tshow (relTgt relation))
   grindArchi (_, typeLookup,_) diagram@View{}
-   = [ translateArchiElem "name" ("View","Text") maybeViewName (Set.singleton Uni) [(viewId diagram, viewName diagram)]
+   = [ translateArchiElem "name" ("View","Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewName diagram)]
      | (not . T.null . viewName) diagram] <>
-     [ translateArchiElem "propOf" ("Property", "View") maybeViewName (Set.singleton Uni) [(propid, viewId diagram)]
+     [ translateArchiElem "propOf" ("Property", "View") maybeViewName (Set.singleton P_Uni) [(propid, viewId diagram)]
      | prop<-viewProps diagram, Just propid<-[archPropId prop]] <>
-     [ translateArchiElem "docu" ("View","Text") maybeViewName (Set.singleton Uni) [(viewId diagram, viewDocu diagram)] -- documentation in the XML-tag
+     [ translateArchiElem "docu" ("View","Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewDocu diagram)] -- documentation in the XML-tag
      | (not . T.null . viewDocu) diagram] <>
-     [ translateArchiElem "docu" ("View","Text") maybeViewName (Set.singleton Uni) [(viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
+     [ translateArchiElem "docu" ("View","Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
      | viewdoc<-viewDocus diagram] <>
      [ translateArchiElem "inView" (chldType,"View") maybeViewName Set.empty [(chldElem viewelem, viewId diagram)] -- register the views in which an element is used.
      | viewelem<-viewChilds diagram, Just chldType<-[typeLookup (chldElem viewelem)]] <>
-     [ translateArchiElem "viewpoint" ("View","ViewPoint") maybeViewName (Set.singleton Uni) [(viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
+     [ translateArchiElem "viewpoint" ("View","ViewPoint") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
      | (not . T.null . viewPoint) diagram] <>
      (concatMap (grindArchi (Nothing,typeLookup,maybeViewName)) . viewProps) diagram <>
      (concatMap (grindArchi (Just (viewId diagram),typeLookup,maybeViewName)) . viewChilds) diagram
@@ -491,10 +493,10 @@ instance MetaArchi ArchiProp where
   typeMap _ property
    = Map.fromList [ (propid, "Property") | Just propid<-[archPropId property] ]
   grindArchi (_,_,maybeViewname) property
-   = [ translateArchiElem "key" ("Property","Text") maybeViewname (Set.singleton Uni)
+   = [ translateArchiElem "key" ("Property","Text") maybeViewname (Set.singleton P_Uni)
          [(propid, archPropKey property)
          | (not . T.null . archPropKey) property, Just propid<-[archPropId property] ]
-     , translateArchiElem "value" ("Property","Text") maybeViewname (Set.singleton Uni)
+     , translateArchiElem "value" ("Property","Text") maybeViewname (Set.singleton P_Uni)
          [(propid, archPropVal property)
          | (not . T.null . archPropVal) property, Just propid<-[archPropId property] ]
      ]
@@ -506,7 +508,7 @@ instance MetaArchi a => MetaArchi [a] where
 -- | The function `translateArchiElem` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Relation`, but the first contains the population and the second is used to
 --   include the metamodel of ArchiMate in the population. This saves the author the effort of maintaining an ArchiMate-metamodel.
-translateArchiElem :: Text -> (Text, Text) -> Maybe Text -> Set.Set Prop-> [(Text, Text)]
+translateArchiElem :: Text -> (Text, Text) -> Maybe Text -> Set.Set PProp-> [(Text, Text)]
                       -> (P_Population,P_Relation,Maybe Text,PPurpose)
 translateArchiElem label (srcLabel,tgtLabel) maybeViewName props tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (transTuples tuples)

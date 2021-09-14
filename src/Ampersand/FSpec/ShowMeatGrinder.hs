@@ -12,7 +12,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
--- import           Ampersand.Core.A2P_Converters
+import           Ampersand.Core.A2P_Converters
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 -- import qualified RIO.Set as Set
@@ -45,6 +45,7 @@ metaModel mmLabel =
       , ctx_ps     = []
       , ctx_pops   = []
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where
     transformers = case mmLabel of
@@ -73,6 +74,7 @@ grind transformers userFspec =
       , ctx_ps     = []
       , ctx_pops   = map transformer2pop filtered
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
   where
     filtered :: [Transformer]
@@ -83,7 +85,7 @@ metarelation  tr =
   P_Relation { dec_nm     = tRel tr
              , dec_sign   = P_Sign (mkPConcept (tSrc tr))
                                    (mkPConcept (tTrg tr))
-             , dec_prps   = mults tr 
+             , dec_prps   = aProps2Pprops $ mults tr 
              , dec_pragma = []
              , dec_Mean   = []
              , pos   = OriginUnknown 

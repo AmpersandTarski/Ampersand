@@ -28,6 +28,7 @@ import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
+
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
 pConcToType p = UserConcept (name p)
@@ -237,7 +238,7 @@ pCtx2aCtx env
       , ctx_ps     = p_purposes
       , ctx_pops   = p_pops
       , ctx_metas  = p_metas
-      }
+      , ctx_enfs   = p_enfs}
  = do contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
   --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
@@ -252,7 +253,8 @@ pCtx2aCtx env
       interfaces  <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations   <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      enforces'   <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
@@ -264,7 +266,7 @@ pCtx2aCtx env
                      , ctxcdsOutPats = allConceptDefsOutPats
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
-                     , ctxrrules = allRoleRules
+                     , ctxrrules = udefRoleRules'
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
                      , ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens
@@ -273,6 +275,7 @@ pCtx2aCtx env
                      , ctxps = purposes
                      , ctxmetas = p_metas
                      , ctxInfo = contextInfo
+                     , ctxEnforces = enforces'
                      }
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx                 -- Check whether all purposes refer to existing objects
@@ -296,14 +299,15 @@ pCtx2aCtx env
           -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
           --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
           multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
-          decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+          let reprOf cpt = fromMaybe
+                             Object -- default representation is Object (sometimes called `ugly identifiers')
+                             (lookup cpt typeMap)
+          decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
           let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d,[EDcD d]) | d <- decls])
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls))  :: Set.Set Type
           return CI { ctxiGens = gns
-                    , representationOf = \cpt -> fromMaybe
-                                                    Object -- default representation is Object (sometimes called `ugly identifiers')
-                                                    (lookup cpt typeMap)
+                    , representationOf = reprOf
                     , multiKernels = multitypologies
                     , reprList = allReprs
                     , declDisambMap = declMap
@@ -814,12 +818,13 @@ pCtx2aCtx env
          <*> traverse (pPop2aPop ci) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-         <*> traverse (pDecl2aDecl cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+         <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
          <*> traverse (pure.pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
          <*> traverse (pure.pRoleRule2aRoleRule) (pt_RRuls ppat)
          <*> traverse pure (pt_Reprs ppat)
+         <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
        where
-        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations
+        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces'
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
@@ -833,6 +838,7 @@ pCtx2aCtx env
                    , ptids = keys'
                    , ptvds = views'
                    , ptxps = xpls
+                   , ptenfs = enforces'
                    }
     pRul2aRul :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
@@ -855,11 +861,32 @@ pCtx2aCtx env
                     , rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings
                     , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrdcl = Nothing
                     , rrpat = mPat
-                    , r_usr = UserDefined
-                    , isSignal = not . any (\x -> nm `elem` arRules x) $ allRoleRules
+                    , rrkind = UserDefined
                     }
+    pEnforce2aEnforce :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
+                      -> P_Enforce TermPrim -> Guarded AEnforce
+    pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+    typeCheckEnforce :: ContextInfo
+                     -> Maybe Text -- name of pattern the enforce is defined in (if any)
+                     -> P_Enforce (TermPrim, DisambPrim)
+                     -> Guarded AEnforce
+    typeCheckEnforce ci mPat P_Enforce { pos = pos'
+                                       , penfRel = pRel
+                                       , penfOp =  oper
+                                       , penfExpr= x
+                                       }
+      = case pRel of
+         (_,Known (EDcD rel))
+           -> do (expr,(_srcBounded,_tgtBounded)) <- typecheckTerm ci x
+                 return AEnforce { pos=pos'
+                          , enfRel=rel
+                          , enfOp=oper
+                          , enfExpr=expr
+                          , enfPatName=mPat
+                          }
+         (o,dx) -> cannotDisambiguate o dx
+
     pIdentity2aIdentity ::
          ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
       -> P_IdentDef -> Guarded IdentityRule
@@ -925,8 +952,8 @@ pCtx2aCtx env
     allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) p_conceptdefs
     allConceptDefs :: [AConceptDef]
     allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs<>concatMap pt_cds p_patterns)
-    allRoleRules :: [A_RoleRule]
-    allRoleRules = map pRoleRule2aRoleRule
+    udefRoleRules' :: [A_RoleRule]
+    udefRoleRules' = map pRoleRule2aRoleRule
                       (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
@@ -1072,41 +1099,64 @@ pAtomValue2aAtomValue typ cpt pav =
   where ttyp = typ cpt
 
 pDecl2aDecl ::
-     ConceptMap
+     (A_Concept -> TType)
+  -> ConceptMap
   -> Maybe Text   -- name of pattern the rule is defined in (if any)
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
   -> P_Relation -> Guarded Relation
-pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
- = let (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
-       dcl = Relation
-                 { decnm   = dec_nm pd
-                 , decsgn  = decSign
-                 , decprps = dec_prps pd
-                 , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                 , decprL  = prL
-                 , decprM  = prM
-                 , decprR  = prR
-                 , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
-                 , decfpos = origin pd
-                 , decusr  = True
-                 , decpat  = maybePatName
-                 , dechash = hash (dec_nm pd) `hashWithSalt` decSign
-                 }
-   in checkEndoProps >> pure dcl
+pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd
+ = do checkEndoProps
+      propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
+      return Relation
+        { decnm   = dec_nm pd
+        , decsgn  = decSign
+        , decprps = Set.fromList . concat $ propLists
+        , decprL  = prL
+        , decprM  = prM
+        , decprR  = prR
+        , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
+        , decfpos = origin pd
+        , decusr  = True
+        , decpat  = maybePatName
+        , dechash = hash (dec_nm pd) `hashWithSalt` decSign
+        }
 
  where
+  (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
+  pProp2aProps :: PProp -> Guarded [AProp]
+  pProp2aProps p = case p of
+    P_Uni   -> pure [Uni ]
+    P_Inj   -> pure [Inj ]
+    P_Sur x -> f Sur x
+    P_Tot x -> f Tot x
+    P_Sym   -> pure [Sym ]
+    P_Asy   -> pure [Asy ]
+    P_Trn   -> pure [Trn ]
+    P_Rfx   -> pure [Rfx ]
+    P_Irf   -> pure [Irf ]
+    P_Prop  -> pure [Sym, Asy]
+    where f :: (Maybe APropDefault -> AProp) -> Maybe PPropDefault -> Guarded [AProp]
+          f surOrTot x =
+              case x of
+                Nothing -> pure [surOrTot Nothing]
+                Just d -> (: []) . surOrTot . Just <$> ppropDef2apropDef d
+          ppropDef2apropDef :: PPropDefault -> Guarded APropDefault
+          ppropDef2apropDef x = case x of
+            PDefAtom val -> ADefAtom <$> pAtomValue2aAtomValue typ (target decSign) val
+            PDefEvalPHP txt -> pure $ ADefEvalPHP txt
+
   decSign = pSign2aSign cptMap (dec_sign pd)
   checkEndoProps :: Guarded ()
   checkEndoProps
     | source decSign == target decSign
                 = pure ()
-    | Set.null xs
+    | null xs
                 = pure ()
-    | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.elems xs)
-   where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `Set.intersection` dec_prps pd
-
-
+    | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.toList xs)
+   where xs =  Set.filter isEndoProp $ dec_prps pd
+         isEndoProp :: PProp -> Bool
+         isEndoProp p = p `elem` [P_Prop, P_Sym,P_Asy,P_Trn,P_Rfx,P_Irf]
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
@@ -1128,11 +1178,11 @@ pConcDef2aConcDef defLanguage defFormat pCd =
 pCDDef2Mean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PCDDef -> Meaning
-pCDDef2Mean defLanguage defFormat x = case x of 
-  PCDDefLegacy defStr refStr -> 
+pCDDef2Mean defLanguage defFormat x = case x of
+  PCDDefLegacy defStr refStr ->
       Meaning Markup{ amLang = defLanguage
                     , amPandoc = string2Blocks defFormat (defStr <> if T.null refStr then mempty else "["<>refStr<>"]")
-                   } 
+                   }
   PCDDefNew m -> pMean2aMean defLanguage defFormat m
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat

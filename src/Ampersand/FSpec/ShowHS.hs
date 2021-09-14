@@ -304,7 +304,7 @@ instance ShowHS FSpec where
               showViolatedRule :: Text -> (Rule,AAtomPairs) -> Text
               showViolatedRule indent' (r,ps)
                  = T.intercalate indent'
-                     [        " ( "<>showHSName r<>" -- This is "<>(if isSignal r then "a process rule." else "an invariant")<>
+                     [        " ( "<>showHSName r<>
                       indent'<>" , "<> wrap "" (indent'<>"   ") 
                                                (let showPair _ p = "( "<> (tshow.showValADL.apLeft) p<>", "<>(tshow.showValADL.apRight) p<>")"
                                                 in showPair
@@ -430,12 +430,12 @@ instance ShowHS Rule where
      ,"  , rrmean = " <> showHS env (indent<>"             ") (rrmean r)
      ,"  , rrmsg  = " <> showHS env "" (rrmsg  r)
      ,"  , rrviol = " <> showHS env "" (rrviol r)
-     ,"  , rrdcl  = " <> case rrdcl r of
-                           Just (p,d) -> "Just ("<>showHSName p<>", "<>showHSName d<>" )"
-                           Nothing    -> "Nothing"
      ,"  , rrpat  = " <> tshow (rrpat  r)
-     ,"  , r_usr  = " <> tshow (r_usr  r)
-     ,"  , isSignal = " <> tshow (isSignal  r)
+     ,"  , rrkind  = " <> (case rrkind r of
+                            Propty prp rel -> "Propty "<>showHS env "" prp<>", "<>showHSName rel
+                            x -> tshow x
+                         )
+    
      ,"  }"
      ]
 
@@ -586,9 +586,6 @@ instance ShowHS Relation where
                      ["Relation { decnm   = " <> tshow (decnm d)
                      ,"         , decsgn  = " <> showHS env "" (sign d)
                      ,"         , decprps = " <> showL(map (showHS env "") (Set.elems $ decprps d))
-                     ,"         , decprps_calc = " <> case decprps_calc d of
-                                                 Nothing -> "Nothing"
-                                                 Just ps -> "Just "<>showL(map (showHS env "") (Set.elems ps))
                      ,"         , decprL  = " <> tshow (decprL d)
                      ,"         , decprM  = " <> tshow (decprM d)
                      ,"         , decprR  = " <> tshow (decprR d)
@@ -624,20 +621,27 @@ instance ShowHS A_Concept where
                     PlainConcept{} -> "PlainConcept "<>tshow (name c)
                     ONE -> "ONE"
 
-instance ShowHSName Prop where
+instance ShowHSName AProp where
  showHSName Uni = "Uni"
  showHSName Inj = "Inj"
- showHSName Sur = "Sur"
- showHSName Tot = "Tot"
+ showHSName Sur{} = "Sur"
+ showHSName Tot{} = "Tot"
  showHSName Sym = "Sym"
  showHSName Asy = "Asy"
  showHSName Trn = "Trn"
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
- showHSName Prop = "Prop"
 
-instance ShowHS Prop where
- showHS _ _ = showHSName
+instance ShowHS AProp where
+  showHS env indent prp = indent <> showHSName prp <> 
+      case prp of
+        Sur d -> " "<> showHS env indent d
+        Tot d -> " "<> showHS env indent d
+        _ -> mempty
+instance ShowHS APropDefault where
+  showHS _ _ d = case d of
+    ADefAtom aav -> "ADefAtom " <> tshow aav
+    ADefEvalPHP txt -> "ADefEvalPHP "<> tshow txt 
 
 instance ShowHS FilePos where
  showHS _ _ = tshow

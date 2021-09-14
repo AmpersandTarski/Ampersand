@@ -63,6 +63,7 @@ mkContextOfPops pops = addRelations
       , ctx_ps     = []
       , ctx_pops   = pops
       , ctx_metas  = []
+      , ctx_enfs   = []
       }
 
 -- | addRelations is meant to enrich a population to a P_Context
@@ -115,7 +116,7 @@ addRelations pCtx = enrichedContext
              = L.unzip
                [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
                           , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
-                                       in Set.fromList ([Uni |test Uni]<>[Tot |test Tot]<>[Inj |test Inj]<>[Sur |test Sur])
+                                       in Set.fromList $ filter (not . test) [P_Uni,P_Tot Nothing,P_Inj,P_Sur Nothing]
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
                  , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations

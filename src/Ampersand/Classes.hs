@@ -5,4 +5,4 @@ module Ampersand.Classes
    ) where
 import Ampersand.Classes.ConceptStructure (ConceptStructure(..))
 import Ampersand.Classes.Relational       (Relational(..),HasProps(..),isONE,isSESSION)
-import Ampersand.Classes.ViewPoint        (Language(..))
+import Ampersand.Classes.ViewPoint        (Language(..),enforce2Rules)

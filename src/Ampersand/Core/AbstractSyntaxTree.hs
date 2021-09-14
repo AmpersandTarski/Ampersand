@@ -13,8 +13,11 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..), Rules
- , RuleOrigin(..)
+ , RuleKind(..)
+ , AEnforce(..)
  , Relation(..), Relations, showRel
+ , AProp(..), AProps
+ , APropDefault(..)
  , IdentityRule(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -42,7 +45,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Signature(..)
  , Population(..)
  , HasSignature(..)
- , Prop(..),Traced(..)
+ , Traced(..)
  , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomPairs
  , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
@@ -62,11 +65,11 @@ import           Ampersand.Core.ParseTree
     , Origin(..)
     , maybeOrdering
     , Traced(..)
+    , EnforceOperator
     , ViewHtmlTemplate(..)
     , BoxHeader(..) -- , TemplateKeyValue(..)
     , PairView(..)
     , PairViewSegment(..)
-    , Prop(..), Props
     , Representation(..), TType(..), PAtomValue(..)
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
@@ -82,26 +85,27 @@ import qualified RIO.Text as T
 import           RIO.Time
 
 data A_Context
-   = ACtx{ ctxnm :: Text                  -- ^ The name of this context
-         , ctxpos :: [Origin]             -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctxlang :: Lang                -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat      -- ^ The default markup format for free text in this context.
-         , ctxpats :: [Pattern]           -- ^ The patterns defined in this context
-         , ctxrs :: Rules                 -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: Relations             -- ^ The relations that are declared in this context, outside the scope of patterns
-         , ctxpopus :: [Population]       -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
-         , ctxcdsOutPats :: [AConceptDef] -- ^ The concept definitions defined outside the patterns of this context.
-         , ctxcds :: [AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns
-         , ctxks :: [IdentityRule]        -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctxrrules :: [A_RoleRule]
-         , ctxreprs :: A_Concept -> TType
-         , ctxvs :: [ViewDef]             -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [AClassify]           -- ^ The specialization statements defined in this context, outside the scope of patterns
-         , ctxgenconcs :: [[A_Concept]]   -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
-         , ctxifcs :: [Interface]         -- ^ The interfaces defined in this context
-         , ctxps :: [Purpose]             -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
-         , ctxmetas :: [MetaData]         -- ^ used for Pandoc authors (and possibly other things)
-         , ctxInfo :: ContextInfo
+   = ACtx{ ctxnm :: !Text                  -- ^ The name of this context
+         , ctxpos :: ![Origin]             -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctxlang :: !Lang                -- ^ The default language used in this context.
+         , ctxmarkup :: !PandocFormat      -- ^ The default markup format for free text in this context.
+         , ctxpats :: ![Pattern]           -- ^ The patterns defined in this context
+         , ctxrs :: !Rules                 -- ^ All user defined rules in this context, but outside patterns
+         , ctxds :: !Relations             -- ^ The relations that are declared in this context, outside the scope of patterns
+         , ctxpopus :: ![Population]       -- ^ The user defined populations of relations defined in this context, including those from patterns
+         , ctxcdsOutPats :: ![AConceptDef] -- ^ The concept definitions defined outside the patterns of this context.
+         , ctxcds :: ![AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns
+         , ctxks :: ![IdentityRule]        -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctxrrules :: ![A_RoleRule]
+         , ctxreprs :: !(A_Concept -> TType)
+         , ctxvs :: ![ViewDef]             -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctxgs :: ![AClassify]           -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgenconcs :: ![[A_Concept]]   -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
+         , ctxifcs :: ![Interface]         -- ^ The interfaces defined in this context
+         , ctxps :: ![Purpose]             -- ^ The purposes of objects defined in this context, outside the scope of patterns
+         , ctxmetas :: ![MetaData]         -- ^ used for Pandoc authors (and possibly other things)
+         , ctxInfo :: !ContextInfo
+         , ctxEnforces :: ![AEnforce]      -- ^ All user defined enforce statements in this context, but outside patterns. 
          } deriving (Typeable)
 instance Show A_Context where
   show = T.unpack . name
@@ -113,20 +117,21 @@ instance Named A_Context where
   name  = ctxnm
 
 data Pattern
-   = A_Pat { ptnm ::  Text              -- ^ Name of this pattern
-           , ptpos :: Origin            -- ^ the position in the file in which this pattern was declared.
-           , ptend :: Origin            -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
-           , ptrls :: Rules             -- ^ The user defined rules in this pattern
-           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
-           , ptdcs :: Relations         -- ^ The relations that are declared in this pattern
-           , ptrrs :: [A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
-           , ptcds :: [AConceptDef]     -- ^ The concept definitions that are declared in this pattern
-           , ptrps :: [Representation]  -- ^ The concept definitions that are declared in this pattern
-           , ptups :: [Population]      -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityRule]    -- ^ The identity definitions defined in this pattern
-           , ptvds :: [ViewDef]         -- ^ The view definitions defined in this pattern
-           , ptxps :: [Purpose]         -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable)      -- Show for debugging purposes
+   = A_Pat { ptnm ::  !Text              -- ^ Name of this pattern
+           , ptpos :: !Origin            -- ^ the position in the file in which this pattern was declared.
+           , ptend :: !Origin            -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
+           , ptrls :: !Rules             -- ^ The user defined rules in this pattern
+           , ptgns :: ![AClassify]       -- ^ The generalizations defined in this pattern
+           , ptdcs :: !Relations         -- ^ The relations that are declared in this pattern
+           , ptrrs :: ![A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
+           , ptcds :: ![AConceptDef]     -- ^ The concept definitions that are declared in this pattern
+           , ptrps :: ![Representation]  -- ^ The concept definitions that are declared in this pattern
+           , ptups :: ![Population]      -- ^ The user defined populations in this pattern
+           , ptids :: ![IdentityRule]    -- ^ The identity definitions defined in this pattern
+           , ptvds :: ![ViewDef]         -- ^ The view definitions defined in this pattern
+           , ptxps :: ![Purpose]         -- ^ The purposes of elements defined in this pattern
+           , ptenfs :: ![AEnforce]
+           } deriving (Typeable)      -- Show for debugging purposes
 instance Eq Pattern where
   a == b = compare a b == EQ
 instance Unique Pattern where
@@ -138,6 +143,13 @@ instance Named Pattern where
 instance Traced Pattern where
  origin = ptpos
 
+data AEnforce = AEnforce
+  { pos :: !Origin
+  , enfRel :: !Relation
+  , enfOp  :: !EnforceOperator
+  , enfExpr :: !Expression
+  , enfPatName :: !(Maybe Text) -- ^ If the Enforce is defined in the context of a pattern, the name of that pattern.
+  } deriving (Eq)
 data AConceptDef = AConceptDef
   { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
   , acdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
@@ -175,9 +187,11 @@ instance Eq A_RoleRule where
  p1 == p2 = compare p1 p2 == EQ
 instance Traced A_RoleRule where
   origin = arPos
-data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
-                | Propty    -- This rule follows implicitly from the Ampersand script (Because of a property) and generated by a computer
-                | Identity        -- This rule follows implicitly from the Ampersand script (Because of a identity) and generated by a computer
+data RuleKind = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
+                | Propty !AProp !Relation
+                   -- This rule follows implicitly from the Ampersand script (Because of a property) and generated by a computer
+                | Identity  -- This rule follows implicitly from the Ampersand script (Because of a identity) and generated by a computer
+                | Enforce   -- This rule follows implicitly from the Ampersand script (Because of an Enforce statement) and generated by a computer
                 deriving (Show, Eq)
 type Rules = Set.Set Rule
 data Rule =
@@ -187,10 +201,8 @@ data Rule =
         , rrmean ::   [Meaning]                   -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
-        , rrdcl ::    Maybe (Prop,Relation)       -- ^ The property, if this rule originates from a property on a Relation
         , rrpat ::    Maybe Text                  -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
-        , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
-        , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
+        , rrkind ::    RuleKind                  -- ^ Where does this rule come from?
         } deriving Typeable
 instance Eq Rule where
   a == b = compare a b == EQ
@@ -232,13 +244,63 @@ instance Unique Conjunct where
 instance Ord Conjunct where
   compare = compare `on` rc_id
 
+type AProps = Set.Set AProp
+data AProp
+  = -- | univalent
+    Uni
+  | -- | injective
+    Inj
+  | -- | surjective
+    Sur (Maybe APropDefault)
+  | -- | total
+    Tot (Maybe APropDefault)
+  | -- | symmetric
+    Sym
+  | -- | antisymmetric
+    Asy
+  | -- | transitive
+    Trn
+  | -- | reflexive
+    Rfx
+  | -- | irreflexive
+    Irf
+  deriving (Eq, Ord, Data, Typeable)
+instance Show AProp where
+ show Uni = "UNI"
+ show Inj = "INJ"
+ show (Sur x) = "SUR"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
+ show (Tot x) = "TOT"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
+ show Sym = "SYM"
+ show Asy = "ASY"
+ show Trn = "TRN"
+ show Rfx = "RFX"
+ show Irf = "IRF"
+ 
+instance Unique AProp where
+ showUnique = tshow
+
+instance Flippable AProp where
+ flp Uni = Inj
+ flp (Tot x) = Sur x
+ flp (Sur x) = Tot x
+ flp Inj = Uni
+ flp x = x
+
+data APropDefault =
+    ADefAtom !AAtomValue
+  | ADefEvalPHP !Text
+  deriving (Eq, Ord, Show, Data)
+
+
 type Relations = Set.Set Relation
 data Relation = Relation
       { decnm :: Text              -- ^ the name of the relation
       , decsgn :: Signature          -- ^ the source and target concepts of the relation
-       --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
-      , decprps :: Props            -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
-      , decprps_calc :: Maybe Props -- ^ the calculated and user defined properties. Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
+      , decprps :: AProps            -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
       , decprL :: Text             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM :: Text             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR :: Text
@@ -387,7 +449,8 @@ data Interface = Ifc
      -- ^ The position in the file (filename, line- and column number)
     , ifcPurpose :: !Text
      -- ^ The purpose of the interface
-    } deriving Show
+  } deriving (Show)
+
 
 instance Eq Interface where
   a == b = compare a b == EQ
@@ -574,7 +637,7 @@ data AAtomValue
   | AAVDateTime { aavtyp :: TType
                 , aadatetime ::  UTCTime
                 }
-  | AtomValueOfONE deriving (Eq,Ord, Show)
+  | AtomValueOfONE deriving (Eq,Ord, Show, Data)
 
 instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (tshow.aavhash) pop

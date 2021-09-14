@@ -30,9 +30,11 @@ consequent r
      x           -> x
 
 isPropertyRule :: Rule -> Bool
-isPropertyRule = isJust . rrdcl 
+isPropertyRule r= case rrkind r of
+  Propty{} -> True
+  _ -> False 
 -- rulefromProp specifies a rule that defines property prp of relation d.
-rulefromProp :: Prop -> Relation -> Rule
+rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp d =
      Ru { rrnm  = tshow prp<>" "<>showDcl
         , formalExpression = rExpr
@@ -40,10 +42,8 @@ rulefromProp prp d =
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrdcl = Just (prp,d)         -- For traceability and transformers: The original property and relation.
         , rrpat = decpat d      
-        , r_usr = Propty
-        , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
+        , rrkind = Propty prp d
         }
        where
         nm = tshow prp<>" "<>showDcl
@@ -54,15 +54,14 @@ rulefromProp prp d =
                 then fatal ("Illegal property of an endo relation "<>tshow (name d)) else
                 case prp of
                      Uni-> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
-                     Tot-> EDcI (source r)  .|-. r .:. flp r
+                     Tot _ -> EDcI (source r)  .|-. r .:. flp r
                      Inj-> flp r .:. ECpl (EDcI (source r)) .:. r .|-. ECpl (EDcI (target r))
-                     Sur-> EDcI (target r)  .|-. flp r .:. r
+                     Sur _ -> EDcI (target r)  .|-. flp r .:. r
                      Sym-> r .==. flp r
                      Asy-> flp r ./\. r .|-. EDcI (source r)
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Prop -> fatal "Prop should have been converted by the parser"
         meanings prop = map (Meaning . markup) [English,Dutch]
           where 
             markup lang = Markup lang (string2Blocks ReST $ f lang)
@@ -84,9 +83,8 @@ rulefromProp prp d =
                     Irf-> explByFullName lang
                     Uni-> "Each " <>s<>" may only have one "<>t<>"" <>" in the relation "<>name d
                     Inj-> "Each " <>t<>" may only have one "<>s<>"" <>" in the relation "<>name d
-                    Tot ->"Every "<>s<>" must have a "      <>t<>"" <>" in the relation "<>name d
-                    Sur ->"Every "<>t<>" must have a "      <>s<>"" <>" in the relation "<>name d
-                    Prop -> fatal "Prop should have been converted by the parser"
+                    Tot _ ->"Every "<>s<>" must have a "      <>t<>"" <>" in the relation "<>name d
+                    Sur _ ->"Every "<>t<>" must have a "      <>s<>"" <>" in the relation "<>name d
                 Dutch ->
                   case prop of
                     Sym-> explByFullName lang
@@ -96,12 +94,11 @@ rulefromProp prp d =
                     Irf-> explByFullName lang
                     Uni-> "Elke "<>s<>" mag slechts één "<>t<>   " hebben" <>" in de relatie "<>name d
                     Inj-> "Elke "<>t<>" mag slechts één "<>s<>   " hebben" <>" in de relatie "<>name d
-                    Tot-> "Elke "<>s<>" dient één "      <>t<>" te hebben" <>" in de relatie "<>name d
-                    Sur-> "Elke "<>t<>" dient een "      <>s<>" te hebben" <>" in de relatie "<>name d
-                    Prop -> fatal "Prop should have been converted by pattern the parser"
+                    Tot _ -> "Elke "<>s<>" dient één "      <>t<>" te hebben" <>" in de relatie "<>name d
+                    Sur _ -> "Elke "<>t<>" dient een "      <>s<>" te hebben" <>" in de relatie "<>name d
             explByFullName lang = showDcl<>" is "<>propFullName False lang prop
 
-propFullName :: Bool -> Lang -> Prop -> Text
+propFullName :: Bool -> Lang -> AProp -> Text
 propFullName isAdjective lang prop =
   case lang of 
     English ->
@@ -112,10 +109,9 @@ propFullName isAdjective lang prop =
           Rfx-> "reflexive"
           Irf-> "irreflexive"
           Uni-> "univalent"
-          Sur-> "surjective"
+          Sur _ -> "surjective"
           Inj-> "injective"
-          Tot-> "total"
-          Prop -> fatal "Prop should have been converted by the parser"
+          Tot _ -> "total"
     Dutch -> (if isAdjective then snd else fst) $
         case prop of
           Sym-> ("symmetrisch"    ,"symmetrische")
@@ -124,7 +120,6 @@ propFullName isAdjective lang prop =
           Rfx-> ("reflexief"      ,"reflexieve")
           Irf-> ("irreflexief"    ,"irreflexieve")
           Uni-> ("univalent"      ,"univalente")
-          Sur-> ("surjectief"     ,"surjectieve")
+          Sur _ -> ("surjectief"     ,"surjectieve")
           Inj-> ("injectief"      ,"injectieve")
-          Tot-> ("totaal"         ,"totale")
-          Prop -> fatal "Prop should have been converted by the parser"
+          Tot _ -> ("totaal"         ,"totale")
