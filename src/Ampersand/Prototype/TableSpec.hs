@@ -94,7 +94,7 @@ createTableSql withComment tSpec
     endings :: [Text]
     endings =   
       [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
-      [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
+      [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8MB4_NOPAD_BIN" ]<>
       [ ", ROW_FORMAT = DYNAMIC"]
     wrap :: [Text] -> [Text]
     wrap = map (\col -> T.replicate indnt " " <> col)
