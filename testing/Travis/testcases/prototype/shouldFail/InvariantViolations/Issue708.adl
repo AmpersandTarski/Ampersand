@@ -1,0 +1,11 @@
+CONTEXT Issue708
+
+RELATION aá_p [A*B] = [("1","foo")]
+RELATION aa_p [A*B]
+RELATION aà_p [A*B] = [("1","bar")]
+
+RULE one :   aá_p=aa_p
+RULE two :   aa_p=aà_p
+RULE three : aá_p=aà_p
+
+ENDCONTEXT
