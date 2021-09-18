@@ -312,7 +312,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept"
-      , Set.fromList [Tot Nothing]
+      , Set.fromList [Tot Nothing]  -- it is Tot by definition, because genrhs is a NonEmpty.
       , [ ( dirtyId ise, dirtyId cpt)
         | ise@IsE{} <- instanceList fSpec
         , cpt <- NE.toList $ genrhs ise]
@@ -402,11 +402,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("isa"                   , "Concept"               , "Concept"
       , Set.empty
-      , [ ( dirtyId gCpt, dirtyId (genspc ise))
+      , [ ( dirtyId (genspc ise), dirtyId gCpt)
         | ise@IsE{} <- instanceList fSpec
         , gCpt <- NE.toList $ genrhs ise
         ] ++
-        [ ( dirtyId (genspc isa), dirtyId (genspc isa))
+        [ ( dirtyId (genspc isa), dirtyId (gengen isa))
         | isa@Isa{} <- instanceList fSpec
         ]
       )
@@ -536,7 +536,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rul::Rule <- instanceList fSpec
         ]
       )
-     ,("name"                  , "ViewDef"              , "ViewDefName"
+     ,("name"                  , "View"                 , "ViewDefName"
       , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . name $ vd)
         | vd::ViewDef <- instanceList fSpec
@@ -831,33 +831,33 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , Just x <- [userTgt expr]
         ]
       )
-     ,("vdats"                 , "ViewDef"              , "ViewSegment"
+     ,("vdats"                 , "View"                  , "ViewSegment"
       , Set.fromList [Inj,Sur Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow $ vs)
         | vd::ViewDef <- instanceList fSpec
         , vs <- vdats vd
         ]
       )
-     ,("vdcpt"                 , "ViewDef"              , "Concept"
+     ,("vdcpt"                 , "View"                  , "Concept"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec, vdIsDefault vd
         ]
       )
-     ,("vdhtml"                , "ViewDef"              , "Concept"
+     ,("vdhtml"                , "View"                  , "Concept"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow $ html)
         | vd::ViewDef <- instanceList fSpec
         , Just html <- [vdhtml vd]
         ]
       )
-     ,("vdIsDefault"           , "ViewDef"              , "Concept"
+     ,("vdIsDefault"           , "View"                  , "Concept"
       , Set.fromList [Uni,Tot Nothing]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec
         ]
       )
-     ,("vdpos"                 , "ViewDef"              , "Origin"
+     ,("vdpos"                 , "View"                  , "Origin"
       , Set.fromList [Uni]
       , [ (dirtyId vd, PopAlphaNumeric . tshow . origin $ vd)
         | vd::ViewDef <- instanceList fSpec
