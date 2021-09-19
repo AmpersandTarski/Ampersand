@@ -197,11 +197,15 @@ makeFSpec env context
           Propty prp dcl 
             | prp == Uni && isUni (EDcD dcl) -> [] --Enforced by the database
             | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
-            | otherwise -> rolesFromScript
+            | otherwise -> case prp of
+                     Tot (Just _) -> byExecengine
+                     Sur (Just _) -> byExecengine
+                     _ -> rolesFromScript
           Identity -> []
-          Enforce -> [Role "ExecEngine"]
+          Enforce -> byExecengine
          
          where
+          byExecengine = [Role "ExecEngine"]
           rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x

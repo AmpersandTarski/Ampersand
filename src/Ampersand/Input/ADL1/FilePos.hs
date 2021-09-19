@@ -120,7 +120,7 @@ instance Show Origin where
   show (XLSXLoc filePath sheet (row,col)) 
                        = filePath<>":"<>
                          "\n   Sheet: "<>T.unpack sheet<>", Cell: "<>T.unpack (int2col col)<>show row<>". "
-  show (PropertyRule dcl o) = "PropertyRule for "<>T.unpack dcl<>" which is defined at "<>show o
+  show (PropertyRule txt o) = "PropertyRule for "<>T.unpack txt<>" which is defined at "<>show o
   show (Origin str)    = T.unpack str
   show OriginUnknown   = "Unknown origin"
   show MeatGrinder     = "MeatGrinder"
