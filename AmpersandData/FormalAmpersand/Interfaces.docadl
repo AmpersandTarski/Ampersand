@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH LATEX
+CONTEXT FormalAmpersand IN ENGLISH LATEX
 INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
