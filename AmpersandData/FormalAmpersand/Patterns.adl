@@ -1,7 +1,48 @@
-CONTEXT RAP IN ENGLISH
+CONTEXT FormalAmpersand IN ENGLISH
+INCLUDE "Terms.adl"
+INCLUDE "Rules.adl"
+
 
 PATTERN Patterns
+    CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
     CONCEPT Pattern "A pattern is a file that is meant to contain Ampersand source code."
+    VIEW Pattern: Pattern(name[Pattern*PatternName])
+
+    REPRESENT PatternName TYPE ALPHANUMERIC
+    RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
+    MEANING "The name of a pattern."
+      ROLE ExecEngine MAINTAINS "del unused PatternName"
+      RULE "del unused PatternName" : I[PatternName] |- name~;name
+      MEANING "A PatternName without Pattern will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
+
+    RELATION allRules[Rule*Context] []          -- ^ all rules in the context, i.e. all user defined rules, property rules, and identity rules.
+    RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
+                                                --   which are not property- and not identity rules. See ViewPoint.hs
+    RELATION proprules[Rule*Pattern] []         -- ^ all property rules the user has declared within a pattern.
+    RELATION identityRules[Rule*Pattern] []     -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    RELATION patRules[Pattern*Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    MEANING "The user-defined rules in a pattern."
+    RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
+    MEANING "The relations that are declared in a pattern."
+
+    ROLE ExecEngine MAINTAINS "Remove rule atom"
+    RULE "Remove rule atom" : I[Rule] - allRules;I[Context];allRules~ |- -V
+    MEANING "A rule without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+
+    ROLE ExecEngine MAINTAINS "Remove relation atom"
+    RULE "Remove relation atom" : I[Relation] - relsDefdIn;I[Context];relsDefdIn~ |- -V
+    MEANING "A relation without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
+
+    ROLE User MAINTAINS "self-sustained patterns"
+    RULE "self-sustained patterns" : usedIn;formalTerm~;patRules~ |- declaredIn[Relation*Pattern]
+    MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
+
+ENDPATTERN
+
+PATTERN Patterns
     CONCEPT Instance "An instance corresponds to an INSTANCE statement in a pattern."
     CONCEPT Entity "Something that refers to a definition."
     CONCEPT Definition "A definition is a locally defined entity."

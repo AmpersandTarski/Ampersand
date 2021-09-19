@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH
+CONTEXT FormalAmpersand IN ENGLISH
     PURPOSE RULE "validity of concepts in a context"
     {+The relation `context[Concept*Context]` represents all concepts that are valid within a context.
     Valid concepts can be used in the natural language and the formal language, which makes it relevant to register which concepts are valid within a context.
