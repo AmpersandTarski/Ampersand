@@ -432,7 +432,7 @@ instance ShowHS Rule where
      ,"  , rrviol = " <> showHS env "" (rrviol r)
      ,"  , rrpat  = " <> tshow (rrpat  r)
      ,"  , rrkind  = " <> (case rrkind r of
-                            Propty prp rel -> "Propty "<>showHSName prp<>", "<>showHSName rel
+                            Propty prp rel -> "Propty "<>showHS env "" prp<>", "<>showHSName rel
                             x -> tshow x
                          )
     
@@ -586,9 +586,6 @@ instance ShowHS Relation where
                      ["Relation { decnm   = " <> tshow (decnm d)
                      ,"         , decsgn  = " <> showHS env "" (sign d)
                      ,"         , decprps = " <> showL(map (showHS env "") (Set.elems $ decprps d))
-                     ,"         , decprps_calc = " <> case decprps_calc d of
-                                                 Nothing -> "Nothing"
-                                                 Just ps -> "Just "<>showL(map (showHS env "") (Set.elems ps))
                      ,"         , decprL  = " <> tshow (decprL d)
                      ,"         , decprM  = " <> tshow (decprM d)
                      ,"         , decprR  = " <> tshow (decprR d)
@@ -624,20 +621,27 @@ instance ShowHS A_Concept where
                     PlainConcept{} -> "PlainConcept "<>tshow (name c)
                     ONE -> "ONE"
 
-instance ShowHSName Prop where
+instance ShowHSName AProp where
  showHSName Uni = "Uni"
  showHSName Inj = "Inj"
- showHSName Sur = "Sur"
- showHSName Tot = "Tot"
+ showHSName Sur{} = "Sur"
+ showHSName Tot{} = "Tot"
  showHSName Sym = "Sym"
  showHSName Asy = "Asy"
  showHSName Trn = "Trn"
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
- showHSName Prop = "Prop"
 
-instance ShowHS Prop where
- showHS _ _ = showHSName
+instance ShowHS AProp where
+  showHS env indent prp = indent <> showHSName prp <> 
+      case prp of
+        Sur d -> " "<> showHS env indent d
+        Tot d -> " "<> showHS env indent d
+        _ -> mempty
+instance ShowHS APropDefault where
+  showHS _ _ d = case d of
+    ADefAtom aav -> "ADefAtom " <> tshow aav
+    ADefEvalPHP txt -> "ADefEvalPHP "<> tshow txt 
 
 instance ShowHS FilePos where
  showHS _ _ = tshow

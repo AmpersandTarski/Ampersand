@@ -11,6 +11,7 @@ module Ampersand.Core.A2P_Converters (
   , aIdentityDef2pIdentityDef
   , aObjectDef2pObjectDef
   , aRelation2pRelation
+  , aProps2Pprops
   , aPopulation2pPopulation
   , aRule2pRule
   , aSign2pSign
@@ -101,12 +102,34 @@ aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
  P_Relation { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
-       , dec_prps   = decprps dcl
+       , dec_prps   = aProps2Pprops $ decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
        , dec_Mean   = map aMeaning2pMeaning (decMean dcl)
        , pos   = decfpos dcl
        }
 
+aProps2Pprops :: AProps -> Set PProp
+aProps2Pprops aps
+  |    P_Sym `elem` xs
+    && P_Asy `elem` xs = Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
+  | otherwise = xs
+   where 
+     xs = Set.map aProp2pProp aps
+     aProp2pProp :: AProp -> PProp
+     aProp2pProp p = case p of
+       Uni -> P_Uni
+       Inj -> P_Inj
+       Sur x -> P_Sur (aPropDef2pPropDef <$> x)
+       Tot x -> P_Tot (aPropDef2pPropDef <$> x)
+       Sym -> P_Sym
+       Asy -> P_Asy
+       Trn -> P_Trn
+       Rfx -> P_Rfx
+       Irf -> P_Irf
+     aPropDef2pPropDef :: APropDefault -> PPropDefault
+     aPropDef2pPropDef x = case x of 
+        ADefAtom val    -> PDefAtom $ aAtomValue2pAtomValue val
+        ADefEvalPHP txt -> PDefEvalPHP txt
 aRelation2pNamedRel :: Relation -> P_NamedRel
 aRelation2pNamedRel dcl = PNamedRel
   { pos      = decfpos dcl

@@ -7,6 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpecAux
 import           Ampersand.Output.ToJSON.JSONutils 
+import qualified RIO.List as L
 import qualified RIO.Set as Set
 
 newtype Relationz = Relationz [RelationJson]deriving (Generic, Show)
@@ -22,6 +23,8 @@ data RelationJson = RelationJson
   , relJSONprop         :: Bool
   , relJSONaffectedConjuncts :: [Text]
   , relJSONmysqlTable   :: RelTableInfo
+  , relJSONdefaultSrc :: Maybe Text
+  , relJSONdefaultTgt :: Maybe Text
   } deriving (Generic, Show)
 data RelTableInfo = RelTableInfo -- Contains info about where the relation is implemented in SQL
   { rtiJSONname    :: Text
@@ -57,9 +60,26 @@ instance JSON Relation RelationJson where
          , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = maybe [] (map rc_id) . lookup dcl . allConjsPerDecl $ fSpec
          , relJSONmysqlTable = fromAmpersand env fSpec dcl
+         , relJSONdefaultSrc = case L.nub [p | p@Sur {} <- Set.toList $ properties dcl] of
+                                 [] -> Nothing
+                                 [Sur Nothing] -> Nothing
+                                 [Sur (Just d)] -> Just $ toText d
+                                 [_]  -> fatal "Nothing else than `Sur` is expected here!"
+                                 ps   -> fatal $ "Multiple instances of Sur should have been prevented by the typechecker\n"
+                                               <>"   "<>tshow ps
+         , relJSONdefaultTgt = case L.nub [p | p@Tot {} <- Set.toList $ properties dcl] of
+                                 [] -> Nothing
+                                 [Tot Nothing] -> Nothing
+                                 [Tot (Just d)] -> Just $ toText d
+                                 [_]  -> fatal "Nothing else than `Tot` is expected here!"
+                                 ps   -> fatal $ "Multiple instances of Tot should have been prevented by the typechecker\n"
+                                               <>"   "<>tshow ps
          }
       where bindedExp = EDcD dcl
-         
+            toText :: APropDefault -> Text
+            toText d = case d of 
+              ADefAtom aav -> tshow aav
+              ADefEvalPHP txt -> "{php}"<>txt
 instance JSON Relation RelTableInfo where
  fromAmpersand env fSpec dcl = RelTableInfo
   { rtiJSONname    = name plug
