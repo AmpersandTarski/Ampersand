@@ -1,8 +1,13 @@
 ﻿# Release notes of Ampersand
 
+## v4.4.1 ( 10 October 2021)
+
+* [Issue #1212](https://github.com/AmpersandTarski/Ampersand/issues/1212) Solved issue with trailing whitespace.
+* [PR #1210](https://github.com/AmpersandTarski/Ampersand/pull/1210) Partial implementation for [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189). The prototype still has to be adapted, so this issue isn't closed yet.
+
 ## v4.4.0 ( 10 September August 2021)
 
-* PR #1201 changes to Transformers.hs for the new RAP release.
+* [PR #1201](https://github.com/AmpersandTarski/Ampersand/pull/1201) Changes to Transformers.hs for the new RAP release.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
 * [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
 
