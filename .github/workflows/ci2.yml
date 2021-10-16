@@ -29,7 +29,7 @@ jobs:
         run: | 
           chmod +x release/Linux/ampersand
           echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
-          echo "::set-output name=theReleaseName::$(echo "Ampersand-v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
+          echo "::set-output name=theReleaseName::$(echo "v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
         id: get-version
       - 
         name: zip the binaries (Linux) 🎒
@@ -70,7 +70,7 @@ jobs:
           draft: false
           prerelease: false
           release_name: ${{ steps.get-version.outputs.theReleaseName }}
-          tag_name: Ampersand-v${{ steps.get-version.outputs.version }}
+          tag_name: v${{ steps.get-version.outputs.version }}
           body: |
             Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
         env:
