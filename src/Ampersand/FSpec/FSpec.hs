@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional designs is a core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
@@ -10,7 +10,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( FSpec(..), emptyFSpec, concDefs, Atom(..), APair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -67,7 +67,7 @@ data FSpec = FSpec { fsName ::       Text
                    , vrules ::       Rules                   
                    -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       Rules                   
-                   -- ^ All rules that are generated: multiplicity rules and identity rules
+                   -- ^ All rules that are generated: property rules and identity rules
                    , invariants ::   Rules                   
                    -- ^ All invariant rules
                    , signals ::      Rules                   
@@ -81,7 +81,7 @@ data FSpec = FSpec { fsName ::       Text
                    , allConcepts ::  A_Concepts
                    -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
-                   , vIndices ::     [IdentityDef]            
+                   , vIndices ::     [IdentityRule]            
                    -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                
                    -- ^ All views that apply in the entire FSpec
@@ -105,11 +105,11 @@ data FSpec = FSpec { fsName ::       Text
                    -- ^ generated: The data structure containing the generalization structure of concepts
                    , vpatterns ::    [Pattern]                
                    -- ^ All patterns taken from the Ampersand script
-                   , conceptDefs ::  [ConceptDef]             
+                   , conceptDefs ::  [AConceptDef]             
                    -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
-                   , fSexpls ::      [Purpose]                
-                   -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                   , metas ::        [Meta]                   
+                   , fSexpls ::      Set.Set Purpose                
+                   -- ^ All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
+                   , metas ::        [MetaData]                   
                    -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 
                    -- ^ Information for CRUD matrices 
@@ -139,6 +139,8 @@ data FSpec = FSpec { fsName ::       Text
                    , largestConcept :: A_Concept -> A_Concept
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
+                   , allEnforces :: [AEnforce]
+                   , isSignal :: Rule -> Bool
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = originalContext f == originalContext f'
@@ -164,13 +166,14 @@ instance Hashable FSpec where
         composeHash s fun = s `hashWithSalt` fun fSpec 
 
 instance Language FSpec where
-  relsDefdIn = relsDefdIn.originalContext
-  udefrules  = udefrules.originalContext
-  identities = identities.originalContext
-  viewDefs   = viewDefs.originalContext
-  gens       = gens.originalContext
-  patterns   = patterns.originalContext
-
+  relsDefdIn = relsDefdIn . originalContext
+  udefrules  = udefrules . originalContext
+  identities = identities . originalContext
+  viewDefs   = viewDefs . originalContext
+  enforces   = enforces . originalContext
+  gens       = gens . originalContext
+  patterns   = patterns . originalContext
+  udefRoleRules = udefRoleRules . originalContext
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
                  , atmVal   :: AAtomValue
@@ -182,17 +185,17 @@ instance Unique Atom where
              [x] -> uniqueShowWithType x
              xs  -> "["<>T.intercalate ", " (map uniqueShowWithType xs)<>"]"
 
-data A_Pair = Pair { lnkDcl :: Relation
-                   , lnkLeft :: Atom
-                   , lnkRight :: Atom
-                   } deriving (Typeable,Eq)
-instance HasSignature A_Pair where
+data APair = Pair { lnkDcl :: Relation
+                  , lnkLeft :: Atom
+                  , lnkRight :: Atom
+                  } deriving (Typeable,Eq)
+instance HasSignature APair where
   sign = sign . lnkDcl
-instance Unique A_Pair where
+instance Unique APair where
   showUnique x = showUnique (lnkDcl x)
               <> showUnique (lnkLeft x)
               <> showUnique (lnkRight x)
-concDefs :: FSpec -> A_Concept -> [ConceptDef]
+concDefs :: FSpec -> A_Concept -> [AConceptDef]
 concDefs fSpec c = 
   case c of
     ONE -> []
@@ -202,29 +205,6 @@ instance ConceptStructure FSpec where
   concs         = allConcepts
   expressionsIn = allExprs 
 
-
---type Attributes = [Attribute]
---data Attribute  = Attr { fld_name :: Text        -- The name of this attribute
---                       , fld_sub :: Attributes        -- all sub-attributes
---                       , fld_expr :: Expression    -- The expression by which this attribute is attached to the interface
---                       , fld_rel :: Relation      -- The relation to which the database table is attached.
---                       , fld_editable :: Bool          -- can this attribute be changed by the user of this interface?
---                       , fld_list :: Bool          -- can there be multiple values in this attribute?
---                       , fld_must :: Bool          -- is this attribute obligatory?
---                       , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
---                       , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
---                       , fld_insAble :: Bool          -- can the user insert in this attribute?
---                       , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this attribute
---                       , fld_delAble :: Bool          -- can the user delete this attribute?
---                       , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this attribute
---                       }
-
-{- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
- - "The properties of the Interface Operation component are as follows:
- - ...
- - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
- - ..."
--}
 
 instance Named FSpec where
   name = fsName
@@ -238,6 +218,8 @@ instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
 instance Eq Quad where
   a == b = compare a b == EQ
+instance Unique Quad where
+  showUnique quad =  "ONCHANGE "<>showRel (qDcl quad)<>" FIX "<>name (qRule quad)
 
 --
 dnf2expr :: DnfClause -> Expression
@@ -266,15 +248,15 @@ data PlugSQL
    --                                            <> [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
    --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped relation))
-   --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
+   --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
    --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
  = TblSQL  { sqlname ::    Text
-           , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
-                                                                    --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
-                                                                    --   the remaining attributes represent attributes.
-           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
-                                                                    -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , dLkpTbl ::   [RelStore]
+           , attributes :: [SqlAttribute]               -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
+                                                        --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
+                                                        --   the remaining attributes represent attributes.
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]   -- ^ lookup table that links all typology concepts to attributes in the plug
+                                                        -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , dLkpTbl ::    [RelStore]
            }
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -316,13 +298,14 @@ lookupCpt fSpec cpt = [(plug,att)
                       , c==cpt
                       ]
 
--- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
+-- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
+getConceptTableFor :: FSpec -> A_Concept -> PlugSQL    -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal $ "tableFor: No concept table for " <> name c
                                (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
+--   A RelStore is used to identify a relation within a persistent store.
 data RelStore 
   = RelStore
      { rsDcl       :: Relation
@@ -410,7 +393,109 @@ substituteReferenceObjectDef fSpec originalObjectDef =
 violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
 violationsOfInvariants fSpec 
   = [(r,vs) |(r,vs) <- allViolations fSpec
-            , not (isSignal r)
+            , not (isSignal fSpec r)
     ]
 defOutputLang :: FSpec -> Lang
 defOutputLang = ctxlang . originalContext
+
+emptyFSpec :: FSpec
+emptyFSpec = FSpec { fsName = ""
+                   -- The name of the specification, taken from the Ampersand script
+                   , originalContext = fatal "Don't ask for the original context in the empty FSpec."
+                   -- the original context. (for showA)  
+                   , fspos =        []                 
+                   -- The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
+                   , plugInfos =    []               
+                   -- All plugs (derived)
+                   , interfaceS =   []              
+                   -- All interfaces defined in the Ampersand script
+                   , interfaceG =   []              
+                   -- All interfaces derived from the basic ontology (the Lonneker interface)
+                   , roleInterfaces  = fatal "Don't ask for the role-interface constraints in the empty FSpec."
+                   -- All interfaces defined in the Ampersand script, for use by a specific Role
+                   , fDeriveProofs = mempty                  
+                   -- The proofs in Pandoc format
+                   , fRoleRuls =    []            
+                   -- the relation saying which roles maintain which rules.
+                   , fMaintains =  fatal "Don't ask for the maintainer roles in the empty FSpec."
+                   , fRoles =       []
+                   -- All roles mentioned in this context, numbered.
+                   , fallRules =    Set.empty
+                   , vrules =       Set.empty                   
+                   -- All user defined rules that apply in the entire FSpec
+                   , grules =       Set.empty                   
+                   -- All rules that are generated: property rules and identity rules
+                   , invariants =   Set.empty                   
+                   -- All invariant rules
+                   , signals =      Set.empty                   
+                   -- All signal rules
+                   , allUsedDecls = Set.empty               
+                   -- All relations that are used in the fSpec
+                   , vrels =        Set.empty               
+                   -- All user defined and generated relations plus all defined and computed totals.
+                                                              --   The generated relations are all generalizations and
+                                                              --   one relation for each signal.
+                   , allConcepts =  Set.empty
+                   -- All concepts in the fSpec
+                   , cptTType = fatal "Don't ask for the concept-TType relation in the empty FSpec."
+                   , vIndices =     []            
+                   -- All keys that apply in the entire FSpec
+                   , vviews =       []                
+                   -- All views that apply in the entire FSpec
+                   , getDefaultViewForConcept = fatal "Don't ask for the default views in the empty FSpec."
+                   , getAllViewsForConcept = fatal "Don't ask for the views in the empty FSpec."
+                   , lookupView = fatal "Don't ask for the lookupView in the empty FSpec."
+                   -- Lookup view by id in fSpec.
+                   , vgens =        []              
+                   -- All gens that apply in the entire FSpec
+                   , allConjuncts = []               
+                   -- All conjuncts generated (by ADL2FSpec)
+                   , allConjsPerRule = []   
+                   -- Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerDecl = []        
+                   -- Maps each relation to the conjuncts it appears in   
+                   , allConjsPerConcept = []    
+                   -- Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
+                   , vquads =       []                   
+                   -- All quads generated (by ADL2FSpec)
+                   , fsisa =        [] 
+                   -- generated: The data structure containing the generalization structure of concepts
+                   , vpatterns =    []                
+                   -- All patterns taken from the Ampersand script
+                   , conceptDefs =  []             
+                   -- All concept definitions defined throughout a context, including those inside patterns and processes
+                   , fSexpls =      Set.empty             
+                   -- All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
+                   , metas =        []                   
+                   -- All meta relations from the entire context
+                   , crudInfo =     fatal "Don't ask for crud information in the empty FSpec."                 
+                   -- Information for CRUD matrices 
+                   , atomsInCptIncludingSmaller = fatal "Don't ask for atoms in the empty FSpec."
+                   -- All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
+                   , atomsBySmallestConcept = fatal "Don't ask for atoms in the empty FSpec."
+                   -- All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
+                   , tableContents = fatal "Don't ask for table contents in the empty FSpec."
+                   -- tableContents is meant to compute the contents of an entity table.
+                   --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than Text.
+                   -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
+                   -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
+                   --                         we may see empty attributes. (NULL values in database terminology)
+                   -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
+                   -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
+                   , pairsInExpr = fatal "Don't ask for pairs from expressions in the empty FSpec."
+                   , applyViolText = fatal "Don't ask for the function applyViolText in the empty FSpec."
+                   , initialConjunctSignals = [] 
+                   -- All conjuncts that have process-rule violations.
+                   , allViolations =  []   
+                   -- All invariant rules with violations.
+                   , allExprs =      Set.empty
+                   -- All expressions in the fSpec
+                   , fcontextInfo   = fatal "Don't ask for the original context in the empty FSpec." 
+                   , ftypologies   = []
+                   , typologyOf = fatal "Don't ask for typologies in the empty FSpec."
+                   , largestConcept = fatal "Don't ask for the largest concept in the empty FSpec."
+                   , specializationsOf = fatal "Don't ask for specializations in the empty FSpec."
+                   , generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec."
+                   , allEnforces = []
+                   , isSignal = fatal "Don't ask for isSignal in an empty FSpec."
+                   }

@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend) where
+
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, doGenMetaModel) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -136,6 +136,16 @@ checkCompilerCompatibility =
     checkConstraints :: Version -> [Constraint] -> [Constraint]
     checkConstraints version constraints =
       filter (\ constraint -> not $ satisfiesConstraint constraint version) constraints
+
+doGenMetaModel :: (HasLogFunc env, HasDirPrototype env) => FSpec -> RIO env()
+doGenMetaModel fSpec = do
+  env <- ask
+  logInfo "Generating metamodel ..."
+  let dir = getMetamodelDir env
+      filepath = dir </> "metamodel.adl"
+  logDebug $ "  Generating "<>display (T.pack filepath) 
+  liftIO $ createDirectoryIfMissing True dir
+  writeFileUtf8 filepath (showA (originalContext fSpec))
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
@@ -303,7 +313,7 @@ genRouteProvider fSpec ifcs = do
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate Nothing template $
                    setAttribute "contextName"         (fsName fSpec)
-                 . setAttribute "ampersandVersionStr" ampersandVersionStr
+                 . setAttribute "ampersandVersionStr" (longVersion appVersion)
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
@@ -328,7 +338,7 @@ genViewInterface fSpec interf = do
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                  . setAttribute "ampersandVersionStr" ampersandVersionStr
+                  . setAttribute "ampersandVersionStr" (longVersion appVersion)
                   . setAttribute "interfaceName"       (ifcName  interf)
                   . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
                   . setAttribute "expAdl"              (showA . _ifcExp $ interf)
@@ -457,7 +467,7 @@ genControllerInterface fSpec interf = do
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "ampersandVersionStr"      ampersandVersionStr
+                     . setAttribute "ampersandVersionStr"      (longVersion appVersion)
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showA . _ifcExp $ interf)

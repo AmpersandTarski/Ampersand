@@ -10,6 +10,6 @@ ENDPATTERN
 ENDCONTEXT
 
 {-
-   Purpose: This script tests the mechanism of matching the source of an interface attribute to the target of the interface expression.
+   Purpose: This script tests the mechanism of matching the source of an interface field to the target of the interface term.
    Result: PASS
 -}

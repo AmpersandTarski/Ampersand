@@ -5,8 +5,8 @@
 module Ampersand.Basics.Languages
     (Lang(..)
     ,LocalizedStr
-    ,NLString(..)
-    ,ENString(..)
+    ,NLString(..), toNL
+    ,ENString(..), toEN
     ,localize
     ,plural
     )
@@ -82,6 +82,11 @@ plural Dutch str =
 newtype NLString = NL Text
 -- | English text
 newtype ENString = EN Text
+
+toNL :: [Char] -> NLString
+toNL str = NL (T.pack str)
+toEN :: [Char] -> ENString
+toEN str = EN (T.pack str)
 
 -- | Type of text containing all localized variations
 type LocalizedStr = (NLString, ENString)

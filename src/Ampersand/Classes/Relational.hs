@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Classes.Relational
    ( HasProps(..)
    , Relational(..)
@@ -10,7 +10,7 @@ import           Ampersand.Basics
 import qualified RIO.Set as Set
 
 class HasProps r where
-    properties :: r -> Props
+    properties :: r -> AProps
 class Relational r where
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
@@ -30,7 +30,7 @@ class Relational r where
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
 instance HasProps Relation where
-    properties d = fromMaybe (decprps d) (decprps_calc d)
+    properties = decprps
 
 -- | Is the concept the ONE and only? (universal singleton) 
 isONE :: A_Concept -> Bool
@@ -42,14 +42,14 @@ isSESSION cpt =
              PlainConcept{} -> "SESSION" `elem` aliases cpt
              ONE            -> False              
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
--- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
+-- but tries to derive the most obvious constraints as well. The more property constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-properties' :: Expression -> Props
-properties' expr = case expr of
+instance HasProps Expression where
+  properties expr = case expr of
      EDcD dcl   -> properties dcl
-     EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
+     EDcI{}     -> Set.fromList [Uni,Tot Nothing,Inj,Sur Nothing,Sym,Asy,Trn,Rfx]
+     EEps a sgn -> Set.fromList $ [Tot Nothing| a == source sgn]++[Sur Nothing | a == target sgn] ++ [Uni,Inj]
      EDcV sgn   -> Set.fromList $ 
                  --NOT totaal
                  --NOT surjective
@@ -59,17 +59,17 @@ properties' expr = case expr of
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
-     EBrk f     -> properties' f
-     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot,Inj,Sur]) (properties' l `Set.intersection` properties' r)
-     EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
-     EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
-     ECpl e'    -> Set.singleton Sym `Set.intersection` properties' e'
-     EFlp e'    -> Set.map flp $ properties' e'
+     EBrk f     -> properties f
+     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot Nothing,Inj,Sur Nothing]) (properties l `Set.intersection` properties r)
+     EPrd (l,r) -> Set.fromList $ [Tot Nothing | isTot l]++[Sur Nothing | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
+     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
+     EFlp e'    -> Set.map flp $ properties e'
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
-instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
+instance Relational Expression where        -- TODO: see if we can find more property constraints...
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
  --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
@@ -121,7 +121,6 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isProp expr = isAsy expr && isSym expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
- --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
  isIdent expr = (\x -> if x && (source expr /= target expr) 
                        then fatal $ "Something wrong with isIdent." <> tshow expr
@@ -137,7 +136,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl0 e     -> isIdent e || isFalse e
      EKl1 e     -> isIdent e
      ECpl e     -> isImin e
-     EDcD{}     -> False
+     EDcD dcl   -> name dcl == "="
      EDcI{}     -> True
      EEps{}     -> False
      EDcV sgn   -> isEndo sgn && isONE (source sgn)
@@ -164,20 +163,20 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
  isFunction r   = isUni r && isTot r
                  
- isTot = isTotSur Tot
- isSur = isTotSur Sur
+ isTot = isTotSur (Tot Nothing)
+ isSur = isTotSur (Sur Nothing)
  
  isUni = isUniInj Uni
  isInj = isUniInj Inj
  
- isRfx r = Rfx `elem` properties' r
- isIrf r = Irf `elem` properties' r
- isTrn r = Trn `elem` properties' r
- isSym r = Sym `elem` properties' r
- isAsy r = Asy `elem` properties' r
+ isRfx r = Rfx `elem` properties r
+ isIrf r = Irf `elem` properties r
+ isTrn r = Trn `elem` properties r
+ isSym r = Sym `elem` properties r
+ isAsy r = Asy `elem` properties r
 
 -- Not to be exported:
-isTotSur :: Prop -> Expression -> Bool 
+isTotSur :: AProp -> Expression -> Bool 
 isTotSur prop expr 
   = case expr of
       EEqu (_,_) -> False
@@ -198,16 +197,16 @@ isTotSur prop expr
       EDcD d     -> prop `elem` properties d
       EDcI{}     -> True
       EEps c sgn -> case prop of
-                      Tot -> c == source sgn
-                      Sur -> c == target sgn
+                      Tot _ -> c == source sgn
+                      Sur _ -> c == target sgn
                       _   -> fatal $ "isTotSur must not be called with "<>tshow prop
       EDcV{}     -> todo
       EBrk e     -> isTotSur prop e
       EMp1{}     -> True
   where
-    todo = prop `elem` properties' expr
+    todo = prop `elem` properties expr
 
-isUniInj :: Prop -> Expression -> Bool 
+isUniInj :: AProp -> Expression -> Bool 
 isUniInj prop expr 
   = case expr of
       EEqu (_,_) -> False
@@ -232,4 +231,4 @@ isUniInj prop expr
       EBrk e     -> isUniInj prop e
       EMp1{}     -> True
   where
-    todo = prop `elem` properties' expr
+    todo = prop `elem` properties expr

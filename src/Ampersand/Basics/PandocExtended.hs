@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Basics.PandocExtended
    ( PandocFormat(..)
    , Markup(..)
@@ -9,17 +9,18 @@ module Ampersand.Basics.PandocExtended
 where 
 
 import           Ampersand.Basics.Languages
-import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.Prelude hiding (toList)
 import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
 import qualified RIO.Text as T
 import           Text.Pandoc hiding (Meta)
+import           Text.Pandoc.Builder hiding (str)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
 
 data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
-           , amPandoc :: [Block]
+           , amPandoc :: Blocks
            } deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Markup where
   showUnique = tshow
@@ -29,21 +30,21 @@ instance Unique Markup where
 aMarkup2String :: Markup -> Text
 aMarkup2String = blocks2String . amPandoc
   where
-    blocks2String :: [Block] -> Text
+    blocks2String :: Blocks -> Text
     blocks2String ec
-      = case runPure $ writeMarkdown def (Pandoc nullMeta ec) of
+      = case runPure $ writeMarkdown def (Pandoc nullMeta (toList ec)) of
               Left pandocError -> fatal $ "Pandoc error: "<>tshow pandocError
               Right txt -> txt
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader should be used on user-defined strings.
-string2Blocks :: PandocFormat -> Text -> [Block]
+string2Blocks :: PandocFormat -> Text -> Blocks
 string2Blocks defaultformat str
  = case runPure $ theParser (removeCRs str) of
     Left err ->  fatal ("Proper error handling of Pandoc is still TODO."
-                        <>"\n  This particular error is cause by some "<>tshow defaultformat<>" in your script:"
+                        <>"\n  This particular error is caused by some "<>tshow defaultformat<>" in your script:"
                         <>"\n"<>tshow err)
-    Right (Pandoc _ blocks) -> blocks
+    Right (Pandoc _ blocks) -> fromList blocks
    where
      theParser =
            case defaultformat of

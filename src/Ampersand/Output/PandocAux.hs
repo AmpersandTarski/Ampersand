@@ -2,14 +2,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.PandocAux
       ( writepandoc
       , chptTitle
       , count
       , showMath
       , texOnlyMarginNote
-      , newGlossaryEntry
       , commaPandocAnd
       , commaPandocOr
       , outputLang
@@ -365,13 +364,6 @@ inMathFlip = "^{\\smallsmile}"
 
 inMathOverline :: Text -> Text
 inMathOverline x = " \\overline{"<>x<>"} "
-
-newGlossaryEntry :: Text -> Text -> Inlines
-newGlossaryEntry nm cnt =
-  rawInline "latex"
-    ("\\newglossaryentry{"<> escapeLatex nm <>"}\n"<>
-     "     { name={"<> toLatexVariable nm <>"}\n"<>
-     "     , description={"<> cnt<>"}}\n")
 
 texOnlyMarginNote :: Text -> Text
 texOnlyMarginNote marginNote = 

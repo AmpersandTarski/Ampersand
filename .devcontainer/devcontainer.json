@@ -1,5 +1,5 @@
 {
-  "name": "HaskellStackDev:8.6"
+  "name": "HaskellStackDev:8.10.4"
   ,
   "dockerFile": "Dockerfile",
   "runArgs": [],
@@ -7,8 +7,27 @@
   // Use 'settings' to set *default* container specific settings.json values on container create. 
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "settings": {
-      "terminal.integrated.shell.linux": "/bin/bash"
-      
+      "terminal.integrated.defaultProfile.linux":"bash", 
+      "terminal.integrated.profiles.linux":{
+        "bash": {
+          "path": "bash",
+          "icon": "terminal-bash"
+        },
+        "zsh": {
+          "path": "zsh",
+        },
+        "fish": {
+          "path": "fish"
+        },
+        "tmux": {
+          "path": "tmux",
+          "icon": "terminal-tmux"
+        },
+        "pwsh": {
+          "path": "pwsh",
+          "icon": "terminal-powershell"
+        }
+      }
   },
   
   // Use 'appPort' to create a container with published ports. If the port isn't working, be sure
@@ -25,6 +44,7 @@
       "github.vscode-pull-request-github",
       "eamodio.gitlens",
       "me-dutour-mathieu.vscode-github-actions",
-      "redhat.vscode-yaml"
+      "redhat.vscode-yaml",
+      "ampersandtarski.language-ampersand"
   ]
 }

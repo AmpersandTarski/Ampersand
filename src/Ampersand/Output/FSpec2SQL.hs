@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries,databaseStructureSql)
 where
@@ -15,7 +15,7 @@ import qualified RIO.List as L
 databaseStructureSql :: FSpec -> Text
 databaseStructureSql fSpec
    = T.intercalate "\n" $ 
-         header ampersandVersionStr
+         header (longVersion appVersion)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
 
@@ -28,7 +28,7 @@ generateDBstructQueries fSpec withComment
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec
    = T.intercalate "\n" $ 
-         header ampersandVersionStr
+         header (longVersion appVersion)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
        <>header "Violations of conjuncts"

@@ -1,9 +1,51 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+
+## v4.4.2 (16 October 2021)
+
+* Fix CI script for automatic build push to Docker Hub. Note! Release tags should now have format 'vX.Y.Z' instead of 'Ampersand-vX.Y.Z' for semver pattern to work
+* Merge docker build into existing CI script. Prevent duplicate jobs, trigger on pull_request not needed.
+
+## v4.4.1 ( 10 October 2021)
+
+* [Issue #1212](https://github.com/AmpersandTarski/Ampersand/issues/1212) Solved issue with trailing whitespace.
+* [PR #1210](https://github.com/AmpersandTarski/Ampersand/pull/1210) Partial implementation for [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189). The prototype still has to be adapted, so this issue isn't closed yet.
+
+## v4.4.0 ( 10 September August 2021)
+
+* [PR #1201](https://github.com/AmpersandTarski/Ampersand/pull/1201) Changes to Transformers.hs for the new RAP release.
+* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
+* [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
+
+## v4.3.0 ( 13 August 2021)
+
+* [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
+* [Issue RAP #123](https://github.com/AmpersandTarski/RAP/issues/123) To enhance the Atlas in RAP to an acceptable minimal level, some changes in Ampersand are required.
+* [Issue #1196](https://github.com/AmpersandTarski/Ampersand/issues/1196) Allow multiple files on the command line. The second to last files are handled as if they were INCLUDEd in the first one.
+
+## v4.2.0 ( 16 July 2021)
+
+* In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.
+* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
+* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
+* [Issue #1183](https://github.com/AmpersandTarski/Ampersand/issues/1183) Use markup in definition of Concept is now possible.
+* Improvements to the way we test the build (CI/CD).
+
+## v4.1.5 ( 2 June 2021)
+
+* Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might affect tables in the documentation that is generated with the `documentation` command.
+* Add switch `--numeric-version`
+* Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration. 
+
+## v4.1.4 (29 january 2021)
+* [Issue #1131](https://github.com/AmpersandTarski/Ampersand/issues/1131) remove COLS and ROWS from the parser and from other parts of the Ampersand compiler.
+
+## v4.1.3 (9 november 2020)
 * [Issue #1070](https://github.com/AmpersandTarski/Ampersand/issues/1070) Remove CLI options dbHost, dbName, dbUser and dbPass. These are part of the prototype framework and can be specified as config or environment variable as described here: https://github.com/AmpersandTarski/prototype/tree/development/config 
 * [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
   * The following CLI options are removed --force-reinstall-framework, --prototype-framework-version, --customizations
+* internal refactorings
 
 ## v4.1.2 (9 october 2020)
 
@@ -19,10 +61,10 @@
 * [Issue #1067](https://github.com/AmpersandTarski/Ampersand/issues/1067) Docker build push to Docker hub instead of Github package repo
 * [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
 * **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 
-This breaking change presents the opportunity to rename the built-in templates to more self explaining template names:
-  * ROWS -> FORM
-  * COLS -> TABLE
-  * TABS -> TABS (unchanged)
+This breaking change presented an opportunity to rename the built-in templates to more self explaining template names:
+  * ROWS -> BOX \<FORM\>
+  * COLS -> BOX \<TABLE\>
+  * TABS -> BOX \<TABS\>
 * Update default prototype framework version to v1.6.0, which includes new templates as described above
 
 ## v4.0.2 (17 july 2020)
@@ -47,7 +89,6 @@ This breaking change presents the opportunity to rename the built-in templates t
 * [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/1054) Ampersand daemon now also reports type errors
 * [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/1063) Return violations of invariants with standard check
 * [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
-
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
 * Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
 * Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
@@ -248,6 +289,8 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #624](https://github.com/AmpersandTarski/Ampersand/issues/624) New feature: ExecEngine can merge atoms to fix violations of univalence and other identity violations.
 * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
 * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
+* FormalAmpersand.adl and PrototypeContext.adl are no longer used by the compiler. The metamodel is derived from the transformers, so the correspondence between the metamodel and the transformers is 100%. By definition.
+* There is a new option under "proto" called "metamodel", which is meant to show the metamodel to the user.
 
 ## v3.8.1 (20 january 2017)
 
@@ -321,21 +364,21 @@ It has taken some time since the last release. This release has some major work 
 ## v3.5.2 (10 juni 2016)
 
 * Work on meatgrinder (still experimental!)
-* Bug fix: Issue with SQL query [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152)
-* Bug fix: minor issue with SQL query [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436)
-* Bug fix: Nontermination of functional document generator. [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231)
-* SQL query performance improvements: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217)
+* [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152) Issue with SQL query 
+* [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436) Fix minor issue with SQL query
+* [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231) Fix nontermination of functional document generator.
+* [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217) SQL query performance improvements.
 * Back end performance: Postpone calculation of view and label for Atoms untill really needed (e.g. in interfaces)
 * Added frontend switch to turn on/off auto saving changes
 
 ## v3.5.1 (17 may 2016)
 
 * Minor enhancement of generation of Logical Data Model
-* More consisten use of views in interface definitions: [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416)
+* [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416) More consisten use of views in interface definitions.
 * Re-enabled output format for `--fSpec=asciidoc`
 * Added depth parameter in API resources call (?depth=\<int\>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
 * Added this release notes file.
-* Bug fixes: [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413)
+* [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413) Bugfix
 
 ## v3.5.0 (28 apr 2016)
 

@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH MARKDOWN
+CONTEXT FormalAmpersand IN ENGLISH MARKDOWN
 INCLUDE "Patterns.adl"
 
     PURPOSE PATTERN "Reusing Definitions"
@@ -11,6 +11,10 @@ INCLUDE "Patterns.adl"
         For that purpose, a pattern contains a set of definitions that describe the intended solution unambiguously and irredundantly.
         When a pattern is instantiated (reused), its definitions are made visible in the environment where it is used.
         Patterns are also meant to formalize the stakeholders' agreement on a particular theme.
+    +}
+    PURPOSE CONCEPT Pattern
+    {+  Patterns are also meant to keep a discussion among stakeholders focused on a single theme.
+        A large set of concepts and relations can be broken down in small subsets enclosed in a pattern.
     +}
     CONCEPT Pattern "A pattern describes a solution to a generic problem."
 

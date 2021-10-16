@@ -2,5 +2,11 @@ testCmds:
 # The intention of this testcase is to test the meatgrinder. 
 #  - command: ampersand validate --verbose --build-recipe AtlasComplete
 #    exitcode: 0
-  - command: ampersand population --verbose --build-recipe AtlasPopulation
+  - command: ampersand population --verbose --build-recipe Standard
+    exitcode: 0
+  - command: ampersand population --verbose --build-recipe Prototype
+    exitcode: 0
+  - command: ampersand population --verbose --build-recipe Grind
+    exitcode: 0
+  - command: ampersand population --verbose --build-recipe RAP
     exitcode: 0

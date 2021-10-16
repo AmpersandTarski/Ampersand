@@ -7,15 +7,18 @@
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
- , Meta(..)
+ , MetaData(..)
  , Origin(..)
  , Pattern(..) 
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..), Rules
- , RuleOrigin(..)
+ , RuleKind(..)
+ , AEnforce(..)
  , Relation(..), Relations, showRel
- , IdentityDef(..)
+ , AProp(..), AProps
+ , APropDefault(..)
+ , IdentityRule(..)
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
@@ -33,6 +36,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Expression(..)
  , getExpressionRelation
  , A_Concept(..), A_Concepts
+ , AConceptDef(..)
  , ShowWithAliases(..)
  , Meaning(..)
  , A_RoleRule(..)
@@ -41,7 +45,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Signature(..)
  , Population(..)
  , HasSignature(..)
- , Prop(..),Traced(..)
+ , Traced(..)
  , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomPairs
  , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
@@ -55,17 +59,17 @@ module Ampersand.Core.AbstractSyntaxTree (
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
-    ( Meta(..)
+    ( MetaData(..)
     , Role(..)
-    , ConceptDef, P_Concept(..), mkPConcept, PClassify(specific,generics)
+    , P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
     , maybeOrdering
     , Traced(..)
+    , EnforceOperator
     , ViewHtmlTemplate(..)
     , BoxHeader(..) -- , TemplateKeyValue(..)
     , PairView(..)
     , PairViewSegment(..)
-    , Prop(..), Props
     , Representation(..), TType(..), PAtomValue(..)
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
@@ -81,26 +85,28 @@ import qualified RIO.Text as T
 import           RIO.Time
 
 data A_Context
-   = ACtx{ ctxnm :: Text           -- ^ The name of this context
-         , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctxlang :: Lang           -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context.
-         , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
-         , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
-         , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
-         , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctxrrules :: [A_RoleRule]
-         , ctxreprs :: A_Concept -> TType
-         , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [AClassify]          -- ^ The specialization statements defined in this context, outside the scope of patterns
-         , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
-         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
-         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
-         , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
-         , ctxInfo :: ContextInfo
-         } deriving (Typeable)              --deriving (Show) -- voor debugging
+   = ACtx{ ctxnm :: !Text                  -- ^ The name of this context
+         , ctxpos :: ![Origin]             -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctxlang :: !Lang                -- ^ The default language used in this context.
+         , ctxmarkup :: !PandocFormat      -- ^ The default markup format for free text in this context.
+         , ctxpats :: ![Pattern]           -- ^ The patterns defined in this context
+         , ctxrs :: !Rules                 -- ^ All user defined rules in this context, but outside patterns
+         , ctxds :: !Relations             -- ^ The relations that are declared in this context, outside the scope of patterns
+         , ctxpopus :: ![Population]       -- ^ The user defined populations of relations defined in this context, including those from patterns
+         , ctxcdsOutPats :: ![AConceptDef] -- ^ The concept definitions defined outside the patterns of this context.
+         , ctxcds :: ![AConceptDef]        -- ^ The concept definitions defined in this context, including those from patterns
+         , ctxks :: ![IdentityRule]        -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctxrrules :: ![A_RoleRule]
+         , ctxreprs :: !(A_Concept -> TType)
+         , ctxvs :: ![ViewDef]             -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctxgs :: ![AClassify]           -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgenconcs :: ![[A_Concept]]   -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
+         , ctxifcs :: ![Interface]         -- ^ The interfaces defined in this context
+         , ctxps :: ![Purpose]             -- ^ The purposes of objects defined in this context, outside the scope of patterns
+         , ctxmetas :: ![MetaData]         -- ^ used for Pandoc authors (and possibly other things)
+         , ctxInfo :: !ContextInfo
+         , ctxEnforces :: ![AEnforce]      -- ^ All user defined enforce statements in this context, but outside patterns. 
+         } deriving (Typeable)
 instance Show A_Context where
   show = T.unpack . name
 instance Eq A_Context where
@@ -111,17 +117,21 @@ instance Named A_Context where
   name  = ctxnm
 
 data Pattern
-   = A_Pat { ptnm ::  Text        -- ^ Name of this pattern
-           , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
-           , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
-           , ptrls :: Rules         -- ^ The user defined rules in this pattern
-           , ptgns :: [AClassify]   -- ^ The generalizations defined in this pattern
-           , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
-           , ptups :: [Population]  -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
-           , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
-           , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable)  -- Show for debugging purposes
+   = A_Pat { ptnm ::  !Text              -- ^ Name of this pattern
+           , ptpos :: !Origin            -- ^ the position in the file in which this pattern was declared.
+           , ptend :: !Origin            -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
+           , ptrls :: !Rules             -- ^ The user defined rules in this pattern
+           , ptgns :: ![AClassify]       -- ^ The generalizations defined in this pattern
+           , ptdcs :: !Relations         -- ^ The relations that are declared in this pattern
+           , ptrrs :: ![A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
+           , ptcds :: ![AConceptDef]     -- ^ The concept definitions that are declared in this pattern
+           , ptrps :: ![Representation]  -- ^ The concept definitions that are declared in this pattern
+           , ptups :: ![Population]      -- ^ The user defined populations in this pattern
+           , ptids :: ![IdentityRule]    -- ^ The identity definitions defined in this pattern
+           , ptvds :: ![ViewDef]         -- ^ The view definitions defined in this pattern
+           , ptxps :: ![Purpose]         -- ^ The purposes of elements defined in this pattern
+           , ptenfs :: ![AEnforce]
+           } deriving (Typeable)      -- Show for debugging purposes
 instance Eq Pattern where
   a == b = compare a b == EQ
 instance Unique Pattern where
@@ -133,7 +143,35 @@ instance Named Pattern where
 instance Traced Pattern where
  origin = ptpos
 
-
+data AEnforce = AEnforce
+  { pos :: !Origin
+  , enfRel :: !Relation
+  , enfOp  :: !EnforceOperator
+  , enfExpr :: !Expression
+  , enfPatName :: !(Maybe Text) -- ^ If the Enforce is defined in the context of a pattern, the name of that pattern.
+  } deriving (Eq)
+data AConceptDef = AConceptDef
+  { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
+  , acdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+  , acddef2 :: !Meaning   -- ^ The textual definition of this concept.
+  , acdmean :: ![Meaning] -- ^ User-specified meanings, possibly more than one, for multiple languages.
+  , acdfrom:: !Text   -- ^ The name of the pattern or context in which this concept definition was made --TODO: Refactor to Maybe Pattern.
+  }   deriving (Show,Typeable)
+instance Named AConceptDef where
+  name = acdcpt
+instance Traced AConceptDef where
+ origin = pos
+instance Ord AConceptDef where
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["ConceptDef should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x  
+instance Eq AConceptDef where
+  a == b = compare a b == EQ
 data A_RoleRule = A_RoleRule { arPos ::   Origin
                              , arRoles :: NE.NonEmpty Role
                              , arRules :: NE.NonEmpty Text -- the names of the rules
@@ -149,9 +187,11 @@ instance Eq A_RoleRule where
  p1 == p2 = compare p1 p2 == EQ
 instance Traced A_RoleRule where
   origin = arPos
-data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
-                | Multiplicity    -- This rule follows implicitly from the Ampersand script (Because of a property) and generated by a computer
-                | Identity        -- This rule follows implicitly from the Ampersand script (Because of a identity) and generated by a computer
+data RuleKind = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
+                | Propty !AProp !Relation
+                   -- This rule follows implicitly from the Ampersand script (Because of a property) and generated by a computer
+                | Identity  -- This rule follows implicitly from the Ampersand script (Because of a identity) and generated by a computer
+                | Enforce   -- This rule follows implicitly from the Ampersand script (Because of an Enforce statement) and generated by a computer
                 deriving (Show, Eq)
 type Rules = Set.Set Rule
 data Rule =
@@ -161,10 +201,8 @@ data Rule =
         , rrmean ::   [Meaning]                   -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
-        , rrdcl ::    Maybe (Prop,Relation)       -- ^ The property, if this rule originates from a property on a Relation
         , rrpat ::    Maybe Text                  -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
-        , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
-        , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
+        , rrkind ::    RuleKind                  -- ^ Where does this rule come from?
         } deriving Typeable
 instance Eq Rule where
   a == b = compare a b == EQ
@@ -206,13 +244,63 @@ instance Unique Conjunct where
 instance Ord Conjunct where
   compare = compare `on` rc_id
 
+type AProps = Set.Set AProp
+data AProp
+  = -- | univalent
+    Uni
+  | -- | injective
+    Inj
+  | -- | surjective
+    Sur (Maybe APropDefault)
+  | -- | total
+    Tot (Maybe APropDefault)
+  | -- | symmetric
+    Sym
+  | -- | antisymmetric
+    Asy
+  | -- | transitive
+    Trn
+  | -- | reflexive
+    Rfx
+  | -- | irreflexive
+    Irf
+  deriving (Eq, Ord, Data, Typeable)
+instance Show AProp where
+ show Uni = "UNI"
+ show Inj = "INJ"
+ show (Sur x) = "SUR"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
+ show (Tot x) = "TOT"<>(case x of 
+                  Nothing -> mempty 
+                  Just d  -> " "<>show d)
+ show Sym = "SYM"
+ show Asy = "ASY"
+ show Trn = "TRN"
+ show Rfx = "RFX"
+ show Irf = "IRF"
+ 
+instance Unique AProp where
+ showUnique = tshow
+
+instance Flippable AProp where
+ flp Uni = Inj
+ flp (Tot x) = Sur x
+ flp (Sur x) = Tot x
+ flp Inj = Uni
+ flp x = x
+
+data APropDefault =
+    ADefAtom !AAtomValue
+  | ADefEvalPHP !Text
+  deriving (Eq, Ord, Show, Data)
+
+
 type Relations = Set.Set Relation
 data Relation = Relation
       { decnm :: Text              -- ^ the name of the relation
       , decsgn :: Signature          -- ^ the source and target concepts of the relation
-       --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
-      , decprps :: Props            -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-      , decprps_calc :: Maybe Props -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
+      , decprps :: AProps            -- ^ the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
       , decprL :: Text             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM :: Text             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR :: Text
@@ -250,21 +338,21 @@ instance HasSignature Relation where
 instance Traced Relation where
   origin = decfpos
 
-data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+data IdentityRule = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                       , idLbl :: Text        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , idPat :: Maybe Text  -- ^ if defined within a pattern, then the name of that pattern.
                       , identityAts :: NE.NonEmpty IdentitySegment  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Show)
-instance Named IdentityDef where
+instance Named IdentityRule where
   name = idLbl
-instance Traced IdentityDef where
+instance Traced IdentityRule where
   origin = idPos
-instance Unique IdentityDef where
+instance Unique IdentityRule where
   showUnique = name
-instance Ord IdentityDef where
+instance Ord IdentityRule where
   compare a b = name a `compare` name b
-instance Eq IdentityDef where
+instance Eq IdentityRule where
   a == b = compare a b == EQ
 newtype IdentitySegment = IdentityExp 
          { segment :: ObjectDef
@@ -346,14 +434,24 @@ instance Hashable AClassify where
                          IsE{} -> NE.toList . NE.sort $ genrhs g 
                        )
 
-data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
-                     , ifcname ::     Text        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
-                     , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
-                     , ifcPrp ::      Text        -- The purpose of the interface
-                     } deriving Show
+data Interface = Ifc
+  { -- | is this interface of type API?
+    ifcIsAPI :: !Bool,
+    -- | all roles for which an interface is available (empty means: available for all roles)
+    ifcname :: !Text,
+    -- | all roles for which an interface is available (empty means: available for all roles)
+    ifcRoles :: ![Role],
+    -- | NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+    ifcObj :: !ObjectDef,
+    -- | All conjuncts that must be evaluated after a transaction
+    ifcConjuncts :: ![Conjunct],
+    -- | The position in the file (filename, line- and column number)
+    ifcPos :: !Origin,
+    -- | The purpose of the interface
+    ifcPurpose :: !Text
+  }
+  deriving (Show)
+
 
 instance Eq Interface where
   a == b = compare a b == EQ
@@ -419,7 +517,7 @@ instance Eq BoxTxt where
  a == b = compare a b == EQ
 data ObjectDef = 
     ObjectDef { objnm    :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-           , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , objPos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
            , objmView :: Maybe Text   -- ^ The view that should be used for this object
@@ -428,7 +526,7 @@ data ObjectDef =
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
-  origin = objpos
+  origin = objPos
 instance Unique ObjectDef where
   showUnique = tshow
 instance Ord ObjectDef where
@@ -540,7 +638,7 @@ data AAtomValue
   | AAVDateTime { aavtyp :: TType
                 , aadatetime ::  UTCTime
                 }
-  | AtomValueOfONE deriving (Eq,Ord, Show)
+  | AtomValueOfONE deriving (Eq,Ord, Show, Data)
 
 instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (tshow.aavhash) pop
@@ -817,6 +915,8 @@ instance Eq A_Concept where
 
 -}
   
+instance Unique AConceptDef where
+  showUnique = tshow . name
 instance Unique A_Concept where
   showUnique = tshow
 instance Hashable A_Concept where
@@ -880,14 +980,36 @@ class HasSignature rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [AClassify]      -- The generalisation relations in the context
-     , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
-     , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-     , reprList         :: [Representation] -- a list of all Representations
-     , declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
-     , soloConcs        :: Set.Set Type -- types not used in any declaration
-     , gens_efficient   :: Op1EqualitySystem Type -- generalisation relations again, as a type system (including phantom types)
-     , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
+  CI {
+    -- | The generalisation relations in the context
+    ctxiGens         :: [AClassify]     
+     ,
+    -- | a list containing all user defined Representations in the context
+    representationOf :: A_Concept -> TType
+     ,
+    -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+    multiKernels     :: [Typology]
+     ,
+    -- | a list of all Representations
+    reprList         :: [Representation]
+     ,
+    -- | a map of declarations and the corresponding types
+    declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression)
+     ,
+    -- | types not used in any declaration
+    soloConcs        :: Set.Set Type
+     ,
+    -- | generalisation relations again, as a type system (including phantom types)
+    gens_efficient   :: Op1EqualitySystem Type
+     ,
+    -- | a map that must be used to convert P_Concept to A_Concept
+    conceptMap       :: ConceptMap
+     ,
+    -- | the default language used to interpret markup texts in this context
+    defaultLang      :: Lang
+     ,
+    -- | the default format used to interpret markup texts in this context
+    defaultFormat    :: PandocFormat
      } 
                        
 instance Named Type where

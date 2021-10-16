@@ -1,6 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Commands
@@ -62,7 +62,6 @@ commandLineHandler
   -> [Text] -- the (command-line) arguments
   -> IO (GlobalOptsMonoid, RIO Runner ())
 commandLineHandler currentDir _progName args = complicatedOptions
-  ampersandVersionStr
   "ampersand - The Ampersand generator"
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
@@ -97,11 +96,11 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet"
                   <>"must comply to the specific format."
                   <>"This is an experimental feature.")
-                  dataAnalysisCmd
+                  (mkAction exportAsAdl)
                   (outputFileOptsParser "MetaModel.adl")
       addCommand'' Devoutput
                   "Generate some diagnostic files, intended for developers of ampersand."
-                  devoutputCmd
+                  (mkAction devoutput)
                   (devoutputOptsParser ".")
       addCommand'' Documentation
                   ( "Generate a functional design document, to kick-start your "
@@ -110,50 +109,54 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   docOptsParser
 --      addCommand'' Fpa
 --                  ""
---                  fpaCmd
+--                  (mkAction fpa)
 --                  fpaOptsParser
 --      addCommand'' Init
 --                  ""
---                  initCmd
+--                  (mkAction init)
 --                  initOptsParser
       addCommand'' Population
                   "Generate a file that contains the population of your script."
-                  populationCmd
+                  (mkAction population)
                   populationOptsParser
       addCommand'' Proofs
                   "Generate a report containing proofs."
-                  proofCmd
+                  (mkAction proof)
                   proofOptsParser
       addCommand'' Proto
                   "Generate prototype files from your specification. To be used with the prototype framework."
-                  protoCmd
+                  (mkAction proto)
                   protoOptsParser
       addCommand'' Export
                   "Generate a single .adl file of your script (prettyprinted)"
-                  pprintCmd
+                  (mkAction exportAsAdl)
                   (outputFileOptsParser "export.adl")
       addCommand'' Uml
                   "Generate a data model in UML 2.0 style."
-                  umlCmd
+                  (mkAction uml)
                   umlOptsParser
       addCommand'' Validate
                   ("Compare results of rule evaluation in Haskell and SQL, for" <>
                    "testing expression semantics. This requires command line php with"<>
                    "MySQL support.")
-                  validateCmd
+                  (mkAction validate)
                   validateOptsParser
       addCommand'' Test
-                  ("Run testsuites in a given directory. This is ment to do regression testing" <>
+                  ("Run testsuites in a given directory. This is meant to do regression testing" <>
                    " during automatic build (e.g. Travis-ci)")
                   testCmd
                   (testOptsParser ".")
      where
         -- addCommand hiding global options
-        addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
+        addCommand'' :: HasOptions a => Command -> String -> (a -> RIO Runner ()) -> Parser a
                     -> AddCommand
-        addCommand'' cmd title constr =
-            addCommand (map toLower . show $ cmd) title globalFooter constr (\_ gom -> gom) globalOpts
-
+        addCommand'' cmd title constr parser =
+            addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts parser
+          where constr' opts = do
+                  runner <- ask 
+                  logDebug .display $ shortVersion appVersion <> " runs with the following settings:"
+                  showOptions (runner,opts)
+                  constr opts
 
 
 
@@ -176,8 +179,6 @@ type AddCommand =
 complicatedOptions
   :: Monoid a
   => Text
-  -- ^ version string
-  -> Text
   -- ^ header
   -> Text
   -- ^ program description (displayed between usage and options listing in the help output)
@@ -193,7 +194,7 @@ complicatedOptions
   -> ExceptT b (Writer (Mod CommandFields (b,a))) ()
   -- ^ commands (use 'addCommand')
   -> IO (a,b)
-complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
+complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = do
      runSimpleApp $ do
           logDebug $ displayShow helpDoc'
      (a,(b,c)) <- case execParserPure myPreferences parser (T.unpack <$> args) of
@@ -218,14 +219,23 @@ complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure com
                 paragraph (show opt) -- optHelp opt -- "Een of andere optie."
         parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
         desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
-        versionOptions = versionOption stringVersion
-        versionOption :: Text -> Parser (a -> a)
-        versionOption txt =
-          infoOption
-            (T.unpack txt)
-            (long "version" <>
-             help "Show version")
-
+        versionOptions :: Parser (a -> a)
+        versionOptions = normal <*> numeric
+          where
+            normal :: Parser (a -> a)
+            normal =
+              infoOption
+                (T.unpack $ shortVersion appVersion)
+                (short 'V' <> 
+                 long "version" <>
+                 help "Show version")
+            numeric :: Parser (a -> a)
+            numeric =
+              infoOption
+                (T.unpack $ numericVersion appVersion)
+                (long "numeric-version" <>
+                 help "Show version in numeric format")
+             
 -- | Add a command to the options dispatcher.
 addCommand :: String   -- ^ command string
            -> String   -- ^ title of command
@@ -241,16 +251,11 @@ addCommand cmd title footerStr constr extendCommon =
 -- -- | Add a command that takes sub-commands to the options dispatcher.
 -- addSubCommands
 --   :: Monoid c
---   => Text
---   -- ^ command string
---   -> Text
---   -- ^ title of command
---   -> Text
---   -- ^ footer of command help
---   -> Parser c
---   -- ^ common parser
---   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
---   -- ^ sub-commands (use 'addCommand')
+--   => Text                                             -- ^ command string
+--   -> Text                                             -- ^ title of command
+--   -> Text                                             -- ^ footer of command help
+--   -> Parser c                                         -- ^ common parser
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()  -- ^ sub-commands (use 'addCommand')
 --   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
 -- addSubCommands cmd title footerStr commonParser commandParser =
 --   addCommand' cmd
@@ -273,6 +278,9 @@ addCommand' cmd title footerStr constr commonParser inner =
                       (info (constr <$> inner <*> commonParser)
                             (progDesc title <> footer footerStr))))
 
+-- | The Options parser type
+--type OptParser a = (RIO Runner ()) (Writer (Mod CommandFields ((RIO Runner (),a))) ()
+-- P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
 
 -- | Generate a complicated options parser.
 complicatedParser
@@ -311,81 +319,41 @@ helpOption =
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts = 
-    extendWith daemonOpts        
-       runDaemon 
+    extendWith daemonOpts runDaemon 
+
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
-    extendWith docOpts . forceAllowInvariants $ mkAction False doGenDocument 
+  (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
   where
     forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env
 
--- | Create a prototype based on the current script.
-protoCmd :: ProtoOpts -> RIO Runner ()
-protoCmd opts = 
-    extendWith opts $ mkAction True proto
-
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
     extendWith testOpts test
-dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
-dataAnalysisCmd opts = 
-    extendWith opts $ do
-        let recipe = script UserScript `andThen` EncloseInConstraints
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec exportAsAdl
-pprintCmd :: InputOutputOpts -> RIO Runner ()
-pprintCmd opts = 
-    extendWith opts $ mkAction False exportAsAdl
 
 checkCmd :: FSpecGenOpts -> RIO Runner ()
-checkCmd opts =
-    extendWith opts $ mkAction False doNothing
+checkCmd = mkAction doNothing
    where doNothing fSpec = do
-            logInfo $ "This script of "<>(display . name $ fSpec)<>" contains no type errors."     
-populationCmd :: PopulationOpts -> RIO Runner ()
-populationCmd opts = 
-    extendWith opts $ mkAction False population
+            logInfo $ "This script of "<>display (name fSpec)<>" contains no type errors."     
 
-proofCmd :: ProofOpts -> RIO Runner ()
-proofCmd opts = 
-    extendWith opts $ mkAction False proof
 
---initCmd :: InitOpts -> RIO Runner ()
---initCmd opts = 
---    extendWith opts init
+mkAction :: forall a . (HasFSpecGenOpts a) =>
+             (FSpec -> RIO (ExtendedRunner a) ()) -> a -> RIO Runner ()
+mkAction theAction opts
+ = extendWith opts $ doOrDie theAction
 
-umlCmd :: UmlOpts -> RIO Runner ()
-umlCmd opts = 
-    extendWith opts $ mkAction False uml
-
-validateCmd :: ValidateOpts -> RIO Runner ()
-validateCmd opts = 
-    extendWith opts $ mkAction True validate
-
-devoutputCmd :: DevOutputOpts -> RIO Runner ()
-devoutputCmd opts = 
-    extendWith opts $ mkAction False devoutput
-
-doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
-doOrDie gA act = 
-  case gA of
-    Checked a ws -> do
-      showWarnings ws
-      act a
-    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
-           . NE.toList . fmap tshow $ err
-  where
-    showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
-
-mkAction :: (HasLogFunc a, HasFSpecGenOpts a) => Bool -> (FSpec -> RIO a b) -> RIO a b
-mkAction isForPrototype theAction = do
-   env <- ask
-   let recipe = recipeBuilder isForPrototype env
-   mFSpec <- createFspec recipe
-   doOrDie mFSpec theAction
-  
-
+doOrDie :: (HasLogFunc env, HasFSpecGenOpts env) =>
+             (FSpec -> RIO env b) -> RIO env b
+doOrDie theAction = do
+   mFSpec <- createFspec
+   case mFSpec of
+     Checked a ws -> do
+       mapM_ (logWarn . displayShow) ws
+       theAction a
+     Errors err -> exitWith . NoValidFSpec
+                 . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
+                 . NE.toList . fmap tshow $ err
 
 data Command = 
         Check
@@ -413,25 +381,3 @@ instance Show Command where
   show Test = "test"
   show Uml = "uml"
   show Validate = "validate"
--- | Generic way to specify the recipe to be used to generate an FSpec
-recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
-recipeBuilder isForPrototype env = 
-  (if isForPrototype then enablePrototype else id) $
-  case view recipeNameL env of
-    Prototype       -> enablePrototype (script UserScript)
-    Standard        -> script UserScript
-    RAP             -> script UserScript 
-                        `merge`
-                       script (MetaScript FormalAmpersand) 
-    AtlasPopulation -> script UserScript `andThen` Grind FormalAmpersand
-    AtlasComplete   -> script (MetaScript FormalAmpersand)
-                        `merge`
-                       (script UserScript `andThen` Grind FormalAmpersand)
-  where
-    enablePrototype :: BuildRecipe -> BuildRecipe
-    enablePrototype x = three
-      where prototypeContext = script (MetaScript PrototypeContext)
-            one = x `merge` prototypeContext
-            two = one `andThen` Grind PrototypeContext
-            three = one `merge` two
-              

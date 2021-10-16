@@ -1,10 +1,11 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import           Ampersand.Basics hiding (view, (^.))
+import           Ampersand.Basics hiding (view, (^?), (^.))
 import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated
@@ -17,9 +18,11 @@ import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 
 parseXlsxFile :: (HasFSpecGenOpts env) => 
-    Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])
+    Maybe FileKind -> FilePath -> RIO env (Guarded P_Context)
 parseXlsxFile mFk file =
   do env <- ask
      bytestr <- 
@@ -33,12 +36,160 @@ parseXlsxFile mFk file =
      return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
  where
   xlsx2pContext :: (HasFSpecGenOpts env) 
-      => env -> Xlsx -> Guarded [P_Population]
+      => env -> Xlsx -> Guarded P_Context
   xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = concatMap (toPops env file)
+      pop = mkContextOfPops
+          . concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
+
+mkContextOfPops :: [P_Population] -> P_Context
+mkContextOfPops pops = addRelations
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      , ctx_enfs   = []
+      }
+
+-- | addRelations is meant to enrich a population to a P_Context
+--   The result of addRelations is a P_Context enriched with the relations in genericRelations
+--   The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
+addRelations :: P_Context -> P_Context
+addRelations pCtx = enrichedContext
+  where
+    enrichedContext :: P_Context
+    enrichedContext
+     = pCtx{ ctx_ds     = mergeRels (genericRelations<>declaredRelations)
+           , ctx_pops   = genericPopulations
+           }
+    declaredRelations ::  [P_Relation]   -- relations declared in the user's script
+    popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
+                                         -- popRelations are derived from P_Populations only.
+    declaredRelations = mergeRels (ctx_ds pCtx<>concatMap pt_dcs (ctx_pats pCtx))
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    --   (SJ20210603: We do not add properties because that might add violations that a user cannot fix.)
+    popRelations 
+     = [ rel
+       | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx<>[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
+       , Just src'<-[src], Just tgt'<-[tgt]
+       , rel<-[ P_Relation{ dec_nm     = name pop
+                     , dec_sign   = P_Sign src' tgt'
+                     , dec_prps   = mempty
+                     , dec_pragma = mempty
+                     , dec_Mean   = mempty
+                     , pos        = origin pop
+                     }]
+       , signatur rel `notElem` map signatur declaredRelations
+       ]
+
+    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
+    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    (genericRelations, genericPopulations)
+     = recur [] popRelations pops invGen
+       where
+        recur :: [P_Concept]->[P_Relation]->[P_Population]->[(P_Concept,Set.Set P_Concept)]->([P_Relation], [P_Population])
+        recur     seen         unseenrels    unseenpops      ((g,specs):invGens)
+         = if g `elem` seen then fatal ("Concept "<>name g<>" has caused a cycle error.") else
+           recur (g:seen) (genericRels<>remainder) (genericPops<>remainPop) invGens
+           where
+            sameNameTargetRels :: [NE.NonEmpty P_Relation]
+            sameNameTargetRels = eqCl (\r->(name r,targt r)) unseenrels
+            genericRels ::    [P_Relation]
+            remainingRels :: [[P_Relation]]
+            (genericRels, remainingRels)
+             = L.unzip
+               [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
+                          , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
+                                       in Set.fromList $ filter (not . test) [P_Uni,P_Tot Nothing,P_Inj,P_Sur Nothing]
+                          }  -- the generic relation that summarizes sRel
+            --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
+                 , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
+                 )
+               | sRel<-sameNameTargetRels
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel)
+               , headrel<-[NE.head sRel]
+               ]
+            remainder :: [P_Relation]
+            remainder
+             = concat (remainingRels<>fmap NE.toList
+                       [ sRel | sRel<-sameNameTargetRels
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel))]
+                      )
+            sameNameTargetPops :: [NE.NonEmpty P_Population]
+            sameNameTargetPops = eqCl (\r->(name r,tgtPop r)) unseenpops
+            genericPops ::    [P_Population]
+            remainingPops :: [[P_Population]]
+            (genericPops, remainingPops)
+             = L.unzip
+               [ ( headPop{p_src=Just g}                   -- the generic relation that summarizes sRel
+            --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
+                 , [ pop| pop<-NE.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
+                 )
+               | sPop<-sameNameTargetPops
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop)
+               , headPop@P_RelPopu{}<-[NE.head sPop] -- Restrict to @P_RelPopu{} because field name p_src is being used
+               ]
+            remainPop :: [P_Population]
+            remainPop
+             = concat (remainingPops<>fmap NE.toList
+                       [ sPop | sPop<-sameNameTargetPops
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop))]
+                      )
+        recur _ rels popus [] = (rels,popus)
+        srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
+        srcPop pop@P_CptPopu{} = PCpt (name pop)
+        srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> s; _ -> fatal ("srcPop ("<>showP pop<>") is mistaken.")
+        tgtPop pop@P_CptPopu{} = PCpt (name pop)
+        tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> t; _ -> fatal ("tgtPop ("<>showP pop<>") is mistaken.")
+
+    sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
+    sourc = pSrc . dec_sign
+    targt = pTgt . dec_sign
+    invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
+    invGen = [ (fst (NE.head cl), Set.fromList spcs)
+             | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NE.toList (generics gen)]
+             , g<-[fst (NE.head cl)], spcs<-[[snd c | c<-NE.toList cl, snd c/=g]], not (null spcs)
+             ]
+    signatur :: P_Relation -> (Text, P_Sign)
+    signatur rel =(name rel, dec_sign rel)
+    concepts = L.nub $
+            [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] <>
+            [ src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] <>
+            [ tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] <>
+            map sourc declaredRelations<> map targt declaredRelations<>
+            concat [specific gen: NE.toList (generics gen)| gen<-ctx_gs pCtx]
+    pops = computeConceptPopulations (ctx_pops pCtx<>[p |pat<-ctx_pats pCtx, p<-pt_pop pat])   -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
+    computeConceptPopulations :: [P_Population] -> [P_Population]
+    computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
+     = [ P_CptPopu{pos = OriginUnknown, p_cpt = c, p_popas = L.nub $
+                       [ atom | cpt@P_CptPopu{}<-pps, PCpt (name cpt) == c, atom<-p_popas cpt]<>
+                       [ ppLeft pair
+                       | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], src' == c
+                       , pair<-p_popps pop]<>
+                       [ ppRight pair
+                       | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], tgt' == c
+                       , pair<-p_popps pop]}
+       | c<-concepts
+       ] <>
+       [ rpop{p_popps=concatMap p_popps cl}
+       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
+       ]
 
 data SheetCellsForTable 
        = Mapping{ theSheetName :: Text
@@ -209,7 +360,7 @@ theSheetCellsForTable (sheetName,ws)
                                    , "startOfTable        : "<>tshow startOfTable
                                    , "firstPopRowNr       : "<>tshow firstPopRowNr
                                    , "lastPopRowNr        : "<>tshow lastPopRowNr
-                                   , "[(row,isProperRow)] : "<>T.concat [tshow (r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]]
+                                   , "[(row,isProperRow)] : "<>T.concat [tshow (r,isProperRow r) | r<-[firstPopRowNr..lastPopRowNr] ]
                                    , "theCols             : "<>tshow theCols
                                    ] 
                      }

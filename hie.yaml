@@ -1,10 +1,18 @@
 cradle:
   stack:
-    - path: "./src"
+    - path: "./src/"
       component: "ampersand:lib"
     - path: "./app/Ampersand/Main.hs"
-      component: "ampersand:exe:ampPreProc"
-    - path: "./app/AmpPreProc/Main.hs"
       component: "ampersand:exe:ampersand"
-    - path: "./app/Test/Main.hs"
+
+    - path: "./app/AmpPreProc/Main.hs"
+      component: "ampersand:exe:ampPreProc"
+
+    - path: "./app/AmpPreProc/Paths_ampersand.hs"
+      component: "ampersand:exe:ampPreProc"
+
+    - path: "./app/Ampersand/Paths_ampersand.hs"
+      component: "ampersand:exe:ampersand"
+
+    - path: "./app/Test"
       component: "ampersand:test:ampersand-test"

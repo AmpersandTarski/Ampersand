@@ -1,31 +1,32 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.Motivations 
-   ( Motivated (purposesDefinedIn),
+   ( Motivated (purposesOf),
      HasMeaning(meaning,meanings))
 where
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
+import qualified RIO.Set as Set
 
 -- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
 --     {+This text explains why r[A*B] exists+}
 -- produces the exact right text in the functional design document.
 
--- The class Motivated exists so that we can write the Haskell expression 'purposesDefinedIn fSpec l x'
+-- The class Motivated exists so that we can write the Haskell expression 'purposesOf fSpec l x'
 -- anywhere we like for every type of x that could possibly be motivated in an Purpose.
--- 'purposesDefinedIn fSpec l x' produces all purposes related to x from the context (fSpec)
+-- 'purposesOf fSpec l x' produces all purposes related to x from the context (fSpec)
 -- that are available in the language specified in 'l'.
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
 
 class  Named a => Motivated a where
   isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Language.
-  purposesDefinedIn fSpec l x
-   = [e | e<-fSexpls fSpec
+  purposesOf :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Language.
+  purposesOf fSpec l x
+   = [e | e<-Set.toList (fSexpls fSpec)
         , amLang (explMarkup e) == l  -- filter by language
         , isForObject x (explObj e)   -- informally: "if x and e are the same"
      ]
@@ -61,6 +62,10 @@ class Named a => HasMeaning a where
        _    -> fatal ("In the "<>tshow l<>" language, too many meanings given for "<>name x <>".")             
   meanings :: a -> [Meaning]
   {-# MINIMAL meanings #-}
+
+instance HasMeaning AConceptDef where
+  meanings cd = 
+    acddef2 cd : acdmean cd
 
 instance HasMeaning Rule where
   meanings = rrmean

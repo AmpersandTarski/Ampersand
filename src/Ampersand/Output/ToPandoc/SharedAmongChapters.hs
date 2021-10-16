@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
     , module Text.Pandoc
@@ -22,6 +22,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , printMarkup
     , printPurposes
     , purposes2Blocks
+    , meaning2Blocks
     , violation2Inlines
     , isMissing
     , lclForLang
@@ -29,17 +30,20 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
+    , showPredLogic
+    , legacyTable
+    , printConcept
     )
 where
-import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.ADL1 hiding (MetaData)
 import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
-import           Ampersand.Input.ADL1.FilePos
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
+import           Ampersand.Output.PredLogic
 import           Data.Hashable
 import           Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -48,7 +52,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
-import           Text.Pandoc.Builder
+import           Text.Pandoc.Builder hiding (caption)
 import           System.FilePath ( (</>) )
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
@@ -94,27 +98,24 @@ instance Xreferenceble Picture where
     dirOutput = view dirOutputL env
     src  = dirOutput </> imagePathRelativeToDirOutput env a
 instance Xreferenceble CustomSection where
-  xSafeLabel a = 
+  xSafeLabel a =
        (tshow . xrefPrefix . refStuff $ a)
      <> tshow (chapterOfSection x)
      <> typeOfSection x
      <> "-"
      <> (tshow . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
-    where 
+    where
       x = refStuff a
   hyperLinkTo = codeGen'
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "<>tshow (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "<>tshow (refStuff a))) id (hyperTarget env fSpec a)
 
-hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines 
+hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines
 hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
-      XRefSharedLangTheme mPat   -> Left . hdr $ 
-                                       (case mPat of
-                                          Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
-                                          Just pat -> text (name pat)
-                                       )
+      XRefSharedLangTheme (Just pat) -> (Left . hdr . text . name) pat
+      XRefSharedLangTheme Nothing    -> (Left . hdr . text . l) (NL "Overig",EN "Remaining")
       XRefSharedLangRelation d        -> Right $ spanWith (xSafeLabel a,[],[]) (str . showRel $ d)
                                       --   Left $ divWith (xSafeLabel a,[],[]) 
                                       --                  (   (para . str $ showRel d)
@@ -130,21 +131,21 @@ hyperTarget env fSpec a =
                                       --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
                                       --                    <>printMeaning (outputLang env fSpec) r
                                       --                  )
-      XRefConceptualAnalysisRelation _d 
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+      XRefConceptualAnalysisRelation _d
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
                                --   <> (str . show . numberOf fSpec $ d)
-                                )  
-      XRefConceptualAnalysisRule _r    
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+                                )
+      XRefConceptualAnalysisRule _r
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
-                                ) 
+                                )
       XRefConceptualAnalysisExpression _r
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
-                                ) 
+                                )
       _ ->  fatal ("hyperTarget not yet defined for "<>tshow (refStuff a))
    where
     hdr = headerWith (xSafeLabel a, [], []) 2
@@ -152,7 +153,7 @@ hyperTarget env fSpec a =
     l :: LocalizedStr -> Text
     l = localize (outputLang env fSpec)
 codeGen' :: Xreferenceble a => a -> Inlines
-codeGen' a = 
+codeGen' a =
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
                  , citationSuffix = [Space]
@@ -177,19 +178,19 @@ instance Show CrossrefType where
             Tbl -> "tbl:"
             Fig -> "fig:"
 pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Inlines -> Blocks
-pandocEquationWithLabel env fSpec xref x = 
+pandocEquationWithLabel env fSpec xref x =
   para (strong (xDefInln env fSpec xref) <> x)
 
-data RefStuff = 
+data RefStuff =
   RefStuff { typeOfSection    :: Text
            , chapterOfSection :: Chapter
            , nameOfThing      :: Text
            , xrefPrefix       :: CrossrefType
            } deriving Show
 refStuff :: CustomSection -> RefStuff
-refStuff x  = 
+refStuff x  =
    case x of
-     XRefSharedLangRelation d 
+     XRefSharedLangRelation d
        -> RefStuff { typeOfSection    = relation
                    , chapterOfSection = SharedLang
                    , nameOfThing      = showRel d
@@ -219,13 +220,13 @@ refStuff x  =
                    , nameOfThing      = showRel d
                    , xrefPrefix       = Eq
                    }
-     XRefConceptualAnalysisRule r 
+     XRefConceptualAnalysisRule r
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
                    , xrefPrefix       = Eq
                    }
-     XRefConceptualAnalysisExpression r 
+     XRefConceptualAnalysisExpression r
        -> RefStuff { typeOfSection    = expression
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
@@ -234,46 +235,12 @@ refStuff x  =
      XRefSharedLangTheme mt
        -> RefStuff { typeOfSection    = theme
                    , chapterOfSection = SharedLang
-                   , nameOfThing      = maybe ":losseEindjes" name mt
+                   , nameOfThing      = maybe ":overig" name mt
                    , xrefPrefix       = Sec
                    }
   where (relation , rule  , expression , pattern' , theme) =
           ("relation","rule" ,"expression","pattern","theme")
-         
 
-{- 
-class NumberedThing a where
-  numberOf :: FSpec -> a -> Int
-
-instance NumberedThing Rule where
-  numberOf fSpec r = case filter isTheOne ns of
-                      [] -> fatal ("Rule has not been numbered: "<>name r)
-                      [nr] -> theNr nr 
-                      _ -> fatal ("Rule has been numbered multiple times: "<>name r)
-    where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
-          isTheOne :: Numbered RuleCont -> Bool
-          isTheOne = (r ==) . cRul . theLoad
-instance NumberedThing Relation where
-  numberOf fSpec d = case filter isTheOne ns of
-                      [] -> fatal ("Relation has not been numbered: "<>showRel d)
-                      [nr] -> theNr nr 
-                      _ -> fatal ("Relation has been numbered multiple times: "<>showRel d)
-    where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
-          isTheOne :: Numbered DeclCont -> Bool
-          isTheOne = (d ==) . cDcl . theLoad
-instance NumberedThing A_Concept where
-  numberOf fSpec c = case filter isTheOne ns of
-                      [] -> fatal ("Concept has not been numbered: "<>name c)
-                      [nr] -> theNr nr 
-                      _ -> fatal ("Concept has been numbered multiple times: "<>name c)
-    where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
-          isTheOne :: Numbered CptCont -> Bool
-          isTheOne = (c ==) . cCpt . theLoad
--}
-
--- | This function orders the content to print by theme. It returns a list of
---   tripples by theme. The last tripple might not have a theme, but will contain everything
---   that isn't handled in a specific theme.
 
 data ThemeContent =
        Thm { themeNr ::      Int
@@ -298,7 +265,7 @@ data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
-                     , cCptDefs :: [ConceptDef]
+                     , cCptDefs :: [AConceptDef]
                      , cCptPurps :: [Purpose]
                      }
 instance Named RuleCont where
@@ -307,127 +274,74 @@ instance Named DeclCont where
   name = name . cDcl
 instance Named CptCont where
   name = name . cCpt
-data Counters
-  = Counter { pNr :: Int --Theme number
-            , definitionNr :: Int --For Concepts
-            , agreementNr ::  Int --For relations andrules
-            }
 
--- orderingByTheme organizes the content of a specification in patterns according to a define-before-use policy.
--- It must ensure that all rules, relations and concepts from the context are included in the specification.
-orderingByTheme :: (HasOutputLanguage env) => env -> FSpec -> [ThemeContent]
+-- | orderingByTheme collects materials from the fSpec to distribute over themes.
+--   It ensures that all rules, relations and concepts from the context are included in the specification.
+--   The principle is that every rule, relation, or concept that is defined in a pattern is documented in the corresponding theme.
+--   Everything that is defined outside themes is documented in the last theme.
+--   As a consequence, something that is declared in several patterns occurs in the corresponding themes and may be seen as a double occurrence.
+--   However, that may be the intention of the Ampersand modeler.
+--   The story: materials from the patterns are gathered in ruless, conceptss, and relationss.
+--   Numbering of each item is done recursively by `numbered`, while keeping the structure intact.
+--   Finally, the theme content is constructed.
+orderingByTheme :: HasOutputLanguage env => env -> FSpec -> [ThemeContent]
 orderingByTheme env fSpec
- = f ( Counter 1 1 1 --the initial numbers of the countes
-     , (sortWithOrigins . filter rulMustBeShown . Set.elems . fallRules)  fSpec
-     , (sortWithOrigins . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
-     , (L.sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
-     ) $
-     [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
-     ]<>[Nothing] --Make sure the last is Nothing, to take all res stuff.
- where
-  conceptOrder :: A_Concept -> A_Concept -> Ordering
-  conceptOrder a b =
-  -- The sorting of Concepts is done by the origin of its first definition if there is one.
-  -- Concepts without definition are placed last, and sorted by name.
-   case (originOfFirstCDef a, originOfFirstCDef b) of
-     (Just origA, Just origB) -> case maybeOrdering origA origB of
-                                   Just ord -> ord
-                                   Nothing -> case (isFuzzyOrigin origA,isFuzzyOrigin origB) of
-                                                (False,False) -> fatal "This should be impossible"
-                                                (False,True)  -> LT
-                                                (True,False)  -> GT
-                                                (True,True)   -> comparing name a b 
-     (Just _    , Nothing   ) -> LT
-     (Nothing   , Just _    ) -> GT
-     (Nothing   , Nothing   ) -> comparing name a b
-  originOfFirstCDef :: A_Concept -> Maybe Origin
-  originOfFirstCDef cpt
-    = case sortWithOrigins $ concDefs fSpec cpt of
-        [] -> Nothing
-        cd :_ -> Just (origin cd)
-  rulMustBeShown :: Rule -> Bool
-  rulMustBeShown r = 
-     not . isPropertyRule $ r -- property rules are shown as part of the declaration
-  relMustBeShown :: Relation -> Bool
-  relMustBeShown = decusr
-  cptMustBeShown = not . null . concDefs fSpec
-  f :: (Counters, [Rule], [Relation], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
-  f stuff pats
-   = case pats of
-       pat:pats' -> let ( thm, rest) = partitionByTheme pat stuff
-                    in thm : f rest pats'
-       []        -> case stuff of
-                      (_,[],[],[]) -> []
-                      _ -> fatal "No stuff should be left over."
+ = [ Thm { themeNr      = i
+         , patOfTheme   = Just pat
+         , rulesOfTheme = fmap rul2rulCont nrules
+         , dclsOfTheme  = fmap dcl2dclCont nrelations
+         , cptsOfTheme  = fmap cpt2cptCont nconcepts
+         }
+   | (pat, i, nrules, nrelations, nconcepts)<-L.zip5 (vpatterns fSpec) [0..] (NE.init nruless) (NE.init nrelationss) (NE.init nconceptss) ] <>
+   [ Thm { themeNr      = length (vpatterns fSpec)
+         , patOfTheme   = Nothing
+         , rulesOfTheme = fmap rul2rulCont (NE.last nruless)
+         , dclsOfTheme  = fmap dcl2dclCont (NE.last nrelationss)
+         , cptsOfTheme  = fmap cpt2cptCont (NE.last nconceptss)
+         } ]
+   where
+     nruless     :: NonEmpty [Numbered Rule]
+     nconceptss  :: NonEmpty [Numbered AConceptDef]
+     nrelationss :: NonEmpty [Numbered Relation]
+     nruless      = transformNonEmpty (numbering 0 (map Set.toList ruless    <>[Set.toList (ctxrs aCtx)]))
+     nconceptss   = transformNonEmpty (numbering 0 (               conceptss <>[ctxcdsOutPats aCtx]            ))
+     nrelationss  = transformNonEmpty (numbering 0 (map Set.toList relationss<>[Set.toList (ctxds aCtx)]))
+     transformNonEmpty :: [a] -> NonEmpty a
+     transformNonEmpty x = case NE.nonEmpty x of Just ne -> ne; Nothing -> fatal "onbereikbare code"
+     aCtx = originalContext fSpec
+     ruless     :: [Rules]
+     conceptss  :: [[AConceptDef]]
+     relationss :: [Relations]
+     (ruless, conceptss, relationss)
+      = L.unzip3 [ (ptrls pat, ptcds pat, ptdcs pat) | pat<-vpatterns fSpec ]
+     numbering :: Int -> [[a]] -> [[Numbered a]]
+     numbering n (xs:xss) = [ Nr i x | (x,i)<-zip xs [n..]]: numbering (n+length xs) xss
+     numbering _ _ = []
 
-  rul2rulCont :: Rule -> RuleCont
-  rul2rulCont rul
-    = CRul { cRul      = rul
-           , cRulPurps = purposesDefinedIn fSpec (outputLang env fSpec) rul
-           , cRulMeanings = meanings rul
-           }
-  dcl2dclCont :: Relation -> DeclCont
-  dcl2dclCont dcl
-    = CDcl { cDcl      = dcl
-           , cDclPurps = purposesDefinedIn fSpec (outputLang env fSpec) dcl
-           , cDclMeanings = meanings dcl
-           , cDclPairs = pairsInExpr fSpec (EDcD dcl)
-           }
-
-  cpt2cptCont :: A_Concept -> CptCont
-  cpt2cptCont cpt
-    = CCpt { cCpt      = cpt
-           , cCptDefs  = sortWithOrigins $ concDefs fSpec cpt
-           , cCptPurps = purposesDefinedIn fSpec (outputLang env fSpec) cpt
-           }
-
-
-  setNumbers :: Int           -- ^ the initial number
-             -> (t -> a)      -- ^ the constructor function
-             -> [t]           -- ^ a list of things that are numberd
-             -> [Numbered a]
-  setNumbers i construct items =
-    case items of
-      []     -> []
-      (x:xs) ->  Nr { theNr   = i
-                    , theLoad = construct x
-                    }:setNumbers (i+1) construct xs
-  -- | This function takes care of partitioning each of the
-  --   lists in a pair of lists of elements which do and do not belong
-  --   to the theme, respectively
-  partitionByTheme :: Maybe Pattern  -- Just pat if this theme is from a pattern, otherwise this stuff comes from outside a pattern (but inside a context).
-                   -> ( Counters, [Rule], [Relation], [A_Concept])
-                   -> ( ThemeContent , ( Counters ,[Rule], [Relation], [A_Concept])
-                      )
-  partitionByTheme mPat (cnt, ruls, rels, cpts)
-      = ( Thm { themeNr      = pNr cnt
-              , patOfTheme   = mPat
-              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
-              , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
-              , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
-              }
-        , (Counter {pNr = pNr cnt +1
-                   ,definitionNr = definitionNr cnt + length themeCpts
-                   ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
+     rul2rulCont :: Numbered Rule -> Numbered RuleCont
+     rul2rulCont (Nr n rul)
+       = Nr n CRul { cRul      = rul
+                   , cRulPurps = purposesOf fSpec (outputLang env fSpec) rul
+                   , cRulMeanings = meanings rul
                    }
-        , restRuls, restDcls, restCpts)
-        )
-     where
-       (thmRuls,restRuls) = L.partition (inThisTheme rulesInTheme) ruls
-          where rulesInTheme p = Set.filter ( \r -> Just (name p) == rrpat r) (fallRules fSpec)
-       (themeDcls,restDcls) = L.partition (inThisTheme relsInTheme) rels
-          where relsInTheme p = relsDefdIn p `Set.union` bindedRelationsIn p
-       (themeCpts,restCpts) = L.partition (inThisTheme concs) cpts
-       inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
-       inThisTheme allElemsOf x
-         = case mPat of
-             Nothing  -> True
-             Just pat -> x `elem` allElemsOf pat
+     dcl2dclCont :: Numbered Relation -> Numbered DeclCont
+     dcl2dclCont (Nr n dcl)
+       = Nr n CDcl { cDcl      = dcl
+                   , cDclPurps = purposesOf fSpec (outputLang env fSpec) dcl
+                   , cDclMeanings = meanings dcl
+                   , cDclPairs = pairsInExpr fSpec (EDcD dcl)
+                   }
+   
+     cpt2cptCont :: Numbered AConceptDef -> Numbered CptCont
+     cpt2cptCont (Nr n cpt)
+       = Nr n CCpt { cCpt      = c
+                   , cCptDefs  = [cpt]
+                   , cCptPurps = purposesOf fSpec (outputLang env fSpec) c
+                   } where c = PlainConcept (acdcpt cpt NE.:| [])
 
---GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: (HasDocumentOpts env) => 
-    env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
-          -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
+dpRule' :: (HasDocumentOpts env) =>
+            env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+            -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' env fSpec = dpR
  where
    l lstr = text $ localize (outputLang env fSpec) lstr
@@ -443,8 +357,8 @@ dpRule' env fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks env (purposesDefinedIn fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (outputLang env fSpec) d]  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks env (purposesOf fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesOf fSpec (outputLang env fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (Set.elems . Set.map EDcD $ nds, outputLang env fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
@@ -459,7 +373,7 @@ dpRule' env fSpec = dpR
                        []   -> mempty
                        [rd] -> plain (  l (NL "Om dit te formalizeren maken we gebruik van relatie "
                                           ,EN "We use relation ")
-                                     <> showRef rd 
+                                     <> showRef rd
                                      <> l (NL ".", EN " to formalize this.")
                                      )
                        _    ->    plain (  l (NL "Dit formaliseren we door gebruik te maken van de volgende relaties: "
@@ -468,11 +382,11 @@ dpRule' env fSpec = dpR
              else case Set.elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
-                                      <> showRef rd 
+                                      <> showRef rd
                                       <> l (NL " om ", EN " to formalize ")
                                       <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren: ", EN ": ")
-                                     ) 
+                                     )
                        _    -> plain (   l (NL " Om ", EN " To formalize ")
                                       <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
@@ -480,7 +394,7 @@ dpRule' env fSpec = dpR
                                      ) <>
                                (bulletList  . map (plain . showRef) . Set.elems $ rds)
            )
-         <> plain (if isSignal r
+         <> plain (if isSignal fSpec r
                    then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
                           , EN "Activities that are defined by this rule are finished when: ")
                    else l (NL "De regel luidt: ", EN "This means: ")
@@ -496,9 +410,9 @@ dpRule' env fSpec = dpR
             )
         showRef :: Relation -> Inlines
         showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
-        
+
         ncs = concs r Set.\\ seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, name cd==name c]    -- ... and their definitions
         ds  = bindedRelationsIn r
         nds = ds Set.\\ seenRelations     -- newly seen relations
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
@@ -511,17 +425,19 @@ printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)
 
 printMarkup :: Markup -> Blocks
-printMarkup = fromList . amPandoc
+printMarkup = amPandoc
+
+meaning2Blocks :: Meaning -> Blocks
+meaning2Blocks
+ = printMarkup . ameaMrk
 
 purposes2Blocks :: (HasDocumentOpts env) => env -> [Purpose] -> Blocks
 purposes2Blocks env ps
- = case ps of
-      [] -> mempty
-            -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
-      _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
-             Nothing -> mempty
-             Just p  -> fromList $ amPandoc p
-       where   -- The reference information, if available for this purpose, is put
+ = maybe mempty amPandoc (concatMarkup . map markup' $ ps)
+    where   -- The reference information, if available for this purpose, is put
+        markup' purp = Markup { amLang= amLang . explMarkup $ purp
+                    , amPandoc= insertAfterFirstInline (ref purp) $ amPandoc . explMarkup $ purp
+                    }
         ref :: Purpose -> [Inline]
         ref purp = [RawInline
                       (Text.Pandoc.Builder.Format "latex")
@@ -535,18 +451,20 @@ concatMarkup es
  = case eqCl amLang es of
     []   -> Nothing
     [cl] -> Just Markup { amLang   = amLang (NE.head cl)
-                        , amPandoc = concatMap amPandoc es
+                        , amPandoc = mconcat (map amPandoc es)
                         }
     cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "<>
                    T.intercalate "\n   " (map (tshow . amLang . NE.head) cls)
                   )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
-insertAfterFirstInline :: [Inline] -> [Block] -> [Block]
-insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines<>inls)) : pblocks
-insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines<>inls)) : pblocks
-insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines<>inls)) : pblocks):blocks
-insertAfterFirstInline inlines blocks                                        = Plain inlines : blocks
+insertAfterFirstInline :: [Inline] -> Blocks -> Blocks
+insertAfterFirstInline inlines =  fromList . insertAfterFirstInline' . toList
+  where
+    insertAfterFirstInline' (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines<>inls)) : pblocks
+    insertAfterFirstInline' (            Para (inl:inls):pblocks)         =             Para (inl : (inlines<>inls)) : pblocks
+    insertAfterFirstInline' (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines<>inls)) : pblocks):blocks
+    insertAfterFirstInline' blocks                                        = Plain inlines : blocks
 
 isMissing :: Maybe Purpose -> Bool
 isMissing = maybe True (not . explUserdefd)
@@ -571,3 +489,69 @@ violation2Inlines env fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worde
                                         )
   where
     l = localize (outputLang env fSpec)
+
+-- Some helper function to cope with changes in Pandoc. In the newer versions of Pandoc,
+-- tables have gotten more possibilities. For the time being, we do not use them. Maybe later.
+legacyTable
+      :: Inlines               -- ^ Caption
+      -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
+      -> [Blocks]              -- ^ Headers
+      -> [[Blocks]]            -- ^ Rows
+      -> Blocks
+legacyTable caption' cellspecs headers rows =
+  table tCaption tColSpec tHead tBodies tFooter
+    where
+      tCaption :: Caption
+      tCaption
+        | null caption' = emptyCaption
+        | otherwise = Caption (Just . toList $ caption') []
+      tColSpec :: [ColSpec]
+      tColSpec = map toColSpec cellspecs
+        where toColSpec :: (Alignment, Double) -> ColSpec
+              toColSpec (a, d) = (a, ColWidth d)
+      tHead :: TableHead
+      tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers)
+        where toRow :: Alignment -> Blocks -> Row
+              toRow a bs = Row nullAttr (map (toCell a . singleton) $ toList bs)
+      toCell :: Alignment -> Blocks -> Cell
+      toCell a b = Cell nullAttr a (RowSpan 1) (ColSpan 1) (toList b)
+      tBodies :: [TableBody]
+      tBodies = map toBodyRow rows
+         where toBodyRow :: [Blocks] -> TableBody
+               toBodyRow bs = TableBody nullAttr (RowHeadColumns 0) [] [Row nullAttr $ zipWith toCell (map fst cellspecs) bs]
+      tFooter :: TableFoot
+      tFooter = TableFoot nullAttr []
+
+-- | This function is used in the conceptual analysis chapter as wel as the natural language chapter. To avoid
+--   code duplication, it has been placed in this shared module.
+printConcept :: (HasDocumentOpts env) =>
+    env -> (LocalizedStr -> Text) -> Numbered CptCont -> Blocks
+printConcept env l nCpt
+        = -- Purposes:
+           (printPurposes . cCptPurps . theLoad) nCpt
+         <> case (nubByContent . cCptDefs . theLoad) nCpt of
+             []    -> mempty  -- There is no definition of the concept
+             [cd] -> printCDef cd Nothing
+             cds  -> mconcat
+                    [printCDef cd (Just $ T.snoc "." suffx)
+                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                    ]
+        where
+         fspecFormat = view fspecFormatL env
+         nubByContent = L.nubBy (\x y -> fun x == fun y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+           where fun = amPandoc . ameaMrk . acddef2
+         printCDef :: AConceptDef -- the definition to print
+                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
+                -> Blocks
+         printCDef cDef suffx
+           = definitionList
+              [(   str (l (NL"Definitie " ,EN "Definition "))
+                <> ( if fspecFormat `elem` [Fpdf, Flatex]
+                     then (str . tshow .theNr) nCpt
+                     else (str . name) cDef
+                   )
+                <> str (fromMaybe "" suffx) <> ":"
+               , [meaning2Blocks (acddef2 cDef)]
+               )
+              ]
+

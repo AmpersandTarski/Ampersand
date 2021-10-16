@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Basics.Prelude
   ( module RIO
   , readUTF8File
@@ -15,9 +15,11 @@ module Ampersand.Basics.Prelude
   , defaultFirstFalse
   , decodeUtf8
   , foldl
+  , undefined
   )where
 import           Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import           RIO hiding (zipWith,exitWith)
+import           RIO hiding (zipWith,exitWith,undefined)
+import qualified RIO as WarnAbout  (undefined)
 import qualified RIO.Text as T
 import           System.IO (openTempFile)
 
@@ -45,6 +47,11 @@ zipWith fun = go
 foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
 {-# WARNING foldl "Please do not use foldl. Use foldl' instead. It is more performant." #-}
 foldl = foldl'
+
+-- Redefine undefined to ensure that it isn't accidentally used. 
+undefined :: a
+{-# WARNING undefined "Undefined statement left in code. Why not use fatal?" #-}
+undefined = WarnAbout.undefined 
 
 -- Functions copied from stack
 -- | Like @First Bool@, but the default is @True@.

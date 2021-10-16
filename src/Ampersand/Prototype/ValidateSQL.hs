@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import           Ampersand.ADL1
@@ -11,13 +11,12 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
-with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
-therefore most likely to be correct in case of discrepancies.
+with the results from Haskell-based Ampersand rule evaluator.
 -}
 
 validateRulesSQL :: (HasLogFunc env) => FSpec ->  RIO env [Text]
 validateRulesSQL fSpec = do
-    case filter (not . isSignal . fst) (allViolations fSpec) of
+    case filter (not . isSignal fSpec . fst) (allViolations fSpec) of
        []    -> return()
        viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     hSetBuffering stdout NoBuffering

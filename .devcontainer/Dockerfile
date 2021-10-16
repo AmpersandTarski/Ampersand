@@ -1,4 +1,4 @@
-FROM haskell:8.6 
+FROM haskell:8.10.4 
 
 # This Dockerfile adds a non-root user with sudo access. Use the "remoteUser"
 # property in devcontainer.json to use it. On Linux, the container user's GID/UIDs

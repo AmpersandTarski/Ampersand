@@ -1,7 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Utilities for running stack commands.
 --
@@ -134,17 +132,17 @@ withRunnerGlobal go inner = do
                           hSupportsANSIWithoutEmulation stderr
   let defaultTerminalWidth = 100
   termWidth <- clipWidth <$> maybe (fromMaybe defaultTerminalWidth
-                                    <$> fmap (fmap width) size)
+                                    <$> (fmap width <$> size))
                                    pure (globalTermWidth go)
   menv <- mkDefaultProcessContext
   logOptions0 <- logOptionsHandle stderr False
   let logOptions
         = setLogUseColor useColor
-        $ setLogUseTime (globalTimeInLog go)
-        $ setLogMinLevel (globalLogLevel go)
-        $ setLogVerboseFormat (globalLogLevel go <= LevelDebug)
-        $ setLogTerminal (globalTerminal go)
-          logOptions0
+        . setLogUseTime (globalTimeInLog go)
+        . setLogMinLevel (globalLogLevel go)
+        . setLogVerboseFormat (globalLogLevel go <= LevelDebug)
+        . setLogTerminal (globalTerminal go)
+        $ logOptions0
   withLogFunc logOptions $ \logFunc -> runRIO Runner
     { runnerGlobalOpts = go
     , runnerUseColor = useColor

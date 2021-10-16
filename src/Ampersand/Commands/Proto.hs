@@ -1,7 +1,6 @@
-﻿{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE ConstraintKinds #-}
+﻿{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 
 -- | Generate a prototype from a project.
 module Ampersand.Commands.Proto
@@ -13,9 +12,8 @@ module Ampersand.Commands.Proto
 import           Ampersand.Basics
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend)
+import           Ampersand.Prototype.GenFrontend
 import           Ampersand.Types.Config
-import qualified RIO.Text as T
 import           System.Directory
 -- | Builds a prototype of the current project.
 --
@@ -27,13 +25,10 @@ proto fSpec = do
     logDebug "Generating prototype..."
     liftIO $ createDirectoryIfMissing True dirPrototype
     generateFrontend <- view generateFrontendL
-    generateBackend <- view generateBackendL
     if generateFrontend 
      then do doGenFrontend fSpec
      else do logDebug "  Skipping generating frontend files"
+    generateBackend <- view generateBackendL
     if generateBackend
       then do doGenBackend fSpec
       else do logDebug "  Skipping generating backend files"
-    dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
-    logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-

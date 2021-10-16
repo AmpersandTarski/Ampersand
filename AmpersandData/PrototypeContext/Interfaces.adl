@@ -3,6 +3,10 @@ CONTEXT PrototypeFramework IN ENGLISH
     CONCEPT PF_Interface ""
         REPRESENT PF_Interface TYPE OBJECT
 
+    -- RELATION label[PF_Interface*PF_Label] needs to be TOT because the prototype framework depends on having an interface label
+    -- The identitier of the PF_Interface itself can contain escaped characters, e.g. "Interface_32_label"
+    -- We want to show the user "Interface label" instead
+    -- The label is added to the population file by the meatgrinder using the Proto build recipe
     RELATION label[PF_Interface*PF_Label] [UNI,TOT]
         REPRESENT PF_Label TYPE ALPHANUMERIC
 
@@ -12,7 +16,7 @@ CONTEXT PrototypeFramework IN ENGLISH
     RELATION isPublic[PF_Interface*PF_Interface] [PROP]
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"
 
-        -- Cannot enfore this rule yet, because ExecEngine is still required to add missing roles
+        -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
         -- RULE "Public interface integrity" : isPublic;V[PF_Interface*Role] |- pf_ifcRoles
 
     -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V[PF_Interface*Role]

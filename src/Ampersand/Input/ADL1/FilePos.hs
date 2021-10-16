@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
     isFuzzyOrigin, maybeOrdering, sortWithOrigins,
@@ -58,7 +58,7 @@ data Origin = OriginUnknown
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath Text (Int,Int) 
             | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
-    deriving (Typeable, Generic, Data)
+    deriving (Eq,Typeable, Generic, Data)
 -- Eq and Ord have been removed by desing on Origin. See issue #1035
 -- | A fuzzy origin has a constructor that breaks tracability. They should be used as little as possible.
 isFuzzyOrigin :: Origin -> Bool

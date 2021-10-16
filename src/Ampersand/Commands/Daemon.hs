@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -52,7 +52,7 @@ mainWithTerminal termSize termOutput = goForever
             curDir <- liftIO getCurrentDirectory
             logDebug $ "%OS: " <> display (T.pack os)
             logDebug $ "%ARCH: " <> display (T.pack arch)
-            logDebug $ "%VERSION: " <> display ampersandVersionWithoutBuildTimeStr
+            logDebug $ "%VERSION: " <> display (shortVersion appVersion)
             env <- ask
             withCurrentDirectory curDir $ do
                 termSize' <- liftIO $ return $ do
@@ -67,12 +67,13 @@ mainWithTerminal termSize termOutput = goForever
 
                 restyle <- liftIO $ do
                     useStyle <- case Auto of
-                        Always -> return True
-                        Never -> return False
+                    -- TODO: fix enabling/disabling use of color in output, by introducing an option for it.
+                    --    Always -> return True
+                    --    Never -> return False
                         Auto -> liftIO $ hSupportsANSI stdout
                     when useStyle $ liftIO $ do
                         h <- lookupEnv "HSPEC_OPTIONS"
-                        when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
+                        when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see https://github.com/ndmitchell/ghcid/issues/87
                     return $ if useStyle then id else map unescape
 
                 withWaiterNotify env $ \waiter ->

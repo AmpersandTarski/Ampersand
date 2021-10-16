@@ -1,48 +1,74 @@
-{-# LANGUAGE TupleSections #-}
+﻿{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-      parseFileTransitive
+      parseFilesTransitive
     , parseFormalAmpersand
     , parsePrototypeContext
     , parseRule
-    , runParser
+    , parseCtx
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
-import           Ampersand.ADL1
-import           Ampersand.Basics
-import           Ampersand.Core.ShowPStruct
-import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Input.ADL1.Lexer
-import           Ampersand.Input.ADL1.Parser
-import           Ampersand.Input.Archi.ArchiAnalyze
-import           Ampersand.Input.PreProcessor
-import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.ADL1
+    ( Origin(Origin), mergeContexts, P_Context, Term, TermPrim )
+import Ampersand.Basics
+import Ampersand.Core.ShowPStruct ( showP )
+import Ampersand.Input.ADL1.CtxError
+    ( addWarnings,
+      lexerError2CtxError,
+      lexerWarning2Warning,
+      mkErrorReadingINCLUDE,
+      whenCheckedM,
+      CtxError(PE),
+      Guarded(..) )
+import Ampersand.Input.ADL1.Lexer ( initPos, Token(tokPos), lexer )
+import Ampersand.Input.ADL1.Parser
+    ( AmpParser, pContext, pRule, Include(..) )
+import Ampersand.Input.Archi.ArchiAnalyze ( archi2PContext )
+import Ampersand.Input.PreProcessor
+    ( preProcess, processFlags, PreProcDefine )
+import Ampersand.Input.Xslx.XLSX ( parseXlsxFile )
+import Ampersand.Misc.HasClasses ( HasFSpecGenOpts,Roots(..) )
+import Ampersand.Prototype.StaticFiles_Generated
+    ( getStaticFileContent,
+      FileKind(PrototypeContext, FormalAmpersand) )
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           System.Directory
-import           System.FilePath
+import System.Directory
+    ( canonicalizePath, doesFileExist, getCurrentDirectory )
+import System.FilePath
+    ( takeDirectory,
+      (</>),
+      equalFilePath,
+      joinDrive,
+      joinPath,
+      normalise,
+      pathSeparators,
+      splitDrive,
+      splitPath,
+      takeExtension )
 import           Text.Parsec.Prim (runP)
 
-
-
--- | Parse an Ampersand file and all transitive includes
-parseFileTransitive :: (HasFSpecGenOpts env, HasLogFunc env) =>
-            FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
+-- | Parse Ampersand files and all transitive includes
+parseFilesTransitive :: (HasFSpecGenOpts env, HasLogFunc env) =>
+            Roots
          -> RIO env ([ParseCandidate], Guarded P_Context) -- ^ A tuple containing a list of parsed files and the The resulting context
-parseFileTransitive fp = do 
+parseFilesTransitive xs = do -- parseFileTransitive . NE.head . getRoots --TODO Fix this, to also take the tail files into account. 
     curDir <- liftIO getCurrentDirectory
-    canonical <- liftIO $ canonicalizePath fp
-    parseThing' ParseCandidate
-       { pcBasePath  = Just curDir
+    canonical <- liftIO . mapM canonicalizePath . getRoots $ xs
+    let candidates = map (mkCandidate curDir) canonical 
+
+    parseThings candidates
+  where
+    mkCandidate :: FilePath -> FilePath -> ParseCandidate
+    mkCandidate curdir canonical = ParseCandidate
+       { pcBasePath  = Just curdir
        , pcOrigin    = Nothing
        , pcFileKind  = Nothing
        , pcCanonical = canonical
@@ -54,7 +80,7 @@ parseFormalAmpersand = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification"
        , pcFileKind  = Just FormalAmpersand
-       , pcCanonical = "AST.adl"
+       , pcCanonical = "FormalAmpersand.adl"
        , pcDefineds  = Set.empty
        }
 parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
@@ -68,14 +94,14 @@ parsePrototypeContext = parseThing ParseCandidate
 
 parseThing :: (HasFSpecGenOpts env, HasLogFunc env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
-parseThing pc = snd <$> parseThing' pc 
+parseThing pc = snd <$> parseThings [pc] 
 
-parseThing' :: (HasFSpecGenOpts env, HasLogFunc env) =>
-               ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
-parseThing' pc = do
-  results <- parseADLs [] [pc]
+parseThings :: (HasFSpecGenOpts env, HasLogFunc env) =>
+               [ParseCandidate] -> RIO env ([ParseCandidate], Guarded P_Context) 
+parseThings pcs = do
+  results <- parseADLs [] pcs
   case results of 
-     Errors err    -> return ([pc], Errors err)
+     Errors err    -> return (pcs, Errors err)
      Checked xs ws -> return ( candidates
                              , Checked mergedContexts ws
                              )
@@ -133,7 +159,7 @@ parseSingleADL pc
          | -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
            extension == ".xlsx" = do 
               popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-              return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+              return ((,[]) <$> popFromExcel)  -- An Excel file does not contain include files
          | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
            extension == ".archimate" = do 
               ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
@@ -143,9 +169,7 @@ parseSingleADL pc
                          writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
                          logInfo "ArchiMetaModel.adl written"
                     Errors _ -> pure ()
-              return ((,) <$> ctxFromArchi
-                          <*> pure [] -- ArchiMate file cannot contain include files
-                         )
+              return ((,[]) <$> ctxFromArchi)  -- An Archimate file does not contain include files
          | otherwise = do
               mFileContents
                     <- case pcFileKind pc of
@@ -212,29 +236,6 @@ parseSingleADL pc
                  where f :: SomeException -> RIO env a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "<>tshow exception)
 
--- | To enable roundtrip testing, all data can be exported.
--- For this purpose mkContextOfPopsOnly exports the population only
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
-
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
@@ -250,7 +251,7 @@ parse p fn ts =
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
           -> FilePath    -- ^ Name of the file (for error messages)
-          -> Text      -- ^ Text to parse
+          -> Text        -- ^ Text to parse
           -> Guarded a   -- ^ The result
 runParser parser filename input =
   let lexed = lexer filename (T.unpack input)

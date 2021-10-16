@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
@@ -15,7 +15,7 @@ import           Text.Pandoc.CrossRef
 --The third chapter is intended for the analyst. It contains all the rules mentioned in
 --natural language in the second chapter. It presents the trace from natural language
 --to the formal rule.
---The fourth chapter presents a datamodel together with all the multiplicity rules.
+--The fourth chapter presents a datamodel together with all the property rules.
 -- by datasets and rules.
 --Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept,
 --also called the theme. Functionalities defined on the theme by one or more plugs are
@@ -78,17 +78,20 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
-    diagnosisOnly = view chaptersL env == [Diagnosis]
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
-                [] -> (if diagnosisOnly
+                [] -> (if view chaptersL env == [Diagnosis]
                        then (text.l)
-                               ( NL "Functioneel Ontwerp van "
-                               , EN "Functional Design of ")
-                       else (text.l)
                                ( NL "Diagnose van "
                                , EN "Diagnosis of ")
+                       else if view chaptersL env == [ConceptualAnalysis]
+                       then (text.l)
+                               ( NL "Conceptuele Analyse van "
+                               , EN "Conceptual Analysis of ")
+                       else  (text.l)
+                               ( NL "Functioneel Ontwerp van "
+                               , EN "Functional Design of ")
                       ) <> (singleQuoted.text.name) fSpec
                 titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )

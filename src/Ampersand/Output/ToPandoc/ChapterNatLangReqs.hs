@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
@@ -48,7 +48,7 @@ chpNatLangReqs env lev fSpec =
   genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
-            <> table caption'
+            <> legacyTable caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
                      [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]
@@ -59,7 +59,7 @@ chpNatLangReqs env lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec outputLang'
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesOf fSpec outputLang'
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -81,11 +81,11 @@ chpNatLangReqs env lev fSpec =
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
                  Just pat -> 
-                   case purposesDefinedIn fSpec outputLang' pat of
+                   case purposesOf fSpec outputLang' pat of
                      []    -> printIntro    (cptsOfTheme tc)
                      purps -> purposes2Blocks env purps
              )
-          <> (mconcat . map printConcept . cptsOfTheme ) tc
+          <> (mconcat . map (printConcept env l). cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
       where
@@ -145,55 +145,12 @@ chpNatLangReqs env lev fSpec =
                 (_:_:_) -> True
                 _       -> False       
 
-  printConcept :: Numbered CptCont -> Blocks
-  printConcept nCpt 
-        = -- Purposes:
-           (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText.cCptDefs.theLoad) nCpt of
-             []    -> mempty  -- There is no definition of the concept
-             [cd] -> printCDef cd Nothing
-             cds  -> mconcat
-                    [printCDef cd (Just $ T.snoc "." suffx) 
-                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                    ]
-        where
-         fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: ConceptDef -- the definition to print
-                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
-                -> Blocks
-         printCDef cDef suffx
-           = definitionList 
-              [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
-                     then (str . tshow .theNr) nCpt
-                     else (str . name) cDef  
-                   )  
-                <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (cddef cDef)
-                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                             then rawInline "latex"
-                                    ("~"<>texOnlyMarginNote 
-                                            ("\\gls{"<>escapeLatex 
-                                                        (name cDef<>fromMaybe "" suffx)
-                                                <>"}"
-                                            )
-                                    )
-                             else mempty
-                           )
-                        <> str (cddef cDef)
-                        <> if T.null (cdref cDef) then mempty
-                           else str (" ["<>cdref cDef<>"]")
-                       ) 
-                 ] 
-               )
-              ]
 
   printRel :: Numbered DeclCont -> Blocks
   printRel nDcl =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
-            [(   (str.l) (NL "Afspraak ", EN "Agreement ")
+            [(   (str.l) (NL "Relatie ", EN "Relation ")
               <> (text . tshow . theNr $ nDcl) <> ": " <> xDefInln env fSpec (XRefSharedLangRelation dcl)
              , 
                 [printMeaning outputLang' dcl]

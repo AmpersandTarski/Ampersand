@@ -276,4 +276,3 @@ showElse defs showing = maybe "" (("--#ELSE\n" ++) . block2file defs showing)
 
 xor :: Bool -> Bool -> Bool
 xor p q = (p || q) && not (p && q)
-

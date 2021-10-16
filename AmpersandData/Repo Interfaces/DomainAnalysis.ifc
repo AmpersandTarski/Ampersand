@@ -1,0 +1,98 @@
+﻿CONTEXT FormalAmpersand IN ENGLISH 
+INCLUDE "DomainAnalysis.adl"
+INCLUDE "Terms.adl"
+INCLUDE "Braga.xslx"
+
+INTERFACE Overview : "_SESSION"
+BOX <TABS>
+    [concepts :V[SESSION*Concept]
+      BOX<TABLE sortable>
+           [ name         : I[Concept]
+           , "isa"        : isa
+           , "isa+"       : isaPlus
+           , "isa~"       : isa~
+           , "isa+~"      : isaPlus~
+           , atoms        : pop~
+           , "type-term"  : popset
+           ]
+    , types : V[SESSION*Signature]
+      BOX<TABLE sortable>
+           [ signature  : I[Signature]
+           , src   : src
+           , tgt   : tgt
+           , vee   : vee
+           ]
+    , terms : V[SESSION*Term]
+    , "type-terms" : V[SESSION*Concept]
+      BOX<TABLE sortable>
+           [ Concept      : I
+           , "type-terms" : pretype~
+             BOX<TABLE sortable>
+                  [ "type-term" : I[TypeTerm]
+                  , "sub"       : sub     
+                  , "sub*"      : subStar    
+                  , "sub~"      : sub~    
+                  , "sub*~"     : subStar~   
+                  ]
+           ]
+    , atoms : V[SESSION*Atom]
+      BOX<TABLE sortable>
+           [ repr : I
+           , type : pop - pop;isaPlus
+           , pop  : pop
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<TABLE sortable>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+    , relations : V[SESSION*Relation]
+      BOX<TABLE sortable>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           ]
+    , garbage : V[SESSION*Atom];(I - pop;pop~)
+      BOX <TABLE> [ repr : repr
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+
+INTERFACE Atom(repr[Atom*Representation]) FOR Ampersand : I[Atom]
+BOX [ repr : repr
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE Concept(name[Concept*Identifier],isa) FOR Ampersand : I[Concept]
+BOX [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
+
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) FOR Ampersand: I[Pair]
+BOX [ pair           : I
+     , lAtom          : lAtom
+     , rAtom          : rAtom
+     , "relation(s)"  : in
+     ]
+
+VIEW Signature : Signature(TXT "[", src;name,TXT "*", tgt;name,TXT "]")
+
+INTERFACE Signature(signature, src, tgt) FOR Ampersand: I[Signature]
+BOX [ signature : I
+     , src  : src
+     , tgt  : tgt
+     ]
+
+VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+
+INTERFACE Relation(name[Relation*Identifier], source, target) FOR Ampersand: I[Relation]
+BOX [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+ENDCONTEXT

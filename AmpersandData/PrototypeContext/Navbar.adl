@@ -4,6 +4,10 @@ CONTEXT PrototypeFramework IN ENGLISH
     CONCEPT PF_NavMenuItem ""
         REPRESENT PF_NavMenuItem TYPE OBJECT
   
+    -- RELATION label[PF_NavMenuItem*PF_Label] needs to be TOT because the prototype framework depends on having an interface label
+    -- The identitier of the PF_NavMenuItem itself is a generated UUID, e.g. "PF__NavMenuItem_1550521084_00490187"
+    -- We want to show the user a navigation label instead
+    -- The navigation menu items and its label (and other attributes) are added by the prototype framework during application installation
     RELATION label[PF_NavMenuItem*PF_Label] [UNI,TOT] 
         MEANING "The human readable text that represents the navbar item and is shown to the user"
         CONCEPT PF_Label ""

@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.ToFSpec.NormalForms
   ( conjNF
   , cfProof
@@ -547,7 +547,6 @@ rTerm2expr term
             { decnm   = nm
             , decsgn  = sgn
             , decprps = fatal "Illegal RTerm in rTerm2expr"
-            , decprps_calc = Nothing
             , decprL  = fatal "Illegal RTerm in rTerm2expr"
             , decprM  = fatal "Illegal RTerm in rTerm2expr"
             , decprR  = fatal "Illegal RTerm in rTerm2expr"
@@ -557,7 +556,7 @@ rTerm2expr term
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
             , dechash = hash nm `hashWithSalt` sgn
             }
-class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
+class ShowIT a where  --class meant for stuff not belonging to A-struct and/or P-struct
   showIT :: a -> Text
 
 instance ShowIT RTerm where
@@ -1029,7 +1028,6 @@ delta sgn
               { decnm   = T.pack "Delta"
               , decsgn  = sgn
               , decprps = Set.empty
-              , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""
               , decprR  = ""
@@ -1177,7 +1175,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM True   (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
   nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
   nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
--- Issues #345 and #256: The following two rules may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
+-- Issues #345 and #256: The following two rules may not be used, because properties are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
 --  nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
   nM posCpl (ECps (l,r))           rs                 = (t .:. f, steps<>steps', fEqu [equ',equ''])
@@ -1415,7 +1413,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
                       | e@(ECpl t')<-NE.toList $ exprIsc2list r
                       , f'<-NE.toList . appendLeft rs $ exprUni2list l
                       , t'==f']
--- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
+-- Issue #72: The following rule may not be used, because properties are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _ (EFlp e) _ | isSym e =  (e,[shw e<>" is symmetric"],"<=>")
   nM _ x _               = (x,[],"<=>")
 

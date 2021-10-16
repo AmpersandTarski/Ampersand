@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
          , createTempDatabase
@@ -243,7 +243,7 @@ createTempDatabase fSpec = do
            "DROP DATABASE "<>singleQuote (tempDbName fSpec)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>singleQuote (tempDbName fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>singleQuote (tempDbName fSpec)<>" DEFAULT CHARACTER SET UTF8MB4 COLLATE UTF8MB4_NOPAD_BIN"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

@@ -9,17 +9,18 @@ import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
-         , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
+         , P_Enforce(..), EnforceOperator(..)
          , P_Context(..), mergeContexts
-         , Meta(..)
+         , MetaData(..)
          , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
          , P_Rule(..),Role(..)
-         , Prop(..),Props
+         , PProp(..)
+         , PPropDefault(..)
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
@@ -31,7 +32,7 @@ import Ampersand.Core.ParseTree (
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)
          , P_Relation(..)
-         , ConceptDef(..)
+         , PConceptDef(..), PCDDef(..)
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
@@ -40,8 +41,8 @@ import Ampersand.Core.AbstractSyntaxTree (
          , HasSignature(..)
          , Expression(..)
          , AClassify(..)
-         , RuleOrigin(..)
-         , IdentityDef(..)
+         , RuleKind(..)
+         , IdentityRule(..)
          , IdentitySegment(..)
          , ViewDef(..)
          , ViewSegment(..)
@@ -54,8 +55,13 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Interface(..), getInterfaceByName
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
+         , AProp(..), AProps
+         , APropDefault(..)
          , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
+         , Representation(..)
+         , AEnforce(..)
+         , AConceptDef(..)
          , Conjunct(..)
          , PAtomValue(..)
          , AAtomValues, AAtomPairs, safePSingleton2AAtomVal

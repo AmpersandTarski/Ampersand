@@ -10,7 +10,7 @@ After changing the data type, see @optimize1@, the structure allows you to perfo
 -}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.ADL1.Lattices 
     ( findExact,findUpperbounds,optimize1
     , Op1EqualitySystem,addEquality,emptySystem

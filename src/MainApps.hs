@@ -1,11 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 module MainApps(
     IO
   , ampersand
   , preProcessor
   , mainTest
 ) where
+
+-- The purpose of this module is to call "commandLineHandler" with the correct directory, program name, and arguments.
+-- Or, in case of the preprocessor or test engine, call them.
 
 import           Ampersand
 import           Ampersand.Input.PreProcessor
@@ -40,8 +42,9 @@ ampersandWorker eGlobalRun = do
     Right (globalMonoid,run) -> do
       global <- globalOptsFromMonoid isTerminal defaultOuptutDir globalMonoid
       -- when (globalLogLevel global == LevelDebug) $ hPutStrLn stderr versionString'
+      
       withRunnerGlobal global $ run `catch` \e ->
-          -- This special handler stops "stack: " from being printed before the
+          -- This special handler stops "ampersand: " from being printed before the
           -- exception
           case fromException e of
               Just ec -> exitWith ec

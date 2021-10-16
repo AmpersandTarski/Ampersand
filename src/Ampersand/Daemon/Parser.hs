@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Reads a project and parses it
 module Ampersand.Daemon.Parser (
     parseProject
@@ -13,17 +13,17 @@ import           Ampersand.Input.ADL1.CtxError
 import qualified RIO.NonEmpty as NE
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
-import           Ampersand.Misc.HasClasses (HasRootFile(..),rootFileL, HasDaemonOpts(..), showWarningsL)
+import           Ampersand.Misc.HasClasses (HasRootFile(..),rootFileL, HasDaemonOpts(..), showWarningsL,Roots(..))
 
 -- | parseProject will try to parse a file. If it succeeds, it will 
---   also parse all INCLUDED files transitive. Any of these parses could
+--   also parse all INCLUDED files transitively. Any of these parses could
 --   fail. It will return a tuple containing the Loads and a list of 
 --   the filepaths that are read. 
 parseProject :: (HasDaemonOpts env, HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
-parseProject rootAdl =  local (set rootFileL (Just rootAdl)) $ do
+parseProject rootAdl =  local (set rootFileL (Roots [rootAdl])) $ do
     showWarnings <- view showWarningsL
-    (pc,gPctx) <- parseFileTransitive rootAdl 
+    (pc,gPctx) <- parseFilesTransitive (Roots [rootAdl]) 
     env <- ask
     let loadedFiles = map pcCanonical pc
         gActx = pCtx2Fspec env =<< gPctx

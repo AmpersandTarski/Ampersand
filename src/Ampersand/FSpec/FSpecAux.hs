@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.FSpec.FSpecAux 
   (getRelationTableInfo,getConceptTableInfo)
 where

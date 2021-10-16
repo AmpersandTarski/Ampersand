@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureTyp(..), imagePathRelativeToDirOutput)
 where
@@ -22,7 +22,7 @@ import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 import           System.Directory(createDirectoryIfMissing,makeAbsolute)
 import           System.FilePath 
-import           System.Process (callCommand)
+-- import           System.Process (callCommand)
 
 data PictureTyp = PTClassDiagram           -- classification model of the entire script
                 | PTCDPattern Pattern      -- conceptual diagram of the pattern
@@ -64,7 +64,7 @@ makePicture env fSpec pr =
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ClassDiagram $ cdAnalysis fSpec
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec fSpec
                                , dotProgName = Dot
                                , caption =
                                    case outputLang' of
@@ -86,13 +86,13 @@ makePicture env fSpec pr =
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case outputLang' of
-                                      English -> "Concept diagram of the rules about " <> name cpt
-                                      Dutch   -> "Conceptueel diagram van de regels rond " <> name cpt
+                                      English -> "Concept diagram of " <> name cpt
+                                      Dutch   -> "Conceptueel diagram van " <> name cpt
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotProgName = Dot
                                , caption =
                                    case outputLang' of
                                       English -> "Concept diagram of relations in " <> name pat
@@ -100,12 +100,12 @@ makePicture env fSpec pr =
                                }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotProgName = Dot
                                , caption =
                                    case outputLang' of
                                       English -> "Concept diagram of the rules in " <> name pat
-                                      Dutch   -> "Conceptueel diagram van de regels in " <> name pat
+                                      Dutch   -> "Conceptueel diagram van " <> name pat
                                }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
@@ -135,16 +135,17 @@ makePicture env fSpec pr =
 
 -- | pictureFileName is used in the filename of the picture.
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
+--   File names are urlEncoded to cater for the entire alphabet.
 pictureFileName :: PictureTyp -> FilePath
 pictureFileName pr = toBaseFileName $
      case pr of
       PTClassDiagram      -> "Classification"
       PTLogicalDM         -> "LogicalDataModel"
       PTTechnicalDM       -> "TechnicalDataModel"
-      PTCDConcept cpt     -> "CDConcept"<>name cpt
-      PTDeclaredInPat pat -> "RelationsInPattern"<>name pat
-      PTCDPattern pat     -> "CDPattern"<>name pat
-      PTCDRule r          -> "CDRule"<>name r
+      PTCDConcept cpt     -> "CDConcept"<>urlEncodedName (name cpt)
+      PTDeclaredInPat pat -> "RelationsInPattern"<>urlEncodedName (name pat)
+      PTCDPattern pat     -> "CDPattern"<>urlEncodedName (name pat)
+      PTCDRule r          -> "CDRule"<>urlEncodedName (name r)
 
 -- | conceptualStructure produces a uniform structure,
 --   so the transformation to .dot-format can be done with one function.
@@ -223,8 +224,9 @@ writePicture pict = do
   --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
   --  writeDot DotOutput --Reproduces the input along with layout information.
     writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
-    writeDot imagePathRelativeToCurrentDir Svg    -- format that is used when docx docs are being generated.
-    writePdf imagePathRelativeToCurrentDir Eps    -- .eps file that is postprocessed to a .pdf file 
+  -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
+  -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
+  -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where
      writeDot :: (HasBlackWhite env, HasLogFunc env) =>
                  FilePath -> GraphvizOutput -> RIO env ()
@@ -248,22 +250,22 @@ writePicture pict = do
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelized graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: (HasLogFunc env ) => 
-                FilePath -> RIO env ()
-     makePdf path = do
-         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
-         liftIO $ callCommand (ps2pdfCmd path)
-         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
-       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
-                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
-                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
-                   
-     writePdf :: (HasBlackWhite env, HasLogFunc env) 
-          => FilePath -> GraphvizOutput -> RIO env ()
-     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
-       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
-                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
-     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
+--     makePdf :: (HasLogFunc env ) => 
+--                FilePath -> RIO env ()
+--     makePdf path = do
+--         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
+--         liftIO $ callCommand (ps2pdfCmd path)
+--         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
+--       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
+--                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
+--                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
+--                   
+--     writePdf :: (HasBlackWhite env, HasLogFunc env) 
+--          => FilePath -> GraphvizOutput -> RIO env ()
+--     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
+--       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+--                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
+--     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph Text
 mkDotGraph env pict =
@@ -284,10 +286,10 @@ instance ReferableFromPandoc Picture where
       filename = pictureFileName . pType $ p
       extention =
          case view fspecFormatL env of
-           Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
-           Fdocx  -> "png"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+           Fpdf   -> "png"   -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
+           Fdocx  -> "png"   -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in MS-word.
            Fhtml  -> "png"
-           _      -> "pdf"
+           _      -> "dot"
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to draw in the graph
                                    , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)

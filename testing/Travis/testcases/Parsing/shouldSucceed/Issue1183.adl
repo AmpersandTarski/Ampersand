@@ -1,0 +1,6 @@
+CONTEXT ISSUE1183
+  
+CONCEPT SomeConcept "description" "this description comes out of thin air" 
+     MEANING {+this is some markup for an explainaition of the concept+}
+
+ENDCONTEXT

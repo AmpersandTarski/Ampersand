@@ -1,0 +1,75 @@
+CONTEXT FormalAmpersand IN ENGLISH 
+INCLUDE "Concepts.adl"
+--INCLUDE "Atoms.xlsx"
+
+INTERFACE Overview : "_SESSION"[SESSION]
+BOX <TABS>
+    [ atoms : V[SESSION*Atom]
+      BOX<TABLE sortable>
+           [ repr : I
+           , type : pop - pop;(isas-I)
+           , pop  : pop
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<TABLE sortable>
+           [ name    : I[Concept]
+           , "isa"   : isa
+           , "isa+"  : isas
+           , "isa~"  : isa~
+           , "isa+~" : isas~
+           , atoms   : pop~
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<TABLE sortable>
+           [ pair          : I
+           , "relation(s)" : in
+           ]
+    , relations : V[SESSION*Relation]
+      BOX<TABLE sortable>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           ]
+    , rules : V[SESSION*Rule]
+      BOX <TABLE> [ name : name
+           , signature : sign
+           , term : term[Rule*Term]
+           , meaning : meaning
+           , purpose : purpose
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+
+INTERFACE Atom(repr) : I[Atom]
+BOX [ repr : repr
+     , pop  : pop
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+BOX [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
+
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+BOX [ pair           : I
+     , lAtom          : lAtom
+     , rAtom          : rAtom
+     , "relation(s)"  : in
+     ]
+
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+
+INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+BOX [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+VIEW Rule: Rule(name[Rule*RuleName])
+
+ENDCONTEXT
