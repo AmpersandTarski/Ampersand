@@ -2,7 +2,6 @@
 name: Build and test 🚀
 
 on:
-  pull_request:
   push:
     branches:
       - "**" # Only trigger on branches (i.e. not tags, ..)
@@ -29,7 +28,7 @@ jobs:
         run: | 
           chmod +x release/Linux/ampersand
           echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
-          echo "::set-output name=theReleaseName::$(echo "Ampersand-v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
+          echo "::set-output name=theReleaseName::$(echo "v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
         id: get-version
       - 
         name: zip the binaries (Linux) 🎒
@@ -70,7 +69,7 @@ jobs:
           draft: false
           prerelease: false
           release_name: ${{ steps.get-version.outputs.theReleaseName }}
-          tag_name: Ampersand-v${{ steps.get-version.outputs.version }}
+          tag_name: v${{ steps.get-version.outputs.version }}
           body: |
             Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
         env:
@@ -106,8 +105,22 @@ jobs:
           asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
 
+  build-and-test-docker:
+    name: Build with Docker
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
+    - name: Prepare for docker
+      run: |
+        echo Running on branch ${GITHUB_REF##*/}
+        docker version
 
+    - name: Build final image
+      run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
 
   build-and-test-ubuntu:
     name: Build and test on ubuntu-latest 🏗 🧪
@@ -137,7 +150,6 @@ jobs:
         with:
           name: Linux-binaries
           path: /home/runner/.local/bin/*
-      
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪

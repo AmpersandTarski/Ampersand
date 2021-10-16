@@ -1,5 +1,12 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased changes
+
+## v4.4.2 (16 October 2021)
+
+* Fix CI script for automatic build push to Docker Hub. Note! Release tags should now have format 'vX.Y.Z' instead of 'Ampersand-vX.Y.Z' for semver pattern to work
+* Merge docker build into existing CI script. Prevent duplicate jobs, trigger on pull_request not needed.
+
 ## v4.4.1 ( 10 October 2021)
 
 * [Issue #1212](https://github.com/AmpersandTarski/Ampersand/issues/1212) Solved issue with trailing whitespace.
