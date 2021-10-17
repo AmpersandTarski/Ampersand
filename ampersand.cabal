@@ -592,6 +592,7 @@ library
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -656,6 +657,7 @@ executable ampPreProc
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -723,6 +725,7 @@ executable ampersand
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -788,6 +791,7 @@ test-suite ampersand-test
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
