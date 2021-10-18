@@ -87,7 +87,7 @@ doGenBackend fSpec = do
   if checkCompilerVersion
     then do checkCompilerCompatibility
     else do logInfo "Skipping compiler version check"
-  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
+  writeFile (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
   writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
