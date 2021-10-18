@@ -17,7 +17,7 @@ import           Ampersand.Types.Config
 import           System.Directory
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasFSpecGenOpts env, HasProtoOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasCheckCompilerVersion env) 
+proto :: (Show env, HasRunner env, HasFSpecGenOpts env, HasProtoOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasCheckCompilerVersion env, HasGenerateMetamodel env)
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
@@ -32,3 +32,7 @@ proto fSpec = do
     if generateBackend
       then do doGenBackend fSpec
       else do logDebug "  Skipping generating backend files"
+    generateMetamodel <- view generateMetamodelL
+    if generateMetamodel
+      then do doGenMetaModel fSpec
+      else do logDebug "  Skipping generating metamodel.adl"
