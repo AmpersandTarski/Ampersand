@@ -87,7 +87,6 @@ doGenBackend fSpec = do
   if checkCompilerVersion
     then do checkCompilerCompatibility
     else do logInfo "Skipping compiler version check"
-  writeFile (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
   writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
@@ -97,6 +96,7 @@ doGenBackend fSpec = do
   writeFile (dir </> "views"      <.>"json") $ viewsToJSON env fSpec
   writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
+  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec -- writeFileUft8 requires that the directory exists, therefore this line is after other files that are generated
   logInfo "Backend generated"
 
 checkCompilerCompatibility :: (HasLogFunc env, HasDirPrototype env) => RIO env ()
