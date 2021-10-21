@@ -41,6 +41,7 @@ module Ampersand.Core.ParseTree (
 import           Ampersand.Basics hiding (foldr, sequence, concatMap, orElse)
 import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable (concatMap)
+import           Data.Hashable (Hashable(..),hashWithSalt)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -239,6 +240,10 @@ instance Show TType where
     Float             ->   "FLOAT"
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
+instance Hashable TType where
+  hashWithSalt s tt =
+     s `hashWithSalt` show tt
+     
 data P_Relation = P_Relation
   { -- | the name of the relation
     dec_nm :: !Text,
