@@ -1,0 +1,7 @@
+CONTEXT Issue1189
+
+RELATION r[A * B] TGT EVALPHP "Ordina" SRC VALUE 10
+
+ENDCONTEXT
+
+-- This should fail, because 10 should match the TType of A
