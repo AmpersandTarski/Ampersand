@@ -71,7 +71,7 @@ instance JSON Relation RelationJson where
             toText :: ARelDefault -> Text
             toText x = case x of
               ARelDefaultAtom _ val    -> showValADL val
-              ARelDefaultEvalPHP _ txt -> txt
+              ARelDefaultEvalPHP _ txt -> "{php}"<>txt
 instance JSON Relation RelTableInfo where
  fromAmpersand env fSpec dcl = RelTableInfo
   { rtiJSONname    = name plug
