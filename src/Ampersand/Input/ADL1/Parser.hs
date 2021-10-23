@@ -278,9 +278,11 @@ pRelDefault = pDefAtom <|> pDefEvalPHP
    where
       pDefAtom :: AmpParser PRelationDefault
       pDefAtom = PDefAtom <$> pSrcOrTgt
+                          <*  pKey "VALUE"
                           <*> pAtomValue
       pDefEvalPHP :: AmpParser PRelationDefault
       pDefEvalPHP = PDefEvalPHP <$> pSrcOrTgt  
+                                <*  pKey "EVALPHP"
                                 <*> asText pDoubleQuotedString
       pSrcOrTgt = Src <$ pKey "SRC"
               <|> Tgt <$ pKey "TGT" 
