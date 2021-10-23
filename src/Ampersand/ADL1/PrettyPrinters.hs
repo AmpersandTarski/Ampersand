@@ -136,14 +136,13 @@ instance Pretty P_Pattern where
 
 instance Pretty P_Relation where
     pretty (P_Relation nm sign prps dflts pragma mean _) =
-        text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> defaults <+\> pragmas <+\> prettyhsep mean
+        text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> sequential dflts<+\> pragmas <+\> prettyhsep mean
         where props | null prps                       = empty
                     | otherwise                       = pretty $ Set.toList prps
-              defaults | null dflts = empty
-                       | otherwise  = pretty dflts
               pragmas | T.null (T.concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
-
+              sequential :: Pretty a => [a] -> Doc 
+              sequential = sep . map pretty
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
        Prim a -> pretty a

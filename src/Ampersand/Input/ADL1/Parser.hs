@@ -274,16 +274,17 @@ pRelationDef = reorder <$> currPos
 
 ---RelDefault ::= ( 'SRC' | 'TGT' ) ( 'VALUE' '<AtomValue>' | 'EVALPHP' '<DoubleQuotedString>' )
 pRelDefault :: AmpParser PRelationDefault
-pRelDefault = pDefAtom <|> pDefEvalPHP
+pRelDefault = build <$> pSrcOrTgt
+                    <*> pDef
    where
-      pDefAtom :: AmpParser PRelationDefault
-      pDefAtom = PDefAtom <$> pSrcOrTgt
-                          <*  pKey "VALUE"
-                          <*> pAtomValue
-      pDefEvalPHP :: AmpParser PRelationDefault
-      pDefEvalPHP = PDefEvalPHP <$> pSrcOrTgt  
-                                <*  pKey "EVALPHP"
-                                <*> asText pDoubleQuotedString
+      build st (Left val)  = PDefAtom st val
+      build st (Right txt) = PDefEvalPHP st txt
+      pDef :: AmpParser (Either PAtomValue Text)
+      pDef = pAtom <|> pPHP
+      pAtom = Left <$  pKey "VALUE"
+                   <*> pAtomValue
+      pPHP = Right <$  pKey "EVALPHP"
+                   <*> asText pDoubleQuotedString
       pSrcOrTgt = Src <$ pKey "SRC"
               <|> Tgt <$ pKey "TGT" 
 --- RelationNew ::= 'RELATION' Varid Signature
