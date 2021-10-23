@@ -253,17 +253,18 @@ pRuleDef =  P_Rule <$> currPos
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> asText pDoubleQuotedString
 
---- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' Text+)? Meaning* ('=' Content)? '.'?
+--- RelationDef ::= (RelationNew | RelationOld) Props? RelDefaults? ('PRAGMA' Text+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser (P_Relation, [P_Population])
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> optSet pProps
+                       <*> many pRelDefault
                        <*> optList (pKey "PRAGMA" *> many1 (asText pDoubleQuotedString))
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos' (nm,sign,fun) prop pragma meanings prs =
-                    (P_Relation nm sign props pragma meanings pos', map pair2pop prs)
+            where reorder pos' (nm,sign,fun) prop dflts pragma meanings prs =
+                    (P_Relation nm sign props dflts pragma meanings pos', map pair2pop prs)
                     where
                       props = prop `Set.union` fun
                       pair2pop :: PAtomPair -> P_Population
@@ -271,6 +272,18 @@ pRelationDef = reorder <$> currPos
                       rel :: P_NamedRel   -- the named relation
                       rel = PNamedRel pos' nm (Just sign)
 
+---RelDefault ::= ( 'SRC' | 'TGT' ) ( 'VALUE' '<AtomValue>' | 'EVALPHP' '<DoubleQuotedString>' )
+pRelDefault :: AmpParser PRelationDefault
+pRelDefault = pDefAtom <|> pDefEvalPHP
+   where
+      pDefAtom :: AmpParser PRelationDefault
+      pDefAtom = PDefAtom <$> pSrcOrTgt
+                          <*> pAtomValue
+      pDefEvalPHP :: AmpParser PRelationDefault
+      pDefEvalPHP = PDefEvalPHP <$> pSrcOrTgt  
+                                <*> asText pDoubleQuotedString
+      pSrcOrTgt = Src <$ pKey "SRC"
+              <|> Tgt <$ pKey "TGT" 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (Text,P_Sign,PProps)
 pRelationNew = (,,) <$  pKey "RELATION"
@@ -291,19 +304,9 @@ pRelationOld = relOld <$> asText pVarid
 pProps :: AmpParser (Set.Set PProp)
 pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- PropList ::= Prop (',' Prop)*
-        --- Prop ::= 'UNI' | 'INJ' | 'SUR' PropDefault? | 'TOT' PropDefault? | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
+        --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser PProp
-        pProp = choice $
-           [ p <$ pKey (show p) | p <- [P_Uni, P_Inj, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf, P_Prop]
-           ] <>
-           [ P_Tot <$ pKey "TOT" <*> pMaybe pPropDefault
-           , P_Sur <$ pKey "SUR" <*> pMaybe pPropDefault]
-        --- PropDefault ::= 'VALUE' AtomValue | 'EVALPHP' DoubleQuotedString
-           where pPropDefault :: AmpParser PPropDefault
-                 pPropDefault = choice
-                   [ PDefAtom  <$ pKey "VALUE" <*> pAtomValue
-                   , PDefEvalPHP <$ pKey "EVALPHP" <*> (T.pack <$> pDoubleQuotedString)
-                   ]
+        pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
         normalizeProps :: [PProp] -> PProps
         normalizeProps = conv.rep . Set.fromList
             where -- replace PROP by SYM, ASY
@@ -322,14 +325,14 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser PProps
 pFun  =  Set.empty               <$ pOperator "*"  <|>
-        Set.fromList [P_Uni ,P_Tot Nothing ] <$ pOperator "->" <|>
-        Set.fromList [P_Sur Nothing ,P_Inj ] <$ pOperator "<-" <|>
+        Set.fromList [P_Uni ,P_Tot ] <$ pOperator "->" <|>
+        Set.fromList [P_Sur ,P_Inj ] <$ pOperator "<-" <|>
         pBrackets pMults
         --- Mults ::= Mult '-' Mult
   where pMults :: AmpParser PProps
-        pMults = Set.union <$> optSet (pMult (P_Sur Nothing ,P_Inj))
+        pMults = Set.union <$> optSet (pMult (P_Sur ,P_Inj))
                            <*  pDash
-                           <*> optSet (pMult (P_Tot Nothing ,P_Uni))
+                           <*> optSet (pMult (P_Tot ,P_Uni))
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'

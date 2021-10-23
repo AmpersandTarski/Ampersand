@@ -86,6 +86,7 @@ metarelation  tr =
              , dec_sign   = P_Sign (mkPConcept (tSrc tr))
                                    (mkPConcept (tTrg tr))
              , dec_prps   = aProps2Pprops $ mults tr 
+             , dec_defaults = []
              , dec_pragma = []
              , dec_Mean   = []
              , pos   = OriginUnknown 

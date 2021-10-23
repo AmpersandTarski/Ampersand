@@ -34,7 +34,7 @@ module Ampersand.Core.ParseTree (
    , P_Markup(..)
 
    , PProp(..), PProps
-   , PPropDefault(..)
+   , PRelationDefault(..)
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -248,6 +248,8 @@ data P_Relation = P_Relation
     dec_prps :: !PProps,
     -- | Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+    dec_defaults :: ![PRelationDefault],
+    -- | a list of default values for tuples in the relation
     dec_pragma :: ![Text],
     -- | the optional meaning of a relation, possibly more than one for different languages.
     dec_Mean :: ![PMeaning],
@@ -280,7 +282,8 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
      = P_Relation { dec_nm     = name r0
              , dec_sign   = dec_sign r0
              , dec_prps   =  Set.unions (dec_prps <$> NE.toList rels)
-             , dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
+             , dec_defaults = concatMap dec_defaults rels
+             ,  dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
                               []  -> dec_pragma r0
                               h:_ -> dec_pragma h
              , dec_Mean   = L.nub $ concatMap dec_Mean rels
@@ -502,7 +505,7 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded, Data)
 instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
@@ -890,9 +893,9 @@ data PProp
   | -- | injective
     P_Inj
   | -- | surjective
-    P_Sur (Maybe PPropDefault)
+    P_Sur
   | -- | total
-    P_Tot (Maybe PPropDefault)
+    P_Tot
   | -- | symmetric
     P_Sym
   | -- | antisymmetric
@@ -905,17 +908,13 @@ data PProp
     P_Irf
   | -- | PROP keyword, the parser must replace this by [Sym, Asy].
     P_Prop
-  deriving (Eq, Ord, Typeable, Data)
+  deriving (Eq, Ord, Typeable, Data, Enum, Bounded)
 
 instance Show PProp where
  show P_Uni = "UNI"
  show P_Inj = "INJ"
- show (P_Sur x) = "SUR"<>case x of 
-                    Nothing -> mempty
-                    Just d  -> " "<>show d
- show (P_Tot x) = "TOT"<>case x of 
-                    Nothing -> mempty
-                    Just d  -> " "<>show d
+ show P_Sur = "SUR"
+ show P_Tot = "TOT"
  show P_Sym = "SYM"
  show P_Asy = "ASY"
  show P_Trn = "TRN"
@@ -928,13 +927,13 @@ instance Unique PProp where
 
 instance Flippable PProp where
  flp P_Uni = P_Inj
- flp (P_Tot x) = P_Sur x
- flp (P_Sur x) = P_Tot x
+ flp P_Tot = P_Sur
+ flp P_Sur = P_Tot
  flp P_Inj = P_Uni
  flp x = x
-data PPropDefault =
-    PDefAtom !PAtomValue
-  | PDefEvalPHP !Text
+data PRelationDefault =
+    PDefAtom SrcOrTgt !PAtomValue
+  | PDefEvalPHP SrcOrTgt !Text
   deriving (Eq, Ord, Data, Show)
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
