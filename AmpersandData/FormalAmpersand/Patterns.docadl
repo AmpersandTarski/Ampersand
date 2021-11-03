@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH MARKDOWN
+CONTEXT FormalAmpersand IN ENGLISH MARKDOWN
 INCLUDE "Patterns.adl"
 
     PURPOSE PATTERN "Reusing Definitions"
