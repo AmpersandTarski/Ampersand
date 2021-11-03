@@ -23,6 +23,17 @@ jobs:
     - name: Build final image
       run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
 
+    # For main branch push latest to DockerHub
+    - name: Login to DockerHub
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+    - name: Push latest
+      if: github.ref == 'refs/heads/main'
+      run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
+
   build-and-test-ubuntu:
     name: Build and test on ubuntu-latest 🏗 🧪
     runs-on: ubuntu-latest
