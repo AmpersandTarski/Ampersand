@@ -272,9 +272,9 @@ pRelationDef = reorder <$> currPos
                       rel :: P_NamedRel   -- the named relation
                       rel = PNamedRel pos' nm (Just sign)
 
---- RelDefaults ::= 'DEFAULT' RelDefault (',' RelDefault)*
+--- RelDefaults ::= 'DEFAULT' RelDefault*
 pRelDefaults :: AmpParser [PRelationDefault]
-pRelDefaults = pKey "DEFAULT" *> (toList . concat <$> sepBy1 pRelDefault pComma)
+pRelDefaults = pKey "DEFAULT" *> (toList . concat <$> many1 pRelDefault)
 
 --- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
 pRelDefault :: AmpParser [PRelationDefault]
@@ -291,7 +291,8 @@ pRelDefault = build <$> pSrcOrTgt
       pPHP = Right <$  pKey "EVALPHP"
                    <*> asText pDoubleQuotedString
       pSrcOrTgt = Src <$ pKey "SRC"
-              <|> Tgt <$ pKey "TGT" 
+              <|> Tgt <$ pKey "TGT"
+
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (Text,P_Sign,PProps)
 pRelationNew = (,,) <$  pKey "RELATION"
