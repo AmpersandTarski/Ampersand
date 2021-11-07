@@ -272,20 +272,22 @@ pRelationDef = reorder <$> currPos
                       rel :: P_NamedRel   -- the named relation
                       rel = PNamedRel pos' nm (Just sign)
 
+--- RelDefaults ::= 'DEFAULT' RelDefault (',' RelDefault)*
 pRelDefaults :: AmpParser [PRelationDefault]
-pRelDefaults = pKey "DEFAULT" *> many1 pRelDefault
+pRelDefaults = pKey "DEFAULT" *> (toList . concat <$> sepBy1 pRelDefault pComma)
 
----RelDefault ::= ( 'SRC' | 'TGT' ) ( 'VALUE' '<AtomValue>' | 'EVALPHP' '<DoubleQuotedString>' )
-pRelDefault :: AmpParser PRelationDefault
+--- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
+pRelDefault :: AmpParser [PRelationDefault]
 pRelDefault = build <$> pSrcOrTgt
                     <*> pDef
    where
-      build st (Left val)  = PDefAtom st val
-      build st (Right txt) = PDefEvalPHP st txt
-      pDef :: AmpParser (Either PAtomValue Text)
+      build :: SrcOrTgt -> Either [PAtomValue] Text -> [PRelationDefault]
+      build st (Left vals) = map (PDefAtom st) vals
+      build st (Right txt) = [PDefEvalPHP st txt]
+      pDef :: AmpParser (Either [PAtomValue] Text)
       pDef = pAtom <|> pPHP
       pAtom = Left <$  pKey "VALUE"
-                   <*> pAtomValue
+                   <*> (toList <$> sepBy1 pAtomValue pComma)
       pPHP = Right <$  pKey "EVALPHP"
                    <*> asText pDoubleQuotedString
       pSrcOrTgt = Src <$ pKey "SRC"
