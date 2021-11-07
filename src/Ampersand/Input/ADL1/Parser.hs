@@ -258,7 +258,7 @@ pRelationDef :: AmpParser (P_Relation, [P_Population])
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> optSet pProps
-                       <*> many pRelDefault
+                       <*> optList pRelDefaults
                        <*> optList (pKey "PRAGMA" *> many1 (asText pDoubleQuotedString))
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
@@ -271,6 +271,9 @@ pRelationDef = reorder <$> currPos
                       pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
                       rel :: P_NamedRel   -- the named relation
                       rel = PNamedRel pos' nm (Just sign)
+
+pRelDefaults :: AmpParser [PRelationDefault]
+pRelDefaults = pKey "DEFAULT" *> many1 pRelDefault
 
 ---RelDefault ::= ( 'SRC' | 'TGT' ) ( 'VALUE' '<AtomValue>' | 'EVALPHP' '<DoubleQuotedString>' )
 pRelDefault :: AmpParser PRelationDefault
