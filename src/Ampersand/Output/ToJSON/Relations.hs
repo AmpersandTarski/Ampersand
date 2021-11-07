@@ -60,18 +60,18 @@ instance JSON Relation RelationJson where
          , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = maybe [] (map rc_id) . lookup dcl . allConjsPerDecl $ fSpec
          , relJSONmysqlTable = fromAmpersand env fSpec dcl
-         , relJSONdefaultSrc = map toText . Set.toList . Set.filter (is Src) $ decDefaults dcl
-         , relJSONdefaultTgt = map toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
+         , relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl
+         , relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
          }
       where bindedExp = EDcD dcl
             is :: SrcOrTgt -> ARelDefault -> Bool
             is st x = case x of
               ARelDefaultAtom st' _    -> st == st'
               ARelDefaultEvalPHP st' _ -> st == st'
-            toText :: ARelDefault -> Text
+            toText :: ARelDefault -> [Text]
             toText x = case x of
-              ARelDefaultAtom _ val    -> showValADL val
-              ARelDefaultEvalPHP _ txt -> "{php}"<>txt
+              ARelDefaultAtom _ vals   -> map showValADL vals
+              ARelDefaultEvalPHP _ txt -> ["{php}"<>txt]
 instance JSON Relation RelTableInfo where
  fromAmpersand env fSpec dcl = RelTableInfo
   { rtiJSONname    = name plug

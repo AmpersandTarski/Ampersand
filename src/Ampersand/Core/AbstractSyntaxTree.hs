@@ -289,7 +289,7 @@ instance Flippable AProp where
 
 type ARelDefaults = Set ARelDefault
 data ARelDefault =
-    ARelDefaultAtom !SrcOrTgt !AAtomValue
+    ARelDefaultAtom !SrcOrTgt ![AAtomValue]
   | ARelDefaultEvalPHP !SrcOrTgt !Text
   deriving (Eq, Ord, Show, Data)
 

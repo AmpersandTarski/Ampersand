@@ -1127,10 +1127,10 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd
  where
   pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
   pReldefault2aReldefaults x = case x of
-      PDefAtom st val -> ARelDefaultAtom st <$> 
-                            pAtomValue2aAtomValue typ (case st of 
+      PDefAtom st vals -> ARelDefaultAtom st <$> 
+                            traverse (pAtomValue2aAtomValue typ (case st of 
                                                          Src -> source decSign
-                                                         Tgt -> target decSign) val
+                                                         Tgt -> target decSign)) vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
   (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
   pProp2aProps :: PProp -> [AProp]

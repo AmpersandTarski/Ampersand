@@ -274,16 +274,16 @@ pRelationDef = reorder <$> currPos
 
 --- RelDefaults ::= 'DEFAULT' RelDefault*
 pRelDefaults :: AmpParser [PRelationDefault]
-pRelDefaults = pKey "DEFAULT" *> (toList . concat <$> many1 pRelDefault)
+pRelDefaults = pKey "DEFAULT" *> (toList <$> many1 pRelDefault)
 
 --- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
-pRelDefault :: AmpParser [PRelationDefault]
+pRelDefault :: AmpParser PRelationDefault
 pRelDefault = build <$> pSrcOrTgt
                     <*> pDef
    where
-      build :: SrcOrTgt -> Either [PAtomValue] Text -> [PRelationDefault]
-      build st (Left vals) = map (PDefAtom st) vals
-      build st (Right txt) = [PDefEvalPHP st txt]
+      build :: SrcOrTgt -> Either [PAtomValue] Text -> PRelationDefault
+      build st (Left vals) = PDefAtom st vals
+      build st (Right txt) = PDefEvalPHP st txt
       pDef :: AmpParser (Either [PAtomValue] Text)
       pDef = pAtom <|> pPHP
       pAtom = Left <$  pKey "VALUE"
