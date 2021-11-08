@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+* [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189) Replace the previous solution. Now the defaults can be given in the `RELATION` statement.
+
 ## v4.4.3 (17 October 2021)
 
 New CI workflow for releases to be pushed automatically to DockerHub with semver. Image is needed by prototype framework in Docker build.

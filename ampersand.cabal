@@ -185,11 +185,13 @@ extra-source-files:
     testing/Travis/testcases/Misc/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
+    testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue980.adl
     testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1014.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1183.adl
+    testing/Travis/testcases/Parsing/shouldSucceed/Issue1189.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue899b.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue960.adl
     testing/Travis/testcases/Parsing/shouldSucceed/testinfo.yaml
