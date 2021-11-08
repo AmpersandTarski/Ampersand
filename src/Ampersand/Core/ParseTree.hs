@@ -932,7 +932,7 @@ instance Flippable PProp where
  flp P_Inj = P_Uni
  flp x = x
 data PRelationDefault =
-    PDefAtom SrcOrTgt [PAtomValue]
+    PDefAtom SrcOrTgt (NE.NonEmpty PAtomValue)
   | PDefEvalPHP SrcOrTgt Text
   deriving (Eq, Ord, Data, Show)
 mergeContexts :: P_Context -> P_Context -> P_Context

@@ -114,7 +114,7 @@ aRelDefaults2pRelDefaults = map aRelDefaults2pRelDefault . toList
 
 aRelDefaults2pRelDefault :: ARelDefault -> PRelationDefault
 aRelDefaults2pRelDefault x = case x of
-    ARelDefaultAtom st vals -> PDefAtom st (map aAtomValue2pAtomValue vals)
+    ARelDefaultAtom st vals -> PDefAtom st (fmap aAtomValue2pAtomValue vals)
     ARelDefaultEvalPHP st txt -> PDefEvalPHP st txt
     
 aProps2Pprops :: AProps -> Set PProp

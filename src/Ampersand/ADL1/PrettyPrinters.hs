@@ -389,7 +389,7 @@ instance Pretty PProp where
 
 instance Pretty PRelationDefault where
     pretty x = case x of
-      PDefAtom sOrT pav -> pretty sOrT <+> text "VALUE " <+> pretty pav
+      PDefAtom sOrT pav -> pretty sOrT <+> text "VALUE " <+> (cat . punctuate (text ", ") . toList $ fmap pretty pav)
       PDefEvalPHP sOrT txt -> pretty sOrT <+> text "EVALPHP " <+> text (show txt)
 
 instance Pretty PAtomPair where

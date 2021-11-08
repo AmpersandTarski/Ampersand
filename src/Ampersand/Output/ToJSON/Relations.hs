@@ -70,7 +70,7 @@ instance JSON Relation RelationJson where
               ARelDefaultEvalPHP st' _ -> st == st'
             toText :: ARelDefault -> [Text]
             toText x = case x of
-              ARelDefaultAtom _ vals   -> map showValADL vals
+              ARelDefaultAtom _ vals   -> toList $ fmap showValADL vals
               ARelDefaultEvalPHP _ txt -> ["{php}"<>txt]
 instance JSON Relation RelTableInfo where
  fromAmpersand env fSpec dcl = RelTableInfo

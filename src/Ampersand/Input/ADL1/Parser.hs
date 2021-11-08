@@ -281,13 +281,13 @@ pRelDefault :: AmpParser PRelationDefault
 pRelDefault = build <$> pSrcOrTgt
                     <*> pDef
    where
-      build :: SrcOrTgt -> Either [PAtomValue] Text -> PRelationDefault
+      build :: SrcOrTgt -> Either (NE.NonEmpty PAtomValue) Text -> PRelationDefault
       build st (Left vals) = PDefAtom st vals
       build st (Right txt) = PDefEvalPHP st txt
-      pDef :: AmpParser (Either [PAtomValue] Text)
+      pDef :: AmpParser (Either (NE.NonEmpty PAtomValue) Text)
       pDef = pAtom <|> pPHP
       pAtom = Left <$  pKey "VALUE"
-                   <*> (toList <$> sepBy1 pAtomValue pComma)
+                   <*> sepBy1 pAtomValue pComma
       pPHP = Right <$  pKey "EVALPHP"
                    <*> asText pDoubleQuotedString
       pSrcOrTgt = Src <$ pKey "SRC"
