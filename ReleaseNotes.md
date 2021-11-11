@@ -1,6 +1,11 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
+  * Removed CLI options: --force-reinstall-framework, --prototype-framework-version, --customizations
+  * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
+  * Added CLI option: --(no-)backend to specify if the compiler must generate backend config files (default enabled)
+  * Added CLI option: --(no-)check-compiler-version to specify if compiler must check prototype framework compatibility (default enabled)
 
 ## v4.5.0 (11 November 2021)
 * [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189) Replace the previous solution. Now the defaults can be given in the `RELATION` statement.
@@ -43,8 +48,6 @@ New CI workflow for releases to be pushed automatically to DockerHub with semver
 
 ## v4.1.3 (9 november 2020)
 * [Issue #1070](https://github.com/AmpersandTarski/Ampersand/issues/1070) Remove CLI options dbHost, dbName, dbUser and dbPass. These are part of the prototype framework and can be specified as config or environment variable as described here: https://github.com/AmpersandTarski/prototype/tree/development/config 
-* [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
-  * The following CLI options are removed --force-reinstall-framework, --prototype-framework-version, --customizations
 * internal refactorings
 
 ## v4.1.2 (9 october 2020)
