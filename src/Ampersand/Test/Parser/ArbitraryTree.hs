@@ -157,6 +157,7 @@ instance Arbitrary P_Relation where
          <$> lowerId
          <*> arbitrary
          <*> arbitrary
+         <*> arbitrary
          <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
          <*> arbitrary
          <*> arbitrary
@@ -389,15 +390,11 @@ instance Arbitrary PandocFormat where
     arbitrary = elements [minBound..]
 
 instance Arbitrary PProp where
-    arbitrary = oneof [ elements [ P_Uni, P_Inj
-                                 , P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf, P_Prop
-                                 ]
-                      , P_Tot <$> arbitrary 
-                      , P_Sur <$> arbitrary 
-                      ]
-instance Arbitrary PPropDefault where
-    arbitrary = oneof [ PDefAtom <$> arbitrary
-                      , PDefEvalPHP <$> safeStr
+    arbitrary = elements [minBound..]
+    
+instance Arbitrary PRelationDefault where
+    arbitrary = oneof [ PDefAtom <$> arbitrary <*> arbitrary
+                      , PDefEvalPHP <$> arbitrary <*> safeStr
                       ]
 
 noOne :: Foldable t => t P_Concept -> Bool

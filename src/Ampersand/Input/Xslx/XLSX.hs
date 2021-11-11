@@ -90,6 +90,7 @@ addRelations pCtx = enrichedContext
        , rel<-[ P_Relation{ dec_nm     = name pop
                      , dec_sign   = P_Sign src' tgt'
                      , dec_prps   = mempty
+                     , dec_defaults = mempty
                      , dec_pragma = mempty
                      , dec_Mean   = mempty
                      , pos        = origin pop
@@ -116,7 +117,7 @@ addRelations pCtx = enrichedContext
              = L.unzip
                [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
                           , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
-                                       in Set.fromList $ filter (not . test) [P_Uni,P_Tot Nothing,P_Inj,P_Sur Nothing]
+                                       in Set.fromList $ filter (not . test) [P_Uni,P_Tot,P_Inj,P_Sur]
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
                  , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
