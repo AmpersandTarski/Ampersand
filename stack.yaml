@@ -17,6 +17,7 @@ extra-deps:
  - SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
  - wl-pprint-1.2.1@sha256:aea676cff4a062d7d912149d270e33f5bb0c01b68a9db46ff13b438141ff4b7c,734
  - yaml-config-0.4.0@sha256:575103d9fa1ef074a2b419256babaae7be5f5257f37adf3ed2601052415b2d83,1814
+ - salve-1.0.11
 
 
 # Override default flag values for local packages and extra-deps
