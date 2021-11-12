@@ -633,15 +633,12 @@ instance ShowHSName AProp where
  showHSName Irf = "Irf"
 
 instance ShowHS AProp where
-  showHS env indent prp = indent <> showHSName prp <> 
-      case prp of
-        Sur d -> " "<> showHS env indent d
-        Tot d -> " "<> showHS env indent d
-        _ -> mempty
-instance ShowHS APropDefault where
+  showHS _ indent prp = indent <> showHSName prp
+  
+instance ShowHS ARelDefault where
   showHS _ _ d = case d of
-    ADefAtom aav -> "ADefAtom " <> tshow aav
-    ADefEvalPHP txt -> "ADefEvalPHP "<> tshow txt 
+    ARelDefaultAtom st aav -> "ARelDefaultAtom "<>tshow st <> tshow aav
+    ARelDefaultEvalPHP st txt -> "ARelDefaultEvalPHP "<>tshow st <> tshow txt 
 
 instance ShowHS FilePos where
  showHS _ _ = tshow

@@ -37,10 +37,10 @@ isONE :: A_Concept -> Bool
 isONE ONE = True
 isONE _   = False
 isSESSION :: A_Concept -> Bool
-isSESSION cpt = 
+isSESSION cpt =
            case cpt of
              PlainConcept{} -> "SESSION" `elem` aliases cpt
-             ONE            -> False              
+             ONE            -> False
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
 -- but tries to derive the most obvious constraints as well. The more property constraints are known,
 -- the better the data structure that is derived.
@@ -48,9 +48,9 @@ isSESSION cpt =
 instance HasProps Expression where
   properties expr = case expr of
      EDcD dcl   -> properties dcl
-     EDcI{}     -> Set.fromList [Uni,Tot Nothing,Inj,Sur Nothing,Sym,Asy,Trn,Rfx]
-     EEps a sgn -> Set.fromList $ [Tot Nothing| a == source sgn]++[Sur Nothing | a == target sgn] ++ [Uni,Inj]
-     EDcV sgn   -> Set.fromList $ 
+     EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EEps a sgn -> Set.fromList $ [Tot| a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
+     EDcV sgn   -> Set.fromList $
                  --NOT totaal
                  --NOT surjective
                    [Inj | isONE (source sgn)]
@@ -60,8 +60,8 @@ instance HasProps Expression where
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
      EBrk f     -> properties f
-     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot Nothing,Inj,Sur Nothing]) (properties l `Set.intersection` properties r)
-     EPrd (l,r) -> Set.fromList $ [Tot Nothing | isTot l]++[Sur Nothing | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
+     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot,Inj,Sur]) (properties l `Set.intersection` properties r)
+     EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
      EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
      EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
      ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
@@ -122,7 +122,7 @@ instance Relational Expression where        -- TODO: see if we can find more pro
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
- isIdent expr = (\x -> if x && (source expr /= target expr) 
+ isIdent expr = (\x -> if x && (source expr /= target expr)
                        then fatal $ "Something wrong with isIdent." <> tshow expr
                        else x
                 ) $
@@ -162,13 +162,13 @@ instance Relational Expression where        -- TODO: see if we can find more pro
      EFlp f     -> isImin f
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
  isFunction r   = isUni r && isTot r
-                 
- isTot = isTotSur (Tot Nothing)
- isSur = isTotSur (Sur Nothing)
- 
+
+ isTot = isTotSur Tot
+ isSur = isTotSur Sur
+
  isUni = isUniInj Uni
  isInj = isUniInj Inj
- 
+
  isRfx r = Rfx `elem` properties r
  isIrf r = Irf `elem` properties r
  isTrn r = Trn `elem` properties r
@@ -176,8 +176,8 @@ instance Relational Expression where        -- TODO: see if we can find more pro
  isAsy r = Asy `elem` properties r
 
 -- Not to be exported:
-isTotSur :: AProp -> Expression -> Bool 
-isTotSur prop expr 
+isTotSur :: AProp -> Expression -> Bool
+isTotSur prop expr
   = case expr of
       EEqu (_,_) -> False
       EInc (_,_) -> False
@@ -197,8 +197,8 @@ isTotSur prop expr
       EDcD d     -> prop `elem` properties d
       EDcI{}     -> True
       EEps c sgn -> case prop of
-                      Tot _ -> c == source sgn
-                      Sur _ -> c == target sgn
+                      Tot -> c == source sgn
+                      Sur -> c == target sgn
                       _   -> fatal $ "isTotSur must not be called with "<>tshow prop
       EDcV{}     -> todo
       EBrk e     -> isTotSur prop e
@@ -206,8 +206,8 @@ isTotSur prop expr
   where
     todo = prop `elem` properties expr
 
-isUniInj :: AProp -> Expression -> Bool 
-isUniInj prop expr 
+isUniInj :: AProp -> Expression -> Bool
+isUniInj prop expr
   = case expr of
       EEqu (_,_) -> False
       EInc (_,_) -> False

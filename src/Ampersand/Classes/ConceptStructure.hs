@@ -77,7 +77,7 @@ instance ConceptStructure A_Context where
                       , (expressionsIn . ctxvs) ctx
                       , (expressionsIn . identityRules) ctx
                       , (expressionsIn . proprules) ctx
-                      , (expressionsIn . ctxEnforces) ctx]
+                      , (expressionsIn . enforceRules) ctx]
 
 instance ConceptStructure IdentityRule where
   concs identity = Set.singleton (idCpt identity)
