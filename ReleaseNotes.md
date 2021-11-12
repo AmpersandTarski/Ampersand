@@ -1,48 +1,60 @@
-﻿# Release notes of Ampersand
+# Release notes of Ampersand
 
 ## Unreleased changes
 
+* [Issue #1231](https://github.com/AmpersandTarski/Ampersand/issues/1231) Enable the generation of a logical data model (graphic) where the entities are grouped per pattern.
+
 ## v4.5.0 (11 November 2021)
+
 * [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189) Replace the previous solution. Now the defaults can be given in the `RELATION` statement.
 
 ## v4.4.3 (17 October 2021)
+
 New CI workflow for releases to be pushed automatically to DockerHub with semver. Image is needed by prototype framework in Docker build.
 
 ## v4.4.2 (16 October 2021)
+
 * Fix CI script for automatic build push to Docker Hub. Note! Release tags should now have format 'vX.Y.Z' instead of 'Ampersand-vX.Y.Z' for semver pattern to work
 * Merge docker build into existing CI script. Prevent duplicate jobs, trigger on pull_request not needed.
 
 ## v4.4.1 ( 10 October 2021)
+
 * [Issue #1212](https://github.com/AmpersandTarski/Ampersand/issues/1212) Solved issue with trailing whitespace.
 * [PR #1210](https://github.com/AmpersandTarski/Ampersand/pull/1210) Partial implementation for [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189). The prototype still has to be adapted, so this issue isn't closed yet.
 
 ## v4.4.0 ( 10 September August 2021)
+
 * [PR #1201](https://github.com/AmpersandTarski/Ampersand/pull/1201) Changes to Transformers.hs for the new RAP release.
-* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
+* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning.
 * [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
 
 ## v4.3.0 ( 13 August 2021)
+
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
 * [Issue RAP #123](https://github.com/AmpersandTarski/RAP/issues/123) To enhance the Atlas in RAP to an acceptable minimal level, some changes in Ampersand are required.
 * [Issue #1196](https://github.com/AmpersandTarski/Ampersand/issues/1196) Allow multiple files on the command line. The second to last files are handled as if they were INCLUDEd in the first one.
 
 ## v4.2.0 ( 16 July 2021)
+
 * In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.
-* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
-* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
+* [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement.
+* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed.
 * [Issue #1183](https://github.com/AmpersandTarski/Ampersand/issues/1183) Use markup in definition of Concept is now possible.
 * Improvements to the way we test the build (CI/CD).
 
 ## v4.1.5 ( 2 June 2021)
+
 * Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might affect tables in the documentation that is generated with the `documentation` command.
 * Add switch `--numeric-version`
-* Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration. 
+* Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration.
 
 ## v4.1.4 (29 january 2021)
+
 * [Issue #1131](https://github.com/AmpersandTarski/Ampersand/issues/1131) remove COLS and ROWS from the parser and from other parts of the Ampersand compiler.
 
 ## v4.1.3 (9 november 2020)
-* [Issue #1070](https://github.com/AmpersandTarski/Ampersand/issues/1070) Remove CLI options dbHost, dbName, dbUser and dbPass. These are part of the prototype framework and can be specified as config or environment variable as described here: https://github.com/AmpersandTarski/prototype/tree/development/config 
+
+* [Issue #1070](https://github.com/AmpersandTarski/Ampersand/issues/1070) Remove CLI options dbHost, dbName, dbUser and dbPass. These are part of the prototype framework and can be specified as config or environment variable as described here: https://github.com/AmpersandTarski/prototype/tree/development/config
 * internal refactorings
 
 ## v4.1.2 (9 october 2020)
@@ -58,8 +70,8 @@ New CI workflow for releases to be pushed automatically to DockerHub with semver
 
 * [Issue #1067](https://github.com/AmpersandTarski/Ampersand/issues/1067) Docker build push to Docker hub instead of Github package repo
 * [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
-* **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 
-This breaking change presented an opportunity to rename the built-in templates to more self explaining template names:
+* **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates).
+  This breaking change presented an opportunity to rename the built-in templates to more self explaining template names:
   * ROWS -> BOX \<FORM\>
   * COLS -> BOX \<TABLE\>
   * TABS -> BOX \<TABS\>
@@ -86,7 +98,7 @@ This breaking change presented an opportunity to rename the built-in templates t
 * [Issue #1056](https://github.com/AmpersandTarski/Ampersand/issues/1056) Bugfix in .xlsx parser
 * [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/1054) Ampersand daemon now also reports type errors
 * [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/1063) Return violations of invariants with standard check
-* [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
+* [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9.
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
 * Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
 * Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
@@ -123,7 +135,7 @@ This breaking change presented an opportunity to rename the built-in templates t
 * [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.
 * [Issue #925](https://github.com/AmpersandTarski/Ampersand/issues/925) Add warning when a script contains `BOX <ROWSNH>`, for this is deprecated and could result in an error when a prototype is being generated.
 * [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578) Implement meta model for navigation menu
-* [Issue #932](https://github.com/AmpersandTarski/Ampersand/issues/932) `--daemon` now has an optional parameter to tell what config file is used. defaults to `.ampersand`.
+* [Issue #932](https://github.com/AmpersandTarski/Ampersand/issues/932)`--daemon` now has an optional parameter to tell what config file is used. defaults to `.ampersand`.
 * [Issue #903](https://github.com/AmpersandTarski/Ampersand/issues/903) Add switch to skip installing php dependencies (using Composer package manager).
 * [Issue #952](https://github.com/AmpersandTarski/Ampersand/issues/952) Fixed bug causing the ampersand daemon to crash when an .xlsx file had an error.
 * Upgrade to [prototype framework v1.2.0](https://github.com/AmpersandTarski/Prototype/releases/tag/v1.2.0). Needed for [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578)
@@ -362,7 +374,7 @@ It has taken some time since the last release. This release has some major work 
 ## v3.5.2 (10 juni 2016)
 
 * Work on meatgrinder (still experimental!)
-* [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152) Issue with SQL query 
+* [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152) Issue with SQL query
 * [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436) Fix minor issue with SQL query
 * [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231) Fix nontermination of functional document generator.
 * [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217) SQL query performance improvements.
