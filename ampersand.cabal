@@ -537,6 +537,7 @@ library
       Ampersand.Daemon.Util
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
+      Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Misc.Defaults
       Ampersand.Options.DaemonParser

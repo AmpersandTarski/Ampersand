@@ -1,7 +1,7 @@
 
 module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
-) 
+)
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -12,11 +12,13 @@ import           Ampersand.Graphic.ClassDiagram
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
+
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"<>name fSpec
+                   , groups  = []
                    , classes = map clas . Set.elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
@@ -37,14 +39,15 @@ clAnalysis fSpec =
                          }
 
 class CDAnalysable a where
-  cdAnalysis :: FSpec -> a -> ClassDiag
+  cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
 -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
 -- Properties and identities are not shown.
+-- The first parameter (Bool) indicates wether or not the entities should be grouped by patterns.
 
 buildClass :: FSpec -> A_Concept -> Class
-buildClass fSpec root 
+buildClass fSpec root
   = case classOf fSpec root of
       Nothing -> fatal $ "Concept is not a class: `"<>name root<>"`."
       Just exprs ->
@@ -56,12 +59,12 @@ buildClass fSpec root
 
 cptIsShown :: FSpec -> A_Concept -> Bool
 cptIsShown fSpec cpt = isInScope cpt && hasClass cpt
-  where 
-   isInScope _ = True 
+  where
+   isInScope _ = True
    hasClass = isJust . classOf fSpec
 
 classOf :: FSpec -> A_Concept -> Maybe (NE.NonEmpty Expression)
-classOf fSpec cpt = 
+classOf fSpec cpt =
   case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
      []   -> Nothing
      [es] -> Just es
@@ -99,18 +102,19 @@ decl2assocOrAggr d = Left
           }
 
 dclIsShown :: FSpec -> [A_Concept] -> Relation -> Bool
-dclIsShown fSpec nodeConcepts d = 
+dclIsShown fSpec nodeConcepts d =
       (not . isProp . EDcD) d
    && (   (d `notElem` attribDcls fSpec)
        || (   source d `elem` nodeConcepts
            && target d `elem` nodeConcepts
            && source d /= target d
           )
-      )      
+      )
 
 instance CDAnalysable Pattern where
-  cdAnalysis fSpec pat =
+  cdAnalysis _ fSpec pat =
     OOclassdiagram { cdName  = "logical_"<>name pat
+                   , groups  = []
                    , classes = map (buildClass fSpec) entities
                    , assocs  = lefts assocsAndAggrs
                    , aggrs   = rights assocsAndAggrs
@@ -128,9 +132,10 @@ instance CDAnalysable Pattern where
      nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
 
 instance CDAnalysable FSpec where
-  cdAnalysis _ fSpec=
+  cdAnalysis grouped _ fSpec=
     OOclassdiagram { cdName  = "logical_"<>name fSpec
-                   , classes = map (buildClass fSpec) entities
+                   , groups  = groups'
+                   , classes = classes'
                    , assocs  = lefts assocsAndAggrs
                    , aggrs   = rights assocsAndAggrs
                    , geners  = map OOGener (gens fSpec)
@@ -138,6 +143,26 @@ instance CDAnalysable FSpec where
                    }
 
    where
+     (groups', classes')
+        | grouped = (samePattern $ rights grps, lefts grps)
+        | otherwise = ( [], map (buildClass fSpec) entities)
+     grps :: [Either Class (Text , Class)]
+     grps = map (byPattern . buildClass fSpec) entities
+       where byPattern :: Class -> Either Class (Text , Class)
+             byPattern cl = case patternOf =<< clcpt cl of
+                              Nothing  -> Left cl
+                              Just pat -> Right (pat, cl)
+             patternOf :: A_Concept -> Maybe Text
+             patternOf cpt = case filter isDefinedBy . concat $ ptcds <$> instanceList fSpec of
+                                     [] -> Nothing
+                                     (h:_) -> Just $ acdfrom h
+                where
+                  isDefinedBy :: AConceptDef -> Bool
+                  isDefinedBy cd = name cd == name cpt
+     samePattern :: [(Text , Class)] -> [(Text, NonEmpty Class)]
+     samePattern = map groupClasses . NE.groupWith fst
+       where groupClasses :: NonEmpty (Text, Class) -> (Text, NonEmpty Class)
+             groupClasses xs = ( fst . NE.head $ xs , snd <$> xs)
      entities = (filter (cptIsShown fSpec) . Set.elems . concs) fSpec
      assocsAndAggrs = ( map decl2assocOrAggr
                       . filter (dclIsShown fSpec nodeConcepts)
@@ -151,6 +176,7 @@ instance CDAnalysable FSpec where
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram {cdName  = "technical_"<>name fSpec
+                 ,groups  = []
                  ,classes = allClasses
                  ,assocs  = allAssocs
                  ,aggrs   = []
@@ -162,10 +188,10 @@ tdAnalysis fSpec =
       [ OOClass{ clName = sqlname table
                , clcpt  = primKey table
                , clAtts = case table of
-                            TblSQL{} -> 
+                            TblSQL{} ->
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAtt kernelAtts) kernelAtts
-                                <>map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table) 
+                                <>map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table)
                             BinSQL{}      -> NE.toList $
                               fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
@@ -196,7 +222,7 @@ tdAnalysis fSpec =
    allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
      where
        isAssocBetweenClasses a = let allClassNames = map clName allClasses in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
-       
+
        kernelConcepts = map fst (concatMap cLkpTbl tables)
 
        relsOf t =

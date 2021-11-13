@@ -82,7 +82,7 @@ fSpec2UML env fSpec =
                , " </xmi:Extension>"
                , "</xmi:XMI>" ]
     }
- where classDiag     = cdAnalysis fSpec fSpec
+ where classDiag     = cdAnalysis False fSpec fSpec
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
