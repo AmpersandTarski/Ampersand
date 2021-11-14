@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
@@ -40,7 +41,7 @@ clAnalysis fSpec =
 
 class CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
--- | This function, cdAnalysis, generates a conceptual data model.
+-- ^ This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
 -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
 -- Properties and identities are not shown.
@@ -143,26 +144,37 @@ instance CDAnalysable FSpec where
                    }
 
    where
+     groups' :: [(Text, NonEmpty Class)]
      (groups', classes')
-        | grouped = (samePattern $ rights grps, lefts grps)
+        | grouped = ([ (name pat, case classesOfPattern (Just pat) of
+                                         [] -> fatal "Shouldn't be empty here"
+                                         h:tl -> h :| tl
+                       ) 
+                     | pat::Pattern <- instanceList fSpec
+                     , let cls = classesOfPattern (Just pat)
+                     , not (null cls)
+                     ]
+                    , classesOfPattern Nothing
+                    )  -- (samePattern $ rights grps, lefts grps)
         | otherwise = ( [], map (buildClass fSpec) entities)
-     grps :: [Either Class (Text , Class)]
-     grps = map (byPattern . buildClass fSpec) entities
-       where byPattern :: Class -> Either Class (Text , Class)
-             byPattern cl = case patternOf =<< clcpt cl of
-                              Nothing  -> Left cl
-                              Just pat -> Right (pat, cl)
-             patternOf :: A_Concept -> Maybe Text
-             patternOf cpt = case filter isDefinedBy . concat $ ptcds <$> instanceList fSpec of
-                                     [] -> Nothing
-                                     (h:_) -> Just $ acdfrom h
-                where
-                  isDefinedBy :: AConceptDef -> Bool
-                  isDefinedBy cd = name cd == name cpt
-     samePattern :: [(Text , Class)] -> [(Text, NonEmpty Class)]
-     samePattern = map groupClasses . NE.groupWith fst
-       where groupClasses :: NonEmpty (Text, Class) -> (Text, NonEmpty Class)
-             groupClasses xs = ( fst . NE.head $ xs , snd <$> xs)
+     classesOfPattern :: Maybe Pattern -> [Class]
+     classesOfPattern pat = map snd
+                                . filter ((==) pat . fst)
+                                . map (addPatternInfo . buildClass fSpec)
+                                $ entities
+        where
+             addPatternInfo :: Class -> (Maybe Pattern, Class)
+             addPatternInfo cl = (patternOf cl,cl)
+             patternOf :: Class -> Maybe Pattern
+             patternOf cl =
+                 case clcpt cl of
+                    Nothing -> Nothing
+                    Just cpt -> case [p | p :: Pattern <- instanceList fSpec,
+                                          cdef <- ptcds p,
+                                          name cdef == name cpt
+                                     ] of
+                                  [] -> Nothing
+                                  (h : _) -> Just h
      entities = (filter (cptIsShown fSpec) . Set.elems . concs) fSpec
      assocsAndAggrs = ( map decl2assocOrAggr
                       . filter (dclIsShown fSpec nodeConcepts)

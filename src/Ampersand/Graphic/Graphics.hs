@@ -221,9 +221,9 @@ writePicture pict = do
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
     liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
-  --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
-  --  writeDot DotOutput --Reproduces the input along with layout information.
-    writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
+    writeDot imagePathRelativeToCurrentDir Canon --Pretty-printed Dot output with no layout performed.
+  --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
+  --  writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
