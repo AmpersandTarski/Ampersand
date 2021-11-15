@@ -159,12 +159,13 @@ instance Hashable FSpec where
       `composeHash` name
       `composeHash` (L.sort . Set.toList . fallRules) 
       `composeHash` (L.sort . Set.toList . vrels)
-      `composeHash` (L.sort . Set.toList . allConcepts)
+      `composeHash` (L.sort . fmap conceptAndTType . Set.toList . allConcepts)
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
       where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
         composeHash s fun = s `hashWithSalt` fun fSpec 
-
+        conceptAndTType :: A_Concept -> (A_Concept,TType)
+        conceptAndTType cpt = (cpt,cptTType fSpec cpt)
 instance Language FSpec where
   relsDefdIn = relsDefdIn . originalContext
   udefrules  = udefrules . originalContext
