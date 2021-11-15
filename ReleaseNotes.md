@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
 * [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
   * Removed CLI options: --force-reinstall-framework, --prototype-framework-version, --customizations
   * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
