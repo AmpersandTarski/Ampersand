@@ -221,10 +221,9 @@ writePicture pict = do
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
     liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
-    writeDot imagePathRelativeToCurrentDir Canon --Pretty-printed Dot output with no layout performed.
+    writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
   --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
-  --  writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
-  -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
+    writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where
@@ -240,6 +239,7 @@ writePicture pict = do
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
+          --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
             path <- liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        dropExtension fp
             absPath <- liftIO . makeAbsolute $ path
