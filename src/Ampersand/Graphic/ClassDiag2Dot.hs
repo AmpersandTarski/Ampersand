@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Ampersand.Graphic.ClassDiag2Dot ( 
+module Ampersand.Graphic.ClassDiag2Dot (
   classdiagram2dot
 
-) 
+)
 where
 import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
@@ -25,7 +25,7 @@ classdiagram2dot env cd
  = DotGraph { strictGraph     = False
             , directedGraph   = True
             , graphID         = Nothing
-            , graphStatements = 
+            , graphStatements =
                     DotStmts
                         { attrStmts =  GraphAttrs [ RankDir FromLeft
                                                   , bgColor White]
@@ -35,7 +35,8 @@ classdiagram2dot env cd
                                                    , MinLen 4
                                        ]           ]
                         , subGraphs = group2subgraph <$> groups cd
-                        , nodeStmts = allNodes (allClasses cd) (filter isOtherNode $ nodes cd)
+                        , nodeStmts =     map class2node (allClasses cd) 
+                                      ++  map nonClass2node (filter isOtherNode $ nodes cd)
                         , edgeStmts = map association2edge (assocs cd)  ++
                                       map aggregation2edge (aggrs cd)  ++
                                       concatMap generalization2edges (geners cd)
@@ -46,28 +47,24 @@ classdiagram2dot env cd
        isOtherNode :: Text -> Bool
        isOtherNode n = n `notElem` nodes (allClasses cd)
        group2subgraph :: (Text, NonEmpty Class) -> DotSubGraph Text
-       group2subgraph x = DotSG { 
+       group2subgraph x = DotSG {
                isCluster = True
              , subGraphID = Just . Str . TL.fromStrict $ txt
-             , subGraphStmts = DotStmts 
-                    { attrStmts = [GraphAttrs [Label . StrLabel . TL.fromStrict $ txt]]
+             , subGraphStmts = DotStmts
+                    { attrStmts = [GraphAttrs [ Label . StrLabel . TL.fromStrict $ txt
+                                              , BgColor [WC (X11Color GhostWhite) Nothing]
+                                              ]
+                                  ]
                     , subGraphs = []
-                    , nodeStmts = allNodes2 (toList . snd) x
+                    , nodeStmts = map class2node classesInGroup
+                               ++ map nonClass2node (filter notInClassNodes $ nodes x)
                     , edgeStmts = []
                     }
        }
             where txt = fst x
-       allNodes2 :: CdNode a => (a -> [Class]) -> a -> [DotNode Text]
-       allNodes2 f a = 
-          map class2node (f a) ++
-          map nonClass2node (filter notInClassNodes $ nodes a)
-         where classNodes' = f a
-               notInClassNodes :: Text -> Bool
-               notInClassNodes n = n `notElem` nodes classNodes'
-       allNodes :: [Class] -> [Text] -> [DotNode Text]
-       allNodes cs others =
-          map class2node cs ++
-          map nonClass2node others
+                  notInClassNodes :: Text -> Bool
+                  notInClassNodes n = n `notElem` nodes classesInGroup
+                  classesInGroup = toList . snd $ x
 
        class2node :: Class -> DotNode Text
        class2node cl = DotNode
@@ -199,7 +196,7 @@ classdiagram2dot env cd
                       }
              | (spec,gener)<-splits gen
              , spec /= gener -- required, until issue #896 is fixed.
-             ] 
+             ]
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
                                IsE{} -> [(genspc gen, x ) | x<-NE.toList $ genrhs gen]
@@ -218,7 +215,7 @@ instance CdNode ClassDiag where
                 )       )
 
 instance CdNode (Text, NonEmpty Class) where
- nodes = nodes . toList . snd 
+ nodes = nodes . toList . snd
 instance CdNode Class where
  nodes cl = [clName cl]
 instance CdNode a => CdNode [a] where
