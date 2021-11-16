@@ -159,12 +159,13 @@ instance Hashable FSpec where
       `composeHash` name
       `composeHash` (L.sort . Set.toList . fallRules) 
       `composeHash` (L.sort . Set.toList . vrels)
-      `composeHash` (L.sort . Set.toList . allConcepts)
+      `composeHash` (L.sort . fmap conceptAndTType . Set.toList . allConcepts)
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
       where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
         composeHash s fun = s `hashWithSalt` fun fSpec 
-
+        conceptAndTType :: A_Concept -> (A_Concept,TType)
+        conceptAndTType cpt = (cpt,cptTType fSpec cpt)
 instance Language FSpec where
   relsDefdIn = relsDefdIn . originalContext
   udefrules  = udefrules . originalContext
@@ -322,9 +323,9 @@ data SqlAttribute = Att { attName ::    Text
                         , attExpr ::    Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
                         , attType ::    TType
                         , attUse ::     SqlAttributeUsage
-                        , attNull ::    Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
-                        , attDBNull ::  Bool           -- ^ True for all fields, to disable strict checking by the database itself. 
-                        , attUniq ::    Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+                        , attNull ::    Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for documentation of DB-implementation)
+                        , attDBNull ::  Bool           -- ^ True for all fields (except primary key column) because we check TOT/SUR constraints with invariant rules, not by enforcing this with the database structure 
+                        , attUniq ::    Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for documentation of DB-implementation)
                         , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)
 instance Named SqlAttribute where

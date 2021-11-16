@@ -1,19 +1,39 @@
 ﻿# Release notes of Ampersand
 
-## v4.4.0 ( 10 September August 2021)
+## Unreleased changes
+* [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
+* [Issue #941](https://github.com/AmpersandTarski/Ampersand/issues/941) Fix and document purpose and difference of attNull and attDBNull aspects of SqlAttribute
+* [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
+  * Removed CLI options: --force-reinstall-framework, --prototype-framework-version, --customizations
+  * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
+  * Added CLI option: --(no-)backend to specify if the compiler must generate backend config files (default enabled)
+  * Added CLI option: --(no-)check-compiler-version to specify if compiler must check prototype framework compatibility (default enabled)
 
-* PR #1201 changes to Transformers.hs for the new RAP release.
+## v4.5.0 (11 November 2021)
+* [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189) Replace the previous solution. Now the defaults can be given in the `RELATION` statement.
+
+## v4.4.3 (17 October 2021)
+New CI workflow for releases to be pushed automatically to DockerHub with semver. Image is needed by prototype framework in Docker build.
+
+## v4.4.2 (16 October 2021)
+* Fix CI script for automatic build push to Docker Hub. Note! Release tags should now have format 'vX.Y.Z' instead of 'Ampersand-vX.Y.Z' for semver pattern to work
+* Merge docker build into existing CI script. Prevent duplicate jobs, trigger on pull_request not needed.
+
+## v4.4.1 ( 10 October 2021)
+* [Issue #1212](https://github.com/AmpersandTarski/Ampersand/issues/1212) Solved issue with trailing whitespace.
+* [PR #1210](https://github.com/AmpersandTarski/Ampersand/pull/1210) Partial implementation for [Issue #1189](https://github.com/AmpersandTarski/Ampersand/issues/1189). The prototype still has to be adapted, so this issue isn't closed yet.
+
+## v4.4.0 ( 10 September August 2021)
+* [PR #1201](https://github.com/AmpersandTarski/Ampersand/pull/1201) Changes to Transformers.hs for the new RAP release.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Duplicate labels in VIEW will now result in error, not warning. 
 * [Issue #1204](https://github.com/AmpersandTarski/Ampersand/issues/1204) Introduction of ENFORCE statement.
 
 ## v4.3.0 ( 13 August 2021)
-
 * [Issue #1194](https://github.com/AmpersandTarski/Ampersand/issues/1194) Ampersand will output the options in debug mode.
 * [Issue RAP #123](https://github.com/AmpersandTarski/RAP/issues/123) To enhance the Atlas in RAP to an acceptable minimal level, some changes in Ampersand are required.
 * [Issue #1196](https://github.com/AmpersandTarski/Ampersand/issues/1196) Allow multiple files on the command line. The second to last files are handled as if they were INCLUDEd in the first one.
 
 ## v4.2.0 ( 16 July 2021)
-
 * In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
 * [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
@@ -21,7 +41,6 @@
 * Improvements to the way we test the build (CI/CD).
 
 ## v4.1.5 ( 2 June 2021)
-
 * Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might affect tables in the documentation that is generated with the `documentation` command.
 * Add switch `--numeric-version`
 * Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration. 

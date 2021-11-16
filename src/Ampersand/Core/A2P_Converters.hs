@@ -103,11 +103,20 @@ aRelation2pRelation dcl =
  P_Relation { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = aProps2Pprops $ decprps dcl
+       , dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
        , dec_Mean   = map aMeaning2pMeaning (decMean dcl)
        , pos   = decfpos dcl
        }
 
+aRelDefaults2pRelDefaults :: ARelDefaults -> [PRelationDefault]
+aRelDefaults2pRelDefaults = map aRelDefaults2pRelDefault . toList
+
+aRelDefaults2pRelDefault :: ARelDefault -> PRelationDefault
+aRelDefaults2pRelDefault x = case x of
+    ARelDefaultAtom st vals -> PDefAtom st (fmap aAtomValue2pAtomValue vals)
+    ARelDefaultEvalPHP st txt -> PDefEvalPHP st txt
+    
 aProps2Pprops :: AProps -> Set PProp
 aProps2Pprops aps
   |    P_Sym `elem` xs
@@ -119,17 +128,13 @@ aProps2Pprops aps
      aProp2pProp p = case p of
        Uni -> P_Uni
        Inj -> P_Inj
-       Sur x -> P_Sur (aPropDef2pPropDef <$> x)
-       Tot x -> P_Tot (aPropDef2pPropDef <$> x)
+       Sur -> P_Sur
+       Tot -> P_Tot
        Sym -> P_Sym
        Asy -> P_Asy
        Trn -> P_Trn
        Rfx -> P_Rfx
        Irf -> P_Irf
-     aPropDef2pPropDef :: APropDefault -> PPropDefault
-     aPropDef2pPropDef x = case x of 
-        ADefAtom val    -> PDefAtom $ aAtomValue2pAtomValue val
-        ADefEvalPHP txt -> PDefEvalPHP txt
 aRelation2pNamedRel :: Relation -> P_NamedRel
 aRelation2pNamedRel dcl = PNamedRel
   { pos      = decfpos dcl

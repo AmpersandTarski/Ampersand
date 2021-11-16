@@ -135,8 +135,14 @@ instance Pretty P_Pattern where
           <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
-    pretty (P_Relation nm sign prps pragma mean _) =
-        text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
+    pretty (P_Relation nm sign prps dflts pragma mean _) =
+        text "RELATION"
+        <+> (text . T.unpack) nm <~> sign
+        <+> props
+        <+> if null dflts then empty else text "DEFAULT"
+        <+\> (hsep . map pretty) dflts
+        <+\> pragmas
+        <+\> prettyhsep mean
         where props | null prps                       = empty
                     | otherwise                       = pretty $ Set.toList prps
               pragmas | T.null (T.concat pragma) = empty
@@ -377,18 +383,15 @@ instance Pretty PandocFormat where
 
 instance Pretty PProp where
     pretty p = case p of
-      P_Sur m_ppd -> text "SUR" <> doShow m_ppd
-      P_Tot m_ppd -> text "SUR" <> doShow m_ppd
+      P_Sur -> text "SUR"
+      P_Tot -> text "SUR"
       _ -> text . map toUpper . show $ p
-      where
-        doShow :: Maybe PPropDefault -> Doc
-        doShow x = case x of  
-          Nothing -> mempty
-          Just ppd -> text " "<+> pretty ppd
-instance Pretty PPropDefault where
+
+instance Pretty PRelationDefault where
     pretty x = case x of
-      PDefAtom pav -> text "VALUE "<+>pretty pav
-      PDefEvalPHP txt -> text "EVALPHP " <+> text (show txt)
+      PDefAtom sOrT pav -> pretty sOrT <+> text "VALUE " <+> (cat . punctuate (text ", ") . toList $ fmap pretty pav)
+      PDefEvalPHP sOrT txt -> pretty sOrT <+> text "EVALPHP " <+> text (show txt)
+
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 
                        <~> text "," <+> pretty r 

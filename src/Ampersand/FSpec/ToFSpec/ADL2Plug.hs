@@ -96,8 +96,8 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                                                 && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                                              then PrimaryKey cpt  
                                              else PlainAttr
-                              , attNull    = not . isTot $ expr
-                              , attDBNull  = cpt /= tableKey 
+                              , attNull    = cpt /= tableKey -- column for specializations can be NULL, but not the first column (tableKey)
+                              , attDBNull  = cpt /= tableKey -- column for specializations can be NULL, but not the first column (tableKey)
                               , attUniq    = True
                               , attFlipped = False
                               }
@@ -113,7 +113,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                                           then ForeignKey (target dclAttExpression)
                                           else PlainAttr
                               , attNull = not . isTot $ keyToTargetExpr
-                              , attDBNull = True -- to prevent database errors. Ampersand checks for itself. 
+                              , attDBNull = True -- always allow NULL values in the table structure. We use the invariant rules to check if column is mandatory
                               , attUniq = isInj keyToTargetExpr
                               , attFlipped = isStoredFlipped dcl
                               }
@@ -169,8 +169,8 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                     , attUse  = if suitableAsKey . repr . source $ domExpr
                                 then ForeignKey (source domExpr)
                                 else PlainAttr
-                    , attNull = False  -- false for link tables. This was 'isTot codExpr' (was this a mistake?)
-                    , attDBNull = False
+                    , attNull = False       -- false for link tables
+                    , attDBNull = False     -- false for link tables
                     , attUniq = isUni codExpr
                     , attFlipped = isStoredFlipped dcl
                     }
@@ -180,8 +180,8 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                     , attUse  = if suitableAsKey . repr . target $ codExpr
                                 then ForeignKey (target codExpr)
                                 else PlainAttr
-                    , attNull = isSur codExpr
-                    , attDBNull = False  -- false for link tables
+                    , attNull = False       -- false for link tables
+                    , attDBNull = False     -- false for link tables
                     , attUniq = isInj codExpr
                     , attFlipped = isStoredFlipped dcl
                     }

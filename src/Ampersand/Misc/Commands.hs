@@ -124,7 +124,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   (mkAction proof)
                   proofOptsParser
       addCommand'' Proto
-                  "Generate a prototype from your specification."
+                  "Generate prototype files from your specification. To be used with the prototype framework."
                   (mkAction proto)
                   protoOptsParser
       addCommand'' Export

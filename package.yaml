@@ -1,5 +1,5 @@
 name:           ampersand
-version:        4.4.0
+version:        4.5.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -64,6 +64,7 @@ dependencies:
       - QuickCheck == 2.14.2
       - quickcheck-instances
       - rio == 0.1.*
+      - salve == 1.*
       - simple-sql-parser == 0.4.4
       - split == 0.2.*
       - SpreadsheetML == 0.1.*
@@ -206,6 +207,7 @@ custom-setup:
       - process == 1.6.*
       - rio == 0.1.*
       - time == 1.9.3
+      - salve == 1.0.11
       - zip-archive >= 0.4.1
 
 executables:

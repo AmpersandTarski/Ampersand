@@ -1,4 +1,4 @@
-﻿CONTEXT Diamond IN ENGLISH -- Issue233
+CONTEXT Diamond IN ENGLISH -- Issue233
 -- This script checks whether or not the diamond operator is functional.
 
 sum :: Sum * Integer [UNI]

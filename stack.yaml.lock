@@ -53,6 +53,13 @@ packages:
       sha256: 504d63293d50f9949a1130abcaf1885f10df61a658cba854fb704521ba797c91
   original:
     hackage: yaml-config-0.4.0@sha256:575103d9fa1ef074a2b419256babaae7be5f5257f37adf3ed2601052415b2d83,1814
+- completed:
+    hackage: salve-1.0.11@sha256:4a40542345aece926e9571621459e28f956e30da22163571c6d3ab5a934e07b7,1050
+    pantry-tree:
+      size: 350
+      sha256: 67b0215716ae7652da96f6846de5c845787a4e3e8cb90da8cd523e3a81c4b66d
+  original:
+    hackage: salve-1.0.11
 snapshots:
 - completed:
     size: 567037

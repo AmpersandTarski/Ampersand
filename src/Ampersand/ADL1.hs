@@ -20,7 +20,7 @@ import Ampersand.Core.ParseTree (
          , SrcOrTgt(..)
          , P_Rule(..),Role(..)
          , PProp(..)
-         , PPropDefault(..)
+         , PRelationDefault(..)
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
@@ -56,7 +56,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
          , AProp(..), AProps
-         , APropDefault(..)
+         , ARelDefault(..), ARelDefaults
          , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
          , Representation(..)
