@@ -1,6 +1,13 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
+* [Issue #941](https://github.com/AmpersandTarski/Ampersand/issues/941) Fix and document purpose and difference of attNull and attDBNull aspects of SqlAttribute
+* [Issue #1093](https://github.com/AmpersandTarski/Ampersand/issues/1093) Don't download prototype framework from github anymore. The framework must be deployed first via another method (manual, docker or composer+packagist)
+  * Removed CLI options: --force-reinstall-framework, --prototype-framework-version, --customizations
+  * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
+  * Added CLI option: --(no-)backend to specify if the compiler must generate backend config files (default enabled)
+  * Added CLI option: --(no-)check-compiler-version to specify if compiler must check prototype framework compatibility (default enabled)
 
 * [Issue #1231](https://github.com/AmpersandTarski/Ampersand/issues/1231) Enable the generation of a logical data model (graphic) where the entities are grouped per pattern.
 
