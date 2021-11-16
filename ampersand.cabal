@@ -1,8 +1,10 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 37a7aad8d5e8eede7eb2315567bec22fa826ee317c9a5df985c30978c4eb7931
 
 name:           ampersand
 version:        4.5.0
@@ -17,9 +19,8 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
+tested-with:    GHC == 8.10.4
 build-type:     Custom
-tested-with:
-    GHC == 8.10.4
 extra-source-files:
     LICENSE
     ReleaseNotes.md
@@ -214,6 +215,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/ISAtest/Strange.adl
     testing/Travis/testcases/prototype/ISAtest/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/IDENT-test-fail.adl
+    testing/Travis/testcases/prototype/shouldFail/InvariantViolations/Issue708.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/showViolationMessages.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
@@ -562,9 +564,7 @@ library
       Ampersand.Prototype.StaticFiles_Generated
   hs-source-dirs:
       src/
-  default-extensions:
-      NoImplicitPrelude
-      OverloadedStrings
+  default-extensions: NoImplicitPrelude OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints
   build-depends:
       HStringTemplate ==0.8.*
@@ -626,9 +626,7 @@ executable ampPreProc
       Paths_ampersand
   hs-source-dirs:
       app/AmpPreProc
-  default-extensions:
-      NoImplicitPrelude
-      OverloadedStrings
+  default-extensions: NoImplicitPrelude OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*
@@ -693,9 +691,7 @@ executable ampersand
       Paths_ampersand
   hs-source-dirs:
       app/Ampersand
-  default-extensions:
-      NoImplicitPrelude
-      OverloadedStrings
+  default-extensions: NoImplicitPrelude OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
@@ -760,9 +756,7 @@ test-suite ampersand-test
       Paths_ampersand
   hs-source-dirs:
       app/Test
-  default-extensions:
-      NoImplicitPrelude
-      OverloadedStrings
+  default-extensions: NoImplicitPrelude OverloadedStrings
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*
