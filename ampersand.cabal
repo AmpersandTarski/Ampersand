@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        4.4.3
+version:        4.5.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -185,11 +185,13 @@ extra-source-files:
     testing/Travis/testcases/Misc/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
+    testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue980.adl
     testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1014.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1183.adl
+    testing/Travis/testcases/Parsing/shouldSucceed/Issue1189.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue899b.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue960.adl
     testing/Travis/testcases/Parsing/shouldSucceed/testinfo.yaml
@@ -403,6 +405,7 @@ custom-setup
     , filepath ==1.4.*
     , process ==1.6.*
     , rio ==0.1.*
+    , salve ==1.0.11
     , time ==1.9.3
     , zip-archive >=0.4.1
 
@@ -593,6 +596,7 @@ library
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -657,6 +661,7 @@ executable ampPreProc
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -724,6 +729,7 @@ executable ampersand
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*
@@ -789,6 +795,7 @@ test-suite ampersand-test
     , process ==1.6.*
     , quickcheck-instances
     , rio ==0.1.*
+    , salve ==1.*
     , simple-sql-parser ==0.4.4
     , split ==0.2.*
     , terminal-size ==0.3.*

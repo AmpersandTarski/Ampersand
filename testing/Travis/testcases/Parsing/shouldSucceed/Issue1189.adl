@@ -1,0 +1,7 @@
+CONTEXT Issue1189
+
+RELATION r[A * B] DEFAULT TGT EVALPHP "getdate()" SRC VALUE 10, 20
+REPRESENT A TYPE INTEGER
+REPRESENT B TYPE DATE --beware, the PHP function is not validated by the Ampersand typechecker.
+ENDCONTEXT
+

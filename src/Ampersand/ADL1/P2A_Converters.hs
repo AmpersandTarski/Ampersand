@@ -1107,11 +1107,13 @@ pDecl2aDecl ::
   -> P_Relation -> Guarded Relation
 pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd
  = do checkEndoProps
-      propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
+      --propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
+      dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd
       return Relation
         { decnm   = dec_nm pd
         , decsgn  = decSign
-        , decprps = Set.fromList . concat $ propLists
+        , decprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd
+        , decDefaults = Set.fromList dflts
         , decprL  = prL
         , decprM  = prM
         , decprR  = prR
@@ -1123,28 +1125,26 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd
         }
 
  where
+  pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
+  pReldefault2aReldefaults x = case x of
+      PDefAtom st vals -> ARelDefaultAtom st <$> 
+                            traverse (pAtomValue2aAtomValue typ (case st of 
+                                                         Src -> source decSign
+                                                         Tgt -> target decSign)) vals
+      PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
   (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
-  pProp2aProps :: PProp -> Guarded [AProp]
+  pProp2aProps :: PProp -> [AProp]
   pProp2aProps p = case p of
-    P_Uni   -> pure [Uni ]
-    P_Inj   -> pure [Inj ]
-    P_Sur x -> f Sur x
-    P_Tot x -> f Tot x
-    P_Sym   -> pure [Sym ]
-    P_Asy   -> pure [Asy ]
-    P_Trn   -> pure [Trn ]
-    P_Rfx   -> pure [Rfx ]
-    P_Irf   -> pure [Irf ]
-    P_Prop  -> pure [Sym, Asy]
-    where f :: (Maybe APropDefault -> AProp) -> Maybe PPropDefault -> Guarded [AProp]
-          f surOrTot x =
-              case x of
-                Nothing -> pure [surOrTot Nothing]
-                Just d -> (: []) . surOrTot . Just <$> ppropDef2apropDef d
-          ppropDef2apropDef :: PPropDefault -> Guarded APropDefault
-          ppropDef2apropDef x = case x of
-            PDefAtom val -> ADefAtom <$> pAtomValue2aAtomValue typ (target decSign) val
-            PDefEvalPHP txt -> pure $ ADefEvalPHP txt
+    P_Uni  -> [Uni]
+    P_Inj  -> [Inj]
+    P_Sur  -> [Sur]
+    P_Tot  -> [Tot]
+    P_Sym  -> [Sym]
+    P_Asy  -> [Asy]
+    P_Trn  -> [Trn]
+    P_Rfx  -> [Rfx]
+    P_Irf  -> [Irf]
+    P_Prop -> [Sym, Asy]
 
   decSign = pSign2aSign cptMap (dec_sign pd)
   checkEndoProps :: Guarded ()
