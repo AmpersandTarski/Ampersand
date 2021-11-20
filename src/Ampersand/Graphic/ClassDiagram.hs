@@ -10,12 +10,13 @@ import Ampersand.ADL1
      )
 import qualified RIO.Text as T
 
-data ClassDiag = OOclassdiagram {cdName :: Text
-                                ,classes :: [Class]           --
-                                ,assocs :: [Association]      --
-                                ,aggrs ::  [Aggregation]      --
-                                ,geners :: [Generalization]   --
-                                ,ooCpts :: [A_Concept]}
+data ClassDiag = OOclassdiagram {cdName :: !Text
+                                ,groups :: ![(Text, NonEmpty Class)] -- ^ name of a subgraph and a list of classes in that subgraph
+                                ,classes :: ![Class]           -- ^ list of classes that do not go in a subgraph
+                                ,assocs :: ![Association]      --
+                                ,aggrs ::  ![Aggregation]      --
+                                ,geners :: ![Generalization]   --
+                                ,ooCpts :: ![A_Concept]}
                          deriving Show
 instance Named ClassDiag where
    name = cdName
@@ -24,13 +25,13 @@ data Class = OOClass  { clName :: Text          -- ^ name of the class
                       , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
                       , clAtts :: [CdAttribute]   -- ^ Attributes of the class
                       , clMths :: [Method]        -- ^ Methods of the class
-                      } deriving Show
+                      } deriving (Show, Eq)
 instance Named Class where
    name = clName
 data CdAttribute    = OOAttr   { attNm :: Text            -- ^ name of the attribute
                                , attTyp :: Text           -- ^ type of the attribute (Concept name or built-in type)
                                , attOptional :: Bool        -- ^ says whether the attribute is optional
-                               } deriving Show
+                               } deriving (Show, Eq)
 instance Named CdAttribute where
    name = attNm
 data MinValue = MinZero | MinOne deriving (Show, Eq)
@@ -69,6 +70,7 @@ data Method         = OOMethodC      Text             -- name of this method, wh
                     | OOMethod       Text             -- name of this method, which deletes an object (using nothing but a handle).
                                      [CdAttribute]      -- list of parameters: attribute names and types
                                      Text             -- result: a type
+          deriving Eq
 
 instance Show Method where
   show (OOMethodC nm cs)  = T.unpack $ nm<>"("<>T.intercalate "," [ n | OOAttr n _ _<-cs]<>"):handle"

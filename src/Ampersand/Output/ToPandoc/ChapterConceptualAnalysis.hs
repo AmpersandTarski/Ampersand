@@ -95,7 +95,7 @@ chpConceptualAnalysis env lev fSpec
     where
       themeClasses :: [Class]
       themeClasses = case patOfTheme themeContent of
-                       Just pat -> classes (cdAnalysis fSpec pat)
+                       Just pat -> classes (cdAnalysis False fSpec pat)
                        Nothing  -> []
 
       caEntity :: Class -> (Blocks, [Relation])

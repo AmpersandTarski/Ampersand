@@ -66,7 +66,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
     <> technicalDataModelBlocks
     <> crudMatrixSection
   thePictures
-    =  [classificationPicture, logicalDataModelPicture, technicalDataModelPicture]
+    =  [classificationPicture, logicalDataModelPictureGroupedByPattern, logicalDataModelPicture, technicalDataModelPicture]
   classificationPicture = makePicture env fSpec PTClassDiagram
 
 
@@ -103,10 +103,11 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
        <> conceptTables
        <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
 
-  logicalDataModelPicture = makePicture env fSpec PTLogicalDM
-
+  logicalDataModelPicture = ldm False
+  logicalDataModelPictureGroupedByPattern = ldm True
+  ldm grouped = makePicture env fSpec (PTLogicalDM grouped)
   oocd :: ClassDiag
-  oocd = cdAnalysis fSpec fSpec
+  oocd = cdAnalysis False fSpec fSpec
 
   conceptTables :: Blocks  -- This produces two separate tables:
                            -- The first table contains the concepts that have their own table in the logical data model.

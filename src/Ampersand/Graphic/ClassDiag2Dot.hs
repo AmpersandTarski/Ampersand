@@ -1,7 +1,8 @@
-module Ampersand.Graphic.ClassDiag2Dot ( 
+{-# LANGUAGE FlexibleInstances #-}
+module Ampersand.Graphic.ClassDiag2Dot (
   classdiagram2dot
 
-) 
+)
 where
 import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
@@ -16,6 +17,7 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import qualified RIO.Text.Lazy as TL
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph Text
@@ -23,7 +25,7 @@ classdiagram2dot env cd
  = DotGraph { strictGraph     = False
             , directedGraph   = True
             , graphID         = Nothing
-            , graphStatements = 
+            , graphStatements =
                     DotStmts
                         { attrStmts =  GraphAttrs [ RankDir FromLeft
                                                   , bgColor White]
@@ -32,20 +34,37 @@ classdiagram2dot env cd
                                        [EdgeAttrs  [ FontSize 11
                                                    , MinLen 4
                                        ]           ]
-                        , subGraphs = []
-                        , nodeStmts = allNodes (classes cd) [n | n<- nodes cd
-                                                            , n `notElem` nodes (classes cd)
-                                                            ]
+                        , subGraphs = group2subgraph <$> groups cd
+                        , nodeStmts =     map class2node (allClasses cd) 
+                                      ++  map nonClass2node (filter isOtherNode $ nodes cd)
                         , edgeStmts = map association2edge (assocs cd)  ++
                                       map aggregation2edge (aggrs cd)  ++
                                       concatMap generalization2edges (geners cd)
                         }
             }
      where
-       allNodes :: [Class] -> [Text] -> [DotNode Text]
-       allNodes cs others =
-          map class2node cs ++
-          map nonClass2node others
+       allClasses x = classes x ++ (concatMap (toList . snd) . groups $ x)
+       isOtherNode :: Text -> Bool
+       isOtherNode n = n `notElem` nodes (allClasses cd)
+       group2subgraph :: (Text, NonEmpty Class) -> DotSubGraph Text
+       group2subgraph x = DotSG {
+               isCluster = True
+             , subGraphID = Just . Str . TL.fromStrict $ txt
+             , subGraphStmts = DotStmts
+                    { attrStmts = [GraphAttrs [ Label . StrLabel . TL.fromStrict $ txt
+                                              , BgColor [WC (X11Color GhostWhite) Nothing]
+                                              ]
+                                  ]
+                    , subGraphs = []
+                    , nodeStmts = map class2node classesInGroup
+                               ++ map nonClass2node (filter notInClassNodes $ nodes x)
+                    , edgeStmts = []
+                    }
+       }
+            where txt = fst x
+                  notInClassNodes :: Text -> Bool
+                  notInClassNodes n = n `notElem` nodes classesInGroup
+                  classesInGroup = toList . snd $ x
 
        class2node :: Class -> DotNode Text
        class2node cl = DotNode
@@ -177,7 +196,7 @@ classdiagram2dot env cd
                       }
              | (spec,gener)<-splits gen
              , spec /= gener -- required, until issue #896 is fixed.
-             ] 
+             ]
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
                                IsE{} -> [(genspc gen, x ) | x<-NE.toList $ genrhs gen]
@@ -189,11 +208,14 @@ class CdNode a where
 
 instance CdNode ClassDiag where
  nodes cd = L.nub (concat (  map nodes (classes cd)
+                         ++map nodes (groups  cd)
                          ++map nodes (assocs  cd)
                          ++map nodes (aggrs   cd)
                          ++map nodes (geners  cd)
                 )       )
 
+instance CdNode (Text, NonEmpty Class) where
+ nodes = nodes . toList . snd
 instance CdNode Class where
  nodes cl = [clName cl]
 instance CdNode a => CdNode [a] where

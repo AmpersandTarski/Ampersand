@@ -45,6 +45,7 @@
       "eamodio.gitlens",
       "me-dutour-mathieu.vscode-github-actions",
       "redhat.vscode-yaml",
-      "ampersandtarski.language-ampersand"
+      "ampersandtarski.language-ampersand",
+      "mhutchie.git-graph"
   ]
 }

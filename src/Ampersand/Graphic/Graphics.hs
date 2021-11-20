@@ -29,7 +29,7 @@ data PictureTyp = PTClassDiagram           -- classification model of the entire
                 | PTDeclaredInPat Pattern  -- conceptual diagram of relations and gens within one pattern
                 | PTCDConcept A_Concept    -- conceptual diagram comprising all rules in which c is used
                 | PTCDRule Rule            -- conceptual diagram of the rule in isolation of any context.
-                | PTLogicalDM              -- logical data model of the entire script
+                | PTLogicalDM !Bool         -- logical data model of the entire script
                 | PTTechnicalDM            -- technical data model of the entire script
 data DotContent = 
      ClassDiagram ClassDiag
@@ -47,7 +47,7 @@ instance Named PictureTyp where -- for displaying a fatal error
   name (PTDeclaredInPat pat) = name pat
   name (PTCDConcept c)       = name c
   name (PTCDRule r)          = name r
-  name PTLogicalDM           = "PTLogicalDM"
+  name (PTLogicalDM grouped)  = "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
   name PTTechnicalDM         = "PTTechnicalDM"
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
@@ -62,9 +62,9 @@ makePicture env fSpec pr =
                                       English -> "Classification of " <> name fSpec
                                       Dutch   -> "Classificatie van " <> name fSpec
                                }
-   PTLogicalDM         -> Pict { pType = pr
+   PTLogicalDM grouped -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ClassDiagram $ cdAnalysis fSpec fSpec
+                               , dotContent = ClassDiagram $ cdAnalysis grouped fSpec fSpec
                                , dotProgName = Dot
                                , caption =
                                    case outputLang' of
@@ -91,7 +91,7 @@ makePicture env fSpec pr =
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotContent = ClassDiagram $ cdAnalysis False fSpec pat
                                , dotProgName = Dot
                                , caption =
                                    case outputLang' of
@@ -100,7 +100,7 @@ makePicture env fSpec pr =
                                }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotContent = ClassDiagram $ cdAnalysis False fSpec pat
                                , dotProgName = Dot
                                , caption =
                                    case outputLang' of
@@ -126,7 +126,7 @@ makePicture env fSpec pr =
             PTDeclaredInPat{}-> "0.6"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
-            PTLogicalDM    -> "1.2"
+            PTLogicalDM{}    -> "1.2"
             PTTechnicalDM  -> "1.2"
    graphVizCmdForConceptualGraph = 
        -- Dot gives bad results, but there seems no way to fiddle with the length of edges. 
@@ -140,7 +140,7 @@ pictureFileName :: PictureTyp -> FilePath
 pictureFileName pr = toBaseFileName $
      case pr of
       PTClassDiagram      -> "Classification"
-      PTLogicalDM         -> "LogicalDataModel"
+      PTLogicalDM grouped -> "LogicalDataModel"<>if grouped then "_Grouped_By_Pattern" else mempty
       PTTechnicalDM       -> "TechnicalDataModel"
       PTCDConcept cpt     -> "CDConcept"<>urlEncodedName (name cpt)
       PTDeclaredInPat pat -> "RelationsInPattern"<>urlEncodedName (name pat)
@@ -221,10 +221,9 @@ writePicture pict = do
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
     liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
-  --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
-  --  writeDot DotOutput --Reproduces the input along with layout information.
+    writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
+  --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
     writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
-  -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where
@@ -240,6 +239,7 @@ writePicture pict = do
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
+          --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
             path <- liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        dropExtension fp
             absPath <- liftIO . makeAbsolute $ path
