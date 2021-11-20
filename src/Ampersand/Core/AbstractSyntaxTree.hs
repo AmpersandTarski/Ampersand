@@ -433,23 +433,22 @@ instance Hashable AClassify where
                          IsE{} -> NE.toList . NE.sort $ genrhs g 
                        )
 
-data Interface = Ifc
-  { -- | is this interface of type API?
-    ifcIsAPI :: !Bool,
-    -- | all roles for which an interface is available (empty means: available for all roles)
-    ifcname :: !Text,
-    -- | all roles for which an interface is available (empty means: available for all roles)
-    ifcRoles :: ![Role],
-    -- | NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-    ifcObj :: !ObjectDef,
-    -- | All conjuncts that must be evaluated after a transaction
-    ifcConjuncts :: ![Conjunct],
-    -- | The position in the file (filename, line- and column number)
-    ifcPos :: !Origin,
-    -- | The purpose of the interface
-    ifcPurpose :: !Text
-  }
-  deriving (Show)
+data Interface = Ifc 
+    { ifcIsAPI :: !Bool
+     -- ^ is this interface of type API?
+    , ifcname :: !Text
+     -- ^ The name of the interface
+    , ifcRoles :: ![Role]
+     -- ^ All roles for which an interface is available (empty means: available for all roles)
+    , ifcObj :: !ObjectDef
+     -- ^ NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
+    , ifcConjuncts :: ![Conjunct]
+     -- ^ All conjuncts that must be evaluated after a transaction
+    , ifcPos :: !Origin
+     -- ^ The position in the file (filename, line- and column number)
+    , ifcPurpose :: !Text
+     -- ^ The purpose of the interface
+  } deriving (Show)
 
 
 instance Eq Interface where
@@ -967,14 +966,14 @@ instance HasSignature Signature where
 instance Flippable Signature where
  flp (Sign s t) = Sign t s
 
-class HasSignature rel where
-  source, target :: rel -> A_Concept      -- e.g. Relation -> Concept
-  source x        = source (sign x)
-  target x        = target (sign x)
-  sign :: rel -> Signature
-  isEndo :: rel  -> Bool
-  isEndo s        = source s == target s
-
+class HasSignature a where
+  source, target :: a -> A_Concept
+  source x = source (sign x)
+  target x = target (sign x)
+  sign :: a -> Signature
+  isEndo :: a  -> Bool
+  isEndo s = source s == target s
+--  {-# MINIMAL sign #-}
 
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.

@@ -1,4 +1,5 @@
-﻿{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
@@ -8,16 +9,90 @@ module Ampersand.Prototype.ProtoUtil
          , addSlashes
          , indentBlock
          , phpIndent,showPhpStr,escapePhpStr
+         , writeFile
+         , FEInterface(..), FEAtomicOrBox(..), FEObject(..)
+         , FEExpression(..), toExpr, fromExpr
+         , doesTemplateExist
          ) where
  
 import           Ampersand.Basics
 import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Misc.HasClasses
+import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
 
+-- | data object that contains information about an interface, from the
+--   perspective of the generated frontend
+data FEInterface = FEInterface 
+  -- BEWARE: the names `ifcName` and `ifcLabel` must not be changed, because they are used
+  -- in at lease one template, called routeProvider.config.js. If these names are not present,
+  -- the call to renderTemplate will hang 
+   { ifcName :: Text 
+   , ifcLabel :: Text
+   , ifcExp :: FEExpression
+   , feiRoles :: [Role]
+   , feiObj :: FEObject
+   } deriving (Typeable, Data)
+
+data FEObject =
+    FEObjE { objName     :: Text
+           , objExp      :: FEExpression
+           , objCrudC    :: Bool
+           , objCrudR    :: Bool
+           , objCrudU    :: Bool
+           , objCrudD    :: Bool
+           , exprIsUni   :: Bool
+           , exprIsTot   :: Bool
+           , relIsProp   :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
+           , exprIsIdent :: Bool
+           , atomicOrBox :: FEAtomicOrBox
+           }
+  | FEObjT { objName     :: Text
+           , objTxt      :: Text
+           } deriving (Show, Data, Typeable )
+
+-- | distinguish FEExpression from Expression, to avoid accidents. The source/target
+--   of a FEExpression is not allways the same as the source/target of the Expression. 
+data FEExpression = FEExpression 
+    { feExpr :: !Expression 
+    , feSign :: !Signature
+    , femRelation :: !(Maybe Relation)
+    }
+  deriving Data
+instance HasSignature FEExpression where
+  sign = feSign
+   
+instance Show FEExpression where
+  show = show . feExpr
+toExpr :: FEExpression -> Expression
+toExpr = feExpr
+fromExpr :: Expression -> FEExpression
+fromExpr expr = 
+  FEExpression
+    { feExpr = expr
+    , feSign = Sign src tgt
+    , femRelation = mRel}
+  where (src, mRel, tgt) = case getExpressionRelation expr of
+                Nothing                          -> (source expr, Nothing  , target expr)
+                Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
+                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+
+
+-- | The part to render at the 'end' of the expression
+data FEAtomicOrBox = 
+    FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
+                                         , [Text] -- the attributes of the template
+                                         )
+             }
+  | FEBox    { boxHeader :: BoxHeader
+             , boxSubObjs :: [FEObject] 
+             } 
+    deriving (Show, Data,Typeable)
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
                          FilePath -> Text -> RIO env ()
@@ -28,6 +103,11 @@ writePrototypeAppFile relFilePath content = do
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   writeFileUtf8 filePath content
      
+writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
+writeFile filePath content = do
+  logDebug $ "  Generating "<>display (T.pack filePath) 
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  BL.writeFile filePath content
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -142,3 +222,9 @@ escapePhpStr txt =
      Just ('\\',s) -> "\\\\" <> escapePhpStr s
      Just (c,s)    -> T.cons c $ escapePhpStr s
 
+-- TODO: better abstraction for specific template and fallback to default
+doesTemplateExist :: (HasDirPrototype env) => FilePath -> RIO env Bool
+doesTemplateExist templatePath = do
+  env <- ask
+  let absPath = getTemplateDir env </> templatePath
+  liftIO $ doesFileExist absPath

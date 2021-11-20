@@ -10,14 +10,18 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
+import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.GenFrontend
+import           Ampersand.Prototype.GenFramework
 import           Ampersand.Types.Config
+import qualified RIO.Text as T
 import           System.Directory
+import           System.FilePath
+
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasFSpecGenOpts env, HasProtoOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasCheckCompilerVersion env, HasGenerateMetamodel env)
+proto :: (Show env, HasRunner env, HasFSpecGenOpts env, HasZwolleVersion env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env)
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
@@ -36,3 +40,14 @@ proto fSpec = do
     if generateMetamodel --TODO @stefjoosten, Why should this be generated at the proto command??
       then do doGenMetaModel fSpec
       else do logDebug "  Skipping generating metamodel.adl"
+
+doGenMetaModel :: (HasLogFunc env, HasDirPrototype env) => FSpec -> RIO env()
+doGenMetaModel fSpec = do
+  env <- ask
+  logInfo "Generating metamodel ..."
+  let dir = getMetamodelDir env
+      filepath = dir </> "metamodel.adl"
+  logDebug $ "  Generating "<>display (T.pack filepath) 
+  liftIO $ createDirectoryIfMissing True dir
+  writeFileUtf8 filepath (showA (originalContext fSpec))
+

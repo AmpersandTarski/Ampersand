@@ -3,6 +3,8 @@ cabal-version: 2.0
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 4b27a9ba6b432d561dc818be2ed86859f42ed8da7bb77cbe1d0d4f209c69dd01
 
 name:           ampersand
 version:        4.5.0
@@ -17,9 +19,9 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
-build-type:     Custom
 tested-with:
     GHC == 8.10.4
+build-type:     Custom
 extra-source-files:
     LICENSE
     ReleaseNotes.md
@@ -504,7 +506,10 @@ library
       Ampersand.Output.ToPandoc.ChapterIntroduction
       Ampersand.Output.ToPandoc.ChapterNatLangReqs
       Ampersand.Output.ToPandoc.SharedAmongChapters
-      Ampersand.Prototype.GenFrontend
+      Ampersand.Prototype.GenAngularFrontend
+      Ampersand.Prototype.GenAngularJSFrontend
+      Ampersand.Prototype.GenBackend
+      Ampersand.Prototype.GenFramework
       Ampersand.Prototype.PHP
       Ampersand.Prototype.ProtoUtil
       Ampersand.Prototype.TableSpec

@@ -61,11 +61,13 @@ instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-class (HasRootFile a) => HasDirPrototype a where
+class HasProtoOpts a => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
   getTemplateDir :: a -> FilePath
   getTemplateDir x =
-    getDirPrototype x </> "templates"
+    getDirPrototype x </> case view frontendVersionL x of
+                             AngularJS -> "templates"
+                             Angular   -> "angular-app/templates"
   getAppDir :: a -> FilePath
   getAppDir x =
     getDirPrototype x </> "public" </> "app" </> "project"
@@ -92,11 +94,6 @@ class HasGenerateMetamodel a where
   generateMetamodelL :: Lens' a Bool
 instance HasGenerateMetamodel ProtoOpts where
   generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
-
-class HasCheckCompilerVersion a where
-  checkCompilerVersionL :: Lens' a Bool
-instance HasCheckCompilerVersion ProtoOpts where
-  checkCompilerVersionL = lens xcheckCompilerVersion (\x y -> x { xcheckCompilerVersion = y })
 
 -- | A type to denote the root file(s) to be parsed for the creation of an Fspec
 newtype Roots = Roots {getRoots :: [FilePath]
@@ -131,6 +128,16 @@ class HasShowWarnings a where
   showWarningsL :: Lens' a Bool  -- Should warnings be given to the output?
 instance HasDaemonOpts a => HasShowWarnings a where
   showWarningsL = daemonOptsL . lens xshowWarnings (\x y -> x { xshowWarnings = y })
+
+class HasDirCustomizations a where
+  dirCustomizationsL :: Lens' a (Maybe [FilePath]) -- the directories that are copied after generating the prototype
+instance HasDirCustomizations ProtoOpts where
+  dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
+
+class HasZwolleVersion a where
+  zwolleVersionL :: Lens' a FilePath -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
+instance HasZwolleVersion ProtoOpts where
+  zwolleVersionL = lens xzwolleVersion (\x y -> x { xzwolleVersion = y })
 
 class HasDirOutput a where
   dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
@@ -167,6 +174,11 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
+   forceReinstallFrameworkL :: Lens' env Bool
+   forceReinstallFrameworkL
+             = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
+   frontendVersionL :: Lens' env FrontendVersion
+   frontendVersionL = protoOptsL . lens xfrontendVersion (\x y -> x { xfrontendVersion = y })
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
@@ -274,6 +286,9 @@ data FSpecFormat =
        | Ftextile
        deriving (Show, Eq, Enum, Bounded)
 
+data FrontendVersion = Angular | AngularJS 
+  deriving (Show, Eq)
+
 -- | Options for @ampersand export@.
 newtype ExportOpts = ExportOpts
    { xexport2adl :: FilePath  --relative path
@@ -291,23 +306,30 @@ instance HasOptions InputOutputOpts where
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { x1OutputLanguage :: !(Maybe Lang)
+   { xforceReinstallFramework :: !Bool
+   -- ^ when true, an existing prototype directory will be destroyed and re-installed
+   , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
+   , xdirCustomizations :: !(Maybe [FilePath])
+   , xzwolleVersion :: !FilePath
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
-   , xcheckCompilerVersion :: !Bool
+   , xfrontendVersion :: !FrontendVersion
    , xgenerateMetamodel :: !Bool
   } deriving Show
 instance HasOptions ProtoOpts where
   optsList opts =
-     [ ("--language", tshow $ x1OutputLanguage opts)
+     [ ("--force-reinstall-framework", tshow $ xforceReinstallFramework opts)
+     , ("--language", tshow $ x1OutputLanguage opts)
      ] <>
      optsList (x1fSpecGenOpts opts) <>
      [ ("--proto-dir", maybe "" tshow $ xdirPrototype opts)
-     , ("--[no-]check-compiler-version", tshow $ xcheckCompilerVersion opts)
+     , ("--customizations", maybe "" (T.intercalate "; " . fmap T.pack) $ xdirCustomizations opts)
+     , ("--prototype-framework-version", tshow $ xzwolleVersion opts)
      , ("--[no-]frontend", tshow $ xgenerateFrontend opts)
      , ("--[no-]backend", tshow $ xgenerateBackend opts)
+     , ("--frontend-version", tshow $ xfrontendVersion opts)
      , ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
      ]
 
