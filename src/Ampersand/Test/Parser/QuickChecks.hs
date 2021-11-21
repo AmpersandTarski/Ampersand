@@ -1,4 +1,3 @@
-
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -62,14 +61,15 @@ doRoundtripTest = do
       }
   where
     checkArgs :: Args
-    checkArgs = Args
-      { replay          = Nothing
-      , maxSuccess      = 100
-      , maxDiscardRatio = 8
-      , maxSize         = 15      -- otherwise there's nothing quick about it.
-      , maxShrinks      = 50 
-      , chatty          = True
-      }
+    checkArgs =
+      Args
+        { replay = Nothing,
+          maxSuccess = 100,
+          maxDiscardRatio = 8,
+          maxSize = 15, -- otherwise there's nothing quick about it.
+          maxShrinks = 50,
+          chatty = True
+        }
 
 prop_parserRoundtrip :: P_Context -> Bool
 prop_parserRoundtrip pCtx =

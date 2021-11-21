@@ -1,86 +1,166 @@
-﻿module Ampersand.ADL1
-   ( module Ampersand.Core.ParseTree
-   , module Ampersand.Core.AbstractSyntaxTree
-   , module Ampersand.ADL1.Expression
-   , module Ampersand.ADL1.Rule
-   )
+module Ampersand.ADL1
+  ( module Ampersand.Core.ParseTree,
+    module Ampersand.Core.AbstractSyntaxTree,
+    module Ampersand.ADL1.Expression,
+    module Ampersand.ADL1.Rule,
+  )
 where
-import Ampersand.Core.ParseTree (
-           PPurpose(..), PRef2Obj(..)
-         , mkPair
-         , FilePos(..), Origin(..), Traced(..)
-         , P_Concept(..)
-         , P_Sign(..)
-         , P_Enforce(..), EnforceOperator(..)
-         , P_Context(..), mergeContexts
-         , MetaData(..)
-         , P_RoleRule(..)
-         , P_Pattern(..)
-         , PairView(..), PairViewSegment(..)
-         , SrcOrTgt(..)
-         , P_Rule(..),Role(..)
-         , PProp(..)
-         , PRelationDefault(..)
-         , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
-         , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
-         , P_Population(..),PAtomPair(..)
-         , P_BoxItemTermPrim,P_BoxItem(..)
-         , P_Interface(..)
-         , P_SubInterface,P_SubIfc(..),P_Cruds(..)
-         , BoxHeader(..), TemplateKeyValue(..)
-         , Term(..)
-         , TermPrim(..), P_NamedRel(..)
-         , PClassify(..)
-         , P_Relation(..)
-         , PConceptDef(..), PCDDef(..)
-         , PMeaning(..),PMessage(..),P_Markup(..)
-         )
-import Ampersand.Core.AbstractSyntaxTree (
-           Signature(..) ,showSign
-         , A_Context(..)
-         , HasSignature(..)
-         , Expression(..)
-         , AClassify(..)
-         , RuleKind(..)
-         , IdentityRule(..)
-         , IdentitySegment(..)
-         , ViewDef(..)
-         , ViewSegment(..)
-         , ViewSegmentPayLoad(..)
-         , BoxItem(..), ObjectDef(..), BoxTxt(..)
-         , Object(..)
-         , Default(..)
-         , SubInterface(..)
-         , Relation(..)
-         , Interface(..), getInterfaceByName
-         , Pattern(..)
-         , Relation(..), Relations, getExpressionRelation, showRel
-         , AProp(..), AProps
-         , ARelDefault(..), ARelDefaults
-         , Rule(..), Rules, A_RoleRule(..)
-         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
-         , Representation(..)
-         , AEnforce(..)
-         , AConceptDef(..)
-         , Conjunct(..)
-         , PAtomValue(..)
-         , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
-         , Cruds(..)
-         , Typology(..)
-         , DnfClause(..)
-         , Population(..)
-         , Purpose(..), ExplObj(..) ,Meaning(..)
-         , AAtomPair(..), AAtomValue(..), aavtxt, mkAtomPair, ContextInfo(..)
-         , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
-         )
+
 import Ampersand.ADL1.Expression
-         ( primitives,subExpressions,Expressions
-         , notCpl, isCpl, isEEps, isMp1, isFlipped
-         , isPos, isNeg
-         , isFitForCrudC ,isFitForCrudR ,isFitForCrudU ,isFitForCrudD
-         , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
-         , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
-         , insParentheses)
-import Ampersand.ADL1.Rule 
-         ( consequent, antecedent, hasantecedent
-         , rulefromProp, isPropertyRule, propFullName)
+  ( Expressions,
+    deMorganECps,
+    deMorganEIsc,
+    deMorganERad,
+    deMorganEUni,
+    exprCps2list,
+    exprIsc2list,
+    exprPrd2list,
+    exprRad2list,
+    exprUni2list,
+    insParentheses,
+    isCpl,
+    isEEps,
+    isFitForCrudC,
+    isFitForCrudD,
+    isFitForCrudR,
+    isFitForCrudU,
+    isFlipped,
+    isMp1,
+    isNeg,
+    isPos,
+    notCpl,
+    primitives,
+    subExpressions,
+  )
+import Ampersand.ADL1.Rule
+  ( antecedent,
+    consequent,
+    hasantecedent,
+    isPropertyRule,
+    propFullName,
+    rulefromProp,
+  )
+import Ampersand.Core.AbstractSyntaxTree
+  ( AAtomPair (..),
+    AAtomPairs,
+    AAtomValue (..),
+    AAtomValues,
+    AClassify (..),
+    AConceptDef (..),
+    AEnforce (..),
+    AProp (..),
+    AProps,
+    ARelDefault (..),
+    ARelDefaults,
+    A_Concept (..),
+    A_Concepts,
+    A_Context (..),
+    A_RoleRule (..),
+    BoxItem (..),
+    BoxTxt (..),
+    Conjunct (..),
+    ContextInfo (..),
+    Cruds (..),
+    Default (..),
+    DnfClause (..),
+    ExplObj (..),
+    Expression (..),
+    HasSignature (..),
+    IdentityRule (..),
+    IdentitySegment (..),
+    Interface (..),
+    Meaning (..),
+    Object (..),
+    ObjectDef (..),
+    PAtomValue (..),
+    Pattern (..),
+    Population (..),
+    Purpose (..),
+    Relation (..),
+    Relations,
+    Representation (..),
+    Rule (..),
+    RuleKind (..),
+    Rules,
+    Signature (..),
+    SubInterface (..),
+    TType (..),
+    Typology (..),
+    ViewDef (..),
+    ViewSegment (..),
+    ViewSegmentPayLoad (..),
+    aavtxt,
+    getExpressionRelation,
+    getInterfaceByName,
+    mkAtomPair,
+    safePSingleton2AAtomVal,
+    showRel,
+    showSign,
+    showValADL,
+    showValSQL,
+    unsafePAtomVal2AtomValue,
+    (.!.),
+    (.*.),
+    (.-.),
+    (./.),
+    (./\.),
+    (.:.),
+    (.<>.),
+    (.==.),
+    (.\.),
+    (.\/.),
+    (.|-.),
+  )
+import Ampersand.Core.ParseTree
+  ( BoxHeader (..),
+    EnforceOperator (..),
+    FilePos (..),
+    MetaData (..),
+    Origin (..),
+    PAtomPair (..),
+    PCDDef (..),
+    PClassify (..),
+    PConceptDef (..),
+    PMeaning (..),
+    PMessage (..),
+    PProp (..),
+    PPurpose (..),
+    PRef2Obj (..),
+    PRelationDefault (..),
+    P_BoxItem (..),
+    P_BoxItemTermPrim,
+    P_Concept (..),
+    P_Context (..),
+    P_Cruds (..),
+    P_Enforce (..),
+    P_IdentDef,
+    P_IdentDf (..),
+    P_IdentSegment,
+    P_IdentSegmnt (..),
+    P_Interface (..),
+    P_Markup (..),
+    P_NamedRel (..),
+    P_Pattern (..),
+    P_Population (..),
+    P_Relation (..),
+    P_RoleRule (..),
+    P_Rule (..),
+    P_Sign (..),
+    P_SubIfc (..),
+    P_SubInterface,
+    P_ViewD (..),
+    P_ViewDef,
+    P_ViewSegment (..),
+    P_ViewSegmtPayLoad (..),
+    PairView (..),
+    PairViewSegment (..),
+    Role (..),
+    SrcOrTgt (..),
+    TemplateKeyValue (..),
+    Term (..),
+    TermPrim (..),
+    Traced (..),
+    ViewHtmlTemplate (..),
+    mergeContexts,
+    mkPair,
+  )

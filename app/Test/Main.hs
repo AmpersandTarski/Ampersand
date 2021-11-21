@@ -1,4 +1,5 @@
-module Main(main) where
+module Main (main) where
+
 import MainApps
 
 main :: IO ()

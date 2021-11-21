@@ -1,5 +1,3 @@
-
-
 module Ampersand.Options.PopulationOptsParser (populationOptsParser) where
 
 import Ampersand.Basics

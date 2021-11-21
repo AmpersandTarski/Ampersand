@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP #-}
 
+{- ORMOLU_DISABLE -}
+
 -- | Cross-platform operations for manipulating terminal console windows.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Terminal(
@@ -15,7 +17,6 @@ import Graphics.Win32.Window
 import Graphics.Win32.Message
 import Graphics.Win32.GDI.Types
 import System.Win32.Types
-
 
 wM_SETICON, wM_GETICON :: WindowMessage
 wM_SETICON = 0x0080
@@ -38,7 +39,6 @@ foreign import CALLCONV unsafe "windows.h SetWindowPos"
     setWindowPos :: HWND -> HWND -> Int -> Int -> Int -> Int -> Word32 -> IO Bool
 #endif
 
-
 -- | Raise the current terminal on top of all other screens, if you can.
 terminalTopmost :: IO ()
 #if defined(mingw32_HOST_OS)
@@ -49,7 +49,6 @@ terminalTopmost = do
 #else
 terminalTopmost = return ()
 #endif
-
 
 data WindowIcon = IconOK | IconWarning | IconError
 
@@ -70,7 +69,6 @@ setWindowIcon x = do
 #else
 setWindowIcon _ = return ()
 #endif
-
 
 -- | Run an operation in which you call setWindowIcon
 withWindowIcon :: RIO env a -> RIO env a

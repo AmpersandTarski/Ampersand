@@ -1,4 +1,3 @@
-
 {-# LANGUAGE TupleSections #-}
 
 module Ampersand.Options.DocOptsParser (docOptsParser) where

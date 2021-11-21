@@ -1,26 +1,27 @@
-
 -- | Utility functions
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Util(
-    takeRemainder,
+module Ampersand.Daemon.Util
+  ( takeRemainder,
     allGoodMessage,
     getModTime,
-    getShortTime
-    ) where
+    getShortTime,
+  )
+where
 
-import           Ampersand.Basics
-import           RIO.Time
-import           System.Console.ANSI
-import           System.Directory
-import           System.IO.Error(isDoesNotExistError)
+import Ampersand.Basics
+import RIO.Time
+import System.Console.ANSI
+import System.Directory
+import System.IO.Error (isDoesNotExistError)
 
 -- | The message to show when no errors have been reported
 allGoodMessage :: String
-allGoodMessage = setSGRCode [SetColor Foreground Dull Green] ++  "All good" ++ setSGRCode []
+allGoodMessage = setSGRCode [SetColor Foreground Dull Green] ++ "All good" ++ setSGRCode []
 
 -- | Given a 'FilePath' return either 'Nothing' (file does not exist) or 'Just' (the modification time)
 getModTime :: FilePath -> IO (Maybe UTCTime)
-getModTime file = handleJust
+getModTime file =
+  handleJust
     (\e -> if isDoesNotExistError e then Just () else Nothing)
     (\_ -> return Nothing)
     (Just <$> getModificationTime file)
