@@ -19,7 +19,14 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.FSpecAux
 import Language.SQL.SimpleSQL.Pretty
 import Language.SQL.SimpleSQL.Syntax
-import RIO.List (intercalate, lastMaybe, maximumMaybe, nub, partition, (\\))
+import RIO.List
+  ( intercalate,
+    lastMaybe,
+    maximumMaybe,
+    nub,
+    partition,
+    (\\),
+  )
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -561,7 +568,7 @@ nonSpecialSelectExpr fSpec expr =
           We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
           the pole holds the constraints of the connection of the fence to the previous fence.
           Only pole 0 has no previous fence, so there are no constraints.
-          In general, at some pole i, the constraint is that fence(i-1).trg=fence i.src
+          In general, at some pole i, the constraint is that fence(i- 1).trg=fence i.src
           However, there are exceptions for the expressions V and Mp1 (and possibly I??).
           For V, we do not calculate V, and we also pose no restrictions at the pole.
           For Mp1, we do not calculate Mp1, but we do pose a restriction at the pole.

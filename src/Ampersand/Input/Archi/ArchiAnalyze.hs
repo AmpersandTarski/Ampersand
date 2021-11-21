@@ -702,7 +702,8 @@ processStraight absFilePath =
     getArchiObj :: ArrowXml a => a XmlTree ArchiObj
     getArchiObj =
       isElem >>> (hasName "element" <+> hasName "elements")
-        >>> proc l -> do -- don't use atTag, because there is recursion in getFolder.
+        >>> proc l -> do
+          -- don't use atTag, because there is recursion in getFolder.
           objId <- getAttrValue "id" -< l
           objName <- getAttrValue "name" -< l
           objType <- getAttrValue "xsi:type" -< l

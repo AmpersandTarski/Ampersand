@@ -21,7 +21,10 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 import System.Console.ANSI (hSupportsANSI, setTitle)
 import qualified System.Console.Terminal.Size as Term
-import System.Directory (getCurrentDirectory, setCurrentDirectory)
+import System.Directory
+  ( getCurrentDirectory,
+    setCurrentDirectory,
+  )
 import System.Environment
 import System.FilePath
 import System.Info
@@ -67,7 +70,7 @@ mainWithTerminal termSize termOutput = goForever
               return $
                 TermSize
                   (termWidth term - 1)
-                  (termHeight term -1)
+                  (termHeight term - 1)
                   (termWrap term)
 
           restyle <- liftIO $ do

@@ -94,7 +94,7 @@ splitAtE i e = case unesc e of
   _ | i <= 0 -> (Esc "", e)
   Nothing -> (e, e)
   Just (Left code, rest) -> first (app code) $ splitAtE i rest
-  Just (Right c, rest) -> first (app $ Esc [c]) $ splitAtE (i -1) rest
+  Just (Right c, rest) -> first (app $ Esc [c]) $ splitAtE (i - 1) rest
 
 reverseE :: Esc -> Esc
 reverseE = implode . reverse . explode

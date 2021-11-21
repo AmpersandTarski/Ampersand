@@ -7,7 +7,7 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (toList)
 import Ampersand.Classes
 import qualified RIO.List as L
-import qualified RIO.List.Partial as P -- TODO Use NonEmpty
+import qualified RIO.List.Partial as P
 -- import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -52,7 +52,7 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
     -- For printing a variable we use varMap
     -- A variable is represented by the first character of its concept name, followed by a number of primes to distinguish from similar variables.
     varMap :: Var -> Text
-    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars -1)) '\''
+    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars - 1)) '\''
       where
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
         vChar = T.toLower . T.take 1 . name

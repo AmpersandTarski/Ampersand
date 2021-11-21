@@ -33,7 +33,7 @@ fatal msg =
       Just (h, tl)
         | T.null tl -> mempty
         | n == 0 -> "\n<Ampersand's fatal-mechanism has removed the rest of this error message.>"
-        | otherwise -> T.cons h (lazyCutoff (n -1) tl)
+        | otherwise -> T.cons h (lazyCutoff (n - 1) tl)
 {-# NOINLINE fatal #-}
 
 data VersionInfo = VersionInfo
