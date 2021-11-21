@@ -2,24 +2,27 @@
 
 module Ampersand.Input.Xslx.XLSX (parseXlsxFile) where
 
-import           Ampersand.Basics                          hiding (view, (^.),
-                                                            (^?))
-import           Ampersand.Core.ParseTree
-import           Ampersand.Core.ShowPStruct
-import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated
-import           Codec.Xlsx
-import           Control.Lens                              hiding (both)
-import           Data.Tuple.Extra                          (both, swap)
-import qualified RIO.ByteString                            as B
-import qualified RIO.ByteString.Lazy                       as BL
-import           RIO.Char
-import qualified RIO.List                                  as L
-import qualified RIO.Map                                   as Map
-import qualified RIO.NonEmpty                              as NE
-import qualified RIO.Set                                   as Set
-import qualified RIO.Text                                  as T
+import Ampersand.Basics hiding
+  ( view,
+    (^.),
+    (^?),
+  )
+import Ampersand.Core.ParseTree
+import Ampersand.Core.ShowPStruct
+import Ampersand.Input.ADL1.CtxError
+import Ampersand.Misc.HasClasses
+import Ampersand.Prototype.StaticFiles_Generated
+import Codec.Xlsx
+import Control.Lens hiding (both)
+import Data.Tuple.Extra (both, swap)
+import qualified RIO.ByteString as B
+import qualified RIO.ByteString.Lazy as BL
+import RIO.Char
+import qualified RIO.List as L
+import qualified RIO.Map as Map
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 parseXlsxFile ::
   (HasFSpecGenOpts env) =>
@@ -234,11 +237,11 @@ addRelations pCtx = enrichedContext
 
 data SheetCellsForTable = Mapping
   { theSheetName :: Text,
-    theCellMap   :: CellMap,
+    theCellMap :: CellMap,
     headerRowNrs :: [Int],
-    popRowNrs    :: [Int],
-    colNrs       :: [Int],
-    debugInfo    :: [Text]
+    popRowNrs :: [Int],
+    colNrs :: [Int],
+    debugInfo :: [Text]
   }
 
 instance Show SheetCellsForTable where --for debugging only
@@ -286,11 +289,11 @@ toPops env file x = map popForColumn (colNrs x)
         popOrigin :: Origin
         popOrigin = originOfCell (relNamesRow, targetCol)
         (relNamesRow, conceptNamesRow) = case headerRowNrs x of
-          []            -> fatal "headerRowNrs x is empty"
-          [rnr]         -> (rnr, fatal "headerRowNrs x has only one element")
+          [] -> fatal "headerRowNrs x is empty"
+          [rnr] -> (rnr, fatal "headerRowNrs x has only one element")
           rnr : cnr : _ -> (rnr, cnr)
         sourceCol = case colNrs x of
-          []    -> fatal "colNrs x is empty"
+          [] -> fatal "colNrs x is empty"
           c : _ -> c
         targetCol = i
         sourceConceptName :: Text
@@ -319,9 +322,9 @@ toPops env file x = map popForColumn (colNrs x)
           case value (relNamesRow, targetCol) of
             Just (CellText t) ->
               case T.uncons . T.reverse . trim $ t of
-                Nothing          -> (mempty, False)
+                Nothing -> (mempty, False)
                 Just ('~', rest) -> (T.reverse rest, True)
-                Just (h, tl)     -> (T.reverse $ T.cons h tl, False)
+                Just (h, tl) -> (T.reverse $ T.cons h tl, False)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -375,7 +378,7 @@ toPops env file x = map popForColumn (colNrs x)
         unDelimit :: Maybe Char -> Text -> [Text]
         unDelimit mDelimiter xs =
           case mDelimiter of
-            Nothing          -> [xs]
+            Nothing -> [xs]
             (Just delimiter) -> map trim $ T.split (== delimiter) xs
         handleSpaces = if view trimXLSXCellsL env then trim else id
     originOfCell ::
@@ -408,7 +411,7 @@ theSheetCellsForTable (sheetName, ws) =
     isBracketed' k =
       case value k of
         Just (CellText t) -> isBracketed t
-        _                 -> False
+        _ -> False
 
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters
@@ -442,10 +445,10 @@ theSheetCellsForTable (sheetName, ws) =
         maxRowOfWorksheet :: Int
         maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws ^. wsCells))) of
           Nothing -> fatal "Maximum of an empty list is not defined!"
-          Just m  -> m
+          Just m -> m
         maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws ^. wsCells))) of
           Nothing -> fatal "Maximum of an empty list is not defined!"
-          Just m  -> m
+          Just m -> m
         firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
         lastPopRowNr = ((map fst tableStarters <> [maxRowOfWorksheet + 1]) `L.genericIndex` (indexInTableStarters + 1)) -1
         okHeaderRows = filter isProperRow [firstHeaderRowNr, firstHeaderRowNr + nrOfHeaderRows - 1]
@@ -457,12 +460,12 @@ theSheetCellsForTable (sheetName, ws) =
           | otherwise = notEmpty (rowNr, firstColumNr)
         notEmpty k =
           case value k of
-            Just (CellText t)   -> (not . T.null . trim) t
+            Just (CellText t) -> (not . T.null . trim) t
             Just (CellDouble _) -> True
-            Just (CellBool _)   -> True
-            Just (CellRich _)   -> True
-            Just (CellError e)  -> fatal $ "Error reading cell " <> tshow e
-            Nothing             -> False
+            Just (CellBool _) -> True
+            Just (CellRich _) -> True
+            Just (CellError e) -> fatal $ "Error reading cell " <> tshow e
+            Nothing -> False
         theCols = filter isProperCol [1 .. maxColOfWorksheet]
         isProperCol :: Int -> Bool
         isProperCol colNr
@@ -471,11 +474,11 @@ theSheetCellsForTable (sheetName, ws) =
         isProperConceptName k =
           case value k of
             Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter $ t
-            _                 -> False
+            _ -> False
         isProperRelName k =
           case value k of
             Just (CellText t) -> (not . T.null . trim) t -- && (isLower . T.head . trim) t
-            _                 -> False
+            _ -> False
 
 conceptNameWithOptionalDelimiter ::
   Text ->
@@ -507,7 +510,7 @@ isDelimiter = isPunctuation
 
 isConceptName :: Text -> Bool
 isConceptName t = case T.uncons t of
-  Nothing       -> False
+  Nothing -> False
   (Just (h, _)) -> isUpper h
 
 -- | trim is used to remove leading and trailing spaces
@@ -517,12 +520,12 @@ trim = T.reverse . trim' . T.reverse . trim'
     trim' :: Text -> Text
     trim' t = case uncons t of
       Just (' ', t') -> trim' t'
-      _              -> t
+      _ -> t
 
 isBracketed :: Text -> Bool
 isBracketed t =
   case T.uncons (trim t) of
     Just ('[', tl) -> case T.uncons (T.reverse tl) of
       Just (']', _) -> True
-      _             -> False
+      _ -> False
     _ -> False
