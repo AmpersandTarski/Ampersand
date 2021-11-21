@@ -11,25 +11,20 @@ module Ampersand.FSpec.SQL
   )
 where
 
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux
-import Language.SQL.SimpleSQL.Pretty
-import Language.SQL.SimpleSQL.Syntax
-import RIO.List
-  ( intercalate,
-    lastMaybe,
-    maximumMaybe,
-    nub,
-    partition,
-    (\\),
-  )
-import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
-import qualified RIO.Text as T
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.FSpecAux
+import           Language.SQL.SimpleSQL.Pretty
+import           Language.SQL.SimpleSQL.Syntax
+import           RIO.List                      (intercalate, lastMaybe,
+                                                maximumMaybe, nub, partition,
+                                                (\\))
+import qualified RIO.NonEmpty                  as NE
+import qualified RIO.Set                       as Set
+import qualified RIO.Text                      as T
 
 data SqlQuery
   = SqlQueryPlain Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
@@ -128,7 +123,7 @@ class SQLAble a where
                 bseTbl = bseTbl bqe,
                 bseWhr = Just $
                   case bseWhr bqe of
-                    Nothing -> placeHolder
+                    Nothing  -> placeHolder
                     Just whr -> conjunctSQL [placeHolder, whr]
               }
           placeHolder = BinOp (col2ValueExpr (bseSrc bqe)) [Name "="] (StringLit $ T.unpack placeHolderSQL)
@@ -219,7 +214,7 @@ maybeSpecialCase fSpec expr =
               <> "complement of "
               <> ( case expr2 of
                      (EDcD dcl) -> "`" <> name dcl <> "`"
-                     _ -> "<expr2>"
+                     _          -> "<expr2>"
                  )
               <> ".",
             "where ",
@@ -305,7 +300,7 @@ nonSpecialSelectExpr fSpec expr =
         negVals :: [PAtomValue]
         negVals = nub (map (atmValue . notCpl) negMp1Terms)
         atmValue (EMp1 a _) = a
-        atmValue _ = fatal "atm error"
+        atmValue _          = fatal "atm error"
         mp1Terms, nonMp1Terms :: [Expression]
         (mp1Terms, nonMp1Terms) = NE.partition isMp1 (exprIsc2list expr)
         posMp1Terms, negMp1Terms :: [Expression]
@@ -334,7 +329,7 @@ nonSpecialSelectExpr fSpec expr =
                   mandatoryTuple :: Maybe ValueExpr
                   mandatoryTuple =
                     case specificValue of
-                      Nothing -> Nothing
+                      Nothing  -> Nothing
                       Just val -> Just $ equalToValueClause val
                     where
                       equalToValueClause :: PAtomValue -> ValueExpr
@@ -508,9 +503,9 @@ nonSpecialSelectExpr fSpec expr =
                       isI :: Expression -> Maybe (Expression, Name)
                       isI e =
                         case e of
-                          EDcI c -> Just (e, sqlAttConcept fSpec c)
+                          EDcI c   -> Just (e, sqlAttConcept fSpec c)
                           EEps c _ -> Just (e, sqlAttConcept fSpec c)
-                          _ -> Nothing
+                          _        -> Nothing
                       nonOptimizedIntersectSelectExpr :: BinQueryExpr
                       nonOptimizedIntersectSelectExpr =
                         case map (selectExpr fSpec) exprs of
@@ -539,7 +534,7 @@ nonSpecialSelectExpr fSpec expr =
                                   bseTbl = zipWith tableRef [0 ..] es,
                                   bseWhr =
                                     Just . conjunctSQL . concatMap constraintsOfTailExpression $
-                                      [1 .. length es -1]
+                                      [1 .. length es - 1]
                                 }
                             where
                               iSect :: Int -> Name
@@ -616,9 +611,9 @@ nonSpecialSelectExpr fSpec expr =
                       then makeNormalFence
                       else case fenceExpr i of
                         -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries.
-                        EDcV {} -> Nothing
+                        EDcV {}      -> Nothing
                         ECpl EDcI {} -> Nothing -- in case of r;-I;s
-                        _ -> makeNormalFence
+                        _            -> makeNormalFence
                     where
                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
                   polesConstraints :: [Maybe ValueExpr]
@@ -1195,7 +1190,7 @@ selectExists tbl whr =
         qeFrom =
           [ case tbl of
               TRAlias {} -> tbl
-              _ -> tbl `as` Name "aDummyName" -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+              _          -> tbl `as` Name "aDummyName" -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
           ],
         qeWhere = whr,
         qeGroupBy = [],
@@ -1209,28 +1204,28 @@ selectExists tbl whr =
 data BinQueryExpr
   = BSE
       { bseSetQuantifier :: SetQuantifier,
-        bseSrc :: Col,
-        bseTrg :: Col,
+        bseSrc           :: Col,
+        bseTrg           :: Col,
         -- | tables
-        bseTbl :: [TableRef],
+        bseTbl           :: [TableRef],
         -- | the (optional) WHERE clause
-        bseWhr :: Maybe ValueExpr
+        bseWhr           :: Maybe ValueExpr
       }
   | BCQE
       { bseSetQuantifier :: SetQuantifier,
         -- | The combine operator
-        bcqeOper :: CombineOp,
+        bcqeOper         :: CombineOp,
         -- | Left  expression
-        bcqe0 :: BinQueryExpr,
+        bcqe0            :: BinQueryExpr,
         -- | Right expression
-        bcqe1 :: BinQueryExpr
+        bcqe1            :: BinQueryExpr
       }
   | BQEComment [Comment] BinQueryExpr
 
 data Col = Col
-  { cTable :: [Name],
-    cCol :: [Name],
-    cAlias :: [Name],
+  { cTable   :: [Name],
+    cCol     :: [Name],
+    cAlias   :: [Name],
     cSpecial :: Maybe ValueExpr
   }
 
@@ -1279,7 +1274,7 @@ stripCommentQueryExpr :: QueryExpr -> QueryExpr
 stripCommentQueryExpr qe =
   case qe of
     QEComment _ qe' -> stripCommentQueryExpr qe'
-    _ -> qe
+    _               -> qe
 
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe =
@@ -1353,13 +1348,13 @@ stringOfName (UQName s) = T.pack s
 stringOfName _ = fatal "This kind of a Name wasn't used before in Ampersand."
 
 conjunctSQL :: [ValueExpr] -> ValueExpr
-conjunctSQL [] = fatal "nothing to `and`."
-conjunctSQL [ve] = bracketsSQL ve
+conjunctSQL []         = fatal "nothing to `and`."
+conjunctSQL [ve]       = bracketsSQL ve
 conjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [Name "and"] (conjunctSQL ves)
 
 disjunctSQL :: [ValueExpr] -> ValueExpr
-disjunctSQL [] = fatal "nothing to `or`."
-disjunctSQL [ve] = bracketsSQL ve
+disjunctSQL []         = fatal "nothing to `or`."
+disjunctSQL [ve]       = bracketsSQL ve
 disjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [Name "or"] (conjunctSQL ves)
 
 bracketsSQL :: ValueExpr -> ValueExpr
@@ -1525,7 +1520,7 @@ broadQuery fSpec obj =
                     Just att ->
                       ( Iden
                           ( case tableName of
-                              Nothing -> [QName . T.unpack . name $ att]
+                              Nothing  -> [QName . T.unpack . name $ att]
                               Just tab -> [tab, QName . T.unpack . name $ att]
                           ),
                         Just

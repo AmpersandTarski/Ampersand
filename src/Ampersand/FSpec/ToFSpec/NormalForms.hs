@@ -9,19 +9,19 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   )
 where
 
-import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt)
-import Ampersand.Basics
-import Ampersand.Classes.Relational
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Ampersand.Input (parseRule)
-import Data.Hashable
-import qualified RIO.List as L
-import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
-import qualified RIO.Set.Partial as SetPartial
-import qualified RIO.Text as T
+import           Ampersand.ADL1
+import           Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt)
+import           Ampersand.Basics
+import           Ampersand.Classes.Relational
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Input               (parseRule)
+import           Data.Hashable
+import qualified RIO.List                      as L
+import qualified RIO.NonEmpty                  as NE
+import qualified RIO.Set                       as Set
+import qualified RIO.Set.Partial               as SetPartial
+import qualified RIO.Text                      as T
 
 {- SJC:
 Ideas for future work:
@@ -127,33 +127,33 @@ normRT term = term
 
 isRIsc, isRUni, isRDif, isRCpl, isRDia, isRLrs, isRRrs, isRRad, isRCps, isRPrd, isRKl0, isRKl1, isRFlp, isRVar :: RTerm -> Bool
 isRIsc RIsc {} = True
-isRIsc _ = False
+isRIsc _       = False
 isRUni RUni {} = True
-isRUni _ = False
+isRUni _       = False
 isRDif RDif {} = True
-isRDif _ = False
+isRDif _       = False
 isRCpl RCpl {} = True
-isRCpl _ = False
+isRCpl _       = False
 isRDia RDia {} = True
-isRDia _ = False
+isRDia _       = False
 isRLrs RLrs {} = True
-isRLrs _ = False
+isRLrs _       = False
 isRRrs RRrs {} = True
-isRRrs _ = False
+isRRrs _       = False
 isRRad RRad {} = True
-isRRad _ = False
+isRRad _       = False
 isRCps RCps {} = True
-isRCps _ = False
+isRCps _       = False
 isRPrd RPrd {} = True
-isRPrd _ = False
+isRPrd _       = False
 isRKl0 RKl0 {} = True
-isRKl0 _ = False
+isRKl0 _       = False
 isRKl1 RKl1 {} = True
-isRKl1 _ = False
+isRKl1 _       = False
 isRFlp RFlp {} = True
-isRFlp _ = False
+isRFlp _       = False
 isRVar RVar {} = True
-isRVar _ = False
+isRVar _       = False
 
 {- dSteps computes the expressions that can be obtained in one rewrite step.
    It yields the steps, for the purpose of constructing the entire proof.
@@ -445,30 +445,30 @@ dSteps drs x = dStps x
       ]
       where
         f (DEquiR l r) = [DInclR l r, DInclR r l]
-        f inclusion = [inclusion]
+        f inclusion    = [inclusion]
         stepTerms :: RTerm -> NE.NonEmpty DerivRule -> [RTerm]
         stepTerms template cl -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
           =
           [term' | rule <- NE.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template]
         vars :: RTerm -> Set Text
-        vars (RIsc rs) = (Set.unions . map vars . Set.toList) rs
-        vars (RUni rs) = (Set.unions . map vars . Set.toList) rs
-        vars (RDif l r) = vars l `Set.union` vars r
-        vars (RCpl e) = vars e
-        vars (RDia l r) = vars l `Set.union` vars r
-        vars (RLrs l r) = vars l `Set.union` vars r
-        vars (RRrs l r) = vars l `Set.union` vars r
-        vars (RRad rs) = foldr (Set.union . vars) Set.empty rs
-        vars (RCps rs) = foldr (Set.union . vars) Set.empty rs
-        vars (RPrd rs) = foldr (Set.union . vars) Set.empty rs
-        vars (RKl0 e) = vars e
-        vars (RKl1 e) = vars e
-        vars (RFlp e) = vars e
-        vars (RId c) = Set.fromList [name c]
-        vars (RVee s t) = Set.fromList [name s, name t]
+        vars (RIsc rs)    = (Set.unions . map vars . Set.toList) rs
+        vars (RUni rs)    = (Set.unions . map vars . Set.toList) rs
+        vars (RDif l r)   = vars l `Set.union` vars r
+        vars (RCpl e)     = vars e
+        vars (RDia l r)   = vars l `Set.union` vars r
+        vars (RLrs l r)   = vars l `Set.union` vars r
+        vars (RRrs l r)   = vars l `Set.union` vars r
+        vars (RRad rs)    = foldr (Set.union . vars) Set.empty rs
+        vars (RCps rs)    = foldr (Set.union . vars) Set.empty rs
+        vars (RPrd rs)    = foldr (Set.union . vars) Set.empty rs
+        vars (RKl0 e)     = vars e
+        vars (RKl1 e)     = vars e
+        vars (RFlp e)     = vars e
+        vars (RId c)      = Set.fromList [name c]
+        vars (RVee s t)   = Set.fromList [name s, name t]
         vars (RVar r s t) = Set.fromList [r, name s, name t]
-        vars RConst {} = Set.empty
-        vars RAtm {} = Set.empty
+        vars RConst {}    = Set.empty
+        vars RAtm {}      = Set.empty
 
 {-
      showMatchableRules :: [(RTerm,[RTerm])] -> Text
@@ -480,23 +480,23 @@ splitList :: [a] -> [([a], a, [a])]
 splitList lst = [(take i lst, l, drop (i + 1) lst) | (i, l) <- zip [0 ..] lst]
 
 instance HasSignature RTerm where
-  sign (RIsc a) = sign $ SetPartial.findMin a
-  sign (RUni a) = sign $ SetPartial.findMin a
+  sign (RIsc a)   = sign $ SetPartial.findMin a
+  sign (RUni a)   = sign $ SetPartial.findMin a
   sign (RDif a _) = sign a
-  sign (RCpl a) = sign a
+  sign (RCpl a)   = sign a
   sign (RDia a b) = Sign (source a) (target b)
   sign (RLrs a b) = Sign (source a) (source b)
   sign (RRrs a b) = Sign (target a) (target b)
-  sign (RRad as) = Sign (source (head as)) (target (last as))
-  sign (RCps as) = Sign (source (head as)) (target (last as))
-  sign (RPrd as) = Sign (source (head as)) (target (last as))
-  sign (RKl0 a) = sign a
-  sign (RKl1 a) = sign a
-  sign (RFlp a) = Sign (target a) (source a)
-  sign (RId a) = Sign a a
+  sign (RRad as)  = Sign (source (head as)) (target (last as))
+  sign (RCps as)  = Sign (source (head as)) (target (last as))
+  sign (RPrd as)  = Sign (source (head as)) (target (last as))
+  sign (RKl0 a)   = sign a
+  sign (RKl1 a)   = sign a
+  sign (RFlp a)   = Sign (target a) (source a)
+  sign (RId a)    = Sign a a
   sign (RVee a b) = Sign a b
   sign (RAtm _ b) = Sign b b
-  sign RVar {} = fatal "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
+  sign RVar {}    = fatal "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
   sign (RConst e) = sign e
 
 expr2RTerm :: Expression -> RTerm
@@ -511,18 +511,18 @@ expr2RTerm expr =
           where
             lSet = case expr2RTerm l of
               RIsc terms -> terms
-              trm -> Set.singleton trm
+              trm        -> Set.singleton trm
             rSet = case expr2RTerm r of
               RIsc terms -> terms
-              trm -> Set.singleton trm
+              trm        -> Set.singleton trm
         EUni (l, r) -> combSet RUni (lSet `Set.union` rSet)
           where
             lSet = case expr2RTerm l of
               RUni terms -> terms
-              trm -> Set.singleton trm
+              trm        -> Set.singleton trm
             rSet = case expr2RTerm r of
               RUni terms -> terms
-              trm -> Set.singleton trm
+              trm        -> Set.singleton trm
         EDif (l, r) -> RDif (expr2RTerm l) (expr2RTerm r)
         ECpl e -> RCpl (expr2RTerm e)
         EDia (l, r) -> RDia (expr2RTerm l) (expr2RTerm r)
@@ -532,26 +532,26 @@ expr2RTerm expr =
           where
             lLst = case expr2RTerm l of
               RRad terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
             rLst = case expr2RTerm r of
               RRad terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
         ECps (l, r) -> RCps (lLst <> rLst)
           where
             lLst = case expr2RTerm l of
               RCps terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
             rLst = case expr2RTerm r of
               RCps terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
         EPrd (l, r) -> RPrd (lLst <> rLst)
           where
             lLst = case expr2RTerm l of
               RPrd terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
             rLst = case expr2RTerm r of
               RPrd terms -> terms
-              trm -> [trm]
+              trm        -> [trm]
         EKl0 e -> RKl0 (expr2RTerm e)
         EKl1 e -> RKl1 (expr2RTerm e)
         EFlp e -> RFlp (expr2RTerm e)
@@ -571,12 +571,12 @@ rTerm2expr :: RTerm -> Expression
 rTerm2expr term =
   case term of
     RIsc rs -> case Set.toList (Set.map rTerm2expr rs) of
-      [e] -> e
-      [] -> fatal "empty set in RIsc is illegal."
+      [e]    -> e
+      []     -> fatal "empty set in RIsc is illegal."
       e : es -> let oper l r = EIsc (l, r) in foldr oper e es
     RUni rs -> case Set.toList (Set.map rTerm2expr rs) of
-      [e] -> e
-      [] -> fatal "empty set in RUni is illegal."
+      [e]    -> e
+      []     -> fatal "empty set in RUni is illegal."
       e : es -> let oper l r = EUni (l, r) in foldr oper e es
     RDif l r -> EDif (rTerm2expr l, rTerm2expr r)
     RCpl e -> ECpl (rTerm2expr e)
@@ -584,16 +584,16 @@ rTerm2expr term =
     RLrs l r -> ELrs (rTerm2expr l, rTerm2expr r)
     RRrs l r -> ERrs (rTerm2expr l, rTerm2expr r)
     RRad rs -> case map rTerm2expr rs of
-      [e] -> e
-      [] -> fatal "empty set in RRad is illegal."
+      [e]    -> e
+      []     -> fatal "empty set in RRad is illegal."
       e : es -> let oper l r = ERad (l, r) in foldr oper e es
     RCps rs -> case map rTerm2expr rs of
-      [e] -> e
-      [] -> fatal "empty set in RCps is illegal."
+      [e]    -> e
+      []     -> fatal "empty set in RCps is illegal."
       e : es -> let oper l r = ECps (l, r) in foldr oper e es
     RPrd rs -> case map rTerm2expr rs of
-      [e] -> e
-      [] -> fatal "empty set in RPrd is illegal."
+      [e]    -> e
+      []     -> fatal "empty set in RPrd is illegal."
       e : es -> let oper l r = EPrd (l, r) in foldr oper e es
     RKl0 e -> EKl0 $ rTerm2expr e
     RKl1 e -> EKl1 $ rTerm2expr e
@@ -684,7 +684,7 @@ dRule :: ConceptMap -> Term TermPrim -> [DerivRule]
 dRule cptMap term0 = case term0 of
   (PEqu _ l r) -> [DEquiR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
   (PInc _ l r) -> [DInclR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
-  _ -> fatal ("Illegal use of dRule with term " <> showP term0)
+  _            -> fatal ("Illegal use of dRule with term " <> showP term0)
   -- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
   -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
   where
@@ -702,18 +702,18 @@ dRule cptMap term0 = case term0 of
               where
                 lSet = case term2rTerm l of
                   RIsc terms -> terms
-                  trm -> Set.singleton trm
+                  trm        -> Set.singleton trm
                 rSet = case term2rTerm r of
                   RIsc terms -> terms
-                  trm -> Set.singleton trm
+                  trm        -> Set.singleton trm
             PUni _ l r -> combSet RUni (lSet `Set.union` rSet)
               where
                 lSet = case term2rTerm l of
                   RUni terms -> terms
-                  trm -> Set.singleton trm
+                  trm        -> Set.singleton trm
                 rSet = case term2rTerm r of
                   RUni terms -> terms
-                  trm -> Set.singleton trm
+                  trm        -> Set.singleton trm
             PDif _ l r -> RDif (term2rTerm l) (term2rTerm r)
             PCpl _ e -> RCpl (term2rTerm e)
             PDia _ l r -> RDia (term2rTerm l) (term2rTerm r)
@@ -723,26 +723,26 @@ dRule cptMap term0 = case term0 of
               where
                 lLst = case term2rTerm l of
                   RRad terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
                 rLst = case term2rTerm r of
                   RRad terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
             PCps _ l r -> RCps (lLst <> rLst)
               where
                 lLst = case term2rTerm l of
                   RCps terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
                 rLst = case term2rTerm r of
                   RCps terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
             PPrd _ l r -> RPrd (lLst <> rLst)
               where
                 lLst = case term2rTerm l of
                   RPrd terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
                 rLst = case term2rTerm r of
                   RPrd terms -> terms
-                  trm -> [trm]
+                  trm        -> [trm]
             PKl0 _ e -> RKl0 (term2rTerm e)
             PKl1 _ e -> RKl1 (term2rTerm e)
             PFlp _ e -> RFlp (term2rTerm e)
@@ -763,20 +763,20 @@ weightNF dnf = w
     w :: RTerm -> Integer
     w trm =
       case trm of
-        RIsc ls -> sum (map w (Set.toList ls)) * if dnf then 1 else 2
-        RUni ls -> sum (map w (Set.toList ls)) * if dnf then 2 else 1
+        RIsc ls  -> sum (map w (Set.toList ls)) * if dnf then 1 else 2
+        RUni ls  -> sum (map w (Set.toList ls)) * if dnf then 2 else 1
         RDif l r -> (w l + w r + 10) * 4
-        RCpl e -> (w e + 1) * 4
+        RCpl e   -> (w e + 1) * 4
         RDia l r -> (w l + w r + 10) * 4
         RLrs l r -> (w l + w r + 10) * 4
         RRrs l r -> (w l + w r + 10) * 4
-        RRad ls -> (sum (map w ls) + 1) * 4
-        RCps ls -> (sum (map w ls) + 1) * 4
-        RPrd ls -> (sum (map w ls) + 1) * 4
-        RKl0 e -> (w e + 1) * 4
-        RKl1 e -> (w e + 1) * 4
-        RFlp e -> (w e + 1) * 8
-        _ -> 1
+        RRad ls  -> (sum (map w ls) + 1) * 4
+        RCps ls  -> (sum (map w ls) + 1) * 4
+        RPrd ls  -> (sum (map w ls) + 1) * 4
+        RKl0 e   -> (w e + 1) * 4
+        RKl1 e   -> (w e + 1) * 4
+        RFlp e   -> (w e + 1) * 8
+        _        -> 1
 
 -- If  'matches d expr'  yields  'Just ss', then  'substitute anything ss (lTerm d) == expr'
 
@@ -841,7 +841,7 @@ flat isrComb ls =
 rTermListForSets :: RTerm -> [RTerm]
 rTermListForSets (RIsc s) = Set.toList s
 rTermListForSets (RUni s) = Set.toList s
-rTermListForSets x = rTermList x
+rTermListForSets x        = rTermList x
 
 matches :: RTerm -> RTerm -> [Unifier]
 matches term expr
@@ -887,7 +887,7 @@ matchLists rCombinator es es'
 
 mix :: [[Unifier]] -> [Unifier]
 mix (ls : lss) = [Set.union e str | e <- ls, str <- mix lss]
-mix [] = [Set.empty]
+mix []         = [Set.empty]
 
 {- example:
    mix ["12","xyz","","p"] = [] -- (because the fourth element did not match!)
@@ -945,22 +945,22 @@ parts n = Set.toList . Set.fromList . map (Set.fromList . map Set.fromList) . p 
        parts 6 "abcde" = {}
     -}
     subsets :: [a] -> [[a]]
-    subsets [] = [[]]
+    subsets []       = [[]]
     subsets (x : xs) = map (x :) (subsets xs) <> subsets xs
 
 combLst :: ([RTerm] -> RTerm) -> [RTerm] -> RTerm
 combLst rCombinator es =
   case es of
-    [] -> fatal "Not allowed."
+    []  -> fatal "Not allowed."
     [e] -> e
-    _ -> rCombinator es
+    _   -> rCombinator es
 
 combSet :: (Set RTerm -> RTerm) -> Set RTerm -> RTerm
 combSet rCombinator s =
   case Set.toList s of
-    [] -> fatal "Not allowed."
+    []  -> fatal "Not allowed."
     [e] -> e
-    _ -> rCombinator s
+    _   -> rCombinator s
 
 -- Example: noDoubles { p->A;B, q->'Piet', p->'Z', r->A* } is False, because p binds two different expressions.
 noDoubles :: Unifier -> Bool
@@ -968,8 +968,8 @@ noDoubles unif = and [n == 1 | n <- (map length . eqCl fst . Set.toList) unif]
 
 safezip :: [a] -> [b] -> [(a, b)]
 safezip (a : as) (b : bs) = (a, b) : safezip as bs
-safezip [] [] = []
-safezip _ _ = fatal "Zip of two lists with different lengths!"
+safezip [] []             = []
+safezip _ _               = fatal "Zip of two lists with different lengths!"
 
 {-
    assignments {a,p} {2,3,4}
@@ -1293,9 +1293,9 @@ normStep
           ( flp y,
             [ case (x, y) of
                 (EFlp _, EFlp _) -> "(SJ) (x~;y~)/x |- y"
-                (_, EFlp _) -> "(SJ) (x;y~)/x~ |- y"
-                (EFlp _, _) -> "(SJ) (x~;y)/x |- y~"
-                (_, _) -> "(SJ) (x;y)/x~ |- y~"
+                (_, EFlp _)      -> "(SJ) (x;y~)/x~ |- y"
+                (EFlp _, _)      -> "(SJ) (x~;y)/x |- y~"
+                (_, _)           -> "(SJ) (x;y)/x~ |- y~"
             ],
             "==>"
           )
@@ -1352,7 +1352,7 @@ normStep
           ( foldr1
               (./\.)
               ( let absorbAsy1 = case absorbAsy of
-                      [] -> fatal "impossible" -- because of above or-clause
+                      []     -> fatal "impossible" -- because of above or-clause
                       h : tl -> h NE.:| tl
                     fun cl =
                       let e = NE.head cl
@@ -1367,7 +1367,7 @@ normStep
           ( foldr1
               (./\.)
               ( let absorbAsyRfx1 = case absorbAsyRfx of
-                      [] -> fatal "impossible" -- because of above or-clause
+                      []     -> fatal "impossible" -- because of above or-clause
                       h : tl -> h NE.:| tl
                     fun cl =
                       let e = NE.head cl
@@ -1385,14 +1385,14 @@ normStep
         -- Absorb:    (x\\/-y)/\\y  =  x/\\y
         | isEUni l && not (null absor1) =
           ( case head absor1 of
-              (_, []) -> r
+              (_, [])      -> r
               (_, t' : ts) -> foldr (.\/.) t' ts ./\. r,
             ["absorb " <> shw t' <> ", using law (x\\/-y)/\\y  =  x/\\y" | (t', _) <- absor1],
             "<=>"
           )
         | isEUni r && not (null absor1') =
           ( case head absor1' of
-              (_, []) -> l
+              (_, [])      -> l
               (_, t' : ts) -> l ./\. foldr (.\/.) t' ts,
             ["absorb " <> shw t' <> ", using law x/\\(y\\/-x)  =  x/\\y" | (t', _) <- absor1'],
             "<=>"
@@ -1410,7 +1410,7 @@ normStep
           (f, steps', equ'') = nM posCpl r (l : rs)
           absorbClasses :: NE.NonEmpty (NE.NonEmpty Expression)
           absorbClasses = case eqClass (==) (NE.toList $ exprIsc2list l <> exprIsc2list r) of
-            [] -> fatal "Impossible"
+            []     -> fatal "Impossible"
             h : tl -> h NE.:| tl
           incons = NE.filter (\conjunct -> conjunct == notCpl l) $ exprIsc2list r
           absor0 =
@@ -1499,14 +1499,14 @@ normStep
         -- Absorb:    (x/\\-y)\\/y  =  x\\/y
         | isEIsc l && not (null absor1) =
           ( case head absor1 of
-              (_, []) -> r
+              (_, [])      -> r
               (_, t' : ts) -> foldr (./\.) t' ts .\/. r,
             ["absorb " <> shw t' <> ", using law (x/\\-y)\\/y  =  x\\/y" | (t', _) <- absor1],
             "<=>"
           )
         | isEIsc r && not (null absor1') =
           ( case head absor1' of
-              (_, []) -> l
+              (_, [])      -> l
               (_, t' : ts) -> l .\/. foldr (./\.) t' ts,
             ["absorb " <> shw t' <> ", using law x\\/(y/\\-x)  =  x\\/y" | (t', _) <- absor1'],
             "<=>"
@@ -1518,7 +1518,7 @@ normStep
           -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
           absorbClasses :: NE.NonEmpty (NE.NonEmpty Expression)
           absorbClasses = case eqClass (==) (NE.toList $ exprUni2list l <> exprUni2list r) of
-            [] -> fatal "Impossible"
+            []     -> fatal "Impossible"
             h : tl -> h NE.:| tl
           -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
           tauts = [t' | disjunct <- NE.toList $ exprUni2list r, disjunct == notCpl l, ECpl t' <- [disjunct, l]]
@@ -1618,11 +1618,11 @@ cfProof, dfProof :: Expression -> Proof Expression
 
 isEUni :: Expression -> Bool
 isEUni EUni {} = True
-isEUni _ = False
+isEUni _       = False
 
 isEIsc :: Expression -> Bool
 isEIsc EIsc {} = True
-isEIsc _ = False
+isEIsc _       = False
 
 conjuncts :: env -> Rule -> NE.NonEmpty Expression
 conjuncts env =
@@ -1789,33 +1789,33 @@ allShifts env conjunct = map NE.head . eqClass (==) . filter pnEq . map normDNF 
     headECps expr = f expr
       where
         f (ECps (l@ECps {}, _)) = f l
-        f (ECps (l, _)) = l
-        f _ = expr
+        f (ECps (l, _))         = l
+        f _                     = expr
 
     tailECps :: Expression -> Expression
     tailECps expr = f expr
       where
         f (ECps (ECps (l, r), q)) = f (ECps (l, ECps (r, q)))
-        f (ECps (_, r)) = r
-        f _ = EDcI (target expr)
+        f (ECps (_, r))           = r
+        f _                       = EDcI (target expr)
 
     initECps :: Expression -> Expression
     initECps expr = f expr
       where
         f (ECps (l, ECps (r, q))) = initECps (ECps (ECps (l, r), q))
-        f (ECps (l, _)) = l
-        f _ = EDcI (source expr)
+        f (ECps (l, _))           = l
+        f _                       = EDcI (source expr)
 
     lastECps :: Expression -> Expression
     lastECps expr = f expr
       where
         f (ECps (_, r@ECps {})) = f r
-        f (ECps (_, r)) = r
-        f _ = expr
+        f (ECps (_, r))         = r
+        f _                     = expr
 
     isEDcI :: Expression -> Bool
     isEDcI EDcI {} = True
-    isEDcI _ = False
+    isEDcI _       = False
 
 makeAllConjs :: env -> Rules -> [Conjunct]
 makeAllConjs env allRls =
@@ -1836,13 +1836,13 @@ makeAllConjs env allRls =
       where
         split :: DnfClause -> [Expression] -> DnfClause
         split (Dnf antc cons) (ECpl e : rest) = split (Dnf (e : antc) cons) rest
-        split (Dnf antc cons) (e : rest) = split (Dnf antc (e : cons)) rest
-        split dc [] = dc
+        split (Dnf antc cons) (e : rest)      = split (Dnf antc (e : cons)) rest
+        split dc []                           = dc
 
 appendLeft :: [a] -> NE.NonEmpty a -> NE.NonEmpty a
 appendLeft lst ne =
   case reverse lst of
-    [] -> ne
+    []     -> ne
     x : xs -> appendLeft xs $ x NE.<| ne
 
 foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
@@ -1863,7 +1863,7 @@ init = fromMaybe (fatal "Illegal use of init") . L.initMaybe
 --   will result in the original list.
 dist :: Int -> [a] -> [[[a]]]
 dist 1 ls = [[ls]]
-dist 2 ls = [[take i ls, drop i ls] | i <- [1 .. length ls -1]]
+dist 2 ls = [[take i ls, drop i ls] | i <- [1 .. length ls - 1]]
 dist n ls = [init ds <> st | ds <- dist (n - 1) ls, let staart = last ds, length staart >= 2, st <- dist 2 staart]
 
 {- examples:

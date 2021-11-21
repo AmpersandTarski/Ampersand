@@ -80,7 +80,7 @@ header :: Text -> [Text]
 header title =
   [ "/*",
     T.replicate width "*",
-    "***" <> spaces firstspaces <> title <> spaces (width -6 - firstspaces - l) <> "***",
+    "***" <> spaces firstspaces <> title <> spaces (width - 6 - firstspaces - l) <> "***",
     T.replicate width "*",
     "*/"
   ]
