@@ -1,0 +1,20 @@
+# The purpose of this action is to enforce that every pull request
+# includes a change to our release notes file
+name: Check formatting of code
+on:
+  pull_request:
+    # The specific activity types are listed here to include "labeled" and "unlabeled"
+    # (which are not included by default for the "pull_request" trigger).
+    # This is needed to allow skipping enforcement of the changelog in PRs with specific labels,
+    # as defined in the (optional) "skipLabels" property.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+jobs:
+  # Enforces the use of ormolu formatting of each Haskell file on every pull request 
+  ormolu:
+    runs-on: ubuntu-latest
+    steps:
+    # The checkout step is needed since the enforcer relies on local git commands
+    - uses: actions/checkout@v2
+    
+    - uses: mrkkrp/ormolu-action@v4
