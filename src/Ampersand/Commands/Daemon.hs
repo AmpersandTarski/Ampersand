@@ -289,14 +289,15 @@ withCurrentDirectory dir act =
           act
       )
   where
+    -- returns the value from the in-between computation
     bracket' ::
-      -- | computation to run first (\"acquire resource\")
       IO a ->
-      -- | computation to run last (\"release resource\")
+      --  computation to run first (\"acquire resource\")
       (a -> IO b) ->
-      -- | computation to run in-between
+      --  computation to run last (\"release resource\")
       (a -> RIO env c) ->
-      RIO env c -- returns the value from the in-between computation
+      --  computation to run in-between
+      RIO env c
     bracket' before after thing =
       mask $ \restore -> do
         a <- liftIO before

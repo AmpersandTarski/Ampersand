@@ -344,11 +344,11 @@ toPops env file x = map popForColumn (colNrs x)
             origSrc = XLSXLoc file (theSheetName x) (r, sourceCol)
             origTrg = XLSXLoc file (theSheetName x) (r, targetCol)
         cellToAtomValues ::
-          -- | the delimiter, if there is any, used as seperator for multiple values in the cell
+          -- the delimiter, if there is any, used as seperator for multiple values in the cell
           Maybe Char ->
-          -- | The value that is read from the cell
+          -- The value that is read from the cell
           CellValue ->
-          -- | the origin of the value.
+          -- the origin of the value.
           Origin ->
           [PAtomValue]
         cellToAtomValues mDelimiter cv orig =
@@ -450,7 +450,7 @@ theSheetCellsForTable (sheetName, ws) =
           Nothing -> fatal "Maximum of an empty list is not defined!"
           Just m -> m
         firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-        lastPopRowNr = ((map fst tableStarters <> [maxRowOfWorksheet + 1]) `L.genericIndex` (indexInTableStarters + 1)) -1
+        lastPopRowNr = ((map fst tableStarters <> [maxRowOfWorksheet + 1]) `L.genericIndex` (indexInTableStarters + 1)) - 1
         okHeaderRows = filter isProperRow [firstHeaderRowNr, firstHeaderRowNr + nrOfHeaderRows - 1]
         populationRows = filter isProperRow [firstPopRowNr .. lastPopRowNr]
         isProperRow :: Int -> Bool
