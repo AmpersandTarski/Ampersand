@@ -35,7 +35,6 @@ where
 --import Path hiding ((</>))
 import Ampersand.Basics
 import Data.List (isPrefixOf)
-import Data.Maybe
 import Data.Monoid hiding ((<>))
 import qualified Data.Text as T
 import Options.Applicative
