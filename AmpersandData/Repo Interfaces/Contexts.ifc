@@ -1,0 +1,51 @@
+CONTEXT RAP IN ENGLISH
+INCLUDE "Contexts.adl"
+
+VIEW Context : Context(name)
+INTERFACE Contexts (valid,relations) : "_SESSION"[SESSION]
+BOX <TABS>
+    [ "Contexts" : V[SESSION*Context]
+      BOX<TABLE sortable>
+           [ context        : I
+           , "valid rules"  : valid[Rule*Context]~
+           , relations      : relsDefdIn[Relation*Context]~
+           ]
+    ]
+
+
+INTERFACE Context FOR Ampersand : I[Context]
+BOX <TABS>
+  [ "About" : I BOX
+    [ "name"  : name[Context*ContextIdentifier]
+    , "versionInfo" : versionInfo
+--    , "owner" : owner[Context*Account]
+    , "valid rules" : valid[Rule*Context]~
+    , "valid relations" : valid[Relation*Context]~
+    , "valid concepts" : valid[Concept*Context]~
+    ]
+  , "Patterns defined" : context[Pattern*Context]~ BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Patterns used" : uses[Context*Pattern] BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Isas" : context[Concept*Context]~ ; (I[Concept] 
+          /\
+                (gengen[Isa*Concept]~;gengen[Isa*Concept]) /\
+                ( -(genspc[Isa*Concept]~;genspc[Isa*Concept]))) 
+         -- INTERFACE IsaTree 
+  , "Concepts" : context[Concept*Context]~
+  , "Relations" : relsDefdIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
+       BOX<TABLE sortable>
+           [ relation   : I
+           , "declared in pattern" : declaredIn
+           , "declared in context" : relsDefdIn
+           ]
+  , "Roles" : allRoles[Context*Role]
+--  , "allConjuncts" : allConjuncts[Context*Conjunct]
+--  , "Rules" : context[Rule*Context]~ INTERFACE "Rule"
+  ]
+
+ENDCONTEXT
+
+

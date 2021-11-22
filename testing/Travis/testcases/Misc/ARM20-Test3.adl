@@ -9,7 +9,7 @@ Generating php Object files with Ampersand
   Generating Generics.php
 prototype.exe: !fatal error 344 (module RelBinGenSQL, Prototype v2.2.1.2458 (lib: Ampersand
  v2.2.1.1072))
-  No plug for expression EDcD RELATION verplichting [BIAlijst*Verplichting] Nothing PRAGMA
+  No plug for term EDcD RELATION verplichting [BIAlijst*Verplichting] Nothing PRAGMA
 "" "" "" [BIAlijst*Verplichting]
 
 Errorlevel = 1 - prototype files will not be installed

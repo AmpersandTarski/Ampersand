@@ -1,0 +1,29 @@
+CONTEXT Issue890
+
+RELATION isEnrolledFor[Student*Module]
+RELATION isPartOf[Module*Course]
+RELATION takes[Student*Module]
+REPRESENT Student TYPE ALPHANUMERIC
+
+INTERFACE Overview : "_SESSION"                  crud
+BOX <TABLE> 
+  [ Students : V[SESSION*Student]             crud
+        BOX <TABLE>
+          [ "Student" : I[Student]         cRuD
+          , "Enrolled for" : isEnrolledFor cRUD
+          , "Course" : takes               CRUD
+          ]
+     , Course : V[SESSION*Course]                CRuD   -- used for a box
+        BOX <TABLE>
+          [ "Course" : I                   cRud   -- used for a field
+          , "Modules" : isPartOf~                 -- CRUD is default
+          ]
+     , Modules : V[SESSION*Module]               cRud
+        BOX <TABLE>
+          [ "Modules" : I                  cRuD
+          , "Course" : isPartOf            cRud
+          , "Students" : isEnrolledFor~    CRUD
+          ]
+     ]
+
+ENDCONTEXT

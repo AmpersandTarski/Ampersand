@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+
 module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
@@ -8,16 +7,18 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char hiding (Space)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
-import           Data.List.Split(splitOn)
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
+import qualified RIO.Text.Partial as T'(splitOn)
 
-chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
-chpNatLangReqs opts@Options{..} lev fSpec =
+chpNatLangReqs :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> Int -> FSpec -> Blocks
+chpNatLangReqs env lev fSpec =
       --  *** Header ***
-   xDefBlck opts fSpec SharedLang
+   xDefBlck env fSpec SharedLang
    <> --  *** Intro  ***
-    case fsLang fSpec of
+    case outputLang' of
         Dutch   -> para
                      (  "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
@@ -35,28 +36,30 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      <> "All definitions and agreements have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   (mconcat . map printOneTheme . orderingByTheme) fSpec
+   (mconcat . map printOneTheme . orderingByTheme env) fSpec
    <> --  *** Legal Refs ***
      if genLegalRefs then legalRefs else mempty
 
   where
   -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
+  l :: LocalizedStr -> Text
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
+  genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
-            <> table caption'
+            <> legacyTable caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
                      [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]
                      | art <-(L.sort . L.nub . concatMap getArticlesOfLaw.getRefs) fSpec  ]
 
          where (sectionTitle, lawHeader, articleHeader, caption') =
-                 case fsLang fSpec of
+                 case outputLang' of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec (fsLang fSpec)
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesOf fSpec outputLang'
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -69,7 +72,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
         null (rulesOfTheme tc) = mempty
     | otherwise =
              --  *** Header of the theme: ***
-            xDefBlck opts fSpec (XRefSharedLangTheme (patOfTheme tc))
+            xDefBlck env fSpec (XRefSharedLangTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -78,11 +81,11 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
                  Just pat -> 
-                   case purposesDefinedIn fSpec (fsLang fSpec) pat of
+                   case purposesOf fSpec outputLang' pat of
                      []    -> printIntro    (cptsOfTheme tc)
-                     purps -> purposes2Blocks opts purps
+                     purps -> purposes2Blocks env purps
              )
-          <> (mconcat . map printConcept . cptsOfTheme ) tc
+          <> (mconcat . map (printConcept env l). cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
       where
@@ -111,7 +114,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                    _ 
                      -> para(   (str.l) (NL "Nu volgen definities van de begrippen "
                                         ,EN "At this point, the definitions of ")
-                             <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
+                             <> commaPandocAnd outputLang' (map showCpt (sortWith theNr nCpts)) 
                              <> (str.l) (NL "."
                                         ,EN " are given.")
                              )
@@ -128,7 +131,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                    multipleDefineds
                        -> para(  (str.l) (NL "De begrippen "
                                          ,EN "Concepts ")
-                              <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
+                              <> commaPandocAnd outputLang' (map showCpt multipleDefineds) 
                               <> (str.l) (NL " hebben meerdere definities."
                                          ,EN " are multiple defined.")
                               )
@@ -142,62 +145,19 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                 (_:_:_) -> True
                 _       -> False       
 
-  printConcept :: Numbered CptCont -> Blocks
-  printConcept nCpt 
-        = -- Purposes:
-           (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText.cCptDefs.theLoad) nCpt of
-             []    -> mempty  -- There is no definition of the concept
-             [cd] -> printCDef cd Nothing
-             cds  -> mconcat
-                    [printCDef cd (Just ("."++ [suffx])) 
-                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                    ]
-        where
-         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: ConceptDef -- the definition to print
-                -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
-                -> Blocks
-         printCDef cDef suffx
-           = definitionList 
-              [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
-                     then (str . show .theNr) nCpt
-                     else (str . name) cDef  
-                   )  
-                <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                             then rawInline "latex"
-                                    ("~"++texOnlyMarginNote 
-                                            ("\\gls{"++escapeNonAlphaNum 
-                                                        (name cDef++fromMaybe "" suffx)
-                                                ++"}"
-                                            )
-                                    )
-                             else mempty
-                           )
-                        <> str (cddef cDef)
-                        <> if null (cdref cDef) then mempty
-                           else str (" ["++cdref cDef++"]")
-                       ) 
-                 ] 
-               )
-              ]
 
   printRel :: Numbered DeclCont -> Blocks
   printRel nDcl =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
-            [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
-             , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
-              mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>[printMeaning (fsLang fSpec) dcl]
+            [(   (str.l) (NL "Relatie ", EN "Relation ")
+              <> (text . tshow . theNr $ nDcl) <> ": " <> xDefInln env fSpec (XRefSharedLangRelation dcl)
+             , 
+                [printMeaning outputLang' dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
-                                   <> (commaPandocAnd (fsLang fSpec) (map (str . propFullName (fsLang fSpec)) ps)<>"."
+                                   <> (commaPandocAnd outputLang' (map (str . propFullName False outputLang') ps)<>"."
                                       )
                                   )
                            ]
@@ -216,29 +176,28 @@ chpNatLangReqs opts@Options{..} lev fSpec =
             []  -> mempty
             _   -> bulletList . map (plain . mkPhrase dcl) $ samples
     where dcl = cDcl . theLoad $ nDcl
+          
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         xDefBlck opts fSpec (XRefSharedLangRule rul)
-      <> (printPurposes . cRulPurps . theLoad) nRul
-      -- <> definitionList 
-      --       [(   str (l (NL "Afspraak ", EN "Agreement "))
-      --         <> ": TODO"
-      --        , case (cRulMeaning . theLoad) nRul of
-      --            Nothing 
-      --               -> [plain $
-      --                       (str.l) (NL "De regel ",EN "The rule ")
-      --                    <> (emph.str.name) rul
-      --                    <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-      --                  ]
-      --            Just m
-      --               -> [printMeaning m]
-      --        )
-      --       ]
+         (printPurposes . cRulPurps . theLoad) nRul
+      <> definitionList 
+            [(   str (l (NL "Afspraak ", EN "Agreement "))
+              <> (text . tshow . theNr $ nRul) <>": "
+              <> xDefInln env fSpec (XRefSharedLangRule rul)<>"."
+
+             , case (cRulMeanings . theLoad) nRul of
+                 [] -> [plain $
+                            (str.l) (NL "Deze regel ",EN "The rule ")
+                         <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                       ]
+                 ms -> fmap (printMarkup . ameaMrk) ms
+             )
+            ]
      where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
-   | null (prL++prM++prR)
+   | T.null (prL<>prM<>prR)
                    =    (atomShow . upCap) srcAtom
                      <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
                      <> atomShow tgtAtom
@@ -246,13 +205,13 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      <> atomShow (name decl)
                      <> "."
    | otherwise
-                  =    (if null prL then mempty
+                  =    (if T.null prL then mempty
                          else pragmaShow (upCap prL) <> " ")
                      <> atomShow srcAtom <> " "
-                     <> (if null prM then mempty
+                     <> (if T.null prM then mempty
                          else pragmaShow prM <> " ")
                      <> atomShow tgtAtom
-                     <> (if null prR then mempty
+                     <> (if T.null prR then mempty
                          else " " <> pragmaShow prR)
                      <> "."
    where srcAtom = showValADL (apLeft pair)
@@ -263,40 +222,45 @@ chpNatLangReqs opts@Options{..} lev fSpec =
          atomShow = str
          pragmaShow = emph . str
                    
-data LawRef = LawRef { lawRef :: String}
-data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
-                                 , aOlArt :: [Either String Int]
+newtype LawRef = LawRef { lawRef :: Text}
+data ArticleOfLaw = ArticleOfLaw { aOlLaw :: Text
+                                 , aOlArt :: [Either Text Int]
                                  } deriving Eq
-toLawRef:: String -> Maybe LawRef
-toLawRef s = case s of
-              [] -> Nothing
-              _  -> (Just . LawRef) s
-wordsOf :: LawRef -> NEL.NonEmpty String
-wordsOf ref = case words . lawRef $ ref of
-                [] -> fatal $ "string in LaWRef must not be empty."
-                h:tl -> h NEL.:| tl
+toLawRef:: Text -> Maybe LawRef
+toLawRef txt = if T.null txt then Nothing else Just (LawRef txt)
+wordsOf :: LawRef -> NE.NonEmpty Text
+wordsOf ref = case T.words . lawRef $ ref of
+                [] -> fatal "text in LaWRef must not be empty."
+                h:tl -> h NE.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NEL.init .wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . T'.splitOn ", " . T.unwords . NE.init . wordsOf $ ref
                              
    where
-     buildLA art = ArticleOfLaw ((NEL.last . wordsOf) ref) (scanRef art)
+     buildLA :: Text -> ArticleOfLaw
+     buildLA art = ArticleOfLaw ((NE.last . wordsOf) ref) (scanRef art)
        where
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)
-         scanRef :: String -> [Either String Int]
-         scanRef "" = []
-         scanRef str'@(c:_) | isDigit c = scanRefInt str'
-                            | otherwise = scanRefTxt str'
-         scanRefTxt "" = []
-         scanRefTxt str' = let (txt, rest) = break isDigit str'
-                           in  Left txt : scanRefInt rest
+         scanRef :: Text -> [Either Text Int]
+         scanRef txt = case T.uncons txt of
+           Nothing -> mempty
+           Just (c,_) | isDigit c -> scanRefInt txt
+                      | otherwise -> scanRefTxt txt
+         scanRefTxt :: Text -> [Either Text Int]
+         scanRefTxt txt = case T.uncons txt of
+           Nothing -> mempty
+           Just _ -> let (txt', rest) = T.break isDigit txt'
+                           in  Left txt' : scanRefInt rest
 
-         scanRefInt "" = []
-         scanRefInt str' = let (digits, rest) = span isDigit str'
-                           in  Right (case readMaybe digits of
-                                        Nothing  -> fatal $ "Impossible: This cannot be interpreted as digits: "<> digits
-                                        Just x -> x
-                                     ) : scanRefTxt rest
+         scanRefInt :: Text -> [Either Text Int]
+         scanRefInt txt = case T.uncons txt of
+           Nothing -> mempty
+           Just _  -> Right 
+                        (case readMaybe (T.unpack digits) of
+                          Nothing  -> fatal $ "Impossible: This cannot be interpreted as digits: "<> digits
+                          Just x -> x
+                        ) : scanRefTxt rest
+                  where (digits, rest) = T.span isDigit txt
 
 instance Ord ArticleOfLaw where
  compare a b =
@@ -304,7 +268,8 @@ instance Ord ArticleOfLaw where
      EQ   -> compare (aOlArt a) (aOlArt b)
      ord' -> ord'
 
-unscanRef :: [Either String Int] -> String
-unscanRef = concatMap (either id show)
+unscanRef :: [Either Text Int] -> Text
+unscanRef = T.concat . fmap (either id tshow)
+
              
              

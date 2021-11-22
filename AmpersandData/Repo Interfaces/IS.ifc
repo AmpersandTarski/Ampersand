@@ -1,0 +1,15 @@
+CONTEXT RAP IN ENGLISH LATEX
+
+INTERFACE ruleOverview : I[ONE]
+BOX [ rules : V[ONE*Rule]
+      BOX [ rule : I
+          , term : characteristic
+          ]
+    ]
+
+INTERFACE newRule (characteristic, meaning["Rule"*"NatLang"], purpose["Rule"*"NatLang"]): I[Rule]
+BOX [ rule : I
+    , term : characteristic
+    ]
+
+ENDCONTEXT 

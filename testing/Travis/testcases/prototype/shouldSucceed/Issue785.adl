@@ -2,8 +2,8 @@
 
 prop :: A * A [PROP]
 
-RULE "good expression": (I - prop);V;"Some text"[B]
-RULE "buggy expression": (I - prop)#"Some text"[B]
+RULE "good term": (I - prop);V;"Some text"[B]
+RULE "buggy term": (I - prop)#"Some text"[B]
 
 POPULATION B CONTAINS [ "Some Text" ]
 

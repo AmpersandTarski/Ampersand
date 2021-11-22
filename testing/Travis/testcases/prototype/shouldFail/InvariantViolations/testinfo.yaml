@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand validate
+    exitcode: 10

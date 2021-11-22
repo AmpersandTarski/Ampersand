@@ -1,35 +1,37 @@
+
 module Ampersand.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)
            ) where
-import qualified RIO.List as L
 import Ampersand.Basics
 import Ampersand.ADL1
      ( A_Concept, Relation, AClassify
      )
+import qualified RIO.Text as T
 
-data ClassDiag = OOclassdiagram {cdName :: String
-                                ,classes :: [Class]           --
-                                ,assocs :: [Association]      --
-                                ,aggrs ::  [Aggregation]      --
-                                ,geners :: [Generalization]   --
-                                ,ooCpts :: [A_Concept]}
+data ClassDiag = OOclassdiagram {cdName :: !Text
+                                ,groups :: ![(Text, NonEmpty Class)] -- ^ name of a subgraph and a list of classes in that subgraph
+                                ,classes :: ![Class]           -- ^ list of classes that do not go in a subgraph
+                                ,assocs :: ![Association]      --
+                                ,aggrs ::  ![Aggregation]      --
+                                ,geners :: ![Generalization]   --
+                                ,ooCpts :: ![A_Concept]}
                          deriving Show
 instance Named ClassDiag where
    name = cdName
 
-data Class          = OOClass  { clName :: String          -- ^ name of the class
-                               , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
-                               , clAtts :: [CdAttribute]   -- ^ Attributes of the class
-                               , clMths :: [Method]        -- ^ Methods of the class
-                               } deriving Show
+data Class = OOClass  { clName :: Text          -- ^ name of the class
+                      , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
+                      , clAtts :: [CdAttribute]   -- ^ Attributes of the class
+                      , clMths :: [Method]        -- ^ Methods of the class
+                      } deriving (Show, Eq)
 instance Named Class where
    name = clName
-data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
-                               , attTyp :: String           -- ^ type of the attribute (Concept name or built-in type)
+data CdAttribute    = OOAttr   { attNm :: Text            -- ^ name of the attribute
+                               , attTyp :: Text           -- ^ type of the attribute (Concept name or built-in type)
                                , attOptional :: Bool        -- ^ says whether the attribute is optional
-                               } deriving Show
+                               } deriving (Show, Eq)
 instance Named CdAttribute where
    name = attNm
 data MinValue = MinZero | MinOne deriving (Show, Eq)
@@ -38,44 +40,45 @@ data MaxValue = MaxOne | MaxMany deriving (Show, Eq)
 
 data Multiplicities = Mult MinValue MaxValue deriving Show
 
-data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the name of the source class
-                               , assSrcPort :: String           -- ^ the name of the attribute in the source class
-                               , asslhm ::     Multiplicities   -- ^ left hand side multiplicities
-                               , asslhr ::     String           -- ^ left hand side role
-                               , assTgt ::     String           -- ^ target: the name of the target class
-                               , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
-                               , assrhr ::     String           -- ^ right hand side role
+data Association    = OOAssoc  { assSrc ::     Text           -- ^ source: the name of the source class
+                               , assSrcPort :: Text           -- ^ the name of the attribute in the source class
+                               , asslhm ::     Multiplicities   -- ^ left hand side properties
+                               , asslhr ::     Text           -- ^ left hand side role
+                               , assTgt ::     Text           -- ^ target: the name of the target class
+                               , assrhm ::     Multiplicities   -- ^ right hand side properties
+                               , assrhr ::     Text           -- ^ right hand side role
                                , assmdcl ::    Maybe Relation -- ^ the relations that caused this association , if any.
                                } deriving Show
 data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --
                                , aggParent :: A_Concept         --
                                } deriving (Show, Eq)
-data Generalization = OOGener  { genAgen :: AClassify               --
-                               } deriving (Show)
+newtype Generalization = OOGener  { genAgen :: AClassify               --
+                                  } deriving (Show)
 
 data Deleting       = Open | Close                      --
                                  deriving (Show, Eq)
-data Method         = OOMethodC      String             -- name of this method, which creates a new object (producing a handle)
+data Method         = OOMethodC      Text             -- name of this method, which creates a new object (producing a handle)
                                      [CdAttribute]      -- list of parameters: attribute names and types
-                    | OOMethodR      String             -- name of this method, which yields the attribute values of an object (using a handle).
+                    | OOMethodR      Text             -- name of this method, which yields the attribute values of an object (using a handle).
                                      [CdAttribute]      -- list of parameters: attribute names and types
-                    | OOMethodS      String             -- name of this method, which selects an object using key attributes (producing a handle).
+                    | OOMethodS      Text             -- name of this method, which selects an object using key attributes (producing a handle).
                                      [CdAttribute]      -- list of parameters: attribute names and types
-                    | OOMethodU      String             -- name of this method, which updates an object (using a handle).
+                    | OOMethodU      Text             -- name of this method, which updates an object (using a handle).
                                      [CdAttribute]      -- list of parameters: attribute names and types
-                    | OOMethodD      String             -- name of this method, which deletes an object (using nothing but a handle).
-                    | OOMethod       String             -- name of this method, which deletes an object (using nothing but a handle).
+                    | OOMethodD      Text             -- name of this method, which deletes an object (using nothing but a handle).
+                    | OOMethod       Text             -- name of this method, which deletes an object (using nothing but a handle).
                                      [CdAttribute]      -- list of parameters: attribute names and types
-                                     String             -- result: a type
+                                     Text             -- result: a type
+          deriving Eq
 
 instance Show Method where
-  show (OOMethodC nm cs)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"):handle"
-  show (OOMethodR nm as)  = nm++"(handle):["++L.intercalate "," [ n | OOAttr n _ _<-as]++"]"
-  show (OOMethodS nm ks)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-ks]++"):handle"
-  show (OOMethodD nm)     = nm++"(handle)"
-  show (OOMethodU nm cs)  = nm++"(handle,"++L.intercalate "," [ n | OOAttr n _ _<-cs]++")"
-  show (OOMethod nm cs r) = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r
+  show (OOMethodC nm cs)  = T.unpack $ nm<>"("<>T.intercalate "," [ n | OOAttr n _ _<-cs]<>"):handle"
+  show (OOMethodR nm as)  = T.unpack $ nm<>"(handle):["<>T.intercalate "," [ n | OOAttr n _ _<-as]<>"]"
+  show (OOMethodS nm ks)  = T.unpack $ nm<>"("<>T.intercalate "," [ n | OOAttr n _ _<-ks]<>"):handle"
+  show (OOMethodD nm)     = T.unpack $ nm<>"(handle)"
+  show (OOMethodU nm cs)  = T.unpack $ nm<>"(handle,"<>T.intercalate "," [ n | OOAttr n _ _<-cs]<>")"
+  show (OOMethod nm cs r) = T.unpack $ nm<>"("<>T.intercalate "," [ n | OOAttr n _ _<-cs]<>"): "<>r
 
 --
 --   testCD

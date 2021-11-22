@@ -1,154 +1,217 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric, DuplicateRecordFields,OverloadedLabels  #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings#-}
 module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
-   , Meta(..)
-   , MetaObj(..)
+   , MetaData(..)
    , P_RoleRule(..)
    , Role(..)
+   , P_Enforce(..)
+   , EnforceOperator(..)
    , P_Pattern(..)
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
+   , BoxHeader(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
-   , ConceptDef(..)
+   , PConceptDef(..), PCDDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
+   , PAtomPair(..), PAtomValue(..), mkPair, makePSingleton
    , P_BoxItemTermPrim, P_SubInterface, P_Interface(..), P_IClass(..), P_BoxItem(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
-
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
    , P_Concept(..), P_Sign(..)
-
+   , mkPConcept
    , PClassify(..)
 
    , P_Markup(..)
 
-   , Prop(..), Props
+   , PProp(..), PProps
+   , PRelationDefault(..)
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
-import           Ampersand.Basics hiding (foldr, sequence, concatMap)
+import           Ampersand.Basics hiding (foldr, sequence, concatMap, orElse)
 import           Ampersand.Input.ADL1.FilePos
-import           Data.Foldable hiding (concat)
-import qualified Data.List.NonEmpty as NEL
+import           Data.Foldable (concatMap)
+import           Data.Hashable (Hashable(..),hashWithSalt)
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
-import           Data.Time.LocalTime() -- for instance Show UTCTime
+import qualified RIO.Text as T
+import           RIO.Time
 import           Data.Traversable
-import           GHC.Generics (Generic)
+import           Data.Typeable (typeOf)
 
 data P_Context
-   = PCtx{ ctx_nm ::     String           -- ^ The name of this context
-         , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
-         , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
-         , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
-         , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
-         , ctx_reprs ::  [Representation]
-         , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
-         , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
-         , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
-         , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+   = PCtx{ ctx_nm ::     !Text             -- ^ The name of this context
+         , ctx_pos ::    ![Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctx_lang ::   !(Maybe Lang)         -- ^ The language specified on the top-level context. If omitted, English will be the default.
+         , ctx_markup :: !(Maybe PandocFormat) -- ^ The default markup format for free text in this context
+         , ctx_pats ::   ![P_Pattern]        -- ^ The patterns defined in this context
+         , ctx_rs ::     ![P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_ds ::     ![P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
+         , ctx_cs ::     ![PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctx_ks ::     ![P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctx_rrules :: ![P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+         , ctx_reprs ::  ![Representation]
+         , ctx_vs ::     ![P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     ![PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_ifcs ::   ![P_Interface]      -- ^ The interfaces defined in this context
+         , ctx_ps ::     ![PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
+         , ctx_pops ::   ![P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
+         , ctx_metas ::  ![MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+         , ctx_enfs ::   ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this context, outside the scope of patterns
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
-
 instance Named P_Context where
   name = ctx_nm
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
-data Meta = Meta { pos :: Origin
-              , mtObj :: MetaObj
-              , mtName :: String
-              , mtVal :: String
-              } deriving (Eq,Ord,Show)
-instance Traced Meta where
+data MetaData = MetaData { pos :: Origin
+              , mtName :: Text
+              , mtVal :: Text
+              } deriving (Show)
+instance Traced MetaData where
   origin = pos
-data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
 
- -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
+data EnforceOperator =
+      IsSuperSet Origin
+    | IsSubSet Origin
+    | IsSameSet Origin
+    deriving (Show,Eq)
+
+data P_Enforce a = P_Enforce
+     { pos :: !Origin
+     , penfRel :: !a
+     , penfOp  :: !EnforceOperator
+     , penfExpr :: !(Term a)} deriving (Show)
+instance Functor P_Enforce where fmap = fmapDefault
+instance Foldable P_Enforce where foldMap = foldMapDefault
+instance Traversable P_Enforce where
+  traverse f (P_Enforce orig rel op expr)  =
+    (\r e -> P_Enforce orig r op e) <$> f rel
+                                    <*> traverse f expr
+
+
+-- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
      { pos :: Origin      -- ^ position in the Ampersand script
-     , mRoles :: NEL.NonEmpty Role    -- ^ names of a role
-     , mRules :: NEL.NonEmpty String  -- ^ names of a Rule
-     } deriving (Eq,Ord, Show) -- deriving (Show) is just for debugging
+     , mRoles :: NE.NonEmpty Role    -- ^ names of a role
+     , mRules :: NE.NonEmpty Text  -- ^ names of a Rule
+     } deriving (Show) -- deriving (Show) is just for debugging
+instance Traced P_RoleRule where
+ origin = pos
 
-data Role = Role String
-          | Service String
-           deriving (Show, Typeable, Data, Ord )   -- deriving (Show) is just for debugging
+data Role = Role Text
+          | Service Text
+           deriving (Show, Typeable, Data)   -- deriving (Show) is just for debugging
+instance Ord Role where
+  compare a b = compare (name a) (name b)
 instance Eq Role where
- r == r' = name r == name r'
+  a == b = compare a b == EQ
 instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
 instance Unique Role where
  showUnique = name
-instance Traced P_RoleRule where
- origin = pos
 
 data P_Pattern
-   = P_Pat { pos ::      Origin            -- ^ the starting position in the file in which this pattern was declared.
-           , pt_nm ::    String            -- ^ Name of this pattern
-           , pt_rls ::   [P_Rule TermPrim] -- ^ The user defined rules in this pattern
-           , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
-           , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
-           , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
-           , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
-           , pt_xps ::   [PPurpose]        -- ^ The purposes of elements defined in this pattern
-           , pt_pop ::   [P_Population]    -- ^ The populations that are local to this pattern
-           , pt_end ::   Origin            -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pos ::      !Origin            -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm ::    !Text            -- ^ Name of this pattern
+           , pt_rls ::   ![P_Rule TermPrim] -- ^ The user defined rules in this pattern
+           , pt_gns ::   ![PClassify]       -- ^ The generalizations defined in this pattern
+           , pt_dcs ::   ![P_Relation]      -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: ![P_RoleRule]      -- ^ The assignment of roles to rules.
+           , pt_cds ::   ![PConceptDef]    -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: ![Representation]  -- ^ The type into which concepts is represented
+           , pt_ids ::   ![P_IdentDef]      -- ^ The identity definitions defined in this pattern
+           , pt_vds ::   ![P_ViewDef]       -- ^ The view definitions defined in this pattern
+           , pt_xps ::   ![PPurpose]        -- ^ The purposes of elements defined in this pattern
+           , pt_pop ::   ![P_Population]    -- ^ The populations that are local to this pattern
+           , pt_end ::   !Origin            -- ^ the end position in the file in which this pattern was declared.
+           , pt_enfs ::  ![P_Enforce TermPrim] -- ^ The Enforce statements defined in this pattern
            } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
- compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_Pattern should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x
 instance Eq P_Pattern where
- p1 == p2 = name   p1 == name   p2 && 
-            origin p1 == origin p2
+  a == b = compare a b == EQ
 instance Named P_Pattern where
  name = pt_nm
 
 instance Traced P_Pattern where
  origin = pos
 
-data ConceptDef
-   = Cd  { pos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-         , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-         , cddef :: String   -- ^ The textual definition of this concept.
-         , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-         , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
-         }   deriving (Show,Eq,Ord,Typeable)
+data PConceptDef = PConceptDef
+  { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
+    pos :: !Origin,
+    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    cdcpt :: !Text,
+    -- | The textual definition of this concept.
+    cddef2 :: !PCDDef,
+    -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+    cdmean :: ![PMeaning],
+    -- | The name of the pattern or context in which this concept definition was made
+    cdfrom :: !Text
+  }
+  deriving (Show, Typeable)
 
-instance Unique ConceptDef where
-  showUnique cd = cdcpt cd++"At"++uniqueShowWithType (origin cd)
-instance Traced ConceptDef where
+instance Ord PConceptDef where
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["ConceptDef should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x
+instance Eq PConceptDef where
+  a == b = compare a b == EQ
+instance Unique PConceptDef where
+  showUnique cd = cdcpt cd<>"At"<>tshow (typeOf x) <>"_" <> tshow x
+    where x = origin cd
+instance Traced PConceptDef where
  origin = pos
-instance Named ConceptDef where
+instance Named PConceptDef where
  name = cdcpt
 
+-- | Data structure to implement the change to the new way to specify 
+--   the definition part of a concept. By using this structure, we can 
+--   implement the change in a fully backwards compatible way. 
+data PCDDef
+  = PCDDefLegacy
+      { -- | The textual definition of this concept.
+        pcddef :: !Text,
+        -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+        pcdref :: !Text
+      }
+  | PCDDefNew
+      { pcdmean :: !PMeaning
+      }
+  deriving (Show, Typeable)
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: NEL.NonEmpty String  -- ^ the concepts
+         , reprcpts  :: NE.NonEmpty P_Concept  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
-         } deriving (Ord,Eq,Show)
+         } deriving (Show)
 instance Traced Representation where
  origin = pos
 
@@ -158,9 +221,9 @@ data TType
   | Date | DateTime
   | Boolean | Integer | Float | Object
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Eq, Ord, Typeable, Enum, Bounded)
+     deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
 instance Unique TType where
- showUnique = show
+ showUnique = tshow
 instance Show TType where
   show tt = case tt of
     Alphanumeric      ->   "ALPHANUMERIC"
@@ -177,16 +240,28 @@ instance Show TType where
     Float             ->   "FLOAT"
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
-data P_Relation =
-      P_Sgn { dec_nm :: String        -- ^ the name of the relation
-            , dec_sign :: P_Sign      -- ^ the type. Parser must guarantee it is not empty.
-            , dec_prps :: Props       -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-            , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-                                      -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-            , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-            , pos :: Origin           -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-            } deriving (Show)         --For QuickCheck error messages only!
-
+instance Hashable TType where
+  hashWithSalt s tt =
+     s `hashWithSalt` show tt
+     
+data P_Relation = P_Relation
+  { -- | the name of the relation
+    dec_nm :: !Text,
+    -- | the type. Parser must guarantee it is not empty.
+    dec_sign :: !P_Sign,
+    -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf, Prop)
+    dec_prps :: !PProps,
+    -- | Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+    dec_defaults :: ![PRelationDefault],
+    -- | a list of default values for tuples in the relation
+    dec_pragma :: ![Text],
+    -- | the optional meaning of a relation, possibly more than one for different languages.
+    dec_Mean :: ![PMeaning],
+    -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+    pos :: !Origin
+  }
+  deriving (Show) --For QuickCheck error messages only!
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
 --   However, in the parser, we need to distinguish between two relations with the same name and signature when they are in different locations.
@@ -194,74 +269,58 @@ data P_Relation =
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
---   The only reason for having Ord P_Relation is to represent sets of P_Relations by Data.Set
-instance Eq P_Relation where
- decl==decl' = compare decl decl' == EQ
-instance Ord P_Relation where
- compare p1 p2 
-   = case compare (origin p1) (origin p2) of
-      LT -> LT
-      GT -> GT
-      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
+--   This is still not true for MEATGRINDER stuff!
+--   So,
+-- DO NOT USE ORD and EQ on P_Relation!
 instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
  origin = pos
--- instance Flippable P_Relation where
---   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
---                ,dec_sign = flp (dec_sign rel)}
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
 mergeRels :: [P_Relation] -> [P_Relation]
-mergeRels rs = map (foldr1 mergeRel) (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
   where
-    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
-    mergeRel :: P_Relation -> P_Relation -> P_Relation -- merges attributes, assuming both signatures are equal.
-    mergeRel r0 r1
-     = P_Sgn { dec_nm     = name r0     -- ^ the name of the relation
-             , dec_sign   = dec_sign r0 -- ^ the type. Parser must guarantee it is not empty.
-             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-             , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
-                                        -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-             , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-             , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+    fun :: NonEmpty P_Relation -> P_Relation
+    fun rels
+     = P_Relation { dec_nm     = name r0
+             , dec_sign   = dec_sign r0
+             , dec_prps   =  Set.unions (dec_prps <$> NE.toList rels)
+             , dec_defaults = concatMap dec_defaults rels
+             ,  dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
+                              []  -> dec_pragma r0
+                              h:_ -> dec_pragma h
+             , dec_Mean   = L.nub $ concatMap dec_Mean rels
+             , pos        = case NE.filter (not . isFuzzyOrigin . origin) rels of
+                              []  -> origin r0
+                              h:_ -> origin h
              }
+         where (r0 :| _ ) = rels
+    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
 
 data PAtomPair
   = PPair { pos :: Origin
           , ppLeft  :: PAtomValue
           , ppRight :: PAtomValue
-          } deriving (Eq,Ord,Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
+          } deriving (Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
+instance Ord PAtomPair where
+  compare a b = compare (ppLeft a, ppRight a) (ppLeft b, ppRight b)
+instance Eq PAtomPair where
+  a == b = compare a b == EQ
 instance Traced PAtomPair where
   origin = pos
 instance Flippable PAtomPair where
   flp pr = pr{ppLeft = ppRight pr
              ,ppRight = ppLeft pr}
---data PSingleton
---  = PSingleton { pos :: Origin
---               , psRaw  :: String
---               , psInterprets :: [PAtomValue]
---               }
---instance Show PSingleton where
--- show = psRaw
---instance Eq PSingleton where
--- a == b = psRaw a == psRaw b
---instance Ord PSingleton where
--- compare a b = compare (psRaw a) (psRaw b)
---instance Traced PSingleton where
--- origin = pos
-type PSingleton = PAtomValue
-makePSingleton :: String -> PSingleton
+
+makePSingleton :: Text -> PAtomValue
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
---   PSingleton { psOrig =Origin "ParseTree.hs"
---              , psRaw = s
---              , psInterprets = fatal "Probably no need to make something up..."
---              }
+
 data PAtomValue
-  = PSingleton Origin String (Maybe PAtomValue)
-  | ScriptString Origin String -- string from script char to enquote with when printed
-  | XlsxString Origin String
+  = PSingleton Origin Text (Maybe PAtomValue)
+  | ScriptString Origin Text -- string from script char to enquote with when printed
+  | XlsxString Origin Text
   | ScriptInt Origin Integer
   | ScriptFloat Origin Double
   | XlsxDouble Origin Double
@@ -269,6 +328,7 @@ data PAtomValue
   | ScriptDate Origin Day
   | ScriptDateTime Origin UTCTime
    deriving (Typeable, Data)
+
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
   case pav of
@@ -277,11 +337,11 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> show s
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
+    XlsxDouble     o d -> fatal ("We got a value "<>tshow d<>" from "<>tshow o<>", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
-  
+
 instance Eq PAtomValue where
   a == b = compare a b == EQ
 
@@ -319,7 +379,7 @@ instance Traced PAtomValue where
     ScriptDate     o _ -> o
     ScriptDateTime o _ -> o
 instance Unique PAtomValue where
-  showUnique = show
+  showUnique = tshow
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r
    = PPair { pos   = o
@@ -333,11 +393,11 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
+   | Patm Origin PAtomValue (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
                                                   --   eg, when `123` is found by the parser, the list will contain both interpretations as
-                                                  --   the String "123" or as Integer 123.
-                                                  --   Since everything between the single quotes can allways be interpretated as a String,
-                                                  --   it is quaranteed that the list contains the interpretation as String, and thus cannot
+                                                  --   the Text "123" or as Integer 123.
+                                                  --   Since everything between the single quotes can allways be interpretated as a Text,
+                                                  --   it is quaranteed that the list contains the interpretation as Text, and thus cannot
                                                   --   be empty.
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
@@ -345,26 +405,14 @@ data TermPrim
    | PNamedR P_NamedRel
    deriving (Show) --For QuickCheck error messages only!
 
--- | A P_NamedRel is used to refer to one Relation. (i.e. It identifies a relation)
---   In Ampersand source code, it is allowed to leave out the signature (i.e. source and target)
---   as long as the name (without signature) refers to one relation only. For this reason, the signature is optional (Maybe).
---   At all times, a P_NamedRel must be a reliable reference to a relation, which is invariably true for every correct (i.e. type error free) script.
---   In the Haskell code we ensure that every P_NamedRel behind the type checker is typed (i.e. the p_mbSign is Just somesignature).
-data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   deriving (Show, Eq, Ord)
+data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: Text, p_mbSign :: Maybe P_Sign }
+   deriving Show
 
-{- For whenever it may turn out to be useful
-instance Eq TermPrim where
-  PI _           == PI _            = True
-  Pid _ (Just c) == Pid _ (Just c') = p_cptnm c==p_cptnm c'
-  Pid _ Nothing  == Pid _ Nothing   = True
-  Patm _ x c     == Patm _ x' c'    = x==x' && p_cptnm c==p_cptnm c'
-  PVee _         == PVee _          = True
-  Pfull _ c d    == Pfull _ c' d'   = p_cptnm c==p_cptnm c' && d==d'
-  Prel _ x       == Prel _ x'       = x==x'
-  PTrel _ x s    == PTrel _ x' s'   = x==x' && pSrc s==pSrc s' && pTgt s==pTgt s'
-  _ == _ = False
--}
+instance Eq P_NamedRel where
+     nr==nr'
+      = case (p_mbSign nr, p_mbSign nr') of
+             (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+             _                      -> False
 
 data Term a
    = Prim a
@@ -421,9 +469,10 @@ instance Traced (P_SubIfc a) where
 instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 instance Traversable P_BoxItem where
- traverse f (P_BxExpr nm pos' ctx mCrud mView msub)
-  = (\ctx' msub'->(P_BxExpr nm pos' ctx' mCrud mView msub')) <$>
-     traverse f ctx <*> traverse (traverse f) msub
+ traverse f (P_BxExpr nm orig ctx mCrud mView msub)
+  = (\ctx' msub'-> P_BxExpr nm orig ctx' mCrud mView msub')
+       <$> traverse f ctx
+       <*> traverse (traverse f) msub
  traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)
 
 instance Traced TermPrim where
@@ -434,15 +483,6 @@ instance Traced TermPrim where
    PVee orig      -> orig
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
-
---instance Named TermPrim where
--- name e = case e of
---   PI _        -> "I"
---   Pid _ _     -> "I"
---   Patm _ s _  -> s
---   PVee _      -> "V"
---   Pfull _ _ _ -> "V"
---   PNamedR r   -> name r
 
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
@@ -470,24 +510,34 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded, Data)
 instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-data PairView a = PairView { ppv_segs :: NEL.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView { ppv_segs :: NE.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
-  origin = origin . NEL.head . ppv_segs
+  origin = origin . NE.head . ppv_segs
 data PairViewSegment a =
     PairViewText{ pos :: Origin
-                , pvsStr :: String
+                , pvsStr :: Text
                 }
   | PairViewExp { pos :: Origin
                 , pvsSoT :: SrcOrTgt
                 , pvsExp :: a
-                } deriving (Show, Typeable, Eq, Generic)
+                } deriving (Show, Typeable, Generic)
+instance Eq (PairViewSegment a) where
+ p1 == p2 = compare p1 p2 == EQ
+instance Ord (PairViewSegment a) where
+ compare a b = fromMaybe
+    (fatal . T.intercalate "\n" $
+       ["P_Rule a should have a non-fuzzy Origin."
+       , tshow (origin a)
+       , tshow (origin b)
+       ])
+    (maybeOrdering (origin a) (origin b))
 instance Hashable a => Hashable (PairViewSegment a)
 instance Traced (PairViewSegment a) where
   origin = pos
@@ -514,134 +564,175 @@ instance Traversable PairView where
 instance Functor PairView where fmap = fmapDefault
 instance Foldable PairView where foldMap = foldMapDefault
 
-data P_Rule a  =
-   P_Ru { pos ::  Origin            -- ^ Position in the Ampersand file
-        , rr_nm ::   String            -- ^ Name of this rule
+data P_Rule a  = P_Rule
+        { pos ::  Origin            -- ^ Position in the Ampersand file
+        , rr_nm ::   Text            -- ^ Name of this rule
         , rr_exp ::  Term a            -- ^ The rule expression
         , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
         , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rr_viol :: Maybe (PairView (Term a))  -- ^ Custom presentation for violations, currently only in a single language
         } deriving Show
 instance Ord (P_Rule a) where
-  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_Rule a should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_Rule a) where
  origin = pos
 instance Functor P_Rule where fmap = fmapDefault
 instance Foldable P_Rule where foldMap = foldMapDefault
 instance Traversable P_Rule where
- traverse f (P_Ru fps nm expr mean msg viol)
-  = (\e v -> P_Ru fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
+ traverse f (P_Rule fps nm expr mean msg viol)
+  = (\e v -> P_Rule fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
 instance Named (P_Rule a) where
  name = rr_nm
 
 newtype PMeaning = PMeaning P_Markup
-         deriving Show
+         deriving (Show, Eq)
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
     P_Markup  { mLang   :: Maybe Lang
               , mFormat :: Maybe PandocFormat
-              , mString :: String
-              } deriving Show -- for debugging only
+              , mString :: Text
+              } deriving (Show,Eq) -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
-              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+  = P_RelPopu { p_src   :: Maybe P_Concept -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe P_Concept -- these src and tgt must be more specific than the P_NamedRel
               , pos     :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation that corresponds with the table which the pairs (p_popps) are stored.
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin
-              , p_cnme  :: String  -- the name of a concept
+              , p_cpt   :: P_Concept  -- the concept the population belongs to
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
+--NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging. 
 
-instance Ord P_Population where
-  compare p1 p2 = case (p1,p2) of -- P_Population cannot be compaired using 'pos', because Origin of grinded population (meat grinder) is the same for all
-    ( P_RelPopu{} , P_RelPopu{} ) -> if p_nmdr p1==p_nmdr p2 then compare (p_popps p1) (p_popps p2) else compare (p_nmdr p1) (p_nmdr p2)
-    ( P_CptPopu{} , P_CptPopu{} ) -> compare (p_popas p1) (p_popas p2)
-    ( P_RelPopu{} , _           ) -> LT
-    ( _           , P_RelPopu{} ) -> GT
-
-instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
- p1 == p2 = compare p1 p2 == EQ
- 
 instance Named P_Population where
- name P_RelPopu{p_nmdr = nr} = name nr
- name P_CptPopu{p_cnme = nm} = nm
+    name P_RelPopu{p_nmdr = rel} = name rel
+    name P_CptPopu{p_cpt  = cpt} = name cpt
 
 instance Traced P_Population where
  origin = pos
-
 data P_Interface =
      P_Ifc { ifc_IsAPI :: Bool      -- ^ The interface is of type API
-           , ifc_Name :: String           -- ^ the name of the interface
+           , ifc_Name :: Text           -- ^ the name of the interface
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_BoxItemTermPrim       -- ^ the context expression (mostly: I[c])
            , pos :: Origin
-           , ifc_Prp :: String
+           , ifc_Prp :: Text
            } deriving (Show) --For QuickCheck error messages only!
 
 instance Ord P_Interface where --Required for merge of P_Contexts
- compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_Interface should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x
 instance Eq P_Interface where
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Named P_Interface where
  name = ifc_Name
 
 instance Traced P_Interface where
  origin = pos
 
-data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Ord, Show)
+newtype P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
-              = P_Box          { pos :: Origin
-                               , si_class :: Maybe String
+              = P_Box          { pos :: !Origin
+                               , si_header :: !BoxHeader
                                , si_box :: [P_BoxItem a] }
-              | P_InterfaceRef { pos :: Origin
-                               , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
-                               , si_str :: String  -- Name of the interface that is reffered to
-                               } 
+              | P_InterfaceRef { pos :: !Origin
+                               , si_isLink :: !Bool --True iff LINKTO is used. (will display as hyperlink)
+                               , si_str :: !Text  -- Name of the interface that is reffered to
+                               }
                 deriving (Show)
+
+-- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
+data BoxHeader = BoxHeader
+    { pos :: !Origin
+    , btType :: !Text
+    -- ^ Type of the HTML template that is used for rendering
+    , btKeys :: [TemplateKeyValue]
+    -- ^ Key-value pairs 
+    } deriving (Show,Data)
+
+
+instance Traced BoxHeader where
+  origin = pos
+
+data TemplateKeyValue = TemplateKeyValue
+    { pos :: !Origin
+    , tkkey :: !Text
+    -- ^ Name of the attribute  
+    , tkval :: !(Maybe Text)
+    -- ^ value of the attribute. (when no value, the attribute is handled like a switch)
+    } deriving (Show,Data)
+instance Named TemplateKeyValue where
+  name = tkkey
+instance Traced TemplateKeyValue where
+  origin = pos
+
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
-     P_BxExpr { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+     P_BxExpr { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
            , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
-           , obj_mView :: Maybe String -- ^ The view that should be used for this object
+           , obj_mView :: Maybe Text -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            }
-   | P_BxTxt  { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+   | P_BxTxt  { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , pos :: Origin
-           , obj_txt :: String
+           , obj_txt :: Text
            } deriving (Show)       -- just for debugging (zie ook instance Show BoxItem)
 instance Ord (P_BoxItem a) where
-  compare a b = compare (origin a) (origin b)
-instance Eq (P_BoxItem a) where od==od' = origin od==origin od'
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_BoxItem a should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+instance Eq (P_BoxItem a) where
+  a == b = compare a b == EQ
 instance Named (P_BoxItem a) where
   name = obj_nm
 instance Traced (P_BoxItem a) where
  origin = pos
-data P_Cruds = P_Cruds Origin String deriving Show
+data P_Cruds = P_Cruds Origin Text deriving Show
 type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
 data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-              , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+              , ix_lbl :: Text         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , ix_ats :: NEL.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+              , ix_ats :: NE.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
 instance Named (P_IdentDf a) where
  name = ix_lbl
 instance Ord (P_IdentDf a) where
-  compare p1 p2 = compare (origin p1) (origin p2)
-instance Eq (P_IdentDf a) where 
-  p1 == p2 = compare p1 p2 == EQ
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_IdentDf a should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+instance Eq (P_IdentDf a) where
+  a == b = compare a b == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
 instance Functor P_IdentDf where fmap = fmapDefault
@@ -654,24 +745,31 @@ instance Traversable P_IdentSegmnt where
   traverse f (P_IdentExp x) = P_IdentExp <$> traverse f x
 
 type P_IdentSegment = P_IdentSegmnt TermPrim
-data P_IdentSegmnt a
+newtype P_IdentSegmnt a
               = P_IdentExp  { ks_obj :: P_BoxItem a}
                 deriving (Eq, Ord, Show)
 
 type P_ViewDef = P_ViewD TermPrim
 data P_ViewD a =
          P_Vd { pos :: Origin            -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-              , vd_lbl :: String            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+              , vd_lbl :: Text            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , vd_cpt :: P_Concept         -- ^ the concept for which this view is applicable
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
+              , vd_ats :: [P_ViewSegment a] -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
- compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["P_ViewD a should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_ViewD a) where
  origin = pos
 instance Named (P_ViewD a) where
@@ -681,8 +779,8 @@ instance Foldable P_ViewD where foldMap = foldMapDefault
 instance Traversable P_ViewD where
  traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
-data P_ViewSegment a = 
-     P_ViewSegment { vsm_labl :: Maybe String
+data P_ViewSegment a =
+     P_ViewSegment { vsm_labl :: Maybe Text
                    , pos :: Origin
                    , vsm_load :: P_ViewSegmtPayLoad a
                    } deriving Show
@@ -692,20 +790,14 @@ instance Functor P_ViewSegment where fmap = fmapDefault
 instance Foldable P_ViewSegment where foldMap = foldMapDefault
 instance Traversable P_ViewSegment where
  traverse fn (P_ViewSegment a b c) = P_ViewSegment a b <$> traverse fn c
-data P_ViewSegmtPayLoad a  
+data P_ViewSegmtPayLoad a
                     = P_ViewExp  { vs_expr :: Term a }
-                    | P_ViewText { vs_txt :: String }
+                    | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-data ViewHtmlTemplate = ViewHtmlTemplateFile String
---              | ViewHtmlTemplateInline String -- Future extension
+newtype ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
+--              | ViewHtmlTemplateInline Text -- Future extension
                   deriving (Eq, Ord, Show)
-
-{- Future extension:
-data ViewText = ViewTextTemplateFile String
-              | ViewTextTemplateInline String
-                  deriving (Eq, Ord, Show)
--}
 
 instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
 instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault
@@ -714,23 +806,20 @@ instance Traversable P_ViewSegmtPayLoad where
  traverse _ (P_ViewText a) = pure (P_ViewText a)
 
 
--- PPurpose is a parse-time constructor. It contains the name of the object it explains.
--- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
---                       Constructor      name          RefID  Explanation
-data PRef2Obj = PRef2ConceptDef String
+data PRef2Obj = PRef2ConceptDef Text
               | PRef2Relation P_NamedRel
-              | PRef2Rule String
-              | PRef2IdentityDef String
-              | PRef2ViewDef String
-              | PRef2Pattern String
-              | PRef2Interface String
-              | PRef2Context String
-              deriving Show -- only for fatal error messages
+              | PRef2Rule Text
+              | PRef2IdentityDef Text
+              | PRef2ViewDef Text
+              | PRef2Pattern Text
+              | PRef2Interface Text
+              | PRef2Context Text
+              deriving (Show, Eq) -- only for fatal error messages
 
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Relation (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
+     PRef2Relation (PNamedRel _ nm mSgn) -> nm<>maybe "" tshow mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
@@ -741,32 +830,43 @@ instance Named PRef2Obj where
 data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand script of this purpose definition
                       , pexObj :: PRef2Obj    -- the reference to the object whose purpose is explained
                       , pexMarkup:: P_Markup  -- the piece of text, including markup and language info
-                      , pexRefIDs :: [String] -- the references (for traceability)
+                      , pexRefIDs :: [Text] -- the references (for traceability)
                       } deriving Show
 instance Ord PPurpose where --Required for merge of P_Contexts
- compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
-instance Eq PPurpose where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+ compare a b = case compare (name (pexObj a)) (name (pexObj b)) of
+     EQ -> case (origin a, origin b) of
+             (OriginUnknown,OriginUnknown) -> compare (pexRefIDs a) (pexRefIDs b)
+             (OriginUnknown,_) -> LT
+             (_,OriginUnknown) -> GT
+             (_, _) -> fromMaybe (fatal . T.intercalate "\n" $
+                            ["PPurpose a should have a non-fuzzy Origin."
+                            , tshow (origin a)
+                            , tshow (origin b)
+                            ])
+                         (maybeOrdering (origin a) (origin b))
+     x -> x
 
-instance Named PPurpose where
- name pe = name (pexObj pe)
+instance Eq PPurpose where --Required for merge of P_Contexts
+  a == b = compare a b == EQ
 
 instance Traced PPurpose where
  origin = pos
 
 data P_Concept
-   = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
-   | P_Singleton
+   = PCpt{ p_cptnm :: Text }  -- ^The name of this Concept
+   | P_ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
       deriving (Eq,Ord)
 -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
-
+mkPConcept :: Text -> P_Concept
+mkPConcept "ONE" = P_ONE
+mkPConcept nm = PCpt {p_cptnm = nm}
 instance Named P_Concept where
  name PCpt {p_cptnm = nm} = nm
- name P_Singleton = "ONE"
+ name P_ONE = "ONE"
 
 instance Show P_Concept where
- show = name
+ show = T.unpack . name
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
 -- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
@@ -781,77 +881,121 @@ instance Flippable P_Sign where
 data PClassify =  PClassify
   { pos      :: Origin
   , specific :: P_Concept                    -- ^ Left hand side concept expression
-  , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
-  } deriving (Show, Eq, Ord)
+  , generics :: NE.NonEmpty P_Concept       -- ^ Right hand side concept expression
+  } deriving (Show)
+
+-- (Stef April 29th, 2020) Eq PClassify is used to generate P-contexts without duplicate PClassify's in it.
+instance Eq PClassify where
+ p == q = specific p==specific q && generics p==generics q
 
 instance Traced PClassify where
  origin = pos
 
-type Props = Set.Set Prop
+type PProps = Set PProp
+data PProp
+  = -- | univalent
+    P_Uni
+  | -- | injective
+    P_Inj
+  | -- | surjective
+    P_Sur
+  | -- | total
+    P_Tot
+  | -- | symmetric
+    P_Sym
+  | -- | antisymmetric
+    P_Asy
+  | -- | transitive
+    P_Trn
+  | -- | reflexive
+    P_Rfx
+  | -- | irreflexive
+    P_Irf
+  | -- | PROP keyword, the parser must replace this by [Sym, Asy].
+    P_Prop
+  deriving (Eq, Ord, Typeable, Data, Enum, Bounded)
 
-data Prop      = Uni          -- ^ univalent
-               | Inj          -- ^ injective
-               | Sur          -- ^ surjective
-               | Tot          -- ^ total
-               | Sym          -- ^ symmetric
-               | Asy          -- ^ antisymmetric
-               | Trn          -- ^ transitive
-               | Rfx          -- ^ reflexive
-               | Irf          -- ^ irreflexive
-               | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
-                 deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
+instance Show PProp where
+ show P_Uni = "UNI"
+ show P_Inj = "INJ"
+ show P_Sur = "SUR"
+ show P_Tot = "TOT"
+ show P_Sym = "SYM"
+ show P_Asy = "ASY"
+ show P_Trn = "TRN"
+ show P_Rfx = "RFX"
+ show P_Irf = "IRF"
+ show P_Prop = "PROP"
 
-instance Show Prop where
- show Uni = "UNI"
- show Inj = "INJ"
- show Sur = "SUR"
- show Tot = "TOT"
- show Sym = "SYM"
- show Asy = "ASY"
- show Trn = "TRN"
- show Rfx = "RFX"
- show Irf = "IRF"
- show Prop = "PROP"
+instance Unique PProp where
+ showUnique = tshow
 
-instance Unique Prop where
- showUnique = show
-
-instance Flippable Prop where
- flp Uni = Inj
- flp Tot = Sur
- flp Sur = Tot
- flp Inj = Uni
+instance Flippable PProp where
+ flp P_Uni = P_Inj
+ flp P_Tot = P_Sur
+ flp P_Sur = P_Tot
+ flp P_Inj = P_Uni
  flp x = x
-
+data PRelationDefault =
+    PDefAtom SrcOrTgt (NE.NonEmpty PAtomValue)
+  | PDefEvalPHP SrcOrTgt Text
+  deriving (Eq, Ord, Data, Show)
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
-  PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
+  PCtx{ ctx_nm     = case (filter (not.T.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
-      , ctx_pos    = nubSortConcatMap ctx_pos contexts
+      , ctx_pos    = fromContextsKeepDoubles ctx_pos
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
-      , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_pats   = nubSortConcatMap ctx_pats contexts
-      , ctx_rs     = nubSortConcatMap ctx_rs contexts
-      , ctx_ds     = mergeRels (ctx_ds ctx1++ctx_ds ctx2)
-      , ctx_cs     = nubSortConcatMap ctx_cs contexts
-      , ctx_ks     = nubSortConcatMap ctx_ks contexts
-      , ctx_rrules = nubSortConcatMap ctx_rrules contexts
-      , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
-      , ctx_vs     = nubSortConcatMap ctx_vs contexts
-      , ctx_gs     = nubSortConcatMap ctx_gs contexts
-      , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
-      , ctx_ps     = nubSortConcatMap ctx_ps contexts
-      , ctx_pops   = nubSortConcatMap ctx_pops contexts
-      , ctx_metas  = nubSortConcatMap ctx_metas contexts
+      , ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts
+      , ctx_pats   = fromContextsKeepDoubles ctx_pats
+      , ctx_rs     = fromContextsRemoveDoubles ctx_rs
+      , ctx_ds     = mergeRels (ctx_ds ctx1<>ctx_ds ctx2)
+      , ctx_cs     = fromContextsKeepDoubles ctx_cs
+      , ctx_ks     = fromContextsKeepDoubles ctx_ks
+      , ctx_rrules = fromContextsKeepDoubles ctx_rrules
+      , ctx_reprs  = fromContextsKeepDoubles ctx_reprs
+      , ctx_vs     = fromContextsRemoveDoubles ctx_vs
+      , ctx_gs     = fromContextsKeepDoubles ctx_gs
+      , ctx_ifcs   = fromContextsRemoveDoubles ctx_ifcs
+      , ctx_ps     = fromContextsKeepDoubles ctx_ps
+      , ctx_pops   = mergePops (ctx_pops ctx1<>ctx_pops ctx2)
+      , ctx_metas  = fromContextsKeepDoubles ctx_metas
+      , ctx_enfs   = fromContextsKeepDoubles ctx_enfs
       }
     where
+      -- NOTE:
+      -- In the P_Structure we want to limit nub as much as possible. 
+      -- this is to ensure that no information is lost because we do
+      -- not know a proper origin of some element. Sometimes the origin
+      -- is used to distinquish between two elements. That is not 
+      -- usefull here, and might lead to information lost.
+      fromContextsKeepDoubles :: (P_Context -> [a]) -> [a]
+      fromContextsKeepDoubles fun = concatMap fun contexts
       contexts = [ctx1,ctx2]
-      nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
-      nubSortConcatMap f = Set.toList 
-                         . Set.unions 
-                         . map Set.fromList 
-                         . map f
+      fromContextsRemoveDoubles :: Ord b => (P_Context -> [b]) -> [b]
+      fromContextsRemoveDoubles f =
+         Set.toList . Set.unions . map (Set.fromList . f) $ contexts
+      mergePops :: [P_Population] -> [P_Population]
+      mergePops = map mergePopsSameType . NE.groupBy groupCondition
+         where
+             groupCondition :: P_Population -> P_Population -> Bool
+             groupCondition a b =
+               case (a,b) of
+                 (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b
+                                           && p_tgt a == p_tgt b
+                                           && sameNamedRels (p_nmdr a) (p_nmdr b)
+                 (P_CptPopu{},P_CptPopu{}) -> p_cpt a == p_cpt b
+                 _  -> False
+               where
+                 sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool
+                 sameNamedRels x y = p_nrnm x == p_nrnm y
+                                  && p_mbSign x == p_mbSign y
+             mergePopsSameType :: NE.NonEmpty P_Population -> P_Population
+             mergePopsSameType (h :| tl) = case h of
+                P_RelPopu{} -> h {p_popps = Set.toList . Set.unions . map (Set.fromList . p_popps) $ (h:tl)}
+                P_CptPopu{} -> h {p_popas = Set.toList . Set.unions . map (Set.fromList . p_popas) $ (h:tl)}
+
       -- | Left-biased choice on maybes
       orElse :: Maybe a -> Maybe a -> Maybe a
       x `orElse` y = case x of

@@ -1,0 +1,15 @@
+CONTEXT InterfaceTest1 IN ENGLISH
+
+  INTERFACE Identifier : I["Business actor"]
+   BOX[ name : name~ ]
+
+PATTERN Business
+name :: "Business actor" * Identifier [UNI]
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script tests the mechanism of matching the source of an interface field to the target of the interface term.
+   Result: PASS
+-}

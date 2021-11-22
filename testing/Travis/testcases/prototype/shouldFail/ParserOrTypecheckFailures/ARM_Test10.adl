@@ -1,0 +1,12 @@
+﻿CONTEXT ARM_Test10 IN DUTCH -- (project ARMisa)
+{- This script should produce a compiler error saying that
+the source of: critText [Criterium*Blob] does not match the type of the BOX, Gewetensvraag.
+-}
+critText :: Criterium -> Blob
+INTERFACE "Gewetensvraag" : I[Gewetensvraag]
+BOX[ gewetensvragen: I[Gewetensvraag]
+BOX[ gewetensvraag: I
+, criterium : critText
+]
+]
+ENDCONTEXT

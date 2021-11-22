@@ -1,41 +1,38 @@
-{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Test.Parser.ParserTest (
-    parseReparse, parseScripts, showErrors
+    parseScripts, showErrors
 ) where
 
-import           Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.CtxError (Guarded(..),CtxError(..),whenChecked)
-import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.ADL1.CtxError (Guarded(..),CtxError)
 import           Ampersand.Input.Parsing
-import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL
-
+import           Ampersand.Misc.HasClasses
+import           Ampersand.Options.FSpecGenOptsParser
+import           Ampersand.Types.Config
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 -- Tries to parse all the given files
-parseScripts :: (HasOptions env, HasHandle env, HasVerbosity env) => 
+parseScripts :: (HasRunner env) => 
                 [FilePath] ->  RIO env Bool
 parseScripts paths =
   case paths of
     [] -> return True
-    (f:fs) -> do
-        parsed <- snd <$> parseADL f
+    h:tl -> do
+        let fSpecGenOpts = defFSpecGenOpts (h:tl)
+        parsed <- snd <$> extendWith fSpecGenOpts (parseFilesTransitive (Roots (h:tl)))
         case parsed of
             Checked _ ws -> do
-                sayLn ("Parsed: " ++ f)
-                mapM_  sayLn . concatMap (lines . show) $ ws
-                parseScripts fs
+                logInfo $ "Parsed: " <> display (T.pack h)
+                mapM_ logWarn (fmap displayShow ws)
+                parseScripts tl
             Errors  e -> do 
-                sayLn ("Cannot parse: " ++ f)
-                showErrors (NEL.toList e)
+                logError $ "Cannot parse: " <> display (T.pack h)
+                showErrors (NE.toList e)
                 return False
 
-showErrors :: (HasHandle env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
-showErrors = mapM_ $ mapM_ sayLn . lines . show
+showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()
+showErrors = mapM_ (logError . displayShow)
 
-parse :: FilePath -> String -> Guarded P_Context
-parse file txt = whenChecked (runParser pContext file txt) (pure . fst)
-
-parseReparse :: FilePath -> String -> Guarded P_Context
-parseReparse file txt = whenChecked (parse file txt) reparse
-                  where reparse p = parse (file ++ "**pretty") (prettyPrint p)

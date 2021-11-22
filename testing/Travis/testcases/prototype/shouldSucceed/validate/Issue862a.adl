@@ -44,14 +44,14 @@ POPULATION husband CONTAINS
     , ("Janny","Stef")
     , ("Marian","Timo")
     ]
-INTERFACE "Persons": V[SESSION*Person] cRud BOX <SHCOLS>
+INTERFACE "Persons": V[SESSION*Person] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
    , husband: husband
    , wife : husband~]
-INTERFACE "Males": V[SESSION*Male] cRud BOX <SHCOLS>
+INTERFACE "Males": V[SESSION*Male] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
    , wife : husband~]
-INTERFACE "Females": V[SESSION*Female] cRud BOX <SHCOLS>
+INTERFACE "Females": V[SESSION*Female] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
    , husband: husband]
    

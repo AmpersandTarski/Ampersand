@@ -1,0 +1,21 @@
+CONTEXT "TestPredLogic"
+
+
+RELATION r[A * B] [UNI,TOT]
+
+RELATION s[A * B]
+PURPOSE RULE s1
+{+Rule s1 should be documented with the MEANING, in natural language, without predicate logic.+}
+RULE s1 : s~;-I;s |- -I[B]
+MEANING "IF a differs from a' then s(a) differs from s(a')."
+
+RELATION t[A * B]
+PURPOSE RULE t1
+{+Rule t1 should be documented in predicate logic, because the user did not specify a MEANING.+}
+RULE t1 : t~;-I;t |- -I[B]
+
+RULE s2 : s;t~
+RULE r2 : r~;s;t~
+RULE r3 : r~;s;t~/\t~
+
+ENDCONTEXT

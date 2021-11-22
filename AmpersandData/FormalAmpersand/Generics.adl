@@ -1,4 +1,4 @@
-CONTEXT Generics IN ENGLISH LATEX
+CONTEXT FormalAmpersand IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currently is, and in future will have been, the contents of GENERICS.PHP+}
 
@@ -6,7 +6,7 @@ REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
-RELATION dbName[Context*DatabaseName] [UNI]   -- e.g. 'GRCengine';
+REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 
 -- HJO20150206 @Rieks: Willen we hier nog iets met signalTableName, isDev, autoRefreshInterval?
 
@@ -32,15 +32,24 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [INJ]
-RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
-RELATION conjunct[Conjunct*Expression] [TOT]
+RELATION rc_conjunct[Conjunct*Term] [TOT]
+ROLE ExecEngine MAINTAINS conjunctTotal
+RULE conjunctTotal : I[Conjunct] |- rc_conjunct;rc_conjunct~
+-- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
+VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
+
+RELATION originatesFrom[Conjunct*Rule] -- rule where the conjunct originates from.
+ROLE ExecEngine MAINTAINS originatesFromTotal
+RULE originatesFromTotal : I[Conjunct] |- originatesFrom;originatesFrom~
+-- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a rule.")
+VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
 
 --[Roles]--
 
 -- VIEW Role : Role(name)
--- TODO: IDENT: name and context
+-- TODO: IDENT Role: Role(name[Role*RoleName], allRoles[Context*Role]~)
 RELATION allRoles[Context*Role] [INJ]
-RELATION name[Role*RoleName] [UNI,TOT]
+RELATION name[Role*RoleName] [UNI]
 REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 RELATION interfaces[Role*Interface]

@@ -1,0 +1,14 @@
+CONTEXT Issue1063 IN DUTCH
+
+{- This scipt should fail the standard check, because there are violations of an invariant.
+   "thisShouldFail" is not in Even and is not in Odd.
+-}
+RULE ruleOne : I[Natural] |- I[Even] \/ I[Odd]
+CLASSIFY Even ISA Natural
+CLASSIFY Odd  ISA Natural
+
+POPULATION Natural CONTAINS ["thisShouldFail" , "one" , "two"]
+POPULATION Even    CONTAINS ["two"]
+POPULATION Odd     CONTAINS ["one"]
+
+ENDCONTEXT

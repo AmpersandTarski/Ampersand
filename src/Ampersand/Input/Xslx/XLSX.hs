@@ -1,66 +1,221 @@
-{-# LANGUAGE OverloadedStrings, DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import           Ampersand.ADL1
-import           Ampersand.Basics hiding (view, (^.))
+import           Ampersand.Basics hiding (view, (^?), (^.))
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Misc
-import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
+import           Ampersand.Misc.HasClasses
+import           Ampersand.Prototype.StaticFiles_Generated
 import           Codec.Xlsx
-import           Control.Lens -- ((^?),ix)
+import           Control.Lens hiding (both) -- ((^?),ix)
+import           Data.Tuple.Extra(both,swap)
 import qualified RIO.List as L
+import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
-import qualified Data.Map as M 
+import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import           Data.Tuple
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 
-parseXlsxFile :: HasOptions env => Maybe FileKind
-              -> FilePath -> RIO env (Guarded [P_Population])
+parseXlsxFile :: (HasFSpecGenOpts env) => 
+    Maybe FileKind -> FilePath -> RIO env (Guarded P_Context)
 parseXlsxFile mFk file =
-  do opts <- view optionsL
+  do env <- ask
      bytestr <- 
         case mFk of
           Just fileKind 
              -> case getStaticFileContent fileKind file of
-                      Just cont -> return $ fromString cont
-                      Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
+                      Just cont -> return cont
+                      Nothing -> fatal ("Statically included "<> tshow fileKind<> " files. \n  Cannot find `"<>T.pack file<>"`.")
           Nothing
-             -> liftIO $ BL.readFile file
-     return . xlsx2pContext opts . toXlsx $ bytestr
+             -> liftIO $ B.readFile file
+     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
  where
-  xlsx2pContext :: Options -> Xlsx -> Guarded [P_Population]
-  xlsx2pContext opts xlsx = Checked pop []
+  xlsx2pContext :: (HasFSpecGenOpts env) 
+      => env -> Xlsx -> Guarded P_Context
+  xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = concatMap (toPops opts file)
+      pop = mkContextOfPops
+          . concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
+mkContextOfPops :: [P_Population] -> P_Context
+mkContextOfPops pops = addRelations
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      , ctx_enfs   = []
+      }
+
+-- | addRelations is meant to enrich a population to a P_Context
+--   The result of addRelations is a P_Context enriched with the relations in genericRelations
+--   The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
+addRelations :: P_Context -> P_Context
+addRelations pCtx = enrichedContext
+  where
+    enrichedContext :: P_Context
+    enrichedContext
+     = pCtx{ ctx_ds     = mergeRels (genericRelations<>declaredRelations)
+           , ctx_pops   = genericPopulations
+           }
+    declaredRelations ::  [P_Relation]   -- relations declared in the user's script
+    popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
+                                         -- popRelations are derived from P_Populations only.
+    declaredRelations = mergeRels (ctx_ds pCtx<>concatMap pt_dcs (ctx_pats pCtx))
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    --   (SJ20210603: We do not add properties because that might add violations that a user cannot fix.)
+    popRelations 
+     = [ rel
+       | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx<>[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
+       , Just src'<-[src], Just tgt'<-[tgt]
+       , rel<-[ P_Relation{ dec_nm     = name pop
+                     , dec_sign   = P_Sign src' tgt'
+                     , dec_prps   = mempty
+                     , dec_defaults = mempty
+                     , dec_pragma = mempty
+                     , dec_Mean   = mempty
+                     , pos        = origin pop
+                     }]
+       , signatur rel `notElem` map signatur declaredRelations
+       ]
+
+    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
+    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    (genericRelations, genericPopulations)
+     = recur [] popRelations pops invGen
+       where
+        recur :: [P_Concept]->[P_Relation]->[P_Population]->[(P_Concept,Set.Set P_Concept)]->([P_Relation], [P_Population])
+        recur     seen         unseenrels    unseenpops      ((g,specs):invGens)
+         = if g `elem` seen then fatal ("Concept "<>name g<>" has caused a cycle error.") else
+           recur (g:seen) (genericRels<>remainder) (genericPops<>remainPop) invGens
+           where
+            sameNameTargetRels :: [NE.NonEmpty P_Relation]
+            sameNameTargetRels = eqCl (\r->(name r,targt r)) unseenrels
+            genericRels ::    [P_Relation]
+            remainingRels :: [[P_Relation]]
+            (genericRels, remainingRels)
+             = L.unzip
+               [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
+                          , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
+                                       in Set.fromList $ filter (not . test) [P_Uni,P_Tot,P_Inj,P_Sur]
+                          }  -- the generic relation that summarizes sRel
+            --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
+                 , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
+                 )
+               | sRel<-sameNameTargetRels
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel)
+               , headrel<-[NE.head sRel]
+               ]
+            remainder :: [P_Relation]
+            remainder
+             = concat (remainingRels<>fmap NE.toList
+                       [ sRel | sRel<-sameNameTargetRels
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel))]
+                      )
+            sameNameTargetPops :: [NE.NonEmpty P_Population]
+            sameNameTargetPops = eqCl (\r->(name r,tgtPop r)) unseenpops
+            genericPops ::    [P_Population]
+            remainingPops :: [[P_Population]]
+            (genericPops, remainingPops)
+             = L.unzip
+               [ ( headPop{p_src=Just g}                   -- the generic relation that summarizes sRel
+            --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
+                 , [ pop| pop<-NE.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
+                 )
+               | sPop<-sameNameTargetPops
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop)
+               , headPop@P_RelPopu{}<-[NE.head sPop] -- Restrict to @P_RelPopu{} because field name p_src is being used
+               ]
+            remainPop :: [P_Population]
+            remainPop
+             = concat (remainingPops<>fmap NE.toList
+                       [ sPop | sPop<-sameNameTargetPops
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop))]
+                      )
+        recur _ rels popus [] = (rels,popus)
+        srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
+        srcPop pop@P_CptPopu{} = PCpt (name pop)
+        srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> s; _ -> fatal ("srcPop ("<>showP pop<>") is mistaken.")
+        tgtPop pop@P_CptPopu{} = PCpt (name pop)
+        tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> t; _ -> fatal ("tgtPop ("<>showP pop<>") is mistaken.")
+
+    sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
+    sourc = pSrc . dec_sign
+    targt = pTgt . dec_sign
+    invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
+    invGen = [ (fst (NE.head cl), Set.fromList spcs)
+             | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NE.toList (generics gen)]
+             , g<-[fst (NE.head cl)], spcs<-[[snd c | c<-NE.toList cl, snd c/=g]], not (null spcs)
+             ]
+    signatur :: P_Relation -> (Text, P_Sign)
+    signatur rel =(name rel, dec_sign rel)
+    concepts = L.nub $
+            [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] <>
+            [ src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] <>
+            [ tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] <>
+            map sourc declaredRelations<> map targt declaredRelations<>
+            concat [specific gen: NE.toList (generics gen)| gen<-ctx_gs pCtx]
+    pops = computeConceptPopulations (ctx_pops pCtx<>[p |pat<-ctx_pats pCtx, p<-pt_pop pat])   -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
+    computeConceptPopulations :: [P_Population] -> [P_Population]
+    computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
+     = [ P_CptPopu{pos = OriginUnknown, p_cpt = c, p_popas = L.nub $
+                       [ atom | cpt@P_CptPopu{}<-pps, PCpt (name cpt) == c, atom<-p_popas cpt]<>
+                       [ ppLeft pair
+                       | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], src' == c
+                       , pair<-p_popps pop]<>
+                       [ ppRight pair
+                       | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], tgt' == c
+                       , pair<-p_popps pop]}
+       | c<-concepts
+       ] <>
+       [ rpop{p_popps=concatMap p_popps cl}
+       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
+       ]
+
 data SheetCellsForTable 
-       = Mapping{ theSheetName :: String
+       = Mapping{ theSheetName :: Text
                 , theCellMap   :: CellMap
                 , headerRowNrs :: [Int]
                 , popRowNrs    :: [Int]
                 , colNrs       :: [Int]
-                , debugInfo :: [String]
+                , debugInfo :: [Text]
                 }
 instance Show SheetCellsForTable where  --for debugging only
   show x 
-   = unlines $
-      [ "Sheet       : "++theSheetName x
-      , "headerRowNrs: "++show (headerRowNrs x)
-      , "popRowNrs   : "++show (popRowNrs x)
-      , "colNrs      : "++show (colNrs x)
-      ] ++ debugInfo x 
-toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
-toPops opts file x = map popForColumn (colNrs x)
+   = T.unpack . T.unlines $
+      [ "Sheet       : "<>theSheetName x
+      , "headerRowNrs: "<>tshow (headerRowNrs x)
+      , "popRowNrs   : "<>tshow (popRowNrs x)
+      , "colNrs      : "<>tshow (colNrs x)
+      ] <> debugInfo x 
+toPops :: (HasFSpecGenOpts env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
       if i  == sourceCol  
       then  P_CptPopu { pos = popOrigin
-                      , p_cnme = sourceConceptName 
+                      , p_cpt = mkPConcept sourceConceptName 
                       , p_popas = concat [ case value(row,i) of
                                              Nothing -> []
                                              Just cv -> cellToAtomValues mSourceConceptDelimiter cv popOrigin
@@ -74,9 +229,9 @@ toPops opts file x = map popForColumn (colNrs x)
                       , p_popps = thePairs
                       }
      where                             
-       src, trg :: Maybe String
+       src, trg :: Maybe P_Concept
        (src,trg) = case mTargetConceptName of
-                  Just tCptName -> (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
+                  Just tCptName -> both (fmap mkPConcept) $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
                   Nothing -> (Nothing,Nothing)
           
        popOrigin :: Origin
@@ -89,33 +244,34 @@ toPops opts file x = map popForColumn (colNrs x)
                            [] -> fatal "colNrs x is empty"
                            c:_ -> c
        targetCol       = i 
-       sourceConceptName :: String
+       sourceConceptName :: Text
        mSourceConceptDelimiter :: Maybe Char
        (sourceConceptName, mSourceConceptDelimiter)
           = case value (conceptNamesRow,sourceCol) of
                 Just (CellText t) -> 
                    fromMaybe (fatal "No valid source conceptname found. This should have been checked before")
-                             (conceptNameWithOptionalDelimiter . trim $ t)
+                             (conceptNameWithOptionalDelimiter t)
                 _ -> fatal "No valid source conceptname found. This should have been checked before"
-       mTargetConceptName :: Maybe String
+       mTargetConceptName :: Maybe Text
        mTargetConceptDelimiter :: Maybe Char
        (mTargetConceptName, mTargetConceptDelimiter)
           = case value (conceptNamesRow,targetCol) of
                 Just (CellText t) -> let (nm,mDel) 
                                            = fromMaybe
                                                 (fatal "No valid source conceptname found. This should have been checked before")
-                                                (conceptNameWithOptionalDelimiter . trim $ t)
+                                                (conceptNameWithOptionalDelimiter t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
-       relationName :: String
+       relationName :: Text
        isFlipped' :: Bool
        (relationName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
-                    case T.unpack . T.reverse . trim $ t of
-                      '~':rest -> (reverse rest, True )
-                      xs       -> (reverse xs  , False)
-                _ -> fatal ("No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol))
+                    case T.uncons . T.reverse . trim $ t of
+                      Nothing -> (mempty, False)
+                      Just ('~',rest) -> (T.reverse rest, True )
+                      Just (h,tl)     -> (T.reverse $ T.cons h tl, False)
+                _ -> fatal ("No valid relation name found. This should have been checked before" <>tshow (relNamesRow,targetCol))
        thePairs :: [PAtomPair]
        thePairs =  concat . mapMaybe pairsAtRow . popRowNrs $ x
        pairsAtRow :: Int -> Maybe [PAtomPair]
@@ -131,29 +287,35 @@ toPops opts file x = map popForColumn (colNrs x)
                        _               -> Nothing
             where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
                   origTrg = XLSXLoc file (theSheetName x) (r,targetCol)
-       cellToAtomValues :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
+       -- | Read a cel, If it is text, it could represent multiple values. This is 
+       --   the case if the header cell contains a delimiter. 
+       cellToAtomValues 
+            :: Maybe Char -- ^ the delimiter, if there is any, used as seperator for multiple values in the cell 
+            -> CellValue  -- ^ The value that is read from the cell
+            -> Origin     -- ^ the origin of the value.
+            -> [PAtomValue]  
        cellToAtomValues mDelimiter cv orig
          = case cv of
-             CellText t   -> map (XlsxString orig . T.unpack) 
+             CellText t   -> map (XlsxString orig) 
                            . filter (not . T.null)
                            . unDelimit mDelimiter 
                            . handleSpaces $ t
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
-             CellRich ts -> map (XlsxString orig . T.unpack) 
+             CellRich ts -> map (XlsxString orig) 
                           . filter (not . T.null)
                           . unDelimit mDelimiter 
                           . handleSpaces . T.concat . map _richTextRunText $ ts
-             CellError e -> fatal . L.intercalate "\n  " $
+             CellError e -> fatal . T.intercalate "\n  " $
                                     [ "Error reading cell at:"
-                                    , show orig
-                                    , show e]
-       unDelimit :: Maybe Char -> T.Text -> [T.Text]
+                                    , tshow orig
+                                    , tshow e]
+       unDelimit :: Maybe Char -> Text -> [Text]
        unDelimit mDelimiter xs = 
          case mDelimiter of
            Nothing -> [xs]
            (Just delimiter) -> map trim $ T.split (== delimiter) xs
-       handleSpaces = if trimXLSXCells opts then trim else id     
+       handleSpaces = if view trimXLSXCellsL env then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
@@ -163,12 +325,12 @@ toPops opts file x = map popForColumn (colNrs x)
     value k = theCellMap x ^? ix k . cellValue . _Just
 
 
-theSheetCellsForTable :: (T.Text,Worksheet) -> [SheetCellsForTable]
+theSheetCellsForTable :: (Text,Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable (sheetName,ws) 
   =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
-    tableStarters = filter isStartOfTable $ M.keys (ws  ^. wsCells)  
+    tableStarters = filter isStartOfTable $ Map.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
@@ -188,19 +350,19 @@ theSheetCellsForTable (sheetName,ws)
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just Mapping { theSheetName = T.unpack sheetName
+     =  Just Mapping { theSheetName = sheetName
                      , theCellMap   = ws  ^. wsCells
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
-                     , debugInfo = [ "indexInTableStarters"++": "++show indexInTableStarters
-                                   , "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
-                                   , "maxColOfWorksheet"++": "++show maxColOfWorksheet
-                                   , "startOfTable     "++": "++show startOfTable
-                                   , "firstPopRowNr    "++": "++show firstPopRowNr
-                                   , "lastPopRowNr     "++": "++show lastPopRowNr
-                                   , "[(row,isProperRow)] "++": "++concatMap show [(r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]]
-                                   , "theCols          "++": "++show theCols
+                     , debugInfo = [ "indexInTableStarters: "<>tshow indexInTableStarters
+                                   , "maxRowOfWorksheet   : "<>tshow maxRowOfWorksheet
+                                   , "maxColOfWorksheet   : "<>tshow maxColOfWorksheet
+                                   , "startOfTable        : "<>tshow startOfTable
+                                   , "firstPopRowNr       : "<>tshow firstPopRowNr
+                                   , "lastPopRowNr        : "<>tshow lastPopRowNr
+                                   , "[(row,isProperRow)] : "<>T.concat [tshow (r,isProperRow r) | r<-[firstPopRowNr..lastPopRowNr] ]
+                                   , "theCols             : "<>tshow theCols
                                    ] 
                      }
      where
@@ -211,14 +373,14 @@ theSheetCellsForTable (sheetName,ws)
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
        maxRowOfWorksheet :: Int
-       maxRowOfWorksheet = case L.maximumMaybe (map fst (M.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+       maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
-       maxColOfWorksheet = case L.maximumMaybe (map snd (M.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+       maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters<>[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool
@@ -232,7 +394,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
             Just (CellRich _)   -> True
-            Just (CellError e)  -> fatal $ "Error reading cell "++show e
+            Just (CellError e)  -> fatal $ "Error reading cell "<>tshow e
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool
@@ -241,21 +403,21 @@ theSheetCellsForTable (sheetName,ws)
           | otherwise  = isProperConceptName (conceptNameRowNr,colNr) && isProperRelName(relationNameRowNr,colNr)
        isProperConceptName k 
          = case value k of
-            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter . trim $ t
+            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter $ t
             _ -> False
        isProperRelName k 
          = case value k of
             Just (CellText t) -> (not . T.null . trim) t -- && (isLower . T.head . trim) t
             _ -> False
                
-conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname -} 
+conceptNameWithOptionalDelimiter :: Text -> Maybe ( Text     {- Conceptname -} 
                                                     , Maybe Char {- Delimiter   -}
                                              )
--- Cases:  1) "[" ++ Conceptname ++ delimiter ++ "]"
+-- Cases:  1) "[" <> Conceptname <> delimiter <> "]"
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
-conceptNameWithOptionalDelimiter t
+conceptNameWithOptionalDelimiter t'
   | isBracketed t   = 
        let mid = T.dropEnd 1 . T.drop 1 $ t
        in case T.uncons . T.reverse $ mid of 
@@ -263,27 +425,27 @@ conceptNameWithOptionalDelimiter t
             Just (d,revInit) -> 
                        let nm = T.reverse revInit
                        in if isDelimiter d && isConceptName (T.reverse nm)
-                          then Just (T.unpack nm , Just d)
+                          then Just (nm , Just d)
                           else Nothing
-  | isConceptName t = Just (T.unpack t, Nothing)
+  | isConceptName t = Just (t, Nothing)
   | otherwise       = Nothing
-           
+  where t = trim t'
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
-isConceptName :: T.Text -> Bool
+isConceptName :: Text -> Bool
 isConceptName t = case T.uncons t of
                     Nothing  -> False
                     (Just (h,_)) -> isUpper h
 
 -- | trim is used to remove leading and trailing spaces
-trim :: T.Text -> T.Text
+trim :: Text -> Text
 trim = T.reverse . trim' . T.reverse . trim'
   where 
-    trim' :: T.Text -> T.Text
+    trim' :: Text -> Text
     trim' t = case uncons t of
                Just (' ',t') -> trim' t'
                _  -> t 
-isBracketed :: T.Text -> Bool
+isBracketed :: Text -> Bool
 isBracketed t =
     case T.uncons (trim t) of
       Just ('[',tl) -> case T.uncons (T.reverse tl) of

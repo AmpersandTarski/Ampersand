@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Ampersand.Input.ADL1.Lexer
     ( keywords
     , operators
@@ -19,21 +19,19 @@ module Ampersand.Input.ADL1.Lexer
     , lexemeText
     , initPos
     , FilePos(..)
+    , isSafeIdChar
 ) where
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.FilePos(updatePos)
 import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
-import           Ampersand.Misc
 import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
-import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import qualified RIO.Text as T
+import           RIO.Time
 import           Numeric
 
 -- | Retrieves a list of keywords accepted by the Ampersand language
@@ -50,10 +48,8 @@ keywords  = L.nub $
                 , "CONCEPT"
                 -- Keywords for Relation-statements
                 , "RELATION", "PRAGMA", "MEANING"
-                ] ++
-                [map toUpper $ show x | x::Prop <-[minBound..]
-                ] ++ 
-                [ "POPULATION", "CONTAINS"
+                , "ASY", "INJ", "IRF", "RFX", "SUR", "SYM", "TOT", "TRN", "UNI", "PROP", "VALUE", "EVALPHP"
+                , "POPULATION", "CONTAINS"
                 -- Keywords for rules
                 , "RULE", "MESSAGE", "VIOLATION", "TXT"
                 ] ++
@@ -68,7 +64,7 @@ keywords  = L.nub $
                 ] ++ 
                 -- Keywords for interfaces
                 [ "INTERFACE", "FOR", "LINKTO", "API"
-                , "BOX", "ROWS", "TABS", "COLS"
+                , "BOX"
                 -- Keywords for identitys
                 , "IDENT"
                 -- Keywords for views
@@ -86,25 +82,26 @@ keywords  = L.nub $
                 [ "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
                 , "SERVICE"
-                -- Depreciated keywords:
+                -- Enforce statement:
+                , "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
                 ]
 
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
-              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
+              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."
+              , ":=", ">:",":<"
+            ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: Options should be one item, not a list
 -- | Runs the lexer
-lexer :: [Options]  -- ^ The command line options
-      -> FilePath   -- ^ The file name, used for error messages
+lexer :: FilePath   -- ^ The file name, used for error messages
       -> String     -- ^ The content of the file
       -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
-lexer opt file input = runLexerMonad opt file (mainLexer (initPos file) input)
+lexer file input = runLexerMonad file (mainLexer (initPos file) input)
 
 -----------------------------------------------------------
 -- Help functions
@@ -127,20 +124,20 @@ mainLexer :: Lexer
 
 mainLexer _ [] =  return []
 
-mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should increase line number and reset the column number
+mainLexer p ('-':'-':s) = mainLexer p (skipLine s)
 
 mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
                                     isSpaceNoTab x = isSpace x && (not .  isTab) x
                                     isTab = ('\t' ==)
                                 in  do when (isTab c) (lexerWarning TabCharacter p)
-                                       mainLexer (L.foldl updatePos p (c:spc)) next
+                                       mainLexer (foldl' updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in case rest of
-         ('"':xs) -> returnToken (LexString s) p mainLexer (addPos (swidth+2) p) xs
+         ('"':xs) -> returnToken (LexDubbleQuotedString s) p mainLexer (addPos (swidth+2) p) xs
          _        -> lexerError (NonTerminatedString s) p
          
 
@@ -154,17 +151,15 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
                         else returnToken (LexSymbol    '<')    p mainLexer (addPos 1 p) (d:s)
 
 mainLexer p cs@(c:s)
-     | isIdStart c || isUpper c
+     | isSafeIdChar True c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
-               name''               = c:name'
-               tokt   | iskw name'' = LexKeyword name''
-                      | otherwise = if isIdStart c
-                                    then LexVarId name''
-                                    else LexConId name''
+               name''             = c:name'
+               tokt | iskeyword name'' = LexKeyword name''
+                    | otherwise   = LexSafeID name''
            in returnToken tokt p mainLexer p' s'
-     | isOperatorBegin c
+     | prefixIsOperator cs  
          = let (name', s') = getOp cs
-           in returnToken (LexOperator name') p mainLexer (L.foldl updatePos p name') s'
+           in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
@@ -192,28 +187,25 @@ mainLexer p cs@(c:s)
 -- Check on keywords - operators - special chars
 -----------------------------------------------------------
 
-locatein :: Ord a => [a] -> a -> Bool
-locatein es e = elem e (Set.fromList es)
-
-iskw :: String -> Bool
-iskw = locatein keywords
+iskeyword :: String -> Bool
+iskeyword str = str `elem` keywords
 
 isSymbol :: Char -> Bool
-isSymbol = locatein symbols
+isSymbol c = c `elem` symbols
 
 isOperator :: String -> Bool
-isOperator  = locatein operators
+isOperator str = str `elem` operators
 
-isOperatorBegin :: Char -> Bool
-isOperatorBegin  = locatein (mapMaybe head operators)
-   where head :: [a] -> Maybe a
-         head (a:_) = Just a
-         head []    = Nothing
-isIdStart :: Char -> Bool
-isIdStart c = isLower c || c == '_'
+prefixIsOperator :: String -> Bool
+prefixIsOperator str = any (`L.isPrefixOf` str) operators
 
-isIdChar :: Char -> Bool
-isIdChar c =  isAlphaNum c || c == '_'
+
+-- | Tells if a character is valid as character in an identifier. Because there are
+--   different rules for the first character of an identifier and the rest of the
+--   characters of an identifier, a boolean is required that tells if this is the
+--   first character.
+isSafeIdChar :: Bool -> Char -> Bool
+isSafeIdChar isFirst c =  isLetter c || (not isFirst && (isAlphaNum c || c == '_'))
 
 -- Finds the longest prefix of cs occurring in keywordsops
 getOp :: String -> (String, String)
@@ -226,9 +218,9 @@ getOp cs = findOper operators cs ""
               else findOper found rest (op ++ [c])
               where found = [s' | o:s'<-ops, c==o]
 
--- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
+-- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (nm,rest) = span isIdChar s
+scanIdent p s = let (nm,rest) = span (isSafeIdChar False) s
                 in (nm,addPos (length nm) p,rest)
 
 
@@ -242,11 +234,9 @@ lexNestComment c p ('{':'-':s) = lexNestComment (lexNestComment c) (addPos 2 p) 
 lexNestComment c p (x:s)       = lexNestComment c (updatePos p x) s
 lexNestComment _ p []          = lexerError UnterminatedComment p
 
---TODO: Also accept {+ ... +} as delimiters
 lexMarkup :: Lexer -> Lexer
 lexMarkup = lexMarkup' ""
  where 
-    -- lexMarkup' str _ p ('-':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s -- for backwards compatibility with old `{+ ... -}` notation.
        lexMarkup' str _ p ('+':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s
        lexMarkup' str c p (x:s)       = lexMarkup' (str++[x]) c (updatePos p x) s
        lexMarkup' _   _ p []          = lexerError UnterminatedMarkup p
@@ -354,7 +344,7 @@ getNumber str =
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
                            _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal ("No number to read!\n  " ++ take 40 str)
+    _  -> fatal $ "No number to read!\n  " <> T.take 40 (T.pack str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
 --getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
@@ -426,7 +416,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
+                                    _  -> fatal $ "Impossible! first char is a digit.. "<>T.take 40 (T.pack s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

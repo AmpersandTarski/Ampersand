@@ -1,0 +1,31 @@
+CONTEXT Experiment IN ENGLISH
+INCLUDE "Views.adl"
+INCLUDE "Views.xlsx"
+
+VIEW Session : Session(TXT "demo")
+
+INTERFACE Overview (concept) : "_SESSION"
+BOX <TABS>
+     [ Concepts : V[SESSION*Concept]
+       BOX<TABLE sortable>
+         [ Concept        : I
+         , isa            : isa
+         , "defined View" : concept~
+         , viewBy         : viewBy
+         , "Viewable by"  : viewBy;concept~
+         ]
+     , Atoms    : V[SESSION*Atom]
+       BOX<TABLE sortable>
+         [ atom           : I
+         , pop            : pop
+         , "Viewable by"  : pop;viewBy;concept~
+         ]
+     , Views    : V[SESSION*View]
+       BOX<TABLE sortable>
+         [ View       : I
+         , concept    : concept
+         , Concepts   : concept;viewBy~
+         ]
+     ]
+
+ENDCONTEXT

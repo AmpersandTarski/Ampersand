@@ -1,1 +1,8 @@
-.stack-work
+.*
+ArchitectureAndDesign/
+docker/
+miscellaneous/
+*.lock
+README*
+travis_long
+.dockerignore

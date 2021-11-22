@@ -1,4 +1,4 @@
-module Ampersand.ADL1
+﻿module Ampersand.ADL1
    ( module Ampersand.Core.ParseTree
    , module Ampersand.Core.AbstractSyntaxTree
    , module Ampersand.ADL1.Expression
@@ -9,30 +9,30 @@ import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
-         , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
+         , P_Enforce(..), EnforceOperator(..)
          , P_Context(..), mergeContexts
-         , Meta(..)
-         , MetaObj(..)
+         , MetaData(..)
          , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
          , P_Rule(..),Role(..)
-         , Prop(..),Props
+         , PProp(..)
+         , PRelationDefault(..)
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
          , P_BoxItemTermPrim,P_BoxItem(..)
          , P_Interface(..)
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
+         , BoxHeader(..), TemplateKeyValue(..)
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)
          , P_Relation(..)
-         , ConceptDef(..)
-         , PSingleton
+         , PConceptDef(..), PCDDef(..)
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
@@ -41,13 +41,13 @@ import Ampersand.Core.AbstractSyntaxTree (
          , HasSignature(..)
          , Expression(..)
          , AClassify(..)
-         , RuleOrigin(..)
-         , IdentityDef(..)
+         , RuleKind(..)
+         , IdentityRule(..)
          , IdentitySegment(..)
          , ViewDef(..)
          , ViewSegment(..)
          , ViewSegmentPayLoad(..)
-         , BoxItem(..), ObjectDef(..), BoxTxt(..), isObjExp
+         , BoxItem(..), ObjectDef(..), BoxTxt(..)
          , Object(..)
          , Default(..)
          , SubInterface(..)
@@ -55,8 +55,13 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Interface(..), getInterfaceByName
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
+         , AProp(..), AProps
+         , ARelDefault(..), ARelDefaults
          , Rule(..), Rules, A_RoleRule(..)
-         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, makeConcept ,unsafePAtomVal2AtomValue 
+         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
+         , Representation(..)
+         , AEnforce(..)
+         , AConceptDef(..)
          , Conjunct(..)
          , PAtomValue(..)
          , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
@@ -65,7 +70,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , DnfClause(..)
          , Population(..)
          , Purpose(..), ExplObj(..) ,Meaning(..)
-         , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)
+         , AAtomPair(..), AAtomValue(..), aavtxt, mkAtomPair, ContextInfo(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Ampersand.ADL1.Expression
@@ -79,4 +84,3 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Rule 
          ( consequent, antecedent, hasantecedent
          , rulefromProp, isPropertyRule, propFullName)
-

@@ -1,11 +1,13 @@
-module Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
+
+module Ampersand.FSpec.Crud (CrudInfo(..), getCrudObjectsForInterface, mkCrudInfo) where
 
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.ADL1
 import qualified RIO.List as L
-import qualified Data.Map as Map 
+import qualified RIO.Map as Map 
 import qualified RIO.Set as Set
+
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 
@@ -17,35 +19,24 @@ data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud c
                          -- TODO: think about representation of these matrices
                          } deriving Show
 
-showCrudInfo :: CrudInfo -> String
-showCrudInfo (CrudInfo crudObjs ifcCrudObjs _) =
-  "CRUD info\nObjects:\n" ++ unlines [ name crudCncpt ++" : " ++ show (map name crudDecls) | (crudCncpt, crudDecls) <- crudObjs] ++
-  "\nMatrices\n" ++ concat
-    [ "Interface " ++ name ifc ++
-      "\nC R U D Object\n" ++
-       unlines (map showCrud cObjs)
-    | (ifc, cObjs) <- ifcCrudObjs
-    ] ++ "\n"
-  where showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
-        showX isX = if isX then "X" else " "
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
 getCrudObjectsForInterface crudInfo ifc = 
-  fromMaybe (fatal $ "NO CRUD objects for interface " ++ show (name ifc))
+  fromMaybe (fatal $ "NO CRUD objects for interface " <> tshow (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
 mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
-  where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
-        nonCrudConcpts = (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls) ++
+  where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ isONE c || isSESSION c ]
+        nonCrudConcpts = (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls) <>
                          (map target . filter isInj . filter isTot . map EDcD . Set.elems $ decls)
         crudCncpts = allConcs L.\\ nonCrudConcpts
         
         transSurjClosureMap :: Map.Map A_Concept [A_Concept]
         transSurjClosureMap = transClosureMap' . Map.fromListWith L.union $
-          (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) ++ -- TODO: no isUni?
-          (map (mkMapItem      ) . filter isTot . map EDcD $ Set.elems decls)    -- TODO: no isInj?
+          (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) <> 
+          (map mkMapItem         . filter isTot . map EDcD $ Set.elems decls)    
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
            where
              mkMapItem :: Expression -> (A_Concept,[A_Concept])
@@ -53,12 +44,12 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         
         -- crud concept together with its target concept in the surjective/total transitive closure of relations
         crudObjs :: [(A_Concept, [A_Concept])]
-        crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
+        crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap)
                    | crudCncpt <- crudCncpts ]
         
         getCrudUpdateConcpts :: Expression -> [A_Concept]
         getCrudUpdateConcpts decl = 
-          if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
+          if  isSur decl || isTot decl  
           then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
           else []
           
@@ -101,8 +92,8 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                InterfaceRef{siIsLink = True} -> []
                                InterfaceRef{siIsLink = False} ->
                                   case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                                    []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
-                                    (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
+                                    []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
+                                    (_:_:_) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                Box{} -> concatMap getExprs' (siObjs si)
                         where getExprs' (BxExpr e) = getExprs e

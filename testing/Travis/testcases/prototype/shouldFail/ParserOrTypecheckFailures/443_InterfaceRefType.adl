@@ -1,0 +1,11 @@
+CONTEXT Issue443 IN ENGLISH
+
+INTERFACE Main : I[A]
+  BOX [ l : I[A] INTERFACE B -- Should give a type error
+      ]
+   
+INTERFACE B : I[B]
+  BOX [ l : I[B]
+      ]
+  
+ENDCONTEXT

@@ -1,0 +1,91 @@
+﻿CONTEXT FormalAmpersand IN ENGLISH
+INCLUDE "Tables.adl"
+INCLUDE "Tables.xlsx"
+
+
+
+INTERFACE SQLPlug (table, key, concept): I[TblSQL] CRUD
+BOX [ SQLPlug : I
+    , attributes : table~
+      BOX [ SqlAttribute : I
+          , concept : concept
+          ]
+    , key : key
+    ]
+
+INTERFACE SqlAttribute (concept): I[SqlAttribute] CRUD
+BOX [ SqlAttribute : I
+    , concept  : concept
+    , sqlPlug : table
+    ]
+
+REPRESENT Atom TYPE ALPHANUMERIC
+
+INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+BOX <TABS>
+    [ relations : V[SESSION*Relation] CRUD
+      BOX<TABLE sortable>
+           [ relation   : I[Relation]
+           , prop       : prop
+           , table      : srcAtt;table /\ tgtAtt;table
+             BOX <TABLE> [ wide : I[TblSQL];rootConcept
+                  , bin  : I[BinSQL];table~;srcAtt~
+                  ]
+           , srcAtt     : srcAtt;concept
+           , tgtAtt     : tgtAtt;concept
+           , pairs      : in~
+           ]
+    , concepts :V[SESSION*Concept] CRUD
+      BOX<TABLE sortable>
+           [ name         : name
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , conceptAttribute : conceptAttribute
+           , atoms        : pop~
+           ]
+    , "SQL plugs" : V[SESSION*SQLPlug] CRUD
+      BOX<TABLE sortable>
+           [ SQLPlug : I
+           , "table~"  : table~ BOX <TABLE> [rel : srcAtt~\/tgtAtt~ , attr : I , c : concept ]
+           ]
+    , pairs : V[SESSION*Pair] CRUD
+      BOX<TABLE sortable>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<TABLE sortable>
+--           [ atom : I
+--           , "smallest concept(s)" : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
+    ]
+
+VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept] CRUD
+BOX [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair] CRUD
+BOX [ "relation(s)"  : in
+     , lAtom          : lAtom
+     , rAtom          : rAtom
+     ]
+
+INTERFACE RelTable(name[Relation*Identifier],source,target) : I[Relation] CRUD
+BOX [ name    : name
+     , source  : source
+     , target  : target
+     , srcAtt  : srcAtt
+     , tgtAtt  : tgtAtt
+     ]
+ENDCONTEXT

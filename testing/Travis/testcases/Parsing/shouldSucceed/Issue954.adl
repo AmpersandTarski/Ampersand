@@ -1,5 +1,0 @@
-CONTEXT "Issue954"
-
-VIEW "Note"   : Note HTML TEMPLATE "Note.html" ENDVIEW
-
-ENDCONTEXT

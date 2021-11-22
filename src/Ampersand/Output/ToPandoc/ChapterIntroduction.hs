@@ -1,37 +1,44 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
-module Ampersand.Output.ToPandoc.ChapterIntroduction
-where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.Time.Format
 
-chpIntroduction :: Options -> FSpec -> Blocks
-chpIntroduction opts@Options{..} fSpec =
-      xDefBlck opts fSpec Intro
-   <> fromList purposesOfContext  -- the motivation(s) of this context
-   <> readingGuide                -- tells what can be expected in this document.
+{-# LANGUAGE ScopedTypeVariables #-}
+module Ampersand.Output.ToPandoc.ChapterIntroduction
+   (chpIntroduction)
+where
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import qualified RIO.Text as T
+import           RIO.Time
+
+chpIntroduction :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> UTCTime -> FSpec -> Blocks
+chpIntroduction env now fSpec =
+      xDefBlck env fSpec Intro
+   <> purposesOfContext  -- the motivation(s) of this context
+   <> readingGuide       -- tells what can be expected in this document.
   where
+    outputLang' = outputLang env fSpec
     readingGuide
-      = case fsLang fSpec of
+      = case outputLang' of
           Dutch
             -> para ( text "Dit document"
-                   <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
-                   <> text " analyseert de functionaliteit van een informatiesysteem genaamd "
+                   <> (note.para.text) ("Dit document is gegenereerd op "<>date<>" om "<>time<>", dmv. "<>longVersion appVersion<>".")
+                   <> text " definieert de functionaliteit van een informatiesysteem genaamd "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
-            <> if SharedLang `elem` chaptersInDoc opts
-               then text "Voor de lezer zonder kennis van informatiesystemen c.q. Ampersand staan relaties en regels opgesomd in "
-                 <> hyperLinkTo SharedLang
-                 <> text ", geordend op thema. "
-               else mempty
-             )
-            <> if Diagnosis `elem` chaptersInDoc opts
+                   <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
+                   <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
+                   <> text ". "
+                   <> if SharedLang `elem` chaptersInDoc env
+                      then text "Deze afspraken staan opgesomd in "
+                        <> hyperLinkTo SharedLang
+                        <> text ", geordend op thema. "
+                      else text "Deze afspraken zijn niet opgenomen in dit document."
+                    )
+            <> (if Diagnosis `elem` chaptersInDoc env
                then para (   text "De diagnose in " 
                           <> hyperLinkTo Diagnosis
                           <> text " is bedoeld voor de auteurs zelf om gebreken uit hun Ampersand model op te sporen. "
                          )
-               else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc opts
+               else mempty)
+            <> (if ConceptualAnalysis `elem` chaptersInDoc env
                then para (   text "De conceptuele analyse in "
                           <> hyperLinkTo ConceptualAnalysis
                           <> text " is bedoeld voor requirements engineers en architecten om de gemaakte afspraken"
@@ -40,8 +47,8 @@ chpIntroduction opts@Options{..} fSpec =
                           <> text "De formalisatie in dit hoofdstuk maakt consistentie van de functionele specificatie bewijsbaar. "
                           <> text "Ook garandeert het een eenduidige interpretatie van de afspraken."
                          )
-               else mempty
-            <> if DataAnalysis `elem` chaptersInDoc opts
+               else mempty)
+            <> (if DataAnalysis `elem` chaptersInDoc env
                then para ( text "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van "
                         <> (singleQuoted.text.name) fSpec
                         <> text ". "
@@ -58,30 +65,30 @@ chpIntroduction opts@Options{..} fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text " compliance ten aanzien van alle gestelde afspraken. "
                          )
-               else mempty
+               else mempty)
 
           English
             -> para ( text "This document"
-                   <> (note.para.text) ("This document was generated at "++date++" on "++time++", using "++ampersandVersionStr++".")
+                   <> (note.para.text) ("This document was generated at "<>date<>" on "<>time<>", using "<>longVersion appVersion<>".")
                    <> text " defines the functionality of an information system called "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
                    <> text "It defines the database and the business services of " <> (text.name) fSpec <> text " by means of business rules"
                    <> (note.para.text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
                    <> text ". "
-                   <> if SharedLang `elem` chaptersInDoc opts
+                   <> if SharedLang `elem` chaptersInDoc env
                       then text "Those rules are listed in "
                         <> hyperLinkTo SharedLang
                         <> text ", ordered by theme. "
                       else text "Those rules are not included in this document."
                     )
-             <> if Diagnosis `elem` chaptersInDoc opts
+             <> (if Diagnosis `elem` chaptersInDoc env
                then para (  text "The diagnosis in "
                          <> hyperLinkTo Diagnosis
                          <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
-               else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc opts
+               else mempty)
+            <> (if ConceptualAnalysis `elem` chaptersInDoc env
                then para (  text "The conceptual analysis in "
                          <> hyperLinkTo ConceptualAnalysis
                          <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
@@ -89,8 +96,8 @@ chpIntroduction opts@Options{..} fSpec =
                          <> text "The formalization in this chapter makes consistency of the functional design provable. "
                          <> text "It also yields an unambiguous interpretation of all requirements."
                          )
-               else mempty
-            <> if DataAnalysis `elem` chaptersInDoc opts
+               else mempty)
+            <> (if DataAnalysis `elem` chaptersInDoc env
                then para ( text "Chapters that follow have the builders of "
                         <> (singleQuoted.text.name) fSpec
                         <> text " as their intended audience. "
@@ -107,9 +114,13 @@ chpIntroduction opts@Options{..} fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text " ensures compliance to all rules agreed upon."
                          )
-               else mempty
+               else mempty)
 
-    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" genTime
-    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" genTime
+    date :: Text
+    date = T.pack $ formatTime (lclForLang outputLang') "%-d-%-m-%Y" now
+    time :: Text
+    time = T.pack $ formatTime (lclForLang outputLang') "%H:%M:%S" now
 
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]
+    purposesOfContext :: Blocks
+    purposesOfContext = mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ fSpec
+    

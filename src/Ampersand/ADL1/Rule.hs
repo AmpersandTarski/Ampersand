@@ -1,3 +1,4 @@
+
 module Ampersand.ADL1.Rule 
   ( consequent, antecedent, hasantecedent
   , isPropertyRule, rulefromProp
@@ -19,7 +20,7 @@ antecedent r
  = case formalExpression r of
      EEqu (le,_) -> le
      EInc (le,_) -> le
-     _           -> fatal ("erroneous reference to antecedent of rule "++show r)
+     _           -> fatal ("erroneous reference to antecedent of rule "<>tshow r)
 
 consequent :: Rule -> Expression
 consequent r
@@ -29,28 +30,28 @@ consequent r
      x           -> x
 
 isPropertyRule :: Rule -> Bool
-isPropertyRule = isJust . rrdcl 
+isPropertyRule r= case rrkind r of
+  Propty{} -> True
+  _ -> False 
 -- rulefromProp specifies a rule that defines property prp of relation d.
-rulefromProp :: Prop -> Relation -> Rule
+rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp d =
-     Ru { rrnm  = show prp++" "++showDcl
+     Ru { rrnm  = tshow prp<>" "<>showDcl
         , formalExpression = rExpr
         , rrfps = PropertyRule nm (origin d)
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
         , rrpat = decpat d      
-        , r_usr = Multiplicity
-        , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
+        , rrkind = Propty prp d
         }
        where
-        nm = show prp++" "++showDcl
+        nm = tshow prp<>" "<>showDcl
         showDcl = showRel d
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-                then fatal ("Illegal property of an endo relation "++show (name d)) else
+                then fatal ("Illegal property of an endo relation "<>tshow (name d)) else
                 case prp of
                      Uni-> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
                      Tot-> EDcI (source r)  .|-. r .:. flp r
@@ -61,11 +62,10 @@ rulefromProp prp d =
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Prop -> fatal "Prop should have been converted by the parser"
         meanings prop = map (Meaning . markup) [English,Dutch]
           where 
             markup lang = Markup lang (string2Blocks ReST $ f lang)
-            f lang = showDcl++" is "++propFullName lang prop
+            f lang = showDcl<>" is "<>propFullName False lang prop
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
@@ -81,11 +81,10 @@ rulefromProp prp d =
                     Trn-> explByFullName lang
                     Rfx-> explByFullName lang
                     Irf-> explByFullName lang
-                    Uni-> "Each " ++s++" may only have one "++t++"" ++" in the relation "++name d
-                    Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
-                    Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
-                    Sur ->"Every "++t++" must have a "      ++s++"" ++" in the relation "++name d
-                    Prop -> fatal "Prop should have been converted by the parser"
+                    Uni-> "Each " <>s<>" may only have one "<>t<>"" <>" in the relation "<>name d
+                    Inj-> "Each " <>t<>" may only have one "<>s<>"" <>" in the relation "<>name d
+                    Tot->"Every "<>s<>" must have a "      <>t<>"" <>" in the relation "<>name d
+                    Sur->"Every "<>t<>" must have a "      <>s<>"" <>" in the relation "<>name d
                 Dutch ->
                   case prop of
                     Sym-> explByFullName lang
@@ -93,15 +92,14 @@ rulefromProp prp d =
                     Trn-> explByFullName lang
                     Rfx-> explByFullName lang
                     Irf-> explByFullName lang
-                    Uni-> "Elke "++s++" mag slechts één "++t++   " hebben" ++" in de relatie "++name d
-                    Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
-                    Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
-                    Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
-                    Prop -> fatal "Prop should have been converted by pattern the parser"
-            explByFullName lang = showDcl++" is "++propFullName lang prop
+                    Uni-> "Elke "<>s<>" mag slechts één "<>t<>   " hebben" <>" in de relatie "<>name d
+                    Inj-> "Elke "<>t<>" mag slechts één "<>s<>   " hebben" <>" in de relatie "<>name d
+                    Tot-> "Elke "<>s<>" dient één "      <>t<>" te hebben" <>" in de relatie "<>name d
+                    Sur-> "Elke "<>t<>" dient een "      <>s<>" te hebben" <>" in de relatie "<>name d
+            explByFullName lang = showDcl<>" is "<>propFullName False lang prop
 
-propFullName :: Lang -> Prop -> String
-propFullName lang prop =
+propFullName :: Bool -> Lang -> AProp -> Text
+propFullName isAdjective lang prop =
   case lang of 
     English ->
         case prop of
@@ -114,16 +112,14 @@ propFullName lang prop =
           Sur-> "surjective"
           Inj-> "injective"
           Tot-> "total"
-          Prop -> fatal "Prop should have been converted by the parser"
-    Dutch ->
+    Dutch -> (if isAdjective then snd else fst) $
         case prop of
-          Sym-> "symmetrisch"
-          Asy-> "antisymmetrisch"
-          Trn-> "transitief"
-          Rfx-> "reflexief"
-          Irf-> "irreflexief"
-          Uni-> "univalent"
-          Sur-> "surjectief"
-          Inj-> "injectief"
-          Tot-> "totaal"
-          Prop -> fatal "Prop should have been converted by the parser"
+          Sym-> ("symmetrisch"    ,"symmetrische")
+          Asy-> ("antisymmetrisch","antisymmetrische")
+          Trn-> ("transitief"     ,"transitieve")
+          Rfx-> ("reflexief"      ,"reflexieve")
+          Irf-> ("irreflexief"    ,"irreflexieve")
+          Uni-> ("univalent"      ,"univalente")
+          Sur-> ("surjectief"     ,"surjectieve")
+          Inj-> ("injectief"      ,"injectieve")
+          Tot-> ("totaal"         ,"totale")

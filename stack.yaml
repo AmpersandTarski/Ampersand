@@ -1,7 +1,7 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-14.1
+resolver: lts-17.9
 # resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: true
 # Local packages, usually specified by relative directory name
@@ -9,19 +9,30 @@ packages:
 - '.'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: 
-- fgl-5.7.0.1
-- graphviz-2999.20.0.3
-- pandoc-crossref-0.3.4.0
-- roman-numerals-0.5.1.5
-- simple-sql-parser-0.4.4
-- SpreadsheetML-0.1
-- wl-pprint-1.2.1
-- yaml-config-0.4.0
-- zip-archive-0.4.1@sha256:51774bdc747d20b8f23172315f9c3fdd6c11de01607e98e9890eb87fb49566d7 # can be removed when LTS >= lts-13.19
+extra-deps:
+ - pandoc-citeproc-0.17.0.2
+ - pandoc-crossref-0.3.9.1@sha256:80d0af9f7f525c719b93e94d285e51688e1660045b9eda4b3816871f867489b5,8065
+ - roman-numerals-0.5.1.5@sha256:819d04d9d442b24629dd058f6f0b02bd78e9f9ae99538bc44ca448f1cb2b7b01,1208
+ - simple-sql-parser-0.4.4@sha256:9e7171247d29d8b367f452044791223840aa4587b4e844f852cf620e85c61db0,3978
+ - SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
+ - wl-pprint-1.2.1@sha256:aea676cff4a062d7d912149d270e33f5bb0c01b68a9db46ff13b438141ff4b7c,734
+ - yaml-config-0.4.0@sha256:575103d9fa1ef074a2b419256babaae7be5f5257f37adf3ed2601052415b2d83,1814
+ - salve-1.0.11
+
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+flags:
+  pandoc:
+    trypandoc: false
+    embed_data_files: true
+#    static: false
+  pandoc-citeproc:
+    bibutils: true
+    embed_data_files: true
+    unicode_collation: false
+    test_citeproc: false
+    debug: false
+
 
 # Make sure we can already use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
 # compiler-check: newer-minor
@@ -34,6 +45,11 @@ build:
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
+
+# Ampersand is large, and sometimes stack may crash out of memory.
+# Reducing the number of parallel jobs lowers the memory use to acceptable levels.
+# This resolved issue #1040 and is inspired on https://github.com/commercialhaskell/stack/issues/1910.
+jobs: 4
 
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default

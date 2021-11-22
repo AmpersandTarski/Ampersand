@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)
@@ -20,25 +19,24 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
-import           Data.String (IsString(fromString))
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 data TableSpec
-  = TableSpec { tsCmnt :: [String]  -- Without leading "// "
-              , tsName :: String
+  = TableSpec { tsCmnt :: [Text]  -- Without leading "// "
+              , tsName :: Text
               , tsflds :: [AttributeSpec]
-              , tsKey  ::  String
+              , tsKey  ::  Text
               }
 data AttributeSpec
-  = AttributeSpec { fsname :: T.Text
+  = AttributeSpec { fsname :: Text
                   , fstype :: TType
                   , fsIsPrimKey :: Bool
                   , fsDbNull :: Bool
                   }
 
-getTableName :: TableSpec -> T.Text
-getTableName = T.pack . tsName
+getTableName :: TableSpec -> Text
+getTableName = tsName
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
@@ -51,19 +49,19 @@ plug2TableSpec plug
                    ]<> concat
                    [ [showA (attExpr x)
                      ]
-                   | x <- NEL.toList $ plugAttributes plug
+                   | x <- NE.toList $ plugAttributes plug
                    ]
      , tsName = name plug
-     , tsflds = NEL.toList . fmap fld2AttributeSpec $ plugAttributes plug
-     , tsKey  = case (plug, (NEL.head . plugAttributes) plug) of
+     , tsflds = NE.toList . fmap fld2AttributeSpec $ plugAttributes plug
+     , tsKey  = case (plug, (NE.head . plugAttributes) plug) of
                  (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
                                     then "PRIMARY KEY (" 
-                                            <> L.intercalate ", " (NEL.toList $ fmap (show . attName) (plugAttributes plug))
+                                            <> T.intercalate ", " (NE.toList $ fmap (tshow . attName) (plugAttributes plug))
                                             <> ")"
                                     else ""
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         PrimaryKey _ -> "PRIMARY KEY (" <> (show . attName) primFld <> ")"
+                         PrimaryKey _ -> "PRIMARY KEY (" <> (tshow . attName) primFld <> ")"
                          ForeignKey c -> fatal ("ForeignKey "<>name c<>"not expected here!")
                          PlainAttr    -> ""
      }
@@ -71,7 +69,7 @@ plug2TableSpec plug
 createTableSql :: Bool -> TableSpec -> SqlQuery
 createTableSql withComment tSpec
   | withComment = SqlQueryPretty $
-      ( map T.pack . commentBlockSQL . tsCmnt $ tSpec
+      ( commentBlockSQL . tsCmnt $ tSpec
       ) <>
       [header] <>
       wrap cols <>
@@ -83,28 +81,28 @@ createTableSql withComment tSpec
       " " <> fromMaybe mempty mKey <>
       " " <> T.unwords endings
   where
-    header :: T.Text
-    header = "CREATE TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
-    cols :: [T.Text]
+    header :: Text
+    header = "CREATE TABLE "<>(doubleQuote . tsName $ tSpec)
+    cols :: [Text]
     cols = [ T.pack [pref] <> " " <> addColumn att 
            | (pref, att) <- zip ('(' : L.repeat ',') (tsflds tSpec)]
-    mKey :: Maybe T.Text
+    mKey :: Maybe Text
     mKey =
       case tsKey tSpec of
         "" -> Nothing
-        x  -> Just . T.pack $ ", "<> x
-    endings :: [T.Text]
+        x  -> Just $ ", "<> x
+    endings :: [Text]
     endings =   
       [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
-      [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
+      [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8MB4 COLLATE UTF8MB4_NOPAD_BIN" ]<>
       [ ", ROW_FORMAT = DYNAMIC"]
-    wrap :: [T.Text] -> [T.Text]
+    wrap :: [Text] -> [Text]
     wrap = map (\col -> T.replicate indnt " " <> col)
     indnt = 5
-    addColumn :: AttributeSpec -> T.Text
+    addColumn :: AttributeSpec -> Text
     addColumn att 
        =    doubleQuote (fsname att) <> " " 
-         <> (T.pack . showSQL . fstype) att 
+         <> (showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
          <> " /* "
@@ -113,15 +111,15 @@ createTableSql withComment tSpec
          
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec = SqlQuerySimple $
-       "SHOW COLUMNS FROM "<>(doubleQuote . T.pack . tsName $ tSpec)
+       "SHOW COLUMNS FROM "<>(doubleQuote . tsName $ tSpec)
 
 dropTableSql :: TableSpec -> SqlQuery
 dropTableSql tSpec = SqlQuerySimple $
-       "DROP TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
+       "DROP TABLE "<>(doubleQuote . tsName $ tSpec)
 
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
-  = AttributeSpec { fsname = T.pack (name att)
+  = AttributeSpec { fsname = name att
                   , fstype = attType att
                   , fsIsPrimKey = isPrimaryKey att
                   , fsDbNull = attDBNull att 
@@ -129,41 +127,41 @@ fld2AttributeSpec att
 
 insertQuery :: SomeValue val =>
        Bool          -- prettyprinted?
-    -> T.Text     -- The name of the table
-    -> NEL.NonEmpty T.Text   -- The names of the attributes
+    -> Text     -- The name of the table
+    -> NE.NonEmpty Text   -- The names of the attributes
     -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>T.intercalate ", " (NEL.toList $ fmap doubleQuote attNames) <>")"
+     , "   ("<>T.intercalate ", " (NE.toList $ fmap doubleQuote attNames) <>")"
      , "VALUES " 
      ]
    <> (T.lines . ("   "<>) .T.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
   | otherwise = SqlQueryPlain $
         "INSERT INTO "<>doubleQuote tableName
-     <> " ("<>T.intercalate ", " (NEL.toList $ fmap  doubleQuote attNames) <>")"
+     <> " ("<>T.intercalate ", " (NE.toList $ fmap  doubleQuote attNames) <>")"
      <> " VALUES "
-     <> (T.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+     <> T.intercalate ", " [ "(" <>valuechain md<> ")" | md<-tblRecords]
   where
-    valuechain :: SomeValue val => [Maybe val] -> T.Text
-    valuechain record = T.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
+    valuechain :: SomeValue val => [Maybe val] -> Text
+    valuechain record = T.intercalate ", " [maybe "NULL" repr att | att<-record]
 
 class SomeValue a where
-  repr :: a -> T.Text
+  repr :: a -> Text
 instance SomeValue AAtomValue where
-  repr = T.pack . showValSQL
-instance SomeValue String where
-  repr = T.pack
+  repr = showValSQL
+instance SomeValue Text where
+  repr = id
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
  createTableSql withComment tSpec :
- [SqlQuerySimple . T.pack $ 
-    ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>show i)
-    <>" ON "<>show (tsName tSpec) <> " ("
-    <> (show . T.unpack . fsname $ fld)<>")"
+ [SqlQuerySimple 
+    ( "CREATE INDEX "<> tshow (tsName tSpec<>"_"<>tshow i)
+    <>" ON "<>tshow (tsName tSpec) <> " ("
+    <> (tshow . fsname $ fld)<>")"
     )
  | (i,fld) <- zip [0..(maxIndexes - 1)]
             . filter (suitableAsKey . fstype)
@@ -175,16 +173,16 @@ tableSpec2Queries withComment tSpec =
 additionalDatabaseSettings :: [SqlQuery]
 additionalDatabaseSettings = [ SqlQuerySimple "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
 
-doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
+doubleQuote :: (IsString m, Monoid m) => m -> m
 doubleQuote = enclose '\"'
-singleQuote :: (Data.String.IsString m, Monoid m) => m -> m
+singleQuote :: (IsString m, Monoid m) => m -> m
 singleQuote = enclose '`'
-enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
+enclose :: (IsString m, Monoid m) => Char -> m -> m
 enclose c s = fromString [c] <> s <> fromString [c]
 
-queryAsPHP :: SqlQuery -> T.Text
+queryAsPHP :: SqlQuery -> Text
 queryAsPHP = showPhpStr . queryAsSQL
-queryAsSQL :: SqlQuery -> T.Text
+queryAsSQL :: SqlQuery -> Text
 queryAsSQL sql = 
   case sql of 
     SqlQuerySimple x  -> x

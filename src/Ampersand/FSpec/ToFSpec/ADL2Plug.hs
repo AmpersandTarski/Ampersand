@@ -1,3 +1,4 @@
+
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,typologies
@@ -9,14 +10,14 @@ import           Ampersand.Classes
 import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import           Ampersand.Misc
-import           RIO.Char
+import           Ampersand.Misc.HasClasses
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Text as T
 
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c
- = [  att | att<-NEL.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
+ = [  att | att<-NE.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
    where
      inKernel :: SqlAttribute -> Bool
      inKernel att = isUni expr 
@@ -26,24 +27,22 @@ attributesOfConcept fSpec c
          where expr = attExpr att 
               --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs :: Options -> A_Context 
-              -> (Relation -> Relation) -- Function to add calculated properties to a relation
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) 
+       => env -> A_Context 
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs env context = conceptTables <> linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls :: Relations
-    calculatedDecls = Set.map calcProps . relsDefdIn $ context 
-    (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
+    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (typologies context)
     makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
       TblSQL
              { sqlname    = unquote . name $ tableKey
-             , attributes = map cptAttrib cpts ++ map dclAttrib dcls
+             , attributes = map cptAttrib cpts <> map dclAttrib dcls
              , cLkpTbl    = conceptLookuptable
              , dLkpTbl    = dclLookuptable
              }
@@ -51,24 +50,23 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
           -- | Make sure each attribute in the table has a unique name. Take into account that sql 
           --   is not case sensitive about names of coloums. 
-          colNameMap :: [ (Either A_Concept Relation, String) ]
+          colNameMap :: [ (Either A_Concept Relation, Text) ]
           colNameMap = f [] (cpts, dcls)
-            where f :: [ (Either A_Concept Relation, String) ] -> ([A_Concept],[Relation]) -> [ (Either A_Concept Relation, String) ]
+            where f :: [ (Either A_Concept Relation, Text) ] -> ([A_Concept],[Relation]) -> [ (Either A_Concept Relation, Text) ]
                   f names (cs,ds) =
                      case (cs,ds) of
                        ([],[]) -> names
                        ([], h:tl) -> f (insert (Right h) names) ([],tl)
                        (h:tl,_  ) -> f (insert (Left h) names) (tl,ds)
-                  insert :: Either A_Concept Relation -> [(Either A_Concept Relation, String)] -> [(Either A_Concept Relation, String)]
+                  insert :: Either A_Concept Relation -> [(Either A_Concept Relation, Text)] -> [(Either A_Concept Relation, Text)]
                   insert item = tryInsert item 0
                     where 
-                      tryInsert :: Either A_Concept Relation -> Int -> [(Either A_Concept Relation,String)] -> [(Either A_Concept Relation,String)]
+                      tryInsert :: Either A_Concept Relation -> Int -> [(Either A_Concept Relation,Text)] -> [(Either A_Concept Relation,Text)]
                       tryInsert x n names =
-                        let nm = either name name x ++ (if n == 0 then "" else "_"++show n)
-                        in if map toLower nm `elem` map (map toLower . snd) names -- case insencitive compare, because SQL needs that.
+                        let nm = either name name x <> (if n == 0 then "" else "_"<>tshow n)
+                        in if T.toLower nm `elem` map (T.toLower . snd) names -- case insencitive compare, because SQL needs that.
                            then tryInsert x (n+1) names
                            else (x,nm):names
-
 
           tableKey = tyroot typ
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
@@ -84,13 +82,13 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
           lookupC :: A_Concept -> SqlAttribute
           lookupC cpt           = case [f |(c',f)<-conceptLookuptable, cpt==c'] of
-                                    []  -> fatal $ "Concept `"++name cpt++"` is not in the lookuptable."
-                                         ++"\ncpts: "++show cpts
-                                         ++"\ndcls: "++show (map (\d -> name d++show (sign d)++" "++show (properties d)) dcls)
-                                         ++"\nlookupTable: "++show (map fst conceptLookuptable)
+                                    []  -> fatal $ "Concept `"<>name cpt<>"` is not in the lookuptable."
+                                         <>"\ncpts: "<>tshow cpts
+                                         <>"\ndcls: "<>tshow (map (\d -> name d<>tshow (sign d)<>" "<>tshow (properties d)) dcls)
+                                         <>"\nlookupTable: "<>tshow (map fst conceptLookuptable)
                                     x:_ -> x
           cptAttrib :: A_Concept -> SqlAttribute
-          cptAttrib cpt = Att { attName = fromMaybe (fatal ("No name found for `"++name cpt++"`. "))
+          cptAttrib cpt = Att { attName = fromMaybe (fatal ("No name found for `"<>name cpt<>"`. "))
                                                     (lookup (Left cpt) colNameMap) 
                               , attExpr    = expr
                               , attType    = repr cpt
@@ -98,8 +96,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                                 && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                                              then PrimaryKey cpt  
                                              else PlainAttr
-                              , attNull    = not . isTot $ expr
-                              , attDBNull  = cpt /= tableKey 
+                              , attNull    = cpt /= tableKey -- column for specializations can be NULL, but not the first column (tableKey)
+                              , attDBNull  = cpt /= tableKey -- column for specializations can be NULL, but not the first column (tableKey)
                               , attUniq    = True
                               , attFlipped = False
                               }
@@ -107,7 +105,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                              then EDcI cpt
                              else EEps cpt (Sign tableKey cpt)
           dclAttrib :: Relation -> SqlAttribute
-          dclAttrib dcl = Att { attName = fromMaybe (fatal ("No name found for `"++name dcl++"`. "))
+          dclAttrib dcl = Att { attName = fromMaybe (fatal ("No name found for `"<>name dcl<>"`. "))
                                                     (lookup (Right dcl) colNameMap)
                               , attExpr = dclAttExpression
                               , attType = repr (target dclAttExpression)
@@ -115,7 +113,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                           then ForeignKey (target dclAttExpression)
                                           else PlainAttr
                               , attNull = not . isTot $ keyToTargetExpr
-                              , attDBNull = True -- to prevent database errors. Ampersand checks for itself. 
+                              , attDBNull = True -- always allow NULL values in the table structure. We use the invariant rules to check if column is mandatory
                               , attUniq = isInj keyToTargetExpr
                               , attFlipped = isStoredFlipped dcl
                               }
@@ -156,35 +154,35 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
             , rsSrcAtt    = if isStoredFlipped dcl then trgAtt else srcAtt
             , rsTrgAtt    = if isStoredFlipped dcl then srcAtt else trgAtt
             }
-       --the expr for the source of r
-       srcExpr
+       --the expr for the domain of r
+       domExpr
         | isTot bindedExp = EDcI (source bindedExp)
         | isSur bindedExp = EDcI (target bindedExp)
         | otherwise = EDcI (source bindedExp) ./\. (bindedExp .:. flp bindedExp)
-       --the expr for the target of r
-       trgExpr
+       --the expr for the codomain of r
+       codExpr
         | not (isTot bindedExp) && isSur bindedExp = flp bindedExp
         | otherwise                                =     bindedExp
-       srcAtt = Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
-                    , attExpr = srcExpr
-                    , attType = repr . source $ srcExpr
-                    , attUse  = if suitableAsKey . repr . source $ srcExpr
-                                then ForeignKey (target srcExpr)
+       srcAtt = Att { attName = T.concat["Src" | isEndo dcl]<>(unquote . name . source) codExpr
+                    , attExpr = domExpr
+                    , attType = repr (source domExpr)
+                    , attUse  = if suitableAsKey . repr . source $ domExpr
+                                then ForeignKey (source domExpr)
                                 else PlainAttr
-                    , attNull = False  -- false for link tables. This was 'isTot trgExpr' (was this a mistake?)
-                    , attDBNull = False
-                    , attUniq = isUni trgExpr
+                    , attNull = False       -- false for link tables
+                    , attDBNull = False     -- false for link tables
+                    , attUniq = isUni codExpr
                     , attFlipped = isStoredFlipped dcl
                     }
-       trgAtt = Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
-                    , attExpr = trgExpr
-                    , attType = repr . target $ trgExpr
-                    , attUse  = if suitableAsKey . repr . target $ trgExpr
-                                then ForeignKey (target trgExpr)
+       trgAtt = Att { attName = T.concat["Tgt" | isEndo dcl]<>(unquote . name . target) codExpr
+                    , attExpr = codExpr
+                    , attType = repr (target domExpr)
+                    , attUse  = if suitableAsKey . repr . target $ codExpr
+                                then ForeignKey (target codExpr)
                                 else PlainAttr
-                    , attNull = isSur trgExpr
-                    , attDBNull = False  -- false for link tables
-                    , attUniq = isInj trgExpr
+                    , attNull = False       -- false for link tables
+                    , attDBNull = False     -- false for link tables
+                    , attUniq = isInj codExpr
                     , attFlipped = isStoredFlipped dcl
                     }
 
@@ -208,40 +206,34 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                Just x  -> x `elem` tyCpts typ
                            ]
     conceptTableOf :: Relation -> Maybe A_Concept
-    conceptTableOf  = fst . wayToStore opts
+    conceptTableOf  = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
-    isStoredFlipped = snd . wayToStore opts
+    isStoredFlipped = snd . wayToStore env
 
 -- | this function tells how a given relation is to be stored. If stored
---   in a concept table, it returns that concept. It allways returns a boolean
---   telling wether or not the relation is stored flipped.
-wayToStore :: Options -> Relation -> (Maybe A_Concept,Bool)
-wayToStore opts dcl
-  | sqlBinTables opts = (Nothing, False)
-  | otherwise =
-       case (isInj d, isUni d) of
-            (True   , False  ) -> inConceptTableFlipped
-            (_      , True   ) -> inConceptTablePlain
-            (False  , False  ) -> inLinkTable --Will become a link-table
+--   in a concept table, it returns that concept. It returns a boolean
+--   that tells wether or not the relation is stored flipped.
+wayToStore :: (HasFSpecGenOpts env) => env -> Relation -> (Maybe A_Concept,Bool)
+wayToStore env dcl 
+  | view sqlBinTablesL env = (Nothing, False) -- binary tables only
+  | isUni (EDcD dcl)       = (Just $ source d, False) -- to concept table, plain
+  | isInj (EDcD dcl)       = (Just $ target d, True) -- to concept table, flipped
+  | otherwise              = (Nothing, not (isTot d) && isSur d) -- to link-table
+                                 -- The order of columns in a linked table could
+                                 -- potentially speed up queries, in cases where
+                                 -- the relation is TOT or SUR. In that case there
+                                 -- should be no need to look in the concept table,
+                                 -- for all atoms are in the first colum of the link table
   where d = EDcD dcl
-        inConceptTablePlain   = (Just $ source d,False)
-        inConceptTableFlipped = (Just $ target d, True)
-        inLinkTable = ( Nothing
-                      , -- The order of columns in a linked table could
-                        -- potentially speed up queries, in cases where
-                        -- the relation is TOT or SUR. In that case there
-                        -- should be no need to look in the concept table,
-                        -- for all atoms are in the first colum of the link table
-                        not (isTot d) && isSur d
-                      )
 
-unquote :: String -> String
+unquote :: Text -> Text
 unquote str =
-  case str of
-   '"':tl  -> case reverse tl of
-                '"':mid -> reverse mid
-                _       -> str
-   _       -> str
+  case T.uncons str of
+   Just ('"',tl)
+       -> case T.uncons (T.reverse tl) of
+            Just ('"',mid) -> T.reverse mid
+            _              -> str
+   _   -> str
       
 suitableAsKey :: TType -> Bool
 suitableAsKey st =
@@ -261,13 +253,9 @@ suitableAsKey st =
     Object           -> True
     TypeOfOne        -> fatal "ONE has no key at all. does it?"
 
- 
-
-
-
 typologies :: A_Context -> [Typology]
 typologies context = 
-   (multiKernels . ctxInfo $ context) ++ 
+   (multiKernels . ctxInfo $ context) <> 
    [Typology { tyroot = c
              , tyCpts = [c]
              } 

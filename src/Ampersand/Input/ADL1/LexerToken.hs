@@ -6,12 +6,9 @@ module Ampersand.Input.ADL1.LexerToken
     , FilePos(..)
     ) where
 
-import Ampersand.Basics
-import Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Time.LocalTime() -- for instance Show UTCTime
-import Text.Parsec()
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
+import           RIO.Time
 
 -- | The Ampersand token
 data Token = Tok { tokLex :: Lexeme  -- ^ The lexeme
@@ -22,36 +19,47 @@ instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
 -- | The Ampersand Lexemes
-data Lexeme  = LexSymbol      Char    -- ^ A symbol
-             | LexOperator    String  -- ^ An operator
-             | LexKeyword     String  -- ^ A keyword
-             | LexString      String  -- ^ A quoted string
-             | LexMarkup      String  -- ^ A markup (string to be parsed by Pandoc)
-             | LexSingleton   String  -- ^ An atomvalue in an Expression
-             | LexDecimal     Int     -- ^ A decimal number
-             | LexFloat      Double   -- ^ A decimal floating point thing
-             | LexOctal       Int     -- ^ An octal number
-             | LexHex         Int     -- ^ A hexadecimal number
-             | LexConId       String  -- ^ An upper case identifier
-             | LexVarId       String  -- ^ A lower case identifier
-             | LexDateTime    UTCTime -- ^ A date-time
-             | LexDate        Day     -- ^ A date
+data Lexeme
+  = -- | A symbol
+    LexSymbol !Char
+  | -- | An operator
+    LexOperator !String
+  | -- | A keyword
+    LexKeyword !String
+  | -- | A single quoted (possibly empty) string
+    LexSingleQuotedString !String
+  | -- | A double quoted (possibly empty) string
+    LexDubbleQuotedString !String
+  | -- | A markup (string to be parsed by Pandoc)
+    LexMarkup !String
+  | -- | A decimal number
+    LexDecimal !Int
+  | -- | A decimal floating point thing
+    LexFloat !Double
+  | -- | An octal number
+    LexOctal !Int
+  | -- | A hexadecimal number
+    LexHex !Int
+  | -- | An identifier that is safe to be used as a name in a database. It must contain only alphanumeric (UTF8) characters and underscore `_`. It may not begin with a numeric character or an underscore.
+    LexSafeID !String
+  | -- | A date-time
+    LexDateTime !UTCTime
+  | -- | A date
+    LexDate !Day
   deriving (Eq, Ord)
-
 instance Show Lexeme where
     show x = case x of
          LexSymbol   val -> "symbol "                ++ "'"  ++     [val] ++ "'"
          LexOperator val -> "operator "              ++ "'"  ++      val  ++ "'"
          LexKeyword  val -> "keyword "               ++         show val
-         LexString   val -> "string "                ++ "\"" ++      val  ++ "\""
+         LexSingleQuotedString   val -> "single quoted string "                ++ "'" ++      val  ++ "'"
+         LexDubbleQuotedString   val -> "double quoted string "                ++ "\"" ++      val  ++ "\""
          LexMarkup   val -> "markup "                ++ "{+" ++      val  ++ "+}"
-         LexSingleton val -> "singleton "            ++ "'"  ++      val  ++ "'"
          LexDecimal   _  -> "integer "               ++   lexemeText  x
          LexFloat     _  -> "float "                 ++   lexemeText  x
          LexOctal     _  -> "octal "                 ++   lexemeText  x
          LexHex       _  -> "hexadecimal "           ++   lexemeText  x
-         LexVarId    val -> "lower case identifier " ++              val
-         LexConId    val -> "upper case identifier " ++              val
+         LexSafeID   val -> "identifier "            ++              val
          LexDateTime _   -> "iso 8601 date time "    ++   lexemeText  x
          LexDate     _   -> "iso 8601 date "         ++   lexemeText  x
          
@@ -69,15 +77,14 @@ lexemeText l = case l of
          LexSymbol   val -> [val]
          LexOperator val -> val
          LexKeyword  val -> val
-         LexString   val -> val
+         LexSingleQuotedString val -> val
+         LexDubbleQuotedString   val -> val
          LexMarkup   val -> val
-         LexSingleton val -> val
          LexDecimal  val -> show val
          LexFloat    val -> show val
          LexOctal    val -> "0o" ++ toBase 8  val
          LexHex      val -> "0x" ++ toBase 16 val
-         LexConId    val -> val
-         LexVarId    val -> val
+         LexSafeID   val -> val
          LexDateTime val -> show val
          LexDate     val -> show val
 

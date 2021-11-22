@@ -1,34 +1,38 @@
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
+﻿{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
+
     AmpParser, pIsThere, optList, optSet,
-    -- Operators
+    -- * Combinators
     (<?>), (<??>),
-    -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
-    -- Positions
+    -- * Positions
     currPos, posOf, valPosOf,
-    -- Basic parsers
-    pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
-    -- special parsers
+    -- * Basic parsers
+    pConid, pDoubleQuotedString, pAmpersandMarkup, pVarid, pCrudString,
+    -- * special parsers
     pAtomValInPopulation, Value(..),
-    -- Special symbols
+    -- * Parsers for special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
-    -- Keywords
+    -- * Keyword parsers
     pKey,
-    -- Operators
+    -- * Operator parsers
     pOperator, pDash, pSemi, pColon,
-    -- Integers
+    -- * Integer parsers
     pZero, pOne
 ) where
 
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import           RIO.Char(toLower)
-import qualified Data.List.NonEmpty as NEL
+import RIO.Char ( toUpper, isLower, isUpper ) 
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import qualified RIO.Text as T
+import           RIO.Time
 import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
 import           Text.Parsec.Pos (newPos)
 
@@ -68,24 +72,31 @@ opt ::  AmpParser a  -- ^ The parser to try
     -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
-sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
-sepBy1 p sep = liftM2 (NEL.:|) p (many (sep >> p))
+-- | @sepBy1 p sep@ parses /one/ or more occurrences of @p@, separated
+-- by @sep@. Returns a non-empty list of values returned by @p@.
+sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NE.NonEmpty a)
+sepBy1 p sep = liftM2 (NE.:|) p (many (sep >> p))
 
 -----------------------------------------------------------
 -- Keywords & operators
 -----------------------------------------------------------
+-- | Take a keyword and return a parser for that keyword 
 pKey :: String -> AmpParser String
 pKey key = match (LexKeyword key)
 
+-- | Take an operator and return a parser for that operator 
 pOperator :: String -> AmpParser String
 pOperator op = match (LexOperator op)
 
+-- | a parser for a dash (-)
 pDash :: AmpParser String
 pDash = pOperator "-"
 
+-- | a parser for a semicolon (;)
 pSemi :: AmpParser String
 pSemi = pOperator ";"
 
+-- | a parser for a colon (:)
 pColon :: AmpParser String
 pColon = pOperator ":"
 
@@ -93,6 +104,7 @@ pColon = pOperator ":"
 -- Token parsers
 -----------------------------------------------------------
 
+-- | given a predicate for a token, return a parser for tokens that comply to that predicate
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check predicate = tokenPrim showTok nextPos matchTok
   where  -- Token pretty-printing function
@@ -105,50 +117,59 @@ check predicate = tokenPrim showTok nextPos matchTok
          -- ^ Matching function for the token to parse.
          matchTok (Tok l _) = predicate l
 
+-- | a parser for a given @Lexeme@
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
 
---- Conid ::= UpperChar (Char | '_')*
+--- Conid ::= UpperChar AlphaNumericChar*
 pConid :: AmpParser String
-pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing }) <?> "upper case identifier"
+pConid = check (\case
+  LexSafeID s@(h:_) -> if isUpper h then Just s else Nothing
+  _ -> Nothing) <?> "upper case identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
-pString :: AmpParser String
-pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing }) <?> "string"
+pDoubleQuotedString :: AmpParser String
+pDoubleQuotedString = check (\case
+  LexDubbleQuotedString s -> Just s
+  _ -> Nothing) <?> "double quoted string"
 
 --- Markup ::= '{+' Any* '+}'
 pAmpersandMarkup :: AmpParser String
-pAmpersandMarkup = check (\lx -> case lx of { LexMarkup s -> Just s; _ -> Nothing }) <?> "markup"
+pAmpersandMarkup = check (\case
+  LexMarkup s -> Just s
+  _ -> Nothing) <?> "markup"
 
---- Varid ::= (LowerChar | '_') (Char | '_')*
+--- Varid ::= LowerChar AlphaNumericChar*
 pVarid :: AmpParser String
-pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
+pVarid = check (\case
+  LexSafeID s@(h:_) -> if isLower h then Just s else Nothing
+  _ -> Nothing) <?> "lower case identifier"
 
+-- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
+-- at most once. The order of the characters is free.
 pCrudString :: AmpParser String
-pCrudString = check (\lx -> case lx of 
-                              LexConId s -> testCrud s 
-                              LexVarId s -> testCrud s
-                              _ -> Nothing 
-                    ) <?> "crud definition"
+pCrudString = check (\case
+  LexSafeID s -> testCrud s
+  _ -> Nothing) <?> "crud definition"
    where 
-     testCrud "" = Nothing
-     testCrud s = test "crud" (map toLower s)
-       where test _ [] = Just s
-             test [] _ = Nothing
-             test (x:xs) (y:ys) 
-                       = if x == y 
-                         then test xs ys
-                         else test xs (y:ys)
+    testCrud s = 
+       if and $ [ not (null s)
+                , L.nub caps == caps
+                ] ++ map (`elem` ['C','R','U','D'] ) caps 
+          then Just s
+          else Nothing
+      where caps = map toUpper s
 
 
-data Value = VRealString String
-           | VSingleton String (Maybe Value)
+data Value = VRealString Text
+           | VSingleton Text (Maybe Value)
            | VInt Int
            | VFloat Double
            | VBoolean Bool
            | VDateTime UTCTime
            | VDate Day
+           
 pAtomValInPopulation :: Bool -> AmpParser Value
 -- An atomvalue can be lots of things. However, since it can be used in 
 -- as a term (singleton expression), an ambiguity might occur if we allow
@@ -160,7 +181,7 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString <$> pString
+          <|> VRealString <$> (T.pack <$> pDoubleQuotedString)
           <|> VDateTime <$> pUTCTime
           <|> VDate <$> pDay
           <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
@@ -173,10 +194,14 @@ pAtomValInPopulation constrainsApply =
 -----------------------------------------------------------
 
 pDay :: AmpParser Day
-pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 8601 Date"
+pDay = check (\case
+  LexDate s -> Just s
+  _ -> Nothing) <?> "iso 8601 Date"
 
 pUTCTime :: AmpParser UTCTime
-pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
+pUTCTime  = check (\case
+  LexDateTime s -> Just s
+  _ -> Nothing) <?> "iso 8601 DateTime"
 
 -----------------------------------------------------------
 -- Integers /float(Double)
@@ -241,7 +266,7 @@ pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 -----------------------------------------------------------
 
 posOrigin :: Show a => a -> SourcePos -> Origin
-posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (show sym)
+posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (tshow sym)
 
 currPos :: AmpParser Origin
 currPos = posOf $ return ()

@@ -2,7 +2,7 @@ CONTEXT ResiduTest IN ENGLISH
 
 PURPOSE PATTERN SelectExprTest IN ENGLISH 
 {+
-This pattern is meant to test the translation of Expressions in Ampersand into
+This pattern is meant to test the translation of Terms in Ampersand into
 SELECT statements in SQL.
 +}
 
@@ -32,8 +32,8 @@ RULE equiv4: s~\t~ = (t/s)~
 And this produces the following fatal error:
 
   Cannot intersect (with operator "/\")
-       expression -(s~\t~) \/ (t/s)~ of type [B*D]
-   with expression s~;(t/s)~ |- t~   of type [C*D]
+       term -(s~\t~) \/ (t/s)~ of type [B*D]
+   with term s~;(t/s)~ |- t~   of type [C*D]
 
 -}
 

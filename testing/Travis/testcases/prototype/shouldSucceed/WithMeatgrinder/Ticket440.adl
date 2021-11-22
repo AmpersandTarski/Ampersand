@@ -1,4 +1,4 @@
-﻿CONTEXT Ticket440 IN DUTCH
+CONTEXT Ticket440 IN DUTCH
 
 PATTERN "Voldoen aan normen"
 heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan een norm."

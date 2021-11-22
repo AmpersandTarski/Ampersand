@@ -1,0 +1,44 @@
+CONTEXT Try10 IN ENGLISH
+
+PURPOSE PATTERN Try10 IN ENGLISH 
+{+
+This pattern is meant to test the translation of ObjectDefs in Ampersand.
++}
+
+PATTERN Try10
+  r :: A*A
+  s :: C*X
+  t :: A*B
+  CLASSIFY A ISA D
+  CLASSIFY C ISA D
+ENDPATTERN
+
+INTERFACE Overview : I[ONE]
+  BOX [ as : V[ONE*A]
+        BOX [ "id" : I
+            , "r"  : r
+            , r    : s
+            , t    : t  -- type is B
+              BOX [ "id" : I
+                  , s    : s
+                  , t    : t~;s
+                  ]
+            ]
+      ]
+
+ENDCONTEXT
+
+{- 
+   Purpose: to check that uniqueness of lables in boxes are tested.
+   Result: FAIL
+   Reason: on lines 19 and 20 there are duplicate labels.
+   
+   Message:
+C:> ampersand check Try10.adl
+Reading file /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl
+/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl:19:15 error:
+  Every label in box must have a unique name. "r", however, is used at:/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl:19:15
+      /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl:20:15.
+ExitFailure 10
+C:>
+-}
