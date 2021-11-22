@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v4.6.0 (22 November 2021)
 
 * [Issue #prototype/69 ](https://github.com/AmpersandTarski/prototype/issues/69 )Auxiliary work to facilitate the implementation of the new Angular frontend. 
 * [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
