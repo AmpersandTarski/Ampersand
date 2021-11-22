@@ -10,8 +10,8 @@
   * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
   * Added CLI option: --(no-)backend to specify if the compiler must generate backend config files (default enabled)
   * Added CLI option: --(no-)check-compiler-version to specify if compiler must check prototype framework compatibility (default enabled)
-
 * [Issue #1231](https://github.com/AmpersandTarski/Ampersand/issues/1231) Enable the generation of a logical data model (graphic) where the entities are grouped per pattern.
+* [Issue #1253](https://github.com/AmpersandTarski/Ampersand/issues/1253) Bugfix 'ampersand: No match in record selector aavtxt'
 
 ## v4.5.0 (11 November 2021)
 

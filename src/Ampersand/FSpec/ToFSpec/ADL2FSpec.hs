@@ -120,7 +120,7 @@ makeFSpec env context
      apply_viol_text :: Rule -> AAtomPair -> Text
      apply_viol_text rule violPair
       = case rrviol rule of
-          Nothing -> "(" <> aavtxt (apLeft violPair) <> ", " <> aavtxt (apRight violPair) <> ")"
+          Nothing -> "(" <> showA (apLeft violPair) <> ", " <> showA (apRight violPair) <> ")"
           Just pv -> pairsegs
             where
               pairsegs :: Text
@@ -132,7 +132,7 @@ makeFSpec env context
               totext (PairViewExp _ Tgt expr) = lrToText apRight expr
               lrToText :: (AAtomPair -> AAtomValue) -> Expression -> Text
               lrToText g expr
-               = case fmap (aavtxt.apRight) . toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
+               = case fmap (showA.apRight) . toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
                  of [h]  -> h
                     []   -> ""
                     xs   -> "{" <> T.intercalate ", " xs <> "}"

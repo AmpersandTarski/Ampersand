@@ -3,8 +3,6 @@ cabal-version: 2.0
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 4b27a9ba6b432d561dc818be2ed86859f42ed8da7bb77cbe1d0d4f209c69dd01
 
 name:           ampersand
 version:        4.5.0
@@ -19,9 +17,9 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
+build-type:     Custom
 tested-with:
     GHC == 8.10.4
-build-type:     Custom
 extra-source-files:
     LICENSE
     ReleaseNotes.md
@@ -111,15 +109,15 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldFail/Session.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
     testing/Sentinel/Tests/ShouldFail/testinfo.yaml
-    testing/Sentinel/Tests/ShouldSucceed/Bug337_FatalONE.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue233.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue280.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue751.adl
-    testing/Sentinel/Tests/ShouldSucceed/Issue853.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue751.adl
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue853.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/testinfo.yaml
+    testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Ticket580.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldSucceed/testinfo.yaml
-    testing/Sentinel/Tests/ShouldSucceed/Ticket580.adl
     testing/StillUnsupported/Bug335_Kl0Kl1.adl
     testing/StillUnsupported/Issue166.adl
     testing/StillUnsupported/Issue166_2.adl
