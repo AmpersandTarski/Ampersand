@@ -19,12 +19,12 @@ packages:
   original:
     hackage: roman-numerals-0.5.1.5@sha256:819d04d9d442b24629dd058f6f0b02bd78e9f9ae99538bc44ca448f1cb2b7b01,1208
 - completed:
-    hackage: simple-sql-parser-0.4.4@sha256:9e7171247d29d8b367f452044791223840aa4587b4e844f852cf620e85c61db0,3978
+    hackage: simple-sql-parser-0.6.0@sha256:ce8f602fa81001287deb25af7b711fc45e1cdf36ff7702edde5dee2358f19a37,5580
     pantry-tree:
-      size: 1746
-      sha256: 7d2d5a45845ef3504c585ac74cb8ff8c7300658e00f79c2208cf34829b243ea1
+      size: 2752
+      sha256: cd333c976b4b12425d0eed28749884551a4595dd249cc6d6b75c34e4ce7688cc
   original:
-    hackage: simple-sql-parser-0.4.4
+    hackage: simple-sql-parser-0.6.0
 - completed:
     hackage: SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
     pantry-tree:
