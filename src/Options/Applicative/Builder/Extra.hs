@@ -12,7 +12,6 @@ module Options.Applicative.Builder.Extra
   ,enableDisableFlags
   ,enableDisableFlagsNoDefault
   ,extraHelpOption
-  ,execExtraHelp
   ,textOption
   ,textArgument
   ,optionalFirst
@@ -41,7 +40,6 @@ import Options.Applicative.Types (readerAsk)
 --import Path hiding ((</>))
 import Ampersand.Basics
 import System.Directory (getCurrentDirectory, getDirectoryContents, doesDirectoryExist)
-import System.Environment (withArgs)
 import System.FilePath (takeBaseName, (</>), splitFileName, isRelative, takeExtension)
 
 -- | Enable/disable flags for a 'Bool'.
@@ -144,26 +142,6 @@ extraHelpOption hide progName fakeName helpName =
                                   help optDesc' <>
                                   (if hide then hidden <> internal else idm))
   where optDesc' = concat ["Run '", takeBaseName progName, " --", helpName, "' for details"]
-
--- | Display extra help if extra help option passed in arguments.
---
--- Since optparse-applicative doesn't allow an arbitrary IO action for an 'abortOption', this
--- was the best way I found that doesn't require manually formatting the help.
-execExtraHelp :: [String]  -- ^ Command line arguments
-              -> String    -- ^ Extra help option name, e.g. @"docker-help"@
-              -> Parser a  -- ^ Option parser for the relevant command
-              -> String    -- ^ Option description
-              -> IO ()
-execExtraHelp args helpOpt parser pd =
-    when (args == ["--" ++ helpOpt]) $
-      withArgs ["--help"] $ do
-        _ <- execParser (info (hiddenHelper <*>
-                               ((,) <$>
-                                parser <*>
-                                some (strArgument (metavar "OTHER ARGUMENTS") :: Parser String)))
-                        (fullDesc <> progDesc pd))
-        return ()
-  where hiddenHelper = abortOption ShowHelpText (long "help" <> hidden <> internal)
 
 -- | 'option', specialized to 'Text'.
 textOption :: Mod OptionFields Text -> Parser Text

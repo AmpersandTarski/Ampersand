@@ -1,5 +1,5 @@
 {
-  "name": "HaskellStackDev:8.10.4"
+  "name": "HaskellStackDev:8.10.7"
   ,
   "dockerFile": "Dockerfile",
   "runArgs": [],

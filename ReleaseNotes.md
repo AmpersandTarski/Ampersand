@@ -1,7 +1,9 @@
 # Release notes of Ampersand
 * The Archimate extension has been made compilable again, which was necessary since RIO is being used. This affects the "feature/Archimate extension" branch.
 
-## Unreleased changes
+* Upgrade to [LTS Haskell 18.18 (ghc-8.10.7)](https://www.stackage.org/lts-18.18) . This includes an upgrade of several dependencies.
+
+## v4.6.0 (22 November 2021)
 
 * [Issue #prototype/69 ](https://github.com/AmpersandTarski/prototype/issues/69 )Auxiliary work to facilitate the implementation of the new Angular frontend. 
 * [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
@@ -11,8 +13,8 @@
   * Added CLI option: --(no-)frontend to specify if the compiler must generate frontend files (default enabled)
   * Added CLI option: --(no-)backend to specify if the compiler must generate backend config files (default enabled)
   * Added CLI option: --(no-)check-compiler-version to specify if compiler must check prototype framework compatibility (default enabled)
-
 * [Issue #1231](https://github.com/AmpersandTarski/Ampersand/issues/1231) Enable the generation of a logical data model (graphic) where the entities are grouped per pattern.
+* [Issue #1253](https://github.com/AmpersandTarski/Ampersand/issues/1253) Bugfix 'ampersand: No match in record selector aavtxt'
 
 ## v4.5.0 (11 November 2021)
 
