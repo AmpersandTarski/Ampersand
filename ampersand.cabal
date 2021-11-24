@@ -6873,7 +6873,6 @@ library
       Ampersand.Commands.Test
       Ampersand.Commands.Uml
       Ampersand.Commands.Validate
-      Ampersand.Components
       Ampersand.Daemon.Daemon
       Ampersand.Daemon.Escape
       Ampersand.Daemon.Parser
@@ -6885,7 +6884,6 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Misc.Defaults
-      Ampersand.Misc.Options
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser
