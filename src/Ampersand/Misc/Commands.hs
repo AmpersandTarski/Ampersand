@@ -214,7 +214,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         myPreferences = prefs $ showHelpOnEmpty
                              <>  noBacktrack
                              <>  disambiguate 
-        myDescriptionFunction :: OptHelpInfo -> Option x -> Chunk Doc
+        myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
         myDescriptionFunction _info' opt = dullyellow <$>
                 paragraph (show opt) -- optHelp opt -- "Een of andere optie."
         parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
@@ -313,7 +313,7 @@ hsubparser' commandMetavar m = mkParser d g rdr
 -- | Non-hidden help option.
 helpOption :: Parser (a -> a)
 helpOption =
-    abortOption ShowHelpText $
+    abortOption (ShowHelpText $ Just "This is some text, but when does it show??") $
     long "help" <>
     help "Show this help text"
 
