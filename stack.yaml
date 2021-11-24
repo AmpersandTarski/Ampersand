@@ -32,6 +32,8 @@ flags:
   #   unicode_collation: false
   #   test_citeproc: false
   #   debug: false
+  mintty:
+    Win32-2-13-1: false # see https://github.com/RyanGlScott/mintty/issues/4 for the reason to set this flag. TODO: This should probably be removed when upgrading to something higher than LTS-18.18
 
 
 # Make sure we can already use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
