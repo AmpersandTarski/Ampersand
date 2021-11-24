@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* Upgrade to [LTS Haskell 18.18 (ghc-8.10.7)](https://www.stackage.org/lts-18.18) . This includes an upgrade of several dependencies.
+
 ## v4.6.0 (22 November 2021)
 
 * [Issue #prototype/69 ](https://github.com/AmpersandTarski/prototype/issues/69 )Auxiliary work to facilitate the implementation of the new Angular frontend. 
