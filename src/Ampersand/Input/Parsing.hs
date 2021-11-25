@@ -128,12 +128,14 @@ parseADLs parsedFilePaths fpIncludes =
                   whenCheckedM (parseADLs (parsedFilePaths<>[x]) (includes<>xs)) 
                                           (\rst -> pure . pure $ (x,ctx):rst)        --return . pure . (:) (x,ctx) 
 
+-- | ParseCandidate is intended to represent an INCLUDE-statement.
+--   This information is gathered while parsing and returned alongside the parse result.
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
        , pcOrigin   :: Maybe Origin
        , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
-       , pcDefineds :: Set.Set PreProcDefine
+       , pcDefineds  :: Set.Set PreProcDefine
        }
 instance Eq ParseCandidate where
  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b

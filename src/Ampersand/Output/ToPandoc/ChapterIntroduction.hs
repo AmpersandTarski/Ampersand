@@ -35,7 +35,7 @@ chpIntroduction env now fSpec =
             <> (if Diagnosis `elem` chaptersInDoc env
                then para (   text "De diagnose in " 
                           <> hyperLinkTo Diagnosis
-                          <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
+                          <> text " is bedoeld voor de auteurs zelf om gebreken uit hun Ampersand model op te sporen. "
                          )
                else mempty)
             <> (if ConceptualAnalysis `elem` chaptersInDoc env

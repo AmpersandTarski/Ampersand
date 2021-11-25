@@ -115,7 +115,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   conceptTables =
     legacyTable (text.l $ (NL "Logische gegevensverzamelingen"
                     ,EN "Logical entity types"))
-         [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
+         [(AlignLeft,2/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
          , (plain.text.l) (NL "Aantal"        , EN "Count")

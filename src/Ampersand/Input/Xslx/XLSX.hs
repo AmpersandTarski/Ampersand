@@ -225,7 +225,7 @@ toPops env file x = map popForColumn (colNrs x)
       else  P_RelPopu { pos = popOrigin
                       , p_src = src
                       , p_tgt = trg
-                      , p_nmdr = PNamedRel popOrigin relName Nothing -- The P-to-A converter must assign the type.
+                      , p_nmdr = PNamedRel popOrigin relationName Nothing -- The P-to-A converter must assign the type.
                       , p_popps = thePairs
                       }
      where                             
@@ -262,9 +262,9 @@ toPops env file x = map popForColumn (colNrs x)
                                                 (conceptNameWithOptionalDelimiter t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
-       relName :: Text
+       relationName :: Text
        isFlipped' :: Bool
-       (relName,isFlipped') 
+       (relationName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
                     case T.uncons . T.reverse . trim $ t of
