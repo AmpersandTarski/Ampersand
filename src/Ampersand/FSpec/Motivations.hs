@@ -1,13 +1,15 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 
-module Ampersand.FSpec.Motivations 
-   ( Motivated (purposesOf),
-     HasMeaning(meaning,meanings))
+module Ampersand.FSpec.Motivations
+  ( Motivated (purposesOf),
+    HasMeaning (meaning, meanings),
+  )
 where
+
 import Ampersand.ADL1
-import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
+import Ampersand.FSpec.FSpec (FSpec (..))
 import qualified RIO.Set as Set
 
 -- The general idea is that an Ampersand relation such as:
@@ -22,16 +24,25 @@ import qualified RIO.Set as Set
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
 
-class  Named a => Motivated a where
-  isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  purposesOf :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Language.
-  purposesOf fSpec l x
-   = [e | e<-Set.toList (fSexpls fSpec)
-        , amLang (explMarkup e) == l  -- filter by language
-        , isForObject x (explObj e)   -- informally: "if x and e are the same"
-     ]
+class Named a => Motivated a where
+  isForObject ::
+    a ->
+    ExplObj ->
+    -- | Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
+    Bool
+  purposesOf ::
+    FSpec ->
+    Lang ->
+    a ->
+    -- | The purposes defined for a specific a, given Language.
+    [Purpose]
+  purposesOf fSpec l x =
+    [ e | e <- Set.toList (fSexpls fSpec), amLang (explMarkup e) == l, isForObject x (explObj e) -- filter by language
+    -- informally: "if x and e are the same"
+    ]
+
 instance Motivated A_Concept where
---  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"<>name c<>"')")
+  --  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"<>name c<>"')")
   isForObject c1 (ExplConcept c2) = c1 == c2
   isForObject _ _ = False
 
@@ -51,24 +62,23 @@ instance Motivated Interface where
   isForObject x (ExplInterface str) = name x == str
   isForObject _ _ = False
 
-
-
 class Named a => HasMeaning a where
   meaning :: Lang -> a -> Maybe Meaning
-  meaning l x = 
-     case filter (\(Meaning m) -> l == amLang m) (meanings x) of
-       []   -> Nothing
-       [m]  -> Just m
-       _    -> fatal ("In the "<>tshow l<>" language, too many meanings given for "<>name x <>".")             
+  meaning l x =
+    case filter (\(Meaning m) -> l == amLang m) (meanings x) of
+      [] -> Nothing
+      [m] -> Just m
+      _ -> fatal ("In the " <> tshow l <> " language, too many meanings given for " <> name x <> ".")
   meanings :: a -> [Meaning]
   {-# MINIMAL meanings #-}
 
 instance HasMeaning AConceptDef where
-  meanings cd = 
+  meanings cd =
     acddef2 cd : acdmean cd
 
 instance HasMeaning Rule where
   meanings = rrmean
+
 --  meaning l rule
 --   = head (expls<>map explCont (autoMeaning l rule))
 --     where
@@ -83,6 +93,7 @@ instance HasMeaning Rule where
 
 instance HasMeaning Relation where
   meanings = decMean
+
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
@@ -321,4 +332,3 @@ instance HasMeaning Relation where
 instance Motivated FSpec where
   isForObject x (ExplContext str) = name x == str
   isForObject _ _ = False
-

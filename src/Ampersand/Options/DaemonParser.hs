@@ -1,4 +1,3 @@
-
 module Ampersand.Options.DaemonParser where
 
 import Ampersand.Basics
