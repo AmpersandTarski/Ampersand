@@ -608,7 +608,7 @@ data P_Population
   = P_RelPopu { p_src   :: Maybe P_Concept -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
               , p_tgt   :: Maybe P_Concept -- these src and tgt must be more specific than the P_NamedRel
               , pos     :: Origin       -- the origin
-              , p_nmdr  :: P_NamedRel   -- the named relation
+              , p_nmdr  :: P_NamedRel   -- the named relation that corresponds with the table which the pairs (p_popps) are stored.
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin

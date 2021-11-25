@@ -1,4 +1,5 @@
 # Release notes of Ampersand
+* The Archimate extension has been made compilable again, which was necessary since RIO is being used. This affects the "feature/Archimate extension" branch.
 
 * Upgrade to [LTS Haskell 18.18 (ghc-8.10.7)](https://www.stackage.org/lts-18.18) . This includes an upgrade of several dependencies.
 
