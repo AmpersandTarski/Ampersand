@@ -8,22 +8,22 @@
 -- configuration parsing. For example, we want @withConfig $
 -- withConfig $ ...@ to fail.
 module Ampersand.Runners
-      (
---     withBuildConfig
---    , withEnvConfig
---    , withDefaultEnvConfig
-        withConfig
---    , withGlobalProject
-      , withRunnerGlobal
-      , logLevel
---    , ShouldReexec (..)
-    ) where
+  ( --     withBuildConfig
+    --    , withEnvConfig
+    --    , withDefaultEnvConfig
+    withConfig,
+    --    , withGlobalProject
+    withRunnerGlobal,
+    logLevel,
+    --    , ShouldReexec (..)
+  )
+where
 
-import           Ampersand.Basics
-import           RIO.Process (mkDefaultProcessContext)
+import Ampersand.Basics
 --import           RIO.Time (addUTCTime, getCurrentTime)
 --import           Stack.Build.Target(NeedTargets(..))
-import           Ampersand.Types.Config
+import Ampersand.Types.Config
+import RIO.Process (mkDefaultProcessContext)
 --import           Stack.Constants
 --import           Stack.DefaultColorWhen (defaultColorWhen)
 --import qualified Stack.Docker as Docker
@@ -34,8 +34,8 @@ import           Ampersand.Types.Config
 --import           Stack.Types.Docker (dockerEnable)
 --import           Stack.Types.Nix (nixEnable)
 --import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
-import           System.Console.ANSI (hSupportsANSIWithoutEmulation)
-import           System.Console.Terminal.Size (size, width)
+import System.Console.ANSI (hSupportsANSIWithoutEmulation)
+import System.Console.Terminal.Size (size, width)
 
 -- -- | Ensure that no project settings are used when running 'withConfig'.
 -- withGlobalProject :: RIO Runner a -> RIO Runner a
@@ -78,17 +78,17 @@ import           System.Console.Terminal.Size (size, width)
 
 -- | Load the configuration. Convenience function used
 -- throughout this module.
-withConfig
-  :: RIO Config a
-  -> RIO Runner a
+withConfig ::
+  RIO Config a ->
+  RIO Runner a
 withConfig inner =
-    loadConfig $ \config -> do
-      runRIO config $ do
-  --      -- Catching all exceptions here, since we don't want this
-  --      -- check to ever cause Stack to stop working
-  --      shouldUpgradeCheck `catchAny` \e ->
-  --        logError ("Error when running shouldUpgradeCheck: " <> displayShow e)
-        inner
+  loadConfig $ \config -> do
+    runRIO config $ do
+      --      -- Catching all exceptions here, since we don't want this
+      --      -- check to ever cause Stack to stop working
+      --      shouldUpgradeCheck `catchAny` \e ->
+      --        logError ("Error when running shouldUpgradeCheck: " <> displayShow e)
+      inner
 
 -- -- | Perform a Docker or Nix reexec, if warranted. Otherwise run the
 -- -- inner action.
@@ -128,34 +128,44 @@ withConfig inner =
 -- action.
 withRunnerGlobal :: GlobalOpts -> RIO Runner a -> IO a
 withRunnerGlobal go inner = do
-  useColor <- fromMaybe True <$>
-                          hSupportsANSIWithoutEmulation stderr
+  useColor <-
+    fromMaybe True
+      <$> hSupportsANSIWithoutEmulation stderr
   let defaultTerminalWidth = 100
-  termWidth <- clipWidth <$> maybe (fromMaybe defaultTerminalWidth
-                                    <$> (fmap width <$> size))
-                                   pure (globalTermWidth go)
+  termWidth <-
+    clipWidth
+      <$> maybe
+        ( fromMaybe defaultTerminalWidth
+            <$> (fmap width <$> size)
+        )
+        pure
+        (globalTermWidth go)
   menv <- mkDefaultProcessContext
   logOptions0 <- logOptionsHandle stderr False
-  let logOptions
-        = setLogUseColor useColor
-        . setLogUseTime (globalTimeInLog go)
-        . setLogMinLevel (globalLogLevel go)
-        . setLogVerboseFormat (globalLogLevel go <= LevelDebug)
-        . setLogTerminal (globalTerminal go)
-        $ logOptions0
-  withLogFunc logOptions $ \logFunc -> runRIO Runner
-    { runnerGlobalOpts = go
-    , runnerUseColor = useColor
-    , runnerLogFunc = logFunc
-    , runnerTermWidth = termWidth
-    , runnerProcessContext = menv
-    } inner
-  where minTerminalWidth = 40
-        maxTerminalWidth = 200
-        clipWidth w
-          | w < minTerminalWidth = minTerminalWidth
-          | w > maxTerminalWidth = maxTerminalWidth
-          | otherwise = w
+  let logOptions =
+        setLogUseColor useColor
+          . setLogUseTime (globalTimeInLog go)
+          . setLogMinLevel (globalLogLevel go)
+          . setLogVerboseFormat (globalLogLevel go <= LevelDebug)
+          . setLogTerminal (globalTerminal go)
+          $ logOptions0
+  withLogFunc logOptions $ \logFunc ->
+    runRIO
+      Runner
+        { runnerGlobalOpts = go,
+          runnerUseColor = useColor,
+          runnerLogFunc = logFunc,
+          runnerTermWidth = termWidth,
+          runnerProcessContext = menv
+        }
+      inner
+  where
+    minTerminalWidth = 40
+    maxTerminalWidth = 200
+    clipWidth w
+      | w < minTerminalWidth = minTerminalWidth
+      | w > maxTerminalWidth = maxTerminalWidth
+      | otherwise = w
 
 -- -- | Check if we should recommend upgrading Stack and, if so, recommend it.
 -- shouldUpgradeCheck :: RIO Config ()

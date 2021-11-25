@@ -1,5 +1,3 @@
-
-
 module Ampersand.Options.FSpecGenOptsParser (fSpecGenOptsParser, defFSpecGenOpts) where
 
 import Ampersand.Basics
@@ -26,17 +24,18 @@ fSpecGenOptsParser isForDaemon =
     <*> allowInvariantViolationsP
   where
     rootsP :: Parser Roots
-    rootsP = if isForDaemon
-            then pure $ Roots [] -- The rootfile should come from the daemon config file.
-            else Roots <$> some rootFileP
-    
+    rootsP =
+      if isForDaemon
+        then pure $ Roots [] -- The rootfile should come from the daemon config file.
+        else Roots <$> some rootFileP
+
     rootFileP :: Parser FilePath
     rootFileP =
       strArgument
         ( metavar "AMPERSAND_SCRIPT"
             <> help "The root file of your Ampersand model."
         )
-    
+
     sqlBinTablesP :: Parser Bool
     sqlBinTablesP =
       switch
@@ -46,14 +45,14 @@ fSpecGenOptsParser isForDaemon =
                   <> "database, for testing purposes."
               )
         )
-    
+
     genInterfacesP :: Parser Bool
     genInterfacesP =
       switch
         ( long "interfaces"
             <> help "Generate interfaces, which currently does not work."
         )
-    
+
     namespaceP :: Parser Text
     namespaceP =
       strOption
@@ -66,7 +65,7 @@ fSpecGenOptsParser isForDaemon =
                   <> "isolate namespaces within the same database."
               )
         )
-    
+
     crudP :: Parser (Bool, Bool, Bool, Bool)
     crudP =
       toCruds
@@ -88,7 +87,7 @@ fSpecGenOptsParser isForDaemon =
             'u' `notElem` crudString,
             'd' `notElem` crudString
           )
-    
+
     trimXLSXCellsP :: Parser Bool
     trimXLSXCellsP =
       boolFlags
@@ -98,9 +97,7 @@ fSpecGenOptsParser isForDaemon =
             <> "that are INCLUDED in the script."
         )
         mempty
-    
-    -- | This code is written such that the recipe names from `data Recipe` (from CreateFspec.hs)
-    --   can be altered without changing the code below.
+
     knownRecipeP :: Parser Recipe
     knownRecipeP =
       toKnownRecipe . T.pack
@@ -139,7 +136,7 @@ fSpecGenOptsParser isForDaemon =
           where
             matches :: (Show a) => a -> Bool
             matches x = T.toLower s `T.isPrefixOf` T.toLower (tshow x)
-    
+
     allowInvariantViolationsP :: Parser Bool
     allowInvariantViolationsP =
       switch
@@ -165,4 +162,3 @@ defFSpecGenOpts rootAdl =
       xrecipe = Standard,
       xallowInvariantViolations = False
     }
-    

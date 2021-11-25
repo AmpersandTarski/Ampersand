@@ -1,4 +1,4 @@
-﻿module Ampersand.Options.ProtoOptsParser (protoOptsParser) where
+module Ampersand.Options.ProtoOptsParser (protoOptsParser) where
 
 import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)
@@ -8,25 +8,23 @@ import Ampersand.Options.Utils
 import Data.List.Split (splitWhen)
 import Options.Applicative
 import Options.Applicative.Builder.Extra
-import RIO.Char ( toLower )
+import RIO.Char (toLower)
 
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser =
-  standardToProtoType <$>
-    (  ProtoOpts 
-         <$> forceReinstallP
-         <*> outputLanguageP
-         <*> fSpecGenOptsParser False
-         <*> optional dirPrototypeP
-         <*> optional dirCustomizationsP
-         <*> zwolleVersionP
-         <*> generateFrontendP
-         <*> generateBackendP
-         <*> frontendVersionP
-         <*> generateMetamodelP
-    )
-
-
+  standardToProtoType
+    <$> ( ProtoOpts
+            <$> forceReinstallP
+            <*> outputLanguageP
+            <*> fSpecGenOptsParser False
+            <*> optional dirPrototypeP
+            <*> optional dirCustomizationsP
+            <*> zwolleVersionP
+            <*> generateFrontendP
+            <*> generateBackendP
+            <*> frontendVersionP
+            <*> generateMetamodelP
+        )
   where
     standardToProtoType :: ProtoOpts -> ProtoOpts
     standardToProtoType opts =
@@ -78,23 +76,28 @@ protoOptsParser =
               )
         )
     frontendVersionP :: Parser FrontendVersion
-    frontendVersionP = toFrontendVersion <$> strOption
-            ( long "frontend-version"
-            <> metavar "VERSION"
-            <> value "angularjs"
-            <> showDefault
-            <> help  "Temporary switch to enable the development of the new angular frontend."
-            )
-        where
-          toFrontendVersion :: String -> FrontendVersion
-          toFrontendVersion x = case map toLower x of
-                                    "angular"   -> Angular 
-                                    "angularjs" -> AngularJS
-                                    _           -> AngularJS    
+    frontendVersionP =
+      toFrontendVersion
+        <$> strOption
+          ( long "frontend-version"
+              <> metavar "VERSION"
+              <> value "angularjs"
+              <> showDefault
+              <> help "Temporary switch to enable the development of the new angular frontend."
+          )
+      where
+        toFrontendVersion :: String -> FrontendVersion
+        toFrontendVersion x = case map toLower x of
+          "angular" -> Angular
+          "angularjs" -> AngularJS
+          _ -> AngularJS
     generateFrontendP :: Parser Bool
-    generateFrontendP = boolFlags True "frontend"
-            "Generate prototype frontend files (Angular application)"
-            mempty
+    generateFrontendP =
+      boolFlags
+        True
+        "frontend"
+        "Generate prototype frontend files (Angular application)"
+        mempty
 
     generateBackendP :: Parser Bool
     generateBackendP =

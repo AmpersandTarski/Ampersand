@@ -2,25 +2,25 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( Recipe(..)
---  , BuildStep(Grind)
---  , StartContext(..)
---  , MetaModel(..)
-  , createFspec 
---  , script
---  , merge
---  , andThen
+  ( Recipe (..),
+    --  , BuildStep(Grind)
+    --  , StartContext(..)
+    --  , MetaModel(..)
+    createFspec,
+    --  , script
+    --  , merge
+    --  , andThen
   )
-
 where
-import           Ampersand.ADL1
-import           Ampersand.Basics
-import           Ampersand.FSpec.FSpec
-import           Ampersand.FSpec.MetaModels
-import           Ampersand.FSpec.Transformers
-import           Ampersand.FSpec.ShowMeatGrinder
-import           Ampersand.Input
-import           Ampersand.Misc.HasClasses
+
+import Ampersand.ADL1
+import Ampersand.Basics
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.MetaModels
+import Ampersand.FSpec.ShowMeatGrinder
+import Ampersand.FSpec.Transformers
+import Ampersand.Input
+import Ampersand.Misc.HasClasses
 
 -- | creating an FSpec is based on command-line options.
 --   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
@@ -54,33 +54,38 @@ import           Ampersand.Misc.HasClasses
 --     That is why 'one' is the combination of the user script and the metamodel of the prototype context.
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
-createFspec :: (HasFSpecGenOpts env, HasLogFunc env) => 
-               RIO env (Guarded FSpec)
+createFspec ::
+  (HasFSpecGenOpts env, HasLogFunc env) =>
+  RIO env (Guarded FSpec)
 createFspec =
- do env <- ask
+  do
+    env <- ask
     let recipe = view recipeL env
     userScript <- do
-         rootFiles <- view rootFileL
-         snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
-    formalAmpersandScript  <- parseFormalAmpersand
+      rootFiles <- view rootFileL
+      snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
+    formalAmpersandScript <- parseFormalAmpersand
     prototypeContextScript <- parsePrototypeContext
-    let pContext
-          = case recipe of
-              Standard  -> userScript
-              Grind     -> do userScr   <- userScript
-                              userFspc  <- pCtx2Fspec env userScr
-                              return (grind transformersFormalAmpersand userFspc)
-              Prototype -> do userPCtx  <- userScript
-                              let one    = userPCtx `mergeContexts` metaModel PrototypeContext
-                              oneFspec  <- pCtx2Fspec env one  -- this is done to typecheck the combination
-                              let two    = grind transformersPrototypeContext oneFspec
-                              pcScript  <- prototypeContextScript
-                              return (one `mergeContexts` two `mergeContexts` pcScript)
-              RAP       -> do rapPCtx   <- userScript
-                              faScript  <- formalAmpersandScript
-                              let one    = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
-                              oneFspec  <- pCtx2Fspec env one  -- this is done to typecheck the combination
-                              let two    = grind transformersPrototypeContext oneFspec
-                              pcScript  <- prototypeContextScript
-                              return (one `mergeContexts` two `mergeContexts` pcScript)
+    let pContext =
+          case recipe of
+            Standard -> userScript
+            Grind -> do
+              userScr <- userScript
+              userFspc <- pCtx2Fspec env userScr
+              return (grind transformersFormalAmpersand userFspc)
+            Prototype -> do
+              userPCtx <- userScript
+              let one = userPCtx `mergeContexts` metaModel PrototypeContext
+              oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
+              let two = grind transformersPrototypeContext oneFspec
+              pcScript <- prototypeContextScript
+              return (one `mergeContexts` two `mergeContexts` pcScript)
+            RAP -> do
+              rapPCtx <- userScript
+              faScript <- formalAmpersandScript
+              let one = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
+              oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
+              let two = grind transformersPrototypeContext oneFspec
+              pcScript <- prototypeContextScript
+              return (one `mergeContexts` two `mergeContexts` pcScript)
     return (pCtx2Fspec env =<< pContext)

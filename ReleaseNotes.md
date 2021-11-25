@@ -5,6 +5,7 @@
 
 ## v4.6.0 (22 November 2021)
 
+* Format all Haskell code, for more uniformity, better understanding of code.
 * [Issue #prototype/69 ](https://github.com/AmpersandTarski/prototype/issues/69 )Auxiliary work to facilitate the implementation of the new Angular frontend. 
 * [Issue #425](https://github.com/AmpersandTarski/Ampersand/issues/425) Add check on release notes for every pull request
 * [Issue #941](https://github.com/AmpersandTarski/Ampersand/issues/941) Fix and document purpose and difference of attNull and attDBNull aspects of SqlAttribute

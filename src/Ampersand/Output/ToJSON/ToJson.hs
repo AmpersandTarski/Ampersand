@@ -1,19 +1,27 @@
 module Ampersand.Output.ToJSON.ToJson
-  ( settingsToJSON, relationsToJSON, rulesToJSON, conceptsToJSON, conjunctsToJSON
-  , interfacesToJSON, viewsToJSON, rolesToJSON, populationToJSON
+  ( settingsToJSON,
+    relationsToJSON,
+    rulesToJSON,
+    conceptsToJSON,
+    conjunctsToJSON,
+    interfacesToJSON,
+    viewsToJSON,
+    rolesToJSON,
+    populationToJSON,
   )
 where
-import           Ampersand.Output.ToJSON.Concepts 
-import           Ampersand.Output.ToJSON.Conjuncts 
-import           Ampersand.Output.ToJSON.Interfaces 
-import           Ampersand.Output.ToJSON.JSONutils
-import           Ampersand.Output.ToJSON.Populations
-import           Ampersand.Output.ToJSON.Relations
-import           Ampersand.Output.ToJSON.Roles
-import           Ampersand.Output.ToJSON.Rules 
-import           Ampersand.Output.ToJSON.Settings
-import           Ampersand.Output.ToJSON.Views
-import           Data.Aeson.Encode.Pretty
+
+import Ampersand.Output.ToJSON.Concepts
+import Ampersand.Output.ToJSON.Conjuncts
+import Ampersand.Output.ToJSON.Interfaces
+import Ampersand.Output.ToJSON.JSONutils
+import Ampersand.Output.ToJSON.Populations
+import Ampersand.Output.ToJSON.Relations
+import Ampersand.Output.ToJSON.Roles
+import Ampersand.Output.ToJSON.Rules
+import Ampersand.Output.ToJSON.Settings
+import Ampersand.Output.ToJSON.Views
+import Data.Aeson.Encode.Pretty
 import qualified RIO.ByteString.Lazy as BL
 
 settingsToJSON :: (Show env, HasProtoOpts env) => env -> FSpec -> BL.ByteString
@@ -43,11 +51,12 @@ rolesToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Roles)
 populationToJSON :: env -> FSpec -> BL.ByteString
 populationToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Populations)
 
-
 encodePretty'' :: ToJSON a => a -> BL.ByteString
-encodePretty'' =  
-  encodePretty' Config { confIndent = Spaces 4
-                       , confCompare = compare
-                       , confNumFormat = Generic
-                       , confTrailingNewline = False
-                       }
+encodePretty'' =
+  encodePretty'
+    Config
+      { confIndent = Spaces 4,
+        confCompare = compare,
+        confNumFormat = Generic,
+        confTrailingNewline = False
+      }
