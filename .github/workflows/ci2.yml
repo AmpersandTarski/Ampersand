@@ -49,7 +49,7 @@ jobs:
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false  # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
+          weeder: true  # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
           hlint: true
 
   build-and-test-macOS:
