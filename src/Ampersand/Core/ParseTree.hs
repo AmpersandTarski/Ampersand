@@ -132,7 +132,7 @@ data MetaData = MetaData
   }
   deriving (Show)
 
-instance Traced Met aData where
+instance Traced MetaData where
   origin = pos
 
 data EnforceOperator
