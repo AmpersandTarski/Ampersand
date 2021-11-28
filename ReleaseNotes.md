@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* Upgrade devcontainer to work with ghc-8.10.7 as well. Also some other enhancements like autoformat.
+
 ## v4.6.1 (26 November 2021)
 
 * Upgrade to [LTS Haskell 18.18 (ghc-8.10.7)](https://www.stackage.org/lts-18.18) . This includes an upgrade of several dependencies.
