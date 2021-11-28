@@ -44,6 +44,8 @@
     "redhat.vscode-yaml",
     "ampersandtarski.language-ampersand",
     "mhutchie.git-graph",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    // Because of bug (see https://github.com/Microsoft/vscode/issues/45997):
+    "bdsoftware.format-on-auto-save"
   ]
 }
