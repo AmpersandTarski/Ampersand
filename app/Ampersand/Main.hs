@@ -3,4 +3,5 @@ module Main (main) where
 import MainApps
 
 main :: IO ()
-main = ampersand
+main = 
+    ampe rsand

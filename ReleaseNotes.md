@@ -1,5 +1,11 @@
 # Release notes of Ampersand
 
+* Improvements to the conceptual analysis to make it more practical to generate a proper design document. As an information systems designer, I want that:
+** the purpose of an IDENT statement is used in the text of a conceptual analysis;
+** a definition that follows a purpose  belong together visually to avoid confusion for the reader;
+** an empty table is not shown because the reader will not understand why it is there;
+** an arrow between two entities, one of which is inside a pattern and the other one outside of it, is drawn in the conceptual diagram of that pattern;
+** the order of attributes or relations in a table respects the order in the script, so the author can influence that order in a predictable way.
 * Upgrade devcontainer to work with ghc-8.10.7 as well. Also some other enhancements like autoformat.
 
 ## v4.6.1 (26 November 2021)
