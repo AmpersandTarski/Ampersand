@@ -288,6 +288,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/InterfaceTest4.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue1018.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue1026.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue1261.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.xlsx
     testing/Travis/testcases/prototype/shouldSucceed/Issue142TooGeneric.adl
