@@ -14,8 +14,9 @@ chpIntroduction ::
   Blocks
 chpIntroduction env now fSpec =
   xDefBlck env fSpec Intro
-    <> purposesOfContext -- the motivation(s) of this context
-    <> readingGuide -- tells what can be expected in this document.
+  <> if null purposesOfContext -- the motivation(s) of this context
+     then readingGuide -- tells what can be expected in this document.
+     else purposesOfContext
   where
     outputLang' = outputLang env fSpec
     readingGuide =

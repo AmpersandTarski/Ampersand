@@ -29,25 +29,29 @@ chpConceptualAnalysis env lev fSpec =
     outputLang' = outputLang env fSpec
     caIntro :: Blocks
     caIntro =
-      ( case outputLang' of
-          Dutch ->
-            para
-              ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
-                  <> (singleQuoted . str . name) fSpec
-                  <> " te kunnen bespreken. "
-                  <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
-                  <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
-              )
-          English ->
-            para
-              ( "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
-                  <> (singleQuoted . str . name) fSpec
-                  <> "."
-                  <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
-                  <> "The text targets readers with sufficient skill in conceptual modeling."
-              )
-      )
-        <> purposes2Blocks env (purposesOf fSpec outputLang' fSpec) -- This explains the purpose of this context.
+      if null purps
+      then case outputLang' of
+             Dutch ->
+               para
+                 ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
+                     <> (singleQuoted . str . name) fSpec
+                     <> " te kunnen bespreken. "
+                     <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
+                     <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
+                     <> "(Deze alinea is gegenereerd. Vervang deze tekst door een PURPOSE CONTEXT te beschrijven.)"
+                 )
+             English ->
+               para
+                 ( "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
+                     <> (singleQuoted . str . name) fSpec
+                     <> "."
+                     <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
+                     <> "The text targets readers with sufficient skill in conceptual modeling."
+                     <> "(This paragraph has been generated. Replace it by defining a PURPOSE CONTEXT in your script.)"
+                 )
+      else purps -- This explains the purpose of this context.
+      where
+        purps = purposes2Blocks env (purposesOf fSpec outputLang' fSpec)
     pictures =
       map pictOfPat (vpatterns fSpec)
         <> map pictOfConcept (Set.elems $ concs fSpec)

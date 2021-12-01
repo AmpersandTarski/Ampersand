@@ -22,7 +22,18 @@ chpNatLangReqs ::
 chpNatLangReqs env lev fSpec =
   --  *** Header ***
   xDefBlck env fSpec SharedLang
-    <> case outputLang' of --  *** Intro  ***
+    <> chpPurpose
+    <> (mconcat . map printOneTheme . orderingByTheme env) fSpec --  *** Requirements ***
+    <> if genLegalRefs then legalRefs else mempty --  *** Legal Refs ***
+  where
+    -- shorthand for easy localizing
+    l :: LocalizedStr -> Text
+    l = localize outputLang'
+    outputLang' = outputLang env fSpec
+
+    chpPurpose :: Blocks
+    chpPurpose =
+      case outputLang' of --  *** Intro  ***
       Dutch ->
         para
           ( "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
@@ -41,13 +52,6 @@ chpNatLangReqs env lev fSpec =
               <> "The purpose of this chapter is to create shared understanding among stakeholders. "
               <> "All definitions and agreements have been numbered for the sake of traceability. "
           )
-    <> (mconcat . map printOneTheme . orderingByTheme env) fSpec --  *** Requirements ***
-    <> if genLegalRefs then legalRefs else mempty --  *** Legal Refs ***
-  where
-    -- shorthand for easy localizing
-    l :: LocalizedStr -> Text
-    l = localize outputLang'
-    outputLang' = outputLang env fSpec
     genLegalRefs = view genLegalRefsL env
     legalRefs :: Blocks
     legalRefs =
