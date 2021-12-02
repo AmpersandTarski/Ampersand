@@ -1,7 +1,10 @@
-# Release notes of Ampersand
+﻿# Release notes of Ampersand
+
+## Unreleased changes
 
 * Upgrade devcontainer to work with ghc-8.10.7 as well. Also some other enhancements like autoformat.
 * [Issue #1261](https://github.com/AmpersandTarski/Ampersand/issues/1261) Fix bug on SQL generation, that got broken during the upgrade in version v4.6.1
+* [Issue #1262](https://github.com/AmpersandTarski/Ampersand/issues/1262) Fix merge conflicts that unintendedly reintroduced CLI options --force-reinstall-framework, --prototype-framework-version, --customizations
 
 ## v4.6.1 (26 November 2021)
 
