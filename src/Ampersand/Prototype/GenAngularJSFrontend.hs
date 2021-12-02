@@ -31,6 +31,12 @@ import Text.StringTemplate
   )
 import Text.StringTemplate.GenericStandard ()
 
+-- For useful info on the template language, see
+-- https://theantlrguy.atlassian.net/wiki/spaces/ST/pages/1409038/StringTemplate+cheat+sheet
+-- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on
+--       composite attributes in anonymous templates will hang the generator :-(
+--       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
+
 ------ Generate RouteProvider.js
 
 genRouteProvider ::

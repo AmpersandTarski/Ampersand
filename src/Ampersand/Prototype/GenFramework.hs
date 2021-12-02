@@ -44,12 +44,6 @@ doGenFrontend fSpec = do
   writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
   logInfo "Frontend generated"
 
--- For useful info on the template language, see
--- https://theantlrguy.atlassian.net/wiki/spaces/ST/pages/1409038/StringTemplate+cheat+sheet
--- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on
---       composite attributes in anonymous templates will hang the generator :-(
---       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
-
 copyTemplates ::
   (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
   RIO env ()
