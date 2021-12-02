@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Ampersand.Prototype.GenFramework (doGenFrontend) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import Ampersand.ADL1
 import Ampersand.Basics

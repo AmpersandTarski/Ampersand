@@ -508,7 +508,7 @@ library
       Ampersand.Prototype.GenAngularFrontend
       Ampersand.Prototype.GenAngularJSFrontend
       Ampersand.Prototype.GenBackend
-      Ampersand.Prototype.GenFramework
+      Ampersand.Prototype.GenFrontend
       Ampersand.Prototype.PHP
       Ampersand.Prototype.ProtoUtil
       Ampersand.Prototype.TableSpec

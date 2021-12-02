@@ -13,7 +13,7 @@ import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
-import Ampersand.Prototype.GenFramework
+import Ampersand.Prototype.GenFrontend
 import Ampersand.Types.Config
 import qualified RIO.Text as T
 import System.Directory
