@@ -154,18 +154,6 @@ class HasShowWarnings a where
 instance HasDaemonOpts a => HasShowWarnings a where
   showWarningsL = daemonOptsL . lens xshowWarnings (\x y -> x {xshowWarnings = y})
 
-class HasDirCustomizations a where
-  dirCustomizationsL :: Lens' a (Maybe [FilePath]) -- the directories that are copied after generating the prototype
-
-instance HasDirCustomizations ProtoOpts where
-  dirCustomizationsL = lens xdirCustomizations (\x y -> x {xdirCustomizations = y})
-
-class HasZwolleVersion a where
-  zwolleVersionL :: Lens' a FilePath -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
-
-instance HasZwolleVersion ProtoOpts where
-  zwolleVersionL = lens xzwolleVersion (\x y -> x {xzwolleVersion = y})
-
 class HasDirOutput a where
   dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
@@ -203,9 +191,6 @@ class HasVersion a where
 
 class HasProtoOpts env where
   protoOptsL :: Lens' env ProtoOpts
-  forceReinstallFrameworkL :: Lens' env Bool
-  forceReinstallFrameworkL =
-    protoOptsL . lens xforceReinstallFramework (\x y -> x {xforceReinstallFramework = y})
   frontendVersionL :: Lens' env FrontendVersion
   frontendVersionL = protoOptsL . lens xfrontendVersion (\x y -> x {xfrontendVersion = y})
 
@@ -355,13 +340,9 @@ instance HasOptions InputOutputOpts where
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-  { -- | when true, an existing prototype directory will be destroyed and re-installed
-    xforceReinstallFramework :: !Bool,
-    x1OutputLanguage :: !(Maybe Lang),
+  { x1OutputLanguage :: !(Maybe Lang),
     x1fSpecGenOpts :: !FSpecGenOpts,
     xdirPrototype :: !(Maybe FilePath),
-    xdirCustomizations :: !(Maybe [FilePath]),
-    xzwolleVersion :: !FilePath,
     xgenerateFrontend :: !Bool,
     xgenerateBackend :: !Bool,
     xfrontendVersion :: !FrontendVersion,
@@ -371,13 +352,10 @@ data ProtoOpts = ProtoOpts
 
 instance HasOptions ProtoOpts where
   optsList opts =
-    [ ("--force-reinstall-framework", tshow $ xforceReinstallFramework opts),
-      ("--language", tshow $ x1OutputLanguage opts)
+    [ ("--language", tshow $ x1OutputLanguage opts)
     ]
       <> optsList (x1fSpecGenOpts opts)
       <> [ ("--proto-dir", maybe "" tshow $ xdirPrototype opts),
-           ("--customizations", maybe "" (T.intercalate "; " . fmap T.pack) $ xdirCustomizations opts),
-           ("--prototype-framework-version", tshow $ xzwolleVersion opts),
            ("--[no-]frontend", tshow $ xgenerateFrontend opts),
            ("--[no-]backend", tshow $ xgenerateBackend opts),
            ("--frontend-version", tshow $ xfrontendVersion opts),

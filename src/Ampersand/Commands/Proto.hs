@@ -18,10 +18,11 @@ import Ampersand.Types.Config
 import qualified RIO.Text as T
 import System.Directory
 import System.FilePath
+import Ampersand.Prototype.GenBackend (doGenBackend)
 
 -- | Builds a prototype of the current project.
 proto ::
-  (Show env, HasRunner env, HasFSpecGenOpts env, HasZwolleVersion env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env) =>
+  (Show env, HasRunner env, HasFSpecGenOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env) =>
   FSpec ->
   RIO env ()
 proto fSpec = do
