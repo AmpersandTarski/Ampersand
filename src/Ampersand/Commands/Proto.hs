@@ -13,12 +13,12 @@ import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
+import Ampersand.Prototype.GenBackend (doGenBackend)
 import Ampersand.Prototype.GenFrontend
 import Ampersand.Types.Config
 import qualified RIO.Text as T
 import System.Directory
 import System.FilePath
-import Ampersand.Prototype.GenBackend (doGenBackend)
 
 -- | Builds a prototype of the current project.
 proto ::
