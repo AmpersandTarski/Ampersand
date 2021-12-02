@@ -5,7 +5,6 @@ module Ampersand.Prototype.GenAngularJSFrontend
   ( genViewInterfaces,
     genControllerInterfaces,
     genRouteProvider,
-    copyCustomizations,
   )
 where
 
@@ -20,7 +19,6 @@ import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
 import qualified RIO.List as L
 import qualified RIO.Text as T
-import System.Directory
 import System.FilePath
 import Text.StringTemplate
   ( StringTemplate,
@@ -33,28 +31,11 @@ import Text.StringTemplate
   )
 import Text.StringTemplate.GenericStandard ()
 
-copyCustomizations ::
-  (HasDirPrototype env, HasFSpecGenOpts env, HasDirCustomizations env, HasLogFunc env) =>
-  RIO env ()
-copyCustomizations = do
-  env <- ask
-  dirCustomizations <- view dirCustomizationsL
-  let dirPrototype = getDirPrototype env
-  let custDirs = maybe [] (map (dirSource env </>)) dirCustomizations
-  mapM_ (copyDir dirPrototype) custDirs
-  where
-    copyDir ::
-      (HasLogFunc env) =>
-      FilePath ->
-      FilePath ->
-      RIO env ()
-    copyDir targetDir sourceDir = do
-      sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
-      if sourceDirExists
-        then do
-          logDebug $ "Copying customizations from " <> display (T.pack sourceDir) <> " -> " <> display (T.pack targetDir)
-          copyDirRecursively sourceDir targetDir -- recursively copy all customizations
-        else logDebug $ "No customizations (there is no directory " <> display (T.pack sourceDir) <> ")"
+-- For useful info on the template language, see
+-- https://theantlrguy.atlassian.net/wiki/spaces/ST/pages/1409038/StringTemplate+cheat+sheet
+-- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on
+--       composite attributes in anonymous templates will hang the generator :-(
+--       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
 ------ Generate RouteProvider.js
 

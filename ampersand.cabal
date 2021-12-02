@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        4.6.1
+version:        4.6.2
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -508,7 +508,7 @@ library
       Ampersand.Prototype.GenAngularFrontend
       Ampersand.Prototype.GenAngularJSFrontend
       Ampersand.Prototype.GenBackend
-      Ampersand.Prototype.GenFramework
+      Ampersand.Prototype.GenFrontend
       Ampersand.Prototype.PHP
       Ampersand.Prototype.ProtoUtil
       Ampersand.Prototype.TableSpec

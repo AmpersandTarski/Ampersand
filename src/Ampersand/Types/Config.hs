@@ -190,9 +190,6 @@ instance HasDaemonOpts a => HasDaemonOpts (ExtendedRunner a) where
 instance HasTestOpts a => HasTestOpts (ExtendedRunner a) where
   testOptsL = cmdOptsL . testOptsL
 
-instance HasZwolleVersion a => HasZwolleVersion (ExtendedRunner a) where
-  zwolleVersionL = cmdOptsL . zwolleVersionL
-
 instance HasGenerateFrontend a => HasGenerateFrontend (ExtendedRunner a) where
   generateFrontendL = cmdOptsL . generateFrontendL
 

@@ -13,7 +13,8 @@ import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
-import Ampersand.Prototype.GenFramework
+import Ampersand.Prototype.GenBackend (doGenBackend)
+import Ampersand.Prototype.GenFrontend
 import Ampersand.Types.Config
 import qualified RIO.Text as T
 import System.Directory
@@ -21,7 +22,7 @@ import System.FilePath
 
 -- | Builds a prototype of the current project.
 proto ::
-  (Show env, HasRunner env, HasFSpecGenOpts env, HasZwolleVersion env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env) =>
+  (Show env, HasRunner env, HasFSpecGenOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env) =>
   FSpec ->
   RIO env ()
 proto fSpec = do

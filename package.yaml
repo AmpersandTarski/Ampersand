@@ -1,5 +1,5 @@
 name: ampersand
-version: 4.6.1
+version: 4.6.2
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -181,7 +181,7 @@ library:
     - Ampersand.Prototype.GenAngularFrontend
     - Ampersand.Prototype.GenAngularJSFrontend
     - Ampersand.Prototype.GenBackend
-    - Ampersand.Prototype.GenFramework
+    - Ampersand.Prototype.GenFrontend
     - Ampersand.Prototype.PHP
     - Ampersand.Prototype.ProtoUtil
     - Ampersand.Prototype.TableSpec
