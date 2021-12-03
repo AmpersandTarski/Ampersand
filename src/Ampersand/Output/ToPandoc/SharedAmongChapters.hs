@@ -278,6 +278,7 @@ data ThemeContent = Thm
   { themeNr :: Int,
     patOfTheme :: Maybe Pattern, -- A theme is about either a pattern or about everything outside patterns
     rulesOfTheme :: [Numbered RuleCont], -- The (numbered) rules of that theme
+    idRulesOfTheme :: [Numbered RuleCont], -- The (numbered) identity rules of that theme.
     dclsOfTheme :: [Numbered DeclCont], -- The (numbered) relations that are used in a rule of this theme, but not in any rule of a previous theme.
     cptsOfTheme :: [Numbered CptCont] -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
   }
@@ -333,15 +334,17 @@ orderingByTheme env fSpec =
       { themeNr = i,
         patOfTheme = Just pat,
         rulesOfTheme = fmap rul2rulCont nrules,
+        idRulesOfTheme = fmap idrul2rulCont nidrules,
         dclsOfTheme = fmap dcl2dclCont nrelations,
         cptsOfTheme = fmap cpt2cptCont nconcepts
       }
-    | (pat, i, nrules, nrelations, nconcepts) <- L.zip5 (vpatterns fSpec) [0 ..] (NE.init nruless) (NE.init nrelationss) (NE.init nconceptss)
+    | (pat, i, nrules, nidrules, nrelations, nconcepts) <- L.zip6 (vpatterns fSpec) [0 ..] (NE.init nruless) (NE.init nidruless) (NE.init nrelationss) (NE.init nconceptss)
   ]
     <> [ Thm
            { themeNr = length (vpatterns fSpec),
              patOfTheme = Nothing,
              rulesOfTheme = fmap rul2rulCont (NE.last nruless),
+             idRulesOfTheme = fmap idrul2rulCont (NE.last nidruless),
              dclsOfTheme = fmap dcl2dclCont (NE.last nrelationss),
              cptsOfTheme = fmap cpt2cptCont (NE.last nconceptss)
            }
@@ -351,16 +354,18 @@ orderingByTheme env fSpec =
     nconceptss :: NonEmpty [Numbered AConceptDef]
     nrelationss :: NonEmpty [Numbered Relation]
     nruless = transformNonEmpty (numbering 0 (map Set.toList ruless <> [Set.toList (ctxrs aCtx)]))
+    nidruless = transformNonEmpty (numbering 0 idruless)
     nconceptss = transformNonEmpty (numbering 0 (conceptss <> [ctxcdsOutPats aCtx]))
     nrelationss = transformNonEmpty (numbering 0 (map Set.toList relationss <> [Set.toList (ctxds aCtx)]))
     transformNonEmpty :: [a] -> NonEmpty a
     transformNonEmpty x = case NE.nonEmpty x of Just ne -> ne; Nothing -> fatal "onbereikbare code"
     aCtx = originalContext fSpec
     ruless :: [Rules]
+    idruless :: [[IdentityRule]]
     conceptss :: [[AConceptDef]]
     relationss :: [Relations]
-    (ruless, conceptss, relationss) =
-      L.unzip3 [(ptrls pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
+    (ruless, idruless, conceptss, relationss) =
+      L.unzip4 [(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
     numbering :: Int -> [[a]] -> [[Numbered a]]
     numbering n (xs : xss) = [Nr i x | (x, i) <- zip xs [n ..]] : numbering (n + length xs) xss
     numbering _ _ = []
@@ -374,6 +379,17 @@ orderingByTheme env fSpec =
             cRulPurps = purposesOf fSpec (outputLang env fSpec) rul,
             cRulMeanings = meanings rul
           }
+
+    idrul2rulCont :: Numbered IdentityRule -> Numbered RuleCont
+    idrul2rulCont (Nr n rul) =
+      Nr
+        n
+        CRul
+          { cRul = ruleFromIdentity rul,
+            cRulPurps = purposesOf fSpec (outputLang env fSpec) rul,
+            cRulMeanings = mempty -- Identity rules have a fixed meaning, so there are no meaning fields
+          }
+
     dcl2dclCont :: Numbered Relation -> Numbered DeclCont
     dcl2dclCont (Nr n dcl) =
       Nr

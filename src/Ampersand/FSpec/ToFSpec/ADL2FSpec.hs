@@ -225,7 +225,7 @@ makeFSpec env context =
           | prp == Uni && isUni (EDcD dcl) -> [] --Enforced by the database
           | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
           | otherwise -> rolesFromScript
-        Identity -> []
+        Identity _ -> []
         Enforce -> [Role "ExecEngine"]
       where
         rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
@@ -235,7 +235,7 @@ makeFSpec env context =
       case rrkind rul of
         UserDefined -> True
         Propty _ _ -> False
-        Identity -> False
+        Identity _ -> False
         Enforce -> False
     -- Lookup view by id in fSpec.
     lookupView' :: Text -> ViewDef

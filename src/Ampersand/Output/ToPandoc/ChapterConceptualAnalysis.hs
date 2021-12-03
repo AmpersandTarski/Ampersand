@@ -78,8 +78,9 @@ chpConceptualAnalysis env lev fSpec =
           <> case patOfTheme themeContent of
             Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
             Nothing -> mempty
-          -- followed by a conceptual model for this pattern
+          -- followed by the purposes and definitions of every concept that is defined (by a CONCEPT statement) in this pattern
           <> (mconcat . map (printConcept env l) . cptsOfTheme) themeContent
+          -- At this point the reader gets a diagram with the classes and relations between those classes.
           <> ( case (outputLang', patOfTheme themeContent) of
                  (Dutch, Just pat) ->
                    -- announce the conceptual diagram
@@ -117,6 +118,48 @@ chpConceptualAnalysis env lev fSpec =
           Just pat -> classes (cdAnalysis False fSpec pat)
           Nothing -> []
 
+        -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
+        caSubsections :: [(Blocks, [Relation])]
+        caSubsections =
+          [ ( header 3 (str (name cl)) <> mconcat (identityBlocks cpt)<>entityBlocks,
+              entityRels
+            )
+            | cl <- themeClasses, Just cpt<-[clcpt cl],
+              (entityBlocks, entityRels) <- [caEntity cl],
+              length entityRels > 1
+          ] <>
+          [ ( header 3 (str (l (NL "Overige identiteiten", EN "Other identities"))) <>
+              mconcat [ blck | cpt<-orphanIdentities, blck<-identityBlocks (cCpt cpt)],
+              mempty
+            )
+            | not (null orphanIdentities)
+          ]
+          where
+            orphanIdentities :: [CptCont]
+            orphanIdentities =
+                [cc |
+                ncc <- cptsOfTheme themeContent,
+                let cc = theLoad ncc,
+                cl <- themeClasses,
+                Just cpt <- [clcpt cl],
+                cpt /= cCpt cc,
+                (_, entityRels) <- [caEntity cl],
+                null entityRels]
+
+{-
+        identityBlocks :: A_Concept->[Blocks]
+        identityBlocks cpt
+         = [ purposes2Blocks env (purposesOf fSpec outputLang' r)
+           | rc<-idRulesOfTheme themeContent, let r=cRul (theLoad rc), Identity c<-[rrkind r], cpt==c
+           , trace (showA r<>"cpt = "<>showA cpt<>"\nc = "<>showA c) True
+           ]
+ data CptCont = CCpt
+  { cCpt :: A_Concept,
+    cCptDefs :: [AConceptDef],
+    cCptPurps :: [Purpose]
+  }
+-}
+        -- caEntity shows a table with the purposes and meanings of the attributes of one concept
         caEntity :: Class -> (Blocks, [Relation])
         caEntity cl =
           ( simpleTable
@@ -154,15 +197,13 @@ chpConceptualAnalysis env lev fSpec =
             bss -> bulletList bss
             <> (printPurposes . purposesOf fSpec outputLang') rel
 
-        caSubsections :: [(Blocks, [Relation])]
-        caSubsections =
-          [ ( header 3 (str (name cl)) <> entityBlocks,
-              entityRels
-            )
-            | cl <- themeClasses,
-              (entityBlocks, entityRels) <- [caEntity cl],
-              length entityRels > 1
-          ]
+        -- identityBlocks documents the IDENT rules of the concept of an entity.
+        identityBlocks :: A_Concept->[Blocks]
+        identityBlocks cpt
+         = [ purposes2Blocks env (purposesOf fSpec outputLang' r)
+           | rc<-idRulesOfTheme themeContent, let r=cRul (theLoad rc), Identity c<-[rrkind r], cpt==c
+           , trace (showA r<>"cpt = "<>showA cpt<>"\nc = "<>showA c) True
+           ]
 
         caRemainingRelations :: Blocks
         caRemainingRelations =
