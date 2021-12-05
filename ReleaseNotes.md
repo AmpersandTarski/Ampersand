@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
 
 ## v4.6.2 (2 December 2021)
 
