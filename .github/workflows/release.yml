@@ -7,6 +7,22 @@ on:
     types: [created]
 
 jobs:
+  add-release-notes:
+    name: Add release notes to artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Upload macOS artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_name: ReleaseNotes.md
+          asset_path: ReleaseNotes.md
+          asset_content_type: text/markdown
+
   docker-hub:
     name: Build push image to DockerHub
     runs-on: ubuntu-latest
