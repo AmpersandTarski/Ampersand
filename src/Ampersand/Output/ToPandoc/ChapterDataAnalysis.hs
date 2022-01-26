@@ -19,7 +19,7 @@ chpDataAnalysis ::
   env ->
   FSpec ->
   (Blocks, [Picture])
-chpDataAnalysis env fSpec = (theBlocks, thePictures)
+chpDataAnalysis env fSpec = (theBlocks, [])
   where
     -- shorthand for easy localizing
     l :: LocalizedStr -> Text
@@ -63,12 +63,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                      ( case outputLang' of
                          Dutch ->
                            "Een aantal concepten zit in een classificatiestructuur. "
-                             <> ( "Deze is weergegeven in " <> hyperLinkTo classificationPicture <> "."
-                                )
-                         English ->
-                           "A number of concepts is organized in a classification structure. "
-                             <> ( "This is shown in " <> hyperLinkTo classificationPicture <> "."
-                                )
+                             <> "Deze is weergegeven in " <> hyperLinkTo classificationPicture <> "."
+                         English -> ""
+                             <> "This is shown in " <> hyperLinkTo classificationPicture <> "."
                      )
                    <> xDefBlck env fSpec classificationPicture
            )
@@ -76,9 +73,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
         <> logicalDataModelBlocks
         <> technicalDataModelBlocks
         <> crudMatrixSection
-    thePictures =
-      [classificationPicture, logicalDataModelPictureGroupedByPattern, logicalDataModelPicture, technicalDataModelPicture]
-    classificationPicture = makePicture env fSpec PTClassDiagram
+        where classificationPicture = makePicture env fSpec PTClassDiagram
 
     logicalDataModelBlocks =
       header
@@ -91,12 +86,10 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
           ( case outputLang' of
               Dutch ->
                 text "De afspraken zijn vertaald naar een gegevensmodel. "
-                  <> ( text "Dit gegevensmodel is in " <> hyperLinkTo logicalDataModelPicture <> text " weergegeven."
-                     )
+                  <> text "Dit gegevensmodel is in " <> hyperLinkTo logicalDataModelPicture <> text " weergegeven."
               English ->
                 text "The functional requirements have been translated into a data model. "
-                  <> ( text "This model is shown by " <> hyperLinkTo logicalDataModelPicture <> text "."
-                     )
+                  <> text "This model is shown by " <> hyperLinkTo logicalDataModelPicture <> text "."
           )
         <> xDefBlck env fSpec logicalDataModelPicture
         <> let nrOfClasses = length (classes oocd)
@@ -121,10 +114,8 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                      )
                  <> conceptTables
                  <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
+      where logicalDataModelPicture = makePicture env fSpec (PTLogicalDM False)
 
-    logicalDataModelPicture = ldm False
-    logicalDataModelPictureGroupedByPattern = ldm True
-    ldm grouped = makePicture env fSpec (PTLogicalDM grouped)
     oocd :: ClassDiag
     oocd = cdAnalysis False fSpec fSpec
 

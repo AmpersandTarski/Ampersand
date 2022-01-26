@@ -13,7 +13,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     module Ampersand.Classes,
     Chapter (..),
     chaptersInDoc,
-    Xreferenceble (..),
+    Xreferenceable (..),
     CustomSection (..),
     pandocEqnArray,
     pandocEquationWithLabel,
@@ -77,14 +77,14 @@ data CustomSection
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 
 -- | Things that can be referenced in a document.
-class Typeable a => Xreferenceble a where
+class Typeable a => Xreferenceable a where
   xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
-  xDefBlck _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeld in <Blocks>.") --you should use xDefInln instead.
+  xDefBlck _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in <Blocks>.") --you should use xDefInln instead.
 
   -- ^ function that defines the target Blocks of something that can be referenced.
 
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
-  xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
+  xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in an <Inlines>.") --you should use xDefBlck instead.
 
   -- ^ function that defines the target Inlines of something that can e referenced.
 
@@ -94,12 +94,12 @@ class Typeable a => Xreferenceble a where
   xSafeLabel :: a -> Text -- The full string that is used as ID for referencing
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
-instance Xreferenceble Chapter where
+instance Xreferenceable Chapter where
   xSafeLabel a = tshow Sec <> tshow a
   hyperLinkTo = codeGen'
   xDefBlck env fSpec a = headerWith (xSafeLabel a, [], []) 1 (chptTitle (outputLang env fSpec) a)
 
-instance Xreferenceble Picture where
+instance Xreferenceable Picture where
   xSafeLabel a = tshow Fig <> caption a
   hyperLinkTo = codeGen'
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) (T.pack src) (xSafeLabel a) (text (caption a))
@@ -107,7 +107,7 @@ instance Xreferenceble Picture where
       dirOutput = view dirOutputL env
       src = dirOutput </> imagePathRelativeToDirOutput env a
 
-instance Xreferenceble CustomSection where
+instance Xreferenceable CustomSection where
   xSafeLabel a =
     (tshow . xrefPrefix . refStuff $ a)
       <> tshow (chapterOfSection x)
@@ -169,7 +169,7 @@ hyperTarget env fSpec a =
     l :: LocalizedStr -> Text
     l = localize (outputLang env fSpec)
 
-codeGen' :: Xreferenceble a => a -> Inlines
+codeGen' :: Xreferenceable a => a -> Inlines
 codeGen' a =
   cite
     [ Citation
@@ -319,6 +319,9 @@ instance Named DeclCont where
 instance Named CptCont where
   name = name . cCpt
 
+instance Named ThemeContent where
+  name tc = maybe "Outside of patterns" name (patOfTheme tc)
+
 -- | orderingByTheme collects materials from the fSpec to distribute over themes.
 --   It ensures that all rules, relations and concepts from the context are included in the specification.
 --   The principle is that every rule, relation, or concept that is defined in a pattern is documented in the corresponding theme.
@@ -354,7 +357,7 @@ orderingByTheme env fSpec =
     nconceptss :: NonEmpty [Numbered AConceptDef]
     nrelationss :: NonEmpty [Numbered Relation]
     nruless = transformNonEmpty (numbering 0 (map Set.toList ruless <> [Set.toList (ctxrs aCtx)]))
-    nidruless = transformNonEmpty (numbering 0 idruless)
+    nidruless = (trace . T.concat . map name . concat) idruless $ transformNonEmpty (numbering 0 idruless)
     nconceptss = transformNonEmpty (numbering 0 (conceptss <> [ctxcdsOutPats aCtx]))
     nrelationss = transformNonEmpty (numbering 0 (map Set.toList relationss <> [Set.toList (ctxds aCtx)]))
     transformNonEmpty :: [a] -> NonEmpty a
@@ -365,7 +368,8 @@ orderingByTheme env fSpec =
     conceptss :: [[AConceptDef]]
     relationss :: [Relations]
     (ruless, idruless, conceptss, relationss) =
-      L.unzip4 [(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
+      L.unzip4 ([(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]<>
+                [(ctxrs ctx, ctxks ctx, ctxcds ctx, ctxds ctx) | let ctx = originalContext fSpec])
     numbering :: Int -> [[a]] -> [[Numbered a]]
     numbering n (xs : xss) = [Nr i x | (x, i) <- zip xs [n ..]] : numbering (n + length xs) xss
     numbering _ _ = []
@@ -703,7 +707,7 @@ printConcept env l nCpt =
       Maybe Text -> -- when multiple definitions exist of a single concept, this is to distinguish
       Blocks
     printCDef cDef suffx =
-      definitionList
+      (blockQuote . definitionList)
         [ ( str (l (NL "Definitie ", EN "Definition "))
               <> ( if fspecFormat `elem` [Fpdf, Flatex]
                      then (str . tshow . theNr) nCpt
