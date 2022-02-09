@@ -43,6 +43,7 @@ module Ampersand.Core.AbstractSyntaxTree
     ExplObj (..),
     Expression (..),
     getExpressionRelation,
+    BuiltInRelation (..),
     A_Concept (..),
     A_Concepts,
     AConceptDef (..),
@@ -974,10 +975,15 @@ instance Unique ExplObj where
 
 data BuiltInRelation
   = LessThanEqual
+  | GreaterThan
   deriving (Eq, Ord, Show, Data)
 
 instance Hashable BuiltInRelation where
-  hashWithSalt s LessThanEqual = hashWithSalt s (show LessThanEqual)
+  hashWithSalt s x = hashWithSalt s (show x)
+
+instance Flippable BuiltInRelation where
+  flp LessThanEqual = GreaterThan
+  flp GreaterThan = LessThanEqual
 
 data Expression
   = -- | equivalence             =
@@ -1161,6 +1167,7 @@ instance Flippable Expression where
     ECps (l, r) -> ECps (flp r, flp l)
     ERad (l, r) -> ERad (flp r, flp l)
     EPrd (l, r) -> EPrd (flp r, flp l)
+    EBir x (l, r) -> EBir (flp x) (flp r, flp l)
     EFlp e -> e
     ECpl e -> ECpl (flp e)
     EKl0 e -> EKl0 (flp e)
@@ -1184,6 +1191,7 @@ instance HasSignature Expression where
   sign (ECps (l, r)) = Sign (source l) (target r)
   sign (ERad (l, r)) = Sign (source l) (target r)
   sign (EPrd (l, r)) = Sign (source l) (target r)
+  sign (EBir _ (l, r)) = Sign (source l) (target r)
   sign (EKl0 e) = sign e
   sign (EKl1 e) = sign e
   sign (EFlp e) = flp (sign e)

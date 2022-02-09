@@ -687,6 +687,9 @@ instance ShowHS SubInterface where
   showHS _ _ (InterfaceRef _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
   showHS env indent (Box _ x cl objs) = "Box (" <> showHS env indent x <> ") (" <> tshow cl <> ")" <> indent <> "     (" <> showHS env (indent <> "     ") objs <> ")"
 
+instance ShowHS BuiltInRelation where
+  showHS _ _ x = tshow x
+
 instance ShowHS Expression where
   showHS env indent (EEqu (l, r)) = "EEqu (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
   showHS env indent (EInc (l, r)) = "EInc (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
@@ -699,6 +702,7 @@ instance ShowHS Expression where
   showHS env indent (ECps (l, r)) = "ECps (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
   showHS env indent (ERad (l, r)) = "ERad (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
   showHS env indent (EPrd (l, r)) = "EPrd (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
+  showHS env indent (EBir x (l, r)) = "EBir " <> showHS env "" x <> " (" <> showHS env (indent <> "      ") l <> indent <> "     ," <> showHS env (indent <> "      ") r <> indent <> "     )"
   showHS env indent (EKl0 e) = "EKl0 (" <> showHS env (indent <> "      ") e <> ")"
   showHS env indent (EKl1 e) = "EKl1 (" <> showHS env (indent <> "      ") e <> ")"
   showHS env indent (EFlp e) = "EFlp (" <> showHS env (indent <> "      ") e <> ")"

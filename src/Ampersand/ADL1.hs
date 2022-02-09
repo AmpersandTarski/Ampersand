@@ -58,6 +58,7 @@ import Ampersand.Core.AbstractSyntaxTree
     A_RoleRule (..),
     BoxItem (..),
     BoxTxt (..),
+    BuiltInRelation (..),
     Conjunct (..),
     ContextInfo (..),
     Cruds (..),
