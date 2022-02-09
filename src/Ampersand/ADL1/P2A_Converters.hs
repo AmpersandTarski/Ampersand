@@ -869,6 +869,7 @@ pCtx2aCtx
             PVee _ -> Vee
             Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
             PNamedR nr -> Rel $ disambNamedRel nr
+            PBuiltIn nr -> Rel $ disambNamedRel nr
         )
         where
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r

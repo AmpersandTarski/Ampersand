@@ -201,6 +201,7 @@ instance Pretty TermPrim where
     PVee _ -> text "V"
     Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
     PNamedR rel -> pretty rel
+    PBuiltIn rel -> pretty rel
 
 instance Pretty P_NamedRel where
   pretty (PNamedRel _ str mpSign) = (text . T.unpack) str <~> mpSign

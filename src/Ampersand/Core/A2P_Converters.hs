@@ -304,6 +304,7 @@ aExpression2pTermPrim expr =
     ECpl e -> PCpl o (aExpression2pTermPrim e)
     EBrk e -> PBrk o (aExpression2pTermPrim e)
     EDcD dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
+    EBui dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt

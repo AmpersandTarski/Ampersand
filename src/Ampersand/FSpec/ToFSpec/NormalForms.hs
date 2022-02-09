@@ -749,6 +749,7 @@ dRule cptMap term0 = case term0 of
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
             Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
+            Prim (PBuiltIn (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
             Prim (Pid _ c) -> RId (pCpt2aCpt cptMap c)
             Prim (Pfull _ s t) -> RVee (pCpt2aCpt cptMap s) (pCpt2aCpt cptMap t)
             Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt cptMap c)
@@ -756,6 +757,8 @@ dRule cptMap term0 = case term0 of
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
+              fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
+            Prim (PBuiltIn (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
 
 weightNF :: Bool -> RTerm -> Integer

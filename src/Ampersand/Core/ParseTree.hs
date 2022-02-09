@@ -533,6 +533,7 @@ data TermPrim
     --   At parse time, there may be zero, one or two elements in the list of concepts.
     Pfull Origin P_Concept P_Concept
   | PNamedR P_NamedRel
+  | PBuiltIn P_NamedRel
   deriving (Show) --For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel {pos :: Origin, p_nrnm :: Text, p_mbSign :: Maybe P_Sign}
@@ -637,6 +638,7 @@ instance Traced TermPrim where
     PVee orig -> orig
     Pfull orig _ _ -> orig
     PNamedR r -> origin r
+    PBuiltIn r -> origin r
 
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
