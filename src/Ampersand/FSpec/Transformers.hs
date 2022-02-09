@@ -1525,6 +1525,19 @@ exprInfo expr =
           userTgt' = Nothing,
           singleton' = Nothing
         }
+    (EBui r) ->
+      ExprInfo
+        { binOp' = Nothing,
+          unaryOp' = Nothing,
+          bindedRel' = Just r,
+          first' = Nothing,
+          second' = Nothing,
+          arg' = Nothing,
+          userCpt' = Nothing,
+          userSrc' = Nothing,
+          userTgt' = Nothing,
+          singleton' = Nothing
+        }
     (EDcI cpt) ->
       ExprInfo
         { binOp' = Nothing,
@@ -1576,19 +1589,6 @@ exprInfo expr =
           userSrc' = Nothing,
           userTgt' = Nothing,
           singleton' = Just val
-        }
-    (EBui r) ->
-      ExprInfo
-        { binOp' = Nothing,
-          unaryOp' = Nothing,
-          bindedRel' = Just r,
-          first' = Nothing,
-          second' = Nothing,
-          arg' = Nothing,
-          userCpt' = Nothing,
-          userSrc' = Nothing,
-          userTgt' = Nothing,
-          singleton' = Nothing
         }
 
 data UnaryOp

@@ -557,11 +557,11 @@ expr2RTerm expr =
         EFlp e -> RFlp (expr2RTerm e)
         EBrk e -> expr2RTerm e
         EDcD {} -> RConst expr
+        EBui {} -> RConst expr
         EDcI c -> RId c
         EEps {} -> RConst expr
         EDcV sgn -> RVee (source sgn) (target sgn)
         EMp1 a c -> RAtm a c
-        EBui {} -> RConst expr
 
 --   --      _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
 

@@ -231,11 +231,11 @@ toPredLogic expr =
     propagate varSet (EBrk e) (a, b) = propagate varSet e (a, b)
     propagate varSet (EFlp e) (a, b) = propagate varSet e (b, a)
     propagate _ (EDcD dcl) (a, b) = (R (Variable a) dcl (Variable b), Set.fromList [a, b])
+    propagate _ (EBui dcl) (a, b) = (R (Variable a) dcl (Variable b), Set.fromList [a, b])
     propagate _ (EDcI _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
     propagate _ (EEps _ _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
     propagate _ (EDcV _) (a, b) = (Vee a b, Set.fromList [a, b])
     propagate _ (EMp1 pAV _) _ = (Constant (T.pack (show pAV)), Set.empty)
-    propagate _ (Ebui dcl) (a, b) = (R (Variable a) dcl (Variable b), Set.fromList [a, b])
 
     fencePoles :: VarSet -> NonEmpty Expression -> (Var, Var) -> (NonEmpty Var, [PredLogic], VarSet)
     fencePoles varSet fences (a, b) = (polVs, predLs, varSet'')

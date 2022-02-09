@@ -60,11 +60,7 @@ subst (decl, expr) = subs
     subs e@(EDcD d)
       | d == decl = expr
       | otherwise = e
-    subs e@EDcI {} = e
-    subs e@EEps {} = e
-    subs e@EDcV {} = e
-    subs e@EMp1 {} = e
-    subs e@EBui {} = e
+    subs e = e  -- goes for EBui, EDcI, EEps, EDcV, and EMp1
 
 type Expressions = Set.Set Expression
 
@@ -87,12 +83,8 @@ primitives expr =
     (EFlp e) -> primitives e
     (ECpl e) -> primitives e
     (EBrk e) -> primitives e
-    EDcD {} -> Set.singleton expr
-    EDcI {} -> Set.singleton expr
     EEps {} -> Set.empty -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
-    EDcV {} -> Set.singleton expr
-    EMp1 {} -> Set.singleton expr
-    EBui {} -> Set.singleton expr
+    _ -> Set.singleton expr  -- goes for EDcD, EBui, EDcI, EDcV, and EMp1
 
 subExpressions :: Expression -> Expressions
 subExpressions expr =
@@ -113,12 +105,7 @@ subExpressions expr =
     (EFlp e) -> Set.singleton expr `Set.union` subExpressions e
     (ECpl e) -> Set.singleton expr `Set.union` subExpressions e
     (EBrk e) -> Set.singleton expr `Set.union` subExpressions e
-    EDcD {} -> Set.singleton expr
-    EDcI {} -> Set.singleton expr
-    EEps {} -> Set.singleton expr
-    EDcV {} -> Set.singleton expr
-    EMp1 {} -> Set.singleton expr
-    EBui {} -> Set.singleton expr
+    _ -> Set.singleton expr  -- goes for EDcD, EBui, EDcI, EEps, EDcV, and EMp1
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.

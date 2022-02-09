@@ -1007,6 +1007,8 @@ data Expression
     EBrk Expression
   | -- | simple relation
     EDcD Relation
+  | -- | Built-in Relation
+    EBui Relation
   | -- | Identity relation
     EDcI A_Concept
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
@@ -1015,8 +1017,6 @@ data Expression
     EDcV Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
     EMp1 PAtomValue A_Concept
-  | -- | Built-in Relation
-    EBui Relation
   deriving (Eq, Ord, Show, Typeable, Generic, Data)
 
 instance Hashable Expression where
@@ -1040,11 +1040,11 @@ instance Hashable Expression where
         ECpl e -> (14 :: Int) `hashWithSalt` e
         EBrk e -> (15 :: Int) `hashWithSalt` e
         EDcD d -> (16 :: Int) `hashWithSalt` d
+        EBui d -> (20 :: Int) `hashWithSalt` d
         EDcI c -> (17 :: Int) `hashWithSalt` c
         EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
-        EBui x -> (20 :: Int) `hashWithSalt` x
 
 instance Unique Expression where
   showUnique = tshow -- showA is not good enough: epsilons are disguised, so there can be several different
@@ -1160,11 +1160,11 @@ instance Flippable Expression where
     EKl1 e -> EKl1 (flp e)
     EBrk f -> EBrk (flp f)
     EDcD {} -> EFlp expr
+    EBui {} -> EFlp expr
     EDcI {} -> expr
     EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
-    EBui {} -> EFlp expr
 
 instance HasSignature Expression where
   sign (EEqu (l, r)) = Sign (source l) (target r)
@@ -1184,11 +1184,11 @@ instance HasSignature Expression where
   sign (ECpl e) = sign e
   sign (EBrk e) = sign e
   sign (EDcD d) = sign d
+  sign (EBui d) = sign d
   sign (EDcI c) = Sign c c
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c
-  sign (EBui d) = sign d
 
 showSign :: HasSignature a => a -> Text
 showSign x = let Sign s t = sign x in "[" <> name s <> "*" <> name t <> "]"

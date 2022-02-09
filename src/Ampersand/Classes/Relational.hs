@@ -51,7 +51,6 @@ isSESSION cpt =
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
 instance HasProps Expression where
   properties expr = case expr of
-    EDcD dcl -> properties dcl
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
     EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
@@ -71,8 +70,9 @@ instance HasProps Expression where
     EKl1 e' -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni, Inj])
     ECpl e' -> Set.singleton Sym `Set.intersection` properties e'
     EFlp e' -> Set.map flp $ properties e'
-    EMp1 {} -> Set.fromList [Uni, Inj, Sym, Asy, Trn]
+    EDcD dcl -> properties dcl
     EBui dcl -> properties dcl
+    EMp1 {} -> Set.fromList [Uni, Inj, Sym, Asy, Trn]
     _ -> Set.empty
 
 instance Relational Expression where -- TODO: see if we can find more property constraints...
@@ -93,11 +93,11 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EFlp e -> isTrue e
       ECpl e -> isFalse e
       EDcD {} -> False
+      EBui {} -> False
       EDcI c -> isONE c
       EEps i _ -> isONE i
       EDcV {} -> True
       EBrk e -> isTrue e
-      EBui {} -> False
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
   isFalse expr =
     case expr of
@@ -113,11 +113,11 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EFlp e -> isFalse e
       ECpl e -> isTrue e
       EDcD {} -> False
+      EBui {} -> False
       EDcI {} -> False
       EEps {} -> False
       EDcV {} -> False
       EBrk e -> isFalse e
-      EBui {} -> False
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
   isProp expr = isAsy expr && isSym expr
@@ -137,12 +137,12 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl1 e -> isIdent e
       ECpl e -> isImin e
       EDcD dcl -> name dcl == "="
+      EBui dcl -> name dcl == "="
       EDcI {} -> True
       EEps {} -> False
       EDcV sgn -> isEndo sgn && isONE (source sgn)
       EBrk f -> isIdent f
       EFlp f -> isIdent f
-      EBui {} -> False  -- TODO Take notice: this might not be False for every kind of EBui.
       _ -> False -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad
   isEpsilon e = case e of
     EEps {} -> True
@@ -156,12 +156,12 @@ instance Relational Expression where -- TODO: see if we can find more property c
     EDif (l, r) -> isImin l && isFalse r
     ECpl e -> isIdent e
     EDcD {} -> False
+    EBui {} -> False
     EDcI {} -> False
     EEps {} -> False
     EDcV {} -> False
     EBrk f -> isImin f
     EFlp f -> isImin f
-    EBui {} -> False  -- TODO Take notice: this might not be False for every kind of EBui.
     _ -> False -- TODO: find richer answers for ELrs, ERrs, and EDia
   isFunction r = isUni r && isTot r
 
@@ -197,6 +197,7 @@ isTotSur prop expr =
     EDia _ -> todo
     ERad _ -> todo
     EDcD d -> prop `elem` properties d
+    EBui d -> prop `elem` properties d
     EDcI {} -> True
     EEps c sgn -> case prop of
       Tot -> c == source sgn
@@ -205,7 +206,6 @@ isTotSur prop expr =
     EDcV {} -> todo
     EBrk e -> isTotSur prop e
     EMp1 {} -> True
-    EBui d -> prop `elem` properties d
   where
     todo = prop `elem` properties expr
 
@@ -228,11 +228,11 @@ isUniInj prop expr =
     EDia _ -> todo
     ERad _ -> todo
     EDcD d -> prop `elem` properties d
+    EBui d -> prop `elem` properties d
     EDcI {} -> True
     EEps {} -> True
     EDcV {} -> todo
     EBrk e -> isUniInj prop e
     EMp1 {} -> True
-    EBui d -> prop `elem` properties d
   where
     todo = prop `elem` properties expr

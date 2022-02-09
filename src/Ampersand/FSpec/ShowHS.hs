@@ -705,11 +705,11 @@ instance ShowHS Expression where
   showHS env indent (ECpl e) = "ECpl (" <> showHS env (indent <> "      ") e <> ")"
   showHS env indent (EBrk e) = "EBrk (" <> showHS env (indent <> "      ") e <> ")"
   showHS _ _ (EDcD dcl) = "EDcD " <> showHSName dcl
+  showHS _ _ (EBui dcl) = "EBui " <> showHSName dcl
   showHS _ _ (EDcI c) = "EDcI " <> showHSName c
   showHS env _ (EEps i sgn) = "EEps (" <> showHS env "" i <> ") (" <> showHS env "" sgn <> ")"
   showHS env _ (EDcV sgn) = "EDcV (" <> showHS env "" sgn <> ")"
   showHS _ _ (EMp1 a c) = "EMp1 " <> tshow a <> " " <> showHSName c
-  showHS _ _ (EBui x) = "EBui " <> showHSName x
 
 instance ShowHS Signature where
   showHS _ _ sgn = "Sign " <> showHSName (source sgn) <> " " <> showHSName (target sgn)

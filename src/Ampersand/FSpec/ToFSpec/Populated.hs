@@ -146,6 +146,7 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             ECpl x -> contents (EDcV (sign x) .-. x)
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
+            EBui _ -> Map.empty
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals c]
             EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
             EDcV sgn ->
@@ -162,4 +163,3 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 else Map.singleton av (Set.singleton av)
               where
                 av = safePSingleton2AAtomVal ci c val
-            EBui dcl -> []
