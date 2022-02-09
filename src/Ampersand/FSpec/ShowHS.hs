@@ -709,6 +709,7 @@ instance ShowHS Expression where
   showHS env _ (EEps i sgn) = "EEps (" <> showHS env "" i <> ") (" <> showHS env "" sgn <> ")"
   showHS env _ (EDcV sgn) = "EDcV (" <> showHS env "" sgn <> ")"
   showHS _ _ (EMp1 a c) = "EMp1 " <> tshow a <> " " <> showHSName c
+  showHS _ _ (EBui x) = "EBui " <> showHSName x
 
 instance ShowHS Signature where
   showHS _ _ sgn = "Sign " <> showHSName (source sgn) <> " " <> showHSName (target sgn)

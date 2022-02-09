@@ -1015,6 +1015,8 @@ data Expression
     EDcV Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
     EMp1 PAtomValue A_Concept
+  | -- | Built-in Relation
+    EBui Relation
   deriving (Eq, Ord, Show, Typeable, Generic, Data)
 
 instance Hashable Expression where
@@ -1042,6 +1044,7 @@ instance Hashable Expression where
         EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
+        EBui x -> (20 :: Int) `hashWithSalt` x
 
 instance Unique Expression where
   showUnique = tshow -- showA is not good enough: epsilons are disguised, so there can be several different
@@ -1161,6 +1164,7 @@ instance Flippable Expression where
     EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
+    EBui {} -> EFlp expr
 
 instance HasSignature Expression where
   sign (EEqu (l, r)) = Sign (source l) (target r)
@@ -1184,6 +1188,7 @@ instance HasSignature Expression where
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c
+  sign (EBui d) = sign d
 
 showSign :: HasSignature a => a -> Text
 showSign x = let Sign s t = sign x in "[" <> name s <> "*" <> name t <> "]"
