@@ -299,6 +299,7 @@ instance ShowMath Expression where
       showExpr EEps {} = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
       showExpr (EDcV sgn) = "V_{ \\lbrack " <> inMathText (name (source sgn)) <> "*" <> inMathText (name (target sgn)) <> " \\rbrack }"
       showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
+      showExpr (EBui d) = inMathText (name d)
 
 atomVal2Math :: PAtomValue -> Text
 atomVal2Math pav =

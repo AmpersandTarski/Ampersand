@@ -561,6 +561,7 @@ expr2RTerm expr =
         EEps {} -> RConst expr
         EDcV sgn -> RVee (source sgn) (target sgn)
         EMp1 a c -> RAtm a c
+        EBui {} -> RConst expr
 
 --   --      _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
 

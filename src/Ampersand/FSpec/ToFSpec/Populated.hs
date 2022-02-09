@@ -162,3 +162,4 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 else Map.singleton av (Set.singleton av)
               where
                 av = safePSingleton2AAtomVal ci c val
+            EBui dcl -> []
