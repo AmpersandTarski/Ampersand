@@ -40,7 +40,7 @@ jobs:
     steps:
       - 
         name: Checkout project contents 📡
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2   # technisch is dit een verwijzing naar de repo "checkout" van de github user "actions"
       - 
         name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
