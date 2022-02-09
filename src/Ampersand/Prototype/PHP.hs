@@ -121,8 +121,8 @@ connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
   [ "// Try to connect to the MySQL server",
     "global $DB_host,$DB_user,$DB_pass;",
-    "$DB_host='root';",
-    "$DB_user='ampersand';",
+    "$DB_host='127.0.0.1';",
+    "$DB_user='root';",
     "$DB_pass='';",
     ""
   ]
