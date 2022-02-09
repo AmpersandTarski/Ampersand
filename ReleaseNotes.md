@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
+* [Issue #1256](https://github.com/AmpersandTarski/Ampersand/issues/1267) Implement the greater than operator (experimental)
 
 ## v4.6.2 (2 December 2021)
 
