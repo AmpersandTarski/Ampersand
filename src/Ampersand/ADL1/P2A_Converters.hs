@@ -328,6 +328,23 @@ pCtx2aCtx
       allGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
+      builtins :: [Relation] 
+      builtins = [Relation
+                    { decnm   = T.pack "<="
+                    , decsgn  = sgn
+                    , decprps = Set.empty
+                    , decDefaults = fatal "Illegal RTerm in rTerm2expr"
+                    , decprL  = ""
+                    , decprM  = ""
+                    , decprR  = ""
+                    , decMean = []
+                    , decfpos = Origin ("generated relation ( <= "<>T.pack (show sgn)<>")")
+                    , decusr  = False
+                    , decpat  = Nothing
+                    , dechash = hash sgn
+                    }]
+                    where sgn = Sign c c
+                          c = PlainConcept (NE.singleton "Num")
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
@@ -340,7 +357,8 @@ pCtx2aCtx
                 Object -- default representation is Object (sometimes called `ugly identifiers')
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
+        let declMap = (Map.map groupOnTp . Map.fromListWith (<>))
+                      ([(name d, [EDcD d]) | d <- decls]<>[(name b, [EBui b]) | b <- builtins])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
@@ -869,7 +887,7 @@ pCtx2aCtx
             PVee _ -> Vee
             Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
             PNamedR nr -> Rel $ disambNamedRel nr
-            PBuiltIn nr -> Rel $ disambNamedRel nr
+            PBuiltInR nr -> Rel $ disambNamedRel nr
         )
         where
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r

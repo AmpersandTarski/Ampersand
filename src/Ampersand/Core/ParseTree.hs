@@ -17,6 +17,7 @@ module Ampersand.Core.ParseTree
     Term (..),
     TermPrim (..),
     P_NamedRel (..),
+    P_BuiltInRel (..),
     PairView (..),
     PairViewSegment (..),
     PairViewTerm (..),
@@ -533,16 +534,25 @@ data TermPrim
     --   At parse time, there may be zero, one or two elements in the list of concepts.
     Pfull Origin P_Concept P_Concept
   | PNamedR P_NamedRel
-  | PBuiltIn P_NamedRel
+  | PBuiltInR P_BuiltInRel
   deriving (Show) --For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel {pos :: Origin, p_nrnm :: Text, p_mbSign :: Maybe P_Sign}
+  deriving (Show)
+
+data P_BuiltInRel = PBuiltInRel {pos :: Origin, p_nrnmB :: Text, p_mbSignB :: Maybe P_Sign}
   deriving (Show)
 
 instance Eq P_NamedRel where
   nr == nr' =
     case (p_mbSign nr, p_mbSign nr') of
       (Just sgn, Just sgn') -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+      _ -> False
+
+instance Eq P_BuiltInRel where
+  nr == nr' =
+    case (p_mbSignB nr, p_mbSignB nr') of
+      (Just sgn, Just sgn') -> p_nrnmB nr == p_nrnmB nr' && sgn == sgn'
       _ -> False
 
 data Term a
@@ -638,7 +648,7 @@ instance Traced TermPrim where
     PVee orig -> orig
     Pfull orig _ _ -> orig
     PNamedR r -> origin r
-    PBuiltIn r -> origin r
+    PBuiltInR r -> origin r
 
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o

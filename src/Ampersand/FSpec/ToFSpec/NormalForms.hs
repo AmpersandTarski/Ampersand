@@ -11,7 +11,45 @@ where
 
 import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt)
-import Ampersand.Basics
+import Ampersand.Basics.Auxiliaries
+    ( Flippable(flp), eqClass, eqCl, converseNE )
+import Ampersand.Basics.Prelude
+    ( (++),
+      filter,
+      zip,
+      fst,
+      otherwise,
+      map,
+      ($),
+      Eq(..),
+      Functor(fmap),
+      Num((-), (+), (*)),
+      Ord((<=), (<), (>=), (>)),
+      Show(..),
+      Foldable(length, sum, foldl', null, foldr),
+      Semigroup((<>)),
+      Bool(..),
+      Int,
+      Integer,
+      Maybe(Nothing, Just),
+      (&&),
+      (.),
+      Set,
+      Text,
+      and,
+      concat,
+      concatMap,
+      notElem,
+      or,
+      fromMaybe,
+      drop,
+      reverse,
+      take,
+      not,
+      (||),
+      tshow )
+import Ampersand.Basics.Unique ( Named(name) )
+import Ampersand.Basics.Version ( fatal )
 import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
@@ -749,7 +787,7 @@ dRule cptMap term0 = case term0 of
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
             Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
-            Prim (PBuiltIn (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
+            Prim (PBuiltInR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
             Prim (Pid _ c) -> RId (pCpt2aCpt cptMap c)
             Prim (Pfull _ s t) -> RVee (pCpt2aCpt cptMap s) (pCpt2aCpt cptMap t)
             Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt cptMap c)
@@ -758,7 +796,7 @@ dRule cptMap term0 = case term0 of
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
-            Prim (PBuiltIn (PNamedRel _ _ Nothing)) ->
+            Prim (PBuiltInR (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
 
 weightNF :: Bool -> RTerm -> Integer
