@@ -972,6 +972,13 @@ instance Unique ExplObj where
         (ExplInterface s) -> "an Interface named " <> s
         (ExplContext s) -> "a Context named " <> s
 
+data BuiltInRelation
+  = LessThanEqual
+  deriving (Eq, Ord, Show, Data)
+
+instance Hashable BuiltInRelation where
+  hashWithSalt s LessThanEqual = hashWithSalt s (show LessThanEqual)
+
 data Expression
   = -- | equivalence             =
     EEqu (Expression, Expression)
@@ -995,6 +1002,8 @@ data Expression
     ERad (Expression, Expression)
   | -- | cartesian product       *
     EPrd (Expression, Expression)
+  | -- | built in operators/relations
+    EBir BuiltInRelation (Expression, Expression)
   | -- | Rfx.Trn closure         *  (Kleene star)
     EKl0 Expression
   | -- | Transitive closure      +  (Kleene plus)
@@ -1032,6 +1041,7 @@ instance Hashable Expression where
         ECps (a, b) -> (8 :: Int) `hashWithSalt` a `hashWithSalt` b
         ERad (a, b) -> (9 :: Int) `hashWithSalt` a `hashWithSalt` b
         EPrd (a, b) -> (10 :: Int) `hashWithSalt` a `hashWithSalt` b
+        EBir x (a, b) -> (20 :: Int) `hashWithSalt` x `hashWithSalt` a `hashWithSalt` b
         EKl0 e -> (11 :: Int) `hashWithSalt` e
         EKl1 e -> (12 :: Int) `hashWithSalt` e
         EFlp e -> (13 :: Int) `hashWithSalt` e

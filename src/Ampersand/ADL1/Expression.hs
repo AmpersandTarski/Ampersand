@@ -52,6 +52,7 @@ subst (decl, expr) = subs
     subs (ECps (l, r)) = ECps (subs l, subs r)
     subs (ERad (l, r)) = ERad (subs l, subs r)
     subs (EPrd (l, r)) = EPrd (subs l, subs r)
+    subs (EBir x (l, r)) = EBir x (subs l, subs r)
     subs (EKl0 e) = EKl0 (subs e)
     subs (EKl1 e) = EKl1 (subs e)
     subs (EFlp e) = EFlp (subs e)
@@ -81,6 +82,7 @@ primitives expr =
     (ECps (l, r)) -> primitives l `Set.union` primitives r
     (ERad (l, r)) -> primitives l `Set.union` primitives r
     (EPrd (l, r)) -> primitives l `Set.union` primitives r
+    (EBir _ (l, r)) -> primitives l `Set.union` primitives r
     (EKl0 e) -> primitives e
     (EKl1 e) -> primitives e
     (EFlp e) -> primitives e
@@ -106,6 +108,7 @@ subExpressions expr =
     (ECps (l, r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
     (ERad (l, r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
     (EPrd (l, r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EBir _ (l, r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
     (EKl0 e) -> Set.singleton expr `Set.union` subExpressions e
     (EKl1 e) -> Set.singleton expr `Set.union` subExpressions e
     (EFlp e) -> Set.singleton expr `Set.union` subExpressions e
