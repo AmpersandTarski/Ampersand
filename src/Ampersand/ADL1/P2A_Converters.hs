@@ -333,18 +333,18 @@ pCtx2aCtx
                     { decnm   = T.pack "<="
                     , decsgn  = sgn
                     , decprps = Set.empty
-                    , decDefaults = fatal "Illegal RTerm in rTerm2expr"
+                    , decDefaults = Set.empty
                     , decprL  = ""
                     , decprM  = ""
                     , decprR  = ""
                     , decMean = []
-                    , decfpos = Origin ("generated relation ( <= "<>T.pack (show sgn)<>")")
+                    , decfpos = Origin ("built-in relation ( <= "<>T.pack (show sgn)<>" )")
                     , decusr  = False
                     , decpat  = Nothing
                     , dechash = hash sgn
                     }]
                     where sgn = Sign c c
-                          c = PlainConcept (NE.singleton "Num")
+                          c = PlainConcept ("Num" NE.:| [])
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
