@@ -357,7 +357,7 @@ orderingByTheme env fSpec =
     nconceptss :: NonEmpty [Numbered AConceptDef]
     nrelationss :: NonEmpty [Numbered Relation]
     nruless = transformNonEmpty (numbering 0 (map Set.toList ruless <> [Set.toList (ctxrs aCtx)]))
-    nidruless = (trace . T.concat . map name . concat) idruless $ transformNonEmpty (numbering 0 idruless)
+    nidruless = transformNonEmpty (numbering 0 idruless)
     nconceptss = transformNonEmpty (numbering 0 (conceptss <> [ctxcdsOutPats aCtx]))
     nrelationss = transformNonEmpty (numbering 0 (map Set.toList relationss <> [Set.toList (ctxds aCtx)]))
     transformNonEmpty :: [a] -> NonEmpty a
