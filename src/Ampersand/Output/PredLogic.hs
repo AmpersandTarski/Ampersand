@@ -219,6 +219,7 @@ toPredLogic expr =
       where
         (l', _) = propagate varSet l (a, b)
         (r', _) = propagate varSet r (a, b)
+    propagate varSet (EBir x (l, r)) (a, b) = undefined -- @stefjoosten TODO
     propagate varSet (EKl0 e) (a, b) = (Kleene0 predL, vSet)
       where
         (predL, vSet) = propagate varSet e (a, b)

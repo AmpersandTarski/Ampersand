@@ -544,6 +544,7 @@ expr2RTerm expr =
             rLst = case expr2RTerm r of
               RCps terms -> terms
               trm -> [trm]
+        EBir x (l, r) -> undefined -- @stefjoosten TODO
         EPrd (l, r) -> RPrd (lLst <> rLst)
           where
             lLst = case expr2RTerm l of
