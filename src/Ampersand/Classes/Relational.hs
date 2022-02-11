@@ -183,6 +183,7 @@ isTotSur prop expr =
     EDif (l, _) -> isTotSur prop l
     ECps (l, r) -> isTotSur prop l && isTotSur prop r
     EPrd (_, _) -> todo
+    EBir _ (_, _) -> todo
     EKl0 e -> isTotSur prop e
     EKl1 e -> isTotSur prop e
     EFlp e -> isTotSur (flp prop) e
@@ -213,6 +214,7 @@ isUniInj prop expr =
     EDif (l, _) -> isUniInj prop l
     ECps (l, r) -> isUniInj prop l && isUniInj prop r
     EPrd (_, _) -> todo
+    EBir _ (_, _) -> todo
     EKl0 e -> isUniInj prop e
     EKl1 e -> isUniInj prop e
     EFlp e -> isUniInj (flp prop) e
