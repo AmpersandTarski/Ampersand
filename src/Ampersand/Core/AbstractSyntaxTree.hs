@@ -87,6 +87,7 @@ module Ampersand.Core.AbstractSyntaxTree
     (.*.),
     makeConceptMap,
     ConceptMap,
+    isIn,
   )
 where
 
@@ -984,6 +985,12 @@ instance Hashable BuiltInRelation where
 instance Flippable BuiltInRelation where
   flp LessThanEqual = GreaterThan
   flp GreaterThan = LessThanEqual
+
+-- | Is the given pair an element of the given builtin relation?
+isIn :: BuiltInRelation -> AAtomPair -> Bool
+isIn x (APair a b) = case x of
+  LessThanEqual -> a <= b
+  GreaterThan -> a > b
 
 data Expression
   = -- | equivalence             =

@@ -93,6 +93,7 @@ import Ampersand.Core.AbstractSyntaxTree
     aavtxt,
     getExpressionRelation,
     getInterfaceByName,
+    isIn,
     mkAtomPair,
     safePSingleton2AAtomVal,
     showRel,

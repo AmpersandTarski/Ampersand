@@ -80,7 +80,7 @@ pairsOf ci ps dcl =
     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
-fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+fullContents ci ps e = Set.fromList [mkAtomPair a b | (a, bs) <- Map.toList (contents e), b <- Set.toList bs]
   where
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
@@ -127,6 +127,18 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                     not (null cod),
                     a <- Set.elems $ aVals (source l)
                 ]
+            EBir x' (l, r) ->
+              Map.fromListWith
+                Set.union
+                [ (x, Set.singleton y) | (x, xv) <- Map.toList (contents l), (y, yv) <- Map.toList flipr, xv `hasAMatch` yv
+                ]
+              where
+                -- Is there a match based on the semantics of the specific built in relation?
+                hasAMatch :: Set AAtomValue -> Set AAtomValue -> Bool
+                hasAMatch xs ys =
+                  not . null $
+                    [(x, y) | x <- Set.elems xs, y <- Set.elems ys, isIn x' (mkAtomPair x y)]
+                flipr = contents (EFlp r)
             ECps (l, r) ->
               Map.fromListWith
                 Set.union

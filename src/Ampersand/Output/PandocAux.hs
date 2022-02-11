@@ -289,6 +289,7 @@ instance ShowMath Expression where
       showExpr (ECps (l, r)) = showExpr l <> inMathCompose <> showExpr r
       showExpr (ERad (l, r)) = showExpr l <> inMathRelativeAddition <> showExpr r
       showExpr (EPrd (l, r)) = showExpr l <> inMathCartesianProduct <> showExpr r
+      showExpr (EBir x (l, r)) = showExpr l <> inMathBuiltInRelation x <> showExpr r
       showExpr (EKl0 e) = showExpr (addParensToSuper e) <> inMathStar
       showExpr (EKl1 e) = showExpr (addParensToSuper e) <> inMathPlus
       showExpr (EFlp e) = showExpr (addParensToSuper e) <> inMathFlip
@@ -384,6 +385,11 @@ inMathFlip = "^{\\smallsmile}"
 
 inMathOverline :: Text -> Text
 inMathOverline x = " \\overline{" <> x <> "} "
+
+inMathBuiltInRelation :: BuiltInRelation -> Text
+inMathBuiltInRelation x = case x of
+  LessThanEqual -> " <= "
+  GreaterThan -> " > "
 
 texOnlyMarginNote :: Text -> Text
 texOnlyMarginNote marginNote =
