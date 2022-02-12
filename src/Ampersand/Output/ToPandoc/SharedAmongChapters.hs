@@ -368,8 +368,10 @@ orderingByTheme env fSpec =
     conceptss :: [[AConceptDef]]
     relationss :: [Relations]
     (ruless, idruless, conceptss, relationss) =
-      L.unzip4 ([(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]<>
-                [(ctxrs ctx, ctxks ctx, ctxcds ctx, ctxds ctx) | let ctx = originalContext fSpec])
+      L.unzip4
+        ( [(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
+            <> [(ctxrs ctx, ctxks ctx, ctxcds ctx, ctxds ctx) | let ctx = originalContext fSpec]
+        )
     numbering :: Int -> [[a]] -> [[Numbered a]]
     numbering n (xs : xss) = [Nr i x | (x, i) <- zip xs [n ..]] : numbering (n + length xs) xss
     numbering _ _ = []

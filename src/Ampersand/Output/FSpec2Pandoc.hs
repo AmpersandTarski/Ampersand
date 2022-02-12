@@ -135,8 +135,9 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
         . mconcat
         $ blocksByChapter
 
-    thePictures = map (makePicture env fSpec) largePictures++concat picturesByChapter
-      where largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False, PTTechnicalDM]
+    thePictures = map (makePicture env fSpec) largePictures ++ concat picturesByChapter
+      where
+        largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False, PTTechnicalDM]
 
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
@@ -148,4 +149,3 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
     fspec2Blocks Diagnosis = chpDiagnosis env fSpec
     fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis env 0 fSpec
     fspec2Blocks DataAnalysis = chpDataAnalysis env fSpec
-

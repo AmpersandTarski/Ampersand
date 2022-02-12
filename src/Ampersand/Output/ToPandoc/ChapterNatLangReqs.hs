@@ -34,24 +34,24 @@ chpNatLangReqs env lev fSpec =
     chpPurpose :: Blocks
     chpPurpose =
       case outputLang' of --  *** Intro  ***
-      Dutch ->
-        para
-          ( "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
-              <> (singleQuoted . str . name) fSpec
-              <> " in natuurlijke taal. "
-              <> "Het hoofdstuk bevat definities en afspraken. "
-              <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
-              <> "Alle definities en afspraken zijn genummerd omwille van de traceerbaarheid. "
-          )
-      English ->
-        para
-          ( "This chapter describes functional requirements for "
-              <> (singleQuoted . str . name) fSpec
-              <> " in natural language. "
-              <> "It contains definitions and agreements. "
-              <> "The purpose of this chapter is to create shared understanding among stakeholders. "
-              <> "All definitions and agreements have been numbered for the sake of traceability. "
-          )
+        Dutch ->
+          para
+            ( "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
+                <> (singleQuoted . str . name) fSpec
+                <> " in natuurlijke taal. "
+                <> "Het hoofdstuk bevat definities en afspraken. "
+                <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
+                <> "Alle definities en afspraken zijn genummerd omwille van de traceerbaarheid. "
+            )
+        English ->
+          para
+            ( "This chapter describes functional requirements for "
+                <> (singleQuoted . str . name) fSpec
+                <> " in natural language. "
+                <> "It contains definitions and agreements. "
+                <> "The purpose of this chapter is to create shared understanding among stakeholders. "
+                <> "All definitions and agreements have been numbered for the sake of traceability. "
+            )
     genLegalRefs = view genLegalRefsL env
     legalRefs :: Blocks
     legalRefs =
