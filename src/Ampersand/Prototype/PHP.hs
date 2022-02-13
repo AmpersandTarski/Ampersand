@@ -74,8 +74,8 @@ performQuery dbNm queryStr = do
              "      echo ''; ",
              "    } else { ",
              "      echo ',';",
-             "      echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
-             "    } ",
+             "    };",
+             "    echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
              "  }",
              "echo ']';"
            ]
