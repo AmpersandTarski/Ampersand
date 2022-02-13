@@ -47,11 +47,23 @@ jobs:
         with:
           mysql-version: "mariadb-10.6"
       - name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
+        uses: freckle/stack-action@v3 # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: true # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
-          hlint: true
+      - name: Check weeds
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true
+  hlint:
+    name: Check for code sanity with hlint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v2
+      - name: Setup hlint
+        uses: rwe/actions-hlint-setup@v1
+      - name: Run hlint
+        uses: rwe/actions-hlint-run@v2
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
@@ -69,8 +81,6 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: false
-          hlint: true
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
