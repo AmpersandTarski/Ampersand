@@ -88,10 +88,9 @@ executePHPStr phpStr = do
   let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
   liftIO $ createDirectoryIfMissing True (takeDirectory phpPath)
   writeFileUtf8 phpPath phpStr
-
   executePHP phpPath
 
-executePHP :: FilePath -> RIO env Text
+executePHP :: HasLogFunc env => FilePath -> RIO env Text
 executePHP phpPath = do
   let cp =
         (shell command)
@@ -100,7 +99,16 @@ executePHP phpPath = do
       inputFile = phpPath
       outputFile = inputFile <> "Result"
       command = "php " <> show inputFile <> " > " <> show outputFile
-  _ <- liftIO $ readCreateProcess cp ""
+      errorHandler :: HasLogFunc env => IOException -> RIO env String
+      errorHandler err = do
+        logError . display $ "Could not execute PHP: " <> tshow err
+        fileContents <- readUTF8File phpPath
+        mapM_ (logError . display) $
+          case fileContents of
+            Left msg -> msg
+            Right txt -> addLineNumbers . T.lines $ txt
+        return "ERROR"
+  _ <- liftIO (readCreateProcess cp "") `catch` errorHandler
   result <- readUTF8File outputFile
   case result of
     Right content -> do
@@ -110,6 +118,12 @@ executePHP phpPath = do
       exitWith . PHPExecutionFailed $
         "PHP execution failed:" :
         fmap ("  " <>) err
+
+addLineNumbers :: [Text] -> [Text]
+addLineNumbers = zipWith (curry withNumber) [1 ..]
+  where
+    withNumber :: (Int, Text) -> Text
+    withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
 
 showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
@@ -178,15 +192,10 @@ createTempDatabase fSpec = do
               result,
               "The statements:"
             ]
-              <> lineNumbers phpStr
+              <> addLineNumbers phpStr
 
   return (T.null result)
   where
-    lineNumbers :: [Text] -> [Text]
-    lineNumbers = zipWith (curry withNumber) [1 ..]
-      where
-        withNumber :: (Int, Text) -> Text
-        withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
     phpStr :: [Text]
     phpStr =
       connectToMySqlServerPHP Nothing
