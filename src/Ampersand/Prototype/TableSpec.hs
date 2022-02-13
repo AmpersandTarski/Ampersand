@@ -133,7 +133,7 @@ showColumsSql tSpec =
 dropTableSql :: TableSpec -> SqlQuery
 dropTableSql tSpec =
   SqlQuerySimple $
-    "DROP TABLE " <> (doubleQuote . tsName $ tSpec)
+    "DROP TABLE IF EXISTS " <> (doubleQuote . tsName $ tSpec)
 
 fld2AttributeSpec :: SqlAttribute -> AttributeSpec
 fld2AttributeSpec att =

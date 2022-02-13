@@ -120,7 +120,7 @@ executePHP phpPath = do
         fmap ("  " <>) err
 
 addLineNumbers :: [Text] -> [Text]
-addLineNumbers = zipWith (curry withNumber) [1 ..]
+addLineNumbers = zipWith (curry withNumber) [0 ..]
   where
     withNumber :: (Int, Text) -> Text
     withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
