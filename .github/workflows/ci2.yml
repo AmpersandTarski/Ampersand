@@ -50,7 +50,7 @@ jobs:
         uses: freckle/stack-action@v3 # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-      - name: Check weeds
+      - name: Check weeds🌿🌿🌿
         uses: freckle/stack-action@v1
         with:
           weeder: true
@@ -110,5 +110,3 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: false
-          hlint: false
