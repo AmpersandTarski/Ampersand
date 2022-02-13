@@ -247,7 +247,7 @@ createTempDatabase fSpec = do
         dropDB :: SqlQuery
         dropDB =
           SqlQuerySimple $
-            "DROP DATABASE " <> singleQuote (tempDbName fSpec)
+            "DROP DATABASE IF EXISTS " <> singleQuote (tempDbName fSpec)
         createDB :: SqlQuery
         createDB =
           SqlQuerySimple $
