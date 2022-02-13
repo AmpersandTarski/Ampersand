@@ -60,18 +60,23 @@ performQuery dbNm queryStr = do
       connectToMySqlServerPHP (Just dbNm)
         <> [ "$sql=" <> queryAsPHP queryStr <> ";",
              "$result=mysqli_query($DB_link,$sql);",
-             "if(!$result)",
+             "if(!$result) {",
              "  die('Error : Connect to server failed'.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
+             "}",
              "$rows=Array();",
              "  while ($row = mysqli_fetch_array($result)) {",
              "    $rows[]=$row;",
              "    unset($row);",
              "  }",
              "echo '[';",
-             "for ($i = 0; $i < count($rows); $i<>) {",
-             "  if ($i==0) echo ''; else echo ',';",
-             "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
-             "}",
+             "  for ($i = 0; $i < count($rows); $i<>) {",
+             "    if ($i==0) { ",
+             "      echo ''; ",
+             "    } else { ",
+             "      echo ',';",
+             "      echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
+             "    } ",
+             "  }",
              "echo ']';"
            ]
 
