@@ -69,7 +69,7 @@ performQuery dbNm queryStr = do
              "    unset($row);",
              "  }",
              "echo '[';",
-             "  for ($i = 0; $i < count($rows); $i<>) {",
+             "  for ($i = 0; $i < count($rows); $i++) {",
              "    if ($i==0) { ",
              "      echo ''; ",
              "    } else { ",
