@@ -79,7 +79,7 @@ jobs:
         with:
           mysql-version: "mariadb-10.6"
       - name: Build and test  🏗 🧪
-        uses: freckle/stack-action@main
+        uses: freckle/stack-action@v3
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
       - name: Check weeds🌿🌿🌿
@@ -112,6 +112,10 @@ jobs:
           php-version: "8.0"
           extensions: mysqli
       - name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main
+        uses: freckle/stack-action@v3
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true
