@@ -6,6 +6,17 @@ on:
       - "**" # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
+  hlint:
+    name: Check for code sanity with hlint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v2
+      - name: Setup hlint
+        uses: rwe/actions-hlint-setup@v1
+      - name: Run hlint
+        uses: rwe/actions-hlint-run@v2
+
   build-and-test-docker:
     name: Build with Docker
     runs-on: ubuntu-latest
@@ -54,16 +65,6 @@ jobs:
         uses: freckle/stack-action@v1
         with:
           weeder: true
-  hlint:
-    name: Check for code sanity with hlint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout project contents 📡
-        uses: actions/checkout@v2
-      - name: Setup hlint
-        uses: rwe/actions-hlint-setup@v1
-      - name: Run hlint
-        uses: rwe/actions-hlint-run@v2
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
@@ -81,6 +82,10 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
