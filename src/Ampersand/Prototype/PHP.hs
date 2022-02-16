@@ -20,9 +20,8 @@ createTablePHP tSpec =
   map ("// " <>) (tsCmnt tSpec)
     <> [
          -- Drop table if it already exists
-         "if($columns = mysqli_query($DB_link, " <> queryAsPHP (showColumsSql tSpec) <> ")){",
-         "    mysqli_query($DB_link, " <> queryAsPHP (dropTableSql tSpec) <> ");",
-         "}"
+         "mysqli_query($DB_link, " <> queryAsPHP (dropTableIfExistsSql tSpec) <> ");",
+         ""
        ]
     <> [ "$sql=" <> queryAsPHP (createTableSql False tSpec) <> ";",
          "mysqli_query($DB_link,$sql);",

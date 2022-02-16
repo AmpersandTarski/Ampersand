@@ -5,7 +5,7 @@ module Ampersand.Prototype.TableSpec
     getTableName,
     plug2TableSpec,
     tableSpec2Queries,
-    dropTableSql,
+    dropTableIfExistsSql,
     showColumsSql,
     createTableSql,
     insertQuery,
@@ -130,8 +130,8 @@ showColumsSql tSpec =
   SqlQuerySimple $
     "SHOW COLUMNS FROM " <> (doubleQuote . tsName $ tSpec)
 
-dropTableSql :: TableSpec -> SqlQuery
-dropTableSql tSpec =
+dropTableIfExistsSql :: TableSpec -> SqlQuery
+dropTableIfExistsSql tSpec =
   SqlQuerySimple $
     "DROP TABLE IF EXISTS " <> (doubleQuote . tsName $ tSpec)
 
