@@ -187,13 +187,7 @@ createTempDatabase fSpec = do
       $ phpStr
   logInfo $
     if T.null result
-      then
-        display $
-          T.intercalate "\n" $
-            [ "Temp database created succesfully.",
-              "The statements:"
-            ]
-              <> addLineNumbers phpStr
+      then "Temp database created succesfully."
       else
         display $
           T.intercalate "\n" $
