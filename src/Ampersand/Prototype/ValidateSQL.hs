@@ -113,7 +113,7 @@ validateExp ::
   RIO env (ValidationExp, Bool)
 validateExp fSpec total (vExp, i) = do
   let (e, _) = vExp
-  logSticky . display $ "Validating expressions: " <> tshow i <> " of " <> tshow total <> " (" <> tshow e <> ")."
+  logSticky . display $ "Validating expressions: " <> tshow i <> " of " <> tshow total <> " " <> showA e <> " (" <> tshow e <> ")."
   case vExp of
     (EDcD {}, _) -> do
       -- skip all simple relations
