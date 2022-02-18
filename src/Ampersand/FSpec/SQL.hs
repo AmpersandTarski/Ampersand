@@ -892,7 +892,7 @@ nonSpecialSelectExpr fSpec expr =
           traceComment
             ["case ECpl (EDcV _)"]
             emptySet
-        EDcI ONE -> fatal "EDcI ONE must not be seen at this place."
+        --        EDcI ONE -> fatal "EDcI ONE must not be seen at this place."
         EDcI c ->
           traceComment
             ["case: ECpl (EDcI c)"]
