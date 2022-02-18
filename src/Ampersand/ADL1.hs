@@ -91,6 +91,7 @@ import Ampersand.Core.AbstractSyntaxTree
     ViewSegment (..),
     ViewSegmentPayLoad (..),
     aavtxt,
+    builtIn2Relation,
     getExpressionRelation,
     getInterfaceByName,
     isIn,

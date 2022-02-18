@@ -297,6 +297,9 @@ aExpression2pTermPrim expr =
       | otherwise -> PCps o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     ERad (l, r) -> PRad o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EPrd (l, r) -> PPrd o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
+    EBir x (l, r) -> PCps o (aExpression2pTermPrim l) (PCps o trm (aExpression2pTermPrim r))
+                     where dcl = builtIn2Relation (target l, source r) x
+                           trm = Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EEps a _ -> aExpression2pTermPrim $ EDcI a
     EKl0 e -> PKl0 o (aExpression2pTermPrim e)
     EKl1 e -> PKl1 o (aExpression2pTermPrim e)

@@ -549,7 +549,7 @@ expr2RTerm expr =
             lLst = case expr2RTerm l of
               RCps terms -> terms
               trm -> [trm]
-            xLst = [expr2RTerm (builtIn2Expression x)]
+            xLst = [(expr2RTerm . EDcD . builtIn2Relation (target l,source r)) x]
             rLst = case expr2RTerm r of
               RCps terms -> terms
               trm -> [trm]

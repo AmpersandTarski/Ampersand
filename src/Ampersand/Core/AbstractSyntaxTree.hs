@@ -44,6 +44,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Expression (..),
     getExpressionRelation,
     BuiltInRelation (..),
+    builtIn2Relation,
     A_Concept (..),
     A_Concepts,
     AConceptDef (..),
@@ -979,6 +980,39 @@ data BuiltInRelation
   | GreaterThan
   deriving (Eq, Ord, Show, Data)
 
+builtIn2Relation :: (A_Concept,A_Concept) -> BuiltInRelation -> Relation
+builtIn2Relation (s,t) LessThanEqual
+ = Relation
+        { decnm = "<=",
+          decsgn = Sign s t,
+          decprps = Set.fromList [Asy,Trn,Rfx],
+          decDefaults = Set.empty,
+          decprL = "",
+          decprM = " is less than or equal to ",
+          decprR = "",
+          decMean = [],
+          decfpos = OriginUnknown,
+          decusr = False,
+          decpat = Nothing,
+          dechash = hash ("<="::Text) `hashWithSalt` s `hashWithSalt` t
+        }
+builtIn2Relation (s,t) GreaterThan
+ = Relation
+        { decnm = ">",
+          decsgn = Sign s t,
+          decprps = Set.fromList [Asy,Trn,Irf],
+          decDefaults = Set.empty,
+          decprL = "",
+          decprM = " is less than or equal to ",
+          decprR = "",
+          decMean = [],
+          decfpos = OriginUnknown,
+          decusr = False,
+          decpat = Nothing,
+          dechash = hash (">"::Text) `hashWithSalt` s `hashWithSalt` t
+        }
+
+  
 instance Hashable BuiltInRelation where
   hashWithSalt s x = hashWithSalt s (show x)
 
