@@ -7,6 +7,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Core.ShowAStruct (AStruct (..)) -- for traceability, we generate comments in the Haskell code.
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Instances (Instances (instanceList))
 import Ampersand.Misc.HasClasses
 import Data.Hashable
 import RIO.Char (isAlphaNum)
@@ -353,10 +354,10 @@ instance ShowHS FSpec where
                  <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` name) (plugInfos fSpec)]
                  <> "\n"
          )
-      <> ( if null (vpatterns fSpec)
+      <> ( if null (instanceList fSpec :: [Pattern])
              then ""
              else
-               "\n -- *** Patterns (total: " <> (tshow . length . vpatterns) fSpec <> " patterns) ***: "
+               "\n -- *** Patterns (total: " <> (tshow . length $ (instanceList fSpec :: [Pattern])) <> " patterns) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- vpatterns fSpec]
                  <> "\n"
          )
