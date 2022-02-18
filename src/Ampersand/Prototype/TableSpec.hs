@@ -65,12 +65,12 @@ plug2TableSpec plug =
           if all (suitableAsKey . attType) (plugAttributes plug)
             then
               "PRIMARY KEY ("
-                <> T.intercalate ", " (NE.toList $ fmap (tshow . attName) (plugAttributes plug))
+                <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . attName) (plugAttributes plug))
                 <> ")"
             else ""
         (TblSQL {}, primFld) ->
           case attUse primFld of
-            PrimaryKey _ -> "PRIMARY KEY (" <> (tshow . attName) primFld <> ")"
+            PrimaryKey _ -> "PRIMARY KEY (" <> (doubleQuote . attName) primFld <> ")"
             ForeignKey c -> fatal ("ForeignKey " <> name c <> "not expected here!")
             PlainAttr -> ""
     }
@@ -185,11 +185,11 @@ tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec =
   createTableSql withComment tSpec :
     [ SqlQuerySimple
-        ( "CREATE INDEX " <> tshow (tsName tSpec <> "_" <> tshow i)
+        ( "CREATE INDEX " <> doubleQuote (tsName tSpec <> "_" <> tshow i)
             <> " ON "
-            <> tshow (tsName tSpec)
+            <> doubleQuote (tsName tSpec)
             <> " ("
-            <> (tshow . fsname $ fld)
+            <> doubleQuote (fsname fld)
             <> ")"
         )
       | (i, fld) <-
