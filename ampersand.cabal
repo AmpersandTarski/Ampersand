@@ -90,6 +90,7 @@ extra-source-files:
     outputTemplates/default.xwiki
     outputTemplates/default.zimwiki
     outputTemplates/README.md
+    testing/issue.adl
     testing/README.md
     testing/Sentinel/README.md
     testing/Sentinel/Tests/NoSentinel/Conjuncts.adl
@@ -162,6 +163,7 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testinfo.yaml
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
+    testing/Travis/testcases/FuncSpec/~$sue1275.docx
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
     testing/Travis/testcases/Misc/ArchiTest3.adl
