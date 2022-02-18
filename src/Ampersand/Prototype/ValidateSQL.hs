@@ -21,7 +21,7 @@ validateRulesSQL fSpec = do
     viols -> exitWith . ViolationsInDatabase . map stringify $ viols
   hSetBuffering stdout NoBuffering
 
-  logDebug "Initializing temporary database (this could take a while)"
+  logDebug "Initializing temporary database"
   succes <- createTempDatabase fSpec
   if succes
     then actualValidation
