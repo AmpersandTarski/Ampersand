@@ -828,8 +828,7 @@ rightAssociate combinator operator term =
 --- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef =
-        PNamedR <$> pNamedRel
-    <|> PBuiltInRel <$> pBuiltIn
+        PNamedR <$> (pNamedRel <|> pBuiltIn)
     <|> pid <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)
     <|> pfull <$> currPos <* pKey "V" <*> pMaybe pSign
     <|> Patm <$> currPos <*> pSingleton <*> pMaybe (pBrackets pConceptOneRef)
@@ -880,8 +879,8 @@ pNamedRel :: AmpParser P_NamedRel
 pNamedRel = PNamedRel <$> currPos <*> asText pVarid <*> pMaybe pSign
 
 --- NamedRel ::= Varid Signature?
-pBuiltIn :: AmpParser P_BuiltInRel
-pBuiltIn = PBuiltInRel <$> currPos <*> asText pBuiltInid <*> pMaybe pSign
+pBuiltIn :: AmpParser P_NamedRel
+pBuiltIn = PNamedRel <$> currPos <*> asText pBuiltInid <*> pMaybe pSign
 
 --- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign

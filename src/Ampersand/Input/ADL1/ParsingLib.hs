@@ -31,6 +31,7 @@ module Ampersand.Input.ADL1.ParsingLib
     pDoubleQuotedString,
     pAmpersandMarkup,
     pVarid,
+    pBuiltInid,
     pCrudString,
 
     -- * special parsers
@@ -219,6 +220,10 @@ pVarid =
         _ -> Nothing
     )
     <?> "lower case identifier"
+
+--- Varid ::= LowerChar AlphaNumericChar*
+pBuiltInid :: AmpParser String
+pBuiltInid = pOperator "<="
 
 -- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
 -- at most once. The order of the characters is free.
