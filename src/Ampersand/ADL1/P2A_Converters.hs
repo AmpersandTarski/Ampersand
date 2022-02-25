@@ -327,12 +327,13 @@ pCtx2aCtx
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [Representation]
-      allReprs = p_representations <> concatMap pt_Reprs p_patterns
+      allReprs = p_representations <> concatMap pt_Reprs p_patterns <>
+                 [ Repr OriginUnknown (PCpt "Num" NE.:| []) Integer]
       builtins :: [Relation] 
       builtins = [Relation
                     { decnm   = T.pack "<="
                     , decsgn  = sgn
-                    , decprps = Set.empty
+                    , decprps = Set.fromList [Asy,Trn,Rfx]
                     , decDefaults = Set.empty
                     , decprL  = ""
                     , decprM  = ""
@@ -351,17 +352,17 @@ pCtx2aCtx
         typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
-        multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
+        multitypologies <- traverse mkTypology (fmap Set.elems connectedConcepts) -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
         let reprOf cpt =
               fromMaybe
-                Object -- default representation is Object (sometimes called `ugly identifiers')
+                Object -- default representation is Object (formerly called `ugly identifiers')
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = (Map.map groupOnTp . Map.fromListWith (<>))
                       ([(name d, [EDcD d]) | d <- decls]<>[(name b, [EBui b]) | b <- builtins])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-        let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
+        let allConcs = Set.map aConcToType (concs decls) :: Set.Set Type
         return
           CI
             { ctxiGens = gns,
@@ -378,12 +379,12 @@ pCtx2aCtx
         where
           gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
 
-          connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect [] (map (Set.elems . concs) gns)
+          connectedConcepts :: [Set A_Concept] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
+          connectedConcepts = connect [] gns
 
-          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
+          mkTypeMap :: [Set A_Concept] -> [Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
-            f <$> traverse typeOfGroup groups
+            f <$> traverse typeOfGroup (fmap Set.elems groups)
               <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
             where
               f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
@@ -406,8 +407,8 @@ pCtx2aCtx
                       groupCondition :: (A_Concept, TType, Origin) -> (A_Concept, TType, Origin) -> Bool
                       groupCondition (cptA, typA, _) (cptB, typB, _) = cptA == cptB && typA == typB
                       thdOf3 (_, _, x) = x
-              conceptsOfGroups :: [A_Concept]
-              conceptsOfGroups = L.nub (concat groups)
+              conceptsOfGroups :: Set A_Concept
+              conceptsOfGroups = Set.unions groups
               conceptsOfReprs :: [A_Concept]
               conceptsOfReprs = L.nub $ map fstOf3 reprTrios
                 where
@@ -438,19 +439,13 @@ pCtx2aCtx
                     [] -> pure []
                     [t] -> pure [(cpt, t) | cpt <- grp]
                     _ -> mkMultipleTypesInTypologyError typeList
-          connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          connect typols gss =
-            case gss of
-              [] -> typols
-              x : xs -> connect (t : typols) rest
-                where
-                  (t, rest) = g' x xs
-                  g' a as = case L.partition (disjoint a) as of
-                    (_, []) -> (a, as)
-                    (hs', hs) -> g' (L.nub $ a <> concat hs) hs'
-                  disjoint :: Eq a => [a] -> [a] -> Bool
-                  disjoint ys = null . L.intersect ys
-
+          -- | connect produces the largest subsets of A_Concepts that are connected by classify statements
+          connect :: [Set A_Concept] -> [AClassify] -> [Set A_Concept]
+          connect parts (g:gs) = connect (concs g `Set.union` Set.unions parts' : rest) gs
+            where
+              (rest,parts')
+               = L.partition (\p-> Set.null (p `Set.intersection` concs g)) parts
+          connect parts [] = parts
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs =
             case filter (not . isSpecific) cs of
