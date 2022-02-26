@@ -304,7 +304,7 @@ pCtx2aCtx
                 ctxrrules = udefRoleRules',
                 ctxreprs = representationOf contextInfo,
                 ctxvs = viewdefs,
-                ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
+                ctxgs = mapMaybe (pClassify2aClassify conceptmap) (p_gens <> builtinGens),
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
                 ctxifcs = interfaces,
                 ctxps = purposes,
@@ -318,34 +318,64 @@ pCtx2aCtx
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
-      return actx
+      trace (T.pack $ "A_Context is built\n"<>show (concs actx)) $ return actx
     where
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
       cptMap = makeConceptMap allGens
       allGens :: [PClassify]
-      allGens = p_gens <> concatMap pt_gns p_patterns
+      allGens = p_gens <> concatMap pt_gns p_patterns <> builtinGens
+      builtinGens :: [PClassify]
+      builtinGens
+        = [ PClassify
+              { pos = OriginUnknown,
+                specific = PCpt "DATE",
+                generics = PCpt "NUM" NE.:| []
+              }
+          , PClassify
+              { pos = OriginUnknown,
+                specific = PCpt "INTEGER",
+                generics = PCpt "NUM" NE.:| []
+              }
+        ]
       allReprs :: [Representation]
-      allReprs = p_representations <> concatMap pt_Reprs p_patterns <>
-                 [ Repr OriginUnknown (PCpt "Num" NE.:| []) Integer]
-      builtins :: [Relation] 
-      builtins = [Relation
-                    { decnm   = T.pack "<="
-                    , decsgn  = sgn
-                    , decprps = Set.fromList [Asy,Trn,Rfx]
-                    , decDefaults = Set.empty
-                    , decprL  = ""
-                    , decprM  = ""
-                    , decprR  = ""
-                    , decMean = []
-                    , decfpos = Origin ("built-in relation ( <= "<>T.pack (show sgn)<>" )")
-                    , decusr  = False
-                    , decpat  = Nothing
-                    , dechash = hash sgn
-                    }]
-                    where sgn = Sign c c
-                          c = PlainConcept ("Num" NE.:| [])
+      allReprs = p_representations <> concatMap pt_Reprs p_patterns <> builtinReprs
+      builtinReprs =
+        [ Repr OriginUnknown (PCpt cname NE.:| []) Integer
+        | cname<-[ "ALPHANUMERIC"
+                 , "BIGALPHANUMERIC"
+                 , "HUGEALPHANUMERIC"
+                 , "PASSWORD"
+                 , "BINARY"
+                 , "BIGBINARY"
+                 , "HUGEBINARY"
+                 , "DATE"
+                 , "DATETIME"
+                 , "BOOLEAN"
+                 , "INTEGER"
+                 , "FLOAT"
+                 , "OBJECT"
+                 , "TYPEOFONE" ]
+        ]
+      builtinRels :: [Relation]
+      builtinRels =
+        [let sgn = Sign c c
+             c = PlainConcept ("Num" NE.:| [])
+         in Relation { decnm   = T.pack "<="
+                     , decsgn  = sgn
+                     , decprps = Set.fromList [Asy,Trn,Rfx]
+                     , decDefaults = Set.empty
+                     , decprL  = ""
+                     , decprM  = ""
+                     , decprR  = ""
+                     , decMean = []
+                     , decfpos = Origin ("built-in relation ( <= "<>T.pack (show sgn)<>" )")
+                     , decusr  = False
+                     , decpat  = Nothing
+                     , dechash = hash sgn
+                     }
+        ]
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
@@ -359,7 +389,7 @@ pCtx2aCtx
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = (Map.map groupOnTp . Map.fromListWith (<>))
-                      ([(name d, [EDcD d]) | d <- decls]<>[(name b, [EBui b]) | b <- builtins])
+                      ([(name d, [EDcD d]) | d <- decls]<>[(name b, [EBui b]) | b <- builtinRels])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.map aConcToType (concs decls) :: Set.Set Type
@@ -389,9 +419,7 @@ pCtx2aCtx
             where
               f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
               f typesOfGroups typesOfOthers =
-                concat typesOfGroups <> map stripOrigin (catMaybes typesOfOthers)
-              stripOrigin :: (A_Concept, TType, [Origin]) -> (A_Concept, TType)
-              stripOrigin (cpt, t, _) = (cpt, t)
+                concat typesOfGroups <> [ (cpt, t) | (cpt, t, _) <- catMaybes typesOfOthers ]
               reprTrios :: [(A_Concept, TType, Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where

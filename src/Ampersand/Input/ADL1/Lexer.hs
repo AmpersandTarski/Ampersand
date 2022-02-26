@@ -112,8 +112,6 @@ keywords =
         "REPRESENT",
         "TYPE"
       ]
-      ++ [ map toUpper $ show tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
-         ]
       ++
       -- Keywords for values of atoms:
       [ "TRUE",
