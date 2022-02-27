@@ -115,14 +115,14 @@ decl2assocOrAggr d =
         assmdcl = Just d
       }
 
-dclIsShown :: FSpec -> [A_Concept] -> Relation -> Bool
+dclIsShown :: FSpec -> Set A_Concept -> Relation -> Bool
 dclIsShown fSpec nodeConcepts d =
-  (not . isProp . EDcD) d
-    && ( (d `notElem` attribDcls fSpec)
-           || ( source d `elem` nodeConcepts
-                  && target d `elem` nodeConcepts
-                  && source d /= target d
-              )
+   (not . isProp . EDcD) d
+    && ( d `notElem` attribDcls fSpec ||
+         (  source d `elem` nodeConcepts
+         && target d `elem` nodeConcepts
+         && source d /= target d
+         )
        )
 
 instance CDAnalysable Pattern where
@@ -145,7 +145,7 @@ instance CDAnalysable Pattern where
             . ptdcs
         )
           pat
-      nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
+      nodeConcepts = Set.unions (map (tyCpts . typologyOf fSpec) entities)
 
 instance CDAnalysable FSpec where
   cdAnalysis grouped _ fSpec =
@@ -199,7 +199,7 @@ instance CDAnalysable FSpec where
             . vrels
         )
           fSpec
-      nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
+      nodeConcepts = Set.unions (map (tyCpts . typologyOf fSpec) entities)
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.

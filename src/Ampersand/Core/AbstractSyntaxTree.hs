@@ -1637,7 +1637,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
 data Typology = Typology
   { tyroot :: A_Concept, -- the most generic concept in the typology
-    tyCpts :: [A_Concept] -- all concepts, from generic to specific
+    tyCpts :: Set.Set A_Concept -- the subset of all concepts of which tyroot is the most generic
   }
   deriving (Show)
 

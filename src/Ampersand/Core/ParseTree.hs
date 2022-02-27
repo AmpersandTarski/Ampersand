@@ -101,7 +101,6 @@ data P_Context = PCtx
     ctx_ks :: ![P_IdentDef],
     -- | The MAINTAIN definitions defined in this context, outside the scope of patterns
     ctx_rrules :: ![P_RoleRule],
-    ctx_reprs :: ![P_Representation],
     -- | The view definitions defined in this context, outside the scope of patterns
     ctx_vs :: ![P_ViewDef],
     -- | The gen definitions defined in this context, outside the scope of patterns
@@ -206,8 +205,6 @@ data P_Pattern = P_Pat
     pt_RRuls :: ![P_RoleRule],
     -- | The concept definitions defined in this pattern
     pt_cds :: ![PConceptDef],
-    -- | The type into which concepts is represented
-    pt_Reprs :: ![P_Representation],
     -- | The identity definitions defined in this pattern
     pt_ids :: ![P_IdentDef],
     -- | The view definitions defined in this pattern
@@ -303,8 +300,7 @@ data PCDDef
 
 data P_Representation = Repr
   { pos :: Origin,
-    -- | the concepts
-    reprcpts :: NE.NonEmpty P_Concept,
+    reprcpts :: P_Concept,
     reprdom :: TType -- the type of the concept the atom is in
   }
   deriving (Show)
@@ -1273,7 +1269,6 @@ mergeContexts ctx1 ctx2 =
       ctx_cs = fromContextsKeepDoubles ctx_cs,
       ctx_ks = fromContextsKeepDoubles ctx_ks,
       ctx_rrules = fromContextsKeepDoubles ctx_rrules,
-      ctx_reprs = fromContextsKeepDoubles ctx_reprs,
       ctx_vs = fromContextsRemoveDoubles ctx_vs,
       ctx_gs = fromContextsKeepDoubles ctx_gs,
       ctx_ifcs = fromContextsRemoveDoubles ctx_ifcs,

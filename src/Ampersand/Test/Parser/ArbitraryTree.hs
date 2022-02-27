@@ -148,7 +148,6 @@ instance Arbitrary P_Context where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary
 
 instance Arbitrary MetaData where
   arbitrary = MetaData <$> arbitrary <*> safeStr <*> safeStr
@@ -159,7 +158,7 @@ instance Arbitrary P_RoleRule where
 instance Arbitrary P_Representation where
   arbitrary =
     Repr <$> arbitrary
-      <*> arbitrary `suchThat` noOne
+      <*> arbitrary
       <*> arbitrary
 
 instance Arbitrary TType where
@@ -175,7 +174,6 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
   arbitrary =
     P_Pat <$> arbitrary <*> identifier <*> arbitrary <*> arbitrary <*> arbitrary
-      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary

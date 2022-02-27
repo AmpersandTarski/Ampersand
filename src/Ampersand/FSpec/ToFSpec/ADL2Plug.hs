@@ -54,7 +54,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
           dLkpTbl = dclLookuptable
         }
       where
-        cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
+        cpts = (reverse . sortSpecific2Generic (gens context) . Set.toList . tyCpts) typ
 
         colNameMap :: [(Either A_Concept Relation, Text)]
         colNameMap = f [] (cpts, dcls)
@@ -288,7 +288,7 @@ typologies context =
   (multiKernels . ctxInfo $ context)
     <> [ Typology
            { tyroot = c,
-             tyCpts = [c]
+             tyCpts = Set.singleton c
            }
          | c <- Set.elems $ concs context Set.\\ concs (gens context)
        ]

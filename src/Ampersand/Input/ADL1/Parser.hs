@@ -54,10 +54,9 @@ pContext =
             ctx_rs = [p | CRul p <- ces], -- All user defined rules in this context, but outside patterns
             ctx_ds = [p | CRel (p, _) <- ces], -- The relations defined in this context, outside the scope of patterns
             ctx_cs = [c ("CONTEXT " <> nm) | CCon c <- ces], -- The concept definitions defined in this context, outside the scope of patterns
-            ctx_gs = concat [ys | CCfy ys <- ces], -- The Classify definitions defined in this context, outside the scope of patterns
+            ctx_gs = concat ([ys | CCfy ys <- ces]<>[r | CRep r <- ces]), -- The Classify definitions defined in this context, outside the scope of patterns
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
-            ctx_reprs = [r | CRep r <- ces],
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
@@ -95,7 +94,7 @@ data ContextElement
   | CCfy [PClassify]
   | CRel (P_Relation, [P_Population])
   | CCon (Text -> PConceptDef)
-  | CRep P_Representation
+  | CRep [PClassify]
   | Cm P_RoleRule
   | CIndx P_IdentDef
   | CView P_ViewDef
@@ -151,11 +150,10 @@ pPatternDef =
         { pos = pos',
           pt_nm = nm,
           pt_rls = [r | Pr r <- pes],
-          pt_gns = concat [ys | Py ys <- pes],
+          pt_gns = concat ([ys | Py ys <- pes]<>[x | Prep x <- pes]),
           pt_dcs = [d | Pd (d, _) <- pes],
           pt_RRuls = [rr | Pm rr <- pes],
           pt_cds = [c nm | Pc c <- pes],
-          pt_Reprs = [x | Prep x <- pes],
           pt_ids = [k | Pk k <- pes],
           pt_vds = [v | Pv v <- pes],
           pt_xps = [e | Pe e <- pes],
@@ -187,7 +185,7 @@ data PatElem
   | Pd (P_Relation, [P_Population])
   | Pm P_RoleRule
   | Pc (Text -> PConceptDef)
-  | Prep P_Representation
+  | Prep [PClassify]
   | Pk P_IdentDef
   | Pv P_ViewDef
   | Pe PPurpose
@@ -412,14 +410,16 @@ pConceptDef =
         <|> (PCDDefNew <$> pMeaning)
 
 --- P_Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
-pRepresentation :: AmpParser P_Representation
+pRepresentation :: AmpParser [PClassify]
 pRepresentation =
-  Repr <$> currPos
+  repr <$> currPos
     <* pKey "REPRESENT"
     <*> pConceptRef `sepBy1` pComma
     <* pKey "TYPE"
     <*> pAdlTType
-
+  where repr :: Origin -> NonEmpty P_Concept -> TType -> [PClassify]
+        repr orig cs tt =
+          [  PClassify {pos=orig, specific=c, generics=(Set.singleton . PCpt . showUnique) tt} | c<-NE.toList cs ] 
 --- AdlTType = ...<enumeration>
 pAdlTType :: AmpParser TType
 pAdlTType =
