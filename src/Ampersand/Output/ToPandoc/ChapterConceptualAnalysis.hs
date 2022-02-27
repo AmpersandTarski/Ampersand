@@ -49,7 +49,7 @@ chpConceptualAnalysis env lev fSpec =
       )
         <> purposes2Blocks env (purposesOf fSpec outputLang' fSpec) -- This explains the purpose of this context.
     pictures =
-      map pictOfPat (vpatterns fSpec)
+      map pictOfPat (instanceList fSpec)
         <> map pictOfConcept (Set.elems $ concs fSpec)
         <> map pictOfRule (Set.elems $ vrules fSpec)
     -----------------------------------------------------

@@ -21,7 +21,7 @@ validateRulesSQL fSpec = do
     viols -> exitWith . ViolationsInDatabase . map stringify $ viols
   hSetBuffering stdout NoBuffering
 
-  logDebug "Initializing temporary database (this could take a while)"
+  logDebug "Initializing temporary database"
   succes <- createTempDatabase fSpec
   if succes
     then actualValidation
@@ -112,7 +112,8 @@ validateExp ::
   ) ->
   RIO env (ValidationExp, Bool)
 validateExp fSpec total (vExp, i) = do
-  logSticky $ "Validating exprssions: " <> displayShow i <> " of " <> displayShow total
+  let (e, _) = vExp
+  logSticky . display $ "Validating expressions: " <> tshow i <> " of " <> tshow total <> " " <> showA e <> " (" <> tshow e <> ")."
   case vExp of
     (EDcD {}, _) -> do
       -- skip all simple relations

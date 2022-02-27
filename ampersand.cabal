@@ -157,6 +157,7 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/Issue1275.adl
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml

@@ -336,10 +336,10 @@ orderingByTheme env fSpec =
         dclsOfTheme = fmap dcl2dclCont nrelations,
         cptsOfTheme = fmap cpt2cptCont nconcepts
       }
-    | (pat, i, nrules, nrelations, nconcepts) <- L.zip5 (vpatterns fSpec) [0 ..] (NE.init nruless) (NE.init nrelationss) (NE.init nconceptss)
+    | (pat, i, nrules, nrelations, nconcepts) <- L.zip5 (instanceList fSpec) [0 ..] (NE.init nruless) (NE.init nrelationss) (NE.init nconceptss)
   ]
     <> [ Thm
-           { themeNr = length (vpatterns fSpec),
+           { themeNr = length (instanceList fSpec :: [Pattern]),
              patOfTheme = Nothing,
              rulesOfTheme = fmap rul2rulCont (NE.last nruless),
              dclsOfTheme = fmap dcl2dclCont (NE.last nrelationss),
@@ -360,7 +360,7 @@ orderingByTheme env fSpec =
     conceptss :: [[AConceptDef]]
     relationss :: [Relations]
     (ruless, conceptss, relationss) =
-      L.unzip3 [(ptrls pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
+      L.unzip3 [(ptrls pat, ptcds pat, ptdcs pat) | pat <- instanceList fSpec]
     numbering :: Int -> [[a]] -> [[Numbered a]]
     numbering n (xs : xss) = [Nr i x | (x, i) <- zip xs [n ..]] : numbering (n + length xs) xss
     numbering _ _ = []

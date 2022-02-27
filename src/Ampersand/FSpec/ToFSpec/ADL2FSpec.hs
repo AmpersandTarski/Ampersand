@@ -72,7 +72,7 @@ makeFSpec env context =
       allConcepts = fSpecAllConcepts,
       cptTType = representationOf contextinfo,
       fsisa = L.nub . concatMap genericAndSpecifics . gens $ context,
-      vpatterns = patterns context,
+      vpatterns = mergeByName . patterns $ context,
       vgens = gens context,
       vIndices = identities context,
       vviews = viewDefs context,
@@ -114,6 +114,29 @@ makeFSpec env context =
       isSignal = fIsSignal
     }
   where
+    mergeByName :: [Pattern] -> [Pattern]
+    mergeByName [] = []
+    mergeByName (h : tl) = h' : otherNamedPats
+      where
+        (sameNamePats, otherNamedPats) = L.partition (\pat -> name h == name pat) tl
+        h' = foldr merge h sameNamePats
+        merge p1 p2 =
+          A_Pat
+            { ptnm = name p1,
+              ptpos = ptpos p1,
+              ptend = ptend p1,
+              ptrls = ptrls p1 <> ptrls p2,
+              ptgns = ptgns p1 <> ptgns p2,
+              ptdcs = ptdcs p1 <> ptdcs p2,
+              ptrrs = ptrrs p1 <> ptrrs p2,
+              ptcds = ptcds p1 <> ptcds p2,
+              ptrps = ptrps p1 <> ptrps p2,
+              ptups = ptups p1 <> ptups p2,
+              ptids = ptids p1 <> ptids p2,
+              ptvds = ptvds p1 <> ptvds p2,
+              ptxps = ptxps p1 <> ptxps p2,
+              ptenfs = ptenfs p1 <> ptenfs p2
+            }
     fIsSignal :: Rule -> Bool
     fIsSignal = not . null . maintainersOf
 
