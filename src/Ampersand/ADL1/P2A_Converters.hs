@@ -337,7 +337,7 @@ pCtx2aCtx
                 generics = Set.fromList [PCpt "INTEGER", PCpt "NUM"]
               }
         ]
-      allReprs :: [Representation]
+      allReprs :: [P_Representation]  TODO: introduce A_Representation
       allReprs = p_representations <> concatMap pt_Reprs p_patterns <> builtinReprs
       builtinReprs =
         [ Repr OriginUnknown (PCpt cname NE.:| []) (ttype cname)
@@ -426,7 +426,7 @@ pCtx2aCtx
           connectedConcepts :: [Set A_Concept] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] gns
 
-          mkTypeMap :: [Set A_Concept] -> [Representation] -> Guarded [(A_Concept, TType)]
+          mkTypeMap :: [Set A_Concept] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
             f <$> traverse typeOfGroup (fmap Set.elems groups)
               <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
@@ -437,7 +437,7 @@ pCtx2aCtx
               reprTrios :: [(A_Concept, TType, Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
-                  toReprs :: Representation -> [(A_Concept, TType, Origin)]
+                  toReprs :: P_Representation -> [(A_Concept, TType, Origin)]
                   toReprs r = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
                   nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition

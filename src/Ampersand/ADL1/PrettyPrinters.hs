@@ -268,7 +268,7 @@ instance Pretty P_Population where
     where
       contents = list . map pretty
 
-instance Pretty Representation where
+instance Pretty P_Representation where
   pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
 
 instance Pretty TType where

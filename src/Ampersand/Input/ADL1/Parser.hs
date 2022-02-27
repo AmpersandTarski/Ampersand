@@ -77,6 +77,7 @@ pContext =
         <|> CCfy <$> pClassify
         <|> CRel <$> pRelationDef
         <|> CCon <$> pConceptDef
+        <|> CRep <$> pRepresentation
         <|> Cm <$> pRoleRule
         <|> Cm <$> pServiceRule
         <|> CIndx <$> pIndex
@@ -94,7 +95,7 @@ data ContextElement
   | CCfy [PClassify]
   | CRel (P_Relation, [P_Population])
   | CCon (Text -> PConceptDef)
-  | CRep Representation
+  | CRep P_Representation
   | Cm P_RoleRule
   | CIndx P_IdentDef
   | CView P_ViewDef
@@ -173,6 +174,7 @@ pPatElem =
     <|> Pm <$> pRoleRule
     <|> Pm <$> pServiceRule
     <|> Pc <$> pConceptDef
+    <|> Prep <$> pRepresentation
     <|> Pk <$> pIndex
     <|> Pv <$> pViewDef
     <|> Pe <$> pPurpose
@@ -185,7 +187,7 @@ data PatElem
   | Pd (P_Relation, [P_Population])
   | Pm P_RoleRule
   | Pc (Text -> PConceptDef)
-  | Prep Representation
+  | Prep P_Representation
   | Pk P_IdentDef
   | Pv P_ViewDef
   | Pe PPurpose
@@ -408,6 +410,34 @@ pConceptDef =
           <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
       )
         <|> (PCDDefNew <$> pMeaning)
+
+--- P_Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
+pRepresentation :: AmpParser P_Representation
+pRepresentation =
+  Repr <$> currPos
+    <* pKey "REPRESENT"
+    <*> pConceptRef `sepBy1` pComma
+    <* pKey "TYPE"
+    <*> pAdlTType
+
+--- AdlTType = ...<enumeration>
+pAdlTType :: AmpParser TType
+pAdlTType =
+  k Alphanumeric "ALPHANUMERIC"
+    <|> k BigAlphanumeric "BIGALPHANUMERIC"
+    <|> k HugeAlphanumeric "HUGEALPHANUMERIC"
+    <|> k Password "PASSWORD"
+    <|> k Binary "BINARY"
+    <|> k BigBinary "BIGBINARY"
+    <|> k HugeBinary "HUGEBINARY"
+    <|> k Date "DATE"
+    <|> k DateTime "DATETIME"
+    <|> k Boolean "BOOLEAN"
+    <|> k Integer "INTEGER"
+    <|> k Float "FLOAT"
+    <|> k Object "OBJECT"
+  where
+    k tt str = f <$> pKey str where f _ = tt
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].

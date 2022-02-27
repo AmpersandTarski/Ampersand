@@ -156,7 +156,7 @@ instance Arbitrary MetaData where
 instance Arbitrary P_RoleRule where
   arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 identifier
 
-instance Arbitrary Representation where
+instance Arbitrary P_Representation where
   arbitrary =
     Repr <$> arbitrary
       <*> arbitrary `suchThat` noOne

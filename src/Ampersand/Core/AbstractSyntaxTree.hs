@@ -49,7 +49,7 @@ module Ampersand.Core.AbstractSyntaxTree
     ShowWithAliases (..),
     Meaning (..),
     A_RoleRule (..),
-    Representation (..),
+    P_Representation (..),
     TType (..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
@@ -101,7 +101,7 @@ import Ampersand.Core.ParseTree
     P_Concept (..),
     PairView (..),
     PairViewSegment (..),
-    Representation (..),
+    P_Representation (..),
     Role (..),
     SrcOrTgt (..),
     TType (..),
@@ -194,7 +194,7 @@ data Pattern = A_Pat
     -- | The concept definitions that are declared in this pattern
     ptcds :: ![AConceptDef],
     -- | The concept definitions that are declared in this pattern
-    ptrps :: ![Representation],
+    ptrps :: ![P_Representation],
     -- | The user defined populations in this pattern
     ptups :: ![Population],
     -- | The identity definitions defined in this pattern
@@ -1341,7 +1341,7 @@ data ContextInfo = CI
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: [Typology],
     -- | a list of all Representations
-    reprList :: [Representation],
+    reprList :: [P_Representation],
     -- | a map of declarations and the corresponding types
     declDisambMap :: Map.Map Text (Map.Map SignOrd Expression),
     -- | types not used in any declaration
@@ -1606,7 +1606,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
         message :: Show x => Origin -> x -> Text
         message orig x =
           T.intercalate "\n    " $
-            [ "Representation mismatch",
+            [ "P_Representation mismatch",
               "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
               "as representation of an atom in concept `" <> name c <> "`.",
               "However, the representation-type of that concept is " <> implicitly,
@@ -1614,7 +1614,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             ]
               <> example
           where
-            c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
+            c = fromMaybe (fatal "P_Representation mismatch without concept known should not happen.") mCpt
             implicitly = if typ == Object then "(implicitly) " else ""
             example :: [Text]
             example = case typ of

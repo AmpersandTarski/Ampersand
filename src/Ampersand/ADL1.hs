@@ -78,7 +78,7 @@ import Ampersand.Core.AbstractSyntaxTree
     Purpose (..),
     Relation (..),
     Relations,
-    Representation (..),
+    P_Representation (..),
     Rule (..),
     RuleKind (..),
     Rules,
