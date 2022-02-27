@@ -6,103 +6,116 @@ on:
       - "**" # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
+  hlint:
+    name: Check for code sanity with hlint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v2
+      - name: Setup hlint
+        uses: rwe/actions-hlint-setup@v1
+      - name: Run hlint
+        uses: rwe/actions-hlint-run@v2
+
   build-and-test-docker:
     name: Build with Docker
     runs-on: ubuntu-latest
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Prepare for docker
-      run: |
-        echo Running on branch ${GITHUB_REF##*/}
-        docker version
+      - name: Prepare for docker
+        run: |
+          echo Running on branch ${GITHUB_REF##*/}
+          docker version
 
-    - name: Build final image
-      run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+      - name: Build final image
+        run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
 
-    # For main branch push latest to DockerHub
-    - name: Login to DockerHub
-      if: github.ref == 'refs/heads/main'
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Push latest
-      if: github.ref == 'refs/heads/main'
-      run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
+      # For main branch push latest to DockerHub
+      - name: Login to DockerHub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+      - name: Push latest
+        if: github.ref == 'refs/heads/main'
+        run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
 
   build-and-test-ubuntu:
     name: Build and test on ubuntu-latest 🏗 🧪
     runs-on: ubuntu-latest
     steps:
-      - 
-        name: Checkout project contents 📡
-        uses: actions/checkout@v2   # technisch is dit een verwijzing naar de repo "checkout" van de github user "actions"
-      - 
-        name: Use cache when available 📦
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v2 # technisch is dit een verwijzing naar de repo "checkout" van de github user "actions"
+      - name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
-      - 
-        name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
+      - name: Set up Mariadb 🧰
+        uses: shogo82148/actions-setup-mysql@v1
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: true  # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
-          hlint: true
+          mysql-version: "mariadb-10.6"
+      - name: Build and test 🏗 🧪
+        uses: freckle/stack-action@v3 # stack-action does all these steps: dependencies, build, test.
+        with:
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
     runs-on: macos-latest
     steps:
-      - 
-        name: Checkout project contents 📡
+      - name: Checkout project contents 📡
         uses: actions/checkout@v2
-      - 
-        name: Use cache when available 📦
+      - name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
-      - 
-        name: Build and test  🏗 🧪
-        uses: freckle/stack-action@main
+      - name: Set up Mariadb 🧰
+        uses: shogo82148/actions-setup-mysql@v1
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: true
+          mysql-version: "mariadb-10.6"
+      - name: Build and test  🏗 🧪
+        uses: freckle/stack-action@v3
+        with:
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
     runs-on: windows-latest
     steps:
-      - 
-        name: Checkout project contents 📡
+      - name: Checkout project contents 📡
         uses: actions/checkout@v2
-      - 
-        name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
+      - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
         uses: actions/cache@v2.1.3
         # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
         with:
-          path: | 
+          path: |
             ~/.ghc
             ~/.stack
             ~/.stack-work
           key: ${{ runner.os }}-stack
-      - 
-        name: Set up MySQL 🧰
+      - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: '8.0'
-      - 
-        name: Setup PHP 🧰
+          mysql-version: "mariadb-10.6"
+      - name: Setup PHP 🧰
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.0'
+          php-version: "8.0"
           extensions: mysqli
-      - 
-        name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main
+      - name: Build and test 🏗 🧪
+        uses: freckle/stack-action@v3
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: false
-
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@v1
+        with:
+          weeder: true

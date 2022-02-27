@@ -20,9 +20,8 @@ createTablePHP tSpec =
   map ("// " <>) (tsCmnt tSpec)
     <> [
          -- Drop table if it already exists
-         "if($columns = mysqli_query($DB_link, " <> queryAsPHP (showColumsSql tSpec) <> ")){",
-         "    mysqli_query($DB_link, " <> queryAsPHP (dropTableSql tSpec) <> ");",
-         "}"
+         "mysqli_query($DB_link, " <> queryAsPHP (dropTableIfExistsSql tSpec) <> ");",
+         ""
        ]
     <> [ "$sql=" <> queryAsPHP (createTableSql False tSpec) <> ";",
          "mysqli_query($DB_link,$sql);",
@@ -60,18 +59,23 @@ performQuery dbNm queryStr = do
       connectToMySqlServerPHP (Just dbNm)
         <> [ "$sql=" <> queryAsPHP queryStr <> ";",
              "$result=mysqli_query($DB_link,$sql);",
-             "if(!$result)",
+             "if(!$result) {",
              "  die('Error : Connect to server failed'.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
+             "}",
              "$rows=Array();",
              "  while ($row = mysqli_fetch_array($result)) {",
              "    $rows[]=$row;",
              "    unset($row);",
              "  }",
              "echo '[';",
-             "for ($i = 0; $i < count($rows); $i<>) {",
-             "  if ($i==0) echo ''; else echo ',';",
-             "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
-             "}",
+             "  for ($i = 0; $i < count($rows); $i++) {",
+             "    if ($i==0) { ",
+             "      echo ''; ",
+             "    } else { ",
+             "      echo ',';",
+             "    };",
+             "    echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';",
+             "  }",
              "echo ']';"
            ]
 
@@ -88,10 +92,9 @@ executePHPStr phpStr = do
   let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
   liftIO $ createDirectoryIfMissing True (takeDirectory phpPath)
   writeFileUtf8 phpPath phpStr
-
   executePHP phpPath
 
-executePHP :: FilePath -> RIO env Text
+executePHP :: HasLogFunc env => FilePath -> RIO env Text
 executePHP phpPath = do
   let cp =
         (shell command)
@@ -100,7 +103,16 @@ executePHP phpPath = do
       inputFile = phpPath
       outputFile = inputFile <> "Result"
       command = "php " <> show inputFile <> " > " <> show outputFile
-  _ <- liftIO $ readCreateProcess cp ""
+      errorHandler :: HasLogFunc env => IOException -> RIO env String
+      errorHandler err = do
+        logError . display $ "Could not execute PHP: " <> tshow err
+        fileContents <- readUTF8File phpPath
+        mapM_ (logError . display) $
+          case fileContents of
+            Left msg -> msg
+            Right txt -> addLineNumbers . T.lines $ txt
+        return "ERROR"
+  _ <- liftIO (readCreateProcess cp "") `catch` errorHandler
   result <- readUTF8File outputFile
   case result of
     Right content -> do
@@ -110,6 +122,12 @@ executePHP phpPath = do
       exitWith . PHPExecutionFailed $
         "PHP execution failed:" :
         fmap ("  " <>) err
+
+addLineNumbers :: [Text] -> [Text]
+addLineNumbers = zipWith (curry withNumber) [0 ..]
+  where
+    withNumber :: (Int, Text) -> Text
+    withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
 
 showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
@@ -121,8 +139,8 @@ connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
   [ "// Try to connect to the MySQL server",
     "global $DB_host,$DB_user,$DB_pass;",
-    "$DB_host='root';",
-    "$DB_user='ampersand';",
+    "$DB_host='127.0.0.1';",
+    "$DB_user='root';",
     "$DB_pass='';",
     ""
   ]
@@ -178,15 +196,10 @@ createTempDatabase fSpec = do
               result,
               "The statements:"
             ]
-              <> lineNumbers phpStr
+              <> addLineNumbers phpStr
 
   return (T.null result)
   where
-    lineNumbers :: [Text] -> [Text]
-    lineNumbers = zipWith (curry withNumber) [1 ..]
-      where
-        withNumber :: (Int, Text) -> Text
-        withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
     phpStr :: [Text]
     phpStr =
       connectToMySqlServerPHP Nothing
@@ -198,18 +211,22 @@ createTempDatabase fSpec = do
              "       if(!$result)",
              "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
              "",
-             "    /* file_format = Barracuda is required for long columns */",
-             "    $sql='SET GLOBAL innodb_file_format = `Barracuda`';",
-             "    $result=mysqli_query($DB_link, $sql);",
-             "       if(!$result)",
-             "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
-             "",
-             "    /* large_prefix gives max single-column indices of 3072 bytes = win! */",
-             "    $sql='SET GLOBAL innodb_large_prefix = true';",
-             "    $result=mysqli_query($DB_link, $sql);",
-             "       if(!$result)",
-             "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
-             "",
+             --             "    /* file_format = Barracuda is required for long columns */",
+             --             "    /* Since MariaDB 10.2, the default is Barracuda. ",
+             --             "    $sql='SET GLOBAL innodb_file_format = `Barracuda`';",
+             --             "    $result=mysqli_query($DB_link, $sql);",
+             --             "       if(!$result)",
+             --             "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
+             --             "    */",
+             --             "",
+             --             "    /* large_prefix gives max single-column indices of 3072 bytes = win! */",
+             --             "    /* Since MariaDB 10.2, the default is Barracuda. The innodb_large_prefix setting has become obsolete.",
+             --             "    $sql='SET GLOBAL innodb_large_prefix = true';",
+             --             "    $result=mysqli_query($DB_link, $sql);",
+             --             "       if(!$result)",
+             --             "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');",
+             --             "    */",
+             --             "",
              "$DB_name='" <> tempDbName fSpec <> "';",
              "// Drop the database if it exists",
              "$sql=" <> queryAsPHP dropDB <> ";",
@@ -243,7 +260,7 @@ createTempDatabase fSpec = do
         dropDB :: SqlQuery
         dropDB =
           SqlQuerySimple $
-            "DROP DATABASE " <> singleQuote (tempDbName fSpec)
+            "DROP DATABASE IF EXISTS " <> singleQuote (tempDbName fSpec)
         createDB :: SqlQuery
         createDB =
           SqlQuerySimple $

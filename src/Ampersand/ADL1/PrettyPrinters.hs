@@ -7,7 +7,7 @@ module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
 import Ampersand.Basics hiding (view, (<$>))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
-import RIO.Char (toUpper)
+import RIO.Char (isLetter, toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -57,7 +57,7 @@ isId xs =
     Nothing -> False
     Just (h, _) -> T.all isIdChar xs && isFirstIdChar h && xs `notElem` map T.pack keywords
       where
-        isFirstIdChar x = elem x $ "_" ++ ['a' .. 'z'] ++ ['A' .. 'Z']
+        isFirstIdChar x = x == '_' || isLetter x
         isIdChar x = isFirstIdChar x || elem x ['0' .. '9']
 
 isUpperId :: Text -> Bool

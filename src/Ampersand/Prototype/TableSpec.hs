@@ -5,7 +5,7 @@ module Ampersand.Prototype.TableSpec
     getTableName,
     plug2TableSpec,
     tableSpec2Queries,
-    dropTableSql,
+    dropTableIfExistsSql,
     showColumsSql,
     createTableSql,
     insertQuery,
@@ -65,12 +65,12 @@ plug2TableSpec plug =
           if all (suitableAsKey . attType) (plugAttributes plug)
             then
               "PRIMARY KEY ("
-                <> T.intercalate ", " (NE.toList $ fmap (tshow . attName) (plugAttributes plug))
+                <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . attName) (plugAttributes plug))
                 <> ")"
             else ""
         (TblSQL {}, primFld) ->
           case attUse primFld of
-            PrimaryKey _ -> "PRIMARY KEY (" <> (tshow . attName) primFld <> ")"
+            PrimaryKey _ -> "PRIMARY KEY (" <> (doubleQuote . attName) primFld <> ")"
             ForeignKey c -> fatal ("ForeignKey " <> name c <> "not expected here!")
             PlainAttr -> ""
     }
@@ -130,10 +130,10 @@ showColumsSql tSpec =
   SqlQuerySimple $
     "SHOW COLUMNS FROM " <> (doubleQuote . tsName $ tSpec)
 
-dropTableSql :: TableSpec -> SqlQuery
-dropTableSql tSpec =
+dropTableIfExistsSql :: TableSpec -> SqlQuery
+dropTableIfExistsSql tSpec =
   SqlQuerySimple $
-    "DROP TABLE " <> (doubleQuote . tsName $ tSpec)
+    "DROP TABLE IF EXISTS " <> (doubleQuote . tsName $ tSpec)
 
 fld2AttributeSpec :: SqlAttribute -> AttributeSpec
 fld2AttributeSpec att =
@@ -185,11 +185,11 @@ tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec =
   createTableSql withComment tSpec :
     [ SqlQuerySimple
-        ( "CREATE INDEX " <> tshow (tsName tSpec <> "_" <> tshow i)
+        ( "CREATE INDEX " <> doubleQuote (tsName tSpec <> "_" <> tshow i)
             <> " ON "
-            <> tshow (tsName tSpec)
+            <> doubleQuote (tsName tSpec)
             <> " ("
-            <> (tshow . fsname $ fld)
+            <> doubleQuote (fsname fld)
             <> ")"
         )
       | (i, fld) <-
