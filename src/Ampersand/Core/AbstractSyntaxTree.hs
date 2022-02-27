@@ -575,8 +575,8 @@ data ViewSegmentPayLoad
   deriving (Eq, Show)
 
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
---   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
---   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
+--   CLASSIFY Employee ISA Person       translates to   Isa orig (C "Person") (C "Employee")          via   PClassify orig (PCpt "Person") [PCpt "Person") (PCpt "Employee"]
+--   CLASSIFY Eagle IS Bird/\Predator   translates to   IsE orig (C "Eagle") [C "Bird",C "Predator"]  via   PClassify orig (PCpt "Eagle") [PCpt "Bird",PCpt "Predator"]
 data AClassify
   = Isa
       { genpos :: Origin,
@@ -595,7 +595,7 @@ data AClassify
   deriving (Typeable)
 
 instance Ord AClassify where
-  -- subjective choice: Isa > IsE
+  -- arbitrary choice: Isa > IsE
   compare a b = case (a, b) of
     (Isa {}, Isa {}) -> compare (genspc a, gengen a) (genspc b, gengen b)
     (Isa {}, IsE {}) -> GT

@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Ampersand.Core.A2P_Converters
   ( aAtomValue2pAtomValue,
@@ -185,13 +186,13 @@ aClassify2pClassify gen =
       PClassify
         { pos = genpos gen,
           specific = aConcept2pConcept (genspc gen),
-          generics = aConcept2pConcept (gengen gen) NE.:| []
+          generics = (Set.singleton . aConcept2pConcept . gengen) gen
         }
     IsE {} ->
       PClassify
         { pos = genpos gen,
           specific = aConcept2pConcept (genspc gen),
-          generics = fmap aConcept2pConcept . genrhs $ gen
+          generics = (Set.fromList . NE.toList) (aConcept2pConcept <$> genrhs gen)
         }
 
 aInterface2pInterface :: Interface -> P_Interface

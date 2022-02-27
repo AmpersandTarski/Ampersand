@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Ampersand.Core.ShowAStruct (AStruct (..)) where
 
 import Ampersand.Basics

@@ -186,7 +186,7 @@ addRelations pCtx = enrichedContext
     invGen :: [(P_Concept, Set.Set P_Concept)] -- each pair contains a concept with all of its specializations
     invGen =
       [ (fst (NE.head cl), Set.fromList spcs)
-        | cl <- eqCl fst [(g, specific gen) | gen <- ctx_gs pCtx, g <- NE.toList (generics gen)],
+        | cl <- eqCl fst [(g, specific gen) | gen <- ctx_gs pCtx, g <- Set.toList (generics gen)],
           g <- [fst (NE.head cl)],
           spcs <- [[snd c | c <- NE.toList cl, snd c /= g]],
           not (null spcs)
@@ -200,7 +200,7 @@ addRelations pCtx = enrichedContext
           <> [tgt' | P_RelPopu {p_tgt = tgt} <- ctx_pops pCtx, Just tgt' <- [tgt]]
           <> map sourc declaredRelations
           <> map targt declaredRelations
-          <> concat [specific gen : NE.toList (generics gen) | gen <- ctx_gs pCtx]
+          <> concat [specific gen : Set.elems (generics gen) | gen <- ctx_gs pCtx]
     pops = computeConceptPopulations (ctx_pops pCtx <> [p | pat <- ctx_pats pCtx, p <- pt_pop pat]) -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.

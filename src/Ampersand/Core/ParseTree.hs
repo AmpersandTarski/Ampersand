@@ -1187,12 +1187,15 @@ instance Flippable P_Sign where
         pTgt = pSrc sgn
       }
 
+-- | PClassify o s gs means \(atoms(s)=\bigcap(map atoms gs)\)
+--   So, `CLASSIFY S ISA G`         translates (roughly) to   PClassify o S {G,S}
+--   and `CLASSIFY S IS G/\K/\L`    translates (roughly) to   PClassify o S {G,K,L}
 data PClassify = PClassify
   { pos :: Origin,
     -- | Left hand side concept expression
     specific :: P_Concept,
     -- | Right hand side concept expression
-    generics :: NE.NonEmpty P_Concept
+    generics :: Set.Set P_Concept
   }
   deriving (Show)
 

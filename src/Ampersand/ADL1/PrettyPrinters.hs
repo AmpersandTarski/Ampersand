@@ -408,14 +408,11 @@ instance Pretty P_Sign where
   pretty (P_Sign src tgt) = brackets (pretty src <> text "*" <> pretty tgt)
 
 instance Pretty PClassify where
-  pretty p =
-    case p of
-      PClassify _ spc gen ->
-        text "CLASSIFY" <+> pretty spc
-          <+> ( case (NE.length gen, NE.filter (spc /=) gen) of
-                  (2, [x]) -> text "ISA" <~> x
-                  _ -> text "IS" <+> separate "/\\" (NE.toList gen)
-              )
+  pretty (PClassify _ spc gens) =
+    text "CLASSIFY" <+> pretty spc <+>
+    if spc `Set.member` gens && Set.size gens==2
+    then text "ISA" <+> separate "/\\" (filter (/=spc) (Set.toList gens))
+    else text "IS" <+> separate "/\\" (Set.toList gens)
 
 instance Pretty Lang where
   pretty x = text "IN" <+> (text . map toUpper . show $ x)

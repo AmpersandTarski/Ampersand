@@ -17,7 +17,6 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
@@ -238,10 +237,8 @@ pClassify =
           PClassify
             { pos = p,
               specific = s,
-              generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
+              generics = Set.fromList (if isISA then s:rhs else rhs)
             }
-    --- Cterm ::= Cterm1 ('/\' Cterm1)*
-    --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
     pCterm = concat <$> pCterm1 `sepBy1` pOperator "/\\"
     pCterm1 =
       pure <$> pConceptRef

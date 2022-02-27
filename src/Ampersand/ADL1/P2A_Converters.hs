@@ -1,6 +1,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
@@ -29,6 +30,8 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import qualified RIO.NonEmpty.Partial as PARTIAL
+import qualified RIO.Set.Partial as PartialSet
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -304,7 +307,7 @@ pCtx2aCtx
                 ctxrrules = udefRoleRules',
                 ctxreprs = representationOf contextInfo,
                 ctxvs = viewdefs,
-                ctxgs = mapMaybe (pClassify2aClassify conceptmap) (p_gens <> builtinGens),
+                ctxgs = pClassify2aClassify conceptmap <$> (p_gens <> builtinGens),
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
                 ctxifcs = interfaces,
                 ctxps = purposes,
@@ -330,19 +333,14 @@ pCtx2aCtx
       builtinGens
         = [ PClassify
               { pos = OriginUnknown,
-                specific = PCpt "DATE",
-                generics = PCpt "NUM" NE.:| []
-              }
-          , PClassify
-              { pos = OriginUnknown,
                 specific = PCpt "INTEGER",
-                generics = PCpt "NUM" NE.:| []
+                generics = Set.fromList [PCpt "INTEGER", PCpt "NUM"]
               }
         ]
       allReprs :: [Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns <> builtinReprs
       builtinReprs =
-        [ Repr OriginUnknown (PCpt cname NE.:| []) Integer
+        [ Repr OriginUnknown (PCpt cname NE.:| []) (ttype cname)
         | cname<-[ "ALPHANUMERIC"
                  , "BIGALPHANUMERIC"
                  , "HUGEALPHANUMERIC"
@@ -358,6 +356,22 @@ pCtx2aCtx
                  , "OBJECT"
                  , "TYPEOFONE" ]
         ]
+        where
+          ttype :: Text -> TType
+          ttype "ALPHANUMERIC" = Alphanumeric
+          ttype "BIGALPHANUMERIC" = BigAlphanumeric
+          ttype "HUGEALPHANUMERIC" = HugeAlphanumeric
+          ttype "PASSWORD" = Password
+          ttype "BINARY" = Binary
+          ttype "BIGBINARY" = BigBinary
+          ttype "HUGEBINARY" = HugeBinary
+          ttype "DATE" = Date
+          ttype "DATETIME" = DateTime
+          ttype "BOOLEAN" = Boolean
+          ttype "INTEGER" = Integer
+          ttype "FLOAT" = Float
+          ttype "OBJECT" = Object
+          ttype _ = TypeOfOne
       builtinRels :: [Relation]
       builtinRels =
         [let sgn = Sign c c
@@ -407,7 +421,7 @@ pCtx2aCtx
               defaultFormat = deffrmtCtxt
             }
         where
-          gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
+          gns = pClassify2aClassify conceptmap <$> allGens
 
           connectedConcepts :: [Set A_Concept] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] gns
@@ -510,12 +524,12 @@ pCtx2aCtx
       -- the genLattice is the resulting optimized structure
       genRules :: [(Set.Set Type, Set.Set Type)] -- SJ: Why not [(NE.NonEmpty Type, NE.NonEmpty Type)] ?
       genRules =
-        [ ( Set.fromList [pConcToType . specific $ x],
-            Set.fromList . NE.toList . NE.map pConcToType . generics $ x
+        [ ( (Set.singleton . pConcToType . specific) x,
+            Set.map pConcToType (generics x)
           )
           | x <- allGens
         ]
-
+      completeRules :: [(Set Type, Set Type)]
       completeRules =
         genRules
           <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
@@ -547,29 +561,21 @@ pCtx2aCtx
       genLattice :: Op1EqualitySystem Type
       genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-      pClassify2aClassify :: ConceptMap -> PClassify -> Maybe AClassify
+      -- | De semantiek van `PClassify _ s gs` is \(atoms(s)=\bigcup(map atoms gs)\).
+      pClassify2aClassify :: ConceptMap -> PClassify -> AClassify
       pClassify2aClassify fun pg =
-        case NE.tail (generics pg) of
-          [] -> case filter (/= specCpt) [pCpt2aCpt fun . NE.head $ generics pg] of
-            [] -> Nothing
-            h : _ ->
-              Just
-                Isa
-                  { genpos = origin pg,
-                    gengen = h,
-                    genspc = specCpt
-                  }
-          _ -> case NE.filter (/= specCpt) . fmap (pCpt2aCpt fun) $ generics pg of
-            [] -> Nothing
-            h : tl ->
-              Just
-                IsE
-                  { genpos = origin pg,
-                    genrhs = h NE.:| tl,
-                    genspc = specCpt
-                  }
+        if specific pg `Set.member` generics pg && Set.size (generics pg)==2
+        then Isa { genpos = origin pg,
+                   gengen = (PartialSet.elemAt 0 . Set.filter (/= specCpt)) genCpts, -- elemAt 0 is safe because Set.size (generics pg)==2
+                   genspc = specCpt
+                 }
+        else IsE { genpos = origin pg,
+                   genrhs = (PARTIAL.fromList . Set.toList) genCpts,
+                   genspc = specCpt
+                 }
         where
           specCpt = pCpt2aCpt fun $ specific pg
+          genCpts = Set.map (pCpt2aCpt fun) (generics pg)
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept x = UserConcept (name x)
@@ -974,7 +980,7 @@ pCtx2aCtx
                 ptpos = origin ppat,
                 ptend = pt_end ppat,
                 ptrls = Set.fromList rules',
-                ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> pt_gns ppat,
+                ptgns = pClassify2aClassify (conceptMap ci) <$> pt_gns ppat,
                 ptdcs = Set.fromList relations,
                 ptrrs = roleRules,
                 ptcds = conceptdefs,
