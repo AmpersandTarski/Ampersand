@@ -329,10 +329,7 @@ pCtx2aCtx
       allGens = p_gens <> concatMap pt_gns p_patterns
       allConcs = (Set.unions . map pRel2concs) allDecls
       pRel2concs :: P_Relation -> Set A_Concept
-      pRel2concs pRel = Set.fromList [sourc pRel, targt pRel]
-       where
-         sourc = pCpt2aCpt . pSrc . dec_sign
-         targt = pCpt2aCpt . pTgt . dec_sign
+      pRel2concs  = concs . pSign2aSign pCpt2aCpt . dec_sign
       allDecls :: [P_Relation]
       allDecls = p_relations <> concatMap pt_dcs p_patterns
       allReprs :: [P_Representation]  -- TODO: introduce A_Representation
@@ -516,7 +513,7 @@ pCtx2aCtx
           declMap = declDisambMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
-        if givenType `elem` findExact (trace (tshow genLattice) genLattice) (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
+        if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 

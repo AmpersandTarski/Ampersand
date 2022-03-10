@@ -407,7 +407,8 @@ doOrDie theAction = do
   case mFSpec of
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
-      trace ("FSpec is built.\n"<>showA (originalContext a)) theAction a
+      {- trace ("FSpec is built.\n"<>showA (originalContext a)) -}
+      theAction a
     Errors err ->
       exitWith . NoValidFSpec
         . T.lines

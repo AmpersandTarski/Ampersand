@@ -885,6 +885,7 @@ nonSpecialSelectExpr fSpec expr =
                   bseWhr = Just (notNull cAtt)
                 }
     (EDcD d) -> selectRelation fSpec d
+    (EBui d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->
       case e of
