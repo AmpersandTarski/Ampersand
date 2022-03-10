@@ -74,10 +74,9 @@ getGroups (ES1 tran _ imap) =
       where
         overlap = IntMap.intersection allElems (IntMap.fromSet id im) -- overlap between im and the previously treated elements
         oldKeys = IntMap.elems overlap -- sets to which the overlapping items belong
-        newKey = head oldKeys -- get any key name
-          where
-            head [] = fatal "head used on empty list."
-            head (x : _) = x
+        newKey = case oldKeys of -- get any key name
+                  x:_ -> x
+                  _   -> fatal "head used on empty list."
         oldKeySet = IntSet.fromList oldKeys -- remove duplicates, provide efficient lookup
         -- newRev' is all items that will remain the same
         -- newItm' is all (old) items that must be renamed
@@ -204,7 +203,7 @@ data Op1EqualitySystem a
               IntSet.IntSet -- add this set
             )
           ]
-      )
+      ) deriving Show
 
 -- TODO: this function can be optimised a lot
 reverseMap :: (Ord a) => [(a, [Int])] -> RevMap a

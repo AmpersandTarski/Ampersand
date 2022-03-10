@@ -22,7 +22,6 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Data.Hashable
-import Data.List (head)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -264,6 +263,7 @@ pCtx2aCtx
       ctx_cs = p_conceptdefs,
       ctx_ks = p_identdefs,
       ctx_rrules = p_roleRules,
+      ctx_reprs = p_representations,
       ctx_vs = p_viewdefs,
       ctx_gs = p_gens,
       ctx_ifcs = p_interfaces,
@@ -275,16 +275,16 @@ pCtx2aCtx
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
-      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
+      uniqueNames "pattern" p_patterns   -- Enforce that chapters in the documentation have unique names
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
-      uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
+      uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns -- Rule names must identify the rule within this context.
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
-      uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
+      uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns -- because an identity can be referred to by its name.
       identdefs <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
-      uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
+      uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns -- because a view definition can be referred to by its name.
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
-      uniqueNames "interface" p_interfaces
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      uniqueNames "interface" p_interfaces -- because an interface can be referred to by its name.
+      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  Note: there are no interfaces inside patterns.
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -305,7 +305,7 @@ pCtx2aCtx
                 ctxrrules = udefRoleRules',
                 ctxreprs = representationOf contextInfo,
                 ctxvs = viewdefs,
-                ctxgs = pClassify2aClassify <$> (p_gens <> builtinGens),
+                ctxgs = pClassify2aClassify <$> p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
                 ctxifcs = interfaces,
                 ctxps = purposes,
@@ -316,99 +316,60 @@ pCtx2aCtx
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
-      checkInterfaceCycles actx -- Check that interface references are not cyclic
+      checkInterfaceCycles actx -- Check that interface references are not cyclic (SJ: why should that be forbidden?)
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
-      trace (T.pack $ "A_Context is built\n"<>show (concs actx)) $ return actx
+      return actx
     where
-      concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
+      concGroups = getGroups genLatticeIncomplete :: [[Type]]
       pCpt2aCpt = makeConceptMap allGens
       allGens :: [PClassify]
-      allGens = p_gens <> concatMap pt_gns p_patterns <> builtinGens
-      builtinGens :: [PClassify]
-      builtinGens
-        = [ PClassify
-              { pos = OriginUnknown,
-                specific = PCpt "INTEGER",
-                generics = Set.fromList [PCpt "INTEGER", PCpt "NUM"]
-              }
-        ]
-      builtinReprs :: [P_Representation]  -- TODO: introduce A_Representation
-      builtinReprs =
-        [ Repr OriginUnknown (PCpt cname) (ttype cname)
-        | cname<-[ "ALPHANUMERIC"
-                 , "BIGALPHANUMERIC"
-                 , "HUGEALPHANUMERIC"
-                 , "PASSWORD"
-                 , "BINARY"
-                 , "BIGBINARY"
-                 , "HUGEBINARY"
-                 , "DATE"
-                 , "DATETIME"
-                 , "BOOLEAN"
-                 , "INTEGER"
-                 , "FLOAT"
-                 , "OBJECT"
-                 , "TYPEOFONE" ]
-        ]
-        where
-          ttype :: Text -> TType
-          ttype "ALPHANUMERIC" = Alphanumeric
-          ttype "BIGALPHANUMERIC" = BigAlphanumeric
-          ttype "HUGEALPHANUMERIC" = HugeAlphanumeric
-          ttype "PASSWORD" = Password
-          ttype "BINARY" = Binary
-          ttype "BIGBINARY" = BigBinary
-          ttype "HUGEBINARY" = HugeBinary
-          ttype "DATE" = Date
-          ttype "DATETIME" = DateTime
-          ttype "BOOLEAN" = Boolean
-          ttype "INTEGER" = Integer
-          ttype "FLOAT" = Float
-          ttype "OBJECT" = Object
-          ttype _ = TypeOfOne
+      allGens = p_gens <> concatMap pt_gns p_patterns
+      allConcs = (Set.unions . map pRel2concs) allDecls
+      pRel2concs :: P_Relation -> Set A_Concept
+      pRel2concs pRel = Set.fromList [sourc pRel, targt pRel]
+       where
+         sourc = pCpt2aCpt . pSrc . dec_sign
+         targt = pCpt2aCpt . pTgt . dec_sign
+      allDecls :: [P_Relation]
+      allDecls = p_relations <> concatMap pt_dcs p_patterns
+      allReprs :: [P_Representation]  -- TODO: introduce A_Representation
+      allReprs = p_representations <> concatMap pt_Reprs p_patterns
       builtinRels :: [Relation]
       builtinRels =
-        [let sgn = Sign c c
-             c = PlainConcept ("Num" NE.:| [])
-         in Relation { decnm   = T.pack "<="
-                     , decsgn  = sgn
-                     , decprps = Set.fromList [Asy,Trn,Rfx]
-                     , decDefaults = Set.empty
-                     , decprL  = ""
-                     , decprM  = ""
-                     , decprR  = ""
-                     , decMean = []
-                     , decfpos = Origin ("built-in relation ( <= "<>T.pack (show sgn)<>" )")
-                     , decusr  = False
-                     , decpat  = Nothing
-                     , dechash = hash sgn
-                     }
-        ]
+        [let
+           sgn = Sign c c
+           c = pCpt2aCpt pCpt
+         in
+           Relation
+             {decnm = T.pack "<=", decsgn = sgn,
+              decprps = Set.fromList [Asy, Trn, Rfx], decDefaults = Set.empty,
+              decprL = "", decprM = "", decprR = "", decMean = [],
+              decfpos = Origin
+                          ("built-in relation ( <= " <> T.pack (show sgn) <> " )"),
+              decusr = False, decpat = Nothing, dechash = hash sgn} |
+         Repr _orig neCs tt <- allReprs,
+         tt == Integer,
+         pCpt <- NE.toList neCs]
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        let multitypologies = map mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
-        let reprOf cpt =
-              fromMaybe
-                Object -- default representation is Object (formerly called `ugly identifiers')
-                (lookup cpt (mkTypeMap connectedConcepts builtinReprs))
-        decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        let reprOf cpt = fromMaybe Object (lookup cpt typeMap)
+        decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) allDecls
         let declMap = (Map.map groupOnTp . Map.fromListWith (<>))
                       ([(name d, [EDcD d]) | d <- decls]<>[(name b, [EBui b]) | b <- builtinRels])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-        let allConcs = Set.map aConcToType (concs decls) :: Set.Set Type
         return
           CI
             { ctxiGens = gns,
               representationOf = reprOf,
-              multiKernels = multitypologies,
-              reprList = builtinReprs,
+              multiKernels = map mkTypology connectedGens,
+              reprList = allReprs,
               declDisambMap = declMap,
-              soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
+              soloConcs = (Set.filter (not . isInSystem genLattice) . Set.map aConcToType . concs) decls,
               gens_efficient = genLattice,
               conceptMap = pCpt2aCpt,
               defaultLang = deflangCtxt,
@@ -417,28 +378,47 @@ pCtx2aCtx
         where
           gns = pClassify2aClassify <$> allGens
 
-          connectedConcepts :: [Set A_Concept] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect [] gns
-            where
-            -- connect produces the largest subsets of A_Concepts that are connected by classify statements
-              connect :: [Set A_Concept] -> [AClassify] -> [Set A_Concept]
-              connect parts (g:gs) = connect (concs g `Set.union` Set.unions parts' : rest) gs
-                where
-                  (rest,parts')
-                   = L.partition (\p-> Set.null (p `Set.intersection` concs g)) parts
-              connect parts [] = parts
-
-          mkTypeMap :: [Set A_Concept] -> [P_Representation] -> [(A_Concept, TType)]
-          mkTypeMap conceptSubsets reprs =
+          typeMap :: [(A_Concept, TType)]
+          typeMap =
             [ (c',tt)
-            | subset<-conceptSubsets, Repr _orig c tt<-reprs,  pCpt2aCpt c `Set.member` subset
+            | subset<-subsets
+            , Repr _orig neCs tt<-allReprs, c<-NE.toList neCs
+            ,  pCpt2aCpt c `Set.member` subset
             , c' <- Set.toList subset
-            ]
-          mkTypology :: Set A_Concept -> Typology
+            ]<>[ (c, Object) | c<-Set.toList (allConcs `Set.difference` Set.unions subsets)]
+           where
+             subsets = map concs connectedGens
+
+          connectedGens :: [Set AClassify]
+          connectedGens = connect [] gns
+            where
+              -- | connect produces the largest subsets of AClassifies that are connected.
+              --   The type is actually:
+              --   connect :: (Ord a, ConceptStructure a) =>[Set a] -> [a] -> [Set a]
+              --   but I made the type more concrete to make the code more readable.
+              connect :: [Set AClassify] -> [AClassify] -> [Set AClassify]
+              connect isaParts (g:gs) = connect (g `Set.insert` Set.unions isaParts': isaRest) gs
+                where
+                  (isaRest,isaParts')
+                   = L.partition (\p-> Set.null (concs p `Set.intersection` concs g)) isaParts
+              connect isaParts [] = isaParts
+
+          -- | pre: cs is a connected set of AClassifies with precisely one root concept.
+          --   The type checker guarantees this by checking that any two concepts have a lub.
+          --   As a consequence all elements of cs have the same technical type.
+          --   The root concepts will be used as key in the corresponding database table.
+          mkTypology :: Set AClassify -> Typology
           mkTypology cs =
-            head ([ Typology (pCpt2aCpt c) cs
-                  | Repr _orig c _ttype<-builtinReprs,  pCpt2aCpt c `Set.member` cs
-                  ])
+            case Set.toList (Set.unions (Set.map gen cs) `Set.difference` Set.unions (Set.map spc cs)) of
+              [root] -> Typology root (concs cs)
+              _      -> fatal ("Concepts "<>tshow cs<>" should have precisely one root.")
+            where
+              spc :: AClassify -> Set A_Concept
+              spc g@Isa {} = Set.singleton (genspc g)
+              spc g@IsE {} = Set.singleton (genspc g)
+              gen :: AClassify -> Set A_Concept
+              gen g@Isa {} = Set.singleton (gengen g)
+              gen g@IsE {} = (Set.fromList . NE.toList . genrhs) g
 
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
@@ -456,6 +436,10 @@ pCtx2aCtx
       completeRules :: [(Set Type, Set Type)]
       completeRules =
         genRules
+          <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
+               | x <- p_representations <> concatMap pt_Reprs p_patterns,
+                 cpt <- NE.toList $ reprcpts x
+             ]
           <> [ ( Set.singleton RepresentSeparator,
                  Set.fromList
                    [ BuiltIn Alphanumeric,
@@ -532,7 +516,7 @@ pCtx2aCtx
           declMap = declDisambMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
-        if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
+        if givenType `elem` findExact (trace (tshow genLattice) genLattice) (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
@@ -891,9 +875,10 @@ pCtx2aCtx
           <*> traverse (pDecl2aDecl (representationOf ci) pCpt2aCpt (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> traverse (pure . pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
           <*> traverse (pure . pRoleRule2aRoleRule) (pt_RRuls ppat)
+          <*> traverse pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
         where
-          f rules' keys' pops' views' xpls relations conceptdefs roleRules  enforces' =
+          f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
               { ptnm = name ppat,
                 ptpos = origin ppat,
@@ -903,7 +888,7 @@ pCtx2aCtx
                 ptdcs = Set.fromList relations,
                 ptrrs = roleRules,
                 ptcds = conceptdefs,
-                ptrps = [],   -- TODO built-in reprs
+                ptrps = representations,
                 ptups = pops',
                 ptids = keys',
                 ptvds = views',
@@ -1222,6 +1207,19 @@ pAtomValue2aAtomValue typ cpt pav =
   where
     ttyp = typ cpt
 
+pProp2aProps :: PProp -> [AProp]
+pProp2aProps p = case p of
+  P_Uni -> [Uni]
+  P_Inj -> [Inj]
+  P_Sur -> [Sur]
+  P_Tot -> [Tot]
+  P_Sym -> [Sym]
+  P_Asy -> [Asy]
+  P_Trn -> [Trn]
+  P_Rfx -> [Rfx]
+  P_Irf -> [Irf]
+  P_Prop -> [Sym, Asy]
+
 pDecl2aDecl ::
   (A_Concept -> TType) ->
   ConceptMap ->
@@ -1266,18 +1264,6 @@ pDecl2aDecl typ pCpt2aCpt maybePatName defLanguage defFormat pd =
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
     (prL : prM : prR : _) = dec_pragma pd <> ["", "", ""]
-    pProp2aProps :: PProp -> [AProp]
-    pProp2aProps p = case p of
-      P_Uni -> [Uni]
-      P_Inj -> [Inj]
-      P_Sur -> [Sur]
-      P_Tot -> [Tot]
-      P_Sym -> [Sym]
-      P_Asy -> [Asy]
-      P_Trn -> [Trn]
-      P_Rfx -> [Rfx]
-      P_Irf -> [Irf]
-      P_Prop -> [Sym, Asy]
 
     decSign = pSign2aSign pCpt2aCpt (dec_sign pd)
     checkEndoProps :: Guarded ()

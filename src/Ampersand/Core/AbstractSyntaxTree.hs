@@ -1641,8 +1641,8 @@ data Typology = Typology
   }
   deriving (Show)
 
--- | Since we can have concepts with several aliasses, we need to have a
---   way to resolve these aliasses. In the A-structure, we do not want to
+-- | Since we can have concepts with several aliases, we need to have a
+--   way to resolve these aliases. In the A-structure, we do not want to
 --   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.
@@ -1652,10 +1652,7 @@ makeConceptMap :: [PClassify] -> ConceptMap
 makeConceptMap gs = mapFunction
   where
     mapFunction :: P_Concept -> A_Concept
-    mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
-      xs -> mkConcept pCpt xs
-      where
-        inCycle xs = pCpt `elem` xs
+    mapFunction pCpt = mkConcept pCpt . L.nub . concat . filter (elem pCpt) . getCycles $ edges
     mkConcept :: P_Concept -> [P_Concept] -> A_Concept
     mkConcept pCpt aliasses =
       case pCpt of

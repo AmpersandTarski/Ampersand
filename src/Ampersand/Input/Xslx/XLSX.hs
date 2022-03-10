@@ -65,6 +65,7 @@ mkContextOfPops pops =
         ctx_cs = [],
         ctx_ks = [],
         ctx_rrules = [],
+        ctx_reprs = [],
         ctx_vs = [],
         ctx_gs = [],
         ctx_ifcs = [],

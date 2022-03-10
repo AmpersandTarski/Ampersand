@@ -89,7 +89,7 @@ separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty P_Context where
-  pretty (PCtx nm _ lang markup pats rs ds cs ks rrules vs gs ifcs ps pops metas enfs) =
+  pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
       <+> quoteConcept nm
       <~> lang
@@ -102,6 +102,7 @@ instance Pretty P_Context where
       <+\> perline cs
       <+\> perline ks
       <+\> perline rrules
+      <+\> perline reprs
       <+\> perline vs
       <+\> perline gs
       <+\> perline ifcs
@@ -122,13 +123,14 @@ instance Pretty Role where
   pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
-  pretty (P_Pat _ nm rls gns dcs rruls cds ids vds xps pop _ enfs) =
+  pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
       <+> quoteConcept nm
       <+\> perline rls
       <+\> perline gns
       <+\> perline dcs
       <+\> perline rruls
+      <+\> perline reprs
       <+\> perline cds
       <+\> perline ids
       <+\> perline vds
@@ -267,7 +269,7 @@ instance Pretty P_Population where
       contents = list . map pretty
 
 instance Pretty P_Representation where
-  pretty (Repr _ c tt) = text ("REPRESENT"<>T.unpack (name c)<>"TYPE") <+> pretty tt
+  pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
 
 instance Pretty TType where
   pretty = text . show
