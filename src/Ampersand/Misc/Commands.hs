@@ -24,7 +24,6 @@ import Ampersand.Commands.Validate
 {-getProgName,-}
 import Ampersand.FSpec (FSpec(..))
 import Ampersand.FSpec.ToFSpec.CreateFspec
-import Ampersand.Core.ShowAStruct
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Options.DaemonParser
