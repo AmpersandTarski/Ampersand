@@ -50,8 +50,11 @@ import Ampersand.Misc.HasClasses
 
 --   Explanation Prototype
 --     The "Prototype" option is used to generate prototypes. It combines the user script
---     with some navigation elements from the prototype context.
---     That is why 'one' is the combination of the user script and the metamodel of the prototype context.
+--     with some meta concepts and relations from the prototype context. Furthermore a few management interfaces are added.
+--     That is why 'one' is the combination of the user script (uCtx) and the prototype context (pCtx).
+--     NOTE! different than with the RAP recipe, we don't want the metaModel of the PrototypeContext, but the context itself
+--     Next step is to grind 'one' using the PrototypeContext transformers. That will give us the meta-population in 'two'
+--     We return the combination of 'one' and 'two'
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec ::
@@ -75,11 +78,11 @@ createFspec =
               return (grind transformersFormalAmpersand userFspc)
             Prototype -> do
               userPCtx <- userScript
-              let one = userPCtx `mergeContexts` metaModel PrototypeContext
+              pcScript <- prototypeContextScript
+              let one = userPCtx `mergeContexts` pcScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
-              pcScript <- prototypeContextScript
-              return (one `mergeContexts` two `mergeContexts` pcScript)
+              return (one `mergeContexts` two)
             RAP -> do
               rapPCtx <- userScript
               faScript <- formalAmpersandScript
