@@ -1,4 +1,4 @@
-FROM haskell:8.10.7 
+FROM haskell:9.0.2 
 
 # This Dockerfile adds a non-root user with sudo access. Use the "remoteUser"
 # property in devcontainer.json to use it. On Linux, the container user's GID/UIDs
@@ -40,6 +40,6 @@ ARG COMMON_SCRIPT_SHA="dev-mode"
 
 # RUN curl -sSL https://get.haskellstack.org/ | sh
 
-RUN stack install ormolu-0.1.4.1
+RUN stack install ormolu-0.3.1.0
 
 USER $USERNAME
