@@ -124,7 +124,7 @@ class SQLAble a where
                     Nothing -> placeHolder
                     Just whr -> conjunctSQL [placeHolder, whr]
               }
-          placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [Name Nothing "="] (StringLit "'" "'" $ T.unpack placeHolderSQL)
+          placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [noQuotes "="] (StringLit "'" "'" $ T.unpack placeHolderSQL)
 
 instance SQLAble Expression where
   getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
