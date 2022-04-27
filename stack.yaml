@@ -13,7 +13,7 @@ extra-deps:
   - pandoc-crossref-0.3.12.2@sha256:5670f34c8b5098346c6580553694e7fdedf6bc5446dcc2388f44d13783d02dab,7621
   - yaml-config-0.4.0@sha256:ed0c2f343d0ef32fe1941e42c0a3ec4e78befda79a65530ce161ef3374db9f40,1948
   - roman-numerals-0.5.1.5@sha256:819d04d9d442b24629dd058f6f0b02bd78e9f9ae99538bc44ca448f1cb2b7b01,1208
-  - simple-sql-parser-0.4.4
+  - simple-sql-parser-0.6.0
   - SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
   #  - salve-1.0.11 # TODO Why was this required??
 

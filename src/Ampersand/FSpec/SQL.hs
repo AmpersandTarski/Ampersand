@@ -1,6 +1,5 @@
 module Ampersand.FSpec.SQL
   ( SqlQuery (..),
-    placeHolderSQL,
     prettySQLQuery,
     sqlQuery,
     prettySQLQueryWithPlaceholder,
@@ -17,6 +16,7 @@ import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.FSpecAux
+import Language.SQL.SimpleSQL.Dialect
 import Language.SQL.SimpleSQL.Pretty
 import Language.SQL.SimpleSQL.Syntax
 import RIO.List (intercalate, lastMaybe, maximumMaybe, nub, partition, (\\))
@@ -95,7 +95,7 @@ class SQLAble a where
       insertPlaceholder :: BinQueryExpr -> BinQueryExpr
       insertPlaceholder bqe =
         case bqe of
-          BSE {} -> case (col2ValueExpr (bseSrc bqe), bseWhr bqe) of
+          BSE {} -> case (col2ScalarExpr (bseSrc bqe), bseWhr bqe) of
             (Iden [_], _) ->
               bqeWithPlaceholder
             (Iden [_, a], _)
@@ -124,7 +124,7 @@ class SQLAble a where
                     Nothing -> placeHolder
                     Just whr -> conjunctSQL [placeHolder, whr]
               }
-          placeHolder = BinOp (col2ValueExpr (bseSrc bqe)) [Name "="] (StringLit $ T.unpack placeHolderSQL)
+          placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [Name Nothing "="] (StringLit "'" "'" $ T.unpack placeHolderSQL)
 
 instance SQLAble Expression where
   getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
@@ -133,8 +133,8 @@ instance SQLAble Relation where
   getBinQueryExpr = selectRelation
 
 sourceAlias, targetAlias :: Name
-sourceAlias = Name "src"
-targetAlias = Name "tgt"
+sourceAlias = noQuotes "src"
+targetAlias = noQuotes "tgt"
 
 selectExpr ::
   FSpec -> -- current context
@@ -167,12 +167,12 @@ maybeSpecialCase fSpec expr =
             ]
           $ let col =
                   Col
-                    { cTable = [Name "notIns"],
+                    { cTable = [noQuotes "notIns"],
                       cCol = [sqlAttConcept fSpec a],
                       cAlias = [],
                       cSpecial = Nothing
                     }
-                aAtt = col2ValueExpr col
+                aAtt = col2ScalarExpr col
                 whereClause =
                   conjunctSQL
                     [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r)),
@@ -182,7 +182,7 @@ maybeSpecialCase fSpec expr =
                   { bseSetQuantifier = SQDefault,
                     bseSrc = col,
                     bseTrg = col,
-                    bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"],
+                    bseTbl = [sqlConceptTable fSpec a `as` noQuotes "notIns"],
                     bseWhr = Just whereClause
                   }
       | otherwise -> Nothing
@@ -242,8 +242,8 @@ maybeSpecialCase fSpec expr =
                   JLeft
                   leftTable
                   ( Just . JoinOn . conjunctSQL $
-                      [ BinOp (Iden [table1, sourceAlias]) [Name "="] (Iden [table2, expr2Src]),
-                        BinOp (Iden [table1, targetAlias]) [Name "="] (Iden [table2, expr2trg])
+                      [ BinOp (Iden [table1, sourceAlias]) [noQuotes "="] (Iden [table2, expr2Src]),
+                        BinOp (Iden [table1, targetAlias]) [noQuotes "="] (Iden [table2, expr2trg])
                       ]
                   )
               ],
@@ -261,17 +261,17 @@ maybeSpecialCase fSpec expr =
               let (plug, relstore) = getRelationTableInfo fSpec rel
                   s = rsSrcAtt relstore
                   t = rsTrgAtt relstore
-                  lt = TRSimple [QName (T.unpack $ name plug)] `as` table2
+                  lt = TRSimple [qName . name $ plug] `as` table2
                in if isFlipped'
-                    then ((QName . T.unpack . name) t, (QName . T.unpack . name) s, lt)
-                    else ((QName . T.unpack . name) s, (QName . T.unpack . name) t, lt)
+                    then ((qName . name) t, (qName . name) s, lt)
+                    else ((qName . name) s, (qName . name) t, lt)
             _ ->
               ( sourceAlias,
                 targetAlias,
                 TRQueryExpr (toSQL (selectExpr fSpec (fun expr2))) `as` table2
               )
-        table1 = Name "t1"
-        table2 = Name "t2"
+        table1 = noQuotes "t1"
+        table2 = noQuotes "t2"
 
 nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
 nonSpecialSelectExpr fSpec expr =
@@ -324,20 +324,20 @@ nonSpecialSelectExpr fSpec expr =
                       vs -> Just (conjunctSQL vs)
                   }
                 where
-                  mandatoryTuple :: Maybe ValueExpr
+                  mandatoryTuple :: Maybe ScalarExpr
                   mandatoryTuple =
                     case specificValue of
                       Nothing -> Nothing
                       Just val -> Just $ equalToValueClause val
                     where
-                      equalToValueClause :: PAtomValue -> ValueExpr
+                      equalToValueClause :: PAtomValue -> ScalarExpr
                       equalToValueClause singleton =
                         conjunctSQL
-                          [ BinOp (col2ValueExpr theSr') [Name "="] (singleton2SQL (source expr) singleton),
-                            BinOp (col2ValueExpr theTr') [Name "="] (singleton2SQL (source expr) singleton)
+                          [ BinOp (col2ScalarExpr theSr') [noQuotes "="] (singleton2SQL (source expr) singleton),
+                            BinOp (col2ScalarExpr theTr') [noQuotes "="] (singleton2SQL (source expr) singleton)
                           ]
 
-                  forbiddenTuples :: Maybe ValueExpr
+                  forbiddenTuples :: Maybe ScalarExpr
                   forbiddenTuples =
                     case negVals of
                       [] -> Nothing
@@ -345,11 +345,11 @@ nonSpecialSelectExpr fSpec expr =
                         Just . conjunctSQL $
                           map notEqualToValueClause negVals
                     where
-                      notEqualToValueClause :: PAtomValue -> ValueExpr
+                      notEqualToValueClause :: PAtomValue -> ScalarExpr
                       notEqualToValueClause singleton =
                         conjunctSQL
-                          [ BinOp (col2ValueExpr theSr') [Name "<>"] (singleton2SQL (source expr) singleton),
-                            BinOp (col2ValueExpr theTr') [Name "<>"] (singleton2SQL (source expr) singleton)
+                          [ BinOp (col2ScalarExpr theSr') [noQuotes "<>"] (singleton2SQL (source expr) singleton),
+                            BinOp (col2ScalarExpr theTr') [noQuotes "<>"] (singleton2SQL (source expr) singleton)
                           ]
 
                   theSr' = bseSrc (makeSelectable sResult)
@@ -360,7 +360,7 @@ nonSpecialSelectExpr fSpec expr =
                     BCQE {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                     BQEComment {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                   sResult = makeIntersectSelectExpr ts
-                  dummy = Name "someDummyNameBecauseMySQLNeedsOne"
+                  dummy = noQuotes "someDummyNameBecauseMySQLNeedsOne"
                   makeSelectable :: BinQueryExpr -> BinQueryExpr
                   makeSelectable x =
                     case x of
@@ -425,17 +425,17 @@ nonSpecialSelectExpr fSpec expr =
                                                 cAlias = [],
                                                 cSpecial = Nothing
                                               },
-                                          bseTbl = [TRQueryExpr (toSQL part2) `as` Name "part2"],
+                                          bseTbl = [TRQueryExpr (toSQL part2) `as` noQuotes "part2"],
                                           bseWhr =
                                             Just . conjunctSQL $
-                                              [ BinOp (Iden [sourceAlias]) [Name "="] (Iden [targetAlias]),
+                                              [ BinOp (Iden [sourceAlias]) [noQuotes "="] (Iden [targetAlias]),
                                                 In
                                                   True
                                                   (Iden [sourceAlias])
                                                   ( InQueryExpr
                                                       ( makeSelect
                                                           { qeSelectList = [(Iden [sourceAlias], Nothing)],
-                                                            qeFrom = [TRQueryExpr (toSQL part1) `as` Name "part1"]
+                                                            qeFrom = [TRQueryExpr (toSQL part1) `as` noQuotes "part1"]
                                                           }
                                                       )
                                                   )
@@ -451,7 +451,7 @@ nonSpecialSelectExpr fSpec expr =
                                   isR :: Expression -> Maybe (Expression, Name)
                                   isR e = case attInBroadQuery fSpec (source hexprs) e of
                                     Nothing -> Nothing
-                                    Just att -> Just (e, (QName . T.unpack . name) att)
+                                    Just att -> Just (e, (qName . name) att)
                               --    esRest :: [Expression] -- all other conjuctions
                               --    esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                               optimizedIntersectSelectExpr :: BinQueryExpr
@@ -483,7 +483,7 @@ nonSpecialSelectExpr fSpec expr =
                                       bseWhr =
                                         Just . conjunctSQL $
                                           [notNull (Iden [nm]) | nm <- nub (map snd esI <> map snd esR)]
-                                            <> [ BinOp (Iden [nm]) [Name "="] (Iden [sqlAttConcept fSpec c])
+                                            <> [ BinOp (Iden [nm]) [noQuotes "="] (Iden [sqlAttConcept fSpec c])
                                                  | nm <- nub (map snd esR),
                                                    nm /= sqlAttConcept fSpec c
                                                ]
@@ -536,13 +536,13 @@ nonSpecialSelectExpr fSpec expr =
                                 }
                             where
                               iSect :: Int -> Name
-                              iSect n = Name ("subIntersect" <> show n)
+                              iSect n = noQuotes ("subIntersect" <> tshow n)
                               tableRef :: Int -> BinQueryExpr -> TableRef
                               tableRef n e = TRQueryExpr (toSQL e) `as` iSect n
-                              constraintsOfTailExpression :: Int -> [ValueExpr]
+                              constraintsOfTailExpression :: Int -> [ScalarExpr]
                               constraintsOfTailExpression n =
-                                [ BinOp (Iden [iSect n, sourceAlias]) [Name "="] (Iden [iSect 0, sourceAlias]),
-                                  BinOp (Iden [iSect n, targetAlias]) [Name "="] (Iden [iSect 0, targetAlias])
+                                [ BinOp (Iden [iSect n, sourceAlias]) [noQuotes "="] (Iden [iSect 0, sourceAlias]),
+                                  BinOp (Iden [iSect n, targetAlias]) [noQuotes "="] (Iden [iSect 0, targetAlias])
                                 ]
     EUni (l, r) ->
       traceComment
@@ -588,7 +588,7 @@ nonSpecialSelectExpr fSpec expr =
             -}
             _ ->
               let fenceName :: Int -> Name
-                  fenceName n = Name ("fence" <> show n)
+                  fenceName n = noQuotes ("fence" <> tshow n)
                   firstNr, lastNr :: Int
                   firstNr = 0
                   lastNr = firstNr + length es - 1
@@ -614,17 +614,17 @@ nonSpecialSelectExpr fSpec expr =
                         _ -> makeNormalFence
                     where
                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
-                  polesConstraints :: [Maybe ValueExpr]
+                  polesConstraints :: [Maybe ScalarExpr]
                   polesConstraints = map makePole [firstNr .. lastNr - 1] --there is one pole less than fences...
                     where
-                      makePole :: Int -> Maybe ValueExpr
+                      makePole :: Int -> Maybe ScalarExpr
                       makePole i =
                         case (fenceTable i, fenceTable (i + 1)) of
                           (Just _, Just _) ->
                             Just
                               ( BinOp
                                   (Iden [fenceName i, targetAlias])
-                                  [Name "="]
+                                  [noQuotes "="]
                                   (Iden [fenceName (i + 1), sourceAlias])
                               )
                           -- When one or both sides have no fenceTable, that is because of optimation of
@@ -637,7 +637,7 @@ nonSpecialSelectExpr fSpec expr =
                                 Just
                                   ( BinOp
                                       (Iden [fenceName i, targetAlias])
-                                      [Name "<>"]
+                                      [noQuotes "<>"]
                                       (Iden [fenceName (i + 2), sourceAlias])
                                   )
                               _ -> fatal "there is no reason for having no fenceTable!"
@@ -689,7 +689,7 @@ nonSpecialSelectExpr fSpec expr =
                       }
     (EFlp x) -> flipped (selectExpr fSpec x)
       where
-        fTable = Name "flipped"
+        fTable = noQuotes "flipped"
         flipped se =
           traceComment ["case: EFlp x"] $
             case se of
@@ -752,13 +752,13 @@ nonSpecialSelectExpr fSpec expr =
                   cSpecial = Nothing
                 },
             bseTbl = [sqlConceptTable fSpec c],
-            bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [Name "="] (singleton2SQL c val)
+            bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [noQuotes "="] (singleton2SQL c val)
           }
     (EDcV (Sign s t)) ->
       let (psrc, fsrc) = fun s
           (ptgt, ftgt) = fun t
           fun :: A_Concept -> (Name, Name)
-          fun cpt = ((QName . T.unpack . name) plug, (QName . T.unpack . name) att)
+          fun cpt = ((qName . name) plug, (qName . name) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
        in traceComment ["case: (EDcV (Sign s t))"] $
@@ -819,8 +819,8 @@ nonSpecialSelectExpr fSpec expr =
                           [notNull (Iden [first', fsrc]), notNull (Iden [secnd, ftgt])]
                   }
                 where
-                  first' = Name "fst"
-                  secnd = Name "snd"
+                  first' = noQuotes "fst"
+                  secnd = noQuotes "snd"
     (EDcI c) -> traceComment ["case: EDcI c"] $
       case c of
         ONE ->
@@ -899,28 +899,28 @@ nonSpecialSelectExpr fSpec expr =
               { bseSetQuantifier = SQDefault,
                 bseSrc =
                   Col
-                    { cTable = [QName "concept0"],
+                    { cTable = [qName "concept0"],
                       cCol = [concpt],
                       cAlias = [],
                       cSpecial = Nothing
                     },
                 bseTrg =
                   Col
-                    { cTable = [QName "concept1"],
+                    { cTable = [qName "concept1"],
                       cCol = [concpt],
                       cAlias = [],
                       cSpecial = Nothing
                     },
                 bseTbl =
-                  [ sqlConceptTable fSpec c `as` QName "concept0",
-                    sqlConceptTable fSpec c `as` QName "concept1"
+                  [ sqlConceptTable fSpec c `as` qName "concept0",
+                    sqlConceptTable fSpec c `as` qName "concept1"
                   ],
                 bseWhr =
                   Just
                     ( BinOp
-                        (Iden [QName "concept0", concpt])
-                        [Name "<>"]
-                        (Iden [QName "concept1", concpt])
+                        (Iden [qName "concept0", concpt])
+                        [noQuotes "<>"]
+                        (Iden [qName "concept1", concpt])
                     )
               }
           where
@@ -952,19 +952,19 @@ nonSpecialSelectExpr fSpec expr =
                       ( Just . conjunctSQL $
                           [ BinOp
                               (Iden [closedWorldName, sourceAlias])
-                              [Name "="]
+                              [noQuotes "="]
                               (Iden [posName, sourceAlias]),
                             BinOp
                               (Iden [closedWorldName, targetAlias])
-                              [Name "="]
+                              [noQuotes "="]
                               (Iden [posName, targetAlias])
                           ]
                       )
               }
           where
-            posName = Name "pos"
+            posName = noQuotes "pos"
             closedWorldName =
-              QName . T.unpack $
+              qName $
                 "cartesian product of " <> name (source e) <> " and " <> name (target e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
@@ -1040,7 +1040,7 @@ nonSpecialSelectExpr fSpec expr =
                             conjunctSQL
                               [ BinOp
                                   (Iden [resLeft, mainSrc])
-                                  [Name "="]
+                                  [noQuotes "="]
                                   (Iden [lhs, targetAlias]),
                                 VEComment [BlockComment . T.unpack $ "Right hand side: " <> showA r] $
                                   selectNotExists
@@ -1049,11 +1049,11 @@ nonSpecialSelectExpr fSpec expr =
                                         conjunctSQL
                                           [ BinOp
                                               (Iden [rhs, sourceAlias])
-                                              [Name "="]
+                                              [noQuotes "="]
                                               (Iden [lhs, sourceAlias]),
                                             BinOp
                                               (Iden [rhs, targetAlias])
-                                              [Name "="]
+                                              [noQuotes "="]
                                               (Iden [resRight, mainTgt])
                                           ]
                                     )
@@ -1062,10 +1062,10 @@ nonSpecialSelectExpr fSpec expr =
                 }
           mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error!!! It is part of the definition of right residu
           mainTgt = (sqlAttConcept fSpec . target) r
-          resLeft = Name "RResLeft"
-          resRight = Name "RResRight"
-          lhs = Name "lhs"
-          rhs = Name "rhs"
+          resLeft = noQuotes "RResLeft"
+          resRight = noQuotes "RResRight"
+          lhs = noQuotes "lhs"
+          rhs = noQuotes "rhs"
           lCode = toTableRef $ selectExpr fSpec l -- selectExprInFROM fSpec sourceAlias targetAlias l
           rCode = toTableRef $ selectExpr fSpec r -- selectExprInFROM fSpec sourceAlias targetAlias r
        in traceComment
@@ -1089,7 +1089,7 @@ nonSpecialSelectExpr fSpec expr =
             selectExpr fSpec (l .:. v .:. r)
   where
     traceComment = traceExprComment expr
-    singleton2SQL :: A_Concept -> PAtomValue -> ValueExpr
+    singleton2SQL :: A_Concept -> PAtomValue -> ScalarExpr
     singleton2SQL cpt singleton =
       atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
 
@@ -1101,10 +1101,10 @@ traceExprComment expr caseStr =
            BlockComment . T.unpack $ "   Signature : " <> tshow (sign expr)
          ]
 
-atomVal2InSQL :: AAtomValue -> ValueExpr
+atomVal2InSQL :: AAtomValue -> ScalarExpr
 atomVal2InSQL val =
   case val of
-    AAVString {} -> StringLit . T.unpack $ aavtxt val
+    AAVString {} -> StringLit "'" "'" . T.unpack $ aavtxt val
     AAVInteger _ int -> NumLit (show int)
     AAVFloat _ d -> NumLit (show d)
     AAVBoolean _ b -> NumLit $ if b then "1" else "0"
@@ -1129,27 +1129,27 @@ selectRelation fSpec dcl =
           bseSrc =
             Col
               { cTable = [],
-                cCol = [QName . T.unpack . name $ s],
+                cCol = [qName . name $ s],
                 cAlias = [],
                 cSpecial = Nothing
               },
           bseTrg =
             Col
               { cTable = [],
-                cCol = [QName . T.unpack . name $ t],
+                cCol = [qName . name $ t],
                 cAlias = [],
                 cSpecial = Nothing
               },
-          bseTbl = [TRSimple [QName . T.unpack . name $ plug]],
+          bseTbl = [TRSimple [qName . name $ plug]],
           bseWhr =
             Just . conjunctSQL . map notNull $
-              [Iden [QName . T.unpack . name $ c] | c <- nub [s, t]]
+              [Iden [qName . name $ c] | c <- nub [s, t]]
         }
       where
         s = rsSrcAtt relstore
         t = rsTrgAtt relstore
 
-isNotIn :: ValueExpr -> QueryExpr -> ValueExpr
+isNotIn :: ScalarExpr -> QueryExpr -> ScalarExpr
 isNotIn value = In False value . InQueryExpr
 
 -- | select only the source of a binary expression
@@ -1175,9 +1175,9 @@ selectExists,
     -- | tables
     TableRef ->
     -- | the (optional) WHERE clause
-    Maybe ValueExpr ->
-    ValueExpr
-selectNotExists tbl whr = PrefixOp [Name "NOT"] $ selectExists tbl whr
+    Maybe ScalarExpr ->
+    ScalarExpr
+selectNotExists tbl whr = PrefixOp [noQuotes "NOT"] $ selectExists tbl whr
 selectExists tbl whr =
   SubQueryExpr
     SqExists
@@ -1187,7 +1187,7 @@ selectExists tbl whr =
         qeFrom =
           [ case tbl of
               TRAlias {} -> tbl
-              _ -> tbl `as` Name "aDummyName" -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+              _ -> tbl `as` noQuotes "aDummyName" -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
           ],
         qeWhere = whr,
         qeGroupBy = [],
@@ -1206,12 +1206,12 @@ data BinQueryExpr
         -- | tables
         bseTbl :: [TableRef],
         -- | the (optional) WHERE clause
-        bseWhr :: Maybe ValueExpr
+        bseWhr :: Maybe ScalarExpr
       }
   | BCQE
       { bseSetQuantifier :: SetQuantifier,
         -- | The combine operator
-        bcqeOper :: CombineOp,
+        bcqeOper :: SetOperatorName,
         -- | Left  expression
         bcqe0 :: BinQueryExpr,
         -- | Right expression
@@ -1223,11 +1223,11 @@ data Col = Col
   { cTable :: [Name],
     cCol :: [Name],
     cAlias :: [Name],
-    cSpecial :: Maybe ValueExpr
+    cSpecial :: Maybe ScalarExpr
   }
 
-col2ValueExpr :: Col -> ValueExpr
-col2ValueExpr col =
+col2ScalarExpr :: Col -> ScalarExpr
+col2ScalarExpr col =
   case cSpecial col of
     Nothing -> Iden x
     Just ve
@@ -1266,6 +1266,7 @@ stripCommentTableRef tr =
     TRQueryExpr qe -> TRQueryExpr (stripCommentQueryExpr qe)
     TRFunction _ _ -> tr
     TRLateral tr1 -> TRLateral (stripCommentTableRef tr1)
+    TROdbc _ -> tr
 
 stripCommentQueryExpr :: QueryExpr -> QueryExpr
 stripCommentQueryExpr qe =
@@ -1280,8 +1281,8 @@ toSQL bqe =
       Select
         { qeSetQuantifier = bseSetQuantifier bqe,
           qeSelectList =
-            [ (col2ValueExpr (bseSrc bqe), Just sourceAlias),
-              (col2ValueExpr (bseTrg bqe), Just targetAlias)
+            [ (col2ScalarExpr (bseSrc bqe), Just sourceAlias),
+              (col2ScalarExpr (bseTrg bqe), Just targetAlias)
             ],
           qeFrom = bseTbl bqe,
           qeWhere = bseWhr bqe,
@@ -1292,7 +1293,7 @@ toSQL bqe =
           qeFetchFirst = Nothing
         }
     BCQE {} ->
-      CombineQueryExpr
+      QueryExprSetOp
         { qe0 = toSQL (bcqe0 bqe),
           qeCombOp = bcqeOper bqe,
           qeSetQuantifier = bseSetQuantifier bqe,
@@ -1327,34 +1328,35 @@ sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . T.unpack . name . getConceptTableFor fSpec
+sqlConcept fSpec = qName . name . getConceptTableFor fSpec
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
-  | c == ONE = QName "ONE"
+  | c == ONE = qName "ONE"
   | otherwise =
     case [ name f | f <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- Set.elems $ concs f, c == c'
          ] of
       [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> name fSpec <> "\"")
-      h : _ -> QName . T.unpack $ h
+      h : _ -> qName $ h
 
 stringOfName :: Name -> Text
-stringOfName (Name s) = T.pack s
-stringOfName (QName s) = T.pack s
-stringOfName (UQName s) = T.pack s
-stringOfName _ = fatal "This kind of a Name wasn't used before in Ampersand."
+stringOfName (Name _ s) = T.pack s
+qName :: Text -> Name
+qName = Name (Just (['"'],['"'])) . T.unpack
+noQuotes :: Text -> Name
+noQuotes = Name Nothing . T.unpack
 
-conjunctSQL :: [ValueExpr] -> ValueExpr
+conjunctSQL :: [ScalarExpr] -> ScalarExpr
 conjunctSQL [] = fatal "nothing to `and`."
 conjunctSQL [ve] = bracketsSQL ve
-conjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [Name "and"] (conjunctSQL ves)
+conjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [noQuotes "and"] (conjunctSQL ves)
 
-disjunctSQL :: [ValueExpr] -> ValueExpr
+disjunctSQL :: [ScalarExpr] -> ScalarExpr
 disjunctSQL [] = fatal "nothing to `or`."
 disjunctSQL [ve] = bracketsSQL ve
-disjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [Name "or"] (conjunctSQL ves)
+disjunctSQL (ve : ves) = BinOp (bracketsSQL ve) [noQuotes "or"] (conjunctSQL ves)
 
-bracketsSQL :: ValueExpr -> ValueExpr
+bracketsSQL :: ScalarExpr -> ScalarExpr
 bracketsSQL = Parens
 
 as :: TableRef -> Name -> TableRef
@@ -1367,11 +1369,11 @@ as ve a =
     withoutAlias = ve
     withAlias = TRAlias ve (Alias a Nothing)
 
-notNull :: ValueExpr -> ValueExpr
-notNull = PostfixOp [Name "is not null"]
+notNull :: ScalarExpr -> ScalarExpr
+notNull = PostfixOp [noQuotes "is not null"]
 
-isNull :: ValueExpr -> ValueExpr
-isNull = PostfixOp [Name "is null"]
+isNull :: ScalarExpr -> ScalarExpr
+isNull = PostfixOp [noQuotes "is null"]
 
 emptySet :: BinQueryExpr
 emptySet =
@@ -1412,11 +1414,11 @@ emptySet =
               )
               `as` nothing
           ],
-        bseWhr = Just (BinOp (Iden [a]) [Name "<>"] (NumLit "1"))
+        bseWhr = Just (BinOp (Iden [a]) [noQuotes "<>"] (NumLit "1"))
       }
   where
-    a = Name "a"
-    nothing = Name "nothing"
+    a = noQuotes "a"
+    nothing = noQuotes "nothing"
 
 one :: BinQueryExpr
 one =
@@ -1439,13 +1441,13 @@ one =
                   qeOffset = Nothing,
                   qeFetchFirst = Nothing
                 }
-              `as` Name "ONE"
+              `as` noQuotes "ONE"
           ],
         bseWhr = Nothing
       }
 
 theDialect :: Dialect
-theDialect = MySQL -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
+theDialect = mysql -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
 
 broadQuery :: FSpec -> ObjectDef -> QueryExpr
 broadQuery fSpec obj =
@@ -1510,18 +1512,18 @@ broadQuery fSpec obj =
                       qeFetchFirst = Nothing
                     }
 
-                makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
+                makeCol :: Maybe Name -> ObjectDef -> (ScalarExpr, Maybe Name)
                 makeCol tableName col =
                   case attInBroadQuery fSpec (target . objExpression $ obj) (objExpression col) of
                     Nothing -> fatal ("this is unexpected behaviour. " <> tshow col)
                     Just att ->
                       ( Iden
                           ( case tableName of
-                              Nothing -> [QName . T.unpack . name $ att]
-                              Just tab -> [tab, QName . T.unpack . name $ att]
+                              Nothing -> [qName . name $ att]
+                              Just tab -> [tab, qName . name $ att]
                           ),
                         Just
-                          ( QName . T.unpack $
+                          ( qName $
                               -- The name is not sufficient for two reasons:
                               --   1) the columname must be unique. For that reason, it is prefixed:
                               "ifc_"
@@ -1532,9 +1534,9 @@ broadQuery fSpec obj =
                           )
                       )
                 subThings ::
-                  ( [(ValueExpr, Maybe Name)],
+                  ( [(ScalarExpr, Maybe Name)],
                     [TableRef],
-                    Maybe ValueExpr
+                    Maybe ScalarExpr
                   )
                 subThings =
                   ( [ (Iden [org, sourceAlias], Just sourceAlias),
@@ -1547,13 +1549,13 @@ broadQuery fSpec obj =
                     Just
                       ( BinOp
                           (Iden [org, targetAlias])
-                          [Name "="]
+                          [noQuotes "="]
                           (Iden [ct, sqlAttConcept fSpec tableCpt])
                       )
                   )
                   where
-                    org = Name "org"
-                    ct = Name "cptTbl"
+                    org = noQuotes "org"
+                    ct = noQuotes "cptTbl"
                 tableCpt = source . objExpression $ hobjs
 
 -- Iff the expression is implemented in the concepttable of the given concept
