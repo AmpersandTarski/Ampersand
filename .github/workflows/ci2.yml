@@ -63,7 +63,7 @@ jobs:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
       # Weeder needs compilation artifacts, so it must still be the same Job
       - name: Check weeds🌿🌿🌿
-      - uses: freckle/weeder-action@v1
+        uses: freckle/weeder-action@v1
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
