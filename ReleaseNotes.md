@@ -1,6 +1,8 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+
+## v4.6.3 (28 April 2022)
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
 * [Issue #1275](https://github.com/AmpersandTarski/Ampersand/issues/1275) Fix duplicate pattern bug
 * Bugfix grinding metapopulation for Prototypes. Bug was introduced by a refactoring done in v4.3.0
