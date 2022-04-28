@@ -918,7 +918,7 @@ separate n s = [(part, s `Set.difference` part) | part <- subsetLength n (Set.to
   where
     subsetLength :: Ord a => Int -> [a] -> [Set a]
     subsetLength 0 _ = [Set.empty]
-    subsetLength i (x : xs) = map (Set.insert x) (subsetLength (i -1) xs) <> subsetLength i xs
+    subsetLength i (x : xs) = map (Set.insert x) (subsetLength (i - 1) xs) <> subsetLength i xs
     subsetLength _ [] = []
 
 -- parts produces a fixed number of subsets
@@ -929,7 +929,7 @@ parts n = Set.toList . Set.fromList . map (Set.fromList . map Set.fromList) . p 
     p 0 _ = []
     p 1 xs = [[xs]]
     p 2 xs = [[ss, rest] | ss <- init (subsets xs), let rest = [e | e <- xs, e `notElem` ss], not (null rest)]
-    p i xs = [twoSets <> tl | (hd : tl) <- p (i -1) xs, twoSets <- p 2 hd]
+    p i xs = [twoSets <> tl | (hd : tl) <- p (i - 1) xs, twoSets <- p 2 hd]
     {- examples:
        parts 1 "abcd" = {{"abcd"}}
        parts 2 "abcd" = {{"a","bcd"},{"ab","cd"},{"abc","d"},{"abd","c"},{"ac","bd"},{"acd","b"},{"ad","bc"}}
@@ -1863,8 +1863,8 @@ init = fromMaybe (fatal "Illegal use of init") . L.initMaybe
 --   will result in the original list.
 dist :: Int -> [a] -> [[[a]]]
 dist 1 ls = [[ls]]
-dist 2 ls = [[take i ls, drop i ls] | i <- [1 .. length ls -1]]
-dist n ls = [init ds <> st | ds <- dist (n -1) ls, let staart = last ds, length staart >= 2, st <- dist 2 staart]
+dist 2 ls = [[take i ls, drop i ls] | i <- [1 .. length ls - 1]]
+dist n ls = [init ds <> st | ds <- dist (n - 1) ls, let staart = last ds, length staart >= 2, st <- dist 2 staart]
 
 {- examples:
 dist 1 "abcd" = [["abcd"]]

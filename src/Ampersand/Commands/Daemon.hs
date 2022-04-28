@@ -67,7 +67,7 @@ mainWithTerminal termSize termOutput = goForever
               return $
                 TermSize
                   (termWidth term - 1)
-                  (termHeight term -1)
+                  (termHeight term - 1)
                   (termWrap term)
 
           restyle <- liftIO $ do
@@ -287,11 +287,11 @@ withCurrentDirectory dir act =
       )
   where
     bracket' ::
-      -- | computation to run first (\"acquire resource\")
+      -- computation to run first (\"acquire resource\")
       IO a ->
-      -- | computation to run last (\"release resource\")
+      -- computation to run last (\"release resource\")
       (a -> IO b) ->
-      -- | computation to run in-between
+      -- computation to run in-between
       (a -> RIO env c) ->
       RIO env c -- returns the value from the in-between computation
     bracket' before after thing =

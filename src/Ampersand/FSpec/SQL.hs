@@ -532,7 +532,7 @@ nonSpecialSelectExpr fSpec expr =
                                   bseTbl = zipWith tableRef [0 ..] es,
                                   bseWhr =
                                     Just . conjunctSQL . concatMap constraintsOfTailExpression $
-                                      [1 .. length es -1]
+                                      [1 .. length es - 1]
                                 }
                             where
                               iSect :: Int -> Name
@@ -1341,8 +1341,10 @@ sqlAttConcept fSpec c
 
 stringOfName :: Name -> Text
 stringOfName (Name _ s) = T.pack s
+
 qName :: Text -> Name
-qName = Name (Just (['"'],['"'])) . T.unpack
+qName = Name (Just (['"'], ['"'])) . T.unpack
+
 noQuotes :: Text -> Name
 noQuotes = Name Nothing . T.unpack
 

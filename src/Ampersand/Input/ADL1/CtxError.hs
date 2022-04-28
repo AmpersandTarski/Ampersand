@@ -459,7 +459,7 @@ mkInvariantViolationsError applyViolText (r, ps) =
         [] -> []
         h : tl
           | i == 0 -> ["  ... (" <> tshow (length xs) <> " more)"]
-          | otherwise -> applyViolText r h : listPairs (i -1) tl
+          | otherwise -> applyViolText r h : listPairs (i - 1) tl
 
 mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =

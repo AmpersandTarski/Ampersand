@@ -52,7 +52,7 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
     -- For printing a variable we use varMap
     -- A variable is represented by the first character of its concept name, followed by a number of primes to distinguish from similar variables.
     varMap :: Var -> Text
-    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars -1)) '\''
+    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars - 1)) '\''
       where
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
         vChar = T.toLower . T.take 1 . name

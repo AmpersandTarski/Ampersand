@@ -57,7 +57,7 @@ addTab ::
   FilePos
 addTab pos@(FilePos _ _ col) = addPos tabWidth pos
   where
-    tabWidth = 8 - ((col -1) `mod` 8)
+    tabWidth = 8 - ((col - 1) `mod` 8)
 
 -- | Adds one column to the file position
 addPos :: Int -> FilePos -> FilePos
