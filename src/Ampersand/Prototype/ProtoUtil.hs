@@ -14,7 +14,6 @@ module Ampersand.Prototype.ProtoUtil
     indentBlock,
     phpIndent,
     showPhpStr,
-    escapePhpStr,
     writeFile,
     FEInterface (..),
     FEAtomicOrBox (..),
@@ -247,18 +246,16 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' "" = ""
 
 showPhpStr :: Text -> Text
-showPhpStr txt = q <> escapePhpStr txt <> q
+showPhpStr txt' = T.singleton '\'' <> escapePhpStr txt' <> T.singleton '\''
   where
-    q = T.singleton '\''
-
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
-escapePhpStr :: Text -> Text
-escapePhpStr txt =
-  case T.uncons txt of
-    Nothing -> mempty
-    Just ('\'', s) -> "\\'" <> escapePhpStr s
-    Just ('\\', s) -> "\\\\" <> escapePhpStr s
-    Just (c, s) -> T.cons c $ escapePhpStr s
+    escapePhpStr :: Text -> Text
+    escapePhpStr txt =
+      case T.uncons txt of
+        Nothing -> mempty
+        Just ('\'', s) -> "\\'" <> escapePhpStr s
+        Just ('\\', s) -> "\\\\" <> escapePhpStr s
+        Just (c, s) -> T.cons c $ escapePhpStr s
 
 -- TODO: better abstraction for specific template and fallback to default
 doesTemplateExist :: (HasDirPrototype env) => FilePath -> RIO env Bool

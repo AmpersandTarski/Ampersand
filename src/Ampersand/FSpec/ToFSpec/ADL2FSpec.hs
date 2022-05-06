@@ -16,6 +16,7 @@ import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.Misc.HasClasses
+import Ampersand.Prototype.ProtoUtil
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -173,7 +174,7 @@ makeFSpec env context =
             totext (PairViewExp _ Tgt expr) = lrToText apRight expr
             lrToText :: (AAtomPair -> AAtomValue) -> Expression -> Text
             lrToText g expr =
-              case fmap (showA . apRight) . toList . Set.filter (\ap -> g violPair == apLeft ap) . pairsinexpr $ expr of
+              case fmap (showPhpStr . showA . apRight) . toList . Set.filter (\ap -> g violPair == apLeft ap) . pairsinexpr $ expr of
                 [h] -> h
                 [] -> ""
                 xs -> "{" <> T.intercalate ", " xs <> "}"
