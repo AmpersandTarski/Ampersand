@@ -248,7 +248,7 @@ addSlashes = T.pack . addSlashes' . T.unpack
 showPhpStr :: Text -> Text
 showPhpStr txt' = T.singleton '\'' <> escapePhpStr txt' <> T.singleton '\''
   where
--- NOTE: we assume a single quote php string, so $ and " are not escaped
+    -- NOTE: we assume a single quote php string, so $ and " are not escaped
     escapePhpStr :: Text -> Text
     escapePhpStr txt =
       case T.uncons txt of
