@@ -3,6 +3,7 @@
 ## Unreleased changes
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
 * [Issue #1275](https://github.com/AmpersandTarski/Ampersand/issues/1275) Fix duplicate pattern bug
+* [Issue #1289](https://github.com/AmpersandTarski/Ampersand/issues/1289) The compiler injects data into PHP-code
 * Bugfix grinding metapopulation for Prototypes. Bug was introduced by a refactoring done in v4.3.0
 
 ## v4.6.2 (2 December 2021)
