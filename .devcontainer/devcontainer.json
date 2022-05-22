@@ -14,7 +14,7 @@
         "icon": "terminal-bash"
       },
       "zsh": {
-        "path": "zsh",
+        "path": "zsh"
       },
       "fish": {
         "path": "fish"
