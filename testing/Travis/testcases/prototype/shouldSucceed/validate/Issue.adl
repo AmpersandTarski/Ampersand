@@ -1,0 +1,22 @@
+CONTEXT "Issue"
+
+   REPRESENT A TYPE INTEGER
+
+   RELATION r[A * B] = [ (1,"aap"), (2,"noot"), (3,"mies") ]
+   RELATION s[A * B] = [ (2,"noot"), (3,"mies") ]
+
+--    ROLE ExecEngine MAINTAINS Issue
+   RULE  r - (I#"aap") |- s
+--    VIOLATION ( TXT "{EX} InsPair;personPhoneNumber;Person;",SRC I, TXT ";PhoneNumber;", TGT I )
+
+ENDCONTEXT
+{-
+I#"aap"  =  { (1,"aap"), (2,"aap"), (3,"aap") }
+
+
+    r - (I#"aap")
+  =
+    { (1,"aap"), (2,"noot"), (3,"mies") }  -  { (1,"aap"), (2,"aap"), (3,"aap") }
+  =
+    { (2,"noot"), (3,"mies") }
+-}
