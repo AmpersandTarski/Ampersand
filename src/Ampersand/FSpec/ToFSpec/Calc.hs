@@ -58,6 +58,11 @@ deriveProofs env context =
           )
         | r <- Set.elems $ allRules context
       ]
+    <> mconcat
+      [ para (linebreak <> "derivation for:   " <> (str . showA) expr <> linebreak)
+          <> showProof (para . str . showA) (cfProof expr)
+      | expr <- (map formalExpression . Set.toList . allRules) context
+      ]
   where
     interText _ [] = ""
     interText inbetween (xs : xss) = xs <> inbetween <> interText inbetween xss
