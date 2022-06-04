@@ -1,7 +1,19 @@
 {
-  "name": "HaskellStackDev:8.10.7",
+  "name": "GHC with Haskell Language Server",
   "dockerFile": "Dockerfile",
   "runArgs": [],
+  "build": {
+    "args": {
+      "GHC_VERSION": "8.10.7" // WARNING: ONLY CHANGE IN COMBINATION WITH resolver: in stack.yaml
+    }
+  },
+  "mounts": [
+    // Make sure the volume names (e.g vscode-haskell-stack) are unique to a project to avoid sharing caches between
+    // other code bases.
+    "src=vscode-haskell-stack,target=/home/vscode/.stack,type=volume",
+    "src=vscode-haskell-cache,target=/home/vscode/.cache,type=volume"
+  ],
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/",
   // Use 'settings' to set *default* container specific settings.json values on container create. 
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "settings": {
@@ -32,8 +44,12 @@
   // Use 'appPort' to create a container with published ports. If the port isn't working, be sure
   // your server accepts connections from all interfaces (0.0.0.0 or '*'), not just localhost.
   // "appPort": [],
+  
   // Comment out the next line if you want to run as root instead
-  // "remoteUser": "vscode",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "workspaceFolder": "/home/vscode/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/workspace,type=bind",
   // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [
     "justusadam.language-haskell",

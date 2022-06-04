@@ -1,4 +1,6 @@
-FROM haskell:8.10.7 
+ARG GHC_VERSION=8.10.7
+FROM haskell:${GHC_VERSION}
+
 
 # This Dockerfile adds a non-root user with sudo access. Use the "remoteUser"
 # property in devcontainer.json to use it. On Linux, the container user's GID/UIDs
@@ -22,7 +24,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # * Anything else you want to do like clean up goes here *
 # ********************************************************
 # Set to false to skip installing zsh and Oh My ZSH!
-ARG INSTALL_ZSH="false"
+ARG INSTALL_ZSH="true"
 
 # Location and expected SHA for common setup script - SHA generated on release
 ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/master/script-library/common-alpine.sh"
@@ -40,6 +42,19 @@ ARG COMMON_SCRIPT_SHA="dev-mode"
 
 # RUN curl -sSL https://get.haskellstack.org/ | sh
 
-RUN stack install ormolu-0.1.4.1
 
 USER $USERNAME
+
+RUN mkdir /home/${USERNAME}/.stack && \
+    echo "system-ghc: true" >> /home/${USERNAME}/.stack/config.yaml && \
+    mkdir /home/${USERNAME}/workspace
+
+
+ENV PATH /opt/haskell-tools/bin:$PATH
+ENV PATH /home/${USERNAME}/.local/bin:$PATH
+
+RUN stack --version
+RUN stack exec ghc -- --version
+
+# RUN PATH=$(stack path --compiler-exe):PATH
+# RUN stack install ormolu-0.1.4.1
