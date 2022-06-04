@@ -14,22 +14,22 @@ class HasProps r where
   properties :: r -> AProps
 
 class Relational r where
-  isProp :: r -> Bool     -- > If True, then the argument is a property. Otherwise we don't know.
-  isIdent :: r -> Bool    -- > If True, then the argument is equivalent to I. Otherwise we don't know.
-  isImin :: r -> Bool     -- > If True, then the argument is equivalent to -I. Otherwise we don't know.
-  isTrue :: r -> Bool     -- > If True, then the argument is equivalent to V. Otherwise we don't know.
-  isFalse :: r -> Bool    -- > If True, then the argument is equivalent to -V. Otherwise we don't know.
+  isProp :: r -> Bool -- > If True, then the argument is a property. Otherwise we don't know.
+  isIdent :: r -> Bool -- > If True, then the argument is equivalent to I. Otherwise we don't know.
+  isImin :: r -> Bool -- > If True, then the argument is equivalent to -I. Otherwise we don't know.
+  isTrue :: r -> Bool -- > If True, then the argument is equivalent to V. Otherwise we don't know.
+  isFalse :: r -> Bool -- > If True, then the argument is equivalent to -V. Otherwise we don't know.
   isFunction :: r -> Bool -- > If True, then the argument is a total function. Otherwise we don't know.
-  isTot :: r -> Bool      -- > If True, then the argument is total. Otherwise we don't know.
-  isUni :: r -> Bool      -- > If True, then the argument is univalent. Otherwise we don't know.
-  isSur :: r -> Bool      -- > If True, then the argument is surjective. Otherwise we don't know.
-  isInj :: r -> Bool      -- > If True, then the argument is injective. Otherwise we don't know.
-  isRfx :: r -> Bool      -- > If True, then the argument is reflexive. Otherwise we don't know.
-  isIrf :: r -> Bool      -- > If True, then the argument is irreflexive. Otherwise we don't know.
-  isTrn :: r -> Bool      -- > If True, then the argument is transitive. Otherwise we don't know.
-  isSym :: r -> Bool      -- > If True, then the argument is symmetric. Otherwise we don't know.
-  isAsy :: r -> Bool      -- > If True, then the argument is antisymmetric. Otherwise we don't know.
- 
+  isTot :: r -> Bool -- > If True, then the argument is total. Otherwise we don't know.
+  isUni :: r -> Bool -- > If True, then the argument is univalent. Otherwise we don't know.
+  isSur :: r -> Bool -- > If True, then the argument is surjective. Otherwise we don't know.
+  isInj :: r -> Bool -- > If True, then the argument is injective. Otherwise we don't know.
+  isRfx :: r -> Bool -- > If True, then the argument is reflexive. Otherwise we don't know.
+  isIrf :: r -> Bool -- > If True, then the argument is irreflexive. Otherwise we don't know.
+  isTrn :: r -> Bool -- > If True, then the argument is transitive. Otherwise we don't know.
+  isSym :: r -> Bool -- > If True, then the argument is symmetric. Otherwise we don't know.
+  isAsy :: r -> Bool -- > If True, then the argument is antisymmetric. Otherwise we don't know.
+
 instance HasProps Relation where
   properties = decprps
 
@@ -83,10 +83,10 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EDif (l, r) -> isTrue l && isFalse r
       ECps (l, r)
         | isUni l && isTot l -> isTrue r
-        | isInj r && isSur r -> isTrue l  --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
-                                          --SJO, 20220603: Restored this statement because this is the symmetric version of the former
+        | isInj r && isSur r -> isTrue l --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+        --SJO, 20220603: Restored this statement because this is the symmetric version of the former
         | otherwise -> isTrue l && isTrue r
-      EPrd (l, r) -> isTrue l && isTrue r  -- SJ, 20220604: if you refine this, please consider issue #1293
+      EPrd (l, r) -> isTrue l && isTrue r -- SJ, 20220604: if you refine this, please consider issue #1293
       EKl0 e -> isTrue e
       EKl1 e -> isTrue e
       EFlp e -> isTrue e

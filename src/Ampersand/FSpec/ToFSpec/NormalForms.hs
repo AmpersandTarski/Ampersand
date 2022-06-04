@@ -5,7 +5,7 @@ module Ampersand.FSpec.ToFSpec.NormalForms
     cfProof,
     dfProofs, -- these are for confluence testing.
     makeAllConjs,
-    conjuncts
+    conjuncts,
   )
 where
 
