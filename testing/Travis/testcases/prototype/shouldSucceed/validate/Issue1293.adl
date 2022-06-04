@@ -9,6 +9,10 @@ CONTEXT "Issue1293"
    RULE  r - (I#"aap") |- s
 --    VIOLATION ( TXT "{EX} InsPair;personPhoneNumber;Person;",SRC I, TXT ";PhoneNumber;", TGT I )
 
+
+{- In order to compile this script with --validate, we need to add the following stuff: -}
+   RELATION label [PF_NavMenuItem*PF_Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+    
 ENDCONTEXT
 {-
 I#"aap"  =  { (1,"aap"), (2,"aap"), (3,"aap") }
