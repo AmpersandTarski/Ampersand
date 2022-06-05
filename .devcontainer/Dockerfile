@@ -1,5 +1,5 @@
 FROM debian:bullseye as base
-
+# This .devcontainer stuff is shamelessly copied from github.com/vzarytovskii/haskell-dev-env
 ARG USERNAME=vscode
 ARG GHC_VERSION=8.10.7
 ARG STACK_VERSION=2.7.5
