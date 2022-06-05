@@ -1,5 +1,5 @@
-# ARG GHC_VERSION=8.10.7
 ARG GHC_VERSION
+ARG RESOLVER
 FROM haskell:${GHC_VERSION}
 
 
@@ -57,5 +57,5 @@ ENV PATH /home/${USERNAME}/.local/bin:$PATH
 RUN stack --version
 RUN stack exec ghc -- --version
 
-# RUN PATH=$(stack path --compiler-exe):PATH
-# RUN stack install ormolu-0.1.4.1
+RUN PATH=$(stack path --compiler-exe):PATH
+RUN stack install --resolver ${RESOLVER} ormolu-0.1.4.1

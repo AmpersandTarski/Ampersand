@@ -4,7 +4,8 @@
   "runArgs": [],
   "build": {
     "args": {
-      "GHC_VERSION": "8.10.7" // WARNING: ONLY CHANGE IN COMBINATION WITH resolver: in stack.yaml
+      "GHC_VERSION": "8.10.7", // WARNING: ONLY CHANGE IN COMBINATION WITH resolver: in stack.yaml
+      "RESOLVER": "lts-18.18"  // Synchronise this with the resolver in the file `package.yaml`
     }
   },
   "mounts": [
