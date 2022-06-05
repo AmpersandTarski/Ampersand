@@ -1,61 +1,95 @@
-ARG GHC_VERSION
-ARG RESOLVER
-FROM haskell:${GHC_VERSION}
+FROM debian:bullseye as base
 
-
-# This Dockerfile adds a non-root user with sudo access. Use the "remoteUser"
-# property in devcontainer.json to use it. On Linux, the container user's GID/UIDs
-# will be updated to match your local UID/GID (when using the dockerFile property).
-# See https://aka.ms/vscode-remote/containers/non-root-user for details.
 ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
+ARG GHC_VERSION=8.10.7
+ARG STACK_VERSION=2.7.5
+ARG STACK_RESOLVER=lts-18.28
+ARG CABAL_VERSION=3.6.2.0
+ARG HLS_VERSION=1.7.0.0
+ARG LLVM_VERSION=12
 
-# Create the user
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    #
-    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
-    && apt-get update \
-    && apt-get install -y sudo \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+ENV USERNAME=${USERNAME} \
+    USER_UID=2001 \
+    USER_GID=2001 \
+    DEBIAN_FRONTEND=noninteractive \
+    GHC_VERSION=${GHC_VERSION} \
+    STACK_RESOLVER=${STACK_RESOLVER} \
+    STACK_VERSION=${STACK_VERSION} \
+    CABAL_VERSION=${CABAL_VERSION} \
+    HLS_VERSION=${HLS_VERSION} \
+    LLVM_VERSION=${LLVM_VERSION}
 
-# ********************************************************
-# * Anything else you want to do like clean up goes here *
-# ********************************************************
-# Set to false to skip installing zsh and Oh My ZSH!
-ARG INSTALL_ZSH="true"
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends apt-utils bash build-essential ca-certificates curl gcc git gnupg libffi-dev libffi7 libgmp-dev libgmp-dev libgmp10 libicu-dev libncurses-dev libncurses5 libnuma1 libnuma-dev libtinfo5 lsb-release make procps software-properties-common sudo wget xz-utils z3 zlib1g-dev
 
-# Location and expected SHA for common setup script - SHA generated on release
-ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/master/script-library/common-alpine.sh"
-ARG COMMON_SCRIPT_SHA="dev-mode"
+RUN wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh ${LLVM_VERSION} && rm /tmp/llvm.sh
 
-# Configure apt and install packages
-# RUN apk update \
-#    && apk add --no-cache wget coreutils ca-certificates \
-#    && wget -q -O /tmp/common-setup.sh $COMMON_SCRIPT_SOURCE \
-#    && if [ "$COMMON_SCRIPT_SHA" != "dev-mode" ]; then echo "$COMMON_SCRIPT_SHA /tmp/common-setup.sh" | sha256sum -c - ; fi \
-#    && /bin/ash /tmp/common-setup.sh "$INSTALL_ZSH" "$USERNAME" "$USER_UID" "$USER_GID" \
-#    && rm /tmp/common-setup.sh
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
 
-# RUN sudo apt-get install haskell-platform
+USER ${USER_UID}:${USER_GID}
+WORKDIR /home/${USERNAME}
+ENV PATH="/home/${USERNAME}/.local/bin:/home/${USERNAME}/.cabal/bin:/home/${USERNAME}/.ghcup/bin:$PATH"
 
-# RUN curl -sSL https://get.haskellstack.org/ | sh
+RUN echo "export PATH=$PATH" >> /home/$USERNAME/.profile
 
+ENV BOOTSTRAP_HASKELL_NONINTERACTIVE=yes \
+    BOOTSTRAP_HASKELL_NO_UPGRADE=yes
 
-USER $USERNAME
+FROM base as tooling
 
-RUN mkdir /home/${USERNAME}/.stack && \
-    echo "system-ghc: true" >> /home/${USERNAME}/.stack/config.yaml && \
-    mkdir /home/${USERNAME}/workspace
+RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
+# Set the GHC version.
+RUN ghcup install ghc ${GHC_VERSION} && ghcup set ghc ${GHC_VERSION}
 
-ENV PATH /opt/haskell-tools/bin:$PATH
-ENV PATH /home/${USERNAME}/.local/bin:$PATH
+# Install cabal-iinstall
+RUN ghcup install cabal ${CABAL_VERSION} && ghcup set cabal ${CABAL_VERSION}
 
-RUN stack --version
-RUN stack exec ghc -- --version
+# Update Cabal.
+RUN cabal update && cabal new-install cabal-install
 
-RUN PATH=$(stack path --compiler-exe):PATH
-RUN stack install --resolver ${RESOLVER} ormolu-0.1.4.1
+# Configure cabal
+RUN cabal user-config update -f && \
+    sed -i 's/-- ghc-options:/ghc-options: -haddock/g' ~/.cabal/config
+
+# Install stack
+RUN ghcup install stack ${STACK_VERSION} && ghcup set stack ${STACK_VERSION}
+
+# Set system-ghc, install-ghc and resolver for stack.
+RUN ((stack ghc -- --version 2>/dev/null) || true) && \
+    # Set global defaults for stack.
+    stack config --system-ghc set system-ghc true --global && \
+    stack config --system-ghc set install-ghc false --global && \
+    stack config --system-ghc set resolver $STACK_RESOLVER
+
+# Set global custom defaults for stack.
+RUN printf "ghc-options:\n  \"\$everything\": -haddock\n" >> /home/${USERNAME}/.stack/config.yaml
+
+# Install hls
+RUN ghcup install hls ${HLS_VERSION} && ghcup set hls ${HLS_VERSION}
+
+FROM tooling as packages
+
+# Install global packages.
+# Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
+RUN cabal install --haddock-hoogle -v \
+    haskell-dap-0.0.15.0 \
+    ghci-dap-0.0.17.0 \
+    haskell-debug-adapter-0.0.35.0 \
+    hlint-3.2.7 \
+    apply-refact-0.9.3.0 \
+    retrie-1.1.0.0 \
+    stylish-haskell-0.13.0.0 \
+    hoogle-5.0.18.3 \
+    ormolu-0.1.3.1 \
+    liquidhaskell-0.8.10.2
+
+# Generate hoogle db
+RUN hoogle generate && stack hoogle
+
+ENV DEBIAN_FRONTEND=dialog
+
+ENTRYPOINT ["/bin/bash"]
