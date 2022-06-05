@@ -19,9 +19,19 @@
     "haskell.haskell",
     "phoityne.phoityne-vscode",
     "eriksik2.vscode-ghci",
-    "jcanero.hoogle-vscode"
+    "jcanero.hoogle-vscode",
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    "me-dutour-mathieu.vscode-github-actions",
+    "redhat.vscode-yaml",
+    "ampersandtarski.language-ampersand",
+    "mhutchie.git-graph",
+    "editorconfig.editorconfig",
+    // Because of bug (see https://github.com/Microsoft/vscode/issues/45997):
+    "bdsoftware.format-on-auto-save"
   ],
   "settings": {
+    "editor.formatonsave": true,
     "files.exclude": {
       "**/*.olean": true,
       "**/.DS_Store": true,
@@ -86,6 +96,29 @@
     "haskell.trace.client": "error",
     "haskell.trace.server": "off",
     "haskell.upgradeGHCup": true,
-    "hoogle-vscode.useCabalDependencies": true
+    "hoogle-vscode.useCabalDependencies": true,
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+      "bash": {
+        "path": "bash",
+        "icon": "terminal-bash"
+      },
+      "zsh": {
+        "path": "zsh",
+        "icon": "terminal-linux"
+      },
+      "fish": {
+        "path": "fish",
+        "icon": "terminal-linux"
+      },
+      "tmux": {
+        "path": "tmux",
+        "icon": "terminal-tmux"
+      },
+      "pwsh": {
+        "path": "pwsh",
+        "icon": "terminal-powershell"
+      }
+  }
   }
 }
