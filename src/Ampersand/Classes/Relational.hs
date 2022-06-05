@@ -14,22 +14,21 @@ class HasProps r where
   properties :: r -> AProps
 
 class Relational r where
-  isProp :: r -> Bool -- > tells whether the argument is a property
-  isImin :: r -> Bool -- > tells whether the argument is equivalent to I-
-  isTrue :: r -> Bool -- > tells whether the argument is equivalent to V
-  isFalse :: r -> Bool -- > tells whether the argument is equivalent to V-
-  isFunction :: r -> Bool
-  isTot :: r -> Bool --
-  isUni :: r -> Bool --
-  isSur :: r -> Bool --
-  isInj :: r -> Bool --
-  isRfx :: r -> Bool --
-  isIrf :: r -> Bool --
-  isTrn :: r -> Bool --
-  isSym :: r -> Bool --
-  isAsy :: r -> Bool --
-  isIdent :: r -> Bool -- > tells whether the argument is equivalent to I
-  isEpsilon :: r -> Bool -- > tells whether the argument is equivalent to I
+  isProp :: r -> Bool -- > If True, then the argument is a property. Otherwise we don't know.
+  isIdent :: r -> Bool -- > If True, then the argument is equivalent to I. Otherwise we don't know.
+  isImin :: r -> Bool -- > If True, then the argument is equivalent to -I. Otherwise we don't know.
+  isTrue :: r -> Bool -- > If True, then the argument is equivalent to V. Otherwise we don't know.
+  isFalse :: r -> Bool -- > If True, then the argument is equivalent to -V. Otherwise we don't know.
+  isFunction :: r -> Bool -- > If True, then the argument is a total function. Otherwise we don't know.
+  isTot :: r -> Bool -- > If True, then the argument is total. Otherwise we don't know.
+  isUni :: r -> Bool -- > If True, then the argument is univalent. Otherwise we don't know.
+  isSur :: r -> Bool -- > If True, then the argument is surjective. Otherwise we don't know.
+  isInj :: r -> Bool -- > If True, then the argument is injective. Otherwise we don't know.
+  isRfx :: r -> Bool -- > If True, then the argument is reflexive. Otherwise we don't know.
+  isIrf :: r -> Bool -- > If True, then the argument is irreflexive. Otherwise we don't know.
+  isTrn :: r -> Bool -- > If True, then the argument is transitive. Otherwise we don't know.
+  isSym :: r -> Bool -- > If True, then the argument is symmetric. Otherwise we don't know.
+  isAsy :: r -> Bool -- > If True, then the argument is antisymmetric. Otherwise we don't know.
 
 instance HasProps Relation where
   properties = decprps
@@ -77,21 +76,21 @@ instance HasProps Expression where
 instance Relational Expression where -- TODO: see if we can find more property constraints...
   isTrue expr =
     case expr of
-      EEqu (l, r) -> l == r
+      EEqu (l, r) -> l == r || isTrue l && isTrue r || isFalse r && isFalse l
       EInc (l, _) -> isTrue l
       EIsc (l, r) -> isTrue l && isTrue r
       EUni (l, r) -> isTrue l || isTrue r
       EDif (l, r) -> isTrue l && isFalse r
       ECps (l, r)
         | isUni l && isTot l -> isTrue r
-        --   | isSur r && isSur r -> isTrue l  --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+        | isInj r && isSur r -> isTrue l --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+        --SJO, 20220603: Restored this statement because this is the symmetric version of the former
         | otherwise -> isTrue l && isTrue r
-      EPrd (l, r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
+      EPrd (l, r) -> isTrue l && isTrue r -- SJ, 20220604: if you refine this, please consider issue #1293
       EKl0 e -> isTrue e
       EKl1 e -> isTrue e
       EFlp e -> isTrue e
       ECpl e -> isFalse e
-      EDcD {} -> False
       EDcI c -> isONE c
       EEps i _ -> isONE i
       EDcV {} -> True
@@ -110,10 +109,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl1 e -> isFalse e
       EFlp e -> isFalse e
       ECpl e -> isTrue e
-      EDcD {} -> False
-      EDcI {} -> False
-      EEps {} -> False
-      EDcV {} -> False
       EBrk e -> isFalse e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
@@ -140,9 +135,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EBrk f -> isIdent f
       EFlp f -> isIdent f
       _ -> False -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad
-  isEpsilon e = case e of
-    EEps {} -> True
-    _ -> False
 
   isImin expr' = case expr' of -- > tells whether the argument is equivalent to I-
     EEqu (l, r) -> isImin (EIsc (EInc (l, r), EInc (r, l))) -- TODO: maybe derive something better?
