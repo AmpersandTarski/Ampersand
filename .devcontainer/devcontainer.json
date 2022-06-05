@@ -119,6 +119,6 @@
         "path": "pwsh",
         "icon": "terminal-powershell"
       }
-  }
+    }
   }
 }
