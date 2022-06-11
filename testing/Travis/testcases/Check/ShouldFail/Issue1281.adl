@@ -3,7 +3,7 @@ CONTEXT Issue1281
 r :: A*B
 s :: C*D
 
-ENFORCE r = s
+ENFORCE r := s
 
 ENDCONTEXT
 
