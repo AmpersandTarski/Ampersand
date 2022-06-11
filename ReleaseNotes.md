@@ -3,6 +3,7 @@
 ## Unreleased changes
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
 * Improve devcontainer functionality for developers of Ampersand.
+* [Issue #1281](https://github.com/AmpersandTarski/Ampersand/issues/1281) Fix an omision in typecheck of ENFORCE statement.
 
 ## v4.6.3 (28 April 2022)
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
