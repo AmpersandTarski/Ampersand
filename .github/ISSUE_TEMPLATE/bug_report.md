@@ -1,3 +1,11 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: 'status: needs triage'
+assignees: ''
+---
+
 <!-- Thanks for contributing to Ampersand! Please pick a clear title and proceed.-->
 <!-- Please note: If your issue is about RAP3, please report it over there:-->
 <!--      https://github.com/AmpersandTarski/RAP/issues -->
