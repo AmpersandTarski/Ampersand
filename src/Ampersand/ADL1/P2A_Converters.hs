@@ -1000,10 +1000,6 @@ pCtx2aCtx
             penfOp = oper,
             penfExpr = x
           } =
-          -- @sjcjoosten, could you fix this?
-          -- This is wrong here. We need:
-          --   1) the source of x to match the source of pRel
-          --   2) the target of x to match the target of pRel
           case pRel of
             (_, Known (EDcD rel)) ->
               do
