@@ -1008,6 +1008,14 @@ pCtx2aCtx
             (_, Known (EDcD rel)) ->
               do
                 (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
+                -- SJC: the following two error messages can occur in parallel
+                --      thanks to 'ApplicativeDo', however, we can write the following
+                --      sequential-looking code that suggests checking src before tgt.
+                --      ApplicativeDo should translate this with a <*> instead.
+                let srcOk = source expr `isaC` source rel
+                unless srcOk $ mustBeOrdered pos' (Src,expr) (Src,rel)
+                let tgtOk = target expr `isaC` target rel
+                unless tgtOk $ mustBeOrdered pos' (Tgt,expr) (Tgt,rel)
                 return
                   AEnforce
                     { pos = pos',
