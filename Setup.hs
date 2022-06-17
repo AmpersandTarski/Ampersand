@@ -27,15 +27,26 @@ import System.Process (readProcessWithExitCode)
 import Prelude (print, putStrLn)
 
 main :: IO ()
-main = defaultMainWithHooks (simpleUserHooks {buildHook = generateHook})
-
-generateHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
+main =
+  defaultMainWithHooks
+    simpleUserHooks
+      { buildHook = customBuildHook,
+        replHook = customReplHook
+      }
 
 -- | Generate Haskell modules that are required for the build and start the build
-generateHook pd lbi uh bf = do
+customBuildHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
+customBuildHook pd lbi uh bf = do
   generateBuildInfoModule (T.pack . prettyShow . pkgVersion . package $ pd)
   generateStaticFileModule
   buildHook simpleUserHooks pd lbi uh bf -- start the build
+
+-- | Generate Haskell modules that are required for the build and start the build
+customReplHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> ReplFlags -> [String] -> IO ()
+customReplHook pd lbi uh rf args = do
+  generateBuildInfoModule (T.pack . prettyShow . pkgVersion . package $ pd)
+  generateStaticFileModule
+  replHook simpleUserHooks pd lbi uh rf args -- start the build
 
 generateBuildInfoModule :: Text -> IO ()
 
