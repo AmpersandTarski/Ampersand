@@ -1009,9 +1009,9 @@ pCtx2aCtx
                 --      sequential-looking code that suggests checking src before tgt.
                 --      ApplicativeDo should translate this with a <*> instead.
                 let srcOk = source expr `isaC` source rel
-                unless srcOk $ mustBeOrdered pos' (Src,expr) (Src,rel)
+                unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
                 let tgtOk = target expr `isaC` target rel
-                unless tgtOk $ mustBeOrdered pos' (Tgt,expr) (Tgt,rel)
+                unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
                 return
                   AEnforce
                     { pos = pos',
