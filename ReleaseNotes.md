@@ -1,9 +1,13 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
+
+## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
 * Improve devcontainer functionality for developers of Ampersand.
-* make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
+* [Issue #1281](https://github.com/AmpersandTarski/Ampersand/issues/1281) Fix an omision in typecheck of ENFORCE statement.
+* Generate multiple error messages when appropriate
 
 ## v4.6.3 (28 April 2022)
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts

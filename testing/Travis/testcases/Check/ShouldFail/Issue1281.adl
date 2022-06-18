@@ -1,0 +1,10 @@
+CONTEXT Issue1281
+
+r :: A*B
+s :: C*D
+
+ENFORCE r := s
+
+ENDCONTEXT
+
+-- The types of expressions at both sides of the `:=` operator must match. In this case, they do not. Hence, this script must fail.
