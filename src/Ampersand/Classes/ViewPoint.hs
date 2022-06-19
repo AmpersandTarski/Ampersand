@@ -178,9 +178,8 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
           rrmsg = [],
           rrviol =
             Just . PairView $
-              PairViewText orig ("{EX} " <> command <> ";")
-                NE.:| [ PairViewText orig $ name rel <> ";" <> name (source rel) <> ";",
-                        PairViewExp orig Src (EDcI (source rel)),
+              PairViewText orig ("{EX} " <> command <> ";" <> name rel <> ";" <> name (source rel) <> ";")
+                NE.:| [ PairViewExp orig Src (EDcI (source rel)),
                         PairViewText orig $ ";" <> name (target rel) <> ";",
                         PairViewExp orig Tgt (EDcI (target rel))
                       ],
