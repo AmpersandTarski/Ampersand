@@ -1,4 +1,4 @@
-module Ampersand.Classes.ViewPoint (Language (..), enforce2Rules) where
+module Ampersand.Classes.ViewPoint (Language (..)) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
@@ -166,8 +166,8 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
     IsSubSet {} -> [delPair]
     IsSameSet {} -> [insPair, delPair]
   where
-    insPair = mkRule "InsPair" (EInc (expr, bindedRel))
-    delPair = mkRule "DelPair" (EInc (bindedRel, expr))
+    insPair = mkRule "InsPair" (EInc (expr, bindedRel)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
+    delPair = mkRule "DelPair" (EInc (bindedRel, expr)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
     bindedRel = EDcD rel
     mkRule command fExpr =
       Ru
