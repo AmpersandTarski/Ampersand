@@ -7,7 +7,7 @@ module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
 import Ampersand.Basics hiding (view, (<$>))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
-import Data.List ( nub )
+import Data.List (nub)
 import RIO.Char (isLetter, toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -112,11 +112,12 @@ instance Pretty P_Context where
       <+\> text "ENDCONTEXT"
 
 perlineRelations :: [P_Relation] -> Doc
-perlineRelations ds
- = if length ds>4*length (nub (map src ds))
-             then vsep [ vsep [ pretty (d::P_Relation) | d<-ds, src d==s] | s<-nub (map src ds) ]  -- if there are many wide tables (as is the case with data-analysis), then sort per entity.
-             else vsep (map pretty ds)
-   where src = pSrc . dec_sign
+perlineRelations ds =
+  if length ds > 4 * length (nub (map src ds))
+    then vsep [vsep [pretty (d :: P_Relation) | d <- ds, src d == s] | s <- nub (map src ds)] -- if there are many wide tables (as is the case with data-analysis), then sort per entity.
+    else vsep (map pretty ds)
+  where
+    src = pSrc . dec_sign
 
 instance Pretty MetaData where
   pretty (MetaData _ nm val) =

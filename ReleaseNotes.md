@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
 
 ## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
