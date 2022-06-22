@@ -53,7 +53,7 @@ chpDiagnosis env fSpec
     outputLang' = outputLang env fSpec
     roleomissions :: Blocks
     roleomissions
-      | null (vpatterns fSpec) = mempty
+      | null (instanceList fSpec :: [Pattern]) = mempty
       | (null . fRoleRuls) fSpec && (not . null . vrules) fSpec =
         plain
           ( (emph . str . upCap . name) fSpec
@@ -380,7 +380,7 @@ chpDiagnosis env fSpec
               d `notElem` (bindedRelationsIn . vrules) fSpec
           ]
         pats =
-          [ pat | pat <- vpatterns fSpec, (not . null) (relsDefdIn pat Set.\\ bindedRelationsIn pat)
+          [ pat | pat <- instanceList fSpec, (not . null) (relsDefdIn pat Set.\\ bindedRelationsIn pat)
           ]
         pictsWithUnusedRels = [makePicture env fSpec (PTDeclaredInPat pat) | pat <- pats]
 
@@ -479,7 +479,7 @@ chpDiagnosis env fSpec
               ]
           )
           -- Content rows
-          ( map mkTableRowPat (vpatterns fSpec)
+          ( map mkTableRowPat (instanceList fSpec :: [Pattern])
               <> [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
           )
       where
@@ -536,7 +536,7 @@ chpDiagnosis env fSpec
                 | (rol, rul) <- fRoleRuls fSpec
               ]
       where
-        multProcs = length (vpatterns fSpec) > 1
+        multProcs = length (instanceList fSpec :: [Pattern]) > 1
 
     wipReport :: Blocks
     wipReport =

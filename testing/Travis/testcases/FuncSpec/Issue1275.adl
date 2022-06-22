@@ -1,0 +1,20 @@
+CONTEXT Issue1275
+
+   PATTERN Foo
+   RELATION r[A*B]
+   ENDPATTERN
+
+   PATTERN Foo
+   RELATION s[A*B]
+   ENDPATTERN
+
+ENDCONTEXT
+{- SJ 2022-02-08
+This test demonstrates that duplicate pattern names are allowed. The intended semantics is that there is just one pattern named Foo and the contents of that pattern is the union of the two patterns in the script:
+```
+   PATTERN Foo
+   RELATION r[A*B]
+   RELATION s[A*B]
+   ENDPATTERN
+```
+-}

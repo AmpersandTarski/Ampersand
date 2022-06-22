@@ -53,7 +53,7 @@ chpConceptualAnalysis env lev fSpec =
       where
         purps = purposes2Blocks env (purposesOf fSpec outputLang' fSpec)
     pictures =
-      map pictOfPat (vpatterns fSpec)
+      map pictOfPat (instanceList fSpec)
         <> map pictOfConcept (Set.elems $ concs fSpec)
         <> map pictOfRule (Set.elems $ vrules fSpec)
     -----------------------------------------------------

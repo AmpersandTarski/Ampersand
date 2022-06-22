@@ -1324,7 +1324,7 @@ normStep
         where
           (t, steps, equ') = nM posCpl l []
           (f, steps', equ'') = nM posCpl r (l : rs)
-      nM _ (EPrd (l, EPrd (_, r))) _ = (l .*. r, ["eliminate middle in cartesian product"], "<=>")
+      nM _ (EPrd (_l, EPrd (m, _r))) _ | isFalse m = (m, ["eliminate middle in cartesian product"], "<=>")
       nM posCpl (EPrd (l, r)) _ = (t .*. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM posCpl l []

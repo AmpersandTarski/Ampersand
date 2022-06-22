@@ -1,7 +1,15 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
+* Improve devcontainer functionality for developers of Ampersand.
+* [Issue #1281](https://github.com/AmpersandTarski/Ampersand/issues/1281) Fix an omision in typecheck of ENFORCE statement.
+* Generate multiple error messages when appropriate
+
+## v4.6.3 (28 April 2022)
 * [Issue #1267](https://github.com/AmpersandTarski/Ampersand/issues/1267) Automatically add ReleaseNotes to release artefacts
+* [Issue #1275](https://github.com/AmpersandTarski/Ampersand/issues/1275) Fix duplicate pattern bug
+* Bugfix grinding metapopulation for Prototypes. Bug was introduced by a refactoring done in v4.3.0
 
 ## v4.6.2 (2 December 2021)
 

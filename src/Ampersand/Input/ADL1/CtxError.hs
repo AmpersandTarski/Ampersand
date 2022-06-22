@@ -691,7 +691,7 @@ instance Applicative Guarded where
   (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws <> ws')
   (<*>) (Errors a) (Checked _ _) = Errors a
   (<*>) (Checked _ _) (Errors b) = Errors b
-  (<*>) (Errors a) (Errors b) = Errors (a >> b)
+  (<*>) (Errors a) (Errors b) = Errors (a <> b)
 
 instance Monad Guarded where
   (>>=) (Checked a ws) f = addWarnings ws (f a)

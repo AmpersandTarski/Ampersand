@@ -344,7 +344,7 @@ orderingByTheme env fSpec =
     | (pat, i, nrules, nidrules, nrelations, nconcepts) <- L.zip6 (vpatterns fSpec) [0 ..] (NE.init nruless) (NE.init nidruless) (NE.init nrelationss) (NE.init nconceptss)
   ]
     <> [ Thm
-           { themeNr = length (vpatterns fSpec),
+           { themeNr = length (instanceList fSpec :: [Pattern]),
              patOfTheme = Nothing,
              rulesOfTheme = fmap rul2rulCont (NE.last nruless),
              idRulesOfTheme = fmap idrul2rulCont (NE.last nidruless),
