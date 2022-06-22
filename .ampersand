@@ -1,2 +1,3 @@
 AmpersandData/FormalAmpersand/FormalAmpersand.adl
 AmpersandData/PrototypeContext/PrototypeContext.adl
+testing/Travis/testcases/prototype/shouldSucceed/Issue1281.adl

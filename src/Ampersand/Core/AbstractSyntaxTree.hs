@@ -225,7 +225,8 @@ data AEnforce = AEnforce
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
     -- | If the Enforce is defined in the context of a pattern, the name of that pattern.
-    enfPatName :: !(Maybe Text)
+    enfPatName :: !(Maybe Text),
+    enfRules :: ![Rule]
   }
   deriving (Eq)
 

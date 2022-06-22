@@ -34,7 +34,7 @@ class Language a where
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforce rules that are maintained within this viewpoint.
-  enforceRules x = Set.fromList . concatMap enforce2Rules . enforces $ x
+  enforceRules x = Set.fromList . concatMap enfRules . enforces $ x
   allRules :: a -> Rules
   allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x
   identities ::
@@ -150,39 +150,11 @@ instance Language Pattern where
   udefRoleRules = ptrrs
 
 roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
-roleRuleFromEnforceRule = map mkRoleRule . enforce2Rules
+roleRuleFromEnforceRule = map mkRoleRule . enfRules
   where
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
           arRoles = Role "ExecEngine" NE.:| [],
           arRules = name rul NE.:| []
-        }
-
-enforce2Rules :: AEnforce -> [Rule]
-enforce2Rules (AEnforce orig rel op expr mPat) =
-  case op of
-    IsSuperSet {} -> [insPair]
-    IsSubSet {} -> [delPair]
-    IsSameSet {} -> [insPair, delPair]
-  where
-    insPair = mkRule "InsPair" (EInc (expr, bindedRel)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
-    delPair = mkRule "DelPair" (EInc (bindedRel, expr)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
-    bindedRel = EDcD rel
-    mkRule command fExpr =
-      Ru
-        { rrnm = "Compute " <> showRel rel <> " using " <> command,
-          formalExpression = fExpr,
-          rrfps = orig,
-          rrmean = [],
-          rrmsg = [],
-          rrviol =
-            Just . PairView $
-              PairViewText orig ("{EX} " <> command <> ";" <> name rel <> ";" <> name (source rel) <> ";")
-                NE.:| [ PairViewExp orig Src (EDcI (source rel)),
-                        PairViewText orig $ ";" <> name (target rel) <> ";",
-                        PairViewExp orig Tgt (EDcI (target rel))
-                      ],
-          rrpat = mPat,
-          rrkind = Enforce
         }
