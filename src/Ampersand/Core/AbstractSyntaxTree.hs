@@ -164,9 +164,6 @@ data A_Context = ACtx
   }
   deriving (Typeable)
 
-instance Show A_Context where
-  show = T.unpack . name
-
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
 
