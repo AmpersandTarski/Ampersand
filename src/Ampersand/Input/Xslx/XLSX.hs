@@ -512,7 +512,7 @@ conceptNameWithOptionalDelimiter t'
     t = trim t'
 
 isDelimiter :: Char -> Bool
-isDelimiter c = isPunctuation c || c `elem` [',', ';']
+isDelimiter = isPunctuation
 
 isConceptName :: Text -> Bool
 isConceptName t = case T.uncons t of
