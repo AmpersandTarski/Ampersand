@@ -34,10 +34,6 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import Text.XML.HXT.Core hiding (fatal, trace, utf8)
 
--- Auxiliary
-fst4 :: (a, b, c, d) -> a
-fst4 (x, _, _, _) = x
-
 -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
 --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
 --   The resulting data structure contains the folder structure of the tool Archi (https://github.com/archimatetool/archi) and represents the model-elements and their properties.
@@ -116,7 +112,7 @@ samePurp :: PPurpose -> PPurpose -> Bool
 samePurp prp prp' = pexObj prp == pexObj prp' && mString (pexMarkup prp) == mString (pexMarkup prp')
 
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
-mkArchiContext :: [ArchiRepo] -> [(P_Population, P_Relation, Maybe Text, PPurpose)] -> Guarded P_Context
+mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops =
   pure
     PCtx
@@ -140,33 +136,28 @@ mkArchiContext [archiRepo] pops =
         ctx_enfs = []
       }
   where
-    -- vwAts picks quadruples that belong to one view, to assemble a pattern for that view.
-    vwAts :: ArchiObj -> [(P_Population, P_Relation, Maybe Text, PPurpose)]
-    vwAts vw@View {} =
-      [ (pop, rel, v, purp)
-        | (pop, rel, v, purp) <- pops,
-          participatingRel rel,
-          dec_nm rel `L.notElem` ["inside", "inView"],
-          PPair _ (ScriptString _ x) _ <- p_popps pop,
-          x `Set.member` viewAtoms
-      ]
-      where
-        viewAtoms =
-          Set.fromList
-            [ a
-              | (pop, rel, Just viewname, _) <- pops,
-                viewname == viewName vw,
-                participatingRel rel,
-                PPair _ (ScriptString _ x) (ScriptString _ y) <- p_popps pop,
-                a <- [x, y]
-            ]
-    vwAts _ = fatal "May not call vwAts on a non-view element"
+    -- vwAts picks ArchiGrains that belong to one view, to assemble a pattern for that view.
+    vwAts :: ArchiObj -> [ArchiGrain]
+    vwAts vw = case vw of
+      View {} ->
+        filter participatingRel
+          . filter isRelevant
+          . filter inView
+          $ pops
+        where
+          isRelevant :: ArchiGrain -> Bool
+          isRelevant ag = dec_nm (grainRel ag) `L.notElem` ["inside", "inView"]
+          inView :: ArchiGrain -> Bool
+          inView ag = case archiViewname ag of
+            Nothing -> fatal "Jammer dan"
+            Just nm -> nm == viewName vw
+          participatingRel :: ArchiGrain -> Bool
+          participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map PCpt ["Relationship", "Property", "View"]
+      _ -> fatal "May not call vwAts on a non-view element"
 
-    participatingRel :: P_Relation -> Bool
-    participatingRel rel = pSrc (dec_sign rel) `L.notElem` map PCpt ["Relationship", "Property", "View"]
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
-    viewpoprels :: [(P_Population, P_Relation, Maybe Text, PPurpose)]
+    viewpoprels :: [ArchiGrain]
     viewpoprels =
       removeDoubles
         [ popRelVw
@@ -174,45 +165,47 @@ mkArchiContext [archiRepo] pops =
             vw@View {} <- fldObjs folder,
             popRelVw <- vwAts vw
         ]
-    removeDoubles :: [(P_Population, P_Relation, Maybe Text, PPurpose)] -> [(P_Population, P_Relation, Maybe Text, PPurpose)]
-    removeDoubles = map NE.head . eqCl (Set.fromList . p_popps . fst4)
+    removeDoubles :: [ArchiGrain] -> [ArchiGrain]
+    removeDoubles = map NE.head . eqCl (Set.fromList . p_popps . grainPop)
     -- to compute the left-over triples, we must use L.deleteFirstsBy because we do not have Ord P_Population.
     leftovers = L.deleteFirstsBy f pops viewpoprels
       where
-        f (pop, _, _, _) (pop', _, _, _) = Set.fromList (p_popps pop) == Set.fromList (p_popps pop')
+        f :: ArchiGrain -> ArchiGrain -> Bool
+        f ag ag' = (Set.fromList . p_popps . grainPop) ag == (Set.fromList . p_popps . grainPop) ag'
     archiPops :: [P_Population]
     archiPops =
       sortRelPops --  The populations that are local to this pattern
-        [pop | (pop, _, _, _) <- leftovers]
+        (map grainPop leftovers)
     archiDecls :: [P_Relation]
     archiDecls =
       sortDecls --  The relations that are declared in this pattern
-        [rel | (_, rel, _, _) <- leftovers]
+        (map grainRel leftovers)
     archiPurps :: [PPurpose]
     archiPurps =
       (map NE.head . eqClass samePurp) --  The relations that are declared in this pattern
-        [purp | (_, _, _, purp) <- leftovers]
-    pats =
-      [ P_Pat
-          { pos = OriginUnknown,
-            pt_nm = viewName vw,
-            pt_rls = [],
-            pt_gns = [],
-            pt_dcs = sortDecls rels,
-            pt_RRuls = [],
-            pt_cds = [],
-            pt_Reprs = [],
-            pt_ids = [],
-            pt_vds = [],
-            pt_xps = purps,
-            pt_pop = sortRelPops popus,
-            pt_end = OriginUnknown,
-            pt_enfs = []
-          }
-        | folder <- allFolders archiRepo,
-          vw@View {} <- fldObjs folder,
-          let (popus, rels, _, purps) = L.unzip4 (vwAts vw)
-      ]
+        (map grainPurp leftovers)
+    pats = map mkPattern . filter isView . concatMap fldObjs . allFolders $ archiRepo
+      where
+        isView :: ArchiObj -> Bool
+        isView View {} = True
+        isView _ = False
+        mkPattern vw =
+          P_Pat
+            { pos = OriginUnknown,
+              pt_nm = viewName vw,
+              pt_rls = [],
+              pt_gns = [],
+              pt_dcs = sortDecls . map grainRel . vwAts $ vw,
+              pt_RRuls = [],
+              pt_cds = [],
+              pt_Reprs = [],
+              pt_ids = [],
+              pt_vds = [],
+              pt_xps = map grainPurp (vwAts vw),
+              pt_pop = sortRelPops . map grainPop . vwAts $ vw,
+              pt_end = OriginUnknown,
+              pt_enfs = []
+            }
 
     sortRelPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
     sortRelPops popus =
@@ -234,6 +227,14 @@ data ArchiRepo = ArchiRepo
     archPurposes :: [ArchiPurpose]
   }
   deriving (Show, Eq)
+
+-- | The smallest grain of data produced by grinding the archimate model.
+data ArchiGrain = ArchiGrain
+  { grainPop :: P_Population,
+    grainRel :: P_Relation,
+    archiViewname :: Maybe Text,
+    grainPurp :: PPurpose
+  }
 
 -- | Where 'archFolders' gives the top level folders, allFolders provides all subfolders as well.
 allFolders :: ArchiRepo -> [Folder]
@@ -423,7 +424,7 @@ class MetaArchi a where
   grindArchi ::
     (Maybe Text, Text -> Maybe Text, Maybe Text) ->
     a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
-    [(P_Population, P_Relation, Maybe Text, PPurpose)]
+    [ArchiGrain]
 
 instance MetaArchi ArchiRepo where
   typeMap _ archiRepo =
@@ -604,18 +605,20 @@ translateArchiElem ::
   Maybe Text ->
   Set.Set PProp ->
   [(Text, Text)] ->
-  (P_Population, P_Relation, Maybe Text, PPurpose)
+  ArchiGrain
 translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
-  ( P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (transTuples tuples),
-    P_Relation label ref_to_signature props [] [] [] OriginUnknown,
-    maybeViewName,
-    PRef2
-      { pos = OriginUnknown, -- the position in the Ampersand script of this purpose definition
-        pexObj = PRef2Relation ref_to_relation, -- the reference to the object whose purpose is explained
-        pexMarkup = P_Markup Nothing Nothing purpText, -- the piece of text, including markup and language info
-        pexRefIDs = [] -- the references (for traceability)
-      }
-  )
+  ArchiGrain
+    { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
+      grainRel = P_Relation label ref_to_signature props [] [] [] OriginUnknown,
+      archiViewname = maybeViewName,
+      grainPurp =
+        PRef2
+          { pos = OriginUnknown, -- the position in the Ampersand script of this purpose definition
+            pexObj = PRef2Relation ref_to_relation, -- the reference to the object whose purpose is explained
+            pexMarkup = P_Markup Nothing Nothing purpText, -- the piece of text, including markup and language info
+            pexRefIDs = [] -- the references (for traceability)
+          }
+    }
   where
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
@@ -637,12 +640,16 @@ unFix str =
     then (T.reverse . T.drop 12 . T.reverse) str
     else str
 
--- | Function `transTuples` is used to save ourselves some writing effort
-transTuples :: [(Text, Text)] -> [PAtomPair]
-transTuples tuples =
-  [ PPair OriginUnknown (ScriptString OriginUnknown x) (ScriptString OriginUnknown y)
-    | (x, y) <- tuples
-  ]
+-- | Function `tuples2PAtomPairs` is used to save ourselves some writing effort
+tuples2PAtomPairs :: [(Text, Text)] -> [PAtomPair]
+tuples2PAtomPairs = map tuple2PAtomPair
+
+tuple2PAtomPair :: (Text, Text) -> PAtomPair
+tuple2PAtomPair (x, y) =
+  PPair
+    OriginUnknown
+    (ScriptString OriginUnknown x)
+    (ScriptString OriginUnknown y)
 
 -- | The function `processStraight` derives an ArchiRepo from an Archi-XML-file.
 processStraight :: FilePath -> IOSLA (XIOState s0) XmlTree ArchiRepo
