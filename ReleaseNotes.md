@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+* [Issue #1313](https://github.com/AmpersandTarski/Ampersand/issues/1313) Fixed a minor bug in the Archi analyser.
 * Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
 * [Issue #987](https://github.com/AmpersandTarski/Ampersand/issues/987) Fixed a bug in the Excel parser.
 * refactoring Archimate parser
