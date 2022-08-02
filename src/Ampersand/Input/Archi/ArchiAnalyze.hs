@@ -149,7 +149,7 @@ mkArchiContext [archiRepo] pops =
           isRelevant ag = dec_nm (grainRel ag) `L.notElem` ["inside", "inView"]
           inView :: ArchiGrain -> Bool
           inView ag = case archiViewname ag of
-            Nothing -> fatal "Jammer dan"
+            Nothing -> False
             Just nm -> nm == viewName vw
           participatingRel :: ArchiGrain -> Bool
           participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map PCpt ["Relationship", "Property", "View"]
