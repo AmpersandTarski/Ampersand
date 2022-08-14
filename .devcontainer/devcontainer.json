@@ -97,6 +97,7 @@
     "haskell.trace.server": "off",
     "haskell.upgradeGHCup": true,
     "hoogle-vscode.useCabalDependencies": true,
+    "terminal.integrated.setLocaleVariables": false,
     "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.profiles.linux": {
       "bash": {
