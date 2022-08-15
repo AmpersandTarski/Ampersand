@@ -231,12 +231,13 @@ addRelations pCtx = enrichedContext
                rpop <- [NE.head cl]
            ]
 
+--  | This structure corresponds to a "wide table" (c.q. a Plug)
 data SheetCellsForTable = Mapping
   { theSheetName :: Text,
     theCellMap :: CellMap,
-    headerRowNrs :: [Int],
-    popRowNrs :: [Int],
-    colNrs :: [Int],
+    headerRowNrs :: [Int], -- The row numbers of the table header
+    popRowNrs :: [Int], -- The row numbers of the population
+    colNrs :: [Int], -- The column numbers that contain a relation
     debugInfo :: [Text]
   }
 
@@ -250,7 +251,15 @@ instance Show SheetCellsForTable where --for debugging only
       ]
         <> debugInfo x
 
-toPops :: (HasFSpecGenOpts env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops ::
+  (HasFSpecGenOpts env) =>
+  -- |
+  env ->
+  -- | The file name is needed for displaying errors in context
+  FilePath ->
+  -- |
+  SheetCellsForTable ->
+  [P_Population]
 toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
@@ -386,6 +395,7 @@ toPops env file x = map popForColumn (colNrs x)
     value :: (Int, Int) -> Maybe CellValue
     value k = theCellMap x ^? ix k . cellValue . _Just
 
+-- This function processes one Excel worksheet and yields every "wide table" (a block of lines in the excel sheet) as a SheetCellsForTable
 theSheetCellsForTable :: (Text, Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable (sheetName, ws) =
   catMaybes [theMapping i | i <- [0 .. length tableStarters - 1]]
@@ -493,7 +503,7 @@ conceptNameWithOptionalDelimiter t'
           Nothing -> Nothing
           Just (d, revInit) ->
             let nm = T.reverse revInit
-             in if isDelimiter d && isConceptName (T.reverse nm)
+             in if isDelimiter d && isConceptName nm
                   then Just (nm, Just d)
                   else Nothing
   | isConceptName t = Just (t, Nothing)

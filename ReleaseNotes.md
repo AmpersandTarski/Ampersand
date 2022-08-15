@@ -1,7 +1,11 @@
 ﻿# Release notes of Ampersand
-
+ 
 ## Unreleased changes
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
+* [Issue #1313](https://github.com/AmpersandTarski/Ampersand/issues/1313) Fixed a minor bug in the Archi analyser.
+* Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
+* [Issue #987](https://github.com/AmpersandTarski/Ampersand/issues/987) Fixed a bug in the Excel parser.
+* refactoring Archimate parser
 
 ## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
