@@ -583,7 +583,7 @@ pSubInterface = pBox <|> pLinkTo
 
     anyKeyWord :: AmpParser String
     anyKeyWord = case map pKey keywords of
-      [] -> fatal "We should have keywords. We always have."
+      [] -> fatal "No keywords? Impossible!"
       h : tl -> foldr (<|>) h tl
     pTemplateKeyValue :: AmpParser TemplateKeyValue
     pTemplateKeyValue =

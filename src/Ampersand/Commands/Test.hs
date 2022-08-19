@@ -17,7 +17,8 @@ import Ampersand.Types.Config (HasRunner)
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
   parserRoundtripTest
-  regressionTest
+
+--  regressionTest
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do

@@ -73,24 +73,26 @@ lowerId = identifier `suchThat` startLower
 -- Generates an object
 objTermPrim :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
 objTermPrim objectKind 0 = objTermPrim objectKind 1 -- minimum of 1 sub interface
-objTermPrim objectKind i =
-  makeObj objectKind genPrim ifc genView i
-  where
-    ifc :: Int -> Gen (P_SubIfc TermPrim)
-    ifc n = subIfc (objTermPrim objectKind) (n `div` 2)
-    --TODO: The view is never tested like this
-    genView = pure Nothing
-    genPrim :: Gen TermPrim
-    genPrim = PNamedR <$> arbitrary
+objTermPrim objectKind i = makeObj objectKind i
 
 data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
 
-makeObj :: ObjectKind -> Gen TermPrim -> (Int -> Gen (P_SubIfc TermPrim)) -> Gen (Maybe Text) -> Int -> Gen P_BoxItemTermPrim
-makeObj objectKind genPrim ifcGen genView n =
+makeObj :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+makeObj objectKind n =
   oneof $
-    (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc) :
+    (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> ifc) :
       [P_BxTxt <$> identifier <*> arbitrary <*> safeStr | isTxtAllowed]
   where
+    genPrim :: Gen TermPrim
+    genPrim = case objectKind of
+      InterfaceKind -> PNamedR <$> arbitrary
+      SubInterfaceKind -> arbitrary
+      IdentSegmentKind -> PNamedR <$> arbitrary
+    ifcGen :: Int -> Gen (P_SubIfc TermPrim)
+    ifcGen n' = case objectKind of
+      InterfaceKind -> subIfc (objTermPrim objectKind) (n' `div` 2)
+      SubInterfaceKind -> genSubInterface n'
+      IdentSegmentKind -> subIfc (objTermPrim objectKind) (n' `div` 2)
     isTxtAllowed = case objectKind of
       InterfaceKind -> False
       SubInterfaceKind -> True
@@ -101,8 +103,8 @@ makeObj objectKind genPrim ifcGen genView n =
         then pure Nothing
         else Just <$> ifcGen (n `div` 2)
 
-genIfc :: ObjectKind -> Int -> Gen (P_SubIfc TermPrim)
-genIfc objectKind = subIfc $ makeObj objectKind arbitrary (genIfc objectKind) (pure Nothing)
+genSubInterface :: Int -> Gen (P_SubIfc TermPrim)
+genSubInterface = subIfc $ makeObj SubInterfaceKind
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n
@@ -379,7 +381,7 @@ instance Arbitrary P_Interface where
       <*> safeStr
 
 instance Arbitrary (P_SubIfc TermPrim) where
-  arbitrary = sized (genIfc SubInterfaceKind)
+  arbitrary = sized genSubInterface
 
 instance Arbitrary P_IdentDef where
   arbitrary =
