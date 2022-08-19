@@ -430,7 +430,7 @@ aAtomValue2pAtomValue val =
   where
     o = fatal "Origin is not present in AAtomValue"
 
-aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
+aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
 aSubIfc2pSubIfc sub =
   case sub of
     Box orig _ heading objs ->

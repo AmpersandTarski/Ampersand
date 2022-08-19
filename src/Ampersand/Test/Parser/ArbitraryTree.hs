@@ -78,7 +78,7 @@ objTermPrim objectKind i = makeObj objectKind i
 data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
 
 makeObj :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
-makeObj objectKind n =
+makeObj objectKind maxDepth =
   oneof $
     (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> ifc) :
       [P_BxTxt <$> identifier <*> arbitrary <*> safeStr | isTxtAllowed]
@@ -88,28 +88,30 @@ makeObj objectKind n =
       InterfaceKind -> PNamedR <$> arbitrary
       SubInterfaceKind -> arbitrary
       IdentSegmentKind -> PNamedR <$> arbitrary
-    ifcGen :: Int -> Gen (P_SubIfc TermPrim)
+    ifcGen :: Int -> Gen P_SubInterface
     ifcGen n' = case objectKind of
-      InterfaceKind -> subIfc (objTermPrim objectKind) (n' `div` 2)
-      SubInterfaceKind -> genSubInterface n'
-      IdentSegmentKind -> subIfc (objTermPrim objectKind) (n' `div` 2)
+      InterfaceKind -> subIfc InterfaceKind (n' `div` 2)
+      SubInterfaceKind -> subIfc SubInterfaceKind n'
+      IdentSegmentKind -> subIfc IdentSegmentKind (n' `div` 2)
     isTxtAllowed = case objectKind of
       InterfaceKind -> False
       SubInterfaceKind -> True
       IdentSegmentKind -> False
     term = Prim <$> genPrim
     ifc =
-      if n == 0
+      if maxDepth == 0
         then pure Nothing
-        else Just <$> ifcGen (n `div` 2)
+        else Just <$> ifcGen (maxDepth `div` 2)
 
-genSubInterface :: Int -> Gen (P_SubIfc TermPrim)
-genSubInterface = subIfc $ makeObj SubInterfaceKind
-
-subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
-subIfc objGen n
+subIfc :: ObjectKind -> Int -> Gen P_SubInterface
+subIfc objectKind n
   | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> identifier
   | otherwise = P_Box <$> arbitrary <*> arbitrary <*> vectorOf n (objGen $ n `div` 2)
+  where
+    objGen = case objectKind of
+      InterfaceKind -> objTermPrim objectKind
+      SubInterfaceKind -> makeObj SubInterfaceKind
+      IdentSegmentKind -> objTermPrim objectKind
 
 instance Arbitrary BoxHeader where
   arbitrary = BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
@@ -380,8 +382,8 @@ instance Arbitrary P_Interface where
       <*> arbitrary
       <*> safeStr
 
-instance Arbitrary (P_SubIfc TermPrim) where
-  arbitrary = sized genSubInterface
+instance Arbitrary P_SubInterface where
+  arbitrary = sized (subIfc SubInterfaceKind)
 
 instance Arbitrary P_IdentDef where
   arbitrary =
