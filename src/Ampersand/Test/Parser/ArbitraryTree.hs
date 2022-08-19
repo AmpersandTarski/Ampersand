@@ -46,12 +46,13 @@ identifier =
     `suchThat` noKeyword
   where
     firstChar :: Gen Char
-    firstChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar True
+    firstChar = idChar True
     restChar :: Gen Char
-    restChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar False
-
+    restChar = idChar False
     noKeyword :: Text -> Bool
     noKeyword x = x `notElem` map T.pack keywords
+    idChar :: Bool -> Gen Char
+    idChar isFirst = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar isFirst
 
 -- Genrates a valid ADL upper-case identifier
 upperId :: Gen Text
@@ -82,7 +83,7 @@ objTermPrim isTxtAllowed i =
     genPrim :: Gen TermPrim
     genPrim = PNamedR <$> arbitrary
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
+makeObj :: Bool -> Gen TermPrim -> (Int -> Gen (P_SubIfc TermPrim)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem TermPrim)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $
     (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc) :
@@ -94,7 +95,7 @@ makeObj isTxtAllowed genPrim ifcGen genView n =
         then pure Nothing
         else Just <$> ifcGen (n `div` 2)
 
-genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
+genIfc :: Int -> Gen (P_SubIfc TermPrim)
 genIfc = subIfc $ makeObj True arbitrary genIfc (pure Nothing)
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
@@ -371,7 +372,7 @@ instance Arbitrary P_Interface where
       <*> arbitrary
       <*> safeStr
 
-instance Arbitrary a => Arbitrary (P_SubIfc a) where
+instance Arbitrary (P_SubIfc TermPrim) where
   arbitrary = sized genIfc
 
 instance Arbitrary P_IdentDef where
@@ -384,7 +385,7 @@ instance Arbitrary P_IdentDef where
 instance Arbitrary P_IdentSegment where
   arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
-instance Arbitrary a => Arbitrary (P_ViewD a) where
+instance Arbitrary P_ViewDef where
   arbitrary =
     P_Vd <$> arbitrary <*> identifier <*> arbitrary
       <*> arbitrary
@@ -394,10 +395,10 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
 instance Arbitrary ViewHtmlTemplate where
   arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
-instance Arbitrary a => Arbitrary (P_ViewSegment a) where
+instance Arbitrary (P_ViewSegment TermPrim) where
   arbitrary = P_ViewSegment <$> (Just <$> identifier) <*> arbitrary <*> arbitrary
 
-instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
+instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
   arbitrary =
     oneof
       [ P_ViewExp <$> sized (genTerm 1), -- only accepts pTerm, no pRule.

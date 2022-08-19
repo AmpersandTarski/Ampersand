@@ -352,7 +352,7 @@ instance Pretty (P_IdentSegmnt TermPrim) where
       view Nothing = empty
       view (Just v) = pretty v
 
-instance Pretty (P_ViewD TermPrim) where
+instance Pretty P_ViewDef where
   pretty (P_Vd _ lbl cpt True Nothing ats) =
     -- legacy syntax
     text "VIEW" <+> maybeQuote lbl <+> text ":"
