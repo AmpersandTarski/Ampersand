@@ -554,12 +554,18 @@ pInterface =
 
 --- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface =
-  P_Box <$> currPos <*> pBoxHeader <*> pBox
-    <|> P_InterfaceRef <$> currPos
-      <*> pIsThere (pKey "LINKTO") <* pInterfaceKey
-      <*> pADLid
+pSubInterface = pBox <|> pLinkTo
   where
+    pBox =
+      P_Box
+        <$> currPos
+        <*> pBoxHeader
+        <*> pBoxBody
+    pLinkTo =
+      P_InterfaceRef
+        <$> currPos
+        <*> pIsThere (pKey "LINKTO") <* pInterfaceKey
+        <*> pADLid
     pBoxHeader :: AmpParser BoxHeader
     pBoxHeader =
       build <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
@@ -588,8 +594,8 @@ pSubInterface =
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
-pObjDef :: AmpParser P_BoxItemTermPrim
-pObjDef =
+pBoxItemTermPrim :: AmpParser P_BoxItemTermPrim
+pBoxItemTermPrim =
   pBoxItem <$> currPos
     <*> pLabel
     <*> (pObj <|> pTxt)
@@ -635,8 +641,8 @@ pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos <*> asText pCrudString
 
 --- Box ::= '[' ObjDefList ']'
-pBox :: AmpParser [P_BoxItemTermPrim]
-pBox = pBrackets $ pObjDef `sepBy` pComma
+pBoxBody :: AmpParser [P_BoxItemTermPrim]
+pBoxBody = pBrackets $ pBoxItemTermPrim `sepBy` pComma
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose

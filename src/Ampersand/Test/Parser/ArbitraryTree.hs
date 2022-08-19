@@ -71,32 +71,38 @@ lowerId = identifier `suchThat` startLower
       Just (h, _) -> isLower h
 
 -- Generates an object
-objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
-objTermPrim isTxtAllowed 0 = objTermPrim isTxtAllowed 1 -- minimum of 1 sub interface
-objTermPrim isTxtAllowed i =
-  makeObj isTxtAllowed genPrim ifc genView i
+objTermPrim :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+objTermPrim objectKind 0 = objTermPrim objectKind 1 -- minimum of 1 sub interface
+objTermPrim objectKind i =
+  makeObj objectKind genPrim ifc genView i
   where
     ifc :: Int -> Gen (P_SubIfc TermPrim)
-    ifc n = subIfc (objTermPrim True) (n `div` 2)
+    ifc n = subIfc (objTermPrim objectKind) (n `div` 2)
     --TODO: The view is never tested like this
     genView = pure Nothing
     genPrim :: Gen TermPrim
     genPrim = PNamedR <$> arbitrary
 
-makeObj :: Bool -> Gen TermPrim -> (Int -> Gen (P_SubIfc TermPrim)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem TermPrim)
-makeObj isTxtAllowed genPrim ifcGen genView n =
+data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
+
+makeObj :: ObjectKind -> Gen TermPrim -> (Int -> Gen (P_SubIfc TermPrim)) -> Gen (Maybe Text) -> Int -> Gen P_BoxItemTermPrim
+makeObj objectKind genPrim ifcGen genView n =
   oneof $
     (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc) :
       [P_BxTxt <$> identifier <*> arbitrary <*> safeStr | isTxtAllowed]
   where
+    isTxtAllowed = case objectKind of
+      InterfaceKind -> False
+      SubInterfaceKind -> True
+      IdentSegmentKind -> False
     term = Prim <$> genPrim
     ifc =
       if n == 0
         then pure Nothing
         else Just <$> ifcGen (n `div` 2)
 
-genIfc :: Int -> Gen (P_SubIfc TermPrim)
-genIfc = subIfc $ makeObj True arbitrary genIfc (pure Nothing)
+genIfc :: ObjectKind -> Int -> Gen (P_SubIfc TermPrim)
+genIfc objectKind = subIfc $ makeObj objectKind arbitrary (genIfc objectKind) (pure Nothing)
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n
@@ -368,12 +374,12 @@ instance Arbitrary P_Interface where
     P_Ifc <$> arbitrary
       <*> identifier
       <*> arbitrary
-      <*> sized (objTermPrim False)
+      <*> sized (objTermPrim InterfaceKind)
       <*> arbitrary
       <*> safeStr
 
 instance Arbitrary (P_SubIfc TermPrim) where
-  arbitrary = sized genIfc
+  arbitrary = sized (genIfc SubInterfaceKind)
 
 instance Arbitrary P_IdentDef where
   arbitrary =
@@ -383,7 +389,7 @@ instance Arbitrary P_IdentDef where
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
-  arbitrary = P_IdentExp <$> sized (objTermPrim False)
+  arbitrary = P_IdentExp <$> sized (objTermPrim IdentSegmentKind)
 
 instance Arbitrary P_ViewDef where
   arbitrary =
