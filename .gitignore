@@ -50,3 +50,6 @@ miscellaneous/AmpersandBackup.jgfns
 
 # Mac OS related
 .DS_Store
+
+# Local history extention of vs-code
+.history

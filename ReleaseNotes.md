@@ -6,6 +6,7 @@
 * Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
 * [Issue #987](https://github.com/AmpersandTarski/Ampersand/issues/987) Fixed a bug in the Excel parser.
 * refactoring Archimate parser
+* [Issue #1321](https://github.com/AmpersandTarski/Ampersand/issues/1321) Stricter testing of the prettyprinter/parser roundtrip.
 
 ## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
