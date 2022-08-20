@@ -291,7 +291,7 @@ pRelationDef =
     <*> (pRelationNew <|> pRelationOld)
     <*> optSet pProps
     <*> optList pRelDefaults
-    <*> optList (pKey "PRAGMA" *> many1 (asText pDoubleQuotedString))
+    <*> pMaybe pPragma
     <*> many pMeaning
     <*> optList (pOperator "=" *> pContent)
     <* optList (pOperator ".")
@@ -304,6 +304,24 @@ pRelationDef =
         pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
         rel :: P_NamedRel -- the named relation
         rel = PNamedRel pos' nm (Just sign)
+
+--- Pragma ::'PRAGMA' Text+
+pPragma :: AmpParser Pragma
+pPragma =
+  build
+    <$> currPos <* pKey "PRAGMA"
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+  where
+    build :: Origin -> Maybe Text -> Maybe Text -> Maybe Text -> Pragma
+    build orig a b c =
+      Pragma
+        { pos = orig,
+          praLeft = fromMaybe "" a,
+          praMid = fromMaybe "" b,
+          praRight = fromMaybe "" c
+        }
 
 --- RelDefaults ::= 'DEFAULT' RelDefault*
 pRelDefaults :: AmpParser [PRelationDefault]

@@ -154,6 +154,7 @@ import Ampersand.Core.ParseTree
     P_ViewSegmtPayLoad (..),
     PairView (..),
     PairViewSegment (..),
+    Pragma (..),
     Role (..),
     SrcOrTgt (..),
     TemplateKeyValue (..),

@@ -158,15 +158,15 @@ instance Pretty P_Relation where
         else
           text "DEFAULT"
             <+\> (hsep . map pretty) dflts
-            <+\> pragmas
+            <+\> pretty pragma
             <+\> prettyhsep mean
     where
       props
         | null prps = empty
         | otherwise = pretty $ Set.toList prps
-      pragmas
-        | T.null (T.concat pragma) = empty
-        | otherwise = text "PRAGMA" <+> hsep (map quote pragma)
+
+instance Pretty Pragma where
+  pretty (Pragma _ l m r) = text "PRAGMA" <+> hsep (map quote [l, m, r])
 
 instance Pretty a => Pretty (Term a) where
   pretty p = case p of

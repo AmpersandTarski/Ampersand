@@ -1283,9 +1283,7 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd =
           decsgn = decSign,
           decprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
           decDefaults = Set.fromList dflts,
-          decprL = prL,
-          decprM = prM,
-          decprR = prR,
+          decpr = dec_pragma pd,
           decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
           decfpos = origin pd,
           decusr = True,
@@ -1307,7 +1305,6 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd =
             )
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
-    (prL : prM : prR : _) = dec_pragma pd <> ["", "", ""]
     pProp2aProps :: PProp -> [AProp]
     pProp2aProps p = case p of
       P_Uni -> [Uni]

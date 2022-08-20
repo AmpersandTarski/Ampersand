@@ -207,9 +207,17 @@ instance Arbitrary P_Relation where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
       <*> arbitrary
       <*> arbitrary
+      <*> arbitrary
+
+instance Arbitrary Pragma where
+  arbitrary =
+    Pragma
+      <$> arbitrary
+      <*> safeStr
+      <*> safeStr
+      <*> safeStr
 
 instance Arbitrary (Term TermPrim) where
   arbitrary = do

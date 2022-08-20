@@ -109,7 +109,7 @@ aRelation2pRelation dcl =
       dec_sign = aSign2pSign (decsgn dcl),
       dec_prps = aProps2Pprops $ decprps dcl,
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
-      dec_pragma = [decprL dcl, decprM dcl, decprR dcl],
+      dec_pragma = decpr dcl,
       dec_Mean = map aMeaning2pMeaning (decMean dcl),
       pos = decfpos dcl
     }
