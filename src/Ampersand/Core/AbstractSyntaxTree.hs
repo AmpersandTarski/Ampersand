@@ -101,6 +101,7 @@ import Ampersand.Core.ParseTree
     P_Concept (..),
     PairView (..),
     PairViewSegment (..),
+    Pragma,
     Representation (..),
     Role (..),
     SrcOrTgt (..),
@@ -108,7 +109,7 @@ import Ampersand.Core.ParseTree
     Traced (..),
     ViewHtmlTemplate (..),
     maybeOrdering,
-    mkPConcept, Pragma
+    mkPConcept,
   )
 import Data.Default (Default (..))
 import Data.Hashable (Hashable (..), hashWithSalt)
