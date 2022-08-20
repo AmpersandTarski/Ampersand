@@ -385,7 +385,7 @@ instance Arbitrary PAtomValue where
         ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <=),
         ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <=),
         ScriptDate <$> arbitrary <*> arbitrary,
-        ScriptDateTime <$> arbitrary <*> arbitrary, --TODO #1090 Show of ScriptDateTime doesn't pass the roundtrip.
+        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
       ]
     where
