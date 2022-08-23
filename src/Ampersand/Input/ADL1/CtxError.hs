@@ -572,7 +572,7 @@ mustBeOrdered o a b =
       "  and concept " <> showEC b
     ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItemTermPrim)] -> Guarded b
 mustBeOrderedLst o lst =
   Errors . pure . CTXE (origin o) . T.unlines $
     [ "Type error in BOX",
@@ -585,7 +585,7 @@ mustBeOrderedLst o lst =
            "  You can do so by using a CLASSIFY statement."
          ]
   where
-    exprOf :: P_BoxItem TermPrim -> Term TermPrim
+    exprOf :: P_BoxItemTermPrim -> Term TermPrim
     exprOf x =
       case x of
         P_BxExpr {} -> obj_ctx x

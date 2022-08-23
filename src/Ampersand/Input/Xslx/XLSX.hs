@@ -103,7 +103,7 @@ addRelations pCtx = enrichedContext
                   dec_sign = P_Sign src' tgt',
                   dec_prps = mempty,
                   dec_defaults = mempty,
-                  dec_pragma = mempty,
+                  dec_pragma = Nothing,
                   dec_Mean = mempty,
                   pos = origin pop
                 }

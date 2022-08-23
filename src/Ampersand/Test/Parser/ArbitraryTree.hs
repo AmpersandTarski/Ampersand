@@ -46,12 +46,13 @@ identifier =
     `suchThat` noKeyword
   where
     firstChar :: Gen Char
-    firstChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar True
+    firstChar = idChar True
     restChar :: Gen Char
-    restChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar False
-
+    restChar = idChar False
     noKeyword :: Text -> Bool
     noKeyword x = x `notElem` map T.pack keywords
+    idChar :: Bool -> Gen Char
+    idChar isFirst = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar isFirst
 
 -- Genrates a valid ADL upper-case identifier
 upperId :: Gen Text
@@ -70,37 +71,46 @@ lowerId = identifier `suchThat` startLower
       Just (h, _) -> isLower h
 
 -- Generates an object
-objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
-objTermPrim isTxtAllowed 0 = objTermPrim isTxtAllowed 1 -- minimum of 1 sub interface
-objTermPrim isTxtAllowed i =
-  makeObj isTxtAllowed genPrim ifc genView i
-  where
-    ifc :: Int -> Gen (P_SubIfc TermPrim)
-    ifc n = subIfc (objTermPrim True) (n `div` 2)
-    --TODO: The view is never tested like this
-    genView = pure Nothing
-    genPrim :: Gen TermPrim
-    genPrim = PNamedR <$> arbitrary
+objTermPrim :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+objTermPrim objectKind 0 = objTermPrim objectKind 1 -- minimum of 1 sub interface
+objTermPrim objectKind i = makeObj objectKind i
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
-makeObj isTxtAllowed genPrim ifcGen genView n =
+data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
+
+makeObj :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+makeObj objectKind maxDepth =
   oneof $
-    (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc) :
+    (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> ifc) :
       [P_BxTxt <$> identifier <*> arbitrary <*> safeStr | isTxtAllowed]
   where
-    term = Prim <$> genPrim
+    isTxtAllowed = case objectKind of
+      InterfaceKind -> False
+      SubInterfaceKind -> True
+      IdentSegmentKind -> False
+    term =
+      -- depending on the kind, we need the term to be a namedRelation
+      Prim <$> case objectKind of
+        InterfaceKind -> PNamedR <$> arbitrary
+        SubInterfaceKind -> arbitrary
+        IdentSegmentKind -> PNamedR <$> arbitrary
     ifc =
-      if n == 0
+      if maxDepth == 0
         then pure Nothing
-        else Just <$> ifcGen (n `div` 2)
+        else
+          Just <$> case objectKind of
+            InterfaceKind -> subIfc SubInterfaceKind (maxDepth `div` 2)
+            SubInterfaceKind -> subIfc SubInterfaceKind maxDepth
+            IdentSegmentKind -> subIfc IdentSegmentKind (maxDepth `div` 2)
 
-genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
-genIfc = subIfc $ makeObj True arbitrary genIfc (pure Nothing)
-
-subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
-subIfc objGen n
+subIfc :: ObjectKind -> Int -> Gen P_SubInterface
+subIfc objectKind n
   | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> identifier
   | otherwise = P_Box <$> arbitrary <*> arbitrary <*> vectorOf n (objGen $ n `div` 2)
+  where
+    objGen = case objectKind of
+      InterfaceKind -> objTermPrim objectKind
+      SubInterfaceKind -> makeObj SubInterfaceKind
+      IdentSegmentKind -> objTermPrim objectKind
 
 instance Arbitrary BoxHeader where
   arbitrary = BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
@@ -151,7 +161,7 @@ instance Arbitrary P_Context where
       <*> arbitrary
 
 instance Arbitrary MetaData where
-  arbitrary = MetaData <$> arbitrary <*> safeStr <*> safeStr
+  arbitrary = MetaData <$> arbitrary <*> safeStr1 <*> safeStr
 
 instance Arbitrary P_RoleRule where
   arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 identifier
@@ -160,10 +170,10 @@ instance Arbitrary Representation where
   arbitrary =
     Repr <$> arbitrary
       <*> arbitrary `suchThat` noOne
-      <*> arbitrary
+      <*> arbitrary `suchThat` (TypeOfOne /=)
 
 instance Arbitrary TType where
-  arbitrary = elements . filter (TypeOfOne /=) $ [minBound ..]
+  arbitrary = elements [minBound ..]
 
 instance Arbitrary Role where
   arbitrary =
@@ -174,16 +184,21 @@ instance Arbitrary Role where
 
 instance Arbitrary P_Pattern where
   arbitrary =
-    P_Pat <$> arbitrary <*> identifier <*> arbitrary <*> arbitrary <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
+    P_Pat
+      <$> arbitrary
+        <*> identifier
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
 
 instance Arbitrary P_Relation where
   arbitrary =
@@ -192,28 +207,43 @@ instance Arbitrary P_Relation where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
+      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
 
-instance Arbitrary a => Arbitrary (Term a) where
+instance Arbitrary Pragma where
+  arbitrary =
+    Pragma
+      <$> arbitrary
+      <*> safeStr
+      <*> safeStr
+      <*> safeStr
+
+instance Arbitrary (Term TermPrim) where
   arbitrary = do
-    lv <- choose (0, 6)
-    sized (genTerm lv)
+    infixLevel <- choose (0, 6)
+    maxTreeDepth <- getSize
+    treeDepth <- choose (0, maxTreeDepth)
+    genTerm infixLevel treeDepth
 
-genTerm :: Arbitrary a => Int -> Int -> Gen (Term a)
-genTerm lv n =
-  if n == 0
+genTerm ::
+  -- | The minimum level of the operands. 0 means that rules are allowe, 1 excludes the operands at that level
+  Int ->
+  -- | The maximum depth of subexpressions
+  Int ->
+  Gen (Term TermPrim)
+genTerm infixLevel treeDepth =
+  if treeDepth == 0
     then Prim <$> arbitrary
     else oneof options
   where
-    gen :: Arbitrary a => Int -> Gen (Term a)
-    gen l = genTerm l (n `div` 2)
+    gen :: Int -> Gen (Term TermPrim)
+    gen l = genTerm l (treeDepth `div` 2)
 
-    options :: Arbitrary a => [Gen (Term a)]
-    options = concat $ drop lv levels
+    options :: [Gen (Term TermPrim)]
+    options = concat $ drop infixLevel levels
 
-    levels :: Arbitrary a => [[Gen (Term a)]]
+    levels :: [[Gen (Term TermPrim)]]
     levels =
       [ -- level 0: pRule
         [ PEqu <$> arbitrary <*> gen 1 <*> gen 1,
@@ -258,31 +288,37 @@ instance Arbitrary TermPrim where
         PNamedR <$> arbitrary
       ]
 
-instance Arbitrary a => Arbitrary (PairView (Term a)) where
+instance Arbitrary (PairView (Term TermPrim)) where
   arbitrary = PairView <$> arbitrary
 
-instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
+instance Arbitrary (PairViewSegment (Term TermPrim)) where
   arbitrary =
     oneof
       [ PairViewText <$> arbitrary <*> safeStr,
-        PairViewExp <$> arbitrary <*> arbitrary <*> sized (genTerm 1) -- only accepts pTerm, no pRule.
+        PairViewExp <$> arbitrary <*> arbitrary <*> genNonRuleTerm
       ]
 
-instance Arbitrary a => Arbitrary (PairViewTerm a) where
+genRuleTerm :: Gen (Term TermPrim)
+genRuleTerm = sized (genTerm 0) -- accepts both pTerm and pRule.
+
+genNonRuleTerm :: Gen (Term TermPrim)
+genNonRuleTerm = sized (genTerm 1) -- only accepts pTerm, no pRule.
+
+instance Arbitrary (PairViewTerm TermPrim) where
   arbitrary = PairViewTerm <$> arbitrary
 
-instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
+instance Arbitrary (PairViewSegmentTerm TermPrim) where
   arbitrary = PairViewSegmentTerm <$> arbitrary
 
 instance Arbitrary SrcOrTgt where
   arbitrary = elements [minBound ..]
 
-instance Arbitrary a => Arbitrary (P_Rule a) where
+instance Arbitrary (P_Rule TermPrim) where
   arbitrary =
     P_Rule
       <$> arbitrary
       <*> identifier
-      <*> sized (genTerm 0) -- rule is a term level 0
+      <*> genRuleTerm
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -292,12 +328,8 @@ instance Arbitrary (P_Enforce TermPrim) where
     P_Enforce <$> arbitrary
       <*> arbitrary `suchThat` isNamedRelation
       <*> arbitrary
-      <*> arbitrary `suchThat` (not . isForRulesOnly)
+      <*> genNonRuleTerm
     where
-      isForRulesOnly :: Term TermPrim -> Bool
-      isForRulesOnly PEqu {} = True
-      isForRulesOnly PInc {} = True
-      isForRulesOnly _ = False
       isNamedRelation :: TermPrim -> Bool
       isNamedRelation PNamedR {} = True
       isNamedRelation _ = False
@@ -353,7 +385,7 @@ instance Arbitrary PAtomValue where
         ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <=),
         ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <=),
         ScriptDate <$> arbitrary <*> arbitrary,
-        --        ScriptDateTime <$> arbitrary <*> arbitrary, --TODO #1090 Show of ScriptDateTime doesn't pass the roundtrip.
+        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
       ]
     where
@@ -367,12 +399,18 @@ instance Arbitrary P_Interface where
     P_Ifc <$> arbitrary
       <*> identifier
       <*> arbitrary
-      <*> sized (objTermPrim False)
+      <*> interfaceObject
       <*> arbitrary
       <*> safeStr
+    where
+      interfaceObject :: Gen P_BoxItemTermPrim
+      interfaceObject = do
+        maxDepth <- getSize
+        depth <- choose (1, maxDepth)
+        makeObj InterfaceKind depth
 
-instance Arbitrary a => Arbitrary (P_SubIfc a) where
-  arbitrary = sized genIfc
+instance Arbitrary P_SubInterface where
+  arbitrary = sized (subIfc SubInterfaceKind)
 
 instance Arbitrary P_IdentDef where
   arbitrary =
@@ -382,9 +420,9 @@ instance Arbitrary P_IdentDef where
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
-  arbitrary = P_IdentExp <$> sized (objTermPrim False)
+  arbitrary = P_IdentExp <$> sized (objTermPrim IdentSegmentKind)
 
-instance Arbitrary a => Arbitrary (P_ViewD a) where
+instance Arbitrary P_ViewDef where
   arbitrary =
     P_Vd <$> arbitrary <*> identifier <*> arbitrary
       <*> arbitrary
@@ -394,14 +432,16 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
 instance Arbitrary ViewHtmlTemplate where
   arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
-instance Arbitrary a => Arbitrary (P_ViewSegment a) where
+instance Arbitrary (P_ViewSegment TermPrim) where
   arbitrary = P_ViewSegment <$> (Just <$> identifier) <*> arbitrary <*> arbitrary
 
-instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
+instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
   arbitrary =
     oneof
-      [ P_ViewExp <$> sized (genTerm 1), -- only accepts pTerm, no pRule.
-        P_ViewText <$> safeStr
+      [ P_ViewExp
+          <$> genNonRuleTerm,
+        P_ViewText
+          <$> safeStr
       ]
 
 instance Arbitrary PPurpose where

@@ -609,7 +609,7 @@ translateArchiElem ::
 translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
   ArchiGrain
     { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
-      grainRel = P_Relation label ref_to_signature props [] [] [] OriginUnknown,
+      grainRel = P_Relation label ref_to_signature props [] Nothing [] OriginUnknown,
       archiViewname = maybeViewName,
       grainPurp =
         PRef2

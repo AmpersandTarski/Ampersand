@@ -13,6 +13,7 @@ module Ampersand.Core.ParseTree
     EnforceOperator (..),
     P_Pattern (..),
     P_Relation (..),
+    Pragma (..),
     mergeRels,
     Term (..),
     TermPrim (..),
@@ -363,13 +364,23 @@ data P_Relation = P_Relation
     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
     dec_defaults :: ![PRelationDefault],
     -- | a list of default values for tuples in the relation
-    dec_pragma :: ![Text],
+    dec_pragma :: !(Maybe Pragma),
     -- | the optional meaning of a relation, possibly more than one for different languages.
     dec_Mean :: ![PMeaning],
     -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
     pos :: !Origin
   }
   deriving (Show) --For QuickCheck error messages only!
+
+-- | Pragma, used in relations. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+--  then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+data Pragma = Pragma
+  { pos :: !Origin,
+    praLeft :: !Text,
+    praMid :: !Text,
+    praRight :: !Text
+  }
+  deriving (Show, Data, Eq)
 
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
@@ -399,9 +410,9 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
           dec_sign = dec_sign r0,
           dec_prps = Set.unions (dec_prps <$> NE.toList rels),
           dec_defaults = concatMap dec_defaults rels,
-          dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
-            [] -> dec_pragma r0
-            h : _ -> dec_pragma h,
+          dec_pragma = case mapMaybe dec_pragma (NE.toList rels) of
+            [] -> Nothing
+            h : _ -> Just h,
           dec_Mean = L.nub $ concatMap dec_Mean rels,
           pos = case NE.filter (not . isFuzzyOrigin . origin) rels of
             [] -> origin r0
