@@ -7,10 +7,7 @@ on:
     branches:
     - development
     paths:
-    - Docs
-  pull_request:
-    branches:
-    - development
+    - docs
 
 jobs:
   deploy:
