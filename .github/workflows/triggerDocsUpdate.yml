@@ -8,6 +8,9 @@ on:
     - development
     paths:
     - Docs
+  pull_request:
+    branches:
+    - development
 
 jobs:
   deploy:
