@@ -7,7 +7,7 @@ on:
     branches:
     - development
     paths:
-    - Docs
+    - docs
 
 jobs:
   deploy:
@@ -15,8 +15,7 @@ jobs:
     steps:
     # Trigger the "DeployToPages" workflow in the "DocuGen" repository
       - run: |
-          curl -X POST \
-          -H "Authorization: Bearer ${{secrets.ACCESS_TOKEN}}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/AmpersandTarski/DocuGen/actions/workflows/DeployToPages.yml/dispatches \
-          -d '{"ref": "master"}'
+          curl -XPOST -u "${{secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" \
+          -H "Accept: application/vnd.github.everest-preview+json" -H \
+          "Content-Type: application/json" https://api.github.com/repos/AmpersandTarski/DocuGen/actions/workflows/DeployToPages.yml/dispatches \
+          --data '{"ref": "main"}'
