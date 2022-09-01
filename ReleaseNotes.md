@@ -1,6 +1,8 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+
+## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
 * [Issue #1313](https://github.com/AmpersandTarski/Ampersand/issues/1313) Fixed a minor bug in the Archi analyser.
 * Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
