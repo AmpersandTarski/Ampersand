@@ -1,0 +1,67 @@
+CONTEXT Enrollment IN DUTCH
+PURPOSE CONTEXT Enrollement
+{+  A complete course consists of several modules.
+    Students of a course can enroll for any module that is part of the course.
++}
+
+-- The concepts
+CONCEPT Student "Someone who wants to study at this institute"
+CONCEPT Course "A complete course that prepares for a diploma"
+CONCEPT Module "An educational entity with a single exam"
+
+-- The relations and the initial population
+RELATION takes [Student*Course] [TOT]
+MEANING "A student takes at least one complete course"
+PURPOSE RELATION takes {+ Students are students when they take a course +}
+
+POPULATION takes CONTAINS
+    [ ("Peter", "Management")
+    ; ("Susan", "Business IT")
+    ; ("John", "Business IT")
+    ]
+
+RELATION isPartOf [Module*Course]
+MEANING "A module part of a complete course"
+PURPOSE RELATION isPartOf {+ Courses consist of a set of modules +}
+
+POPULATION isPartOf CONTAINS
+    [ ("Finance", "Management")
+    ; ("Business Rules", "Business IT")
+    ; ("Business Analytics", "Business IT")
+    ; ("IT-Governance", "Business IT")
+    ; ("IT-Governance", "Management")
+    ]
+
+RELATION isEnrolledFor [Student*Module]
+MEANING "Students enroll for each module in the course separately"
+PURPOSE RELATION isEnrolledFor {+ Students enroll for each module in the course separately +}
+
+-- The one rule in this model
+RULE ModuleEnrollment: isEnrolledFor |- takes;isPartOf~
+MEANING "A student can enroll for any module that is part of the course the student takes"
+MESSAGE "Attempt to enroll student(s) for a module that is not part of the student's course."
+VIOLATION (TXT "Student ", SRC I, TXT " enrolled for the module ", TGT I, TXT " which is not part of the course ", SRC I[Student];takes)
+PURPOSE RULE ModuleEnrollment {+ This rule checks whether the module of choice is part of the course the student is taking +}
+
+INTERFACE Overview : "_SESSION"                  cRud
+BOX <TABS>
+     [ Students : V[SESSION*Student]             cRuD
+       BOX <TABLE>
+                [ "Student" : I[Student]         cRud
+                , "Enrolled for" : isEnrolledFor cRUD
+                , "Course" : takes CRUD
+                ]
+     , Course : V[SESSION*Course]                cRuD
+       BOX <TABLE>
+                [ "Course" : I                   cRud
+                , "Modules" : isPartOf~          CRUD
+                ]
+     , Modules : V[SESSION*Module]               cRud
+       BOX <TABLE>
+                [ "Modules" : I                  cRuD
+                , "Course" : isPartOf            cRUd
+                , "Students" : isEnrolledFor~    CRUD
+                ]
+     ]
+
+ENDCONTEXT

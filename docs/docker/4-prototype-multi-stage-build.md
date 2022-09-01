@@ -1,0 +1,2 @@
+# Prototype multi-stage build
+
