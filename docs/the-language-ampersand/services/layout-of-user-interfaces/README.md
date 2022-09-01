@@ -89,7 +89,7 @@ BOX <TABS>
 
 This service shows three tabs in the user interface, **Students**, **Course** and **Modules**. Only one tab is shown at a time, to avoid cluttered data. This is what the user will see on the screen.
 
-![Tab-oriented layout with column layout in tab "Modules"](../../../.gitbook/assets/Untitled.png)
+![Tab-oriented layout with column layout in tab "Modules"](../../../.gitbook/assets/untitled.png)
 
 We have discussed the `COLS`, `ROWS`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
 
