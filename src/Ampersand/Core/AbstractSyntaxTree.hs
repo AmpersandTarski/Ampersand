@@ -173,6 +173,9 @@ instance Show A_Context where
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
 
+instance Ord A_Context where
+  a `compare` b = name a `compare` name b
+
 instance Unique A_Context where
   showUnique = tName
 
@@ -580,18 +583,18 @@ data ViewSegmentPayLoad
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
 data AClassify
   = Isa
-      { genpos :: Origin,
+      { genpos :: !Origin,
         -- | specific concept
-        genspc :: A_Concept,
+        genspc :: !A_Concept,
         -- | generic concept
-        gengen :: A_Concept
+        gengen :: !A_Concept
       }
   | IsE
-      { genpos :: Origin,
+      { genpos :: !Origin,
         -- | specific concept
-        genspc :: A_Concept,
+        genspc :: !A_Concept,
         -- | concepts of which the conjunction is equivalent to the specific concept
-        genrhs :: NE.NonEmpty A_Concept
+        genrhs :: !(NE.NonEmpty A_Concept)
       }
   deriving (Typeable)
 
