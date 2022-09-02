@@ -277,7 +277,7 @@ aObjectDef2pObjectDef x =
       P_BxTxt
         { box_label = name oDef,
           pos = origin oDef,
-          obj_txt = objtxt oDef
+          obj_txt = boxtxt oDef
         }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim

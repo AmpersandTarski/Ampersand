@@ -153,5 +153,5 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             pure $
               FEObjT
                 { objName = name object',
-                  objTxt = objtxt object'
+                  objTxt = boxtxt object'
                 }

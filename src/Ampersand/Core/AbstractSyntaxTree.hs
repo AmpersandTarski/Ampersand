@@ -113,6 +113,8 @@ import Ampersand.Core.ParseTree
   )
 import Data.Default (Default (..))
 import Data.Hashable (Hashable (..), hashWithSalt)
+import Data.Text1 ((<>.))
+import Data.Text1.Text1 ((.<>))
 import Data.Typeable (typeOf)
 import RIO.Char (toUpper)
 import qualified RIO.List as L
@@ -124,7 +126,7 @@ import RIO.Time
 
 data A_Context = ACtx
   { -- | The name of this context
-    ctxnm :: !Text,
+    ctxnm :: !Name,
     -- | The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
     ctxpos :: ![Origin],
     -- | The default language used in this context.
@@ -166,20 +168,20 @@ data A_Context = ACtx
   deriving (Typeable)
 
 instance Show A_Context where
-  show = T.unpack . name
+  show = T.unpack . text1ToText . tName
 
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
 
 instance Unique A_Context where
-  showUnique = name
+  showUnique = tName
 
 instance Named A_Context where
   name = ctxnm
 
 data Pattern = A_Pat
   { -- | Name of this pattern
-    ptnm :: !Text,
+    ptnm :: !Name,
     -- | the position in the file in which this pattern was declared.
     ptpos :: !Origin,
     -- | the end position in the file, elements with a position between pos and end are elements of this pattern.
@@ -212,7 +214,7 @@ instance Eq Pattern where
   a == b = compare a b == EQ
 
 instance Unique Pattern where
-  showUnique = name
+  showUnique = tName
 
 instance Ord Pattern where
   a `compare` b = name a `compare` name b
@@ -237,7 +239,7 @@ data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    acdcpt :: !Text,
+    acdcpt :: !Name,
     -- | The textual definition of this concept.
     acddef2 :: !Meaning,
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -305,21 +307,21 @@ type Rules = Set.Set Rule
 
 data Rule = Ru
   { -- | Name of this rule
-    rrnm :: Text,
+    rrnm :: !Name,
     -- | The expression that should be True
-    formalExpression :: Expression,
+    formalExpression :: !Expression,
     -- | Position in the Ampersand file
-    rrfps :: Origin,
+    rrfps :: !Origin,
     -- | Ampersand generated meaning (for all known languages)
-    rrmean :: [Meaning],
+    rrmean :: ![Meaning],
     -- | User-specified violation messages, possibly more than one, for multiple languages.
-    rrmsg :: [Markup],
+    rrmsg :: ![Markup],
     -- | Custom presentation for violations, currently only in a single language
-    rrviol :: Maybe (PairView Expression),
+    rrviol :: !(Maybe (PairView Expression)),
     -- | If the rule is defined in the context of a pattern, the name of that pattern.
-    rrpat :: Maybe Text,
+    rrpat :: !(Maybe Name),
     -- | Where does this rule come from?
-    rrkind :: RuleKind
+    rrkind :: !RuleKind
   }
   deriving (Typeable)
 
@@ -327,14 +329,15 @@ instance Eq Rule where
   a == b = compare a b == EQ
 
 instance Unique Rule where
-  showUnique = name
+  showUnique = tName
 
 instance Ord Rule where
   compare = compare `on` rrnm -- Origin should not be here: A check that they all have unique names is done before typechecking.
 
 instance Show Rule where
   show x =
-    "RULE " <> T.unpack (if T.null (name x) then mempty else name x <> ": ") <> show (formalExpression x)
+    T.unpack $
+      "RULE " <> text1ToText (tName x <>. (": " <> tshow (formalExpression x)))
 
 instance Traced Rule where
   origin = rrfps
@@ -349,17 +352,17 @@ instance Hashable Rule where
       `hashWithSalt` formalExpression rul
 
 data Conjunct = Cjct
-  { rc_id :: Text, -- string that identifies this conjunct ('id' rather than 'name', because
+  { rc_id :: !Text1, -- string that identifies this conjunct ('id' rather than 'name', because
   -- this is an internal id that has no counterpart at the ADL level)
-    rc_orgRules :: NE.NonEmpty Rule, -- All rules this conjunct originates from
-    rc_conjunct :: Expression,
-    rc_dnfClauses :: [DnfClause]
+    rc_orgRules :: !(NE.NonEmpty Rule), -- All rules this conjunct originates from
+    rc_conjunct :: !Expression,
+    rc_dnfClauses :: ![DnfClause]
   }
   deriving (Show, Typeable)
 
 data DnfClause = Dnf
-  { antcs :: [Expression],
-    conss :: [Expression]
+  { antcs :: ![Expression],
+    conss :: ![Expression]
   }
   deriving (Show, Eq) -- Show is for debugging purposes only.
 
@@ -411,7 +414,7 @@ instance Show AProp where
   show Irf = "IRF"
 
 instance Unique AProp where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Flippable AProp where
   flp Uni = Inj
@@ -431,7 +434,7 @@ type Relations = Set.Set Relation
 
 data Relation = Relation
   { -- | the name of the relation
-    decnm :: !Text,
+    decnm :: !Name,
     -- | the source and target concepts of the relation
     decsgn :: !Signature,
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
@@ -447,7 +450,7 @@ data Relation = Relation
     -- | if true, this relation is declared by an author in the Ampersand script; otherwise it was generated by Ampersand.
     decusr :: !Bool,
     -- | If the relation is declared inside a pattern, the name of that pattern.
-    decpat :: !(Maybe Text),
+    decpat :: !(Maybe Name),
     dechash :: !Int
   }
   deriving (Typeable, Data)
@@ -459,23 +462,23 @@ instance Ord Relation where
   compare a b = compare (name a, sign a) (name b, sign b)
 
 instance Unique Relation where
-  showUnique d =
-    name d <> showUnique (decsgn d)
+  showUnique rel =
+    tName rel <> showUnique (decsgn rel)
 
 instance Hashable Relation where
   hashWithSalt s Relation {dechash = v} = s `hashWithSalt` v
 
 instance Show Relation where -- For debugging purposes only (and fatal messages)
-  show decl =
-    T.unpack $ name decl <> showSign (sign decl)
+  show rel =
+    T.unpack . text1ToText $ tName rel <> showSign rel
 
-showRel :: Relation -> Text
-showRel rel = name rel <> "[" <> tshow (source rel) <> "*" <> tshow (target rel) <> "]"
+showRel :: Relation -> Text1
+showRel rel = tName rel <> showSign rel
 
 newtype Meaning = Meaning {ameaMrk :: Markup} deriving (Show, Eq, Ord, Typeable, Data)
 
 instance Unique Meaning where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Named Relation where
   name = decnm
@@ -488,13 +491,13 @@ instance Traced Relation where
 
 data IdentityRule = Id
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
-    idPos :: Origin,
+    idPos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    idLbl :: Text,
+    idLbl :: !Name,
     -- | this expression describes the instances of this object, related to their context
     idCpt :: A_Concept,
     -- | if defined within a pattern, then the name of that pattern.
-    idPat :: Maybe Text,
+    idPat :: !(Maybe Name),
     -- | the constituent attributes (i.e. name/expression pairs) of this identity.
     identityAts :: NE.NonEmpty IdentitySegment
   }
@@ -507,7 +510,7 @@ instance Traced IdentityRule where
   origin = idPos
 
 instance Unique IdentityRule where
-  showUnique = name
+  showUnique = tName
 
 instance Ord IdentityRule where
   compare a b = name a `compare` name b
@@ -522,18 +525,18 @@ newtype IdentitySegment = IdentityExp
 
 data ViewDef = Vd
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
-    vdpos :: Origin,
+    vdpos :: !Origin,
     -- | the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    vdlbl :: Text,
+    vdlbl :: !Name,
     -- | the concept for which this view is applicable
-    vdcpt :: A_Concept,
+    vdcpt :: !A_Concept,
     -- | whether or not this is the default view for the concept
-    vdIsDefault :: Bool,
+    vdIsDefault :: !Bool,
     -- | the html template for this view (not required since we may have other kinds of views as well in the future)
     --                  , vdtext :: Maybe ViewText -- Future extension
-    vdhtml :: Maybe ViewHtmlTemplate,
+    vdhtml :: !(Maybe ViewHtmlTemplate),
     -- | the constituent attributes (i.e. name/expression pairs) of this view.
-    vdats :: [ViewSegment]
+    vdats :: ![ViewSegment]
   }
   deriving (Show)
 
@@ -544,7 +547,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = name vd <> "_" <> name (vdcpt vd)
+  showUnique vd = tName vd <> ("_" .<> tName (vdcpt vd))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -611,8 +614,8 @@ instance Traced AClassify where
 instance Unique AClassify where
   showUnique a =
     case a of
-      Isa {} -> showUnique (genspc a) <> " ISA " <> showUnique (gengen a)
-      IsE {} -> showUnique (genspc a) <> " IS " <> T.intercalate " /\\ " (NE.toList . fmap showUnique $ genrhs a)
+      Isa {} -> showUnique (genspc a) <> (" ISA " .<> showUnique (gengen a))
+      IsE {} -> showUnique (genspc a) <>. " IS " <> T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a)
 
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
@@ -633,7 +636,7 @@ data Interface = Ifc
   { -- | is this interface of type API?
     ifcIsAPI :: !Bool,
     -- | The name of the interface
-    ifcname :: !Text,
+    ifcname :: !Name,
     -- | All roles for which an interface is available (empty means: available for all roles)
     ifcRoles :: ![Role],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
@@ -660,10 +663,10 @@ instance Traced Interface where
   origin = ifcPos
 
 instance Unique Interface where
-  showUnique = name
+  showUnique = tName
 
 -- Utility function for looking up interface refs
-getInterfaceByName :: [Interface] -> Text -> Interface
+getInterfaceByName :: [Interface] -> Name -> Interface
 getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == nm] of
   [] -> fatal $ "getInterface by name: no interfaces named " <> tshow nm
   [ifc] -> ifc
@@ -692,7 +695,7 @@ data BoxItem
   deriving (Eq, Show)
 
 instance Unique BoxItem where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Traced BoxItem where
   origin o =
@@ -702,14 +705,14 @@ instance Traced BoxItem where
 
 data BoxTxt = BoxTxt
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    objnm :: Text,
-    objpos :: Origin,
-    objtxt :: Text
+    boxLabel :: !(Maybe Text1),
+    boxpos :: !Origin,
+    boxtxt :: !Text1
   }
   deriving (Show)
 
 instance Ord BoxTxt where
-  compare a b = case compare (name a, objtxt a) (name b, objtxt b) of
+  compare a b = case compare (boxLabel a, boxtxt a) (boxLabel b, boxtxt b) of
     EQ ->
       fromMaybe
         ( fatal . T.intercalate "\n" $
@@ -726,7 +729,7 @@ instance Eq BoxTxt where
 
 data ObjectDef = ObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    objnm :: Text,
+    objLabel :: !(Maybe Text1),
     -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
     objPos :: Origin,
     -- | this expression describes the instances of this object, related to their context.
@@ -740,17 +743,14 @@ data ObjectDef = ObjectDef
   }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
-instance Named ObjectDef where
-  name = objnm
-
 instance Traced ObjectDef where
   origin = objPos
 
 instance Unique ObjectDef where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Ord ObjectDef where
-  compare a b = case compare (name a) (name b) of
+  compare a b = case compare (objLabel a) (objLabel b) of
     EQ ->
       fromMaybe
         ( fatal . T.intercalate "\n" $
@@ -765,11 +765,8 @@ instance Ord ObjectDef where
 instance Eq ObjectDef where
   a == b = compare a b == EQ
 
-instance Named BoxTxt where
-  name = objnm
-
 instance Traced BoxTxt where
-  origin = objpos
+  origin = boxpos
 
 data Cruds = Cruds
   { crudOrig :: Origin,
@@ -798,15 +795,15 @@ data SubInterface
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
 data Purpose = Expl
   { -- | The position in the Ampersand script of this purpose definition
-    explPos :: Origin,
+    explPos :: !Origin,
     -- | The object that is explained.
-    explObj :: ExplObj,
+    explObj :: !ExplObj,
     -- | This field contains the text of the explanation including language and markup info.
-    explMarkup :: Markup,
+    explMarkup :: !Markup,
     -- | Is this purpose defined in the script?
-    explUserdefd :: Bool,
+    explUserdefd :: !Bool,
     -- | The references of the explaination
-    explRefIds :: [Text]
+    explRefIds :: ![Text]
   }
   deriving (Show, Typeable)
 
@@ -832,7 +829,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p =
     uniqueShowWithType (explMarkup p)
-      <> tshow (typeOf x)
+      <>. tshow (typeOf x)
       <> "_"
       <> tshow x
     where
@@ -870,7 +867,7 @@ mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = "(" <> (showUnique . apLeft) apair <> "," <> (showUnique . apRight) apair <> ")"
+  showUnique apair = "(" .<> (showUnique . apLeft) apair <> ("," .<> (showUnique . apRight) apair <>. ")")
 
 type AAtomValues = Set.Set AAtomValue
 
@@ -904,13 +901,13 @@ data AAtomValue
   deriving (Eq, Ord, Show, Data)
 
 instance Unique AAtomValue where -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
-  showUnique pop@AAVString {} = (tshow . aavhash) pop
-  showUnique pop@AAVInteger {} = (tshow . aavint) pop
-  showUnique pop@AAVFloat {} = (tshow . aavflt) pop
-  showUnique pop@AAVBoolean {} = (tshow . aavbool) pop
-  showUnique pop@AAVDate {} = (tshow . aadateDay) pop
-  showUnique pop@AAVDateTime {} = (tshow . aadatetime) pop
-  showUnique AtomValueOfONE = "ONE"
+  showUnique pop@AAVString {} = (toText1Unsafe . tshow . aavhash) pop
+  showUnique pop@AAVInteger {} = (toText1Unsafe . tshow . aavint) pop
+  showUnique pop@AAVFloat {} = (toText1Unsafe . tshow . aavflt) pop
+  showUnique pop@AAVBoolean {} = (toText1Unsafe . tshow . aavbool) pop
+  showUnique pop@AAVDate {} = (toText1Unsafe . tshow . aadateDay) pop
+  showUnique pop@AAVDateTime {} = (toText1Unsafe . tshow . aadatetime) pop
+  showUnique AtomValueOfONE = tName nameOfONE
 
 showValSQL :: AAtomValue -> Text
 showValSQL val =
@@ -949,26 +946,26 @@ showValADL val =
 data ExplObj
   = ExplConcept A_Concept
   | ExplRelation Relation
-  | ExplRule Text
-  | ExplIdentityDef Text
-  | ExplViewDef Text
-  | ExplPattern Text
-  | ExplInterface Text
-  | ExplContext Text
+  | ExplRule Name
+  | ExplIdentityDef Name
+  | ExplViewDef Name
+  | ExplPattern Name
+  | ExplInterface Name
+  | ExplContext Name
   deriving (Show, Eq, Typeable, Ord)
 
 instance Unique ExplObj where
   showUnique e =
     "Explanation of "
-      <> case e of
+      .<> case e of
         (ExplConcept cpt) -> uniqueShowWithType cpt
         (ExplRelation rel) -> uniqueShowWithType rel
-        (ExplRule s) -> "a Rule named " <> s
-        (ExplIdentityDef s) -> "an Ident named " <> s
-        (ExplViewDef s) -> "a View named " <> s
-        (ExplPattern s) -> "a Pattern named " <> s
-        (ExplInterface s) -> "an Interface named " <> s
-        (ExplContext s) -> "a Context named " <> s
+        (ExplRule s) -> "a Rule named " .<> tName s
+        (ExplIdentityDef s) -> "an Ident named " .<> tName s
+        (ExplViewDef s) -> "a View named " .<> tName s
+        (ExplPattern s) -> "a Pattern named " .<> tName s
+        (ExplInterface s) -> "an Interface named " .<> tName s
+        (ExplContext s) -> "a Context named " .<> tName s
 
 data Expression
   = -- | equivalence             =
@@ -1042,14 +1039,14 @@ instance Hashable Expression where
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
-  showUnique = tshow -- showA is not good enough: epsilons are disguised, so there can be several different
+  showUnique = toText1Unsafe . tshow -- showA is not good enough: epsilons are disguised, so there can be several different
   -- expressions with the same showA.
 
 instance Unique (PairView Expression) where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Unique (PairViewSegment Expression) where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
@@ -1183,8 +1180,8 @@ instance HasSignature Expression where
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c
 
-showSign :: HasSignature a => a -> Text
-showSign x = let Sign s t = sign x in "[" <> name s <> "*" <> name t <> "]"
+showSign :: HasSignature a => a -> Text1
+showSign x = let Sign s t = sign x in ("[" .<> tName s <>. "*") <> tName t <>. "]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
@@ -1230,7 +1227,7 @@ getExpressionRelation expr = case getRelation expr of
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
-        aliases :: NE.NonEmpty Text
+        aliases :: NE.NonEmpty Name
       }
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
@@ -1251,10 +1248,10 @@ instance Eq A_Concept where
 -}
 
 instance Unique AConceptDef where
-  showUnique = tshow . name
+  showUnique = toText1Unsafe . tshow . name
 
 instance Unique A_Concept where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Hashable A_Concept where
   hashWithSalt s cpt =
@@ -1266,30 +1263,26 @@ instance Hashable A_Concept where
 
 instance Named A_Concept where
   name PlainConcept {aliases = names} = NE.head names
-  name ONE = "ONE"
+  name ONE = nameOfONE
 
 instance Show A_Concept where
-  show = T.unpack . name
+  show = T.unpack . text1ToText . tName
 
 -- | special type of Show, for types that can have aliases. Its purpose is
 --   to use when giving feedback to the ampersand modeler, in cases aliases
 --   are used.
 class Show a => ShowWithAliases a where
-  showWithAliases :: a -> Text
-  -- Default is to just use show. This makes it easier to use showAliases
-  -- at more places, even if there is not a specific implementation
-  -- for it
-  showWithAliases = tshow
+  showWithAliases :: a -> Text1
 
 instance ShowWithAliases A_Concept where
-  showWithAliases ONE = name ONE
+  showWithAliases ONE = tName ONE
   showWithAliases cpt@PlainConcept {aliases = names} =
     case NE.tail names of
-      [] -> name cpt
-      xs -> name cpt <> "(" <> T.intercalate ", " xs <> ")"
+      [] -> tName cpt
+      xs -> tName cpt <>. "(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")"
 
 instance Unique (A_Concept, PAtomValue) where
-  showUnique (c, val) = tshow val <> "[" <> showUnique c <> "]"
+  showUnique (c, val) = tshow val <> "[" .<> showUnique c <>. "]"
 
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 
@@ -1301,10 +1294,10 @@ instance Show Signature where
 
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) =
-    "[" <> showWithAliases s <> "*" <> showWithAliases t <> "]"
+    ("[" .<> showWithAliases s <>. "*") <> showWithAliases t <>. "]"
 
 instance Unique Signature where
-  showUnique (Sign s t) = "[" <> showUnique s <> "*" <> showUnique t <> "]"
+  showUnique (Sign s t) = ("[" .<> showUnique s <>. "*") <> showUnique t <>. "]"
 
 instance HasSignature Signature where
   source (Sign s _) = s
@@ -1349,22 +1342,14 @@ data ContextInfo = CI
     defaultFormat :: PandocFormat
   }
 
-instance Named Type where
-  name v = case typeOrConcept dummy v of
-    Right (Just x) -> "Built-in type " <> tshow x
-    Right Nothing -> "The Generic Built-in type"
-    Left x -> "Concept: " <> name x
-    where
-      dummy = makeConceptMap []
-
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
-typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun . mkPConcept $ "ONE"
+typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun . mkPConcept $ nameOfONE
 typeOrConcept fun (UserConcept s) = Left . fun . mkPConcept $ s
 typeOrConcept _ (BuiltIn x) = Right (Just x)
 typeOrConcept _ RepresentSeparator = Right Nothing
 
 data Type
-  = UserConcept Text
+  = UserConcept Name
   | BuiltIn TType
   | RepresentSeparator
   deriving (Eq, Ord, Show)
@@ -1601,7 +1586,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
           T.intercalate "\n    " $
             [ "Representation mismatch",
               "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
-              "as representation of an atom in concept `" <> name c <> "`.",
+              "as representation of an atom in concept `" <> text1ToText (tName c) <> "`.",
               "However, the representation-type of that concept is " <> implicitly,
               "defined as " <> tshow typ <> ". The found value does not match that type."
             ]

@@ -700,7 +700,7 @@ transformersFormalAmpersand fSpec =
             Just vw <- [objmView obj]
         ]
       ),
-      ( "objpos",
+      ( "boxpos",
         "ObjectDef",
         "Origin",
         Set.fromList [Uni],

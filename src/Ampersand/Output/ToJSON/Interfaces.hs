@@ -208,5 +208,5 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONcrud = Nothing,
             ifcobjJSONexpr = Nothing,
             ifcobjJSONsubinterfaces = Nothing,
-            ifcobjJSONtxt = Just $ objtxt object
+            ifcobjJSONtxt = Just $ boxtxt object
           }

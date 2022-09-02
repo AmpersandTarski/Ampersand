@@ -680,7 +680,7 @@ pCtx2aCtx
                 obj crud (e, sr) s =
                   ( BxExpr
                       ObjectDef
-                        { objnm = nm,
+                        { boxLabel = nm,
                           objPos = orig,
                           objExpression = e,
                           objcrud = crud,
@@ -697,9 +697,9 @@ pCtx2aCtx
               pure
                 ( BxTxt
                     BoxTxt
-                      { objnm = nm,
-                        objpos = orig,
-                        objtxt = str
+                      { boxLabel = nm,
+                        boxpos = orig,
+                        boxtxt = str
                       },
                   True
                 )

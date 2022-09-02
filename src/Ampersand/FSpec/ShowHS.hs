@@ -630,8 +630,8 @@ instance ShowHS ObjectDef where
   showHS env indent x =
     T.intercalate
       indent
-      [ "ObjectDef { objnm    = " <> tshow (name x),
-        "       , objpos   = " <> showHS env "" (origin x),
+      [ "ObjectDef { boxLabel    = " <> tshow (name x),
+        "       , boxpos   = " <> showHS env "" (origin x),
         "       , objExpression   = " <> showHS env (indent <> "                ") (objExpression x),
         "       , objcrud  = " <> showHS env (indent <> "                ") (objcrud x),
         "       , objmView = " <> tshow (objmView x),
@@ -643,9 +643,9 @@ instance ShowHS BoxTxt where
   showHS env indent x =
     T.intercalate
       indent
-      [ "BoxTxt { objnm    = " <> tshow (name x),
-        "       , objpos   = " <> showHS env "" (origin x),
-        "       , objtxt   = " <> tshow (objtxt x),
+      [ "BoxTxt { boxLabel    = " <> tshow (name x),
+        "       , boxpos   = " <> showHS env "" (origin x),
+        "       , boxtxt   = " <> tshow (boxtxt x),
         "       }"
       ]
 

@@ -388,7 +388,7 @@ makeFSpec env context =
       let recur :: [NE.NonEmpty Expression] -> [ObjectDef]
           recur es =
             [ ObjectDef
-                { objnm = showA t,
+                { boxLabel = showA t,
                   objPos = orig,
                   objExpression = t,
                   objcrud = fatal "No default crud in generated interface",
@@ -431,7 +431,7 @@ makeFSpec env context =
                 ifcObj =
                   let orig = Origin "generated object: step 4a - default theme"
                    in ObjectDef
-                        { objnm = name c,
+                        { boxLabel = name c,
                           objPos = orig,
                           objExpression = EDcI c,
                           objcrud = fatal "No default crud in generated interface",
@@ -456,7 +456,7 @@ makeFSpec env context =
             ifcObj =
               let orig = Origin "generated object: step 4b"
                in ObjectDef
-                    { objnm = nm,
+                    { boxLabel = nm,
                       objPos = orig,
                       objExpression = EDcI ONE,
                       objcrud = fatal "No default crud in generated interface",
@@ -478,7 +478,7 @@ makeFSpec env context =
                 h : _ -> h
               att =
                 ObjectDef
-                  { objnm = name c,
+                  { boxLabel = name c,
                     objPos = Origin "generated attribute object: step 4b",
                     objExpression = EDcV (Sign ONE c),
                     objcrud = fatal "No default crud in generated interface.",
