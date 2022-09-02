@@ -38,7 +38,6 @@ module Ampersand.Core.ParseTree
     P_BoxItemTermPrim,
     P_SubInterface,
     P_Interface (..),
-    P_IClass (..),
     P_BoxItem (..),
     P_SubIfc (..),
     P_Cruds (..),
@@ -72,6 +71,7 @@ import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
 import Data.Hashable (Hashable (..), hashWithSalt)
+import Data.Text1 ((<>.))
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -82,7 +82,7 @@ import RIO.Time
 
 data P_Context = PCtx
   { -- | The name of this context
-    ctx_nm :: !Text,
+    ctx_nm :: !Name,
     -- | The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
     ctx_pos :: ![Origin],
     -- | The language specified on the top-level context. If omitted, English will be the default.
@@ -127,9 +127,9 @@ instance Named P_Context where
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data MetaData = MetaData
-  { pos :: Origin,
-    mtName :: Text,
-    mtVal :: Text
+  { pos :: !Origin,
+    mtName :: !Text1,
+    mtVal :: !Text
   }
   deriving (Show)
 
@@ -137,9 +137,9 @@ instance Traced MetaData where
   origin = pos
 
 data EnforceOperator
-  = IsSuperSet Origin
-  | IsSubSet Origin
-  | IsSameSet Origin
+  = IsSuperSet !Origin
+  | IsSubSet !Origin
+  | IsSameSet !Origin
   deriving (Show, Eq)
 
 data P_Enforce a = P_Enforce
@@ -166,7 +166,7 @@ data P_RoleRule = Maintain
     -- | names of a role
     mRoles :: NE.NonEmpty Role,
     -- | names of a Rule
-    mRules :: NE.NonEmpty Text
+    mRules :: NE.NonEmpty Name
   }
   deriving (Show) -- deriving (Show) is just for debugging
 
@@ -174,8 +174,8 @@ instance Traced P_RoleRule where
   origin = pos
 
 data Role
-  = Role Text
-  | Service Text
+  = Role !Name
+  | Service !Name
   deriving (Show, Typeable, Data) -- deriving (Show) is just for debugging
 
 instance Ord Role where
@@ -189,13 +189,13 @@ instance Named Role where
   name (Service nm) = nm
 
 instance Unique Role where
-  showUnique = name
+  showUnique = tName
 
 data P_Pattern = P_Pat
   { -- | the starting position in the file in which this pattern was declared.
     pos :: !Origin,
     -- | Name of this pattern
-    pt_nm :: !Text,
+    pt_nm :: !Name,
     -- | The user defined rules in this pattern
     pt_rls :: ![P_Rule TermPrim],
     -- | The generalizations defined in this pattern
@@ -249,15 +249,26 @@ data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    cdcpt :: !Text,
+    cdcpt :: !Name,
     -- | The textual definition of this concept.
     cddef2 :: !PCDDef,
     -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
     cdmean :: ![PMeaning],
     -- | The name of the pattern or context in which this concept definition was made
-    cdfrom :: !Text
+    cdfrom :: !DefinitionContainer
   }
   deriving (Show, Typeable)
+
+data DefinitionContainer
+  = CONTEXT !Name
+  | PATTERN !Name
+  | Module !Name
+
+instance Show DefinitionContainer where
+  show x = case x of
+    CONTEXT nm -> show nm
+    PATTERN nm -> show nm
+    Module nm -> show nm
 
 instance Ord PConceptDef where
   compare a b = case compare (name a) (name b) of
@@ -276,7 +287,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = cdcpt cd <> "At" <> tshow (typeOf x) <> "_" <> tshow x
+  showUnique cd = tName cd <>. ("At" <> tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin cd
 
@@ -302,10 +313,11 @@ data PCDDef
   deriving (Show, Typeable)
 
 data Representation = Repr
-  { pos :: Origin,
+  { pos :: !Origin,
     -- | the concepts
-    reprcpts :: NE.NonEmpty P_Concept,
-    reprdom :: TType -- the type of the concept the atom is in
+    reprcpts :: !(NE.NonEmpty P_Concept),
+    -- | the type of the concept the atom is in
+    reprdom :: !TType
   }
   deriving (Show)
 
@@ -330,7 +342,7 @@ data TType
   deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
 
 instance Unique TType where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Show TType where
   show tt = case tt of
@@ -355,7 +367,7 @@ instance Hashable TType where
 
 data P_Relation = P_Relation
   { -- | the name of the relation
-    dec_nm :: !Text,
+    dec_nm :: !Name,
     -- | the type. Parser must guarantee it is not empty.
     dec_sign :: !P_Sign,
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf, Prop)
@@ -449,15 +461,15 @@ makePSingleton :: Text -> PAtomValue
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 
 data PAtomValue
-  = PSingleton Origin Text (Maybe PAtomValue)
-  | ScriptString Origin Text -- string from script char to enquote with when printed
-  | XlsxString Origin Text
-  | ScriptInt Origin Integer
-  | ScriptFloat Origin Double
-  | XlsxDouble Origin Double
-  | ComnBool Origin Bool
-  | ScriptDate Origin Day
-  | ScriptDateTime Origin UTCTime
+  = PSingleton !Origin !Text !(Maybe PAtomValue)
+  | ScriptString !Origin !Text -- string from script char to enquote with when printed
+  | XlsxString !Origin !Text
+  | ScriptInt !Origin !Integer
+  | ScriptFloat !Origin !Double
+  | XlsxDouble !Origin !Double
+  | ComnBool !Origin !Bool
+  | ScriptDate !Origin !Day
+  | ScriptDateTime !Origin !UTCTime
   deriving (Typeable, Data)
 
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
@@ -512,7 +524,7 @@ instance Traced PAtomValue where
       ScriptDateTime o _ -> o
 
 instance Unique PAtomValue where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r =
@@ -546,14 +558,18 @@ data TermPrim
   | PNamedR P_NamedRel
   deriving (Show) --For QuickCheck error messages only!
 
-data P_NamedRel = PNamedRel {pos :: Origin, p_nrnm :: Text, p_mbSign :: Maybe P_Sign}
+data P_NamedRel = PNamedRel
+  { pos :: !Origin,
+    p_nrnm :: !Name,
+    p_mbSign :: !(Maybe P_Sign)
+  }
   deriving (Show)
 
+instance Ord P_NamedRel where
+  compare a b = compare (name a, p_mbSign a) (name b, p_mbSign b)
+
 instance Eq P_NamedRel where
-  nr == nr' =
-    case (p_mbSign nr, p_mbSign nr') of
-      (Just sgn, Just sgn') -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
-      _ -> False
+  a == b = compare a b == EQ
 
 data Term a
   = Prim a
@@ -757,17 +773,17 @@ instance Foldable PairView where foldMap = foldMapDefault
 
 data P_Rule a = P_Rule
   { -- | Position in the Ampersand file
-    pos :: Origin,
+    pos :: !Origin,
     -- | Name of this rule
-    rr_nm :: Text,
+    rr_nm :: !Name,
     -- | The rule expression
-    rr_exp :: Term a,
+    rr_exp :: !(Term a),
     -- | User-specified meanings, possibly more than one, for multiple languages.
-    rr_mean :: [PMeaning],
+    rr_mean :: ![PMeaning],
     -- | User-specified violation messages, possibly more than one, for multiple languages.
-    rr_msg :: [PMessage],
+    rr_msg :: ![PMessage],
     -- | Custom presentation for violations, currently only in a single language
-    rr_viol :: Maybe (PairView (Term a))
+    rr_viol :: !(Maybe (PairView (Term a)))
   }
   deriving (Show)
 
@@ -839,15 +855,15 @@ instance Traced P_Population where
 
 data P_Interface = P_Ifc
   { -- | The interface is of type API
-    ifc_IsAPI :: Bool,
+    ifc_IsAPI :: !Bool,
     -- | the name of the interface
-    ifc_Name :: Text,
+    ifc_Name :: !Name,
     -- | a list of roles that may use this interface
-    ifc_Roles :: [Role],
+    ifc_Roles :: ![Role],
     -- | the context expression (mostly: I[c])
-    ifc_Obj :: P_BoxItemTermPrim,
-    pos :: Origin,
-    ifc_Prp :: Text
+    ifc_Obj :: !P_BoxItemTermPrim,
+    pos :: !Origin,
+    ifc_Prp :: !Text
   }
   deriving (Show) --For QuickCheck error messages only!
 
@@ -873,8 +889,6 @@ instance Named P_Interface where
 instance Traced P_Interface where
   origin = pos
 
-newtype P_IClass = P_IClass {iclass_name :: Text} deriving (Eq, Ord, Show)
-
 type P_SubInterface = P_SubIfc TermPrim
 
 data P_SubIfc a
@@ -886,7 +900,7 @@ data P_SubIfc a
   | P_InterfaceRef
       { pos :: !Origin,
         si_isLink :: !Bool, --True iff LINKTO is used. (will display as hyperlink)
-        si_str :: !Text -- Name of the interface that is reffered to
+        si_str :: !Name -- Name of the interface that is reffered to
       }
   deriving (Show)
 
@@ -894,7 +908,7 @@ data P_SubIfc a
 data BoxHeader = BoxHeader
   { pos :: !Origin,
     -- | Type of the HTML template that is used for rendering
-    btType :: !Text,
+    btType :: !Text1,
     -- | Key-value pairs
     btKeys :: [TemplateKeyValue]
   }
@@ -906,14 +920,11 @@ instance Traced BoxHeader where
 data TemplateKeyValue = TemplateKeyValue
   { pos :: !Origin,
     -- | Name of the attribute
-    tkkey :: !Text,
+    tkkey :: !Text1,
     -- | value of the attribute. (when no value, the attribute is handled like a switch)
     tkval :: !(Maybe Text)
   }
   deriving (Show, Data)
-
-instance Named TemplateKeyValue where
-  name = tkkey
 
 instance Traced TemplateKeyValue where
   origin = pos
@@ -923,23 +934,23 @@ type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a
   = P_BxExpr
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-        obj_nm :: Text,
+        box_label :: !(Maybe Text1),
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
-        pos :: Origin,
+        pos :: !Origin,
         -- | this expression describes the instances of this object, related to their context.
-        obj_ctx :: Term a,
+        obj_ctx :: !(Term a),
         -- | the CRUD actions as required by the user
-        obj_crud :: Maybe P_Cruds,
+        obj_crud :: !(Maybe P_Cruds),
         -- | The view that should be used for this object
-        obj_mView :: Maybe Text,
+        obj_mView :: !(Maybe Name),
         -- | the attributes, which are object definitions themselves.
-        obj_msub :: Maybe (P_SubIfc a)
+        obj_msub :: !(Maybe (P_SubIfc a))
       }
   | P_BxTxt
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-        obj_nm :: Text,
-        pos :: Origin,
-        obj_txt :: Text
+        box_label :: !(Maybe Text1),
+        pos :: !Origin,
+        obj_txt :: !Text1
       }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
@@ -957,26 +968,23 @@ instance Ord (P_BoxItem a) where
 instance Eq (P_BoxItem a) where
   a == b = compare a b == EQ
 
-instance Named (P_BoxItem a) where
-  name = obj_nm
-
 instance Traced (P_BoxItem a) where
   origin = pos
 
-data P_Cruds = P_Cruds Origin Text deriving (Show)
+data P_Cruds = P_Cruds Origin Text1 deriving (Show)
 
 type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
 
 data P_IdentDf a -- so this is the parametric data-structure
   = P_Id
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
-    pos :: Origin,
+    pos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    ix_lbl :: Text,
+    ix_lbl :: !Name,
     -- | this expression describes the instances of this object, related to their context
-    ix_cpt :: P_Concept,
+    ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
-    ix_ats :: NE.NonEmpty (P_IdentSegmnt a)
+    ix_ats :: !(NE.NonEmpty (P_IdentSegmnt a))
   }
   deriving (Show)
 
@@ -1023,18 +1031,18 @@ type P_ViewDef = P_ViewD TermPrim
 
 data P_ViewD a = P_Vd
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
-    pos :: Origin,
+    pos :: !Origin,
     -- | the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    vd_lbl :: Text,
+    vd_lbl :: !Name,
     -- | the concept for which this view is applicable
-    vd_cpt :: P_Concept,
+    vd_cpt :: !P_Concept,
     -- | whether or not this is the default view for the concept
-    vd_isDefault :: Bool,
+    vd_isDefault :: !Bool,
     -- | the html template for this view (not required since we may have other kinds of views as well in the future)
     --              , vd_text :: Maybe P_ViewText -- Future extension
-    vd_html :: Maybe ViewHtmlTemplate,
+    vd_html :: !(Maybe ViewHtmlTemplate),
     -- | the constituent segments of this view.
-    vd_ats :: [P_ViewSegment a]
+    vd_ats :: ![P_ViewSegment a]
   }
   deriving (Show)
 
@@ -1068,9 +1076,9 @@ instance Traversable P_ViewD where
   traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
 data P_ViewSegment a = P_ViewSegment
-  { vsm_labl :: Maybe Text,
-    pos :: Origin,
-    vsm_load :: P_ViewSegmtPayLoad a
+  { vsm_labl :: !(Maybe Text1),
+    pos :: !Origin,
+    vsm_load :: !(P_ViewSegmtPayLoad a)
   }
   deriving (Show)
 
@@ -1093,35 +1101,37 @@ newtype ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
   --              | ViewHtmlTemplateInline Text -- Future extension
   deriving (Eq, Ord, Show)
 
-instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
+instance Functor P_ViewSegmtPayLoad where
+  fmap = fmapDefault
 
-instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault
+instance Foldable P_ViewSegmtPayLoad where
+  foldMap = foldMapDefault
 
 instance Traversable P_ViewSegmtPayLoad where
   traverse f (P_ViewExp a) = P_ViewExp <$> traverse f a
   traverse _ (P_ViewText a) = pure (P_ViewText a)
 
 data PRef2Obj
-  = PRef2ConceptDef Text
-  | PRef2Relation P_NamedRel
-  | PRef2Rule Text
-  | PRef2IdentityDef Text
-  | PRef2ViewDef Text
-  | PRef2Pattern Text
-  | PRef2Interface Text
-  | PRef2Context Text
-  deriving (Show, Eq) -- only for fatal error messages
+  = PRef2ConceptDef !Name
+  | PRef2Relation !P_NamedRel
+  | PRef2Rule !Name
+  | PRef2IdentityDef !Name
+  | PRef2ViewDef !Name
+  | PRef2Pattern !Name
+  | PRef2Interface !Name
+  | PRef2Context !Name
+  deriving (Show, Eq, Ord) -- only for fatal error messages
 
-instance Named PRef2Obj where
-  name pe = case pe of
-    PRef2ConceptDef str -> str
-    PRef2Relation (PNamedRel _ nm mSgn) -> nm <> maybe "" tshow mSgn
-    PRef2Rule str -> str
-    PRef2IdentityDef str -> str
-    PRef2ViewDef str -> str
-    PRef2Pattern str -> str
-    PRef2Interface str -> str
-    PRef2Context str -> str
+-- instance Named PRef2Obj where
+--   name pe = case pe of
+--     PRef2ConceptDef str -> str
+--     PRef2Relation (PNamedRel _ nm mSgn) -> nm <> maybe "" tshow mSgn
+--     PRef2Rule str -> str
+--     PRef2IdentityDef str -> str
+--     PRef2ViewDef str -> str
+--     PRef2Pattern str -> str
+--     PRef2Interface str -> str
+--     PRef2Context str -> str
 
 data PPurpose = PRef2
   { pos :: Origin, -- the position in the Ampersand script of this purpose definition
@@ -1132,7 +1142,7 @@ data PPurpose = PRef2
   deriving (Show)
 
 instance Ord PPurpose where --Required for merge of P_Contexts
-  compare a b = case compare (name (pexObj a)) (name (pexObj b)) of
+  compare a b = case compare (pexObj a) (pexObj b) of
     EQ -> case (origin a, origin b) of
       (OriginUnknown, OriginUnknown) -> compare (pexRefIDs a) (pexRefIDs b)
       (OriginUnknown, _) -> LT
@@ -1156,27 +1166,32 @@ instance Traced PPurpose where
 
 data P_Concept
   = -- | The name of this Concept
-    PCpt {p_cptnm :: Text}
+    PCpt {p_cptnm :: !Name}
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     P_ONE
+  -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
+  -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
   deriving (Eq, Ord)
 
--- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
--- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
-mkPConcept :: Text -> P_Concept
-mkPConcept "ONE" = P_ONE
-mkPConcept nm = PCpt {p_cptnm = nm}
+mkPConcept :: Name -> P_Concept
+mkPConcept nm =
+  if nm == nameOfONE
+    then P_ONE
+    else PCpt {p_cptnm = nm}
 
 instance Named P_Concept where
   name PCpt {p_cptnm = nm} = nm
-  name P_ONE = "ONE"
+  name P_ONE = nameOfONE
 
 instance Show P_Concept where
-  show = T.unpack . name
+  show = T.unpack . text1ToText . tName
 
-data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept} deriving (Ord, Eq)
-
--- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
+data P_Sign = P_Sign
+  { pSrc :: P_Concept,
+    pTgt :: P_Concept
+  }
+  -- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
+  deriving (Ord, Eq)
 
 instance Show P_Sign where
   show sgn = "[" <> show (pSrc sgn) <> "*" <> show (pTgt sgn) <> "]"
@@ -1242,7 +1257,7 @@ instance Show PProp where
   show P_Prop = "PROP"
 
 instance Unique PProp where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Flippable PProp where
   flp P_Uni = P_Inj
@@ -1259,9 +1274,7 @@ data PRelationDefault
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
   PCtx
-    { ctx_nm = case (filter (not . T.null) . map ctx_nm) contexts of
-        [] -> ""
-        (x : _) -> x,
+    { ctx_nm = name ctx1, -- This is an arbitrary choice. For all univalent fields of a context, we take the first one.
       ctx_pos = fromContextsKeepDoubles ctx_pos,
       ctx_lang = ctx_lang ctx1, -- By taking the first, we end up with the language of the top-level context
       ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts,

@@ -399,7 +399,7 @@ mkUndeclaredError entity objDef ref =
   case objDef of
     P_BxExpr {} ->
       CTXE (origin objDef) $
-        "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (obj_nm objDef)
+        "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (box_label objDef)
     _ -> fatal "Unexpected use of mkUndeclaredError."
 
 mkEndoPropertyError :: Origin -> [PProp] -> CtxError
@@ -475,7 +475,7 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
     P_BxExpr {} ->
       CTXE (origin objDef) $
-        "Incompatible interface reference " <> tshow ref <> " at field " <> tshow (obj_nm objDef)
+        "Incompatible interface reference " <> tshow ref <> " at field " <> tshow (box_label objDef)
           <> ":\nReferenced interface "
           <> tshow ref
           <> " has type "
@@ -503,7 +503,7 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
     P_BxExpr {} ->
       CTXE (origin objDef) $
-        "Incompatible view annotation <" <> viewId <> "> at field " <> tshow (obj_nm objDef) <> ":"
+        "Incompatible view annotation <" <> viewId <> "> at field " <> tshow (box_label objDef) <> ":"
           <> "\nView "
           <> tshow viewId
           <> " has type "

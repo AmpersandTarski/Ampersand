@@ -10,6 +10,7 @@ where
 
 import Ampersand.Basics.Languages
 import Ampersand.Basics.Prelude hiding (toList)
+import Ampersand.Basics.String (toText1Unsafe)
 import Ampersand.Basics.Unique
 import Ampersand.Basics.Version
 import qualified RIO.Text as T
@@ -25,7 +26,7 @@ data Markup = Markup
   deriving (Show, Eq, Ord, Typeable, Data)
 
 instance Unique Markup where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose.
 aMarkup2String :: Markup -> Text

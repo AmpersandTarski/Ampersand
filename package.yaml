@@ -71,9 +71,11 @@ dependencies:
   - terminal-size == 0.3.*
   - texmath == 0.12.*
   - text == 1.2.*
+  - text1 == 0.0.7.4
   - time == 1.9.3
   - transformers
   - typed-process == 0.2.*
+  - uri-encode
   - wl-pprint == 1.2.*
   - xlsx == 0.8.*
   - yaml == 0.11.*

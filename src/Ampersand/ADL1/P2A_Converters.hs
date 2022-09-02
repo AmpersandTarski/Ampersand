@@ -638,7 +638,7 @@ pCtx2aCtx
       typecheckObjDef declMap objDef =
         case objDef of
           P_BxExpr
-            { obj_nm = nm,
+            { box_label = nm,
               pos = orig,
               obj_ctx = ctx,
               obj_crud = mCrud,
@@ -690,7 +690,7 @@ pCtx2aCtx
                     sr
                   )
           P_BxTxt
-            { obj_nm = nm,
+            { box_label = nm,
               pos = orig,
               obj_txt = str
             } ->

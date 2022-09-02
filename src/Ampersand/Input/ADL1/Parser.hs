@@ -555,7 +555,7 @@ pInterface =
           ifc_Roles = maybe [] NE.toList roles,
           ifc_Obj =
             P_BxExpr
-              { obj_nm = nm,
+              { box_label = nm,
                 pos = p,
                 obj_ctx = ctx,
                 obj_crud = mCrud,
@@ -623,7 +623,7 @@ pBoxItemTermPrim =
     pBoxItem p nm fun =
       fun
         { pos = p,
-          obj_nm = nm
+          box_label = nm
         }
 
     pObj :: AmpParser P_BoxItemTermPrim
@@ -635,7 +635,7 @@ pBoxItemTermPrim =
       where
         obj ctx mCrud mView msub =
           P_BxExpr
-            { obj_nm = fatal "This should have been filled in promptly.",
+            { box_label = fatal "This should have been filled in promptly.",
               pos = fatal "This should have been filled in promptly.",
               obj_ctx = ctx,
               obj_crud = mCrud,
@@ -649,7 +649,7 @@ pBoxItemTermPrim =
       where
         obj txt =
           P_BxTxt
-            { obj_nm = fatal "This should have been filled in promptly.",
+            { box_label = fatal "This should have been filled in promptly.",
               pos = fatal "This should have been filled in promptly.",
               obj_txt = txt
             }
@@ -889,7 +889,7 @@ pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
   where
     rebuild pos' nm ctx =
       P_BxExpr
-        { obj_nm = nm,
+        { box_label = nm,
           pos = pos',
           obj_ctx = ctx,
           obj_crud = Nothing,

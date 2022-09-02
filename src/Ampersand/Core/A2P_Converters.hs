@@ -264,7 +264,7 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BxExpr
-        { obj_nm = name oDef,
+        { box_label = name oDef,
           pos = origin oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
@@ -275,7 +275,7 @@ aObjectDef2pObjectDef x =
         }
     BxTxt oDef ->
       P_BxTxt
-        { obj_nm = name oDef,
+        { box_label = name oDef,
           pos = origin oDef,
           obj_txt = objtxt oDef
         }
