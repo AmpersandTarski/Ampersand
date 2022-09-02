@@ -782,12 +782,12 @@ data SubInterface
       { pos :: !Origin,
         siConcept :: !A_Concept,
         siHeader :: !BoxHeader,
-        siObjs :: [BoxItem]
+        siObjs :: ![BoxItem]
       }
   | InterfaceRef
       { pos :: !Origin,
         siIsLink :: !Bool,
-        siIfcId :: !Text --id of the interface that is referenced to
+        siIfcId :: !Name --id of the interface that is referenced to
       }
   deriving (Show)
 

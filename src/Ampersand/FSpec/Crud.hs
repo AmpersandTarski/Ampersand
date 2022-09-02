@@ -103,11 +103,12 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
           InterfaceRef {siIsLink = True} -> []
           InterfaceRef {siIsLink = False} ->
             case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-              [] -> fatal ("Referenced interface " <> siIfcId si <> " missing")
-              (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
+              [] -> fatal ("Referenced interface " <> referencedInterface <> " missing")
+              (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> referencedInterface)
               [i] -> getAllInterfaceExprs allIfcs i
           Box {} -> concatMap getExprs' (siObjs si)
           where
+            referencedInterface = text1ToText . tName . siIfcId $ si
             getExprs' (BxExpr e) = getExprs e
             getExprs' (BxTxt _) = []
 

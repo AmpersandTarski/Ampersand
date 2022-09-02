@@ -22,6 +22,9 @@ module Ampersand.FSpec.FSpec
     RelStore (..),
     metaValues,
     SqlAttribute (..),
+    sqlColumNameToString,
+    sqlColumNameToText1,
+    text1ToSqlColumName,
     isPrimaryKey,
     isForeignKey,
     Typology (..),
@@ -48,6 +51,7 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.Crud
 import Data.Hashable
+import Data.Text1 ((.<>), (<>.))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -56,80 +60,80 @@ import Text.Pandoc.Builder (Blocks)
 
 data FSpec = FSpec
   { -- | The name of the specification, taken from the Ampersand script
-    fsName :: Text,
+    fsName :: !Name,
     -- | the original context. (for showA)
-    originalContext :: A_Context,
+    originalContext :: !(Maybe A_Context),
     -- | The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-    fspos :: [Origin],
+    fspos :: ![Origin],
     -- | All plugs (derived)
-    plugInfos :: [PlugInfo],
+    plugInfos :: ![PlugInfo],
     -- | All interfaces defined in the Ampersand script
-    interfaceS :: [Interface],
+    interfaceS :: ![Interface],
     -- | All interfaces derived from the basic ontology (the Lonneker interface)
-    interfaceG :: [Interface],
+    interfaceG :: ![Interface],
     -- | All interfaces defined in the Ampersand script, for use by a specific Role
-    roleInterfaces :: Role -> [Interface],
+    roleInterfaces :: !(Role -> [Interface]),
     -- | The proofs in Pandoc format
-    fDeriveProofs :: Blocks,
+    fDeriveProofs :: !Blocks,
     -- | the relation saying which roles maintain which rules.
-    fRoleRuls :: [(Role, Rule)],
-    fMaintains :: Role -> Rules,
+    fRoleRuls :: ![(Role, Rule)],
+    fMaintains :: !(Role -> Rules),
     -- | All roles mentioned in this context, numbered.
-    fRoles :: [(Role, Int)],
-    fallRules :: Rules,
+    fRoles :: ![(Role, Int)],
+    fallRules :: !Rules,
     -- | All user defined rules that apply in the entire FSpec
-    vrules :: Rules,
+    vrules :: !Rules,
     -- | All rules that are generated: property rules and identity rules
-    grules :: Rules,
+    grules :: !Rules,
     -- | All invariant rules
-    invariants :: Rules,
+    invariants :: !Rules,
     -- | All signal rules
-    signals :: Rules,
+    signals :: !Rules,
     -- | All relations that are used in the fSpec
-    allUsedDecls :: Relations,
+    allUsedDecls :: !Relations,
     -- | All user defined and generated relations plus all defined and computed totals.
     --   The generated relations are all generalizations and
     --   one relation for each signal.
-    vrels :: Relations,
+    vrels :: !Relations,
     -- | All concepts in the fSpec
-    allConcepts :: A_Concepts,
-    cptTType :: A_Concept -> TType,
+    allConcepts :: !A_Concepts,
+    cptTType :: !(A_Concept -> TType),
     -- | All keys that apply in the entire FSpec
-    vIndices :: [IdentityRule],
+    vIndices :: ![IdentityRule],
     -- | All views that apply in the entire FSpec
-    vviews :: [ViewDef],
-    getDefaultViewForConcept :: A_Concept -> Maybe ViewDef,
-    getAllViewsForConcept :: A_Concept -> [ViewDef],
+    vviews :: ![ViewDef],
+    getDefaultViewForConcept :: !(A_Concept -> Maybe ViewDef),
+    getAllViewsForConcept :: !(A_Concept -> [ViewDef]),
     -- | Lookup view by id in fSpec.
-    lookupView :: Text -> ViewDef,
+    lookupView :: !(Name -> ViewDef),
     -- | All gens that apply in the entire FSpec
-    vgens :: [AClassify],
+    vgens :: ![AClassify],
     -- | All conjuncts generated (by ADL2FSpec)
-    allConjuncts :: [Conjunct],
+    allConjuncts :: ![Conjunct],
     -- | Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules)
-    allConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)],
+    allConjsPerRule :: ![(Rule, NE.NonEmpty Conjunct)],
     -- | Maps each relation to the conjuncts it appears in
-    allConjsPerDecl :: [(Relation, [Conjunct])],
+    allConjsPerDecl :: ![(Relation, [Conjunct])],
     -- | Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
-    allConjsPerConcept :: [(A_Concept, [Conjunct])],
+    allConjsPerConcept :: ![(A_Concept, [Conjunct])],
     -- | All quads generated (by ADL2FSpec)
-    vquads :: [Quad],
+    vquads :: ![Quad],
     -- | generated: The data structure containing the generalization structure of concepts
-    fsisa :: [(A_Concept, A_Concept)],
+    fsisa :: ![(A_Concept, A_Concept)],
     -- | All patterns taken from the Ampersand script
-    vpatterns :: [Pattern],
+    vpatterns :: ![Pattern],
     -- | All concept definitions defined throughout a context, including those inside patterns and processes
-    conceptDefs :: [AConceptDef],
+    conceptDefs :: ![AConceptDef],
     -- | All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
-    fSexpls :: Set.Set Purpose,
+    fSexpls :: !(Set.Set Purpose),
     -- | All meta relations from the entire context
-    metas :: [MetaData],
+    metas :: ![MetaData],
     -- | Information for CRUD matrices
-    crudInfo :: CrudInfo,
+    crudInfo :: !CrudInfo,
     -- | All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
-    atomsInCptIncludingSmaller :: A_Concept -> AAtomValues,
+    atomsInCptIncludingSmaller :: !(A_Concept -> AAtomValues),
     -- | All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
-    atomsBySmallestConcept :: A_Concept -> AAtomValues,
+    atomsBySmallestConcept :: !(A_Concept -> AAtomValues),
     -- | tableContents is meant to compute the contents of an entity table.
     --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than Text.
     -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
@@ -137,23 +141,23 @@ data FSpec = FSpec
     --                         we may see empty attributes. (NULL values in database terminology)
     -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
     -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
-    tableContents :: PlugSQL -> [[Maybe AAtomValue]],
-    pairsInExpr :: Expression -> AAtomPairs,
-    applyViolText :: Rule -> AAtomPair -> Text,
+    tableContents :: !(PlugSQL -> [[Maybe AAtomValue]]),
+    pairsInExpr :: !(Expression -> AAtomPairs),
+    applyViolText :: !(Rule -> AAtomPair -> Text),
     -- | All conjuncts that have process-rule violations.
-    initialConjunctSignals :: [(Conjunct, AAtomPairs)],
+    initialConjunctSignals :: ![(Conjunct, AAtomPairs)],
     -- | All invariant rules with violations.
-    allViolations :: [(Rule, AAtomPairs)],
+    allViolations :: ![(Rule, AAtomPairs)],
     -- | All expressions in the fSpec
-    allExprs :: Expressions,
-    fcontextInfo :: ContextInfo,
-    ftypologies :: [Typology],
-    typologyOf :: A_Concept -> Typology,
-    largestConcept :: A_Concept -> A_Concept,
-    specializationsOf :: A_Concept -> [A_Concept],
-    generalizationsOf :: A_Concept -> [A_Concept],
-    allEnforces :: [AEnforce],
-    isSignal :: Rule -> Bool
+    allExprs :: !Expressions,
+    fcontextInfo :: !ContextInfo,
+    ftypologies :: ![Typology],
+    typologyOf :: !(A_Concept -> Typology),
+    largestConcept :: !(A_Concept -> A_Concept),
+    specializationsOf :: !(A_Concept -> [A_Concept]),
+    generalizationsOf :: !(A_Concept -> [A_Concept]),
+    allEnforces :: ![AEnforce],
+    isSignal :: !(Rule -> Bool)
   }
   deriving (Typeable)
 
@@ -161,9 +165,11 @@ instance Eq FSpec where
   f == f' = originalContext f == originalContext f'
 
 instance Unique FSpec where
-  showUnique = showUnique . originalContext
+  showUnique = maybe fatalmsg showUnique . originalContext
+    where
+      fatalmsg = fatal "showUnique is not expected to be called on an FSpec derived from a module. " --TODO: Either make sure that this is te case, or fix it. See https://github.com/AmpersandTarski/Ampersand/issues/1307
 
-metaValues :: Text -> FSpec -> [Text]
+metaValues :: Text1 -> FSpec -> [Text]
 metaValues key fSpec = [mtVal m | m <- metas fSpec, mtName m == key]
 
 -- The point of calculating a hash for FSpec is that such a hash can be used
@@ -186,14 +192,14 @@ instance Hashable FSpec where
       conceptAndTType cpt = (cpt, cptTType fSpec cpt)
 
 instance Language FSpec where
-  relsDefdIn = relsDefdIn . originalContext
-  udefrules = udefrules . originalContext
-  identities = identities . originalContext
-  viewDefs = viewDefs . originalContext
-  enforces = enforces . originalContext
-  gens = gens . originalContext
-  patterns = patterns . originalContext
-  udefRoleRules = udefRoleRules . originalContext
+  relsDefdIn = maybe mempty relsDefdIn . originalContext
+  udefrules = maybe mempty udefrules . originalContext
+  identities = maybe mempty identities . originalContext
+  viewDefs = maybe mempty viewDefs . originalContext
+  enforces = maybe mempty enforces . originalContext
+  gens = maybe mempty gens . originalContext
+  patterns = maybe mempty patterns . originalContext
+  udefRoleRules = maybe mempty udefRoleRules . originalContext
 
 data Atom = Atom
   { atmRoots :: [A_Concept], -- The root concept(s) of the atom.
@@ -205,10 +211,10 @@ data Atom = Atom
 instance Unique Atom where
   showUnique a =
     showValADL (atmVal a) <> " in "
-      <> case atmRoots a of
+      .<> case atmRoots a of
         [] -> fatal "an atom must have at least one root concept"
         [x] -> uniqueShowWithType x
-        xs -> "[" <> T.intercalate ", " (map uniqueShowWithType xs) <> "]"
+        xs -> Text1 '[' $ T.intercalate ", " (text1ToText . uniqueShowWithType <$> xs) <> "]"
 
 data APair = Pair
   { lnkDcl :: Relation,
@@ -253,7 +259,7 @@ instance Eq Quad where
   a == b = compare a b == EQ
 
 instance Unique Quad where
-  showUnique quad = "ONCHANGE " <> showRel (qDcl quad) <> " FIX " <> name (qRule quad)
+  showUnique quad = "ONCHANGE " .<> showRel (qDcl quad) <> (" FIX " .<> tName (qRule quad))
 
 --
 dnf2expr :: DnfClause -> Expression
@@ -271,7 +277,7 @@ instance Named PlugInfo where
   name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
-  showUnique (InternalPlug psql) = "SQLTable " <> name psql
+  showUnique (InternalPlug psql) = "SQLTable " .<> tName psql
 
 instance ConceptStructure PlugInfo where
   concs (InternalPlug psql) = concs psql
@@ -290,15 +296,15 @@ data PlugSQL
     --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
     --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
     TblSQL
-      { sqlname :: Text,
+      { sqlname :: !Name,
         -- | the first attribute is the concept table of the most general concept (e.g. Person)
         --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
         --   the remaining attributes represent attributes.
-        attributes :: [SqlAttribute],
+        attributes :: ![SqlAttribute],
         -- | lookup table that links all typology concepts to attributes in the plug
         -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-        cLkpTbl :: [(A_Concept, SqlAttribute)],
-        dLkpTbl :: [RelStore]
+        cLkpTbl :: ![(A_Concept, SqlAttribute)],
+        dLkpTbl :: ![RelStore]
       }
   | -- | stores one relation r in two ordered columns
     --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -306,9 +312,9 @@ data PlugSQL
     --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
     --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
     BinSQL
-      { sqlname :: Text,
-        cLkpTbl :: [(A_Concept, SqlAttribute)],
-        dLkpTbl :: [RelStore]
+      { sqlname :: !Name,
+        cLkpTbl :: ![(A_Concept, SqlAttribute)],
+        dLkpTbl :: ![RelStore]
       }
   deriving (Show, Typeable)
 
@@ -319,7 +325,7 @@ instance Eq PlugSQL where
   a == b = compare a b == EQ
 
 instance Unique PlugSQL where
-  showUnique = name
+  showUnique = tName
 
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
@@ -351,7 +357,7 @@ lookupCpt fSpec cpt =
 -- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
-  [] -> fatal $ "tableFor: No concept table for " <> name c
+  [] -> fatal $ "tableFor: No concept table for " <> text1ToText (tName c)
   (t, _) : _ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.
@@ -370,30 +376,42 @@ data SqlAttributeUsage
   | PlainAttr -- None of the above
   deriving (Eq, Show)
 
+newtype SqlColumName = SqlColumName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
+  deriving (Eq, Ord)
+
+instance Show SqlColumName where
+  show (SqlColumName t) = "BEWARE: This show is for debugging only. Use `sqlColumNameToString`. " <> (T.unpack . text1ToText) t
+
+sqlColumNameToString :: SqlColumName -> String
+sqlColumNameToString = T.unpack . text1ToText . sqlColumNameToText1
+
+sqlColumNameToText1 :: SqlColumName -> Text1
+sqlColumNameToText1 (SqlColumName t) = t
+
+text1ToSqlColumName :: Text1 -> SqlColumName
+text1ToSqlColumName = SqlColumName
+
 data SqlAttribute = Att
-  { attName :: Text,
+  { attSQLColName :: !SqlColumName,
     -- | De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-    attExpr :: Expression,
-    attType :: TType,
-    attUse :: SqlAttributeUsage,
+    attExpr :: !Expression,
+    attType :: !TType,
+    attUse :: !SqlAttributeUsage,
     -- | True if there can be NULL-values in the SQL-attribute (intended for documentation of DB-implementation)
-    attNull :: Bool,
+    attNull :: !Bool,
     -- | True for all fields (except primary key column) because we check TOT/SUR constraints with invariant rules, not by enforcing this with the database structure
-    attDBNull :: Bool,
+    attDBNull :: !Bool,
     -- | True if all values in the SQL-attribute are unique? (intended for documentation of DB-implementation)
-    attUniq :: Bool,
-    attFlipped :: Bool
+    attUniq :: !Bool,
+    attFlipped :: !Bool
   }
   deriving (Eq, Show, Typeable)
 
-instance Named SqlAttribute where
-  name = attName
-
 instance Unique (PlugSQL, SqlAttribute) where
-  showUnique (p, f) = showUnique p <> "." <> attName f
+  showUnique (p, f) = showUnique p <>. ("." <> tshow (attSQLColName f))
 
 instance Ord SqlAttribute where
-  compare x y = compare (attName x) (attName y)
+  compare x y = compare (attSQLColName x) (attSQLColName y)
 
 instance ConceptStructure SqlAttribute where
   concs f = Set.fromList [target e' | let e' = attExpr f, isSur e']
@@ -451,7 +469,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
             let ifc = substituteReferenceObjectDef fSpec (ifcObj (lookupInterface interfaceId))
              in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
         _ -> Nothing
-    lookupInterface :: Text -> Interface
+    lookupInterface :: Name -> Interface
     lookupInterface nm =
       case [ifc | ifc <- interfaceS fSpec <> interfaceG fSpec, name ifc == nm] of
         [ifc] -> ifc
@@ -463,12 +481,12 @@ violationsOfInvariants fSpec =
   ]
 
 defOutputLang :: FSpec -> Lang
-defOutputLang = ctxlang . originalContext
+defOutputLang = maybe English ctxlang . originalContext
 
-emptyFSpec :: FSpec
-emptyFSpec =
+emptyFSpec :: Name -> FSpec
+emptyFSpec nm =
   FSpec
-    { fsName = "",
+    { fsName = nm,
       -- The name of the specification, taken from the Ampersand script
       originalContext = fatal "Don't ask for the original context in the empty FSpec.",
       -- the original context. (for showA)
