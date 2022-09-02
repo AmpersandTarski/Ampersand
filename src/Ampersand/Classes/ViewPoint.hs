@@ -3,6 +3,8 @@ module Ampersand.Classes.ViewPoint (Language (..), enforce2Rules) where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
 import Ampersand.Classes.Relational (HasProps (properties))
+import Data.Text1 ((.<>))
+import Data.Text1.Text1 ((<>.))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -74,7 +76,10 @@ ruleFromIdentity identity =
         $ identity
     mkKeyRule expression =
       Ru
-        { rrnm = "identity_" <> name identity,
+        { rrnm =
+            toName
+              (nameSpaceOf identity)
+              ("identity_" .<> tName identity),
           formalExpression = expression,
           rrfps = origin identity, -- position in source file
           rrmean = map toMeaning [minBound ..],
@@ -87,8 +92,8 @@ ruleFromIdentity identity =
         toMeaning lang =
           Meaning . Markup lang . string2Blocks ReST $
             case lang of
-              English -> "Identity rule, following from identity " <> name identity
-              Dutch -> "Identiteitsregel, volgend uit identiteit " <> name identity
+              English -> "Identity rule, following from identity " <> (text1ToText . tName) identity
+              Dutch -> "Identiteitsregel, volgend uit identiteit " <> (text1ToText . tName) identity
 
 instance (Eq a, Language a) => Language [a] where
   relsDefdIn = Set.unions . map relsDefdIn
@@ -155,7 +160,7 @@ roleRuleFromEnforceRule = map mkRoleRule . enforce2Rules
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
-          arRoles = Role "ExecEngine" NE.:| [],
+          arRoles = Role nameOfExecEngineRole NE.:| [],
           arRules = name rul NE.:| []
         }
 
@@ -169,9 +174,13 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
     insPair = mkRule "InsPair" (EInc (expr, bindedRel))
     delPair = mkRule "DelPair" (EInc (bindedRel, expr))
     bindedRel = EDcD rel
+    mkRule :: Text -> Expression -> Rule
     mkRule command fExpr =
       Ru
-        { rrnm = "Compute " <> showRel rel <> " using " <> command,
+        { rrnm =
+            toName
+              (nameSpaceOf rel)
+              ("Compute " .<> showRel rel <>. " using " <> command),
           formalExpression = fExpr,
           rrfps = orig,
           rrmean = [],
@@ -179,9 +188,9 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
           rrviol =
             Just . PairView $
               PairViewText orig ("{EX} " <> command <> ";")
-                NE.:| [ PairViewText orig $ name rel <> ";" <> name (source rel) <> ";",
+                NE.:| [ PairViewText orig $ (text1ToText . tName) rel <> ";" <> (text1ToText . tName) (source rel) <> ";",
                         PairViewExp orig Src (EDcI (source rel)),
-                        PairViewText orig $ ";" <> name (target rel) <> ";",
+                        PairViewText orig $ ";" <> (text1ToText . tName) (target rel) <> ";",
                         PairViewExp orig Tgt (EDcI (target rel))
                       ],
           rrpat = mPat,

@@ -231,7 +231,7 @@ data AEnforce = AEnforce
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
     -- | If the Enforce is defined in the context of a pattern, the name of that pattern.
-    enfPatName :: !(Maybe Text)
+    enfPatName :: !(Maybe Name)
   }
   deriving (Eq)
 
@@ -274,7 +274,7 @@ instance Eq AConceptDef where
 data A_RoleRule = A_RoleRule
   { arPos :: Origin,
     arRoles :: NE.NonEmpty Role,
-    arRules :: NE.NonEmpty Text -- the names of the rules
+    arRules :: NE.NonEmpty Name -- the names of the rules
   }
   deriving (Show)
 

@@ -22,9 +22,9 @@ import Ampersand.Basics
 import qualified RIO.Text as T
 
 data ClassDiag = OOclassdiagram
-  { cdName :: !Text,
+  { cdName :: !Name,
     -- | name of a subgraph and a list of classes in that subgraph
-    groups :: ![(Text, NonEmpty Class)],
+    groups :: ![(Name, NonEmpty Class)],
     -- | list of classes that do not go in a subgraph
     classes :: ![Class],
     assocs :: ![Association], --
@@ -39,13 +39,13 @@ instance Named ClassDiag where
 
 data Class = OOClass
   { -- | name of the class
-    clName :: Text,
+    clName :: !Name,
     -- | Main concept of the class. (link tables do not have a main concept)
-    clcpt :: Maybe A_Concept,
+    clcpt :: !(Maybe A_Concept),
     -- | Attributes of the class
-    clAtts :: [CdAttribute],
+    clAtts :: ![CdAttribute],
     -- | Methods of the class
-    clMths :: [Method]
+    clMths :: ![Method]
   }
   deriving (Show, Eq)
 
@@ -54,11 +54,11 @@ instance Named Class where
 
 data CdAttribute = OOAttr
   { -- | name of the attribute
-    attNm :: Text,
+    attNm :: !Name,
     -- | type of the attribute (Concept name or built-in type)
-    attTyp :: Text,
+    attTyp :: !Name,
     -- | says whether the attribute is optional
-    attOptional :: Bool
+    attOptional :: !Bool
   }
   deriving (Show, Eq)
 
@@ -108,31 +108,31 @@ data Deleting = Open | Close --
 
 data Method
   = OOMethodC
-      Text -- name of this method, which creates a new object (producing a handle)
+      !Name -- name of this method, which creates a new object (producing a handle)
       [CdAttribute] -- list of parameters: attribute names and types
   | OOMethodR
-      Text -- name of this method, which yields the attribute values of an object (using a handle).
+      !Name -- name of this method, which yields the attribute values of an object (using a handle).
       [CdAttribute] -- list of parameters: attribute names and types
   | OOMethodS
-      Text -- name of this method, which selects an object using key attributes (producing a handle).
+      !Name -- name of this method, which selects an object using key attributes (producing a handle).
       [CdAttribute] -- list of parameters: attribute names and types
   | OOMethodU
-      Text -- name of this method, which updates an object (using a handle).
+      !Name -- name of this method, which updates an object (using a handle).
       [CdAttribute] -- list of parameters: attribute names and types
-  | OOMethodD Text -- name of this method, which deletes an object (using nothing but a handle).
+  | OOMethodD !Name -- name of this method, which deletes an object (using nothing but a handle).
   | OOMethod
-      Text -- name of this method, which deletes an object (using nothing but a handle).
+      !Name -- name of this method, which deletes an object (using nothing but a handle).
       [CdAttribute] -- list of parameters: attribute names and types
-      Text -- result: a type
+      !Name -- result: a type
   deriving (Eq)
 
 instance Show Method where
-  show (OOMethodC nm cs) = T.unpack $ nm <> "(" <> T.intercalate "," [n | OOAttr n _ _ <- cs] <> "):handle"
-  show (OOMethodR nm as) = T.unpack $ nm <> "(handle):[" <> T.intercalate "," [n | OOAttr n _ _ <- as] <> "]"
-  show (OOMethodS nm ks) = T.unpack $ nm <> "(" <> T.intercalate "," [n | OOAttr n _ _ <- ks] <> "):handle"
-  show (OOMethodD nm) = T.unpack $ nm <> "(handle)"
-  show (OOMethodU nm cs) = T.unpack $ nm <> "(handle," <> T.intercalate "," [n | OOAttr n _ _ <- cs] <> ")"
-  show (OOMethod nm cs r) = T.unpack $ nm <> "(" <> T.intercalate "," [n | OOAttr n _ _ <- cs] <> "): " <> r
+  show (OOMethodC nm cs) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> "):handle"
+  show (OOMethodR nm as) = T.unpack $ (text1ToText . tName) nm <> "(handle):[" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- as] <> "]"
+  show (OOMethodS nm ks) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- ks] <> "):handle"
+  show (OOMethodD nm) = T.unpack $ (text1ToText . tName) nm <> "(handle)"
+  show (OOMethodU nm cs) = T.unpack $ (text1ToText . tName) nm <> "(handle," <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> ")"
+  show (OOMethod nm cs r) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> "): " <> (text1ToText . tName) r
 
 --
 --   testCD
