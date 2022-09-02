@@ -75,10 +75,10 @@ instance Hashable FilePos where
 
 data Origin
   = OriginUnknown
-  | Origin Text
-  | PropertyRule Text Origin -- Constructor is used to hold the origin of a propertyrule.
-  | FileLoc FilePos SymbolName
-  | XLSXLoc FilePath Text (Int, Int)
+  | Origin !Text
+  | PropertyRule !Text1 !Origin -- Constructor is used to hold the origin of a propertyrule.
+  | FileLoc !FilePos !SymbolName
+  | XLSXLoc !FilePath !Text !(Int, Int)
   | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
   deriving (Eq, Typeable, Generic, Data)
 
@@ -142,7 +142,17 @@ maybeOrdering x y = case x of
       then Nothing
       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n" <> tshow x
 
-instance Hashable Origin
+instance Hashable Origin where
+  hashWithSalt s orig =
+    s
+      `hashWithSalt` case orig of
+        OriginUnknown -> (0 :: Int)
+        Origin a ->
+          (1 :: Int) `hashWithSalt` a
+        PropertyRule a b -> (2 :: Int) `hashWithSalt` text1ToText a `hashWithSalt` b
+        FileLoc a b -> (3 :: Int) `hashWithSalt` a `hashWithSalt` b
+        XLSXLoc a b c -> (4 :: Int) `hashWithSalt` a `hashWithSalt` b `hashWithSalt` c
+        MeatGrinder -> (5 :: Int)
 
 instance Show FilePos where
   show (FilePos fn l c) = fn <> ":" <> show l <> ":" <> show c
@@ -162,7 +172,7 @@ instance Show Origin where
       <> T.unpack (int2col col)
       <> show row
       <> ". "
-  show (PropertyRule dcl o) = "PropertyRule for " <> T.unpack dcl <> " which is defined at " <> show o
+  show (PropertyRule dcl o) = "PropertyRule for " <> (T.unpack . text1ToText) dcl <> " which is defined at " <> show o
   show (Origin str) = T.unpack str
   show OriginUnknown = "Unknown origin"
   show MeatGrinder = "MeatGrinder"
