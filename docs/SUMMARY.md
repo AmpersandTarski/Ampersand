@@ -43,7 +43,6 @@
       * [Semantics of relational operators visualized](the-language-ampersand/terms/semantics-visualized/semantics-of-relational-operators-visualized.md)
       * [Semantics of residuals visualized](the-language-ampersand/terms/semantics-visualized/semantics-visualized.md)
   * [Context](the-language-ampersand/context.md)
-  * [Module](the-language-ampersand/context-1.md)
   * [Best Practices](the-language-ampersand/best-practices.md)
   * [Syntactical Conventions](the-language-ampersand/syntactical-conventions/README.md)
     * [The CONCEPT statement](the-language-ampersand/syntactical-conventions/the-concept-statement.md)
