@@ -1,3 +1,29 @@
+# Reusing Available Modules
+
+## Sessions, Identity and Access Management \(SIAM version 3\)
+
+You might want to know who is using your application. Or you might want to offer each one of your users some privacy when using your application. Logging in, passwords, authorizations, are typically used for such purposes. This field, also known as Identity and Access Management is covered in [this chapter](#The-SIAM-Module).
+
+The [SIAMv3 module](https://github.com/AmpersandTarski/ampersand-models/tree/master/SIAMv3) gives you a selection of ways to organise that, ready for you to use.This module is located in the ampersand-models repository on [Github](https://github.com/AmpersandTarski). It is maintained by [Rieks Joosten](https://github.com/orgs/AmpersandTarski/people/RieksJ) from a closed repository at TNO \(git@ci.tno.nl:ampersand/models.git\).
+
+# Modules
+
+An Ampersand Module is a coherent set of Ampersand scripts that:
+
+* provide a specific functionality, and 
+* are set up in such a way that re-using them in different prototypes is easy.
+
+An example is the SIAM module \(SIAM = Session Identity and Access Management Module\). This module provides login functionality and extendable registrations for e.g. persons, organizations and accounts. Also, it provides functionality that allows for access control \(of INTERFACEs\) based on roles, as well as on account attributes.
+
+The SIAM module is set up in such a way that it is easy to re-use. Developers may INCLUDE a script \(for which a template is provided\) that imports the appropriate functionalities into the prototype. By tailoring this INCLUDE-script, a developer may turn specific features on or off. This is much easier than having to develop the functionality all by himself.
+
+The current set of modules include:
+
+* Messaging - sending messages to people, roles and other recipients by variious means, e.g. email.
+* Sets - perhaps the simplest module of all, implementing set- and subset functionality.
+* Sequences - functions for creating sequences of items, adding items at different ends
+* SIAM - i.e. Session, Identity and Access Management.
+
 # Security
 
 Even though Ampersand was designed for prototyping, we are taking applications such as RAP2 and RAP3 to production. As the development of Ampersand is going in the direction of production software, we must be prepared for questions. Currently, I can hardly answer any questions about security. This page is for the purpose to discuss security questions, such that we are at least on the same ground wrt security. If any changes to Ampersand emerge from that, we should create separate issues for them. Here is a list of questions.
@@ -57,4 +83,22 @@ How well are libraries, frameworks, and other software modules protected? Are th
 ## Unvalidated Redirects and Forwards
 
 Is it conceivable that an Ampersand application forwards its user to other pages and websites? _Answer_: The Ampersand-programmer uses the \(technical\) data type `URL` for hyperlinking the user to other sites. She must ensure the trustworthiness of the URL's used in order to build a trustworthy web-application.
+
+# The SIAM Module
+
+The SIAM (Sessions, Identity and Access Management) Module implements functionalities for managing Sessions, Identies and authentication \(login\). Also, it implements Accounts, Roles and a primitive yet extendable registration for people and organizations.
+
+This chapter informs developers about:
+
+* how to include the SIAM module into a prototype;
+* what configuration/tinkering options he has;
+* what he should or should not do.
+
+## Where to find the Module
+
+## Acquainting yourself with the  Module's functionality
+
+Playing with the module's functionality allows you to assess whether or not the implemented functionality is valid for your purposes. This section tells you how to do this.
+
+## Including the Module into your prototype
 
