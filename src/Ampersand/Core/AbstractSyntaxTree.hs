@@ -101,6 +101,7 @@ import Ampersand.Core.ParseTree
     P_Concept (..),
     PairView (..),
     PairViewSegment (..),
+    Pragma,
     Representation (..),
     Role (..),
     SrcOrTgt (..),
@@ -437,11 +438,8 @@ data Relation = Relation
     decprps :: !AProps,
     -- | the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime
     decDefaults :: !ARelDefaults,
-    -- | three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-    decprL :: !Text,
-    -- |    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-    decprM :: !Text,
-    decprR :: !Text,
+    -- | the pragma is a way to make the meaning of a relation explicit by examples.
+    decpr :: !(Maybe Pragma),
     -- | the meaning of a relation, for each language supported by Ampersand.
     decMean :: ![Meaning],
     -- | the position in the Ampersand source file where this declaration is declared. Not all declarations come from the ampersand souce file.

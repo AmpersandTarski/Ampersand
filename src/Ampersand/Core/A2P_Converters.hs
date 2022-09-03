@@ -109,7 +109,7 @@ aRelation2pRelation dcl =
       dec_sign = aSign2pSign (decsgn dcl),
       dec_prps = aProps2Pprops $ decprps dcl,
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
-      dec_pragma = [decprL dcl, decprM dcl, decprR dcl],
+      dec_pragma = decpr dcl,
       dec_Mean = map aMeaning2pMeaning (decMean dcl),
       pos = decfpos dcl
     }
@@ -430,7 +430,7 @@ aAtomValue2pAtomValue val =
   where
     o = fatal "Origin is not present in AAtomValue"
 
-aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
+aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
 aSubIfc2pSubIfc sub =
   case sub of
     Box orig _ heading objs ->

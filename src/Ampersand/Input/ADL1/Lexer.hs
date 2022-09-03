@@ -322,7 +322,7 @@ getDateTime cs =
       case getTime rd of
         Nothing -> case rd of
           'T' : _ -> Just . Left $ ProblematicISO8601DateTime
-          _ -> Nothing
+          _ -> getDateTime' cs -- Here we try the ohter notation of time
         Just (timeOfDay, tzoneOffset, lt, rt) ->
           let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
            in Just . Right $
@@ -399,6 +399,20 @@ getTZD cs =
                   rest
                 )
             else Nothing
+
+getDateTime' :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
+getDateTime' cs = case readUniversalTime cs of
+  Nothing -> Nothing
+  Just (time, rest) -> Just . Right $ (LexDateTime time, time, length cs - length rest, rest)
+  where
+    readUniversalTime :: String -> Maybe (UTCTime, String)
+    readUniversalTime s = best (reads s)
+    best :: [(UTCTime, String)] -> Maybe (UTCTime, String)
+    best candidates = case reverse . L.sortBy myOrdering $ candidates of
+      [] -> Nothing
+      (h : _) -> Just h
+    myOrdering :: Show a => (a, b) -> (a, b) -> Ordering
+    myOrdering (x, _) (y, _) = compare (length . show $ x) (length . show $ y)
 
 getDate :: String -> Maybe (Lexeme, Day, Int, String)
 getDate cs =
