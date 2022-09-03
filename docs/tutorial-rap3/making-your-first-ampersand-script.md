@@ -41,4 +41,4 @@ After finishing your assignment, you have learned:
 ## Want to learn more?
 
 1. How to describe functionality in a [conceptual model](conceptual-model-enrollment.md)?
-2. How can I upload [bulk data](https://github.com/ampersandtarski/documentation/tree/662a3e7bdf67bf950cfc029e4c51efc919c0bf53/tutorial/data-in-spreadsheets.md) from spreadsheets into my application?
+2. How can I upload [bulk data](the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets) from spreadsheets into my application?
