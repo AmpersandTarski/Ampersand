@@ -1,4 +1,0 @@
-# Semantics in natural language
-
-
-
