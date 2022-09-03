@@ -71,7 +71,7 @@ We are happy to receive [bug reports at AmpersandTarski](https://github.com/Ampe
 In case the Ampersand compiler is called by software and fails, it is useful to have an exit code to give some information about the nature of the failure. The Ampersand compiler [produces the following exit codes](https://github.com/AmpersandTarski/Ampersand/blob/main/src/Ampersand/Basics/Exit.hs):
 
 | Code | Name                 | Meaning                                                                                                                                                                                 |
-| ---- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ---- | --- | --- |
 | 0    | Success              | Compilation has terminated without failures                                                                                                                                             |
 | 2    | Fatal                | This is a software error in the Ampersand compiler, that should never have occured in operational use. Please [report an issue](https://github.com/AmpersandTarski/ampersand/issues).   |
 | 10   | Invalid              | The script is not valid and the compiler has produced error messages to help you diagnose your mistake(s).                                                                              |

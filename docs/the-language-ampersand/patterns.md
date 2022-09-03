@@ -54,7 +54,7 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 | `<ident>`          | a rule that defines an [identity](the-ident-statement.md) on a concept                                   |
 | `<viewDef>`        | a statement for presenting facts in a readable sentence                                                  |
 | `<purpose>`        | a statement to describe the [purpose](the-purpose-statement.md) of a pattern or a pattern element        |
-| `<population>`     | a statement that sums up the initial population of a relation                                            |
+| `<population>`     | a statement that sums up the initial [population](the-population-statement.md) of a relation             |
 
 ## Good practice
 
