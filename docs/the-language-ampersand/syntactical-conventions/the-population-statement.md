@@ -1,12 +1,50 @@
-# Population in spreadsheets
+# Population
+
+## Purpose
+
+To store data in a database corresponds to populating the relations in a context. Atoms are the data and pairs of atoms are inserted and deleted during the lifetime of a relation.
+
+## Description
+
+All pairs in a relation are called the population of that relation. All atoms in a concept constitute the population of that concept. The population of all relations and concepts in a context make the population of that context.
+
+There are two ways to populate a concept with atoms:
+
+* A `POPULATION` statement defines the initial population of a  concept or a relation.
+* An `INCLUDE` statement defines the initial population from an xlsx-file \(i.e. an Excel speadsheet\)
+
+[Using spreadsheets](#population-in-spreadsheets) to define an initial population allows you to work with larger populations. Often you can use an existing spreadsheet and adapt it to become acceptable as Ampersand input.
+
+## Syntax
+
+You can define atoms separately and you can define the pairs in a relation. Both methods result in added population for each concept.
+
+```text
+POPULATION Tree CONTAINS
+    [ "Oak"
+    , "Birch"
+    , "Willow"
+    ]
+```
+
+```text
+POPULATION personBank[Person*Bank] CONTAINS
+    [ ("John", "ING")
+    , ("Jane", "TRIODOS")
+    ]
+```
+
+The list of pairs is a comma-separated list between square brackets. Pairs are comma-separated pairs between round brackets. Each atom is enclosed in double quotes.
+
+## Population in spreadsheets
 
 In this section we will make an Ampersand script that is based on an existing spreadsheet. This technique is useful for quickly adding population to an information system. Ampersand has a facility that allows you to import existing .xlsx files with minimal changes.
 
-## Theory: tables vs. binary relations
+### Theory: tables vs. binary relations
 
 We can consider Ampersand as a finite system of relations. Every relation is a set of \(ordered\) pairs and each pair contains two atoms. However, in the real world we also store information in wider tables, as we do in spreadsheets and relational databases. Here is the trick. If we have two pairs that share the same left atom, e.g. \(1, Abraham\) and \(1, Lincoln\), we can put them in the same row. Using the same trick, we can interpret a row in a spreadsheet as a number of pairs.
 
-### Example
+#### Example
 
 Let us look at an example:
 
@@ -44,7 +82,7 @@ POPULATION birth[President*Date] CONTAINS
 
 Notice that the column names in the table correspond with the relation names in Ampersand. In the table we call them "attributes". So it makes sense to say that a relation in Ampersand can correspond with an attribute in a table.
 
-## Practice: how to prepare a spreadsheet
+### Practice: how to prepare a spreadsheet
 
 In theory, the population of the Hawaii-script might just as well be given in a spreadsheet. This works in practice too. It looks like this:
 
@@ -59,11 +97,11 @@ In theory, the population of the Hawaii-script might just as well be given in a 
 
 Please copy this in a spreadsheet of your own. The element in the first column with square brackets tells Ampersand that a new table starts. The first row contains relation names. The second row contains concept names. The rows that follow contain pairs. Ampersand reconstructs those pairs as in the example above.
 
-## Reusing existing data
+### Reusing existing data
 
 In practical applications, you might want to reuse data from existing spreadsheets. People tend to have lots of "informal administration" in spreadsheets, which gives you access to authentic population. Surely you need that data organized in rows, but fortunately that is reasonably common. In such cases, you just add two lines above each table to inform Ampersand about the relations that are populated. In other cases, you have some work organizing the spreadsheet for importing it.
 
-## Uploading your spreadsheet
+### Uploading your spreadsheet
 
 You will find the Excel import function in the menu bar on the top right of your screen
 
@@ -71,7 +109,7 @@ You will find the Excel import function in the menu bar on the top right of your
 
 .
 
-![](../../../.gitbook/assets/screenshot-import.png)
+![](../../.gitbook/assets/screenshot-import.png)
 
 This is what your upload screen looks like: 
 
@@ -83,11 +121,11 @@ _Upload_
 
  button. At that time, all population from the .xlsx-file is added to the context and checked for inconsistencies. As a result, you may get errors when uploading. Only error-free spreadsheets will be uploaded successfully. As long as an error remains, the population in your context will not change.
 
-## Assignment
+### Assignment
 
 Make a population of your own for the Hawaii-script and put it in a .xlsx spreadsheet. As described above. Make sure to delete the population statements from your Hawaii source code, to make sure that you get to see the population from your .xlsx-file. Generate a prototype from your Hawaii-application, upload your population in Excel and play around with the results.
 
-## What have you learned?
+### What have you learned?
 
 After finishing your assignment, you have learned:
 

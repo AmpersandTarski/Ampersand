@@ -13,7 +13,7 @@ There are two ways to populate a concept with atoms:
 * A `POPULATION` statement defines the initial population of a  concept or a relation.
 * An `INCLUDE` statement defines the initial population from an xlsx-file \(i.e. an Excel speadsheet\)
 
-[Using spreadsheets](data-in-spreadsheets.md) to define an initial population allows you to work with larger populations. Often you can use an existing spreadsheet and adapt it to become acceptable as Ampersand input.
+[Using spreadsheets](#population-in-spreadsheets) to define an initial population allows you to work with larger populations. Often you can use an existing spreadsheet and adapt it to become acceptable as Ampersand input.
 
 ## Syntax
 
