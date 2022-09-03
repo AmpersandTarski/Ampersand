@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+* [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 
 ## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
