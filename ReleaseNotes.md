@@ -1,11 +1,15 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+
+## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
 * [Issue #1313](https://github.com/AmpersandTarski/Ampersand/issues/1313) Fixed a minor bug in the Archi analyser.
 * Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
 * [Issue #987](https://github.com/AmpersandTarski/Ampersand/issues/987) Fixed a bug in the Excel parser.
 * refactoring Archimate parser
+* [Issue #1321](https://github.com/AmpersandTarski/Ampersand/issues/1321) Stricter testing of the prettyprinter/parser roundtrip.
+* [Issue #1090](https://github.com/AmpersandTarski/Ampersand/issues/1090) Fixed a bug in the parser for DateTime values ([UTCTime](https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format-ISO8601.html#t:ISO8601) values are supported now).
 
 ## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`

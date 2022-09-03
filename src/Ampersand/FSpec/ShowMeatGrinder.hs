@@ -93,7 +93,7 @@ metarelation tr =
           (mkPConcept (tTrg tr)),
       dec_prps = aProps2Pprops $ mults tr,
       dec_defaults = [],
-      dec_pragma = [],
+      dec_pragma = Nothing,
       dec_Mean = [],
       pos = OriginUnknown
     }

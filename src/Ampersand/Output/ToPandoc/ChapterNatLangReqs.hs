@@ -229,37 +229,36 @@ chpNatLangReqs env lev fSpec =
       where
         rul = cRul . theLoad $ nRul
     mkPhrase :: Relation -> AAtomPair -> Inlines
-    mkPhrase decl pair -- srcAtom tgtAtom
-      | T.null (prL <> prM <> prR) =
-        (atomShow . upCap) srcAtom
-          <> (pragmaShow . l) (NL " correspondeert met ", EN " corresponds to ")
-          <> atomShow tgtAtom
-          <> (pragmaShow . l) (NL " in de relatie ", EN " in relation ")
-          <> atomShow (name decl)
-          <> "."
-      | otherwise =
-        ( if T.null prL
-            then mempty
-            else pragmaShow (upCap prL) <> " "
-        )
-          <> atomShow srcAtom
-          <> " "
-          <> ( if T.null prM
-                 then mempty
-                 else pragmaShow prM <> " "
-             )
-          <> atomShow tgtAtom
-          <> ( if T.null prR
-                 then mempty
-                 else " " <> pragmaShow prR
-             )
-          <> "."
+    mkPhrase decl pair =
+      -- srcAtom tgtAtom =
+      case decpr decl of
+        Nothing ->
+          (atomShow . upCap) srcAtom
+            <> (pragmaShow . l) (NL " correspondeert met ", EN " corresponds to ")
+            <> atomShow tgtAtom
+            <> (pragmaShow . l) (NL " in de relatie ", EN " in relation ")
+            <> atomShow (name decl)
+            <> "."
+        Just pragma ->
+          ( if T.null (praLeft pragma)
+              then mempty
+              else pragmaShow (upCap (praLeft pragma)) <> " "
+          )
+            <> atomShow srcAtom
+            <> " "
+            <> ( if T.null (praMid pragma)
+                   then mempty
+                   else pragmaShow (praMid pragma) <> " "
+               )
+            <> atomShow tgtAtom
+            <> ( if T.null (praRight pragma)
+                   then mempty
+                   else " " <> pragmaShow (praRight pragma)
+               )
+            <> "."
       where
         srcAtom = showValADL (apLeft pair)
         tgtAtom = showValADL (apRight pair)
-        prL = decprL decl
-        prM = decprM decl
-        prR = decprR decl
         atomShow = str
         pragmaShow = emph . str
 
