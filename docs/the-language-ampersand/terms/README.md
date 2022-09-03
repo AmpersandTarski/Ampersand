@@ -49,9 +49,9 @@ The operators come in families. We advise novices to study only the rule operato
 | Family                                                   |                   binary operators | binding power |       unary operators | binding power |
 | -------------------------------------------------------- | ---------------------------------: | ------------- | --------------------: | ------------- |
 | rules                                                    |           $$=$$ and $$\subseteq\$$ | 1 (weakest)   |                       |               |
-| [boolean](semantics-in-logic/boolean-operators.md)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $$\overline{\strut}$$ | prefix        |
-| [relational](semantics-in-logic/relational-operators.md) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |       $$\smallsmile$$ | postfix       |
-| [residual](semantics-in-logic/residual-operators.md)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                       |               |
+| [boolean](semantics.md#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $$\overline{\strut}$$ | prefix        |
+| [relational](semantics.md#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |       $$\smallsmile$$ | postfix       |
+| [residual](semantics.md#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                       |               |
 | Kleene                                                   |                                    |               |       $$∗$$ and $$+$$ | postfix       |
 
 ## Brackets
