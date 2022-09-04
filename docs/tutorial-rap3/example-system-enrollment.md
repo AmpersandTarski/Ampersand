@@ -119,4 +119,4 @@ After finishing your assignment, you have learned:
 
 1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](your-tool-rap3.md).
 2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](conceptual-model-enrollment.md)
-3. How can I upload [bulk data](/the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets) from spreadsheets into my application?
+3. How can I upload [bulk data](../the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets) from spreadsheets into my application?
