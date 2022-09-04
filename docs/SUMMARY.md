@@ -52,7 +52,7 @@
     * [The INCLUDE statement](the-language-ampersand/syntactical-conventions/the-include-statement.md)
     * [Explanation](the-language-ampersand/syntactical-conventions/explanations.md)
     * [Patterns](the-language-ampersand/syntactical-conventions/patterns.md)
-    * [Population](the-language-ampersand/syntactical-conventions/the-population-statement/README.md)
+    * [Population](the-language-ampersand/syntactical-conventions/the-population-statement.md)
       * [Population in spreadsheets](the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets)
     * [The PURPOSE statement](the-language-ampersand/syntactical-conventions/the-purpose-statement.md)
     * [The IDENT statement](the-language-ampersand/syntactical-conventions/the-ident-statement.md)
