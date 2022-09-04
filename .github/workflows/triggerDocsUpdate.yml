@@ -1,8 +1,8 @@
-# Workflow which triggers the workflow in DocuGen on changes to "Docs"
+# Workflow to update documentation on our landingpage AmpersandTarski.gihub.io
 name: Trigger Documentation Update
 
 on:
- # Runs on pushes targeting the development branch which contain changes in the "Docs" folder
+ # TODO: set to 'main' branch when everything is configured and working correctly
   push:
     branches:
     - development
@@ -13,9 +13,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    # Trigger the "DeployToPages" workflow in the "DocuGen" repository
+    # Trigger the "DeployToPages" workflow in the "AmpersandTarski.github.io" repository
       - run: |
           curl -XPOST -u "${{secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" \
           -H "Accept: application/vnd.github.everest-preview+json" -H \
-          "Content-Type: application/json" https://api.github.com/repos/AmpersandTarski/DocuGen/actions/workflows/DeployToPages.yml/dispatches \
+          "Content-Type: application/json" https://api.github.com/repos/AmpersandTarski/AmpersandTarski.github.io/actions/workflows/DeployToPages.yml/dispatches \
           --data '{"ref": "main"}'
