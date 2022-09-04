@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - "**" # Only trigger on branches (i.e. not tags, ..)
-
+    paths-ignore:
+      - "docs/**" # If only documentation changes, no need to build.
 jobs:
   hlint:
     name: Check for code sanity with hlint

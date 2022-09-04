@@ -8,13 +8,15 @@ on:
     # This is needed to allow skipping enforcement of the changelog in PRs with specific labels,
     # as defined in the (optional) "skipLabels" property.
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    paths-ignore:
+      - "docs/**" # If only documentation changes, no need to build.
 
 jobs:
-  # Enforces the use of ormolu formatting of each Haskell file on every pull request 
+  # Enforces the use of ormolu formatting of each Haskell file on every pull request
   ormolu:
     runs-on: ubuntu-latest
     steps:
-    # The checkout step is needed since the enforcer relies on local git commands
-    - uses: actions/checkout@v2
-    
-    - uses: mrkkrp/ormolu-action@v2 # BEWARE: Do not upgrade unless we use ghc 9 or higher. v4 does not work for ghc less then 9.
+      # The checkout step is needed since the enforcer relies on local git commands
+      - uses: actions/checkout@v2
+
+      - uses: mrkkrp/ormolu-action@v2 # BEWARE: Do not upgrade unless we use ghc 9 or higher. v4 does not work for ghc less then 9.
