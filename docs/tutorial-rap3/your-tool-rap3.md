@@ -47,7 +47,7 @@ Notes:
 
 * how can I [make and run my first Ampersand script](making-your-first-ampersand-script.md).
 * How can I describe functionality in a [conceptual model](conceptual-model-enrollment.md)?
-* How can I upload [bulk data](/the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets) from spreadsheets into my application?
+* How can I upload [bulk data](../the-language-ampersand/syntactical-conventions/the-population-statement.md#population-in-spreadsheets) from spreadsheets into my application?
 
 ## What have you learned?
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The purpose of a rule is to constrain data. Refer to the [chapter about rules](https://github.com/ampersandtarski/documentation/tree/662a3e7bdf67bf950cfc029e4c51efc919c0bf53/tutorial/rules/intro_rules.md) in the tutorial for examples and a practice oriented explanation.
+The purpose of a rule is to constrain data. Refer to the chapter about rules in the tutorial for examples and a practice oriented explanation.
 
 A rule statement defines something that should be true. It does not define the enforcement.
 
