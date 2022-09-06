@@ -23,6 +23,7 @@ module Ampersand.Core.A2P_Converters
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1 (BoxTxt (boxLabel))
 import Ampersand.Basics
 import Ampersand.Classes
 import RIO.Char
@@ -239,7 +240,7 @@ aPopulation2pPopulation p =
   case p of
     ARelPopu {} ->
       P_RelPopu
-        { pos = Origin $ "Origin is not present in Population(" <> name pDcl <> ") from A-Structure",
+        { pos = Origin $ "Origin is not present in Population(" <> (text1ToText . tName) pDcl <> ") from A-Structure",
           p_nmdr = pDcl,
           p_popps = map aAtomPair2pAtomPair (Set.elems $ popps p),
           p_src = Nothing,
@@ -249,7 +250,7 @@ aPopulation2pPopulation p =
         pDcl = aRelation2pNamedRel (popdcl p)
     ACptPopu {} ->
       P_CptPopu
-        { pos = Origin $ "Origin is not present in Population(" <> name (popcpt p) <> ") from A-Structure",
+        { pos = Origin $ "Origin is not present in Population(" <> (text1ToText . tName) (popcpt p) <> ") from A-Structure",
           p_cpt = aCpt2pCpt (popcpt p),
           p_popas = map aAtomValue2pAtomValue (popas p)
         }
@@ -264,7 +265,7 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BxExpr
-        { box_label = name oDef,
+        { box_label = objLabel oDef,
           pos = origin oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
@@ -275,7 +276,7 @@ aObjectDef2pObjectDef x =
         }
     BxTxt oDef ->
       P_BxTxt
-        { box_label = name oDef,
+        { box_label = boxLabel oDef,
           pos = origin oDef,
           obj_txt = boxtxt oDef
         }
@@ -447,7 +448,12 @@ aSubIfc2pSubIfc sub =
         }
 
 aCruds2pCruds :: Cruds -> P_Cruds
-aCruds2pCruds x = P_Cruds (crudOrig x) (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds x =
+  P_Cruds
+    (crudOrig x)
+    ( toText1Unsafe . T.pack $
+        zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
+    )
   where
     f :: (Bool, Char) -> Char
     f (b, c) = (if b then toUpper else toLower) c

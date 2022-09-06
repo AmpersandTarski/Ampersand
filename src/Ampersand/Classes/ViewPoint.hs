@@ -75,7 +75,7 @@ ruleFromIdentity identity =
         . identityAts
         $ identity
     mkKeyRule expression =
-      Ru
+      Rule
         { rrnm =
             toName
               (nameSpaceOf identity)
@@ -176,7 +176,7 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
     bindedRel = EDcD rel
     mkRule :: Text -> Expression -> Rule
     mkRule command fExpr =
-      Ru
+      Rule
         { rrnm =
             toName
               (nameSpaceOf rel)

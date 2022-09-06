@@ -41,7 +41,7 @@ isPropertyRule r = case rrkind r of
 -- rulefromProp specifies a rule that defines property prp of relation d.
 rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp rel =
-  Ru
+  Rule
     { rrnm =
         toName
           (nameSpaceOf (name rel))

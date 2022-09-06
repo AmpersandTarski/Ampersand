@@ -93,6 +93,7 @@ import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
   ( BoxHeader (..),
+    DefinitionContainer (..),
     EnforceOperator,
     MetaData (..),
     Origin (..),
@@ -248,7 +249,7 @@ data AConceptDef = AConceptDef
     -- | User-specified meanings, possibly more than one, for multiple languages.
     acdmean :: ![Meaning],
     -- | The name of the pattern or context in which this concept definition was made --TODO: Refactor to Maybe Pattern.
-    acdfrom :: !Text
+    acdfrom :: !DefinitionContainer
   }
   deriving (Show, Typeable)
 
@@ -275,9 +276,9 @@ instance Eq AConceptDef where
   a == b = compare a b == EQ
 
 data A_RoleRule = A_RoleRule
-  { arPos :: Origin,
-    arRoles :: NE.NonEmpty Role,
-    arRules :: NE.NonEmpty Name -- the names of the rules
+  { arPos :: !Origin,
+    arRoles :: !(NE.NonEmpty Role),
+    arRules :: !(NE.NonEmpty Name) -- the names of the rules
   }
   deriving (Show)
 
@@ -308,7 +309,7 @@ data RuleKind
 
 type Rules = Set.Set Rule
 
-data Rule = Ru
+data Rule = Rule
   { -- | Name of this rule
     rrnm :: !Name,
     -- | The expression that should be True
@@ -498,7 +499,7 @@ data IdentityRule = Id
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
     idLbl :: !Name,
     -- | this expression describes the instances of this object, related to their context
-    idCpt :: A_Concept,
+    idCpt :: !A_Concept,
     -- | if defined within a pattern, then the name of that pattern.
     idPat :: !(Maybe Name),
     -- | the constituent attributes (i.e. name/expression pairs) of this identity.
@@ -559,10 +560,10 @@ instance Ord ViewDef where
   a `compare` b = (vdlbl a, vdcpt a) `compare` (vdlbl b, vdcpt b)
 
 data ViewSegment = ViewSegment
-  { vsmpos :: Origin,
-    vsmlabel :: Maybe Text,
-    vsmSeqNr :: Integer,
-    vsmLoad :: ViewSegmentPayLoad
+  { vsmpos :: !Origin,
+    vsmlabel :: !(Maybe Text1),
+    vsmSeqNr :: !Integer,
+    vsmLoad :: !ViewSegmentPayLoad
   }
   deriving (Show)
 
@@ -571,10 +572,10 @@ instance Traced ViewSegment where
 
 data ViewSegmentPayLoad
   = ViewExp
-      { vsgmExpr :: Expression
+      { vsgmExpr :: !Expression
       }
   | ViewText
-      { vsgmTxt :: Text
+      { vsgmTxt :: !Text
       }
   deriving (Eq, Show)
 
@@ -693,8 +694,8 @@ instance Object ObjectDef where
   contextOf = objExpression
 
 data BoxItem
-  = BxExpr {objE :: ObjectDef}
-  | BxTxt {objT :: BoxTxt}
+  = BxExpr {objE :: !ObjectDef}
+  | BxTxt {objT :: !BoxTxt}
   deriving (Eq, Show)
 
 instance Unique BoxItem where
@@ -734,15 +735,15 @@ data ObjectDef = ObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     objLabel :: !(Maybe Text1),
     -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
-    objPos :: Origin,
+    objPos :: !Origin,
     -- | this expression describes the instances of this object, related to their context.
-    objExpression :: Expression,
+    objExpression :: !Expression,
     -- | CRUD as defined by the user
-    objcrud :: Cruds,
+    objcrud :: !Cruds,
     -- | The view that should be used for this object
-    objmView :: Maybe Text,
+    objmView :: !(Maybe Name),
     -- | the fields, which are object definitions themselves.
-    objmsub :: Maybe SubInterface
+    objmsub :: !(Maybe SubInterface)
   }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
@@ -772,11 +773,11 @@ instance Traced BoxTxt where
   origin = boxpos
 
 data Cruds = Cruds
-  { crudOrig :: Origin,
-    crudC :: Bool,
-    crudR :: Bool,
-    crudU :: Bool,
-    crudD :: Bool
+  { crudOrig :: !Origin,
+    crudC :: !Bool,
+    crudR :: !Bool,
+    crudU :: !Bool,
+    crudD :: !Bool
   }
   deriving (Show)
 
@@ -843,14 +844,14 @@ instance Traced Purpose where
 
 data Population -- The user defined populations
   = ARelPopu
-      { popdcl :: Relation,
-        popps :: AAtomPairs, -- The user-defined pairs that populate the relation
-        popsrc :: A_Concept, -- potentially more specific types than the type of Relation
-        poptgt :: A_Concept
+      { popdcl :: !Relation,
+        popps :: !AAtomPairs, -- The user-defined pairs that populate the relation
+        popsrc :: !A_Concept, -- potentially more specific types than the type of Relation
+        poptgt :: !A_Concept
       }
   | ACptPopu
-      { popcpt :: A_Concept,
-        popas :: [AAtomValue] -- The user-defined atoms that populate the concept
+      { popcpt :: !A_Concept,
+        popas :: ![AAtomValue] -- The user-defined atoms that populate the concept
       }
   deriving (Eq, Ord)
 
@@ -861,8 +862,8 @@ instance Unique Population where
 type AAtomPairs = Set.Set AAtomPair
 
 data AAtomPair = APair
-  { apLeft :: AAtomValue,
-    apRight :: AAtomValue
+  { apLeft :: !AAtomValue,
+    apRight :: !AAtomValue
   }
   deriving (Eq, Ord)
 
@@ -876,29 +877,29 @@ type AAtomValues = Set.Set AAtomValue
 
 data AAtomValue
   = AAVString
-      { aavhash :: Int,
-        aavtyp :: TType,
-        aavtxt :: Text
+      { aavhash :: !Int,
+        aavtyp :: !TType,
+        aavtxt :: !Text
       }
   | AAVInteger
-      { aavtyp :: TType,
-        aavint :: Integer
+      { aavtyp :: !TType,
+        aavint :: !Integer
       }
   | AAVFloat
-      { aavtyp :: TType,
-        aavflt :: Double
+      { aavtyp :: !TType,
+        aavflt :: !Double
       }
   | AAVBoolean
-      { aavtyp :: TType,
-        aavbool :: Bool
+      { aavtyp :: !TType,
+        aavbool :: !Bool
       }
   | AAVDate
-      { aavtyp :: TType,
-        aadateDay :: Day
+      { aavtyp :: !TType,
+        aadateDay :: !Day
       }
   | AAVDateTime
-      { aavtyp :: TType,
-        aadatetime :: UTCTime
+      { aavtyp :: !TType,
+        aadatetime :: !UTCTime
       }
   | AtomValueOfONE
   deriving (Eq, Ord, Show, Data)
@@ -947,14 +948,14 @@ showValADL val =
     AtomValueOfONE {} -> "1"
 
 data ExplObj
-  = ExplConcept A_Concept
-  | ExplRelation Relation
-  | ExplRule Name
-  | ExplIdentityDef Name
-  | ExplViewDef Name
-  | ExplPattern Name
-  | ExplInterface Name
-  | ExplContext Name
+  = ExplConcept !A_Concept
+  | ExplRelation !Relation
+  | ExplRule !Name
+  | ExplIdentityDef !Name
+  | ExplViewDef !Name
+  | ExplPattern !Name
+  | ExplInterface !Name
+  | ExplContext !Name
   deriving (Show, Eq, Typeable, Ord)
 
 instance Unique ExplObj where
@@ -972,47 +973,47 @@ instance Unique ExplObj where
 
 data Expression
   = -- | equivalence             =
-    EEqu (Expression, Expression)
+    EEqu !(Expression, Expression)
   | -- | inclusion               |-
-    EInc (Expression, Expression)
+    EInc !(Expression, Expression)
   | -- | intersection            /\
-    EIsc (Expression, Expression)
+    EIsc !(Expression, Expression)
   | -- | union                   \/
-    EUni (Expression, Expression)
+    EUni !(Expression, Expression)
   | -- | difference              -
-    EDif (Expression, Expression)
+    EDif !(Expression, Expression)
   | -- | left residual           /
-    ELrs (Expression, Expression)
+    ELrs !(Expression, Expression)
   | -- | right residual          \
-    ERrs (Expression, Expression)
+    ERrs !(Expression, Expression)
   | -- | diamond                 <>
-    EDia (Expression, Expression)
+    EDia !(Expression, Expression)
   | -- | composition             ;
-    ECps (Expression, Expression)
+    ECps !(Expression, Expression)
   | -- | relative addition       !
-    ERad (Expression, Expression)
+    ERad !(Expression, Expression)
   | -- | cartesian product       *
-    EPrd (Expression, Expression)
+    EPrd !(Expression, Expression)
   | -- | Rfx.Trn closure         *  (Kleene star)
-    EKl0 Expression
+    EKl0 !Expression
   | -- | Transitive closure      +  (Kleene plus)
-    EKl1 Expression
+    EKl1 !Expression
   | -- | conversion (flip, wok)  ~
-    EFlp Expression
+    EFlp !Expression
   | -- | Complement
-    ECpl Expression
+    ECpl !Expression
   | -- | bracketed expression ( ... )
-    EBrk Expression
+    EBrk !Expression
   | -- | simple relation
-    EDcD Relation
+    EDcD !Relation
   | -- | Identity relation
-    EDcI A_Concept
+    EDcI !A_Concept
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
-    EEps A_Concept Signature
+    EEps !A_Concept !Signature
   | -- | Cartesian product relation
-    EDcV Signature
+    EDcV !Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
-    EMp1 PAtomValue A_Concept
+    EMp1 !PAtomValue !A_Concept
   deriving (Eq, Ord, Show, Typeable, Generic, Data)
 
 instance Hashable Expression where
@@ -1230,7 +1231,7 @@ getExpressionRelation expr = case getRelation expr of
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
-        aliases :: NE.NonEmpty Name
+        aliases :: !(NE.NonEmpty Name)
       }
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
@@ -1287,7 +1288,7 @@ instance ShowWithAliases A_Concept where
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c, val) = tshow val <> "[" .<> showUnique c <>. "]"
 
-data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
+data Signature = Sign !A_Concept !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Hashable Signature
 
@@ -1312,8 +1313,8 @@ instance Flippable Signature where
 
 class HasSignature a where
   source, target :: a -> A_Concept
-  source x = source (sign x)
-  target x = target (sign x)
+  source = source . sign
+  target = target . sign
   sign :: a -> Signature
   isEndo :: a -> Bool
   isEndo s = source s == target s
@@ -1324,25 +1325,25 @@ class HasSignature a where
 --  in a context.
 data ContextInfo = CI
   { -- | The generalisation relations in the context
-    ctxiGens :: [AClassify],
+    ctxiGens :: ![AClassify],
     -- | a list containing all user defined Representations in the context
-    representationOf :: A_Concept -> TType,
+    representationOf :: !(A_Concept -> TType),
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-    multiKernels :: [Typology],
+    multiKernels :: ![Typology],
     -- | a list of all Representations
-    reprList :: [Representation],
+    reprList :: ![Representation],
     -- | a map of declarations and the corresponding types
-    declDisambMap :: Map.Map Text (Map.Map SignOrd Expression),
+    declDisambMap :: !(Map.Map Text (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
-    soloConcs :: Set.Set Type,
+    soloConcs :: !(Set.Set Type),
     -- | generalisation relations again, as a type system (including phantom types)
-    gens_efficient :: Op1EqualitySystem Type,
+    gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept
-    conceptMap :: ConceptMap,
+    conceptMap :: !ConceptMap,
     -- | the default language used to interpret markup texts in this context
-    defaultLang :: Lang,
+    defaultLang :: !Lang,
     -- | the default format used to interpret markup texts in this context
-    defaultFormat :: PandocFormat
+    defaultFormat :: !PandocFormat
   }
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
@@ -1352,8 +1353,8 @@ typeOrConcept _ (BuiltIn x) = Right (Just x)
 typeOrConcept _ RepresentSeparator = Right Nothing
 
 data Type
-  = UserConcept Name
-  | BuiltIn TType
+  = UserConcept !Name
+  | BuiltIn !TType
   | RepresentSeparator
   deriving (Eq, Ord, Show)
 
@@ -1617,8 +1618,8 @@ unsafePAtomVal2AtomValue typ mCpt pav =
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements,
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
 data Typology = Typology
-  { tyroot :: A_Concept, -- the most generic concept in the typology
-    tyCpts :: [A_Concept] -- all concepts, from generic to specific
+  { tyroot :: !A_Concept, -- the most generic concept in the typology
+    tyCpts :: ![A_Concept] -- all concepts, from generic to specific
   }
   deriving (Show)
 

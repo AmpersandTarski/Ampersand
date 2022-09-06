@@ -25,6 +25,7 @@ module Ampersand.Core.ParseTree
     BoxHeader (..),
     TemplateKeyValue (..),
     SrcOrTgt (..),
+    DefinitionContainer(..),
     P_Rule (..),
     PConceptDef (..),
     PCDDef (..),

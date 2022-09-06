@@ -970,7 +970,7 @@ pCtx2aCtx
             (exp', _) <- typecheckTerm ci expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
-              Ru
+              Rule
                 { rrnm = nm,
                   formalExpression = exp',
                   rrfps = orig,

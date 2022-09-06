@@ -27,9 +27,9 @@ data FPType
   deriving (Show)
 
 data FP = FP
-  { fpType :: FPType,
-    fpName :: Text,
-    fpComplexity :: Complexity
+  { fpType :: !FPType,
+    fpName :: !Name,
+    fpComplexity :: !Complexity
   }
   deriving (Show)
 
