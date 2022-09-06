@@ -49,9 +49,7 @@ If you want to generate functional prototypes from ampersand scripts, you need t
 
        `ampersand`
 
-       , with rights to create/read/update/delete databases as well as their contents. If you use phpmyadmin this could look like:
-
-       ![](../.gitbook/assets/databaseuserconfig.jpg)
+       , with rights to create/read/update/delete databases as well as their contents.
    * The webserver must run on `localhost` . By default you will use port 80, but you could change that if required. See the documentation of you webserver.
 2. You will also need to install [**Composer**](https://getcomposer.org/download/), because at runtime, the prototype has dependencies of libraries . Composer will take care of that.
 
