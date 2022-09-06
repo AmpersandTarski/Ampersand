@@ -170,7 +170,7 @@ mkMultipleRepresentTypesError cpt rs =
       (_, x) : _ -> x
     msg =
       T.intercalate "\n" $
-        [ "The Concept " <> showWithAliases cpt <> " was shown to be representable with multiple types.",
+        [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
           "The following TYPEs are defined for it:"
         ]
           <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
@@ -188,7 +188,7 @@ mkMultipleTypesInTypologyError tripls =
           "The following concepts are in the same typology, but not all",
           "of them have the same TYPE:"
         ]
-          <> ["  - REPRESENT " <> showWithAliases c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
+          <> ["  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs =
@@ -202,9 +202,9 @@ mkMultipleRootsError roots gs =
         ]
           <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
           <> ["Parhaps you could add the following statements:"]
-          <> ["  CLASSIFY " <> showWithAliases cpt <> " ISA " <> tshow rootName | cpt <- roots]
+          <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> tshow rootName | cpt <- roots]
       where
-        rootName = T.intercalate "_Or_" . map showWithAliases $ roots
+        rootName = T.intercalate "_Or_" . map (text1ToText . showWithAliases) $ roots
 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =
@@ -249,23 +249,24 @@ instance GetOneGuarded Expression (P_NamedRel, (A_Concept, A_Concept)) where
   getOneExactly (o, (sr, tg)) = getOneExactly (o, (Just sr, Just tg))
 
 instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) where
-  getOneExactly _ [d] = pure d
-  getOneExactly o [] =
-    Errors . pure $
-      (CTXE . origin . fst) o $
-        "A relation is used that is not explicitly declared: " <> showP_T o
-  getOneExactly o lst =
-    Errors . pure $
-      (CTXE . origin . fst) o $
-        "A relation is used that is not explicitly declared: " <> showP_T o
-          <> ".\n  Perhaps you meant one of the following matching expressions:"
-          <> T.concat ["\n  - " <> showA l | l <- lst]
-
-showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
-showP_T (p, (src, tgt)) = p_nrnm p <> "[" <> showC src <> "*" <> showC tgt <> "]"
-  where
-    showC Nothing = "???"
-    showC (Just tp) = showA tp
+  getOneExactly o lst = case lst of
+    [d] -> pure d
+    [] ->
+      Errors . pure $
+        (CTXE . origin . fst) o $
+          "A relation is used that is not explicitly declared: " <> showP_T o
+    _ ->
+      Errors . pure $
+        (CTXE . origin . fst) o $
+          "A relation is used that is not explicitly declared: " <> showP_T o
+            <> ".\n  Perhaps you meant one of the following matching expressions:"
+            <> T.concat ["\n  - " <> showA l | l <- lst]
+    where
+      showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
+      showP_T (p, (src, tgt)) = (text1ToText . tName) p <> "[" <> showC src <> "*" <> showC tgt <> "]"
+        where
+          showC Nothing = "???"
+          showC (Just tp) = showA tp
 
 mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
 mkTypeMismatchError o rel sot typ =
@@ -278,12 +279,12 @@ mkTypeMismatchError o rel sot typ =
                Tgt -> "target"
            )
         <> "("
-        <> name typ
+        <> tshow typ
         <> ") for the population pairs "
         <> "\n  must be more specific or equal to that of the "
         <> "relation you wish to populate ("
-        <> name rel
-        <> showWithAliases (sign rel)
+        <> tshow rel
+        <> (text1ToText . showWithAliases) (sign rel)
         <> " found at "
         <> tshow (origin rel)
         <> ")."
@@ -351,20 +352,19 @@ uniqueNames nameclass = uniqueBy name messageFor
             <> "."
         )
 
-uniqueLables :: Origin -> [ViewSegment] -> Guarded ()
-uniqueLables orig = uniqueBy vsmlabel messageFor . filter hasLabel
+uniqueLables :: Origin -> (a -> Text1) -> [a] -> Guarded ()
+uniqueLables orig toLabel = uniqueBy toLabel (messageFor . fmap toLabel)
   where
-    hasLabel = isJust . vsmlabel
-    messageFor :: NonEmpty ViewSegment -> CtxError
+    messageFor :: NonEmpty Text1 -> CtxError
     messageFor x =
-      CTXE (origin $ NE.head x)
+      CTXE orig
         . T.intercalate "\n    "
-        $ [ "The label `" <> lable <> "` occurs " <> tshow (NE.length x) <> " times",
+        $ [ "The label `" <> text1ToText lable <> "` occurs " <> tshow (NE.length x) <> " times",
             "in the VIEW statement defined at: ",
             "   " <> tshow orig <> "."
           ]
       where
-        lable = fromMaybe "" (vsmlabel $ NE.head x)
+        lable = NE.head x
 
 -- | Helper function to check for uniqueness.
 uniqueBy ::
@@ -470,46 +470,50 @@ mkInterfaceRefCycleError cyclicIfcs =
     showIfc :: Interface -> Text
     showIfc i = "- " <> tshow (name i) <> " at position " <> tshow (origin i)
 
-mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Text -> CtxError
+mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
     P_BxExpr {} ->
       CTXE (origin objDef) $
-        "Incompatible interface reference " <> tshow ref <> " at field " <> tshow (box_label objDef)
+        "Incompatible interface reference " <> tshow ref
+          <> " at field "
+          <> maybe "without a label" tshow (box_label objDef)
           <> ":\nReferenced interface "
           <> tshow ref
           <> " has type "
-          <> showWithAliases refSrc
+          <> (text1ToText . showWithAliases) refSrc
           <> ", which is not comparable to the target "
-          <> showWithAliases expTgt
+          <> (text1ToText . showWithAliases) expTgt
           <> " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
   CTXE (origin . NE.head $ vds) $
-    "Multiple default views for concept " <> showWithAliases cpt <> ":"
+    "Multiple default views for concept " <> (text1ToText . showWithAliases) cpt <> ":"
       <> T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
   where
     showViewDef :: ViewDef -> Text
-    showViewDef vd = "VIEW " <> name vd <> " (at " <> tshow (origin vd) <> ")"
+    showViewDef vd = "VIEW " <> (text1ToText . tName) vd <> " (at " <> tshow (origin vd) <> ")"
     cpt = case nubOrd . NE.toList . fmap vdcpt $ vds of
       [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
       [c] -> c
       _ -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
 
-mkIncompatibleViewError :: (Named b, Named c) => P_BoxItem a -> Text -> b -> c -> CtxError
+mkIncompatibleViewError :: (Named b, Named c) => P_BoxItem a -> Name -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
     P_BxExpr {} ->
       CTXE (origin objDef) $
-        "Incompatible view annotation <" <> viewId <> "> at field " <> tshow (box_label objDef) <> ":"
+        "Incompatible view annotation <" <> (text1ToText . tName) viewId <> "> at field "
+          <> maybe "without a label" tshow (box_label objDef)
+          <> ":"
           <> "\nView "
           <> tshow viewId
           <> " has type "
-          <> name viewCptStr
+          <> (text1ToText . tName) viewCptStr
           <> ", which should be equal to or more general than the target "
-          <> name viewRefCptStr
+          <> (text1ToText . tName) viewRefCptStr
           <> " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleViewError."
 
@@ -525,14 +529,14 @@ mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxErro
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
   CTXE (origin ifc) . T.intercalate "\n  " $
     [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-      "The TYPE of the concept `" <> showWithAliases cpt <> "`, for interface `" <> name ifc <> "`, however is " <> tshow tt <> "."
+      "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for interface `" <> (text1ToText . tName) ifc <> "`, however is " <> tshow tt <> "."
     ]
 
 mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x) . T.intercalate "\n  " $
     [ "The TYPE of the concept for which a " <> tshow boxTemplate <> " is defined must be OBJECT.",
-      "The TYPE of the concept `" <> showWithAliases cpt <> "`, for this " <> tshow boxTemplate <> ", however is " <> tshow tt <> "."
+      "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for this " <> tshow boxTemplate <> ", however is " <> tshow tt <> "."
     ]
   where
     boxTemplate = btType . si_header $ x
@@ -541,16 +545,16 @@ class ErrorConcept a where
   showEC :: a -> Text
 
 instance ErrorConcept (P_ViewD a) where
-  showEC x = showP (vd_cpt x) <> " given in VIEW " <> vd_lbl x
+  showEC x = showP (vd_cpt x) <> " given in VIEW " <> (text1ToText . tName) x
 
 instance ErrorConcept P_IdentDef where
-  showEC x = showP (ix_cpt x) <> " given in Identity " <> ix_lbl x
+  showEC x = showP (ix_cpt x) <> " given in Identity " <> (text1ToText . tName) x
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
 
 showEC' :: (SrcOrTgt, A_Concept, Text) -> Text
-showEC' (p1, c1, e1) = showWithAliases c1 <> " (" <> tshow p1 <> " of " <> e1 <> ")"
+showEC' (p1, c1, e1) = (text1ToText . showWithAliases) c1 <> " (" <> tshow p1 <> " of " <> e1 <> ")"
 
 instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
   showEC (p1, e1) =
@@ -572,20 +576,20 @@ mustBeOrdered o a b =
       "  and concept " <> showEC b
     ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItemTermPrim)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst =
   Errors . pure . CTXE (origin o) . T.unlines $
     [ "Type error in BOX",
       "  Cannot match:"
     ]
-      <> [ "  - concept " <> showWithAliases c <> " , " <> showP st <> " of: " <> showP (exprOf a)
+      <> [ "  - concept " <> (text1ToText . showWithAliases) c <> " , " <> showP st <> " of: " <> showP (exprOf a)
            | (c, st, a) <- lst
          ]
       <> [ "  if you think there is no type error, add an order between the mismatched concepts.",
            "  You can do so by using a CLASSIFY statement."
          ]
   where
-    exprOf :: P_BoxItemTermPrim -> Term TermPrim
+    exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
       case x of
         P_BxExpr {} -> obj_ctx x
@@ -596,7 +600,7 @@ mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
   Errors . pure . CTXE (origin o) . T.unlines $
     [ "Ambiguous type when matching: " <> tshow p1 <> " of " <> showA e1,
       " and " <> tshow p2 <> " of " <> showA e2 <> ".",
-      "  The type can be " <> T.intercalate " or " (map (T.intercalate "/" . map showWithAliases) cs),
+      "  The type can be " <> T.intercalate " or " (map (T.intercalate "/" . map (text1ToText . showWithAliases)) cs),
       "  None of these concepts is known to be the smallest, you may want to add an order between them."
     ]
 
@@ -659,7 +663,7 @@ mkCaseProblemWarning x y =
     T.intercalate
       "\n    "
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
-        tshow (typeOf x) <> " `" <> name x <> "` and `" <> name y <> "`."
+        tshow (typeOf x) <> " `" <> (text1ToText . tName) x <> "` and `" <> (text1ToText . tName) y <> "`."
       ]
 
 addWarning :: Warning -> Guarded a -> Guarded a
