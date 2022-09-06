@@ -3,7 +3,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Ampersand.FSpec.Transformers
-  ( transformersFormalAmpersand,
+  ( nameSpaceFormalAmpersand,
+    transformersFormalAmpersand,
+    nameSpacePrototypeContext,
     transformersPrototypeContext,
     Transformer (..),
     PopAtom (..),
@@ -26,9 +28,9 @@ import qualified Text.Pandoc.Shared as P
 --   some relation of Formal Ampersand of a given
 --   ampersand script.
 data Transformer = Transformer
-  { tRel :: Text, -- name of relation
-    tSrc :: Text, -- name of source
-    tTrg :: Text, -- name of target
+  { tRel :: Name, -- name of relation
+    tSrc :: Name, -- name of source
+    tTrg :: Name, -- name of target
     mults :: AProps, -- property constraints
     tPairs :: [PAtomPair] -- the population of this relation from the user's script.
   }
@@ -39,10 +41,10 @@ data PopAtom
   = -- | Any Text. must be:
     --      * unique in the scope of the entire fspec
     --      * storable in a 255 database field
-    DirtyId Text
+    DirtyId !Text1
   | -- | Intended to be observable by users. Not a 'dirty id'.
-    PopAlphaNumeric Text
-  | PopInt Integer
+    PopAlphaNumeric !Text
+  | PopInt !Integer
   deriving (Eq, Ord)
 
 instance Show PopAtom where
@@ -56,10 +58,13 @@ dirtyId :: Unique a => a -> PopAtom
 dirtyId = DirtyId . idWithoutType
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
-toTransformer :: (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -> Transformer
-toTransformer (rel, src, tgt, props, tuples) =
-  Transformer rel src tgt props tuples'
+toTransformer :: NameSpace -> (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -> Transformer
+toTransformer namespace (rel, src, tgt, props, tuples) =
+  Transformer rel' src' tgt' props tuples'
   where
+    rel' = toName namespace . toText1Unsafe $ rel
+    src' = toName namespace . toText1Unsafe $ src
+    tgt' = toName namespace . toText1Unsafe $ tgt
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =
@@ -67,15 +72,18 @@ toTransformer (rel, src, tgt, props, tuples) =
     pAtom2AtomValue :: PopAtom -> PAtomValue
     pAtom2AtomValue atm =
       case atm of
-        DirtyId str -> ScriptString MeatGrinder str
+        DirtyId str -> ScriptString MeatGrinder (text1ToText str)
         PopAlphaNumeric str -> ScriptString MeatGrinder str
         PopInt i -> ScriptInt MeatGrinder i
+
+nameSpaceFormalAmpersand :: NameSpace
+nameSpaceFormalAmpersand = [toText1Unsafe "FA"]
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec =
   map
-    toTransformer
+    (toTransformer nameSpaceFormalAmpersand)
     [ {-
       -}
       --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
@@ -521,9 +529,16 @@ transformersFormalAmpersand fSpec =
         "FieldDef",
         "FieldName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId fld, PopAlphaNumeric (name obj))
+        [ ( dirtyId fld,
+            PopAlphaNumeric
+              ( case objLabel fld of
+                  Nothing -> fatal "This should not happen, because only fields with a label are filtered."
+                  Just lbl -> text1ToText lbl
+              )
+          )
           | obj :: ObjectDef <- instanceList fSpec,
-            fld <- fields obj
+            fld <- fields obj,
+            isJust (objLabel fld)
         ]
       ),
       ( "language",
@@ -623,7 +638,7 @@ transformersFormalAmpersand fSpec =
         "Concept",
         "ConceptName",
         Set.fromList [Uni],
-        [ (dirtyId cpt, (PopAlphaNumeric . name) cpt)
+        [ (dirtyId cpt, (PopAlphaNumeric . text1ToText . tName) cpt)
           | cpt :: A_Concept <- instanceList fSpec
         ]
       ),
@@ -631,7 +646,7 @@ transformersFormalAmpersand fSpec =
         "Context",
         "ContextName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId ctx, (PopAlphaNumeric . name) ctx)
+        [ (dirtyId ctx, (PopAlphaNumeric . text1ToText . tName) ctx)
           | ctx :: A_Context <- instanceList fSpec
         ]
       ),
@@ -639,23 +654,15 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "InterfaceName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId ifc, (PopAlphaNumeric . name) ifc)
+        [ (dirtyId ifc, (PopAlphaNumeric . text1ToText . tName) ifc)
           | ifc :: Interface <- instanceList fSpec
-        ]
-      ),
-      ( "name",
-        "ObjectDef",
-        "ObjectName",
-        Set.fromList [Uni, Tot],
-        [ (dirtyId obj, (PopAlphaNumeric . name) obj)
-          | obj :: ObjectDef <- instanceList fSpec
         ]
       ),
       ( "name",
         "Pattern",
         "PatternName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId pat, (PopAlphaNumeric . name) pat)
+        [ (dirtyId pat, (PopAlphaNumeric . text1ToText . tName) pat)
           | pat :: Pattern <- instanceList fSpec
         ]
       ),
@@ -663,7 +670,7 @@ transformersFormalAmpersand fSpec =
         "Relation",
         "RelationName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId rel, (PopAlphaNumeric . name) rel)
+        [ (dirtyId rel, (PopAlphaNumeric . text1ToText . tName) rel)
           | rel :: Relation <- instanceList fSpec
         ]
       ),
@@ -671,7 +678,7 @@ transformersFormalAmpersand fSpec =
         "Role",
         "RoleName",
         Set.fromList [Uni],
-        [ (dirtyId rol, (PopAlphaNumeric . name) rol)
+        [ (dirtyId rol, (PopAlphaNumeric . text1ToText . tName) rol)
           | rol :: Role <- instanceList fSpec
         ]
       ),
@@ -679,7 +686,7 @@ transformersFormalAmpersand fSpec =
         "Rule",
         "RuleName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId rul, (PopAlphaNumeric . name) rul)
+        [ (dirtyId rul, (PopAlphaNumeric . text1ToText . tName) rul)
           | rul :: Rule <- instanceList fSpec
         ]
       ),
@@ -687,7 +694,7 @@ transformersFormalAmpersand fSpec =
         "View",
         "ViewDefName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId vd, PopAlphaNumeric . tshow . name $ vd)
+        [ (dirtyId vd, PopAlphaNumeric . text1ToText . tName $ vd)
           | vd :: ViewDef <- instanceList fSpec
         ]
       ),
@@ -695,7 +702,7 @@ transformersFormalAmpersand fSpec =
         "ObjectDef",
         "View",
         Set.empty,
-        [ (dirtyId obj, PopAlphaNumeric vw)
+        [ (dirtyId obj, PopAlphaNumeric . text1ToText . tName $ vw)
           | obj :: ObjectDef <- instanceList fSpec,
             Just vw <- [objmView obj]
         ]
@@ -1018,7 +1025,7 @@ transformersFormalAmpersand fSpec =
         "Concept",
         "EncodedName",
         Set.fromList [Uni],
-        [ (dirtyId cpt, PopAlphaNumeric . urlEncodedName . name $ cpt)
+        [ (dirtyId cpt, PopAlphaNumeric . text1ToText . urlEncodedName . name $ cpt)
           | cpt :: A_Concept <- instanceList fSpec
         ]
       ),
@@ -1026,7 +1033,7 @@ transformersFormalAmpersand fSpec =
         "Pattern",
         "EncodedName",
         Set.fromList [Uni],
-        [ (dirtyId pat, PopAlphaNumeric . urlEncodedName . name $ pat)
+        [ (dirtyId pat, PopAlphaNumeric . text1ToText . urlEncodedName . name $ pat)
           | pat :: Pattern <- instanceList fSpec
         ]
       ),
@@ -1034,7 +1041,7 @@ transformersFormalAmpersand fSpec =
         "Rule",
         "EncodedName",
         Set.fromList [Uni],
-        [ (dirtyId rul, PopAlphaNumeric . urlEncodedName . name $ rul)
+        [ (dirtyId rul, PopAlphaNumeric . text1ToText . urlEncodedName . name $ rul)
           | rul :: Rule <- instanceList fSpec
         ]
       ),
@@ -1143,6 +1150,9 @@ transformersFormalAmpersand fSpec =
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
+nameSpacePrototypeContext :: NameSpace
+nameSpacePrototypeContext = [toText1Unsafe "PF"]
+
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
 --   You might do this by dropping all prefixes "PF_" and "pf_" and doing
@@ -1152,7 +1162,7 @@ dirtyIdWithoutType = DirtyId . idWithoutType
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec =
   map
-    toTransformer
+    (toTransformer nameSpacePrototypeContext)
     -- the following transformer is also contained in FormalAmpersand.
     [ ( "isAPI",
         "PF_Interface",
@@ -1179,7 +1189,7 @@ transformersPrototypeContext fSpec =
         "PF_Interface",
         "PF_Label",
         Set.fromList [],
-        [ (dirtyIdWithoutType ifc, PopAlphaNumeric . name $ ifc)
+        [ (dirtyIdWithoutType ifc, PopAlphaNumeric . text1ToText . tName $ ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
@@ -1188,7 +1198,7 @@ transformersPrototypeContext fSpec =
         "Role",
         "PF_Label",
         Set.fromList [Uni],
-        [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
+        [ (dirtyIdWithoutType role, PopAlphaNumeric . text1ToText . tName $ role)
           | role :: Role <- instanceList fSpec
         ]
       ),
@@ -1587,7 +1597,7 @@ data UnaryOp
   deriving (Eq, Show, Typeable)
 
 instance Unique UnaryOp where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 data BinOp
   = CartesianProduct
@@ -1604,7 +1614,7 @@ data BinOp
   deriving (Eq, Show, Typeable)
 
 instance Unique BinOp where
-  showUnique = tshow
+  showUnique = toText1Unsafe . tshow
 
 instance Unique (Either BinOp UnaryOp) where
   showUnique (Left a) = showUnique a
