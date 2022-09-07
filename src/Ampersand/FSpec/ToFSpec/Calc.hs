@@ -33,7 +33,7 @@ testConfluence context =
    in para ("Confluence analysis statistics from " <> (str . tshow . length . expressionsIn) context <> " expressions." <> linebreak)
         <> para ("This script contains " <> linebreak <> (str . tshow . length) tcss <> " non-confluent expressions " <> linebreak)
         <> para (linebreak <> "Total number of derived expressions: " <> (str . tshow) sumt <> linebreak)
-        <> para ("Confluence analysis for " <> (str . name) context)
+        <> para ("Confluence analysis for " <> (str . text1ToText . tName) context)
         <> mconcat
           [ para (linebreak <> "expression:   " <> (str . showA) expr <> linebreak)
               <> bulletList [showProof (para . str . showA) prf | (_, prf) <- tcs]
@@ -44,10 +44,10 @@ deriveProofs :: env -> A_Context -> Blocks
 deriveProofs env context =
   testConfluence context
     <> para (linebreak <> "--------------" <> linebreak)
-    <> para ("Rules and their conjuncts for " <> (str . name) context)
+    <> para ("Rules and their conjuncts for " <> (str . text1ToText . tName) context)
     <> bulletList
       [ para
-          ( "rule r:   " <> str (name r) <> linebreak
+          ( "rule r:   " <> (str . text1ToText . tName) r <> linebreak
               <> "formalExpression r:  "
               <> str (showA (formalExpression r))
               <> linebreak

@@ -23,6 +23,7 @@ import Ampersand.ADL1
   )
 import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
+import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand, nameSpacePrototypeContext)
 import Ampersand.Input.ADL1.CtxError
   ( CtxError (PE),
     Guarded (..),
@@ -79,7 +80,7 @@ import System.FilePath
     takeExtension,
     (</>),
   )
-import Text.Parsec.Prim (runP)
+import Text.Parsec (runP)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
@@ -93,7 +94,7 @@ parseFilesTransitive xs = do
   canonical <- liftIO . mapM canonicalizePath . getRoots $ xs
   let candidates = map (mkCandidate curDir) canonical
 
-  parseThings candidates
+  parseThings [] candidates
   where
     mkCandidate :: FilePath -> FilePath -> ParseCandidate
     mkCandidate curdir canonical =
@@ -105,9 +106,12 @@ parseFilesTransitive xs = do
           pcDefineds = Set.empty
         }
 
-parseFormalAmpersand :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parseFormalAmpersand ::
+  (HasFSpecGenOpts env, HasLogFunc env) =>
+  RIO env (Guarded P_Context)
 parseFormalAmpersand =
   parseThing
+    nameSpaceFormalAmpersand
     ParseCandidate
       { pcBasePath = Nothing,
         pcOrigin = Just $ Origin "Formal Ampersand specification",
@@ -116,9 +120,12 @@ parseFormalAmpersand =
         pcDefineds = Set.empty
       }
 
-parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parsePrototypeContext ::
+  (HasFSpecGenOpts env, HasLogFunc env) =>
+  RIO env (Guarded P_Context)
 parsePrototypeContext =
   parseThing
+    nameSpacePrototypeContext
     ParseCandidate
       { pcBasePath = Nothing,
         pcOrigin = Just $ Origin "Ampersand specific system context",
@@ -129,16 +136,18 @@ parsePrototypeContext =
 
 parseThing ::
   (HasFSpecGenOpts env, HasLogFunc env) =>
+  NameSpace ->
   ParseCandidate ->
   RIO env (Guarded P_Context)
-parseThing pc = snd <$> parseThings [pc]
+parseThing ns pc = snd <$> parseThings ns [pc]
 
 parseThings ::
   (HasFSpecGenOpts env, HasLogFunc env) =>
+  NameSpace ->
   [ParseCandidate] ->
   RIO env ([ParseCandidate], Guarded P_Context)
-parseThings pcs = do
-  results <- parseADLs [] pcs
+parseThings ns pcs = do
+  results <- parseADLs ns [] pcs
   case results of
     Errors err -> return (pcs, Errors err)
     Checked xs ws ->
@@ -155,19 +164,20 @@ parseThings pcs = do
 -- | Parses several ADL files
 parseADLs ::
   (HasFSpecGenOpts env, HasLogFunc env) =>
+  NameSpace ->
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
   [ParseCandidate] ->
   -- | The resulting contexts and the ParseCandidate that is the source for that P_Context
   RIO env (Guarded [(ParseCandidate, P_Context)])
-parseADLs parsedFilePaths fpIncludes =
+parseADLs ns parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x : xs ->
       if x `elem` parsedFilePaths
-        then parseADLs parsedFilePaths xs
-        else whenCheckedM (parseSingleADL x) parseTheRest
+        then parseADLs ns parsedFilePaths xs
+        else whenCheckedM (parseSingleADL ns x) parseTheRest
       where
         parseTheRest ::
           (HasFSpecGenOpts env, HasLogFunc env) =>
@@ -175,7 +185,7 @@ parseADLs parsedFilePaths fpIncludes =
           RIO env (Guarded [(ParseCandidate, P_Context)])
         parseTheRest (ctx, includes) =
           whenCheckedM
-            (parseADLs (parsedFilePaths <> [x]) (includes <> xs))
+            (parseADLs ns (parsedFilePaths <> [x]) (includes <> xs))
             (\rst -> pure . pure $ (x, ctx) : rst) --return . pure . (:) (x,ctx)
 
 -- | ParseCandidate is intended to represent an INCLUDE-statement.
@@ -194,9 +204,10 @@ instance Eq ParseCandidate where
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL ::
   (HasFSpecGenOpts env, HasLogFunc env) =>
+  NameSpace ->
   ParseCandidate ->
   RIO env (Guarded (P_Context, [ParseCandidate]))
-parseSingleADL pc =
+parseSingleADL ns pc =
   do
     case pcFileKind pc of
       Just _ ->
@@ -246,7 +257,7 @@ parseSingleADL pc =
             let -- TODO: This should be cleaned up. Probably better to do all the file reading
                 --       first, then parsing and typechecking of each module, building a tree P_Contexts
                 meat :: Guarded (P_Context, [Include])
-                meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath . T.pack
+                meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx ns filePath . T.pack
                 proces :: Guarded (P_Context, [Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
                 proces (Errors err) = pure (Errors err)
                 proces (Checked (ctxts, includes) ws) =
@@ -337,21 +348,23 @@ runParser parser filename input =
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
 parseRule ::
+  NameSpace ->
   -- | The string to be parsed
   Text ->
   -- | The resulting rule
   Term TermPrim
-parseRule str =
-  case runParser pRule "inside Haskell code" str of
+parseRule ns str =
+  case runParser (pRule ns) "inside Haskell code" str of
     Checked result _ -> result
     Errors msg -> fatal ("Parse errors in " <> str <> ":\n   " <> tshow msg)
 
 -- | Parses an Ampersand context
 parseCtx ::
+  NameSpace ->
   -- | The file name (used for error messages)
   FilePath ->
   -- | The string to be parsed
   Text ->
   -- | The context and a list of included files
   Guarded (P_Context, [Include])
-parseCtx = runParser pContext
+parseCtx = runParser . pContext

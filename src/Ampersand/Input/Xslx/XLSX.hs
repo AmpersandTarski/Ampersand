@@ -38,6 +38,9 @@ parseXlsxFile mFk file =
           liftIO $ B.readFile file
     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
   where
+    file1 = case file of
+      [] -> fatal "Filename must not be empty."
+      h : tl -> Text1 h (T.pack tl)
     xlsx2pContext ::
       (HasFSpecGenOpts env) =>
       env ->
@@ -46,16 +49,19 @@ parseXlsxFile mFk file =
     xlsx2pContext env xlsx = Checked pop []
       where
         pop =
-          mkContextOfPops
-            . concatMap (toPops env file)
-            . concatMap theSheetCellsForTable
+          mkContextOfPops (toName nameSpaceOfXLXSfiles file1)
+            . concatMap (toPops env nameSpaceOfXLXSfiles file)
+            . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
 
-mkContextOfPops :: [P_Population] -> P_Context
-mkContextOfPops pops =
+nameSpaceOfXLXSfiles :: NameSpace
+nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn more about namespaces.
+
+mkContextOfPops :: Name -> [P_Population] -> P_Context
+mkContextOfPops nm pops =
   addRelations
     PCtx
-      { ctx_nm = "",
+      { ctx_nm = nm,
         ctx_pos = [],
         ctx_lang = Nothing,
         ctx_markup = Nothing,
@@ -119,7 +125,7 @@ addRelations pCtx = enrichedContext
         recur :: [P_Concept] -> [P_Relation] -> [P_Population] -> [(P_Concept, Set.Set P_Concept)] -> ([P_Relation], [P_Population])
         recur seen unseenrels unseenpops ((g, specs) : invGens) =
           if g `elem` seen
-            then fatal ("Concept " <> name g <> " has caused a cycle error.")
+            then fatal ("Concept " <> (text1ToText . tName) g <> " has caused a cycle error.")
             else recur (g : seen) (genericRels <> remainder) (genericPops <> remainPop) invGens
           where
             sameNameTargetRels :: [NE.NonEmpty P_Relation]
@@ -191,7 +197,7 @@ addRelations pCtx = enrichedContext
           spcs <- [[snd c | c <- NE.toList cl, snd c /= g]],
           not (null spcs)
       ]
-    signatur :: P_Relation -> (Text, P_Sign)
+    signatur :: P_Relation -> (Name, P_Sign)
     signatur rel = (name rel, dec_sign rel)
     concepts =
       L.nub $
@@ -255,12 +261,13 @@ toPops ::
   (HasFSpecGenOpts env) =>
   -- |
   env ->
+  NameSpace ->
   -- | The file name is needed for displaying errors in context
   FilePath ->
   -- |
   SheetCellsForTable ->
   [P_Population]
-toPops env file x = map popForColumn (colNrs x)
+toPops env ns file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
@@ -301,16 +308,16 @@ toPops env file x = map popForColumn (colNrs x)
           [] -> fatal "colNrs x is empty"
           c : _ -> c
         targetCol = i
-        sourceConceptName :: Text
+        sourceConceptName :: Name
         mSourceConceptDelimiter :: Maybe Char
         (sourceConceptName, mSourceConceptDelimiter) =
           case value (conceptNamesRow, sourceCol) of
             Just (CellText t) ->
               fromMaybe
                 (fatal "No valid source conceptname found. This should have been checked before")
-                (conceptNameWithOptionalDelimiter t)
+                (conceptNameWithOptionalDelimiter ns t)
             _ -> fatal "No valid source conceptname found. This should have been checked before"
-        mTargetConceptName :: Maybe Text
+        mTargetConceptName :: Maybe Name
         mTargetConceptDelimiter :: Maybe Char
         (mTargetConceptName, mTargetConceptDelimiter) =
           case value (conceptNamesRow, targetCol) of
@@ -318,18 +325,20 @@ toPops env file x = map popForColumn (colNrs x)
               let (nm, mDel) =
                     fromMaybe
                       (fatal "No valid source conceptname found. This should have been checked before")
-                      (conceptNameWithOptionalDelimiter t)
+                      (conceptNameWithOptionalDelimiter ns t)
                in (Just nm, mDel)
             _ -> (Nothing, Nothing)
-        relationName :: Text
+        relationName :: Name
         isFlipped' :: Bool
         (relationName, isFlipped') =
           case value (relNamesRow, targetCol) of
             Just (CellText t) ->
               case T.uncons . T.reverse . trim $ t of
-                Nothing -> (mempty, False)
-                Just ('~', rest) -> (T.reverse rest, True)
-                Just (h, tl) -> (T.reverse $ T.cons h tl, False)
+                Nothing -> (fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol), False)
+                Just ('~', rest) -> case T.uncons . T.reverse $ rest of
+                  Nothing -> fatal "the `~` symbol should be preceded by a relation name. However, it just isn't there."
+                  Just (h, tl) -> (toName ns $ Text1 h tl, True)
+                Just (h, tl) -> (toName ns . toText1Unsafe . T.reverse $ T.cons h tl, False)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -396,8 +405,8 @@ toPops env file x = map popForColumn (colNrs x)
     value k = theCellMap x ^? ix k . cellValue . _Just
 
 -- This function processes one Excel worksheet and yields every "wide table" (a block of lines in the excel sheet) as a SheetCellsForTable
-theSheetCellsForTable :: (Text, Worksheet) -> [SheetCellsForTable]
-theSheetCellsForTable (sheetName, ws) =
+theSheetCellsForTable :: NameSpace -> (Text, Worksheet) -> [SheetCellsForTable]
+theSheetCellsForTable ns (sheetName, ws) =
   catMaybes [theMapping i | i <- [0 .. length tableStarters - 1]]
   where
     tableStarters :: [(Int, Int)]
@@ -479,7 +488,7 @@ theSheetCellsForTable (sheetName, ws) =
           | otherwise = isProperConceptName (conceptNameRowNr, colNr) && isProperRelName (relationNameRowNr, colNr)
         isProperConceptName k =
           case value k of
-            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter $ t
+            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter ns $ t
             _ -> False
         isProperRelName k =
           case value k of
@@ -487,16 +496,17 @@ theSheetCellsForTable (sheetName, ws) =
             _ -> False
 
 conceptNameWithOptionalDelimiter ::
+  NameSpace ->
   Text ->
   Maybe
-    ( Text {- Conceptname -},
+    ( Name {- Conceptname -},
       Maybe Char {- Delimiter   -}
     )
 -- Cases:  1) "[" <> Conceptname <> delimiter <> "]"
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
-conceptNameWithOptionalDelimiter t'
+conceptNameWithOptionalDelimiter ns t'
   | isBracketed t =
     let mid = T.dropEnd 1 . T.drop 1 $ t
      in case T.uncons . T.reverse $ mid of
@@ -504,12 +514,15 @@ conceptNameWithOptionalDelimiter t'
           Just (d, revInit) ->
             let nm = T.reverse revInit
              in if isDelimiter d && isConceptName nm
-                  then Just (nm, Just d)
+                  then Just (mkName nm, Just d)
                   else Nothing
-  | isConceptName t = Just (t, Nothing)
+  | isConceptName t = Just (mkName t, Nothing)
   | otherwise = Nothing
   where
     t = trim t'
+    mkName x = case T.uncons x of
+      Nothing -> fatal "Empty conceptname should not be possible."
+      Just (h, tl) -> toName ns $ Text1 h tl
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

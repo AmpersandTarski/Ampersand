@@ -60,16 +60,16 @@ instance JSON FSpec Relationz where
 instance JSON Relation RelationJson where
   fromAmpersand env fSpec dcl =
     RelationJson
-      { relJSONname = name dcl,
-        relJSONsignature = name dcl <> (tshow . sign) dcl,
-        relJSONsrcConceptId = idWithoutType . source $ dcl,
-        relJSONtgtConceptId = idWithoutType . target $ dcl,
+      { relJSONname = text1ToText . tName $ dcl,
+        relJSONsignature = (text1ToText . tName) dcl <> (tshow . sign) dcl,
+        relJSONsrcConceptId = text1ToText . idWithoutType . source $ dcl,
+        relJSONtgtConceptId = text1ToText . idWithoutType . target $ dcl,
         relJSONuni = isUni bindedExp,
         relJSONtot = isTot bindedExp,
         relJSONinj = isInj bindedExp,
         relJSONsur = isSur bindedExp,
         relJSONprop = isProp bindedExp,
-        relJSONaffectedConjuncts = maybe [] (map rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
+        relJSONaffectedConjuncts = maybe [] (map $ text1ToText . rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
         relJSONmysqlTable = fromAmpersand env fSpec dcl,
         relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl,
         relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
@@ -88,7 +88,7 @@ instance JSON Relation RelationJson where
 instance JSON Relation RelTableInfo where
   fromAmpersand env fSpec dcl =
     RelTableInfo
-      { rtiJSONname = name plug,
+      { rtiJSONname = text1ToText . tName $ plug,
         rtiJSONtableOf = srcOrtgt,
         rtiJSONsrcCol = fromAmpersand env fSpec . rsSrcAtt $ relstore,
         rtiJSONtgtCol = fromAmpersand env fSpec . rsTrgAtt $ relstore
@@ -107,7 +107,7 @@ instance JSON Relation RelTableInfo where
 instance JSON SqlAttribute TableCol where
   fromAmpersand _ _ att =
     TableCol
-      { tcJSONname = attName att,
+      { tcJSONname = text1ToText . sqlColumNameToText1 . attSQLColName $ att,
         tcJSONnull = attDBNull att,
         tcJSONunique = attUniq att
       }

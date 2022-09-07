@@ -31,8 +31,8 @@ instance JSON FSpec Conjuncts where
 instance JSON Conjunct JSONConjunct where
   fromAmpersand env fSpec conj =
     JSONConjunct
-      { cnjJSONid = rc_id conj,
-        cnjJSONsignalRuleNames = map name . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
-        cnjJSONinvariantRuleNames = map name . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
+      { cnjJSONid = text1ToText . rc_id $ conj,
+        cnjJSONsignalRuleNames = map (text1ToText . tName) . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
+        cnjJSONinvariantRuleNames = map (text1ToText . tName) . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec . conjNF env . notCpl . rc_conjunct $ conj
       }

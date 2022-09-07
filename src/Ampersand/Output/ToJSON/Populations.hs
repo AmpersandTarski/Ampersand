@@ -65,14 +65,14 @@ instance JSON FSpec Populations where
 instance JSON A_Concept AtomValuesOfConcept where
   fromAmpersand _ fSpec cpt =
     AtomValuesOfConcept
-      { avcJSONconcept = idWithoutType cpt,
+      { avcJSONconcept = text1ToText . idWithoutType $ cpt,
         avcJSONatoms = map showValADL (Set.elems $ atomsBySmallestConcept fSpec cpt)
       }
 
 instance JSON Relation PairsOfRelation where
   fromAmpersand env fSpec dcl =
     PairsOfRelation
-      { porJSONrelation = showRel dcl,
+      { porJSONrelation = text1ToText . showRel $ dcl,
         porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
       }
 

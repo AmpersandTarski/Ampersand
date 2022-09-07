@@ -34,8 +34,8 @@ instance JSON FSpec Views where
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =
     View
-      { vwJSONlabel = name vd,
-        vwJSONconceptId = idWithoutType . vdcpt $ vd,
+      { vwJSONlabel = text1ToText . tName $ vd,
+        vwJSONconceptId = text1ToText . idWithoutType . vdcpt $ vd,
         vwJSONisDefault = vdIsDefault vd,
         vwJSONsegments = fmap (fromAmpersand env fSpec) . vdats $ vd
       }
