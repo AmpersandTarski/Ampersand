@@ -653,7 +653,7 @@ pCtx2aCtx
                 Just (newExpr, subStructures) -> return (obj crud (newExpr, srcBounded) (Just subStructures))
                 Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
               where
-                lookupView :: Text -> Maybe P_ViewDef
+                lookupView :: Name -> Maybe P_ViewDef
                 lookupView viewId = case [vd | vd <- p_viewdefs, vd_lbl vd == viewId] of
                   [] -> Nothing
                   vd : _ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
@@ -663,7 +663,7 @@ pCtx2aCtx
                     (Just _, Just P_InterfaceRef {si_isLink = False}) ->
                       Errors . pure $ mkCrudForRefInterfaceError orig
                     _ -> pure ()
-                typeCheckViewAnnotation :: Expression -> Maybe Text -> Guarded ()
+                typeCheckViewAnnotation :: Expression -> Maybe Name -> Guarded ()
                 typeCheckViewAnnotation _ Nothing = pure ()
                 typeCheckViewAnnotation objExpr (Just viewId) =
                   case lookupView viewId of
@@ -680,7 +680,7 @@ pCtx2aCtx
                 obj crud (e, sr) s =
                   ( BxExpr
                       ObjectDef
-                        { boxLabel = nm,
+                        { objLabel = nm,
                           objPos = orig,
                           objExpression = e,
                           objcrud = crud,
@@ -692,7 +692,7 @@ pCtx2aCtx
           P_BxTxt
             { box_label = nm,
               pos = orig,
-              obj_txt = str
+              box_txt = str
             } ->
               pure
                 ( BxTxt

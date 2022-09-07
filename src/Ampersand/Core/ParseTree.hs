@@ -25,7 +25,7 @@ module Ampersand.Core.ParseTree
     BoxHeader (..),
     TemplateKeyValue (..),
     SrcOrTgt (..),
-    DefinitionContainer(..),
+    DefinitionContainer (..),
     P_Rule (..),
     PConceptDef (..),
     PCDDef (..),
@@ -36,7 +36,7 @@ module Ampersand.Core.ParseTree
     PAtomValue (..),
     mkPair,
     makePSingleton,
-    P_BoxItemTermPrim,
+    P_BoxBodyElement,
     P_SubInterface,
     P_Interface (..),
     P_BoxItem (..),
@@ -862,7 +862,7 @@ data P_Interface = P_Ifc
     -- | a list of roles that may use this interface
     ifc_Roles :: ![Role],
     -- | the context expression (mostly: I[c])
-    ifc_Obj :: !P_BoxItemTermPrim,
+    ifc_Obj :: !P_BoxBodyElement,
     pos :: !Origin,
     ifc_Prp :: !Text
   }
@@ -930,7 +930,7 @@ data TemplateKeyValue = TemplateKeyValue
 instance Traced TemplateKeyValue where
   origin = pos
 
-type P_BoxItemTermPrim = P_BoxItem TermPrim
+type P_BoxBodyElement = P_BoxItem TermPrim
 
 data P_BoxItem a
   = P_BxExpr
@@ -951,7 +951,7 @@ data P_BoxItem a
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
         box_label :: !(Maybe Text1),
         pos :: !Origin,
-        obj_txt :: !Text1
+        box_txt :: !Text1
       }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 

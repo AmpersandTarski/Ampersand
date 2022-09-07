@@ -71,13 +71,13 @@ lowerId = identifier `suchThat` startLower
       Just (h, _) -> isLower h
 
 -- Generates an object
-objTermPrim :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+objTermPrim :: ObjectKind -> Int -> Gen P_BoxBodyElement
 objTermPrim objectKind 0 = objTermPrim objectKind 1 -- minimum of 1 sub interface
 objTermPrim objectKind i = makeObj objectKind i
 
 data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
 
-makeObj :: ObjectKind -> Int -> Gen P_BoxItemTermPrim
+makeObj :: ObjectKind -> Int -> Gen P_BoxBodyElement
 makeObj objectKind maxDepth =
   oneof $
     (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> ifc) :
@@ -403,7 +403,7 @@ instance Arbitrary P_Interface where
       <*> arbitrary
       <*> safeStr
     where
-      interfaceObject :: Gen P_BoxItemTermPrim
+      interfaceObject :: Gen P_BoxBodyElement
       interfaceObject = do
         maxDepth <- getSize
         depth <- choose (1, maxDepth)

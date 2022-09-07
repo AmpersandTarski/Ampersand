@@ -394,7 +394,7 @@ mkDanglingRefError ::
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Reference to non-existent " <> entity <> ": " <> tshow ref
 
-mkUndeclaredError :: Text -> P_BoxItem a -> Text -> CtxError
+mkUndeclaredError :: Text -> P_BoxItem a -> Name -> CtxError
 mkUndeclaredError entity objDef ref =
   case objDef of
     P_BxExpr {} ->

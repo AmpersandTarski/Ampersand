@@ -73,21 +73,21 @@ data Multiplicities = Mult MinValue MaxValue deriving (Show)
 
 data Association = OOAssoc
   { -- | source: the name of the source class
-    assSrc :: Text,
+    assSrc :: !Name,
     -- | the name of the attribute in the source class
-    assSrcPort :: Text,
+    assSrcPort :: !Name,
     -- | left hand side properties
-    asslhm :: Multiplicities,
-    -- | left hand side role
-    asslhr :: Text,
+    asslhm :: !Multiplicities,
+    -- | left hand side role, if it exists
+    asslhr :: !(Maybe Name),
     -- | target: the name of the target class
-    assTgt :: Text,
+    assTgt :: !Name,
     -- | right hand side properties
-    assrhm :: Multiplicities,
-    -- | right hand side role
-    assrhr :: Text,
+    assrhm :: !Multiplicities,
+    -- | right hand side role, if it exists
+    assrhr :: !(Maybe Name),
     -- | the relations that caused this association , if any.
-    assmdcl :: Maybe Relation
+    assmdcl :: !(Maybe Relation)
   }
   deriving (Show)
 

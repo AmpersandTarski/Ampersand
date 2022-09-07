@@ -23,7 +23,6 @@ module Ampersand.Core.A2P_Converters
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1 (BoxTxt (boxLabel))
 import Ampersand.Basics
 import Ampersand.Classes
 import RIO.Char
@@ -260,7 +259,7 @@ aCpt2pCpt cpt = case cpt of
   PlainConcept {} -> PCpt {p_cptnm = name cpt}
   ONE -> P_ONE
 
-aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
+aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
 aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
@@ -278,7 +277,7 @@ aObjectDef2pObjectDef x =
       P_BxTxt
         { box_label = boxLabel oDef,
           pos = origin oDef,
-          obj_txt = boxtxt oDef
+          box_txt = boxtxt oDef
         }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim

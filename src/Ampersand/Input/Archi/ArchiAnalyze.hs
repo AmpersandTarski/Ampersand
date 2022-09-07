@@ -49,7 +49,9 @@ archi2PContext archiRepoFilename -- e.g. "CArepository.archimate"
   do
     -- hSetEncoding stdout utf8
     archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
-    let typeLookup atom = (Map.lookup atom . typeMap Nothing) archiRepo
+    let typeLookup :: Text1 -> Maybe Text1
+        typeLookup atom = (Map.lookup atom . typeMap Nothing) archiRepo
+
     let archiRepoWithProps = (grindArchi (Nothing, typeLookup, Nothing) . identifyProps []) archiRepo
     --     let relPops = (filter (not.null.p_popps) . sortRelPops . map fst4) archiRepoWithProps
     --     let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst4) archiRepoWithProps
@@ -111,12 +113,16 @@ sameRel rel rel' = dec_nm rel == dec_nm rel' && dec_sign rel == dec_sign rel'
 samePurp :: PPurpose -> PPurpose -> Bool
 samePurp prp prp' = pexObj prp == pexObj prp' && mString (pexMarkup prp) == mString (pexMarkup prp')
 
+-- | Namespace for archi models. For a first attempt, I now leave it as simple as can be:
+archiNameSpace :: NameSpace
+archiNameSpace = []
+
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops =
   pure
     PCtx
-      { ctx_nm = archRepoName archiRepo,
+      { ctx_nm = toName archiNameSpace $ archRepoName archiRepo,
         ctx_pos = [],
         ctx_lang = Just Dutch,
         ctx_markup = Nothing,
@@ -146,13 +152,13 @@ mkArchiContext [archiRepo] pops =
           $ pops
         where
           isRelevant :: ArchiGrain -> Bool
-          isRelevant ag = dec_nm (grainRel ag) `L.notElem` ["inside", "inView"]
+          isRelevant ag = (text1ToText . tName . grainRel) ag `L.notElem` ["inside", "inView"]
           inView :: ArchiGrain -> Bool
           inView ag = case archiViewname ag of
             Nothing -> False
             Just nm -> nm == viewName vw
           participatingRel :: ArchiGrain -> Bool
-          participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map PCpt ["Relationship", "Property", "View"]
+          participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (PCpt . toName archiNameSpace . toText1Unsafe) ["Relationship", "Property", "View"]
       _ -> fatal "May not call vwAts on a non-view element"
 
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
@@ -192,7 +198,7 @@ mkArchiContext [archiRepo] pops =
         mkPattern vw =
           P_Pat
             { pos = OriginUnknown,
-              pt_nm = viewName vw,
+              pt_nm = toName archiNameSpace $ viewName vw,
               pt_rls = [],
               pt_gns = [],
               pt_dcs = sortDecls . map grainRel . vwAts $ vw,
@@ -220,8 +226,8 @@ mkArchiContext _ _ = fatal "Something dead-wrong with mkArchiContext."
 
 -- | `data ArchiRepo` represents an entire ArchiMate repository in one Haskell data structure.
 data ArchiRepo = ArchiRepo
-  { archRepoId :: Text,
-    archRepoName :: Text,
+  { archRepoId :: Text1,
+    archRepoName :: Text1,
     archFolders :: [Folder],
     archProperties :: [ArchiProp],
     archPurposes :: [ArchiPurpose]
@@ -232,7 +238,7 @@ data ArchiRepo = ArchiRepo
 data ArchiGrain = ArchiGrain
   { grainPop :: P_Population,
     grainRel :: P_Relation,
-    archiViewname :: Maybe Text,
+    archiViewname :: Maybe Text1,
     grainPurp :: PPurpose
   }
 
@@ -257,27 +263,27 @@ data Folder = Folder
 -- | `data ArchiObj` represents every ArchiMate element in the ArchiMate repo
 data ArchiObj
   = Element
-      { elemId :: Text,
+      { elemId :: Text1,
         elemName :: Text,
-        elemType :: Text,
+        elemType :: Text1,
         elemDocu :: Text,
         elemProps :: [ArchiProp],
         elemDocus :: [ArchiDocu]
       }
   | Relationship
-      { relId :: Text,
+      { relId :: Text1,
         relName :: Text,
-        relType :: Text,
+        relType :: Text1,
         relDocu :: Text,
         relProps :: [ArchiProp],
         relDocus :: [ArchiDocu],
-        relSrc :: Text,
-        relTgt :: Text,
+        relSrc :: Text1,
+        relTgt :: Text1,
         relAccTp :: Text
       }
   | View
-      { viewId :: Text,
-        viewName :: Text,
+      { viewId :: Text1,
+        viewName :: Text1,
         --  , viewType   :: Text       -- this is always "archimate:ArchimateDiagramModel" in Archi
         viewDocu :: Text,
         viewProps :: [ArchiProp],
@@ -294,7 +300,7 @@ data Child = Child
     --, chldId         :: Text
     --, chldAlgn       :: Text
     --, chldFCol       :: Text
-    chldElem :: Text,
+    chldElem :: Text1,
     --, trgtConn       :: Text
     --, bound          :: Bound
     srcConns :: [SourceConnection],
@@ -315,7 +321,7 @@ newtype SourceConnection = SrcConn
     --  sConId         :: Text,
     --  sConSrc        :: Text,
     --  sConTgt        :: Text,
-    sConRel :: Text
+    sConRel :: Text1
     --  sConRelat      :: [Relation],
     --  sCbendPts      :: [BendPoint]
   }
@@ -331,7 +337,7 @@ data BendPoint = BendPt
 -}
 
 data ArchiProp = ArchiProp
-  { archPropId :: Maybe Text,
+  { archPropId :: Maybe Text1,
     archPropKey :: Text,
     archPropVal :: Text
   }
@@ -357,7 +363,7 @@ newtype ArchiDocu = ArchiDocu
 --   of class WithProperties.
 class WithProperties a where
   allProps :: a -> [ArchiProp] -- takes all properties from an ArchiRepo, a Folder, or an Element
-  identifyProps :: [Text] -> a -> a -- distributes identifiers ( [Text] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
+  identifyProps :: [Text1] -> a -> a -- distributes identifiers ( [Text1] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
 
 instance WithProperties ArchiRepo where
   allProps archiRepo = allProps (archFolders archiRepo) <> archProperties archiRepo
@@ -367,7 +373,7 @@ instance WithProperties ArchiRepo where
         archFolders = identifyProps fldrIds (archFolders archiRepo)
       }
     where
-      identifiers = map (\i -> "pr-" <> tshow i) [0 :: Integer ..]
+      identifiers = map (\i -> toText1Unsafe $ "pr-" <> tshow i) [0 :: Integer ..]
       len = (length . allProps . archFolders) archiRepo
       fldrIds = take len identifiers
       propIds = drop len identifiers
@@ -416,13 +422,13 @@ instance WithProperties a => WithProperties [a] where
 --   we must grind that contents into binary tables. For that purpose, we define the
 --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
 class MetaArchi a where
-  typeMap :: Maybe Text -> a -> Map Text Text -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
+  typeMap :: Maybe Text1 -> a -> Map Text1 Text1 -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
   -- grindArchi takes two parameters:
   --  1. the view name (Maybe Text), just used when scanning inside a view to link an ArchiMate object to a view;
   --  2. a lookup function (Text->Maybe Text) called typeLookup, that looks up the type of an ArchiMate object. E.g. typeLookup ("702221af-2740-46e2-a0ae-c64d0226ff95") = "BusinessRole"
 
   grindArchi ::
-    (Maybe Text, Text -> Maybe Text, Maybe Text) ->
+    (Maybe Text1, Text1 -> Maybe Text1, Maybe Text1) ->
     a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
     [ArchiGrain]
 
@@ -431,21 +437,21 @@ instance MetaArchi ArchiRepo where
     typeMap Nothing (archFolders archiRepo)
   grindArchi env archiRepo =
     [ translateArchiElem
-        "name"
-        ("ArchiRepo", "Text")
+        (toText1Unsafe "name")
+        (toText1Unsafe "ArchiRepo", toText1Unsafe "Text")
         Nothing
         (Set.singleton P_Uni)
-        [(archRepoId archiRepo, archRepoName archiRepo)]
+        [(text1ToText $ archRepoId archiRepo, text1ToText $ archRepoName archiRepo)]
     ]
       <> [ translateArchiElem
-             "purpose"
-             ("ArchiRepo", "Text")
+             (toText1Unsafe "purpose")
+             (toText1Unsafe "ArchiRepo", toText1Unsafe "Text")
              Nothing
              (Set.singleton P_Uni)
-             [(archRepoId archiRepo, archPurpVal purp) | purp <- archPurposes archiRepo]
+             [(text1ToText $ archRepoId archiRepo, archPurpVal purp) | purp <- archPurposes archiRepo]
            | (not . null . archPurposes) archiRepo
          ]
-      <> [ translateArchiElem "propOf" ("Property", "ArchiRepo") Nothing (Set.singleton P_Uni) [(propid, archRepoId archiRepo)]
+      <> [ translateArchiElem (toText1Unsafe "propOf") (toText1Unsafe "Property", toText1Unsafe "ArchiRepo") Nothing (Set.singleton P_Uni) [(text1ToText propid, text1ToText $ archRepoId archiRepo)]
            | prop <- archProperties archiRepo,
              Just propid <- [archPropId prop]
          ]
@@ -466,53 +472,62 @@ instance MetaArchi ArchiObj where
     Map.fromList [(elemId element, elemType element)]
       <> typeMap maybeViewName (elemProps element)
   typeMap maybeViewName relation@Relationship {} =
-    Map.fromList [(relId relation, "Relationship")]
+    Map.fromList [(relId relation, toText1Unsafe "Relationship")]
       <> typeMap maybeViewName (relProps relation)
   typeMap _ diagram@View {} =
-    Map.fromList [(viewId diagram, "View") | (not . T.null . viewName) diagram]
+    Map.fromList [(viewId diagram, toText1Unsafe "View")]
       <> typeMap (Just (viewName diagram)) (viewProps diagram)
   grindArchi env@(_, _, maybeViewname) element@Element {} =
-    [ translateArchiElem "name" (elemType element, "Text") maybeViewname (Set.singleton P_Uni) [(elemId element, elemName element)]
+    [ translateArchiElem (toText1Unsafe "name") (elemType element, toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ elemId element, elemName element)]
       | (not . T.null . elemName) element
     ]
-      <> [ translateArchiElem "docu" (elemType element, "Text") maybeViewname (Set.singleton P_Uni) [(elemId element, elemDocu element)] -- documentation in the XML-tag
+      <> [ translateArchiElem (toText1Unsafe "docu") (elemType element, toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ elemId element, elemDocu element)] -- documentation in the XML-tag
            | (not . T.null . elemDocu) element
          ]
-      <> [ translateArchiElem "docu" (elemType element, "Text") maybeViewname (Set.singleton P_Uni) [(elemId element, archDocuVal eldo)] -- documentation with <documentation/> tags.
+      <> [ translateArchiElem (toText1Unsafe "docu") (elemType element, toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ elemId element, archDocuVal eldo)] -- documentation with <documentation/> tags.
            | eldo <- elemDocus element
          ]
-      <> [ translateArchiElem "propOf" ("Property", "ArchiObject") maybeViewname (Set.singleton P_Uni) [(propid, elemId element)]
+      <> [ translateArchiElem (toText1Unsafe "propOf") (toText1Unsafe "Property", toText1Unsafe "ArchiObject") maybeViewname (Set.singleton P_Uni) [(text1ToText propid, text1ToText $ elemId element)]
            | prop <- elemProps element,
              Just propid <- [archPropId prop]
          ]
       <> (concatMap (grindArchi env) . elemProps) element
   grindArchi env@(_, typeLookup, maybeViewname) relation@Relationship {} =
-    [translateArchiElem relLabel (xType, yType) maybeViewname Set.empty [(relSrc relation, relTgt relation)]]
-      <> [translateArchiElem "name" ("Relationship", "Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relLabel)]]
-      <> [translateArchiElem "type" ("Relationship", "Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relTyp)]]
-      <> [translateArchiElem "source" ("Relationship", xType) maybeViewname (Set.singleton P_Uni) [(relId relation, relSrc relation)]]
-      <> [translateArchiElem "target" ("Relationship", yType) maybeViewname (Set.singleton P_Uni) [(relId relation, relTgt relation)]]
-      <> [ translateArchiElem "docu" ("Relationship", "Text") maybeViewname (Set.singleton P_Uni) [(relId relation, relDocu relation)] -- documentation in the XML-tag
+    [translateArchiElem relLabel (xType, yType) maybeViewname Set.empty [(text1ToText $ relSrc relation, text1ToText $ relTgt relation)]]
+      <> [translateArchiElem (toText1Unsafe "name") (toText1Unsafe "Relationship", toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, text1ToText relLabel)]]
+      <> [translateArchiElem (toText1Unsafe "type") (toText1Unsafe "Relationship", toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, text1ToText relTyp)]]
+      <> [translateArchiElem (toText1Unsafe "source") (toText1Unsafe "Relationship", xType) maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, text1ToText $ relSrc relation)]]
+      <> [translateArchiElem (toText1Unsafe "target") (toText1Unsafe "Relationship", yType) maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, text1ToText $ relTgt relation)]]
+      <> [ translateArchiElem (toText1Unsafe "docu") (toText1Unsafe "Relationship", toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, relDocu relation)] -- documentation in the XML-tag
            | (not . T.null . relDocu) relation
          ]
-      <> [ translateArchiElem "docu" ("Relationship", "Text") maybeViewname (Set.singleton P_Uni) [(relId relation, archDocuVal reldo)] -- documentation with <documentation/> tags.
+      <> [ translateArchiElem (toText1Unsafe "docu") (toText1Unsafe "Relationship", toText1Unsafe "Text") maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, archDocuVal reldo)] -- documentation with <documentation/> tags.
            | reldo <- relDocus relation
          ]
-      <> [ translateArchiElem "accessType" ("Relationship", "AccessType") maybeViewname (Set.singleton P_Uni) [(relId relation, relAccTp relation)]
+      <> [ translateArchiElem (toText1Unsafe "accessType") (toText1Unsafe "Relationship", toText1Unsafe "AccessType") maybeViewname (Set.singleton P_Uni) [(text1ToText $ relId relation, relAccTp relation)]
            | (not . T.null . relAccTp) relation
          ]
-      <> [ translateArchiElem "propOf" ("Property", "Relationship") maybeViewname (Set.singleton P_Uni) [(propid, relId relation)]
+      <> [ translateArchiElem (toText1Unsafe "propOf") (toText1Unsafe "Property", toText1Unsafe "Relationship") maybeViewname (Set.singleton P_Uni) [(text1ToText propid, text1ToText $ relId relation)]
            | prop <- relProps relation,
              Just propid <- [archPropId prop]
          ]
       <> (concatMap (grindArchi env) . relProps) relation
     where
+      relTyp :: Text1
       relTyp = (relCase . unFix . relType) relation -- the relation type,  e.g. "access"
-      relLabel = case relTyp of
+        where
+          unFix :: Text1 -> Text1
+          unFix str
+            | str == toText1Unsafe "Relationship" = str
+            | "Relationship" `T.isSuffixOf` text1ToText str =
+              toText1Unsafe . T.reverse . T.drop 12 . T.reverse . text1ToText $ str
+            | otherwise = str
+      relLabel :: Text1
+      relLabel = case text1ToText relTyp of
         "association" ->
-          if T.null (relName relation)
-            then relTyp
-            else relCase (relName relation) -- the name given by the user, e.g. "create/update"
+          case T.uncons (relName relation) of
+            Nothing -> relTyp
+            Just (h, tl) -> relCase $ Text1 h tl -- the name given by the user, e.g. "create/update"
         _ -> relTyp
       xType = case typeLookup (relSrc relation) of
         Just str -> str
@@ -521,24 +536,22 @@ instance MetaArchi ArchiObj where
         Just str -> str
         Nothing -> fatal ("No Archi-object found for Archi-identifier " <> tshow (relTgt relation))
   grindArchi (_, typeLookup, _) diagram@View {} =
-    [ translateArchiElem "name" ("View", "Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewName diagram)]
-      | (not . T.null . viewName) diagram
-    ]
-      <> [ translateArchiElem "propOf" ("Property", "View") maybeViewName (Set.singleton P_Uni) [(propid, viewId diagram)]
+    [translateArchiElem (toText1Unsafe "name") (toText1Unsafe "View", toText1Unsafe "Text") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, text1ToText $ viewName diagram)]]
+      <> [ translateArchiElem (toText1Unsafe "propOf") (toText1Unsafe "Property", toText1Unsafe "View") maybeViewName (Set.singleton P_Uni) [(text1ToText propid, text1ToText $ viewId diagram)]
            | prop <- viewProps diagram,
              Just propid <- [archPropId prop]
          ]
-      <> [ translateArchiElem "docu" ("View", "Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewDocu diagram)] -- documentation in the XML-tag
+      <> [ translateArchiElem (toText1Unsafe "docu") (toText1Unsafe "View", toText1Unsafe "Text") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, viewDocu diagram)] -- documentation in the XML-tag
            | (not . T.null . viewDocu) diagram
          ]
-      <> [ translateArchiElem "docu" ("View", "Text") maybeViewName (Set.singleton P_Uni) [(viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
+      <> [ translateArchiElem (toText1Unsafe "docu") (toText1Unsafe "View", toText1Unsafe "Text") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
            | viewdoc <- viewDocus diagram
          ]
-      <> [ translateArchiElem "inView" (chldType, "View") maybeViewName Set.empty [(chldElem viewelem, viewId diagram)] -- register the views in which an element is used.
+      <> [ translateArchiElem (toText1Unsafe "inView") (chldType, toText1Unsafe "View") maybeViewName Set.empty [(text1ToText $ chldElem viewelem, text1ToText $ viewId diagram)] -- register the views in which an element is used.
            | viewelem <- viewChilds diagram,
              Just chldType <- [typeLookup (chldElem viewelem)]
          ]
-      <> [ translateArchiElem "viewpoint" ("View", "ViewPoint") maybeViewName (Set.singleton P_Uni) [(viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
+      <> [ translateArchiElem (toText1Unsafe "viewpoint") (toText1Unsafe "View", toText1Unsafe "ViewPoint") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
            | (not . T.null . viewPoint) diagram
          ]
       <> (concatMap (grindArchi (Nothing, typeLookup, maybeViewName)) . viewProps) diagram
@@ -550,17 +563,17 @@ instance MetaArchi Child where
   typeMap _ _ =
     Map.empty
   grindArchi env@(Just viewid, typeLookup, maybeViewName) diagrObj =
-    [ translateArchiElem "inView" (elType, viewtype) maybeViewName Set.empty [(chldElem child, viewid)]
+    [ translateArchiElem (toText1Unsafe "inView") (elType, viewtype) maybeViewName Set.empty [(text1ToText $ chldElem child, text1ToText viewid)]
       | child <- childs diagrObj,
         Just elType <- [typeLookup (chldElem child)],
         Just viewtype <- [typeLookup viewid]
     ]
-      <> [ translateArchiElem "inView" (connType, viewtype) maybeViewName Set.empty [(sConRel conn, viewid)]
+      <> [ translateArchiElem (toText1Unsafe "inView") (connType, viewtype) maybeViewName Set.empty [(text1ToText $ sConRel conn, text1ToText viewid)]
            | conn <- srcConns diagrObj,
              Just connType <- [typeLookup (sConRel conn)],
              Just viewtype <- [typeLookup viewid]
          ]
-      <> [ translateArchiElem "inside" (childtype, objtype) maybeViewName Set.empty [(chldElem child, chldElem diagrObj)]
+      <> [ translateArchiElem (toText1Unsafe "inside") (childtype, objtype) maybeViewName Set.empty [(text1ToText $ chldElem child, text1ToText $ chldElem diagrObj)]
            | child <- childs diagrObj,
              Just childtype <- [typeLookup (chldElem child)],
              Just objtype <- [typeLookup (chldElem diagrObj)]
@@ -570,23 +583,23 @@ instance MetaArchi Child where
 
 instance MetaArchi ArchiProp where
   typeMap _ property =
-    Map.fromList [(propid, "Property") | Just propid <- [archPropId property]]
+    Map.fromList [(propid, toText1Unsafe "Property") | Just propid <- [archPropId property]]
   grindArchi (_, _, maybeViewname) property =
     [ translateArchiElem
-        "key"
-        ("Property", "Text")
+        (toText1Unsafe "key")
+        (toText1Unsafe "Property", toText1Unsafe "Text")
         maybeViewname
         (Set.singleton P_Uni)
-        [ (propid, archPropKey property)
+        [ (text1ToText propid, archPropKey property)
           | (not . T.null . archPropKey) property,
             Just propid <- [archPropId property]
         ],
       translateArchiElem
-        "value"
-        ("Property", "Text")
+        (toText1Unsafe "value")
+        (toText1Unsafe "Property", toText1Unsafe "Text")
         maybeViewname
         (Set.singleton P_Uni)
-        [ (propid, archPropVal property)
+        [ (text1ToText propid, archPropVal property)
           | (not . T.null . archPropVal) property,
             Just propid <- [archPropId property]
         ]
@@ -600,16 +613,16 @@ instance MetaArchi a => MetaArchi [a] where
 --   It looks redundant to produce both a `P_Population` and a `P_Relation`, but the first contains the population and the second is used to
 --   include the metamodel of ArchiMate in the population. This saves the author the effort of maintaining an ArchiMate-metamodel.
 translateArchiElem ::
-  Text ->
-  (Text, Text) ->
-  Maybe Text ->
+  Text1 ->
+  (Text1, Text1) ->
+  Maybe Text1 ->
   Set.Set PProp ->
   [(Text, Text)] ->
   ArchiGrain
 translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
   ArchiGrain
     { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
-      grainRel = P_Relation label ref_to_signature props [] Nothing [] OriginUnknown,
+      grainRel = P_Relation relName' ref_to_signature props [] Nothing [] OriginUnknown,
       archiViewname = maybeViewName,
       grainPurp =
         PRef2
@@ -620,25 +633,19 @@ translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
           }
     }
   where
+    relName' = toName archiNameSpace label
+    srcName = toName archiNameSpace srcLabel
+    tgtName = toName archiNameSpace tgtLabel
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel
-    ref_to_relation = PNamedRel OriginUnknown label (Just ref_to_signature)
+    ref_to_relation = PNamedRel OriginUnknown relName' (Just ref_to_signature)
     ref_to_signature :: P_Sign
-    ref_to_signature = P_Sign (PCpt srcLabel) (PCpt tgtLabel)
+    ref_to_signature = P_Sign (PCpt srcName) (PCpt tgtName)
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
-relCase :: Text -> Text
-relCase str = case T.uncons str of
-  Nothing -> fatal "fatal empty relation identifier."
-  Just (c, cs) -> escapeIdentifier . T.cons (toLower c) $ cs
-
--- | Function `unFix` is used to remove the "Relationship" suffix, which is specific to Archi.
-unFix :: Text -> Text
-unFix str =
-  if "Relationship" `T.isSuffixOf` str
-    then (T.reverse . T.drop 12 . T.reverse) str
-    else str
+relCase :: Text1 -> Text1
+relCase (Text1 c cs) = escapeIdentifier $ Text1 (toLower c) cs
 
 -- | Function `tuples2PAtomPairs` is used to save ourselves some writing effort
 tuples2PAtomPairs :: [(Text, Text)] -> [PAtomPair]
@@ -679,10 +686,14 @@ processStraight absFilePath =
           returnA
             -<
               ArchiRepo
-                { archRepoName = T.pack repoNm,
-                  archRepoId = T.pack repoId,
+                { archRepoName = case T.uncons $ T.pack repoNm of
+                    Nothing -> toText1Unsafe "ArchimateModel"
+                    Just (h, tl) -> Text1 h tl,
+                  archRepoId = case T.uncons $ T.pack repoId of
+                    Nothing -> toText1Unsafe "ArchimateModel"
+                    Just (h, tl) -> Text1 h tl,
                   archFolders = folders,
-                  archProperties = [prop {archPropId = Just $ "pr-" <> tshow i} | (prop, i) <- zip props [length (allProps folders) ..]],
+                  archProperties = [prop {archPropId = Just . toText1Unsafe $ "pr-" <> tshow i} | (prop, i) <- zip props [length (allProps folders) ..]],
                   archPurposes = purposes
                 }
 
@@ -712,8 +723,14 @@ processStraight absFilePath =
         >>> proc l -> do
           -- don't use atTag, because there is recursion in getFolder.
           objId <- getAttrValue "id" -< l
+          let objId' = case T.uncons $ T.pack objId of
+                Nothing -> fatal "id is empty"
+                Just (h, tl) -> Text1 h tl
           objName <- getAttrValue "name" -< l
           objType <- getAttrValue "xsi:type" -< l
+          let objType' = case T.uncons $ T.pack objType of
+                Nothing -> fatal $ "Type is empty for object " <> T.pack objId
+                Just (h, tl) -> Text1 h tl
           objDocu <- getAttrValue "documentation" -< l -- This accommodates Archi vs. 2
           objDocus <- listA (getChildren >>> getDocu) -< l
           objProps <- listA (getChildren >>> getProp) -< l
@@ -727,44 +744,48 @@ processStraight absFilePath =
               if objType == "archimate:ArchimateDiagramModel"
                 then
                   View
-                    { viewId = T.pack objId,
-                      viewName = T.pack objName,
+                    { viewId = objId',
+                      viewName = case T.uncons $ T.pack objName of
+                        Nothing -> fatal $ "View name is empty for view " <> T.pack objId
+                        Just (h, tl) -> Text1 h tl,
                       viewDocu = T.pack objDocu,
                       viewDocus = objDocus,
                       viewProps = objProps,
                       viewPoint = T.pack objVwPt,
                       viewChilds = objChilds
                     }
-                else
-                  if null objSrc
-                    then
-                      Element
-                        { elemId = T.pack objId,
-                          elemName = T.pack objName,
-                          elemType = unPrefix (T.pack objType),
-                          elemDocu = T.pack objDocu,
-                          elemDocus = objDocus,
-                          elemProps = objProps
-                        }
-                    else
-                      Relationship
-                        { relId = T.pack objId,
-                          relName = T.pack objName,
-                          relType = unPrefix (T.pack objType),
-                          relDocu = T.pack objDocu,
-                          relDocus = objDocus,
-                          relProps = objProps,
-                          relSrc = T.pack objSrc,
-                          relTgt = T.pack objTgt,
-                          relAccTp = T.pack objAccTp
-                        }
+                else case objSrc of
+                  [] ->
+                    Element
+                      { elemId = objId',
+                        elemName = T.pack objName,
+                        elemType = unPrefix objType',
+                        elemDocu = T.pack objDocu,
+                        elemDocus = objDocus,
+                        elemProps = objProps
+                      }
+                  (h : tl) ->
+                    Relationship
+                      { relId = objId',
+                        relName = T.pack objName,
+                        relType = unPrefix objType',
+                        relDocu = T.pack objDocu,
+                        relDocus = objDocus,
+                        relProps = objProps,
+                        relSrc = Text1 h $ T.pack tl,
+                        relTgt = case objTgt of
+                          [] -> fatal $ "No target defined for relation " <> text1ToText objId'
+                          (c : s) -> Text1 c (T.pack s),
+                        relAccTp = T.pack objAccTp
+                      }
 
-    unPrefix :: Text -> Text
-    unPrefix str =
-      if "archimate:" `T.isPrefixOf` str
-        then T.drop 10 str
-        else str
-
+    unPrefix :: Text1 -> Text1
+    unPrefix str
+      | text1ToText str == thePrefix = fatal $ text1ToText str <> " found without continuation text."
+      | thePrefix `T.isPrefixOf` text1ToText str = toText1Unsafe . T.drop (T.length thePrefix) . text1ToText $ str
+      | otherwise = str
+      where
+        thePrefix = "archimate:"
     getProp :: ArrowXml a => a XmlTree ArchiProp
     getProp =
       isElem >>> (hasName "property" <+> hasName "properties")
@@ -812,7 +833,9 @@ processStraight absFilePath =
                   --                      , chldId   = T.pack chldId'
                   --                      , chldAlgn = T.pack chldAlgn'
                   --                      , chldFCol = T.pack chldFCol'
-                  chldElem = T.pack chldElem',
+                  chldElem = case chldElem' of
+                    [] -> fatal "Child element found without archimateElement"
+                    c : s -> Text1 c (T.pack s),
                   --                      , trgtConn = T.pack trgtConn'
                   --                      , bound    = bound'
                   srcConns = srcConns',
@@ -840,9 +863,11 @@ processStraight absFilePath =
                   --                          sConId    = T.pack sConId'
                   --                          sConSrc   = T.pack sConSrc'
                   --                          sConTgt   = T.pack sConTgt'
-                  sConRel = T.pack sConRel'
-                  --                          sConRelat = sConRelat'
-                  --                          sCbendPts = bendPts'
+                  sConRel = case sConRel' of
+                    [] -> fatal "sourceConnection found without archimateRelationship"
+                    c : s -> Text1 c (T.pack s)
+                    --                          sConRelat = sConRelat'
+                    --                          sCbendPts = bendPts'
                 }
 
 {- We no longer analyze all information that is available.

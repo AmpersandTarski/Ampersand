@@ -27,11 +27,13 @@ module Ampersand.Input.ADL1.ParsingLib
     valPosOf,
 
     -- * Basic parsers
-    pConid,
-    pDoubleQuotedString,
     pAmpersandMarkup,
-    pVarid,
     pCrudString,
+    pDoubleQuotedString,
+    pDoubleQuotedString1,
+    pLowerCaseName,
+    pSingleWord,
+    pUpperCaseName,
 
     -- * special parsers
     pAtomValInPopulation,
@@ -139,24 +141,28 @@ sepBy1 p sep = liftM2 (NE.:|) p (many (sep >> p))
 -----------------------------------------------------------
 
 -- | Take a keyword and return a parser for that keyword
-pKey :: String -> AmpParser String
-pKey key = match (LexKeyword key)
+pKey :: Text1 -> AmpParser Text1
+pKey key = toText1Unsafe <$> match (LexKeyword key)
 
 -- | Take an operator and return a parser for that operator
-pOperator :: String -> AmpParser String
-pOperator op = match (LexOperator op)
+pOperator :: Text1 -> AmpParser Text1
+pOperator op = toText1Unsafe <$> match (LexOperator op)
 
 -- | a parser for a dash (-)
-pDash :: AmpParser String
-pDash = pOperator "-"
+pDash :: AmpParser Text1
+pDash = pOperator (Text1 '-' mempty)
+
+-- | a parser for a plus (+)
+pPlus :: AmpParser Text1
+pPlus = pOperator (Text1 '+' mempty)
 
 -- | a parser for a semicolon (;)
-pSemi :: AmpParser String
-pSemi = pOperator ";"
+pSemi :: AmpParser Text1
+pSemi = pOperator (Text1 ';' mempty)
 
 -- | a parser for a colon (:)
-pColon :: AmpParser String
-pColon = pOperator ":"
+pColon :: AmpParser Text1
+pColon = pOperator (Text1 ':' mempty)
 
 -----------------------------------------------------------
 -- Token parsers
@@ -176,22 +182,12 @@ check predicate = tokenPrim showTok nextPos matchTok
     matchTok (Tok l _) = predicate l
 
 -- | a parser for a given @Lexeme@
-match :: Lexeme -> AmpParser String
+match :: Lexeme -> AmpParser Text
 match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
-
---- Conid ::= UpperChar AlphaNumericChar*
-pConid :: AmpParser String
-pConid =
-  check
-    ( \case
-        LexSafeID s@(h : _) -> if isUpper h then Just s else Nothing
-        _ -> Nothing
-    )
-    <?> "upper case identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
-pDoubleQuotedString :: AmpParser String
+pDoubleQuotedString :: AmpParser Text
 pDoubleQuotedString =
   check
     ( \case
@@ -200,8 +196,19 @@ pDoubleQuotedString =
     )
     <?> "double quoted string"
 
+pDoubleQuotedString1 :: AmpParser Text1
+pDoubleQuotedString1 =
+  check
+    ( \case
+        LexDubbleQuotedString t -> case T.uncons t of
+          Nothing -> Nothing
+          Just _ -> Just (toText1Unsafe t)
+        _ -> Nothing
+    )
+    <?> "double quoted string"
+
 --- Markup ::= '{+' Any* '+}'
-pAmpersandMarkup :: AmpParser String
+pAmpersandMarkup :: AmpParser Text
 pAmpersandMarkup =
   check
     ( \case
@@ -210,19 +217,42 @@ pAmpersandMarkup =
     )
     <?> "markup"
 
+--- Conid ::= UpperChar AlphaNumericChar*
+pUpperCaseName :: NameSpace -> AmpParser Name
+pUpperCaseName ns =
+  toName ns
+    <$> ( check
+            ( \case
+                LexSafeID (Text1 h tl) -> if isUpper h then Just $ Text1 h tl else Nothing
+                _ -> Nothing
+            )
+            <?> "upper case identifier"
+        )
+
 --- Varid ::= LowerChar AlphaNumericChar*
-pVarid :: AmpParser String
-pVarid =
+pLowerCaseName :: NameSpace -> AmpParser Name
+pLowerCaseName ns =
+  toName ns
+    <$> ( check
+            ( \case
+                LexSafeID (Text1 h tl) -> if isLower h then Just $ Text1 h tl else Nothing
+                _ -> Nothing
+            )
+            <?> "lower case identifier"
+        )
+
+pSingleWord :: AmpParser Text1
+pSingleWord =
   check
     ( \case
-        LexSafeID s@(h : _) -> if isLower h then Just s else Nothing
+        LexSafeID s -> Just s
         _ -> Nothing
     )
-    <?> "lower case identifier"
+    <?> "single word identifier"
 
 -- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
 -- at most once. The order of the characters is free.
-pCrudString :: AmpParser String
+pCrudString :: AmpParser Text1
 pCrudString =
   check
     ( \case
@@ -231,15 +261,17 @@ pCrudString =
     )
     <?> "crud definition"
   where
-    testCrud s =
+    testCrud :: Text1 -> Maybe Text1
+    testCrud (Text1 h tl) =
       if and $
         [ not (null s),
           L.nub caps == caps
         ]
           ++ map (`elem` ['C', 'R', 'U', 'D']) caps
-        then Just s
+        then Just (Text1 h tl)
         else Nothing
       where
+        s = h : T.unpack tl
         caps = map toUpper s
 
 data Value
@@ -260,9 +292,9 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 -- the user can lift the constraints by embeding the value in curly brackets. In
 -- such a case, the user could use a negative number as a singleton expression.
 pAtomValInPopulation constrainsApply =
-  VBoolean True <$ pKey "TRUE"
-    <|> VBoolean False <$ pKey "FALSE"
-    <|> VRealString <$> (T.pack <$> pDoubleQuotedString)
+  VBoolean True <$ pKey (toText1Unsafe "TRUE")
+    <|> VBoolean False <$ pKey (toText1Unsafe "FALSE")
+    <|> VRealString <$> pDoubleQuotedString
     <|> VDateTime <$> pUTCTime
     <|> VDate <$> pDay
     <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
@@ -298,7 +330,7 @@ pUTCTime =
 -- Integers /float(Double)
 -----------------------------------------------------------
 
-pNumber :: Int -> AmpParser String
+pNumber :: Int -> AmpParser Text
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pNumeric :: AmpParser (Either Int Double)
@@ -314,8 +346,8 @@ pIsNeg :: AmpParser Bool
 pIsNeg =
   fromMaybe False
     <$> pMaybe
-      ( True <$ pOperator "-"
-          <|> False <$ pOperator "+"
+      ( True <$ pDash
+          <|> False <$ pPlus
       )
 
 pUnsignedNumeric :: AmpParser (Either Int Double)
@@ -327,10 +359,10 @@ pUnsignedNumeric = check isNr
     isNr (LexFloat d) = Just (Right d)
     isNr _ = Nothing
 
-pZero :: AmpParser String
+pZero :: AmpParser Text
 pZero = pNumber 0
 
-pOne :: AmpParser String
+pOne :: AmpParser Text
 pOne = pNumber 1
 
 -----------------------------------------------------------
@@ -338,10 +370,10 @@ pOne = pNumber 1
 -----------------------------------------------------------
 
 -- matches special characters
-pSpec :: Char -> AmpParser String
-pSpec sym = match (LexSymbol sym)
+pSpec :: Char -> AmpParser Text1
+pSpec sym = toText1Unsafe <$> match (LexSymbol sym)
 
-pComma :: AmpParser String
+pComma :: AmpParser Text1
 pComma = pSpec ','
 
 pParens :: AmpParser a -> AmpParser a
