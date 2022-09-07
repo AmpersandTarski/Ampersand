@@ -22,6 +22,7 @@ module Ampersand.FSpec.FSpec
     RelStore (..),
     metaValues,
     SqlAttribute (..),
+    SqlColumName,
     sqlColumNameToString,
     sqlColumNameToText1,
     text1ToSqlColumName,

@@ -395,6 +395,9 @@ data Pragma = Pragma
   }
   deriving (Show, Data, Eq)
 
+instance Traced Pragma where
+  origin = pos
+
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
 --   However, in the parser, we need to distinguish between two relations with the same name and signature when they are in different locations.

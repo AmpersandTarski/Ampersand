@@ -388,7 +388,7 @@ mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 mkDanglingRefError ::
   Text -> -- The type of thing that dangles. eg. "Rule"
-  Text -> -- the reference itself. eg. "Rule 42"
+  Name -> -- the reference itself. eg. "Rule 42"
   Origin -> -- The place where the thing is found.
   CtxError
 mkDanglingRefError entity ref orig =
@@ -426,8 +426,8 @@ mkMultipleInterfaceError role' ifc duplicateIfcs =
     "Multiple interfaces named " <> tshow (name ifc) <> " for role " <> tshow role' <> ":"
       <> T.intercalate "\n    " (map (tshow . origin) (ifc : duplicateIfcs))
 
-mkInvalidCRUDError :: Origin -> Text -> CtxError
-mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `" <> str <> "`."
+mkInvalidCRUDError :: Origin -> Text1 -> CtxError
+mkInvalidCRUDError o x = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `" <> text1ToText x <> "`."
 
 mkCrudForRefInterfaceError :: Origin -> CtxError
 mkCrudForRefInterfaceError o = CTXE o "Crud specification is not allowed in combination with a reference to an interface."

@@ -1333,7 +1333,7 @@ data ContextInfo = CI
     -- | a list of all Representations
     reprList :: ![Representation],
     -- | a map of declarations and the corresponding types
-    declDisambMap :: !(Map.Map Text (Map.Map SignOrd Expression)),
+    declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
     -- | generalisation relations again, as a type system (including phantom types)
@@ -1356,7 +1356,19 @@ data Type
   = UserConcept !Name
   | BuiltIn !TType
   | RepresentSeparator
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Named Type where
+  name t = case t of
+    UserConcept nm -> nm
+    BuiltIn tt -> toNameUnsafe ["AmpersandBuiltIn"] (tshow tt)
+    RepresentSeparator -> toNameUnsafe ["AmpersandBuiltIn"] "RepresentSeparator"
+
+instance Show Type where
+  show a = T.unpack $ case a of
+    UserConcept nm -> text1ToText . tName $ nm
+    BuiltIn tt -> "BuiltIn " <> tshow tt
+    RepresentSeparator -> "RepresentSeparator"
 
 -- for faster comparison
 newtype SignOrd = SignOrd Signature

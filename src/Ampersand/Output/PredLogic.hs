@@ -55,7 +55,7 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
     varMap (Var n c) = vChar c <> (T.pack . replicate (length vars -1)) '\''
       where
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
-        vChar = T.toLower . T.take 1 . name
+        vChar = T.toLower . T.take 1 . plainNameOf
 
 -- predLshow exists for the purpose of translating a predicate logic expression to natural language.
 -- example:  'predLshow l e' translates expression 'e'
@@ -112,7 +112,7 @@ predLshow lang vMap = charshow 0
           | isIdent (EDcD rel) -> wrap i 5 (charshow 5 pexpr) <> T.pack " = " <> wrap i 5 (charshow 5 pexpr')
           | otherwise ->
             if T.null (decprL <> decprM <> decprR)
-              then d <> T.pack " " <> name rel <> T.pack " " <> c
+              then d <> T.pack " " <> (text1ToText . tName) rel <> T.pack " " <> c
               else decprL <> d <> decprM <> c <> decprR
           where
             d = wrap i 5 (charshow 5 pexpr)
@@ -124,7 +124,7 @@ predLshow lang vMap = charshow 0
         Constant txt -> txt
         Variable v -> vMap v
         Vee v w -> wrap i 5 (vMap v) <> T.pack " V " <> wrap i 5 (vMap w)
-        Function pexpr rel -> name rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
+        Function pexpr rel -> (text1ToText . tName) rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
         Kleene0 rs -> wrap i 6 (charshow 6 rs <> T.pack "*")
         Kleene1 rs -> wrap i 7 (charshow 7 rs <> T.pack "+")
         Not rs -> wrap i 8 (l (toNL " niet ", toEN " not ") <> charshow 8 rs)
