@@ -33,7 +33,7 @@ chpConceptualAnalysis env lev fSpec =
           Dutch ->
             para
               ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
-                  <> (singleQuoted . str . name) fSpec
+                  <> (singleQuoted . str . text1ToText . tName) fSpec
                   <> " te kunnen bespreken. "
                   <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
                   <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
@@ -41,7 +41,7 @@ chpConceptualAnalysis env lev fSpec =
           English ->
             para
               ( "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
-                  <> (singleQuoted . str . name) fSpec
+                  <> (singleQuoted . str . text1ToText . tName) fSpec
                   <> "."
                   <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
                   <> "The text targets readers with sufficient skill in conceptual modeling."
@@ -79,11 +79,11 @@ chpConceptualAnalysis env lev fSpec =
           <> ( case (outputLang', patOfTheme themeContent) of
                  (Dutch, Just pat) ->
                    -- announce the conceptual diagram
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . text1ToText . tName) pat <> ".")
                      -- draw the conceptual diagram
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (English, Just pat) ->
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . name) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . text1ToText . tName) pat <> ".")
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (_, Nothing) -> mempty
              )
@@ -119,7 +119,7 @@ chpConceptualAnalysis env lev fSpec =
               [ (plain . text . l) (NL "Attribuut", EN "Attribute"),
                 (plain . text . l) (NL "Betekenis", EN "Meaning")
               ]
-              ( [ [ (plain . text . name) attr,
+              ( [ [ (plain . text . text1ToText . tName) attr,
                     defineRel rel
                   ]
                   | attr <- clAtts cl,
@@ -152,7 +152,7 @@ chpConceptualAnalysis env lev fSpec =
 
         caSubsections :: [(Blocks, [Relation])]
         caSubsections =
-          [ ( header 3 (str (name cl)) <> entityBlocks,
+          [ ( header 3 (str . text1ToText . tName $ cl) <> entityBlocks,
               entityRels
             )
             | cl <- themeClasses,
@@ -166,7 +166,12 @@ chpConceptualAnalysis env lev fSpec =
             [ (plain . text . l) (NL "Relatie", EN "Relation"),
               (plain . text . l) (NL "Betekenis", EN "Meaning")
             ]
-            ( [ [ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")"),
+            ( [ [ (plain . text)
+                    ( (text1ToText . tName) rel <> " "
+                        <> if null cls
+                          then tshow (sign rel)
+                          else l (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map (text1ToText . tName)) cls <> ")"
+                    ),
                   defineRel rel -- use "tshow.attType" for the technical type.
                 ]
                 | rel <- rels,
@@ -283,7 +288,7 @@ chpConceptualAnalysis env lev fSpec =
                         ( L.intersperse
                             (str ", ")
                             [ hyperLinkTo (XRefConceptualAnalysisRelation d)
-                                <> text (" (" <> name d <> ")")
+                                <> text (" (" <> (text1ToText . tName) d <> ")")
                               | d <- Set.elems $ bindedRelationsIn r
                             ]
                         )

@@ -23,7 +23,7 @@ plugs2Sheets :: FSpec -> [(Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (Text, Worksheet)
-    plug2sheet (InternalPlug plug) = fmap (name plug,) sheet
+    plug2sheet (InternalPlug plug) = fmap (text1ToText . tName $ plug,) sheet
       where
         sheet :: Maybe Worksheet
         sheet = case matrix of
@@ -50,12 +50,12 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                     toCell
                     [ if isFirstField -- In case of the first field of the table, we put the fieldname inbetween brackets,
                     -- to be able to find the population again by the reader of the .xlsx file
-                        then Just $ "[" <> name att <> "]"
+                        then Just $ "[" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "]"
                         else Just . cleanUpRelName $
                           case plug of
-                            TblSQL {} -> name att
-                            BinSQL {} -> name plug,
-                      Just $ name . target . attExpr $ att
+                            TblSQL {} -> text1ToText . sqlColumNameToText1 . attSQLColName $ att
+                            BinSQL {} -> text1ToText . tName $ plug,
+                      Just . text1ToText . tName . target . attExpr $ att
                     ]
                 cleanUpRelName :: Text -> Text
                 --TODO: This is a not-so-nice way to get the relationname from the fieldname.

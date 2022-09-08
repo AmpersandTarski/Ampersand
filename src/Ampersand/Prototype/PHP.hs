@@ -133,7 +133,7 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
 
 tempDbName :: FSpec -> Text
-tempDbName fSpec = "TempDB_" <> name fSpec
+tempDbName fSpec = "TempDB_" <> (text1ToText . tName) fSpec
 
 connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
@@ -273,6 +273,5 @@ createTempDatabase fSpec = do
               ) :
               ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
               where
-                query = insertQuery True tableName attrNames tblRecords
-                tableName = name plug
-                attrNames = fmap attName . plugAttributes $ plug
+                query = insertQuery True (text1ToText . tName $ plug) attrNames tblRecords
+                attrNames = attSQLColName <$> plugAttributes plug

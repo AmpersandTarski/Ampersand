@@ -12,6 +12,7 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
+import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -21,7 +22,7 @@ import qualified RIO.Set as Set
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
-    { cdName = "classification_" <> name fSpec,
+    { cdName = prependToPlainName "classification_" $ name fSpec,
       groups = [],
       classes = map clas . Set.elems . concs . vgens $ fSpec,
       assocs = [],
@@ -41,10 +42,13 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
-        { attNm = attName att,
-          attTyp = if isProp (attExpr att) then "Prop" else (name . target . attExpr) att,
+        { attNm = fullNameToName . sqlColumNameToText1 $ attSQLColName att,
+          attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att -- optional if NULL is allowed
         }
+
+propTypeName :: Name
+propTypeName = toName nameSpaceFormalAmpersand (toText1Unsafe "Prop")
 
 class CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
@@ -57,7 +61,7 @@ class CDAnalysable a where
 buildClass :: FSpec -> A_Concept -> Class
 buildClass fSpec root =
   case classOf fSpec root of
-    Nothing -> fatal $ "Concept is not a class: `" <> name root <> "`."
+    Nothing -> fatal $ "Concept is not a class: `" <> (text1ToText . tName) root <> "`."
     Just exprs ->
       OOClass
         { clName = name root,
@@ -90,7 +94,7 @@ ooAttr r =
     { attNm = case Set.elems $ bindedRelationsIn r of
         [] -> fatal $ "No bindedRelations in an expression: " <> tshow r
         h : _ -> name h,
-      attTyp = if isProp r then "Prop" else (name . target) r,
+      attTyp = if isProp r then propTypeName else (name . target) r,
       attOptional = (not . isTot) r
     }
 
@@ -108,10 +112,10 @@ decl2assocOrAggr d =
       { assSrc = name $ source d,
         assSrcPort = name d,
         asslhm = mults . flp $ EDcD d,
-        asslhr = "",
+        asslhr = Nothing,
         assTgt = name $ target d,
         assrhm = mults $ EDcD d,
-        assrhr = name d,
+        assrhr = Just $ name d,
         assmdcl = Just d
       }
 
@@ -128,7 +132,7 @@ dclIsShown fSpec nodeConcepts d =
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
     OOclassdiagram
-      { cdName = "logical_" <> name pat,
+      { cdName = prependToPlainName "logical_" $ name pat,
         groups = [],
         classes = map (buildClass fSpec) entities,
         assocs = lefts assocsAndAggrs,
@@ -150,7 +154,7 @@ instance CDAnalysable Pattern where
 instance CDAnalysable FSpec where
   cdAnalysis grouped _ fSpec =
     OOclassdiagram
-      { cdName = "logical_" <> name fSpec,
+      { cdName = prependToPlainName "logical_" $ name fSpec,
         groups = groups',
         classes = classes',
         assocs = lefts assocsAndAggrs,
@@ -159,7 +163,7 @@ instance CDAnalysable FSpec where
         ooCpts = entities
       }
     where
-      groups' :: [(Text, NonEmpty Class)]
+      groups' :: [(Name, NonEmpty Class)]
       (groups', classes')
         | grouped =
           ( [ ( name pat,
@@ -206,7 +210,7 @@ instance CDAnalysable FSpec where
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram
-    { cdName = "technical_" <> name fSpec,
+    { cdName = prependToPlainName "technical_" $ name fSpec,
       groups = [],
       classes = allClasses,
       assocs = allAssocs,
@@ -230,7 +234,7 @@ tdAnalysis fSpec =
                 where
                   mkOOattr a =
                     OOAttr
-                      { attNm = attName a,
+                      { attNm = sqlAttToName a,
                         attTyp = (name . target . attExpr) a,
                         attOptional = False -- A BinSQL contains pairs, so NULL cannot occur.
                       },
@@ -249,10 +253,10 @@ tdAnalysis fSpec =
     ooAtt :: [SqlAttribute] -> SqlAttribute -> CdAttribute
     ooAtt kernelAtts f =
       OOAttr
-        { attNm = attName f,
+        { attNm = sqlAttToName f,
           attTyp =
             if isProp (attExpr f) && (f `notElem` kernelAtts)
-              then "Prop"
+              then propTypeName
               else (name . target . attExpr) f,
           attOptional = attNull f -- optional if NULL is allowed
         }
@@ -270,12 +274,12 @@ tdAnalysis fSpec =
                 mkOOAssoc a =
                   OOAssoc
                     { assSrc = sqlname t,
-                      assSrcPort = attName a,
+                      assSrcPort = sqlAttToName a,
                       asslhm = Mult MinZero MaxMany,
-                      asslhr = "",
+                      asslhr = Nothing,
                       assTgt = name . getConceptTableFor fSpec . target . attExpr $ a,
                       assrhm = Mult MinOne MaxOne,
-                      assrhr = "",
+                      assrhr = Nothing,
                       assmdcl = Nothing
                     }
         relOf f =
@@ -290,14 +294,19 @@ tdAnalysis fSpec =
         mkRel t (expr, f) =
           OOAssoc
             { assSrc = sqlname t,
-              assSrcPort = attName f,
+              assSrcPort = sqlAttToName f,
               asslhm = (mults . flp) expr,
-              asslhr = attName f,
+              asslhr = Just $ sqlAttToName f,
               assTgt = name . getConceptTableFor fSpec . target $ expr,
               assrhm = mults expr,
-              assrhr = case [name d | d <- Set.elems $ bindedRelationsIn expr] of h : _ -> h; _ -> fatal "no relations used in expr",
+              assrhr = case toList . Set.elems $ bindedRelationsIn expr of
+                h : _ -> Just (name h)
+                _ -> fatal "no relations used in expr",
               assmdcl = Nothing
             }
+
+sqlAttToName :: SqlAttribute -> Name
+sqlAttToName = toName [] . sqlColumNameToText1 . attSQLColName
 
 mults :: Expression -> Multiplicities
 mults r =

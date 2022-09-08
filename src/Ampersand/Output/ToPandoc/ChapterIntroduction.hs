@@ -25,10 +25,10 @@ chpIntroduction env now fSpec =
             ( text "Dit document"
                 <> (note . para . text) ("Dit document is gegenereerd op " <> date <> " om " <> time <> ", dmv. " <> longVersion appVersion <> ".")
                 <> text " definieert de functionaliteit van een informatiesysteem genaamd "
-                <> (singleQuoted . text . name) fSpec
+                <> (singleQuoted . text . text1ToText . tName) fSpec
                 <> text ". "
                 <> text "Het definieert de database en de business-services van "
-                <> (text . name) fSpec
+                <> (text . text1ToText . tName) fSpec
                 <> text " door middel van bedrijfsregels"
                 <> (note . para . text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
                 <> text ". "
@@ -65,12 +65,12 @@ chpIntroduction env now fSpec =
                    then
                      para
                        ( text "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van "
-                           <> (singleQuoted . text . name) fSpec
+                           <> (singleQuoted . text . text1ToText . tName) fSpec
                            <> text ". "
                            <> text "De gegevensanalyse in "
                            <> hyperLinkTo DataAnalysis
                            <> text " beschrijft de gegevensverzamelingen waarop "
-                           <> (singleQuoted . text . name) fSpec
+                           <> (singleQuoted . text . text1ToText . tName) fSpec
                            <> text " wordt gebouwd. "
                            <> text "Elk volgend hoofdstuk definieert één business service. "
                            <> text "Hierdoor kunnen bouwers zich concentreren op één service tegelijk. "
@@ -78,7 +78,7 @@ chpIntroduction env now fSpec =
                        <> para
                          ( text "Tezamen ondersteunen deze services alle geldende afspraken. "
                              <> text "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt "
-                             <> (singleQuoted . text . name) fSpec
+                             <> (singleQuoted . text . text1ToText . tName) fSpec
                              <> text " compliance ten aanzien van alle gestelde afspraken. "
                          )
                    else mempty
@@ -88,10 +88,10 @@ chpIntroduction env now fSpec =
             ( text "This document"
                 <> (note . para . text) ("This document was generated at " <> date <> " on " <> time <> ", using " <> longVersion appVersion <> ".")
                 <> text " defines the functionality of an information system called "
-                <> (singleQuoted . text . name) fSpec
+                <> (singleQuoted . text . text1ToText . tName) fSpec
                 <> text ". "
                 <> text "It defines the database and the business services of "
-                <> (text . name) fSpec
+                <> (text . text1ToText . tName) fSpec
                 <> text " by means of business rules"
                 <> (note . para . text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
                 <> text ". "
@@ -127,12 +127,12 @@ chpIntroduction env now fSpec =
                    then
                      para
                        ( text "Chapters that follow have the builders of "
-                           <> (singleQuoted . text . name) fSpec
+                           <> (singleQuoted . text . text1ToText . tName) fSpec
                            <> text " as their intended audience. "
                            <> text "The data analysis in "
                            <> hyperLinkTo DataAnalysis
                            <> text " describes the data sets upon which "
-                           <> (singleQuoted . text . name) fSpec
+                           <> (singleQuoted . text . text1ToText . tName) fSpec
                            <> text " is built. "
                            <> text "Each subsequent chapter defines one business service. "
                            <> text "This allows builders to focus on a single service at a time. "
@@ -140,7 +140,7 @@ chpIntroduction env now fSpec =
                        <> para
                          ( text "Together, these services fulfill all commitments. "
                              <> text "By disclosing all functionality exclusively through these services, "
-                             <> (singleQuoted . text . name) fSpec
+                             <> (singleQuoted . text . text1ToText . tName) fSpec
                              <> text " ensures compliance to all rules agreed upon."
                          )
                    else mempty

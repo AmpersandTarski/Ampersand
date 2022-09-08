@@ -6,6 +6,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiag2Dot
 import Ampersand.Graphic.ClassDiagram (ClassDiag)
 import Ampersand.Graphic.Fspec2ClassDiagrams
@@ -49,13 +50,13 @@ data Picture = Pict
   }
 
 instance Named PictureTyp where -- for displaying a fatal error
-  name PTClassDiagram = "PTClassDiagram"
+  name PTClassDiagram = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTClassDiagram"
   name (PTCDPattern pat) = name pat
   name (PTDeclaredInPat pat) = name pat
   name (PTCDConcept c) = name c
   name (PTCDRule r) = name r
-  name (PTLogicalDM grouped) = "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
-  name PTTechnicalDM = "PTTechnicalDM"
+  name (PTLogicalDM grouped) = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
+  name PTTechnicalDM = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTTechnicalDM"
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
@@ -68,8 +69,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Classification of " <> name fSpec
-              Dutch -> "Classificatie van " <> name fSpec
+              English -> "Classification of " <> (text1ToText . tName) fSpec
+              Dutch -> "Classificatie van " <> (text1ToText . tName) fSpec
         }
     PTLogicalDM grouped ->
       Pict
@@ -79,8 +80,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Logical data model of " <> name fSpec
-              Dutch -> "Logisch gegevensmodel van " <> name fSpec
+              English -> "Logical data model of " <> (text1ToText . tName) fSpec
+              Dutch -> "Logisch gegevensmodel van " <> (text1ToText . tName) fSpec
         }
     PTTechnicalDM ->
       Pict
@@ -90,8 +91,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Technical data model of " <> name fSpec
-              Dutch -> "Technisch gegevensmodel van " <> name fSpec
+              English -> "Technical data model of " <> (text1ToText . tName) fSpec
+              Dutch -> "Technisch gegevensmodel van " <> (text1ToText . tName) fSpec
         }
     PTCDConcept cpt ->
       Pict
@@ -101,8 +102,8 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of " <> name cpt
-              Dutch -> "Conceptueel diagram van " <> name cpt
+              English -> "Concept diagram of " <> (text1ToText . tName) cpt
+              Dutch -> "Conceptueel diagram van " <> (text1ToText . tName) cpt
         }
     PTDeclaredInPat pat ->
       Pict
@@ -112,8 +113,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of relations in " <> name pat
-              Dutch -> "Conceptueel diagram van relaties in " <> name pat
+              English -> "Concept diagram of relations in " <> (text1ToText . tName) pat
+              Dutch -> "Conceptueel diagram van relaties in " <> (text1ToText . tName) pat
         }
     PTCDPattern pat ->
       Pict
@@ -123,8 +124,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of the rules in " <> name pat
-              Dutch -> "Conceptueel diagram van " <> name pat
+              English -> "Concept diagram of the rules in " <> (text1ToText . tName) pat
+              Dutch -> "Conceptueel diagram van " <> (text1ToText . tName) pat
         }
     PTCDRule rul ->
       Pict
@@ -134,8 +135,8 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of rule " <> name rul
-              Dutch -> "Conceptueel diagram van regel " <> name rul
+              English -> "Concept diagram of rule " <> (text1ToText . tName) rul
+              Dutch -> "Conceptueel diagram van regel " <> (text1ToText . tName) rul
         }
   where
     outputLang' :: Lang
@@ -164,10 +165,10 @@ pictureFileName pr = toBaseFileName $
     PTClassDiagram -> "Classification"
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
     PTTechnicalDM -> "TechnicalDataModel"
-    PTCDConcept cpt -> "CDConcept" <> urlEncodedName (name cpt)
-    PTDeclaredInPat pat -> "RelationsInPattern" <> urlEncodedName (name pat)
-    PTCDPattern pat -> "CDPattern" <> urlEncodedName (name pat)
-    PTCDRule r -> "CDRule" <> urlEncodedName (name r)
+    PTCDConcept cpt -> "CDConcept" <> (text1ToText . urlEncodedName . name) cpt
+    PTDeclaredInPat pat -> "RelationsInPattern" <> (text1ToText . urlEncodedName . name) pat
+    PTCDPattern pat -> "CDPattern" <> (text1ToText . urlEncodedName . name) pat
+    PTCDRule r -> "CDRule" <> (text1ToText . urlEncodedName . name) r
 
 -- | conceptualStructure produces a uniform structure,
 --   so the transformation to .dot-format can be done with one function.
@@ -226,7 +227,7 @@ conceptualStructure fSpec pr =
                   $ bindedRelationsIn r,
               csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
             }
-    _ -> fatal ("No conceptual graph defined for pictureReq " <> name pr <> ".")
+    _ -> fatal ("No conceptual graph defined for pictureReq " <> (text1ToText . tName) pr <> ".")
   where
     isaEdges cpts = [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
     gs = fsisa fSpec
@@ -297,7 +298,7 @@ writePicture pict = do
 --                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
 --     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
-mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph Text
+mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph Name
 mkDotGraph env pict =
   case dotContent pict of
     ClassDiagram x -> classdiagram2dot env x
@@ -333,7 +334,7 @@ data ConceptualStructure = CStruct
     csIdgs :: [(A_Concept, A_Concept)]
   }
 
-conceptual2Dot :: ConceptualStructure -> DotGraph Text
+conceptual2Dot :: ConceptualStructure -> DotGraph Name
 conceptual2Dot cs@(CStruct _ rels idgs) =
   DotGraph
     { strictGraph = False,
@@ -384,20 +385,20 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
           }
     }
   where
-    nodes :: HasDotParts a => a -> [DotNode Text]
+    nodes :: HasDotParts a => a -> [DotNode Name]
     nodes = dotNodes cs
-    edges :: HasDotParts a => a -> [DotEdge Text]
+    edges :: HasDotParts a => a -> [DotEdge Name]
     edges = dotEdges cs
 
 class HasDotParts a where
-  dotNodes :: ConceptualStructure -> a -> [DotNode Text]
-  dotEdges :: ConceptualStructure -> a -> [DotEdge Text]
+  dotNodes :: ConceptualStructure -> a -> [DotNode Name]
+  dotEdges :: ConceptualStructure -> a -> [DotEdge Name]
 
-baseNodeId :: ConceptualStructure -> A_Concept -> Text
+baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
   case lookup c (zip (allCpts x) [(1 :: Int) ..]) of
-    Just i -> "cpt_" <> tshow i
-    _ -> fatal ("element " <> name c <> " not found by nodeLabel.")
+    Just i -> toName [] . toText1Unsafe $ "cpt_" <> tshow i
+    _ -> fatal ("element " <> (text1ToText . tName) c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
 allCpts (CStruct cpts' rels idgs) = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
@@ -410,7 +411,7 @@ instance HasDotParts A_Concept where
     [ DotNode
         { nodeID = baseNodeId x cpt,
           nodeAttributes =
-            [ Label . StrLabel . TL.fromStrict . name $ cpt
+            [ Label . StrLabel . TL.fromStrict . text1ToText . tName $ cpt
             ]
         }
     ]
@@ -420,12 +421,12 @@ instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
       [ DotNode
-          { nodeID = baseNodeId x (source rel) <> name rel,
+          { nodeID = prependToPlainName (text1ToText . tName . baseNodeId x . source $ rel) $ name rel,
             nodeAttributes =
               [ Color [WC (X11Color Transparent) Nothing],
                 Shape PlainText,
                 Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  name rel :
+                  (text1ToText . tName) rel :
                   case Set.toList . properties $ rel of
                     [] -> []
                     ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
@@ -437,7 +438,7 @@ instance HasDotParts Relation where
     | isEndo rel =
       [ DotEdge
           { fromNode = baseNodeId x . source $ rel,
-            toNode = baseNodeId x (source rel) <> name rel,
+            toNode = prependToPlainName (text1ToText . tName . baseNodeId x . source $ rel) $ name rel,
             edgeAttributes =
               [ Dir NoDir,
                 edgeLenFactor 0.4,
@@ -451,7 +452,7 @@ instance HasDotParts Relation where
             toNode = baseNodeId x . target $ rel,
             edgeAttributes =
               [ Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  name rel :
+                  (text1ToText . tName) rel :
                   case Set.toList . properties $ rel of
                     [] -> []
                     ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
