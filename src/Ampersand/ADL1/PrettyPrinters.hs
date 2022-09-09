@@ -64,15 +64,6 @@ isId xs =
         isFirstIdChar x = x == '_' || isLetter x
         isIdChar x = isFirstIdChar x || elem x ['0' .. '9']
 
-isUpperId :: Name -> Bool
-isUpperId xs =
-  case T.uncons (plainNameOf xs) of
-    Nothing -> False
-    Just (h, _) -> isId xs && h `elem` ['A' .. 'Z']
-
-maybeQuoteName :: Name -> Doc
-maybeQuoteName a = if isId a then (text . T.unpack . plainNameOf) a else quoteN a
-
 maybeQuoteLabel :: Maybe Text1 -> Doc
 maybeQuoteLabel lbl =
   case lbl of
@@ -81,10 +72,6 @@ maybeQuoteLabel lbl =
       [] -> mempty
       [word] -> (text . T.unpack) word <> text ":"
       _ -> quote (text1ToText t) <> text ":"
-
--- adds quotes unless it's an upper identifier
-quoteConcept :: Name -> Doc
-quoteConcept a = if isUpperId a then (text . T.unpack . plainNameOf) a else quoteN a
 
 prettyhsep :: Pretty a => [a] -> Doc
 prettyhsep = hsep . map pretty
@@ -101,10 +88,13 @@ listOf1 = listOf . NE.toList
 separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
+instance Pretty Name where
+  pretty a = if isId a then (text . T.unpack . plainNameOf) a else quoteN a
+
 instance Pretty P_Context where
   pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
-      <+> quoteConcept nm
+      <~> nm
       <~> lang
       <~> markup
       <+\> perline metas
@@ -137,16 +127,16 @@ instance Pretty MetaData where
 
 instance Pretty P_RoleRule where
   pretty (Maintain _ roles rules) =
-    text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap maybeQuoteName $ rules)
+    text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap pretty $ rules)
 
 instance Pretty Role where
-  pretty (Role nm) = maybeQuoteName nm
-  pretty (Service nm) = maybeQuoteName nm
+  pretty (Role nm) = pretty nm
+  pretty (Service nm) = pretty nm
 
 instance Pretty P_Pattern where
   pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
-      <+> quoteConcept nm
+      <~> nm
       <+\> perline rls
       <+\> perline gns
       <+\> perline dcs
@@ -254,7 +244,7 @@ instance Pretty (P_Rule TermPrim) where
       rName =
         if T.null (plainNameOf nm)
           then empty
-          else maybeQuoteName nm <> text ":"
+          else pretty nm <> text ":"
 
 instance Pretty (P_Enforce TermPrim) where
   pretty (P_Enforce _ rel op expr) =
@@ -268,9 +258,9 @@ instance Pretty EnforceOperator where
     IsSameSet _ -> text ":="
 
 instance Pretty PConceptDef where
-  pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
+  pretty (PConceptDef _ nm def mean _) -- from, the last argument, is not used in the parser
     =
-    text "CONCEPT" <+> quoteConcept cpt
+    text "CONCEPT" <~> nm
       <+> pretty def <+\> perline mean
 
 instance Pretty PCDDef where
@@ -297,7 +287,7 @@ instance Pretty TType where
 
 instance Pretty P_Interface where
   pretty (P_Ifc isAPI nm roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ") <+> maybeQuoteName nm
+    text (if isAPI then "API " else "INTERFACE ") <~> nm
       <+> iroles
       <+> ( case obj of
               P_BxExpr {} ->
@@ -331,7 +321,7 @@ instance Pretty P_Cruds where
 instance Pretty a => Pretty (P_SubIfc a) where
   pretty p = case p of
     P_Box _ c bs -> boxSpec c <+> text "[" <> listOf bs <> text "]"
-    P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <+> maybeQuoteName str
+    P_InterfaceRef _ isLink nm -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <~> nm
     where
       boxSpec :: BoxHeader -> Doc
       boxSpec x = text "BOX " <+> encloseSep (text " <") (text "> ") (text " ") items
@@ -347,7 +337,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
 
 instance Pretty (P_IdentDf TermPrim) where
   pretty (P_Id _ lbl cpt ats) =
-    text "IDENT" <+> maybeQuoteName lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
+    text "IDENT" <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
   pretty (P_IdentExp obj) =
@@ -364,13 +354,13 @@ instance Pretty (P_IdentSegmnt TermPrim) where
       view (Just v) = pretty v
 
 instance Pretty P_ViewDef where
-  pretty (P_Vd _ lbl cpt True Nothing ats) =
+  pretty (P_Vd _ nm cpt True Nothing ats) =
     -- legacy syntax
-    text "VIEW" <+> maybeQuoteName lbl <+> text ":"
+    text "VIEW" <~> nm <+> text ":"
       <~> cpt <+> parens (listOf ats)
-  pretty (P_Vd _ lbl cpt isDefault html ats) =
+  pretty (P_Vd _ nm cpt isDefault html ats) =
     -- new syntax
-    text "VIEW" <+> maybeQuoteName lbl <+> text ":"
+    text "VIEW" <~> nm <+> text ":"
       <~> cpt
       <+> (if isDefault then text "DEFAULT" else empty)
       <+> braces (listOf ats)
@@ -405,14 +395,14 @@ instance Pretty PPurpose where
 
 instance Pretty PRef2Obj where
   pretty p = case p of
-    PRef2ConceptDef str -> text "CONCEPT" <+> quoteConcept str
+    PRef2ConceptDef nm -> text "CONCEPT" <~> nm
     PRef2Relation namedRel -> text "RELATION" <~> namedRel
-    PRef2Rule str -> text "RULE" <+> maybeQuoteName str
-    PRef2IdentityDef str -> text "IDENT" <+> maybeQuoteName str
-    PRef2ViewDef str -> text "VIEW" <+> maybeQuoteName str
-    PRef2Pattern str -> text "PATTERN" <+> maybeQuoteName str
-    PRef2Interface str -> text "INTERFACE" <+> maybeQuoteName str
-    PRef2Context str -> text "CONTEXT" <+> maybeQuoteName str
+    PRef2Rule nm -> text "RULE" <~> nm
+    PRef2IdentityDef nm -> text "IDENT" <~> nm
+    PRef2ViewDef nm -> text "VIEW" <~> nm
+    PRef2Pattern nm -> text "PATTERN" <~> nm
+    PRef2Interface nm -> text "INTERFACE" <~> nm
+    PRef2Context nm -> text "CONTEXT" <~> nm
 
 instance Pretty PMeaning where
   pretty (PMeaning markup) = text "MEANING" <~> markup
@@ -421,7 +411,7 @@ instance Pretty PMessage where
   pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-  pretty (PCpt nm) = quoteConcept nm
+  pretty (PCpt nm) = pretty nm
   pretty P_ONE = text "ONE"
 
 instance Pretty P_Sign where
