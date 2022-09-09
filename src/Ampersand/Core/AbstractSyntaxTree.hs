@@ -711,7 +711,7 @@ data BoxTxt = BoxTxt
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     boxLabel :: !(Maybe Text1),
     boxpos :: !Origin,
-    boxtxt :: !Text1
+    boxtxt :: !Text
   }
   deriving (Show)
 

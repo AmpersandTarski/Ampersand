@@ -679,7 +679,7 @@ pBoxBodyElement ns =
         <$> currPos
         <*> pMaybe pLabelAndColon
         <* (pKey . toText1Unsafe) "TXT"
-        <*> pDoubleQuotedString1
+        <*> pDoubleQuotedString
       where
         build orig lab txt =
           P_BxTxt

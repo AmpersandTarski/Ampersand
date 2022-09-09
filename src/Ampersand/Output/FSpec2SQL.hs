@@ -6,6 +6,7 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
+import Data.Text1 ((.<>), (<>.))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -39,7 +40,7 @@ dumpSQLqueries env fSpec =
     y = interfaceS fSpec <> interfaceG fSpec
     showInterface :: Interface -> [Text]
     showInterface ifc =
-      header ("INTERFACE: " <> name ifc)
+      header ("INTERFACE: " <> (text1ToText . tName) ifc)
         <> (map ("  " <>) . showObjDef . ifcObj) ifc
       where
         showObjDef :: ObjectDef -> [Text]
@@ -57,20 +58,21 @@ dumpSQLqueries env fSpec =
 
     showConjunct :: Conjunct -> [Text]
     showConjunct conj =
-      header (rc_id conj)
+      header (text1ToText . rc_id $ conj)
         <> [ "/*",
              "Conjunct expression:",
              "  " <> (showA . rc_conjunct $ conj),
              "Rules for this conjunct:"
            ]
-        <> map showRule (NE.toList $ rc_orgRules conj)
+        <> map (text1ToText . showRule) (NE.toList $ rc_orgRules conj)
         <> [ "*/",
              (queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";",
              ""
            ]
       where
+        showRule :: Rule -> Text1
         showRule r =
-          "  - " <> name r <> ": " <> showA r
+          "  - " .<> tName r <>. ": " <> showA r
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)

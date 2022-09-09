@@ -16,9 +16,15 @@ with the results from Haskell-based Ampersand rule evaluator.
 
 validateRulesSQL :: (HasLogFunc env) => FSpec -> RIO env [Text]
 validateRulesSQL fSpec = do
-  case filter (not . isSignal fSpec . fst) (allViolations fSpec) of
+  case filter (not . isSignal fSpec . fst) . allViolations $ fSpec of
     [] -> return ()
-    viols -> exitWith . ViolationsInDatabase . map stringify $ viols
+    viols -> exitWith . ViolationsInDatabase . map toTexts $ viols
+      where
+        toTexts :: (Rule, AAtomPairs) -> (Text, [Text])
+        toTexts (rule, pairs) = (text1ToText . tName $ rule, f <$> Set.elems pairs)
+          where
+            f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
+
   hSetBuffering stdout NoBuffering
 
   logDebug "Initializing temporary database"
@@ -47,11 +53,6 @@ validateRulesSQL fSpec = do
           return $
             "Validation error. The following expressions failed validation:" :
             map showVExp ves
-
-stringify :: (Rule, AAtomPairs) -> (Text, [Text])
-stringify (rule, pairs) = (name rule, map f . Set.elems $ pairs)
-  where
-    f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
 
 -- functions for extracting all expressions from the context
 

@@ -26,8 +26,8 @@ safeStr :: Gen Text
 safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
-safeStr1 :: Gen Text
-safeStr1 = safeStr `suchThat` (not . T.null)
+safeStr1 :: Gen Text1
+safeStr1 = toText1Unsafe <$> (safeStr `suchThat` (not . T.null))
 
 noEsc :: Text -> Bool
 noEsc = not . T.any (== '\\')
@@ -39,101 +39,99 @@ listOf1 p = (NE.:|) <$> p <*> listOf p
 safeFilePath :: Gen FilePath
 safeFilePath = T.unpack <$> safeStr
 
--- Genrates a valid ADL identifier
-identifier :: Gen Text
+-- | An identifier consists of a single word that starts with a letter. The other
+--   characters are all alphanumerical or '_'. Keywords are excluded from identifiers
+identifier :: Gen Text1
 identifier =
-  (T.cons <$> firstChar <*> (T.pack <$> listOf restChar))
-    `suchThat` noKeyword
+  ( Text1 <$> arbitrary `suchThat` isSafeIdChar True
+      <*> (T.pack <$> listOf (arbitrary `suchThat` isSafeIdChar False))
+  )
+    `suchThat` (not . isKeyword)
   where
-    firstChar :: Gen Char
-    firstChar = idChar True
-    restChar :: Gen Char
-    restChar = idChar False
-    noKeyword :: Text -> Bool
-    noKeyword x = x `notElem` map T.pack keywords
-    idChar :: Bool -> Gen Char
-    idChar isFirst = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar isFirst
+    isKeyword :: Text1 -> Bool
+    isKeyword x = x `elem` keywords
 
--- Genrates a valid ADL upper-case identifier
-upperId :: Gen Text
-upperId = identifier `suchThat` startUpper
+-- Genrates a valid ADL lower-case name
+lowercaseName :: Gen Name
+lowercaseName = arbitrary `suchThat` (firstLowercase . plainNameOf1)
   where
-    startUpper txt = case T.uncons txt of
-      Nothing -> False
-      Just (h, _) -> isUpper h
+    firstLowercase :: Text1 -> Bool
+    firstLowercase (Text1 c _) = isLower c
 
--- Genrates a valid ADL lower-case identifier
-lowerId :: Gen Text
-lowerId = identifier `suchThat` startLower
+-- Genrates a valid ADL upper-case name
+uppercaseName :: Gen Name
+uppercaseName = arbitrary `suchThat` (firstUppercase . plainNameOf1)
   where
-    startLower txt = case T.uncons txt of
-      Nothing -> False
-      Just (h, _) -> isLower h
+    firstUppercase :: Text1 -> Bool
+    firstUppercase (Text1 c _) = isUpper c
 
--- Generates an object
-objTermPrim :: ObjectKind -> Int -> Gen P_BoxBodyElement
-objTermPrim objectKind 0 = objTermPrim objectKind 1 -- minimum of 1 sub interface
-objTermPrim objectKind i = makeObj objectKind i
+data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind
 
-data ObjectKind = InterfaceKind | SubInterfaceKind | IdentSegmentKind
-
-makeObj :: ObjectKind -> Int -> Gen P_BoxBodyElement
-makeObj objectKind maxDepth =
+makeObj :: ObjectKind -> Gen P_BoxBodyElement
+makeObj objectKind =
   oneof $
-    (P_BxExpr <$> identifier <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> ifc) :
-      [P_BxTxt <$> identifier <*> arbitrary <*> safeStr | isTxtAllowed]
+    (P_BxExpr <$> labelGenerator <*> arbitrary <*> term <*> arbitrary <*> pure Nothing <*> subInterface objectKind) :
+      [P_BxTxt <$> labelGenerator <*> arbitrary <*> safeStr | isTxtAllowed]
   where
     isTxtAllowed = case objectKind of
       InterfaceKind -> False
-      SubInterfaceKind -> True
+      SubInterfaceKind _ -> True
       IdentSegmentKind -> False
+    labelGenerator :: Gen (Maybe Text1)
+    labelGenerator = case objectKind of
+      InterfaceKind -> Just <$> safeLabel
+      SubInterfaceKind _ -> Just <$> safeLabel
+      IdentSegmentKind -> pure Nothing
     term =
       -- depending on the kind, we need the term to be a namedRelation
       Prim <$> case objectKind of
         InterfaceKind -> PNamedR <$> arbitrary
-        SubInterfaceKind -> arbitrary
+        SubInterfaceKind _ -> arbitrary
         IdentSegmentKind -> PNamedR <$> arbitrary
-    ifc =
-      if maxDepth == 0
-        then pure Nothing
-        else
-          Just <$> case objectKind of
-            InterfaceKind -> subIfc SubInterfaceKind (maxDepth `div` 2)
-            SubInterfaceKind -> subIfc SubInterfaceKind maxDepth
-            IdentSegmentKind -> subIfc IdentSegmentKind (maxDepth `div` 2)
+    subInterface :: ObjectKind -> Gen (Maybe (P_SubIfc TermPrim))
+    subInterface objectKind' = case objectKind' of
+      InterfaceKind -> do
+        maxDepth <- getSize
+        depth <- choose (0, maxDepth)
+        subInterface (SubInterfaceKind {siMaxDepth = depth})
+      IdentSegmentKind -> pure Nothing
+      SubInterfaceKind 0 -> pure Nothing
+      SubInterfaceKind n ->
+        Just
+          <$> oneof
+            [ P_Box <$> arbitrary <*> arbitrary <*> listOf (makeObj (SubInterfaceKind {siMaxDepth = n -1})),
+              P_InterfaceRef <$> arbitrary <*> arbitrary <*> arbitrary
+            ]
 
-subIfc :: ObjectKind -> Int -> Gen P_SubInterface
-subIfc objectKind n
-  | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> identifier
-  | otherwise = P_Box <$> arbitrary <*> arbitrary <*> vectorOf n (objGen $ n `div` 2)
-  where
-    objGen = case objectKind of
-      InterfaceKind -> objTermPrim objectKind
-      SubInterfaceKind -> makeObj SubInterfaceKind
-      IdentSegmentKind -> objTermPrim objectKind
+instance Arbitrary Name where
+  arbitrary =
+    toName <$> listOf safeNamePart <*> safeNamePart
+    where
+      safeNamePart :: Gen Text1
+      safeNamePart = identifier `suchThat` requirements
+      requirements t =
+        T.all (/= '.') . text1ToText $ t
 
 instance Arbitrary BoxHeader where
-  arbitrary = BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
+  arbitrary =
+    BoxHeader
+      <$> arbitrary
+      <*> pure (toText1Unsafe "BOX")
+      <*> listOf arbitrary
 
 instance Arbitrary TemplateKeyValue where
   arbitrary =
     TemplateKeyValue
       <$> arbitrary
-      <*> identifier `suchThat` startsWithLetter
-      <*> liftArbitrary safeStr1
-    where
-      startsWithLetter :: Text -> Bool
-      startsWithLetter t = case T.uncons t of
-        Nothing -> False
-        Just (h, _) -> isLetter h
+      <*> identifier
+      <*> liftArbitrary safeStr
 
---- Now the arbitrary instances
 instance Arbitrary P_Cruds where
   arbitrary =
     P_Cruds <$> arbitrary
-      <*> (T.pack <$> suchThat (sublistOf "cCrRuUdD") isCrud)
+      <*> (toText1Unsafe . T.pack <$> (sublistOf "cCrRuUdD" `suchThat` requirements))
     where
-      isCrud str = L.nub (map toUpper str) == map toUpper str
+      requirements cs = length cs `elem` [1 .. 4] && map toUpper cs == (L.nub . map toUpper $ cs)
 
 instance Arbitrary Origin where
   arbitrary = pure OriginUnknown
@@ -141,7 +139,7 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
   arbitrary =
     PCtx
-      <$> identifier -- name
+      <$> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -164,7 +162,7 @@ instance Arbitrary MetaData where
   arbitrary = MetaData <$> arbitrary <*> safeStr1 <*> safeStr
 
 instance Arbitrary P_RoleRule where
-  arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 identifier
+  arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary Representation where
   arbitrary =
@@ -178,15 +176,15 @@ instance Arbitrary TType where
 instance Arbitrary Role where
   arbitrary =
     oneof
-      [ Role <$> identifier,
-        Service <$> identifier
+      [ Role <$> arbitrary,
+        Service <$> arbitrary
       ]
 
 instance Arbitrary P_Pattern where
   arbitrary =
     P_Pat
       <$> arbitrary
-        <*> identifier
+        <*> arbitrary
         <*> arbitrary
         <*> arbitrary
         <*> arbitrary
@@ -203,7 +201,7 @@ instance Arbitrary P_Pattern where
 instance Arbitrary P_Relation where
   arbitrary =
     P_Relation
-      <$> lowerId
+      <$> lowercaseName
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -317,7 +315,7 @@ instance Arbitrary (P_Rule TermPrim) where
   arbitrary =
     P_Rule
       <$> arbitrary
-      <*> identifier
+      <*> arbitrary
       <*> genRuleTerm
       <*> arbitrary
       <*> arbitrary
@@ -344,9 +342,17 @@ instance Arbitrary EnforceOperator where
 
 instance Arbitrary PConceptDef where
   arbitrary =
-    PConceptDef <$> arbitrary <*> identifier <*> arbitrary
+    PConceptDef <$> arbitrary <*> uppercaseName <*> arbitrary
       <*> arbitrary
-      <*> identifier
+      <*> arbitrary
+
+instance Arbitrary DefinitionContainer where
+  arbitrary =
+    oneof
+      [ CONTEXT <$> uppercaseName,
+        PATTERN <$> uppercaseName,
+        Module <$> arbitrary
+      ]
 
 instance Arbitrary PCDDef where
   arbitrary =
@@ -374,7 +380,7 @@ instance Arbitrary P_Population where
       ]
 
 instance Arbitrary P_NamedRel where
-  arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
+  arbitrary = PNamedRel <$> arbitrary <*> lowercaseName <*> arbitrary
 
 instance Arbitrary PAtomValue where
   -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
@@ -397,34 +403,25 @@ instance Arbitrary PAtomValue where
 instance Arbitrary P_Interface where
   arbitrary =
     P_Ifc <$> arbitrary
-      <*> identifier
       <*> arbitrary
-      <*> interfaceObject
+      <*> arbitrary
+      <*> makeObj InterfaceKind
       <*> arbitrary
       <*> safeStr
-    where
-      interfaceObject :: Gen P_BoxBodyElement
-      interfaceObject = do
-        maxDepth <- getSize
-        depth <- choose (1, maxDepth)
-        makeObj InterfaceKind depth
-
-instance Arbitrary P_SubInterface where
-  arbitrary = sized (subIfc SubInterfaceKind)
 
 instance Arbitrary P_IdentDef where
   arbitrary =
     P_Id <$> arbitrary
-      <*> identifier
+      <*> arbitrary
       <*> arbitrary `suchThat` notIsOne
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
-  arbitrary = P_IdentExp <$> sized (objTermPrim IdentSegmentKind)
+  arbitrary = P_IdentExp <$> makeObj IdentSegmentKind
 
 instance Arbitrary P_ViewDef where
   arbitrary =
-    P_Vd <$> arbitrary <*> identifier <*> arbitrary
+    P_Vd <$> arbitrary <*> arbitrary <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -445,19 +442,19 @@ instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
       ]
 
 instance Arbitrary PPurpose where
-  arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1
+  arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr
 
 instance Arbitrary PRef2Obj where
   arbitrary =
     oneof
-      [ PRef2ConceptDef <$> identifier,
+      [ PRef2ConceptDef <$> arbitrary,
         PRef2Relation <$> arbitrary,
-        PRef2Rule <$> identifier,
-        PRef2IdentityDef <$> identifier,
-        PRef2ViewDef <$> identifier,
-        PRef2Pattern <$> identifier,
-        PRef2Interface <$> identifier,
-        PRef2Context <$> identifier
+        PRef2Rule <$> arbitrary,
+        PRef2IdentityDef <$> arbitrary,
+        PRef2ViewDef <$> arbitrary,
+        PRef2Pattern <$> arbitrary,
+        PRef2Interface <$> arbitrary,
+        PRef2Context <$> arbitrary
       ]
 
 instance Arbitrary PMeaning where
@@ -469,7 +466,7 @@ instance Arbitrary PMessage where
 instance Arbitrary P_Concept where
   arbitrary =
     frequency
-      [ (100, PCpt <$> upperId),
+      [ (100, PCpt <$> uppercaseName),
         (1, pure P_ONE)
       ]
 
@@ -510,3 +507,11 @@ noOne = all notIsOne
 
 notIsOne :: P_Concept -> Bool
 notIsOne = (P_ONE /=)
+
+safeLabel :: Gen Text1
+safeLabel =
+  oneof
+    [ identifier,
+      toText1Unsafe . tshow <$> safeStr1,
+      elements keywords
+    ]

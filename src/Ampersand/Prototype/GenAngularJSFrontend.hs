@@ -92,7 +92,7 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents =
         renderTemplate Nothing template $
-          setAttribute "contextName" (addSlashes . fsName $ fSpec)
+          setAttribute "contextName" (addSlashes . text1ToText . tName $ fSpec)
             . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
@@ -136,7 +136,12 @@ genViewObject fSpec depth obj =
           atomicAndBoxAttrs =
             setAttribute "exprIsUni" (exprIsUni obj)
               . setAttribute "exprIsTot" (exprIsTot obj)
-              . setAttribute "name" (escapeIdentifier . objName $ obj)
+              . setAttribute
+                "name"
+                ( case T.uncons . objName $ obj of
+                    Nothing -> ""
+                    Just (h, tl) -> text1ToText . escapeIdentifier $ Text1 h tl
+                )
               . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
               . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
               . setAttribute "source" (idWithoutType . source . objExp $ obj)
@@ -171,7 +176,7 @@ genViewObject fSpec depth obj =
           } -> do
             subObjAttrs <- mapM genView_SubObject subObjs
 
-            parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
+            parentTemplate <- readTemplate $ "Box-" <> (T.unpack . text1ToText . btType) header <.> "html"
 
             return . indentation
               . T.lines
@@ -194,7 +199,9 @@ genViewObject fSpec depth obj =
             lns <- genViewObject fSpec (depth + 1) subObj
             return
               SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
+                { subObjName = case T.uncons . objName $ subObj of
+                    Nothing -> mempty
+                    Just (h, tl) -> text1ToText . escapeIdentifier $ Text1 h tl,
                   subObjLabel = objName subObj, -- no escaping for labels in templates needed
                   subObjContents = T.intercalate "\n" lns,
                   subObjExprIsUni = exprIsUni subObj
@@ -203,7 +210,9 @@ genViewObject fSpec depth obj =
           do
             return
               SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
+                { subObjName = case T.uncons . objName $ subObj of
+                    Nothing -> mempty
+                    Just (h, tl) -> text1ToText . escapeIdentifier $ Text1 h tl,
                   subObjLabel = objName subObj,
                   subObjContents = objTxt subObj,
                   subObjExprIsUni = True
@@ -228,7 +237,7 @@ genViewObject fSpec depth obj =
           else "Atomic-" <> show ttp <.> "html"
       where
         ttp = cptTType fSpec cpt
-        cptfn = "Concept-" <> T.unpack (name cpt) <.> "html"
+        cptfn = "Concept-" <> (T.unpack . text1ToText . tName) cpt <.> "html"
 
 ------ Generate controller JavaScript code
 genControllerInterfaces :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
@@ -317,5 +326,5 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
         fun soFar keyVal = soFar . doAttribute keyVal
         doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
         doAttribute h = case tkval h of
-          Nothing -> setAttribute (T.unpack $ tkkey h) True
-          Just val -> setAttribute (T.unpack $ tkkey h) val
+          Nothing -> setAttribute (T.unpack . text1ToText $ tkkey h) True
+          Just val -> setAttribute (T.unpack . text1ToText $ tkkey h) val

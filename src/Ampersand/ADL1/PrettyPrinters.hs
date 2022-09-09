@@ -317,7 +317,7 @@ instance Pretty a => Pretty (P_BoxItem a) where
         (P_BxExpr _ _ ctx mCrud mView msub) ->
           nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
         (P_BxTxt _ _ str) ->
-          text "TXT" <+> quote (text1ToText str)
+          text "TXT" <+> quote str
     where
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
@@ -358,7 +358,7 @@ instance Pretty (P_IdentSegmnt TermPrim) where
           <+> (view . fmap (T.unpack . (text1ToText . tName))) mView
       (P_BxTxt lbl _ str) ->
         maybeQuoteLabel lbl
-          <~> text "TXT" <+> quote (text1ToText str)
+          <~> text "TXT" <+> quote str
     where
       view Nothing = empty
       view (Just v) = pretty v

@@ -72,8 +72,8 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
       obj <- buildObject (BxExpr $ ifcObj ifc)
       return
         FEInterface
-          { ifcName = escapeIdentifier $ name ifc,
-            ifcLabel = name ifc,
+          { ifcName = text1ToText . escapeIdentifier . tName $ ifc,
+            ifcLabel = text1ToText . tName $ ifc,
             ifcExp = objExp obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
@@ -93,11 +93,11 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                   mSpecificTemplatePath <-
                     case mView of
                       Just Vd {vdhtml = Just (ViewHtmlTemplateFile fName), vdats = viewSegs} ->
-                        return $ Just (fName, mapMaybe vsmlabel viewSegs)
+                        return $ Just (fName, mapMaybe (fmap text1ToText . vsmlabel) viewSegs)
                       _ -> do
                         -- no view, or no view with an html template, so we fall back to target-concept template
                         -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                        let templatePath = "Atomic-" <> T.unpack (idWithoutType tgt) <.> ".html"
+                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType $ tgt) <.> ".html"
                         hasSpecificTemplate <- doesTemplateExist templatePath
                         return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                   return
@@ -117,8 +117,8 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                         )
                     InterfaceRef {} ->
                       case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                        [] -> fatal ("Referenced interface " <> siIfcId si <> " missing")
-                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
+                        [] -> fatal ("Referenced interface " <> (text1ToText . tName . siIfcId) si <> " missing")
+                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> (text1ToText . tName . siIfcId) si)
                         [i] ->
                           if siIsLink si
                             then do
@@ -135,7 +135,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
             return
               FEObjE
-                { objName = name object,
+                { objName = maybe "" text1ToText . objLabel $ object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
@@ -150,8 +150,8 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                   atomicOrBox = aOrB
                 }
           BxTxt object' ->
-            pure $
+            return
               FEObjT
-                { objName = name object',
+                { objName = maybe "" text1ToText . boxLabel $ object',
                   objTxt = boxtxt object'
                 }

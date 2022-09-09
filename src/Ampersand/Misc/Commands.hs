@@ -386,7 +386,7 @@ checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing
   where
     doNothing fSpec = do
-      logInfo $ "This script of " <> display (name fSpec) <> " contains no type errors."
+      logInfo $ "This script of " <> (display . text1ToText . tName) fSpec <> " contains no type errors."
 
 mkAction ::
   forall a.

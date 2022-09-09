@@ -954,7 +954,7 @@ data P_BoxItem a
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
         box_label :: !(Maybe Text1),
         pos :: !Origin,
-        box_txt :: !Text1
+        box_txt :: !Text
       }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
