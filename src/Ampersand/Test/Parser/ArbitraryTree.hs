@@ -139,7 +139,7 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
   arbitrary =
     PCtx
-      <$> arbitrary
+      <$> uppercaseName
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -454,7 +454,7 @@ instance Arbitrary PRef2Obj where
         PRef2ViewDef <$> arbitrary,
         PRef2Pattern <$> arbitrary,
         PRef2Interface <$> arbitrary,
-        PRef2Context <$> arbitrary
+        PRef2Context <$> uppercaseName
       ]
 
 instance Arbitrary PMeaning where

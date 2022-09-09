@@ -41,7 +41,7 @@ pContext ::
   AmpParser (P_Context, [Include])
 pContext ns =
   rebuild <$> (posOf . pKey . toText1Unsafe $ "CONTEXT")
-    <*> pConceptName ns
+    <*> pUpperCaseName ns
     <*> pMaybe pLanguageRef
     <*> pMaybe pTextMarkup
     <*> many pContextElement
@@ -144,7 +144,7 @@ pPatternDef :: NameSpace -> AmpParser P_Pattern
 pPatternDef ns =
   rebuild <$> currPos
     <* (pKey . toText1Unsafe) "PATTERN"
-    <*> pConceptName ns -- The name spaces of patterns and concepts are shared.
+    <*> pUpperCaseName ns -- The name spaces of patterns and concepts are shared.
     <*> many (pPatElem ns)
     <*> currPos
     <* (pKey . toText1Unsafe) "ENDPATTERN"
@@ -435,7 +435,7 @@ pConceptDef :: NameSpace -> AmpParser (DefinitionContainer -> PConceptDef)
 pConceptDef ns =
   PConceptDef <$> currPos
     <* (pKey . toText1Unsafe) "CONCEPT"
-    <*> pConceptName ns
+    <*> pUpperCaseName ns
     <*> pPCDDef2
     <*> many pMeaning
   where
@@ -713,14 +713,14 @@ pPurpose ns =
         --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
     pRef2Obj :: AmpParser PRef2Obj
     pRef2Obj =
-      PRef2ConceptDef <$ (pKey . toText1Unsafe) "CONCEPT" <*> pConceptName ns
+      PRef2ConceptDef <$ (pKey . toText1Unsafe) "CONCEPT" <*> pUpperCaseName ns
         <|> PRef2Relation <$ (pKey . toText1Unsafe) "RELATION" <*> pNamedRel ns
         <|> PRef2Rule <$ (pKey . toText1Unsafe) "RULE" <*> pUnrestrictedName ns
         <|> PRef2IdentityDef <$ (pKey . toText1Unsafe) "IDENT" <*> pUnrestrictedName ns
         <|> PRef2ViewDef <$ (pKey . toText1Unsafe) "VIEW" <*> pUnrestrictedName ns
-        <|> PRef2Pattern <$ (pKey . toText1Unsafe) "PATTERN" <*> pUnrestrictedName ns
+        <|> PRef2Pattern <$ (pKey . toText1Unsafe) "PATTERN" <*> pUpperCaseName ns
         <|> PRef2Interface <$ pInterfaceKey <*> pUnrestrictedName ns
-        <|> PRef2Context <$ (pKey . toText1Unsafe) "CONTEXT" <*> pUnrestrictedName ns
+        <|> PRef2Context <$ (pKey . toText1Unsafe) "CONTEXT" <*> pUpperCaseName ns
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789
@@ -937,14 +937,9 @@ pSign ns = pBrackets sign
     sign = mkSign <$> pConceptOneRef ns <*> pMaybe ((pOperator . toText1Unsafe) "*" *> pConceptOneRef ns)
     mkSign src mTgt = P_Sign src (fromMaybe src mTgt)
 
---- ConceptName ::= Conid | Text
---- ConceptNameList ::= ConceptName (',' ConceptName)
-pConceptName :: NameSpace -> AmpParser Name
-pConceptName = pUpperCaseName
-
 --- ConceptRef ::= ConceptName
 pConceptRef :: NameSpace -> AmpParser P_Concept
-pConceptRef ns = PCpt <$> pConceptName ns
+pConceptRef ns = PCpt <$> pUpperCaseName ns
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: NameSpace -> AmpParser P_Concept
