@@ -36,6 +36,7 @@ module Ampersand.Core.ParseTree
     PAtomValue (..),
     mkPair,
     makePSingleton,
+    ObjectKind (..),
     P_BoxBodyElement,
     P_SubInterface,
     P_Interface (..),
@@ -934,6 +935,9 @@ instance Traced TemplateKeyValue where
   origin = pos
 
 type P_BoxBodyElement = P_BoxItem TermPrim
+
+data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind
+  deriving (Show)
 
 data P_BoxItem a
   = P_BxExpr

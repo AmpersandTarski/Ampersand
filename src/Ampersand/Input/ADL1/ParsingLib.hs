@@ -48,6 +48,8 @@ module Ampersand.Input.ADL1.ParsingLib
 
     -- * Keyword parsers
     pKey,
+    pAnyKeyWordName,
+    pAnyKeyWord,
 
     -- * Operator parsers
     pOperator,
@@ -63,6 +65,7 @@ where
 
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Input.ADL1.FilePos (FilePos (..), Origin (..))
+import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Input.ADL1.LexerToken
   ( Lexeme (..),
     Token (..),
@@ -240,6 +243,14 @@ pLowerCaseName ns =
             )
             <?> "lower case identifier"
         )
+
+pAnyKeyWordName :: NameSpace -> AmpParser Name
+pAnyKeyWordName ns = toName ns <$> pAnyKeyWord
+
+pAnyKeyWord :: AmpParser Text1
+pAnyKeyWord = case map pKey keywords of
+  [] -> fatal "We should have keywords."
+  h : tl -> foldr (<|>) h tl
 
 pSingleWord :: AmpParser Text1
 pSingleWord =

@@ -6,9 +6,8 @@ module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
 
 import Ampersand.Basics hiding (view, (<$>))
 import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (keywords)
 import Data.List (nub)
-import RIO.Char (isLetter, toUpper)
+import RIO.Char (toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -34,9 +33,6 @@ prettyPrint x = T.pack $ displayS (renderPretty rfrac col_width doc) ""
 perline :: Pretty a => [a] -> Doc
 perline = vsep . map pretty
 
-quoteN :: Name -> Doc
-quoteN = quote . plainNameOf
-
 quote :: Text -> Doc
 quote = text . show
 
@@ -55,22 +51,13 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         =
         Partial.replace needle replacement haystack
 
-isId :: Name -> Bool
-isId xs =
-  case T.uncons (plainNameOf xs) of
-    Nothing -> False
-    Just (h, _) -> T.all isIdChar (plainNameOf xs) && isFirstIdChar h && plainNameOf1 xs `notElem` keywords
-      where
-        isFirstIdChar x = x == '_' || isLetter x
-        isIdChar x = isFirstIdChar x || elem x ['0' .. '9']
-
 maybeQuoteLabel :: Maybe Text1 -> Doc
 maybeQuoteLabel lbl =
   case lbl of
     Nothing -> mempty
     Just t -> case T.words (text1ToText t) of
       [] -> mempty
-      [word] -> (text . T.unpack) word <> text ":"
+      [word] -> quote word <> text ":" -- quote just to be safe. Otherwise we have to deal with exceptions.
       _ -> quote (text1ToText t) <> text ":"
 
 prettyhsep :: Pretty a => [a] -> Doc
@@ -82,6 +69,9 @@ commas = encloseSep empty empty comma
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 
+listOfBy :: (a -> Doc) -> [a] -> Doc
+listOfBy fun = commas . map fun
+
 listOf1 :: Pretty a => NE.NonEmpty a -> Doc
 listOf1 = listOf . NE.toList
 
@@ -89,7 +79,7 @@ separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty Name where
-  pretty a = if isId a then (text . T.unpack . plainNameOf) a else quoteN a
+  pretty = text . T.unpack . plainNameOf
 
 instance Pretty P_Context where
   pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
@@ -287,40 +277,46 @@ instance Pretty TType where
 
 instance Pretty P_Interface where
   pretty (P_Ifc isAPI nm roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ") <~> nm
+    text (if isAPI then "API " else "INTERFACE ")
+      <~> nm
       <+> iroles
-      <+> ( case obj of
-              P_BxExpr {} ->
-                nest 2 (text ":" <+> pretty (obj_ctx obj) <$> pretty (obj_msub obj))
-              P_BxTxt {} -> fatal "TXT must not be used directly in a P_Ifc."
-          )
+      <+> interfaceExpression
+      <+> crud (obj_crud obj)
+      <+> prettyObject InterfaceKind obj
     where
       iroles =
         if null roles
           then empty
           else text "FOR" <+> listOf roles
-
-instance Pretty a => Pretty (P_BoxItem a) where
-  pretty obj =
-    maybeQuoteLabel (box_label obj) <+> text ":"
-      <+> case obj of
-        (P_BxExpr _ _ ctx mCrud mView msub) ->
-          nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
-        (P_BxTxt _ _ str) ->
-          text "TXT" <+> quote str
-    where
+      interfaceExpression = text ":" <~> pretty (obj_ctx obj)
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
-      view :: Maybe Name -> Doc
-      view Nothing = empty
-      view (Just v) = (text . T.unpack) ("<" <> plainNameOf v <> ">")
+
+prettyObject :: ObjectKind -> P_BoxBodyElement -> Doc
+prettyObject objectKind obj =
+  maybeQuoteLabel
+    (box_label obj)
+    <+> ( case obj of
+            (P_BxExpr _ _ ctx mCrud mView msub) -> case objectKind of
+              InterfaceKind -> view mView <$> pretty msub
+              SubInterfaceKind _ -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
+              IdentSegmentKind -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
+            (P_BxTxt _ _ str) ->
+              text "TXT" <+> quote str
+        )
+  where
+    crud Nothing = empty
+    crud (Just cruds) = pretty cruds
+    view :: Maybe Name -> Doc
+    view Nothing = empty
+    view (Just v) = (text . T.unpack) ("<" <> plainNameOf v <> ">")
 
 instance Pretty P_Cruds where
   pretty (P_Cruds _ str) = (text . T.unpack . text1ToText) str
 
-instance Pretty a => Pretty (P_SubIfc a) where
+instance Pretty (P_SubIfc TermPrim) where
   pretty p = case p of
-    P_Box _ c bs -> boxSpec c <+> text "[" <> listOf bs <> text "]"
+    P_Box _ c bs -> boxSpec c <+> text "[" <> listOfBy (prettyObject (SubInterfaceKind 2)) bs <> text "]"
     P_InterfaceRef _ isLink nm -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <~> nm
     where
       boxSpec :: BoxHeader -> Doc
@@ -340,18 +336,7 @@ instance Pretty (P_IdentDf TermPrim) where
     text "IDENT" <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
-  pretty (P_IdentExp obj) =
-    case obj of
-      (P_BxExpr lbl _ ctx _ mView _) ->
-        maybeQuoteLabel lbl
-          <~> pretty ctx
-          <+> (view . fmap (T.unpack . (text1ToText . tName))) mView
-      (P_BxTxt lbl _ str) ->
-        maybeQuoteLabel lbl
-          <~> text "TXT" <+> quote str
-    where
-      view Nothing = empty
-      view (Just v) = pretty v
+  pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj
 
 instance Pretty P_ViewDef where
   pretty (P_Vd _ nm cpt True Nothing ats) =

@@ -14,7 +14,6 @@ where
 
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -578,22 +577,21 @@ pInterface ns =
   lbl <$> currPos
     <*> pInterfaceIsAPI
     <*> pUnrestrictedName ns
-    <*> pMaybe pParams
     <*> pMaybe pRoles
     <*> (pColon *> pTerm ns) -- the expression of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
     <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    lbl :: Origin -> Bool -> Name -> a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
-    lbl p isAPI nm _params roles ctx mCrud mView sub =
+    lbl :: Origin -> Bool -> Name -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    lbl p isAPI nm roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,
           ifc_Roles = maybe [] NE.toList roles,
           ifc_Obj =
             P_BxExpr
-              { box_label = Just (tName nm),
+              { box_label = Nothing,
                 pos = p,
                 obj_ctx = ctx,
                 obj_crud = mCrud,
@@ -603,8 +601,6 @@ pInterface ns =
           pos = p,
           ifc_Prp = "" --TODO: Nothing in syntax defined for the purpose of the interface.
         }
-    --- Params ::= '(' NamedRel ')'
-    pParams = pParens (pNamedRel ns `sepBy1` pComma)
     --- Roles ::= 'FOR' RoleList
     pRoles = (pKey . toText1Unsafe) "FOR" *> pRole ns False `sepBy1` pComma
 
@@ -632,20 +628,15 @@ pSubInterface ns =
     pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
     pBoxSpecification =
       pChevrons $
-        (,) <$> (pSingleWord <|> anyKeyWord)
+        (,) <$> (pSingleWord <|> pAnyKeyWord)
           <*> many pTemplateKeyValue
 
     pTemplateKeyValue :: AmpParser TemplateKeyValue
     pTemplateKeyValue =
       TemplateKeyValue
         <$> currPos
-        <*> (pSingleWord <|> anyKeyWord)
+        <*> (pSingleWord <|> pAnyKeyWord)
         <*> optional (id <$ (pOperator . toText1Unsafe) "=" <*> pDoubleQuotedString)
-
-anyKeyWord :: AmpParser Text1
-anyKeyWord = case map pKey keywords of
-  [] -> fatal "We should have keywords."
-  h : tl -> foldr (<|>) h tl
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
@@ -950,7 +941,7 @@ pLabelAndColon :: AmpParser Text1
 pLabelAndColon = pUnrestrictedLabel <* pColon
 
 pUnrestrictedLabel :: AmpParser Text1
-pUnrestrictedLabel = pSingleWord <|> anyKeyWord <|> pDoubleQuotedString1
+pUnrestrictedLabel = pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1
 
 pNameAndColon :: NameSpace -> AmpParser Name --TODO: Dit moet subtieler, omdat er ook namen kunnen bestaan met een NameSpace-gedeelte als prefix.
 pNameAndColon ns = toName ns <$> pLabelAndColon
@@ -974,4 +965,4 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pUnrestrictedName :: NameSpace -> AmpParser Name
-pUnrestrictedName ns = pLowerCaseName ns <|> pUpperCaseName ns
+pUnrestrictedName ns = pLowerCaseName ns <|> pUpperCaseName ns <|> pAnyKeyWordName ns

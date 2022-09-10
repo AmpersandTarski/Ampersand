@@ -289,7 +289,7 @@ prefixIsOperator str = any ((`T.isPrefixOf` str) . text1ToText) operators
 --   characters of an identifier, a boolean is required that tells if this is the
 --   first character.
 isSafeIdChar :: Bool -> Char -> Bool
-isSafeIdChar isFirst c = isLetter c || (not isFirst && (isAlphaNum c || c == '_'))
+isSafeIdChar isFirst c = isLower c || isUpper c || (not isFirst && (isAlphaNum c || c == '_'))
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
