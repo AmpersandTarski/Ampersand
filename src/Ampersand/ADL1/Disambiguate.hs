@@ -197,7 +197,7 @@ instance Disambiguatable P_SubIfc where
 instance Disambiguatable P_BoxItem where
   disambInfo
     cptMap
-    ( P_BxExpr
+    ( P_BoxItemTerm
         a
         b
         c -- term/expression
@@ -207,7 +207,7 @@ instance Disambiguatable P_BoxItem where
       )
     env -- from the environment, only the source is important
       =
-      (P_BxExpr a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
+      (P_BoxItemTerm a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
       where
         (d', env1) =
           case d of

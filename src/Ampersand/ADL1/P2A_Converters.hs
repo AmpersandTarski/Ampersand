@@ -643,7 +643,7 @@ pCtx2aCtx
       typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
       typecheckObjDef declMap objDef =
         case objDef of
-          P_BxExpr
+          P_BoxItemTerm
             { box_label = nm,
               pos = orig,
               obj_ctx = ctx,
@@ -798,7 +798,7 @@ pCtx2aCtx
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
                 Just disambObj -> typecheckTerm ci $
                   case disambObj of
-                    P_BxExpr {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                    P_BoxItemTerm {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
                 Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
               objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr

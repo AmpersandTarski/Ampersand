@@ -66,7 +66,7 @@ uppercaseName = arbitrary `suchThat` (firstUppercase . plainNameOf1)
 makeObj :: ObjectKind -> Gen P_BoxBodyElement
 makeObj objectKind =
   oneof $
-    (P_BxExpr <$> labelGenerator <*> arbitrary <*> term <*> cruds <*> view' <*> subInterface objectKind) :
+    (P_BoxItemTerm <$> labelGenerator <*> arbitrary <*> term <*> cruds <*> view' <*> subInterface objectKind) :
       [P_BxTxt <$> labelGenerator <*> arbitrary <*> safeText | isTxtAllowed]
   where
     labelGenerator :: Gen (Maybe Text1)

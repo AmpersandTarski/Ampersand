@@ -297,7 +297,7 @@ prettyObject objectKind obj =
   maybeQuoteLabel
     (box_label obj)
     <+> ( case obj of
-            (P_BxExpr _ _ ctx mCrud mView msub) -> case objectKind of
+            (P_BoxItemTerm _ _ ctx mCrud mView msub) -> case objectKind of
               InterfaceKind -> view mView <$> pretty msub
               SubInterfaceKind _ -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
               IdentSegmentKind -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub

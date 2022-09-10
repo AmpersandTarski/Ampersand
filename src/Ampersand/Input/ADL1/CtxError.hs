@@ -397,7 +397,7 @@ mkDanglingRefError entity ref orig =
 mkUndeclaredError :: Text -> P_BoxItem a -> Name -> CtxError
 mkUndeclaredError entity objDef ref =
   case objDef of
-    P_BxExpr {} ->
+    P_BoxItemTerm {} ->
       CTXE (origin objDef) $
         "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (box_label objDef)
     _ -> fatal "Unexpected use of mkUndeclaredError."
@@ -473,7 +473,7 @@ mkInterfaceRefCycleError cyclicIfcs =
 mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
-    P_BxExpr {} ->
+    P_BoxItemTerm {} ->
       CTXE (origin objDef) $
         "Incompatible interface reference " <> tshow ref
           <> " at field "
@@ -503,7 +503,7 @@ mkMultipleDefaultError vds =
 mkIncompatibleViewError :: (Named b, Named c) => P_BoxItem a -> Name -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
-    P_BxExpr {} ->
+    P_BoxItemTerm {} ->
       CTXE (origin objDef) $
         "Incompatible view annotation <" <> (text1ToText . tName) viewId <> "> at field "
           <> maybe "without a label" tshow (box_label objDef)
@@ -592,7 +592,7 @@ mustBeOrderedLst o lst =
     exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
       case x of
-        P_BxExpr {} -> obj_ctx x
+        P_BoxItemTerm {} -> obj_ctx x
         P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

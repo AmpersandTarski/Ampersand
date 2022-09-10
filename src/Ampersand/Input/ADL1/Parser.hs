@@ -496,7 +496,7 @@ pIdentDef ns =
     pAtt = rebuild <$> currPos <*> pTerm ns
       where
         rebuild pos' ctx =
-          P_BxExpr
+          P_BoxItemTerm
             { box_label = Nothing,
               pos = pos',
               obj_ctx = ctx,
@@ -590,7 +590,7 @@ pInterface ns =
           ifc_Name = nm,
           ifc_Roles = maybe [] NE.toList roles,
           ifc_Obj =
-            P_BxExpr
+            P_BoxItemTerm
               { box_label = Nothing,
                 pos = p,
                 obj_ctx = ctx,
@@ -656,7 +656,7 @@ pBoxBodyElement ns =
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
         build orig lab term mCrud mView msub =
-          P_BxExpr
+          P_BoxItemTerm
             { box_label = Just lab,
               pos = orig,
               obj_ctx = term,
@@ -941,7 +941,7 @@ pLabelAndColon :: AmpParser Text1
 pLabelAndColon = pUnrestrictedLabel <* pColon
 
 pUnrestrictedLabel :: AmpParser Text1
-pUnrestrictedLabel = pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1
+pUnrestrictedLabel = pSingleWord <|> pDoubleQuotedString1
 
 pNameAndColon :: NameSpace -> AmpParser Name --TODO: Dit moet subtieler, omdat er ook namen kunnen bestaan met een NameSpace-gedeelte als prefix.
 pNameAndColon ns = toName ns <$> pLabelAndColon

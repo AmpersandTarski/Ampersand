@@ -263,7 +263,7 @@ aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
 aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
-      P_BxExpr
+      P_BoxItemTerm
         { box_label = objLabel oDef,
           pos = origin oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
