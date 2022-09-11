@@ -106,7 +106,7 @@ data FSpec = FSpec
     getDefaultViewForConcept :: !(A_Concept -> Maybe ViewDef),
     getAllViewsForConcept :: !(A_Concept -> [ViewDef]),
     -- | Lookup view by id in fSpec.
-    lookupView :: !(Name -> ViewDef),
+    lookupView :: !(Name -> Maybe ViewDef),
     -- | All gens that apply in the entire FSpec
     vgens :: ![AClassify],
     -- | All conjuncts generated (by ADL2FSpec)
@@ -530,9 +530,9 @@ emptyFSpec nm =
       -- All keys that apply in the entire FSpec
       vviews = [],
       -- All views that apply in the entire FSpec
-      getDefaultViewForConcept = fatal "Don't ask for the default views in the empty FSpec.",
-      getAllViewsForConcept = fatal "Don't ask for the views in the empty FSpec.",
-      lookupView = fatal "Don't ask for the lookupView in the empty FSpec.",
+      getDefaultViewForConcept = const Nothing,
+      getAllViewsForConcept = const [],
+      lookupView = const Nothing,
       -- Lookup view by id in fSpec.
       vgens = [],
       -- All gens that apply in the entire FSpec

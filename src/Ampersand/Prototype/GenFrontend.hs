@@ -89,7 +89,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
               case objmsub object of
                 Nothing -> do
                   let tgt = target feExp
-                  let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
+                  let mView = maybe (getDefaultViewForConcept fSpec tgt) (lookupView fSpec) (objmView object)
                   mSpecificTemplatePath <-
                     case mView of
                       Just Vd {vdhtml = Just (ViewHtmlTemplateFile fName), vdats = viewSegs} ->
