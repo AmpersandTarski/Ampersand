@@ -40,21 +40,21 @@ CONTEXT PrototypeFramework IN ENGLISH
         MEANING "A navbar item is accessible for a role"
 
     -- Add/remove menu items based on interface roles
-    ROLE ExecEngine MAINTAINS "Add navItemRoles for interfaces"
-    RULE "Add navItemRoles for interfaces" : ifc;pf_ifcRoles |- pf_navItemRoles
+    ROLE ExecEngine MAINTAINS Add_navItemRoles_for_interfaces
+    RULE Add_navItemRoles_for_interfaces : ifc;pf_ifcRoles |- pf_navItemRoles
     VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "Remove navItemRoles for interfaces"
-    RULE "Remove navItemRoles for interfaces" : (I /\ ifc;ifc~);pf_navItemRoles |- ifc;pf_ifcRoles
+    ROLE ExecEngine MAINTAINS Remove_navItemRoles_for_interfaces
+    RULE Remove_navItemRoles_for_interfaces : (I /\ ifc;ifc~);pf_navItemRoles |- ifc;pf_ifcRoles
     VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
     -- Add/remove parent menu items if needed
-    ROLE ExecEngine MAINTAINS "Add navItemRoles for parent items"
-    RULE "Add navItemRoles for parent items": isSubItemOf~;pf_navItemRoles |- pf_navItemRoles
+    ROLE ExecEngine MAINTAINS Add_navItemRoles_for_parent_items
+    RULE Add_navItemRoles_for_parent_items: isSubItemOf~;pf_navItemRoles |- pf_navItemRoles
     VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "Remove navItemRoles for parent items"
-    RULE "Remove navItemRoles for parent items": (I /\ isSubItemOf~;isSubItemOf);pf_navItemRoles |- isSubItemOf~;pf_navItemRoles
+    ROLE ExecEngine MAINTAINS Remove_navItemRoles_for_parent_items
+    RULE Remove_navItemRoles_for_parent_items: (I /\ isSubItemOf~;isSubItemOf);pf_navItemRoles |- isSubItemOf~;pf_navItemRoles
     VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
     
     --[NAV MENUS]----------------------------------------------------------------------------------
@@ -65,16 +65,16 @@ CONTEXT PrototypeFramework IN ENGLISH
     RELATION isPartOf[PF_NavMenuItem*PF_NavMenu] [UNI,TOT]
         MEANING "A navbar item is part of a certain navmenu"
 
-    ROLE ExecEngine MAINTAINS "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]"
-    RULE "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]": I[PF_NavMenuItem];isSubItemOf;isPartOf |- isPartOf
+    ROLE ExecEngine MAINTAINS Fix_TOT_for_isPartOf_PF_NavMenuItem_PF_NavMenu
+    RULE Fix_TOT_for_isPartOf_PF_NavMenuItem_PF_NavMenu: I[PF_NavMenuItem];isSubItemOf;isPartOf |- isPartOf
     VIOLATION (TXT "{EX}InsPair;isPartOf;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenu;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "Automatically designate root of PF_NavMenItem tree as PF_NavMenu"
-    RULE "Automatically designate root of PF_NavMenItem tree as PF_NavMenu": I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ |- I[PF_NavMenu]
+    ROLE ExecEngine MAINTAINS Automatically_designate_root_of_PF_NavMenItem_tree_as_PF_NavMenu
+    RULE Automatically_designate_root_of_PF_NavMenItem_tree_as_PF_NavMenu: I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ |- I[PF_NavMenu]
     VIOLATION (TXT "{EX} SetConcept;PF_NavMenuItem;PF_NavMenu;", SRC I[PF_NavMenuItem])
 
-    ROLE ExecEngine MAINTAINS "De-assign non-root PF_NavMenItems as PF_NavMenu"
-    RULE "De-assign non-root PF_NavMenItems as PF_NavMenu": I[PF_NavMenu] |- I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ 
+    ROLE ExecEngine MAINTAINS Deassign_non_root_PF_NavMenItems_as_PF_NavMenu
+    RULE Deassign_non_root_PF_NavMenItems_as_PF_NavMenu: I[PF_NavMenu] |- I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ 
     VIOLATION (TXT "{EX} ClearConcept;PF_NavMenu;", SRC I[PF_NavMenu])
 
 ENDCONTEXT
