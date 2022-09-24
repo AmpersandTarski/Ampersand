@@ -394,6 +394,7 @@ makeFSpec env context =
           crudU = True,
           crudD = True
         }
+    interfaceGen = step4a <> step4b
     step4a :: [Interface]
     step4a =
       let recur :: [NE.NonEmpty Expression] -> [ObjectDef]
