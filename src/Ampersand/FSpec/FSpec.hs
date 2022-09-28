@@ -75,7 +75,8 @@ data FSpec = FSpec
     -- | All interfaces defined in the Ampersand script, for use by a specific Role
     roleInterfaces :: !(Role -> [Interface]),
     -- | The proofs in Pandoc format
-    fDeriveProofs :: !Blocks,
+    fDeriveProofs :: Blocks, -- BEWARE: Do not make this strict as long as the non-termination issue in normalforms hasn't been solved.
+
     -- | the relation saying which roles maintain which rules.
     fRoleRuls :: ![(Role, Rule)],
     fMaintains :: !(Role -> Rules),
