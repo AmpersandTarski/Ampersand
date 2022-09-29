@@ -147,7 +147,7 @@ instance ShowHS SqlAttribute where
   showHS env indent sqAtt =
     T.intercalate
       indentA
-      [ "Att { attSQLColName    = " <> tshow (attSQLColName sqAtt),
+      [ "Att { attSQLColName    = " <> (text1ToText . sqlColumNameToText1 . attSQLColName) sqAtt,
         ", attExpr    = " <> showHS env indentB (attExpr sqAtt),
         ", attType    = " <> showHS env "" (attType sqAtt),
         ", attUse     = " <> showHS env "" (attUse sqAtt),

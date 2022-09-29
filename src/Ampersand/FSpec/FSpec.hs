@@ -410,7 +410,7 @@ data SqlAttribute = Att
   deriving (Eq, Show, Typeable)
 
 instance Unique (PlugSQL, SqlAttribute) where
-  showUnique (p, f) = showUnique p <>. ("." <> tshow (attSQLColName f))
+  showUnique (p, f) = showUnique p <> toText1Unsafe "." <> (sqlColumNameToText1 . attSQLColName) f
 
 instance Ord SqlAttribute where
   compare x y = compare (attSQLColName x) (attSQLColName y)
