@@ -52,7 +52,7 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.Crud
 import Data.Hashable
-import Data.Text1 ((.<>), (<>.))
+import Data.Text1 ((.<>))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
