@@ -382,7 +382,7 @@ newtype SqlColumName = SqlColumName Text1 -- In het kader van namespaces introdu
   deriving (Eq, Ord)
 
 instance Show SqlColumName where
-  show (SqlColumName t) = "BEWARE: This show is for debugging only. Use `sqlColumNameToString`. " <> (T.unpack . text1ToText) t
+  show = sqlColumNameToString
 
 sqlColumNameToString :: SqlColumName -> String
 sqlColumNameToString = T.unpack . text1ToText . sqlColumNameToText1

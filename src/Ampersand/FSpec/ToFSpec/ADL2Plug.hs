@@ -80,7 +80,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                 toSqlColName i =
                   text1ToSqlColumName
                     . toText1Unsafe
-                    . T.intercalate "-"
+                    . T.intercalate "__"
                     . map text1ToText
                     $ either nameSpaceOf nameSpaceOf nm <> [either plainNameOf1 plainNameOf1 nm <>. (if i == 0 then "" else "_" <> tshow i)]
         tableKey = tyroot typ
