@@ -20,7 +20,7 @@ RULE "Criteria": I[Criterium] |- critTAV;critTAV~
 
 ENDPATTERN
 ------------------------------------------------------------
-INTERFACE "Overzicht" : I[ONE]
+INTERFACE Overzicht : I[ONE]
 BOX[ "Personen"         : V[ONE*Persoon]
    BOX[ "Naam" : I
       , "Eigenaar van"  : bfEigenaar~

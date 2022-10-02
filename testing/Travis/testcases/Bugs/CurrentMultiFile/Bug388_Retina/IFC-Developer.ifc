@@ -1,6 +1,6 @@
 CONTEXT DeveloperInterfacing IN DUTCH
 --[Overzicht]-----------------------------------------------
-INTERFACE "[Overzicht]" FOR Developer : I[ONE]
+INTERFACE Overzicht FOR Developer : I[ONE]
 BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    , "Services"                : V[ONE*Service]
    , "Doelen"                  : V[ONE*Doel]
@@ -12,12 +12,12 @@ BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    ]
 ------------------------------------------------------------
 PATTERN Developer
-RULE "Triviality" : I[Verwerking] = I[Verwerking]
-ROLE Developer MAINTAINS "Triviality"
+RULE Triviality : I[Verwerking] = I[Verwerking]
+ROLE Developer MAINTAINS Triviality
 ENDPATTERN
 ------------------------------------------------------------
 --[Verwerkingen]--------------------------------------------
-INTERFACE "[Verwerking]"
+INTERFACE Verwerking
 (verwerkingNaam, verwerkingOmschrijving, verwerkingsVerantwoordelijke, isDeelverwerkingVan, verwerkingBewerker, verwerkingsDoel, verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger, verwerkingGegevensDoorgiftenBuitenEU, verwerkingSpecificatieSamenvatting, verwerkingBewaartermijn
 ) FOR Developer : I[Verwerking]
 BOX[ "Verwerking" : I

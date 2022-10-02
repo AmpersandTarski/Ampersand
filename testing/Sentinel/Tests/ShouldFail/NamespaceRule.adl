@@ -1,0 +1,9 @@
+CONTEXT Bug IN ENGLISH
+
+PATTERN Developer
+RULE "Triviality" : I[ONE] = I[ONE]
+ENDPATTERN
+
+ENDCONTEXT
+
+{- The name of a rule is not a proper name. It is quoted. -}

@@ -1,11 +1,11 @@
-CONTEXT "Issue853"
+CONTEXT Issue853
 
 compArgs       :: Computation * Person
 compProcdArgs  :: Computation * Person
 compResIsValid :: Computation * Computation [PROP] 
 
-ROLE ExecEngine MAINTAINS "Validate computation result"
-RULE "Validate computation result": I /\ (compArgs<>compProcdArgs~) |- compResIsValid
+ROLE ExecEngine MAINTAINS ValidateComputationResult
+RULE ValidateComputationResult: I /\ (compArgs<>compProcdArgs~) |- compResIsValid
 VIOLATION (SRC I, TXT " - ", TGT I)
 
 

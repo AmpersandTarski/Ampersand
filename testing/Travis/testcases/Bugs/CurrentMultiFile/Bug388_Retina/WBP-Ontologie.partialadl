@@ -1,7 +1,7 @@
 CONTEXT WBPOntologie IN DUTCH
 -----------------------------------------------------------
-PATTERN "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
-PURPOSE PATTERN "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
+PATTERN Wbp_Hoofdstuk_1_uitgezonderd_paragraaf_2
+PURPOSE PATTERN Wbp_Hoofdstuk_1_uitgezonderd_paragraaf_2
 {+Dit pattern bevat de terminologie (en de relaties daartussen) welke aansluiten op de Wet Bescherming Persoonsgegevens (Wbp), althans (en vooralsnog) de artikelen 1 t/m 15, en voorzover deze nodig zijn voor het werkwerken van persoonsgegevens bij volledig geautomatiseerde systemen (dat is immers de scope van ons onderzoek). De wet zelf is van toepassing op elke geheel of gedeeltelijk geautomatiseerde verwerking van persoonsgegevens, alsmede op elke niet geautomatiseerde verwerking van persoonsgegevens die in een bestand zijn opgenomen of die bestemd zijn om daarin te worden opgenomen (artikel 2 eerste lid Wbp). Dit pattern definieert een mapping tussen de tekst van de wet en een formele ontologie voor ons systeem.+}
 
 --[Persoonsgegevens]--
@@ -24,13 +24,13 @@ PRAGMA "" " is verzameld ten behoeve van "
 PURPOSE RELATION verzamelDoel REF "Artikel 7 Wbp"
 {+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.+}
 
-RULE "Integriteit van het verzamelen van persoonsgegevens" : 
+RULE IntegriteitVanHetVerzamelenVanPersoonsgegevens : 
 I[Persoonsgegeven] |- verzamelDoel;verzamelDoel~
 MEANING "Persoonsgegevens worden alleen verzameld ten behoeve van een (welbepaald, uitdrukkelijk omschreven en gerechtvaardigd) doel (Artikel 7 Wbp)"
 MESSAGE "Persoonsgegevens worden alleen verzameld ten behoeve van een (welbepaald, uitdrukkelijk omschreven en gerechtvaardigd) doel (Artikel 7 Wbp)"
 VIOLATION (TXT "Van persoonsgegeven ", SRC I, TXT " is geen doel bekend waartoe het is verzameld")
-ROLE User MAINTAINS "Integriteit van het verzamelen van persoonsgegevens"
-PURPOSE RULE "Integriteit van het verzamelen van persoonsgegevens" REF "Artikel 7 Wbp"
+ROLE User MAINTAINS IntegriteitVanHetVerzamelenVanPersoonsgegevens
+PURPOSE RULE IntegriteitVanHetVerzamelenVanPersoonsgegevens REF "Artikel 7 Wbp"
 {+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.+}
 
 --[Verwerkingen]--
@@ -42,10 +42,10 @@ VIEW "Verwerkingen": Verwerking(verwerkingNaam)
 verwerkingNaam :: Verwerking * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 verwerkingOmschrijving :: Verwerking * Omschrijving PRAGMA "" " wordt omschreven als "
 
-RULE "Verwerking omschrijven": I[Verwerking] |- verwerkingOmschrijving;verwerkingOmschrijving~
+RULE VerwerkingOmschrijven: I[Verwerking] |- verwerkingOmschrijving;verwerkingOmschrijving~
 MEANING "Elke verwerking moet zijn omschreven"
 VIOLATION (TXT "Van verwerking '", SRC I, TXT "' moet de omschrijving worden ingevuld")
-ROLE User MAINTAINS "Verwerking omschrijven"
+ROLE User MAINTAINS VerwerkingOmschrijven
 
 verwerkingsVerantwoordelijke :: Verwerking * Partij PRAGMA "Voor " " draagt " " (me)de verantwoordelijkheid in de zin van de Wbp"
 PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 1 sub d Wbp"
@@ -53,12 +53,12 @@ PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 1 sub d Wbp"
 PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 28 sub a Wbp"
 {+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.+}
 
-RULE "Verwerkingsverantwoordelijkheid toekennen": I[Verwerking] |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
+RULE VerwerkingsverantwoordelijkheidToekennen: I[Verwerking] |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
 MEANING "Elke verwerking moet een VERANTWOORDELIJKE hebben (Artikel 1 sub d Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Van verwerking '", SRC I, TXT "' moet de Verantwoordelijke worden ingevuld")
-ROLE User MAINTAINS "Verwerkingsverantwoordelijkheid toekennen"
-PURPOSE RULE "Verwerkingsverantwoordelijkheid toekennen" REF "Artikel 1 sub d Wbp"
+ROLE User MAINTAINS VerwerkingsverantwoordelijkheidToekennen
+PURPOSE RULE VerwerkingsverantwoordelijkheidToekennen REF "Artikel 1 sub d Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt. Dat kan alleen als aan elke VERWERKING een VERANTWOORDELIJKE is toegekend+}
 
 {-[IRF] overtredingen worden niet goed uitgerekend door prototypes-} --$Zie T#313**
@@ -68,39 +68,39 @@ PURPOSE RELATION isDeelverwerkingVan REF "Meldingsformulier Wbp en de Toelichtin
 {++}
 
 {-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
-RULE "Irreflexiviteit van deelverwerking zijn": I |- -isDeelverwerkingVan 
+RULE IrreflexiviteitVanDeelverwerkingZijn: I |- -isDeelverwerkingVan 
 MEANING "Een verwerking is geen deelverwerking van zichzelf"
 MESSAGE ""
 
-RULE "Deelverwerkingen dienen subdoelen": isDeelverwerkingVan |- verwerkingsDoel; isSubdoelVan; verwerkingsDoel~
+RULE DeelverwerkingenDienenSubdoelen: isDeelverwerkingVan |- verwerkingsDoel; isSubdoelVan; verwerkingsDoel~
 MEANING "Elke deelverwerking heeft een verwerkingsdoel dat een subdoel is van de verwerking waar hij deel van uitmaakt"
 MESSAGE ""
 VIOLATION (TXT "Verwerking '", SRC I, TXT "' moet tenminste 1 doel hebben die een subdoel is van '", TGT I) 
-ROLE User MAINTAINS "Deelverwerkingen dienen subdoelen"
-PURPOSE RULE "Deelverwerkingen dienen subdoelen"
+ROLE User MAINTAINS DeelverwerkingenDienenSubdoelen
+PURPOSE RULE DeelverwerkingenDienenSubdoelen
 {+Om te kunnen beargumenteren dat een verwerking wordt aangeroepen door (c.q. een deelverwerking is van) een andere verwerking, moet die eerste een bijdrage leveren aan het doel van de tweede. Deze bijdrage is een doel van de eerste verwerking, en dus ook een subdoel van een doel dat de tweede verwerking beoogt. Merk op dat een soortgelijke doelsafhankelijkheid op runtime veel strakker is, omdat elke verwerkingsinstantie precies 1 doel dient.+}
 
-RULE "Verwerkingsverantwoordelijkheidsintegriteit": verwerkingsVerantwoordelijke~; (I[Verwerking] /\ -(isDeelverwerkingVan~;isDeelverwerkingVan)); verwerkingsVerantwoordelijke |- I[Partij]
+RULE Verwerkingsverantwoordelijkheidsintegriteit: verwerkingsVerantwoordelijke~; (I[Verwerking] /\ -(isDeelverwerkingVan~;isDeelverwerkingVan)); verwerkingsVerantwoordelijke |- I[Partij]
 MEANING "Verwerkingen die niet uit onderdelen bestaan hebben precies 1 verantwoordelijke (Toelichting Meldingsformulier Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Verwerking '", SRC I, TXT "' heeft geen deelverwerkingen en moet daarom precies 1 verantwoordelijke hebben")
-ROLE User MAINTAINS "Verwerkingsverantwoordelijkheidsintegriteit"
-PURPOSE RULE "Verwerkingsverantwoordelijkheidsintegriteit" REF "Toelichting Meldingsformulier Wbp"
+ROLE User MAINTAINS Verwerkingsverantwoordelijkheidsintegriteit
+PURPOSE RULE Verwerkingsverantwoordelijkheidsintegriteit REF "Toelichting Meldingsformulier Wbp"
 {+Er kunnen bij een verwerking meerdere verantwoordelijken zijn. Is dat het geval, dan zal de onderlinge verdeling van verantwoordelijkheid tussen de verantwoordelijken duidelijk gemaakt moeten worden.+}
 
 verwerkingBewerker :: Verwerking * Partij PRAGMA "De feitelijke (runtime) uitvoering van " " is uitbesteed aan "
 PURPOSE RELATION verwerkingBewerker REF "Artikel 1 sub e Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.+}
 
-RULE "Bewerkers hebben verantwoordelijken": I /\ verwerkingBewerker;verwerkingBewerker~ |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
+RULE BewerkersHebbenVerantwoordelijken: I /\ verwerkingBewerker;verwerkingBewerker~ |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
 MEANING "Voor elke bewerker moet de verantwoordelijkheid zijn belegd (Artikel 12 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Voor verwerking '", SRC I, TXT " bestaat wel een verwerker, namelijk ", SRC verwerkingBewerker, TXT ", maar er is geen verantwoordelijke")
-ROLE User MAINTAINS "Bewerkers hebben verantwoordelijken" 
-PURPOSE RULE "Bewerkers hebben verantwoordelijken" REF "Artikel 12 eerste lid Wbp"
+ROLE User MAINTAINS BewerkersHebbenVerantwoordelijken 
+PURPOSE RULE BewerkersHebbenVerantwoordelijken REF "Artikel 12 eerste lid Wbp"
 {+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
-RULE "Bewerkers hebben precies 1 verantwoordelijke": 
+RULE BewerkersHebbenPreciesEenVerantwoordelijke: 
 {- Onderstaande regel kan gemakkelijker d.m.v.:
 verwerkingsVerantwoordelijke~;(I /\ verwerkingBewerker;verwerkingBewerker~);verwerkingsVerantwoordelijke
 maar dan kun je geen goede VIOLATION maken. Vandaar de volgende regel: -}
@@ -110,8 +110,8 @@ I /\ verwerkingBewerker;verwerkingBewerker~
 MEANING "Voor elke bewerker moet eenduidig bepaald kunnen worden wie de bijbehorende verantwoordelijke is (Artikel 12 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Omdat verwerking '", SRC I, TXT "' een verwerker heeft, namelijk ", SRC verwerkingBewerker, TXT ", moet de verantwoordelijkheid eenduidig zijn belegd, en niet bij meerdere partijen, zoals ", SRC verwerkingsVerantwoordelijke)
-ROLE User MAINTAINS "Bewerkers hebben precies 1 verantwoordelijke" 
-PURPOSE RULE "Bewerkers hebben precies 1 verantwoordelijke" REF "Artikel 12 eerste lid Wbp"
+ROLE User MAINTAINS BewerkersHebbenPreciesEenVerantwoordelijke 
+PURPOSE RULE BewerkersHebbenPreciesEenVerantwoordelijke REF "Artikel 12 eerste lid Wbp"
 {+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
 verwerkingsDoel :: Verwerking * Doel
@@ -121,12 +121,12 @@ PURPOSE RELATION svcVerwerkingsDoel REF "Artikel 11 eerste lid Wbp"
 PURPOSE RELATION verwerkingsDoel REF "Artikel 28 sub b Wbp"
 {+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.+}
 
-RULE "Doel van verwerkingen": I[Verwerking] |- verwerkingsDoel;verwerkingsDoel~
+RULE DoelVanVerwerkingen: I[Verwerking] |- verwerkingsDoel;verwerkingsDoel~
 MEANING "Elke verwerking dient tenminste 1 doel (Artikel 28 sub b Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Voor verwerking '", SRC I, TXT "' moet het doel (c.q. de doelen) worden gespecificeerd.")
-ROLE User MAINTAINS "Doel van verwerkingen"
-PURPOSE RULE "Doel van verwerkingen" REF "Artikel 28 sub b Wbp"
+ROLE User MAINTAINS DoelVanVerwerkingen
+PURPOSE RULE DoelVanVerwerkingen REF "Artikel 28 sub b Wbp"
 {+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.+}
 
 verwerkingBetrokkenenCategorie :: Verwerking * BetrokkeneCategorie
@@ -227,8 +227,8 @@ PURPOSE RELATION verenigbaarMet REF "Artikel 9 eerste lid Wbp"
 
 ENDPATTERN
 --[Partijen]-----------------------------------------------
-PATTERN "Partijen"
-PURPOSE PATTERN "Partijen"
+PATTERN Partijen
+PURPOSE PATTERN Partijen
 {+Om te kunnen praten over de concrete personen, rechtspersonen, bestuursorganen e.d. die een rol kunnen vervullen zoals de Wbp die noemt (bijvoorbeeld 'Verantwoordelijke' of 'Bewerker'), hebben we een concept nodig waarmee we instaties van die rollen kunnen weergeven.+}
 
 CONCEPT Partij "Een natuurlijke persoon, rechtspersoon, bestuursorgaan of ieder ander die de rol van VERANTWOORDELIJKE, BEWERKER, BETROKKENE, ONTVANGER of DERDE kan vervullen."
@@ -237,12 +237,12 @@ IDENT "Partijen": Partij(partijNaam)
 partijNaam :: Partij -> PartijNaam PRAGMA "" " wordt aangeduid middels "
 partijAdres :: Partij * Adres PRAGMA "" " is gevestigd op "
 
-RULE "Integriteit voor partijen die VERANTWOORDELIJKE zijn": 
+RULE IntegriteitVoorPartijenDie_VERANTWOORDELIJKE_zijn: 
 I[Partij] /\ verwerkingsVerantwoordelijke~;verwerkingsVerantwoordelijke |- partijNaam;partijNaam~ /\ partijAdres;partijAdres~
 MEANING "Van elke VERANTWOORDELIJKE moet de naam en het adres bekend zijn (Artikel 28 sub a Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Van ", SRC I, TXT " moet de naam en het adres bekend zijn")
-PURPOSE RULE "Integriteit voor partijen die VERANTWOORDELIJKE zijn" REF "Artikel 28 sub a Wbp"
+PURPOSE RULE IntegriteitVoorPartijenDie_VERANTWOORDELIJKE_zijn REF "Artikel 28 sub a Wbp"
 {+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.+}
 
 ENDPATTERN
