@@ -13,8 +13,8 @@ PATTERN Rules
     REPRESENT RuleName TYPE ALPHANUMERIC
     RELATION name[Rule*RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
-      ROLE ExecEngine MAINTAINS "del unused RuleName"
-      RULE "del unused RuleName" : I[RuleName] |- name~;name
+      ROLE ExecEngine MAINTAINS DelDnusedRuleName
+      RULE DelDnusedRuleName : I[RuleName] |- name~;name
       MEANING "A RuleName without Rule will be removed."
       VIOLATION ( TXT "{EX} DelAtom;RuleName;", SRC I )
     REPRESENT EncodedName TYPE ALPHANUMERIC

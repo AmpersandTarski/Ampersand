@@ -114,8 +114,8 @@ BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Term
     , "defines rule" : formalTerm[Rule*Term]~ cRud
     , bind  : bind[BindedRelation*Relation] cRud LINKTO INTERFACE Relation
     , singleton : singleton[Singleton*AtomValue] cRud 
---    , "user defined src" : userSrc["V"*Concept]cRud
---    , "user defined trg" : userTgt["V"*Concept]cRud
+--    , "user defined src" : userSrc[CartesianProduct*Concept]cRud
+--    , "user defined trg" : userTgt[CartesianProduct*Concept]cRud
 --    , "user defined cpt" : userCpt["I"*Concept]cRud
     ]
 INTERFACE Signature FOR Ampersand : I[Signature] cRud

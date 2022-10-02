@@ -6,7 +6,7 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "Concepts.adl"
 --INCLUDE "AtomsAsShouldBe.adl"
 
-PATTERN "Static Interface Structure"
+PATTERN StaticInterfaceStructure
     CLASSIFY Interface ISA ObjectDef
     CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
