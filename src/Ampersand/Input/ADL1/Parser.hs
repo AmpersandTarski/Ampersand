@@ -15,6 +15,7 @@ where
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
+import Data.Hashable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
@@ -258,17 +259,17 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> pMaybe pLabelAndColon
+    <*> pMaybe (pNameAndColon ns)
     <*> pRule ns
     <*> many pMeaning
     <*> many pMessage
     <*> pMaybe pViolation
   where
-    build orig mlabel term meanings messages mViolation =
+    build orig mName term meanings messages mViolation =
       P_Rule
         { pos = orig,
-          rr_nm = toName ns $
-            case mlabel of
+          rr_nm =
+            case mName of
               Nothing -> rulid orig
               Just lbl -> lbl,
           rr_exp = term,
@@ -276,8 +277,8 @@ pRuleDef ns =
           rr_msg = messages,
           rr_viol = mViolation
         }
-    rulid :: Origin -> Text1
-    rulid (FileLoc pos' _) = toText1Unsafe $ "rule@" <> tshow pos'
+    rulid :: Origin -> Name
+    rulid (FileLoc pos' _) = toName ns . toText1Unsafe $ "rule_" <> (tshow . abs . hash . tshow $ pos')
     rulid _ = fatal "pRuleDef is expecting a file location."
 
     --- Violation ::= 'VIOLATION' PairView
