@@ -5,7 +5,7 @@ Only, a message does not contain terms but only relations and flipped relations.
 The idea is to have a conceptual model that matches the messages in JSON.
 Take for example the following message (code in JavaScript)
 <script>
-var myJSON = '{ "command" : "INSERT", "concept" : "Person", "rel" : [ { "name" : "lastName", "target" : "Text", "atoms" : ["John"] }, { "name" : "age", "target" : "Age", "atoms" : [34] }, { "name" : "address", "target" : "Address", "frames" : [{ "name" : "street", "atoms" : ["Albert Cuyplaan"] }, { "name" : "zipCode", "atoms" : ["1012AB"] }, { "name" : "city", "atoms" : ["Amsterdam"] }] }], "relFlp" : [ { "name" : "member", "source" : "Company", "atoms" : ["ACME"] } }';
+var myJSON = '{ "command" : "INSERT", "concept" : Person, "rel" : [ { "name" : "lastName", "target" : "Text", "atoms" : ["John"] }, { "name" : "age", "target" : "Age", "atoms" : [34] }, { "name" : "address", "target" : "Address", "frames" : [{ "name" : "street", "atoms" : ["Albert Cuyplaan"] }, { "name" : "zipCode", "atoms" : ["1012AB"] }, { "name" : "city", "atoms" : ["Amsterdam"] }] }], "relFlp" : [ { "name" : "member", "source" : "Company", "atoms" : ["ACME"] } }';
 var myObj = JSON.parse(myJSON);
 document.getElementById("demo").innerHTML = JSON.stringify(myObj.rel[2].frames[2]);
 </script>
@@ -13,7 +13,7 @@ yields the text '{"name":"city","atoms":["Amsterdam"]}'
 
 The JSON-message
 { "command" : "INSERT"
-, "concept" : "Person"
+, "concept" : Person
 , "rel" : [ { "name" : "lastName", "target" : "Text", "atoms" : ["John"] }
           , { "name" : "age", "target" : "Age", "atoms" : [34] }
           , { "name" : "address"

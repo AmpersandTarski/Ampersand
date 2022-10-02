@@ -16,11 +16,11 @@ Je kunt eenvoudig vaststellen dat deze bug niet meer aanwezig is als:
 PATTERN ARM20Test8
 bfEigenaar :: Bedrijfsfunctie * Persoon [UNI]
 critTAV :: Criterium * Bedrijfsfunctie [UNI]
-RULE "Criteria": I[Criterium] |- critTAV;critTAV~
+RULE Criteria: I[Criterium] |- critTAV;critTAV~
 
 ENDPATTERN
 ------------------------------------------------------------
-INTERFACE "Overzicht" : I[ONE]
+INTERFACE Overzicht : I[ONE]
 BOX[ "Personen"         : V[ONE*Persoon]
    BOX[ "Naam" : I
       , "Eigenaar van"  : bfEigenaar~

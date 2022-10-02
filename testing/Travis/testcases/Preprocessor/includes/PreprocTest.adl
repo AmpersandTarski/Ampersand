@@ -1,11 +1,11 @@
-CONTEXT "PreprocTest1"
+CONTEXT PreprocTest1
 
 INCLUDE "./PreprocTestPopulation.adl" --# [ "!GenerateErrorIfThisVarIsSet" ]
 
 r1 :: A * B1
 r2 :: A * B2
 
-INTERFACE "Test": I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
+INTERFACE Test: I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 
   , "NoVars": V[SESSION*NoVar] cRud 
   , "Ifc" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>

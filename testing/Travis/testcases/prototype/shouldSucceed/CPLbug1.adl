@@ -1,4 +1,4 @@
-﻿CONTEXT CPLbug1 IN DUTCH
+CONTEXT CPLbug1 IN DUTCH
 
 r :: A * A [PROP]
 r :: B * A

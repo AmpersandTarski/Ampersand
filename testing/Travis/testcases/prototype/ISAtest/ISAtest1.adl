@@ -30,9 +30,9 @@ RULE "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting
 
 ENDPATTERN
 ------------------------------------------------------------
-INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
+INTERFACE Overzicht FOR Developer, ExecEngine : I[ONE]
 BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
-   , "Criteria"               : V[ONE*Criterium]
+   , Criteria               : V[ONE*Criterium]
    , "Verplichtingen"         : V[ONE*Verplichting]
    , "Externe verplichtingen" : V[ONE*ExterneVerplichting]
    , "Verwachtingen"          : V[ONE*Verwachting]
@@ -41,7 +41,7 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
    ]
 
 --[Bedrijfsfuncties]---------------------------------------
-INTERFACE "Bedrijfsfunctie" -- I[Bedrijfsfunctie]
+INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
    ( bfNaam
    ) FOR Developer        : I[Bedrijfsfunctie]
 BOX[ "Naam"               : bfNaam
@@ -52,17 +52,17 @@ BOX[ "Naam"               : bfNaam
    , "Gewetensvragen TAV" : critBF~;I[Gewetensvraag];critTAV
    ]
 
-INTERFACE "Criterium" (critBF, critTAV, critText) : I[Criterium]
-BOX[ "Criterium"   : critText
+INTERFACE Criterium (critBF, critTAV, critText) : I[Criterium]
+BOX[ Criterium   : critText
    , "Van (BF)"    : critBF
    , "Tav (BF)"    : critTAV
    ]
 
-INTERFACE "Verplichting" (critBF, critTAV, critText) : I[Verplichting] INTERFACE "Criterium"
-INTERFACE "ExterneVerplichting" (critBF, critTAV, critText) : I[ExterneVerplichting] INTERFACE "Criterium"
-INTERFACE "Verwachting" (critBF, critTAV, critText) : I[Verwachting] INTERFACE "Criterium"
-INTERFACE "ExterneVerwachting" (critBF, critTAV, critText) : I[ExterneVerwachting] INTERFACE "Criterium"
-INTERFACE "Gewetensvraag" (critBF, critTAV, critText) : I[Gewetensvraag] INTERFACE "Criterium"
+INTERFACE Verplichting (critBF, critTAV, critText) : I[Verplichting] INTERFACE Criterium
+INTERFACE ExterneVerplichting (critBF, critTAV, critText) : I[ExterneVerplichting] INTERFACE Criterium
+INTERFACE Verwachting (critBF, critTAV, critText) : I[Verwachting] INTERFACE Criterium
+INTERFACE ExterneVerwachting (critBF, critTAV, critText) : I[ExterneVerwachting] INTERFACE Criterium
+INTERFACE Gewetensvraag (critBF, critTAV, critText) : I[Gewetensvraag] INTERFACE Criterium
 
 ------------------------------------------------------------
 ENDCONTEXT

@@ -93,10 +93,10 @@ Kennelijk kan een bestuursorgaan bevoegdheden hebben.
     ]
 
 
-   RULE "Artikel 10:2 Awb" : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
+   RULE mandaatRegel : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
    MEANING "Een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit geldt als een besluit van de mandaatgever."
 
-   PURPOSE RULE "Artikel 10:2 Awb" REF "Artikel 10:2 Awb"
+   PURPOSE RULE mandaatRegel REF "Artikel 10:2 Awb"
 {+
 -}
    PURPOSE RELATION namens[Mandaat*Bestuursorgaan] REF "Artikel 10:10 Awb"
@@ -152,9 +152,9 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
    -- POPULATION krachtens[Besluit*Mandaat] toe te voegen door Gurbinder Singh Garcha en Han Veldhuis
 
   -- RULE toegevoegd door Erik Gubler, 03-04-2013, 10:50
-  RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
+  RULE Artikel_10_10_AWB : krachtens;namens |- beslotenDoor
   MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
-  PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
+  PURPOSE RULE Artikel_10_10_AWB REF "Artikel 10:10 Awb"
 {+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. +}
 
 
@@ -234,7 +234,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    -- RULE nog uit te werken door George de Vries en Tim Ruijters.
    -- RULE "Artikel 10:4 Awb" : krachtens;namens |- beslotenDoor
    -- MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
-   -- PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
+   -- PURPOSE RULE Artikel_10_10_AWB REF "Artikel 10:10 Awb"
 
 
    ENDPATTERN

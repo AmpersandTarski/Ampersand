@@ -1,4 +1,4 @@
-﻿CONTEXT Issue785
+CONTEXT Issue785
 
 prop :: A * A [PROP]
 

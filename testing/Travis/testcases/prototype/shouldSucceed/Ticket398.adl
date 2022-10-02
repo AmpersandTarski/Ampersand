@@ -6,8 +6,8 @@ actEndTime :: Activity * Timestamp [UNI] MEANING "Activities may be  completed a
 taskCompleted :: Task * Task [PROP] MEANING "Tasks may have the property  of being completed"
 
 taskCmpStatIsGreen :: Task * Task
-ROLE Developer MAINTAINS "Complete task"
-RULE "Complete task": I[Task] /\ (-actTask~!(I /\  actEndTime;actEndTime~));actTask |- taskCmpStatIsGreen  MEANING  "When all activities of the task have terminated, the task status  must be Green"
+ROLE Developer MAINTAINS CompleteTask
+RULE CompleteTask: I[Task] /\ (-actTask~!(I /\  actEndTime;actEndTime~));actTask |- taskCmpStatIsGreen  MEANING  "When all activities of the task have terminated, the task status  must be Green"
 
 ENDPATTERN
 ENDCONTEXT

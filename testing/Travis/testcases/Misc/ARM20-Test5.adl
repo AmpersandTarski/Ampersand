@@ -22,7 +22,7 @@ um]       signature: [Verwachting*Criterium]
 
 -}
 ------------------------------------------------------------
-PATTERN "ARM20Test5"
+PATTERN ARM20Test5
 
 critBF   :: Criterium -> Bedrijfsfunctie
 

@@ -1,4 +1,4 @@
-﻿CONTEXT "Issue 766" IN ENGLISH
+CONTEXT Issue766 IN ENGLISH
 
   CLASSIFY Datatype ISA Class
   

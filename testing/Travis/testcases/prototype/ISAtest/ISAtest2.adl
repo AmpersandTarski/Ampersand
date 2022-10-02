@@ -35,8 +35,8 @@ RULE "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting
 --[BIA-lijst]--
 
 biaVerplichting_Def :: Bedrijfsfunctie * ExterneVerplichting [INJ]
-ROLE Developer MAINTAINS "BIA-lijst bijhouden"
-RULE "BIA-lijst bijhouden": biaVerplichting_Def = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
+ROLE Developer MAINTAINS BiaLijstBijhouden
+RULE BiaLijstBijhouden: biaVerplichting_Def = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
 --[Afdekkingen]--
 afdekking :: Verplichting * Verwachtingsverzameling [UNI]
@@ -62,9 +62,9 @@ VIOLATION (TXT "{EX} DelPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Be
 
 ENDPATTERN
 ------------------------------------------------------------
-INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
+INTERFACE Overzicht FOR Developer, ExecEngine : I[ONE]
 BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
-   , "Criteria"               : V[ONE*Criterium]
+   , Criteria               : V[ONE*Criterium]
    , "Verplichtingen"         : V[ONE*Verplichting]
    , "Externe verplichtingen" : V[ONE*ExterneVerplichting]
    , "Verwachtingen"          : V[ONE*Verwachting]
@@ -75,7 +75,7 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 
 --[Bedrijfsfuncties]---------------------------------------
 
-INTERFACE "Bedrijfsfunctie" -- I[Bedrijfsfunctie]
+INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
    ( bfNaam
    ) FOR Developer : I[Bedrijfsfunctie]
 BOX[ "ID" : I
@@ -83,7 +83,7 @@ BOX[ "ID" : I
    , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
    ]
 
-INTERFACE "BIA-lijst" -- I[Bedrijfsfunctie]
+INTERFACE BIA_Lijst -- I[Bedrijfsfunctie]
    ( critBF
    , biaVerplichting_Def
      , critID
@@ -92,24 +92,24 @@ INTERFACE "BIA-lijst" -- I[Bedrijfsfunctie]
    ) FOR Developer : I[Bedrijfsfunctie]
 BOX[ "Algemeen" : I
    , "Nieuwe verplichtingen" : nieuweVerplichting
-      BOX[ "Verplichting" : I[Verplichting]
+      BOX[ Verplichting : I[Verplichting]
          , "ID"           : critID
          , "Criterium"    : critText
          , "T.a.v."       : critTAV
          ]
    , "Externe verplichtingen"  : biaVerplichting_Def -- De constructie I;relatie dient om te voorkomen dat er geedit wordt
-   BOX[ "Verplichting" : I[ExterneVerplichting]
+   BOX[ Verplichting : I[ExterneVerplichting]
       , "Criterium"    : I;critText
       , "T.a.v."       : I;critTAV
       ]
    ]
 
 
-PATTERN "{EE} BIA-lijst interface"
+PATTERN EE_BIA_lijst_interface
 nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
-ROLE ExecEngine MAINTAINS "nieuwe BIA verplichtingen"
-RULE "nieuwe BIA verplichtingen": nieuweVerplichting |- -V
+ROLE ExecEngine MAINTAINS NieuweBiaVerplichtingen
+RULE NieuweBiaVerplichtingen: nieuweVerplichting |- -V
 -- bij de 'v'tjes moet 'ExterneVerplichting' staan in plaats van 'Verplichting', hoewel dat laatste ook zou moeten kunnen...
 --                                  vvvvvvvvvvvv
 VIOLATION (TXT "{EX} InsPair;critBF;Verplichting;", TGT I, TXT ";Bedrijfsfunctie;", SRC I
@@ -121,7 +121,7 @@ ENDPATTERN
 
 --[Verplichtingen]-----------------------------------------
 
-INTERFACE "Verplichting" -- I[Verplichting]
+INTERFACE Verplichting -- I[Verplichting]
    ( critID
    , critTAV
    , critText
@@ -152,7 +152,7 @@ BOX[ "ID" : I
 
 --[Verwachtingsverzamelingen en gewetensvragen]------------
 
-INTERFACE "Verwachtingsverzameling" -- I[Verwachtingsverzameling]
+INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
    ( vvID
    , vvVerplichting
      , critID
@@ -167,7 +167,7 @@ INTERFACE "Verwachtingsverzameling" -- I[Verwachtingsverzameling]
    ) FOR Developer  : I[Verwachtingsverzameling]
 BOX[ Verwachtingsverzameling : I
    BOX[ "ID" : I
-      , "Verplichting" : vvVerplichting
+      , Verplichting : vvVerplichting
       BOX[ "ID"          : I[Verplichting]
          , "Van (BF)"    : critBF
          , "Tav (BF)"    : critTAV
@@ -186,7 +186,7 @@ BOX[ Verwachtingsverzameling : I
       ]
    ]
 
-INTERFACE "Gewetensvraag" -- I[Gewetensvraag]
+INTERFACE Gewetensvraag -- I[Gewetensvraag]
    ( critID
    , critBF
    , critTAV
@@ -194,7 +194,7 @@ INTERFACE "Gewetensvraag" -- I[Gewetensvraag]
    , afdekking
    , vvVerplichting
    ) FOR Developer : I[Gewetensvraag]
-BOX[ "Gewetensvraag": I
+BOX[ Gewetensvraag: I
    BOX[ "ID"        : I
        
       , "Criterium" : critText
@@ -217,7 +217,7 @@ BOX[ "Gewetensvraag": I
 
 --[Verwachtingen]------------------------------------------
 
-INTERFACE "Verwachting" -- I[Verwachting]
+INTERFACE Verwachting -- I[Verwachting]
    ( critID
    , critTAV
    , critText

@@ -55,7 +55,7 @@ INTERFACE "Females": V[SESSION*Female] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
    , husband: husband]
    
-INTERFACE "Person": I[Person] cRud BOX
+INTERFACE Person: I[Person] cRud BOX
    [ person : I[Person]
    , isMale : I[Male]
    , father : father 

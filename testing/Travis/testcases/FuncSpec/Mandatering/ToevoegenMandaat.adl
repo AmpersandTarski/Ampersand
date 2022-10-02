@@ -39,7 +39,7 @@ BOX[ "Mandaat"      : I
    ]
 
 PATTERN ToevoegenMandaat
-ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
+ROLE Bestuurder MAINTAINS mandaatRegel
 ENDPATTERN
 
 ENDCONTEXT

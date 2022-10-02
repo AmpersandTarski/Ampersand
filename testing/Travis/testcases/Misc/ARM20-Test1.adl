@@ -1,6 +1,6 @@
 CONTEXT ARM20bug IN DUTCH
 ------------------------------------------------------------
-PATTERN "ARM 2.0 bug"
+PATTERN ARM_2punt0_bug
 
 oblBF :: Verplichting -> Bedrijfsfunctie
 expBF :: Verwachting -> Bedrijfsfunctie

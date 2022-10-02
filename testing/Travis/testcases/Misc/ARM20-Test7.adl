@@ -26,8 +26,8 @@ CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
 RULE "Gewetensvragen": I[Gewetensvraag] = I[Verplichting] /\ I[Verwachting]
 
 criterium :: Criterium * Text
-ROLE USER MAINTAINS "Criteria"
-RULE "Criteria": I[Criterium] |- criterium;criterium~
+ROLE USER MAINTAINS Criteria
+RULE Criteria: I[Criterium] |- criterium;criterium~
 
 oblImpact :: Verplichting * Impact
 RULE "Impacts" : I[Verplichting] |- oblImpact;oblImpact~

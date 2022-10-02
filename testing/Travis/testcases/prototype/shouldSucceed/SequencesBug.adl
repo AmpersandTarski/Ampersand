@@ -1,4 +1,4 @@
-﻿CONTEXT Sequences IN ENGLISH
+CONTEXT Sequences IN ENGLISH
 
 seSequence    :: SeqEntry * Sequence [UNI,TOT] -- Sequence entries are in a sequence
 seqFirstEntry :: Sequence * SeqEntry [UNI,INJ] -- First entry in a sequence
