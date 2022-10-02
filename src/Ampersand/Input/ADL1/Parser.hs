@@ -259,13 +259,19 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> pMaybe (pNameAndColon ns)
-    <*> pRule ns
+    <*> pNameAndTerm
     <*> many pMeaning
     <*> many pMessage
     <*> pMaybe pViolation
   where
-    build orig mName term meanings messages mViolation =
+    pNameAndTerm :: AmpParser (Maybe Name, Term TermPrim)
+    pNameAndTerm =
+      try (withName <$> pNameAndColon ns <*> pRule ns)
+        <|> (withoutName <$> pRule ns)
+      where
+        withName nm term = (Just nm, term)
+        withoutName term = (Nothing, term)
+    build orig (mName, term) meanings messages mViolation =
       P_Rule
         { pos = orig,
           rr_nm =
