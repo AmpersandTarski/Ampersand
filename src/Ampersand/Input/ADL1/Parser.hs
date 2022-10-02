@@ -588,14 +588,15 @@ pInterface ns =
   lbl <$> currPos
     <*> pInterfaceIsAPI
     <*> pUnrestrictedName ns
+    <*> pMaybe pParams
     <*> pMaybe pRoles
     <*> (pColon *> pTerm ns) -- the expression of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
     <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    lbl :: Origin -> Bool -> Name -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
-    lbl p isAPI nm roles ctx mCrud mView sub =
+    lbl :: Origin -> Bool -> Name -> parametersForTemplate -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    lbl p isAPI nm _params roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,
@@ -612,6 +613,8 @@ pInterface ns =
           pos = p,
           ifc_Prp = "" --TODO: Nothing in syntax defined for the purpose of the interface.
         }
+    --- Params ::= '(' NamedRel ')'
+    pParams = pParens (pNamedRel ns `sepBy1` pComma)
     --- Roles ::= 'FOR' RoleList
     pRoles = (pKey . toText1Unsafe) "FOR" *> pRole ns False `sepBy1` pComma
 
