@@ -14,16 +14,16 @@ aggr :: "Business actor" * "Department" PRAGMA "Business interface " " takes par
 
 comp :: "Business actor" * "Business actor" [RFX,TRN,ASY] PRAGMA "Business actor " " is a component of Business actor ".
 
-CONCEPT "Business collaboration" "A (temporary) configuration of two or more business roles resulting in specific collective behaviour in a particular context. A business process or function may be interpreted as the internal behaviour assigned to a single business role. In some cases behaviour is the collective effort of more than one business role. Business collaborations represent this collective effort. Business interactions are used to describe the internal behaviour that takes place within business collaboration. The name of a business collaboration should preferably be a noun. It is also rather common to leave a business collaboration unnamed." "Archimate"
-CLASSIFY "Business collaboration" ISA "Business concept"
+CONCEPT BusinessCollaboration "A (temporary) configuration of two or more business roles resulting in specific collective behaviour in a particular context. A business process or function may be interpreted as the internal behaviour assigned to a single business role. In some cases behaviour is the collective effort of more than one business role. Business collaborations represent this collective effort. Business interactions are used to describe the internal behaviour that takes place within business collaboration. The name of a business collaboration should preferably be a noun. It is also rather common to leave a business collaboration unnamed." "Archimate"
+CLASSIFY BusinessCollaboration ISA "Business concept"
 
-CLASSIFY "Business collaboration" ISA "Business role"
+CLASSIFY BusinessCollaboration ISA BusinessRole
 
-comp :: "Business role" * "Business collaboration" PRAGMA "Business role " " is a component of Business collaboration ".
-RULE R001: comp["Business role" * "Business collaboration"] |- -I["Business role"]; comp["Business role" * "Business collaboration"]
+comp :: BusinessRole * BusinessCollaboration PRAGMA "Business role " " is a component of Business collaboration ".
+RULE R001: comp[BusinessRole * BusinessCollaboration] |- -I[BusinessRole]; comp[BusinessRole * BusinessCollaboration]
  MEANING "A business collaboration is composed of two or more business roles."
 
-aggr :: "Business interface" * "Business collaboration" PRAGMA "Business interface " " takes part in Business collaboration ".
+aggr :: "Business interface" * BusinessCollaboration PRAGMA "Business interface " " takes part in Business collaboration ".
 
 CLASSIFY "Business event" ISA "Behavioural concept"
 CLASSIFY "Business process" ISA "Behavioural concept"
@@ -51,13 +51,13 @@ CLASSIFY "Business activity" ISA "Business interaction"
 CONCEPT "Business interface" "an interface that declares how a business role can connect with its environment. A business interface specifies how the functionality of a business role can be used by other business roles (provided interface), or which functionality the business roles requires from its environment (required interface). A business interface exposes a business service to the environment. The same business service may be exposed through different interfaces. The name of a business interface should preferably be a noun." "Archimate"
 CLASSIFY "Business interface" ISA "Business concept"
 
-provides :: "Business role" * "Business interface" [UNI,TOT,SUR] PRAGMA "Business role " " provides Business interface ".
-takesPart :: "Business role" * "Business interface" [UNI,TOT,SUR] PRAGMA "Business role " " takes part in providing Business interface ".
-provides :: "Business collaboration" * "Business interface" [UNI,TOT,SUR] PRAGMA "Business collaboration " " provides Business interface ".
-RULE R002: comp;I["Business collaboration"];provides \/ provides = takesPart
+provides :: BusinessRole * "Business interface" [UNI,TOT,SUR] PRAGMA "Business role " " provides Business interface ".
+takesPart :: BusinessRole * "Business interface" [UNI,TOT,SUR] PRAGMA "Business role " " takes part in providing Business interface ".
+provides :: BusinessCollaboration * "Business interface" [UNI,TOT,SUR] PRAGMA "Business collaboration " " provides Business interface ".
+RULE R002: comp;I[BusinessCollaboration];provides \/ provides = takesPart
  MEANING "An interface provided by a business collaboration is considered to be provided by all participants in the collaboration."
 
-requires :: "Business role" * "Business interface" [TOT,SUR] PRAGMA "Business role " " requires Business interface ".
+requires :: BusinessRole * "Business interface" [TOT,SUR] PRAGMA "Business role " " requires Business interface ".
 
 CONCEPT "Business object" "a unit of information that has relevance from a business perspective. Business objects represent the important “informational” concepts in which the business thinks about a domain. Generally, a business object is used to model an object type (cf. a UML class), of which several instances may exist within the organisation. A wide variety of types of business objects can be defined. Business objects are passive in the sense that they do not trigger or perform processes. The name of a business object is usually a noun." "Archimate"
 CLASSIFY "Business object" ISA "Business concept"
@@ -74,18 +74,18 @@ CLASSIFY "Business process" ISA "Business concept"
 comp :: "Business process" * "Business process" [RFX,TRN,ASY] PRAGMA "Business process " " is a component of Business process ".
 CLASSIFY "Business activity" ISA "Business process"
 
-CONCEPT "Business role" "A named specific behaviour of a business actor participating in a particular context. Business processes or business functions are assigned to a single business role with certain responsibilities or skills. A business actor that fulfils a business role ultimately performs the corresponding behaviour. Next to the relation of a business role with behaviour, a business role is also useful in an (structural) organisational sense for instance in the division of an organisation. The name of a business role should preferably be a noun." "Archimate"
-CLASSIFY "Business role" ISA "Business concept"
+CONCEPT BusinessRole "A named specific behaviour of a business actor participating in a particular context. Business processes or business functions are assigned to a single business role with certain responsibilities or skills. A business actor that fulfils a business role ultimately performs the corresponding behaviour. Next to the relation of a business role with behaviour, a business role is also useful in an (structural) organisational sense for instance in the division of an organisation. The name of a business role should preferably be a noun." "Archimate"
+CLASSIFY BusinessRole ISA "Business concept"
 
-comp :: "Business role" * "Business role" [RFX,TRN,ASY] PRAGMA "Business role " " is a component of Business role ".
-comp :: "Business interface" * "Business role" PRAGMA "Business interface " " is a component of Business role ".
-CLASSIFY "Business collaboration" ISA "Business role"
+comp :: BusinessRole * BusinessRole [RFX,TRN,ASY] PRAGMA "Business role " " is a component of Business role ".
+comp :: "Business interface" * BusinessRole PRAGMA "Business interface " " is a component of Business role ".
+CLASSIFY BusinessCollaboration ISA BusinessRole
 
 CONCEPT "Business service" "The externally visible (“logical”) functionality, which is meaningful to the environment and is realised by business behaviour (business process, business function or business interaction). A business service exposes the functionality of business roles or collaborations to their environment. This functionality is accessed through one or more business interfaces. A business service is realised by one or more business processes, business functions or business interactions that are performed by the business roles or business collaborations respectively. It may access business objects. A business service should provide a unit of functionality that is meaningful from the point of view of the environment. It has a purpose, which states this utility. The environment includes the (behaviour of) users from outside as well as inside the organisation. A business service should preferably be a verb ending with ‘-ing’, e.g. ‘transaction processing’." "Archimate"
 CLASSIFY "Business service" ISA "Business concept"
 
 associate :: "Business service" * "Purpose" [UNI,TOT] PRAGMA "Business service " " is associated with purpose ".
-expose :: "Business role" * "Business service" PRAGMA "Business role " " exposes Business service " " through its business interfaces".
+expose :: BusinessRole * "Business service" PRAGMA "Business role " " exposes Business service " " through its business interfaces".
 expose :: "Application component" * "Business service" PRAGMA "Business role " " exposes Business service " " through its application interfaces".
 
 comp :: "Business service" * "Business service" [RFX,TRN,ASY] PRAGMA "Business service " " is a component of Business service ".
@@ -129,10 +129,10 @@ MEANING "If a product is associated with a value, all business services taking p
 
 comp :: Value * Value [RFX,TRN,ASY] PRAGMA "Value " " is a component of Value ".
 
-assign :: "Business process" * "Business role" PRAGMA "Business process " " and Business role " " are assigned".
-assign :: "Business function" * "Business role" PRAGMA "Business function " " and Business role " " are assigned".
-assign :: "Business role" * "Business actor" [TOT,SUR] PRAGMA "Business role " " and Business actor " " are assigned".
-assign :: "Business interaction" * "Business collaboration" PRAGMA "Business interaction " " are assigned".
+assign :: "Business process" * BusinessRole PRAGMA "Business process " " and Business role " " are assigned".
+assign :: "Business function" * BusinessRole PRAGMA "Business function " " and Business role " " are assigned".
+assign :: BusinessRole * "Business actor" [TOT,SUR] PRAGMA "Business role " " and Business actor " " are assigned".
+assign :: "Business interaction" * BusinessCollaboration PRAGMA "Business interaction " " are assigned".
 assign :: "Business interaction" * "Application collaboration" PRAGMA "Business interaction " " are assigned".
 assign :: "Business service" * "Business interface" [TOT,SUR] PRAGMA "Business service " " and Business interface " " are assigned".
 
@@ -148,7 +148,7 @@ use :: "Business interaction" * "Business service" PRAGMA "Business interaction 
 use :: "Business process" * "Application service" PRAGMA "Business process " " may use (external) Application service ".
 use :: "Business function" * "Application service" PRAGMA "Business function " " may use (external) Application service ".
 use :: "Business interaction" * "Application service" PRAGMA "Business interaction " " may use (external) Application service ".
-use :: "Business role" * "Business interface" [TOT,SUR] PRAGMA "Business role " " may use Business interface " " to access its functionality".
+use :: BusinessRole * "Business interface" [TOT,SUR] PRAGMA "Business role " " may use Business interface " " to access its functionality".
 ENDPATTERN
 
 PATTERN Application
@@ -225,61 +225,61 @@ realise :: "Application component" * "Application function" PRAGMA "Application 
 use :: "Application function" * "Application service" PRAGMA "Application function " " may use Application service ".
 use :: "Application component" * "Application interface" [TOT,SUR] PRAGMA "Application component " " may use Application interface " " to access its functionality".
 use :: "Application collaboration" * "Application interface" PRAGMA "Application collaboration " " may use Application interface".
-use :: "Business role" * "Application interface" PRAGMA "Business role " " may use Application interface".
+use :: BusinessRole * "Application interface" PRAGMA "Business role " " may use Application interface".
 use :: "Application behavioural concept" * "Application service" PRAGMA "Application behavioural concept " " may use Application service ".
 use :: "Application interaction" * "Application service" PRAGMA "Application interaction " " may use Application service ".
 ENDPATTERN
 
 PATTERN Technology
 CONCEPT Artifact "a physical piece of information that is used or produced in a software development process, or by deployment and operation of a system. An artifact represents a concrete element in the physical world. It is typically used to model (software) products such as source files, executables, scripts, database tables, messages, documents, specifications, and model files. An instance (copy) of an artifact can be deployed on a node. The name of an artifact should preferably be the name of the file it represents, e.g. ‘order.jar’." "Archimate"
-CLASSIFY Artifact ISA "Technology concept"
+CLASSIFY Artifact ISA TechnologyConcept
 
 comp :: Artifact * Artifact [RFX,TRN,ASY] PRAGMA "Artifact " " is a component of Artifact ".
 
-CONCEPT "Communication path" "a relation between two or more nodes, through which these nodes can exchange information. A communication path is used to model the logical communication relations between nodes. It is realised by one or more networks, which represent the physical communication links. The communication properties (e.g. bandwidth, latency) of a communication path are usually aggregated from these underlying networks." "Archimate"
-CLASSIFY "Communication path" ISA "Technology concept"
+CONCEPT CommunicationPath "a relation between two or more nodes, through which these nodes can exchange information. A communication path is used to model the logical communication relations between nodes. It is realised by one or more networks, which represent the physical communication links. The communication properties (e.g. bandwidth, latency) of a communication path are usually aggregated from these underlying networks." "Archimate"
+CLASSIFY CommunicationPath ISA TechnologyConcept
 
-connect :: Node * "Communication path" PRAGMA "Node " " is connected to Communication path ".
+connect :: Node * CommunicationPath PRAGMA "Node " " is connected to Communication path ".
 -- RULE R011: connect |- I[Node];connect -- RJ: dit is geen goede formalisatie van de MEANING.
-RULE R011: connect[Node * "Communication path"] |- -I[Node]; connect[Node * "Communication path"]
+RULE R011: connect[Node * CommunicationPath] |- -I[Node]; connect[Node * CommunicationPath]
 MEANING "A communication path connects two or more nodes."
 
 CONCEPT Device "a physical computational resource upon which artifacts may be deployed for execution. A device is a specialisation of a node that represents a physical resource with processing capability. It is typically used to model hardware systems such as mainframes, PCs, or routers. Usually, they are part of a node together with system software. Devices may be composite, i.e., consist of sub-devices. Devices can be interconnected by networks. The name of a device should preferably be a noun referring to the type of hardware, e.g. “IBM zSeries mainframe”." "Archimate"
-CLASSIFY Device ISA "Technology concept"
+CLASSIFY Device ISA TechnologyConcept
 
 connect :: Device * Network PRAGMA "Device " " is connected to network ".
 contain :: Node * Device PRAGMA "Node " " contains Device ".
 comp :: Device * Device [RFX,TRN,ASY] PRAGMA "Device " " is a component of Device ".
 
 CONCEPT "System software" "represents a software environment for specific types of components and objects that are deployed on it in the form of artifacts. System software is a specialisation of a node that is used to model the software environment in which artifacts run. This can be e.g. an operating system, a J2EE application server, a CORBA ORB, a database system, or a workflow engine. Also, system software can be used to represent e.g. communication middleware. Usually, system software is combined with a device representing the hardware environment to form a general node. The name of a device should preferably be a noun referring to the type of exection environment, e.g. “J2EE server”." "Archimate"
-CLASSIFY "System software" ISA "Technology concept"
+CLASSIFY "System software" ISA TechnologyConcept
 
 contain :: Node * "System software" PRAGMA "Node " " contains System software ".
 contain :: "System software" * "System software" PRAGMA "System software " " contains System software ".
 
 CONCEPT "Infrastructure interface" "declares how the functionality offered by a node can be accessed by other nodes and application components. An infrastructure interface specifies how the infrastructure services of a node can be accessed by other nodes (provided interface), or which functionality the node requires from its environment (required interface). An infrastructure interface exposes an infrastructure service to the environment. The same service may be exposed through different interfaces. In a sense, an infrastructure interface specifies a kind of contract that a component realising this interface must fulfil. This may include e.g. parameters, protocols used, pre- and postconditions, and data formats. The name of an infrastructure interface should preferably be a noun." "Archimate"
-CLASSIFY "Infrastructure interface" ISA "Technology concept"
+CLASSIFY "Infrastructure interface" ISA TechnologyConcept
 
 provides :: Node * "Infrastructure interface" [TOT,SUR] PRAGMA "Node " " provides Infrastructure interface ".
 requires :: Node * "Infrastructure interface" [TOT,SUR] PRAGMA "Node " " requires Infrastructure interface ".
 accesses :: Node * "Infrastructure interface" [TOT,SUR] PRAGMA "Node " " accesses Infrastructure interface ".
 
 CONCEPT "Infrastructure service" "An infrastructure service is an externally visible unit of functionality, provided by one or more nodes, exposed through well-defined interfaces, and meaningful to the environment. An infrastructure service exposes the functionality of a node to its environment. This functionality is accessed through one or more infrastructure interfaces. It may require, use, and produce artifacts. An infrastructure service should be meaningful from the point of view of the environment; it should provide a unit of functionality that is in itself useful to its users, such as application components and nodes. Typical infrastructure services may e.g. include messaging, storage, naming, and directory services. It may access artifacts, e.g. a file containing a message. The name of an infrastructure service should preferably be a verb ending with ‘-ing’, e.g. ‘messaging’." "Archimate"
-CLASSIFY "Infrastructure service" ISA "Technology concept"
+CLASSIFY "Infrastructure service" ISA TechnologyConcept
 
 expose :: "Node" * "Infrastructure service" [TOT,SUR] PRAGMA "Node " " exposes Infrastructure service " " by assigning it to its infrastructure".
 comp :: "Infrastructure service" * "Infrastructure service" [RFX,TRN,ASY] PRAGMA "Infrastructure service " " is a component of Infrastructure service ".
 
 CONCEPT Network "a physical communication medium between two or more devices. A network represents the physical communication infrastructure. This may comprise one or more fixed or wireless network links. The most basic network is a single link between two devices. A network has properties such as bandwidth and latency. It embodies the physical realisation of the logical communication paths between nodes." "Archimate"
-CLASSIFY Network ISA "Technology concept"
+CLASSIFY Network ISA TechnologyConcept
 
 comp :: Network * Network [RFX,TRN,ASY] PRAGMA "Network " " is a component of Network ".
 
 CONCEPT Node "a computational resource upon which artifacts may be deployed for execution. Nodes are active processing elements that execute and process artifacts, which are the representation of components and data objects. Nodes are for example used to model application servers, database servers, or client workstations. They can consist of sub-nodes representing physical devices and execution environments for artifacts. Nodes can be interconnected by communication paths. The name of a node should preferably be a noun." "Archimate"
-CLASSIFY Node ISA "Technology concept"
+CLASSIFY Node ISA TechnologyConcept
 
-connect :: Node * "Communication path" PRAGMA "Node " " is connected to Communication path ".
-RULE R005: connect[Node * "Communication path"] |- contain[Node*Device];connect[Device*Network];realise[Network*"Communication path"]  -- This rule is not covered by the Archimate reference manual.
+connect :: Node * CommunicationPath PRAGMA "Node " " is connected to Communication path ".
+RULE R005: connect[Node * CommunicationPath] |- contain[Node*Device];connect[Device*Network];realise[Network*CommunicationPath]  -- This rule is not covered by the Archimate reference manual.
  MEANING "A"
 comp :: Node * Node [RFX,TRN,ASY] PRAGMA "Node " " is a component of Node ".
 
@@ -294,7 +294,7 @@ assign :: "Infrastructure service" * "Infrastructure interface" [TOT,SUR] PRAGMA
 
 realise :: Artifact * "Application component" [SUR] PRAGMA "Artifact " " realises Application component ".
 realise :: Artifact * "Data object" [SUR] PRAGMA "Artifact " " realises Data object ".
-realise :: Network * "Communication path" PRAGMA "Network " " realises Communication path ".
+realise :: Network * CommunicationPath PRAGMA "Network " " realises Communication path ".
 realise :: "Node" * "Infrastructure service" [TOT,SUR] PRAGMA "Node " " realises Infrastructure service ".
 
 use :: "Application component" * "Infrastructure interface" [TOT,SUR] PRAGMA "Application component " " may use Infrastructure interface " " to access its functionality".
@@ -305,7 +305,7 @@ ENDPATTERN
 PATTERN Group
 CLASSIFY "Business concept" ISA ConceptX
 CLASSIFY "Application concept" ISA ConceptX
-CLASSIFY "Technology concept" ISA ConceptX
+CLASSIFY TechnologyConcept ISA ConceptX
 group :: ConceptX * Group [UNI] PRAGMA "ConceptX " " is member of Group ".
 from :: Junction * ConceptX [TOT] PRAGMA "There is an arrow to Junction " " from ConceptX ".
 to :: Junction * ConceptX [TOT] PRAGMA "There is an arrow from Junction " " to ConceptX ".

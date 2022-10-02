@@ -37,7 +37,7 @@ BOX[ "Verwerking" : I
    , "verwerkingBewaartermijn" : verwerkingBewaartermijn
    ]
 ------------------------------------------------------------
-INTERFACE "[Melding]"
+INTERFACE Melding
 FOR Developer : I[Verwerking] -- Zie artikel 28, eerste en tweede lid, artikel 29, tweede lid en artikel 30, eerste lid.
 BOX[ "Verwerking/Systeem" : I
    , "Naam" : verwerkingNaam
@@ -59,7 +59,7 @@ BOX[ "Verwerking/Systeem" : I
    ]
 ------------------------------------------------------------
 --[Services]------------------------------------------------
-INTERFACE "[Service]"
+INTERFACE Service
 ( svcNaam, svcOmschrijving, svcSpecificatieSamenvatting
 , isDeelsvcVanVerwerking, isDeelsvcVan
 , svcVerantwoordelijke, svcBewerker
@@ -84,7 +84,7 @@ BOX[ "Service" : I
    ]
 ------------------------------------------------------------
 --[Doelen]--------------------------------------------------
-INTERFACE "[Doel]" (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
+INTERFACE Doel (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
 FOR Developer : I[Doel]
 BOX[ "Doel" : I
    , "doelID" : doelID
@@ -101,7 +101,7 @@ BOX[ "Doel" : I
    , "svcVerwerkingsDoel" : svcVerwerkingsDoel~
    ]
 ------------------------------------------------------------
-INTERFACE "[Doe1]" (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
+INTERFACE Doe1 (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
 FOR Developer : I[DoelID];doelID~
 BOX[ "Doel" : I
    , "doelID" : doelID
@@ -119,7 +119,7 @@ BOX[ "Doel" : I
    ]
 ------------------------------------------------------------
 --[Partijen]------------------------------------------------
-INTERFACE "[Partij]" (partijNaam, partijAdres)
+INTERFACE Partij (partijNaam, partijAdres)
 FOR Developer : I[Partij]
 BOX[ "Partij" : I
    , "partijNaam" : partijNaam
@@ -131,7 +131,7 @@ BOX[ "Partij" : I
    ]
 ------------------------------------------------------------
 --[Berichtsoorten]------------------------------------------
-INTERFACE "[BerichtSoort]" (berichtSoortGegevensType, svcOntvangtBerichtSoort, svcVerstuurtBerichtSoort, typeOf[Bericht*BerichtSoort])
+INTERFACE BerichtSoort (berichtSoortGegevensType, svcOntvangtBerichtSoort, svcVerstuurtBerichtSoort, typeOf[Bericht*BerichtSoort])
 FOR Developer : I[BerichtSoort]
 BOX[ "BerichtSoort" : I
    , "berichtSoortNaam" : berichtSoortNaam
@@ -142,7 +142,7 @@ BOX[ "BerichtSoort" : I
    ]
 ------------------------------------------------------------
 --[Berichten]-----------------------------------------------
-INTERFACE "[Bericht]" (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType)
+INTERFACE Bericht (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType)
 FOR Developer : I[Bericht]
 BOX[ "Bericht" : I
    , "Bericht type" : typeOf
@@ -152,7 +152,7 @@ BOX[ "Bericht" : I
    ]
 ------------------------------------------------------------
 --[Persoonsgegevens]----------------------------------------
-INTERFACE "[Persoonsgegeven]" (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService)
+INTERFACE Persoonsgegeven (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService)
 FOR Developer : I[Persoonsgegeven]
 BOX[ "Persoonsgegeven" : I
    , "Type" : persoonsgegevensType
@@ -165,7 +165,7 @@ BOX[ "Persoonsgegeven" : I
    ]
 ------------------------------------------------------------
 --[PersoonsgegevensTypes]-----------------------------------
-INTERFACE "[PersoonsgegevensType]" (svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType)
+INTERFACE PersoonsgegevensType (svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType)
 FOR Developer : I[PersoonsgegevensType]
 BOX[ "persoonsgegevensType" : I
    , "svcVerzameltPersoonsgegevensType" : svcVerzameltPersoonsgegevensType~
