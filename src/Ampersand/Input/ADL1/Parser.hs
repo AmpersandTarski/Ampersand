@@ -517,7 +517,7 @@ pViewDefImproved ns =
     <*> pNameAndColon ns
     <*> pConceptOneRef ns
     <*> pIsThere ((pKey . toText1Unsafe) "DEFAULT")
-    <*> pBraces (pViewSegment ns `sepBy` pComma) `opt` []
+    <*> pBraces (pViewSegment Improved ns `sepBy` pComma) `opt` []
     <*> pMaybe pHtmlView
     <* (pKey . toText1Unsafe) "ENDVIEW"
   where
@@ -545,11 +545,15 @@ pViewSegmentLoad ns =
   P_ViewExp <$> pTerm ns
     <|> P_ViewText <$ (pKey . toText1Unsafe) "TXT" <*> pDoubleQuotedString
 
+data ViewKind = Legacy | Improved
+
 --- ViewSegment ::= Label ViewSegmentLoad
-pViewSegment :: NameSpace -> AmpParser (P_ViewSegment TermPrim)
-pViewSegment ns =
+pViewSegment :: ViewKind -> NameSpace -> AmpParser (P_ViewSegment TermPrim)
+pViewSegment viewKind ns =
   build <$> currPos
-    <*> pMaybe pLabelAndColon
+    <*> case viewKind of
+      Legacy -> pure Nothing
+      Improved -> pMaybe pLabelAndColon
     <*> pViewSegmentLoad ns
   where
     build :: Origin -> Maybe Text1 -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
@@ -569,7 +573,7 @@ pViewDefLegacy ns =
     <*> pConceptOneRef ns
     <*> return True
     <*> return Nothing
-    <*> pParens (pViewSegment ns `sepBy` pComma)
+    <*> pParens (pViewSegment Legacy ns `sepBy` pComma)
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: NameSpace -> AmpParser P_Interface
