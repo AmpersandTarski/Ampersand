@@ -1,3 +1,7 @@
+---
+draft: true
+---
+
 # Interfaces
 You can work with data in your information system only through a service. Interfaces are the spectacles you need for viewing, changing, creating and deleting data.
 
