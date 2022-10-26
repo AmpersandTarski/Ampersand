@@ -2,6 +2,7 @@
  
 ## Unreleased changes
 * [Issue #1307](https://github.com/AmpersandTarski/Ampersand/issues/1307) First phase of introducing namespaces in Ampersand.
+* Minor update of the devcontainer.
 
 ## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
