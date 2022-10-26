@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+* Minor update of the devcontainer.
 
 ## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)

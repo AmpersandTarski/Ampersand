@@ -9,6 +9,6 @@ Check out the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/
 
 ## Documentation
 
-The best place to look at if you are new to Ampersand, and you want to install the software, is at our [documentation](https://ampersandtarski.gitbook.io/documentation/). Anyone can add comments if you read the documentation online. Please do so if there is anything you miss in the documentation.
+We are currently in a process to change the way we publish our documentation. The old site can be found [here](https://ampersandtarski.gitbook.io/documentation/). It is still easier to navigate. The new site can be found [here](https://ampersandtarski.github.io/docs/Ampersand/). It contains all documentation of several repositories in a single place. We are still [working](https://github.com/AmpersandTarski/Ampersand/issues/1315) on structuring it. 
 
-There is also some [documentation for the developers of ampersand](https://ampersandtarski.gitbook.io/the-tools-we-use-for-ampersand/).
+The old site does not contain the documentation specific for developers of Ampersand. That can be found as [documentation for the developers of ampersand](https://ampersandtarski.gitbook.io/the-tools-we-use-for-ampersand/).
