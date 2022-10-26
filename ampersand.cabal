@@ -104,6 +104,7 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldFail/Issue298.adl
     testing/Sentinel/Tests/ShouldFail/Issue335.adl
     testing/Sentinel/Tests/ShouldFail/Issue406.adl
+    testing/Sentinel/Tests/ShouldFail/NamespaceRule.adl
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/Session.adl
