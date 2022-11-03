@@ -22,6 +22,9 @@ extra-deps:
   - dhall-1.37.1@sha256:447031286e8fe270b0baacd9cc5a8af340d2ae94bb53b85807bee93381ca5287,35080
   - generic-lens-2.0.0.0@sha256:7409fa0ce540d0bd41acf596edd1c5d0c0ab1cd1294d514cf19c5c24e8ef2550,3866
   - generic-lens-core-2.0.0.0@sha256:40b063c4a1399b3cdb19f2df1fae5a1a82f3313015c7c3e47fc23b8ef1b3e443,2913
+  # extra-deps for haskell-debug-adapter-0.0.37.0:
+  - ghci-dap-0.0.19.0@sha256:5c4485b7a62d120f648c883f1f1480b25363ab5e14f6ca1ed2db526e0af1d43c,3293
+  - haskell-dap-0.0.15.0@sha256:d58ec48d5f23c13675ba6a6ceb75f9ad9c0b0e90031e15cf7cd227478bad5fa5,945
 
 # Override default flag values for local packages and extra-deps
 flags:
