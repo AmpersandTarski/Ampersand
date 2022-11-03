@@ -27,7 +27,7 @@ This statement means the population of the relation will automatically be kept r
 ```
 ENFORCE r := s;t
 {- Ampersand will keep the population of the relation r equal to the population
-   of the expression s;t . It will do so by changing the contents of r
+   of the term s;t . It will do so by changing the contents of r
    without affecting the contents of s;t .
    The effect can be observed in the prototype.
 -}
@@ -36,7 +36,7 @@ ENFORCE r := s;t
 ```
 ENFORCE canDrive :< hasCar /\ hasDriverLicence
 {- Ampersand will keep the population of the relation canDrive smaller than
-   the population of the expression hasCar /\ hasDriverLicence .
+   the population of the term hasCar /\ hasDriverLicence .
    It will do so by deleting pairs from the contents of canDrive
    without affecting the contents of hasCar /\ hasDriverLicence .
    So, whenever a person can drive, that person needs to have a car and a driver licence.
@@ -48,4 +48,4 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
 ## Miscellaneous
 
 * Both the sources and the targets of the relation and the term must match. An error message is given otherwise.
-* The relation must be specified in order to use it here, as is the case with any relation used in an expression.
+* The relation must be specified in order to use it here, as is the case with any relation used in a term.

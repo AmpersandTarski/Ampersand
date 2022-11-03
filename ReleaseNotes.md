@@ -399,7 +399,7 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
 * ExecEngine extension: improved logging for debugging
 * Added new reporting functionality for backend framework
-* DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+* DB performance: less queries because 'I[Concept]'-term is not queried anymore
 * Minor backend fixes
 * Fix issues regarding CRUD specifications: missing interfaces in navbar +menu, missing crudR check in templates, return content after create
 

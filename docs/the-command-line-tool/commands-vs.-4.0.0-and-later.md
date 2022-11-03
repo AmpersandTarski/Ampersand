@@ -51,7 +51,7 @@ The general structure of commands is `ampersand [options]* COMMAND`. The followi
     &#x20;Generate a data model in UML 2.0 style.
 11. `ampersand [options]* validate <filename>`
 
-    Compare results of rule evaluation in Haskell and SQL, for testing expression semantics. This requires command line PHP with MySQL support.
+    Compare results of rule evaluation in Haskell and SQL, for testing term semantics. This requires command line PHP with MySQL support.
 12. `ampersand [options]* test <filename>`
 
     &#x20;Run test suites in a given directory. This is meant to do regression testing during automatic build (e.g. Travis-ci)

@@ -1,25 +1,22 @@
-# Syntactical Conventions
-
-To keep this chapter as readable as possible, we have chosen to omit some details that are irrelevant for practically all &-modelers. In the very rare case that these technicalities are of interest, the reader could have a look in [the sourcecode of the parser](https://github.com/AmpersandTarski/Ampersand/blob/master/src/Ampersand/Input/ADL1/Parser.hs), where all EBNF statements are in comments.
+# Syntax
 
 ## Purpose
 
 This page is meant as a reference for syntactical details and conventions, reserved words, etc.
 
-## Learning the syntax
+To keep this chapter as readable as possible, we have chosen to omit some details that are irrelevant for practically all &-modelers. In the very rare case that these technicalities are of interest, the reader could have a look in [the sourcecode of the parser](https://github.com/AmpersandTarski/Ampersand/blob/master/src/Ampersand/Input/ADL1/Parser.hs), where all EBNF statements are in comments.
 
-The most effective way to learn Ampersand's syntax is to copy from existing scripts. This is learning by examples. This reference chapter is suitable to check things, and less suitable for learning.
-
+## Syntactical Conventions
 ## Symbols
 
-Ampersand has _reserved words_, such as `RELATION`, `CONTEXT`, `CONTAINS`. All reserved words are written in capital letters. They are introduced on the fly. You will find an exhaustive list of reserved words at the end of this page.
+Ampersand has _reserved words_, such as `RELATION`, `CONTEXT`, `CONTAINS`. All reserved words are written in capital letters. They are introduced on the fly. You will find an exhaustive list of reserved words [here](## List of reserved words).
 
 Untyped atoms are written between double quotes, e.g. `"Peter"` or `"KD-686-D"`. If you want to introduce a double quote inside an atom, escape it with a backslash, e.g. `"the symbol \" is called double quote"`.  
 Numeric atoms always start with a digit, e.g. `4711` or `75.88E3`. The boolean atoms are `TRUE` and `FALSE`. Dates and timestamps follow the Excel-syntax, e.g. ??? The atom `_SESSION` indicates the current user session, and is an instance of concept `SESSION`. It is used in services.
 
 Brackets must always match. For terms, we use round brackets `(` and `)`. For populations and services we use square brackets `[` and `]`.
 
-Constructs that contain ampersand statements are contexts and patterns. They always come in pairs: `PATTERN` and `ENDPATTERN`, and `CONTEXT` and `ENDCONTEXT`.
+Constructs that contain Ampersand statements are contexts and patterns. They always come in pairs: `PATTERN` and `ENDPATTERN`, and `CONTEXT` and `ENDCONTEXT`.
 
 White space characters \(spaces, tabs, CRLF\) are meaningless. You can use them freely to layout your script in a way that helps you to recognize its structure.
 

@@ -11,26 +11,26 @@ A rule statement defines something that should be true. It does not define the e
 A `<rule>` has the following syntax:
 
 ```text
-RULE <label>? <expression> <meaning>* <message>* <violation>?
+RULE <label>? <term> <meaning>* <message>* <violation>?
 ```
 
 ## Syntax of labels
 
 A `<label>` is optional. It can be a single word or a string \(enclosed by double brackets\) followed by a colon \(`:`\).
 
-### Expression
+### Term
 
-An expression can be any of:
+A term can be any of:
 
-* Expression BinaryOperator Expression
-* UnaryOpPre Expression
-* Expression UnaryOpPost
+* Term BinaryOperator Term
+* UnaryOpPre Term
+* Term UnaryOpPost
 * a \(reference to a\) relation \(including an optional signature, when required to disambiguate\):
   * A relation by name 
   * `I` \(the Identity relation\)
   * `V` \(carthesian product\) Note that this can also be used to denote the empty relation, by using the unary negation operator:  '-v'
-  * A singleton expression \(the value of an atom\)
-* an expression enclosed in brackets.
+  * A singleton term \(the value of an atom\)
+* a term enclosed in brackets.
 
 #### Operators
 
@@ -105,10 +105,10 @@ VIOLATION (Segment1,Segment2,... )
 Every segment must be of one of the following forms:
 
 * `TXT` String
-* `SRC` Expression
-* `TGT` Expression
+* `SRC` Term
+* `TGT` Term
 
-A rule is violated by a pair of atoms \(source, target\). The source atom is the root of the violation message. In the message the target atoms are printed. With the Identity relation the root atom itself can be printed. You can use an expression to print other atoms. Below two examples reporting a violation of the rule that each project must have a project leader. The first prints the project's ID, the second the project's name using the relation projectName:
+A rule is violated by a pair of atoms \(source, target\). The source atom is the root of the violation message. In the message the target atoms are printed. With the Identity relation the root atom itself can be printed. You can use a term to print other atoms. Below two examples reporting a violation of the rule that each project must have a project leader. The first prints the project's ID, the second the project's name using the relation projectName:
 
 `VIOLATION ( TXT "Project ", SRC I, TXT " does not have a projectleader")`
 

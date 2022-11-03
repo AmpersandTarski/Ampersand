@@ -72,7 +72,7 @@ even more complex than it already was.
           Generate a data model in UML 2.0 style.
   * ***--validate*** `validate`
           Compare results of rule evaluation in Haskell and SQL, for
-          testing expression semantics. This requires command line php with
+          testing the semantics of terms. This requires command line php with
           MySQL support.
   * ***--haskell*** `devoutput`
           generate internal data structure, written in Haskell (for
