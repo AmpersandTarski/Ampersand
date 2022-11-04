@@ -87,9 +87,9 @@ getGroups (ES1 tran _ imap) =
         newRev = IntMap.insert newKey newItm newRev'
         newElems = IntMap.union (IntMap.fromSet (const newKey) newItm) allElems -- overwrites some of the allElems items with the new key
 
--- | Find all concepts equal to some concept-expression.
+-- | Find all concepts equal to some concept-term.
 --   Equality is decided according to the concept-system given in the first argument.
---   If there are no concepts equal to the expression, the empty set is returned.
+--   If there are no concepts equal to the term, the empty set is returned.
 findExact :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> Set.Set a -- returns the empty set on a failure, returns all sets equivalent to "FreeLattice a" according to the equalitysystem
 findExact = findWith lookupInRevMap (\x -> fromList [x])
 
@@ -286,7 +286,7 @@ imapTranslate imap tds doneSet =
         Nothing -> set'
         Just lst -> IntSet.unions (set' : [IntSet.difference tl doneSet | (fl, tl) <- lst, IntSet.isSubsetOf fl doneSet])
 
--- | Data structure to capture an expression in a lattice
+-- | Data structure to capture concepts and types in a lattice
 data FreeLattice a
   = Join (FreeLattice a) (FreeLattice a)
   | Meet (FreeLattice a) (FreeLattice a)

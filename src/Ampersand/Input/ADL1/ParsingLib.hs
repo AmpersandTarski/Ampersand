@@ -253,12 +253,12 @@ data Value
 
 pAtomValInPopulation :: Bool -> AmpParser Value
 -- An atomvalue can be lots of things. However, since it can be used in
--- as a term (singleton expression), an ambiguity might occur if we allow
+-- a term (singleton term), an ambiguity might occur if we allow
 -- negative numbers. The minus sign could be confused with a complement operator.
 -- For this reason, we introduced a possibility to constrain the value.
--- constrained values have the constraint that a negative number is'n allowed.
+-- constrained values have the constraint that a negative number is not allowed.
 -- the user can lift the constraints by embeding the value in curly brackets. In
--- such a case, the user could use a negative number as a singleton expression.
+-- such a case, the user could use a negative number as a singleton term.
 pAtomValInPopulation constrainsApply =
   VBoolean True <$ pKey "TRUE"
     <|> VBoolean False <$ pKey "FALSE"

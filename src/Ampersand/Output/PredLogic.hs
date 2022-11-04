@@ -57,8 +57,8 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
         vChar = T.toLower . T.take 1 . name
 
--- predLshow exists for the purpose of translating a predicate logic expression to natural language.
--- example:  'predLshow l e' translates expression 'e'
+-- predLshow exists for the purpose of translating a predicate logic term to natural language.
+-- example:  'predLshow l e' translates term 'e'
 -- into a string that contains a natural language representation of 'e'.
 predLshow :: Lang -> (Var -> Text) -> PredLogic -> Text
 predLshow lang vMap = charshow 0

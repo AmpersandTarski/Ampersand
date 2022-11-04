@@ -76,7 +76,7 @@ fSpecGenOptsParser isForDaemon =
               <> metavar "CRUD"
               <> help
                 ( "Temporary switch to learn about the semantics of crud in "
-                    <> "interface expressions."
+                    <> "interface terms."
                 )
           )
       where
