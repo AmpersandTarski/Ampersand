@@ -41,13 +41,14 @@ safeFilePath = T.unpack <$> safeText
 --   characters are all alphanumerical or '_'. Keywords are excluded from identifiers
 identifier :: Gen Text1
 identifier =
-  ( Text1 <$> arbitrary `suchThat` isSafeIdChar True
-      <*> (T.pack <$> listOf (arbitrary `suchThat` isSafeIdChar False))
+  ( Text1 <$> arbitrary `suchThat` isSafeIdChar' True
+      <*> (T.pack <$> listOf (arbitrary `suchThat` isSafeIdChar' False))
   )
     `suchThat` (not . isKeyword)
   where
     isKeyword :: Text1 -> Bool
     isKeyword x = x `elem` keywords
+    isSafeIdChar' b c = isSafeIdChar b c && isAscii c -- Only use ascii to run the quickckeck. This prevents difficult-to-read error messages in the parser/prettyprinter roundtrip.
 
 -- Genrates a valid ADL lower-case name
 lowercaseName :: Gen Name
