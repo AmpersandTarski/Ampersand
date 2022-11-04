@@ -1101,8 +1101,8 @@ instance Traversable P_ViewSegment where
   traverse fn (P_ViewSegment a b c) = P_ViewSegment a b <$> traverse fn c
 
 data P_ViewSegmtPayLoad a
-  = P_ViewExp {vs_expr :: Term a}
-  | P_ViewText {vs_txt :: Text}
+  = P_ViewExp {vs_expr :: !(Term a)}
+  | P_ViewText {vs_txt :: !Text}
   deriving (Show)
 
 newtype ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
