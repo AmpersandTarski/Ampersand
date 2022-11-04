@@ -154,7 +154,7 @@ commandLineHandler currentDir _progName args =
       addCommand''
         Validate
         ( "Compare results of rule evaluation in Haskell and SQL, for"
-            <> "testing expression semantics. This requires command line php with"
+            <> "testing term semantics. This requires command line php with"
             <> "MySQL support."
         )
         (mkAction validate)

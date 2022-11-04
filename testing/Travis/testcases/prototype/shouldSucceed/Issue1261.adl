@@ -1,5 +1,5 @@
 CONTEXT Issue1261
--- This script generates SQL for a singleton in an expression. In such case, single quotes should be used. 
+-- This script generates SQL for a singleton in a term. In such case, single quotes should be used. 
 -- This can be verified (manually :( ) in conjuncts.json. Search for 'god'. (Aren't we all?)
 
 -- For system bootstrapping purposes, we need a "God"-account that has all permissions/roles.

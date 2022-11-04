@@ -304,7 +304,7 @@ refStuff x =
         }
     XRefConceptualAnalysisExpression r ->
       RefStuff
-        { typeOfSection = expression,
+        { typeOfSection = term,
           chapterOfSection = ConceptualAnalysis,
           identOfThing = mkId r,
           xrefPrefix = Eq
@@ -317,8 +317,8 @@ refStuff x =
           xrefPrefix = Sec
         }
   where
-    (relation, rule, expression, pattern', theme) =
-      ("relation", "rule", "expression", "pattern", "theme")
+    (relation, rule, term, pattern', theme) =
+      ("relation", "rule", "term", "pattern", "theme")
 
 data ThemeContent = Thm
   { themeNr :: Int,

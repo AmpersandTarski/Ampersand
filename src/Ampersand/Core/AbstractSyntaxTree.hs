@@ -312,7 +312,7 @@ type Rules = Set.Set Rule
 data Rule = Rule
   { -- | Name of this rule
     rrnm :: !Name,
-    -- | The expression that should be True
+    -- | The term that should be True
     formalExpression :: !Expression,
     -- | Position in the Ampersand file
     rrfps :: !Origin,
@@ -494,15 +494,15 @@ instance Traced Relation where
   origin = decfpos
 
 data IdentityRule = Id
-  { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
+  { -- | The position of this definition in the text of the Ampersand source file (filename, line number and column number).
     idPos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
     idLbl :: !Name,
-    -- | this expression describes the instances of this object, related to their context
+    -- | this term describes the instances of this object, related to their context
     idCpt :: !A_Concept,
     -- | if defined within a pattern, then the name of that pattern.
     idPat :: !(Maybe Name),
-    -- | the constituent attributes (i.e. name/expression pairs) of this identity.
+    -- | the constituent attributes (i.e. name/term pairs) of this identity.
     identityAts :: NE.NonEmpty IdentitySegment
   }
   deriving (Show)
@@ -539,7 +539,7 @@ data ViewDef = Vd
     -- | the html template for this view (not required since we may have other kinds of views as well in the future)
     --                  , vdtext :: Maybe ViewText -- Future extension
     vdhtml :: !(Maybe ViewHtmlTemplate),
-    -- | the constituent attributes (i.e. name/expression pairs) of this view.
+    -- | the constituent attributes (i.e. name/term pairs) of this view.
     vdats :: ![ViewSegment]
   }
   deriving (Show)
@@ -679,7 +679,7 @@ getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == 
 class Object a where
   concept :: a -> A_Concept -- the type of the object
   fields :: a -> [ObjectDef] -- the objects defined within the object
-  contextOf :: a -> Expression -- the context expression
+  contextOf :: a -> Expression -- the context term
 
 instance Object ObjectDef where
   concept obj = target (objExpression obj)
@@ -736,7 +736,7 @@ data ObjectDef = ObjectDef
     objLabel :: !(Maybe Text1),
     -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
     objPos :: !Origin,
-    -- | this expression describes the instances of this object, related to their context.
+    -- | this term describes the instances of this object, related to their context.
     objExpression :: !Expression,
     -- | CRUD as defined by the user
     objcrud :: !Cruds,
@@ -1079,52 +1079,52 @@ infixl 8 .*. -- cartesian product
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
 l .==. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot equate (with operator \"==\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EEqu (l, r)
 
 l .|-. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot include (with operator \"|-\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EInc (l, r)
 
 l ./\. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot intersect (with operator \"/\\\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EIsc (l, r)
 
 l .\/. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot unite (with operator \"\\/\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EUni (l, r)
 
 l .-. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot subtract (with operator \"-\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EDif (l, r)
 
 l ./. r =
   if target l /= target r
-    then fatal ("Cannot residuate (with operator \"/\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else ELrs (l, r)
 
 l .\. r =
   if source l /= source r
-    then fatal ("Cannot residuate (with operator \"\\\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else ERrs (l, r)
 
 l .<>. r =
   if source r /= target l
-    then fatal ("Cannot use diamond operator \"<>\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else EDia (l, r)
 
 l .:. r =
   if source r /= target l
-    then fatal ("Cannot compose (with operator \";\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else ECps (l, r)
 
 l .!. r =
   if source r /= target l
-    then fatal ("Cannot add (with operator \"!\") expression l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with expression r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
     else ERad (l, r)
 
 l .*. r =

@@ -608,7 +608,7 @@ data Term a
     PFlp Origin (Term a)
   | -- | Complement
     PCpl Origin (Term a)
-  | -- | bracketed expression ( ... )
+  | -- | bracketed term ( ... )
     PBrk Origin (Term a)
   deriving (Show) -- deriving Show for debugging purposes
 
@@ -781,7 +781,7 @@ data P_Rule a = P_Rule
     pos :: !Origin,
     -- | Name of this rule
     rr_nm :: !Name,
-    -- | The rule expression
+    -- | The rule term
     rr_exp :: !(Term a),
     -- | User-specified meanings, possibly more than one, for multiple languages.
     rr_mean :: ![PMeaning],
@@ -865,7 +865,7 @@ data P_Interface = P_Ifc
     ifc_Name :: !Name,
     -- | a list of roles that may use this interface
     ifc_Roles :: ![Role],
-    -- | the context expression (mostly: I[c])
+    -- | the context term (mostly: I[c])
     ifc_Obj :: !P_BoxBodyElement,
     pos :: !Origin,
     ifc_Prp :: !Text
@@ -945,7 +945,7 @@ data P_BoxItem a
         box_label :: !(Maybe Text1),
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
         pos :: !Origin,
-        -- | this expression describes the instances of this object, related to their context.
+        -- | this term describes the instances of this object, related to their context.
         obj_ctx :: !(Term a),
         -- | the CRUD actions as required by the user
         obj_crud :: !(Maybe P_Cruds),
@@ -989,7 +989,7 @@ data P_IdentDf a -- so this is the parametric data-structure
     pos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
     ix_lbl :: !Name,
-    -- | this expression describes the instances of this object, related to their context
+    -- | this term describes the instances of this object, related to their context
     ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
     ix_ats :: !(NE.NonEmpty (P_IdentSegmnt a))
@@ -1213,9 +1213,9 @@ instance Flippable P_Sign where
 
 data PClassify = PClassify
   { pos :: Origin,
-    -- | Left hand side concept expression
+    -- | Left hand side concept
     specific :: P_Concept,
-    -- | Right hand side concept expression
+    -- | Right hand side concept
     generics :: NE.NonEmpty P_Concept
   }
   deriving (Show)

@@ -36,8 +36,8 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- | subst is used to replace each occurrence of a relation
---   with an expression. The parameter expr will therefore be applied to an
---   expression of the form Erel rel.
+--   with an expression. The parameter expr will therefore be applied to a
+--   term of the form Erel rel.
 subst :: (Relation, Expression) -> Expression -> Expression
 subst (decl, expr) = subs
   where
@@ -178,7 +178,7 @@ isFlipped EFlp {} = True
 isFlipped (EBrk e) = isFlipped e
 isFlipped _ = False
 
--- | Function to determine that the expression
+-- | Function to determine that the term
 --   could be used to create a new atom in its target concept
 isFitForCrudC :: Expression -> Bool
 isFitForCrudC expr =
@@ -194,12 +194,12 @@ isFitForCrudC expr =
 
 -- EDcI{} -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
 
--- | Function to determine that the expression
+-- | Function to determine that the term
 --   could be used to read the population of its target concept
 isFitForCrudR :: Expression -> Bool
 isFitForCrudR _ = True
 
--- | Function to determine that the expression
+-- | Function to determine that the term
 --   could be used to insert or delete a pair in the population of a relation
 isFitForCrudU :: Expression -> Bool
 isFitForCrudU expr =
@@ -213,7 +213,7 @@ isFitForCrudU expr =
     ECps (_, _) -> False
     _ -> False
 
--- | Function to determine that the expression is simple, that it
+-- | Function to determine that the term is simple, that it
 --   could be used to update the population of a relation
 isFitForCrudD :: Expression -> Bool
 isFitForCrudD _ = True

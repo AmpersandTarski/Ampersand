@@ -483,7 +483,7 @@ pAdlTType =
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
 -- The label 'onNameAddress' is used to refer to this identity.
--- You may also use an expression on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
+-- You may also use a term on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 
 --- IdentDef ::= 'IDENT' Label ConceptRef '(' IndSegmentList ')'
@@ -590,7 +590,7 @@ pInterface ns =
     <*> pUnrestrictedName ns
     <*> pMaybe pParams
     <*> pMaybe pRoles
-    <*> (pColon *> pTerm ns) -- the expression of the interface object
+    <*> (pColon *> pTerm ns) -- the term of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
     <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
     <*> pSubInterface ns
@@ -664,7 +664,7 @@ pBoxBodyElement ns =
       build
         <$> currPos
         <*> pLabelAndColon
-        <*> pTerm ns -- the context expression (for example: I[c])
+        <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
         <*> pMaybe (pChevrons $ pUpperCaseName ns) --for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
@@ -881,7 +881,7 @@ pTrm6 ns =
   Prim <$> pRelationRef ns
     <|> PBrk <$> currPos <*> pParens (pTerm ns)
 
--- Help function for several expressions. The type 't' is each of the terms.
+-- Help function for several terms. The type 't' is each of the terms.
 invert :: (Origin -> t -> t -> t) -> Origin -> t -> t -> t
 invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
 

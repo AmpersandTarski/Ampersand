@@ -234,7 +234,7 @@ onlyUserConcepts ci = fmap $ userList (conceptMap ci)
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
---    Disambiguation means replacing every "TermPrim" (the parsed expression) with the correct Expression (available through DisambPrim)
+--    Disambiguation means replacing every "TermPrim" (the parsed term) with the correct Expression (available through DisambPrim)
 --    This is done by using the function "disambiguate" on the outer-most structure.
 --    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
 --    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
@@ -748,7 +748,7 @@ pCtx2aCtx
               warns :: [Warning]
               warns =
                 map (mkCrudWarning pc) $
-                  [ [ "'C' was specified, but the expression ",
+                  [ [ "'C' was specified, but the term ",
                       "  " <> showA expr,
                       "doesn't allow for the creation of a new atom at its target concept (" <> (text1ToText . tName . target) expr <> ") "
                     ]
@@ -758,19 +758,19 @@ pCtx2aCtx
                          ]
                     | 'C' `elem` T.unpack crd && not (isFitForCrudC expr)
                   ]
-                    <> [ [ "'R' was specified, but the expression ",
+                    <> [ [ "'R' was specified, but the term ",
                            "  " <> showA expr,
-                           "doesn't allow for read of the pairs in that expression."
+                           "doesn't allow for read of the pairs in that term."
                          ]
                          | 'R' `elem` T.unpack crd && not (isFitForCrudR expr)
                        ]
-                    <> [ [ "'U' was specified, but the expression ",
+                    <> [ [ "'U' was specified, but the term ",
                            "  " <> showA expr,
                            "doesn't allow to insert or delete pairs in it."
                          ]
                          | 'U' `elem` T.unpack crd && not (isFitForCrudU expr)
                        ]
-                    <> [ [ "'D' was specified, but the expression ",
+                    <> [ [ "'D' was specified, but the term ",
                            "  " <> showA expr,
                            "doesn't allow for the deletion of an atom from its target concept (" <> (text1ToText . tName . target) expr <> ") "
                          ]
@@ -788,7 +788,7 @@ pCtx2aCtx
         P_BoxItem a -> -- name of where the error occured!
         P_SubIfc (TermPrim, DisambPrim) -> -- Subinterface to check
         Guarded
-          ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original expression (in such a case, epsilons are added to the branches instead)
+          ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
             SubInterface -- the subinterface
           )
       pSubi2aSubi ci objExpr b o x =
@@ -917,7 +917,7 @@ pCtx2aCtx
                           Errors . pure
                             . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
                             $ tt
-                    BxTxt _ -> fatal "Unexpected BxTxt" --Interface should not have TXT only. it should have an expression object.
+                    BxTxt _ -> fatal "Unexpected BxTxt" --Interface should not have TXT only. it should have a term object.
           ttype :: A_Concept -> TType
           ttype = representationOf declMap
 
@@ -1182,16 +1182,16 @@ typecheckTerm ci tct =
     o = origin (fmap fst tct)
     tt = typecheckTerm ci
     -- SJC: Here is what binary, binary' and unary do:
-    -- (1) Create an expression, the combinator for this is given by its first argument
-    -- (2) Fill in the corresponding type-checked terms to that expression
+    -- (1) Create a term, the combinator for this is given by its first argument
+    -- (2) Fill in the corresponding type-checked terms to that term
     -- (3) For binary' only: fill in the intermediate concept too
-    -- (4) Fill in the type of the new expression
+    -- (4) Fill in the type of the new term
     -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
     -- If you don't know what to use, try MBE: it is the strictest form.
     -- In the steps (3) and (4), different type errors may arise:
     -- If the type does not exist, this yields a type error.
     -- Some types may be generalized, while others may not.
-    -- When a type may be generalized, that means that the value of the expression does not change if the type becomes larger
+    -- When a type may be generalized, that means that the value of the term does not change if the type becomes larger
     -- When a type may not be generalized:
     --   the type so far is actually just an estimate
     --   it must be bound by the context to something smaller, or something as big
@@ -1421,7 +1421,7 @@ lMeet a b = Meet (Atom a) (Atom b)
 flType :: FreeLattice A_Concept -> FreeLattice Type
 flType = fmap aConcToType
 
--- intended for finding the right expression on terms like (Src,fst)
+-- intended for finding the right term on terms like (Src,fst)
 resolve :: t -> (SrcOrTgt, t -> (t1, (t2, t2))) -> (SrcOrTgt, (t1, t2))
 resolve es (p, f) =
   case (p, f es) of

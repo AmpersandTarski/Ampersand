@@ -30,12 +30,12 @@ testConfluence context =
             length tcs > 1
         ]
       sumt = sum (map (length . snd) tcss)
-   in para ("Confluence analysis statistics from " <> (str . tshow . length . expressionsIn) context <> " expressions." <> linebreak)
-        <> para ("This script contains " <> linebreak <> (str . tshow . length) tcss <> " non-confluent expressions " <> linebreak)
-        <> para (linebreak <> "Total number of derived expressions: " <> (str . tshow) sumt <> linebreak)
+   in para ("Confluence analysis statistics from " <> (str . tshow . length . expressionsIn) context <> " terms." <> linebreak)
+        <> para ("This script contains " <> linebreak <> (str . tshow . length) tcss <> " non-confluent terms " <> linebreak)
+        <> para (linebreak <> "Total number of derived terms: " <> (str . tshow) sumt <> linebreak)
         <> para ("Confluence analysis for " <> (str . text1ToText . tName) context)
         <> mconcat
-          [ para (linebreak <> "expression:   " <> (str . showA) expr <> linebreak)
+          [ para (linebreak <> "term:   " <> (str . showA) expr <> linebreak)
               <> bulletList [showProof (para . str . showA) prf | (_, prf) <- tcs]
             | (expr, tcs) <- tcss
           ]

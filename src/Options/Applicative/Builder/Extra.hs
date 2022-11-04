@@ -173,7 +173,7 @@ extraHelpOption ::
   Bool ->
   -- | Program name, e.g. @"stack"@
   String ->
-  -- | Option glob expression, e.g. @"docker*"@
+  -- | Option glob term, e.g. @"docker*"@
   String ->
   -- | Help option name, e.g. @"docker-help"@
   String ->
