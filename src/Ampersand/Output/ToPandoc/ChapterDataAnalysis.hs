@@ -430,10 +430,10 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
           para . text $
             l
               ( NL $
-                  "Nu volgt een opsomming van alle regels. Per regel wordt de formele expressie ervan gegeven. "
+                  "Nu volgt een opsomming van alle regels door de term van elke regel af te drukken. "
                     <> "Eerst worden de procesregels gegeven, vervolgens de invarianten.",
                 EN $
-                  "In this section an overview of all rules is given. For every rule, the formal expression is shown. "
+                  "In this section an overview of all rules by printing the term of each rule. "
                     <> "The process rules are given first, followed by the invariants."
               ),
           docRules
@@ -513,7 +513,7 @@ primExpr2pandocMath lang e =
     (EIsc (r1, _)) ->
       let srcTable = case r1 of
             EDcI c -> c
-            _ -> fatal ("Unexpected expression: " <> tshow r1)
+            _ -> fatal ("Unexpected term: " <> tshow r1)
        in case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "

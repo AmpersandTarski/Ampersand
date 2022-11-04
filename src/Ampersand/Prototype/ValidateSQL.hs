@@ -36,7 +36,7 @@ validateRulesSQL fSpec = do
               <> getAllPairViewExps fSpec
               <> getAllIdExps fSpec
               <> getAllViewExps fSpec
-      logDebug $ "Number of expressions to be validated: " <> displayShow (length allExps)
+      logDebug $ "Number of terms to be validated: " <> displayShow (length allExps)
       results <- mapM (validateExp fSpec (length allExps)) $ zip allExps [1 ..]
       logStickyDone ""
       case [ve | (ve, False) <- results] of
@@ -45,7 +45,7 @@ validateRulesSQL fSpec = do
           return []
         ves ->
           return $
-            "Validation error. The following expressions failed validation:" :
+            "Validation error. The following terms failed validation:" :
             map showVExp ves
 
 stringify :: (Rule, AAtomPairs) -> (Text, [Text])
@@ -53,7 +53,7 @@ stringify (rule, pairs) = (name rule, map f . Set.elems $ pairs)
   where
     f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
 
--- functions for extracting all expressions from the context
+-- functions for extracting all terms from the context
 
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec =
@@ -66,7 +66,7 @@ getAllInterfaceExps fSpec =
       (objExpression objDef, "interface " <> tshow iName) :
       concatMap (getObjExps iName) (fields objDef)
 
--- we check the complement of the rule, since that is the expression evaluated in the prototype
+-- we check the complement of the rule, since that is the term evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` grules fSpec
   where
@@ -100,20 +100,20 @@ type ValidationExp = (Expression, Text)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
 showVExp :: (Expression, Text) -> Text
-showVExp (expr, orig) = "Origin: " <> orig <> ", expression: " <> showA expr
+showVExp (expr, orig) = "Origin: " <> orig <> ", term: " <> showA expr
 
--- validate a single expression and report the results
+-- validate a single term and report the results
 validateExp ::
   (HasLogFunc env) =>
   FSpec ->
-  Int -> -- total amount of expressions to be validated (for showing progress)
+  Int -> -- total amount of terms to be validated (for showing progress)
   ( ValidationExp, -- The expression to be validated
     Int -- The index of the expression (for showing progress)
   ) ->
   RIO env (ValidationExp, Bool)
 validateExp fSpec total (vExp, i) = do
   let (e, _) = vExp
-  logSticky . display $ "Validating expressions: " <> tshow i <> " of " <> tshow total <> " " <> showA e <> " (" <> tshow e <> ")."
+  logSticky . display $ "Validating terms: " <> tshow i <> " of " <> tshow total <> " " <> showA e <> " (" <> tshow e <> ")."
   case vExp of
     (EDcD {}, _) -> do
       -- skip all simple relations
@@ -126,7 +126,7 @@ validateExp fSpec total (vExp, i) = do
           return (vExp, True)
         else do
           logInfo ""
-          logInfo $ "Checking " <> display orig <> ": expression = " <> display (showA expr)
+          logInfo $ "Checking " <> display orig <> ": term = " <> display (showA expr)
           logInfo ""
           logInfo "Mismatch between SQL and Ampersand"
           logInfo $ display (showVExp vExp)

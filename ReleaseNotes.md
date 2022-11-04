@@ -1,6 +1,8 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+* Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
+* [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 * Minor update of the devcontainer.
 
 ## v4.7.1 (1 September 2022)
@@ -399,7 +401,7 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
 * ExecEngine extension: improved logging for debugging
 * Added new reporting functionality for backend framework
-* DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+* DB performance: less queries because 'I[Concept]'-term is not queried anymore
 * Minor backend fixes
 * Fix issues regarding CRUD specifications: missing interfaces in navbar +menu, missing crudR check in templates, return content after create
 

@@ -1,0 +1,6 @@
+{
+    "structure": {
+        "readme": "intro.md"
+    }
+,   "plugins": ["mathjax"]
+}
