@@ -301,6 +301,7 @@ prettyObject objectKind obj =
               InterfaceKind -> view mView <$> pretty msub
               SubInterfaceKind _ -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
               IdentSegmentKind -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
+              ViewSegmentKind -> pretty ctx <+> view mView
             (P_BxTxt _ _ str) ->
               text "TXT" <+> quote str
         )
