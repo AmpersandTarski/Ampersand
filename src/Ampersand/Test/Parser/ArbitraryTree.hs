@@ -75,26 +75,31 @@ makeObj objectKind =
       InterfaceKind -> pure Nothing
       SubInterfaceKind _ -> Just <$> safeLabel
       IdentSegmentKind -> pure Nothing
+      ViewSegmentKind -> pure Nothing
     cruds :: Gen (Maybe P_Cruds)
     cruds = case objectKind of
       InterfaceKind -> arbitrary
       SubInterfaceKind _ -> arbitrary
       IdentSegmentKind -> pure Nothing
+      ViewSegmentKind -> pure Nothing
     view' :: Gen (Maybe Name)
     view' = case objectKind of
       InterfaceKind -> oneof [pure Nothing, Just <$> uppercaseName]
       SubInterfaceKind _ -> oneof [pure Nothing, Just <$> uppercaseName]
       IdentSegmentKind -> pure Nothing
+      ViewSegmentKind -> oneof [pure Nothing, Just <$> uppercaseName]
     isTxtAllowed = case objectKind of
       InterfaceKind -> False
       SubInterfaceKind _ -> True
       IdentSegmentKind -> False
+      ViewSegmentKind -> True
     term =
       -- depending on the kind, we need the term to be a namedRelation
       Prim <$> case objectKind of
         InterfaceKind -> PNamedR <$> arbitrary
         SubInterfaceKind _ -> arbitrary
         IdentSegmentKind -> PNamedR <$> arbitrary
+        ViewSegmentKind -> arbitrary
     subInterface :: ObjectKind -> Gen (Maybe (P_SubIfc TermPrim))
     subInterface objectKind' = case objectKind' of
       InterfaceKind -> subInterface (SubInterfaceKind {siMaxDepth = 3})
@@ -106,6 +111,7 @@ makeObj objectKind =
             [ P_Box <$> arbitrary <*> arbitrary <*> smallListOf (makeObj (SubInterfaceKind {siMaxDepth = min (n -1) 2})),
               P_InterfaceRef <$> arbitrary <*> arbitrary <*> arbitrary
             ]
+      ViewSegmentKind -> pure Nothing
 
 smallListOf :: Gen a -> Gen [a]
 smallListOf gen = do

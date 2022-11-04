@@ -936,7 +936,7 @@ instance Traced TemplateKeyValue where
 
 type P_BoxBodyElement = P_BoxItem TermPrim
 
-data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind
+data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind | ViewSegmentKind
   deriving (Show)
 
 data P_BoxItem a
