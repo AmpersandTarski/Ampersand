@@ -137,7 +137,7 @@ tempDbName fSpec = mkValidDBName $ "TempDB_" <> (text1ToText . tName) fSpec
 
 -- | Database name should not contain specific characters. Also, it has some maximum length.
 mkValidDBName :: Text -> Text
-mkValidDBName = T.take 31 . removeAll [' ', '/']
+mkValidDBName = T.reverse . T.take 31 . T.reverse . removeAll [' ', '/', '.']
   where
     removeAll :: [Char] -> Text -> Text
     removeAll cs t = case T.uncons t of
