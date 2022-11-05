@@ -133,7 +133,19 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
 
 tempDbName :: FSpec -> Text
-tempDbName fSpec = "TempDB_" <> (text1ToText . tName) fSpec
+tempDbName fSpec = mkValidDBName $ "TempDB_" <> (text1ToText . tName) fSpec
+
+-- | Database name should not contain specific characters. Also, it has some maximum length.
+mkValidDBName :: Text -> Text
+mkValidDBName = T.take 31 . removeAll [' ', '/']
+  where
+    removeAll :: [Char] -> Text -> Text
+    removeAll cs t = case T.uncons t of
+      Nothing -> t
+      Just (h, tl) ->
+        if h `elem` cs
+          then removeAll cs tl
+          else T.cons h (removeAll cs tl)
 
 connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
