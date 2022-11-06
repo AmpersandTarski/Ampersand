@@ -25,9 +25,9 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 data SqlQuery
-  = SqlQueryPlain Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
-  | SqlQueryPretty [Text] -- Human readable, neatly prettyprinted
-  | SqlQuerySimple Text -- Simple sql statement, could be both plain and pretty.
+  = SqlQueryPlain !Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
+  | SqlQueryPretty ![Text] -- Human readable, neatly prettyprinted
+  | SqlQuerySimple !Text -- Simple sql statement, could be both plain and pretty.
 
 placeHolderSQL :: Text
 placeHolderSQL = "_SRCATOM"
@@ -1333,10 +1333,10 @@ sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
   | c == ONE = QName "ONE"
   | otherwise =
-    case [ tshow f | f <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- Set.elems $ concs f, c == c'
+    case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- Set.elems $ concs att, c == c'
          ] of
       [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> text1ToText (tName fSpec) <> "\"")
-      h : _ -> QName . T.unpack $ h
+      h : _ -> QName . sqlColumNameToString . attSQLColName $ h
 
 stringOfName :: Name -> Text
 stringOfName (Name s) = T.pack s

@@ -142,10 +142,7 @@ mkValidDBName = T.reverse . T.take 31 . T.reverse . removeAll [' ', '/', '.']
     removeAll :: [Char] -> Text -> Text
     removeAll cs t = case T.uncons t of
       Nothing -> t
-      Just (h, tl) ->
-        if h `elem` cs
-          then removeAll cs tl
-          else T.cons h (removeAll cs tl)
+      Just (h, tl) -> T.cons (if h `elem` cs then h else '_') (removeAll cs tl)
 
 connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
