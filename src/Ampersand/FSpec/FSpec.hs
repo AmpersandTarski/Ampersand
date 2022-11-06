@@ -379,7 +379,15 @@ data SqlAttributeUsage
   deriving (Eq, Show)
 
 newtype SqlColumName = SqlColumName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
-  deriving (Eq, Ord)
+
+instance Ord SqlColumName where
+  compare = compare `on` foo
+    where
+      foo :: SqlColumName -> Text
+      foo (SqlColumName t1) = T.toUpper . text1ToText $ t1
+
+instance Eq SqlColumName where
+  a == b = compare a b == EQ
 
 instance Show SqlColumName where
   show = sqlColumNameToString
