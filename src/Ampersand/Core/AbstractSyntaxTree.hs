@@ -1079,52 +1079,52 @@ infixl 8 .*. -- cartesian product
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
 l .==. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EEqu (l, r)
 
 l .|-. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EInc (l, r)
 
 l ./\. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EIsc (l, r)
 
 l .\/. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EUni (l, r)
 
 l .-. r =
   if source l /= source r || target l /= target r
-    then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EDif (l, r)
 
 l ./. r =
   if target l /= target r
-    then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else ELrs (l, r)
 
 l .\. r =
   if source l /= source r
-    then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else ERrs (l, r)
 
 l .<>. r =
   if source r /= target l
-    then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else EDia (l, r)
 
 l .:. r =
   if source r /= target l
-    then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else ECps (l, r)
 
 l .!. r =
   if source r /= target l
-    then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> "\n   " <> tshow l <> "\n   with term r of type " <> tshow (sign r) <> "\n   " <> tshow r <> ".")
+    then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
     else ERad (l, r)
 
 l .*. r =
