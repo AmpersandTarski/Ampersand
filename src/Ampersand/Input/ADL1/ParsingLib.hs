@@ -208,7 +208,7 @@ pDoubleQuotedString1 =
           Just _ -> Just (toText1Unsafe t)
         _ -> Nothing
     )
-    <?> "double quoted string"
+    <?> "double quoted non-empty string"
 
 --- Markup ::= '{+' Any* '+}'
 pAmpersandMarkup :: AmpParser Text

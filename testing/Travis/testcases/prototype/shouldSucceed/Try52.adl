@@ -5,17 +5,17 @@ RELATION r[A*B]
 RELATION r[C*D]
 ENDPATTERN
 
-INTERFACE "Overview" : I[ONE]
+INTERFACE Overview : I[ONE]
 BOX [ "r[A*B]" : V[ONE*A] BOX [ "" : r[A*B] ]
     , "r[C*D]" : V[ONE*C] BOX [ "" : r[C*D] ]
     ]
 
-INTERFACE "from A" (r[A*B]) : I[A]
+INTERFACE from_A (r[A*B]) : I[A]
 BOX [ "" : I
     , "r[A*B]" : r[A*B]
     ]
 
-INTERFACE "from C" (r[C*D]) : I[C]
+INTERFACE from_C (r[C*D]) : I[C]
 BOX [ "" : I
     , "r[C*D]" : r[C*D]
     ]
