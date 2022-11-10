@@ -20,7 +20,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         MEANING "A navbar item can direct to an interface"
         CONCEPT PF_Interface "Representation of an Ampersand interface"
 
-    RULE "Do not allow references to API interfaces" : ifc;isAPI |- -V
+    RULE DoNotAllowReferencesToApiInterfaces : ifc;isAPI |- -V
         MESSAGE "A navbar item can not reference an API interface"
   
     RELATION url[PF_NavMenuItem*PF_URL] [UNI]

@@ -259,19 +259,13 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> pNameAndTerm
+    <*> optional (pNameAndColon ns)
+    <*> pRule ns
     <*> many pMeaning
     <*> many pMessage
     <*> pMaybe pViolation
   where
-    pNameAndTerm :: AmpParser (Maybe Name, Term TermPrim)
-    pNameAndTerm =
-      try (withName <$> pNameAndColon ns <*> pRule ns)
-        <|> (withoutName <$> pRule ns)
-      where
-        withName nm term = (Just nm, term)
-        withoutName term = (Nothing, term)
-    build orig (mName, term) meanings messages mViolation =
+    build orig mName term meanings messages mViolation =
       P_Rule
         { pos = orig,
           rr_nm =
@@ -957,8 +951,8 @@ pLabelAndColon = pUnrestrictedLabel <* pColon
 pUnrestrictedLabel :: AmpParser Text1
 pUnrestrictedLabel = pSingleWord <|> pDoubleQuotedString1
 
-pNameAndColon :: NameSpace -> AmpParser Name --TODO: Dit moet subtieler, omdat er ook namen kunnen bestaan met een NameSpace-gedeelte als prefix.
-pNameAndColon ns = toName ns <$> pLabelAndColon
+pNameAndColon :: NameSpace -> AmpParser Name
+pNameAndColon ns = (pUpperCaseName ns <|> pLowerCaseName ns) <* pColon
 
 --- Content ::= '[' RecordList? ']'
 pContent :: AmpParser [PAtomPair]
