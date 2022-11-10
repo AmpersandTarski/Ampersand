@@ -159,7 +159,7 @@ parseThings ns pcs = do
         (candidates, contexts) = L.unzip xs
         mergedContexts = case contexts of
           [] -> fatal "Impossible"
-          h : tl -> foldr mergeContexts h tl
+          h : tl -> foldl' mergeContexts h tl
 
 -- | Parses several ADL files
 parseADLs ::
