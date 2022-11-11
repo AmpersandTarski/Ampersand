@@ -23,7 +23,7 @@ PATTERN ARM20Test7
 CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
 CLASSIFY Verwachting ISA Criterium -- had ook 'Businessrule' kunnen zijn
 CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
-RULE "Gewetensvragen": I[Gewetensvraag] = I[Verplichting] /\ I[Verwachting]
+RULE Gewetensvragen: I[Gewetensvraag] = I[Verplichting] /\ I[Verwachting]
 
 criterium :: Criterium * Text
 ROLE USER MAINTAINS Criteria

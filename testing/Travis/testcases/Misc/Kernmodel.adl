@@ -195,9 +195,9 @@ RELATION departementsleiding[Departement*Functie]
    RELATION gronden[Mandaat*Titel]
    RELATION bevoegde[Bevoegdheid*Functie]
 
-   VIEW "Bevoegdheid" : Bevoegdheid(TXT "bevoegdheid van ", bevoegde, TXT " tot het ", bevoegdheid~ , TXT "op grond van ", gronden)
+   VIEW Bevoegdheid : Bevoegdheid(TXT "bevoegdheid van ", bevoegde, TXT " tot het ", bevoegdheid~ , TXT "op grond van ", gronden)
 {- Voorbeeld: bevoegdheid van de Minister van VROM aanwijzingen te geven aan gemeenten op grond van artikel 37 van de Wet op de Ruimtelijke Ordening -} -- Deze formulering is afkomstig van de Memorie van Toelichting.
-   VIEW "Specifiek Mandaat" : Mandaat (TXT "mandaat door ", mandaatgever, TXT " aan ", gemandateerde, TXT " van ", mandaatbevoegdheid, TXT " op grond van ", gronden) -- Deze formulering is afkomstig van de Memorie van Toelichting.
+   VIEW Specifiek_Mandaat : Mandaat (TXT "mandaat door ", mandaatgever, TXT " aan ", gemandateerde, TXT " van ", mandaatbevoegdheid, TXT " op grond van ", gronden) -- Deze formulering is afkomstig van de Memorie van Toelichting.
 {- Voorbeeld: mandaat door de Minister van Justitie aan het hoofd van politie te Groningen van de bevoegdheid te beslissen omtrent een vestigingsvergunning respectievelijk een verblijfsvergunning op grond van de Vreemdelingenwet (Afd. rechtspraak 19 december 1985, AB 1986, 398, en Afd. rechtspraak 24 februari 1986, AB 1987, 190) -}
 
    RULE mandaatRegel : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
