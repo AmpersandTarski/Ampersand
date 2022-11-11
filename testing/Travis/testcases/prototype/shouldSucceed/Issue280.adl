@@ -6,7 +6,7 @@ CONTEXT Issue280 IN ENGLISH
  RELATION s[A*C] [UNI]
  RELATION t[B*C] [UNI]
 
- RULE "Issue280":
+ RULE Issue280:
     (q;V /\ p;(I-r;r~)) \/ (p /\ q;-I;r~)
  \/
     (s;V /\ p;(I-t;t~)) \/ (p /\ s;-I;t~)

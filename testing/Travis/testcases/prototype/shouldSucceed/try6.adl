@@ -15,7 +15,7 @@ CLASSIFY A ISA G
 -- CLASSIFY B ISA F
 -- CLASSIFY F IS B /\ F
 -- CLASSIFY G IS B /\ G
-RULE r = s!(t\/u)
+RULE Try6 : r = s!(t\/u)
 ENDPATTERN
 
 ENDCONTEXT

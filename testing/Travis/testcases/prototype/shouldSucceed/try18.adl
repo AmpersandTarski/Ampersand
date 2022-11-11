@@ -7,7 +7,7 @@ RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RELATION t[Q*Y]
-RULE r = s;I[B];t
+RULE Test : r = s;I[B];t
 CLASSIFY D IS A/\B
 -- was:  RULE I[D] = I[A]/\I[B]
 ENDPATTERN

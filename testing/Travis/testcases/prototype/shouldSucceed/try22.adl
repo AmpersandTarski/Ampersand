@@ -3,7 +3,7 @@ CONTEXT Test IN ENGLISH
 PATTERN Test11
 r :: A*A
 r :: B*C
-RULE r = r[A*A]-I
+RULE Test: r = r[A*A]-I
 ENDPATTERN
 
 ENDCONTEXT

@@ -9,7 +9,7 @@ RELATION tav[Verplichting*Bedrijfsfunctie]
 
 RELATION tav[Verwachting*Bedrijfsfunctie]
 
-RULE scope/\tav[Verplichting*Bedrijfsfunctie] |- tav[Verwachting*Bedrijfsfunctie]
+RULE Try34: scope/\tav[Verplichting*Bedrijfsfunctie] |- tav[Verwachting*Bedrijfsfunctie]
 
 ENDPATTERN
 ENDCONTEXT
