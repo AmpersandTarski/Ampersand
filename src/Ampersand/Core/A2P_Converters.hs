@@ -428,7 +428,7 @@ aAtomValue2pAtomValue val =
       _ -> fatal "Unexpected combination of value types"
     TypeOfOne -> fatal "Unexpected combination of value types"
   where
-    o = fatal $ "Origin is not present in AAtomValue: " <> tshow val
+    o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 
 aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
 aSubIfc2pSubIfc sub =
