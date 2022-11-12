@@ -1,6 +1,6 @@
 CONTEXT Ticket440 IN DUTCH
 
-PATTERN "Voldoen aan normen"
+PATTERN Voldoen_aan_normen
 heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan een norm."
 isDeelnormVan :: Norm * Norm [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
 
@@ -10,11 +10,11 @@ MEANING "Als aan alle deelnormen is voldaan, dan is ook aan de norm zelf voldaan
 VIOLATION (TXT "Afdeling '", SRC I, TXT "' voldoet nog niet aan norm '", TGT I, TXT "'.")
 
 ROLE Afdelingsmanager MAINTAINS "Voldoen aan normen [2]"
-RULE "Voldoen aan normen [2]": -(-heeftVoldaanAan;isDeelnormVan)  |- heeftVoldaanAan
+RULE Voldoen_aan_normen_2: -(-heeftVoldaanAan;isDeelnormVan)  |- heeftVoldaanAan
 MEANING "Als er geen deelnorm is waar niet aan is voldaan, dan is ook aan de norm zelf voldaan"
 VIOLATION (TXT "Afdeling '", SRC I, TXT "' heeft nog niet voldaan aan norm '", TGT I, TXT "'.")
 
-RULE "Voldoen aan normen [3]": (heeftVoldaanAan!-isDeelnormVan) = -(-heeftVoldaanAan;isDeelnormVan)
+RULE Voldoen_aan_normen_3: (heeftVoldaanAan!-isDeelnormVan) = -(-heeftVoldaanAan;isDeelnormVan)
 MEANING "Of je het nu op de ene of de andere manier uitrekent zou niet uit moeten maken"
 VIOLATION (TXT "Berekening voor Afdeling '", SRC I, TXT "' en norm '", TGT I, TXT "' zijn verschillend.")
 
@@ -24,7 +24,7 @@ POPULATION isDeelnormVan     CONTAINS [ ("N1", "N") ]
 POPULATION isDeelnormVan     CONTAINS [ ("N2", "N") ]
 POPULATION heeftVoldaanAan   CONTAINS [ ("Afd1", "N3") ]
 --------------------------------------------------------
-INTERFACE "TEST" (isDeelnormVan,heeftVoldaanAan) : I[ONE]
+INTERFACE TEST : I[ONE]
 BOX[ "Afdelingen" : V[ONE*Afdeling]
    BOX[ "Afdeling" : I
       , "Voldoet aan" : heeftVoldaanAan

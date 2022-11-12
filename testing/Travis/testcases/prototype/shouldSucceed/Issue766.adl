@@ -5,7 +5,7 @@ CONTEXT Issue766 IN ENGLISH
   subClassOf        :: Class * Class [IRF,ASY]
   baseDatatype      :: Datatype * Datatype [UNI]
   
-  RULE subClassOf;baseDatatype |- baseDatatype
+  RULE Issue766: subClassOf;baseDatatype |- baseDatatype
   VIOLATION (TXT "some text ", SRC I[Datatype], TXT " other text ", SRC subClassOf)
   
 

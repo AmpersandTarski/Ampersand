@@ -351,7 +351,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    PRAGMA "" " valt onder de verantwoordelijkheid van "
    MEANING LATEX "De uitspraak ``Functie $a$ valt onder de verantwoordelijkheid van $b$.'' behoort tot de gemeenschappelijke taal."
 
-   RULE onder |- formatie~;formatie
+   RULE VerantwoordelijkheidBinnenOrgaan : onder |- formatie~;formatie
    MEANING "Een functie (ambtenaar) kan alleen onder de verantwoordelijkheid van een andere vallen wanneer zij tot hetzelfde bestuursorgaan behoren."
 
    -- RULE toegevoegd op 31 maart door Roger Hage en Sebastiaan Hobers 
@@ -359,11 +359,11 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    MEANING "Een bevoegdheid die is gemandateerd is alleen voorbehouden (deze bevoegdheden niet kunnen worden ondergemandateerd) aan elke ambtenaar die deze bevoegdheid van hogerhand heeft gekregen."
 
    -- RULE toegevoegd op 3 april door George de Vries en Tim Ruijters.
-   RULE onder |- -I
+   RULE NietOnderZichzelf: onder |- -I
    MEANING "Een functie mag niet onder de verantwoordelijkheid van zichzelf vallen."
 
    -- RULE toegevoegd op 4 april door George de Vries en Tim Ruijters.
-   RULE onder /\ onder~ |- -V
+   RULE GeenCycles: onder /\ onder~ |- -V
    MEANING "Wanneer functie a onder de verantwoordelijkheid van b valt, dan mag b niet onder de verantwoordelijkheid van a vallen."
 
 

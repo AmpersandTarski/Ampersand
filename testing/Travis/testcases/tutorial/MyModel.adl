@@ -24,7 +24,7 @@ VIOLATION (TXT "{EX} SetNavToOnCommit;/Hello_44__32_World"
           ,TXT "{EX} InsPair;sayHelloReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
 
-INTERFACE "Hello, World": "_SESSION"[SESSION] cRud BOX
+INTERFACE HelloWorld: "_SESSION"[SESSION] cRud BOX
    [ "Hello, world. My name is" : sessionMyName cRud
    ]
 

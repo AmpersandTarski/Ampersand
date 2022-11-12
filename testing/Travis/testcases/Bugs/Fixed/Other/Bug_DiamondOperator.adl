@@ -22,7 +22,7 @@ stmSubjNS      :: Statement * Namespace [UNI] -- the Namespace within which the 
 stmSubjID      :: Statement * Symbol [UNI,TOT] -- the Symbol to be dereferenced into the Subject
 stmLDGraph     :: Statement * LDGraph [UNI] -- the stuff that is stated about the statement's subject 
 
-RULE "Subject identifiers in a Statement must be dereferenceable as Entities":
+RULE Subject_identifiers_in_a_Statement_must_be_dereferenceable_as_Entities:
   stmSubject = (stmSubjNS<>idfrNS~ /\ stmSubjID;idfrID~);idfrEntity
 
 ENDCONTEXT

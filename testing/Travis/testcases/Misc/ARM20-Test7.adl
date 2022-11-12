@@ -30,10 +30,10 @@ ROLE USER MAINTAINS Criteria
 RULE Criteria: I[Criterium] |- criterium;criterium~
 
 oblImpact :: Verplichting * Impact
-RULE "Impacts" : I[Verplichting] |- oblImpact;oblImpact~
+RULE Impacts : I[Verplichting] |- oblImpact;oblImpact~
 
 expBelang :: Verwachting * Belang
-RULE "Belangen": I[Verwachting] |- expBelang;expBelang~
+RULE Belangen: I[Verwachting] |- expBelang;expBelang~
 
 ENDPATTERN
 ------------------------------------------------------------

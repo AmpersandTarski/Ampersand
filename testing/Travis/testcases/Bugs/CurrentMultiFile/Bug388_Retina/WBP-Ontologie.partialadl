@@ -38,7 +38,7 @@ PURPOSE RULE IntegriteitVanHetVerzamelenVanPersoonsgegevens REF "Artikel 7 Wbp"
 CONCEPT Verwerking "de specificatie van een geheel aan (runtime) handelingen als bedoeld in artikel 1 sub b Wbp, ten behoeve van een (of meerdere) doel(einden)" ""
 PURPOSE CONCEPT Verwerking REF "Artikel 1 sub b Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.+}
-VIEW "Verwerkingen": Verwerking(verwerkingNaam)
+VIEW Verwerkingen: Verwerking(verwerkingNaam)
 verwerkingNaam :: Verwerking * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 verwerkingOmschrijving :: Verwerking * Omschrijving PRAGMA "" " wordt omschreven als "
 
@@ -168,7 +168,7 @@ PURPOSE RELATION verwerkingBewaartermijn REF "Artikel 10 Wbp"
 --[Doelen]--
 
 CONCEPT Doel "een welbepaald, uitdrukkelijk omschreven en gerechtvaardigd doeleind" "Artikel 7 Wbp"
-VIEW "Doelen": Doel(doelID, TXT " (" , gerechtvaardigdDoor;partijNaam, TXT ")")
+VIEW Doelen: Doel(doelID, TXT " (" , gerechtvaardigdDoor;partijNaam, TXT ")")
 doelID :: Doel -> DoelID PRAGMA "" " wordt aangeduid door "
 
 gerechtvaardigdDoor :: Doel * Partij [UNI] 
@@ -200,18 +200,18 @@ PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 3 eerste lid Wbp"
 
 isSubdoelVan :: Doel * Doel [ASY]
 PRAGMA "Het bereiken van " " is een onderdeel van het bereiken van "
-RULE "IRF(isSubdoelVan)": I |- -isSubdoelVan --$Zie Ticket 313
+RULE IRF_isSubdoelVan: I |- -isSubdoelVan --$Zie Ticket 313
 MEANING "Een doel kan geen subdoel zijn van zichzelf"
 MESSAGE ""
 VIOLATION (TXT "Doel ", SRC I, TXT " mag geen subdoel van zichzelf zijn")
 
-RULE "Integriteit van subdoelen": 
+RULE Integriteit_van_subdoelen: 
 I[Doel] /\ -(isSubdoelVan~;isSubdoelVan) |- doelOmschrijving;doelOmschrijving~
 MEANING "Elk doel dat niet uit subdoelen bestaat moet een omschrijving hebben."
 MESSAGE "Elk doel dat niet uit subdoelen bestaat moet een omschrijving hebben."
 VIOLATION (TXT "Van ", SRC I, TXT " moet een omschrijving bestaan.")
 
-RULE "Verantwoordelijkheids integriteit": 
+RULE Verantwoordelijkheids_integriteit: 
 I[Doel] |- gerechtvaardigdDoor;gerechtvaardigdDoor~ \/ isSubdoelVan;isSubdoelVan~
 MEANING "Elk doel is gerechtvaardigd, of is een subdoel van een ander doel (waaruit de rechtvaardiging is overgeerfd) (artikel 7 resp. artikel 8 Wbp)"
 MESSAGE ""

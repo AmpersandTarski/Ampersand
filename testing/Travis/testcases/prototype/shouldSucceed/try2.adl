@@ -7,7 +7,7 @@ RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RELATION t[Q*Y]
-RULE r = s;t[B*Y]
+RULE Test: r = s;t[B*Y]
 CLASSIFY D IS A/\B
 -- was:  RULE I[D] = I[A]/\I[B]
 -- RULE 'THING'[A] |- t[B*Y];V[Y*A] -- there is something of A in t

@@ -41,7 +41,7 @@ BOX [ "All people" : V[ONE*Person]
     , "All lemons" : V[ONE*Lemon]
     ]
 
-INTERFACE Person (ownsNectarines,ownsOranges,ownsLimes, ownsCitrus, citrusOwnedBy, ownsLimoranges) : I[Person]
+INTERFACE Person : I[Person]
 BOX [ "Person atom" : I
     , "ownsNectarines"  : ownsNectarines
     , "ownsOranges"  : ownsOranges
@@ -64,7 +64,7 @@ BOX [ "Person atom" : I
      -- NOTE: like W terms, these are currently not guaranteed to be empty, as mutual exclusion for CLASSIFY is not enforced (strangeLemon is an example)
     ]
 
-INTERFACE Lime (limeProperties) : I[Lime]
+INTERFACE Lime : I[Lime]
 BOX [ "Lime atom" : I
     , "limeProperties" : limeProperties
     ]

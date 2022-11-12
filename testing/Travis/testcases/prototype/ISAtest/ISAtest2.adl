@@ -25,7 +25,7 @@ CLASSIFY Gewetensvraag IS  Verplichting /\ Verwachting
 CLASSIFY ExterneVerplichting ISA Verplichting
 RULE ExterneVerplichtingen: I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
 CLASSIFY ExterneVerwachting ISA Verwachting
-RULE "Externe verwachtingen":  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
+RULE ExterneVerwachtingen:  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
 
 RULE Gewetensvragen1: I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
 RULE Gewetensvragen2: I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
@@ -76,20 +76,14 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 --[Bedrijfsfuncties]---------------------------------------
 
 INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
-   ( bfNaam
-   ) FOR Developer : I[Bedrijfsfunctie]
+   FOR Developer : I[Bedrijfsfunctie]
 BOX[ "ID" : I
    , "Naam" : bfNaam
    , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
    ]
 
 INTERFACE BIA_Lijst -- I[Bedrijfsfunctie]
-   ( critBF
-   , biaVerplichting_Def
-     , critID
-     , critText
-     , critTAV
-   ) FOR Developer : I[Bedrijfsfunctie]
+   FOR Developer : I[Bedrijfsfunctie]
 BOX[ "Algemeen" : I
    , "Nieuwe verplichtingen" : nieuweVerplichting
       BOX[ Verplichting : I[Verplichting]
@@ -122,12 +116,7 @@ ENDPATTERN
 --[Verplichtingen]-----------------------------------------
 
 INTERFACE Verplichting -- I[Verplichting]
-   ( critID
-   , critTAV
-   , critText
-   , afdekking
-   , vvVerplichting
-   ) FOR Developer : I[Verplichting]
+   FOR Developer : I[Verplichting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
@@ -153,18 +142,7 @@ BOX[ "ID" : I
 --[Verwachtingsverzamelingen en gewetensvragen]------------
 
 INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
-   ( vvID
-   , vvVerplichting
-     , critID
-     , critText
-     , critTAV
-     , afdekking
-   , vvVerwachting
-     , critID
-     , critText
-     , critTAV
-   , afdekking
-   ) FOR Developer  : I[Verwachtingsverzameling]
+   FOR Developer  : I[Verwachtingsverzameling]
 BOX[ Verwachtingsverzameling : I
    BOX[ "ID" : I
       , Verplichting : vvVerplichting
@@ -187,13 +165,7 @@ BOX[ Verwachtingsverzameling : I
    ]
 
 INTERFACE Gewetensvraag -- I[Gewetensvraag]
-   ( critID
-   , critBF
-   , critTAV
-   , critText
-   , afdekking
-   , vvVerplichting
-   ) FOR Developer : I[Gewetensvraag]
+   FOR Developer : I[Gewetensvraag]
 BOX[ Gewetensvraag: I
    BOX[ "ID"        : I
        
@@ -218,12 +190,7 @@ BOX[ Gewetensvraag: I
 --[Verwachtingen]------------------------------------------
 
 INTERFACE Verwachting -- I[Verwachting]
-   ( critID
-   , critTAV
-   , critText
-   , afdekking
-   , vvVerwachting
-   ) FOR Developer : I[Verwachting]
+   FOR Developer : I[Verwachting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
