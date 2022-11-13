@@ -155,7 +155,7 @@ instance Disambiguatable P_ViewD where
     cptMap
     P_Vd
       { pos = o,
-        vd_lbl = s,
+        vd_nm = s,
         vd_cpt = c,
         vd_isDefault = d,
         vd_html = h,

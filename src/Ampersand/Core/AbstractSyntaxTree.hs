@@ -497,7 +497,7 @@ data IdentityRule = Id
   { -- | The position of this definition in the text of the Ampersand source file (filename, line number and column number).
     idPos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    idLbl :: !Name,
+    idName :: !Name,
     -- | this term describes the instances of this object, related to their context
     idCpt :: !A_Concept,
     -- | if defined within a pattern, then the name of that pattern.
@@ -508,7 +508,7 @@ data IdentityRule = Id
   deriving (Show)
 
 instance Named IdentityRule where
-  name = idLbl
+  name = idName
 
 instance Traced IdentityRule where
   origin = idPos
@@ -531,7 +531,7 @@ data ViewDef = Vd
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
     vdpos :: !Origin,
     -- | the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    vdlbl :: !Name,
+    vdname :: !Name,
     -- | the concept for which this view is applicable
     vdcpt :: !A_Concept,
     -- | whether or not this is the default view for the concept
@@ -545,7 +545,7 @@ data ViewDef = Vd
   deriving (Show)
 
 instance Named ViewDef where
-  name = vdlbl
+  name = vdname
 
 instance Traced ViewDef where
   origin = vdpos
@@ -557,7 +557,7 @@ instance Eq ViewDef where
   a == b = compare a b == EQ
 
 instance Ord ViewDef where
-  a `compare` b = (vdlbl a, vdcpt a) `compare` (vdlbl b, vdcpt b)
+  a `compare` b = (vdname a, vdcpt a) `compare` (vdname b, vdcpt b)
 
 data ViewSegment = ViewSegment
   { vsmpos :: !Origin,

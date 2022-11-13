@@ -988,7 +988,7 @@ data P_IdentDf a -- so this is the parametric data-structure
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
     pos :: !Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    ix_lbl :: !Name,
+    ix_name :: !Name,
     -- | this term describes the instances of this object, related to their context
     ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
@@ -997,7 +997,7 @@ data P_IdentDf a -- so this is the parametric data-structure
   deriving (Show)
 
 instance Named (P_IdentDf a) where
-  name = ix_lbl
+  name = ix_name
 
 instance Ord (P_IdentDf a) where
   compare a b =
@@ -1041,7 +1041,7 @@ data P_ViewD a = P_Vd
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
     pos :: !Origin,
     -- | the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-    vd_lbl :: !Name,
+    vd_nm :: !Name,
     -- | the concept for which this view is applicable
     vd_cpt :: !P_Concept,
     -- | whether or not this is the default view for the concept
@@ -1074,7 +1074,7 @@ instance Traced (P_ViewD a) where
   origin = pos
 
 instance Named (P_ViewD a) where
-  name = vd_lbl
+  name = vd_nm
 
 instance Functor P_ViewD where fmap = fmapDefault
 

@@ -568,7 +568,7 @@ instance ShowHSName IdentityRule where
 
 instance ShowHS IdentityRule where
   showHS env indent identity =
-    "Id (" <> showHS env "" (idPos identity) <> ") " <> tshow (idLbl identity) <> " (" <> showHSName (idCpt identity) <> ")"
+    "Id (" <> showHS env "" (idPos identity) <> ") " <> tshow (idName identity) <> " (" <> showHSName (idCpt identity) <> ")"
       <> indent
       <> "  [ "
       <> T.intercalate (indent <> "  , ") (NE.toList . fmap (showHS env indent) $ identityAts identity)

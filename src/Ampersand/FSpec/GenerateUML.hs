@@ -292,15 +292,15 @@ mkUnlabeledId tag =
     pure $ tag <> "ID_" <> tshow idC
 
 refLabeledId :: Text -> StateUML Text
-refLabeledId label =
+refLabeledId lbl =
   do
     lidMap <- gets labelIdMap
-    case Map.lookup label lidMap of
+    case Map.lookup lbl lidMap of
       Just lid -> return lid
-      Nothing -> fatal ("Requesting non-existent label " <> label)
+      Nothing -> fatal ("Requesting non-existent label " <> lbl)
 
 mkLabeledId :: Text -> Text -> StateUML ()
-mkLabeledId tag label =
+mkLabeledId tag lbl =
   do
-    let classId = tag <> "ID_" <> label
-    modify $ \state' -> state' {labelIdMap = Map.insert label classId (labelIdMap state')}
+    let classId = tag <> "ID_" <> lbl
+    modify $ \state' -> state' {labelIdMap = Map.insert lbl classId (labelIdMap state')}

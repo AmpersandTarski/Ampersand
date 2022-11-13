@@ -154,7 +154,7 @@ aIdentityDef2pIdentityDef :: IdentityRule -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
   P_Id
     { pos = idPos iDef,
-      ix_lbl = idLbl iDef,
+      ix_name = idName iDef,
       ix_cpt = aConcept2pConcept (idCpt iDef),
       ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
     }
@@ -171,7 +171,7 @@ aViewDef2pViewDef :: ViewDef -> P_ViewDef
 aViewDef2pViewDef vDef =
   P_Vd
     { pos = vdpos vDef,
-      vd_lbl = vdlbl vDef,
+      vd_nm = vdname vDef,
       vd_cpt = aConcept2pConcept (vdcpt vDef),
       vd_isDefault = vdIsDefault vDef,
       vd_html = vdhtml vDef,

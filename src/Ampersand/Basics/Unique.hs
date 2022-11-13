@@ -10,6 +10,8 @@ instance Unique Pattern where
 module Ampersand.Basics.Unique
   ( Unique (..),
     Named (..),
+    NameDef,
+    --    NameRef,
     Name,
     NameSpace,
     Text1 (..),
@@ -40,57 +42,74 @@ import qualified RIO.Text.Lazy as TL
 
 type NameSpace = [Text1]
 
-data Name = Name
+type Name = NameDef --TODO: Get rid of this definition. Each use of it must either be a NameDef or a NameRef
+
+-- newtype NameRef = ReferenceTo NameDef
+
+data NameType = ConceptName | RelationName | RuleName | PatternName | ContextName | RoleName | TemporaryDummy
+  deriving (Data)
+
+data NameDef = NameDef
   { -- | The plain name
     plainName :: !Text1,
     -- | The namespace where the name resides in.
-    nameSpace :: !NameSpace
+    nameSpace :: !NameSpace,
+    -- | An optional label for showing the definition in things like the user-interface
+    mLabel :: !(Maybe Text1),
+    -- | The type of the thing that this name is for
+    nameType :: !NameType
   }
   deriving (Data)
 
-instance Ord Name where
+instance Ord NameDef where
   compare a b = compare (tshow a) (tshow b)
 
-instance Eq Name where
+instance Eq NameDef where
   a == b = compare a b == EQ
 
-instance Show Name where
+instance Show NameDef where
   show x = T.unpack . mconcat . L.intersperse "." $ (toText <$> nameSpace x) <> [toText $ plainName x]
     where
       toText :: Text1 -> Text
       toText (Text1 c tl) = T.cons c tl
 
-instance Hashable Name where
+instance Hashable NameDef where
   hashWithSalt s = hashWithSalt s . text1ToText . tName
 
-instance Named Name where
+instance Named NameDef where
   name = id
 
-instance GVP.PrintDot Name where
+instance GVP.PrintDot NameDef where
   unqtDot = GVP.text . TL.fromStrict . text1ToText . tName
 
-nameOfExecEngineRole :: Name
+nameOfExecEngineRole :: NameDef
 nameOfExecEngineRole =
-  Name
+  NameDef
     { plainName = Text1 'E' "xecEngine",
-      nameSpace = []
+      nameSpace = [],
+      mLabel = Nothing,
+      nameType = RoleName
     }
 
-nameOfONE :: Name
+nameOfONE :: NameDef
 nameOfONE =
-  Name
+  NameDef
     { plainName = Text1 'O' "NE",
-      nameSpace = []
+      nameSpace = [],
+      mLabel = Nothing,
+      nameType = ConceptName
     }
 
-toName :: NameSpace -> Text1 -> Name
+toName :: NameSpace -> Text1 -> NameDef
 toName space plainname =
-  Name
+  NameDef
     { plainName = mkValid plainname,
-      nameSpace = space
+      nameSpace = space,
+      mLabel = Nothing,
+      nameType = TemporaryDummy
     }
 
-toNameUnsafe :: [Text] -> Text -> Name
+toNameUnsafe :: [Text] -> Text -> NameDef
 toNameUnsafe ns t = toName ns' t'
   where
     ns' = toSafe <$> ns
@@ -123,7 +142,7 @@ mkValid t1@(Text1 h tl) =
 
 -- | anything could have some label, can't it?
 class Named a where
-  name :: a -> Name
+  name :: a -> NameDef
   tName :: a -> Text1
   tName = toText1Unsafe . tshow . name
   nameSpaceOf :: a -> [Text1]
@@ -134,8 +153,13 @@ class Named a where
   plainNameOf nm = T.cons h tl
     where
       Text1 h tl = plainNameOf1 nm
+  label :: a -> Text1
+  label x =
+    fromMaybe
+      (plainName . name $ x)
+      (mLabel . name $ x)
 
-fullNameToName :: Text1 -> Name
+fullNameToName :: Text1 -> NameDef
 fullNameToName t = case T.split (== '.') . text1ToText $ t of
   [] -> fatal $ "Name should contain chacters other than `.`: " <> tshow t
   (h : tl) -> toName (NE.init parts) (NE.last parts)
@@ -146,10 +170,10 @@ fullNameToName t = case T.split (== '.') . text1ToText $ t of
         Nothing -> fatal $ "part may not be empty (" <> text1ToText t <> ")."
         Just (h', tl') -> mkValid (Text1 h' tl')
 
-prependToPlainName :: Text -> Name -> Name
+prependToPlainName :: Text -> NameDef -> NameDef
 prependToPlainName prefix nm = toName (nameSpaceOf nm) (prefix T1..<> plainNameOf1 nm)
 
-urlEncodedName :: Name -> Text1
+urlEncodedName :: NameDef -> Text1
 urlEncodedName = toText1Unsafe . urlEncode . text1ToText . tName
 
 -- | In the context of the haskell code, things can be Unique.

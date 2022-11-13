@@ -619,7 +619,7 @@ translateArchiElem ::
   Set.Set PProp ->
   [(Text, Text)] ->
   ArchiGrain
-translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
+translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tuples =
   ArchiGrain
     { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
       grainRel = P_Relation relName' ref_to_signature props [] Nothing [] OriginUnknown,
@@ -633,9 +633,9 @@ translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
           }
     }
   where
-    relName' = toName archiNameSpace label
-    srcName = toName archiNameSpace srcLabel
-    tgtName = toName archiNameSpace tgtLabel
+    relName' = toName archiNameSpace plainNm
+    srcName = toName archiNameSpace plainSrcName
+    tgtName = toName archiNameSpace plainTgtName
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel

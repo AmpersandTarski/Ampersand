@@ -15,7 +15,6 @@ where
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
-import Data.Hashable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
@@ -259,28 +258,21 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> optional (pNameAndColon ns)
+    <*> pNameAndColon ns
     <*> pRule ns
     <*> many pMeaning
     <*> many pMessage
     <*> pMaybe pViolation
   where
-    build orig mName term meanings messages mViolation =
+    build orig nameDef term meanings messages mViolation =
       P_Rule
         { pos = orig,
-          rr_nm =
-            case mName of
-              Nothing -> rulid orig
-              Just lbl -> lbl,
+          rr_nm = nameDef,
           rr_exp = term,
           rr_mean = meanings,
           rr_msg = messages,
           rr_viol = mViolation
         }
-    rulid :: Origin -> Name
-    rulid (FileLoc pos' _) = toName ns . toText1Unsafe $ "rule_" <> (tshow . abs . hash . tshow $ pos')
-    rulid _ = fatal "pRuleDef is expecting a file location."
-
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView
@@ -525,7 +517,7 @@ pViewDefImproved ns =
     mkViewDef pos' nm cpt isDef ats html =
       P_Vd
         { pos = pos',
-          vd_lbl = nm,
+          vd_nm = nm,
           vd_cpt = cpt,
           vd_isDefault = isDef,
           vd_html = html,
@@ -579,7 +571,7 @@ pViewDefLegacy ns =
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: NameSpace -> AmpParser P_Interface
 pInterface ns =
-  lbl <$> currPos
+  build <$> currPos
     <*> pInterfaceIsAPI
     <*> pUnrestrictedName ns
     <*> pMaybe pRoles
@@ -588,8 +580,8 @@ pInterface ns =
     <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    lbl :: Origin -> Bool -> Name -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
-    lbl p isAPI nm roles ctx mCrud mView sub =
+    build :: Origin -> Bool -> Name -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    build p isAPI nm roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,

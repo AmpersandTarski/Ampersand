@@ -582,7 +582,7 @@ pCtx2aCtx
         ci
         o@P_Vd
           { pos = orig,
-            vd_lbl = lbl, -- Text
+            vd_nm = nm, -- Text
             vd_cpt = cpt, -- Concept
             vd_isDefault = isDefault,
             vd_html = mHtml, -- Html template
@@ -594,7 +594,7 @@ pCtx2aCtx
             let avd =
                   Vd
                     { vdpos = orig,
-                      vdlbl = lbl,
+                      vdname = nm,
                       vdcpt = pCpt2aCpt (conceptMap ci) cpt,
                       vdIsDefault = isDefault,
                       vdhtml = mHtml,
@@ -660,7 +660,7 @@ pCtx2aCtx
                 Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
               where
                 lookupView :: Name -> Maybe P_ViewDef
-                lookupView viewId = case [vd | vd <- p_viewdefs, vd_lbl vd == viewId] of
+                lookupView viewId = case [vd | vd <- p_viewdefs, vd_nm vd == viewId] of
                   [] -> Nothing
                   vd : _ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                 checkCrud :: Guarded ()
@@ -1045,13 +1045,13 @@ pCtx2aCtx
       pIdentity2aIdentity ci mPat pidt =
         case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
           P_Id
-            { ix_lbl = lbl,
+            { ix_name = nm,
               ix_ats = isegs
             } ->
               ( \isegs' ->
                   Id
                     { idPos = orig,
-                      idLbl = lbl,
+                      idName = nm,
                       idCpt = conc,
                       idPat = mPat,
                       identityAts = isegs'
