@@ -7,7 +7,7 @@ POPULATION Account CONTAINS [ "god" ]
 
 sessionLoginAssist :: SESSION * SESSION [PROP]
 
-INTERFACE Login (sessionLoginAssist): "_SESSION"[SESSION]
+INTERFACE Login : "_SESSION"[SESSION]
 BOX[ "Please help" : sessionLoginAssist <SessionProperty>
     , " " : sessionLoginAssist;V[SESSION*SESSION];V[SESSION*Account];(-I[Account]!"god");V[Account*Message];"There are no Accounts!!!"[Message]
     ]

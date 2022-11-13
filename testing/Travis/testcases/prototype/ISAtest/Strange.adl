@@ -32,12 +32,12 @@ BOX [ "All oranges" : V[SESSION*Orange]
     , "All lemons" : V[SESSION*Lemon]
     ]
 
-INTERFACE Orange(name) : I[Orange]
+INTERFACE Orange : I[Orange]
 BOX [ "I" : I
     , "name" : name
     ]
 
-INTERFACE Lemon(name) : I[Lemon]
+INTERFACE Lemon : I[Lemon]
 BOX [ "I" : I
     , "name" : name
     ]

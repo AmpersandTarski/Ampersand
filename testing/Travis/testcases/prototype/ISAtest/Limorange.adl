@@ -31,7 +31,7 @@ BOX [ "All people" : V[SESSION*Person]
     , "All nectarines" : V[SESSION*Nectarine]
     ]
 
-INTERFACE Person (ownsNectarines,ownsOranges,ownsLimes, ownsCitrus, citrusOwnedBy, ownsLimoranges) : I[Person]
+INTERFACE Person  : I[Person]
 BOX [ "Person atom" : I
     , "ownsNectarines"  : ownsNectarines
     , "ownsOranges"  : ownsOranges
@@ -51,7 +51,7 @@ BOX [ "Person atom" : I
     , "ownsLimes;I[Orange]" : ownsLimes;I[Orange]
     ]
 
-INTERFACE Lime (limeProperties) : I[Lime]
+INTERFACE Lime  : I[Lime]
 BOX [ "Lime atom" : I
     , "limeProperties" : limeProperties
     ]
@@ -107,7 +107,7 @@ BOX [ "All people" : V[SESSION*Person]
     , "All nectarines" : V[SESSION*Nectarine]
     ]
 
-INTERFACE Person (owns[Person*Nectarine]) : I[Person]
+INTERFACE Person  : I[Person]
 BOX [ "Atom" : I
     , "Nectarines owned" : owns[Person*Nectarine]
     , "Oranges owned"    : owns[Person*Orange]

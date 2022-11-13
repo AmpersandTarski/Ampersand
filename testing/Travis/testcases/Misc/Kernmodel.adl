@@ -516,7 +516,7 @@ ENDPATTERN
    --
    PURPOSE INTERFACE Bestuursorganen
    {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
-   INTERFACE Bestuursorganen (mandaatgever) FOR BO: I[Bestuursorgaan]
+   INTERFACE Bestuursorganen FOR BO: I[Bestuursorgaan]
    BOX[ "Bestuursorgaan" : I
       , "Mandaat" : namens~
       , "Formatieplaats" : formatie

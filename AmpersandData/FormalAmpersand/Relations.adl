@@ -5,7 +5,7 @@ PATTERN Relations
 RELATION relsDefdIn[Relation*Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , relsDefdIn[Relation*Context])
-RULE "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
+RULE eq_relation: name[Relation*RelationName];name[Relation*RelationName]~ 
                  /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
                  /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
                  |- I[Relation]

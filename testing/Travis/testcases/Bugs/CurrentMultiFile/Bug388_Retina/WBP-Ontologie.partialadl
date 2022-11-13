@@ -232,7 +232,7 @@ PURPOSE PATTERN Partijen
 {+Om te kunnen praten over de concrete personen, rechtspersonen, bestuursorganen e.d. die een rol kunnen vervullen zoals de Wbp die noemt (bijvoorbeeld 'Verantwoordelijke' of 'Bewerker'), hebben we een concept nodig waarmee we instaties van die rollen kunnen weergeven.+}
 
 CONCEPT Partij "Een natuurlijke persoon, rechtspersoon, bestuursorgaan of ieder ander die de rol van VERANTWOORDELIJKE, BEWERKER, BETROKKENE, ONTVANGER of DERDE kan vervullen."
-IDENT "Partijen": Partij(partijNaam)
+IDENT Partijen: Partij(partijNaam)
 
 partijNaam :: Partij -> PartijNaam PRAGMA "" " wordt aangeduid middels "
 partijAdres :: Partij * Adres PRAGMA "" " is gevestigd op "

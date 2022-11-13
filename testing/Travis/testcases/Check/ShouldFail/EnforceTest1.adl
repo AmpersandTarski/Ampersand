@@ -11,4 +11,5 @@ personFirstName :: Person * FirstName
 
 ENFORCE personFirstName := I[NPReg];npRoepnaam
 
+-- This test should fail, because the relation npRoepnaam[NPReg*???] is not defined.
 ENDCONTEXT

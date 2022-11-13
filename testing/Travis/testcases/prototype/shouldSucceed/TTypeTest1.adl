@@ -15,7 +15,7 @@ POPULATION woonplaats CONTAINS [ ("adres van Han" , "Peize") ]
 INTERFACE Adressen FOR admin : "_SESSION"[SESSION]
 BOX ["Adressen" : V[SESSION*NAW] 
     ]
-INTERFACE Adres  (huisnummer,straat,woonplaats) FOR admin :I[NAW] 
+INTERFACE Adres  FOR admin :I[NAW] 
 BOX [ ie: I
     , huisnummer : huisnummer
     , straat : straat

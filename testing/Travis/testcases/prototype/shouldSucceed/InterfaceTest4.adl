@@ -8,7 +8,7 @@ ENDPATTERN
 
 POPULATION r CONTAINS [ ("Champagne","Hans") ; ("Champagne","Jan") ; ("Champagne","Piet")]
 
-INTERFACE Proefje ( r )  : V[ONE*B]
+INTERFACE Proefje : V[ONE*B]
 BOX [ B : I
     , "rechter element : " : r~
     ]

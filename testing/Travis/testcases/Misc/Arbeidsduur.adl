@@ -155,14 +155,12 @@ MEANING "Deze regel bewaakt dat er minstens vier maanden zijn verstreken tussen 
 MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 3"
 VIOLATION (TXT "Het ", SRC I, TXT " is later dan vier maanden voor de ingangsdatum (", SRC tot;ingang, TXT ") ingediend.")
 
-RULE IndieningsmogelijkhedenBeperkenTotTweeJaar:
-minstensTweeJaarTrigger /\ beslisdatum~;op;isDirecteVoorloperVan;(I[Verzoek] /\ laatsteVerzoek~;laatsteVerzoek);ingediend |- minstensTweeJaar
+RULE IndieningsmogelijkhedenBeperkenTotTweeJaar: minstensTweeJaarTrigger /\ beslisdatum~;op;isDirecteVoorloperVan;(I[Verzoek] /\ laatsteVerzoek~;laatsteVerzoek);ingediend |- minstensTweeJaar
 MEANING "De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen"
 PURPOSE RULE IndieningsmogelijkhedenBeperkenTotTweeJaar REF "Artikel 2 lid 3"
 {+De wet zegt: 'De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen'. Daarom moet een regel bestaan die dit afdwingt.+}
 
-RULE AlleenOpHetLaatsteVerzoekBesluiten: 
-arbeidsrelatie~ /\ -laatsteVerzoek |- arbeidsrelatie~;(I /\ op~;op)
+RULE AlleenOpHetLaatsteVerzoekBesluiten: arbeidsrelatie~ /\ -laatsteVerzoek |- arbeidsrelatie~;(I /\ op~;op)
 MEANING "Per arbeidsrelatie mag hoogstens een verzoek bestaan waarover (nog) niet besloten is."
 PURPOSE RULE AlleenOpHetLaatsteVerzoekBesluiten REF "Artikel 2 lid 3"
 {+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, kan er op elk tijdstip en per arbeidsrelatie hoogstens een verzoek bestaan waarop nog niet is besloten. Dat is dan dus tevens het laatste verzoek. Deze eigenschap maakt het mogelijk om eenduidig een opeenvolging van verzoeken per arbeidsrelatie te maken.+}
@@ -270,8 +268,7 @@ VIOLATION (TXT "{EX} InsPair;isDirecteVoorloperVan;Verzoek;", SRC laatsteVerzoek
           )
 
 ROLE ExecEngine MAINTAINS ArbeidsrelatieGeautomatiseerdInvullen
-RULE ArbeidsrelatieGeautomatiseerdInvullen:
-arbeidsrelatie;werknemer;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werknemer));werknemer~ |- arbeidsrelatie
+RULE ArbeidsrelatieGeautomatiseerdInvullen: arbeidsrelatie;werknemer;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werknemer));werknemer~ |- arbeidsrelatie
 MEANING "Als een werknemer die om aanpassing verzoekt slechts 1 arbeidsrelatie heeft, dan wordt deze zo nodig automatisch in het verzoek ingevuld."
 VIOLATION (TXT "{EX} InsPair;arbeidsrelatie;Verzoek;", SRC I, TXT ";Arbeidsrelatie;", TGT I)
 PURPOSE RULE ArbeidsrelatieGeautomatiseerdInvullen
@@ -353,8 +350,7 @@ VIOLATION (TXT "{EX} InsPair;minstensTweeJaarTrigger;Datum;", SRC I, TXT ";Datum
           )
 
 ROLE ExecEngine MAINTAINS  GeautomatiseerdBeslissenOpEenVerzoek
-RULE GeautomatiseerdBeslissenOpEenVerzoek: 
-I[Verzoek] /\ uitersteBeslisdatum;datumGD~;vandaag~;V /\ -(op~;op) |- op~;I[Beslissing];op
+RULE GeautomatiseerdBeslissenOpEenVerzoek: I[Verzoek] /\ uitersteBeslisdatum;datumGD~;vandaag~;V /\ -(op~;op) |- op~;I[Beslissing];op
 MEANING "Voor elk verzoek waarvan de uiterste beslisdatum is verstreken, en waarop geen beslissing is genomen, wordt - conform de wet - automatisch besloten dat de arbeidsduur wordt aangepast overeenkomstig dat verzoek."
 VIOLATION (TXT "{EX} NewStruct;Beslissing"
                ,TXT ";op;Beslissing;NULL;Verzoek;", SRC I 
@@ -418,8 +414,7 @@ BOX[ "Arbeidsrelaties" : V[ONE*Arbeidsrelatie]
 ----------------------------------------------- -}
  ]
 
-INTERFACE NieuweArbeidsrelatie (werkgever, werknemer, arbeidsduur, inDienst)
-FOR Werkgever : I[Arbeidsrelatie]
+INTERFACE NieuweArbeidsrelatie FOR Werkgever : I[Arbeidsrelatie]
 BOX[ "Werkgever" : werkgever
    , "Werknemer" : werknemer
    , "Arbeidsduur" : arbeidsduur
@@ -436,8 +431,7 @@ BOX[ "Arbeidsrelatie" : I
       ]
    ]
 
-INTERFACE Arbeidsrelatie_werknemer (nieuwVerzoek, tot, omvang, ingang, nieuw) 
-FOR Werknemer : I[Arbeidsrelatie]
+INTERFACE Arbeidsrelatie_werknemer FOR Werknemer : I[Arbeidsrelatie]
 BOX[ "Arbeidsrelatie" : I
    BOX[ "Werkgever" : werkgever
       , "Werknemer" : werknemer
@@ -459,7 +453,7 @@ BOX[ "Arbeidsrelatie" : I
       ]
    ]
 
-INTERFACE GewijzigdeBeslissingNemen (op, aanp, medegedeeldAan, door, reden, omvang, ingang, nieuw) FOR Werkgever : I[Verzoek]
+INTERFACE GewijzigdeBeslissingNemen FOR Werkgever : I[Verzoek]
 BOX[ "Verzoek" : I
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever
@@ -480,7 +474,7 @@ BOX[ "Verzoek" : I
           ]
     ]
 
-INTERFACE VoorstelOngewijzigdAccorderen (op, medegedeeldAan, door, aanp, reden) FOR Werkgever : I[Verzoek]
+INTERFACE VoorstelOngewijzigdAccorderen  FOR Werkgever : I[Verzoek]
 BOX[ "Verzoek" : I
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever
@@ -501,16 +495,14 @@ BOX[ "Verzoek" : I
           ]
     ]
 
-INTERFACE Aanpassing (omvang, ingang, nieuw)
-FOR Werknemer, Werkgever : I[Aanpassing]
+INTERFACE Aanpassing FOR Werknemer, Werkgever : I[Aanpassing]
 BOX[ "aanpassing" : I
     , "omvang" : omvang
     , "ingangsdatum" : ingang
     , "voorstel voor de nieuwe arbeidsduur" : nieuw
     ]
 
-INTERFACE Beslissing (door, op, aanp, reden, medegedeeldAan, omvang, ingang, nieuw)
-FOR Werkgever : I[Beslissing]
+INTERFACE Beslissing FOR Werkgever : I[Beslissing]
 BOX[ door : door
     , verzoek : op
     BOX[ "indiener" : arbeidsrelatie;werknemer
@@ -529,12 +521,7 @@ BOX[ door : door
     ]
 
 
-INTERFACE Arbeidsrelatie
-   ( werkgever
-   , werknemer
-   , arbeidsduur
-   , inDienst
-   ) FOR Werkgever, Werknemer : I[Arbeidsrelatie]
+INTERFACE Arbeidsrelatie FOR Werkgever, Werknemer : I[Arbeidsrelatie]
 BOX[ "werkgever" : werkgever
    , "werknemer" : werknemer
    , "arbeidsduur" : arbeidsduur
@@ -542,11 +529,7 @@ BOX[ "werkgever" : werkgever
    , "nieuw verzoek" : nieuwVerzoek
    ]
 
-INTERFACE Verzoek
-   ( tot
-   , arbeidsrelatie
-   , ingediend
-   ) FOR Werknemer, Werkgever : I[Verzoek]
+INTERFACE Verzoek FOR Werknemer, Werkgever : I[Verzoek]
 BOX[ "tot" : tot
    , "van" : arbeidsrelatie;werknemer
    , "aan" : arbeidsrelatie;werkgever
@@ -555,13 +538,7 @@ BOX[ "tot" : tot
    , "uitersteBeslisdatum" : uitersteBeslisdatum
    ]
 
-INTERFACE BeslissingKlein
-   ( op
-   , aanp
-   , door
-   , medegedeeldAan
-   , reden
-   ) FOR Werknemer, Werkgever : I[Beslissing]
+INTERFACE BeslissingKlein FOR Werknemer, Werkgever : I[Beslissing]
 BOX[ "op" : op
    , "aanp" : aanp
    , "door" : door

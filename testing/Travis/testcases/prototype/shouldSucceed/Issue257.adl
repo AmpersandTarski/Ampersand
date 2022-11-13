@@ -1,6 +1,6 @@
 CONTEXT Bug_257 IN ENGLISH
 
- INTERFACE SendMessage (sessionMsgText, sessionMsgPerson): "_SESSION"[SESSION]
+ INTERFACE SendMessage : "_SESSION"[SESSION]
  BOX[ "Send Message" : I BOX <TABLE>
       [ "To (person)": sessionMsgPerson
       , "Message text" : sessionMsgText

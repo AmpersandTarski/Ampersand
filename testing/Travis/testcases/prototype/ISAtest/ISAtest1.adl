@@ -42,8 +42,7 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 
 --[Bedrijfsfuncties]---------------------------------------
 INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
-   ( bfNaam
-   ) FOR Developer        : I[Bedrijfsfunctie]
+    FOR Developer        : I[Bedrijfsfunctie]
 BOX[ "Naam"               : bfNaam
    , "Obl TAV"            : critBF~;I[Verplichting];critTAV
    , "ExtObl TAV"         : critBF~;I[ExterneVerplichting];critTAV
@@ -52,17 +51,17 @@ BOX[ "Naam"               : bfNaam
    , "Gewetensvragen TAV" : critBF~;I[Gewetensvraag];critTAV
    ]
 
-INTERFACE Criterium (critBF, critTAV, critText) : I[Criterium]
+INTERFACE Criterium  : I[Criterium]
 BOX[ Criterium   : critText
    , "Van (BF)"    : critBF
    , "Tav (BF)"    : critTAV
    ]
 
-INTERFACE Verplichting (critBF, critTAV, critText) : I[Verplichting] INTERFACE Criterium
-INTERFACE ExterneVerplichting (critBF, critTAV, critText) : I[ExterneVerplichting] INTERFACE Criterium
-INTERFACE Verwachting (critBF, critTAV, critText) : I[Verwachting] INTERFACE Criterium
-INTERFACE ExterneVerwachting (critBF, critTAV, critText) : I[ExterneVerwachting] INTERFACE Criterium
-INTERFACE Gewetensvraag (critBF, critTAV, critText) : I[Gewetensvraag] INTERFACE Criterium
+INTERFACE Verplichting : I[Verplichting] INTERFACE Criterium
+INTERFACE ExterneVerplichting : I[ExterneVerplichting] INTERFACE Criterium
+INTERFACE Verwachting : I[Verwachting] INTERFACE Criterium
+INTERFACE ExterneVerwachting : I[ExterneVerwachting] INTERFACE Criterium
+INTERFACE Gewetensvraag : I[Gewetensvraag] INTERFACE Criterium
 
 ------------------------------------------------------------
 ENDCONTEXT

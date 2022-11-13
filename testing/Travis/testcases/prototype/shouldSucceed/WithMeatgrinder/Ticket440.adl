@@ -5,7 +5,7 @@ heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan e
 isDeelnormVan :: Norm * Norm [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
 
 ROLE Afdelingsmanager MAINTAINS "Voldoen aan normen [1]"
-RULE "Voldoen aan normen [1]": (heeftVoldaanAan!-isDeelnormVan)  |- heeftVoldaanAan
+RULE Voldoen_aan_normen_1: (heeftVoldaanAan!-isDeelnormVan)  |- heeftVoldaanAan
 MEANING "Als aan alle deelnormen is voldaan, dan is ook aan de norm zelf voldaan"
 VIOLATION (TXT "Afdeling '", SRC I, TXT "' voldoet nog niet aan norm '", TGT I, TXT "'.")
 
