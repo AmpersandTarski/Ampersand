@@ -128,6 +128,7 @@ import RIO.Time
 data A_Context = ACtx
   { -- | The name of this context
     ctxnm :: !Name,
+    ctxlbl :: !(Maybe Label),
     -- | The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
     ctxpos :: ![Origin],
     -- | The default language used in this context.
@@ -183,9 +184,13 @@ instance Unique A_Context where
 instance Named A_Context where
   name = ctxnm
 
+instance Labeled A_Context where
+  mLabel = ctxlbl
+
 data Pattern = A_Pat
   { -- | Name of this pattern
     ptnm :: !Name,
+    ptlbl :: !(Maybe Label),
     -- | the position in the file in which this pattern was declared.
     ptpos :: !Origin,
     -- | the end position in the file, elements with a position between pos and end are elements of this pattern.
@@ -226,6 +231,9 @@ instance Ord Pattern where
 instance Named Pattern where
   name = ptnm
 
+instance Labeled Pattern where
+  mLabel = ptlbl
+
 instance Traced Pattern where
   origin = ptpos
 
@@ -244,6 +252,7 @@ data AConceptDef = AConceptDef
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
     acdcpt :: !Name,
+    acdlbl :: !(Maybe Label),
     -- | The textual definition of this concept.
     acddef2 :: !Meaning,
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -641,6 +650,7 @@ data Interface = Ifc
     ifcIsAPI :: !Bool,
     -- | The name of the interface
     ifcname :: !Name,
+    ifclbl :: !(Maybe Label),
     -- | All roles for which an interface is available (empty means: available for all roles)
     ifcRoles :: ![Role],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)

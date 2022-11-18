@@ -34,6 +34,7 @@ aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx =
   PCtx
     { ctx_nm = ctxnm ctx,
+      ctx_lbl = ctxlbl ctx,
       ctx_pos = ctxpos ctx,
       ctx_lang = Just $ ctxlang ctx,
       ctx_markup = Just $ ctxmarkup ctx,
@@ -66,7 +67,8 @@ aConcDef2pConcDef :: AConceptDef -> PConceptDef
 aConcDef2pConcDef aCd =
   PConceptDef
     { pos = origin aCd,
-      cdcpt = name aCd,
+      cdname = name aCd,
+      cdlbl = acdlbl aCd,
       cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
       cdmean = map aMeaning2pMeaning $ acdmean aCd,
       cdfrom = acdfrom aCd
@@ -77,6 +79,7 @@ aPattern2pPattern pat =
   P_Pat
     { pos = ptpos pat,
       pt_nm = ptnm pat,
+      pt_lbl = ptlbl pat,
       pt_rls = map aRule2pRule . Set.elems . ptrls $ pat,
       pt_gns = map aClassify2pClassify . ptgns $ pat,
       pt_dcs = map aRelation2pRelation . Set.elems . ptdcs $ pat,
@@ -199,6 +202,7 @@ aInterface2pInterface ifc =
   P_Ifc
     { ifc_IsAPI = ifcIsAPI ifc,
       ifc_Name = name ifc,
+      ifc_lbl = ifclbl ifc,
       ifc_Roles = ifcRoles ifc,
       ifc_Obj = aObjectDef2pObjectDef (BxExpr (ifcObj ifc)),
       pos = origin ifc,

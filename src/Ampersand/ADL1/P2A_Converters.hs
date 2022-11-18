@@ -253,6 +253,7 @@ pCtx2aCtx
   env
   PCtx
     { ctx_nm = n1,
+      ctx_lbl = lbl,
       ctx_pos = n2,
       ctx_lang = ctxmLang,
       ctx_markup = pandocf,
@@ -291,6 +292,7 @@ pCtx2aCtx
       let actx =
             ACtx
               { ctxnm = n1,
+                ctxlbl = lbl,
                 ctxpos = n2,
                 ctxlang = deflangCtxt,
                 ctxmarkup = deffrmtCtxt,
@@ -814,13 +816,13 @@ pCtx2aCtx
             addWarnings warnings $
               build <$> traverse (fn <=< typecheckObjDef ci) l
                 <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
-                <* (uniqueLables (origin x) toLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
+                <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
                 <* mustBeObject (target objExpr)
             where
-              toLabel :: P_BoxItem a -> Text1
-              toLabel bi = case box_label bi of
+              toNonEmptyLabel :: P_BoxItem a -> Text1
+              toNonEmptyLabel bi = case box_label bi of
                 Nothing -> fatal "all items without label should been filtered out here"
-                Just lbl -> lbl
+                Just labl -> labl
               hasLabel :: P_BoxItem a -> Bool
               hasLabel bi = case box_label bi of
                 Nothing -> False
@@ -907,6 +909,7 @@ pCtx2aCtx
                             Ifc
                               { ifcIsAPI = ifc_IsAPI pIfc,
                                 ifcname = name pIfc,
+                                ifclbl = mLabel pIfc,
                                 ifcRoles = ifc_Roles pIfc,
                                 ifcObj = o,
                                 ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
@@ -945,6 +948,7 @@ pCtx2aCtx
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
               { ptnm = name ppat,
+                ptlbl = mLabel ppat,
                 ptpos = origin ppat,
                 ptend = pt_end ppat,
                 ptrls = Set.fromList rules',
@@ -1360,6 +1364,7 @@ pConcDef2aConcDef defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
       acdcpt = name pCd,
+      acdlbl = mLabel pCd,
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd

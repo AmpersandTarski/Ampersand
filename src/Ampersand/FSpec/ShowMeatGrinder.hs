@@ -28,6 +28,7 @@ metaModel :: MetaModel -> P_Context
 metaModel mmLabel =
   PCtx
     { ctx_nm = modelName,
+      ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,
       ctx_markup = Nothing,
@@ -63,6 +64,7 @@ grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
 grind ns fun userFspec =
   PCtx
     { ctx_nm = toName ns $ "Grinded_" .<> tName userFspec,
+      ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,
       ctx_markup = Nothing,

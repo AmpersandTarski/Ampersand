@@ -62,6 +62,7 @@ mkContextOfPops nm pops =
   addRelations
     PCtx
       { ctx_nm = nm,
+        ctx_lbl = Nothing,
         ctx_pos = [],
         ctx_lang = Nothing,
         ctx_markup = Nothing,

@@ -124,6 +124,7 @@ makeFSpec env context =
         merge p1 p2 =
           A_Pat
             { ptnm = name p1,
+              ptlbl = mLabel p1 <|> mLabel p2,
               ptpos = ptpos p1,
               ptend = ptend p1,
               ptrls = ptrls p1 <> ptrls p2,
@@ -440,6 +441,7 @@ makeFSpec env context =
        in [ Ifc
               { ifcIsAPI = False,
                 ifcname = name c,
+                ifclbl = Nothing,
                 ifcObj =
                   let orig = Origin "generated object: step 4a - default theme"
                    in ObjectDef
@@ -465,6 +467,7 @@ makeFSpec env context =
       [ Ifc
           { ifcIsAPI = False,
             ifcname = nm,
+            ifclbl = Nothing,
             ifcObj =
               let orig = Origin "generated object: step 4b"
                in ObjectDef

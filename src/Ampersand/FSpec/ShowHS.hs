@@ -756,7 +756,7 @@ instance ShowHS Pragma where
       ]
 
 --   instance ShowHSName ConceptDef where
---    showHSName cd = haskellIdentifier ("cDef_"<>cdcpt cd)
+--    showHSName cd = haskellIdentifier ("cDef_"<>cdname cd)
 
 instance ShowHS AConceptDef where
   showHS env indent cd =

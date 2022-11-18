@@ -127,6 +127,9 @@ instance Arbitrary Name where
       requirements t =
         T.all (/= '.') . text1ToText $ t
 
+instance Arbitrary Label where
+  arbitrary = Label <$> safeText
+
 instance Arbitrary BoxHeader where
   arbitrary =
     BoxHeader
@@ -155,6 +158,7 @@ instance Arbitrary P_Context where
   arbitrary =
     PCtx
       <$> uppercaseName
+      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -202,6 +206,7 @@ instance Arbitrary P_Pattern where
     P_Pat
       <$> arbitrary
         <*> uppercaseName
+        <*> arbitrary
         <*> smallListOf arbitrary
         <*> smallListOf arbitrary
         <*> smallListOf arbitrary
@@ -359,7 +364,11 @@ instance Arbitrary EnforceOperator where
 
 instance Arbitrary PConceptDef where
   arbitrary =
-    PConceptDef <$> arbitrary <*> uppercaseName <*> arbitrary
+    PConceptDef
+      <$> arbitrary
+      <*> uppercaseName
+      <*> arbitrary
+      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
 
@@ -420,6 +429,7 @@ instance Arbitrary PAtomValue where
 instance Arbitrary P_Interface where
   arbitrary =
     P_Ifc <$> arbitrary
+      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> makeObj InterfaceKind

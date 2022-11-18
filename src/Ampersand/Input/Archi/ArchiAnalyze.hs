@@ -124,6 +124,7 @@ mkArchiContext [archiRepo] pops =
     PCtx
       { ctx_nm = toName archiNameSpace $ archRepoName archiRepo,
         ctx_pos = [],
+        ctx_lbl = Nothing,
         ctx_lang = Just Dutch,
         ctx_markup = Nothing,
         ctx_pats = pats,
@@ -199,6 +200,7 @@ mkArchiContext [archiRepo] pops =
           P_Pat
             { pos = OriginUnknown,
               pt_nm = toName archiNameSpace $ viewName vw,
+              pt_lbl = Nothing,
               pt_rls = [],
               pt_gns = [],
               pt_dcs = sortDecls . map grainRel . vwAts $ vw,

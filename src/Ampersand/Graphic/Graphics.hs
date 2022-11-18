@@ -3,7 +3,7 @@
 module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput) where
 
 import Ampersand.ADL1
-import Ampersand.Basics
+import Ampersand.Basics hiding (Label)
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)

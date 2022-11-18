@@ -81,10 +81,14 @@ separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 instance Pretty Name where
   pretty = text . T.unpack . plainNameOf
 
+instance Pretty Label where
+  pretty (Label x) = text "LABEL" <~> (text . T.unpack . tshow) x
+
 instance Pretty P_Context where
-  pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
+  pretty (PCtx nm lbl _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
       <~> nm
+      <~> lbl
       <~> lang
       <~> markup
       <+\> perline metas
@@ -124,9 +128,10 @@ instance Pretty Role where
   pretty (Service nm) = pretty nm
 
 instance Pretty P_Pattern where
-  pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
+  pretty (P_Pat _ nm lbl rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
       <~> nm
+      <~> lbl
       <+\> perline rls
       <+\> perline gns
       <+\> perline dcs
@@ -248,9 +253,9 @@ instance Pretty EnforceOperator where
     IsSameSet _ -> text ":="
 
 instance Pretty PConceptDef where
-  pretty (PConceptDef _ nm def mean _) -- from, the last argument, is not used in the parser
+  pretty (PConceptDef _ nm lbl def mean _) -- from, the last argument, is not used in the parser
     =
-    text "CONCEPT" <~> nm
+    text "CONCEPT" <~> nm <~> lbl
       <+> pretty def <+\> perline mean
 
 instance Pretty PCDDef where
@@ -276,9 +281,10 @@ instance Pretty TType where
   pretty = text . show
 
 instance Pretty P_Interface where
-  pretty (P_Ifc isAPI nm roles obj _ _) =
+  pretty (P_Ifc isAPI nm lbl roles obj _ _) =
     text (if isAPI then "API " else "INTERFACE ")
       <~> nm
+      <~> lbl
       <+> iroles
       <+> interfaceExpression
       <+> crud (obj_crud obj)

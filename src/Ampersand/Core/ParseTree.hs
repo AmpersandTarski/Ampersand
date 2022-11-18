@@ -85,6 +85,8 @@ import RIO.Time
 data P_Context = PCtx
   { -- | The name of this context
     ctx_nm :: !Name,
+    -- | The label of this context, if it exits
+    ctx_lbl :: !(Maybe Label),
     -- | The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
     ctx_pos :: ![Origin],
     -- | The language specified on the top-level context. If omitted, English will be the default.
@@ -126,6 +128,9 @@ instance Eq P_Context where
 
 instance Named P_Context where
   name = ctx_nm
+
+instance Labeled P_Context where
+  mLabel = ctx_lbl
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data MetaData = MetaData
@@ -199,6 +204,7 @@ data P_Pattern = P_Pat
     -- | Name of this pattern
     pt_nm :: !Name,
     -- | The user defined rules in this pattern
+    pt_lbl :: !(Maybe Label),
     pt_rls :: ![P_Rule TermPrim],
     -- | The generalizations defined in this pattern
     pt_gns :: ![PClassify],
@@ -244,6 +250,9 @@ instance Eq P_Pattern where
 instance Named P_Pattern where
   name = pt_nm
 
+instance Labeled P_Pattern where
+  mLabel = pt_lbl
+
 instance Traced P_Pattern where
   origin = pos
 
@@ -251,7 +260,8 @@ data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    cdcpt :: !Name,
+    cdname :: !Name,
+    cdlbl :: !(Maybe Label),
     -- | The textual definition of this concept.
     cddef2 :: !PCDDef,
     -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
@@ -297,7 +307,10 @@ instance Traced PConceptDef where
   origin = pos
 
 instance Named PConceptDef where
-  name = cdcpt
+  name = cdname
+
+instance Labeled PConceptDef where
+  mLabel = cdlbl
 
 -- | Data structure to implement the change to the new way to specify
 --   the definition part of a concept. By using this structure, we can
@@ -863,6 +876,7 @@ data P_Interface = P_Ifc
     ifc_IsAPI :: !Bool,
     -- | the name of the interface
     ifc_Name :: !Name,
+    ifc_lbl :: !(Maybe Label),
     -- | a list of roles that may use this interface
     ifc_Roles :: ![Role],
     -- | the context term (mostly: I[c])
@@ -890,6 +904,9 @@ instance Eq P_Interface where
 
 instance Named P_Interface where
   name = ifc_Name
+
+instance Labeled P_Interface where
+  mLabel = ifc_lbl
 
 instance Traced P_Interface where
   origin = pos
@@ -1283,6 +1300,7 @@ mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
   PCtx
     { ctx_nm = name ctx1, -- This is an arbitrary choice. For all univalent fields of a context, we take the first one.
+      ctx_lbl = ctx_lbl ctx1,
       ctx_pos = fromContextsKeepDoubles ctx_pos,
       ctx_lang = ctx_lang ctx1, -- By taking the first, we end up with the language of the top-level context
       ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts,

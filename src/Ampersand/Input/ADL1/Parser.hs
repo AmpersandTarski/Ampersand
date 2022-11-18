@@ -41,15 +41,17 @@ pContext ::
 pContext ns =
   rebuild <$> (posOf . pKey . toText1Unsafe $ "CONTEXT")
     <*> pUpperCaseName ns
+    <*> pMaybe pLabel
     <*> pMaybe pLanguageRef
     <*> pMaybe pTextMarkup
     <*> many pContextElement
     <* (pKey . toText1Unsafe $ "ENDCONTEXT")
   where
-    rebuild :: Origin -> Name -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
-    rebuild pos' nm lang fmt ces =
+    rebuild :: Origin -> Name -> Maybe Label -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
+    rebuild pos' nm lbl lang fmt ces =
       ( PCtx
           { ctx_nm = nm,
+            ctx_lbl = lbl,
             ctx_pos = [pos'],
             ctx_lang = lang,
             ctx_markup = fmt,
@@ -144,15 +146,17 @@ pPatternDef ns =
   rebuild <$> currPos
     <* (pKey . toText1Unsafe) "PATTERN"
     <*> pUpperCaseName ns -- The name spaces of patterns and concepts are shared.
+    <*> pMaybe pLabel
     <*> many (pPatElem ns)
     <*> currPos
     <* (pKey . toText1Unsafe) "ENDPATTERN"
   where
-    rebuild :: Origin -> Name -> [PatElem] -> Origin -> P_Pattern
-    rebuild pos' nm pes end =
+    rebuild :: Origin -> Name -> Maybe Label -> [PatElem] -> Origin -> P_Pattern
+    rebuild pos' nm lbl pes end =
       P_Pat
         { pos = pos',
           pt_nm = nm,
+          pt_lbl = lbl,
           pt_rls = [r | Pr r <- pes],
           pt_gns = concat [ys | Py ys <- pes],
           pt_dcs = [d | Pd (d, _) <- pes],
@@ -428,6 +432,7 @@ pConceptDef ns =
   PConceptDef <$> currPos
     <* (pKey . toText1Unsafe) "CONCEPT"
     <*> pUpperCaseName ns
+    <*> pMaybe pLabel
     <*> pPCDDef2
     <*> many pMeaning
   where
@@ -546,7 +551,7 @@ pViewSegment viewKind ns =
   build <$> currPos
     <*> case viewKind of
       Legacy -> pure Nothing
-      Improved -> pMaybe pLabelAndColon
+      Improved -> pMaybe pTex1AndColon
     <*> pViewSegmentLoad ns
   where
     build :: Origin -> Maybe Text1 -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
@@ -574,17 +579,19 @@ pInterface ns =
   build <$> currPos
     <*> pInterfaceIsAPI
     <*> pUnrestrictedName ns
+    <*> pMaybe pLabel
     <*> pMaybe pRoles
     <*> (pColon *> pTerm ns) -- the term of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
     <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    build :: Origin -> Bool -> Name -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
-    build p isAPI nm roles ctx mCrud mView sub =
+    build :: Origin -> Bool -> Name -> Maybe Label -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    build p isAPI nm lbl roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,
+          ifc_lbl = lbl,
           ifc_Roles = maybe [] NE.toList roles,
           ifc_Obj =
             P_BoxItemTerm
@@ -646,7 +653,7 @@ pBoxBodyElement ns =
     pBoxItemTerm =
       build
         <$> currPos
-        <*> pLabelAndColon
+        <*> pTex1AndColon
         <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
         <*> pMaybe (pChevrons $ pUpperCaseName ns) --for the view
@@ -665,7 +672,7 @@ pBoxBodyElement ns =
     pBoxItemText =
       build
         <$> currPos
-        <*> pMaybe pLabelAndColon
+        <*> pMaybe pTex1AndColon
         <* (pKey . toText1Unsafe) "TXT"
         <*> pDoubleQuotedString
       where
@@ -933,12 +940,11 @@ pConceptRef ns = PCpt <$> pUpperCaseName ns
 pConceptOneRef :: NameSpace -> AmpParser P_Concept
 pConceptOneRef ns = (P_ONE <$ (pKey . toText1Unsafe) "ONE") <|> pConceptRef ns
 
---- Label ::= ADLid ':'
-pLabelAndColon :: AmpParser Text1
-pLabelAndColon = pUnrestrictedLabel <* pColon
+pTex1AndColon :: AmpParser Text1
+pTex1AndColon = pUnrestrictedText1 <* pColon
 
-pUnrestrictedLabel :: AmpParser Text1
-pUnrestrictedLabel = pSingleWord <|> pDoubleQuotedString1
+pUnrestrictedText1 :: AmpParser Text1
+pUnrestrictedText1 = pSingleWord <|> pDoubleQuotedString1
 
 pNameAndColon :: NameSpace -> AmpParser Name
 pNameAndColon ns = (pUpperCaseName ns <|> pLowerCaseName ns) <* pColon
@@ -963,3 +969,8 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pUnrestrictedName :: NameSpace -> AmpParser Name
 pUnrestrictedName ns = pLowerCaseName ns <|> pUpperCaseName ns <|> pAnyKeyWordName ns
+
+pLabel :: AmpParser Label
+pLabel =
+  Label <$ (pKey . toText1Unsafe $ "LABEL")
+    <*> pDoubleQuotedString

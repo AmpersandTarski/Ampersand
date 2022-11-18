@@ -6,7 +6,7 @@ module Ampersand.Graphic.ClassDiag2Dot
 where
 
 import Ampersand.ADL1 hiding (Box)
-import Ampersand.Basics
+import Ampersand.Basics hiding (Label)
 import Ampersand.Classes
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Misc.HasClasses
