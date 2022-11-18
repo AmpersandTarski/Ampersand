@@ -1,8 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
---to avoid warning for trace
-{-# OPTIONS_GHC -Wno-deprecations #-}
 
 module Ampersand.Test.Parser.QuickChecks
   ( doAllQuickCheckPropertyTests,
