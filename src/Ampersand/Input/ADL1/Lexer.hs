@@ -52,6 +52,7 @@ keywords =
            "PATTERN",
            "ENDPATTERN",
            "CONCEPT",
+           "LABEL",
            -- Keywords for Relation-statements
            "RELATION",
            "PRAGMA",
