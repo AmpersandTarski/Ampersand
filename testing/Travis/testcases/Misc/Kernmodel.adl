@@ -34,7 +34,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
    PURPOSE INTERFACE Functie
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Functie (formatie, krachtens, beslotenDoor, namens) FOR Bestuurder: I[Functie] {- Stef Joosten, 19 April 2013 -}
+   INTERFACE Functie FOR Bestuurder: I[Functie] {- Stef Joosten, 19 April 2013 -}
    BOX[ "Functie"      : I
       , "Orgaan": formatie~
       , "Verkregen mandaten": gemandateerde~
@@ -56,7 +56,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
    PURPOSE INTERFACE Mandaat 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Mandaat (mandaatgever) FOR Bestuurder: I[Mandaat]  {- Stef Joosten, 19 April 2013 -}
+   INTERFACE Mandaat FOR Bestuurder: I[Mandaat]  {- Stef Joosten, 19 April 2013 -}
    BOX[ "Mandaat"      : I
       , "Mandaatgever": mandaatgever
       , "gemandateerde": gemandateerde
@@ -67,7 +67,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
 PURPOSE INTERFACE Bestuursorgaan 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Bestuursorgaan (bevoegdheid,formatie) FOR Bestuurder: I[Bestuursorgaan]  {- Henk Boer Chris Haveman, 2 mei 2013 -}
+   INTERFACE Bestuursorgaan FOR Bestuurder: I[Bestuursorgaan]  {- Henk Boer Chris Haveman, 2 mei 2013 -}
    BOX[ "Bestuursorgaan" : I
       , "Bevoegdheid": bevoegdheid
       , "formatie": formatie
@@ -76,7 +76,7 @@ PURPOSE INTERFACE Bestuursorgaan
 
    PURPOSE INTERFACE Mandaatvoorbehouden 
    {+ Roger Hage en Sebastiaan Hobers +}
-   INTERFACE Mandaatvoorbehouden (mandaatgever) FOR Bestuurder: I[Mandaat] 
+   INTERFACE Mandaatvoorbehouden FOR Bestuurder: I[Mandaat] 
    BOX[ "Mandaat"      : I
       , "Bevoegdheid": mandaatbevoegdheid[Mandaat*Bevoegdheid]
          BOX [ mandaat : I

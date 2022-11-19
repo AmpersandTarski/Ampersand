@@ -11,7 +11,7 @@ regelFactuur :: Factuurregel * Factuur [UNI,TOT] -- Factuurregels horen bij éé
 
 RULE Sequences: regelFactuur |- seSequence  -- Elke factuur is een sequence van facuurregels.
 
-RULE I[Factuurregel]  /\ seqFirstEntry~;seqFirstEntry /\ -(seqLastEntry~;seqLastEntry)|- regelFactuur;regelFactuur~
-RULE I[Factuurregel]  /\ seqLastEntry~;seqLastEntry /\ -(seqFirstEntry~;seqFirstEntry)|- regelFactuur;regelFactuur~
+RULE R1: I[Factuurregel]  /\ seqFirstEntry~;seqFirstEntry /\ -(seqLastEntry~;seqLastEntry)|- regelFactuur;regelFactuur~
+RULE R2: I[Factuurregel]  /\ seqLastEntry~;seqLastEntry /\ -(seqFirstEntry~;seqFirstEntry)|- regelFactuur;regelFactuur~
 
 ENDCONTEXT

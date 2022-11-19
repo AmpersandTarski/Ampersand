@@ -4,7 +4,7 @@ PATTERN Try30
 CLASSIFY Medewerker ISA Persoon
 CLASSIFY Student ISA Persoon
 
-RULE I[Persoon] |- I[Student] \/ I[Medewerker]
+RULE Try30: I[Persoon] |- I[Student] \/ I[Medewerker]
 MEANING "Een persoon is of een student of een medewerker (of beide)."
 ENDPATTERN
 

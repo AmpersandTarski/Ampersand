@@ -4,7 +4,7 @@ PATTERN Try31
 CLASSIFY Medewerker ISA Persoon
 CLASSIFY Student ISA Persoon
 
-RULE I[Persoon] - I[Student] |- I[Medewerker]
+RULE Try31: I[Persoon] - I[Student] |- I[Medewerker]
 MEANING "Een persoon die geen student is, is een medewerker"
 ENDPATTERN
 

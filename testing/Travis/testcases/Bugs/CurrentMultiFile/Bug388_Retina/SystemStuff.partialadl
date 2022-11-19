@@ -64,7 +64,7 @@ PURPOSE RELATION isDeelsvcVan REF "Meldingsformulier Wbp en de Toelichting hiero
 {++}
 
 {-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
-RULE IrreflexiviteitVanDeelsvcZijn": I |- -isDeelsvcVan 
+RULE IrreflexiviteitVanDeelsvcZijn: I |- -isDeelsvcVan 
 MEANING "Een service is geen deelservice van zichzelf"
 
 RULE DeelservicesDienenSubdoelen: isDeelsvcVan |- svcVerwerkingsDoel; isSubdoelVan; svcVerwerkingsDoel~
