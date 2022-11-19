@@ -1528,7 +1528,7 @@ broadQuery fSpec obj =
                                 <>
                                 --   2) It must be injective. Because SQL deletes trailing spaces,
                                 --      we have to cope with that:
-                                maybe mempty (text1ToText . escapeIdentifier) (objLabel col)
+                                maybe mempty (text1ToText . escapeIdentifier) (objPlainName col)
                           )
                       )
                 subThings ::

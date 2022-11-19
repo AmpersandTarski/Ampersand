@@ -719,14 +719,14 @@ instance Traced BoxItem where
 
 data BoxTxt = BoxTxt
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    boxLabel :: !(Maybe Text1),
+    boxPlainName :: !(Maybe Text1),
     boxpos :: !Origin,
     boxtxt :: !Text
   }
   deriving (Show)
 
 instance Ord BoxTxt where
-  compare a b = case compare (boxLabel a, boxtxt a) (boxLabel b, boxtxt b) of
+  compare a b = case compare (boxPlainName a, boxtxt a) (boxPlainName b, boxtxt b) of
     EQ ->
       fromMaybe
         ( fatal . T.intercalate "\n" $
@@ -743,7 +743,8 @@ instance Eq BoxTxt where
 
 data ObjectDef = ObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    objLabel :: !(Maybe Text1),
+    objPlainName :: !(Maybe Text1),
+    objlbl :: !(Maybe Label),
     -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
     objPos :: !Origin,
     -- | this term describes the instances of this object, related to their context.
@@ -764,7 +765,7 @@ instance Unique ObjectDef where
   showUnique = toText1Unsafe . tshow
 
 instance Ord ObjectDef where
-  compare a b = case compare (objLabel a) (objLabel b) of
+  compare a b = case compare (objPlainName a) (objPlainName b) of
     EQ ->
       fromMaybe
         ( fatal . T.intercalate "\n" $

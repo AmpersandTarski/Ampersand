@@ -67,11 +67,24 @@ uppercaseName = arbitrary `suchThat` (firstUppercase . plainNameOf1)
 makeObj :: ObjectKind -> Gen P_BoxBodyElement
 makeObj objectKind =
   oneof $
-    (P_BoxItemTerm <$> labelGenerator <*> arbitrary <*> term <*> cruds <*> view' <*> subInterface objectKind) :
-      [P_BxTxt <$> labelGenerator <*> arbitrary <*> safeText | isTxtAllowed]
+    ( P_BoxItemTerm
+        <$> plainNameGenerator
+        <*> arbitrary
+        <*> arbitrary
+        <*> term
+        <*> cruds
+        <*> view'
+        <*> subInterface objectKind
+    ) :
+      [ P_BxTxt
+          <$> plainNameGenerator
+          <*> arbitrary
+          <*> safeText
+        | isTxtAllowed
+      ]
   where
-    labelGenerator :: Gen (Maybe Text1)
-    labelGenerator = case objectKind of
+    plainNameGenerator :: Gen (Maybe Text1)
+    plainNameGenerator = case objectKind of
       InterfaceKind -> pure Nothing
       SubInterfaceKind _ -> Just <$> safeLabel
       IdentSegmentKind -> pure Nothing
@@ -108,8 +121,14 @@ makeObj objectKind =
       SubInterfaceKind n ->
         Just
           <$> oneof
-            [ P_Box <$> arbitrary <*> arbitrary <*> smallListOf (makeObj (SubInterfaceKind {siMaxDepth = min (n -1) 2})),
-              P_InterfaceRef <$> arbitrary <*> arbitrary <*> arbitrary
+            [ P_Box
+                <$> arbitrary
+                <*> arbitrary
+                <*> smallListOf (makeObj (SubInterfaceKind {siMaxDepth = min (n -1) 2})),
+              P_InterfaceRef
+                <$> arbitrary
+                <*> arbitrary
+                <*> arbitrary
             ]
       ViewSegmentKind -> pure Nothing
 

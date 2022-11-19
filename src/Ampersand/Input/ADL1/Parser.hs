@@ -495,8 +495,9 @@ pIdentDef ns =
       where
         rebuild pos' ctx =
           P_BoxItemTerm
-            { box_label = Nothing,
-              pos = pos',
+            { pos = pos',
+              obj_PlainName = Nothing,
+              obj_lbl = Nothing,
               obj_ctx = ctx,
               obj_crud = Nothing,
               obj_mView = Nothing,
@@ -595,7 +596,8 @@ pInterface ns =
           ifc_Roles = maybe [] NE.toList roles,
           ifc_Obj =
             P_BoxItemTerm
-              { box_label = Nothing,
+              { obj_PlainName = Nothing,
+                obj_lbl = Nothing,
                 pos = p,
                 obj_ctx = ctx,
                 obj_crud = mCrud,
@@ -654,14 +656,16 @@ pBoxBodyElement ns =
       build
         <$> currPos
         <*> pTex1AndColon
+        <*> pMaybe pLabel
         <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
         <*> pMaybe (pChevrons $ pUpperCaseName ns) --for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
-        build orig lab term mCrud mView msub =
+        build orig localName lbl term mCrud mView msub =
           P_BoxItemTerm
-            { box_label = Just lab,
+            { obj_PlainName = Just localName,
+              obj_lbl = lbl,
               pos = orig,
               obj_ctx = term,
               obj_crud = mCrud,
@@ -678,7 +682,7 @@ pBoxBodyElement ns =
       where
         build orig lab txt =
           P_BxTxt
-            { box_label = lab,
+            { obj_PlainName = lab,
               pos = orig,
               box_txt = txt
             }

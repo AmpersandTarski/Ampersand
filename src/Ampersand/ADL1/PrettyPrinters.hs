@@ -301,9 +301,9 @@ instance Pretty P_Interface where
 prettyObject :: ObjectKind -> P_BoxBodyElement -> Doc
 prettyObject objectKind obj =
   maybeQuoteLabel
-    (box_label obj)
+    (obj_PlainName obj)
     <+> ( case obj of
-            (P_BoxItemTerm _ _ ctx mCrud mView msub) -> case objectKind of
+            (P_BoxItemTerm _ _ _ ctx mCrud mView msub) -> case objectKind of
               InterfaceKind -> view mView <$> pretty msub
               SubInterfaceKind _ -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
               IdentSegmentKind -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub

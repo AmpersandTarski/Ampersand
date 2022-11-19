@@ -668,8 +668,8 @@ instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 
 instance Traversable P_BoxItem where
-  traverse f (P_BoxItemTerm nm orig ctx mCrud mView msub) =
-    (\ctx' msub' -> P_BoxItemTerm nm orig ctx' mCrud mView msub')
+  traverse f (P_BoxItemTerm nm lbl orig ctx mCrud mView msub) =
+    (\ctx' msub' -> P_BoxItemTerm nm lbl orig ctx' mCrud mView msub')
       <$> traverse f ctx
       <*> traverse (traverse f) msub
   traverse _ (P_BxTxt nm pos' str) = pure (P_BxTxt nm pos' str)
@@ -959,7 +959,8 @@ data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentS
 data P_BoxItem a
   = P_BoxItemTerm
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-        box_label :: !(Maybe Text1),
+        obj_PlainName :: !(Maybe Text1),
+        obj_lbl :: !(Maybe Label),
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
         pos :: !Origin,
         -- | this term describes the instances of this object, related to their context.
@@ -973,7 +974,7 @@ data P_BoxItem a
       }
   | P_BxTxt
       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-        box_label :: !(Maybe Text1),
+        obj_PlainName :: !(Maybe Text1),
         pos :: !Origin,
         box_txt :: !Text
       }

@@ -401,8 +401,9 @@ makeFSpec env context =
       let recur :: [NE.NonEmpty Expression] -> [ObjectDef]
           recur es =
             [ ObjectDef
-                { objLabel = Just . toText1Unsafe . showA $ t,
-                  objPos = orig,
+                { objPos = orig,
+                  objPlainName = Just . toText1Unsafe . showA $ t,
+                  objlbl = Nothing,
                   objExpression = t,
                   objcrud = defaultGeneratedCruds,
                   objmView = Nothing,
@@ -445,8 +446,9 @@ makeFSpec env context =
                 ifcObj =
                   let orig = Origin "generated object: step 4a - default theme"
                    in ObjectDef
-                        { objLabel = Just $ tName c,
-                          objPos = orig,
+                        { objPos = orig,
+                          objPlainName = Just $ tName c,
+                          objlbl = Nothing,
                           objExpression = EDcI c,
                           objcrud = defaultGeneratedCruds,
                           objmView = Nothing,
@@ -471,8 +473,9 @@ makeFSpec env context =
             ifcObj =
               let orig = Origin "generated object: step 4b"
                in ObjectDef
-                    { objLabel = Just $ tName nm,
-                      objPos = orig,
+                    { objPos = orig,
+                      objPlainName = Just $ tName nm,
+                      objlbl = Nothing,
                       objExpression = EDcI ONE,
                       objcrud = defaultGeneratedCruds,
                       objmView = Nothing,
@@ -493,8 +496,9 @@ makeFSpec env context =
                 h : _ -> h
               att =
                 ObjectDef
-                  { objLabel = Just $ tName c,
-                    objPos = Origin "generated attribute object: step 4b",
+                  { objPos = Origin "generated attribute object: step 4b",
+                    objPlainName = Just $ tName c,
+                    objlbl = Nothing,
                     objExpression = EDcV (Sign ONE c),
                     objcrud = defaultGeneratedCruds,
                     objmView = Nothing,

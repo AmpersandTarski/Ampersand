@@ -268,8 +268,9 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BoxItemTerm
-        { box_label = objLabel oDef,
-          pos = origin oDef,
+        { pos = origin oDef,
+          obj_PlainName = objPlainName oDef,
+          obj_lbl = objlbl oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
             Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
@@ -279,7 +280,7 @@ aObjectDef2pObjectDef x =
         }
     BxTxt oDef ->
       P_BxTxt
-        { box_label = boxLabel oDef,
+        { obj_PlainName = boxPlainName oDef,
           pos = origin oDef,
           box_txt = boxtxt oDef
         }

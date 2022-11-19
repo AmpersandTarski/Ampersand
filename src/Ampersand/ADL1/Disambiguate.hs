@@ -198,24 +198,25 @@ instance Disambiguatable P_BoxItem where
   disambInfo
     cptMap
     ( P_BoxItemTerm
-        a
-        b
-        c -- term
+        localName
+        lbl
+        orig
+        term
         mCrud
-        v
-        d -- (potential) subobject
+        vw
+        sub -- (potential) subobject
       )
     env -- from the environment, only the source is important
       =
-      (P_BoxItemTerm a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
+      (P_BoxItemTerm localName lbl orig c' mCrud vw d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
       where
         (d', env1) =
-          case d of
+          case sub of
             Nothing -> (Nothing, noConstraints)
             Just si -> Control.Arrow.first Just $ disambInfo cptMap si (Cnstr (bottomUpTargetTypes env2) [])
         (c', env2) =
-          disambInfo cptMap c (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
-  disambInfo _ (P_BxTxt a b c) _ = (P_BxTxt a b c, noConstraints)
+          disambInfo cptMap term (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
+  disambInfo _ (P_BxTxt localName orig txt) _ = (P_BxTxt localName orig txt, noConstraints)
 
 instance Disambiguatable Term where
   disambInfo cptMap (PFlp o a) env1 = (PFlp o a', Cnstr (bottomUpTargetTypes envA) (bottomUpSourceTypes envA))

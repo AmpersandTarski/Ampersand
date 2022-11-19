@@ -33,12 +33,12 @@ BOX [ "All oranges" : V[SESSION*Orange]
     ]
 
 INTERFACE Orange : I[Orange]
-BOX [ "I" : I
+BOX [ "I" LABEL "" : I
     , "name" : name
     ]
 
 INTERFACE Lemon : I[Lemon]
-BOX [ "I" : I
+BOX [ "I" LABEL "" : I
     , "name" : name
     ]
 

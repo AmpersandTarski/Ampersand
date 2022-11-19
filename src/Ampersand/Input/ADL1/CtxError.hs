@@ -399,7 +399,7 @@ mkUndeclaredError entity objDef ref =
   case objDef of
     P_BoxItemTerm {} ->
       CTXE (origin objDef) $
-        "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (box_label objDef)
+        "Undeclared " <> entity <> " " <> tshow ref <> " referenced at field " <> tshow (obj_PlainName objDef)
     _ -> fatal "Unexpected use of mkUndeclaredError."
 
 mkEndoPropertyError :: Origin -> [PProp] -> CtxError
@@ -477,7 +477,7 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
       CTXE (origin objDef) $
         "Incompatible interface reference " <> tshow ref
           <> " at field "
-          <> maybe "without a label" tshow (box_label objDef)
+          <> maybe "without a label" tshow (obj_PlainName objDef)
           <> ":\nReferenced interface "
           <> tshow ref
           <> " has type "
@@ -506,7 +506,7 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
     P_BoxItemTerm {} ->
       CTXE (origin objDef) $
         "Incompatible view annotation <" <> (text1ToText . tName) viewId <> "> at field "
-          <> maybe "without a label" tshow (box_label objDef)
+          <> maybe "without a label" tshow (obj_PlainName objDef)
           <> ":"
           <> "\nView "
           <> tshow viewId

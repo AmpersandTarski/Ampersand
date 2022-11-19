@@ -646,7 +646,8 @@ pCtx2aCtx
       typecheckObjDef declMap objDef =
         case objDef of
           P_BoxItemTerm
-            { box_label = nm,
+            { obj_PlainName = nm,
+              obj_lbl = lbl',
               pos = orig,
               obj_ctx = ctx,
               obj_crud = mCrud,
@@ -688,7 +689,8 @@ pCtx2aCtx
                 obj crud (e, sr) s =
                   ( BxExpr
                       ObjectDef
-                        { objLabel = nm,
+                        { objPlainName = nm,
+                          objlbl = lbl',
                           objPos = orig,
                           objExpression = e,
                           objcrud = crud,
@@ -698,14 +700,14 @@ pCtx2aCtx
                     sr
                   )
           P_BxTxt
-            { box_label = nm,
+            { obj_PlainName = nm,
               pos = orig,
               box_txt = str
             } ->
               pure
                 ( BxTxt
                     BoxTxt
-                      { boxLabel = nm,
+                      { boxPlainName = nm,
                         boxpos = orig,
                         boxtxt = str
                       },
@@ -820,11 +822,11 @@ pCtx2aCtx
                 <* mustBeObject (target objExpr)
             where
               toNonEmptyLabel :: P_BoxItem a -> Text1
-              toNonEmptyLabel bi = case box_label bi of
+              toNonEmptyLabel bi = case obj_PlainName bi of
                 Nothing -> fatal "all items without label should been filtered out here"
                 Just labl -> labl
               hasLabel :: P_BoxItem a -> Bool
-              hasLabel bi = case box_label bi of
+              hasLabel bi = case obj_PlainName bi of
                 Nothing -> False
                 Just _ -> True
               l :: [P_BoxItem (TermPrim, DisambPrim)]

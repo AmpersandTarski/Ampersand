@@ -629,13 +629,13 @@ instance ShowHS Population where
           <> "         }"
 
 --instance ShowHSName ObjectDef where
---  showHSName = haskellIdentifier . tName . prependToPlainName "oDef_" . objLabel
+--  showHSName = haskellIdentifier . tName . prependToPlainName "oDef_" . objPlainName
 
 instance ShowHS ObjectDef where
   showHS env indent x =
     T.intercalate
       indent
-      [ "ObjectDef { objLabel    = " <> tshow (objLabel x),
+      [ "ObjectDef { objPlainName    = " <> tshow (objPlainName x),
         "       , objpos   = " <> showHS env "" (origin x),
         "       , objExpression   = " <> showHS env (indent <> "                ") (objExpression x),
         "       , objcrud  = " <> showHS env (indent <> "                ") (objcrud x),
@@ -648,7 +648,7 @@ instance ShowHS BoxTxt where
   showHS env indent x =
     T.intercalate
       indent
-      [ "BoxTxt { boxLabel    = " <> tshow (boxLabel x),
+      [ "BoxTxt { boxPlainName    = " <> tshow (boxPlainName x),
         "       , boxpos   = " <> showHS env "" (origin x),
         "       , boxtxt   = " <> tshow (boxtxt x),
         "       }"

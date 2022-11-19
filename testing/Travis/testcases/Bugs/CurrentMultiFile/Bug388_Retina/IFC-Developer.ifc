@@ -17,8 +17,7 @@ ROLE Developer MAINTAINS Triviality
 ENDPATTERN
 ------------------------------------------------------------
 --[Verwerkingen]--------------------------------------------
-INTERFACE Verwerking
- FOR Developer : I[Verwerking]
+INTERFACE Verwerking FOR Developer : I[Verwerking]
 BOX[ "Verwerking" : I
    , "verwerkingNaam" : verwerkingNaam
    , "verwerkingOmschrijving" : verwerkingOmschrijving
@@ -36,8 +35,7 @@ BOX[ "Verwerking" : I
    , "verwerkingBewaartermijn" : verwerkingBewaartermijn
    ]
 ------------------------------------------------------------
-INTERFACE Melding
-FOR Developer : I[Verwerking] -- Zie artikel 28, eerste en tweede lid, artikel 29, tweede lid en artikel 30, eerste lid.
+INTERFACE Melding FOR Developer : I[Verwerking] -- Zie artikel 28, eerste en tweede lid, artikel 29, tweede lid en artikel 30, eerste lid.
 BOX[ "Verwerking/Systeem" : I
    , "Naam" : verwerkingNaam
    , "Omschrijving" : verwerkingOmschrijving
@@ -58,14 +56,7 @@ BOX[ "Verwerking/Systeem" : I
    ]
 ------------------------------------------------------------
 --[Services]------------------------------------------------
-INTERFACE Service
-( svcNaam, svcOmschrijving, svcSpecificatieSamenvatting
-, isDeelsvcVanVerwerking, isDeelsvcVan
-, svcVerantwoordelijke, svcBewerker
-, svcVerzamelDoel, svcVerwerkingsDoel
-, svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType
-, svcVerstuurtBerichtSoort, svcOntvangtBerichtSoort
-) FOR Developer : I[Service]
+INTERFACE Service FOR Developer : I[Service]
 BOX[ "Service" : I
    , "svcNaam" : svcNaam
    , "svcOmschrijving" :  svcOmschrijving
@@ -83,8 +74,7 @@ BOX[ "Service" : I
    ]
 ------------------------------------------------------------
 --[Doelen]--------------------------------------------------
-INTERFACE Doel (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
-FOR Developer : I[Doel]
+INTERFACE Doel  FOR Developer : I[Doel]
 BOX[ "Doel" : I
    , "doelID" : doelID
    , "gerechtvaardigdDoor" : gerechtvaardigdDoor
@@ -100,8 +90,7 @@ BOX[ "Doel" : I
    , "svcVerwerkingsDoel" : svcVerwerkingsDoel~
    ]
 ------------------------------------------------------------
-INTERFACE Doe1 (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet)
-FOR Developer : I[DoelID];doelID~
+INTERFACE Doe1 FOR Developer : I[DoelID];doelID~
 BOX[ "Doel" : I
    , "doelID" : doelID
    , "gerechtvaardigdDoor" : gerechtvaardigdDoor
@@ -118,8 +107,7 @@ BOX[ "Doel" : I
    ]
 ------------------------------------------------------------
 --[Partijen]------------------------------------------------
-INTERFACE Partij (partijNaam, partijAdres)
-FOR Developer : I[Partij]
+INTERFACE Partij FOR Developer : I[Partij]
 BOX[ "Partij" : I
    , "partijNaam" : partijNaam
    , "partijAdres" : partijAdres
@@ -130,8 +118,7 @@ BOX[ "Partij" : I
    ]
 ------------------------------------------------------------
 --[Berichtsoorten]------------------------------------------
-INTERFACE BerichtSoort (berichtSoortGegevensType, svcOntvangtBerichtSoort, svcVerstuurtBerichtSoort, typeOf[Bericht*BerichtSoort])
-FOR Developer : I[BerichtSoort]
+INTERFACE BerichtSoort FOR Developer : I[BerichtSoort]
 BOX[ "BerichtSoort" : I
    , "berichtSoortNaam" : berichtSoortNaam
    , "berichtSoortGegevensType" : berichtSoortGegevensType
@@ -141,8 +128,7 @@ BOX[ "BerichtSoort" : I
    ]
 ------------------------------------------------------------
 --[Berichten]-----------------------------------------------
-INTERFACE Bericht (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType)
-FOR Developer : I[Bericht]
+INTERFACE Bericht FOR Developer : I[Bericht]
 BOX[ "Bericht" : I
    , "Bericht type" : typeOf
    , "verstuurdNaar" : verstuurdNaar
@@ -151,8 +137,7 @@ BOX[ "Bericht" : I
    ]
 ------------------------------------------------------------
 --[Persoonsgegevens]----------------------------------------
-INTERFACE Persoonsgegeven (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService)
-FOR Developer : I[Persoonsgegeven]
+INTERFACE Persoonsgegeven FOR Developer : I[Persoonsgegeven]
 BOX[ "Persoonsgegeven" : I
    , "Type" : persoonsgegevensType
    , "Waarde" : persoonsgegevensWaarde
@@ -164,8 +149,7 @@ BOX[ "Persoonsgegeven" : I
    ]
 ------------------------------------------------------------
 --[PersoonsgegevensTypes]-----------------------------------
-INTERFACE PersoonsgegevensType (svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType)
-FOR Developer : I[PersoonsgegevensType]
+INTERFACE PersoonsgegevensType FOR Developer : I[PersoonsgegevensType]
 BOX[ "persoonsgegevensType" : I
    , "svcVerzameltPersoonsgegevensType" : svcVerzameltPersoonsgegevensType~
    , "svcVerwerktPersoonsgegevensType" : svcVerwerktPersoonsgegevensType~

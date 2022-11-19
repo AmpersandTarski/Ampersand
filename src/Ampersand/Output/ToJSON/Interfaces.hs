@@ -174,8 +174,8 @@ instance JSON BoxItem JSONObjectDef where
       BxExpr object' ->
         JSONObjectDef
           { ifcobjJSONtype = "ObjExpression",
-            ifcobjJSONid = maybe "" (text1ToText . escapeIdentifier) (objLabel object),
-            ifcobjJSONlabel = maybe "" text1ToText (objLabel object),
+            ifcobjJSONid = maybe "" (text1ToText . escapeIdentifier) (objPlainName object),
+            ifcobjJSONlabel = maybe "" text1ToText (objPlainName object),
             ifcobjJSONviewId = text1ToText . tName <$> viewToUse,
             ifcobjJSONNormalizationSteps = Just $ showPrf showA . cfProof . objExpression $ object,
             ifcobjJSONrelation = text1ToText . showRel . fst <$> mEditableDecl,
@@ -199,8 +199,8 @@ instance JSON BoxItem JSONObjectDef where
       BxTxt object ->
         JSONObjectDef
           { ifcobjJSONtype = "ObjText",
-            ifcobjJSONid = maybe "" (text1ToText . escapeIdentifier) (boxLabel object),
-            ifcobjJSONlabel = maybe "" text1ToText (boxLabel object),
+            ifcobjJSONid = maybe "" (text1ToText . escapeIdentifier) (boxPlainName object),
+            ifcobjJSONlabel = maybe "" text1ToText (boxPlainName object),
             ifcobjJSONviewId = Nothing,
             ifcobjJSONNormalizationSteps = Nothing,
             ifcobjJSONrelation = Nothing,

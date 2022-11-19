@@ -135,7 +135,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
             return
               FEObjE
-                { objName = maybe "" text1ToText . objLabel $ object,
+                { objName = maybe "" text1ToText . objPlainName $ object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
@@ -152,6 +152,6 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
           BxTxt object' ->
             return
               FEObjT
-                { objName = maybe "" text1ToText . boxLabel $ object',
+                { objName = maybe "" text1ToText . boxPlainName $ object',
                   objTxt = boxtxt object'
                 }
