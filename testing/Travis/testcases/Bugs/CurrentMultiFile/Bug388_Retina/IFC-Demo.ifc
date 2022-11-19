@@ -5,17 +5,11 @@ BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    , "Services"                : V[ONE*Service]
    , "Doelen"                  : V[ONE*Doel]
    , Partijen                : V[ONE*Partij]
-   , "BerichtSoorten"          : V[ONE*BerichtSoort]
+   , BerichtSoorten          : V[ONE*BerichtSoort]
    , "PersoonsgegevensTypes"   : V[ONE*PersoonsgegevensType]
    ]
 --[Verwerkingen]--------------------------------------------
-INTERFACE VerwerkingA
-(verwerkingNaam, verwerkingOmschrijving, verwerkingSpecificatieSamenvatting, verwerkingsVerantwoordelijke, verwerkingBewerker, 
-verwerkingsDoel, 
-isDeelverwerkingVan, isDeelsvcVanVerwerking
---verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger,
---verwerkingGegevensDoorgiftenBuitenEU, verwerkingBewaartermijn
-) FOR User : I[Verwerking]
+INTERFACE VerwerkingA FOR User : I[Verwerking]
 BOX[ "Verwerking" : I
    , "Naam" : verwerkingNaam
    , "Omschrijving" : verwerkingOmschrijving
@@ -36,14 +30,7 @@ BOX[ "Verwerking" : I
 -}
    ]
 ------------------------------------------------------------
-INTERFACE ServiceA
-( svcNaam, svcOmschrijving, svcSpecificatieSamenvatting
-, isDeelsvcVanVerwerking, isDeelsvcVan
-, svcVerantwoordelijke, svcBewerker
-, svcVerzamelDoel, svcVerwerkingsDoel
-, svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType
-, svcVerstuurtBerichtSoort, svcOntvangtBerichtSoort
-) FOR User : I[Service]
+INTERFACE ServiceA FOR User : I[Service]
 BOX[ "Service" : I
    , "svcNaam" : svcNaam
    , "svcOmschrijving" : svcOmschrijving
@@ -61,8 +48,7 @@ BOX[ "Service" : I
    ]
 ------------------------------------------------------------
 --[Doelen]--------------------------------------------------
-INTERFACE DoelA (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet, verzamelDoel, svcVerzamelDoel, verwerkingsDoel, svcVerwerkingsDoel)
-FOR User : I[Doel]
+INTERFACE DoelA FOR User : I[Doel]
 BOX[ "Doel" : I
    , "doelID" : doelID
    , "gerechtvaardigdDoor" : gerechtvaardigdDoor
@@ -78,8 +64,7 @@ BOX[ "Doel" : I
    , "svcVerwerkingsDoel" : svcVerwerkingsDoel~
    ]
 ------------------------------------------------------------
-INTERFACE Doe1A (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet, verzamelDoel, svcVerzamelDoel, verwerkingsDoel, svcVerwerkingsDoel)
-FOR User : I[DoelID];doelID~
+INTERFACE Doe1A FOR User : I[DoelID];doelID~
 BOX[ "Doel" : I
    , "doelID" : doelID
    , "gerechtvaardigdDoor" : gerechtvaardigdDoor
@@ -96,8 +81,7 @@ BOX[ "Doel" : I
    ]
 ------------------------------------------------------------
 --[Partijen]------------------------------------------------
-INTERFACE PartijA (partijNaam, partijAdres, verwerkingsVerantwoordelijke, verwerkingBewerker, verwerkingOntvanger, gerechtvaardigdDoor, doelID)
-FOR User : I[Partij]
+INTERFACE PartijA FOR User : I[Partij]
 BOX[ "Partij" : I
    , "partijNaam" : partijNaam
    , "partijAdres" : partijAdres
@@ -108,10 +92,7 @@ BOX[ "Partij" : I
    ]
 ------------------------------------------------------------
 --[Berichtsoorten]------------------------------------------
-INTERFACE BerichtSoortA 
-(berichtSoortNaam, berichtSoortGegevensType, svcOntvangtBerichtSoort, svcVerstuurtBerichtSoort
---, typeOf[Bericht*BerichtSoort]
-) FOR User : I[BerichtSoort]
+INTERFACE BerichtSoortA  FOR User : I[BerichtSoort]
 BOX[ "BerichtSoort" : I
    , "berichtSoortNaam" : berichtSoortNaam
    , "berichtSoortGegevensType" : berichtSoortGegevensType
@@ -121,8 +102,7 @@ BOX[ "BerichtSoort" : I
    ]
 ------------------------------------------------------------
 --[Berichten]-----------------------------------------------
-INTERFACE BerichtA (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType)
-FOR User : I[Bericht]
+INTERFACE BerichtA FOR User : I[Bericht]
 BOX[ "Bericht" : I
    , "Bericht type" : typeOf
    , "verstuurdNaar" : verstuurdNaar
@@ -131,8 +111,7 @@ BOX[ "Bericht" : I
    ]
 ------------------------------------------------------------
 --[Persoonsgegevens]----------------------------------------
-INTERFACE PersoonsgegevenA (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService)
-FOR User : I[Persoonsgegeven]
+INTERFACE PersoonsgegevenA FOR User : I[Persoonsgegeven]
 BOX[ "Persoonsgegeven" : I
    , "Type" : persoonsgegevensType
    , "Waarde" : persoonsgegevensWaarde
@@ -144,8 +123,7 @@ BOX[ "Persoonsgegeven" : I
    ]
 ------------------------------------------------------------
 --[PersoonsgegevensTypes]-----------------------------------
-INTERFACE PersoonsgegevensTypeA (svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType)
-FOR User : I[PersoonsgegevensType]
+INTERFACE PersoonsgegevensTypeA FOR User : I[PersoonsgegevensType]
 BOX[ "persoonsgegevensType" : I
    , "svcVerzameltPersoonsgegevensType" : svcVerzameltPersoonsgegevensType~
    , "svcVerwerktPersoonsgegevensType" : svcVerwerktPersoonsgegevensType~

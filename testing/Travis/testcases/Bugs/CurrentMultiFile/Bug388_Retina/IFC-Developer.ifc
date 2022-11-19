@@ -5,7 +5,7 @@ BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    , "Services"                : V[ONE*Service]
    , "Doelen"                  : V[ONE*Doel]
    , Partijen                : V[ONE*Partij]
-   , "BerichtSoorten"          : V[ONE*BerichtSoort]
+   , BerichtSoorten          : V[ONE*BerichtSoort]
    , "PersoonsgegevensTypes"   : V[ONE*PersoonsgegevensType]
    , "Berichten"               : V[ONE*Bericht]
    , "Persoonsgegevens"        : V[ONE*Persoonsgegeven]
@@ -18,8 +18,7 @@ ENDPATTERN
 ------------------------------------------------------------
 --[Verwerkingen]--------------------------------------------
 INTERFACE Verwerking
-(verwerkingNaam, verwerkingOmschrijving, verwerkingsVerantwoordelijke, isDeelverwerkingVan, verwerkingBewerker, verwerkingsDoel, verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger, verwerkingGegevensDoorgiftenBuitenEU, verwerkingSpecificatieSamenvatting, verwerkingBewaartermijn
-) FOR Developer : I[Verwerking]
+ FOR Developer : I[Verwerking]
 BOX[ "Verwerking" : I
    , "verwerkingNaam" : verwerkingNaam
    , "verwerkingOmschrijving" : verwerkingOmschrijving

@@ -10,7 +10,7 @@ CONCEPT PersoonsgegevensType "een soort (klasse) van gegevens"
 CONCEPT BerichtSoort "de specificatie van een geheel aan gegevens(types) die tussen services kan worden uitgewisseld"
 
 berichtSoortNaam :: BerichtSoort -> BerichtSoortNaam
-IDENT "BerichtSoorten": BerichtSoort(berichtSoortNaam)
+IDENT BerichtSoorten: BerichtSoort(berichtSoortNaam)
 
 berichtSoortGegevensType :: BerichtSoort * PersoonsgegevensType
 PRAGMA "Berichten van het type " " bevatten gegeven(s) van het type "
@@ -18,7 +18,7 @@ PRAGMA "Berichten van het type " " bevatten gegeven(s) van het type "
 --[Services]--
 CONCEPT Service "een geheel geautomatiseerde verwerking, die geen deelverwerkingingen heeft"
 --CLASSIFY Service ISA Service
-IDENT "Services": Service(svcNaam)
+IDENT Services: Service(svcNaam)
 svcNaam :: Service * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 svcOmschrijving :: Service * Omschrijving PRAGMA "" " wordt omschreven als "
 
@@ -64,7 +64,7 @@ PURPOSE RELATION isDeelsvcVan REF "Meldingsformulier Wbp en de Toelichting hiero
 {++}
 
 {-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
-RULE "Irreflexiviteit van deelsvc zijn": I |- -isDeelsvcVan 
+RULE IrreflexiviteitVanDeelsvcZijn": I |- -isDeelsvcVan 
 MEANING "Een service is geen deelservice van zichzelf"
 
 RULE DeelservicesDienenSubdoelen: isDeelsvcVan |- svcVerwerkingsDoel; isSubdoelVan; svcVerwerkingsDoel~
@@ -142,22 +142,22 @@ e) BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs ve
 g) DERDE: ieder, niet zijnde de BETROKKENE, de VERANTWOORDELIJKE, de BEWERKER, of enig persoon die onder rechtstreeks gezag van de VERANTWOORDELIJKE of de BEWERKER gemachtigd is om PERSOONSGEGEVENs te verwerken.
 -}
 
-RULE "Verzamelen van persoonsgegevens is het verwerken ervan": 
+RULE VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan: 
 svcVerzameltPersoonsgegevensType |- svcVerwerktPersoonsgegevensType
 MEANING "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
 MESSAGE "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
 VIOLATION (TXT "Omdat persoonsgegevens van het type ", TGT I, TXT " worden verzameld door ", SRC I, TXT " moet die laatste ook als 'verwerkende service' zijn geregistreerd")
-ROLE User MAINTAINS "Verzamelen van persoonsgegevens is het verwerken ervan"
-PURPOSE RULE "Verzamelen van persoonsgegevens is het verwerken ervan" REF "Artikel 1 sub b Wbp"
+ROLE User MAINTAINS VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan
+PURPOSE RULE VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan REF "Artikel 1 sub b Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.
 -}
 
-RULE "Define time verwerkingsdoelen":  svcVerwerktPersoonsgegevensType |- svcVerwerkingsDoel;doelGegevensType
+RULE DefineTimeVerwerkingsdoelen:  svcVerwerktPersoonsgegevensType |- svcVerwerkingsDoel;doelGegevensType
 MEANING "PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn (Artikel 11 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Persoonsgegevens van het type '", TGT I, TXT "' mogen niet worden verwerkt in service '", SRC I, TXT "' omdat ze kennelijk niet nodig zijn voor enig doel dat de service dient.")
-ROLE User MAINTAINS "Define time verwerkingsdoelen"
-PURPOSE RULE "Define time verwerkingsdoelen" REF "Artikel 11 eerste lid Wbp"
+ROLE User MAINTAINS DefineTimeVerwerkingsdoelen
+PURPOSE RULE DefineTimeVerwerkingsdoelen REF "Artikel 11 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn.+}
 
 RULE IntegriteitVanHetRechtvaardigenVanVerwerkingsdoelen: svcVerwerkingsDoel |- svcVerantwoordelijke; gerechtvaardigdDoor~

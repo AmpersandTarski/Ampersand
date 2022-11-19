@@ -85,10 +85,10 @@ PATTERN Patterns
     {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
     +}
     
-    RULE fromInstance = name[Entity*String];result~;fst;instantiatesAs~
+    RULE DeterminePattern : fromInstance = name[Entity*String];result~;fst;instantiatesAs~
     MEANING "The first part of the string combination determines the pattern instance of the entity."
     
-    RULE exposes = fromInstance~ /\ consumer;existsIn~
+    RULE Expose: exposes = fromInstance~ /\ consumer;existsIn~
     MEANING "The entities are exposed in the consumer pattern"
 
 
@@ -97,32 +97,32 @@ PATTERN Patterns
     {+A definition is uniquely determined by its name and its type, such that we can find the Definition when refering to it.
     +}
 
-    RULE I[Definition] \/ I[ExternalEntity] = I[Entity]
+    RULE LocalOrExternal: I[Definition] \/ I[ExternalEntity] = I[Entity]
     MEANING "Each entity is local or external"
-    RULE I[Definition] - I[ExternalEntity] = I[Definition]
+    RULE EitherLocalOrExternal: I[Definition] - I[ExternalEntity] = I[Definition]
     MEANING "Each local entity is never external"
-    RULE I[ExternalEntity] - I[Definition] = I[ExternalEntity]
+    RULE ExternalIsNotLocal:I[ExternalEntity] - I[Definition] = I[ExternalEntity]
     MEANING "Each external entity is never local"
 
-    RULE definition /\ V[Definition*Definition] = I /\ existsIn;declaredIn~
+    RULE R1: definition /\ V[Definition*Definition] = I /\ existsIn;declaredIn~
 
-    RULE definition /\ V[ExternalEntity*Definition]
+    RULE R2:definition /\ V[ExternalEntity*Definition]
                 =   exposes~;including  /\ name[Entity*String];result~;snd;name[Entity*String]~ -- second part of the string names the declaration
     
-    RULE excluding \/ including = consumes;declaredIn~
+    RULE R3: excluding \/ including = consumes;declaredIn~
     MEANING "The excluded and the included definitions together are precisely the declarations of the consumed pattern"
     
-    RULE excluding /\ including = -V
+    RULE R4: excluding /\ including = -V
     MEANING "There is no overlap between what is included and excluded"
 
-    RULE consumer~;consumes = instantiates
+    RULE R5: consumer~;consumes = instantiates
     MEANING "The relation `instantiates` is defined here."
 
-    RULE existsIn /\ V[Definition*Pattern] = declaredIn
+    RULE R6: existsIn /\ V[Definition*Pattern] = declaredIn
     MEANING "A definition exists in the pattern in which it is declared"
     
-    RULE consumes;existsIn~ |- exposes;fromEntity
-    MEANING {+ If a pattern in which entity e exists is consumed in some instance,
+    RULE R7: consumes;existsIn~ |- exposes;fromEntity
+     MEANING {+ If a pattern in which entity e exists is consumed in some instance,
                then that instance exposes an entity based on e +}
     
 

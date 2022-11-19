@@ -27,7 +27,7 @@ rel :: Concpt1 * Concpt1
 RULE rule: rel
 IDENT ident : Concpt1(I[Concpt1])
 VIEW view: Concpt1(I[Concpt1])
-INTERFACE Iface : I[ONE] BOX [ I : I[ONE] ]
+INTERFACE Iface : I[ONE] BOX [ "I" LABEL "" : I[ONE] ]
 
 PATTERN Patt
   CONCEPT PattConcpt "{definition of PattConcpt}"
