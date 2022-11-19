@@ -86,7 +86,7 @@ makeObj objectKind =
     plainNameGenerator :: Gen (Maybe Text1)
     plainNameGenerator = case objectKind of
       InterfaceKind -> pure Nothing
-      SubInterfaceKind _ -> Just <$> safeLabel
+      SubInterfaceKind _ -> Just <$> safePlainName
       IdentSegmentKind -> pure Nothing
       ViewSegmentKind -> pure Nothing
     cruds :: Gen (Maybe P_Cruds)
@@ -554,9 +554,9 @@ noOne = all notIsOne
 notIsOne :: P_Concept -> Bool
 notIsOne = (P_ONE /=)
 
-safeLabel :: Gen Text1
-safeLabel =
+safePlainName :: Gen Text1
+safePlainName =
   oneof
     [ identifier,
-      safeStr1
+      safeStr1 `suchThat` (not . null . T.words . text1ToText)
     ]
