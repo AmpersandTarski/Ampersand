@@ -77,7 +77,7 @@ toTransformer namespace (rel, src, tgt, props, tuples) =
         PopInt i -> ScriptInt MeatGrinder i
 
 nameSpaceFormalAmpersand :: NameSpace
-nameSpaceFormalAmpersand = [toText1Unsafe "https://ampersandtarski.github.io/FormalAmpersand"]
+nameSpaceFormalAmpersand = [toText1Unsafe "FormalAmpersand"]
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
@@ -1151,7 +1151,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 nameSpacePrototypeContext :: NameSpace
-nameSpacePrototypeContext = [toText1Unsafe "https://ampersandtarski.github.io/PrototypeContext"]
+nameSpacePrototypeContext = [toText1Unsafe "PrototypeContext"]
 
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
