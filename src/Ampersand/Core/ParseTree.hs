@@ -1304,7 +1304,7 @@ mergeContexts ctx1 ctx2 =
       ctx_lbl = ctx_lbl ctx1,
       ctx_pos = fromContextsKeepDoubles ctx_pos,
       ctx_lang = ctx_lang ctx1, -- By taking the first, we end up with the language of the top-level context
-      ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts,
+      ctx_markup = foldl' (<|>) Nothing $ map ctx_markup contexts,
       ctx_pats = fromContextsKeepDoubles ctx_pats,
       ctx_rs = fromContextsRemoveDoubles ctx_rs,
       ctx_ds = mergeRels (ctx_ds ctx1 <> ctx_ds ctx2),
@@ -1354,8 +1354,3 @@ mergeContexts ctx1 ctx2 =
         mergePopsSameType (h :| tl) = case h of
           P_RelPopu {} -> h {p_popps = Set.toList . Set.unions . map (Set.fromList . p_popps) $ (h : tl)}
           P_CptPopu {} -> h {p_popas = Set.toList . Set.unions . map (Set.fromList . p_popas) $ (h : tl)}
-
-    orElse :: Maybe a -> Maybe a -> Maybe a
-    x `orElse` y = case x of
-      Just _ -> x
-      Nothing -> y
