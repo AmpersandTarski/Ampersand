@@ -1,0 +1,9 @@
+CONTEXT SingletonTest IN DUTCH
+
+RULE ErIsEenKoning : "De koning" [Koning]
+
+ENDCONTEXT
+
+{- Purpose:
+This script should fail, because there is no population specified explicitly, so the rule is violated. See https://github.com/AmpersandTarski/Ampersand/issues/166
+-}
