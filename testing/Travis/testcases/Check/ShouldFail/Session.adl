@@ -7,7 +7,7 @@ POPULATION sessionPassword[SESSION*Password] CONTAINS
   ]
 
 
-INTERFACE "Edit account"(sessionPassword) FOR user : V[ONE*SESSION];'Session2345678_987654'
+INTERFACE EditAccount FOR user : V[ONE*SESSION];"Session2345678_987654"
 BOX [ "Username"  : sessionPassword ]
 
 ENDCONTEXT

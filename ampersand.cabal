@@ -99,17 +99,8 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
-    testing/Sentinel/Tests/ShouldFail/Issue1127.adl
-    testing/Sentinel/Tests/ShouldFail/Issue1127.xlsx
-    testing/Sentinel/Tests/ShouldFail/Issue298.adl
-    testing/Sentinel/Tests/ShouldFail/Issue335.adl
-    testing/Sentinel/Tests/ShouldFail/Issue406.adl
-    testing/Sentinel/Tests/ShouldFail/NamespaceRule.adl
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
-    testing/Sentinel/Tests/ShouldFail/Session.adl
-    testing/Sentinel/Tests/ShouldFail/singletontest.adl
-    testing/Sentinel/Tests/ShouldFail/testinfo.yaml
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
@@ -120,6 +111,8 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldSucceed/testinfo.yaml
     testing/StillUnsupported/Bug335_Kl0Kl1.adl
+    testing/StillUnsupported/Issue1127.adl
+    testing/StillUnsupported/Issue1127.xlsx
     testing/StillUnsupported/Issue166.adl
     testing/StillUnsupported/Issue166_2.adl
     testing/Travis/README.md
@@ -157,6 +150,11 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1281.adl
+    testing/Travis/testcases/Check/ShouldFail/Issue298.adl
+    testing/Travis/testcases/Check/ShouldFail/Issue335.adl
+    testing/Travis/testcases/Check/ShouldFail/Issue406.adl
+    testing/Travis/testcases/Check/ShouldFail/NamespaceRule.adl
+    testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
     testing/Travis/testcases/FuncSpec/Issue1275.adl
@@ -219,6 +217,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/IDENT-test-fail.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/Issue708.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/showViolationMessages.adl
+    testing/Travis/testcases/prototype/shouldFail/InvariantViolations/singletontest.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl

@@ -3,6 +3,8 @@
 REPRESENT B TYPE BIGALPHANUMERIC
 REPRESENT C TYPE BIGALPHANUMERIC
 
-RULE "Initialize s": I[B] |- I[C]
+RULE Issue335: I[B] |- I[C]
 
 ENDCONTEXT
+
+-- This script shows a type error in the rule
