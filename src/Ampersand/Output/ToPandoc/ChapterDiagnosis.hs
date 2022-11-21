@@ -710,7 +710,7 @@ chpDiagnosis env fSpec
         violationMessage =
           T.unlines $
             [ if length ps == 1
-                then "There is one violation of RULE " <> tshow (name r) <> ":"
+                then "There is a violation of RULE " <> tshow (name r) <> ":"
                 else "There are " <> tshow (length ps) <> " violations of RULE " <> tshow (name r) <> ":"
             ]
               <> (map ("  " <>) . listPairs 10 . Set.toList $ ps)
