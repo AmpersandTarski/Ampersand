@@ -368,7 +368,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
 
 
 -- RULE toegevoegd op 4 april door Maarten Bernards en Natali Zepackic en Marcus Krab.
-          RULE mandaatgever /\ gemandateerde  |- -V
+          RULE R1: mandaatgever /\ gemandateerde  |- -V
           MEANING "Een mandaat mag niet door een mandaatgever aan zichzelf verleend worden."
 
 
