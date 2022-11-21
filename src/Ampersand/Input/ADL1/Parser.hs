@@ -619,44 +619,43 @@ pSubInterface ns =
       <*> pIsThere ((pKey . toText1Unsafe) "LINKTO") <* pInterfaceKey
       <*> pUnrestrictedName ns
   where
-    --- Box ::= '[' ObjDefList ']'
-    pBoxBody :: AmpParser [P_BoxBodyElement]
-    pBoxBody = pBrackets $ pBoxBodyElement ns `sepBy` pComma
     pBoxHeader :: AmpParser BoxHeader
     pBoxHeader =
       build <$> currPos <* (pKey . toText1Unsafe) "BOX" <*> optional pBoxSpecification
-    build :: Origin -> Maybe (Text1, [TemplateKeyValue]) -> BoxHeader
-    build o x = BoxHeader o typ keys
       where
-        (typ, keys) = case x of
-          Nothing -> (toText1Unsafe "FORM", [])
-          Just (boxtype, atts) -> (boxtype, atts)
-    pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
-    pBoxSpecification =
-      pChevrons $
-        (,) <$> (pSingleWord <|> pAnyKeyWord)
-          <*> many pTemplateKeyValue
-
-    pTemplateKeyValue :: AmpParser TemplateKeyValue
-    pTemplateKeyValue =
-      TemplateKeyValue
-        <$> currPos
-        <*> (pSingleWord <|> pAnyKeyWord)
-        <*> optional (id <$ (pOperator . toText1Unsafe) "=" <*> pDoubleQuotedString)
+        build :: Origin -> Maybe (Text1, [TemplateKeyValue]) -> BoxHeader
+        build o x = BoxHeader o typ keys
+          where
+            (typ, keys) = fromMaybe (toText1Unsafe "FORM", []) x
+        pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
+        pBoxSpecification =
+          pChevrons $
+            (,) <$> (pSingleWord <|> pAnyKeyWord)
+              <*> many pTemplateKeyValue
+        pTemplateKeyValue :: AmpParser TemplateKeyValue
+        pTemplateKeyValue =
+          TemplateKeyValue
+            <$> currPos
+            <*> (pSingleWord <|> pAnyKeyWord)
+            <*> optional (id <$ (pOperator . toText1Unsafe) "=" <*> pDoubleQuotedString)
+    --- Box ::= '[' ObjDefList ']'
+    pBoxBody :: AmpParser [P_BoxBodyElement]
+    pBoxBody = pBrackets $ pBoxBodyElement ns `sepBy` pComma
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pBoxBodyElement :: NameSpace -> AmpParser P_BoxBodyElement
 pBoxBodyElement ns =
   try pBoxItemTerm
-    <|> try pBoxItemText -- We need `try` becausein the Term, the label is mandatory, while in Text it is optional.
+    <|> try pBoxItemText -- We need `try` because in the Term, the plainName is mandatory, while in Text it is optional.
   where
     pBoxItemTerm :: AmpParser P_BoxBodyElement
     pBoxItemTerm =
       build
         <$> currPos
-        <*> pTex1AndColon
+        <*> pUnrestrictedText1
         <*> pMaybe pLabel
+        <* pColon
         <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
         <*> pMaybe (pChevrons $ pUpperCaseName ns) --for the view
@@ -948,7 +947,7 @@ pTex1AndColon :: AmpParser Text1
 pTex1AndColon = pUnrestrictedText1 <* pColon
 
 pUnrestrictedText1 :: AmpParser Text1
-pUnrestrictedText1 = pSingleWord <|> pDoubleQuotedString1
+pUnrestrictedText1 = pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1
 
 pNameAndColon :: NameSpace -> AmpParser Name
 pNameAndColon ns = (pUpperCaseName ns <|> pLowerCaseName ns) <* pColon

@@ -115,6 +115,7 @@ extra-source-files:
     testing/StillUnsupported/Issue1127.xlsx
     testing/StillUnsupported/Issue166.adl
     testing/StillUnsupported/Issue166_2.adl
+    testing/StillUnsupported/singletontest.adl
     testing/Travis/README.md
     testing/Travis/testcases/Bugs/Current/Other/testinfo.yaml
     testing/Travis/testcases/Bugs/Current/SQL/ARM20-Test8.adl
@@ -217,7 +218,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/IDENT-test-fail.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/Issue708.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/showViolationMessages.adl
-    testing/Travis/testcases/prototype/shouldFail/InvariantViolations/singletontest.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl
