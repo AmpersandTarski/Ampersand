@@ -1,15 +1,16 @@
 # Who owns Ampersand?
 
-The Ampersand project is not owned by anyone.
-It is hosted on GitHub/AmpersandTarski.
-It is being managed by [Stef Joosten](@stefjoosten), [Han Joosten](@hanjoosten), and [Michiel Stornebrink](@Michiel-s).
+The philosophy of Ampersand is that anyone can use it for free, while recognizing the contribution of all the authors.
+For this purpose the Ampersand project is not owned by anyone, the repos do have owners, and authors retain their own legal copyright.
 
-The idea is that anyone can use Ampersand for free, while recognizing the contribution of all the authors.
+All Ampersand repositories are hosted on GitHub/AmpersandTarski.
+They are being managed by [Stef Joosten](@stefjoosten), [Han Joosten](@hanjoosten), and [Michiel Stornebrink](@Michiel-s).
 Authorship of code and documentation is traceable in github.
-For this purpose, we have taken the following measures:
 * The Ampersand compiler and its documentation reside in the [Ampersand repository](https://github.com/AmpersandTarski/Ampersand).
 * The prototype framework and its documentation reside in the [Prototype repository](https://github.com/AmpersandTarski/Prototype).
 * The tool RAP and its documentation reside in the [RAP repository](https://github.com/AmpersandTarski/RAP).
+
+To ensure that users can feel free to use Ampersand without headaches and no string attached, we have taken the following measures:
 * The repositories Ampersand, RAP, and Prototype are licenced with the GNU GENERAL PUBLIC LICENSE, Version 3 of 29 June 2007 (aka GPL).
 * [Stef Joosten](@stefjoosten) owns the repository Ampersand and RAP, while the authorship of its contents lies with the authors as registered in GitHub.
 * [Michiel Stornebrink](@Michiel-s) owns the repository Prototype, while the authorship of its contents lies with the authors as registered in GitHub.
