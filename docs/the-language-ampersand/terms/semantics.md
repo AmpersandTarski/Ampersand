@@ -90,7 +90,7 @@ If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$
 The composition operator is denoted by a semicolon $$;$$ between two terms. It is pronounced as 'composed with'. Let us take a look at $$r$$ composed with $$s$$. Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$ is defined by:
 
 $$
-a(r;s)c\ \Leftrightarrow\ ∃ b∈B\ ∙\ a\ r\ b ∧ b\ s\ c
+a(r;s)c\ \Leftrightarrow\ ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c
 $$
 
 If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ has type $$[A\times C]$$.
@@ -296,7 +296,7 @@ If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]
 
 The composition operator is denoted by a semicolon ; between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
 
-The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$, is a relation with signature $$(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ ∙\ a\ r\ b ∧ b\ s\ c \}$$
+The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$, is a relation with signature $$(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c \}$$
 
 
 
