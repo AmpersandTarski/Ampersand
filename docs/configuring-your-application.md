@@ -1,3 +1,7 @@
+---
+title: Configuring your application
+id: Ampersand/configuring-your-application
+---
 # Configuring your application
 
 ## Local Settings for the client-side application

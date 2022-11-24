@@ -1,6 +1,6 @@
 ---
-title: Table of contents
-sidebar_position: 1
+title: Table of contents (old style)
+id: Ampersand/toc
 ---
 
 # Table of contents
