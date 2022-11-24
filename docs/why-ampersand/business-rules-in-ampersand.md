@@ -1,3 +1,8 @@
+---
+title: The Business Rules Manifesto and Ampersand
+id: Ampersand/BRManifestoAndAmpersand
+---
+
 # The Business Rules Manifesto and Ampersand
 
 Ampersand lets you use business rules as intended in the [Business Rules Manifesto](http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) (by the Business Rules Group, 2003). This chapter quotes each article from the manifesto verbatim. Besides, it describes how Ampersand implements it,

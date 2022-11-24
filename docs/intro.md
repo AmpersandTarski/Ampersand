@@ -1,5 +1,6 @@
 ---
-slug: /Ampersand
+title: Introduction
+id: Ampersand/intro
 ---
 
 # Introduction
