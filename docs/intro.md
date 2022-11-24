@@ -1,3 +1,7 @@
+---
+slug: /Ampersand
+---
+
 # Introduction
 
 Do you want to avoid unnecessary reading? Take a moment to decide which statement describes your curiosity best:

@@ -1,3 +1,8 @@
+---
+title: Table of contents
+sidebar_position: 1
+---
+
 # Table of contents
 
 * [Introduction](intro.md)
