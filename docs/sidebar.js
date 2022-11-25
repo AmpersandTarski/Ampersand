@@ -15,13 +15,14 @@ module.exports = {
         ,
 
         {
-            label: 'Background',
+            label: 'Theory & background',
             type: 'category',
             items: [
                 'Ampersand/why-ampersand/whyAmpersand',
                 'Ampersand/why-ampersand/BRManifestoAndAmpersand',
                 'Ampersand/reactive-programming',
-                'Ampersand/research'
+                'Ampersand/research',
+                'Ampersand/future-plans',
             ]
         },
         {
@@ -94,8 +95,6 @@ module.exports = {
             label: 'More documents',
             type: 'category',
             items: [
-                'Ampersand/Conceptual/Automated Rules',
-                'Ampersand/Conceptual/theory',
                 'Ampersand/Conceptual/why-declarative',
                 'Ampersand/architecture-of-an-ampersand-application/README',
                 'Ampersand/architecture-of-an-ampersand-application/backend-framework',
@@ -123,12 +122,7 @@ module.exports = {
                 'Ampersand/modeling/metamodeling',
                 'Ampersand/modeling/properties',
                 'Ampersand/ownership/README',
-                'Ampersand/plans/README',
-                'Ampersand/plans/api-documentation',
-                'Ampersand/plans/current-state',
-                'Ampersand/plans/nosql-storage',
-                'Ampersand/plans/owl-and-rdfs-input',
-                'Ampersand/plans/refactor-the-front-end',
+
                 'Ampersand/reusing-available-modules',
                 'Ampersand/troubleshooting',
                 'Ampersand/tutorial-rap3/README',
@@ -204,6 +198,11 @@ module.exports = {
                 'TheToolsWeUse/tools-used-in-the-ampersand-project'
             ]
         }
+
+    ],
+    notOnOldSite: [
+        'Ampersand/Conceptual/theory',
+        'Ampersand/Conceptual/Automated Rules',
 
     ]
 };
