@@ -1,6 +1,21 @@
 ﻿# Release notes of Ampersand
-
+ 
 ## Unreleased changes
+* [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
+* Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
+* [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
+* Minor update of the devcontainer.
+
+## v4.7.1 (1 September 2022)
+* make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
+* [Issue #1313](https://github.com/AmpersandTarski/Ampersand/issues/1313) Fixed a minor bug in the Archi analyser.
+* Improve the usability of the MetaModel.adl file, which is output of `ampersand data-analysis`.
+* [Issue #987](https://github.com/AmpersandTarski/Ampersand/issues/987) Fixed a bug in the Excel parser.
+* refactoring Archimate parser
+* [Issue #1321](https://github.com/AmpersandTarski/Ampersand/issues/1321) Stricter testing of the prettyprinter/parser roundtrip.
+* [Issue #1090](https://github.com/AmpersandTarski/Ampersand/issues/1090) Fixed a bug in the parser for DateTime values ([UTCTime](https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format-ISO8601.html#t:ISO8601) values are supported now).
+
+## v4.7.0 (18 June 2022)
 * [Issue #1293](https://github.com/AmpersandTarski/Ampersand/issues/1293) Fixed a bug in expressions of the form `r;V;s`
 * Improve devcontainer functionality for developers of Ampersand.
 * [Issue #1281](https://github.com/AmpersandTarski/Ampersand/issues/1281) Fix an omision in typecheck of ENFORCE statement.
@@ -395,7 +410,7 @@ It has taken some time since the last release. This release has some major work 
 * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
 * ExecEngine extension: improved logging for debugging
 * Added new reporting functionality for backend framework
-* DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+* DB performance: less queries because 'I[Concept]'-term is not queried anymore
 * Minor backend fixes
 * Fix issues regarding CRUD specifications: missing interfaces in navbar +menu, missing crudR check in templates, return content after create
 

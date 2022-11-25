@@ -5,13 +5,14 @@ ARG GHC_VERSION=8.10.7
 ARG STACK_VERSION=2.7.5
 ARG STACK_RESOLVER=lts-18.28
 ARG CABAL_VERSION=3.6.2.0
-ARG HLS_VERSION=1.7.0.0
+ARG HLS_VERSION=1.8.0.0
 ARG LLVM_VERSION=12
 
 ENV USERNAME=${USERNAME} \
-    USER_UID=2001 \
-    USER_GID=2001 \
+    USER_UID=1000 \
+    USER_GID=1000 \
     DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF8 \
     GHC_VERSION=${GHC_VERSION} \
     STACK_RESOLVER=${STACK_RESOLVER} \
     STACK_VERSION=${STACK_VERSION} \
@@ -19,6 +20,9 @@ ENV USERNAME=${USERNAME} \
     HLS_VERSION=${HLS_VERSION} \
     LLVM_VERSION=${LLVM_VERSION}
 
+RUN ulimit -n 8192
+
+RUN export LANG=C.UTF8
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends apt-utils bash build-essential ca-certificates curl gcc git gnupg libffi-dev libffi7 libgmp-dev libgmp-dev libgmp10 libicu-dev libncurses-dev libncurses5 libnuma1 libnuma-dev libtinfo5 lsb-release make procps software-properties-common sudo wget xz-utils z3 zlib1g-dev
 
@@ -77,8 +81,8 @@ FROM tooling as packages
 # Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
 RUN cabal install --haddock-hoogle -v \
     haskell-dap-0.0.15.0 \
-    ghci-dap-0.0.17.0 \
-    haskell-debug-adapter-0.0.35.0 \
+    ghci-dap-0.0.19.0 \
+    haskell-debug-adapter-0.0.37.0 \
     hlint-3.2.7 \
     apply-refact-0.9.3.0 \
     retrie-1.1.0.0 \
@@ -89,6 +93,9 @@ RUN cabal install --haddock-hoogle -v \
 
 # Generate hoogle db
 RUN hoogle generate && stack hoogle
+
+# Set up the dependencies for Ampersand
+# RUN cd /workspaces/Ampersand && stack build --dependencies-only .
 
 ENV DEBIAN_FRONTEND=dialog
 

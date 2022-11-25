@@ -77,7 +77,7 @@ classOf fSpec cpt =
   case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
     [] -> Nothing
     [es] -> Just es
-    _ -> fatal "Only one list of expressions is expected here"
+    _ -> fatal "Only one list of terms is expected here"
   where
     isOfCpt :: NE.NonEmpty Expression -> Bool
     isOfCpt es = source (NE.head es) == cpt
@@ -88,7 +88,7 @@ ooAttr :: Expression -> CdAttribute
 ooAttr r =
   OOAttr
     { attNm = case Set.elems $ bindedRelationsIn r of
-        [] -> fatal $ "No bindedRelations in an expression: " <> tshow r
+        [] -> fatal $ "No bindedRelations in expression: " <> tshow r
         h : _ -> name h,
       attTyp = if isProp r then "Prop" else (name . target) r,
       attOptional = (not . isTot) r

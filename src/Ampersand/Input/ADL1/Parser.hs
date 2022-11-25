@@ -291,7 +291,7 @@ pRelationDef =
     <*> (pRelationNew <|> pRelationOld)
     <*> optSet pProps
     <*> optList pRelDefaults
-    <*> optList (pKey "PRAGMA" *> many1 (asText pDoubleQuotedString))
+    <*> pMaybe pPragma
     <*> many pMeaning
     <*> optList (pOperator "=" *> pContent)
     <* optList (pOperator ".")
@@ -304,6 +304,24 @@ pRelationDef =
         pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
         rel :: P_NamedRel -- the named relation
         rel = PNamedRel pos' nm (Just sign)
+
+--- Pragma ::'PRAGMA' Text+
+pPragma :: AmpParser Pragma
+pPragma =
+  build
+    <$> currPos <* pKey "PRAGMA"
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+    <*> pMaybe (T.pack <$> pDoubleQuotedString)
+  where
+    build :: Origin -> Maybe Text -> Maybe Text -> Maybe Text -> Pragma
+    build orig a b c =
+      Pragma
+        { pos = orig,
+          praLeft = fromMaybe "" a,
+          praMid = fromMaybe "" b,
+          praRight = fromMaybe "" c
+        }
 
 --- RelDefaults ::= 'DEFAULT' RelDefault*
 pRelDefaults :: AmpParser [PRelationDefault]
@@ -445,7 +463,7 @@ pAdlTType =
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
 -- The label 'onNameAddress' is used to refer to this identity.
--- You may also use an expression on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
+-- You may also use a term on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 
 --- Index ::= 'IDENT' Label ConceptRef '(' IndSegmentList ')'
@@ -524,7 +542,7 @@ pInterface =
     <*> pADLid
     <*> pMaybe pParams
     <*> pMaybe pRoles
-    <*> (pColon *> pTerm) -- the expression of the interface object
+    <*> (pColon *> pTerm) -- the term of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
     <*> pMaybe (pChevrons $ asText pConid) -- The view that should be used for this object
     <*> pSubInterface
@@ -554,12 +572,18 @@ pInterface =
 
 --- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface =
-  P_Box <$> currPos <*> pBoxHeader <*> pBox
-    <|> P_InterfaceRef <$> currPos
-      <*> pIsThere (pKey "LINKTO") <* pInterfaceKey
-      <*> pADLid
+pSubInterface = pBox <|> pLinkTo
   where
+    pBox =
+      P_Box
+        <$> currPos
+        <*> pBoxHeader
+        <*> pBoxBody
+    pLinkTo =
+      P_InterfaceRef
+        <$> currPos
+        <*> pIsThere (pKey "LINKTO") <* pInterfaceKey
+        <*> pADLid
     pBoxHeader :: AmpParser BoxHeader
     pBoxHeader =
       build <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
@@ -577,7 +601,7 @@ pSubInterface =
 
     anyKeyWord :: AmpParser String
     anyKeyWord = case map pKey keywords of
-      [] -> fatal "We should have keywords. We always have."
+      [] -> fatal "No keywords? Impossible!"
       h : tl -> foldr (<|>) h tl
     pTemplateKeyValue :: AmpParser TemplateKeyValue
     pTemplateKeyValue =
@@ -588,8 +612,8 @@ pSubInterface =
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
-pObjDef :: AmpParser P_BoxItemTermPrim
-pObjDef =
+pBoxItemTermPrim :: AmpParser P_BoxItemTermPrim
+pBoxItemTermPrim =
   pBoxItem <$> currPos
     <*> pLabel
     <*> (pObj <|> pTxt)
@@ -604,7 +628,7 @@ pObjDef =
 
     pObj :: AmpParser P_BoxItemTermPrim
     pObj =
-      obj <$> pTerm -- the context expression (for example: I[c])
+      obj <$> pTerm -- the context term (for example: I[c])
         <*> pMaybe pCruds
         <*> pMaybe (pChevrons $ asText pConid) --for the view
         <*> pMaybe pSubInterface -- the optional subinterface
@@ -635,8 +659,8 @@ pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos <*> asText pCrudString
 
 --- Box ::= '[' ObjDefList ']'
-pBox :: AmpParser [P_BoxItemTermPrim]
-pBox = pBrackets $ pObjDef `sepBy` pComma
+pBoxBody :: AmpParser [P_BoxItemTermPrim]
+pBoxBody = pBrackets $ pBoxItemTermPrim `sepBy` pComma
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
@@ -809,7 +833,7 @@ pTrm6 =
   Prim <$> pRelationRef
     <|> PBrk <$> currPos <*> pParens pTerm
 
--- Help function for several expressions. The type 't' is each of the terms.
+-- Help function for several terms. The type 't' is each of the terms.
 invert :: (Origin -> t -> t -> t) -> Origin -> t -> t -> t
 invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
 

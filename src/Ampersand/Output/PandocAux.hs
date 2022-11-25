@@ -308,7 +308,7 @@ atomVal2Math pav =
     XlsxString _ s -> " \\texttt{" <> tshow s <> "}"
     ScriptInt _ i -> tshow i
     ScriptFloat _ d -> tshow d
-    XlsxDouble o d -> fatal ("We got a value " <> tshow d <> " from " <> tshow o <> ", which has to be shown in an expression, however the technicaltype is not known.")
+    XlsxDouble o d -> fatal ("We got a value " <> tshow d <> " from " <> tshow o <> ", which has to be shown in a term, however the technicaltype is not known.")
     ComnBool _ b -> tshow b
     ScriptDate _ x -> tshow x
     ScriptDateTime _ x -> tshow x

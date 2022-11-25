@@ -59,7 +59,7 @@ dumpSQLqueries env fSpec =
     showConjunct conj =
       header (rc_id conj)
         <> [ "/*",
-             "Conjunct expression:",
+             "Conjunct term:",
              "  " <> (showA . rc_conjunct $ conj),
              "Rules for this conjunct:"
            ]

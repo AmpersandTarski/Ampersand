@@ -9,7 +9,7 @@
       "STACK_VERSION": "2.7.5",
       "STACK_RESOLVER": "lts-18.28",
       "CABAL_VERSION": "3.6.2.0",
-      "HLS_VERSION": "1.7.0.0",
+      "HLS_VERSION": "1.8.0.0",
       "LLVM_VERSION": "12"
     },
     "context": "..",
@@ -87,7 +87,7 @@
     "haskell.plugin.tactics.codeActionsOn": true,
     "haskell.plugin.tactics.codeLensOn": true,
     "haskell.plugin.tactics.config.auto_gas": 4,
-    "haskell.plugin.tactics.config.hole_severity": "hint",
+    // "haskell.plugin.tactics.config.hole_severity": "null",
     "haskell.plugin.tactics.config.max_use_ctor_actions": 5,
     "haskell.plugin.tactics.config.proofstate_styling": true,
     "haskell.plugin.tactics.config.timeout_duration": 5,
@@ -97,6 +97,7 @@
     "haskell.trace.server": "off",
     "haskell.upgradeGHCup": true,
     "hoogle-vscode.useCabalDependencies": true,
+    "terminal.integrated.setLocaleVariables": false,
     "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.profiles.linux": {
       "bash": {

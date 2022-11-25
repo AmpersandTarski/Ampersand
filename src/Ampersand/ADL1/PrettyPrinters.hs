@@ -7,6 +7,7 @@ module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
 import Ampersand.Basics hiding (view, (<$>))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
+import Data.List (nub)
 import RIO.Char (isLetter, toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -98,7 +99,7 @@ instance Pretty P_Context where
       <+\> perline ps
       <+\> perline pats
       <+\> perline rs
-      <+\> perline ds
+      <+\> perlineRelations ds
       <+\> perline cs
       <+\> perline ks
       <+\> perline rrules
@@ -109,6 +110,14 @@ instance Pretty P_Context where
       <+\> perline pops
       <+\> perline enfs
       <+\> text "ENDCONTEXT"
+
+perlineRelations :: [P_Relation] -> Doc
+perlineRelations ds =
+  if length ds > 4 * length (nub (map src ds))
+    then vsep [vsep [pretty (d :: P_Relation) | d <- ds, src d == s] | s <- nub (map src ds)] -- if there are many wide tables (as is the case with data-analysis), then sort per entity.
+    else vsep (map pretty ds)
+  where
+    src = pSrc . dec_sign
 
 instance Pretty MetaData where
   pretty (MetaData _ nm val) =
@@ -149,15 +158,15 @@ instance Pretty P_Relation where
         else
           text "DEFAULT"
             <+\> (hsep . map pretty) dflts
-            <+\> pragmas
+            <+\> pretty pragma
             <+\> prettyhsep mean
     where
       props
         | null prps = empty
         | otherwise = pretty $ Set.toList prps
-      pragmas
-        | T.null (T.concat pragma) = empty
-        | otherwise = text "PRAGMA" <+> hsep (map quote pragma)
+
+instance Pretty Pragma where
+  pretty (Pragma _ l m r) = text "PRAGMA" <+> hsep (map quote [l, m, r])
 
 instance Pretty a => Pretty (Term a) where
   pretty p = case p of
@@ -343,7 +352,7 @@ instance Pretty (P_IdentSegmnt TermPrim) where
       view Nothing = empty
       view (Just v) = pretty v
 
-instance Pretty (P_ViewD TermPrim) where
+instance Pretty P_ViewDef where
   pretty (P_Vd _ lbl cpt True Nothing ats) =
     -- legacy syntax
     text "VIEW" <+> maybeQuote lbl <+> text ":"
@@ -447,14 +456,14 @@ instance Pretty PAtomPair where
 instance Pretty PAtomValue where
   pretty pav =
     case pav of
-      PSingleton _ _ mav -> case mav of
+      PSingleton _o _ mav -> case mav of
         Nothing -> fatal ("The singleton " <> tshow pav <> " has no type, so it cannot be accuratly prettyprinted in a population statement.")
         Just val -> text "{" <+> pretty val <+> text "}"
-      ScriptString _ s -> text . show $ s
-      XlsxString _ s -> text . show $ s
-      ScriptInt _ i -> text . show $ i
-      ScriptFloat _ d -> text . show $ d
-      XlsxDouble _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
-      ComnBool _ b -> text . map toUpper . show $ b
-      ScriptDate _ x -> text . show $ x
-      ScriptDateTime _ x -> text . show $ x
+      ScriptString _o s -> text . show $ s
+      XlsxString _o s -> text . show $ s
+      ScriptInt _o i -> text . show $ i
+      ScriptFloat _o d -> text . show $ d
+      XlsxDouble _o d -> fatal ("Prettyprinting a value " <> tshow d <> " from a .xlsx-file, which has to be shown in a term, however the technicaltype is not known")
+      ComnBool _o b -> text . map toUpper . show $ b
+      ScriptDate _o x -> text . show $ x
+      ScriptDateTime _o x -> text . show $ x

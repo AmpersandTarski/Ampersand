@@ -61,7 +61,7 @@ data FEObject
         objCrudD :: Bool,
         exprIsUni :: Bool,
         exprIsTot :: Bool,
-        relIsProp :: Bool, -- True iff the expression is a kind of simple relation and that relation is a property.
+        relIsProp :: Bool, -- True iff the term is a kind of simple relation and that relation is a property.
         exprIsIdent :: Bool,
         atomicOrBox :: FEAtomicOrBox
       }
@@ -101,9 +101,9 @@ fromExpr expr =
       Nothing -> (source expr, Nothing, target expr)
       Just (declSrc, decl, declTgt, _) -> (declSrc, Just decl, declTgt)
 
--- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+-- if the term is a relation, use the (possibly narrowed type) from getExpressionRelation
 
--- | The part to render at the 'end' of the expression
+-- | The part to render at the 'end' of the term
 data FEAtomicOrBox
   = FEAtomic
       { objMPrimTemplate ::

@@ -72,10 +72,10 @@ ruleFromIdentity identity =
       fmap ((\expr -> expr .:. flp expr) . objExpression . segment)
         . identityAts
         $ identity
-    mkKeyRule expression =
+    mkKeyRule term =
       Ru
         { rrnm = "identity_" <> name identity,
-          formalExpression = expression,
+          formalExpression = term,
           rrfps = origin identity, -- position in source file
           rrmean = map toMeaning [minBound ..],
           rrmsg = [],

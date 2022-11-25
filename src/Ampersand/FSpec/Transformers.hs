@@ -1609,3 +1609,9 @@ instance Unique BinOp where
 instance Unique (Either BinOp UnaryOp) where
   showUnique (Left a) = showUnique a
   showUnique (Right b) = showUnique b
+
+-- TODO: fix FormalAmpersand to get Pragma inside it in a proper way.
+decprL, decprM, decprR :: Relation -> Text
+decprL = maybe "" praLeft . decpr
+decprM = maybe "" praMid . decpr
+decprR = maybe "" praRight . decpr

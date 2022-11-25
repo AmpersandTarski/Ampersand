@@ -13,6 +13,7 @@ module Ampersand.Core.ParseTree
     EnforceOperator (..),
     P_Pattern (..),
     P_Relation (..),
+    Pragma (..),
     mergeRels,
     Term (..),
     TermPrim (..),
@@ -363,13 +364,23 @@ data P_Relation = P_Relation
     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
     dec_defaults :: ![PRelationDefault],
     -- | a list of default values for tuples in the relation
-    dec_pragma :: ![Text],
+    dec_pragma :: !(Maybe Pragma),
     -- | the optional meaning of a relation, possibly more than one for different languages.
     dec_Mean :: ![PMeaning],
     -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
     pos :: !Origin
   }
   deriving (Show) --For QuickCheck error messages only!
+
+-- | Pragma, used in relations. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+--  then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+data Pragma = Pragma
+  { pos :: !Origin,
+    praLeft :: !Text,
+    praMid :: !Text,
+    praRight :: !Text
+  }
+  deriving (Show, Data, Eq)
 
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
@@ -399,9 +410,9 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
           dec_sign = dec_sign r0,
           dec_prps = Set.unions (dec_prps <$> NE.toList rels),
           dec_defaults = concatMap dec_defaults rels,
-          dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
-            [] -> dec_pragma r0
-            h : _ -> dec_pragma h,
+          dec_pragma = case mapMaybe dec_pragma (NE.toList rels) of
+            [] -> Nothing
+            h : _ -> Just h,
           dec_Mean = L.nub $ concatMap dec_Mean rels,
           pos = case NE.filter (not . isFuzzyOrigin . origin) rels of
             [] -> origin r0
@@ -576,7 +587,7 @@ data Term a
     PFlp Origin (Term a)
   | -- | Complement
     PCpl Origin (Term a)
-  | -- | bracketed expression ( ... )
+  | -- | bracketed term ( ... )
     PBrk Origin (Term a)
   deriving (Show) -- deriving Show for debugging purposes
 
@@ -749,7 +760,7 @@ data P_Rule a = P_Rule
     pos :: Origin,
     -- | Name of this rule
     rr_nm :: Text,
-    -- | The rule expression
+    -- | The rule term
     rr_exp :: Term a,
     -- | User-specified meanings, possibly more than one, for multiple languages.
     rr_mean :: [PMeaning],
@@ -833,7 +844,7 @@ data P_Interface = P_Ifc
     ifc_Name :: Text,
     -- | a list of roles that may use this interface
     ifc_Roles :: [Role],
-    -- | the context expression (mostly: I[c])
+    -- | the context term (mostly: I[c])
     ifc_Obj :: P_BoxItemTermPrim,
     pos :: Origin,
     ifc_Prp :: Text
@@ -915,7 +926,7 @@ data P_BoxItem a
         obj_nm :: Text,
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
         pos :: Origin,
-        -- | this expression describes the instances of this object, related to their context.
+        -- | this term describes the instances of this object, related to their context.
         obj_ctx :: Term a,
         -- | the CRUD actions as required by the user
         obj_crud :: Maybe P_Cruds,
@@ -962,7 +973,7 @@ data P_IdentDf a -- so this is the parametric data-structure
     pos :: Origin,
     -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
     ix_lbl :: Text,
-    -- | this expression describes the instances of this object, related to their context
+    -- | this term describes the instances of this object, related to their context
     ix_cpt :: P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
     ix_ats :: NE.NonEmpty (P_IdentSegmnt a)
@@ -1179,9 +1190,9 @@ instance Flippable P_Sign where
 
 data PClassify = PClassify
   { pos :: Origin,
-    -- | Left hand side concept expression
+    -- | Left hand side concept
     specific :: P_Concept,
-    -- | Right hand side concept expression
+    -- | Right hand side concept
     generics :: NE.NonEmpty P_Concept
   }
   deriving (Show)
