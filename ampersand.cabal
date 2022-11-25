@@ -379,7 +379,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try8.adl
     testing/Travis/testcases/prototype/shouldSucceed/try9.adl
     testing/Travis/testcases/prototype/shouldSucceed/TTypeTest1.adl
-    testing/Travis/testcases/prototype/shouldSucceed/validate/Issue1293.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/Issue1293.BROKENadl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue148.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue862a.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
