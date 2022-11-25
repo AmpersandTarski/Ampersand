@@ -12,9 +12,7 @@ description: >-
 We use a [docker-platform](https://en.wikipedia.org/wiki/Docker\_\(software\)) to run your Ampersand program on virtually any computer. So go ahead and [install docker](https://docs.docker.com/install/) if you don't already have it. You provide (once) a recipe for building (Dockerfile) and a description of the configuration (docker-compose.yml). We'll provide examples for you to adapt.
 
 1. Your Ampersand prototype will run in a [container](https://www.docker.com/resources/what-container), which is a virtual machine.
-2.  The container is started and stopped by `docker-compose`, which uses a[ docker-image](https://docs.docker.com/get-started/#images-and-containers)
-
-    &#x20;that is built with your Dockerfile and deployed with your docker-compose.yml file.
+2.  The container is started and stopped by `docker-compose`, which uses a[ docker-image](https://docs.docker.com/get-started/#images-and-containers) that is built with your Dockerfile and deployed with your docker-compose.yml file.
 3. [Run](https://docs.docker.com/engine/reference/run/) your image from your [command-line](https://en.wikipedia.org/wiki/Command-line\_interface), using the command `docker-compose up -d`. You can verify that it runs with `docker ps`.
 4. Access your application through your browser, using \<TODO: Which URL?>
 
@@ -42,7 +40,7 @@ Sit back and watch. Don't worry, the second time around Docker downloads much le
 
 The deployment consists of the following steps:
 
-1. Copy your `.adl`-file to a working directory on your server. &#x20;
+1. Copy your `.adl`-file to a working directory on your server. 
 2.  Get two docker-files from internet by executing the following commands:
 
     ```

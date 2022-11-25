@@ -2,9 +2,9 @@
 
 ## Purpose
 
-The purpose of this statement is to automatically modify the population of a relation based on rules.&#x20;
+The purpose of this statement is to automatically modify the population of a relation based on rules.
 
-## Syntax&#x20;
+## Syntax
 
 Since ampersand 4.4.0 the syntax of this statement is:
 
@@ -20,7 +20,7 @@ This statement may occur anywhere within a context, either inside or outside a p
 
 ## Semantics
 
-This statement means the population of the relation will automatically be kept respectively equal ( **`:=`**), a subset (`:<`) or a superset (`>:`) of the population of the given term.&#x20;
+This statement means the population of the relation will automatically be kept respectively equal ( **`:=`**), a subset (`:<`) or a superset (`>:`) of the population of the given term.
 
 ## Examples
 
