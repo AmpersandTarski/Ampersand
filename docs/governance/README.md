@@ -10,10 +10,10 @@ The governance of Ampersand is founded on the following principles:
 ## Future directions
 We lay out the future directions in terms of research questions.
 Such topics are usually discussed on Ampersand days or physical meetings of the core team.
-[Stef Joosten](@stefjoosten) has a final say in this, to ensure progress.
+[Stef Joosten](https://github.com/stefjoosten) has a final say in this, to ensure progress.
 
 ## Decision making
-The core team, consisting of [Stef Joosten](@stefjoosten), [Han Joosten](@hanjoosten), and [Michiel Stornebrink](@Michiel-s),
+The core team, consisting of [Stef Joosten](https://github.com/stefjoosten), [Han Joosten](https://github.com/hanjoosten), and [Michiel Stornebrink](https://github.com/Michiel-s),
 makes all decisions.
 All [Ampersand repositories](https://github.com/AmpersandTarski) are managed by the core team.
 

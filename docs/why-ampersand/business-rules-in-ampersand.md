@@ -1,6 +1,6 @@
 ---
 title: The Business Rules Manifesto and Ampersand
-id: Ampersand/BRManifestoAndAmpersand
+id: BRManifestoAndAmpersand
 ---
 
 # The Business Rules Manifesto and Ampersand

@@ -1,6 +1,6 @@
 ---
 title: The Excel Importer
-id: Ampersand/the-excel-importer
+id: the-excel-importer
 ---
 
 # The Excel Importer (runtime)

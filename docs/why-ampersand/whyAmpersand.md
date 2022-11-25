@@ -1,6 +1,6 @@
 ---
 title: Why Ampersand?
-id: Ampersand/whyAmpersand
+id: whyAmpersand
 ---
 
 # Why Ampersand?

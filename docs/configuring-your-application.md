@@ -1,6 +1,6 @@
 ---
 title: Configuring your application
-id: Ampersand/configuring-your-application
+id: configuring-your-application
 ---
 # Configuring your application
 
