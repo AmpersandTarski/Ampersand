@@ -15,9 +15,9 @@ We have three ingredients:
 Before we discuss these three main ingredients, we will discuss the other keywords you see in the code.
 
 * INTERFACE is not crucial for the conceptual model, but still crucial for the web application. It uses the conceptual model to define the tabs and fields displayed. We will come back to this later.
-* The text after MEANING and PURPOSE is printed in the documentation that RAP4 can generate.&#x20;
-* MESSAGE and VIOLATION are used to display messages on screen to the user about rule violations.&#x20;
-* POPULATION provides the web application with actual data to test the rules with. Adding data to the system can also be done with an excel sheet. The data specifies elements that populate the concepts and whether or not these elements are connected to each other in a specific relation.&#x20;
+* The text after MEANING and PURPOSE is printed in the documentation that RAP4 can generate.
+* MESSAGE and VIOLATION are used to display messages on screen to the user about rule violations.
+* POPULATION provides the web application with actual data to test the rules with. Adding data to the system can also be done with an excel sheet. The data specifies elements that populate the concepts and whether or not these elements are connected to each other in a specific relation.
 
 ## The core of the model
 

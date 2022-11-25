@@ -147,17 +147,17 @@ Also assume another relation `wantsa[Person*LaptopType]`, which contains the per
 #### Union
 
 The sentence: "Peter owns a MacBook or Peter wants a MacBook." is represented as\
-&#x20;`"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
+`"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
 
 #### Intersection
 
 The sentence: "Peter owns a MacBook and Peter wants a MacBook." is represented as\
-&#x20;`"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
+`"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
 
 #### Difference
 
 The sentence: "Peter owns a MacBook and Peter does not want a MacBook." is represented as\
-&#x20;`"peter"` (`label` $$-$$ `colour`) `"macbook"`.
+`"peter"` (`label` $$-$$ `colour`) `"macbook"`.
 
 #### Natural language templates
 
@@ -423,7 +423,7 @@ Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. Th
 
 ![Venn-diagram for 'traveler' and 'dest'](<../../.gitbook/assets/venntrips (1) (1).svg>)
 
-Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:&#x20;
+Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
 | Fact                          | Fact                         |
 | ----------------------------- | ---------------------------- |

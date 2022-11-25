@@ -37,11 +37,7 @@ module.exports = {
             label: 'Reference',
             type: 'category',
             items: [
-                'Ampersand/the-command-line-tool/README',
-                'Ampersand/the-command-line-tool/commands-vs.-4.0.0-and-later',
-                'Ampersand/the-command-line-tool/configuration',
-                'Ampersand/the-command-line-tool/options',
-                'Ampersand/the-command-line-tool/switches',
+                'Ampersand/the-command-line-tool',
                 'Ampersand/the-language-ampersand/README',
                 'Ampersand/the-language-ampersand/atoms',
                 'Ampersand/the-language-ampersand/best-practices',

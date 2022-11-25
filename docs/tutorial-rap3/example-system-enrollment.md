@@ -19,7 +19,7 @@ Try it out on an Ampersand implementation. Copy this example code, make a new sc
   * Click on the message to see details.
   * Look-up in the code below where this message is defined. It is the line that starts with `RULE`. You don't have to understand the syntax at this point.
   * Click cancel.
-* Use the trash can icon to remove the course `Business IT` from`Susan` in the tab Students.&#x20;
+* Use the trash can icon to remove the course `Business IT` from`Susan` in the tab Students.
   * This also will trigger an error message because each student can only enroll for a module in courses he has registered in. Get rid of the message by going to the "List all interfaces" in the menu bar and navigate back to the overview.
   * Look up in the code the definition of the `RELATION takes`. The keyword `[TOT]` is responsible for this message.
 * Note the four icons on the top-right of the screen and click on the second icon (nine dots).

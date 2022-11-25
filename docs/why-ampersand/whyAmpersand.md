@@ -22,10 +22,10 @@ The purpose of Ampersand is to help business engineers deliver [correct informat
 5. Make enterprise software adaptable by using Ampersand's software generator and reducing your programming effort to a minimum. Even complex changes, such as changes in your conceptual model (viz. data model) are brought into production quickly.
 6. Support _**your own**_ business, rather than someone else's view on your business. Designing with [_business rules_](http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) lets your business associates convince themselves that the system supports exactly the right rules.
 7. _**Decrease maintenance cost and increase understanding**_, by describing goals instead of steps. Ampersand is a [declarative](../Conceptual/why-declarative.md) language, which yields simplicity without sacrificing precision.
-8. Develop _**more efficiently**_ by preventing errors instead of correcting them. Enjoy the benefits of _strong and static typing_. Several scientific studies show significant effects of strong and static typing on the total cost of ownership of your design. Besides, it enables Ampersand to generate efficient code. &#x20;
+8. Develop _**more efficiently**_ by preventing errors instead of correcting them. Enjoy the benefits of _strong and static typing_. Several scientific studies show significant effects of strong and static typing on the total cost of ownership of your design. Besides, it enables Ampersand to generate efficient code. 
 9. Gain mathematical _**certainty of compliance**_. Ampersand uses _relation algebra_ to align the IT system to the business, by exploiting its natural language interpretation alongside its technical interpretation as working software. Your claim that business stakeholders understand (solely in natural language) what the computer does (in software) can't be made more convincingly.
 10. True _**low-code**_ platforms, such as Ampersand, give you full functionality with little code. Do the [tutorial](../tutorial-rap3/) and experience a full non-trivial example of an information system specified in 61 lines of code only.
-11. _**Reduce risk**_ by developing in _small increments_. Add constraints, user interfaces, relations, and other design elements one at a time. Generate a prototype at any intermediate stage, to try out your system long before it is finished. &#x20;
+11. _**Reduce risk**_ by developing in _small increments_. Add constraints, user interfaces, relations, and other design elements one at a time. Generate a prototype at any intermediate stage, to try out your system long before it is finished. 
 12. _**Reduce risk**_ by dividing the work into small subsystems. To isolate subsystems is easy, due to [_conceptual independence_](http://dl.acm.org/citation.cfm?id=2946158.2946405). Ampersand lets you combine subsystems into larger systems, automating the burden of combining them.  Reuse _design patterns_ to assemble systems, rather than re-invent from scratch.
 13. _**Deploy quickly**_ by building, configuring, and taking it to production automatically.
 
@@ -42,9 +42,9 @@ A characteristic of Ampersand is its focus on business rules. Business rules emb
 Ampersand is a way of designing information systems for enterprises, supported by a method, a tool, and a course. These are the things you do (click on the hyperlinks to watch video clips):
 
 1. Communicate with the business solely [in their own _**language**_](https://player.ou.nl/wowzaportlets/#!production/xqW5z2v), which is a natural language.
-2. Define a domain language (in Ampersand) to consolidate _**agreement of terms**_ among stakeholders, using it solely for technical purposes.&#x20;
-3. [_**Formalize**_ the agreements](https://player.ou.nl/wowzaportlets/#!production/BDAXK2L) into rules that are relevant for the information system using Ampersand-script. &#x20;
-4. Generate a [working _**prototype**_](https://player.ou.nl/wowzaportlets/#!production/7qozHDH) of your information system for verification purposes.&#x20;
+2. Define a domain language (in Ampersand) to consolidate _**agreement of terms**_ among stakeholders, using it solely for technical purposes.
+3. [_**Formalize**_ the agreements](https://player.ou.nl/wowzaportlets/#!production/BDAXK2L) into rules that are relevant for the information system using Ampersand-script. 
+4. Generate a [working _**prototype**_](https://player.ou.nl/wowzaportlets/#!production/7qozHDH) of your information system for verification purposes.
 5. [Use this prototype](https://player.ou.nl/wowzaportlets/#!production/7qozHDH) to _**walk through**_ user stories, test user acceptance, elicit requirements, or otherwise gain more assurance that your design is what your audience wants.
 6. Use the documented ontology that Ampersand generates to _**validate**_ the agreed rules.
 
