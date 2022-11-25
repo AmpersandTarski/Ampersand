@@ -1,3 +1,8 @@
+---
+title: Why Ampersand?
+id: whyAmpersand
+---
+
 # Why Ampersand?
 
 The purpose of Ampersand is to help business engineers deliver [correct information systems](https://player.ou.nl/wowzaportlets/#!production/BDAXK2L). Correct means that the system complies demonstrably to the rules of the business. How cool is that!

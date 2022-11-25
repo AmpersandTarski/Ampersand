@@ -1,4 +1,6 @@
 ---
+title: Research
+id: research
 description: Academic research about Ampersand is documented in this page
 ---
 
