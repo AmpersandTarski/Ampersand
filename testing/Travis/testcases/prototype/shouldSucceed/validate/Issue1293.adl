@@ -6,7 +6,7 @@ CONTEXT Issue1293
    RELATION s[A * B] = [ (2,"noot"), (3,"mies") ]
 
 --    ROLE ExecEngine MAINTAINS Issue
-   RULE  r - (I#"aap") |- s
+   RULE  Issue1293: r - (I#"aap") |- s
 --    VIOLATION ( TXT "{EX} InsPair;personPhoneNumber;Person;",SRC I, TXT ";PhoneNumber;", TGT I )
 
 
