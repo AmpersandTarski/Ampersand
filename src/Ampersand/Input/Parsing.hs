@@ -228,7 +228,7 @@ parseSingleADL ns pc =
     filePath = pcCanonical pc
     parseSingleADL' :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
     parseSingleADL'
-      | -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
+      | -- This feature enables the parsing of Excel files, that are prepared for Ampersand.
         extension == ".xlsx" = do
         popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
         return ((,[]) <$> popFromExcel) -- An Excel file does not contain include files

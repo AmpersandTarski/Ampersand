@@ -54,6 +54,10 @@ instance Motivated Rule where
   isForObject x (ExplRule str) = name x == str
   isForObject _ _ = False
 
+instance Motivated IdentityRule where
+  isForObject x (ExplIdentityDef str) = name x == str
+  isForObject _ _ = False
+
 instance Motivated Pattern where
   isForObject x (ExplPattern str) = name x == str
   isForObject _ _ = False

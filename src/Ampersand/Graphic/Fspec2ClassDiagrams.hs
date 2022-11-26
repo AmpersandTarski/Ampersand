@@ -70,8 +70,8 @@ buildClass fSpec root =
           clMths = []
         }
 
-cptIsShown :: FSpec -> A_Concept -> Bool
-cptIsShown fSpec cpt = isInScope cpt && hasClass cpt
+cptIsClass :: FSpec -> A_Concept -> Bool
+cptIsClass fSpec cpt = isInScope cpt && hasClass cpt
   where
     isInScope _ = True
     hasClass = isJust . classOf fSpec
@@ -138,10 +138,10 @@ instance CDAnalysable Pattern where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens pat),
-        ooCpts = entities
+        ooCpts = Set.elems (concs pat)
       }
     where
-      entities = (filter (cptIsShown fSpec) . Set.elems . concs) pat
+      entities = (filter (isJust . classOf fSpec) . Set.elems . concs) pat
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
@@ -160,7 +160,7 @@ instance CDAnalysable FSpec where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens fSpec),
-        ooCpts = entities
+        ooCpts = Set.elems (concs fSpec)
       }
     where
       groups' :: [(Name, NonEmpty Class)]
@@ -195,7 +195,7 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-      entities = (filter (cptIsShown fSpec) . Set.elems . concs) fSpec
+      entities = (filter (cptIsClass fSpec) . Set.elems . concs) fSpec
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)

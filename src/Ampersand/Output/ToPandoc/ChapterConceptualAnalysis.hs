@@ -24,12 +24,13 @@ chpConceptualAnalysis env lev fSpec =
   )
   where
     -- shorthand for easy localizing
-    l :: LocalizedStr -> Text
-    l = localize outputLang'
+    l :: LocalizedStr -> Inlines
+    l = text . localize outputLang'
     outputLang' = outputLang env fSpec
     caIntro :: Blocks
     caIntro =
-      ( case outputLang' of
+      if null purps
+        then case outputLang' of
           Dutch ->
             para
               ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
@@ -37,6 +38,7 @@ chpConceptualAnalysis env lev fSpec =
                   <> " te kunnen bespreken. "
                   <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
                   <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
+                  <> "(Deze alinea is gegenereerd. Vervang deze tekst door een PURPOSE CONTEXT te beschrijven.)"
               )
           English ->
             para
@@ -45,9 +47,11 @@ chpConceptualAnalysis env lev fSpec =
                   <> "."
                   <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
                   <> "The text targets readers with sufficient skill in conceptual modeling."
+                  <> "(This paragraph has been generated. Replace it by defining a PURPOSE CONTEXT in your script.)"
               )
-      )
-        <> purposes2Blocks env (purposesOf fSpec outputLang' fSpec) -- This explains the purpose of this context.
+        else purps -- This explains the purpose of this context.
+      where
+        purps = purposes2Blocks env (purposesOf fSpec outputLang' fSpec)
     pictures =
       map pictOfPat (instanceList fSpec)
         <> map pictOfConcept (Set.elems $ concs fSpec)
@@ -62,10 +66,10 @@ chpConceptualAnalysis env lev fSpec =
     pictOfConcept = makePicture env fSpec . PTCDConcept
     caSection :: ThemeContent -> Blocks
     caSection themeContent
-      | isNothing (patOfTheme themeContent)
-          && null (cptsOfTheme themeContent)
+      | null (cptsOfTheme themeContent)
           && null (dclsOfTheme themeContent)
-          && null (rulesOfTheme themeContent) =
+          && null (rulesOfTheme themeContent)
+          && null (idRulesOfTheme themeContent) =
         mempty
       | otherwise =
         --  *** Header of the theme: ***
@@ -74,8 +78,9 @@ chpConceptualAnalysis env lev fSpec =
           <> case patOfTheme themeContent of
             Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
             Nothing -> mempty
-          -- followed by a conceptual model for this pattern
-          <> (mconcat . map (printConcept env l) . cptsOfTheme) themeContent
+          -- followed by one subsection for every concept that is defined (by a CONCEPT statement) in this pattern, containing the purposes and definitions of that concept.
+          <> (mconcat . map (printConcept env (localize outputLang')) . cptsOfTheme) themeContent
+          -- At this point the reader gets a diagram with the classes and relations between those classes.
           <> ( case (outputLang', patOfTheme themeContent) of
                  (Dutch, Just pat) ->
                    -- announce the conceptual diagram
@@ -108,16 +113,51 @@ chpConceptualAnalysis env lev fSpec =
                      <> definitionList blocks
              )
       where
+        -- all classes (i.e. entities) from this pattern
         themeClasses :: [Class]
         themeClasses = case patOfTheme themeContent of
           Just pat -> classes (cdAnalysis False fSpec pat)
-          Nothing -> []
+          Nothing -> (filter (`notElem` allClassesInPats) . classes . cdAnalysis False fSpec) fSpec
+          where
+            -- was: [ cl | cl<-classes (cdAnalysis False fSpec fSpec), cl `notElem` allClassesInPats]
+            allClassesInPats = concatMap (classes . cdAnalysis False fSpec) (patterns fSpec)
 
+        -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
+        caSubsections :: [(Blocks, [Relation])]
+        caSubsections =
+          [ ( header 3 (str . text1ToText . tName $ cl) <> identityBlocks cpt <> entityBlocks,
+              entityRels
+            )
+            | (cl, cpt) <- entities,
+              (entityBlocks, entityRels) <- [caEntity cl]
+          ]
+            <> [ ( header 3 (l (NL "Identiteiten", EN "Identities")) <> blcks,
+                   mempty
+                 )
+                 | let blcks = mconcat [identityBlocks (cCpt cpt) | cpt <- nonEntities],
+                   (not . null) blcks
+               ]
+          where
+            entities :: [(Class, A_Concept)]
+            entities =
+              [ (cl, cpt)
+                | cl <- themeClasses,
+                  Just cpt <- [clcpt cl]
+              ]
+            nonEntities :: [CptCont]
+            nonEntities =
+              [ cc
+                | ncc <- cptsOfTheme themeContent, -- the concepts that have a conceptDef in the theme, i.e. declared with a CONCEPT statement inside a PATTERN
+                  let cc = theLoad ncc, -- just the conceptdefinitions, not the numbers
+                  cCpt cc `notElem` map snd entities -- if cc has already been documented above, there is no reason to duplicate that here.
+              ]
+
+        -- caEntity shows a table with the purposes and meanings of the attributes of one concept
         caEntity :: Class -> (Blocks, [Relation])
         caEntity cl =
           ( simpleTable
-              [ (plain . text . l) (NL "Attribuut", EN "Attribute"),
-                (plain . text . l) (NL "Betekenis", EN "Meaning")
+              [ (plain . l) (NL "Attribuut", EN "Attribute"),
+                (plain . l) (NL "Betekenis", EN "Meaning")
               ]
               ( [ [ (plain . text . text1ToText . tName) attr,
                     defineRel rel
@@ -150,34 +190,46 @@ chpConceptualAnalysis env lev fSpec =
             bss -> bulletList bss
             <> (printPurposes . purposesOf fSpec outputLang') rel
 
-        caSubsections :: [(Blocks, [Relation])]
-        caSubsections =
-          [ ( header 3 (str . text1ToText . tName $ cl) <> entityBlocks,
-              entityRels
-            )
-            | cl <- themeClasses,
-              (entityBlocks, entityRels) <- [caEntity cl],
-              length entityRels > 1
-          ]
-
+        -- identityBlocks documents the IDENT rules of the concept of an entity.
+        identityBlocks :: A_Concept -> Blocks
+        identityBlocks cpt =
+          mconcat
+            [ case purposesOf fSpec outputLang' r of
+                [] -> identityText r
+                purs -> purposes2Blocks env purs
+              | rc <- idRulesOfTheme themeContent,
+                let r = cRul (theLoad rc),
+                Identity c <- [rrkind r],
+                cpt == c
+            ]
+        identityText :: Rule -> Blocks
+        identityText r =
+          case rrkind r of
+            Identity c ->
+              (para . l)
+                ( NL ("Een identiteit op \"" <> (text1ToText . tName) c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
+                  EN ("An identity rule for \"" <> (text1ToText . tName) c <> "\" is defined, albeit without a purpose.")
+                )
+            _ -> fatal "The result of idRulesOfTheme themeContent has produced a RuleCont whose rrkind is not Identity c."
         caRemainingRelations :: Blocks
         caRemainingRelations =
-          simpleTable
-            [ (plain . text . l) (NL "Relatie", EN "Relation"),
-              (plain . text . l) (NL "Betekenis", EN "Meaning")
-            ]
-            ( [ [ (plain . text)
-                    ( (text1ToText . tName) rel <> " "
-                        <> if null cls
-                          then tshow (sign rel)
-                          else l (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map (text1ToText . tName)) cls <> ")"
-                    ),
-                  defineRel rel -- use "tshow.attType" for the technical type.
-                ]
-                | rel <- rels,
-                  let cls = [name cl | cl <- themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels]
+          (header 3 . l) (NL "Overige relaties", EN "Relation")
+            <> simpleTable
+              [ (plain . l) (NL "Relatie", EN "Relation"),
+                (plain . l) (NL "Betekenis", EN "Meaning")
               ]
-            )
+              ( [ [ (plain . text)
+                      ( (text1ToText . tName) rel <> " "
+                          <> if null cls
+                            then tshow (sign rel)
+                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map (text1ToText . tName)) cls <> ")"
+                      ),
+                    defineRel rel -- use "tshow.attType" for the technical type.
+                  ]
+                  | rel <- rels,
+                    let cls = [name cl | cl <- themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels]
+                ]
+              )
           where
             rels :: [Relation]
             rels = map (cDcl . theLoad) (dclsOfTheme themeContent) L.\\ Set.toList entityRels
@@ -265,24 +317,22 @@ chpConceptualAnalysis env lev fSpec =
                 <> plain
                   ( if null purp
                       then
-                        str (l (NL "De ongedocumenteerde afspraak ", EN "The undocumented agreement "))
+                        l (NL "De ongedocumenteerde afspraak ", EN "The undocumented agreement ")
                           <> (hyperLinkTo . XRefSharedLangRule) r
-                          <> str (l (NL " bestaat: ", EN " has been made: "))
+                          <> l (NL " bestaat: ", EN " has been made: ")
                       else
-                        str (l (NL "Daarom bestaat afspraak ", EN "Therefore agreement "))
+                        l (NL "Daarom bestaat afspraak ", EN "Therefore agreement ")
                           <> (hyperLinkTo . XRefSharedLangRule) r
-                          <> str (l (NL " : ", EN " exists: "))
+                          <> l (NL " : ", EN " exists: ")
                   )
                 <> ( case meaning outputLang' r of
                        Nothing -> plain . showPredLogic outputLang' . formalExpression $ r
                        Just ms -> printMarkup (ameaMrk ms)
                    )
                 <> plain
-                  ( str
-                      ( l
-                          ( NL "Dit is - gebruikmakend van relaties ",
-                            EN "Using relations "
-                          )
+                  ( l
+                      ( NL "Dit is - gebruikmakend van relaties ",
+                        EN "Using relations "
                       )
                       <> mconcat
                         ( L.intersperse
@@ -292,22 +342,18 @@ chpConceptualAnalysis env lev fSpec =
                               | d <- Set.elems $ bindedRelationsIn r
                             ]
                         )
-                      <> str
-                        ( l
-                            ( NL " - geformaliseerd als ",
-                              EN ", this is formalized as "
-                            )
+                      <> l
+                        ( NL " - geformaliseerd als ",
+                          EN ", this is formalized as "
                         )
                   )
                 <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisRule r) (showMath r)
                 -- followed by a conceptual model for this rule
                 <> para
                   ( hyperLinkTo (pictOfRule r)
-                      <> str
-                        ( l
-                            ( NL " geeft een conceptueel diagram van deze regel.",
-                              EN " shows a conceptual diagram of this rule."
-                            )
+                      <> l
+                        ( NL " geeft een conceptueel diagram van deze regel.",
+                          EN " shows a conceptual diagram of this rule."
                         )
                   )
                 <> xDefBlck env fSpec (pictOfRule r)
