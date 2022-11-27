@@ -11,7 +11,7 @@ jobs:
     name: Add release notes to artefacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Upload macOS artifact
         uses: actions/upload-release-asset@v1
@@ -27,47 +27,44 @@ jobs:
     name: Build push image to DockerHub
     runs-on: ubuntu-latest
     steps:
-    - name: Docker meta
-      id: meta
-      uses: docker/metadata-action@v3
-      with:
-        # list of Docker images to use as base name for tags
-        images: |
-          ampersandtarski/ampersand
-        # generate Docker tags based on the following events/attributes
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern=v{{version}}
-          type=semver,pattern=v{{major}}.{{minor}}
-          type=semver,pattern=v{{major}}
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    
-    - name: Build and push to Docker Hub
-      uses: docker/build-push-action@v2
-      with:
-        push: true
-        tags: ${{ steps.meta.outputs.tags }} # see meta step above
-        labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          GIT_SHA=${{github.sha}}
-          GIT_Branch=${{github.ref}}
-  
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ampersandtarski/ampersand
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }} # see meta step above
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{github.sha}}
+            GIT_Branch=${{github.ref}}
+
   add-release-artefacts:
     name: Add artefacts to release
-    needs: [ build-and-test-ubuntu
-           , build-and-test-macOS
-           , build-and-test-windows
-           ]
+    needs: [build-and-test-ubuntu, build-and-test-macOS, build-and-test-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
@@ -75,26 +72,26 @@ jobs:
         with:
           name: Linux-binaries
           path: release/Linux
-      
+
       - name: get-version
-        run: | 
+        run: |
           chmod +x release/Linux/ampersand
-          echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
-          echo "::set-output name=theReleaseName::$(echo "v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
+          echo "version=$(release/Linux/ampersand --numeric-version)" >> $GITHUB_OUTPUT
+          echo "theReleaseName=$(echo "v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")" >> $GITHUB_OUTPUT
         id: get-version
-      
+
       - name: zip the binaries (Linux)
         uses: papeloto/action-zip@v1
         with:
           files: release/Linux/
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
-      
+
       - name: Download artifacts (macOS)
         uses: actions/download-artifact@v2
         with:
           name: macOS-binaries
           path: release/macOS
-      
+
       - name: zip the binaries (macOS)
         uses: papeloto/action-zip@v1
         with:
@@ -106,13 +103,13 @@ jobs:
         with:
           name: Windows-binaries
           path: release/Windows
-      
+
       - name: zip the binaries (Windows)
         uses: papeloto/action-zip@v1
         with:
           files: release/Windows/
           dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
-      
+
       - name: Upload Linux artifact
         uses: actions/upload-release-asset@v1
         env:
@@ -122,7 +119,7 @@ jobs:
           asset_name: ampersand-${{ steps.get-version.outputs.version }}-Linux-binaries.zip
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
-      
+
       - name: Upload macOS artifact
         uses: actions/upload-release-asset@v1
         env:
@@ -132,7 +129,7 @@ jobs:
           asset_name: ampersand-${{ steps.get-version.outputs.version }}-macOS-binaries.zip
           asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
-      
+
       - name: Upload Windows artifact
         uses: actions/upload-release-asset@v1
         env:
@@ -148,18 +145,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v3
+
       - name: Use cache when available
         uses: freckle/stack-cache-action@main
-      
+
       - name: Build and test
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
-          hlint: true
-      
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+
       - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
@@ -171,18 +166,16 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout project contents
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v3
+
       - name: Use cache when available
         uses: freckle/stack-cache-action@main
-      
+
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: true
-      
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:
@@ -194,36 +187,34 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout project contents
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v3
+
       - name: Use cache (manually) # See https://github.com/freckle/stack-cache-action/issues/5
         uses: actions/cache@v2.1.3
         # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
         with:
-          path: | 
+          path: |
             ~/.ghc
             ~/.stack
             ~/.stack-work
           key: ${{ runner.os }}-stack
-      
+
       - name: Set up MySQL
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: '8.0'
-      
+          mysql-version: "8.0"
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.0'
+          php-version: "8.0"
           extensions: mysqli
-      
+
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: false
-      
+          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+
       - name: Upload artifacts (Windows)
         uses: actions/upload-artifact@v2
         with:
