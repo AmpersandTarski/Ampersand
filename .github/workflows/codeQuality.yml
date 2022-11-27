@@ -24,9 +24,9 @@ jobs:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3.1.0
       - name: Check weeds 🌿🌿🌿
-        uses: freckle/stack-action@3.2.2
+        uses: freckle/stack-action@v3.2.2
         with:
           test: false
 
       # Weeder needs compilation artifacts, so it must still be the same Job
-      - uses: freckle/weeder-action@main
+      - uses: freckle/weeder-action@v1.0.2
