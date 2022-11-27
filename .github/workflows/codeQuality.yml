@@ -7,24 +7,26 @@ on:
     paths-ignore:
       - "docs/**" # If only documentation changes, no need to build.
 jobs:
-  # hlint:
-  #   name: Check for code sanity with hlint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout project contents 📡
-  #       uses: actions/checkout@v3
-  #     - name: Setup hlint
-  #       uses: rwe/actions-hlint-setup@v1
-  #     - name: Run hlint
-  #       uses: rwe/actions-hlint-run@v2
-  weeder:
-    name: Check code sanity (hlint) and dead code (weeder)
+  hlint:
+    name: Check for code sanity with hlint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      - name: Check weeds and lints 🌿🌿🌿
-        uses: freckle/stack-action@main
+      - name: Setup hlint
+        uses: rwe/actions-hlint-setup
+      - name: Run hlint
+        uses: rwe/actions-hlint-run
+  weeder:
+    name: Check dead code with weeder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v3
+      - name: Check weeds 🌿🌿🌿
+        uses: freckle/stack-action
         with:
-          weeder: true
-          hlint: true
+          test: false
+
+      # Weeder needs compilation artifacts, so it must still be the same Job
+      - uses: freckle/weeder-action
