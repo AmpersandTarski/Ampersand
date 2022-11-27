@@ -1,5 +1,5 @@
 # Inspired by https://tech.freckle.com/2021/05/18/haskell-on-actions/
-name: check Code Quality 🚀
+name: Check Code Quality 👌
 on:
   push:
     branches:
@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      - name: Check weeds🌿🌿🌿
+      - name: Check weeds and lints 🌿🌿🌿
         uses: freckle/stack-action@main
         with:
           weeder: true

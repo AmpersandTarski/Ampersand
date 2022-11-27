@@ -154,8 +154,6 @@ jobs:
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: false # TODO: Re-enable. See https://github.com/AmpersandTarski/Ampersand/issues/1225
-          hlint: true
 
       - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
@@ -177,8 +175,6 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: false
-          hlint: true
 
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
@@ -218,8 +214,6 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-          weeder: false
-          hlint: false
 
       - name: Upload artifacts (Windows)
         uses: actions/upload-artifact@v2
