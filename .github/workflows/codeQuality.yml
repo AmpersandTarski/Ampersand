@@ -14,9 +14,9 @@ jobs:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
       - name: Setup hlint
-        uses: rwe/actions-hlint-setup
+        uses: rwe/actions-hlint-setup@main
       - name: Run hlint
-        uses: rwe/actions-hlint-run
+        uses: rwe/actions-hlint-run@main
   weeder:
     name: Check dead code with weeder
     runs-on: ubuntu-latest
@@ -24,9 +24,9 @@ jobs:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
       - name: Check weeds 🌿🌿🌿
-        uses: freckle/stack-action
+        uses: freckle/stack-action@main
         with:
           test: false
 
       # Weeder needs compilation artifacts, so it must still be the same Job
-      - uses: freckle/weeder-action
+      - uses: freckle/weeder-action@main
