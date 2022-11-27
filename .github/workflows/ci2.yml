@@ -51,10 +51,6 @@ jobs:
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-      - name: Check weeds🌿🌿🌿
-        uses: freckle/stack-action@main
-        with:
-          weeder: true
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
@@ -72,10 +68,6 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-      - name: Check weeds🌿🌿🌿
-        uses: freckle/stack-action@main
-        with:
-          weeder: true
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
@@ -105,7 +97,3 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
-      - name: Check weeds🌿🌿🌿
-        uses: freckle/stack-action@main
-        with:
-          weeder: true
