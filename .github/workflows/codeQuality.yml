@@ -1,0 +1,30 @@
+# Inspired by https://tech.freckle.com/2021/05/18/haskell-on-actions/
+name: check Code Quality 🚀
+on:
+  push:
+    branches:
+      - "**" # Only trigger on branches (i.e. not tags, ..)
+    paths-ignore:
+      - "docs/**" # If only documentation changes, no need to build.
+jobs:
+  # hlint:
+  #   name: Check for code sanity with hlint
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout project contents 📡
+  #       uses: actions/checkout@v3
+  #     - name: Setup hlint
+  #       uses: rwe/actions-hlint-setup@v1
+  #     - name: Run hlint
+  #       uses: rwe/actions-hlint-run@v2
+  weeder:
+    name: Check code sanity (hlint) and dead code (weeder)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v3
+      - name: Check weeds🌿🌿🌿
+        uses: freckle/stack-action@main
+        with:
+          weeder: true
+          hlint: true

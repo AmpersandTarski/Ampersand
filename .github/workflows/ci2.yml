@@ -7,17 +7,6 @@ on:
     paths-ignore:
       - "docs/**" # If only documentation changes, no need to build.
 jobs:
-  hlint:
-    name: Check for code sanity with hlint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout project contents 📡
-        uses: actions/checkout@v3
-      - name: Setup hlint
-        uses: rwe/actions-hlint-setup@v1
-      - name: Run hlint
-        uses: rwe/actions-hlint-run@v2
-
   build-and-test-docker:
     name: Build with Docker
     runs-on: ubuntu-latest
