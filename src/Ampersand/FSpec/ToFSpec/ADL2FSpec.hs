@@ -575,7 +575,11 @@ tblcontents ci ps plug =
                   fatal . T.unlines $
                     [ "There is an attempt to populate multiple values into ",
                       "     the row of table `" <> (text1ToText . tName) plug <> "`, where id = " <> tshow (showValADL a) <> ":",
-                      "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps')
+                      "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps'),
+                      "",
+                      "ps: " <> T.intercalate ("\n  |" <> tshow (length ps) <> " ") (fmap tshow ps),
+                      "",
+                      "ps': " <> tshow ps'
                     ] --this has happened before due to:
                     --    when using --dev flag
                     --  , when there are violations

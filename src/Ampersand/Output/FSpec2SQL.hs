@@ -72,7 +72,7 @@ dumpSQLqueries env fSpec =
       where
         showRule :: Rule -> Text1
         showRule r =
-          "  - " .<> tName r <>. ": " <> showA r
+          "  - " .<> (tName r <>. (": " <> showA r))
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)

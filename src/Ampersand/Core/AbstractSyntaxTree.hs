@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -19,7 +20,6 @@ module Ampersand.Core.AbstractSyntaxTree
     AEnforce (..),
     Relation (..),
     Relations,
-    showRel,
     ARelDefault (..),
     ARelDefaults,
     AProp (..),
@@ -350,7 +350,7 @@ instance Ord Rule where
 instance Show Rule where
   show x =
     T.unpack $
-      "RULE " <> text1ToText (tName x <>. (": " <> tshow (formalExpression x)))
+      "RULE " <> text1ToText (tName x) <> ": " <> tshow (formalExpression x)
 
 instance Traced Rule where
   origin = rrfps
@@ -475,18 +475,17 @@ instance Ord Relation where
   compare a b = compare (name a, sign a) (name b, sign b)
 
 instance Unique Relation where
-  showUnique rel =
-    tName rel <> showUnique (decsgn rel)
+  showUnique :: Relation -> Text1
+  showUnique = showWithSign
 
 instance Hashable Relation where
   hashWithSalt s Relation {dechash = v} = s `hashWithSalt` v
 
-instance Show Relation where -- For debugging purposes only (and fatal messages)
-  show rel =
-    T.unpack . text1ToText $ tName rel <> showSign rel
+instance Show Relation where
+  show = T.unpack . text1ToText . showWithSign
 
-showRel :: Relation -> Text1
-showRel rel = tName rel <> showSign rel
+showWithSign :: Relation -> Text1
+showWithSign rel = tName rel <> showSign rel
 
 newtype Meaning = Meaning {ameaMrk :: Markup} deriving (Show, Eq, Ord, Typeable, Data)
 
@@ -627,8 +626,8 @@ instance Traced AClassify where
 instance Unique AClassify where
   showUnique a =
     case a of
-      Isa {} -> showUnique (genspc a) <> (" ISA " .<> showUnique (gengen a))
-      IsE {} -> showUnique (genspc a) <>. " IS " <> T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a)
+      Isa {} -> (showUnique (genspc a) <>. " ISA ") <> showUnique (gengen a)
+      IsE {} -> showUnique (genspc a) <>. (" IS " <> T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a))
 
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
@@ -844,9 +843,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p =
     uniqueShowWithType (explMarkup p)
-      <>. tshow (typeOf x)
-      <> "_"
-      <> tshow x
+      <>. (tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin p
 
@@ -864,7 +861,7 @@ data Population -- The user defined populations
       { popcpt :: !A_Concept,
         popas :: ![AAtomValue] -- The user-defined atoms that populate the concept
       }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 instance Unique Population where
   showUnique pop@ARelPopu {} = (uniqueShowWithType . popdcl) pop <> (showUnique . popps) pop
@@ -876,13 +873,13 @@ data AAtomPair = APair
   { apLeft :: !AAtomValue,
     apRight :: !AAtomValue
   }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = "(" .<> (showUnique . apLeft) apair <> ("," .<> (showUnique . apRight) apair <>. ")")
+  showUnique apair = "(" .<> (showUnique . apLeft) apair <> ("," .<> ((showUnique . apRight) apair <>. ")"))
 
 type AAtomValues = Set.Set AAtomValue
 
@@ -972,15 +969,16 @@ data ExplObj
 instance Unique ExplObj where
   showUnique e =
     "Explanation of "
-      .<> case e of
-        (ExplConcept cpt) -> uniqueShowWithType cpt
-        (ExplRelation rel) -> uniqueShowWithType rel
-        (ExplRule s) -> "a Rule named " .<> tName s
-        (ExplIdentityDef s) -> "an Ident named " .<> tName s
-        (ExplViewDef s) -> "a View named " .<> tName s
-        (ExplPattern s) -> "a Pattern named " .<> tName s
-        (ExplInterface s) -> "an Interface named " .<> tName s
-        (ExplContext s) -> "a Context named " .<> tName s
+      .<> ( case e of
+              (ExplConcept cpt) -> uniqueShowWithType cpt
+              (ExplRelation rel) -> uniqueShowWithType rel
+              (ExplRule s) -> "a Rule named " .<> tName s
+              (ExplIdentityDef s) -> "an Ident named " .<> tName s
+              (ExplViewDef s) -> "a View named " .<> tName s
+              (ExplPattern s) -> "a Pattern named " .<> tName s
+              (ExplInterface s) -> "an Interface named " .<> tName s
+              (ExplContext s) -> "a Context named " .<> tName s
+          )
 
 data Expression
   = -- | equivalence             =
@@ -1196,7 +1194,9 @@ instance HasSignature Expression where
   sign (EMp1 _ c) = Sign c c
 
 showSign :: HasSignature a => a -> Text1
-showSign x = let Sign s t = sign x in ("[" .<> tName s <>. "*") <> tName t <>. "]"
+showSign x = Text1 '[' $ (text1ToText . tName) s <> "*" <> (text1ToText . tName) t <> "]"
+  where
+    Sign s t = sign x
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
@@ -1294,10 +1294,10 @@ instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept {aliases = names} =
     case NE.tail names of
       [] -> tName cpt
-      xs -> tName cpt <>. "(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")"
+      xs -> tName cpt <>. ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
 
 instance Unique (A_Concept, PAtomValue) where
-  showUnique (c, val) = tshow val <> "[" .<> showUnique c <>. "]"
+  showUnique (c, val) = (tshow val <> "[") .<> (showUnique c <>. "]")
 
 data Signature = Sign !A_Concept !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 
@@ -1309,10 +1309,10 @@ instance Show Signature where
 
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) =
-    ("[" .<> showWithAliases s <>. "*") <> showWithAliases t <>. "]"
+    ((("[" .<> showWithAliases s) <>. "*") <> showWithAliases t) <>. "]"
 
 instance Unique Signature where
-  showUnique (Sign s t) = ("[" .<> showUnique s <>. "*") <> showUnique t <>. "]"
+  showUnique (Sign s t) = (("[" .<> showUnique s) <>. "*") <> (showUnique t <>. "]")
 
 instance HasSignature Signature where
   source (Sign s _) = s

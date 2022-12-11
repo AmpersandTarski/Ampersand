@@ -212,11 +212,12 @@ data Atom = Atom
 
 instance Unique Atom where
   showUnique a =
-    showValADL (atmVal a) <> " in "
-      .<> case atmRoots a of
-        [] -> fatal "an atom must have at least one root concept"
-        [x] -> uniqueShowWithType x
-        xs -> Text1 '[' $ T.intercalate ", " (text1ToText . uniqueShowWithType <$> xs) <> "]"
+    (showValADL (atmVal a) <> " in ")
+      .<> ( case atmRoots a of
+              [] -> fatal "an atom must have at least one root concept"
+              [x] -> uniqueShowWithType x
+              xs -> Text1 '[' $ T.intercalate ", " (text1ToText . uniqueShowWithType <$> xs) <> "]"
+          )
 
 data APair = Pair
   { lnkDcl :: Relation,
@@ -261,7 +262,7 @@ instance Eq Quad where
   a == b = compare a b == EQ
 
 instance Unique Quad where
-  showUnique quad = "ONCHANGE " .<> showRel (qDcl quad) <> (" FIX " .<> tName (qRule quad))
+  showUnique quad = ("ONCHANGE " <> tshow (qDcl quad) <> " FIX ") .<> tName (qRule quad)
 
 --
 dnf2expr :: DnfClause -> Expression

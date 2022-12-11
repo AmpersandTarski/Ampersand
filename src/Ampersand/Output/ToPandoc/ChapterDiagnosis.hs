@@ -308,7 +308,7 @@ chpDiagnosis env fSpec
         purposeOnlyMissing = filter (not . hasPurpose) . filter hasMeaning . Set.elems $ decls
         meaningOnlyMissing = filter hasPurpose . filter (not . hasMeaning) . Set.elems $ decls
         decls = vrels fSpec
-        showDclMath = math . text1ToText . showRel
+        showDclMath = math . tshow
     hasPurpose :: Motivated a => a -> Bool
     hasPurpose = not . null . purposesOf fSpec outputLang'
     hasMeaning :: HasMeaning a => a -> Bool

@@ -4,7 +4,6 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
 import Ampersand.Classes.Relational (HasProps (properties))
 import Data.Text1 ((.<>))
-import Data.Text1.Text1 ((<>.))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -180,7 +179,7 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
         { rrnm =
             toName
               (nameSpaceOf rel)
-              ("Compute " .<> showRel rel <>. " using " <> command),
+              (toText1Unsafe $ ("Compute " <> tshow rel) <> (" using " <> command)),
           formalExpression = fExpr,
           rrfps = orig,
           rrmean = [],

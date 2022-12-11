@@ -94,7 +94,6 @@ import Ampersand.Core.AbstractSyntaxTree
     getInterfaceByName,
     mkAtomPair,
     safePSingleton2AAtomVal,
-    showRel,
     showSign,
     showValADL,
     showValSQL,

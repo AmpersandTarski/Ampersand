@@ -72,7 +72,7 @@ instance JSON A_Concept AtomValuesOfConcept where
 instance JSON Relation PairsOfRelation where
   fromAmpersand env fSpec dcl =
     PairsOfRelation
-      { porJSONrelation = text1ToText . showRel $ dcl,
+      { porJSONrelation = tshow dcl,
         porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
       }
 

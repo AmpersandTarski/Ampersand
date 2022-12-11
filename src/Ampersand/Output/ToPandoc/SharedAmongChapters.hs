@@ -126,18 +126,18 @@ hyperTarget env fSpec a =
     XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
     XRefSharedLangTheme (Just pat) -> (Left . hdr . text . text1ToText . tName) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
-    XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . text1ToText . showRel $ d)
+    XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
     --   Left $ divWith (xSafeLabel a,[],[])
-    --                  (   (para . str $ showRel d)
+    --                  (   (para . str $ tshow d)
     --                    <>codeBlockWith
-    --                         ("", ["adl"],[("caption",showRel d)])
+    --                         ("", ["adl"],[("caption",tshow d)])
     --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
     --                  )
     XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow . name $ r)
     --   Left $ divWith (xSafeLabel a,[],[])
-    --                  (   (para . text $ name r)
+    --                  (   (para . text $ tshow r)
     --                  --  <>codeBlockWith
-    --                  --       ("", ["adl"],[("caption",name r)])
+    --                  --       ("", ["adl"],[("caption",tshow r)])
     --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")
     --                    <>printMeaning (outputLang env fSpec) r
     --                  )
@@ -571,7 +571,7 @@ dpRule' env fSpec = dpR
                        )
                )
         showRef :: Relation -> Inlines
-        showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . text1ToText . showRel) dcl <> ")"
+        showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . tshow) dcl <> ")"
 
         ncs = concs r Set.\\ seenConcs -- newly seen concepts
         cds = [(c, cd) | c <- Set.elems ncs, cd <- conceptDefs fSpec, name cd == name c] -- ... and their definitions

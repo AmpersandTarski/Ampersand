@@ -178,7 +178,7 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONlabel = maybe "" text1ToText (objPlainName object),
             ifcobjJSONviewId = text1ToText . tName <$> viewToUse,
             ifcobjJSONNormalizationSteps = Just $ showPrf showA . cfProof . objExpression $ object,
-            ifcobjJSONrelation = text1ToText . showRel . fst <$> mEditableDecl,
+            ifcobjJSONrelation = tshow . fst <$> mEditableDecl,
             ifcobjJSONrelationIsFlipped = fmap snd mEditableDecl,
             ifcobjJSONcrud = Just $ fromAmpersand env fSpec (objcrud object),
             ifcobjJSONexpr = Just $ fromAmpersand env fSpec object,

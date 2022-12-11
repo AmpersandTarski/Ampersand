@@ -42,9 +42,6 @@ import qualified RIO.Text.Lazy as TL
 
 type NameSpace = [Text1]
 
-data NameType = ConceptName | RelationName | RuleName | PatternName | ContextName | RoleName | TemporaryDummy
-  deriving (Data)
-
 data Name = Name
   { -- | The plain name
     plainName :: !Text1,
@@ -92,6 +89,9 @@ nameOfONE =
       nameType = ConceptName
     }
 
+data NameType = ConceptName | RelationName | RuleName | PatternName | ContextName | RoleName | TemporaryDummy
+  deriving (Data)
+
 toName :: NameSpace -> Text1 -> Name
 toName space plainname =
   Name
@@ -133,6 +133,7 @@ mkValid t1@(Text1 h tl) =
 
 -- | anything could have some name, can't it?
 class Named a where
+  {-# MINIMAL name #-}
   name :: a -> Name
   tName :: a -> Text1
   tName = toText1Unsafe . tshow . name
@@ -187,7 +188,7 @@ class (Typeable e, Eq e) => Unique e where
 
   -- | representation of a Unique thing into a Text.
   uniqueShowWithType :: e -> Text1
-  uniqueShowWithType x = (toText1Unsafe . tshow . typeOf $ x) <>. "_" <> (text1ToText . showUnique $ x)
+  uniqueShowWithType x = (toText1Unsafe . tshow . typeOf $ x) <>. ("_" <> (text1ToText . showUnique $ x))
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of

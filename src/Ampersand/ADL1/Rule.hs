@@ -44,8 +44,8 @@ rulefromProp prp rel =
   Rule
     { rrnm =
         toName
-          (nameSpaceOf (name rel))
-          (tshow prp <> "_" .<> showDcl),
+          (nameSpaceOf rel)
+          (toText1Unsafe $ tshow prp <> "_" <> tshow rel),
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),
       rrmean = meanings prp,
@@ -55,8 +55,10 @@ rulefromProp prp rel =
       rrkind = Propty prp rel
     }
   where
-    relIdentifier = tshow prp <> " " .<> showDcl
-    showDcl = showRel rel
+    relIdentifier :: Text1
+    relIdentifier = toText1Unsafe $ tshow prp <> "_" <> tshow rel
+    showDcl :: Text
+    showDcl = tshow rel
     r :: Expression
     r = EDcD rel
     rExpr =
@@ -79,7 +81,7 @@ rulefromProp prp rel =
             { amLang = lang,
               amPandoc =
                 string2Blocks ReST $
-                  text1ToText showDcl <> " is " <> propFullName False lang prop
+                  showDcl <> " is " <> propFullName False lang prop
             }
 
     violMsg prop = [msg lang | lang <- [English, Dutch]]
@@ -99,10 +101,10 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> ("Each " .<> s <>. " may only have one ") <> (t <>. " in the relation ") <> tName rel
-                        Inj -> ("Each " .<> t <>. " may only have one ") <> (s <>. " in the relation ") <> tName rel
-                        Tot -> ("Every " .<> s <>. " must have a ") <> (t <>. " in the relation ") <> tName rel
-                        Sur -> ("Every " .<> t <>. " must have a ") <> (s <>. " in the relation ") <> tName rel
+                        Uni -> (("Each " .<> s) <>. " may only have one ") <> (t <>. " in the relation ") <> tName rel
+                        Inj -> (("Each " .<> t) <>. " may only have one ") <> (s <>. " in the relation ") <> tName rel
+                        Tot -> (("Every " .<> s) <>. " must have a ") <> (t <>. " in the relation ") <> tName rel
+                        Sur -> (("Every " .<> t) <>. " must have a ") <> (s <>. " in the relation ") <> tName rel
                     Dutch ->
                       case prop of
                         Sym -> explByFullName lang
@@ -110,12 +112,12 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> ("Elke " .<> s <>. " mag slechts één ") <> (t <>. " hebben in de relatie ") <> tName rel
-                        Inj -> ("Elke " .<> t <>. " mag slechts één ") <> (s <>. " hebben in de relatie ") <> tName rel
-                        Tot -> ("Elke " .<> s <>. " dient één ") <> (t <>. " te hebben in de relatie ") <> tName rel
-                        Sur -> ("Elke " .<> t <>. " dient een ") <> (s <>. " te hebben in de relatie ") <> tName rel
+                        Uni -> (("Elke " .<> s) <>. " mag slechts één ") <> (t <>. " hebben in de relatie ") <> tName rel
+                        Inj -> (("Elke " .<> t) <>. " mag slechts één ") <> (s <>. " hebben in de relatie ") <> tName rel
+                        Tot -> (("Elke " .<> s) <>. " dient één ") <> (t <>. " te hebben in de relatie ") <> tName rel
+                        Sur -> (("Elke " .<> t) <>. " dient een ") <> (s <>. " te hebben in de relatie ") <> tName rel
             }
-        explByFullName lang = showDcl <>. " is " <> propFullName False lang prop
+        explByFullName lang = toText1Unsafe $ showDcl <> (" is " <> propFullName False lang prop)
 
 propFullName :: Bool -> Lang -> AProp -> Text
 propFullName isAdjective lang prop =
