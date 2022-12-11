@@ -76,9 +76,12 @@ getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` gru
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
   where
-    getPairViewExps r@Rule {rrviol = Just (PairView pvsegs)} =
-      [(expr, "violation view for rule " <> tshow (name r)) | PairViewExp _ _ expr <- NE.toList pvsegs]
-    getPairViewExps _ = []
+    getPairViewExps r = case rrviol r of
+      Nothing -> []
+      Just (PairView pvsegs) ->
+        [ (expr, "violation view for rule " <> tshow (name r))
+          | PairViewExp _ _ expr <- NE.toList pvsegs
+        ]
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec

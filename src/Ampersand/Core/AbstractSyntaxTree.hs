@@ -1309,10 +1309,10 @@ instance Show Signature where
 
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) =
-    ((("[" .<> showWithAliases s) <>. "*") <> showWithAliases t) <>. "]"
+    toText1Unsafe "[" <> showWithAliases s <> toText1Unsafe "*" <> showWithAliases t <> toText1Unsafe "]"
 
 instance Unique Signature where
-  showUnique (Sign s t) = (("[" .<> showUnique s) <>. "*") <> (showUnique t <>. "]")
+  showUnique (Sign s t) = toText1Unsafe "[" <> showUnique s <> toText1Unsafe "*" <> showUnique t <> toText1Unsafe "]"
 
 instance HasSignature Signature where
   source (Sign s _) = s

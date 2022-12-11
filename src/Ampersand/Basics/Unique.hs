@@ -59,10 +59,7 @@ instance Eq Name where
   a == b = compare a b == EQ
 
 instance Show Name where
-  show x = T.unpack . mconcat . L.intersperse "." $ (toText <$> nameSpace x) <> [toText $ plainName x]
-    where
-      toText :: Text1 -> Text
-      toText (Text1 c tl) = T.cons c tl
+  show x = T.unpack . mconcat . L.intersperse "." $ (text1ToText <$> nameSpace x) <> [text1ToText $ plainName x]
 
 instance Hashable Name where
   hashWithSalt s = hashWithSalt s . text1ToText . tName
