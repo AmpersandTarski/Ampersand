@@ -7,4 +7,4 @@ where
 
 import Ampersand.Classes.ConceptStructure (ConceptStructure (..))
 import Ampersand.Classes.Relational (HasProps (..), Relational (..), isONE, isSESSION)
-import Ampersand.Classes.ViewPoint (Language (..), enforce2Rules)
+import Ampersand.Classes.ViewPoint (Language (..), enforce2Rules, ruleFromIdentity)
