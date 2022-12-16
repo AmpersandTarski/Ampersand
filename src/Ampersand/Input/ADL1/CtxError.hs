@@ -544,7 +544,7 @@ instance ErrorConcept (P_ViewD a) where
   showEC x = showP (vd_cpt x) <> " given in VIEW " <> vd_lbl x
 
 instance ErrorConcept P_IdentDef where
-  showEC x = showP (ix_cpt x) <> " given in Identity " <> ix_lbl x
+  showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> ix_lbl x
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)

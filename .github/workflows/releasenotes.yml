@@ -8,16 +8,18 @@ on:
     # This is needed to allow skipping enforcement of the changelog in PRs with specific labels,
     # as defined in the (optional) "skipLabels" property.
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    paths-ignore:
+      - "docs/**" # If only documentation changes, no need to adapt ReleaseNotes.md
 
 jobs:
-  # Enforces the update of a changelog file on every pull request 
+  # Enforces the update of a changelog file on every pull request
   changelog:
     runs-on: ubuntu-latest
     steps:
-    # The checkout step is needed since the enforcer relies on local git commands
-    - uses: actions/checkout@v2
-    
-    - uses: dangoslen/changelog-enforcer@v2
-      with:
-        changeLogPath: ReleaseNotes.md
-        missingUpdateErrorMessage: 'Every pull request MUST include a description of the change in the ReleaseNotes.md file'
+      # The checkout step is needed since the enforcer relies on local git commands
+      - uses: actions/checkout@v3
+
+      - uses: dangoslen/changelog-enforcer@v2
+        with:
+          changeLogPath: ReleaseNotes.md
+          missingUpdateErrorMessage: "Every pull request MUST include a description of the change in the ReleaseNotes.md file"
