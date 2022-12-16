@@ -56,13 +56,13 @@ Stef Joosten and Rieks Joosten, [Specifying business processes by means of rules
 Stef Joosten, [Rekenen met Taal](https://www.researchgate.net/publication/236340036_Rekenen_met_taal). Informatie, juni 2000, Elsevier.
 
 # Results  <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
-The application [RAP](rap.cs.ou.nl) was built as an educational tool, and developed further into a tool in which anyone can build and run their own prototypes.
+The application [RAP](https://rap.cs.ou.nl) was built as an educational tool, and developed further into a tool in which anyone can build and run their own prototypes.
 
-The project has contributed to the development of applications in relation algebra, which has lead to numerous publications in the [International Conference of Relation Algebraic Methods in Computer Science](www.ramics-conference.org).
+The project has contributed to the development of applications in relation algebra, which has lead to numerous publications in the [International Conference of Relation Algebraic Methods in Computer Science](http://www.ramics-conference.org).
 
 Numerous students at the Open Universiteit have graduated in the context of Ampersand.
 
-TNO has built ten information systems in production with Ampersand, of which [SETU](setu.semantic-treehouse.nl) is an example.
+TNO has built ten information systems in production with Ampersand, of which [SETU](https://setu.semantic-treehouse.nl) is an example.
 
 Several hundreds of students have completed the course [Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design) at the Open Universiteit.
 
