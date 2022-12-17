@@ -16,8 +16,8 @@ import Ampersand.Core.A2P_Converters
 import Ampersand.Core.ParseTree
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers
+
 -- import qualified RIO.Set as Set
-import Data.Text1 ((.<>))
 
 data MetaModel = FormalAmpersand | PrototypeContext
   deriving (Eq, Ord, Enum, Bounded, Show)
@@ -63,7 +63,7 @@ metaModel mmLabel =
 grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
 grind ns fun userFspec =
   PCtx
-    { ctx_nm = toName ns $ "Grinded_" .<> tName userFspec,
+    { ctx_nm = toName ns $ toText1Unsafe "Grinded_" <> tName userFspec,
       ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,

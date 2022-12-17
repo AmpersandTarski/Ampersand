@@ -6,7 +6,6 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
-import Data.Text1 ((.<>), (<>.))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -72,7 +71,7 @@ dumpSQLqueries env fSpec =
       where
         showRule :: Rule -> Text1
         showRule r =
-          "  - " .<> (tName r <>. (": " <> showA r))
+          toText1Unsafe "  - " <> (tName r <> toText1Unsafe (": " <> showA r))
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)

@@ -12,7 +12,6 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import Data.Text1 ((<>.))
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -82,7 +81,12 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                     . toText1Unsafe
                     . T.intercalate "__"
                     . map text1ToText
-                    $ either nameSpaceOf nameSpaceOf nm <> [either plainNameOf1 plainNameOf1 nm <>. (if i == 0 then "" else "_" <> tshow i)]
+                    $ either nameSpaceOf nameSpaceOf nm <> [addPostfix (either plainNameOf1 plainNameOf1 nm) (if i == 0 then Nothing else Just (toText1Unsafe ("_" <> tshow i)))]
+                addPostfix :: Text1 -> Maybe Text1 -> Text1
+                addPostfix x pst = case pst of
+                  Nothing -> x
+                  Just y -> x <> y
+
         tableKey = tyroot typ
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]

@@ -114,8 +114,6 @@ import Ampersand.Core.ParseTree
   )
 import Data.Default (Default (..))
 import Data.Hashable (Hashable (..), hashWithSalt)
-import Data.Text1 ((<>.))
-import Data.Text1.Text1 ((.<>))
 import Data.Typeable (typeOf)
 import RIO.Char (toUpper)
 import qualified RIO.List as L
@@ -559,7 +557,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = tName vd <> ("_" .<> tName (vdcpt vd))
+  showUnique vd = tName vd <> toText1Unsafe ("_" <> text1ToText (tName (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -626,8 +624,8 @@ instance Traced AClassify where
 instance Unique AClassify where
   showUnique a =
     case a of
-      Isa {} -> (showUnique (genspc a) <>. " ISA ") <> showUnique (gengen a)
-      IsE {} -> showUnique (genspc a) <>. (" IS " <> T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a))
+      Isa {} -> showUnique (genspc a) <> toText1Unsafe " ISA " <> showUnique (gengen a)
+      IsE {} -> showUnique (genspc a) <> toText1Unsafe " IS " <> toText1Unsafe (T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a))
 
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
@@ -843,7 +841,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p =
     uniqueShowWithType (explMarkup p)
-      <>. (tshow (typeOf x) <> "_" <> tshow x)
+      <> toText1Unsafe (tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin p
 
@@ -879,7 +877,7 @@ mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = "(" .<> (showUnique . apLeft) apair <> ("," .<> ((showUnique . apRight) apair <>. ")"))
+  showUnique apair = toText1Unsafe "(" <> (showUnique . apLeft) apair <> (toText1Unsafe "," <> ((showUnique . apRight) apair <> toText1Unsafe ")"))
 
 type AAtomValues = Set.Set AAtomValue
 
@@ -968,17 +966,17 @@ data ExplObj
 
 instance Unique ExplObj where
   showUnique e =
-    "Explanation of "
-      .<> ( case e of
-              (ExplConcept cpt) -> uniqueShowWithType cpt
-              (ExplRelation rel) -> uniqueShowWithType rel
-              (ExplRule s) -> "a Rule named " .<> tName s
-              (ExplIdentityDef s) -> "an Ident named " .<> tName s
-              (ExplViewDef s) -> "a View named " .<> tName s
-              (ExplPattern s) -> "a Pattern named " .<> tName s
-              (ExplInterface s) -> "an Interface named " .<> tName s
-              (ExplContext s) -> "a Context named " .<> tName s
-          )
+    toText1Unsafe "Explanation of "
+      <> ( case e of
+             (ExplConcept cpt) -> uniqueShowWithType cpt
+             (ExplRelation rel) -> uniqueShowWithType rel
+             (ExplRule s) -> toText1Unsafe "a Rule named " <> tName s
+             (ExplIdentityDef s) -> toText1Unsafe "an Ident named " <> tName s
+             (ExplViewDef s) -> toText1Unsafe "a View named " <> tName s
+             (ExplPattern s) -> toText1Unsafe "a Pattern named " <> tName s
+             (ExplInterface s) -> toText1Unsafe "an Interface named " <> tName s
+             (ExplContext s) -> toText1Unsafe "a Context named " <> tName s
+         )
 
 data Expression
   = -- | equivalence             =
@@ -1294,10 +1292,10 @@ instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept {aliases = names} =
     case NE.tail names of
       [] -> tName cpt
-      xs -> tName cpt <>. ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
+      xs -> tName cpt <> toText1Unsafe ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
 
 instance Unique (A_Concept, PAtomValue) where
-  showUnique (c, val) = (tshow val <> "[") .<> (showUnique c <>. "]")
+  showUnique (c, val) = toText1Unsafe (tshow val <> "[") <> (showUnique c <> toText1Unsafe "]")
 
 data Signature = Sign !A_Concept !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 

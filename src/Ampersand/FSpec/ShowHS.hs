@@ -10,7 +10,6 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances (Instances (instanceList))
 import Ampersand.Misc.HasClasses
 import Data.Hashable
-import Data.Text1 ((.<>))
 import RIO.Char (isAlphaNum)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -141,7 +140,7 @@ instance ShowHS RelStore where
       ]
 
 instance ShowHSName SqlAttribute where
-  showHSName sqAtt = haskellIdentifier ("sqlAtt_" .<> (sqlColumNameToText1 . attSQLColName $ sqAtt))
+  showHSName sqAtt = haskellIdentifier (toText1Unsafe "sqlAtt_" <> (sqlColumNameToText1 . attSQLColName $ sqAtt))
 
 instance ShowHS SqlAttribute where
   showHS env indent sqAtt =

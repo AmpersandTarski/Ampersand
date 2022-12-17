@@ -73,7 +73,6 @@ import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
 import Data.Hashable (Hashable (..), hashWithSalt)
-import Data.Text1 ((<>.))
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -299,7 +298,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = tName cd <>. ("At" <> tshow (typeOf x) <> "_" <> tshow x)
+  showUnique cd = tName cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin cd
 

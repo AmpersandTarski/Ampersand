@@ -10,7 +10,6 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-import Data.Text1 ((.<>), (<>.))
 
 hasantecedent :: Rule -> Bool
 hasantecedent r =
@@ -101,10 +100,10 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> (("Each " .<> s) <>. " may only have one ") <> (t <>. " in the relation ") <> tName rel
-                        Inj -> (("Each " .<> t) <>. " may only have one ") <> (s <>. " in the relation ") <> tName rel
-                        Tot -> (("Every " .<> s) <>. " must have a ") <> (t <>. " in the relation ") <> tName rel
-                        Sur -> (("Every " .<> t) <>. " must have a ") <> (s <>. " in the relation ") <> tName rel
+                        Uni -> toText1Unsafe $ "Each " <> text1ToText s <> " may only have one " <> text1ToText t <> " in the relation " <> text1ToText (tName rel)
+                        Inj -> toText1Unsafe $ "Each " <> text1ToText t <> " may only have one " <> text1ToText s <> " in the relation " <> text1ToText (tName rel)
+                        Tot -> toText1Unsafe $ "Every " <> text1ToText s <> " must have a " <> text1ToText t <> " in the relation " <> text1ToText (tName rel)
+                        Sur -> toText1Unsafe $ "Every " <> text1ToText t <> " must have a " <> text1ToText s <> " in the relation " <> text1ToText (tName rel)
                     Dutch ->
                       case prop of
                         Sym -> explByFullName lang
@@ -112,10 +111,10 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> (("Elke " .<> s) <>. " mag slechts één ") <> (t <>. " hebben in de relatie ") <> tName rel
-                        Inj -> (("Elke " .<> t) <>. " mag slechts één ") <> (s <>. " hebben in de relatie ") <> tName rel
-                        Tot -> (("Elke " .<> s) <>. " dient één ") <> (t <>. " te hebben in de relatie ") <> tName rel
-                        Sur -> (("Elke " .<> t) <>. " dient een ") <> (s <>. " te hebben in de relatie ") <> tName rel
+                        Uni -> toText1Unsafe $ "Elke " <> text1ToText s <> " mag slechts één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (tName rel)
+                        Inj -> toText1Unsafe $ "Elke " <> text1ToText t <> " mag slechts één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (tName rel)
+                        Tot -> toText1Unsafe $ "Elke " <> text1ToText s <> " dient één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (tName rel)
+                        Sur -> toText1Unsafe $ "Elke " <> text1ToText t <> " dient één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (tName rel)
             }
         explByFullName lang = toText1Unsafe $ showDcl <> (" is " <> propFullName False lang prop)
 

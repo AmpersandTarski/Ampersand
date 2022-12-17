@@ -52,7 +52,6 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.Crud
 import Data.Hashable
-import Data.Text1 ((.<>))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -212,12 +211,12 @@ data Atom = Atom
 
 instance Unique Atom where
   showUnique a =
-    (showValADL (atmVal a) <> " in ")
-      .<> ( case atmRoots a of
-              [] -> fatal "an atom must have at least one root concept"
-              [x] -> uniqueShowWithType x
-              xs -> Text1 '[' $ T.intercalate ", " (text1ToText . uniqueShowWithType <$> xs) <> "]"
-          )
+    toText1Unsafe (showValADL (atmVal a) <> " in ")
+      <> ( case atmRoots a of
+             [] -> fatal "an atom must have at least one root concept"
+             [x] -> uniqueShowWithType x
+             xs -> Text1 '[' $ T.intercalate ", " (text1ToText . uniqueShowWithType <$> xs) <> "]"
+         )
 
 data APair = Pair
   { lnkDcl :: Relation,
@@ -280,7 +279,7 @@ instance Named PlugInfo where
   name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
-  showUnique (InternalPlug psql) = "SQLTable " .<> tName psql
+  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> tName psql
 
 instance ConceptStructure PlugInfo where
   concs (InternalPlug psql) = concs psql

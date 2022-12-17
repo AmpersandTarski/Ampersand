@@ -31,8 +31,6 @@ import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import Data.Hashable
 import Data.Text1 (Text1 (..))
-import qualified Data.Text1 as T1 hiding (Text1 (..))
-import Data.Text1.Text1 ((<>.))
 import Data.Typeable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -168,7 +166,7 @@ fullNameToName t = case T.split (== '.') . text1ToText $ t of
         Just (h', tl') -> mkValid (Text1 h' tl')
 
 prependToPlainName :: Text -> Name -> Name
-prependToPlainName prefix nm = toName (nameSpaceOf nm) (prefix T1..<> plainNameOf1 nm)
+prependToPlainName prefix nm = toName (nameSpaceOf nm) (toText1Unsafe $ prefix <> text1ToText (plainNameOf1 nm))
 
 urlEncodedName :: Name -> Text1
 urlEncodedName = toText1Unsafe . urlEncode . text1ToText . tName
@@ -185,7 +183,7 @@ class (Typeable e, Eq e) => Unique e where
 
   -- | representation of a Unique thing into a Text.
   uniqueShowWithType :: e -> Text1
-  uniqueShowWithType x = (toText1Unsafe . tshow . typeOf $ x) <>. ("_" <> (text1ToText . showUnique $ x))
+  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> ("_" <> (text1ToText . showUnique $ x))
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of
