@@ -8,6 +8,17 @@ module.exports = {
     ],
     ampersandGuideSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
+        {
+            label: 'Theory & background',
+            type: 'category',
+            items: [
+                'ampersand/why-ampersand/whyAmpersand',
+                'ampersand/why-ampersand/BRManifestoAndAmpersand',
+                'ampersand/reactive-programming',
+                'ampersand/research',
+                'ampersand/future-plans',
+            ]
+        },
     ],
     ampersandReferenceSidebar: [
 
@@ -30,17 +41,6 @@ module.exports = {
         }
         ,
 
-        {
-            label: 'Theory & background',
-            type: 'category',
-            items: [
-                'ampersand/why-ampersand/whyAmpersand',
-                'ampersand/why-ampersand/BRManifestoAndAmpersand',
-                'ampersand/reactive-programming',
-                'ampersand/research',
-                'ampersand/future-plans',
-            ]
-        },
     ].concat((
         [
 
@@ -161,12 +161,12 @@ module.exports = {
             ]
         },
     ],
-    prototypeReferenceElems: [
+    prototypeReferenceSidebar: [
 
     ],
-    prototypeMainSidebar: [
+    // prototypeMainSidebar: [
 
-    ],
+    // ],
     toolsWeUseMainSidebar: [
         {
             label: 'Tools for contributors',
