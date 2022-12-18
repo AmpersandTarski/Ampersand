@@ -11,6 +11,9 @@ module.exports = {
         'ampersand/the-excel-importer',
         'ampersand/the-command-line-tool',
     ],
+    ampersandReferenceElems: [
+
+    ],
     ampersandMainSidebar: [
 
         {
@@ -137,18 +140,21 @@ module.exports = {
 
     prototypeGuideElems: [
         'prototype/README',
+        'prototype/config',
+        'prototype/file-system',
+        'prototype/event-dispatcher',
+        'prototype/interface-templates',
+        'prototype/generics',
+        'prototype/ampersand-compiler',
+    ],
+    ampersandReferenceElems: [
+
     ],
     prototypeMainSidebar: [
         {
             label: 'Prototype stuff',
             type: 'category',
             items: [
-                'prototype/ampersand-compiler',
-                'prototype/config',
-                'prototype/event-dispatcher',
-                'prototype/file-system',
-                'prototype/generics',
-                'prototype/interface-templates'
             ]
         },
 
