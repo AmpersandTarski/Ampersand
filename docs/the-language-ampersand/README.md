@@ -28,6 +28,6 @@ Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to le
 | [Specialization](the-classify-statement.md) | A rule that defines specialization between two (or more) concepts. | `CLASSIFY A ISA B` | To specify a building block for a classification hierarchy. |
 | Role | A name for a group of people | `ROLE Customer MAINTAINS paymentObligation` | to talk about users without having any users |
 
-Syntactic definitions are given where the underlying notions (e.g. rule, relation, pattern, etc.) are discussed. The metasyntax is singled out [on a separate page](how-to-read-syntax-statements.md). Because [terms](terms/) are defined in relation algebra, their semantics are explained in various ways to suit the background of each individual reader. Terms are the only algebraically defined things.
+Syntactic definitions are given where the underlying notions (e.g. rule, relation, pattern, etc.) are discussed. The metasyntax is singled out [on a separate page](how-to-read-syntax-statements.md). Because [terms](terms/README.md) are defined in relation algebra, their semantics are explained in various ways to suit the background of each individual reader. Terms are the only algebraically defined things.
 
 This section is organized by discussing each notion in isolation. Hyperlinks are added in the text to let the reader navigate on her own. The text is suitable for reference purposes, so there is no preferred order in reading.

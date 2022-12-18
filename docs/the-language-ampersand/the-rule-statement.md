@@ -14,7 +14,7 @@ A `<rule>` has the following syntax:
 RULE <label>? <term> <meaning>* <message>* <violation>?
 ```
 
-Terms and operators are discussed in [a separate section](terms/):
+Terms and operators are discussed in [a separate section](terms/README.md):
 
 ## Syntax of labels
 
