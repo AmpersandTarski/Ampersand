@@ -52,7 +52,7 @@ A relation statement means that there exists a relation in the current context w
 
 A relation statement may occur anywhere inside a context, both inside and outside a pattern.
 
-The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here](meaning-statements.md).
+The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here](the-meaning-substatement).
 
 The name, source concept and target concept together identify a relation uniquely within its context. As a consequence, the name of a relation does not have to be unique. E.g. `name[Book*Name]` can be specified in the same context as `name[Person*Name]`. Because they have different source concepts, these are different relations.
 
@@ -109,7 +109,7 @@ The `PRAGMA` tells us that it makes sense to utter the phrase `"Provider Mario's
 
 ## MEANING
 
-For a full discussion of meaning, we refer to [`this page`](meaning-statements.md).
+For a full discussion of meaning, we refer to [`this page`](the-meaning-substatement).
 
 ## Miscellaneous
 
