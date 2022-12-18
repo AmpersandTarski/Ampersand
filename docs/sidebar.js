@@ -6,19 +6,31 @@ module.exports = {
         },
 
     ],
+    ampersandTheorySidebar: [
+        {
+            type: 'doc',
+            id: 'ampersand/why-ampersand/whyAmpersand'
+        },
+        {
+            type: 'doc',
+            id: 'ampersand/why-ampersand/BRManifestoAndAmpersand'
+        },
+        {
+            type: 'doc',
+            id: 'ampersand/reactive-programming'
+        },
+        {
+            type: 'doc',
+            id: 'ampersand/research'
+        },
+        {
+            type: 'doc',
+            id: 'ampersand/future-plans'
+        },
+
+    ],
     ampersandGuideSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
-        {
-            label: 'Theory & background',
-            type: 'category',
-            items: [
-                'ampersand/why-ampersand/whyAmpersand',
-                'ampersand/why-ampersand/BRManifestoAndAmpersand',
-                'ampersand/reactive-programming',
-                'ampersand/research',
-                'ampersand/future-plans',
-            ]
-        },
     ],
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
@@ -155,7 +167,7 @@ module.exports = {
 
     prototypeGuideSidebar: [
         {
-            label: 'Prototype stuff',
+            label: 'How to create a prototype',
             type: 'category',
             items: [
                 'prototype/README',
