@@ -1,6 +1,6 @@
 ---
-title: The RELATION substatement
-id: the-relation-substatement
+title: The RELATION statement
+id: the-relation-statement
 ---
 # The RELATION statement
 

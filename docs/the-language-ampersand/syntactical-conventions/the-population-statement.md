@@ -1,6 +1,6 @@
 ---
-title: The POPULATION substatement
-id: the-population-substatement
+title: The POPULATION statement
+id: the-population-statement
 ---
 # The POPULATION statement
 
