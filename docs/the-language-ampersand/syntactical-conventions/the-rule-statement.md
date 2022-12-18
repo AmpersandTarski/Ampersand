@@ -1,3 +1,7 @@
+---
+title: The RULE statement
+id: the-rule-statement
+---
 # The RULE statement
 
 ## Purpose

@@ -47,12 +47,12 @@ Keywords in Ampersand are always written in CAPITALS.
   * [`IN`](language-support.md)
   * `ENGLISH`
   * `DUTCH`
-  * [`INCLUDE`](the-include-statement.md)
+  * [`INCLUDE`](the-include-statement)
   * `META`
   * `THEMES`
   * [`PATTERN`](patterns.md)
   * `ENDPATTERN`
-  * [`CONCEPT`](../the-concept-statement.md)
+  * [`CONCEPT`](the-concept-statement)
 * Keywords for [relations](../relations.md)
   * [`RELATION`](../relations.md)
   * `PRAGMA`
@@ -68,7 +68,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `PROP`
   * [`POPULATION`](the-population-statement/)
   * `CONTAINS`
-* Keywords for [rules](../the-rule-statement.md)
+* Keywords for [rules](the-rule-statement)
   * `RULE`
   * `MESSAGE`
   * `VIOLATION`
@@ -81,7 +81,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `ROLE`
   * `MAINTAINS`
 * Keywords for documentation
-  * [`PURPOSE`](the-purpose-statement.md)
+  * [`PURPOSE`](the-purpose-statement)
   * [`MEANING`](../relations.md)
   * `REF`
   * `REST`
@@ -94,7 +94,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `LINKTO`
   * `BOX`
 * Keywords for identities
-  * [`IDENT`](the-ident-statement.md)
+  * [`IDENT`](the-ident-statement)
 * Keywords for views
   * `VIEW`
   * `ENDVIEW`

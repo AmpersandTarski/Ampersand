@@ -1,6 +1,8 @@
+---
+title: The CONTEXT statement
+id: the-context-statement
+---
 # The CONTEXT statement
-
-RJ/20161220: the CONTEXT statement is currently being revised. It is expected that this will lead to changes in syntax in the course of 2017.
 
 ## Purpose
 

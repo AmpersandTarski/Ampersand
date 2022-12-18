@@ -1,3 +1,7 @@
+---
+title: The RELATION substatement
+id: the-relation-substatement
+---
 # The RELATION statement
 
 ## Purpose

@@ -1,3 +1,7 @@
+---
+title: The PURPOSE substatement
+id: the-purpose-substatement
+---
 # The PURPOSE statement
 
 ## Semantics

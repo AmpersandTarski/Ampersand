@@ -1,3 +1,7 @@
+---
+title: The IDENT statement
+id: the-ident-statement
+---
 # The IDENT statement
 
 ## Purpose:

@@ -1,3 +1,7 @@
+---
+title: The CLASSIFY statement
+id: the-classify-statement
+---
 # The CLASSIFY statement
 
 ## Purpose

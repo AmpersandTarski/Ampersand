@@ -8,7 +8,7 @@ description: >-
 
 Let us introduce some language to talk about truth. Consider a fact "Joe Smith lives in New York." from an Ampersand perspective. In Ampersand, we can analyse this as follows:
 
-* Let `Person` and `City` be [_**concepts**_](the-concept-statement.md)_\*\*\*\*_
+* Let `Person` and `City` be [_**concepts**_](the-concept-statement)_\*\*\*\*_
 * Let `"Joe Smith"` be an [_**atom**_](atoms.md) of the concept `Person` and `"New York"` an atom of the concept `City`.
 * Let us use the [_**relation**_](relations.md) `livesIn[Person*City]` to contain our fact.
 * `livesIn` is the _**relation name**_ and `[Person*City]` is the _**signature**_ of this relation.
