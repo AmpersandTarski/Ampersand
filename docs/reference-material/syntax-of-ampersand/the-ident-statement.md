@@ -1,6 +1,7 @@
 ---
 title: The IDENT statement
 id: the-ident-statement
+slug: /the-ident-statement
 ---
 # The IDENT statement
 

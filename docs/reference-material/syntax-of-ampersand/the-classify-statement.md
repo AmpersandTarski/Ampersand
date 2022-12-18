@@ -1,6 +1,7 @@
 ---
 title: The CLASSIFY statement
 id: the-classify-statement
+slug: /the-classify-statement
 ---
 # The CLASSIFY statement
 

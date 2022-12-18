@@ -1,6 +1,7 @@
 ---
 title: The RELATION statement
 id: the-relation-statement
+slug: /the-relation-statement
 ---
 # The RELATION statement
 

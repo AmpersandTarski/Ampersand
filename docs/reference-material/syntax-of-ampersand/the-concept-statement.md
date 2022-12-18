@@ -1,6 +1,7 @@
 ---
 title: The CONCEPT statement
 id: the-concept-statement
+slug: /the-concept-statement
 ---
 # The CONCEPT statement
 

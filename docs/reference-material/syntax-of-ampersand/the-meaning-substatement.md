@@ -1,6 +1,7 @@
 ---
 title: The MEANING substatement
 id: the-meaning-substatement
+slug: /the-meaning-substatement
 ---
 
 # The MEANING sub-statement
