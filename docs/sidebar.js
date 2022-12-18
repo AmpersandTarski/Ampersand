@@ -12,6 +12,7 @@ module.exports = {
         'ampersand/the-command-line-tool',
     ],
     ampersandReferenceElems: [
+        'ampersand/empty'
 
     ],
     ampersandMainSidebar: [
@@ -147,7 +148,7 @@ module.exports = {
         'prototype/generics',
         'prototype/ampersand-compiler',
     ],
-    ampersandReferenceElems: [
+    prototypeReferenceElems: [
         'ampersand/empty'
 
     ],
