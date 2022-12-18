@@ -90,7 +90,7 @@ module.exports = {
                 label: 'More documents',
                 type: 'category',
                 items: [
-                    'ampersand/Conceptual/why-declarative',
+                    'ampersand/conceptual/why-declarative',
                     'ampersand/architecture-of-an-ampersand-application/README',
                     'ampersand/architecture-of-an-ampersand-application/backend-framework',
                     'ampersand/architecture-of-an-ampersand-application/extensions/README',
@@ -203,8 +203,8 @@ module.exports = {
 
     ],
     notOnOldSite: [
-        'ampersand/Conceptual/theory',
-        'ampersand/Conceptual/Automated Rules',
+        'ampersand/conceptual/theory',
+        'ampersand/conceptual/automated-rules',
 
     ]
 };

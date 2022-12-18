@@ -20,9 +20,9 @@ Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to le
 | [Population](the-population-statement.md) | a set of pairs in a context | `POPULATION r[A*B] CONTAINS [ ("Ida",5), ("Bob",1) ]` | to represent the facts (i.e. true statements) in an information system |
 | [Context](context.md) | a population together with a set of rules that are satisfied by the population. | <p><code>CONTEXT</code></p><p> <code>...</code></p><p><code>ENDCONTEXT</code></p> | to maintain a consistent representation of a real life situation |
 | View | A set of pairs that can be shown to users in a particular formulation. |   | to represent facts |
-| [Service](services/) | A structure meant for "the outside world" to communicate with the system and possibly change the population. | `INTERFACE Request FOR Customer` | to let "the outside world" communicate with the system in a given context and possibly change its population |
+| [Service](services/README.md) | A structure meant for "the outside world" to communicate with the system and possibly change the population. | `INTERFACE Request FOR Customer` | to let "the outside world" communicate with the system in a given context and possibly change its population |
 | Multiplicity | A predefined property of a relation | `UNI`, `TOT`, `SUR`, `INJ` | to constrain a relation with predefined properties |
-| [Term](terms/) | A combination of relations and operators that satisfy the Ampersand syntax | `r;s-t` | to express rules |
+| [Term](terms/README.md) | A combination of relations and operators that satisfy the Ampersand syntax | `r;s-t` | to express rules |
 | Operator | a symbol used in combining terms into other terms. | `-`, `~`, `\/`, `/\`, `-`, `;`, `\`, `/`, `\|-`, `=` | to express more complex rules. |
 |                                             |                                                                    |                    |                                                             |
 | [Specialization](the-classify-statement.md) | A rule that defines specialization between two (or more) concepts. | `CLASSIFY A ISA B` | To specify a building block for a classification hierarchy. |
