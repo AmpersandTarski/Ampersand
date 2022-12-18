@@ -40,13 +40,15 @@ module.exports = {
             items: [
                 'ampersand/the-language-ampersand/syntactical-conventions/the-concept-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-context-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-classify-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-enforce-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-ident-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-include-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-meaning-substatement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-population-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-purpose-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-relation-statement',
                 'ampersand/the-language-ampersand/syntactical-conventions/the-rule-statement',
-                'ampersand/the-language-ampersand/syntactical-conventions/the-table-statement',
             ]
         },
 
@@ -84,7 +86,6 @@ module.exports = {
                     'ampersand/the-language-ampersand/design-considerations',
                     'ampersand/the-language-ampersand/how-to-read-syntax-statements',
                     'ampersand/the-language-ampersand/language-support',
-                    'ampersand/the-language-ampersand/meaning-statements',
                     'ampersand/the-language-ampersand/patterns',
                     'ampersand/the-language-ampersand/relations',
                     'ampersand/the-language-ampersand/services/README',
@@ -101,16 +102,7 @@ module.exports = {
                     'ampersand/the-language-ampersand/syntactical-conventions/patterns',
                     'ampersand/the-language-ampersand/terms/README',
                     'ampersand/the-language-ampersand/terms/semantics',
-                    'ampersand/the-language-ampersand/the-classify-statement',
-                    'ampersand/the-language-ampersand/the-concept-statement',
-                    'ampersand/the-language-ampersand/the-enforce-statement',
-                    'ampersand/the-language-ampersand/the-ident-statement',
-                    'ampersand/the-language-ampersand/the-include-statement',
-                    'ampersand/the-language-ampersand/the-population-statement',
                     'ampersand/the-language-ampersand/the-preprocessor',
-                    'ampersand/the-language-ampersand/the-purpose-statement',
-                    'ampersand/the-language-ampersand/the-rule-statement',
-                    'ampersand/the-language-ampersand/the-table-statement',
                     'ampersand/the-language-ampersand/truth',
 
                 ]

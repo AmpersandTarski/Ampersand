@@ -8,7 +8,7 @@ description: Academic research about Ampersand is documented in this page
 
 Research into Ampersand focuses on automatically generating information systems, investigating a language suitable for designing such systems, and communication of designs between stakeholders with vastly different backgrounds. The research is documented on [The Ampersand Project](https://www.researchgate.net/project/Ampersand-automated-design-and-synthesis-of-information-systems-for-compliance-critical-applications) on Researchgate.
 
-# Publications  <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
+## Publications  <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
 The following list gives an overview of publications by members of the Ampersand team.
 
 In 2018 we published a paper that positions Ampersand as a reactive programming language:
@@ -55,7 +55,7 @@ Stef Joosten and Rieks Joosten, [Specifying business processes by means of rules
 
 Stef Joosten, [Rekenen met Taal](https://www.researchgate.net/publication/236340036_Rekenen_met_taal). Informatie, juni 2000, Elsevier.
 
-# Results  <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
+## Results  <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
 The application [RAP](https://rap.cs.ou.nl) was built as an educational tool, and developed further into a tool in which anyone can build and run their own prototypes.
 
 The project has contributed to the development of applications in relation algebra, which has lead to numerous publications in the [International Conference of Relation Algebraic Methods in Computer Science](http://www.ramics-conference.org).
