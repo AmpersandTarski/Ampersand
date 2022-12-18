@@ -7,7 +7,7 @@ id: the-meaning-substatement
 # The MEANING sub-statement
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
-MEANING can be used with [CONCEPT]\\\(the-concept-statement\), [RELATION]\\\(the-relation-statement\), and [RULE]\\\(the-rule-statement\)-statements, to define the meaning of your concepts, relations, and rules.
+MEANING can be used with [CONCEPT]\\\(the-concept-statement), [RELATION]\\\(the-relation-statement), and [RULE]\\\(the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
 ```text
 MEANING
 {+ This is an example that is
