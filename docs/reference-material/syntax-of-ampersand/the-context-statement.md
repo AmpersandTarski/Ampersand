@@ -1,7 +1,7 @@
 ---
 title: The CONTEXT statement
 id: the-context-statement
-slug: /the-context-statement
+
 ---
 # The CONTEXT statement
 

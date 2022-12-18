@@ -1,7 +1,7 @@
 ---
 title: The ENFORCE statement
 id: the-enforce-statement
-slug: /the-enforce-statement
+
 ---
 # The ENFORCE statement
 

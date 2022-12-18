@@ -1,7 +1,7 @@
 ---
 title: The INCLUDE statement
 id: the-include-statement
-slug: /the-include-statement
+
 ---
 # The INCLUDE statement
 

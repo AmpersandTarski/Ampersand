@@ -47,14 +47,14 @@ Keywords in Ampersand are always written in CAPITALS.
   * [`IN`](language-support.md)
   * `ENGLISH`
   * `DUTCH`
-  * [`INCLUDE`](the-include-statement)
+  * [`INCLUDE`]\\(/ampersand/reference-material/syntax-of-ampersand/the-include-statement\)
   * `META`
   * `THEMES`
   * [`PATTERN`](patterns.md)
   * `ENDPATTERN`
-  * [`CONCEPT`](the-concept-statement)
-* Keywords for [relations](the-relation-statement)
-  * [`RELATION`](the-relation-statement)
+  * [`CONCEPT`]\\(/ampersand/reference-material/syntax-of-ampersand/the-concept-statement\)
+* Keywords for [relations]\\(/ampersand/reference-material/syntax-of-ampersand/the-relation-statement\)
+  * [`RELATION`]\\(/ampersand/reference-material/syntax-of-ampersand/the-relation-statement\)
   * `PRAGMA`
   * `UNI`
   * `INJ`
@@ -68,7 +68,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `PROP`
   * [`POPULATION`](the-population-statement/)
   * `CONTAINS`
-* Keywords for [rules](the-rule-statement)
+* Keywords for [rules]\\(/ampersand/reference-material/syntax-of-ampersand/the-rule-statement\)
   * `RULE`
   * `MESSAGE`
   * `VIOLATION`
@@ -81,8 +81,8 @@ Keywords in Ampersand are always written in CAPITALS.
   * `ROLE`
   * `MAINTAINS`
 * Keywords for documentation
-  * [`PURPOSE`](the-purpose-statement)
-  * [`MEANING`](the-relation-statement)
+  * [`PURPOSE`]\\(/ampersand/reference-material/syntax-of-ampersand/the-purpose-statement\)
+  * [`MEANING`]\\(/ampersand/reference-material/syntax-of-ampersand/the-relation-statement\)
   * `REF`
   * `REST`
   * `HTML`
@@ -94,7 +94,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `LINKTO`
   * `BOX`
 * Keywords for identities
-  * [`IDENT`](the-ident-statement)
+  * [`IDENT`]\\(/ampersand/reference-material/syntax-of-ampersand/the-ident-statement\)
 * Keywords for views
   * `VIEW`
   * `ENDVIEW`

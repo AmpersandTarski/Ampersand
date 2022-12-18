@@ -1,7 +1,7 @@
 ---
 title: The POPULATION statement
 id: the-population-statement
-slug: /the-population-statement
+
 ---
 # The POPULATION statement
 

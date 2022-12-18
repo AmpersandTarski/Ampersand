@@ -45,16 +45,16 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 
 |                    |                                                                                                          |
 | ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `<rule>`           | a statement that declares a [rule](the-rule-statement)                                                |
-| `<classify>`       | a statement that specifies generalization/specialization of [concepts](the-classify-statement)        |
-| `<relation>`       | a declaration of a relation, stating the existence of a [relation](the-relation-statement) within the context      |
-| `<conceptDef>`     | a description of a [concept](the-concept-statement), to document its meaning                          |
+| `<rule>`           | a statement that declares a [rule]\\(/ampersand/reference-material/syntax-of-ampersand/the-rule-statement\)                                                |
+| `<classify>`       | a statement that specifies generalization/specialization of [concepts]\\(/ampersand/reference-material/syntax-of-ampersand/the-classify-statement\)        |
+| `<relation>`       | a declaration of a relation, stating the existence of a [relation]\\(/ampersand/reference-material/syntax-of-ampersand/the-relation-statement\) within the context      |
+| `<conceptDef>`     | a description of a [concept]\\(/ampersand/reference-material/syntax-of-ampersand/the-concept-statement\), to document its meaning                          |
 | `<representation>` | a statement that defines the atomic type of a [concept](../tutorial-rap3/conceptual-model-enrollment.md) |
 | `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                          |
-| `<ident>`          | a rule that defines an [identity](the-ident-statement) on a concept                                   |
+| `<ident>`          | a rule that defines an [identity]\\(/ampersand/reference-material/syntax-of-ampersand/the-ident-statement\) on a concept                                   |
 | `<viewDef>`        | a statement for presenting facts in a readable sentence                                                  |
-| `<purpose>`        | a statement to describe the [purpose](the-purpose-statement) of a pattern or a pattern element        |
-| `<population>`     | a statement that sums up the initial [population](the-population-statement) of a relation             |
+| `<purpose>`        | a statement to describe the [purpose]\\(/ampersand/reference-material/syntax-of-ampersand/the-purpose-statement\) of a pattern or a pattern element        |
+| `<population>`     | a statement that sums up the initial [population]\\(/ampersand/reference-material/syntax-of-ampersand/the-population-statement\) of a relation             |
 
 ## Good practice
 

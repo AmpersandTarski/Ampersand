@@ -1,7 +1,7 @@
 ---
 title: The RULE statement
 id: the-rule-statement
-slug: /the-rule-statement
+
 ---
 # The RULE statement
 

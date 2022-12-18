@@ -1,7 +1,7 @@
 ---
 title: The PURPOSE statement
 id: the-purpose-statement
-slug: /the-purpose-statement
+
 ---
 # The PURPOSE statement
 
