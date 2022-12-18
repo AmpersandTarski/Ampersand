@@ -13,7 +13,7 @@ Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to le
 | [Atom](atoms.md) | an indivisible item | `"Peter"` | to represent a thing |
 | [Concept](the-concept-statement) | a name to categorize similar items | `Person` |   |
 | Pair | two atoms: a source and a target atom | `("Ida",5)` | to state that two atoms are related |
-| [Relation](relations.md) | a set of pairs that is identifyable in a context by its name and type | `r[A*B]` | to build true statements and store pairs persistently in an application |
+| [Relation](the-relation-statement) | a set of pairs that is identifyable in a context by its name and type | `r[A*B]` | to build true statements and store pairs persistently in an application |
 | [Rule](the-rule-statement) | a constraint, which is supposed to remain satisfied. | `r;s \|- t` | to provide meaning in a given context |
 | satisfy | A rule is satisfied (in a context) if the data (in that context) do not cause any violation of that rule. |   | to calculate violations at run-time helps users do the right things |
 | [Pattern](syntactical-conventions/patterns.md) | a set of rules | <p><code>PATTERN</code></p><p> <code>...</code></p><p><code>ENDPATTERN</code></p> | to gather rules that belong together for reusing them in different contexts |

@@ -47,7 +47,7 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 | ------------------ | -------------------------------------------------------------------------------------------------------- |
 | `<rule>`           | a statement that declares a [rule](the-rule-statement)                                                |
 | `<classify>`       | a statement that specifies generalization/specialization of [concepts](the-classify-statement)        |
-| `<relation>`       | a declaration of a relation, stating the existence of a [relation](relations.md) within the context      |
+| `<relation>`       | a declaration of a relation, stating the existence of a [relation](the-relation-statement) within the context      |
 | `<conceptDef>`     | a description of a [concept](the-concept-statement), to document its meaning                          |
 | `<representation>` | a statement that defines the atomic type of a [concept](../tutorial-rap3/conceptual-model-enrollment.md) |
 | `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                          |

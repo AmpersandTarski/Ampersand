@@ -35,7 +35,7 @@ module.exports = {
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
-            label: 'The language Ampersand',
+            label: 'Syntax of Ampersand',
             type: 'category',
             items: [
                 'ampersand/reference-material/syntax-of-ampersand/the-concept-statement',
