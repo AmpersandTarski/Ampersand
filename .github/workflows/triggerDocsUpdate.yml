@@ -2,18 +2,18 @@
 name: Trigger Documentation Update
 
 on:
- # TODO: set to 'main' branch when everything is configured and working correctly
   push:
     branches:
-    - development
+      - main
+      - documentation
     paths:
-    - 'docs/**'
+      - "docs/**"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    # Trigger the "DeployToPages" workflow in the "AmpersandTarski.github.io" repository
+      # Trigger the "DeployToPages" workflow in the "AmpersandTarski.github.io" repository
       - run: |
           curl -XPOST -u "${{secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" \
           -H "Accept: application/vnd.github.everest-preview+json" -H \
