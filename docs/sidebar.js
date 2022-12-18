@@ -148,6 +148,7 @@ module.exports = {
         'prototype/ampersand-compiler',
     ],
     ampersandReferenceElems: [
+        'ampersand/empty'
 
     ],
     prototypeMainSidebar: [
@@ -155,6 +156,7 @@ module.exports = {
             label: 'Prototype stuff',
             type: 'category',
             items: [
+                'ampersand/empty'
             ]
         },
 
