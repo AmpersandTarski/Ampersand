@@ -21,6 +21,22 @@ module.exports = {
         },
     ],
     ampersandReferenceSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
+        {
+            label: 'The language Ampersand',
+            type: 'category',
+            items: [
+                'ampersand/the-language-ampersand/syntactical-conventions/the-concept-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-context-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-ident-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-include-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-population-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-purpose-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-relation-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-rule-statement',
+                'ampersand/the-language-ampersand/syntactical-conventions/the-table-statement',
+            ]
+        },
 
     ],
 
@@ -71,15 +87,6 @@ module.exports = {
                     'ampersand/the-language-ampersand/syntactical-conventions/explanations',
                     'ampersand/the-language-ampersand/syntactical-conventions/language-support',
                     'ampersand/the-language-ampersand/syntactical-conventions/patterns',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-concept-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-context-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-ident-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-include-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-population-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-purpose-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-relation-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-rule-statement',
-                    'ampersand/the-language-ampersand/syntactical-conventions/the-table-statement',
                     'ampersand/the-language-ampersand/terms/README',
                     'ampersand/the-language-ampersand/terms/semantics',
                     'ampersand/the-language-ampersand/the-classify-statement',
