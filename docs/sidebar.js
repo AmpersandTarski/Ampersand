@@ -6,6 +6,13 @@ module.exports = {
         },
 
     ],
+    ampersandGuideSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
+    ],
+    ampersandReferenceSidebar: [
+
+    ],
+
     ampersandGuideElems: [
         'ampersand/configuring-your-application',
         'ampersand/the-excel-importer',
@@ -139,27 +146,25 @@ module.exports = {
 
 
 
-    prototypeGuideElems: [
-        'prototype/README',
-        'prototype/config',
-        'prototype/file-system',
-        'prototype/event-dispatcher',
-        'prototype/interface-templates',
-        'prototype/generics',
-        'prototype/ampersand-compiler',
-    ],
-    prototypeReferenceElems: [
-        'ampersand/empty'
-
-    ],
-    prototypeMainSidebar: [
+    prototypeGuideSidebar: [
         {
             label: 'Prototype stuff',
             type: 'category',
             items: [
-                'ampersand/empty'
+                'prototype/README',
+                'prototype/config',
+                'prototype/file-system',
+                'prototype/event-dispatcher',
+                'prototype/interface-templates',
+                'prototype/generics',
+                'prototype/ampersand-compiler',
             ]
         },
+    ],
+    prototypeReferenceElems: [
+
+    ],
+    prototypeMainSidebar: [
 
     ],
     toolsWeUseMainSidebar: [
