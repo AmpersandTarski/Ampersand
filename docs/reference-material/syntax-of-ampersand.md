@@ -85,7 +85,7 @@ To tell Ampersand what language your context is in, you can append a language di
 IN <language>
 ```
 
-Where  can be `ENGLISH` or `DUTCH`.
+Where `<language>` can be `ENGLISH` or `DUTCH`.
 
 ##### Markup format
 
@@ -293,13 +293,13 @@ Make sure to include the adl-files before including xlsx-files.
 
 Included files may contain `INCLUDE`statements themselves. The files mentioned there are treated as though they were included in the main file. So their code is also part of the same context. Nested adl-files can have their own xlsx-files included.
 
-For formatting your excel-file see the text on [the Excel Importer](../../the-excel-importer.md).
+For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
 
 
 ## The MEANING sub-statement
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
-MEANING can be used with [CONCEPT]\\\(the-concept-statement), [RELATION]\\\(the-relation-statement), and [RULE]\\\(the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
+MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
 ```text
 MEANING
 {+ This is an example that is
@@ -444,11 +444,11 @@ In practical applications, you might want to reuse data from existing spreadshee
 
 You will find the Excel import function in the menu bar on the top right of your screen:
 
-![](../../.gitbook/assets/screenshot-import.png)
+![](../.gitbook/assets/screenshot-import.png)
 
 This is what your upload screen looks like: 
 
-![](../../.gitbook/assets/screenshot-upload-excel.png)
+![](../.gitbook/assets/screenshot-upload-excel.png)
 
  You can upload one or more .xlsx-files by dropping them in the drop zone or by selecting them. You have to upload the population with the green 
 
@@ -589,7 +589,7 @@ A relation statement means that there exists a relation in the current context w
 
 A relation statement may occur anywhere inside a context, both inside and outside a pattern.
 
-The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here]\\\(the-meaning-substatement\).
+The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here](#the-meaning-substatement\).
 
 The name, source concept and target concept together identify a relation uniquely within its context. As a consequence, the name of a relation does not have to be unique. E.g. `name[Book*Name]` can be specified in the same context as `name[Person*Name]`. Because they have different source concepts, these are different relations.
 
@@ -646,7 +646,7 @@ The `PRAGMA` tells us that it makes sense to utter the phrase `"Provider Mario's
 
 ### MEANING
 
-For a full discussion of meaning, we refer to [`this page`]\\\(the-meaning-substatement\).
+For a full discussion of meaning, we refer to [`this page`](#the-meaning-substatement\).
 
 ### Miscellaneous
 

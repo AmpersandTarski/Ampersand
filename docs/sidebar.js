@@ -35,21 +35,8 @@ module.exports = {
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
-            label: 'Syntax of Ampersand',
-            type: 'category',
-            items: [
-                'ampersand/reference-material/syntax-of-ampersand/the-concept-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-context-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-classify-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-enforce-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-ident-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-include-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-meaning-substatement',
-                'ampersand/reference-material/syntax-of-ampersand/the-population-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-purpose-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-relation-statement',
-                'ampersand/reference-material/syntax-of-ampersand/the-rule-statement',
-            ]
+            type: 'doc',
+            id: 'ampersand/reference-material/syntax-of-ampersand'
         },
 
     ],
