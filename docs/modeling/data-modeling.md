@@ -42,7 +42,7 @@ POPULATION birth[President*Date] CONTAINS
 
 ## Extract relations from tables
 
-In our example, each row in the spreadsheet represents a president. So, the [source concept](the-relation-statement#examples) of each relation is `President`. Each column represents a different relation. So we can use the name of each column as relation name. Then, we invent names to describe the content of each column: `Name`, `Surname`, `Date`.
+In our example, each row in the spreadsheet represents a president. So, the source concept of each relation is `President`. Each column represents a different relation. So we can use the name of each column as relation name. Then, we invent names to describe the content of each column: `Name`, `Surname`, `Date`.
 
 When things get bigger, it is useful to draw the relations on a whiteboard or in your notebook. This helps you keep overview. Here is how it is done:
 
