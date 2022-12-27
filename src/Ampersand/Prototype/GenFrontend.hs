@@ -38,11 +38,11 @@ doGenFrontend fSpec = do
       genControllerInterfaces fSpec feInterfaces
       genRouteProvider fSpec feInterfaces
       logDebug "Finished generating files for AngularJS"
+      logDebug "Write .timestamp"
+      writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     Angular -> do
       genComponents fSpec feInterfaces
       genAngularModule fSpec feInterfaces
-  logDebug "Write .timestamp"
-  writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
   logInfo "Frontend generated"
 
 copyTemplates ::
