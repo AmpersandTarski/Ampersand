@@ -23,6 +23,10 @@ module Ampersand.Prototype.ProtoUtil
     toExpr,
     fromExpr,
     doesTemplateExist,
+    Template (),
+    readTemplate,
+    renderTemplate,
+    showTemplate,
   )
 where
 
@@ -36,6 +40,16 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 import System.Directory
 import System.FilePath
+import Text.StringTemplate
+  ( StringTemplate,
+    Stringable,
+    checkTemplateDeep,
+    newSTMP,
+    render,
+    setAttribute,
+    toString,
+  )
+import Text.StringTemplate.GenericStandard ()
 
 -- | data object that contains information about an interface, from the
 --   perspective of the generated frontend
@@ -44,6 +58,8 @@ data FEInterface = FEInterface
   -- in at lease one template, called routeProvider.config.js. If these names are not present,
   -- the call to renderTemplate will hang
   { ifcName :: Text,
+    ifcNameKebab :: Text,
+    ifcNamePascal :: Text,
     ifcLabel :: Text,
     ifcExp :: FEExpression,
     feiRoles :: [Role],
@@ -266,3 +282,69 @@ doesTemplateExist templatePath = do
   env <- ask
   let absPath = getTemplateDir env </> templatePath
   liftIO $ doesFileExist absPath
+
+------ Utility functions
+-- data type to keep template and source file together for better errors
+data Template = Template (StringTemplate FilePath) FilePath
+
+readTemplate ::
+  (HasDirPrototype env) =>
+  FilePath ->
+  RIO env Template
+readTemplate templatePath = do
+  env <- ask
+  let absPath = getTemplateDir env </> templatePath
+  res <- readUTF8File absPath
+  case res of
+    Left err -> exitWith $ ReadFileError $ "Error while reading template." : err
+    Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
+
+renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
+renderTemplate userAtts (Template template absPath) setRuntimeAtts =
+  case checkTemplateDeep appliedTemplate of
+    -- BEWARE: checkTemplateDeep will hang if there are sub-attributes missing. I had such a case after I renamed ifcName
+    --         and ifcLabel to feiName and feiLabel. The template `routeProvider.config.js` needs those attributes in
+    --         for each interface provided.
+    ([], [], []) -> T.pack $ render appliedTemplate
+    (parseErrs@(_ : _), _, _) ->
+      templateError . T.concat $
+        [ T.pack $ "Parse error in " <> tmplt <> " " <> err <> "\n"
+          | (tmplt, err) <- parseErrs
+        ]
+    ([], attrs@(_ : _), _)
+      | isJust userAtts -> T.pack . render . fillInTheBlanks (L.nub attrs) $ appliedTemplate
+      | otherwise ->
+        templateError $
+          "The following attributes are expected by the template, but not supplied: " <> tshow attrs
+    ([], [], ts@(_ : _)) ->
+      templateError $
+        "Missing invoked templates: " <> tshow ts -- should not happen as we don't invoke templates
+  where
+    templateError msg =
+      exitWith $
+        ReadFileError
+          [ "*** TEMPLATE ERROR in:" <> T.pack absPath,
+            msg
+          ]
+    appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ template
+    -- Set all attributes not specified to False
+    fillInTheBlanks :: [String] -> StringTemplate String -> StringTemplate String
+    fillInTheBlanks [] = id
+    fillInTheBlanks (h : tl) = setAttribute h False . fillInTheBlanks tl
+    setUserAtts :: [TemplateKeyValue] -> (StringTemplate String -> StringTemplate String)
+    setUserAtts kvPairs = foldl' fun id kvPairs
+      where
+        fun :: (Stringable b) => (StringTemplate b -> StringTemplate b) -> TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
+        fun soFar keyVal = soFar . doAttribute keyVal
+        doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
+        doAttribute h = case tkval h of
+          Nothing -> setAttribute (T.unpack $ tkkey h) True
+          Just val -> setAttribute (T.unpack $ tkkey h) val
+
+showTemplate :: Template -> [Text]
+showTemplate (Template a b) =
+  T.lines . T.intercalate "\n" $
+    ("Template (" <> T.pack b <> ")") :
+    map
+      ("  " <>)
+      [T.pack $ toString a]

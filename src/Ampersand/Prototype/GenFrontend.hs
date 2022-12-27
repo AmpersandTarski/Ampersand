@@ -14,6 +14,7 @@ import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import Data.Hashable (hash)
+import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
 import System.Directory
@@ -73,6 +74,8 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
       return
         FEInterface
           { ifcName = escapeIdentifier $ name ifc,
+            ifcNameKebab = toKebab $name ifc,
+            ifcNamePascal = toPascal $ name ifc,
             ifcLabel = name ifc,
             ifcExp = objExp obj,
             feiRoles = ifcRoles ifc,
@@ -155,3 +158,14 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                 { objName = name object',
                   objTxt = objtxt object'
                 }
+
+toKebab :: Text -> Text
+toKebab = T.intercalate "-" . fmap T.toLower . T.words
+
+toPascal :: Text -> Text
+toPascal = T.concat . map wordCase . T.words
+
+wordCase :: Text -> Text
+wordCase txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (x, xs) -> T.cons (toUpper x) (T.toLower xs)
