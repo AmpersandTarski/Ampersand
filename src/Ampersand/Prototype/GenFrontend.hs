@@ -74,10 +74,11 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
       return
         FEInterface
           { ifcName = escapeIdentifier $ name ifc,
-            ifcNameKebab = toKebab $name ifc,
-            ifcNamePascal = toPascal $ name ifc,
+            ifcNameKebab = toKebab . safechars $name ifc,
+            ifcNamePascal = toPascal . safechars $ name ifc,
             ifcLabel = name ifc,
             ifcExp = objExp obj,
+            isSessionInterface = isSESSION . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
           }
@@ -169,3 +170,6 @@ wordCase :: Text -> Text
 wordCase txt = case T.uncons txt of
   Nothing -> mempty
   Just (x, xs) -> T.cons (toUpper x) (T.toLower xs)
+
+safechars :: Text -> Text
+safechars = T.unwords . T.split (\c -> not (isDigit c || isAlpha c))
