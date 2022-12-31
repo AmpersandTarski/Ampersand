@@ -22,8 +22,8 @@ genComponent fspec ifc = do
   getComponentTs fspec ifc
   logError . display $ "Still TODO: Generate html file for " <> ifcNamePascalComponent ifc
 
-getComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
-getComponentTs fspec interf = do
+genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponentTs fspec interf = do
   let controlerTemplateName = "interface.component.ts.txt"
   template <- readTemplate controlerTemplateName
   mapM_ (logDebug . display) (showTemplate template)
