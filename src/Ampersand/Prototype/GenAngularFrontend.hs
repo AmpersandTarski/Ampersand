@@ -19,7 +19,7 @@ genComponents fSpec = mapM_ (genComponent fSpec)
 
 genComponent :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
-  getComponentTs fspec ifc
+  genComponentTs fspec ifc
   logError . display $ "Still TODO: Generate html file for " <> ifcNamePascalComponent ifc
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
