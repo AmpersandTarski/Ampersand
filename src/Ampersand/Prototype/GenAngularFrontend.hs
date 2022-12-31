@@ -24,8 +24,8 @@ genComponent fspec ifc = do
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fspec interf = do
-  let controlerTemplateName = "interface.component.ts.txt"
-  template <- readTemplate controlerTemplateName
+  let templateFileName = "interface.component.ts.txt"
+  template <- readTemplate templateFileName
   mapM_ (logDebug . display) (showTemplate template)
   runner <- view runnerL
   let loglevel' = logLevel runner
@@ -49,7 +49,7 @@ genComponentTs fspec interf = do
             . setAttribute "crudD" (objCrudD (feiObj interf))
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
-            . setAttribute "usedTemplate" controlerTemplateName
+            . setAttribute "usedTemplate" templateFileName
   let filename = T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
   logDebug . display $ "Generated file " <> filename
