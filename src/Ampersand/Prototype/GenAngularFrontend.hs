@@ -20,7 +20,41 @@ genComponents fSpec = mapM_ (genComponent fSpec)
 genComponent :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
   genComponentTs fspec ifc
-  logError . display $ "Still TODO: Generate html file for " <> ifcNamePascalComponent ifc
+  genComponentView fspec ifc
+  logError . display $ "Still TODO: Generate ts interface file for " <> ifcNamePascalComponent ifc
+  logInfo "Generated files for " <> ifcNamePascalComponent ifc
+
+genComponentView :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponentView fspec interf = do
+  let templateFileName = "interface.component.html"
+  template <- readTemplate templateFileName
+  runner <- view runnerL
+  let loglevel' = logLevel runner
+  lns <- genViewObject fSpec 0 (feiObj interf)
+  let contents =
+        renderTemplate Nothing template $
+          setAttribute "contextName" (addSlashes . fsName $ fSpec)
+            . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
+            . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+            . setAttribute "ampersandVersionStr" (longVersion appVersion)
+            . setAttribute "ifcName" (ifcName interf)
+            . setAttribute "ifcNamePascal" (ifcNamePascal interf)
+            . setAttribute "ifcNameKebab" (ifcNameKebab interf)
+            . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
+            . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
+            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
+            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
+            . setAttribute "crudC" (objCrudC (feiObj interf))
+            . setAttribute "crudR" (objCrudR (feiObj interf))
+            . setAttribute "crudU" (objCrudU (feiObj interf))
+            . setAttribute "crudD" (objCrudD (feiObj interf))
+            . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+            . setAttribute "verbose" (loglevel' == LevelDebug)
+            . setAttribute "loglevel" (show loglevel')
+            . setAttribute "usedTemplate" templateFileName
+  let filename = ifcNameKebab interf </> (T.unpack (ifcNameKebab interf) <> ".component.html"
+  writePrototypeAppFile filename contents
+  logDebug . display $ "Generated file " <> filename
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fspec interf = do
@@ -69,3 +103,6 @@ genAngularModule fSpec ifcs = do
             . setAttribute "loglevel" (show loglevel')
   writePrototypeAppFile "project.module.ts" contents
   logDebug . display $ "Generated file project.module.ts"
+
+
+genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env [Text]
