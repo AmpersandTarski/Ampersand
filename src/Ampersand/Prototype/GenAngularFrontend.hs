@@ -23,7 +23,6 @@ genComponent _ ifc = do
 
 genAngularModule :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genAngularModule fSpec ifcs = do
-  logDebug $ "Generate module for " <> displayShow (map ifcName ifcs)
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "project.module.ts.txt"
@@ -35,6 +34,5 @@ genAngularModule fSpec ifcs = do
             . setAttribute "ifcs" ifcs
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
-  mapM_ (logDebug . display) $ "Generated template: " : (map ("   " <>) . T.lines $ contents)
   writePrototypeAppFile "project.module.ts" contents
-  logDebug "Finish genAngularModule."
+  logDebug . display $ "Generated file project.module.ts"
