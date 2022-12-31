@@ -50,7 +50,7 @@ genComponentTs fspec interf = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
-  let filename = T.unpack (ifcNameKebab interf) <> ".component.ts"
+  let filename = ifcNameKebab interf </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
   logDebug . display $ "Generated file " <> filename
 
