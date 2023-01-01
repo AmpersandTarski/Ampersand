@@ -102,7 +102,7 @@ genAngularModule fSpec ifcs = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
   writePrototypeAppFile "project.module.ts" contents
-  logDebug . display $ "Generated file project.module.ts"
+  logInfo . display $ "Generated file project.module.ts"
 
 genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env [Text]
 genViewObject fSpec depth obj =

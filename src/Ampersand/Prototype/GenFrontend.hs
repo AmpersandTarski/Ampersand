@@ -43,7 +43,7 @@ doGenFrontend fSpec = do
     Angular -> do
       genComponents fSpec feInterfaces
       genAngularModule fSpec feInterfaces
-  logInfo "Frontend generated"
+  logInfo "Angular frontend module generated"
 
 copyTemplates ::
   (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
