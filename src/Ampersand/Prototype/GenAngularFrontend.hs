@@ -112,6 +112,14 @@ genAngularModule fSpec ifcs = do
             . setAttribute "loglevel" (show loglevel')
   writePrototypeAppFile "project.module.ts" contents
 
+-- Helper data structure to pass attribute values to HStringTemplate
+data SubObjectAttr2 = SubObjAttr
+  { subObjName :: Text,
+    subObjLabel :: Text,
+    subObjContents :: Text,
+    subObjExprIsUni :: Bool
+  }
+  deriving (Show, Data, Typeable)
 
 genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env [Text]
 genViewObject fSpec depth obj =
