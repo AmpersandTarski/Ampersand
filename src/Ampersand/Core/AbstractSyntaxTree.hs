@@ -778,7 +778,7 @@ data Cruds = Cruds
     crudU :: Bool,
     crudD :: Bool
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 data SubInterface
   = Box

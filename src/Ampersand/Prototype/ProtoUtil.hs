@@ -72,6 +72,7 @@ data FEObject
   = FEObjE
       { objName :: Text,
         objExp :: FEExpression,
+        objCrud :: Cruds,
         objCrudC :: Bool,
         objCrudR :: Bool,
         objCrudU :: Bool,

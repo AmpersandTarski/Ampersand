@@ -145,6 +145,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                   objCrudR = crudR . objcrud $ object,
                   objCrudU = crudU . objcrud $ object,
                   objCrudD = crudD . objcrud $ object,
+                  objCrud = objcrud object,
                   exprIsUni = isUni . toExpr $ iExp',
                   exprIsTot = isTot . toExpr $ iExp',
                   relIsProp = case femRelation iExp' of

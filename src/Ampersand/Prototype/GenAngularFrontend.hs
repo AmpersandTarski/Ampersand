@@ -11,12 +11,17 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
+import RIO.Char (toLower, toUpper)
 import qualified RIO.Text as T
 import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
 
--- only import instances
+crudsToString :: Cruds -> Text
+crudsToString x = (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+  where
+    f :: (Bool, Char) -> Char
+    f (b, c) = (if b then toUpper else toLower) c
 
 genComponents :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genComponents fSpec = mapM_ (genComponent fSpec)
@@ -52,6 +57,7 @@ genComponentView fSpec interf = do
             . setAttribute "crudR" (objCrudR (feiObj interf))
             . setAttribute "crudU" (objCrudU (feiObj interf))
             . setAttribute "crudD" (objCrudD (feiObj interf))
+            . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
             . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
@@ -126,6 +132,7 @@ genViewObject fSpec depth obj =
               . setAttribute "crudR" (objCrudR obj)
               . setAttribute "crudU" (objCrudU obj)
               . setAttribute "crudD" (objCrudD obj)
+              . setAttribute "crud" (crudsToString . objCrud $ obj)
               . setAttribute "verbose" (loglevel' == LevelDebug)
               . setAttribute "loglevel" (show loglevel')
       case atomicOrBox obj of
