@@ -59,7 +59,6 @@ genComponentView fSpec interf = do
             . setAttribute "usedTemplate" templateFileName
   let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   writePrototypeAppFile filename contents
-  logDebug . display $ "Generated file " <> filename
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fSpec interf = do
@@ -91,7 +90,7 @@ genComponentTs fSpec interf = do
             . setAttribute "usedTemplate" templateFileName
   let filename = ifcNameKebab interf </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
-  logDebug . display $ "Generated file " <> filename
+
 
 genAngularModule :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genAngularModule fSpec ifcs = do
@@ -107,7 +106,7 @@ genAngularModule fSpec ifcs = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
   writePrototypeAppFile "project.module.ts" contents
-  logInfo . display $ "Generated file project.module.ts"
+
 
 genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env [Text]
 genViewObject fSpec depth obj =
