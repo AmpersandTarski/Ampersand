@@ -26,7 +26,7 @@ genComponent fspec ifc = do
 
 genComponentView :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponentView fspec interf = do
-  let templateFileName = "interface.component.html"
+  let templateFileName = "component.html"
   template <- readTemplate templateFileName
   runner <- view runnerL
   let loglevel' = logLevel runner
@@ -58,7 +58,7 @@ genComponentView fspec interf = do
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fspec interf = do
-  let templateFileName = "interface.component.ts.txt"
+  let templateFileName = "component.ts.txt"
   template <- readTemplate templateFileName
   mapM_ (logDebug . display) (showTemplate template)
   runner <- view runnerL
