@@ -25,7 +25,7 @@ genComponent fspec ifc = do
   logInfo "Generated files for " <> ifcNamePascalComponent ifc
 
 genComponentView :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
-genComponentView fspec interf = do
+genComponentView fSpec interf = do
   let templateFileName = "component.html"
   template <- readTemplate templateFileName
   runner <- view runnerL
@@ -52,12 +52,12 @@ genComponentView fspec interf = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
-  let filename = ifcNameKebab interf </> (T.unpack (ifcNameKebab interf) <> ".component.html"
+  let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   writePrototypeAppFile filename contents
   logDebug . display $ "Generated file " <> filename
 
 genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
-genComponentTs fspec interf = do
+genComponentTs fSpec interf = do
   let templateFileName = "component.ts.txt"
   template <- readTemplate templateFileName
   mapM_ (logDebug . display) (showTemplate template)
