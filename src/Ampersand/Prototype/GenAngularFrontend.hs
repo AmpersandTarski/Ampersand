@@ -19,17 +19,17 @@ import Text.StringTemplate.GenericStandard ()
 
 -- only import instances
 
-genComponents :: (HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
+genComponents :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genComponents fSpec = mapM_ (genComponent fSpec)
 
-genComponent :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponent :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
   genComponentTs fspec ifc
   genComponentView fspec ifc
-  logError . display $ "Still TODO: Generate ts interface file for " <> ifcNamePascalComponent ifc
-  logInfo "Generated files for " <> ifcNamePascalComponent ifc
+  -- genComponentInterface fspec ifc
+  logInfo . display $ "Generated files for " <> ifcNamePascal ifc <> "Component"
 
-genComponentView :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponentView :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentView fSpec interf = do
   let templateFileName = "component.html"
   template <- readTemplate templateFileName
@@ -39,7 +39,7 @@ genComponentView fSpec interf = do
   let contents =
         renderTemplate Nothing template $
           setAttribute "contextName" (addSlashes . fsName $ fSpec)
-            . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
+            . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
             . setAttribute "ifcName" (ifcName interf)
@@ -60,7 +60,7 @@ genComponentView fSpec interf = do
   let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   writePrototypeAppFile filename contents
 
-genComponentTs :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponentTs :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fSpec interf = do
   let templateFileName = "component.ts.txt"
   template <- readTemplate templateFileName
@@ -70,7 +70,7 @@ genComponentTs fSpec interf = do
   let contents =
         renderTemplate Nothing template $
           setAttribute "contextName" (fsName fSpec)
-            . setAttribute "isRoot" (isTopLevel . source . ifcExp $ interf)
+            . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
             . setAttribute "ifcName" (ifcName interf)
@@ -88,7 +88,7 @@ genComponentTs fSpec interf = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
-  let filename = ifcNameKebab interf </> T.unpack (ifcNameKebab interf) <> ".component.ts"
+  let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
 
 
