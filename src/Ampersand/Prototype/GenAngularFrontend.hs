@@ -1,15 +1,20 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ampersand.Prototype.GenAngularFrontend (genComponents, genAngularModule) where
 
+import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Classes.Relational
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
 import qualified RIO.Text as T
-import Text.StringTemplate (setAttribute)
+import System.FilePath
+import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
 
 -- only import instances
