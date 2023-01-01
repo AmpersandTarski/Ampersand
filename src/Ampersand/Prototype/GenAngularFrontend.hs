@@ -5,7 +5,6 @@ module Ampersand.Prototype.GenAngularFrontend (genComponents, genAngularModule) 
 
 import Ampersand.ADL1
 import Ampersand.Basics
-import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
@@ -19,17 +18,17 @@ import Text.StringTemplate.GenericStandard ()
 
 -- only import instances
 
-genComponents :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
+genComponents :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genComponents fSpec = mapM_ (genComponent fSpec)
 
-genComponent :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
+genComponent :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
   genComponentTs fspec ifc
   genComponentView fspec ifc
   -- genComponentInterface fspec ifc
   logInfo . display $ "Generated files for " <> ifcNamePascal ifc <> "Component"
 
-genComponentView :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
+genComponentView :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentView fSpec interf = do
   let templateFileName = "component.html"
   template <- readTemplate templateFileName
@@ -60,7 +59,7 @@ genComponentView fSpec interf = do
   let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   writePrototypeAppFile filename contents
 
-genComponentTs :: (HasLogFunc env, HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
+genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fSpec interf = do
   let templateFileName = "component.ts.txt"
   template <- readTemplate templateFileName
