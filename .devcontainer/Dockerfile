@@ -2,10 +2,10 @@ FROM debian:bullseye as base
 # This .devcontainer stuff is shamelessly copied from github.com/vzarytovskii/haskell-dev-env
 ARG USERNAME=vscode
 ARG GHC_VERSION=8.10.7
-ARG STACK_VERSION=2.9.1
+ARG STACK_VERSION=2.9.3
 ARG STACK_RESOLVER=lts-18.28
 ARG CABAL_VERSION=3.6.2.0
-ARG HLS_VERSION=1.8.0.0
+ARG HLS_VERSION=1.9.0.0
 ARG LLVM_VERSION=12
 
 ENV USERNAME=${USERNAME} \

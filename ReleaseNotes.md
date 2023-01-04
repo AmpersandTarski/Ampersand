@@ -1,11 +1,12 @@
 ﻿# Release notes of Ampersand
- 
+   
 ## Unreleased changes
 * [Issue #1307](https://github.com/AmpersandTarski/Ampersand/issues/1307) First phase of introducing namespaces in Ampersand.
 * [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
 * Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
 * [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 * Minor update of the devcontainer.
+* [Issue #1369](https://github.com/AmpersandTarski/Ampersand/issues/1369) update of CI/CD stuff.
 
 ## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
