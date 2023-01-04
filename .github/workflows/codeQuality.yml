@@ -24,7 +24,7 @@ jobs:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3.1.0
       - name: Use cache when available 📦
-        uses: freckle/stack-cache-action@main
+        uses: freckle/stack-cache-action@v2
       - name: Build the project 🌿🌿🌿
         uses: freckle/stack-action@v3.2.2
         with:
