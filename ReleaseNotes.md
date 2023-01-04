@@ -1,5 +1,5 @@
 ﻿# Release notes of Ampersand
- 
+   
 ## Unreleased changes
 * [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
 * Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
