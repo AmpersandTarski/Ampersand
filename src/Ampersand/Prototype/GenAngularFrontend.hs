@@ -12,7 +12,9 @@ import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
 import RIO.Char (toLower, toUpper)
+import RIO.List.Partial as L' (head, tail)
 import qualified RIO.Text as T
+import qualified RIO.Text.Partial as T' (splitOn)
 import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
@@ -41,7 +43,11 @@ genComponentView fSpec interf = do
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (feiObj interf)
   let contents =
-        renderTemplate Nothing template $
+        T.intercalate "\n" -- intercalate, because unlines introduces a trailing \n
+        . concat
+        . (map indentEOL)
+        . T.lines
+        . renderTemplate Nothing template $
           setAttribute "contextName" (addSlashes . fsName $ fSpec)
             . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -58,7 +64,7 @@ genComponentView fSpec interf = do
             . setAttribute "crudU" (objCrudU (feiObj interf))
             . setAttribute "crudD" (objCrudD (feiObj interf))
             . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
-            . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+            . setAttribute "contents" lns
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
@@ -96,7 +102,6 @@ genComponentTs fSpec interf = do
   let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
 
-
 genAngularModule :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genAngularModule fSpec ifcs = do
   runner <- view runnerL
@@ -121,7 +126,7 @@ data SubObjectAttr2 = SubObjAttr
   }
   deriving (Show, Data, Typeable)
 
-genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env [Text]
+genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
 genViewObject fSpec depth obj =
   case obj of
     FEObjE {} -> do
@@ -157,7 +162,7 @@ genViewObject fSpec depth obj =
           let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
           template <- readTemplate templateFilename
 
-          return . indentation
+          return . (T.intercalate eol)
             . T.lines
             . renderTemplate Nothing template
             $ atomicAndBoxAttrs
@@ -169,20 +174,17 @@ genViewObject fSpec depth obj =
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
-            return . indentation
+            return . (T.intercalate eol)
+              . concat -- flatten 2d array
+              . (map indentEOL)
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ atomicAndBoxAttrs
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
-    FEObjT {} -> pure []
+    FEObjT {} -> pure ""
   where
-    indentation :: [Text] -> [Text]
-    indentation = map (T.replicate (if depth == 0 then 4 else 16) " " <>)
-    genView_SubObject ::
-      (HasRunner env, HasDirPrototype env) =>
-      FEObject ->
-      RIO env SubObjectAttr2
+    genView_SubObject :: (HasRunner env, HasDirPrototype env) => FEObject -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
         FEObjE {} ->
@@ -192,7 +194,7 @@ genViewObject fSpec depth obj =
               SubObjAttr
                 { subObjName = escapeIdentifier $ objName subObj,
                   subObjLabel = objName subObj, -- no escaping for labels in templates needed
-                  subObjContents = T.intercalate "\n" lns,
+                  subObjContents = lns,
                   subObjExprIsUni = exprIsUni subObj
                 }
         FEObjT {} ->
@@ -204,6 +206,7 @@ genViewObject fSpec depth obj =
                   subObjContents = objTxt subObj,
                   subObjExprIsUni = True
                 }
+    
     getTemplateForObject ::
       (HasDirPrototype env) =>
       RIO env FilePath
@@ -225,3 +228,24 @@ genViewObject fSpec depth obj =
       where
         ttp = cptTType fSpec cpt
         cptfn = "Concept-" <> T.unpack (name cpt) <.> "html"
+
+-- This function is a helper function to add indentation using the EOL character sequence
+-- Let us explain why! For the html view generator we are using HStringTemplates recursively;
+-- other templates are used inside the 'blanks' of parent templates. The subtemplates need to be
+-- indentated properly. However, the level of indentation (number of spaces) is determined by
+-- the position in its parent templates, all the way up to the outmost template.
+-- The solution we came up with:
+--   * After rendering each (sub)template we replace the newlines (\n) by a EOL character sequence, resulting in a single line
+--   * When this result is rendered in a parent template, we end up with a multi-line text with the sub results still on single lines
+--   * For each line in the text, we post process the line, splitting based on EOL character and prefixing the lines (except the first)
+--   * The resulting text is indented correctly
+indentEOL :: Text -> [Text]
+indentEOL x = ((L'.head list) :)
+  . (map (prefix <>))
+  . L'.tail $ list
+  where 
+    prefix = T.takeWhile (==' ') x
+    list = (T'.splitOn eol) $ x
+
+eol :: Text
+eol = "<<EOL>>"
