@@ -150,14 +150,6 @@ genViewObject fSpec depth obj =
               . setAttribute "loglevel" (show loglevel')
       case atomicOrBox obj of
         FEAtomic {} -> do
-          {-
-              logDebug (getOpts fSpec) $ replicate depth ' ' <> "ATOMIC "<>show nm <>
-                                            " [" <> name src <> "*"<> name tgt <> "], " <>
-                                            (if isEditable then "" else "not ") <> "editable"
-          -}
-          -- For now, we choose specific template based on target concept. This will probably be too weak.
-          -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-          -- logInfo $ nm <> ":" <> show mPrimTemplate
           conceptTemplate <- getTemplateForObject
           let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
           template <- readTemplate templateFilename
