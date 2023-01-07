@@ -1033,8 +1033,9 @@ pCtx2aCtx
                 unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
                 let tgtOk = target expr `isaC` target rel
                 unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
-                let expr' = addEpsilonLeft genLattice (source rel) $
-                            addEpsilonRight genLattice (target rel) expr
+                let expr' =
+                      addEpsilonLeft genLattice (source rel) $
+                        addEpsilonRight genLattice (target rel) expr
                 return
                   AEnforce
                     { pos = pos',
