@@ -20,7 +20,7 @@ import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
 
 crudsToString :: Cruds -> Text
-crudsToString x = (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
   where
     f :: (Bool, Char) -> Char
     f (b, c) = (if b then toUpper else toLower) c
@@ -44,11 +44,10 @@ genComponentView fSpec interf = do
   lns <- genViewObject fSpec 0 (feiObj interf)
   let contents =
         T.intercalate "\n" -- intercalate, because unlines introduces a trailing \n
-        . concat
-        . (map indentEOL)
-        . T.lines
-        . renderTemplate Nothing template $
-          setAttribute "contextName" (addSlashes . fsName $ fSpec)
+          . concatMap indentEOL
+          . T.lines
+          . renderTemplate Nothing template
+          $ setAttribute "contextName" (addSlashes . fsName $ fSpec)
             . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
@@ -68,7 +67,7 @@ genComponentView fSpec interf = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
-  let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
+  let filename = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   writePrototypeAppFile filename contents
 
 genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
@@ -99,7 +98,7 @@ genComponentTs fSpec interf = do
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "usedTemplate" templateFileName
-  let filename = T.unpack(ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
+  let filename = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
 
 genAngularModule :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
@@ -154,7 +153,7 @@ genViewObject fSpec depth obj =
           let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
           template <- readTemplate templateFilename
 
-          return . (T.intercalate eol)
+          return . T.intercalate eol
             . T.lines
             . renderTemplate Nothing template
             $ atomicAndBoxAttrs
@@ -166,9 +165,8 @@ genViewObject fSpec depth obj =
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
-            return . (T.intercalate eol)
-              . concat -- flatten 2d array
-              . (map indentEOL)
+            return . T.intercalate eol
+              . concatMap indentEOL -- flatten 2d array
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ atomicAndBoxAttrs
@@ -198,7 +196,7 @@ genViewObject fSpec depth obj =
                   subObjContents = objTxt subObj,
                   subObjExprIsUni = True
                 }
-    
+
     getTemplateForObject ::
       (HasDirPrototype env) =>
       RIO env FilePath
@@ -232,12 +230,14 @@ genViewObject fSpec depth obj =
 --   * For each line in the text, we post process the line, splitting based on EOL character and prefixing the lines (except the first)
 --   * The resulting text is indented correctly
 indentEOL :: Text -> [Text]
-indentEOL x = ((L'.head list) :)
-  . (map (prefix <>))
-  . L'.tail $ list
-  where 
-    prefix = T.takeWhile (==' ') x
-    list = (T'.splitOn eol) $ x
+indentEOL x =
+  (L'.head list :)
+    . map (prefix <>)
+    . L'.tail
+    $ list
+  where
+    prefix = T.takeWhile (== ' ') x
+    list = T'.splitOn eol x
 
 eol :: Text
 eol = "<<EOL>>"
