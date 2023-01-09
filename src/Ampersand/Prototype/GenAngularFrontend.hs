@@ -12,9 +12,8 @@ import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
 import RIO.Char (toLower, toUpper)
-import RIO.List.Partial as L' (head, tail)
 import qualified RIO.Text as T
-import qualified RIO.Text.Partial as T' (splitOn)
+import qualified RIO.Text.Partial as Partial (splitOn)
 import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
@@ -230,14 +229,13 @@ genViewObject fSpec depth obj =
 --   * For each line in the text, we post process the line, splitting based on EOL character and prefixing the lines (except the first)
 --   * The resulting text is indented correctly
 indentEOL :: Text -> [Text]
-indentEOL x =
-  (L'.head list :)
-    . map (prefix <>)
-    . L'.tail
-    $ list
+indentEOL x = case Partial.splitOn eol x of
+  [] -> []
+  (h : tl) ->
+    h :
+    map (prefix <>) tl
   where
     prefix = T.takeWhile (== ' ') x
-    list = T'.splitOn eol x
 
 eol :: Text
 eol = "<<EOL>>"
