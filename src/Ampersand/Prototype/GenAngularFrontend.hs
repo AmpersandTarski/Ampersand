@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Ampersand.Prototype.GenAngularFrontend (genComponents, genSingleFileFromTemplate) where
+module Ampersand.Prototype.GenAngularFrontend (genComponent, genSingleFileFromTemplate) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -24,9 +24,6 @@ crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x
   where
     f :: (Bool, Char) -> Char
     f (b, c) = (if b then toUpper else toLower) c
-
-genComponents :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
-genComponents fSpec = mapM_ (genComponent fSpec)
 
 genComponent :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
