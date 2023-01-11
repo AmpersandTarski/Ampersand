@@ -32,7 +32,7 @@ genComponent :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> 
 genComponent fspec ifc = do
   genComponentTs fspec ifc
   genComponentView fspec ifc
-  -- genComponentInterface fspec ifc
+  genComponentInterface fspec ifc
   logInfo . display $ "Generated files for " <> ifcNamePascal ifc <> "Component"
 
 genComponentView :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
@@ -45,6 +45,14 @@ genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -
 genComponentTs fSpec interf = do
   let templateFilePath = "component.ts.txt"
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
+  genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath
+  where
+    templateFunction _ _ _ = pure ""
+
+genComponentInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
+genComponentInterface fSpec interf = do
+  let templateFilePath = "component.interface.ts.txt"
+  let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".interface.ts"
   genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath
   where
     templateFunction _ _ _ = pure ""
