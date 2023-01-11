@@ -41,6 +41,14 @@ genComponentView fSpec interf = do
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
   genComponentFileFromTemplate fSpec interf genViewObject templateFilePath targetFilePath
 
+genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
+genComponentTs fSpec interf = do
+  let templateFilePath = "component.ts.txt"
+  let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
+  genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath
+  where
+    templateFunction _ _ _ = pure ""
+
 type FEObjectTemplateFunction = forall env . (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
 
 genComponentFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> FEObjectTemplateFunction -> FilePath -> FilePath -> RIO env ()
@@ -76,37 +84,6 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
             . setAttribute "templateFilePath" templateFilePath
             . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
-
-genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
-genComponentTs fSpec interf = do
-  let templateFileName = "component.ts.txt"
-  template <- readTemplate templateFileName
-  mapM_ (logDebug . display) (showTemplate template)
-  runner <- view runnerL
-  let loglevel' = logLevel runner
-  let contents =
-        renderTemplate Nothing template $
-          setAttribute "contextName" (fsName fSpec)
-            . setAttribute "isSessionInterface" (isSessionInterface interf)
-            . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcName" (ifcName interf)
-            . setAttribute "ifcNamePascal" (ifcNamePascal interf)
-            . setAttribute "ifcNameKebab" (ifcNameKebab interf)
-            . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
-            . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-            . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
-            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
-            . setAttribute "crudC" (objCrudC (feiObj interf))
-            . setAttribute "crudR" (objCrudR (feiObj interf))
-            . setAttribute "crudU" (objCrudU (feiObj interf))
-            . setAttribute "crudD" (objCrudD (feiObj interf))
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
-            . setAttribute "usedTemplate" templateFileName
-  let filename = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
-  writePrototypeAppFile filename contents
 
 genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> FilePath -> FilePath -> RIO env ()
 genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
