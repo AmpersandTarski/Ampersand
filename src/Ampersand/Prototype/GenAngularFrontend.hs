@@ -76,6 +76,8 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
             . setAttribute "ifcNameKebab" (ifcNameKebab interf)
             . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
             . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
+            . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
+            . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
             . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
             . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
             . setAttribute "crudC" (objCrudC (feiObj interf))

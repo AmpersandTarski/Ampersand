@@ -43,7 +43,7 @@ doGenFrontend fSpec = do
     Angular -> do
       mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
       genSingleFileFromTemplate fSpec feInterfaces "project.module.ts.txt" "project.module.ts" -- Angular Module file
-      genSingleFileFromTemplate fSpec feInterfaces "backend.service.interface.ts.txt" "backend.service.interface.ts" -- IBackendService file
+      genSingleFileFromTemplate fSpec feInterfaces "backend.service.ts.txt" "backend.service.ts" -- BackendService file
   logInfo "Angular frontend module generated"
 
 copyTemplates ::
@@ -80,6 +80,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             ifcLabel = name ifc,
             ifcExp = objExp obj,
             isSessionInterface = isSESSION . source . objExp $ obj,
+            srcConcept = idWithoutType . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
           }

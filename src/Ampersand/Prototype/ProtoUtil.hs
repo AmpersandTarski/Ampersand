@@ -63,6 +63,7 @@ data FEInterface = FEInterface
     ifcLabel :: Text,
     ifcExp :: FEExpression,
     isSessionInterface :: Bool, --True if the source concept is the session. (then the interface will show a list of all)
+    srcConcept :: Text,
     feiRoles :: [Role],
     feiObj :: FEObject
   }
