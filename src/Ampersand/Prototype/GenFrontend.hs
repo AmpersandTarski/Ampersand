@@ -43,6 +43,7 @@ doGenFrontend fSpec = do
     Angular -> do
       genComponents fSpec feInterfaces
       genSingleFileFromTemplate fSpec feInterfaces "project.module.ts.txt" "project.module.ts" -- AngularModule file
+      genSingleFileFromTemplate fSpec feInterfaces "backend.service.interface.ts.txt" "backend.service.interface.ts" -- IBackendService file
   logInfo "Angular frontend module generated"
 
 copyTemplates ::

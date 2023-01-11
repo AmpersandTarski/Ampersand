@@ -113,6 +113,8 @@ genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
             . setAttribute "ifcs" ifcs
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
+            . setAttribute "templateFilePath" templateFilePath
+            . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
 -- Helper data structure to pass attribute values to HStringTemplate
