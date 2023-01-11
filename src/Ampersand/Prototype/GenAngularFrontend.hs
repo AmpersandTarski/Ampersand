@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Ampersand.Prototype.GenAngularFrontend (genComponents, genAngularModule) where
+module Ampersand.Prototype.GenAngularFrontend (genComponents, genSingleFileFromTemplate) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -100,11 +100,11 @@ genComponentTs fSpec interf = do
   let filename = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.ts"
   writePrototypeAppFile filename contents
 
-genAngularModule :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
-genAngularModule fSpec ifcs = do
+genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> FilePath -> FilePath -> RIO env ()
+genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
   runner <- view runnerL
   let loglevel' = logLevel runner
-  template <- readTemplate "project.module.ts.txt"
+  template <- readTemplate templateFilePath
   mapM_ (logDebug . display) (showTemplate template)
   let contents =
         renderTemplate Nothing template $
@@ -113,7 +113,7 @@ genAngularModule fSpec ifcs = do
             . setAttribute "ifcs" ifcs
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
-  writePrototypeAppFile "project.module.ts" contents
+  writePrototypeAppFile targetFilePath contents
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr2 = SubObjAttr

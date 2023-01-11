@@ -42,7 +42,7 @@ doGenFrontend fSpec = do
       writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     Angular -> do
       genComponents fSpec feInterfaces
-      genAngularModule fSpec feInterfaces
+      genSingleFileFromTemplate fSpec feInterfaces "project.module.ts.txt" "project.module.ts" -- AngularModule file
   logInfo "Angular frontend module generated"
 
 copyTemplates ::
