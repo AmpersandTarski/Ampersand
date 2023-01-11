@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Ampersand.Prototype.GenAngularFrontend (genComponents, genSingleFileFromTemplate) where
 
@@ -36,11 +37,18 @@ genComponent fspec ifc = do
 
 genComponentView :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentView fSpec interf = do
-  let templateFileName = "component.html"
-  template <- readTemplate templateFileName
+  let templateFilePath = "component.html"
+  let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
+  genComponentFileFromTemplate fSpec interf genViewObject templateFilePath targetFilePath
+
+type FEObjectTemplateFunction = forall env . (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
+
+genComponentFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> FEObjectTemplateFunction -> FilePath -> FilePath -> RIO env ()
+genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath = do
+  template <- readTemplate templateFilePath
   runner <- view runnerL
   let loglevel' = logLevel runner
-  lns <- genViewObject fSpec 0 (feiObj interf)
+  lns <- templateFunction fSpec 0 (feiObj interf)
   let contents =
         T.intercalate "\n" -- intercalate, because unlines introduces a trailing \n
           . concatMap indentEOL
@@ -65,9 +73,9 @@ genComponentView fSpec interf = do
             . setAttribute "contents" lns
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
-            . setAttribute "usedTemplate" templateFileName
-  let filename = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
-  writePrototypeAppFile filename contents
+            . setAttribute "templateFilePath" templateFilePath
+            . setAttribute "targetFilePath" targetFilePath
+  writePrototypeAppFile targetFilePath contents
 
 genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fSpec interf = do
@@ -126,7 +134,7 @@ data SubObjectAttr2 = SubObjAttr
   }
   deriving (Show, Data, Typeable)
 
-genViewObject :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
+genViewObject :: FEObjectTemplateFunction
 genViewObject fSpec depth obj =
   case obj of
     FEObjE {} -> do
