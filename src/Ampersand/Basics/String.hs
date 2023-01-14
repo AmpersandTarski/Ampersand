@@ -16,7 +16,6 @@ where
 
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.Version (fatal)
-import Data.Text1 (Text1 (..))
 import qualified Network.URI.Encode as URI
 import RIO.Char
 import qualified RIO.Text as T

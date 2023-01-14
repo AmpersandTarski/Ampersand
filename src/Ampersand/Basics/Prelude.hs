@@ -17,10 +17,13 @@ module Ampersand.Basics.Prelude
     decodeUtf8,
     foldl,
     undefined,
+    Text1 (..),
   )
 where
 
 -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
+
+import Data.Text1 (Text1 (..))
 import RIO hiding (exitWith, undefined, zipWith)
 import qualified RIO as WarnAbout (undefined)
 import qualified RIO.Text as T
