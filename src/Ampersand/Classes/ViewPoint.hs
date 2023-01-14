@@ -178,7 +178,7 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
         { rrnm =
             toName
               (nameSpaceOf rel)
-              (toText1Unsafe $ ("Compute " <> tshow rel) <> (" using " <> command)),
+              (toText1Unsafe $ ("Compute_" <> tshow rel) <> ("_using_" <> command)),
           formalExpression = fExpr,
           rrfps = orig,
           rrmean = [],
