@@ -22,6 +22,7 @@ import Ampersand.Basics.String (text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import Data.Hashable
+import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -30,11 +31,11 @@ import qualified RIO.Text.Lazy as TL
 type NameSpace = [Text1]
 
 data Name = Name
-  { -- | The plain name
-    plainName :: !Text1,
-    -- | The namespace where the name resides in.
-    nameSpace :: !NameSpace,
-    -- | The type of the thing that this name is for
+  { -- | A name in a namespace can be seen as a nonempty list of words.
+    --   currently, we only deal with 'absolute' names.
+    --   the separator that is inbetween the nameWords can be depending on the specific environment.
+    --   in an .adl file, we will assume a dot `.` as separator.
+    nameWords :: !(NonEmpty Text1),
     nameType :: !NameType
   }
   deriving (Data)
@@ -46,7 +47,13 @@ instance Eq Name where
   a == b = compare a b == EQ
 
 instance Show Name where
-  show x = T.unpack . mconcat . L.intersperse "." $ (text1ToText <$> nameSpace x) <> [text1ToText $ plainName x]
+  show =
+    T.unpack
+      . mconcat
+      . L.intersperse "."
+      . toList
+      . fmap text1ToText
+      . nameWords
 
 instance Hashable Name where
   hashWithSalt s = hashWithSalt s . text1ToText . tName
@@ -60,16 +67,14 @@ instance GVP.PrintDot Name where
 nameOfExecEngineRole :: Name
 nameOfExecEngineRole =
   Name
-    { plainName = Text1 'E' "xecEngine",
-      nameSpace = [],
+    { nameWords = Text1 'E' "xecEngine" :| [],
       nameType = RoleName
     }
 
 nameOfONE :: Name
 nameOfONE =
   Name
-    { plainName = Text1 'O' "NE",
-      nameSpace = [],
+    { nameWords = Text1 'O' "NE" :| [],
       nameType = ConceptName
     }
 
@@ -77,10 +82,9 @@ data NameType = ConceptName | RelationName | RuleName | PatternName | ContextNam
   deriving (Data)
 
 toName :: NameSpace -> Text1 -> Name
-toName space plainname =
+toName ns plainname =
   Name
-    { plainName = mkValid plainname,
-      nameSpace = space,
+    { nameWords = prependList ns (mkValid plainname :| []),
       nameType = TemporaryDummy
     }
 
@@ -101,19 +105,30 @@ toNameUnsafe ns t = toName ns' t'
             ]
       Just (h, tl) -> Text1 h tl
 
+-- | Validation for the rules for the words in a Name. These rules are based on the rules for
+--   mariaDB names for tables and columns. (https://mariadb.com/kb/en/columnstore-naming-conventions/)
+--   1) Table and column names are restricted to alphanumeric and underscore only, i.e "A-Z a-z 0-9 _".
+--   2) The first character of all table and column names should be an ASCII letter (a-z A-Z).
+--   3) ColumnStore reserves certain words that MariaDB does not, such as SELECT, CHAR and TABLE, so even wrapped in backticks these cannot be used.
+-- isValidNameWord ::
+
 -- We do not want points and spaces in the actual name, for this will conflict with namespaces
 mkValid :: Text1 -> Text1
-mkValid t1@(Text1 h tl) =
-  if h `elem` [' ', '.', '_']
-    then fatal $ "A name must not start with a forbiden character. `" <> tshow t1 <> "`."
-    else Text1 h (mkValid' tl)
+mkValid t = case T.words $ text1ToText t of
+  [] -> fatal "empty text seems to be parsed as a part of a name."
+  [wrd] -> case T.uncons wrd of
+    Nothing -> fatal "Impossible. How can a word be empty?"
+    Just (h, tl) ->
+      if isValidFirstCharacter h
+        then Text1 h (mkValidTail tl)
+        else fatal $ "Invalid first character: " <> wrd
+  txts -> fatal $ "There cannot be whitespace in a nameword: " <> tshow txts
   where
-    mkValid' t = case T.uncons t of
-      Nothing -> mempty
-      Just (h', tl') -> case h' of
-        '.' -> T.cons '-' $ mkValid' tl'
-        ' ' -> mkValid' tl'
-        _ -> T.cons h' $ mkValid' tl'
+    mkValidTail = T.map toValidChar
+      where
+        toValidChar c = if isValidOtherCharacter c then c else '_'
+    isValidFirstCharacter c = isAlpha c
+    isValidOtherCharacter c = isAlpha c || isDigit c || c == '_'
 
 -- | anything could have some name, can't it?
 class Named a where
@@ -122,9 +137,9 @@ class Named a where
   tName :: a -> Text1
   tName = toText1Unsafe . tshow . name
   nameSpaceOf :: a -> [Text1]
-  nameSpaceOf = nameSpace . name
+  nameSpaceOf = NE.init . nameWords . name
   plainNameOf1 :: a -> Text1
-  plainNameOf1 = plainName . name
+  plainNameOf1 = NE.last . nameWords . name
   plainNameOf :: a -> Text
   plainNameOf nm = T.cons h tl
     where
@@ -159,3 +174,9 @@ prependToPlainName prefix nm = toName (nameSpaceOf nm) (toText1Unsafe $ prefix <
 
 urlEncodedName :: Name -> Text1
 urlEncodedName = toText1Unsafe . urlEncode . text1ToText . tName
+
+-- Should be in RIO.NonEmpty:
+prependList :: [a] -> NonEmpty a -> NonEmpty a
+prependList ls ne = case ls of
+  [] -> ne
+  (x : xs) -> x :| xs <> toList ne
