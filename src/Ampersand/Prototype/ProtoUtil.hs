@@ -27,6 +27,7 @@ module Ampersand.Prototype.ProtoUtil
     readTemplate,
     renderTemplate,
     showTemplate,
+    newTemplate,
   )
 where
 
@@ -289,6 +290,9 @@ doesTemplateExist templatePath = do
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate FilePath) FilePath
+
+newTemplate :: Text -> FilePath -> Template
+newTemplate txt = Template (newSTMP . T.unpack $ txt)
 
 readTemplate ::
   (HasDirPrototype env) =>

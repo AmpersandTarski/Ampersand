@@ -50,9 +50,7 @@ genComponentInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInte
 genComponentInterface fSpec interf = do
   let templateFilePath = "component.interface.ts.txt"
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".interface.ts"
-  genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath
-  where
-    templateFunction _ _ _ = pure ""
+  genComponentFileFromTemplate fSpec interf genTypescriptInterfaceObject templateFilePath targetFilePath
 
 type FEObjectTemplateFunction = forall env . (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
 
@@ -233,3 +231,79 @@ indentEOL x = case Partial.splitOn eol x of
 
 eol :: Text
 eol = "<<EOL>>"
+
+genTypescriptInterfaceObject :: FEObjectTemplateFunction
+genTypescriptInterfaceObject fSpec depth obj =
+  case obj of
+    FEObjE {} -> do
+      let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
+          atomicAndBoxAttrs =
+            setAttribute "exprIsUni" (exprIsUni obj)
+            . setAttribute "exprIsTot" (exprIsTot obj)
+            . setAttribute "name" (escapeIdentifier . objName $ obj)
+            . setAttribute "source" (idWithoutType . source . objExp $ obj)
+            . setAttribute "target" (idWithoutType . target . objExp $ obj)
+        
+      case atomicOrBox obj of
+        FEAtomic {} -> return getTemplateForFEAtomic
+        FEBox
+          { boxHeader = header,
+            boxSubObjs = subObjs
+          } -> do
+            subObjAttrs <- mapM genView_SubObject subObjs
+
+            let parentTemplate = newTemplate "{ $subObjects:{subObj|\n  $subObj.subObjName$ : $subObj.subObjContents$;}$\n}" "compiler"
+
+            return . T.intercalate eol
+              . concatMap indentEOL -- flatten 2d array
+              . T.lines
+              . renderTemplate (Just . btKeys $ header) parentTemplate
+              $ atomicAndBoxAttrs
+                . setAttribute "isRoot" (depth == 0)
+                . setAttribute "subObjects" subObjAttrs
+    FEObjT {} -> pure $ objTxt obj
+  where
+    genView_SubObject :: (HasRunner env, HasDirPrototype env) => FEObject -> RIO env SubObjectAttr2
+    genView_SubObject subObj =
+      case subObj of
+        FEObjE {} ->
+          do
+            lns <- genTypescriptInterfaceObject fSpec (depth + 1) subObj
+            return
+              SubObjAttr
+                { subObjName = escapeIdentifier $ objName subObj,
+                  subObjLabel = objName subObj, -- no escaping for labels in templates needed
+                  subObjContents = lns,
+                  subObjExprIsUni = exprIsUni subObj
+                }
+        FEObjT {} ->
+          do
+            return
+              SubObjAttr
+                { subObjName = escapeIdentifier $ objName subObj,
+                  subObjLabel = objName subObj,
+                  subObjContents = objTxt subObj,
+                  subObjExprIsUni = True
+                }
+
+    -- This is a mapping from FEAtomic to Typescript types
+    getTemplateForFEAtomic :: Text
+    getTemplateForFEAtomic
+      | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
+      | otherwise = case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
+          Alphanumeric -> "string"
+          BigAlphanumeric -> "string"
+          HugeAlphanumeric -> "string"
+          Password -> "string"
+          Binary -> "string"
+          BigBinary -> "string"
+          HugeBinary -> "string"
+          Date -> "string"
+          DateTime -> "string"
+          Boolean -> "boolean"
+          Integer -> "number"
+          Float -> "number"
+          Object -> "ObjectBase & {}" -- TODO: also add interface for view
+          TypeOfOne -> "'ONE'" -- special concept ONE
+
+        
