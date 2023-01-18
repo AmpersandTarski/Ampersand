@@ -287,10 +287,11 @@ genTypescriptInterfaceObject fSpec depth obj =
                 }
 
     -- This is a mapping from FEAtomic to Typescript types
+    -- When expression is not univalent 'Array<T>' wrapped around the type
     getTemplateForFEAtomic :: Text
     getTemplateForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
-      | otherwise = case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
+      | otherwise = addArray $ case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
           Alphanumeric -> "string"
           BigAlphanumeric -> "string"
           HugeAlphanumeric -> "string"
@@ -306,4 +307,7 @@ genTypescriptInterfaceObject fSpec depth obj =
           Object -> "ObjectBase & {}" -- TODO: also add interface for view
           TypeOfOne -> "'ONE'" -- special concept ONE
 
-        
+    addArray :: Text -> Text
+    addArray typescriptType
+      | exprIsUni obj = typescriptType
+      | otherwise = "Array<" <> typescriptType <> ">"
