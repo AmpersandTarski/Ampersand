@@ -107,8 +107,8 @@ genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
             . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
-atomicAndBoxAttrs :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
-atomicAndBoxAttrs obj loglevel =
+objectAttributes :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
+objectAttributes obj loglevel =
   setAttribute "exprIsUni" (exprIsUni obj)
     . setAttribute "exprIsTot" (exprIsTot obj)
     . setAttribute "name" (escapeIdentifier . objName $ obj)
@@ -133,8 +133,8 @@ data SubObjectAttr2 = SubObjAttr
   }
   deriving (Show, Data, Typeable)
 
-subObjectAttr :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr2
-subObjectAttr fSpec depth templateFunction subObj =
+subObjectAttributes :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr2
+subObjectAttributes fSpec depth templateFunction subObj =
   case subObj of
     FEObjE {} ->
       do
@@ -168,12 +168,12 @@ genViewObject fSpec depth obj =
           return . T.intercalate eol
             . T.lines
             . renderTemplate Nothing template
-            $ atomicAndBoxAttrs obj (logLevel runner)
+            $ objectAttributes obj (logLevel runner)
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM (subObjectAttr fSpec depth genViewObject) subObjs
+            subObjAttrs <- mapM (subObjectAttributes fSpec depth genViewObject) subObjs
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
@@ -181,7 +181,7 @@ genViewObject fSpec depth obj =
               . concatMap indentEOL -- flatten 2d array
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
-              $ atomicAndBoxAttrs obj (logLevel runner)
+              $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure ""
@@ -241,7 +241,7 @@ genTypescriptInterfaceObject fSpec depth obj =
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM (subObjectAttr fSpec depth genTypescriptInterfaceObject) subObjs
+            subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterfaceObject) subObjs
 
             let parentTemplate = newTemplate "{ $subObjects:{subObj|\n  $subObj.subObjName$ : $subObj.subObjContents$;}$\n}" "compiler"
 
@@ -249,7 +249,7 @@ genTypescriptInterfaceObject fSpec depth obj =
               . concatMap indentEOL -- flatten 2d array
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
-              $ atomicAndBoxAttrs obj (logLevel runner)
+              $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ objTxt obj
