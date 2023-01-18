@@ -107,6 +107,23 @@ genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
             . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
+atomicAndBoxAttrs :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
+atomicAndBoxAttrs obj loglevel =
+  setAttribute "exprIsUni" (exprIsUni obj)
+    . setAttribute "exprIsTot" (exprIsTot obj)
+    . setAttribute "name" (escapeIdentifier . objName $ obj)
+    . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
+    . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
+    . setAttribute "source" (idWithoutType . source . objExp $ obj)
+    . setAttribute "target" (idWithoutType . target . objExp $ obj)
+    . setAttribute "crudC" (objCrudC obj)
+    . setAttribute "crudR" (objCrudR obj)
+    . setAttribute "crudU" (objCrudU obj)
+    . setAttribute "crudD" (objCrudD obj)
+    . setAttribute "crud" (crudsToString . objCrud $ obj)
+    . setAttribute "verbose" (loglevel == LevelDebug)
+    . setAttribute "loglevel" (show loglevel)
+
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr2 = SubObjAttr
   { subObjName :: Text,
@@ -142,23 +159,6 @@ genViewObject fSpec depth obj =
   case obj of
     FEObjE {} -> do
       runner <- view runnerL
-      let loglevel' = logLevel runner
-      let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
-          atomicAndBoxAttrs =
-            setAttribute "exprIsUni" (exprIsUni obj)
-              . setAttribute "exprIsTot" (exprIsTot obj)
-              . setAttribute "name" (escapeIdentifier . objName $ obj)
-              . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
-              . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-              . setAttribute "source" (idWithoutType . source . objExp $ obj)
-              . setAttribute "target" (idWithoutType . target . objExp $ obj)
-              . setAttribute "crudC" (objCrudC obj)
-              . setAttribute "crudR" (objCrudR obj)
-              . setAttribute "crudU" (objCrudU obj)
-              . setAttribute "crudD" (objCrudD obj)
-              . setAttribute "crud" (crudsToString . objCrud $ obj)
-              . setAttribute "verbose" (loglevel' == LevelDebug)
-              . setAttribute "loglevel" (show loglevel')
       case atomicOrBox obj of
         FEAtomic {} -> do
           conceptTemplate <- getTemplateForObject
@@ -168,7 +168,7 @@ genViewObject fSpec depth obj =
           return . T.intercalate eol
             . T.lines
             . renderTemplate Nothing template
-            $ atomicAndBoxAttrs
+            $ atomicAndBoxAttrs obj (logLevel runner)
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
@@ -181,7 +181,7 @@ genViewObject fSpec depth obj =
               . concatMap indentEOL -- flatten 2d array
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
-              $ atomicAndBoxAttrs
+              $ atomicAndBoxAttrs obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure ""
@@ -234,14 +234,7 @@ genTypescriptInterfaceObject :: FEObjectTemplateFunction
 genTypescriptInterfaceObject fSpec depth obj =
   case obj of
     FEObjE {} -> do
-      let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
-          atomicAndBoxAttrs =
-            setAttribute "exprIsUni" (exprIsUni obj)
-            . setAttribute "exprIsTot" (exprIsTot obj)
-            . setAttribute "name" (escapeIdentifier . objName $ obj)
-            . setAttribute "source" (idWithoutType . source . objExp $ obj)
-            . setAttribute "target" (idWithoutType . target . objExp $ obj)
-        
+      runner <- view runnerL
       case atomicOrBox obj of
         FEAtomic {} -> return getTypescriptTypeForFEAtomic
         FEBox
@@ -256,7 +249,7 @@ genTypescriptInterfaceObject fSpec depth obj =
               . concatMap indentEOL -- flatten 2d array
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
-              $ atomicAndBoxAttrs
+              $ atomicAndBoxAttrs obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ objTxt obj
