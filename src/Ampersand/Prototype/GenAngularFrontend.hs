@@ -36,7 +36,7 @@ genComponentView :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface
 genComponentView fSpec interf = do
   let templateFilePath = "component.html"
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".component.html"
-  genComponentFileFromTemplate fSpec interf genViewObject templateFilePath targetFilePath
+  genComponentFileFromTemplate fSpec interf genHTMLView templateFilePath targetFilePath
 
 genComponentTs :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponentTs fSpec interf = do
@@ -50,7 +50,7 @@ genComponentInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInte
 genComponentInterface fSpec interf = do
   let templateFilePath = "component.interface.ts.txt"
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".interface.ts"
-  genComponentFileFromTemplate fSpec interf genTypescriptInterfaceObject templateFilePath targetFilePath
+  genComponentFileFromTemplate fSpec interf genTypescriptInterface templateFilePath targetFilePath
 
 type FEObjectTemplateFunction = forall env . (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
 
@@ -154,8 +154,8 @@ subObjectAttributes fSpec depth templateFunction subObj =
             subObjExprIsUni = True
           }
 
-genViewObject :: FEObjectTemplateFunction
-genViewObject fSpec depth obj =
+genHTMLView :: FEObjectTemplateFunction
+genHTMLView fSpec depth obj =
   case obj of
     FEObjE {} -> do
       runner <- view runnerL
@@ -173,7 +173,7 @@ genViewObject fSpec depth obj =
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM (subObjectAttributes fSpec depth genViewObject) subObjs
+            subObjAttrs <- mapM (subObjectAttributes fSpec depth genHTMLView) subObjs
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
@@ -230,18 +230,18 @@ indentEOL x = case Partial.splitOn eol x of
 eol :: Text
 eol = "<<EOL>>"
 
-genTypescriptInterfaceObject :: FEObjectTemplateFunction
-genTypescriptInterfaceObject fSpec depth obj =
+genTypescriptInterface :: FEObjectTemplateFunction
+genTypescriptInterface fSpec depth obj =
   case obj of
     FEObjE {} -> do
       runner <- view runnerL
       case atomicOrBox obj of
-        FEAtomic {} -> return getTypescriptTypeForFEAtomic
+        FEAtomic {} -> return typescriptTypeForFEAtomic
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterfaceObject) subObjs
+            subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterface) subObjs
 
             let parentTemplate = newTemplate "{ $subObjects:{subObj|\n  $subObj.subObjName$ : $subObj.subObjContents$;}$\n}" "compiler"
 
@@ -256,8 +256,8 @@ genTypescriptInterfaceObject fSpec depth obj =
   where
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
-    getTypescriptTypeForFEAtomic :: Text
-    getTypescriptTypeForFEAtomic
+    typescriptTypeForFEAtomic :: Text
+    typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
       | otherwise = addArray $ case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
           Alphanumeric -> "string"
