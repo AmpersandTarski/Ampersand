@@ -116,6 +116,27 @@ data SubObjectAttr2 = SubObjAttr
   }
   deriving (Show, Data, Typeable)
 
+subObjectAttr :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr2
+subObjectAttr fSpec depth templateFunction subObj =
+  case subObj of
+    FEObjE {} ->
+      do
+        lns <- templateFunction fSpec (depth + 1) subObj
+        return SubObjAttr
+          { subObjName = escapeIdentifier $ objName subObj,
+            subObjLabel = objName subObj, -- no escaping for labels in templates needed
+            subObjContents = lns,
+            subObjExprIsUni = exprIsUni subObj
+          }
+    FEObjT {} ->
+      do
+        return SubObjAttr
+          { subObjName = escapeIdentifier $ objName subObj,
+            subObjLabel = objName subObj,
+            subObjContents = objTxt subObj,
+            subObjExprIsUni = True
+          }
+
 genViewObject :: FEObjectTemplateFunction
 genViewObject fSpec depth obj =
   case obj of
@@ -152,7 +173,7 @@ genViewObject fSpec depth obj =
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM genView_SubObject subObjs
+            subObjAttrs <- mapM (subObjectAttr fSpec depth genViewObject) subObjs
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
@@ -165,29 +186,6 @@ genViewObject fSpec depth obj =
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure ""
   where
-    genView_SubObject :: (HasRunner env, HasDirPrototype env) => FEObject -> RIO env SubObjectAttr2
-    genView_SubObject subObj =
-      case subObj of
-        FEObjE {} ->
-          do
-            lns <- genViewObject fSpec (depth + 1) subObj
-            return
-              SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
-                  subObjLabel = objName subObj, -- no escaping for labels in templates needed
-                  subObjContents = lns,
-                  subObjExprIsUni = exprIsUni subObj
-                }
-        FEObjT {} ->
-          do
-            return
-              SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
-                  subObjLabel = objName subObj,
-                  subObjContents = objTxt subObj,
-                  subObjExprIsUni = True
-                }
-
     getTemplateForObject ::
       (HasDirPrototype env) =>
       RIO env FilePath
@@ -250,7 +248,7 @@ genTypescriptInterfaceObject fSpec depth obj =
           { boxHeader = header,
             boxSubObjs = subObjs
           } -> do
-            subObjAttrs <- mapM genView_SubObject subObjs
+            subObjAttrs <- mapM (subObjectAttr fSpec depth genTypescriptInterfaceObject) subObjs
 
             let parentTemplate = newTemplate "{ $subObjects:{subObj|\n  $subObj.subObjName$ : $subObj.subObjContents$;}$\n}" "compiler"
 
@@ -263,29 +261,6 @@ genTypescriptInterfaceObject fSpec depth obj =
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ objTxt obj
   where
-    genView_SubObject :: (HasRunner env, HasDirPrototype env) => FEObject -> RIO env SubObjectAttr2
-    genView_SubObject subObj =
-      case subObj of
-        FEObjE {} ->
-          do
-            lns <- genTypescriptInterfaceObject fSpec (depth + 1) subObj
-            return
-              SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
-                  subObjLabel = objName subObj, -- no escaping for labels in templates needed
-                  subObjContents = lns,
-                  subObjExprIsUni = exprIsUni subObj
-                }
-        FEObjT {} ->
-          do
-            return
-              SubObjAttr
-                { subObjName = escapeIdentifier $ objName subObj,
-                  subObjLabel = objName subObj,
-                  subObjContents = objTxt subObj,
-                  subObjExprIsUni = True
-                }
-
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
     getTypescriptTypeForFEAtomic :: Text
