@@ -245,7 +245,7 @@ genTypescriptInterfaceObject fSpec depth obj =
             . setAttribute "target" (idWithoutType . target . objExp $ obj)
         
       case atomicOrBox obj of
-        FEAtomic {} -> return getTemplateForFEAtomic
+        FEAtomic {} -> return getTypescriptTypeForFEAtomic
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
@@ -288,8 +288,8 @@ genTypescriptInterfaceObject fSpec depth obj =
 
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
-    getTemplateForFEAtomic :: Text
-    getTemplateForFEAtomic
+    getTypescriptTypeForFEAtomic :: Text
+    getTypescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
       | otherwise = addArray $ case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
           Alphanumeric -> "string"
