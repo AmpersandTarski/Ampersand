@@ -18,6 +18,7 @@ import qualified RIO.Text.Partial as Partial (splitOn)
 import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
+import Data.Maybe (fromJust)
 
 crudsToString :: Cruds -> Text
 crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
