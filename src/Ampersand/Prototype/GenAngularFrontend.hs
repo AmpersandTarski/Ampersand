@@ -259,23 +259,48 @@ genTypescriptInterface fSpec depth obj =
     typescriptTypeForFEAtomic :: Text
     typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
-      | otherwise = addArray $ case cptTType fSpec (target . objExp $ obj) of -- otherwise use TType of target concept to map to Typescript types
-          Alphanumeric -> "string"
-          BigAlphanumeric -> "string"
-          HugeAlphanumeric -> "string"
-          Password -> "string"
-          Binary -> "string"
-          BigBinary -> "string"
-          HugeBinary -> "string"
-          Date -> "string"
-          DateTime -> "string"
-          Boolean -> "boolean"
-          Integer -> "number"
-          Float -> "number"
-          Object -> "ObjectBase & {}" -- TODO: also add interface for view
-          TypeOfOne -> "'ONE'" -- special concept ONE
+      | otherwise = addArray . typescriptTypeForConcept . target . objExp $ obj -- otherwise use TType of target concept to map to Typescript types
 
     addArray :: Text -> Text
     addArray typescriptType
       | exprIsUni obj = typescriptType
       | otherwise = "Array<" <> typescriptType <> ">"
+
+    addViewDefinition :: Text
+    addViewDefinition
+      | isJust maybeViewDef = "{\n" <> (typescriptTypeForView . fromJust $ maybeViewDef) <> "\n}"
+      | otherwise = "undefined"
+      where
+        maybeViewDef = viewDef . atomicOrBox $ obj
+    
+    typescriptTypeForView :: ViewDef -> Text
+    typescriptTypeForView viewDef' =
+      T.intercalate "\n"
+      . map (
+        (\(label, segment') -> " "
+          <> label
+          <> ": "
+          <> case segment' of
+            ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
+            ViewText {} -> "'" <> vsgmTxt segment' <> "'"
+          <> ";"
+        )
+        . (\x -> (fromMaybe "" (vsmlabel x), vsmLoad x))
+       ) $ vdats viewDef'
+
+    typescriptTypeForConcept :: A_Concept -> Text
+    typescriptTypeForConcept cpt = case cptTType fSpec cpt of
+      Alphanumeric -> "string"
+      BigAlphanumeric -> "string"
+      HugeAlphanumeric -> "string"
+      Password -> "string"
+      Binary -> "string"
+      BigBinary -> "string"
+      HugeBinary -> "string"
+      Date -> "string"
+      DateTime -> "string"
+      Boolean -> "boolean"
+      Integer -> "number"
+      Float -> "number"
+      Object -> "ObjectBase & {\n  _view_: " <> addViewDefinition <> "\n}"
+      TypeOfOne -> "'ONE'" -- special concept ONE
