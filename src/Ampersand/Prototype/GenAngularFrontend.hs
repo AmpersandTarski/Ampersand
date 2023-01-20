@@ -125,7 +125,7 @@ objectAttributes obj loglevel =
     . setAttribute "loglevel" (show loglevel)
 
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr2 = SubObjAttr
+data SubObjectAttr = SubObjAttr
   { subObjName :: Text,
     subObjLabel :: Text,
     subObjContents :: Text,
@@ -133,7 +133,7 @@ data SubObjectAttr2 = SubObjAttr
   }
   deriving (Show, Data, Typeable)
 
-subObjectAttributes :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr2
+subObjectAttributes :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr
 subObjectAttributes fSpec depth templateFunction subObj =
   case subObj of
     FEObjE {} ->
