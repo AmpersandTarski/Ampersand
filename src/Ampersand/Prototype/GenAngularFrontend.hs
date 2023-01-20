@@ -243,7 +243,7 @@ genTypescriptInterface fSpec depth obj =
           } -> do
             subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterface) subObjs
 
-            let parentTemplate = newTemplate "{ $subObjects:{subObj|\n  $subObj.subObjName$ : $subObj.subObjContents$;}$\n}" "compiler"
+            let parentTemplate = newTemplate "ObjectBase & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}" "compiler"
 
             return . T.intercalate eol
               . concatMap indentEOL -- flatten 2d array
