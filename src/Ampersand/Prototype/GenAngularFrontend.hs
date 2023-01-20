@@ -135,25 +135,23 @@ data SubObjectAttr = SubObjAttr
   deriving (Show, Data, Typeable)
 
 subObjectAttributes :: (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObjectTemplateFunction -> FEObject -> RIO env SubObjectAttr
-subObjectAttributes fSpec depth templateFunction subObj =
+subObjectAttributes fSpec depth templateFunction subObj = do
+  lns <- templateFunction fSpec (depth + 1) subObj
   case subObj of
     FEObjE {} ->
-      do
-        lns <- templateFunction fSpec (depth + 1) subObj
-        return SubObjAttr
-          { subObjName = escapeIdentifier $ objName subObj,
-            subObjLabel = objName subObj, -- no escaping for labels in templates needed
-            subObjContents = lns,
-            subObjExprIsUni = exprIsUni subObj
-          }
+      return SubObjAttr
+        { subObjName = escapeIdentifier $ objName subObj,
+          subObjLabel = objName subObj, -- no escaping for labels in templates needed
+          subObjContents = lns,
+          subObjExprIsUni = exprIsUni subObj
+        }
     FEObjT {} ->
-      do
-        return SubObjAttr
-          { subObjName = escapeIdentifier $ objName subObj,
-            subObjLabel = objName subObj,
-            subObjContents = objTxt subObj,
-            subObjExprIsUni = True
-          }
+      return SubObjAttr
+        { subObjName = escapeIdentifier $ objName subObj,
+          subObjLabel = objName subObj,
+          subObjContents = lns,
+          subObjExprIsUni = True
+        }
 
 genHTMLView :: FEObjectTemplateFunction
 genHTMLView fSpec depth obj =
@@ -185,7 +183,7 @@ genHTMLView fSpec depth obj =
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
-    FEObjT {} -> pure ""
+    FEObjT {} -> pure $ objTxt obj
   where
     getTemplateForObject ::
       (HasDirPrototype env) =>
@@ -253,7 +251,7 @@ genTypescriptInterface fSpec depth obj =
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
-    FEObjT {} -> pure $ objTxt obj
+    FEObjT {} -> pure $ "'" <> objTxt obj <> "'"
   where
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
