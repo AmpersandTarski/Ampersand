@@ -107,7 +107,10 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                         hasSpecificTemplate <- doesTemplateExist templatePath
                         return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                   return
-                    ( FEAtomic {objMPrimTemplate = mSpecificTemplatePath},
+                    ( FEAtomic
+                        { objMPrimTemplate = mSpecificTemplatePath,
+                          viewDef = mView
+                        },
                       feExp
                     )
                 Just si ->
@@ -130,7 +133,10 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                             then do
                               let templatePath = "View-LINKTO.html"
                               return
-                                ( FEAtomic {objMPrimTemplate = Just (templatePath, [])},
+                                ( FEAtomic
+                                    { objMPrimTemplate = Just (templatePath, []),
+                                      viewDef = Nothing
+                                    },
                                   feExp
                                 )
                             else do

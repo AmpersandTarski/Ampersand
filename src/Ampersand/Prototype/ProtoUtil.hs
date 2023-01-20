@@ -130,7 +130,8 @@ data FEAtomicOrBox
           Maybe
             ( FilePath, -- the absolute path to the template
               [Text] -- the attributes of the template
-            )
+            ),
+        viewDef :: Maybe ViewDef
       }
   | FEBox
       { boxHeader :: BoxHeader,
