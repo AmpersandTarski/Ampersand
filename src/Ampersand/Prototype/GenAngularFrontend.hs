@@ -263,12 +263,11 @@ genTypescriptInterface fSpec depth obj =
     typescriptTypeForFEAtomic :: Text
     typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
-      | otherwise = addArray . typescriptTypeForConcept . target . objExp $ obj -- otherwise use TType of target concept to map to Typescript types
-
-    addArray :: Text -> Text
-    addArray typescriptType
-      | exprIsUni obj = typescriptType
-      | otherwise = "Array<" <> typescriptType <> ">"
+      | exprIsUni obj = typescriptTypeForConcept tgtCpt -- for univalent expressions use the Typescript type for target concept
+      | cptTType fSpec tgtCpt == Object = "Array<\n  " <> typescriptTypeForConcept tgtCpt <> "\n>" -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
+      | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
+      where
+        tgtCpt = target . objExp $ obj
 
     addViewDefinition :: Text
     addViewDefinition
