@@ -14,6 +14,7 @@ import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import Data.Hashable (hash)
+import qualified Data.Set as Set
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
@@ -29,7 +30,8 @@ doGenFrontend fSpec = do
   now <- getCurrentTime
   logInfo "Generating frontend..."
   copyTemplates
-  feInterfaces <- buildInterfaces fSpec
+  feSpec <- buildFESpec fSpec
+  let feInterfaces = interfaces feSpec
   frontendVersion <- view frontendVersionL
   logDebug . display $ tshow (length feInterfaces) <> " interfaces will be generated. (" <> tshow frontendVersion <> ")."
   case frontendVersion of
@@ -42,8 +44,9 @@ doGenFrontend fSpec = do
       writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     Angular -> do
       mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
-      genSingleFileFromTemplate fSpec feInterfaces "project.module.ts.txt" "project.module.ts" -- Angular Module file
-      genSingleFileFromTemplate fSpec feInterfaces "backend.service.ts.txt" "backend.service.ts" -- BackendService file
+      genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
+      genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
+      genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
   logInfo "Angular frontend module generated"
 
 copyTemplates ::
@@ -62,6 +65,23 @@ copyTemplates = do
       logDebug $ "Copying project specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
       copyDirRecursively tempDir toDir -- recursively copy all templates
     else logDebug $ "No project specific templates are copied (there is no such directory " <> display (T.pack tempDir) <> ")"
+
+buildFESpec :: (HasDirPrototype env) => FSpec -> RIO env FESpec
+buildFESpec fSpec = do
+  ifcs <- buildInterfaces fSpec
+  return
+    FESpec
+      { interfaces = ifcs,
+        concepts = buildConcepts fSpec
+      }
+
+buildConcepts :: FSpec -> [FEConcept]
+buildConcepts fSpec = map (
+  \cpt -> FEConcept
+    { cptId = idWithoutType cpt,
+      typescriptType = typescriptTypeForConcept fSpec cpt
+    }
+  ) $ Set.elems . allConcepts $ fSpec
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
 buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
@@ -182,3 +202,20 @@ wordCase txt = case T.uncons txt of
 
 safechars :: Text -> Text
 safechars = T.unwords . T.split (\c -> not (isDigit c || isAlpha c))
+
+typescriptTypeForConcept :: FSpec -> A_Concept -> Text
+typescriptTypeForConcept fSpec cpt = case cptTType fSpec cpt of
+  Alphanumeric -> "string"
+  BigAlphanumeric -> "string"
+  HugeAlphanumeric -> "string"
+  Password -> "string"
+  Binary -> "string"
+  BigBinary -> "string"
+  HugeBinary -> "string"
+  Date -> "string"
+  DateTime -> "string"
+  Boolean -> "boolean"
+  Integer -> "number"
+  Float -> "number"
+  TypeOfOne -> "'ONE'" -- special concept ONE
+  Object -> "ObjectBase"

@@ -91,8 +91,8 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
             . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
-genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> FilePath -> FilePath -> RIO env ()
-genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
+genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FESpec -> FilePath -> FilePath -> RIO env ()
+genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate templateFilePath
@@ -101,7 +101,8 @@ genSingleFileFromTemplate fSpec ifcs templateFilePath targetFilePath = do
         renderTemplate Nothing template $
           setAttribute "contextName" (fsName fSpec)
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcs" ifcs
+            . setAttribute "ifcs" (interfaces feSpec)
+            . setAttribute "concepts" (concepts feSpec)
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "templateFilePath" templateFilePath
@@ -257,9 +258,10 @@ genTypescriptInterface fSpec depth obj =
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "'" <> objTxt obj <> "'"
   where
+    tgtCpt = target . objExp $ obj
     boxTemplate
-      | exprIsUni obj = newTemplate "ObjectBase & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}" "compiler"
-      | otherwise = newTemplate "Array<\n  ObjectBase & {$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>" "compiler"
+      | exprIsUni obj = newTemplate (conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}") "compiler"
+      | otherwise = newTemplate ("Array<\n  " <> conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>") "compiler"
 
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
@@ -272,8 +274,6 @@ genTypescriptInterface fSpec depth obj =
           <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
           <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
-      where
-        tgtCpt = target . objExp $ obj
 
     typescriptTypeForView :: ViewDef -> Text
     typescriptTypeForView viewDef' = case segments of
@@ -296,23 +296,11 @@ genTypescriptInterface fSpec depth obj =
 
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
-      Alphanumeric -> "string"
-      BigAlphanumeric -> "string"
-      HugeAlphanumeric -> "string"
-      Password -> "string"
-      Binary -> "string"
-      BigBinary -> "string"
-      HugeBinary -> "string"
-      Date -> "string"
-      DateTime -> "string"
-      Boolean -> "boolean"
-      Integer -> "number"
-      Float -> "number"
       Object -> 
-        "ObjectBase & {\n" 
+        conceptIdWithImportAlias cpt <> " & {\n" 
         <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
         <> "\n}"
-      TypeOfOne -> "'ONE'" -- special concept ONE
+      _ -> conceptIdWithImportAlias cpt
       where
         addViewDefinition :: Text
         addViewDefinition
@@ -320,3 +308,6 @@ genTypescriptInterface fSpec depth obj =
           | otherwise = "undefined"
           where
             maybeViewDef = viewDef . atomicOrBox $ obj
+
+    conceptIdWithImportAlias :: A_Concept -> Text
+    conceptIdWithImportAlias cpt = "concepts." <> idWithoutType cpt

@@ -16,6 +16,8 @@ module Ampersand.Prototype.ProtoUtil
     showPhpStr,
     escapePhpStr,
     writeFile,
+    FESpec (..),
+    FEConcept (..),
     FEInterface (..),
     FEAtomicOrBox (..),
     FEObject (..),
@@ -52,6 +54,12 @@ import Text.StringTemplate
   )
 import Text.StringTemplate.GenericStandard ()
 
+data FESpec = FESpec
+  { interfaces :: [FEInterface],
+    concepts :: [FEConcept]
+  }
+  deriving (Typeable, Data)
+
 -- | data object that contains information about an interface, from the
 --   perspective of the generated frontend
 data FEInterface = FEInterface
@@ -67,6 +75,12 @@ data FEInterface = FEInterface
     srcConcept :: Text,
     feiRoles :: [Role],
     feiObj :: FEObject
+  }
+  deriving (Typeable, Data)
+
+data FEConcept = FEConcept
+  { cptId :: Text,
+    typescriptType :: Text
   }
   deriving (Typeable, Data)
 
