@@ -183,7 +183,7 @@ genHTMLView fSpec depth obj =
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
-    FEObjT {} -> pure $ objTxt obj
+    FEObjT {} -> pure $ "<span>" <> objTxt obj <> "</span>"
   where
     getTemplateForObject ::
       (HasDirPrototype env) =>
