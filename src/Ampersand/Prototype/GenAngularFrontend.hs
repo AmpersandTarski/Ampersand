@@ -286,8 +286,9 @@ genTypescriptInterface fSpec depth obj =
               ViewText {} -> "'" <> vsgmTxt segment' <> "'"
             <> ";"
           )
-          . (\x -> (fromMaybe "" (vsmlabel x), vsmLoad x))
-        ) $ vdats viewDef')
+          . (\x -> (fromJust (vsmlabel x), vsmLoad x)) -- fromJust here, because ViewSegments that don't have a label are filtered out below. Should throw exception otherwise
+        )
+        . filter (isJust . vsmlabel) $ vdats viewDef') -- filter out ViewSegments that don't have a label
       <> "\n}"
 
     typescriptTypeForConcept :: A_Concept -> Text
