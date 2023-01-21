@@ -176,9 +176,8 @@ genHTMLView fSpec depth obj =
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
-            return . T.intercalate eol
-              . concatMap indentEOL -- flatten 2d array
-              . T.lines
+            return 
+              . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
@@ -226,6 +225,9 @@ indentEOL x = case Partial.splitOn eol x of
   where
     prefix = T.takeWhile (== ' ') x
 
+indentSubStructure :: Text -> Text
+indentSubStructure = T.intercalate eol . concatMap indentEOL . T.lines
+
 eol :: Text
 eol = "<<EOL>>"
 
@@ -235,12 +237,7 @@ genTypescriptInterface fSpec depth obj =
     FEObjE {} -> do
       runner <- view runnerL
       case atomicOrBox obj of
-        FEAtomic {} ->
-          return 
-            . T.intercalate eol
-            . concatMap indentEOL -- flatten 2d array
-            . T.lines
-            $ typescriptTypeForFEAtomic
+        FEAtomic {} -> return . indentSubStructure $ typescriptTypeForFEAtomic
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
@@ -249,9 +246,8 @@ genTypescriptInterface fSpec depth obj =
 
             let parentTemplate = newTemplate "ObjectBase & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}" "compiler"
 
-            return . T.intercalate eol
-              . concatMap indentEOL -- flatten 2d array
-              . T.lines
+            return 
+              . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
