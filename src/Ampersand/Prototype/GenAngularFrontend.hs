@@ -276,22 +276,23 @@ genTypescriptInterface fSpec depth obj =
         tgtCpt = target . objExp $ obj
 
     typescriptTypeForView :: ViewDef -> Text
-    typescriptTypeForView viewDef' =
-      "{\n"
-      <> (T.intercalate "\n"
-        . map (
-          (\(label, segment') -> "  "
-            <> label
-            <> ": "
-            <> case segment' of
-              ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
-              ViewText {} -> "'" <> vsgmTxt segment' <> "'"
-            <> ";"
-          )
-          . (\x -> (fromJust (vsmlabel x), vsmLoad x)) -- fromJust here, because ViewSegments that don't have a label are filtered out below. Should throw exception otherwise
-        )
-        . filter (isJust . vsmlabel) $ vdats viewDef') -- filter out ViewSegments that don't have a label
-      <> "\n}"
+    typescriptTypeForView viewDef' = case segments of
+      [] -> "{}"
+      _ -> "{\n"
+        <> (T.intercalate "\n"
+          . map (
+            (\(label, segment') -> "  "
+              <> label
+              <> ": "
+              <> case segment' of
+                ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
+                ViewText {} -> "'" <> vsgmTxt segment' <> "'"
+              <> ";"
+            )
+            . (\x -> (fromJust (vsmlabel x), vsmLoad x)) -- fromJust here, because ViewSegments that don't have a label are filtered out below. Should throw exception otherwise
+          ) $ segments)
+        <> "\n}"
+      where segments = filter (isJust . vsmlabel) $ vdats viewDef' -- filter out ViewSegments that don't have a label
 
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
