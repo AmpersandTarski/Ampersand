@@ -235,7 +235,12 @@ genTypescriptInterface fSpec depth obj =
     FEObjE {} -> do
       runner <- view runnerL
       case atomicOrBox obj of
-        FEAtomic {} -> return typescriptTypeForFEAtomic
+        FEAtomic {} ->
+          return 
+            . T.intercalate eol
+            . concatMap indentEOL -- flatten 2d array
+            . T.lines
+            $ typescriptTypeForFEAtomic
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
