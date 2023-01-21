@@ -231,6 +231,11 @@ indentSubStructure = T.intercalate eol . concatMap indentEOL . T.lines
 eol :: Text
 eol = "<<EOL>>"
 
+prefixAllLines :: Text -> Text -> Text
+prefixAllLines prefix txt = case T.lines txt of
+  [] -> txt
+  list -> T.intercalate "\n" $ map (prefix <>) list -- intercalate, because unlines introduces a trailing \n
+
 genTypescriptInterface :: FEObjectTemplateFunction
 genTypescriptInterface fSpec depth obj =
   case obj of
@@ -260,32 +265,30 @@ genTypescriptInterface fSpec depth obj =
     typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
       | exprIsUni obj = typescriptTypeForConcept tgtCpt -- for univalent expressions use the Typescript type for target concept
-      | cptTType fSpec tgtCpt == Object = "Array<\n  " <> typescriptTypeForConcept tgtCpt <> "\n>" -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
+      | cptTType fSpec tgtCpt == Object =  -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
+          "Array<\n"
+          <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
+          <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
       where
         tgtCpt = target . objExp $ obj
 
-    addViewDefinition :: Text
-    addViewDefinition
-      | isJust maybeViewDef = "{\n" <> (typescriptTypeForView . fromJust $ maybeViewDef) <> "\n}"
-      | otherwise = "undefined"
-      where
-        maybeViewDef = viewDef . atomicOrBox $ obj
-    
     typescriptTypeForView :: ViewDef -> Text
     typescriptTypeForView viewDef' =
-      T.intercalate "\n"
-      . map (
-        (\(label, segment') -> " "
-          <> label
-          <> ": "
-          <> case segment' of
-            ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
-            ViewText {} -> "'" <> vsgmTxt segment' <> "'"
-          <> ";"
-        )
-        . (\x -> (fromMaybe "" (vsmlabel x), vsmLoad x))
-       ) $ vdats viewDef'
+      "{\n"
+      <> (T.intercalate "\n"
+        . map (
+          (\(label, segment') -> "  "
+            <> label
+            <> ": "
+            <> case segment' of
+              ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
+              ViewText {} -> "'" <> vsgmTxt segment' <> "'"
+            <> ";"
+          )
+          . (\x -> (fromMaybe "" (vsmlabel x), vsmLoad x))
+        ) $ vdats viewDef')
+      <> "\n}"
 
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
@@ -301,5 +304,15 @@ genTypescriptInterface fSpec depth obj =
       Boolean -> "boolean"
       Integer -> "number"
       Float -> "number"
-      Object -> "ObjectBase & {\n  _view_: " <> addViewDefinition <> ";\n}"
+      Object -> 
+        "ObjectBase & {\n" 
+        <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
+        <> "\n}"
       TypeOfOne -> "'ONE'" -- special concept ONE
+      where
+        addViewDefinition :: Text
+        addViewDefinition
+          | isJust maybeViewDef = typescriptTypeForView . fromJust $ maybeViewDef
+          | otherwise = "undefined"
+          where
+            maybeViewDef = viewDef . atomicOrBox $ obj
