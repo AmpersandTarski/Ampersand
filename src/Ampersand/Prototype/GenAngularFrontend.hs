@@ -305,5 +305,5 @@ genTypescriptInterface fSpec depth obj =
       Boolean -> "boolean"
       Integer -> "number"
       Float -> "number"
-      Object -> "ObjectBase & {\n  _view_: " <> addViewDefinition <> "\n}"
+      Object -> "ObjectBase & {\n  _view_: " <> addViewDefinition <> ";\n}"
       TypeOfOne -> "'ONE'" -- special concept ONE
