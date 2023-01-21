@@ -248,17 +248,19 @@ genTypescriptInterface fSpec depth obj =
             boxSubObjs = subObjs
           } -> do
             subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterface) subObjs
-
-            let parentTemplate = newTemplate "ObjectBase & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}" "compiler"
-
+  
             return 
               . indentSubStructure
-              . renderTemplate (Just . btKeys $ header) parentTemplate
+              . renderTemplate (Just . btKeys $ header) boxTemplate
               $ objectAttributes obj (logLevel runner)
                 . setAttribute "isRoot" (depth == 0)
                 . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "'" <> objTxt obj <> "'"
   where
+    boxTemplate
+      | exprIsUni obj = newTemplate "ObjectBase & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}" "compiler"
+      | otherwise = newTemplate "Array<\n  ObjectBase & {$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>" "compiler"
+
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
     typescriptTypeForFEAtomic :: Text
