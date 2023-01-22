@@ -210,17 +210,6 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                   objTxt = objtxt object'
                 }
 
-toKebab :: Text -> Text
-toKebab = T.intercalate "-" . fmap T.toLower . T.words
-
-toPascal :: Text -> Text
-toPascal = T.concat . map wordCase . T.words
-
-wordCase :: Text -> Text
-wordCase txt = case T.uncons txt of
-  Nothing -> mempty
-  Just (x, xs) -> T.cons (toUpper x) (T.toLower xs)
-
 safechars :: Text -> Text
 safechars = T.unwords . T.split (\c -> not (isDigit c || isAlpha c))
 

@@ -2,7 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Ampersand.Prototype.GenAngularFrontend (genComponent, genSingleFileFromTemplate) where
+module Ampersand.Prototype.GenAngularFrontend (
+  genComponent,
+  genSingleFileFromTemplate,
+  toPascal,
+  toKebab,
+) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -277,25 +282,6 @@ genTypescriptInterface fSpec depth obj =
           <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
 
-    typescriptTypeForView :: ViewDef -> Text
-    typescriptTypeForView viewDef' = case segments of
-      [] -> "{}"
-      _ -> "{\n"
-        <> (T.intercalate "\n"
-          . map (
-            (\(label, segment') -> "  "
-              <> label
-              <> ": "
-              <> case segment' of
-                ViewExp {} -> "string" -- typescriptTypeForConcept . target . vsgmExpr $ segment
-                ViewText {} -> "'" <> vsgmTxt segment' <> "'"
-              <> ";"
-            )
-            . (\x -> (fromJust (vsmlabel x), vsmLoad x)) -- fromJust here, because ViewSegments that don't have a label are filtered out below. Should throw exception otherwise
-          ) $ segments)
-        <> "\n}"
-      where segments = filter (isJust . vsmlabel) $ vdats viewDef' -- filter out ViewSegments that don't have a label
-
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
       Object -> 
@@ -306,10 +292,24 @@ genTypescriptInterface fSpec depth obj =
       where
         addViewDefinition :: Text
         addViewDefinition
-          | isJust maybeViewDef = typescriptTypeForView . fromJust $ maybeViewDef
+          | isJust maybeViewDef = "views." <> (viewIdWithImportAlias . fromJust $ maybeViewDef)
           | otherwise = "undefined"
           where
             maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
     conceptIdWithImportAlias cpt = "concepts." <> idWithoutType cpt
+
+    viewIdWithImportAlias :: ViewDef -> Text
+    viewIdWithImportAlias viewDef' = (toPascal . vdlbl $ viewDef') <> "View"
+
+toKebab :: Text -> Text
+toKebab = T.intercalate "-" . fmap T.toLower . T.words
+
+toPascal :: Text -> Text
+toPascal = T.concat . map wordCase . T.words
+
+wordCase :: Text -> Text
+wordCase txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (x, xs) -> T.cons (toUpper x) (T.toLower xs)
