@@ -156,8 +156,6 @@ module.exports = {
                     'ampersand/reusing-available-modules',
                     'ampersand/troubleshooting',
                     'ampersand/tutorial-rap4',
-                    'ampersand/why-ampersand/BRManifestoAndAmpersand',
-                    'ampersand/why-ampersand/whyAmpersand'
                 ]
             },
         ]
