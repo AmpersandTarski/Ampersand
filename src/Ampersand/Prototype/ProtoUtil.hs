@@ -20,6 +20,7 @@ module Ampersand.Prototype.ProtoUtil
     FEConcept (..),
     FEInterface (..),
     FEView (..),
+    FEViewSegment (..),
     FEAtomicOrBox (..),
     FEObject (..),
     FEExpression (..),
@@ -88,7 +89,14 @@ data FEConcept = FEConcept
 
 data FEView = FEView
   { viewId :: !Text,
-    viewSegments :: ![ViewSegment]
+    viewSegments :: ![FEViewSegment],
+    viewIsEmpty :: !Bool
+  }
+  deriving (Typeable, Data)
+
+data FEViewSegment = FEViewSegment
+  {  segmentLabel :: !Text,
+     segmentTypescriptType :: !Text
   }
   deriving (Typeable, Data)
 
