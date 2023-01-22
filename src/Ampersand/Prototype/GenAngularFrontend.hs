@@ -266,9 +266,8 @@ genTypescriptInterface fSpec depth obj =
   where
     tgtCpt = target . objExp $ obj
     boxTemplate
-      | exprIsUni obj = newTemplate (conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}") "compiler"
-      | otherwise = newTemplate ("Array<\n  " <> conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>") "compiler"
-      -- TODO: add view to box templates!!!
+      | exprIsUni obj = newTemplate (conceptIdWithImportAlias tgtCpt <> " & {\n  _view_: " <> addViewDefinition <> ";$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}") "compiler"
+      | otherwise = newTemplate ("Array<\n  " <> conceptIdWithImportAlias tgtCpt <> " & {\n    _view_: " <> addViewDefinition <> ";$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>") "compiler"
 
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type
@@ -289,19 +288,18 @@ genTypescriptInterface fSpec depth obj =
         <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
         <> "\n}"
       _ -> conceptIdWithImportAlias cpt
-      where
-        addViewDefinition :: Text
-        addViewDefinition
-          | isJust maybeViewDef = "views." <> (viewIdWithImportAlias . fromJust $ maybeViewDef)
-          | otherwise = "undefined"
-          where
-            maybeViewDef = viewDef . atomicOrBox $ obj
+
+    addViewDefinition :: Text
+    addViewDefinition
+      | isJust maybeViewDef = viewIdWithImportAlias . fromJust $ maybeViewDef
+      | otherwise = "undefined"
+      where maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
     conceptIdWithImportAlias cpt = "concepts." <> idWithoutType cpt
 
     viewIdWithImportAlias :: ViewDef -> Text
-    viewIdWithImportAlias viewDef' = (toPascal . vdlbl $ viewDef') <> "View"
+    viewIdWithImportAlias viewDef' = "views." <> (toPascal . vdlbl $ viewDef') <> "View"
 
 toKebab :: Text -> Text
 toKebab = T.intercalate "-" . fmap T.toLower . T.words

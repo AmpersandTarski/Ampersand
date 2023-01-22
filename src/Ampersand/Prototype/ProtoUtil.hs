@@ -165,7 +165,8 @@ data FEAtomicOrBox
       }
   | FEBox
       { boxHeader :: BoxHeader,
-        boxSubObjs :: [FEObject]
+        boxSubObjs :: [FEObject],
+        viewDef :: Maybe ViewDef
       }
   deriving (Show, Data, Typeable)
 

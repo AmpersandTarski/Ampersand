@@ -132,11 +132,11 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             env <- ask
             let object = substituteReferenceObjectDef fSpec object'
             let feExp = fromExpr . conjNF env $ objExpression object
+            let tgt = target feExp
+            let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
             (aOrB, iExp') <-
               case objmsub object of
                 Nothing -> do
-                  let tgt = target feExp
-                  let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
                   mSpecificTemplatePath <-
                     case mView of
                       Just Vd {vdhtml = Just (ViewHtmlTemplateFile fName), vdats = viewSegs} ->
@@ -161,7 +161,8 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                       return
                         ( FEBox
                             { boxHeader = siHeader si,
-                              boxSubObjs = subObjs
+                              boxSubObjs = subObjs,
+                              viewDef = mView
                             },
                           feExp
                         )
