@@ -155,11 +155,7 @@ module.exports = {
 
                     'ampersand/reusing-available-modules',
                     'ampersand/troubleshooting',
-                    'ampersand/tutorial-rap3/README',
-                    'ampersand/tutorial-rap3/conceptual-model-enrollment',
-                    'ampersand/tutorial-rap3/example-system-enrollment',
-                    'ampersand/tutorial-rap3/making-your-first-ampersand-script',
-                    'ampersand/tutorial-rap3/your-tool-rap3',
+                    'ampersand/tutorial-rap4',
                     'ampersand/why-ampersand/BRManifestoAndAmpersand',
                     'ampersand/why-ampersand/whyAmpersand'
                 ]

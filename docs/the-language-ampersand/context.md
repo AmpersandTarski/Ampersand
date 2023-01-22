@@ -61,7 +61,7 @@ A context may contain different types of statements. The order of statements in 
 | `<classify>` | a statement that specifies generalization/specialization of [concepts](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) |
 | `<relation>` | a declaration of a relation, stating the existence of a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) within the context |
 | `<conceptDef>` | a description of a [concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement), to document its meaning |
-| `<representation>` | a statement that defines the atomic type of a [concept](../tutorial-rap3/conceptual-model-enrollment.md) |
+| `<representation>` | a statement that defines the atomic type of a [concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) |
 | `<roleRule>` | a statement that makes a role responsible for satisfying a rule |
 | `<viewDef>` | a statement for presenting facts in a readable sentence |
 | `<service>` | a unit of code that can be run independently and specifies interaction with a user or a computer |

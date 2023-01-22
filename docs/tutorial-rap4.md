@@ -341,7 +341,7 @@ When you click on the blue plus-sign on the top-right side in the menu bar in yo
 
 ![](<.gitbook/assets/Finished processing your model.png>)
 
-* Generate a Prototype: Click the blu button "Prototype" and when RAP3 has finished loading you will see a new link "Launch Prototype". Click the link.
+* Generate a Prototype: Click the blue button "Prototype" and when RAP4 has finished loading you will see a new link "Launch Prototype". Click the link.
 * Now you see the information system you have just compiled from the code. You are already familiar with the look and feel. Click the Overview button in the top-left of the screen and have a look around.
 * Try to generate documentation: Click on the button Diagnosis. When RAP4 is done, a link will be added below the button. Click on the button Func. spec + pictures and again a link will be added. These two functions create pdf-files with information about the code that has been compiled. During the course you can have a better look there.
 
@@ -398,7 +398,7 @@ After finishing your assignment, you have learned:
 
 ### Want to learn more?
 
-1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](your-tool-rap3.md).
+1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](#your-tool-rap4).
 2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](conceptual-model-enrollment.md)
 3. How can I upload [bulk data](/ampersand/reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 

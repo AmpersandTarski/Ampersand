@@ -196,7 +196,7 @@ Five decisions have been made here:
 4. Only one state of birth will be registered, as a result of constraining the relation `state` to be univalent
 5. Every state has only one capital city and every city is capital to only one state, as a result of constraining the relation `capital` to be univalent and injective.
 
-Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP3. Ampersand will produce the following data model: ![Data model for presidents](../.gitbook/assets/presidents-data-model.png)
+Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP4. Ampersand will produce the following data model: ![Data model for presidents](../.gitbook/assets/presidents-data-model.png)
 
 ## Bonus
 

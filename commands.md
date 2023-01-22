@@ -19,8 +19,7 @@ even more complex than it already was.
           generate graphics in an alternate way. (you may experiment with
           this option to see the differences for yourself)
   * ***--atlas-without-expressions***
-          Temporary switch to create Atlas without expressions, for use in
-          RAP3
+          Temporary switch to create Atlas without expressions, for use in RAP4
   * ***--crowfoot***
           generate crowfoot notation in graphics, to please crowfoot
           addicts.
@@ -157,7 +156,7 @@ even more complex than it already was.
 We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options have been removed:
 
 * ***--gen-as-rap-model***
-          Generate populations for use in RAP3.
+          Generate populations for use in RAP4.
 * ***--meta-file***
           Generate an .adl file that contains the relations of
           formal-ampersand, populated with the the meta-population of your
