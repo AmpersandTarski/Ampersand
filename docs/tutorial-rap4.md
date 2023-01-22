@@ -2,10 +2,9 @@
 
 * Ampersand is meant to develop information systems.
 * This tutorial will get you going with Ampersand. Consult your tutor with questions.
-* You have a [tool](#your-tool-rap4) to experiment with, supplemented by [this video](https://youtu.be/ZISLjxJqkqw) \(in Dutch\) to make your start even easier.
+* You have a [tool](#your-tool-rap4) to experiment with, supplemented by this video (in Dutch) to make your start even easier:
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/ZISLjxJqkqw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-[Watch a video to make your start even easier]("https://www.youtube.com/embed/ZISLjxJqkqw")
+<iframe width="100%" height="444" src="https://www.youtube.com/embed/ZISLjxJqkqw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 
 This tutorial is meant for Business- or IT professionals who want to learn about [information systems](https://player.ou.nl/wowzaportlets/#!production/BDAXK2L) development. Knowledge about Ampersand is not presumed. The text offers pointers for you to find out many things on your own. This tutorial is intended for individual study, but you can always ask your tutor if things are unclear. The required theory is also available in Learning Unit 3 of the coursebook of the course [IM0403, Rule-Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design), taught at the Open University of the Netherlands.
