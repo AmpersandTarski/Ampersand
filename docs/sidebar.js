@@ -6,6 +6,33 @@ module.exports = {
         },
 
     ],
+    ampersandLandingpagesSidebar: [
+        {
+            label: 'interested-visitor',
+            type: 'doc',
+            id: 'ampersand/landingpage/interested-visitor'
+        },
+        {
+            label: 'student',
+            type: 'doc',
+            id: 'ampersand/landingpage/student'
+        },
+        {
+            label: 'software-engineer',
+            type: 'doc',
+            id: 'ampersand/landingpage/software-engineer'
+        },
+        {
+            label: 'scientist',
+            type: 'doc',
+            id: 'ampersand/landingpage/scientist'
+        },
+        {
+            label: 'contributor',
+            type: 'doc',
+            id: 'ampersand/landingpage/contributor'
+        }
+    ],
     ampersandTheorySidebar: [
         {
             type: 'doc',
