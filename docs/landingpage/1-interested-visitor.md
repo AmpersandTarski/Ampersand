@@ -18,10 +18,10 @@ We believe in correct software, to prevent teething troubles of new information 
 We believe in generating software, to save time by eliminating laborious and error-prone tasks from software development projects.
 
 Interested? Here are some frequently asked questions. Click for the answers.
-* [Why Ampersand?](Ampersand/why-ampersand/whyAmpersand)
-* [Who owns Ampersand?](Ampersand/ownership/)
+* [Why Ampersand?](../why-ampersand/whyAmpersand)
+* [Who owns Ampersand?](../ownership/)
 * [What is the history of Ampersand?]
-* [How is the Ampersand project being run?](Ampersand/governance/)
+* [How is the Ampersand project being run?](../governance/)
 * [What are the plans for the future?]
 * [What is needed?]
 * [Who are involved?]

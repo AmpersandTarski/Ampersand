@@ -66,7 +66,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `RFX`
   * `IRF`
   * `PROP`
-  * [`POPULATION`](the-population-statement/)
+  * [`POPULATION`](/ampersand/reference-material/syntax-of-ampersand#the-population-statement)
   * `CONTAINS`
 * Keywords for [rules](/ampersand/reference-material/syntax-of-ampersand#the-rule-statement)
   * `RULE`
