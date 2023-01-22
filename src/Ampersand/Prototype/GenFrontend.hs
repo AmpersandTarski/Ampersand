@@ -45,6 +45,7 @@ doGenFrontend fSpec = do
     Angular -> do
       mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
       genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
+      genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
       genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
       genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
   logInfo "Angular frontend module generated"
@@ -72,7 +73,8 @@ buildFESpec fSpec = do
   return
     FESpec
       { interfaces = ifcs,
-        concepts = buildConcepts fSpec
+        concepts = buildConcepts fSpec,
+        views = buildViews fSpec
       }
 
 buildConcepts :: FSpec -> [FEConcept]
@@ -82,6 +84,14 @@ buildConcepts fSpec = map (
       typescriptType = typescriptTypeForConcept fSpec cpt
     }
   ) $ Set.elems . allConcepts $ fSpec
+
+buildViews :: FSpec -> [FEView]
+buildViews fSpec = map (
+  \viewDef' -> FEView {
+    viewId = toPascal . vdlbl $ viewDef',
+    viewSegments = []
+  }
+  ) $ vviews fSpec
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
 buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs

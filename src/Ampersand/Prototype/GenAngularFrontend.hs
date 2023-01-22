@@ -103,6 +103,7 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
             . setAttribute "ifcs" (interfaces feSpec)
             . setAttribute "concepts" (concepts feSpec)
+            . setAttribute "views" (views feSpec)
             . setAttribute "verbose" (loglevel' == LevelDebug)
             . setAttribute "loglevel" (show loglevel')
             . setAttribute "templateFilePath" templateFilePath
@@ -262,6 +263,7 @@ genTypescriptInterface fSpec depth obj =
     boxTemplate
       | exprIsUni obj = newTemplate (conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n  $subObj.subObjName$: $subObj.subObjContents$;}$\n}") "compiler"
       | otherwise = newTemplate ("Array<\n  " <> conceptIdWithImportAlias tgtCpt <> " & {$subObjects:{subObj|\n    $subObj.subObjName$: $subObj.subObjContents$;}$\n  }\n>") "compiler"
+      -- TODO: add view to box templates!!!
 
     -- This is a mapping from FEAtomic to Typescript types
     -- When expression is not univalent 'Array<T>' wrapped around the type

@@ -19,6 +19,7 @@ module Ampersand.Prototype.ProtoUtil
     FESpec (..),
     FEConcept (..),
     FEInterface (..),
+    FEView (..),
     FEAtomicOrBox (..),
     FEObject (..),
     FEExpression (..),
@@ -56,7 +57,8 @@ import Text.StringTemplate.GenericStandard ()
 
 data FESpec = FESpec
   { interfaces :: [FEInterface],
-    concepts :: [FEConcept]
+    concepts :: [FEConcept],
+    views :: [FEView]
   }
   deriving (Typeable, Data)
 
@@ -81,6 +83,12 @@ data FEInterface = FEInterface
 data FEConcept = FEConcept
   { cptId :: Text,
     typescriptType :: Text
+  }
+  deriving (Typeable, Data)
+
+data FEView = FEView
+  { viewId :: !Text,
+    viewSegments :: ![ViewSegment]
   }
   deriving (Typeable, Data)
 
