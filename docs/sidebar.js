@@ -8,27 +8,27 @@ module.exports = {
     ],
     ampersandLandingpagesSidebar: [
         {
-            label: 'interested-visitor',
+            label: 'Interested visitor',
             type: 'doc',
             id: 'ampersand/landingpage/interested-visitor'
         },
         {
-            label: 'student',
+            label: 'Student',
             type: 'doc',
             id: 'ampersand/landingpage/student'
         },
         {
-            label: 'software-engineer',
+            label: 'Software engineer',
             type: 'doc',
             id: 'ampersand/landingpage/software-engineer'
         },
         {
-            label: 'scientist',
+            label: 'Scientist',
             type: 'doc',
             id: 'ampersand/landingpage/scientist'
         },
         {
-            label: 'contributor',
+            label: 'Contributor',
             type: 'doc',
             id: 'ampersand/landingpage/contributor'
         }
