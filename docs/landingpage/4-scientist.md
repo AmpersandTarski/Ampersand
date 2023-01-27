@@ -8,7 +8,7 @@ Ampersand is about generating administrative systems from simple, yet formal spe
 We aim at generating "all the way", which means that specifications are as close to ``the business'' as we can possibly get and the software is also being deployed in production.
 
 Interested? Here are some frequently asked questions. Click for the answers.
-* [What is the purpose of Ampersand?](/ampersand/why-ampersand/whyAmpersand)
+* [What is the purpose of Ampersand?](./1-interested-visitor.md#whyAmpersand)
 * [Which research papers have been produced?](/ampersand/research#Publications)
 * [Which research results have been produced?](/ampersand/research#Results)
 * [What are the plans with Ampersand?]

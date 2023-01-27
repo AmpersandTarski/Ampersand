@@ -36,7 +36,7 @@ module.exports = {
     ampersandTheorySidebar: [
         {
             type: 'doc',
-            id: 'ampersand/why-ampersand/whyAmpersand'
+            id: 'ampersand/1-interested-visitor.md#whyAmpersand'
         },
         {
             type: 'doc',

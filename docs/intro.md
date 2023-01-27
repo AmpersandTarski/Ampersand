@@ -10,7 +10,7 @@ Do you want to avoid unnecessary reading? Take a moment to decide which statemen
 ## What makes you curious?...
 
 1. "I'm just interested to know who might use Ampersand and for which purposes."
-   [Click here](why-ampersand/whyAmpersand) to learn why you might want Ampersand.
+   [Click here](./1-interested-visitor.md#whyAmpersand) to learn why you might want Ampersand.
 2. "I am a _student_ wanting to use Ampersand in class."\
    [This tutorial](tutorial-rap4) was made just for you. Students who like something different will love it.
 3. "I am a _computer professional_ in need of a good method for designing an information system."\

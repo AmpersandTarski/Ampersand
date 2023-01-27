@@ -9,7 +9,7 @@ id: toc
 We are currently refactoring our documentation. The navigation at the left is work in progress, and we are moving pages into it. For the time being, we have the old style index below. It will gradually be stripped, as pages move to the sidebar at the left.
 
 * [Introduction](ampersand/intro)
-* [Why Ampersand?](ampersand/why-ampersand/whyAmpersand)
+* [Why Ampersand?](ampersand/1-interested-visitor.md#whyAmpersand)
   * [The Business Rules Manifesto and Ampersand](ampersand/why-ampersand/BRManifestoAndAmpersand)
 * [Tutorial](ampersand/tutorial-rap4/)
 * [Reactive programming](ampersand/reactive-programming)
@@ -80,7 +80,7 @@ We are currently refactoring our documentation. The navigation at the left is wo
   * [Domain Driven Design](ampersand/modeling/conceptual-modeling)
   * [Data modeling](ampersand/modeling/data-modeling)
   * [Legal modeling](ampersand/modeling/legal-modeling)
-  * [Architecture modeling](ampersand/modeling/architecture)
+  * [Architecture modeling](ampersand/modeling#architecture)
   * [Metamodeling](ampersand/modeling/metamodeling)
   * [Limitations of Ampersand](ampersand/modeling/limitations-of-ampersand)
 * [Configuring your application](ampersand/configuring-your-application)
