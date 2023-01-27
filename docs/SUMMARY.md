@@ -1,4 +1,5 @@
 ---
+slug: /
 title: Table of contents (old style)
 id: toc
 ---
