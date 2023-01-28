@@ -12,7 +12,7 @@ We are currently refactoring our documentation. The navigation at the left is wo
 :::
 
 * [Introduction](ampersand/intro)
-* [Why Ampersand?](ampersand/1-interested-visitor.md#whyAmpersand)
+* [Why Ampersand?](ampersand/landingpage/1-interested-visitor.md#whyAmpersand)
   * [The Business Rules Manifesto and Ampersand](ampersand/why-ampersand/BRManifestoAndAmpersand)
 * [Tutorial](ampersand/tutorial-rap4/)
 * [Reactive programming](ampersand/reactive-programming)

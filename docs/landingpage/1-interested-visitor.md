@@ -70,7 +70,7 @@ Ampersand is a way of designing information systems for enterprises, supported b
 
 Ampersand is grounded in Relation Algebra. Scientific foundations of Ampersand have been published in the International Conference on Relation Algebraic Methods in Computer Science ([RAMiCS](http://www.ramics-conference.org/)) from 2011 onwards.
 
-Ampersand is a tool for rule-based design. It adheres closely to the concept of business rule as defined by the Business Rules Group. The [following section](business-rules-in-ampersand.md) explains the correspondence between the Business Rules Manifesto and Ampersand.
+Ampersand is a tool for rule-based design. It adheres closely to the concept of business rule as defined by the Business Rules Group. The [following section](../why-ampersand/business-rules-in-ampersand.md) explains the correspondence between the Business Rules Manifesto and Ampersand.
 
 The Open University of the Netherlands has a [course in Rule Based Design](https://www.ou.nl/-/IM0403\_Rule-Based-Design), in which students use Ampersand for this purpose.
 
