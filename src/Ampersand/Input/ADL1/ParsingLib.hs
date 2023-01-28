@@ -2,12 +2,20 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use newtype instead of data" #-}
 
 module Ampersand.Input.ADL1.ParsingLib
   ( AmpParser,
+    ParserState,
     pIsThere,
     optList,
     optSet,
+
+    -- * ParserState manipulators
+    initialParserState,
+    addParserWarning,
 
     -- * Combinators
     (<?>),
@@ -87,7 +95,21 @@ import Text.Parsec.Pos (newPos)
 -- | The Ampersand parser type
 type AmpParser a =
   -- | The Parsec parser for a list of tokens with a file position.
-  P.ParsecT [Token] FilePos Identity a
+  P.ParsecT [Token] ParserState Identity a
+
+-- | the state of the parser. Note: the position in the text is managed by the lexer: Every Token has a position in it
+data ParserState = ParserState
+  { _parseMessages :: ![Text]
+  }
+
+initialParserState :: ParserState
+initialParserState = ParserState []
+
+addParserWarning :: Text -> AmpParser ()
+addParserWarning msg = modifyState update
+  where
+    update :: ParserState -> ParserState
+    update (ParserState xs) = ParserState (xs <> [msg])
 
 -----------------------------------------------------------
 -- Useful functions

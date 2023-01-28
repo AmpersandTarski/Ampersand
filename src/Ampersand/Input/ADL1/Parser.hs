@@ -3,7 +3,9 @@
 
 module Ampersand.Input.ADL1.Parser
   ( AmpParser,
+    ParserState,
     Include (..),
+    initialParserState,
     pContext,
     pContent,
     pPopulations,
@@ -92,6 +94,9 @@ pContext ns =
         <|> CPop <$> pPopulation ns
         <|> CIncl <$> pIncludeStatement
         <|> CEnf <$> pEnforce ns
+
+--pNameAndLabel :: NameSpace -> AmpParser (Name, Maybe Label)
+--pNameAndLabel ns = ss
 
 data ContextElement
   = CMeta MetaData

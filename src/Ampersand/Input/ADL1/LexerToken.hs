@@ -15,9 +15,9 @@ import RIO.Time
 -- | The Ampersand token
 data Token = Tok
   { -- | The lexeme
-    tokLex :: Lexeme,
+    tokLex :: !Lexeme,
     -- | The position where the lexeme was found
-    tokPos :: FilePos
+    tokPos :: !FilePos
   }
 
 instance Show Token where

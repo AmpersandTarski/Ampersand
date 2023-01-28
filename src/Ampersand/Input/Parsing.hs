@@ -34,16 +34,15 @@ import Ampersand.Input.ADL1.CtxError
     whenCheckedM,
   )
 import Ampersand.Input.ADL1.Lexer
-  ( Token (tokPos),
-    initPos,
+  ( Token,
     lexer,
   )
 import Ampersand.Input.ADL1.Parser
-  ( AmpParser,
-    Include (..),
+  ( Include (..),
     pContext,
     pRule,
   )
+import Ampersand.Input.ADL1.ParsingLib
 import Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
 import Ampersand.Input.PreProcessor
   ( PreProcDefine,
@@ -316,14 +315,10 @@ parseSingleADL ns pc =
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
   -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
-  case runP p pos' fn ts of
+  case runP p initialParseState fn ts of
     --TODO: Add language support to the parser errors
     Left err -> Errors $ pure $ PE err
     Right a -> pure a
-  where
-    pos' = case ts of
-      [] -> initPos fn
-      h : _ -> tokPos h
 
 -- | Runs the given parser
 runParser ::
