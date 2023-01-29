@@ -1,15 +1,18 @@
 ---
-slug: /
 title: Table of contents (old style)
 id: toc
 ---
 
 # Table of contents (old style)
 
+:::tip
+
 We are currently refactoring our documentation. The navigation at the left is work in progress, and we are moving pages into it. For the time being, we have the old style index below. It will gradually be stripped, as pages move to the sidebar at the left.
 
+:::
+
 * [Introduction](ampersand/intro)
-* [Why Ampersand?](ampersand/1-interested-visitor.md#whyAmpersand)
+* [Why Ampersand?](ampersand/landingpage/1-interested-visitor.md#whyAmpersand)
   * [The Business Rules Manifesto and Ampersand](ampersand/why-ampersand/BRManifestoAndAmpersand)
 * [Tutorial](ampersand/tutorial-rap4/)
 * [Reactive programming](ampersand/reactive-programming)
