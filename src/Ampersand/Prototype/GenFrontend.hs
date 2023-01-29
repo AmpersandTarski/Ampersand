@@ -229,4 +229,4 @@ typescriptTypeForConcept fSpec cpt = case cptTType fSpec cpt of
   Integer -> "number"
   Float -> "number"
   TypeOfOne -> "'ONE'" -- special concept ONE
-  Object -> "ObjectBase"
+  Object -> "Object"
