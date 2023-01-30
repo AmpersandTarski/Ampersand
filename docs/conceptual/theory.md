@@ -39,7 +39,7 @@ database management systems refer to as integrity rules. The purpose of
 integrity rules is to keep the constraints they represent satisfied.
 
 
-An *information system* is a combination of dataset, schema, and
+An [information system]{#dfn:informationSystem label="informationSystem"} is a combination of dataset, schema, and
 functionality. Each is defined in a separate section.
 
 ## Datasets {#sct:Datasets}
@@ -232,7 +232,7 @@ in which*
     maintainance relation between roles and rules.*
 :::
 
-A []{#dfn:role label="dfn:role"}*role* is a name that identifies a group
+A [role]{#dfn:role label="dfn:role"} is a name that identifies a group
 of users. It serves as a placeholder for a person or a machine (i.e. an
 actor) that works with the dataset (i.e. create, read, update, or delete
 triples). The purpose of a role is to mention an individual user (human)
