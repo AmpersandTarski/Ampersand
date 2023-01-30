@@ -26,10 +26,9 @@ state of the system. This state is represented in a persistent store,
 aka the database [^3]. Events that the system detects may cause the
 state to change.
 
-::: center
-![Anatomy of an information system][anatomy-ref]
-[anatomy-ref]: datamigration-Pre-migration.drawio.png "Anatomy of an information system"
-:::
+<p align="center" id="Anatomy">
+![Anatomy of an information system](datamigration-Pre-migration.drawio.png)
+</p>
 
 To keep our theory technology independent, datasets are assumed to
 contain triples. This makes the theory valid for any kind of database
@@ -207,8 +206,8 @@ $\begin{array}[b]{ll}
 
 ## Information Systems {#sct:Information Systems}
 
-This section defines the notion of information system. As before, a
-suffix disambiguates the elements of this definition when needed.
+This section defines the notion of information system, as shown in [this figure](#Anatomy).
+As before, a suffix disambiguates the elements of this definition when needed.
 
 ::: {#def:information system .definition}
 **Definition 1** (information system).
