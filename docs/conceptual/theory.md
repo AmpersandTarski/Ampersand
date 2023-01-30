@@ -26,9 +26,9 @@ state of the system. This state is represented in a persistent store,
 aka the database [^3]. Events that the system detects may cause the
 state to change.
 
-<p align="center" id="Anatomy">
+<p align="center" id="Anatomy"></p>
 ![Anatomy of an information system](./datamigration-Pre-migration.drawio.png)
-</p>
+
 
 To keep our theory technology independent, datasets are assumed to
 contain triples. This makes the theory valid for any kind of database
