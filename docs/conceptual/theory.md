@@ -68,30 +68,31 @@ and `Melissa` as `Person`, and `074238991` as a `TelephoneNumber`. In
 this example, `Person` and `TelephoneNumber` are concepts. In the
 sequel, variables $A$, $B$, $C$, $D$ will represent concepts.
 
-The relation $\text{\it inst\/}:\mathbb{A}\times\mathbb{C}$ is the
+The relation $\text{\it inst}:\mathbb{A}\times\mathbb{C}$ is the
 instance relation between atoms and concepts. The expression
-$a\ \text{\it inst\/}\ C$ means that atom $a$ is an *instance* of
+$a\ \text{\it inst}\ C$ means that atom $a$ is an *instance* of
 concept $C$. This relation is used in the type system, in which
-$\text{\it inst\/}$ assigns a concept to every atom in the dataset.
+$\text{\it inst}$ assigns a concept to every atom in the dataset.
 
 Relations serve to organize and store data, to allow a developer to
 represent facts. In this paper, variables $r$, $s$, and $d$ represent
 relations. All relations are taken from an infinite set $\mathbb{R}$.
 $\mathbb{R}$ is disjoint from $\mathbb{C}$ and $\mathbb{A}$. Every
 relation $r$ has a name, a source concept, and a target concept. The
-notation $r=\text{\it n\/}_{\langle{A},{B}\rangle}$ denotes that
+notation $r=\text{\it n}_{\langle{A},{B}\rangle}$ denotes that
 relation $r$ has name $n$, source concept $A$, and target concept $B$.
 
 Triples serve to represent data. A triple is an element of
 $\mathbb{A}\times\mathbb{R}\times\mathbb{A}$.
 
 A dataset $\mathscr{D}$ is a tuple
-$\langle{\mathcal{T}},{\text{\it inst\/}}\rangle$ that satisfies:
-$$\begin{aligned}
-   \forall\langle{a},{\text{\it n\/}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst\/}\ A\ \wedge\ b\ \text{\it inst\/}\ B
+$\langle{\mathcal{T}},{\text{\it inst}}\rangle$ that satisfies:
+$\begin{aligned}
+   \forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B
    \label{eqn:wellTypedEdge}
-\end{aligned}$$ For example,
-$\langle{\text{{\tt\small Peter}}},{\text{\it \text{\it phone\/}\/}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
+\end{aligned}$
+For example,
+$\langle{\text{{\tt\small Peter}}},{\text{\it phone}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
 is a triple.
 Equation [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
 reference="eqn:wellTypedEdge"} says that `Peter` is an instance of
@@ -103,21 +104,21 @@ the formal world. Users are entirely free to attach a practical meaning
 to a triple.
 
 The notations $\mathcal{T}_{\mathscr{D}}$ and
-$\text{\it inst\/}_{\mathscr{D}}$ are used to disambiguate $\mathcal{T}$
-and $\text{\it inst\/}$ when necessary. Every dataset is an element of
+$\text{\it inst}_{\mathscr{D}}$ are used to disambiguate $\mathcal{T}$
+and $\text{\it inst}$ when necessary. Every dataset is an element of
 an infinite set called $\mathbb{D}$. To save writing in the sequel, the
 notation $a\ r\ b$ means that $\langle{a},{r},{b}\rangle\in\mathcal{T}$.
 
 A relation $r$ can serve as a container of pairs, as defined by the
 function
-$\text{\it pop\/}_r:\mathbb{D}\rightarrow\cal{P}\{\mathbb{A}\times\mathbb{A}\}$.
+$\text{\it pop}_r:\mathbb{D}\rightarrow\cal{P}\{\mathbb{A}\times\mathbb{A}\}$.
 It defines a set of pairs, also known as the population of $r$:
-$$\text{\it pop\/}_{r}(\mathscr{D})\ =\ \{ \langle{a},{b}\rangle\mid\ \langle{a},{r},{b}\rangle\in\mathcal{T}_{\mathscr{D}}\}
-\label{eqn:pop}$$
+$\text{\it pop}_{r}(\mathscr{D})\ =\ \{ \langle{a},{b}\rangle\mid\ \langle{a},{r},{b}\rangle\in\mathcal{T}_{\mathscr{D}}\}
+\label{eqn:pop}$
 Equation [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
 reference="eqn:wellTypedEdge"} implies that for every dataset
 $\mathscr{D}$:
-$$\langle{a},{b}\rangle\in\text{\it pop\/}_{\text{\it n\/}_{\langle{A},{B}\rangle}}(\mathscr{D})\ \Rightarrow\ a\ \text{\it inst\/}\ A\ \wedge\ b\ \text{\it inst\/}\ B$$
+$\langle{a},{b}\rangle\in\text{\it pop}_{\text{\it n}_{\langle{A},{B}\rangle}}(\mathscr{D})\ \Rightarrow\ a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
 For a developer, this means that the type of an atom depends only on the
 relation in which it resides; not on the actual population of the
 database. This allows for static typing, which has well established
@@ -139,10 +140,10 @@ are provably false. It also ensures that all rules can be interpreted
 within the set of relations in the schema. Due to this type system, the
 Ampersand compiler only generates code for scripts without type errors.
 As a result, for every rule $u$ in the schema, there is a predicate
-$\text{\it sat\/}_{u}(\mathbb{D})$ that says whether dataset
+$\text{\it sat}_{u}(\mathbb{D})$ that says whether dataset
 $\mathscr{D}$ satisfies rule $u$. A discussion of the type system is out
 of scope because this paper only makes use of the predicate
-$\text{\it sat\/}_{u}(\mathbb{D})$.
+$\text{\it sat}_{u}(\mathbb{D})$.
 
 Rules serve as invariants, i.e. constraints that the data in the
 database must satisfy at all times. At times in which the dataset does
@@ -161,12 +162,12 @@ $\mathcal{U}_{\mathscr{Z}}$ rather than $\mathcal{C}$, $\mathcal{R}$,
 and $\mathcal{U}$ respectively.
 
 In order to do static type checking, all concepts and relations must be
-"known" in the schema: $$\begin{aligned}
-   \text{\it n\/}_{\langle{A},{B}\rangle}\in\mathcal{R}&\Rightarrow&A\in\mathcal{C}\ \wedge\ B\in\mathcal{C}
+"known" in the schema: $\begin{aligned}
+   \text{\it n}_{\langle{A},{B}\rangle}\in\mathcal{R}&\Rightarrow&A\in\mathcal{C}\ \wedge\ B\in\mathcal{C}
    \label{eqn:relationsIntroduceConcepts}\\
-   \langle{a},{\text{\it n\/}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&\Rightarrow&\text{\it n\/}_{\langle{A},{B}\rangle}\in\mathcal{R}
+   \langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&\Rightarrow&\text{\it n}_{\langle{A},{B}\rangle}\in\mathcal{R}
    \label{eqn:define R}
-\end{aligned}$$ If a triple $\langle{a},{r},{b}\rangle$ satisfies
+\end{aligned}$ If a triple $\langle{a},{r},{b}\rangle$ satisfies
 requirement [\[eqn:define R\]](#eqn:define R){reference-type="ref"
 reference="eqn:define R"} and its relation $r$ satisfies
 requirement eqn:relationsIntroduceConcepts, this triple is said to
@@ -175,8 +176,8 @@ $\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$.
 
 A special kind of rule is used for specialization. The rule $A\preceq B$
 (pronounce: $A$ is a $B$) states that any instance of $A$ is an instance
-of $B$ as well. $$\label{eqn:specialization}
-   \text{\it sat\/}_{A\preceq B}(\mathscr{D})\ \Leftrightarrow\ \forall a: a\ \text{\it inst\/}\ A\rightarrow a\ \text{\it inst\/}\ B$$
+of $B$ as well. $\label{eqn:specialization}
+   \text{\it sat}_{A\preceq B}(\mathscr{D})\ \Leftrightarrow\ \forall a: a\ \text{\it inst}\ A\rightarrow a\ \text{\it inst}\ B$
 This is called *specialization*, but it is also known as
 *generalization* or *subtyping*. Specialization is needed to allow
 statements such as: "An employee is a person" or "A human is a mammal".
@@ -184,9 +185,9 @@ The specialization rules in a schema form a partial order $\preceq$,
 meaning that $\preceq$ is reflexive, transitive, and antisymmetric.
 Specialization rules are special for two reasons: Firstly, the system
 keeps $A\preceq B$ satisfied automatically by changing
-$\text{\it inst\/}$ whenever needed. This means that a system that
+$\text{\it inst}$ whenever needed. This means that a system that
 contains rule $A\preceq B$ can never be brought into a state in which
-$\text{\it sat\/}_{A\preceq B}$ is False. This allows for certain
+$\text{\it sat}_{A\preceq B}$ is False. This allows for certain
 run-time optimizations, which are beyond the scope of this paper. A
 second property that sets specialization rules apart, is that they play
 a role in the Ampersand compiler. For example, code that determines
@@ -197,12 +198,12 @@ explicitly.
 
 As a result, if an atom is an instance of concept $A$ and $A\preceq B$,
 this atom has all properties that atoms of type $B$ have:
-$$\begin{array}[b]{ll}
-      &a\ \text{\it inst\/}\ A\wedge b\ \text{\it inst\/}\ B\wedge A\preceq B\\
+$\begin{array}[b]{ll}
+      &a\ \text{\it inst}\ A\wedge b\ \text{\it inst}\ B\wedge A\preceq B\\
       \wedge&a=b\\
       \wedge&b\ r\ x
    \end{array}
-      \ \Rightarrow\ a\ r\ x$$
+      \ \Rightarrow\ a\ r\ x$
 
 ## Information Systems {#sct:Information Systems}
 
@@ -213,11 +214,11 @@ suffix disambiguates the elements of this definition when needed.
 **Definition 1** (information system).
 
 *An information system $\mathscr{S}$ is a tuple
-$\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint\/}\rangle$,
+$\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$,
 in which*
 
 -   *dataset
-    $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst\/}}\rangle$ is
+    $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst}}\rangle$ is
     defined as in section [3.1](#sct:Datasets){reference-type="ref"
     reference="sct:Datasets"};*
 
@@ -228,7 +229,7 @@ in which*
 
 -   *$\mathcal{O}$ is a set of roles;*
 
--   *$\text{\it maint\/}: \mathcal{O}\times\mathcal{U}$ is the
+-   *$\text{\it maint}: \mathcal{O}\times\mathcal{U}$ is the
     maintainance relation between roles and rules.*
 :::
 
@@ -239,7 +240,7 @@ triples). The purpose of a role is to mention an individual user (human)
 or an automated actor (bot) without knowing who that user is.
 
 The system is *at rest* when every rule in the schema is satisfied:
-$$\forall u\in\mathcal{U}:\ \text{\it sat\/}_{u}(\mathscr{D})\label{eqn:satisfaction}$$
+$\forall u\in\mathcal{U}:\ \text{\it sat}_{u}(\mathscr{D})\label{eqn:satisfaction}$
 However, the system continually registers events that insert or delete
 triples in its dataset, which may cause rules to be broken. This
 requires a reaction to restore invariance. Example: if a rule says that
@@ -254,12 +255,12 @@ automatic or manual. Manual enforcement is specified by the developer by
 assigning a rule $u$ to a role $o$. Any actor with role $o$, whether
 person or machine, can restore invariance of rule $u$ by inserting or
 deleting the right triples. For this reason, every rule is assigned to
-at least one role by means of the relation $\text{\it maint\/}$.
-$$\forall u\in\mathcal{U}\ \exists o\in\mathcal{O}:\ o\ \text{\it maint\/}\ u\label{eqn:maintain}$$
-$o\ \text{\it maint\/}\ u$ means that role $o$ must keep rule $u$
-satisfied, i.e. to keep $\text{\it sat\/}_{u}(\mathscr{D})$ true. As
+at least one role by means of the relation $\text{\it maint}$.
+$\forall u\in\mathcal{U}\ \exists o\in\mathcal{O}:\ o\ \text{\it maint}\ u\label{eqn:maintain}$
+$o\ \text{\it maint}\ u$ means that role $o$ must keep rule $u$
+satisfied, i.e. to keep $\text{\it sat}_{u}(\mathscr{D})$ true. As
 long as rule $u$ is broken, the system should notify actors in the
-role(s) that are administered in $\text{\it maint\/}$ to do something
+role(s) that are administered in $\text{\it maint}$ to do something
 about it.
 
 Automatic enforcement is specified by the developer with a special
@@ -271,7 +272,7 @@ make other changes to the dataset to satisfy that rule. Hence, the rule
 is not satisfied during a small, finite amount of time.
 
 The system contains a dedicated role for the enforcement engine, so
-every rule has at least one role in the relation $\text{\it maint\/}$,
+every rule has at least one role in the relation $\text{\it maint}$,
 means that all roles together are keeping all rules satisfied.
 
 ## Example {#sct:Example existing IS}
@@ -316,29 +317,29 @@ role to maintain its invariance:
     ROLE Administrator MAINTAINS EnrollRule
 
 The semantics of this rule defines
-$\text{\it sat\/}_{\tt EnrollRule}(\mathscr{D})$ as: $$\begin{array}{l}
-   \forall \langle{s},{m}\rangle\in\text{\it pop\/}_{\tt isEnrolledFor}(\mathscr{D})\ \exists c\in\text{\tt Course}:\\
+$\text{\it sat}_{\tt EnrollRule}(\mathscr{D})$ as: $\begin{array}{l}
+   \forall \langle{s},{m}\rangle\in\text{\it pop}_{\tt isEnrolledFor}(\mathscr{D})\ \exists c\in\text{\tt Course}:\\
 s\ \text{\tt isEnrolledFor}\ m\ \rightarrow\ s\ \text{\tt takes}\ c\ \wedge\ m\ \text{\tt isPartOf}\ c
 \end{array}
-\label{eqn:example isEnrolledFor}$$ Rule `EnrollRule` is satisfied
+\label{eqn:example isEnrolledFor}$ Rule `EnrollRule` is satisfied
 because relation
-$\text{\it \tt isEnrolledFor\/}_{\langle{\tt Student},{\tt Module}\rangle}$
+$\text{\it \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}$
 is empty.
 
 Now let us check the requirements to verify that this example defines an
 information system. The Ampersand compiler generates a dataset
 $\mathscr{D}$, which contains a set of triples and a relation
-$\text{\it inst\/}$. It defines the set of triples $\mathcal{T}$ as:
-$$\begin{array}[t]{l}
-         \langle{\text{\tt "Peter"}},{\text{\it \text{\tt takes}\/}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
-         \langle{\text{\tt "Susan"}},{\text{\it \text{\tt takes}\/}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "John"}},{\text{\it \text{\tt takes}\/}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "Finance"}},{\text{\it \text{\tt isPartOf}\/}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
-         \langle{\text{\tt "Business Rules"}},{\text{\it \text{\tt isPartOf}\/}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "Business Analytics"}},{\text{\it \text{\tt isPartOf}\/}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "IT-Governance"}},{\text{\it \text{\tt isPartOf}\/}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle
-   \end{array}$$ The relation $\text{\it inst\/}$ contains the pairs:
-$$\begin{array}{l}
+$\text{\it inst}$. It defines the set of triples $\mathcal{T}$ as:
+$\begin{array}[t]{l}
+         \langle{\text{\tt "Peter"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
+         \langle{\text{\tt "Susan"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
+         \langle{\text{\tt "John"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
+         \langle{\text{\tt "Finance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
+         \langle{\text{\tt "Business Rules"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
+         \langle{\text{\tt "Business Analytics"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
+         \langle{\text{\tt "IT-Governance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle
+   \end{array}$ The relation $\text{\it inst}$ contains the pairs:
+$\begin{array}{l}
       \langle{\tt "Finance"},{\tt Module}\rangle\\
       \langle{\tt "Business Rules"},{\tt Module}\rangle\\
       \langle{\tt "Business Analytics"},{\tt Module}\rangle\\
@@ -348,8 +349,8 @@ $$\begin{array}{l}
       \langle{\tt "Peter"},{\tt Student}\rangle\\
       \langle{\tt "Susan"},{\tt Student}\rangle\\
       \langle{\tt "John"},{\tt Student}\rangle
-   \end{array}$$ The tuple
-$\langle{\mathcal{T}},{\text{\it inst\/}}\rangle$ satisfies
+   \end{array}$ The tuple
+$\langle{\mathcal{T}},{\text{\it inst}}\rangle$ satisfies
 requirement [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
 reference="eqn:wellTypedEdge"} so this is a dataset $\mathscr{D}$ as
 introduced in section [3.1](#sct:Datasets){reference-type="ref"
@@ -360,16 +361,16 @@ concepts, relations, and rules. It defines the set of concepts to
 satisfy
 requirement [\[eqn:relationsIntroduceConcepts\]](#eqn:relationsIntroduceConcepts){reference-type="ref"
 reference="eqn:relationsIntroduceConcepts"}:
-$$\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$$ It
+$\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$ It
 defines the set of relations to satisfy
 requirement [\[eqn:define R\]](#eqn:define R){reference-type="ref"
-reference="eqn:define R"}: $$\begin{array}{rcl}
+reference="eqn:define R"}: $\begin{array}{rcl}
       \mathcal{R}&=&\{\begin{array}[t]{l}
-                  \text{\it \tt takes\/}_{\langle{\tt Student},{\tt Course}\rangle},\\
-                  \text{\it \tt isPartOf\/}_{\langle{\tt Module},{\tt Course}\rangle},\\
-                  \text{\it \tt isEnrolledFor\/}_{\langle{\tt Student},{\tt Module}\rangle}\ \}
+                  \text{\it \tt takes}_{\langle{\tt Student},{\tt Course}\rangle},\\
+                  \text{\it \tt isPartOf}_{\langle{\tt Module},{\tt Course}\rangle},\\
+                  \text{\it \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}\ \}
                 \end{array}
-     \end{array}$$ And, it defines the set of rules $\mathcal{U}$ to
+     \end{array}$ And, it defines the set of rules $\mathcal{U}$ to
 contain just one rule: `EnrollRule`.
 Requirement [\[eqn:specialization\]](#eqn:specialization){reference-type="ref"
 reference="eqn:specialization"} is satisfied because this example
@@ -381,14 +382,14 @@ reference="sct:Schemas"}.
 
 Now let us check the definition of information system. Ampersand
 generates a set of roles $\mathcal{O}=\{{\tt Administrator}\}$. The
-relation $\text{\it maint\/}$ contains one pair only,
+relation $\text{\it maint}$ contains one pair only,
 $\langle{{\tt Administrator}},{{\tt EnrollRule}}\rangle$, instructing
 the run-time engine to forward all violations of `EnrollRule` to an
 administrator so she can keep `EnrollRule` satisfied.
 Requirement [\[eqn:satisfaction\]](#eqn:satisfaction){reference-type="ref"
 reference="eqn:satisfaction"} is satisfied because the only rule,
 `EnrollRule` is satisfied. This completes the requirements for
-$\mathscr{S}=\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint\/}\rangle$
+$\mathscr{S}=\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$
 from definition [1](#def:information system){reference-type="ref"
 reference="def:information system"}. This concludes the argument that
 $\mathscr{S}$ is an information system.
