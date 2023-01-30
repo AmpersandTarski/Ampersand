@@ -109,7 +109,7 @@ Scientific foundations of Ampersand have been published in the International Con
 
 ### Why rule-based?
 
-Ampersand lets you encode your own [business rules]((http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf)) as constraints on a data set.
+Ampersand lets you encode your own [business rules]((https://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf)) as constraints on a data set.
 You specify your business as constraints and Ampersand generates information systems that keep these constraints satisfied.
 
 Ampersand adheres closely to the concept of business rule as defined by the Business Rules Group. This [essay](../why-ampersand/business-rules-in-ampersand.md) explains the correspondence between the Business Rules Manifesto and Ampersand.
