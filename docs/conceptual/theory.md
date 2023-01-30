@@ -27,7 +27,8 @@ aka the database [^3]. Events that the system detects may cause the
 state to change.
 
 ::: center
-![Anatomy of an information system](datamigration-Pre-migration.drawio.png){#fig:pre-migration}
+![Anatomy of an information system][anatomy-ref]
+[anatomy-ref]: datamigration-Pre-migration.drawio.png "Anatomy of an information system"
 :::
 
 To keep our theory technology independent, datasets are assumed to
