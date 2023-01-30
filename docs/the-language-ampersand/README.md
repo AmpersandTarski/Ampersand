@@ -15,7 +15,7 @@ Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to le
 | Pair | two atoms: a source and a target atom | `("Ida",5)` | to state that two atoms are related |
 | [Relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) | a set of pairs that is identifyable in a context by its name and type | `r[A*B]` | to build true statements and store pairs persistently in an application |
 | [Rule](/ampersand/reference-material/syntax-of-ampersand#the-rule-statement) | a constraint, which is supposed to remain satisfied. | `r;s \|- t` | to provide meaning in a given context |
-| satisfy | A rule is satisfied (in a context) if the data (in that context) do not cause any violation of that rule. |   | to calculate violations at run-time helps users do the right things |
+| satisfy | A rule is satisfied (in a context) if the data (in that context) do not cause any violation of that rule. |   | to calculate violations at runtime helps users do the right things |
 | [Pattern](syntactical-conventions/patterns.md) | a set of rules | <p><code>PATTERN</code></p><p> <code>...</code></p><p><code>ENDPATTERN</code></p> | to gather rules that belong together for reusing them in different contexts |
 | [Population](/ampersand/reference-material/syntax-of-ampersand#the-population-statement) | a set of pairs in a context | `POPULATION r[A*B] CONTAINS [ ("Ida",5), ("Bob",1) ]` | to represent the facts (i.e. true statements) in an information system |
 | [Context](context.md) | a population together with a set of rules that are satisfied by the population. | <p><code>CONTEXT</code></p><p> <code>...</code></p><p><code>ENDCONTEXT</code></p> | to maintain a consistent representation of a real life situation |

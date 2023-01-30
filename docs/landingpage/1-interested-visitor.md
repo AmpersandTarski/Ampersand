@@ -2,7 +2,7 @@
 title: Just curious?
 ---
 
-# What is Ampersand all about?
+# Why Ampersand?
 Thank you for being curious. 
 
 Ampersand automates the development of software for information systems.
@@ -20,27 +20,88 @@ We believe in generating software, to save time by eliminating laborious and err
 We believe in incremental development, to create predictable results in a predictable time.
 
 
-## Why Ampersand?
+## Key capabilities
+Ampersand can help you with information system development. It helps you to:
+* Generate your information systems, to save work on programming.
+* Develop incrementally, also when your data model changes, to support agile software development and to remain flexible while functional requirements *e changing.
+* Make a domain analysis of your business problems to create a shared understanding. 
+* Automate making your database schema, to kick-start your application(s).
+* Experiment with rules to [_**simplify**_ business processes](https://player.ou.nl/wowzaportlets/#!production/P2w4YD0) until they represent your intention, to enhance compliance by design.
+* Generate documentation of your information system, to make the result more maintainable.
+* Ensure that every system invariant remains satisfied during its lifetime, to automate business policies. This comes without the burden of a formal proof.
 
-## What are the key capabilities of Ampersand?
-1. Generate your information systems incrementally, to save work on programming.
-A generator is very practical when your data model changes, which lets you stay flexible when functional requirements change.
-2. Make a domain analysis of your business problems to create a shared understanding. Then use the resulting data model to kick-start your application(s).
-5. Experiment with rules to [_**simplify**_ business processes](https://player.ou.nl/wowzaportlets/#!production/P2w4YD0) until they represent your intention, to enhance compliance by design.
+## Benefits
+Ampersand yields benefits in the process of developing your information systems. It lets you:
+* Free your users from unneccessary constraints, which workflow models can sometimes impose.
+* Be baffled by the precision with which you can formalize legal rules.
+* Reduce your programming effort by using Ampersand's software generator. Bring complex changes, even when changing your data model, to production faster.
+* Use Ampersand to specify _**your own**_ [_business rules_](http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) to design information systems that comply. It is a lot easier to prove compliance with rules that Ampersand keeps satisfied. This is compliance by design.
+* Gain mathematical _**certainty of compliance**_. Ampersand uses _relation algebra_ to align the IT system to the business, by exploiting its natural language interpretation alongside its technical interpretation as working software. Your claim that business stakeholders understand (solely in natural language) what the computer does (in software) can't be made more convincingly.
+* True _**low-code**_ platforms, such as Ampersand, give you full functionality with little code. Do the [tutorial](../tutorial-rap4) and experience a full non-trivial example of an information system specified in 61 lines of code only.
+* _**Reduce risk**_ by developing in _small increments_. Add constraints, user interfaces, relations, and other design elements one at a time. Generate a prototype at any intermediate stage, to try out your system long before it is finished. 
+* _**Reduce risk**_ by dividing the work into small subsystems. To isolate subsystems is easy, due to [_conceptual independence_](http://dl.acm.org/citation.cfm?id=2946158.2946405). Ampersand lets you combine subsystems into larger systems, automating the burden of combining them.  Reuse _design patterns_ to assemble systems, rather than re-invent from scratch.
+* _**Deploy quickly**_ by building, configuring, and taking it to production automatically.
 
-### Benefits
+## Key features
+The key features of Ampersand characterize it 
+### Declarative
+Ampersand is a [declarative](../conceptual/why-declarative.md) language, which means that you can add, update, or delete any rule in your code without affecting other rules.
+This is enables incremental development.
+It also means that rules are free of side effects.
+That means that the result of evaluating a rule only depends on the context and not on the number of times you evaluate that rule.
 
-2. Free your users from unneccessary constraints, which workflow models can sometimes impose.
-3. Be baffled by the precision with which you can formalize legal rules.
-6. Reduce your programming effort by using Ampersand's software generator. Bring complex changes, even when changing your data model, to production faster.
-7. Use Ampersand to specify _**your own**_ [_business rules_](http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) to design information systems that comply. It is a lot easier to prove compliance with rules that Ampersand keeps satisfied. This is compliance by design.
-9. Gain mathematical _**certainty of compliance**_. Ampersand uses _relation algebra_ to align the IT system to the business, by exploiting its natural language interpretation alongside its technical interpretation as working software. Your claim that business stakeholders understand (solely in natural language) what the computer does (in software) can't be made more convincingly.
-10. True _**low-code**_ platforms, such as Ampersand, give you full functionality with little code. Do the [tutorial](../tutorial-rap4) and experience a full non-trivial example of an information system specified in 61 lines of code only.
-11. _**Reduce risk**_ by developing in _small increments_. Add constraints, user interfaces, relations, and other design elements one at a time. Generate a prototype at any intermediate stage, to try out your system long before it is finished. 
-12. _**Reduce risk**_ by dividing the work into small subsystems. To isolate subsystems is easy, due to [_conceptual independence_](http://dl.acm.org/citation.cfm?id=2946158.2946405). Ampersand lets you combine subsystems into larger systems, automating the burden of combining them.  Reuse _design patterns_ to assemble systems, rather than re-invent from scratch.
-13. _**Deploy quickly**_ by building, configuring, and taking it to production automatically.
+This feature characterizes Ampersand as different from *procedural* languages.
 
-### Some examples of information systems built in Ampersand
+### Reactive
+Ampersand is a [reactive] language.
+It does not follow pre-specified threads of action, but it reacts to events from outside and inside the system.
+
+Reactive programming sets Ampersand apart from multi-threaded programming.
+
+### Statically typed
+All relations in a context together form a conceptual model.
+The Ampersand compiler uses this model for type checking the rules you specify in an Ampersand script.
+The word ``static'' refers to type checking by the compiler.
+This prevents many runtime errors, presenting them at compile time as type errors.
+Static typing is known to save modelers much effort and to enhance the quality of the generated code.
+For a novice, static type checking can yield some frustration, which will quickly dissolve as your experience grows.
+
+Static type checking is the opposite of dynamic type checking, which is typically done at runtime.
+
+### Constraint programming
+Each rule in Ampersand is a constraint on a dataset.
+The information system generated by Ampersand keeps that constraint satisfied.
+If compliance with a rule means that it is satisfied all the time, it is fair to say that an Ampersand application delivers compliance with all the rules in its script.
+Constraint programming is typically used in optimization problems, planning and scheduling (See Rossi et.al., 2006).
+
+Ampersand uses constraints instead of instructions to define an information system.
+This is related to the business rules approach, although Ampersand uses constraints for more than decision making only.
+It defines the workflow of a user as any sequence of events that keeps all constraints satisfied,
+saving the user from having to specify workflows.
+A difference with many other constraint-based languages is the use of relation algebra, where other constraint-based systems use first order predicate logic.
+
+F. Rossi, P. van Beek, and T. Walsh, eds., Handbook of Constraint Programming, Elsevier Science, 2006.
+
+### Incremental development
+To change the database schema of an existing information system typically involves a lot of work and bears a high probability of introducing new errors.
+So, database developers consider it good practise to design the schema carefully up front and avoid schema changes during the lifetime of the system.
+This limits incremental development to changes that do not affect the database schema.
+Ampersand stretches this boundary by means of its generator.
+Mistakes that are caused by a changed database schema are caught by Ampersand's type checking mechanism, pre-empting runtime problems caused by a changing schema.
+Bulk input (via spreadsheets) is independent of the database schema, which helps to migrate data.
+Such features make incremental development easier, especially when the database schema changes.
+
+### Formal
+Ampersand is a formal language, based on Relation Algebra (also known as the Calculus of Relations).
+It uses a formal language to ensure that business rules can be defined precisely and that a compiler can transform it to software.
+Relation Algebra has been chosen because it is easy to write software to reason with terms in relation algebra.
+(That is because relation algebra does not use variables and quantifiers and because its algebraic properties are well-established.)
+Also, Relation Algebra is closely related to Relation*al* Algebra, which facilitates generating correct code in for example SQL.
+For users of Ampersand, getting to work with relations, concepts and interfaces is easy.
+However, for specifying your own rules you must learn to use the operators of relation algebra.
+
+Scientific foundations of Ampersand have been published in the International Conference on Relation Algebraic Methods in Computer Science ([RAMiCS](http://www.ramics-conference.org/)) from 2011 onwards.
+## Some examples of information systems built in Ampersand
 
 * Medications, a demonstrator built by TNO in Ampersand to showcase attestation on the internet. This example is undocumented.
 * [SETU standards](https://setu.t4smm.nl/), a site to disclose standards for electronic messaging in the sector of flexible labour. This example is undocumented.
@@ -75,42 +136,6 @@ The Open University of the Netherlands has a [course in Rule Based Design](https
 
 Ampersand is freely available as an [open source project in GitHub](https://github.com/AmpersandTarski).
 
-## What are the key features of Ampersand?
-### Declarative
-Ampersand is a [declarative](../conceptual/why-declarative.md) language, which means that you can add, update, or delete any rule in your code without affecting other rules. This is enables incremental development. It also means that rules are free of side effects. That means that the result of evaluating a rule only depends on the context and not on the number of times you evaluate that rule.
-
-### Reactive
-Ampersand is a [reactive] language.
-It does not follow a pre-specified procedure, but it reacts to events from outside and inside the system.
-If you want to enforce a procedure, you must specify the right constraints.
-
-### Statically typed
-All relations in a context together form a conceptual model.
-The Ampersand compiler uses this model for type checking the rules you specify in an Ampersand script.
-The word ``static'' refers to type checking by the compiler (as opposed to dynamic typing, which is done at run time).
-This prevents many run time errors, presenting them at compile time as type errors.
-Static typing is known to save modelers much effort and to enhance the quality of the generated code.
-For a novice, static type checking can yield some frustration, which will quickly dissolve as your experience grows.
-
-### Constraints
-Each rule in Ampersand is a constraint on a dataset.
-The information system generated by Ampersand keeps that constraint satisfied.
-If compliance with a rule means that it is satisfied all the time, it is fair to say that an Ampersand application delivers compliance with all the rules in its script.
-
-This differs from decision rules and computation rules, which can be ``called'' to get a result.
-Decision rules are a specific form of constraint, so Ampersand can deal with that naturally.
-Computation rules have not been implemented yet.
-
-### Formal
-Ampersand is a formal language, based on Relation Algebra (also known as the Calculus of Relations).
-It uses a formal language to ensure that business rules can be defined precisely and that a compiler can transform it to software.
-Relation Algebra has been chosen because it is easy to write software to reason with terms in relation algebra.
-(That is because relation algebra does not use variables and quantifiers and because its algebraic properties are well-established.)
-Also, Relation Algebra is closely related to Relational Algebra, so generating correct code is easy.
-For users of Ampersand, getting to work with relations, concepts and interfaces is easy.
-However, for specifying your own rules you must learn to use the operators of relation algebra.
-
-Scientific foundations of Ampersand have been published in the International Conference on Relation Algebraic Methods in Computer Science ([RAMiCS](http://www.ramics-conference.org/)) from 2011 onwards.
 
 ## Who is behind Ampersand?
 ## How does Ampersand compare to other methods and tools?

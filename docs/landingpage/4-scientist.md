@@ -9,9 +9,9 @@ We aim at generating "all the way", which means that specifications are as close
 
 Interested? Here are some frequently asked questions. Click for the answers.
 * [What is the purpose of Ampersand?](./1-interested-visitor.md#whyAmpersand)
-* [Which research papers have been produced?](/ampersand/research#Publications)
+* [Which research papers have been produced?](./research#Publications)
 * [Which research results have been produced?](/ampersand/research#Results)
-* [What are the plans with Ampersand?]
+* [What is an information system according to Ampersand?](/ampersand/conceptual/theory.md)
 * [How is the Ampersand project being run?](/ampersand/governance/)
 * [What are the plans for the future?]
 * [What is needed?]

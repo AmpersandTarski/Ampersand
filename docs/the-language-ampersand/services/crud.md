@@ -33,7 +33,7 @@ The user interface defined by this service is shown as a screenshot below. Notic
 
 ![Column-oriented layout of a user interface with columns in each row](<../../.gitbook/assets/COLS layout example.png>)
 
-The next sections give some more detailed information on the run time semantics for CRUD annotations as implemented in Ampersand.
+The next sections give some more detailed information on the runtime semantics for CRUD annotations as implemented in Ampersand.
 
 ## Create
 
