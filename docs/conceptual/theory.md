@@ -26,9 +26,7 @@ state of the system. This state is represented in a persistent store,
 aka the database [^3]. Events that the system detects may cause the
 state to change.
 
-<p align="center" id="Anatomy"></p>
-![Anatomy of an information system](./datamigration-Pre-migration.drawio.png)
-
+![Anatomy of an information system](datamigration-Pre-migration.drawio.png)
 
 To keep our theory technology independent, datasets are assumed to
 contain triples. This makes the theory valid for any kind of database
@@ -39,8 +37,7 @@ database management systems refer to as integrity rules. The purpose of
 integrity rules is to keep the constraints they represent satisfied.
 
 
-An [information system]{#dfn:informationSystem label="informationSystem"} is a combination of dataset, schema, and
-functionality. Each is defined in a separate section.
+An *information system* is a combination of dataset, schema, and functionality. Each is defined in a separate section.
 
 ## Datasets {#sct:Datasets}
 
@@ -86,10 +83,9 @@ $\mathbb{A}\times\mathbb{R}\times\mathbb{A}$.
 
 A dataset $\mathscr{D}$ is a tuple
 $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ that satisfies:
-$\begin{aligned}
-   \forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B
-   \label{eqn:wellTypedEdge}
-\end{aligned}$
+
+   $\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
+
 For example,
 $\langle{\text{{\tt\small Peter}}},{\text{\it phone}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
 is a triple.
