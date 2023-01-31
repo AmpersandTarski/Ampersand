@@ -84,8 +84,9 @@ $\mathbb{A}\times\mathbb{R}\times\mathbb{A}$.
 A dataset $\mathscr{D}$ is a tuple
 $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ that satisfies:
 
-$\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
+$\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}:\ a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
 
+This equation defines what it means that every pair in the database is well-typed.
 For example,
 $\langle{\text{{\tt\small Peter}}},{\text{\it phone}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
 is a triple.
