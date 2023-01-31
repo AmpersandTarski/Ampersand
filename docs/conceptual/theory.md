@@ -192,20 +192,13 @@ run-time, users are required to write all specialization rules
 explicitly.
 
 As a result, if an atom is an instance of concept $A$ and $A\preceq B$,
-this atom has all properties that atoms of type $B$ have:
-$\begin{aligned}
-      &a\ \text{\it inst}\ A\wedge b\ \text{\it inst}\ B\wedge A\preceq B\\
-      \wedge&a=b\\
-      \wedge&b\ r\ x
-\end{aligned}
-      \ \Rightarrow\ a\ r\ x$
+this atom has all properties that atoms of type $B$ have.
 
 ## Information Systems {#sct:Information Systems}
 
-This section defines the notion of information system, as shown in [this figure](#Anatomy).
+This section defines the notion of information system.
 As before, a suffix disambiguates the elements of this definition when needed.
 
-::: {#def:information system .definition}
 **Definition 1** (information system).
 
 *An information system $\mathscr{S}$ is a tuple
@@ -213,29 +206,29 @@ $\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$,
 in which*
 
 -   *dataset
-    $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst}}\rangle$ is
-    defined as in section [3.1](#sct:Datasets){reference-type="ref"
-    reference="sct:Datasets"};*
+    $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst}}\rangle$ as
+    defined previously;*
 
 -   *schema
     $\mathscr{Z}=\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$
-    is defined as in section [3.2](#sct:Schemas){reference-type="ref"
-    reference="sct:Schemas"};*
+    as defined previously;*
 
 -   *$\mathcal{O}$ is a set of roles;*
 
 -   *$\text{\it maint}: \mathcal{O}\times\mathcal{U}$ is the
     maintainance relation between roles and rules.*
-:::
 
-A [role]{#dfn:role label="dfn:role"} is a name that identifies a group
-of users. It serves as a placeholder for a person or a machine (i.e. an
+
+A *role* is a name that identifies a group of users.
+It serves as a placeholder for a person or a machine (i.e. an
 actor) that works with the dataset (i.e. create, read, update, or delete
 triples). The purpose of a role is to mention an individual user (human)
 or an automated actor (bot) without knowing who that user is.
 
 The system is *at rest* when every rule in the schema is satisfied:
-$\forall u\in\mathcal{U}:\ \text{\it sat}_{u}(\mathscr{D})\label{eqn:satisfaction}$
+
+$\forall u\in\mathcal{U}:\ \text{\it sat}_{u}(\mathscr{D})$
+
 However, the system continually registers events that insert or delete
 triples in its dataset, which may cause rules to be broken. This
 requires a reaction to restore invariance. Example: if a rule says that
@@ -250,8 +243,10 @@ automatic or manual. Manual enforcement is specified by the developer by
 assigning a rule $u$ to a role $o$. Any actor with role $o$, whether
 person or machine, can restore invariance of rule $u$ by inserting or
 deleting the right triples. For this reason, every rule is assigned to
-at least one role by means of the relation $\text{\it maint}$.
-$\forall u\in\mathcal{U}\ \exists o\in\mathcal{O}:\ o\ \text{\it maint}\ u\label{eqn:maintain}$
+at least one role by means of the relation $\text{\it maint}$:
+
+$\forall u\in\mathcal{U}\ \exists o\in\mathcal{O}:\ o\ \text{\it maint}\ u$
+
 $o\ \text{\it maint}\ u$ means that role $o$ must keep rule $u$
 satisfied, i.e. to keep $\text{\it sat}_{u}(\mathscr{D})$ true. As
 long as rule $u$ is broken, the system should notify actors in the
@@ -325,7 +320,7 @@ Now let us check the requirements to verify that this example defines an
 information system. The Ampersand compiler generates a dataset
 $\mathscr{D}$, which contains a set of triples and a relation
 $\text{\it inst}$. It defines the set of triples $\mathcal{T}$ as:
-$\begin{array}[t]{l}
+$\begin{aligned}
          \langle{\text{\tt "Peter"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
          \langle{\text{\tt "Susan"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
          \langle{\text{\tt "John"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
@@ -333,8 +328,11 @@ $\begin{array}[t]{l}
          \langle{\text{\tt "Business Rules"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
          \langle{\text{\tt "Business Analytics"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
          \langle{\text{\tt "IT-Governance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle
-   \end{array}$ The relation $\text{\it inst}$ contains the pairs:
-$\begin{array}{l}
+   \end{aligned}$
+   
+The relation $\text{\it inst}$ contains the pairs:
+
+$\begin{aligned}
       \langle{\tt "Finance"},{\tt Module}\rangle\\
       \langle{\tt "Business Rules"},{\tt Module}\rangle\\
       \langle{\tt "Business Analytics"},{\tt Module}\rangle\\
@@ -344,12 +342,11 @@ $\begin{array}{l}
       \langle{\tt "Peter"},{\tt Student}\rangle\\
       \langle{\tt "Susan"},{\tt Student}\rangle\\
       \langle{\tt "John"},{\tt Student}\rangle
-   \end{array}$ The tuple
-$\langle{\mathcal{T}},{\text{\it inst}}\rangle$ satisfies
-requirement [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
-reference="eqn:wellTypedEdge"} so this is a dataset $\mathscr{D}$ as
-introduced in section [3.1](#sct:Datasets){reference-type="ref"
-reference="sct:Datasets"}.
+   \end{aligned}$
+
+The tuple $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ is well-typed,
+so this is a dataset $\mathscr{D}$ as
+introduced before.
 
 The Ampersand compiler generates a schema $\mathscr{Z}$, which contains
 concepts, relations, and rules. It defines the set of concepts to
