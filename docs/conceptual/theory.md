@@ -86,11 +86,11 @@ $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ that satisfies:
 
 $\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}:\ a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
 
-This equation defines what it means that every pair in the database is well-typed.
+This equation defines what it means for a triple to be well-typed.
 For example,
 $\langle{\text{{\tt\small Peter}}},{\text{\it phone}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
 is a triple.
-This equation says that `Peter` is an instance of
+The equation says that `Peter` is an instance of
 `Person` and `074238991` is an instance of `TelephoneNumber`. In
 practice, users can say that Peter has telephone number 074238991. So,
 the "thing" that `Peter` refers to (which is Peter) has `074238991` as a
@@ -108,12 +108,13 @@ A relation $r$ can serve as a container of pairs, as defined by the
 function
 $\text{\it pop}_r:\mathbb{D}\rightarrow\cal{P}\{\mathbb{A}\times\mathbb{A}\}$.
 It defines a set of pairs, also known as the population of $r$:
-$\text{\it pop}_{r}(\mathscr{D})\ =\ \{ \langle{a},{b}\rangle\mid\ \langle{a},{r},{b}\rangle\in\mathcal{T}_{\mathscr{D}}\}
-\label{eqn:pop}$
-Equation [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
-reference="eqn:wellTypedEdge"} implies that for every dataset
-$\mathscr{D}$:
+
+$\text{\it pop}_{r}(\mathscr{D})\ =\ \{ \langle{a},{b}\rangle\mid\ \langle{a},{r},{b}\rangle\in\mathcal{T}_{\mathscr{D}}\}$
+
+So, for every dataset $\mathscr{D}$:
+
 $\langle{a},{b}\rangle\in\text{\it pop}_{\text{\it n}_{\langle{A},{B}\rangle}}(\mathscr{D})\ \Rightarrow\ a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
+
 For a developer, this means that the type of an atom depends only on the
 relation in which it resides; not on the actual population of the
 database. This allows for static typing, which has well established
@@ -157,24 +158,23 @@ $\mathcal{U}_{\mathscr{Z}}$ rather than $\mathcal{C}$, $\mathcal{R}$,
 and $\mathcal{U}$ respectively.
 
 In order to do static type checking, all concepts and relations must be
-"known" in the schema: $\begin{aligned}
-   \text{\it n}_{\langle{A},{B}\rangle}\in\mathcal{R}&\Rightarrow&A\in\mathcal{C}\ \wedge\ B\in\mathcal{C}
-   \label{eqn:relationsIntroduceConcepts}\\
+"known" in the schema:
+$\begin{aligned}
+   \text{\it n}_{\langle{A},{B}\rangle}\in\mathcal{R}&\Rightarrow&A\in\mathcal{C}\ \wedge\ B\in\mathcal{C}\\
    \langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&\Rightarrow&\text{\it n}_{\langle{A},{B}\rangle}\in\mathcal{R}
-   \label{eqn:define R}
-\end{aligned}$ If a triple $\langle{a},{r},{b}\rangle$ satisfies
-requirement [\[eqn:define R\]](#eqn:define R){reference-type="ref"
-reference="eqn:define R"} and its relation $r$ satisfies
-requirement eqn:relationsIntroduceConcepts, this triple is said to
-*befit* schema
-$\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$.
+\end{aligned}$
+
+We say that a triple $\langle{a},{r},{b}\rangle$ 
+*befits* schema $\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$ if it satisfies these requirements.
 
 A special kind of rule is used for specialization. The rule $A\preceq B$
 (pronounce: $A$ is a $B$) states that any instance of $A$ is an instance
-of $B$ as well. $\label{eqn:specialization}
-   \text{\it sat}_{A\preceq B}(\mathscr{D})\ \Leftrightarrow\ \forall a: a\ \text{\it inst}\ A\rightarrow a\ \text{\it inst}\ B$
+of $B$ as well.
+
+$\text{\it sat}_{A\preceq B}(\mathscr{D})\ \Leftrightarrow\ \forall a: a\ \text{\it inst}\ A\rightarrow a\ \text{\it inst}\ B$
+
 This is called *specialization*, but it is also known as
-*generalization* or *subtyping*. Specialization is needed to allow
+*generalization* or *subtyping*. You need specialization to allow
 statements such as: "An employee is a person" or "A human is a mammal".
 The specialization rules in a schema form a partial order $\preceq$,
 meaning that $\preceq$ is reflexive, transitive, and antisymmetric.
@@ -193,11 +193,11 @@ explicitly.
 
 As a result, if an atom is an instance of concept $A$ and $A\preceq B$,
 this atom has all properties that atoms of type $B$ have:
-$\begin{array}[b]{ll}
+$\begin{aligned}
       &a\ \text{\it inst}\ A\wedge b\ \text{\it inst}\ B\wedge A\preceq B\\
       \wedge&a=b\\
       \wedge&b\ r\ x
-   \end{array}
+\end{aligned}
       \ \Rightarrow\ a\ r\ x$
 
 ## Information Systems {#sct:Information Systems}
