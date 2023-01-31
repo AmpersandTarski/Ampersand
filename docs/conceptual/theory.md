@@ -84,13 +84,12 @@ $\mathbb{A}\times\mathbb{R}\times\mathbb{A}$.
 A dataset $\mathscr{D}$ is a tuple
 $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ that satisfies:
 
-   $\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
+$\forall\langle{a},{\text{\it n}_{\langle{A},{B}\rangle}},{b}\rangle\in\mathcal{T}&:&a\ \text{\it inst}\ A\ \wedge\ b\ \text{\it inst}\ B$
 
 For example,
 $\langle{\text{{\tt\small Peter}}},{\text{\it phone}_{\langle{\tt Person},{\tt TelephoneNumber}\rangle}},{\text{{\tt\small 074238991}}}\rangle$
 is a triple.
-Equation [\[eqn:wellTypedEdge\]](#eqn:wellTypedEdge){reference-type="ref"
-reference="eqn:wellTypedEdge"} says that `Peter` is an instance of
+This equation says that `Peter` is an instance of
 `Person` and `074238991` is an instance of `TelephoneNumber`. In
 practice, users can say that Peter has telephone number 074238991. So,
 the "thing" that `Peter` refers to (which is Peter) has `074238991` as a
