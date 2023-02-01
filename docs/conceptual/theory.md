@@ -358,13 +358,11 @@ $\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$
 
 It defines the set of relations:
 
-$\begin{array}{rcl}
-      \mathcal{R}&=&\{\begin{array}[t]{l}
-                  \text{\it \tt takes}_{\langle{\tt Student},{\tt Course}\rangle},\\
-                  \text{\it \tt isPartOf}_{\langle{\tt Module},{\tt Course}\rangle},\\
-                  \text{\it \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}\ \}
-                \end{array}
-     \end{array}$
+$$\begin{array}{ll}
+\mathcal{R}\ =\ \{&\text{\it  \tt takes}_{\langle{\tt Student},{\tt Course}\rangle},\\
+&\text{\it  \tt isPartOf}_{\langle{\tt Module},{\tt Course}\rangle},\\
+&\text{\it  \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}\ \}
+\end{array}$$
 
 And, it defines the set of rules $\mathcal{U}$ to
 contain just one rule: `EnrollRule`.
