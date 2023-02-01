@@ -139,7 +139,6 @@ module.exports = {
                     'ampersand/exercises/README',
                     'ampersand/exercises/delivery',
                     'ampersand/exercises/vog-in-dutch',
-                    'ampersand/governance/README',
                     'ampersand/installing-ampersand/README',
                     'ampersand/installing-ampersand/deploying-your-prototype',
                     'ampersand/installing-ampersand/installing-the-tools-manually',

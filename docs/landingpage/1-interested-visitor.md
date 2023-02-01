@@ -112,12 +112,14 @@ Scientific foundations of Ampersand have been published in the International Con
 Ampersand lets you encode your own [business rules](https://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) as constraints on a data set.
 You specify your business as constraints and Ampersand generates information systems that keep these constraints satisfied.
 
-Ampersand adheres closely to the concept of business rule as defined by the Business Rules Group. This [essay](../why-ampersand/business-rules-in-ampersand.md) explains the correspondence between the Business Rules Manifesto and Ampersand.
+Ampersand adheres closely to the concept of business rule as defined by the Business Rules Group.
+This [essay](../why-ampersand/business-rules-in-ampersand.md) explains the correspondence between the Business Rules Manifesto and Ampersand.
 
 
 ### How does it work?
 
-Ampersand is a way of designing information systems for enterprises, supported by a method, a tool, and a course. These are the things you do (click on the hyperlinks to watch video clips):
+Ampersand is a way of designing information systems for enterprises, supported by a method, a tool, and a course.
+These are the things you do (click on the hyperlinks to watch video clips):
 
 1. Communicate with the business solely [in their own _**language**_](https://player.ou.nl/wowzaportlets/#!production/xqW5z2v), which is a natural language.
 2. Define a domain language (in Ampersand) to consolidate _**agreement of terms**_ among stakeholders, using it solely for technical purposes.
@@ -127,19 +129,39 @@ Ampersand is a way of designing information systems for enterprises, supported b
 6. Use the documented ontology that Ampersand generates to _**validate**_ the agreed rules.
 
 ### Foundations
-
-
-
 The Open University of the Netherlands has a [course in Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design), in which students use Ampersand for this purpose.
 
 ### Licenses
 
 Ampersand is freely available as an [open source project in GitHub](https://github.com/AmpersandTarski).
 
-
-## Who is behind Ampersand?
 ## How does Ampersand compare to other methods and tools?
-## What is the history of Ampersand?
-## How is the Ampersand project being run?
-## What are the plans for the future?
+## How is the Ampersand project being run?{#Governance}
+The governance of Ampersand is founded on the following principles:
+* Ampersand is a research project, driven by the academic virtues of curiosity, spontaneous collaboration and mutual assistance.
+* The repositories are visible to the entire world, but contributions require membership of an Ampersand team, to prevent silly accidents.
+* Maintainability is by far the most highly valued property of anything in the Ampersand project.
+* There is no money involved.
+* There are no deadlines.
+* We continually draw on best practices from others to improve our productivity.
+
+### Future directions
+We lay out the future directions in terms of research questions.
+Such topics are usually discussed on Ampersand days or physical meetings of the core team.
+[Stef Joosten](https://github.com/stefjoosten) has a final say in this, to ensure progress.
+
+### Decision making
+The core team, consisting of [Stef Joosten](https://github.com/stefjoosten), [Han Joosten](https://github.com/hanjoosten), and [Michiel Stornebrink](https://github.com/Michiel-s),
+makes all decisions.
+All [Ampersand repositories](https://github.com/AmpersandTarski) are managed by the core team.
+
+New contributors and temporary contributors are individuals with a GitHub identity, so that we can make them a member of the project.
+
+### Management
+The [Ampersand repository](https://github.com/AmpersandTarski/Ampersand) and [Prototype repository](https://github.com/AmpersandTarski/Prototype)
+both have a "main" branch, which contains all releases as tags.
+Contributors make pull requests to merge their branch into the main branch.
+This merge also requires a code review by one of the core team members.
+Automatic testing (by GitHub actions) ensures a minimal amount of hygiene.
+We merge only compilable code that passes the regression test.## What are the plans for the future?
 ## What do you need to use Ampersand?
