@@ -352,28 +352,25 @@ so this is a dataset $\mathscr{D}$ as
 introduced before.
 
 The Ampersand compiler generates a schema $\mathscr{Z}$, which contains
-concepts, relations, and rules. It defines the set of concepts to
-satisfy
-requirement [\[eqn:relationsIntroduceConcepts\]](#eqn:relationsIntroduceConcepts){reference-type="ref"
-reference="eqn:relationsIntroduceConcepts"}:
-$\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$ It
-defines the set of relations to satisfy
-requirement [\[eqn:define R\]](#eqn:define R){reference-type="ref"
-reference="eqn:define R"}: $\begin{array}{rcl}
+concepts, relations, and rules. It defines the set of concepts:
+
+$\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$
+
+It defines the set of relations:
+
+$\begin{array}{rcl}
       \mathcal{R}&=&\{\begin{array}[t]{l}
                   \text{\it \tt takes}_{\langle{\tt Student},{\tt Course}\rangle},\\
                   \text{\it \tt isPartOf}_{\langle{\tt Module},{\tt Course}\rangle},\\
                   \text{\it \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}\ \}
                 \end{array}
-     \end{array}$ And, it defines the set of rules $\mathcal{U}$ to
+     \end{array}$
+
+And, it defines the set of rules $\mathcal{U}$ to
 contain just one rule: `EnrollRule`.
-Requirement [\[eqn:specialization\]](#eqn:specialization){reference-type="ref"
-reference="eqn:specialization"} is satisfied because this example
-contains no specialization. So, the schema
-$\mathscr{Z}=\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$
-satisfies the requirements from
-section [3.2](#sct:Schemas){reference-type="ref"
-reference="sct:Schemas"}.
+This example contains no specialization.
+So, the schema $\mathscr{Z}=\langle{\mathcal{C}},{\mathcal{R}},{\mathcal{U}}\rangle$
+satisfies all requirements mentioned above.
 
 Now let us check the definition of information system. Ampersand
 generates a set of roles $\mathcal{O}=\{{\tt Administrator}\}$. The
@@ -381,14 +378,12 @@ relation $\text{\it maint}$ contains one pair only,
 $\langle{{\tt Administrator}},{{\tt EnrollRule}}\rangle$, instructing
 the run-time engine to forward all violations of `EnrollRule` to an
 administrator so she can keep `EnrollRule` satisfied.
-Requirement [\[eqn:satisfaction\]](#eqn:satisfaction){reference-type="ref"
-reference="eqn:satisfaction"} is satisfied because the only rule,
-`EnrollRule` is satisfied. This completes the requirements for
-$\mathscr{S}=\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$
-from definition [1](#def:information system){reference-type="ref"
-reference="def:information system"}. This concludes the argument that
-$\mathscr{S}$ is an information system.
+We can see that the only rule,
+`EnrollRule`, is satisfied, which completes the requirements for
+$\mathscr{S}=\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$.
+This concludes the argument that $\mathscr{S}$ is an information system.
 
+## Relation to other theories 
 The following table compares the language used in the world of information systems with related worlds. It is compared with Ampersand, because we use Ampersand to design information systems. It is compared with the world of software, because Ampersand generates software. It is compared with the world of model theory [ref required], because the formal theory of Ampersand can be understood formally in model theory. 
 
 | information system | Ampersand | software | model theory |
