@@ -323,37 +323,29 @@ information system. The Ampersand compiler generates a dataset
 $\mathscr{D}$, which contains a set of triples and a relation
 $\text{\it inst}$. It defines the set of triples $\mathcal{T}$ as:
 
-$\begin{aligned}
-         \langle{\text{\tt "Peter"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
-         \langle{\text{\tt "Susan"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "John"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "Finance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
-         \langle{\text{\tt "Business Rules"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "Business Analytics"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
-         \langle{\text{\tt "IT-Governance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle
-   \end{aligned}$
-
-$$
-\begin{array}{c|c}
-\text{Column 1} & \text{Column 2} \\ \hline
-\text{Row 1, Column 1} & \text{Row 1, Column 2} \\
-\text{Row 2, Column 1} & \text{Row 2, Column 2} \\
-\end{array}
-$$
+$$\begin{array}{llr}
+\langle{\text{\tt "Peter"}},&{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},&{\text{\tt "Management"}}\rangle\\
+\langle{\text{\tt "Susan"}},&{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},&{\text{\tt "Business IT"}}\rangle\\
+\langle{\text{\tt "John"}},&{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},&{\text{\tt "Business IT"}}\rangle\\
+\langle{\text{\tt "Finance"}},&{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},&{\text{\tt "Management"}}\rangle\\
+\langle{\text{\tt "Business Rules"}},&{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},&{\text{\tt "Business IT"}}\rangle\\
+\langle{\text{\tt "Business Analytics"}},&{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},&{\text{\tt "Business IT"}}\rangle\\
+\langle{\text{\tt "IT-Governance"}},&{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},&{\text{\tt "Management"}}\rangle
+\end{array}$$
 
 The relation $\text{\it inst}$ contains the pairs:
 
-$\begin{aligned}
-      \langle{\tt "Finance"},{\tt Module}\rangle\\
-      \langle{\tt "Business Rules"},{\tt Module}\rangle\\
-      \langle{\tt "Business Analytics"},{\tt Module}\rangle\\
-      \langle{\tt "IT-Governance"},{\tt Module}\rangle\\
-      \langle{\tt "Management"},{\tt Course}\rangle\\
-      \langle{\tt "Business IT"},{\tt Course}\rangle\\
-      \langle{\tt "Peter"},{\tt Student}\rangle\\
-      \langle{\tt "Susan"},{\tt Student}\rangle\\
-      \langle{\tt "John"},{\tt Student}\rangle
-   \end{aligned}$
+$$\begin{array}{lcr}
+\langle{\tt "Finance"}&,&{\tt Module}\rangle\\
+\langle{\tt "Business Rules"}&,&{\tt Module}\rangle\\
+\langle{\tt "Business Analytics"}&,&{\tt Module}\rangle\\
+\langle{\tt "IT-Governance"}&,&{\tt Module}\rangle\\
+\langle{\tt "Management"}&,&{\tt Course}\rangle\\
+\langle{\tt "Business IT"}&,&{\tt Course}\rangle\\
+\langle{\tt "Peter"}&,&{\tt Student}\rangle\\
+\langle{\tt "Susan"}&,&{\tt Student}\rangle\\
+\langle{\tt "John"}&,&{\tt Student}\rangle
+\end{array}$$
 
 The tuple $\langle{\mathcal{T}},{\text{\it inst}}\rangle$ is well-typed,
 so this is a dataset $\mathscr{D}$ as
