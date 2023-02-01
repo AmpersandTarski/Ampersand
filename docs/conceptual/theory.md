@@ -1,4 +1,4 @@
-# Theory
+# A Theory of Information Systems
 
 This chapter documents a theory of information systems, upon which Ampersand generates information systems.
 
@@ -307,12 +307,14 @@ role to maintain its invariance:
     ROLE Administrator MAINTAINS EnrollRule
 
 The semantics of this rule defines
-$\text{\it sat}_{\tt EnrollRule}(\mathscr{D})$ as: $\begin{array}{l}
+$\text{\it sat}_{\tt EnrollRule}(\mathscr{D})$ as:
+
+$\begin{aligned}
    \forall \langle{s},{m}\rangle\in\text{\it pop}_{\tt isEnrolledFor}(\mathscr{D})\ \exists c\in\text{\tt Course}:\\
 s\ \text{\tt isEnrolledFor}\ m\ \rightarrow\ s\ \text{\tt takes}\ c\ \wedge\ m\ \text{\tt isPartOf}\ c
-\end{array}
-\label{eqn:example isEnrolledFor}$ Rule `EnrollRule` is satisfied
-because relation
+\end{aligned}$
+
+Rule `EnrollRule` is satisfied because relation
 $\text{\it \tt isEnrolledFor}_{\langle{\tt Student},{\tt Module}\rangle}$
 is empty.
 
@@ -320,6 +322,7 @@ Now let us check the requirements to verify that this example defines an
 information system. The Ampersand compiler generates a dataset
 $\mathscr{D}$, which contains a set of triples and a relation
 $\text{\it inst}$. It defines the set of triples $\mathcal{T}$ as:
+
 $\begin{aligned}
          \langle{\text{\tt "Peter"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle\\
          \langle{\text{\tt "Susan"}},{\text{\it \text{\tt takes}}_{\langle{\text{\tt Student}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
@@ -329,7 +332,15 @@ $\begin{aligned}
          \langle{\text{\tt "Business Analytics"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Business IT"}}\rangle\\
          \langle{\text{\tt "IT-Governance"}},{\text{\it \text{\tt isPartOf}}_{\langle{\text{\tt Module}},{\text{\tt Course}}\rangle}},{\text{\tt "Management"}}\rangle
    \end{aligned}$
-   
+
+$$
+\begin{array}{c|c}
+\text{Column 1} & \text{Column 2} \\ \hline
+\text{Row 1, Column 1} & \text{Row 1, Column 2} \\
+\text{Row 2, Column 1} & \text{Row 2, Column 2} \\
+\end{array}
+$$
+
 The relation $\text{\it inst}$ contains the pairs:
 
 $\begin{aligned}
