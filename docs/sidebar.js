@@ -40,7 +40,7 @@ module.exports = {
         },
         {
             type: 'doc',
-            id: 'ampersand/why-ampersand/BRManifestoAndAmpersand'
+            id: 'ampersand/conceptual/theory'
         },
         {
             type: 'doc',
