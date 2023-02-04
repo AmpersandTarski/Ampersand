@@ -39,9 +39,8 @@ module Ampersand.Input.ADL1.ParsingLib
     pCrudString,
     pDoubleQuotedString,
     pDoubleQuotedString1,
-    pLowerCaseName,
+    pName,
     pSingleWord,
-    pUpperCaseName,
 
     -- * special parsers
     pAtomValInPopulation,
@@ -99,17 +98,17 @@ type AmpParser a =
 
 -- | the state of the parser. Note: the position in the text is managed by the lexer: Every Token has a position in it
 data ParserState = ParserState
-  { _parseMessages :: ![Text]
+  { _parseMessages :: ![(Origin, Text)]
   }
 
 initialParserState :: ParserState
 initialParserState = ParserState []
 
-addParserWarning :: Text -> AmpParser ()
-addParserWarning msg = modifyState update
+addParserWarning :: Origin -> Text -> AmpParser ()
+addParserWarning orig msg = modifyState update
   where
     update :: ParserState -> ParserState
-    update (ParserState xs) = ParserState (xs <> [msg])
+    update (ParserState xs) = ParserState (xs <> [(orig, msg)])
 
 -----------------------------------------------------------
 -- Useful functions
@@ -243,31 +242,56 @@ pAmpersandMarkup =
     <?> "markup"
 
 --- Conid ::= UpperChar AlphaNumericChar*
-pUpperCaseName :: NameSpace -> AmpParser Name
-pUpperCaseName ns =
-  toName ns
-    <$> ( check
-            ( \case
-                LexSafeID (Text1 h tl) -> if isUpper h then Just $ Text1 h tl else Nothing
-                _ -> Nothing
-            )
-            <?> "upper case identifier"
-        )
+pUpperCaseName :: NameType -> AmpParser Name
+pUpperCaseName typ =
+  mkName typ
+    <$> check
+      ( \case
+          LexSafeID t1 ->
+            if isUpper h then Just xs else Nothing
+            where
+              xs = splitOnDots t1
+              Text1 h _ = NE.last xs
+          _ -> Nothing
+      )
+    <?> "upper case identifier"
 
 --- Varid ::= LowerChar AlphaNumericChar*
-pLowerCaseName :: NameSpace -> AmpParser Name
-pLowerCaseName ns =
-  toName ns
-    <$> ( check
-            ( \case
-                LexSafeID (Text1 h tl) -> if isLower h then Just $ Text1 h tl else Nothing
-                _ -> Nothing
-            )
-            <?> "lower case identifier"
-        )
+pLowerCaseName :: NameType -> AmpParser Name
+pLowerCaseName typ =
+  mkName typ
+    <$> check
+      ( \case
+          LexSafeID t1 ->
+            if isLower h then Just xs else Nothing
+            where
+              xs = splitOnDots t1
+              Text1 h _ = NE.last xs
+          _ -> Nothing
+      )
+    <?> "lower case identifier"
 
-pAnyKeyWordName :: NameSpace -> AmpParser Name
-pAnyKeyWordName ns = toName ns <$> pAnyKeyWord
+pAnyKeyWordName :: NameType -> AmpParser Name
+pAnyKeyWordName typ =
+  mkName typ
+    . splitOnDots
+    <$> pAnyKeyWord
+
+--- ADLid ::= Varid | Conid
+--- ADLidList ::= ADLid (',' ADLid)*
+--- ADLidListList ::= ADLid+ (',' ADLid+)*
+pUnrestrictedName :: NameType -> AmpParser Name
+pUnrestrictedName typ = pLowerCaseName typ <|> pUpperCaseName typ <|> pAnyKeyWordName typ
+
+pName :: NameType -> AmpParser Name
+pName typ = case typ of
+  ConceptName -> pUpperCaseName typ
+  RelationName -> pLowerCaseName typ
+  RuleName -> pUnrestrictedName typ
+  PatternName -> pUpperCaseName typ
+  ContextName -> pUpperCaseName typ
+  RoleName -> pUpperCaseName typ
+  ViewName -> pUpperCaseName typ
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of

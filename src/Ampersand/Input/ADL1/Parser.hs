@@ -42,15 +42,14 @@ pContext ::
   AmpParser (P_Context, [Include])
 pContext ns =
   rebuild <$> (posOf . pKey . toText1Unsafe $ "CONTEXT")
-    <*> pUpperCaseName ns
-    <*> pMaybe pLabel
+    <*> pNameAndLabel ContextName ns
     <*> pMaybe pLanguageRef
     <*> pMaybe pTextMarkup
     <*> many pContextElement
     <* (pKey . toText1Unsafe $ "ENDCONTEXT")
   where
-    rebuild :: Origin -> Name -> Maybe Label -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
-    rebuild pos' nm lbl lang fmt ces =
+    rebuild :: Origin -> (Name, Maybe Label) -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
+    rebuild pos' (nm, lbl) lang fmt ces =
       ( PCtx
           { ctx_nm = nm,
             ctx_lbl = lbl,
@@ -95,8 +94,34 @@ pContext ns =
         <|> CIncl <$> pIncludeStatement
         <|> CEnf <$> pEnforce ns
 
---pNameAndLabel :: NameSpace -> AmpParser (Name, Maybe Label)
---pNameAndLabel ns = ss
+pNameAndLabel :: NameType -> NameSpace -> AmpParser (Name, Maybe Label)
+pNameAndLabel typ ns = properParser <|> depricatedParser
+  where
+    properParser :: AmpParser (Name, Maybe Label)
+    properParser = do
+      nm <- withNameSpace ns <$> pName typ
+      mLab <- pMaybe pLabel
+      return (nm, mLab)
+    depricatedParser :: AmpParser (Name, Maybe Label)
+    depricatedParser =
+      do
+        orig <- currPos
+        txt <- pDoubleQuotedString1
+        let nmTxt =
+              toText1Unsafe
+                . T.intercalate "_"
+                . filter (not . T.null)
+                . concat
+                . NE.toList
+                . fmap (T.words . text1ToText)
+                . splitOnDots
+                $ txt
+            mLab
+              | txt == nmTxt = Nothing
+              | otherwise = Just . Label . text1ToText $ txt
+            warn = ""
+        addParserWarning orig warn
+        return (mkName typ (nmTxt NE.:| []), mLab)
 
 data ContextElement
   = CMeta MetaData
@@ -150,14 +175,13 @@ pPatternDef :: NameSpace -> AmpParser P_Pattern
 pPatternDef ns =
   rebuild <$> currPos
     <* (pKey . toText1Unsafe) "PATTERN"
-    <*> pUpperCaseName ns -- The name spaces of patterns and concepts are shared.
-    <*> pMaybe pLabel
+    <*> pNameAndLabel PatternName ns -- The name spaces of patterns and concepts are shared.
     <*> many (pPatElem ns)
     <*> currPos
     <* (pKey . toText1Unsafe) "ENDPATTERN"
   where
-    rebuild :: Origin -> Name -> Maybe Label -> [PatElem] -> Origin -> P_Pattern
-    rebuild pos' nm lbl pes end =
+    rebuild :: Origin -> (Name, Maybe Label) -> [PatElem] -> Origin -> P_Pattern
+    rebuild pos' (nm, lbl) pes end =
       P_Pat
         { pos = pos',
           pt_nm = nm,
@@ -267,7 +291,7 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> pNameAndColon ns
+    <*> (withNameSpace ns <$> pNameAndColon RuleName)
     <*> pRule ns
     <*> many pMeaning
     <*> many pMessage
@@ -367,14 +391,14 @@ pRelDefault =
 pRelationNew :: NameSpace -> AmpParser (Name, P_Sign, PProps)
 pRelationNew ns =
   (,,) <$ (pKey . toText1Unsafe) "RELATION"
-    <*> pLowerCaseName ns
+    <*> (withNameSpace ns <$> pName RelationName)
     <*> pSign ns
     <*> return Set.empty
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
 pRelationOld :: NameSpace -> AmpParser (Name, P_Sign, PProps)
 pRelationOld ns =
-  relOld <$> pLowerCaseName ns
+  relOld <$> (withNameSpace ns <$> pName RelationName)
     <* (pOperator . toText1Unsafe) "::"
     <*> pConceptRef ns
     <*> pFun
@@ -434,13 +458,15 @@ pFun =
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
 pConceptDef :: NameSpace -> AmpParser (DefinitionContainer -> PConceptDef)
 pConceptDef ns =
-  PConceptDef <$> currPos
+  build <$> currPos
     <* (pKey . toText1Unsafe) "CONCEPT"
-    <*> pUpperCaseName ns
-    <*> pMaybe pLabel
+    <*> pNameAndLabel ConceptName ns
     <*> pPCDDef2
     <*> many pMeaning
   where
+    build :: Origin -> (Name, Maybe Label) -> PCDDef -> [PMeaning] -> (DefinitionContainer -> PConceptDef)
+    build orig (nm, mLab) x means =
+      PConceptDef orig nm mLab x means
     pPCDDef2 :: AmpParser PCDDef
     pPCDDef2 =
       ( PCDDefLegacy <$> (pDoubleQuotedString <?> "concept definition (string)")
@@ -487,7 +513,7 @@ pIdentDef :: NameSpace -> AmpParser P_IdentDef
 pIdentDef ns =
   P_Id <$> currPos
     <* (pKey . toText1Unsafe) "IDENT"
-    <*> pNameAndColon ns
+    <*> (withNameSpace ns <$> pNameAndColon IdentName)
     <*> pConceptRef ns
     <*> pParens (pIdentSegment `sepBy1` pComma)
   where
@@ -518,7 +544,7 @@ pViewDefImproved :: NameSpace -> AmpParser P_ViewDef
 pViewDefImproved ns =
   mkViewDef <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
-    <*> pNameAndColon ns
+    <*> (withNameSpace ns <$> pNameAndColon ViewName)
     <*> pConceptOneRef ns
     <*> pIsThere ((pKey . toText1Unsafe) "DEFAULT")
     <*> pBraces (pViewSegment Improved ns `sepBy` pComma) `opt` []
@@ -573,7 +599,7 @@ pViewDefLegacy :: NameSpace -> AmpParser P_ViewDef
 pViewDefLegacy ns =
   P_Vd <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
-    <*> pNameAndColon ns
+    <*> (withNameSpace ns <$> pNameAndColon ViewName)
     <*> pConceptOneRef ns
     <*> return True
     <*> return Nothing
@@ -584,16 +610,15 @@ pInterface :: NameSpace -> AmpParser P_Interface
 pInterface ns =
   build <$> currPos
     <*> pInterfaceIsAPI
-    <*> pUnrestrictedName ns
-    <*> pMaybe pLabel
+    <*> pNameAndLabel InterfaceName ns
     <*> pMaybe pRoles
     <*> (pColon *> pTerm ns) -- the term of the interface object
     <*> pMaybe pCruds -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
-    <*> pMaybe (pChevrons $ pUpperCaseName ns) -- The view that should be used for this object
+    <*> pMaybe (pChevrons (withNameSpace ns <$> pName ViewName)) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    build :: Origin -> Bool -> Name -> Maybe Label -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
-    build p isAPI nm lbl roles ctx mCrud mView sub =
+    build :: Origin -> Bool -> (Name, Maybe Label) -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    build p isAPI (nm, lbl) roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,
@@ -622,7 +647,7 @@ pSubInterface ns =
     <|> P_InterfaceRef
       <$> currPos
       <*> pIsThere ((pKey . toText1Unsafe) "LINKTO") <* pInterfaceKey
-      <*> pUnrestrictedName ns
+      <*> (withNameSpace ns <$> pName InterfaceName)
   where
     pBoxHeader :: AmpParser BoxHeader
     pBoxHeader =
@@ -663,7 +688,7 @@ pBoxBodyElement ns =
         <* pColon
         <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
-        <*> pMaybe (pChevrons $ pUpperCaseName ns) --for the view
+        <*> pMaybe (pChevrons (withNameSpace ns <$> pName ViewName)) --for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
         build orig localName lbl term mCrud mView msub =
@@ -716,14 +741,14 @@ pPurpose ns =
         --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
     pRef2Obj :: AmpParser PRef2Obj
     pRef2Obj =
-      PRef2ConceptDef <$ (pKey . toText1Unsafe) "CONCEPT" <*> pUpperCaseName ns
+      PRef2ConceptDef <$ (pKey . toText1Unsafe) "CONCEPT" <*> (withNameSpace ns <$> pName ConceptName)
         <|> PRef2Relation <$ (pKey . toText1Unsafe) "RELATION" <*> pNamedRel ns
-        <|> PRef2Rule <$ (pKey . toText1Unsafe) "RULE" <*> pUnrestrictedName ns
-        <|> PRef2IdentityDef <$ (pKey . toText1Unsafe) "IDENT" <*> pUnrestrictedName ns
-        <|> PRef2ViewDef <$ (pKey . toText1Unsafe) "VIEW" <*> pUnrestrictedName ns
-        <|> PRef2Pattern <$ (pKey . toText1Unsafe) "PATTERN" <*> pUpperCaseName ns
-        <|> PRef2Interface <$ pInterfaceKey <*> pUnrestrictedName ns
-        <|> PRef2Context <$ (pKey . toText1Unsafe) "CONTEXT" <*> pUpperCaseName ns
+        <|> PRef2Rule <$ (pKey . toText1Unsafe) "RULE" <*> (withNameSpace ns <$> pName RuleName)
+        <|> PRef2IdentityDef <$ (pKey . toText1Unsafe) "IDENT" <*> (withNameSpace ns <$> pName IdentName)
+        <|> PRef2ViewDef <$ (pKey . toText1Unsafe) "VIEW" <*> (withNameSpace ns <$> pName ViewName)
+        <|> PRef2Pattern <$ (pKey . toText1Unsafe) "PATTERN" <*> (withNameSpace ns <$> pName PatternName)
+        <|> PRef2Interface <$ pInterfaceKey <*> (withNameSpace ns <$> pName InterfaceName)
+        <|> PRef2Context <$ (pKey . toText1Unsafe) "CONTEXT" <*> (withNameSpace ns <$> pName ContextName)
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789
@@ -745,7 +770,7 @@ pPopulation ns =
        )
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
---TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+--TODO: Rename the RoleRule to RoleMantains.
 pRoleRule :: NameSpace -> AmpParser P_RoleRule
 pRoleRule ns =
   try
@@ -754,10 +779,10 @@ pRoleRule ns =
         <*> pRole ns False `sepBy1` pComma
         <* (pKey . toText1Unsafe) "MAINTAINS"
     )
-    <*> pUnrestrictedName ns `sepBy1` pComma
+    <*> (withNameSpace ns <$> pName RuleName) `sepBy1` pComma
 
 --- ServiceRule ::= 'SERVICE' RoleList 'MAINTAINS' ADLidList
---TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+--TODO: Rename the RoleRule to RoleMantains.
 pServiceRule :: NameSpace -> AmpParser P_RoleRule
 pServiceRule ns =
   try
@@ -766,12 +791,12 @@ pServiceRule ns =
         <*> pRole ns True `sepBy1` pComma
         <* (pKey . toText1Unsafe) "MAINTAINS"
     )
-    <*> pUnrestrictedName ns `sepBy1` pComma
+    <*> (withNameSpace ns <$> pName RuleName) `sepBy1` pComma
 
 --- Role ::= ADLid
 --- RoleList ::= Role (',' Role)*
 pRole :: NameSpace -> Bool -> AmpParser Role
-pRole ns isService = (if isService then Service else Role) <$> pUnrestrictedName ns
+pRole ns isService = (if isService then Service else Role) <$> (withNameSpace ns <$> pName RoleName)
 
 --- Meaning ::= 'MEANING' Markup
 pMeaning :: AmpParser PMeaning
@@ -931,7 +956,7 @@ value2PAtomValue o v = case v of
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Signature?
 pNamedRel :: NameSpace -> AmpParser P_NamedRel
-pNamedRel ns = PNamedRel <$> currPos <*> pLowerCaseName ns <*> pMaybe (pSign ns)
+pNamedRel ns = PNamedRel <$> currPos <*> (withNameSpace ns <$> pName RelationName) <*> pMaybe (pSign ns)
 
 --- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: NameSpace -> AmpParser P_Sign
@@ -942,7 +967,7 @@ pSign ns = pBrackets sign
 
 --- ConceptRef ::= ConceptName
 pConceptRef :: NameSpace -> AmpParser P_Concept
-pConceptRef ns = PCpt <$> pUpperCaseName ns
+pConceptRef ns = PCpt <$> (withNameSpace ns <$> pName ConceptName)
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: NameSpace -> AmpParser P_Concept
@@ -954,8 +979,8 @@ pTex1AndColon = pUnrestrictedText1 <* pColon
 pUnrestrictedText1 :: AmpParser Text1
 pUnrestrictedText1 = pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1
 
-pNameAndColon :: NameSpace -> AmpParser Name
-pNameAndColon ns = (pUpperCaseName ns <|> pLowerCaseName ns) <* pColon
+pNameAndColon :: NameType -> AmpParser Name
+pNameAndColon typ = pName typ <* pColon
 
 --- Content ::= '[' RecordList? ']'
 pContent :: AmpParser [PAtomPair]
@@ -971,12 +996,6 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
             <* pComma
             <*> pAtomValue
         )
-
---- ADLid ::= Varid | Conid
---- ADLidList ::= ADLid (',' ADLid)*
---- ADLidListList ::= ADLid+ (',' ADLid+)*
-pUnrestrictedName :: NameSpace -> AmpParser Name
-pUnrestrictedName ns = pLowerCaseName ns <|> pUpperCaseName ns <|> pAnyKeyWordName ns
 
 pLabel :: AmpParser Label
 pLabel =

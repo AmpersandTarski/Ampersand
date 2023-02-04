@@ -139,12 +139,15 @@ smallListOf gen = do
 
 instance Arbitrary Name where
   arbitrary =
-    toName <$> listOf safeNamePart <*> safeNamePart
+    mkName <$> arbitrary <*> listOf1 safeNamePart
     where
       safeNamePart :: Gen Text1
       safeNamePart = identifier `suchThat` requirements
       requirements t =
         T.all (/= '.') . text1ToText $ t
+
+instance Arbitrary NameType where
+  arbitrary = elements [minBound ..]
 
 instance Arbitrary Label where
   arbitrary = Label <$> safeText

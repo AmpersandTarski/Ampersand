@@ -315,7 +315,7 @@ parseSingleADL ns pc =
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
   -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
-  case runP p initialParseState fn ts of
+  case runP p initialParserState fn ts of
     --TODO: Add language support to the parser errors
     Left err -> Errors $ pure $ PE err
     Right a -> pure a

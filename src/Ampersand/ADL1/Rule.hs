@@ -10,6 +10,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
+import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
 hasantecedent r =
@@ -42,9 +43,11 @@ rulefromProp :: AProp -> Relation -> Rule
 rulefromProp prp rel =
   Rule
     { rrnm =
-        toName
+        withNameSpace
           (nameSpaceOf rel)
-          (toText1Unsafe $ tshow prp <> "_" <> tshow rel),
+          . mkName
+            RuleName
+          $ (toText1Unsafe (tshow prp <> "_" <> tshow rel) NE.:| []),
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),
       rrmean = meanings prp,

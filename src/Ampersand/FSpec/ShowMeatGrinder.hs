@@ -16,6 +16,7 @@ import Ampersand.Core.A2P_Converters
 import Ampersand.Core.ParseTree
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers
+import qualified RIO.NonEmpty as NE
 
 -- import qualified RIO.Set as Set
 
@@ -49,7 +50,10 @@ metaModel mmLabel =
     }
   where
     modelName :: AB.Name
-    modelName = toName nameSpace . toText1Unsafe $ "MetaModel_" <> tshow mmLabel
+    modelName =
+      withNameSpace nameSpace
+        . mkName ContextName
+        $ (toText1Unsafe ("MetaModel_" <> tshow mmLabel) NE.:| [])
     transformers = case mmLabel of
       FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
       PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName
@@ -63,7 +67,7 @@ metaModel mmLabel =
 grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
 grind ns fun userFspec =
   PCtx
-    { ctx_nm = toName ns $ toText1Unsafe "Grinded_" <> tName userFspec,
+    { ctx_nm = withNameSpace ns . mkName ContextName $ (toText1Unsafe "Grinded_" <> tName userFspec) NE.:| [],
       ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,

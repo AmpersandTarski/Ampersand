@@ -5,15 +5,16 @@ module Ampersand.Basics.Name
   ( Named (..),
     Name,
     NameSpace,
+    NameType (..),
     Label (..),
     Labeled (..),
-    toName,
+    mkName,
     nameOfONE,
     nameOfExecEngineRole,
+    withNameSpace,
     prependToPlainName,
-    fullNameToName,
     urlEncodedName,
-    toNameUnsafe,
+    splitOnDots,
   )
 where
 
@@ -64,6 +65,13 @@ instance Named Name where
 instance GVP.PrintDot Name where
   unqtDot = GVP.text . TL.fromStrict . text1ToText . tName
 
+mkName :: NameType -> NonEmpty Text1 -> Name
+mkName typ xs =
+  Name
+    { nameWords = xs,
+      nameType = typ
+    }
+
 nameOfExecEngineRole :: Name
 nameOfExecEngineRole =
   Name
@@ -78,32 +86,27 @@ nameOfONE =
       nameType = ConceptName
     }
 
-data NameType = ConceptName | RelationName | RuleName | PatternName | ContextName | RoleName | TemporaryDummy
-  deriving (Data)
+data NameType
+  = ConceptName
+  | ContextName
+  | IdentName
+  | InterfaceName
+  | PatternName
+  | PropertyName
+  | RelationName
+  | RoleName
+  | RuleName
+  | SqlAttributeName
+  | SqlTableName
+  | ViewName
+  deriving (Data, Enum, Bounded)
 
-toName :: NameSpace -> Text1 -> Name
-toName ns plainname =
+withNameSpace :: NameSpace -> Name -> Name
+withNameSpace ns nm =
   Name
-    { nameWords = prependList ns (mkValid plainname :| []),
-      nameType = TemporaryDummy
+    { nameWords = prependList ns (nameWords nm),
+      nameType = nameType nm
     }
-
-toNameUnsafe :: [Text] -> Text -> Name
-toNameUnsafe ns t = toName ns' t'
-  where
-    ns' = toSafe <$> ns
-    t' = toSafe t
-    toSafe :: Text -> Text1
-    toSafe txt = case T.uncons txt of
-      Nothing ->
-        fatal $
-          T.intercalate
-            "/n  "
-            [ "toNameUnsafe must not be used unless you are certain that it is safe!",
-              tshow ns,
-              tshow t
-            ]
-      Just (h, tl) -> Text1 h tl
 
 -- | Validation for the rules for the words in a Name. These rules are based on the rules for
 --   mariaDB names for tables and columns. (https://mariadb.com/kb/en/columnstore-naming-conventions/)
@@ -130,6 +133,16 @@ mkValid t = case T.words $ text1ToText t of
     isValidFirstCharacter c = isAlpha c
     isValidOtherCharacter c = isAlpha c || isDigit c || c == '_'
 
+splitOnDots :: Text1 -> NonEmpty Text1
+splitOnDots t1 =
+  case map toText1Unsafe
+    . filter (not . T.null)
+    . T.split (== '.')
+    . text1ToText
+    $ t1 of
+    [] -> fatal "This should be impossible!"
+    te : tes -> te NE.:| tes
+
 -- | anything could have some name, can't it?
 class Named a where
   {-# MINIMAL name #-}
@@ -144,6 +157,11 @@ class Named a where
   plainNameOf nm = T.cons h tl
     where
       Text1 h tl = plainNameOf1 nm
+  updatedName :: Text1 -> a -> Name
+  updatedName txt1 x = Name ws' typ
+    where
+      Name ws typ = name x
+      ws' = NE.reverse (txt1 NE.:| (reverse . NE.tail) ws)
 
 newtype Label = Label Text
 
@@ -158,19 +176,11 @@ class Named a => Labeled a where
 instance Show Label where
   show (Label x) = "LABEL " <> T.unpack x
 
-fullNameToName :: Text1 -> Name
-fullNameToName t = case T.split (== '.') . text1ToText $ t of
-  [] -> fatal $ "Name should contain chacters other than `.`: " <> tshow t
-  (h : tl) -> toName (NE.init parts) (NE.last parts)
-    where
-      parts = tryToMakeValid <$> h NE.:| tl
-      tryToMakeValid :: Text -> Text1
-      tryToMakeValid part = case T.uncons part of
-        Nothing -> fatal $ "part may not be empty (" <> text1ToText t <> ")."
-        Just (h', tl') -> mkValid (Text1 h' tl')
-
 prependToPlainName :: Text -> Name -> Name
-prependToPlainName prefix nm = toName (nameSpaceOf nm) (toText1Unsafe $ prefix <> text1ToText (plainNameOf1 nm))
+prependToPlainName prefix nm =
+  nm {nameWords = NE.reverse $ toText1Unsafe (prefix <> text1ToText h) NE.:| tl}
+  where
+    h NE.:| tl = NE.reverse . nameWords $ nm
 
 urlEncodedName :: Name -> Text1
 urlEncodedName = toText1Unsafe . urlEncode . text1ToText . tName

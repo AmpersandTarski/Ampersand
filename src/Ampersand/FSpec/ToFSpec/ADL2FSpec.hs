@@ -305,7 +305,7 @@ makeFSpec env context =
         qlfname :: PlugSQL -> PlugSQL
         qlfname x = case T.uncons . view namespaceL $ env of
           Nothing -> x
-          Just (c, tl) -> x {sqlname = toName (Text1 c tl : nameSpaceOf x) (plainNameOf1 x)}
+          Just (c, tl) -> x {sqlname = withNameSpace [Text1 c tl] $ name x}
     --TODO151210 -> Plug A is overbodig, want A zit al in plug r
     --CONTEXT Temp
     --PATTERN Temp
@@ -489,8 +489,16 @@ makeFSpec env context =
         | ifcc <- step4a,
           let c = source (objExpression (ifcObj ifcc))
               nm' :: Int -> Name
-              nm' 0 = toName (nameSpaceOf (name c)) . toText1Unsafe . plural (ctxlang context) . plainNameOf $ c
-              nm' i = toName (nameSpaceOf (name c)) . toText1Unsafe . plural (ctxlang context) $ plainNameOf c <> tshow i
+              nm' 0 =
+                mkName ConceptName
+                  . NE.reverse
+                  $ (toText1Unsafe . plural (ctxlang context) . plainNameOf $ c)
+                    NE.:| reverse (nameSpaceOf (name c))
+              nm' i =
+                mkName ConceptName
+                  . NE.reverse
+                  $ (toText1Unsafe . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                    NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"
                 h : _ -> h
@@ -533,7 +541,7 @@ class Named a => Rename a where
     ]
 
 instance Rename PlugSQL where
-  rename p x = p {sqlname = toName (nameSpaceOf . name $ p) x}
+  rename p txt1 = p {sqlname = updatedName txt1 p}
 
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug =

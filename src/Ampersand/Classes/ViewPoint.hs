@@ -75,9 +75,11 @@ ruleFromIdentity identity =
     mkKeyRule term =
       Rule
         { rrnm =
-            toName
+            withNameSpace
               (nameSpaceOf identity)
-              (toText1Unsafe "identity_" <> tName identity),
+              . mkName
+                RuleName
+              $ (toText1Unsafe ("identity_" <> tshow identity) NE.:| []),
           formalExpression = term,
           rrfps = origin identity, -- position in source file
           rrmean = map toMeaning [minBound ..],
@@ -176,9 +178,11 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
     mkRule command fExpr =
       Rule
         { rrnm =
-            toName
+            withNameSpace
               (nameSpaceOf rel)
-              (toText1Unsafe $ ("Compute_" <> tshow rel) <> ("_using_" <> command)),
+              . mkName
+                RuleName
+              $ (toText1Unsafe ("Compute_" <> tshow rel <> "_using_" <> command) NE.:| []),
           formalExpression = fExpr,
           rrfps = orig,
           rrmean = [],
