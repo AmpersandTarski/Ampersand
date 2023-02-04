@@ -188,6 +188,7 @@ extra-source-files:
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl
+    testing/Travis/testcases/Parsing/shouldFail/Issue1309.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue980.adl
     testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml

@@ -1020,7 +1020,8 @@ pCtx2aCtx
                       enfRel = rel,
                       enfOp = oper,
                       enfExpr = expr',
-                      enfPatName = mPat
+                      enfPatName = mPat,
+                      enfRules = enforce2Rules rel expr'
                     }
             (o, dx) -> cannotDisambiguate o dx
           where
@@ -1031,8 +1032,8 @@ pCtx2aCtx
                 IsSubSet {} -> [delPair]
                 IsSameSet {} -> [insPair, delPair]
               where
-                insPair = mkRule "InsPair" (EInc (expr, bindedRel)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
-                delPair = mkRule "DelPair" (EInc (bindedRel, expr)) --TODO: Hier gaat het mis. Controleren of de types kloppen.
+                insPair = mkRule "InsPair" (EInc (expr, bindedRel))
+                delPair = mkRule "DelPair" (EInc (bindedRel, expr))
                 bindedRel = EDcD rel
                 mkRule command fExpr =
                   Ru
