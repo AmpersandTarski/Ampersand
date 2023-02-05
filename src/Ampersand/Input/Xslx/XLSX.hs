@@ -49,7 +49,7 @@ parseXlsxFile mFk file =
     xlsx2pContext env xlsx = Checked pop []
       where
         pop =
-          mkContextOfPops (toName nameSpaceOfXLXSfiles file1)
+          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ file1 NE.:| [])
             . concatMap (toPops env nameSpaceOfXLXSfiles file)
             . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
@@ -338,8 +338,8 @@ toPops env ns file x = map popForColumn (colNrs x)
                 Nothing -> (fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol), False)
                 Just ('~', rest) -> case T.uncons . T.reverse $ rest of
                   Nothing -> fatal "the `~` symbol should be preceded by a relation name. However, it just isn't there."
-                  Just (h, tl) -> (toName ns $ Text1 h tl, True)
-                Just (h, tl) -> (toName ns . toText1Unsafe . T.reverse $ T.cons h tl, False)
+                  Just (h, tl) -> (withNameSpace ns . mkName RelationName $ Text1 h tl :| [], True)
+                Just (h, tl) -> (withNameSpace ns . mkName RelationName $ (toText1Unsafe . T.reverse $ T.cons h tl) :| [], False)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -515,15 +515,15 @@ conceptNameWithOptionalDelimiter ns t'
           Just (d, revInit) ->
             let nm = T.reverse revInit
              in if isDelimiter d && isConceptName nm
-                  then Just (mkName nm, Just d)
+                  then Just (mkName' nm, Just d)
                   else Nothing
-  | isConceptName t = Just (mkName t, Nothing)
+  | isConceptName t = Just (mkName' t, Nothing)
   | otherwise = Nothing
   where
     t = trim t'
-    mkName x = case T.uncons x of
+    mkName' x = case T.uncons x of
       Nothing -> fatal "Empty conceptname should not be possible."
-      Just (h, tl) -> toName ns $ Text1 h tl
+      Just (h, tl) -> withNameSpace ns . mkName ConceptName $ Text1 h tl :| []
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

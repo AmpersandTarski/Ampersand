@@ -62,9 +62,9 @@ toTransformer :: NameSpace -> (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -
 toTransformer namespace (rel, src, tgt, props, tuples) =
   Transformer rel' src' tgt' props tuples'
   where
-    rel' = toName namespace . toText1Unsafe $ rel
-    src' = toName namespace . toText1Unsafe $ src
-    tgt' = toName namespace . toText1Unsafe $ tgt
+    rel' = withNameSpace namespace . mkName RelationName $ toText1Unsafe rel NE.:| []
+    src' = withNameSpace namespace . mkName ConceptName $ toText1Unsafe src NE.:| []
+    tgt' = withNameSpace namespace . mkName ConceptName $ toText1Unsafe tgt NE.:| []
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =

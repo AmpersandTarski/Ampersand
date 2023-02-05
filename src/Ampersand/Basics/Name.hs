@@ -23,7 +23,6 @@ import Ampersand.Basics.String (text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import Data.Hashable
-import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -114,25 +113,6 @@ withNameSpace ns nm =
 --   2) The first character of all table and column names should be an ASCII letter (a-z A-Z).
 --   3) ColumnStore reserves certain words that MariaDB does not, such as SELECT, CHAR and TABLE, so even wrapped in backticks these cannot be used.
 -- isValidNameWord ::
-
--- We do not want points and spaces in the actual name, for this will conflict with namespaces
-mkValid :: Text1 -> Text1
-mkValid t = case T.words $ text1ToText t of
-  [] -> fatal "empty text seems to be parsed as a part of a name."
-  [wrd] -> case T.uncons wrd of
-    Nothing -> fatal "Impossible. How can a word be empty?"
-    Just (h, tl) ->
-      if isValidFirstCharacter h
-        then Text1 h (mkValidTail tl)
-        else fatal $ "Invalid first character: " <> wrd
-  txts -> fatal $ "There cannot be whitespace in a nameword: " <> tshow txts
-  where
-    mkValidTail = T.map toValidChar
-      where
-        toValidChar c = if isValidOtherCharacter c then c else '_'
-    isValidFirstCharacter c = isAlpha c
-    isValidOtherCharacter c = isAlpha c || isDigit c || c == '_'
-
 splitOnDots :: Text1 -> NonEmpty Text1
 splitOnDots t1 =
   case map toText1Unsafe

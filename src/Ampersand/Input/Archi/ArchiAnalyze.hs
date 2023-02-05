@@ -32,7 +32,7 @@ import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import Text.XML.HXT.Core hiding (fatal, trace, utf8)
+import Text.XML.HXT.Core hiding (fatal, mkName, trace, utf8)
 
 -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
 --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
@@ -122,7 +122,7 @@ mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops =
   pure
     PCtx
-      { ctx_nm = toName archiNameSpace $ archRepoName archiRepo,
+      { ctx_nm = withNameSpace archiNameSpace . mkName PatternName $ archRepoName archiRepo NE.:| [],
         ctx_pos = [],
         ctx_lbl = Nothing,
         ctx_lang = Just Dutch,
@@ -159,9 +159,10 @@ mkArchiContext [archiRepo] pops =
             Nothing -> False
             Just nm -> nm == viewName vw
           participatingRel :: ArchiGrain -> Bool
-          participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (PCpt . toName archiNameSpace . toText1Unsafe) ["Relationship", "Property", "View"]
+          participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (mkArchiConcept . toText1Unsafe) ["Relationship", "Property", "View"]
+          mkArchiConcept :: Text1 -> P_Concept
+          mkArchiConcept x = PCpt . withNameSpace archiNameSpace . mkName ConceptName $ x NE.:| []
       _ -> fatal "May not call vwAts on a non-view element"
-
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
     viewpoprels :: [ArchiGrain]
@@ -199,7 +200,7 @@ mkArchiContext [archiRepo] pops =
         mkPattern vw =
           P_Pat
             { pos = OriginUnknown,
-              pt_nm = toName archiNameSpace $ viewName vw,
+              pt_nm = withNameSpace archiNameSpace . mkName PatternName $ viewName vw NE.:| [],
               pt_lbl = Nothing,
               pt_rls = [],
               pt_gns = [],
@@ -635,9 +636,9 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           }
     }
   where
-    relName' = toName archiNameSpace plainNm
-    srcName = toName archiNameSpace plainSrcName
-    tgtName = toName archiNameSpace plainTgtName
+    relName' = withNameSpace archiNameSpace . mkName RelationName $ plainNm NE.:| []
+    srcName = withNameSpace archiNameSpace . mkName ConceptName $ plainSrcName NE.:| []
+    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ plainTgtName NE.:| []
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel

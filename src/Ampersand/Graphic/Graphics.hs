@@ -50,13 +50,17 @@ data Picture = Pict
   }
 
 instance Named PictureTyp where -- for displaying a fatal error
-  name PTClassDiagram = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTClassDiagram"
-  name (PTCDPattern pat) = name pat
-  name (PTDeclaredInPat pat) = name pat
-  name (PTCDConcept c) = name c
-  name (PTCDRule r) = name r
-  name (PTLogicalDM grouped) = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
-  name PTTechnicalDM = toName nameSpaceFormalAmpersand . toText1Unsafe $ "PTTechnicalDM"
+  name pt = case pt of
+    PTClassDiagram -> mkName' "PTClassDiagram"
+    PTCDPattern pat -> name pat
+    PTDeclaredInPat pat -> name pat
+    PTCDConcept c -> name c
+    PTCDRule r -> name r
+    PTLogicalDM grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
+    PTTechnicalDM -> mkName' "PTTechnicalDM"
+    where
+      mkName' :: Text -> Name
+      mkName' = withNameSpace nameSpaceFormalAmpersand . mkName ContextName . (:| []) . toText1Unsafe
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
@@ -397,7 +401,7 @@ class HasDotParts a where
 baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
   case lookup c (zip (allCpts x) [(1 :: Int) ..]) of
-    Just i -> toName [] . toText1Unsafe $ "cpt_" <> tshow i
+    Just i -> mkName ConceptName . (:| []) . toText1Unsafe $ "cpt_" <> tshow i
     _ -> fatal ("element " <> (text1ToText . tName) c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
