@@ -291,12 +291,12 @@ pName typ = case typ of
   PatternName -> pUpperCaseName typ
   ContextName -> pUpperCaseName typ
   RoleName -> pUpperCaseName typ
-  ViewName -> pUpperCaseName typ
-  IdentName -> pUpperCaseName typ
-  InterfaceName -> pUpperCaseName typ
+  ViewName -> pUnrestrictedName typ
+  IdentName -> pUnrestrictedName typ
+  InterfaceName -> pUnrestrictedName typ
   PropertyName -> pUpperCaseName typ
-  SqlAttributeName -> pUpperCaseName typ
-  SqlTableName -> pUpperCaseName typ
+  SqlAttributeName -> pUnrestrictedName typ
+  SqlTableName -> pUnrestrictedName typ
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of
