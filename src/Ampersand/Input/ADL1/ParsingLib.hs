@@ -290,7 +290,7 @@ pName typ = case typ of
   RuleName -> pUnrestrictedName typ
   PatternName -> pUpperCaseName typ
   ContextName -> pUpperCaseName typ
-  RoleName -> pUpperCaseName typ
+  RoleName -> pUnrestrictedName typ
   ViewName -> pUnrestrictedName typ
   IdentName -> pUnrestrictedName typ
   InterfaceName -> pUnrestrictedName typ
