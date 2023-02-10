@@ -6,6 +6,7 @@
 * [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 * Minor update of the devcontainer.
 * [Issue #1369](https://github.com/AmpersandTarski/Ampersand/issues/1369) update of CI/CD stuff.
+* [Issue #1389](https://github.com/AmpersandTarski/Ampersand/issues/1389) Bugix.
 
 ## v4.7.1 (1 September 2022)
 * make the devcontainer experience even smoother (see https://github.com/haskell/hie-bios/issues/352)
