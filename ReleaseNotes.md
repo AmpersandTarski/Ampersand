@@ -1,6 +1,10 @@
 ﻿# Release notes of Ampersand
    
 ## Unreleased changes
+
+## v4.7.3 (13 february 2023)
+* Technical release, to fix the automation of releasing. No functional differences with v4.7.2.
+## v4.7.2 (11 february 2023)
 * [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
 * Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
 * [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
