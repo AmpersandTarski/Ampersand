@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+## v4.7.4 (20 february 2023)
+
 - [Issue #1281 (extra fix after reopening of issue)](https://github.com/AmpersandTarski/Ampersand/issues/1281#issuecomment-1159623865) Final fix an omision in typecheck of ENFORCE statement.
 
 ## v4.7.3 (13 february 2023)
