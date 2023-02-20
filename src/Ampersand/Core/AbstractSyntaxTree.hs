@@ -165,9 +165,6 @@ data A_Context = ACtx
   }
   deriving (Typeable)
 
-instance Show A_Context where
-  show = T.unpack . name
-
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
 
@@ -229,7 +226,8 @@ data AEnforce = AEnforce
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
     -- | If the Enforce is defined in the context of a pattern, the name of that pattern.
-    enfPatName :: !(Maybe Text)
+    enfPatName :: !(Maybe Text),
+    enfRules :: ![Rule]
   }
   deriving (Eq)
 
