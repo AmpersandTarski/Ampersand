@@ -21,19 +21,19 @@ Pattern         ::= 'PATTERN' Id
                     KeyDef       |
                     Explain      )* 'ENDPATTERN'
 Rule            ::= (('SIGNAL' Id 'ON') | ('RULE' Id ('SIGNALS'|'MAINTAINS') ) )?
-                    Expression (('|-' | '-|' | '=' ) Expression)?
+                    Term (('|-' | '-|' | '=' ) Term)?
                     'EXPLANATION' String
 Gen             ::= 'GEN' Id 'ISA' Id
-Expression      ::= (('-')? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
+Term      ::= (('-')? (Relation Sign? | '(' Term ')') ('~'|'*'|'+'|'-')?)
                    ( (';'|'!'|'/\'|'\/')
-                     (('-')? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
+                     (('-')? (Relation Sign? | '(' Term ')') ('~'|'*'|'+'|'-')?)
                    )*
 Relation        ::= 'I' | 'V' | Varid | Atom
 Sign            ::= '[' Concept ( '*' Concept)? ']'
 Concept         ::= 'ONE' | Id
 LabelProps      ::= Id ('{' Id (',' (Id Id*))* '}')? ':'
 ConceptDef      ::= 'CONCEPT' Id String String?
-KeyDef          ::= 'KEY' LabelProps Concept '(' (LabelProps? Expression)(',' (LabelProps? Expression))* ')'
+KeyDef          ::= 'KEY' LabelProps Concept '(' (LabelProps? Term)(',' (LabelProps? Term))* ')'
 Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
 Service         ::= 'SERVICE' ('(' (Relation Sign?) (',' (Relation Sign?))* ')')?
                     ('{' (Id ) (','?  Id)*'}')?

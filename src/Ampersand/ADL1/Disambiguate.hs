@@ -200,7 +200,7 @@ instance Disambiguatable P_BoxItem where
     ( P_BxExpr
         a
         b
-        c -- term/expression
+        c -- term
         mCrud
         v
         d -- (potential) subobject

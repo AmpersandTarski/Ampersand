@@ -1,13 +1,13 @@
 CONTEXT RAP IN ENGLISH LATEX
 
-POPULATION characteristic[Rule*Expression] CONTAINS    -- [UNI,TOT]
+POPULATION characteristic[Rule*Term] CONTAINS    -- [UNI,TOT]
    [ ("def equivalued", "equivalued = state;state~ /\\ result<>result~")
    ; ("def sat",        "sat = state~;true;exp;characteristic~"        )
    ; ("def true",       "true = exp;signature;exp~;equivalued"         )
    ]
-POPULATION exp[Query*Expression] CONTAINS    -- [UNI,TOT]
+POPULATION exp[Query*Term] CONTAINS    -- [UNI,TOT]
    []
-POPULATION signature[Expression*Expression] CONTAINS    -- [UNI,TOT,RFX,TRN]
+POPULATION signature[Term*Term] CONTAINS    -- [UNI,TOT,RFX,TRN]
    [ ("true = exp;signature;exp~;equivalued"         , "V[Query*Query]"     )
    ; ("V[Query*Query]"                               , "V[Query*Query]"     )
    ; ("V[State*Rule]"                                , "V[State*Rule]"      )

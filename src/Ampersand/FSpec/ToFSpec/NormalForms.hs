@@ -34,7 +34,8 @@ Ideas for future work:
 -> Make RTerm polymorphic, so we can treat variables and constants separately.
    We'd have RTerm Expression and RTerm (Text,Text,Text)
    We'd be able to derive fmap, and make RTerm Foldable.
--> Really long term: Unify RTerm and Expression in a way that still allows us to write simple code for binary operators. Would require separating = and |- from Expression, which is also nice.
+-> Really long term: Unify RTerm and Expression in a way that still allows us to write simple code for binary operators.
+   Would require separating = and |- from Expression, which is also nice.
 -}
 
 -- The following was built for the purpose of testing confluence.
@@ -63,7 +64,7 @@ dfProofs cptMap = prfs True
         makeExpr (term, explStr, logicSym) = (rTerm2expr term, explStr, logicSym)
 
 -- Deriving normal forms and representing the neccessary derivation rules are defined by means of RTerms.
--- The data structure RTerm is a representation of relation algebra expressions,
+-- The data structure RTerm is a representation of relation algebra terms,
 -- which is not redundant with respect to associativity and commutativity.
 -- The reason for this is that we use term rewriting for normalization.
 -- This algorithm performs poorly with commutative rules, because it may explode combinatorially.
@@ -155,7 +156,7 @@ isRFlp _ = False
 isRVar RVar {} = True
 isRVar _ = False
 
-{- dSteps computes the expressions that can be obtained in one rewrite step.
+{- dSteps computes the terms that can be obtained in one rewrite step.
    It yields the steps, for the purpose of constructing the entire proof.
    The idea is that the environment picks one of the steps produced by dSteps.
 -}
@@ -197,7 +198,7 @@ dSteps drs x = dStps x
           }
         | (term@(RVee a' b'), rewriteTerms) <- matchableRules, -- select rewrite rules with the proper combinator
           let unif = Set.fromList [(name a', RId a), (name b', RId b)], -- find unifiers such that: substitute "" unif term==rCombinator a
-          noDoubles unif, -- if one variable is bound to more than one different expressions, the deal is off.
+          noDoubles unif, -- if one variable is bound to more than one different terms, the deal is off.
           term' <- rewriteTerms, -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
           let rd = showIT term <> " -> " <> showIT term', -- rule documentation for fatals in 'substitute'
           substitute rd unif term == x
@@ -224,13 +225,13 @@ dSteps drs x = dStps x
       (RTerm -> RTerm) -> -- the combinator
       RTerm -> -- its argument  (So, we are working with the RTerm   rCombinator a)
       [DerivStep] -- all derivation steps that start at  rCombinator a, which can be made using the available ruleset
-      {- We are trying to find steps in case an expression (rCombinator a) has a unary operator (i.e. RCpl, RKl0, RKl1, RFlp) as its root.
-         First, we try to find a rewrite step on the root level of the expression. The resulting steps are called "derivs".
+      {- We are trying to find steps in case a term (rCombinator a) has a unary operator (i.e. RCpl, RKl0, RKl1, RFlp) as its root.
+         First, we try to find a rewrite step on the root level of the term. The resulting steps are called "derivs".
          When that fails, we try to find the steps from subexpression a recursively.
       -}
     dStepUny isrComb rCombinator a =
       if (not . isValid . rCombinator) a
-        then fatal ("Invalid expression in dStepLists: " <> showIT (rCombinator a))
+        then fatal ("Invalid term in dStepLists: " <> showIT (rCombinator a))
         else
           derivs
             <> [ DStep
@@ -261,7 +262,7 @@ dSteps drs x = dStps x
     dStepBin :: (RTerm -> Bool) -> (RTerm -> RTerm -> RTerm) -> RTerm -> RTerm -> [DerivStep]
     dStepBin isrComb rCombinator a b =
       if (not . isValid) (rCombinator a b)
-        then fatal ("Invalid expression in dStepLists: " <> showIT (rCombinator a b))
+        then fatal ("Invalid term in dStepLists: " <> showIT (rCombinator a b))
         else
           derivs
             <> [ DStep
@@ -291,7 +292,7 @@ dSteps drs x = dStps x
               unif1 <- matches subLft a,
               unif2 <- matches subRht b, -- find unifiers such that: substitute "" unif term==rCombinator a
               let unif = Set.union unif1 unif2,
-              noDoubles unif, -- if one variable is bound to more than one different expressions, the deal is off.
+              noDoubles unif, -- if one variable is bound to more than one different terms, the deal is off.
               term' <- rewriteTerms, -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
               let rd = showIT term <> " -> " <> showIT term', -- rule documentation for fatals in 'substitute'
               substitute rd unif term == rCombinator a b
@@ -301,10 +302,10 @@ dSteps drs x = dStps x
     dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm
     dStepLists isrComb rCombinator ls =
       if (not . isValid . rCombinator) ls
-        then fatal ("Invalid expression in dStepLists: " <> showIT (rCombinator ls))
+        then fatal ("Invalid term in dStepLists: " <> showIT (rCombinator ls))
         else
           [ DStep
-              { lhs = rCombinator ls, -- The original expression
+              { lhs = rCombinator ls, -- The original term
                 rul = (term, unif, term'), -- only one rewrite step is done without parallelism.
                 rhs = result
               }
@@ -314,7 +315,7 @@ dSteps drs x = dStps x
               let n = length subTerms,
               (pre, segmentList, post) <- segments n,
               unif <- mix [matches l r | (l, r) <- safezip subTerms (map (combLst rCombinator) segmentList)],
-              noDoubles unif, -- if one variable is bound to more than one different expressions, the deal is off.
+              noDoubles unif, -- if one variable is bound to more than one different terms, the deal is off.
               term' <- rewriteTerms,
               let rd = showIT term <> " -> " <> showIT term', -- rule documentation for fatals in 'substitute'
               let original = flatLst (pre ++ substitute rd unif term : post), -- is equal to rCombinator ls
@@ -439,7 +440,7 @@ dSteps drs x = dStps x
     matchableRules =
       [ (template, rewriteTerms) -- each tuple may represent multiple rules.
         | cl <- eqCl lTerm (concatMap f drs), -- divide into classes to save a little on the number of matches.
-          let template = lTerm (NE.head cl), -- This is the template against which to match full expressions.
+          let template = lTerm (NE.head cl), -- This is the template against which to match full terms.
           let rewriteTerms = stepTerms template cl,
           not (null rewriteTerms)
       ]
@@ -566,7 +567,7 @@ expr2RTerm expr =
 
 rTerm2expr :: RTerm -> Expression
 -- implementation note: because RTerms contain variables, it is cumbersome to reconstruct the type. So we don't.
--- Once the variables have been replaced (by means of substitutions) by real expressions, we get a type correct expression again.
+-- Once the variables have been replaced (by means of substitutions) by real terms, we get a type correct term again.
 -- As a consequence, we cannot use ./\., .\/., etc. in this code.
 rTerm2expr term =
   case term of
@@ -610,9 +611,7 @@ rTerm2expr term =
           decsgn = sgn,
           decprps = fatal "Illegal RTerm in rTerm2expr",
           decDefaults = fatal "Illegal RTerm in rTerm2expr",
-          decprL = fatal "Illegal RTerm in rTerm2expr",
-          decprM = fatal "Illegal RTerm in rTerm2expr",
-          decprR = fatal "Illegal RTerm in rTerm2expr",
+          decpr = fatal "Illegal RTerm in rTerm2expr",
           decMean = fatal "Illegal RTerm in rTerm2expr",
           decfpos = fatal "Illegal RTerm in rTerm2expr",
           decusr = fatal "Illegal RTerm in rTerm2expr",
@@ -787,8 +786,8 @@ instance ShowIT Unifier where
 
 substitute ::
   Text -> -- A text to document fatals
-  Unifier -> -- the substitution, which in reality is a set of text/expression pairs.
-  RTerm -> -- The term to be transformed to an expression, with all variables replaced by subexpressions
+  Unifier -> -- the substitution, which in reality is a set of text/term pairs.
+  RTerm -> -- The term to be transformed to a term, with all variables replaced by subexpressions
   RTerm
 substitute ruleDoc unifier term =
   if isValid result then result else fatal ("substitute has produced an invalid result: " <> showIT result)
@@ -813,18 +812,18 @@ substitute ruleDoc unifier term =
       [e] -> e
       [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> r <> " is not in term " <> showIT term <> " using unifier " <> tshow unifier)
       -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> r <> " in term " <> showIT term <> " has been bound to multiple expressions:\n   " <> T.intercalate "\n   " (map showIT es))
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RId c) = case substExprs (name c) of
       [e] -> e -- This is e@(RId c')
       [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple expressions:\n   " <> T.intercalate "\n   " (map showIT es))
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RVee s t) = case (substExprs (name s), substExprs (name t)) of
       ([RId s'], [RId t']) -> RVee s' t'
       (_, _) -> fatal ("Rule:  " <> ruleDoc <> "\nSomething wrong with RVee in term " <> showIT term <> " with unifier " <> tshow unifier)
     subs (RAtm a c) = case substExprs (name c) of
       [RId c'] -> RAtm a c'
       [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple expressions:\n   " <> T.intercalate "\n   " (map showIT es))
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs e@RConst {} = e
     --     subs t            = fatal ("Rule:  "<>ruleDoc<>"\nError: "<>showIT t<>"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
     substExprs x = [e | (v, e) <- Set.toList unifier, v == x]
@@ -845,8 +844,8 @@ rTermListForSets x = rTermList x
 
 matches :: RTerm -> RTerm -> [Unifier]
 matches term expr
-  | not (isValid term) = fatal ("Invalid term " <> showIT term <> "\nbeing matched to expression " <> showIT expr)
-  | not (isValid expr) = fatal ("Matching term " <> showIT term <> "\nto invalid expression " <> showIT expr)
+  | not (isValid term) = fatal ("Invalid term " <> showIT term <> "\nbeing matched to term " <> showIT expr)
+  | not (isValid expr) = fatal ("Matching term " <> showIT term <> "\nto invalid term " <> showIT expr)
   | otherwise =
     case (term, expr) of
       (RIsc es, RIsc es') -> matchSets RIsc es es'
@@ -871,8 +870,8 @@ matches term expr
 
 matchLists :: ([RTerm] -> RTerm) -> [RTerm] -> [RTerm] -> [Unifier]
 matchLists rCombinator es es'
-  | not (isValid (combLst rCombinator es)) = fatal ("Invalid term " <> showIT (rCombinator es) <> "\nbeing matched to expression " <> showIT (rCombinator es'))
-  | not (isValid (combLst rCombinator es')) = fatal ("Matching term " <> showIT (rCombinator es) <> "\nto invalid expression " <> showIT (rCombinator es'))
+  | not (isValid (combLst rCombinator es)) = fatal ("Invalid term " <> showIT (rCombinator es) <> "\nbeing matched to term " <> showIT (rCombinator es'))
+  | not (isValid (combLst rCombinator es')) = fatal ("Matching term " <> showIT (rCombinator es) <> "\nto invalid term " <> showIT (rCombinator es'))
   | otherwise =
     [ unif
       | let n = length es, -- the length of the template, which contains variables
@@ -882,7 +881,7 @@ matchLists rCombinator es es'
           || fatal (T.concat ["\nms:  [" <> T.intercalate ", " (map showIT m) <> "]" | m <- ms]),
         let subTerms = map (combLst rCombinator) ms, -- make an RTerm from each sublist in ms
         unif <- mix [matches l r | (l, r) <- safezip es subTerms],
-        noDoubles unif -- if one variable, v, is bound to more than one different expressions, the deal is off.
+        noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
     ]
 
 mix :: [[Unifier]] -> [Unifier]
@@ -902,16 +901,16 @@ matchSets rCombinator es es'
   | otherwise =
     [ unif
       | let n = Set.size cdes, -- the length of the template, which contains variables
-        partition' <- parts n cdes', -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
+        partition' <- parts n cdes', -- determine segments from the term with the same length. partition' :: Set (Set RTerm)
         let subTerms = Set.map (combSet rCombinator) partition', -- make an RTerm from each subset in ms. subTerms :: Set RTerm
         template <- L.permutations (Set.toList cdes),
         unif <- mix [matches l r | (l, r) <- safezip template (Set.toList subTerms)],
-        noDoubles unif -- if one variable, v, is bound to more than one different expressions, the deal is off.
+        noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
     ]
   where
     isct = es `Set.intersection` es' -- E.g.:  {'Piet'}
     cdes = es `Set.difference` isct -- the terms of es that are not in es' (a set of templates). E.g.: { r;s }
-    cdes' = es' `Set.difference` isct -- candidates for binding to a variable: { a\b , a;b;c , d , e;f }  (a set of expressions)
+    cdes' = es' `Set.difference` isct -- candidates for binding to a variable: { a\b , a;b;c , d , e;f }  (a set of terms)
 
 separate :: Ord a => Int -> Set a -> [(Set a, Set a)]
 separate n s = [(part, s `Set.difference` part) | part <- subsetLength n (Set.toList s)]
@@ -962,7 +961,7 @@ combSet rCombinator s =
     [e] -> e
     _ -> rCombinator s
 
--- Example: noDoubles { p->A;B, q->'Piet', p->'Z', r->A* } is False, because p binds two different expressions.
+-- Example: noDoubles { p->A;B, q->'Piet', p->'Z', r->A* } is False, because p binds two different terms.
 noDoubles :: Unifier -> Bool
 noDoubles unif = and [n == 1 | n <- (map length . eqCl fst . Set.toList) unif]
 
@@ -1100,7 +1099,7 @@ taeDerivRules = concatMap (dRule.parseRule)
  ]
 -}
 {-
--- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
+-- | This delta is meant to be used as a placeholder for inserting or removing links from terms.
 delta :: Signature -> Expression
 delta sgn
  = EDcD Relation
@@ -1112,7 +1111,7 @@ delta sgn
               , decprR  = ""
               , decMean =
                   [ Meaning (Markup Dutch   (text2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd."))
-                  , Meaning (Markup English (text2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions."))
+                  , Meaning (Markup English (text2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from terms."))
                   ]
               , decfpos = Origin ("generated relation (Delta "<>show sgn<>")")
               , decusr  = False
@@ -1124,16 +1123,16 @@ delta sgn
 
 type Proof a = [(a, [Text], Text)]
 
-{- A proof is a list of triples (e, ss, rel), where |e| is an expression in the chain;
+{- A proof is a list of triples (e, ss, rel), where |e| is a term in the chain;
    |rel| is the relation (equality, inclusion, ...) relating the |e| with the next
-   expression, and |ss| is a documentation of the hint, stating the rule that has been applied.
+   term, and |ss| is a documentation of the hint, stating the rule that has been applied.
    2015-09-12 Stef thinks that the end of the chain is the only triple with empty hint,
    being supported by the base case of |proofPA| below.
 
    WK: I typically do |(a, [(rel, hint, a)])|.
 -}
 
-{- Normalization of expressions -}
+{- Normalization of terms -}
 
 simplify :: Expression -> Expression
 simplify expr = expr'
@@ -1150,13 +1149,13 @@ simpProof shw expr =
     (res, steps, equ) = normStep shw True True expr
 
 -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
--- in which the expression is normalized by means of rewrite rules.
+-- in which the term is normalized by means of rewrite rules.
 -- This function can be used for simplification, which means that an Expression is standardized
 -- using associativity and other 'trivial' rules only.
 -- These 'trivial' rules do not produce a step in the proof.
 -- Use normstep shw eq True expr to do simplification only.
 -- Use normstep shw eq False expr to obtain a single proof step or none when no rule is applicable.
--- This function returns a resulting expression that is closer to a normal form.
+-- This function returns a resulting term that is closer to a normal form.
 -- The normal form is not unique. This function simply uses the first rewrite rule it encounters.
 normStep ::
   (Expression -> Text) ->
@@ -1165,7 +1164,7 @@ normStep ::
   Expression ->
   (Expression, [Text], Text) -- This might be generalized to "Expression" if it weren't for the fact that flip is embedded in the Relation type.
 normStep
-  shw -- a function to print an expression. Might be "showIT"
+  shw -- a function to print a term. Might be "showIT"
   eq -- If eq==True, only equivalences are used. Otherwise, inclusions are used as well.
   simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
   expr =
@@ -1174,13 +1173,13 @@ normStep
       else fatal ("Violation of sign expr==sign res in the normalizer\n  expr: sign( " <> showA expr <> " ) == " <> showSign res <> "\n  res:  sign( " <> showA res <> " ) == " <> showSign res)
     where
       {-SJ 20140720: You might wonder why we test sign expr==sign res, which was introduced as a result of ticket #409 (the residu bug)
-      It turns out that many rewrite rules in the normalizer change the type of an expression; an aspect I have been overlooking all the time.
+      It turns out that many rewrite rules in the normalizer change the type of a term; an aspect I have been overlooking all the time.
       Until the new normalizer works, we will have to work with this one. So I have inserted this test to ensure that the type remains constant during normalization.
       -}
 
       (res, ss, equ) = nM True expr []
       nM :: Bool -> Expression -> [Expression] -> (Expression, [Text], Text)
-      -- posCpl indicates whether the expression is positive under a complement. It is False when expr is inside a complemented expression.
+      -- posCpl indicates whether the term is positive under a complement. It is False when expr is inside a complemented term.
       nM posCpl (EEqu (l, r)) _ | simpl = (t .==. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM posCpl l [] -- TODO: the use of posCpl is erroneous
@@ -1627,7 +1626,7 @@ isEIsc _ = False
 conjuncts :: env -> Rule -> NE.NonEmpty Expression
 conjuncts env =
   exprIsc2list
-    --  . (\e -> trace ("conjNF of that expression: "<>show e) e)
+    --  . (\e -> trace ("conjNF of that term: "<>show e) e)
     . conjNF env
     --  . (\e -> trace ("FormalExpression: "<>show e) e)
     . formalExpression

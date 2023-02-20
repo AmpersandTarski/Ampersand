@@ -242,7 +242,7 @@ instance GetOneGuarded Expression P_NamedRel where
     Errors . pure $
       CTXE (origin o) $
         "A relation is used that is not explicitly declared: " <> showP o
-          <> ".\n  Explicitly mention one of the following matching expressions:"
+          <> ".\n  Explicitly mention one of the following matching terms:"
           <> T.concat ["\n  - " <> showA l | l <- lst]
 
 instance GetOneGuarded Expression (P_NamedRel, (A_Concept, A_Concept)) where
@@ -258,7 +258,7 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
     Errors . pure $
       (CTXE . origin . fst) o $
         "A relation is used that is not explicitly declared: " <> showP_T o
-          <> ".\n  Perhaps you meant one of the following matching expressions:"
+          <> ".\n  Perhaps you meant one of the following matching terms:"
           <> T.concat ["\n  - " <> showA l | l <- lst]
 
 showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
@@ -306,12 +306,12 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
           _ ->
             T.intercalate "\n" $
               [ "Cannot disambiguate: " <> showP o,
-                "  Please add a signature (e.g. [A*B]) to the expression.",
+                "  Please add a signature (e.g. [A*B]) to the term.",
                 "  You may have intended one of these:"
               ]
                 <> map (("  " <>) . showA') exprs
                 <> noteIssue980
-        Known _ -> fatal "We have a known expression, so it is allready disambiguated."
+        Known _ -> fatal "We have a known term, so it is allready disambiguated."
         _ ->
           T.intercalate "\n" $
             [ "Cannot disambiguate: " <> showP o,
@@ -482,7 +482,7 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
           <> showWithAliases refSrc
           <> ", which is not comparable to the target "
           <> showWithAliases expTgt
-          <> " of the expression at this field."
+          <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
@@ -510,7 +510,7 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
           <> name viewCptStr
           <> ", which should be equal to or more general than the target "
           <> name viewRefCptStr
-          <> " of the expression at this field."
+          <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleViewError."
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
@@ -544,7 +544,7 @@ instance ErrorConcept (P_ViewD a) where
   showEC x = showP (vd_cpt x) <> " given in VIEW " <> vd_lbl x
 
 instance ErrorConcept P_IdentDef where
-  showEC x = showP (ix_cpt x) <> " given in Identity " <> ix_lbl x
+  showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> ix_lbl x
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
@@ -572,7 +572,7 @@ mustBeOrdered o a b =
       "  and concept " <> showEC b
     ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItemTermPrim)] -> Guarded b
 mustBeOrderedLst o lst =
   Errors . pure . CTXE (origin o) . T.unlines $
     [ "Type error in BOX",
@@ -585,7 +585,7 @@ mustBeOrderedLst o lst =
            "  You can do so by using a CLASSIFY statement."
          ]
   where
-    exprOf :: P_BoxItem TermPrim -> Term TermPrim
+    exprOf :: P_BoxItemTermPrim -> Term TermPrim
     exprOf x =
       case x of
         P_BxExpr {} -> obj_ctx x
@@ -603,16 +603,16 @@ mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p, e)] =
   Errors . pure . CTXE (origin o) . T.unlines $
-    [ "An ambiguity arises in type checking. Be more specific by binding the " <> tshow p <> " of the expression",
+    [ "An ambiguity arises in type checking. Be more specific by binding the " <> tshow p <> " of the term",
       "  " <> showA e <> ".",
-      "  You could add more types inside the expression, or just write",
+      "  You could add more types inside the term, or just write",
       "  " <> writeBind e <> "."
     ]
 mustBeBound o lst =
   Errors . pure . CTXE (origin o) . T.unlines $
-    [ "An ambiguity arises in type checking. Be more specific in the expressions ",
+    [ "An ambiguity arises in type checking. Be more specific in the terms ",
       "  " <> T.intercalate " and " (map (showA . snd) lst) <> ".",
-      "  You could add more types inside the expression, or write:"
+      "  You could add more types inside the term, or write:"
     ]
       <> ["  " <> writeBind e | (_, e) <- lst]
 

@@ -57,8 +57,8 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
         vChar = T.toLower . T.take 1 . name
 
--- predLshow exists for the purpose of translating a predicate logic expression to natural language.
--- example:  'predLshow l e' translates expression 'e'
+-- predLshow exists for the purpose of translating a predicate logic term to natural language.
+-- example:  'predLshow l e' translates term 'e'
 -- into a string that contains a natural language representation of 'e'.
 predLshow :: Lang -> (Var -> Text) -> PredLogic -> Text
 predLshow lang vMap = charshow 0
@@ -111,15 +111,16 @@ predLshow lang vMap = charshow 0
         R pexpr rel pexpr'
           | isIdent (EDcD rel) -> wrap i 5 (charshow 5 pexpr) <> T.pack " = " <> wrap i 5 (charshow 5 pexpr')
           | otherwise ->
-            if T.null (prL <> prM <> prR)
+            if T.null (decprL <> decprM <> decprR)
               then d <> T.pack " " <> name rel <> T.pack " " <> c
-              else prL <> d <> prM <> c <> prR
+              else decprL <> d <> decprM <> c <> decprR
           where
             d = wrap i 5 (charshow 5 pexpr)
             c = wrap i 5 (charshow 5 pexpr')
-            prL = decprL rel
-            prM = decprM rel
-            prR = decprR rel
+            decprL, decprM, decprR :: Text
+            decprL = maybe "" praLeft . decpr $ rel
+            decprM = maybe "" praMid . decpr $ rel
+            decprR = maybe "" praRight . decpr $ rel
         Constant txt -> txt
         Variable v -> vMap v
         Vee v w -> wrap i 5 (vMap v) <> T.pack " V " <> wrap i 5 (vMap w)

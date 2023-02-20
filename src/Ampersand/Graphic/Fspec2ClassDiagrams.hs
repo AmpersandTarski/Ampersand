@@ -66,8 +66,8 @@ buildClass fSpec root =
           clMths = []
         }
 
-cptIsShown :: FSpec -> A_Concept -> Bool
-cptIsShown fSpec cpt = isInScope cpt && hasClass cpt
+cptIsClass :: FSpec -> A_Concept -> Bool
+cptIsClass fSpec cpt = isInScope cpt && hasClass cpt
   where
     isInScope _ = True
     hasClass = isJust . classOf fSpec
@@ -77,7 +77,7 @@ classOf fSpec cpt =
   case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
     [] -> Nothing
     [es] -> Just es
-    _ -> fatal "Only one list of expressions is expected here"
+    _ -> fatal "Only one list of terms is expected here"
   where
     isOfCpt :: NE.NonEmpty Expression -> Bool
     isOfCpt es = source (NE.head es) == cpt
@@ -88,7 +88,7 @@ ooAttr :: Expression -> CdAttribute
 ooAttr r =
   OOAttr
     { attNm = case Set.elems $ bindedRelationsIn r of
-        [] -> fatal $ "No bindedRelations in an expression: " <> tshow r
+        [] -> fatal $ "No bindedRelations in expression: " <> tshow r
         h : _ -> name h,
       attTyp = if isProp r then "Prop" else (name . target) r,
       attOptional = (not . isTot) r
@@ -134,10 +134,10 @@ instance CDAnalysable Pattern where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens pat),
-        ooCpts = entities
+        ooCpts = Set.elems (concs pat)
       }
     where
-      entities = (filter (cptIsShown fSpec) . Set.elems . concs) pat
+      entities = (filter (isJust . classOf fSpec) . Set.elems . concs) pat
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
@@ -156,7 +156,7 @@ instance CDAnalysable FSpec where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens fSpec),
-        ooCpts = entities
+        ooCpts = Set.elems (concs fSpec)
       }
     where
       groups' :: [(Text, NonEmpty Class)]
@@ -191,7 +191,7 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-      entities = (filter (cptIsShown fSpec) . Set.elems . concs) fSpec
+      entities = (filter (cptIsClass fSpec) . Set.elems . concs) fSpec
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)

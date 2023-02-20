@@ -27,7 +27,7 @@ doGenDocument fSpec = do
   -- before the actual document is written
   genGraphics <- view genGraphicsL
   when (genGraphics && fspecFormat /= FPandoc) $
-    mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
+    mapM_ writePicture thePictures
   genText <- view genTextL
   when genText $
     writepandoc fSpec thePandoc

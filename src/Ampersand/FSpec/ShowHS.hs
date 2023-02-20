@@ -732,15 +732,16 @@ instance ShowHS Relation where
       [ "Relation { decnm   = " <> tshow (decnm d),
         "         , decsgn  = " <> showHS env "" (sign d),
         "         , decprps = " <> showL (map (showHS env "") (Set.elems $ decprps d)),
-        "         , decprL  = " <> tshow (decprL d),
-        "         , decprM  = " <> tshow (decprM d),
-        "         , decprR  = " <> tshow (decprR d),
+        "         , decpr  = " <> showHS env "" (decpr d),
         "         , decMean = " <> tshow (decMean d),
         "         , decfpos = " <> showHS env "" (decfpos d),
         "         , decusr  = " <> tshow (decusr d),
         "         , decpat  = " <> tshow (decpat d)
       ]
       <> "}"
+
+instance ShowHS Pragma where
+  showHS _ _ (Pragma _ l m r) = "PRAGMA " <> tshow l <> tshow m <> tshow r
 
 --   instance ShowHSName ConceptDef where
 --    showHSName cd = haskellIdentifier ("cDef_"<>cdcpt cd)
