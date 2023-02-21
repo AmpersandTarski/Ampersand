@@ -1012,16 +1012,47 @@ pCtx2aCtx
                 unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
                 let tgtOk = target expr `isaC` target rel
                 unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
+                let expr' =
+                      addEpsilonLeft genLattice (source rel) $
+                        addEpsilonRight genLattice (target rel) expr
                 return
                   AEnforce
                     { pos = pos',
                       enfRel = rel,
                       enfOp = oper,
-                      enfExpr = expr,
-                      enfPatName = mPat
+                      enfExpr = expr',
+                      enfPatName = mPat,
+                      enfRules = enforce2Rules rel expr'
                     }
             (o, dx) -> cannotDisambiguate o dx
-
+          where
+            enforce2Rules :: Relation -> Expression -> [Rule]
+            enforce2Rules rel expr =
+              case oper of
+                IsSuperSet {} -> [insPair]
+                IsSubSet {} -> [delPair]
+                IsSameSet {} -> [insPair, delPair]
+              where
+                insPair = mkRule "InsPair" (EInc (expr, bindedRel))
+                delPair = mkRule "DelPair" (EInc (bindedRel, expr))
+                bindedRel = EDcD rel
+                mkRule command fExpr =
+                  Ru
+                    { rrnm = "Compute " <> showRel rel <> " using " <> command,
+                      formalExpression = fExpr,
+                      rrfps = pos',
+                      rrmean = [],
+                      rrmsg = [],
+                      rrviol =
+                        Just . PairView $
+                          PairViewText pos' ("{EX} " <> command <> ";" <> name rel <> ";" <> name (source rel) <> ";")
+                            NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
+                                    PairViewText pos' $ ";" <> name (target rel) <> ";",
+                                    PairViewExp pos' Tgt (EDcI (target rel))
+                                  ],
+                      rrpat = mPat,
+                      rrkind = Enforce
+                    }
       pIdentity2aIdentity ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any)
