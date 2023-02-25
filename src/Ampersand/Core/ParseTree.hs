@@ -1091,7 +1091,7 @@ data P_ViewSegmtPayLoad a
 
 newtype ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
   --              | ViewHtmlTemplateInline Text -- Future extension
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Data)
 
 instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
 

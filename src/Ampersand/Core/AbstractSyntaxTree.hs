@@ -533,7 +533,7 @@ data ViewDef = Vd
     -- | the constituent attributes (i.e. name/term pairs) of this view.
     vdats :: [ViewSegment]
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 instance Named ViewDef where
   name = vdlbl
@@ -556,7 +556,7 @@ data ViewSegment = ViewSegment
     vsmSeqNr :: Integer,
     vsmLoad :: ViewSegmentPayLoad
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 instance Traced ViewSegment where
   origin = vsmpos
@@ -568,7 +568,7 @@ data ViewSegmentPayLoad
   | ViewText
       { vsgmTxt :: Text
       }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
@@ -776,7 +776,7 @@ data Cruds = Cruds
     crudU :: Bool,
     crudD :: Bool
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 data SubInterface
   = Box
