@@ -207,7 +207,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
           Att
             { attName = T.concat ["Tgt" | isEndo dcl] <> (unquote . name . target) codExpr,
               attExpr = codExpr,
-              attType = repr (target domExpr),
+              attType = repr (target codExpr),
               attUse =
                 if suitableAsKey . repr . target $ codExpr
                   then ForeignKey (target codExpr)
