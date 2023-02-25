@@ -5,7 +5,7 @@ ARG GHC_VERSION=8.10.7
 ARG STACK_VERSION=2.9.3
 ARG STACK_RESOLVER=lts-18.28
 ARG CABAL_VERSION=3.6.2.0
-ARG HLS_VERSION=1.9.0.0
+ARG HLS_VERSION=1.9.1.0
 ARG LLVM_VERSION=12
 
 ENV USERNAME=${USERNAME} \
@@ -69,6 +69,9 @@ RUN ((stack ghc -- --version 2>/dev/null) || true) && \
     stack config --system-ghc set install-ghc false --global && \
     stack config --system-ghc set resolver $STACK_RESOLVER
 
+# Temporary required, because http2-4.0.0 is broken, and used to build haddock. See https://github.com/kazu-yamamoto/http2/issues/42
+RUN stack install http2-3.0.3
+
 # Set global custom defaults for stack.
 RUN printf "ghc-options:\n  \"\$everything\": -haddock\n" >> /home/${USERNAME}/.stack/config.yaml
 
@@ -79,20 +82,19 @@ FROM tooling as packages
 
 # Install global packages.
 # Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
-RUN cabal install --haddock-hoogle -v \
-    haskell-dap-0.0.15.0 \
-    ghci-dap-0.0.19.0 \
-    haskell-debug-adapter-0.0.37.0 \
-    hlint-3.2.7 \
-    apply-refact-0.9.3.0 \
-    retrie-1.1.0.0 \
-    stylish-haskell-0.13.0.0 \
-    hoogle-5.0.18.3 \
-    ormolu-0.1.3.1 \
-    liquidhaskell-0.8.10.2
+RUN cabal install -v haskell-dap-0.0.15.0
+RUN cabal install -v ghci-dap-0.0.19.0
+RUN cabal install -v haskell-debug-adapter-0.0.37.0
+RUN cabal install -v hlint-3.2.7
+RUN cabal install -v apply-refact-0.9.3.0
+RUN cabal install -v retrie-1.1.0.0
+RUN cabal install -v stylish-haskell-0.13.0.0
+# RUN cabal install -v hoogle-5.0.18.3
+RUN cabal install -v ormolu-0.1.3.1
+RUN cabal install -v liquidhaskell-0.8.10.2
 
 # Generate hoogle db
-RUN hoogle generate && stack hoogle
+# RUN hoogle generate && stack hoogle
 
 # Set up the dependencies for Ampersand
 # RUN cd /workspaces/Ampersand && stack build --dependencies-only .
