@@ -2,12 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Ampersand.Prototype.GenAngularFrontend (
-  genComponent,
-  genSingleFileFromTemplate,
-  toPascal,
-  toKebab,
-) where
+module Ampersand.Prototype.GenAngularFrontend
+  ( genComponent,
+    genSingleFileFromTemplate,
+    toPascal,
+    toKebab,
+  )
+where
 
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -17,13 +18,13 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
+import Data.Maybe (fromJust)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial (splitOn)
 import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
-import Data.Maybe (fromJust)
 
 crudsToString :: Cruds -> Text
 crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
@@ -58,7 +59,7 @@ genComponentInterface fSpec interf = do
   let targetFilePath = T.unpack (ifcNameKebab interf) </> T.unpack (ifcNameKebab interf) <> ".interface.ts"
   genComponentFileFromTemplate fSpec interf genTypescriptInterface templateFilePath targetFilePath
 
-type FEObjectTemplateFunction = forall env . (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
+type FEObjectTemplateFunction = forall env. (HasRunner env, HasDirPrototype env) => FSpec -> Int -> FEObject -> RIO env Text
 
 genComponentFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> FEObjectTemplateFunction -> FilePath -> FilePath -> RIO env ()
 genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targetFilePath = do
@@ -146,19 +147,21 @@ subObjectAttributes fSpec depth templateFunction subObj = do
   lns <- templateFunction fSpec (depth + 1) subObj
   case subObj of
     FEObjE {} ->
-      return SubObjAttr
-        { subObjName = escapeIdentifier $ objName subObj,
-          subObjLabel = objName subObj, -- no escaping for labels in templates needed
-          subObjContents = lns,
-          subObjExprIsUni = exprIsUni subObj
-        }
+      return
+        SubObjAttr
+          { subObjName = escapeIdentifier $ objName subObj,
+            subObjLabel = objName subObj, -- no escaping for labels in templates needed
+            subObjContents = lns,
+            subObjExprIsUni = exprIsUni subObj
+          }
     FEObjT {} ->
-      return SubObjAttr
-        { subObjName = escapeIdentifier $ objName subObj,
-          subObjLabel = objName subObj,
-          subObjContents = lns,
-          subObjExprIsUni = True
-        }
+      return
+        SubObjAttr
+          { subObjName = escapeIdentifier $ objName subObj,
+            subObjLabel = objName subObj,
+            subObjContents = lns,
+            subObjExprIsUni = True
+          }
 
 genHTMLView :: FEObjectTemplateFunction
 genHTMLView fSpec depth obj =
@@ -183,7 +186,7 @@ genHTMLView fSpec depth obj =
 
             parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
 
-            return 
+            return
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ objectAttributes obj (logLevel runner)
@@ -255,8 +258,8 @@ genTypescriptInterface fSpec depth obj =
             boxSubObjs = subObjs
           } -> do
             subObjAttrs <- mapM (subObjectAttributes fSpec depth genTypescriptInterface) subObjs
-  
-            return 
+
+            return
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) boxTemplate
               $ objectAttributes obj (logLevel runner)
@@ -275,25 +278,26 @@ genTypescriptInterface fSpec depth obj =
     typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
       | exprIsUni obj = typescriptTypeForConcept tgtCpt -- for univalent expressions use the Typescript type for target concept
-      | cptTType fSpec tgtCpt == Object =  -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
-          "Array<\n"
+      | cptTType fSpec tgtCpt == Object -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
+        =
+        "Array<\n"
           <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
           <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
-
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
-      Object -> 
-        conceptIdWithImportAlias cpt <> " & {\n" 
-        <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
-        <> "\n}"
+      Object ->
+        conceptIdWithImportAlias cpt <> " & {\n"
+          <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
+          <> "\n}"
       _ -> conceptIdWithImportAlias cpt
 
     addViewDefinition :: Text
     addViewDefinition
       | isJust maybeViewDef = viewIdWithImportAlias . fromJust $ maybeViewDef
       | otherwise = "undefined"
-      where maybeViewDef = viewDef . atomicOrBox $ obj
+      where
+        maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
     conceptIdWithImportAlias cpt = "concepts." <> idWithoutType cpt

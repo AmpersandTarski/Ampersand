@@ -78,31 +78,38 @@ buildFESpec fSpec = do
       }
 
 buildConcepts :: FSpec -> [FEConcept]
-buildConcepts fSpec = map (
-  \cpt -> FEConcept
-    { cptId = idWithoutType cpt,
-      typescriptType = typescriptTypeForConcept fSpec cpt
-    }
-  ) $ Set.elems . allConcepts $ fSpec
+buildConcepts fSpec =
+  map
+    ( \cpt ->
+        FEConcept
+          { cptId = idWithoutType cpt,
+            typescriptType = typescriptTypeForConcept fSpec cpt
+          }
+    )
+    $ Set.elems . allConcepts $ fSpec
 
 buildViews :: FSpec -> [FEView]
-buildViews fSpec = map (
-  \viewDef' -> FEView {
-    viewId = toPascal . vdlbl $ viewDef',
-    viewSegments = map buildViewSegment $ segments viewDef',
-    viewIsEmpty = null . segments $ viewDef'
-  }
-  ) $ vviews fSpec
+buildViews fSpec =
+  map
+    ( \viewDef' ->
+        FEView
+          { viewId = toPascal . vdlbl $ viewDef',
+            viewSegments = map buildViewSegment $ segments viewDef',
+            viewIsEmpty = null . segments $ viewDef'
+          }
+    )
+    $ vviews fSpec
   where
     segments = filter (isJust . vsmlabel) . vdats -- filter out ViewSegments that don't have a label
 
 buildViewSegment :: ViewSegment -> FEViewSegment
-buildViewSegment viewSegment = FEViewSegment {
-    segmentLabel = fromMaybe "" $ vsmlabel viewSegment,
-    segmentTypescriptType = case vsmLoad viewSegment of
-      ViewExp {} -> "string"
-      ViewText {} -> "'" <> (vsgmTxt . vsmLoad $ viewSegment) <> "'"
-  }
+buildViewSegment viewSegment =
+  FEViewSegment
+    { segmentLabel = fromMaybe "" $ vsmlabel viewSegment,
+      segmentTypescriptType = case vsmLoad viewSegment of
+        ViewExp {} -> "string"
+        ViewText {} -> "'" <> (vsgmTxt . vsmLoad $ viewSegment) <> "'"
+    }
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
 buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs

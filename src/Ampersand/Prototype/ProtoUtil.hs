@@ -95,8 +95,8 @@ data FEView = FEView
   deriving (Typeable, Data)
 
 data FEViewSegment = FEViewSegment
-  {  segmentLabel :: !Text,
-     segmentTypescriptType :: !Text
+  { segmentLabel :: !Text,
+    segmentTypescriptType :: !Text
   }
   deriving (Typeable, Data)
 
