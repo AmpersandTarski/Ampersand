@@ -1,6 +1,6 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    INTERFACE List_all_interfaces FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <TABLE sortable sortBy="Label" order="asc">
+    INTERFACE "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <TABLE sortable sortBy="Label" order="asc">
         [ "Interface"       : I             cRud
         , "Label"           : label         cRud
         , "Is public"       : isPublic      cRud
@@ -9,7 +9,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         , "For roles"       : pf_ifcRoles   cRud
         ]
 
-    INTERFACE Edit_interface FOR Administrator : I[PF_Interface] BOX
+    INTERFACE "Edit interface" FOR Administrator : I[PF_Interface] BOX
         [ "Interface"           : I
         , "Is public"           : isPublic      cRUd
         , "Is API"              : isAPI         cRud -- do not allow editing this property, because non-APIs require a design time generated UI

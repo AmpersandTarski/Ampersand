@@ -55,17 +55,17 @@ PATTERN "Type checking"
       ROLE "Type Checker" MAINTAINS checkRightResidual
 ENDPATTERN
 
-PATTERN ReflexiveIsaClosures
+PATTERN "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
     MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
 
     RELATION isaRfx[Concept*Concept] -- isaRfx=isa\/isa~
-    ROLE ExecEngine MAINTAINS ComputeIsaRfxIns, ComputeIsaRfxDel
-    RULE ComputeIsaRfxIns : isa\/isa~ |- isaRfx
+    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
+    RULE "Compute isaRfxIns" : isa\/isa~ |- isaRfx
     VIOLATION (TXT "{EX} InsPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeIsaRfxDel : isaRfx |- isa\/isa~
+    RULE "Compute isaRfxDel" : isaRfx |- isa\/isa~
     VIOLATION (TXT "{EX} DelPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
 
     RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
@@ -73,10 +73,10 @@ PATTERN ReflexiveIsaClosures
     RULE "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
     VIOLATION (TXT "{EX} TransitiveClosure;isaRfx;Concept;isaRfxCopy;isaRfxPlus")
 
-    ROLE ExecEngine MAINTAINS ComputeIsaRfxStarByIns, ComputeIsaRfxStarByDel
-    RULE ComputeIsaRfxStarByIns : isaRfxPlus\/I |- isaRfxStar
+    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
     VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeIsaRfxStarByDel : isaRfxStar |- isaRfxPlus\/I
+    RULE "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 

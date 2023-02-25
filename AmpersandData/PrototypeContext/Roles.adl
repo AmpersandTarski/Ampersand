@@ -8,7 +8,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         REPRESENT PF_Label TYPE ALPHANUMERIC
         POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
-    API PF_AllRoles FOR SYSTEM : V[ONE*Role] BOX
+    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role] BOX
         [ "id"              : I
         , "label"           : label
         -- , "maintains"       : 

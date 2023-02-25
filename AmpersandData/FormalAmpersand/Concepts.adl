@@ -3,8 +3,8 @@ CONTEXT FormalAmpersand IN ENGLISH
 PATTERN Concepts
     RELATION name[Concept*ConceptName] [UNI,SUR]
 
-    ROLE ExecEngine MAINTAINS delUnusedConceptName
-    RULE delUnusedConceptName : I[ConceptName] |- name~;name
+    ROLE ExecEngine MAINTAINS "del unused ConceptName"
+    RULE "del unused ConceptName" : I[ConceptName] |- name~;name
     MEANING "A ConceptName without Concept will be removed."
     VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I )
     
@@ -33,7 +33,7 @@ PATTERN Specialization
     MEANING "A generalization rule refers to one or more specific concepts."
 ENDPATTERN
 
-PATTERN ComputeClosures
+PATTERN "Compute Closures"
     RELATION isa[Concept*Concept] [ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
@@ -42,46 +42,46 @@ PATTERN ComputeClosures
     MEANING "s isaPlus g  means that each element of concept  s  is an element of concept  g  as well."
 
     RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS ComputeTransitiveClosureOfIsa
-    RULE ComputeTransitiveClosureOfIsa : isa[Concept*Concept] = isaCopy[Concept*Concept]
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+    RULE "Compute transitive closure of isa" : isa[Concept*Concept] = isaCopy[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} TransitiveClosure;isa[Concept*Concept];Concept;isaCopy[Concept*Concept];isaPlus")
 
-    ROLE ExecEngine MAINTAINS ComputeTransitiveClosureOfIsaByIns, ComputeTransitiveClosureOfIsaByDel
-    RULE ComputeTransitiveClosureOfIsaByIns : isaPlus\/I |- isaStar
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeTransitiveClosureOfIsaByDel : isaStar |- isaPlus\/I
+    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
-PATTERN ReflexiveIsaClosures
+PATTERN "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
 
     RELATION isaRfx[Concept*Concept] -- isaRfx[Concept*Concept]=isa[Concept*Concept]\/isa[Concept*Concept]~
-    ROLE ExecEngine MAINTAINS ComputeIsaRfxIns, ComputeIsaRfxDel
-    RULE ComputeIsaRfxIns : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
+    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
+    RULE "Compute isaRfxIns" : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeIsaRfxDel : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
+    RULE "Compute isaRfxDel" : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 
     RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS ComputeTransitiveClosureOfIsas
-    RULE ComputeTransitiveClosureOfIsas : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~"
+    RULE "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~" : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} TransitiveClosure;isaRfx[Concept*Concept];Concept;isaRfxCopy[Concept*Concept];isaRfxPlus[Concept*Concept]")
 
-    ROLE ExecEngine MAINTAINS ComputeIsaRfxStarByIns, ComputeIsaRfxStarByDel
-    RULE ComputeIsaRfxStarByIns : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
+    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeIsaRfxStarByDel : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
+    RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN

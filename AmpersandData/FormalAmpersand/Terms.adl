@@ -4,7 +4,7 @@ INCLUDE "Concepts.adl"
 INCLUDE "Relations.adl"
 
 
-PATTERN TermDefinitions
+PATTERN "Term definitions"
     RELATION usedIn[Relation*Term]
     MEANING "The rule expressed in relation algebra."
 --    TODO make transitive closure of usedIn
@@ -48,16 +48,16 @@ PATTERN TermDefinitions
     REPRESENT AtomValue TYPE ALPHANUMERIC
     RELATION singleton[Singleton*AtomValue] [UNI]
     
-    CONCEPT CartesianProduct "The cartesian product. (Denoted in Ampersand as 'V')"
-    CLASSIFY CartesianProduct ISA Term
-    RELATION userSrc[CartesianProduct*Concept] [UNI]
-    RELATION userTgt[CartesianProduct*Concept] [UNI]
+    CONCEPT "V" "The cartesian product."
+    CLASSIFY "V" ISA Term
+    RELATION userSrc["V"*Concept] [UNI]
+    RELATION userTgt["V"*Concept] [UNI]
     
     CONCEPT Epsilon "An term between two concepts that have an generalisation relation between them" 
     CLASSIFY Epsilon ISA Term
     RELATION userCpt[Epsilon*Concept] [UNI]
-    CONCEPT Identity "The identity term on a concept. (Denoted in Ampersand as 'I')"
-    CLASSIFY Identity ISA Epsilon
+    CONCEPT "I" "The identity term on a concept."
+    CLASSIFY "I" ISA Epsilon
     
     CLASSIFY Equivalence ISA BinaryTerm
     CLASSIFY Inclusion   ISA BinaryTerm
@@ -83,8 +83,8 @@ ENDPATTERN
 RELATION showADL[Term*ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 REPRESENT ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
-      ROLE ExecEngine MAINTAINS DelUnusedShowADL
-      RULE DelUnusedShowADL : I[ShowADL] |- showADL~;showADL
+      ROLE ExecEngine MAINTAINS "del unused ShowADL"
+      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
       MEANING "A ShowADL without Term will be removed."
       VIOLATION ( TXT "{EX}_;DelAtom_;ShowADL_;", SRC I )
 VIEW Term : Term(showADL)

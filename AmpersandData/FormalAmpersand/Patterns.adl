@@ -11,8 +11,8 @@ PATTERN Patterns
     REPRESENT PatternName TYPE ALPHANUMERIC
     RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
-      ROLE ExecEngine MAINTAINS DelDnusedPatternName
-      RULE DelDnusedPatternName : I[PatternName] |- name~;name
+      ROLE ExecEngine MAINTAINS "del unused PatternName"
+      RULE "del unused PatternName" : I[PatternName] |- name~;name
       MEANING "A PatternName without Pattern will be removed."
       VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
 
@@ -26,18 +26,18 @@ PATTERN Patterns
     RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
     MEANING "The relations that are declared in a pattern."
 
-    ROLE ExecEngine MAINTAINS RemoveRuleAtom
-    RULE RemoveRuleAtom : I[Rule] - allRules;I[Context];allRules~ |- -V
+    ROLE ExecEngine MAINTAINS "Remove rule atom"
+    RULE "Remove rule atom" : I[Rule] - allRules;I[Context];allRules~ |- -V
     MEANING "A rule without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
-    ROLE ExecEngine MAINTAINS RemoveRelationAtom
-    RULE RemoveRelationAtom : I[Relation] - relsDefdIn;I[Context];relsDefdIn~ |- -V
+    ROLE ExecEngine MAINTAINS "Remove relation atom"
+    RULE "Remove relation atom" : I[Relation] - relsDefdIn;I[Context];relsDefdIn~ |- -V
     MEANING "A relation without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
 
-    ROLE User MAINTAINS Self_sustainedPatterns
-    RULE Self_sustainedPatterns : usedIn;formalTerm~;patRules~ |- declaredIn[Relation*Pattern]
+    ROLE User MAINTAINS "self-sustained patterns"
+    RULE "self-sustained patterns" : usedIn;formalTerm~;patRules~ |- declaredIn[Relation*Pattern]
     MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
 
 ENDPATTERN
@@ -85,10 +85,10 @@ PATTERN Patterns
     {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
     +}
     
-    RULE DeterminePattern : fromInstance = name[Entity*String];result~;fst;instantiatesAs~
+    RULE fromInstance = name[Entity*String];result~;fst;instantiatesAs~
     MEANING "The first part of the string combination determines the pattern instance of the entity."
     
-    RULE Expose: exposes = fromInstance~ /\ consumer;existsIn~
+    RULE exposes = fromInstance~ /\ consumer;existsIn~
     MEANING "The entities are exposed in the consumer pattern"
 
 
@@ -97,32 +97,32 @@ PATTERN Patterns
     {+A definition is uniquely determined by its name and its type, such that we can find the Definition when refering to it.
     +}
 
-    RULE LocalOrExternal: I[Definition] \/ I[ExternalEntity] = I[Entity]
+    RULE I[Definition] \/ I[ExternalEntity] = I[Entity]
     MEANING "Each entity is local or external"
-    RULE EitherLocalOrExternal: I[Definition] - I[ExternalEntity] = I[Definition]
+    RULE I[Definition] - I[ExternalEntity] = I[Definition]
     MEANING "Each local entity is never external"
-    RULE ExternalIsNotLocal:I[ExternalEntity] - I[Definition] = I[ExternalEntity]
+    RULE I[ExternalEntity] - I[Definition] = I[ExternalEntity]
     MEANING "Each external entity is never local"
 
-    RULE R1: definition /\ V[Definition*Definition] = I /\ existsIn;declaredIn~
+    RULE definition /\ V[Definition*Definition] = I /\ existsIn;declaredIn~
 
-    RULE R2:definition /\ V[ExternalEntity*Definition]
+    RULE definition /\ V[ExternalEntity*Definition]
                 =   exposes~;including  /\ name[Entity*String];result~;snd;name[Entity*String]~ -- second part of the string names the declaration
     
-    RULE R3: excluding \/ including = consumes;declaredIn~
+    RULE excluding \/ including = consumes;declaredIn~
     MEANING "The excluded and the included definitions together are precisely the declarations of the consumed pattern"
     
-    RULE R4: excluding /\ including = -V
+    RULE excluding /\ including = -V
     MEANING "There is no overlap between what is included and excluded"
 
-    RULE R5: consumer~;consumes = instantiates
+    RULE consumer~;consumes = instantiates
     MEANING "The relation `instantiates` is defined here."
 
-    RULE R6: existsIn /\ V[Definition*Pattern] = declaredIn
+    RULE existsIn /\ V[Definition*Pattern] = declaredIn
     MEANING "A definition exists in the pattern in which it is declared"
     
-    RULE R7: consumes;existsIn~ |- exposes;fromEntity
-     MEANING {+ If a pattern in which entity e exists is consumed in some instance,
+    RULE consumes;existsIn~ |- exposes;fromEntity
+    MEANING {+ If a pattern in which entity e exists is consumed in some instance,
                then that instance exposes an entity based on e +}
     
 

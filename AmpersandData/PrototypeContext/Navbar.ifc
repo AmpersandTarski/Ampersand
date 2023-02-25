@@ -1,15 +1,15 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    VIEW PF_NavMenuItem : PF_NavMenuItem DEFAULT { label : label } ENDVIEW
+    VIEW "PF_NavMenuItem" : PF_NavMenuItem DEFAULT { label : label } ENDVIEW
     
     --[ADMIN INTERFACES to adapt the menus]--------------------------------------------------------
-    INTERFACE Edit_navigation_menu FOR Administrator: "_SESSION";V[SESSION*PF_NavMenu] INTERFACE Edit_menu_item
+    INTERFACE "Edit navigation menu" FOR Administrator: "_SESSION";V[SESSION*PF_NavMenu] INTERFACE "Edit menu item"
 
-    INTERFACE Edit_menu_item FOR Administrator: I[PF_NavMenuItem] cRud BOX
+    INTERFACE "Edit menu item" FOR Administrator: I[PF_NavMenuItem] cRud BOX
         [ "Label"        : label
         , "Parent"       : isSubItemOf              cRUd
         , "Items"        : isSubItemOf~ CRuD BOX <TABLE sortable sortBy="Order" order="asc">
-            [ "Item"     : I LINKTO INTERFACE Edit_menu_item
+            [ "Item"     : I LINKTO INTERFACE "Edit menu item"
             , "Order"    : seqNr                    cRUd
             , "Visible"  : isVisible                cRUd
             , "Label"    : label                    cRUd
@@ -21,7 +21,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         ]
 
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------
-    API PF_MenuItems FOR SYSTEM: sessionActiveRoles[SESSION*Role];pf_navItemRoles~;isVisible BOX
+    API "PF_MenuItems" FOR SYSTEM: sessionActiveRoles[SESSION*Role];pf_navItemRoles~;isVisible BOX
         [ "id"              : I
         , "label"           : label
         , "seqNr"           : seqNr
