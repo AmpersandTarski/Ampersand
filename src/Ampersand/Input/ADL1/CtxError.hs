@@ -49,6 +49,7 @@ module Ampersand.Input.ADL1.CtxError
     whenCheckedM,
     mkRoundTripError,
     mkRoundTripTextError,
+    mkParserStateWarning,
   )
 where
 
@@ -665,6 +666,9 @@ mkCaseProblemWarning x y =
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> (text1ToText . tName) x <> "` and `" <> (text1ToText . tName) y <> "`."
       ]
+
+mkParserStateWarning :: Origin -> Text -> Warning
+mkParserStateWarning = Warning
 
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a

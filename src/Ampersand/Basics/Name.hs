@@ -98,7 +98,7 @@ data NameType
   | SqlAttributeName
   | SqlTableName
   | ViewName
-  deriving (Eq, Data, Enum, Bounded)
+  deriving (Show, Eq, Data, Enum, Bounded)
 
 withNameSpace :: NameSpace -> Name -> Name
 withNameSpace ns nm =

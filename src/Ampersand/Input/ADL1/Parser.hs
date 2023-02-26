@@ -108,7 +108,18 @@ pNameWithoutLabel ns typ
         orig <- currPos
         txt <- pDoubleQuotedString1
         let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
-            warn = "The doublequoted string is deprecated."
+            warn =
+              T.intercalate
+                "\n  "
+                [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
+                  tshow . text1ToText $ txt,
+                  "   was replaced by:",
+                  text1ToText
+                    ( case nmTxt of
+                        Nothing -> fatal "This should not be possible."
+                        Just te -> te
+                    )
+                ]
         addParserWarning orig warn
         case nmTxt of
           Nothing -> unexpected "doublequoted string without valid characters."
@@ -131,7 +142,22 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
             mLab
               | Just txt == nmTxt = Nothing
               | otherwise = Just . Label . text1ToText $ txt
-            warn = "The doublequoted string is deprecated."
+            warn =
+              T.intercalate
+                "\n  "
+                [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
+                  tshow . text1ToText $ txt,
+                  "   was replaced by:",
+                  text1ToText
+                    ( case nmTxt of
+                        Nothing -> fatal "This should not be possible."
+                        Just te -> te
+                    )
+                    <> ( case mLab of
+                           Nothing -> mempty
+                           Just (Label lbl) -> " LABEL " <> tshow lbl
+                       )
+                ]
         addParserWarning orig warn
         case nmTxt of
           Nothing -> unexpected "doublequoted string without valid characters."

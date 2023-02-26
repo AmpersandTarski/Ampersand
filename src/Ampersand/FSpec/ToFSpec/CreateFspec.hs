@@ -69,7 +69,7 @@ createFspec =
       snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
     formalAmpersandScript <- parseFormalAmpersand
     prototypeContextScript <- parsePrototypeContext
-    let pContext =
+    let p_context =
           case recipe of
             Standard -> userScript
             Grind -> do
@@ -91,4 +91,4 @@ createFspec =
               let two = grind nameSpacePrototypeContext transformersPrototypeContext oneFspec
               pcScript <- prototypeContextScript
               return (one `mergeContexts` two `mergeContexts` pcScript)
-    return (pCtx2Fspec env =<< pContext)
+    return (pCtx2Fspec env =<< p_context)

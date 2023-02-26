@@ -16,6 +16,7 @@ module Ampersand.Input.ADL1.ParsingLib
     -- * ParserState manipulators
     initialParserState,
     addParserWarning,
+    parseMessages,
 
     -- * Combinators
     (<?>),
@@ -98,7 +99,7 @@ type AmpParser a =
 
 -- | the state of the parser. Note: the position in the text is managed by the lexer: Every Token has a position in it
 data ParserState = ParserState
-  { _parseMessages :: ![(Origin, Text)]
+  { parseMessages :: ![(Origin, Text)]
   }
 
 initialParserState :: ParserState

@@ -31,6 +31,7 @@ import Ampersand.Input.ADL1.CtxError
     lexerError2CtxError,
     lexerWarning2Warning,
     mkErrorReadingINCLUDE,
+    mkParserStateWarning,
     whenCheckedM,
   )
 import Ampersand.Input.ADL1.Lexer
@@ -79,7 +80,7 @@ import System.FilePath
     takeExtension,
     (</>),
   )
-import Text.Parsec (runP)
+import Text.Parsec (getState, runP)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
@@ -330,13 +331,12 @@ runParser ::
   -- | The result
   Guarded a
 runParser parser filename input =
-  let lexed = lexer filename (T.unpack input)
-   in case lexed of
-        Left err -> Errors . pure $ lexerError2CtxError err
-        Right (tokens, lexerWarnings) ->
-          addWarnings
-            (map lexerWarning2Warning lexerWarnings)
-            (parse parser filename tokens)
+  case lexer filename (T.unpack input) of
+    Left err -> Errors . pure $ lexerError2CtxError err
+    Right (tokens, lexerWarnings) ->
+      addWarnings
+        (map lexerWarning2Warning lexerWarnings)
+        (parse parser filename tokens)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
@@ -361,4 +361,13 @@ parseCtx ::
   Text ->
   -- | The context and a list of included files
   Guarded (P_Context, [Include])
-parseCtx = runParser . pContext
+parseCtx ns inp = do
+  x <- runParser pContext' inp
+  return $ case x of
+    Errors err -> Errors err
+    Checked (result, state) warns -> Checked result $ warns ++ map toWarning (parseMessages state)
+  where
+    pContext' = build <$> pContext ns <*> getState
+    build :: a -> ParserState -> (a, ParserState)
+    build res state = (res, state)
+    toWarning (orig, msg) = mkParserStateWarning orig msg
