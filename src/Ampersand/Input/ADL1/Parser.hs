@@ -96,7 +96,9 @@ pContext ns =
         <|> CEnf <$> pEnforce ns
 
 pNameWithoutLabel :: NameSpace -> NameType -> AmpParser Name
-pNameWithoutLabel ns typ = properParser <|> depricatedParser
+pNameWithoutLabel ns typ
+  | typ == RelationName = properParser
+  | otherwise = properParser <|> depricatedParser
   where
     properParser :: AmpParser Name
     properParser = withNameSpace ns <$> pName typ
@@ -105,25 +107,14 @@ pNameWithoutLabel ns typ = properParser <|> depricatedParser
       do
         orig <- currPos
         txt <- pDoubleQuotedString1
-        let nmTxt =
-              toText1Unsafe
-                . T.intercalate "_"
-                . filter (not . T.null)
-                . concat
-                . NE.toList
-                . fmap (T.words . text1ToText)
-                . splitOnDots
-                $ txt
-            warn = ""
+        let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
+            warn = "The doublequoted string is deprecated."
         addParserWarning orig warn
-        return (mkName typ (nmTxt NE.:| []))
+        case nmTxt of
+          Nothing -> unexpected "doublequoted string without valid characters."
+          Just nm -> return (mkName typ (nm NE.:| []))
 
-pNameWithOptionalLabel ::
-  -- |
-  NameSpace ->
-  -- |
-  NameType ->
-  AmpParser (Name, Maybe Label)
+pNameWithOptionalLabel :: NameSpace -> NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
   where
     properParser :: AmpParser (Name, Maybe Label)
@@ -140,12 +131,10 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
             mLab
               | Just txt == nmTxt = Nothing
               | otherwise = Just . Label . text1ToText $ txt
-
-            warn =
-              ""
+            warn = "The doublequoted string is deprecated."
         addParserWarning orig warn
         case nmTxt of
-          Nothing -> unexpected ""
+          Nothing -> unexpected "doublequoted string without valid characters."
           Just nm -> return (mkName typ (nm NE.:| []), mLab)
 
 tmpDoubleQuotedStringToNameVERYUNSAFE :: Text1 -> Maybe Text1
