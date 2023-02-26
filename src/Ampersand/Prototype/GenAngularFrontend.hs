@@ -107,7 +107,9 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
         renderTemplate Nothing template $
           setAttribute "contextName" (fsName fSpec)
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcs" (interfaces feSpec)
+            . setAttribute "ifcs" (interfaces feSpec) -- all interfaces
+            . setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
+            . setAttribute "apis" (filter isApi $ interfaces feSpec) -- only the interfaces that have API (no UI)
             . setAttribute "concepts" (concepts feSpec)
             . setAttribute "views" (views feSpec)
             . setAttribute "verbose" (loglevel' == LevelDebug)
