@@ -28,6 +28,7 @@ module Ampersand.Input.ADL1.ParsingLib
     try,
     choice,
     pMaybe,
+    unexpected,
 
     -- * Positions
     currPos,
@@ -55,7 +56,6 @@ module Ampersand.Input.ADL1.ParsingLib
 
     -- * Keyword parsers
     pKey,
-    pAnyKeyWordName,
     pAnyKeyWord,
 
     -- * Operator parsers
@@ -188,6 +188,10 @@ pSemi = pOperator (Text1 ';' mempty)
 pColon :: AmpParser Text1
 pColon = pOperator (Text1 ':' mempty)
 
+-- | a parser for a dot (.)
+pDot :: AmpParser Text1
+pDot = pOperator (Text1 '.' mempty)
+
 -----------------------------------------------------------
 -- Token parsers
 -----------------------------------------------------------
@@ -242,61 +246,60 @@ pAmpersandMarkup =
     <?> "markup"
 
 --- Conid ::= UpperChar AlphaNumericChar*
-pUpperCaseName :: NameType -> AmpParser Name
-pUpperCaseName typ =
-  mkName typ
-    <$> check
-      ( \case
-          LexSafeID t1 ->
-            if isUpper h then Just xs else Nothing
-            where
-              xs = splitOnDots t1
-              Text1 h _ = NE.last xs
-          _ -> Nothing
-      )
+pUpperCaseID :: AmpParser Text1
+pUpperCaseID =
+  check
+    ( \case
+        LexSafeID t1@(Text1 h _) ->
+          if isUpper h then Just t1 else Nothing
+        _ -> Nothing
+    )
     <?> "upper case identifier"
 
 --- Varid ::= LowerChar AlphaNumericChar*
-pLowerCaseName :: NameType -> AmpParser Name
-pLowerCaseName typ =
-  mkName typ
-    <$> check
-      ( \case
-          LexSafeID t1 ->
-            if isLower h then Just xs else Nothing
-            where
-              xs = splitOnDots t1
-              Text1 h _ = NE.last xs
-          _ -> Nothing
-      )
+pLowerCaseID :: AmpParser Text1
+pLowerCaseID =
+  check
+    ( \case
+        LexSafeID t1@(Text1 h _) ->
+          if isLower h then Just t1 else Nothing
+        _ -> Nothing
+    )
     <?> "lower case identifier"
-
-pAnyKeyWordName :: NameType -> AmpParser Name
-pAnyKeyWordName typ =
-  mkName typ
-    . splitOnDots
-    <$> pAnyKeyWord
 
 --- ADLid ::= Varid | Conid
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
-pUnrestrictedName :: NameType -> AmpParser Name
-pUnrestrictedName typ = pLowerCaseName typ <|> pUpperCaseName typ <|> pAnyKeyWordName typ
+pUnrestrictedID :: AmpParser Text1
+pUnrestrictedID = pLowerCaseID <|> pUpperCaseID <|> pAnyKeyWord
 
 pName :: NameType -> AmpParser Name
-pName typ = case typ of
-  ConceptName -> pUpperCaseName typ
-  RelationName -> pLowerCaseName typ
-  RuleName -> pUnrestrictedName typ
-  PatternName -> pUpperCaseName typ
-  ContextName -> pUpperCaseName typ
-  RoleName -> pUnrestrictedName typ
-  ViewName -> pUnrestrictedName typ
-  IdentName -> pUnrestrictedName typ
-  InterfaceName -> pUnrestrictedName typ
-  PropertyName -> pUpperCaseName typ
-  SqlAttributeName -> pUnrestrictedName typ
-  SqlTableName -> pUnrestrictedName typ
+pName typ =
+  build
+    <$> many namespacePart
+    <*> namePart
+  where
+    build :: [Text1] -> Text1 -> Name
+    build ns nm =
+      mkName typ . NE.reverse $ nm NE.:| reverse ns
+    namePart :: AmpParser Text1
+    namePart = case typ of
+      ConceptName -> pUpperCaseID
+      RelationName -> pLowerCaseID
+      RuleName -> pUnrestrictedID
+      PatternName -> pUpperCaseID
+      ContextName -> pUpperCaseID
+      RoleName -> pUnrestrictedID
+      ViewName -> pUnrestrictedID
+      IdentName -> pUnrestrictedID
+      InterfaceName -> pUnrestrictedID
+      PropertyName -> pUpperCaseID
+      SqlAttributeName -> pUnrestrictedID
+      SqlTableName -> pUnrestrictedID
+    namespacePart :: AmpParser Text1
+    namespacePart = fst <$> try nameAndDot
+      where
+        nameAndDot = (,) <$> pUnrestrictedID <*> pDot
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of

@@ -793,6 +793,8 @@ data P_Rule a = P_Rule
     pos :: !Origin,
     -- | Name of this rule
     rr_nm :: !Name,
+    -- | Label, if present
+    rr_lbl :: !(Maybe Label),
     -- | The rule term
     rr_exp :: !(Term a),
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -828,8 +830,8 @@ instance Functor P_Rule where fmap = fmapDefault
 instance Foldable P_Rule where foldMap = foldMapDefault
 
 instance Traversable P_Rule where
-  traverse f (P_Rule fps nm expr mean msg viol) =
-    (\e v -> P_Rule fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
+  traverse f (P_Rule fps nm lbl expr mean msg viol) =
+    (\e v -> P_Rule fps nm lbl e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
 instance Named (P_Rule a) where
   name = rr_nm

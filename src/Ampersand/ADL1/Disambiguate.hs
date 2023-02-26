@@ -116,12 +116,12 @@ instance Disambiguatable P_IdentSegmnt where
       (v', rt) = disambInfo cptMap v x
 
 instance Disambiguatable P_Rule where
-  disambInfo cptMap (P_Rule fps nm expr mean msg Nothing) x =
-    (P_Rule fps nm exp' mean msg Nothing, rt)
+  disambInfo cptMap (P_Rule fps nm lbl expr mean msg Nothing) x =
+    (P_Rule fps nm lbl exp' mean msg Nothing, rt)
     where
       (exp', rt) = disambInfo cptMap expr x
-  disambInfo cptMap (P_Rule fps nm expr mean msg (Just viol)) x =
-    (P_Rule fps nm exp' mean msg (Just viol'), rt)
+  disambInfo cptMap (P_Rule fps nm lbl expr mean msg (Just viol)) x =
+    (P_Rule fps nm lbl exp' mean msg (Just viol'), rt)
     where
       (exp', rt) = disambInfo cptMap expr x
       (PairViewTerm viol', _) -- SJ 20131123: disambiguation does not depend on the contents of this pairview, but must come from outside...

@@ -80,6 +80,7 @@ ruleFromIdentity identity =
               . mkName
                 RuleName
               $ (toText1Unsafe ("identity_" <> tshow identity) NE.:| []),
+          rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file
           rrmean = map toMeaning [minBound ..],
@@ -183,6 +184,7 @@ enforce2Rules (AEnforce orig rel op expr mPat) =
               . mkName
                 RuleName
               $ (toText1Unsafe ("Compute_" <> tshow rel <> "_using_" <> command) NE.:| []),
+          rrlbl = Just . Label $ "Compute " <> tshow rel <> " by using " <> command,
           formalExpression = fExpr,
           rrfps = orig,
           rrmean = [],

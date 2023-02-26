@@ -48,7 +48,7 @@ identifier =
   where
     isKeyword :: Text1 -> Bool
     isKeyword x = x `elem` keywords
-    isSafeIdChar' b c = isSafeIdChar b c && isAscii c -- Only use ascii to run the quickckeck. This prevents difficult-to-read error messages in the parser/prettyprinter roundtrip.
+    isSafeIdChar' b c = isSafeIdChar b c && isAscii c -- Only use ascii to run the quickcheck. This prevents difficult-to-read error messages in the parser/prettyprinter roundtrip.
 
 -- Genrates a valid ADL lower-case name
 lowercaseName :: Gen Name
@@ -359,6 +359,7 @@ instance Arbitrary (P_Rule TermPrim) where
   arbitrary =
     P_Rule
       <$> arbitrary
+      <*> arbitrary
       <*> arbitrary
       <*> genRuleTerm
       <*> arbitrary

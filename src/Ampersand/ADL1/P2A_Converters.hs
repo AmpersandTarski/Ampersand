@@ -982,6 +982,7 @@ pCtx2aCtx
         P_Rule
           { pos = orig,
             rr_nm = nm,
+            rr_lbl = lbl',
             rr_exp = expr,
             rr_mean = meanings,
             rr_msg = msgs,
@@ -993,6 +994,7 @@ pCtx2aCtx
             return
               Rule
                 { rrnm = nm,
+                  rrlbl = lbl',
                   formalExpression = exp',
                   rrfps = orig,
                   rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings,

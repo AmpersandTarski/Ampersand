@@ -1155,9 +1155,9 @@ nameSpacePrototypeContext = [toText1Unsafe "PrototypeContext"]
 
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
---   You might do this by dropping all prefixes "PF_" and "pf_" and doing
+--   You might do this by dropping all prefixes "PF." and "PF." and doing
 --   the following transformation:
---     label[Role*PF_Label]                -> name[Role*RoleName]
+--     label[Role*PF.Label]                -> name[Role*RoleName]
 --   Then you will see that the transformers defined here are a subset of the FormalAmpersand transformers.
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec =
@@ -1165,8 +1165,8 @@ transformersPrototypeContext fSpec =
     (toTransformer nameSpacePrototypeContext)
     -- the following transformer is also contained in FormalAmpersand.
     [ ( "isAPI",
-        "PF_Interface",
-        "PF_Interface",
+        "PF.Interface",
+        "PF.Interface",
         Set.fromList [],
         [ (dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
           | ifc :: Interface <- instanceList fSpec,
@@ -1176,8 +1176,8 @@ transformersPrototypeContext fSpec =
       -- the following transformer can be calculated by the Exec Engine.
       -- it is also contained in FormalAmpersand.
       ( "isPublic",
-        "PF_Interface",
-        "PF_Interface",
+        "PF.Interface",
+        "PF.Interface",
         Set.fromList [],
         [ (dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
           | ifc :: Interface <- instanceList fSpec,
@@ -1186,8 +1186,8 @@ transformersPrototypeContext fSpec =
       ),
       -- the following transformer is also contained in FormalAmpersand.
       ( "label",
-        "PF_Interface",
-        "PF_Label",
+        "PF.Interface",
+        "PF.Label",
         Set.fromList [],
         [ (dirtyIdWithoutType ifc, PopAlphaNumeric . text1ToText . tName $ ifc)
           | ifc :: Interface <- instanceList fSpec
@@ -1196,15 +1196,15 @@ transformersPrototypeContext fSpec =
       -- the following transformer is called name[Role*RoleName] in FormalAmpersand
       ( "label",
         "Role",
-        "PF_Label",
+        "PF.Label",
         Set.fromList [Uni],
         [ (dirtyIdWithoutType role, PopAlphaNumeric . text1ToText . tName $ role)
           | role :: Role <- instanceList fSpec
         ]
       ),
       -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand
-      ( "pf_ifcRoles",
-        "PF_Interface",
+      ( "PF.ifcRoles",
+        "PF.Interface",
         "Role",
         Set.fromList [],
         [ (dirtyIdWithoutType ifc, dirtyIdWithoutType role)

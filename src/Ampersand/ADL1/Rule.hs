@@ -48,6 +48,7 @@ rulefromProp prp rel =
           . mkName
             RuleName
           $ (toText1Unsafe (tshow prp <> "_" <> tshow rel) NE.:| []),
+      rrlbl = Just . Label $ tshow prp <> " rule for relation " <> tshow rel,
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),
       rrmean = meanings prp,

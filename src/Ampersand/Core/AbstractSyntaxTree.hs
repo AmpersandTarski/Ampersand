@@ -319,6 +319,8 @@ type Rules = Set.Set Rule
 data Rule = Rule
   { -- | Name of this rule
     rrnm :: !Name,
+    -- | Optional label
+    rrlbl :: !(Maybe Label),
     -- | The term that should be True
     formalExpression :: !Expression,
     -- | Position in the Ampersand file

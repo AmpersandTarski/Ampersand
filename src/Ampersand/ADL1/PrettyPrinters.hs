@@ -229,17 +229,16 @@ instance Pretty SrcOrTgt where
   pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
-  pretty (P_Rule _ nm expr mean msg viol) =
-    text "RULE" <+> rName
+  pretty (P_Rule _ nm lbl expr mean msg viol) =
+    text "RULE" <+> pretty nm <+> rLabel <+> text ":"
       <~> expr
       <+\> perline mean
       <+\> perline msg
       <~\> viol
     where
-      rName =
-        if T.null (plainNameOf nm)
-          then empty
-          else pretty nm <> text ":"
+      rLabel = case lbl of
+        Nothing -> mempty
+        Just (Label l) -> text (T.unpack l)
 
 instance Pretty (P_Enforce TermPrim) where
   pretty (P_Enforce _ rel op expr) =

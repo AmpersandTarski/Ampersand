@@ -92,7 +92,6 @@ parseFilesTransitive xs = do
   curDir <- liftIO getCurrentDirectory
   canonical <- liftIO . mapM canonicalizePath . getRoots $ xs
   let candidates = map (mkCandidate curDir) canonical
-
   parseThings [] candidates
   where
     mkCandidate :: FilePath -> FilePath -> ParseCandidate

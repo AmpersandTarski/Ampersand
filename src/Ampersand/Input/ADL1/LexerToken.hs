@@ -45,7 +45,7 @@ data Lexeme
     LexOctal !Int
   | -- | A hexadecimal number
     LexHex !Int
-  | -- | An identifier that is safe to be used as a name in a database. It must contain only alphanumeric (UTF8) characters and underscore `_`. It may not begin with a numeric character or an underscore.
+  | -- | An identifier that is safe to be used as a name in a database. It must contain only alphanumeric (Ascii) letters and digits. It may not begin with a numeric character.
     LexSafeID !Text1
   | -- | A date-time
     LexDateTime !UTCTime
