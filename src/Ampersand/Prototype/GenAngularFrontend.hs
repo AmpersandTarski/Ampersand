@@ -34,8 +34,8 @@ crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x
 
 genComponent :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genComponent fspec ifc = do
-  genComponentTs fspec ifc
-  genComponentView fspec ifc
+  unless (isApi ifc) $ genComponentTs fspec ifc
+  unless (isApi ifc) $ genComponentView fspec ifc
   genComponentInterface fspec ifc
   logInfo . display $ "Generated files for " <> ifcNamePascal ifc <> "Component"
 
