@@ -112,7 +112,7 @@ buildViewSegment viewSegment =
     }
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
-buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
+buildInterfaces fSpec = mapM buildInterface allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
