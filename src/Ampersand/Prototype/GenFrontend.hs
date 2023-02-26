@@ -28,12 +28,11 @@ doGenFrontend ::
   RIO env ()
 doGenFrontend fSpec = do
   now <- getCurrentTime
-  logInfo "Generating frontend..."
+  frontendVersion <- view frontendVersionL
+  logInfo . display $ "Generating " <> tshow frontendVersion <> " frontend... "
   copyTemplates
   feSpec <- buildFESpec fSpec
   let feInterfaces = interfaces feSpec
-  frontendVersion <- view frontendVersionL
-  logDebug . display $ tshow (length feInterfaces) <> " interfaces will be generated. (" <> tshow frontendVersion <> ")."
   case frontendVersion of
     AngularJS -> do
       genViewInterfaces fSpec feInterfaces
@@ -48,7 +47,7 @@ doGenFrontend fSpec = do
       genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
       genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
       genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
-  logInfo "Angular frontend module generated"
+      logDebug "Angular frontend module generated"
 
 copyTemplates ::
   (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
@@ -112,7 +111,7 @@ buildViewSegment viewSegment =
     }
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
-buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
+buildInterfaces fSpec = mapM buildInterface allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
@@ -127,6 +126,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             ifcNamePascal = toPascal . safechars $ name ifc,
             ifcLabel = name ifc,
             ifcExp = objExp obj,
+            isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
             srcConcept = idWithoutType . source . objExp $ obj,
             feiRoles = ifcRoles ifc,

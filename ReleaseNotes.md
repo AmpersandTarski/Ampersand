@@ -3,7 +3,7 @@
 ## Unreleased changes
 
 ## v4.7.5 (25 february 2023)
-* [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend.
+* [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
 
 ## v4.7.4 (20 february 2023)
 
