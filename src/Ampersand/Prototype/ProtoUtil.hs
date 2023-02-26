@@ -74,6 +74,7 @@ data FEInterface = FEInterface
     ifcNamePascal :: Text,
     ifcLabel :: Text,
     ifcExp :: FEExpression,
+    isApi :: Bool,
     isSessionInterface :: Bool, --True if the source concept is the session. (then the interface will show a list of all)
     srcConcept :: Text,
     feiRoles :: [Role],

@@ -127,6 +127,7 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
             ifcNamePascal = toPascal . safechars $ name ifc,
             ifcLabel = name ifc,
             ifcExp = objExp obj,
+            isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
             srcConcept = idWithoutType . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
