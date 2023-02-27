@@ -113,7 +113,7 @@ pNameWithoutLabel ns typ
                 "\n  "
                 [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
                   tshow . text1ToText $ txt,
-                  "   was replaced by:",
+                  "   should be replaced by:",
                   text1ToText
                     ( case nmTxt of
                         Nothing -> fatal "This should not be possible."
@@ -147,7 +147,7 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
                 "\n  "
                 [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
                   tshow . text1ToText $ txt,
-                  "   was replaced by:",
+                  "   should be replaced by:",
                   text1ToText
                     ( case nmTxt of
                         Nothing -> fatal "This should not be possible."

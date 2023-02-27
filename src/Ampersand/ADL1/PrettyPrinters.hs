@@ -51,15 +51,6 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         =
         Partial.replace needle replacement haystack
 
-maybeQuoteLabel :: Maybe Text1 -> Doc
-maybeQuoteLabel lbl =
-  case lbl of
-    Nothing -> mempty
-    Just t -> case T.words (text1ToText t) of
-      [] -> mempty
-      [word] -> quote word <> text ":" -- quote just to be safe. Otherwise we have to deal with exceptions.
-      _ -> quote (text1ToText t) <> text ":"
-
 prettyhsep :: Pretty a => [a] -> Doc
 prettyhsep = hsep . map pretty
 
@@ -230,15 +221,11 @@ instance Pretty SrcOrTgt where
 
 instance Pretty (P_Rule TermPrim) where
   pretty (P_Rule _ nm lbl expr mean msg viol) =
-    text "RULE" <+> pretty nm <+> rLabel <+> text ":"
+    text "RULE" <+> pretty nm <+> pretty lbl <+> text ":"
       <~> expr
       <+\> perline mean
       <+\> perline msg
       <~\> viol
-    where
-      rLabel = case lbl of
-        Nothing -> mempty
-        Just (Label l) -> text (T.unpack l)
 
 instance Pretty (P_Enforce TermPrim) where
   pretty (P_Enforce _ rel op expr) =
@@ -316,6 +303,14 @@ prettyObject objectKind obj =
     view :: Maybe Name -> Doc
     view Nothing = empty
     view (Just v) = (text . T.unpack) ("<" <> plainNameOf v <> ">")
+    maybeQuoteLabel :: Maybe Text1 -> Doc
+    maybeQuoteLabel lbl =
+      case lbl of
+        Nothing -> mempty
+        Just t -> case T.words (text1ToText t) of
+          [] -> mempty
+          [word] -> quote word <> text ":" -- quote just to be safe. Otherwise we have to deal with exceptions.
+          _ -> quote (text1ToText t) <> text ":"
 
 instance Pretty P_Cruds where
   pretty (P_Cruds _ str) = (text . T.unpack . text1ToText) str
