@@ -3,8 +3,8 @@ CONTEXT FormalAmpersand IN ENGLISH
 PATTERN Concepts
     VIEW Concept: Concept(name)
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
-      ROLE ExecEngine MAINTAINS "del unused ConceptName"
-      RULE "del unused ConceptName" : I[ConceptName] |- name~;name
+      ROLE ExecEngine MAINTAINS delunusedConceptName
+      RULE delunusedConceptName LABEL "del unused ConceptName" : I[ConceptName] |- name~;name
       MEANING "A ConceptName without Concept will be removed."
       VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I )
     
@@ -52,7 +52,7 @@ PATTERN Specialization
 
 ENDPATTERN
 
-PATTERN "Compute Closures"
+PATTERN ComputeClosures LABEL "Compute Closures"
     RELATION isa[Concept*Concept] [ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
@@ -61,8 +61,8 @@ PATTERN "Compute Closures"
     MEANING "s isaPlus g  means that each element of concept  s  is an element of concept  g  as well."
 
     RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-    RULE "Compute transitive closure of isa" : isa[Concept*Concept] = isaCopy[Concept*Concept]
+    ROLE ExecEngine MAINTAINS Computetransitiveclosureofisa
+    RULE Computetransitiveclosureofisa LABEL "Compute transitive closure of isa" : isa[Concept*Concept] = isaCopy[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} TransitiveClosure;isa[Concept*Concept];Concept;isaCopy[Concept*Concept];isaPlus")
 

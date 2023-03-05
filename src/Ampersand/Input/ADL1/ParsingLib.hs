@@ -58,6 +58,7 @@ module Ampersand.Input.ADL1.ParsingLib
     -- * Keyword parsers
     pKey,
     pAnyKeyWord,
+    pKeyWordWithFilter,
 
     -- * Operator parsers
     pOperator,
@@ -249,13 +250,18 @@ pAmpersandMarkup =
 --- Conid ::= UpperChar AlphaNumericChar*
 pUpperCaseID :: AmpParser Text1
 pUpperCaseID =
-  check
-    ( \case
-        LexSafeID t1@(Text1 h _) ->
-          if isUpper h then Just t1 else Nothing
-        _ -> Nothing
-    )
-    <?> "upper case identifier"
+  pKeyWordWithFilter upper'
+    <|> ( check
+            ( \case
+                LexSafeID t1@(Text1 h _) ->
+                  if isUpper h then Just t1 else Nothing
+                _ -> Nothing
+            )
+            <?> "upper case identifier"
+        )
+  where
+    upper' :: Text1 -> Bool
+    upper' (Text1 h _) = isUpper h
 
 --- Varid ::= LowerChar AlphaNumericChar*
 pLowerCaseID :: AmpParser Text1
@@ -304,7 +310,12 @@ pName typ =
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of
-  [] -> fatal "We should have keywords."
+  [] -> fatal "There seem to be no keywords at all!"
+  h : tl -> foldr (<|>) h tl
+
+pKeyWordWithFilter :: (Text1 -> Bool) -> AmpParser Text1
+pKeyWordWithFilter p = case map pKey . filter p $ keywords of
+  [] -> fatal "We should have keywords that match the filter."
   h : tl -> foldr (<|>) h tl
 
 pSingleWord :: AmpParser Text1

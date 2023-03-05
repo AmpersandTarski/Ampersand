@@ -11,7 +11,7 @@ CONTEXT Issue1293
 
 
 {- In order to compile this script with --validate, we need to add the following stuff: -}
-   RELATION label [PF.NavMenuItem*PF.Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+   RELATION label [NavMenuItem*Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
     
 ENDCONTEXT
 {-
