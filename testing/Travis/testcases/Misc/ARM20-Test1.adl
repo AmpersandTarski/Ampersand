@@ -1,12 +1,12 @@
 CONTEXT ARM20bug IN DUTCH
 ------------------------------------------------------------
-PATTERN ARM_2punt0_bug
+PATTERN ARM2punt0Bug
 
 oblBF :: Verplichting -> Bedrijfsfunctie
 expBF :: Verwachting -> Bedrijfsfunctie
 oblexp :: Verplichting * Verwachting
 
-RULE Verplichting_and_expectation_integrity: oblexp |- oblBF;expBF~
+RULE VerplichtingAndExpectationIntegrity: oblexp |- oblBF;expBF~
 VIOLATION (TXT "Verplichting '", SRC I, TXT "' is van '", SRC oblBF, TXT "' terwijl verwachting '", TGT I, TXT "' van '", TGT expBF, TXT "' is.")
 
 ENDPATTERN

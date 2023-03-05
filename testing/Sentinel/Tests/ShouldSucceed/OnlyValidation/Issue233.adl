@@ -5,11 +5,11 @@ sum :: Sum * Integer [UNI]
 arg :: Sum * Integer
 
 -- In other words:
-RULE Sums_are_idd_by_their_args_1: arg <> arg~ |- I[Sum]
+RULE SumsAreIddByTheirArgs1: arg <> arg~ |- I[Sum]
 
-RULE Sums_are_idd_by_their_args_2: (-arg ! arg~) /\ (arg ! -arg~) |- I[Sum]
+RULE SumsAreIddByTheirArgs2: (-arg ! arg~) /\ (arg ! -arg~) |- I[Sum]
 
-RULE Test_equivalence: arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
+RULE TestEquivalence: arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
 
 POPULATION arg CONTAINS [ ("1+2", "1") ] 
 POPULATION arg CONTAINS [ ("1+2", "2") ] 

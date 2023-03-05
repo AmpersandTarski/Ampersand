@@ -1,4 +1,4 @@
-CONTEXT ARM_Test10 IN DUTCH -- (project ARMisa)
+CONTEXT ARMTest10 IN DUTCH -- (project ARMisa)
 CLASSIFY Verplichting ISA Criterium
 CLASSIFY Verwachting ISA Criterium
 CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting

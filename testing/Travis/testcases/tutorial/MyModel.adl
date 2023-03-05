@@ -18,9 +18,9 @@ INTERFACE Registration: "_SESSION"[SESSION] cRud BOX
    ]
 
 sayHelloReq :: SESSION * SESSION [PROP]
-ROLE ExecEngine MAINTAINS Say_hello_when_name_is_specified
-RULE Say_hello_when_name_is_specified: "_SESSION"[SESSION] /\ sessionMyName;sessionMyName~ |- sayHelloReq
-VIOLATION (TXT "{EX} SetNavToOnCommit;/Hello_44__32_World"
+ROLE ExecEngine MAINTAINS SayHelloWhenNameIsSpecified
+RULE SayHelloWhenNameIsSpecified: "_SESSION"[SESSION] /\ sessionMyName;sessionMyName~ |- sayHelloReq
+VIOLATION (TXT "{EX} SetNavToOnCommit;/HelloWorld"
           ,TXT "{EX} InsPair;sayHelloReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
 

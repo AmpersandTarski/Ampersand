@@ -421,7 +421,7 @@ BOX[ "Werkgever" : werkgever
    , "Datum in dienst" : inDienst
    ]
 
-INTERFACE Arbeidsrelatie_werkgever 
+INTERFACE ArbeidsrelatieWerkgever 
 FOR Werkgever : I[Arbeidsrelatie]
 BOX[ "Arbeidsrelatie" : I
    BOX[ "Werkgever" : werkgever
@@ -431,7 +431,7 @@ BOX[ "Arbeidsrelatie" : I
       ]
    ]
 
-INTERFACE Arbeidsrelatie_werknemer FOR Werknemer : I[Arbeidsrelatie]
+INTERFACE ArbeidsrelatieWerknemer FOR Werknemer : I[Arbeidsrelatie]
 BOX[ "Arbeidsrelatie" : I
    BOX[ "Werkgever" : werkgever
       , "Werknemer" : werknemer
@@ -609,12 +609,12 @@ PURPOSE CONCEPT Datum
 
 --[Arbeidsrelaties]--
 {-
-POPULATION werkgever           CONTAINS [ ("Arbeidsrelatie_0", "Persoon") ]
-POPULATION werknemer           CONTAINS [ ("Arbeidsrelatie_0", "Persoon") ]
-POPULATION arbeidsduur         CONTAINS [ ("Arbeidsrelatie_0", "Arbeidsduur") ]
-POPULATION inDienst            CONTAINS [ ("Arbeidsrelatie_0", "Datum") ]
-POPULATION laatsteVerzoek      CONTAINS [ ("Arbeidsrelatie_0", "Verzoek") ]
-POPULATION nieuwVerzoek        CONTAINS [ ("Arbeidsrelatie_0", "Verzoek") ]
+POPULATION werkgever           CONTAINS [ ("Arbeidsrelatie0", "Persoon") ]
+POPULATION werknemer           CONTAINS [ ("Arbeidsrelatie0", "Persoon") ]
+POPULATION arbeidsduur         CONTAINS [ ("Arbeidsrelatie0", "Arbeidsduur") ]
+POPULATION inDienst            CONTAINS [ ("Arbeidsrelatie0", "Datum") ]
+POPULATION laatsteVerzoek      CONTAINS [ ("Arbeidsrelatie0", "Verzoek") ]
+POPULATION nieuwVerzoek        CONTAINS [ ("Arbeidsrelatie0", "Verzoek") ]
 -}
 
 POPULATION werkgever           CONTAINS [ ("Koningschap", "Minister President") ]
@@ -641,9 +641,9 @@ POPULATION inDienst            CONTAINS [ ("TNO:17737", "6-5-2014") ]
 
 --[Aanpassingen]--
 {-
-POPULATION nieuw               CONTAINS [ ("Aanpassing_0", "Arbeidsduur") ]
-POPULATION ingang              CONTAINS [ ("Aanpassing_0", "Datum") ]
-POPULATION omvang              CONTAINS [ ("Aanpassing_0", "Omvang") ]
+POPULATION nieuw               CONTAINS [ ("Aanpassing0", "Arbeidsduur") ]
+POPULATION ingang              CONTAINS [ ("Aanpassing0", "Datum") ]
+POPULATION omvang              CONTAINS [ ("Aanpassing0", "Omvang") ]
 -}
 
 POPULATION nieuw               CONTAINS [ ("1 dag meer werken op vrijdag", "95 upw, en in ieder geval op vrijdag") ]
@@ -656,11 +656,11 @@ POPULATION omvang              CONTAINS [ ("Peter wil vrijdag vrij", "4u") ]
 
 --[Verzoeken]--
 {-
-POPULATION tot                 CONTAINS [ ("Verzoek_0", "Aanpassing") ]
-POPULATION arbeidsrelatie      CONTAINS [ ("Verzoek_0", "Arbeidsrelatie") ]
-POPULATION ingediend           CONTAINS [ ("Verzoek_0", "Datum") ]
-POPULATION uitersteBeslisdatum CONTAINS [ ("Verzoek_0", "Datum") ] -- wordt automatisch berekend
-POPULATION isDirecteVoorloperVan CONTAINS [ ("Verzoek_0", "Verzoek_1") ]
+POPULATION tot                 CONTAINS [ ("Verzoek0", "Aanpassing") ]
+POPULATION arbeidsrelatie      CONTAINS [ ("Verzoek0", "Arbeidsrelatie") ]
+POPULATION ingediend           CONTAINS [ ("Verzoek0", "Datum") ]
+POPULATION uitersteBeslisdatum CONTAINS [ ("Verzoek0", "Datum") ] -- wordt automatisch berekend
+POPULATION isDirecteVoorloperVan CONTAINS [ ("Verzoek0", "Verzoek1") ]
 -}
 
 POPULATION tot                 CONTAINS [ ("Verzoek 392a", "1 dag meer werken op vrijdag") ]
@@ -673,12 +673,12 @@ POPULATION ingediend           CONTAINS [ ("Verzoek 18", "9-8-2007") ]
 
 --[Beslissingen]--
 {-
-POPULATION op                  CONTAINS [ ("Beslissing_0", "Verzoek") ]
-POPULATION aanp                CONTAINS [ ("Beslissing_0", "Aanpassing") ]
-POPULATION door                CONTAINS [ ("Beslissing_0", "Persoon") ]
-POPULATION beslisdatum         CONTAINS [ ("Beslissing_0", "Datum") ]
-POPULATION medegedeeldAan      CONTAINS [ ("Beslissing_0", "Persoon") ]
-POPULATION reden               CONTAINS [ ("Beslissing_0", "Reden") ]
+POPULATION op                  CONTAINS [ ("Beslissing0", "Verzoek") ]
+POPULATION aanp                CONTAINS [ ("Beslissing0", "Aanpassing") ]
+POPULATION door                CONTAINS [ ("Beslissing0", "Persoon") ]
+POPULATION beslisdatum         CONTAINS [ ("Beslissing0", "Datum") ]
+POPULATION medegedeeldAan      CONTAINS [ ("Beslissing0", "Persoon") ]
+POPULATION reden               CONTAINS [ ("Beslissing0", "Reden") ]
 -}
 
 POPULATION op                  CONTAINS [ ("Beslissing b342", "Verzoek 392a") ]
@@ -699,8 +699,8 @@ SetPeriod: InsPair(eenMaandVoordien,Datum,1-1-2015,Datum,01-12-2014)
 
 {EE} restored 'Uiterste beslisdatum vaststellen (geautomatiseerd)']
 Rule 'Uiterste beslisdatum vaststellen (geautomatiseerd)' is broken: Van elk verzoek wordt de uiterste belisdatum automatisch vastgesteld.
-InsPair;uitersteBeslisdatum;Verzoek;Verzoek_1399448850_678000;Datum;01-12-2014
-  Update uitersteBeslisdatum(Verzoek*Datum) with (Verzoek_1399448850_678000,01-12-2014)
+InsPair;uitersteBeslisdatum;Verzoek;Verzoek1399448850678000;Datum;01-12-2014
+  Update uitersteBeslisdatum(Verzoek*Datum) with (Verzoek1399448850678000,01-12-2014)
 
 [{EE} restored 'Berekenen van de jaar-termijn conform artikel 2 lid 1']
 Rule 'Berekenen van de jaar-termijn conform artikel 2 lid 1' is broken:

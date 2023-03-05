@@ -19,14 +19,14 @@ CLASSIFY Verwachting   ISA Criterium
 CLASSIFY Gewetensvraag IS  Verplichting /\ Verwachting
 
 CLASSIFY ExterneVerplichting ISA Verplichting
-RULE Externe_verplichtingen: I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
+RULE ExterneVerplichtingen: I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
 CLASSIFY ExterneVerwachting ISA Verwachting
-RULE Externe_verwachtingen:  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
+RULE ExterneVerwachtingen:  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
 
 RULE Gewetensvragen1: I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
 RULE Gewetensvragen2: I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
 
-RULE Verbod_op_niet_gekarakteriseerde_criteria: I[Criterium] |- I[Verplichting] \/ I[Verwachting]
+RULE VerbodOpNietGekarakteriseerdeCriteria: I[Criterium] |- I[Verplichting] \/ I[Verwachting]
 
 ENDPATTERN
 ------------------------------------------------------------

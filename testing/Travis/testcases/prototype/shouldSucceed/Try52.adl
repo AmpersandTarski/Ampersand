@@ -10,12 +10,12 @@ BOX [ "r[A*B]" : V[ONE*A] BOX [ "r[A*B]" : r[A*B] ]
     , "r[C*D]" : V[ONE*C] BOX [ "r[C*D]" : r[C*D] ]
     ]
 
-INTERFACE from_A : I[A]
+INTERFACE fromA : I[A]
 BOX [ "I" LABEL "" : I
     , "r[A*B]" : r[A*B]
     ]
 
-INTERFACE from_C  : I[C]
+INTERFACE fromC  : I[C]
 BOX [ "I" LABEL "" : I
     , "r[C*D]" : r[C*D]
     ]

@@ -30,35 +30,35 @@ RULE ExterneVerwachtingen:  I[ExterneVerwachting] = I[Verwachting] - I[Verplicht
 RULE Gewetensvragen1: I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
 RULE Gewetensvragen2: I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
 
-RULE Verbod_op_niet_gekarakteriseerde_criteria: I[Criterium] |- I[Verplichting] \/ I[Verwachting]
+RULE VerbodOpNietGekarakteriseerdeCriteria: I[Criterium] |- I[Verplichting] \/ I[Verwachting]
 
 --[BIA-lijst]--
 
-biaVerplichting_Def :: Bedrijfsfunctie * ExterneVerplichting [INJ]
+biaVerplichtingDef :: Bedrijfsfunctie * ExterneVerplichting [INJ]
 ROLE Developer MAINTAINS BiaLijstBijhouden
-RULE BiaLijstBijhouden: biaVerplichting_Def = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
+RULE BiaLijstBijhouden: biaVerplichtingDef = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
 --[Afdekkingen]--
 afdekking :: Verplichting * Verwachtingsverzameling [UNI]
 
-RULE Afdekkingen_zijn_verwachtingsverzamelingen: afdekking |- vvVerplichting~
+RULE AfdekkingenZijnVerwachtingsverzamelingen: afdekking |- vvVerplichting~
 
---KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBF_Def, TXT ":", vvID)
-IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBF_Def, vvID) -- lokaal in de DB
-VIEW VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBF_Def, TXT ":", vvID) -- Interfaces
+--KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBFDef, TXT ":", vvID)
+IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, vvID) -- lokaal in de DB
+VIEW VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, TXT ":", vvID) -- Interfaces
 vvID :: Verwachtingsverzameling -> VVID
 vvVerplichting :: Verwachtingsverzameling -> Verplichting
 vvVerwachting :: Verwachtingsverzameling * Verwachting
 
-RULE Integriteit_van_verwachtingsverzamelingen: vvVerplichting~;vvVerwachting |- critBF;critBF~
+RULE IntegriteitVanVerwachtingsverzamelingen: vvVerplichting~;vvVerwachting |- critBF;critBF~
 
-vvBF_Def :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
-ROLE ExecEngine MAINTAINS insvvBF_Def
-RULE insvvBF_Def: vvVerplichting;critBF |- vvBF_Def
-VIOLATION (TXT "{EX} InsPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
-ROLE ExecEngine MAINTAINS delvvBF_Def
-RULE delvvBF_Def: vvBF_Def |- vvVerplichting;critBF
-VIOLATION (TXT "{EX} DelPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
+vvBFDef :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
+ROLE ExecEngine MAINTAINS insvvBFDef
+RULE insvvBFDef: vvVerplichting;critBF |- vvBFDef
+VIOLATION (TXT "{EX} InsPair vvBFDef;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
+ROLE ExecEngine MAINTAINS delvvBFDef
+RULE delvvBFDef: vvBFDef |- vvVerplichting;critBF
+VIOLATION (TXT "{EX} DelPair vvBFDef;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
 
 ENDPATTERN
 ------------------------------------------------------------
@@ -82,7 +82,7 @@ BOX[ "ID" : I
    , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
    ]
 
-INTERFACE BIA_Lijst -- I[Bedrijfsfunctie]
+INTERFACE BIALijst -- I[Bedrijfsfunctie]
    FOR Developer : I[Bedrijfsfunctie]
 BOX[ "Algemeen" : I
    , "Nieuwe verplichtingen" : nieuweVerplichting
@@ -91,7 +91,7 @@ BOX[ "Algemeen" : I
          , "Criterium"    : critText
          , "T.a.v."       : critTAV
          ]
-   , "Externe verplichtingen"  : biaVerplichting_Def -- De constructie I;relatie dient om te voorkomen dat er geedit wordt
+   , "Externe verplichtingen"  : biaVerplichtingDef -- De constructie I;relatie dient om te voorkomen dat er geedit wordt
    BOX[ Verplichting : I[ExterneVerplichting]
       , "Criterium"    : I;critText
       , "T.a.v."       : I;critTAV
@@ -99,7 +99,7 @@ BOX[ "Algemeen" : I
    ]
 
 
-PATTERN EE_BIA_lijst_interface
+PATTERN EEBIALijstInterface
 nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
 ROLE ExecEngine MAINTAINS NieuweBiaVerplichtingen

@@ -2,8 +2,8 @@ CONTEXT Issue785
 
 prop :: A * A [PROP]
 
-RULE good_term: (I - prop);V;"Some text"[B]
-RULE buggy_term: (I - prop)#"Some text"[B]
+RULE goodTerm: (I - prop);V;"Some text"[B]
+RULE buggyTerm: (I - prop)#"Some text"[B]
 
 POPULATION B CONTAINS [ "Some Text" ]
 

@@ -1,4 +1,4 @@
-CONTEXT Bug30_InterfaceRefBug IN ENGLISH
+CONTEXT Bug30InterfaceRefBug IN ENGLISH
 {- Context that shows a problem with interface refs in the new front-end.
    Interface objects "inline", "ref", and "buggyRef" should be equivalent, but "buggyRef" shows no atoms.
 -}
