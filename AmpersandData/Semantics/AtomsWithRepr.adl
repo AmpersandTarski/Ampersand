@@ -85,10 +85,10 @@ VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
     RULE Computetransitiveclosureofisa LABEL "Compute transitive closure of isa" : isa = isaCopy
     VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
 
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
-    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+    ROLE ExecEngine MAINTAINS ComputetransitiveclosureofisabyIns, ComputetransitiveclosureofisabyDel
+    RULE ComputetransitiveclosureofisabyIns LABEL "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
     VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+    RULE ComputetransitiveclosureofisabyDel LABEL "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION name[Relation*Identifier] [UNI,TOT]

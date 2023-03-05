@@ -4,7 +4,7 @@ INCLUDE "Concepts.adl"
 INCLUDE "Relations.adl"
 
 
-PATTERN "Term definitions"
+PATTERN Termdefinitions LABEL "Term definitions"
     RELATION usedIn[Relation*Term]
     MEANING "The rule expressed in relation algebra."
 --    TODO make transitive closure of usedIn

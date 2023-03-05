@@ -5,7 +5,8 @@ PATTERN Relations
 RELATION relsDefdIn[Relation*Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , relsDefdIn[Relation*Context])
-RULE "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
+RULE eqrelation LABEL "eq relation": 
+                    name[Relation*RelationName];name[Relation*RelationName]~ 
                  /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
                  /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
                  |- I[Relation]
@@ -15,8 +16,8 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 RELATION name[Relation*RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
 REPRESENT RelationName TYPE ALPHANUMERIC
-    ROLE ExecEngine MAINTAINS "del unused RelationName"
-    RULE "del unused RelationName" : I[RelationName] |- name~;name
+    ROLE ExecEngine MAINTAINS delunusedRelationName
+    RULE delunusedRelationName LABEL "del unused RelationName" : I[RelationName] |- name~;name
     MEANING "A RelationName without relation will be removed."
     VIOLATION ( TXT "{EX} DelAtom;RelationName;", SRC I )
 

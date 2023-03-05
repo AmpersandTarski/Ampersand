@@ -47,41 +47,41 @@ PATTERN ComputeClosures LABEL "Compute Closures"
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} TransitiveClosure;isa[Concept*Concept];Concept;isaCopy[Concept*Concept];isaPlus")
 
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
-    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+    ROLE ExecEngine MAINTAINS ComputetransitiveclosureofisabyIns, ComputetransitiveclosureofisabyDel
+    RULE ComputetransitiveclosureofisabyIns LABEL "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+    RULE ComputetransitiveclosureofisabyDel LABEL "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
-PATTERN "Reflexive isa closures"
+PATTERN Reflexiveisaclosures
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
 
     RELATION isaRfx[Concept*Concept] -- isaRfx[Concept*Concept]=isa[Concept*Concept]\/isa[Concept*Concept]~
-    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
-    RULE "Compute isaRfxIns" : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
+    ROLE ExecEngine MAINTAINS ComputeisaRfxIns, ComputeisaRfxDel
+    RULE ComputeisaRfxIns LABEL "Compute isaRfxIns" : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute isaRfxDel" : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
+    RULE ComputeisaRfxDel LABEL "Compute isaRfxDel" : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 
     RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~"
-    RULE "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~" : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
+    ROLE ExecEngine MAINTAINS ComputetransitiveclosureofisaConceptConceptisaConceptConcept
+    RULE ComputetransitiveclosureofisaConceptConceptisaConceptConcept LABEL "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~" : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} TransitiveClosure;isaRfx[Concept*Concept];Concept;isaRfxCopy[Concept*Concept];isaRfxPlus[Concept*Concept]")
 
-    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
-    RULE "Compute isaRfxStar by Ins" : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
+    ROLE ExecEngine MAINTAINS ComputeisaRfxStarbyIns, ComputeisaRfxStarbyDel
+    RULE ComputeisaRfxStarbyIns LABEL "Compute isaRfxStar by Ins" : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
+    RULE ComputeisaRfxStarbyDel LABEL "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
