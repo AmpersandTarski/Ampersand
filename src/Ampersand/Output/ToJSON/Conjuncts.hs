@@ -34,5 +34,5 @@ instance JSON Conjunct JSONConjunct where
       { cnjJSONid = text1ToText . rc_id $ conj,
         cnjJSONsignalRuleNames = map (text1ToText . tName) . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map (text1ToText . tName) . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
-        cnjJSONviolationsSQL = sqlQuery fSpec . conjNF env . notCpl . rc_conjunct $ conj
+        cnjJSONviolationsSQL = sqlQuery fSpec . conjNF env . notCpl . rcConjunct $ conj
       }

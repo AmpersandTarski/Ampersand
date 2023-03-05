@@ -206,11 +206,11 @@ transformersFormalAmpersand fSpec =
             cpt :: A_Concept <- Set.elems $ concs pat
         ]
       ),
-      ( "rc_conjunct",
+      ( "rcConjunct",
         "Conjunct",
         "Term",
         Set.fromList [Uni, Tot],
-        [ (dirtyId conj, dirtyId (rc_conjunct conj))
+        [ (dirtyId conj, dirtyId (rcConjunct conj))
           | conj :: Conjunct <- instanceList fSpec
         ]
       ),

@@ -201,7 +201,7 @@ instance ShowHS Conjunct where
       (indent <> "    ")
       [ "Cjct{ rc_id         = " <> tshow (rc_id x),
         ", rc_orgRules   = " <> "[ " <> T.intercalate ", " (NE.toList . fmap showHSName $ rc_orgRules x) <> "]",
-        ", rc_conjunct   = " <> showHS env indentA (rc_conjunct x),
+        ", rcConjunct   = " <> showHS env indentA (rcConjunct x),
         wrap ", rc_dnfClauses = " indentA (\_ -> showHS env (indentA <> "  ")) (rc_dnfClauses x),
         "}"
       ]

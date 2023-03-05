@@ -368,7 +368,7 @@ data Conjunct = Cjct
   { rc_id :: !Text1, -- string that identifies this conjunct ('id' rather than 'name', because
   -- this is an internal id that has no counterpart at the ADL level)
     rc_orgRules :: !(NE.NonEmpty Rule), -- All rules this conjunct originates from
-    rc_conjunct :: !Expression,
+    rcConjunct :: !Expression,
     rc_dnfClauses :: ![DnfClause]
   }
   deriving (Show, Typeable)

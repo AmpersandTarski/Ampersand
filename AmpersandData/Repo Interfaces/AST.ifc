@@ -83,7 +83,7 @@ BOX [ "name" : name[Rule*RuleName]
 INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
     [ "ID" : I
 --    , "originatesFrom" : originatesFrom[Conjunct*Rule]
---    , "conjunct"       : rc_conjunct[Conjunct*Term]
+--    , "conjunct"       : rcConjunct[Conjunct*Term]
     ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I

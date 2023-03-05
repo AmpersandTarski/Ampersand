@@ -148,13 +148,13 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
     testing/Travis/testcases/Check/EnforceTest1.adl
+    testing/Travis/testcases/Check/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1281.adl
     testing/Travis/testcases/Check/ShouldFail/Issue298.adl
     testing/Travis/testcases/Check/ShouldFail/Issue335.adl
     testing/Travis/testcases/Check/ShouldFail/Issue406.adl
-    testing/Travis/testcases/Check/ShouldFail/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml

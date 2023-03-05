@@ -1,7 +1,7 @@
 CONTEXT Bug IN ENGLISH
 
 PATTERN Developer
-RULE "Trivi_ality" : I[ONE] = I[ONE]
+RULE "Triviality" : I[ONE] = I[ONE]
 ENDPATTERN
 
 ENDCONTEXT

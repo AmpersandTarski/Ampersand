@@ -188,7 +188,7 @@ makeFSpec env context =
         cra = pairsinexpr (antecedent r)
         crc = pairsinexpr (consequent r)
     conjunctViolations :: Conjunct -> AAtomPairs
-    conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
+    conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
     fSpecAllConcepts = concs context
@@ -228,12 +228,12 @@ makeFSpec env context =
     allConjs = makeAllConjs env (allRules context)
     fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
     fSpecAllConjsPerRule = converseNE [(conj, rc_orgRules conj) | conj <- allConjs]
-    fSpecAllConjsPerDecl = converse [(conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs]
+    fSpecAllConjsPerDecl = converse [(conj, Set.elems . bindedRelationsIn $ rcConjunct conj) | conj <- allConjs]
     fSpecAllConjsPerConcept =
       converse
         [ (conj, L.nub $ smaller (source e) <> smaller (target e))
           | conj <- allConjs,
-            e <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj
+            e <- Set.elems . modifyablesByInsOrDel . rcConjunct $ conj
         ]
       where
         smaller :: A_Concept -> [A_Concept]
@@ -522,7 +522,7 @@ makeifcConjuncts :: Relations -> [Conjunct] -> [Conjunct]
 makeifcConjuncts params allConjs =
   [ conj
     | conj <- allConjs,
-      (not . null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rc_conjunct conj))
+      (not . null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rcConjunct conj))
       -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
       -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
       -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).

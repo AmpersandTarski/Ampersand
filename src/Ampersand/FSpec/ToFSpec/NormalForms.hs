@@ -1822,7 +1822,7 @@ makeAllConjs env allRls =
   [ Cjct
       { rc_id = toText1Unsafe $ "conj_" <> tshow (i :: Int),
         rc_orgRules = rs,
-        rc_conjunct = expr,
+        rcConjunct = expr,
         rc_dnfClauses = allShifts env (expr2dnfClause expr)
       }
     | (i, (expr, rs)) <- zip [0 ..] conjExprs

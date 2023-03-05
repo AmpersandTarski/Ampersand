@@ -60,12 +60,12 @@ dumpSQLqueries env fSpec =
       header (text1ToText . rc_id $ conj)
         <> [ "/*",
              "Conjunct term:",
-             "  " <> (showA . rc_conjunct $ conj),
+             "  " <> (showA . rcConjunct $ conj),
              "Rules for this conjunct:"
            ]
         <> map (text1ToText . showRule) (NE.toList $ rc_orgRules conj)
         <> [ "*/",
-             (queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";",
+             (queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rcConjunct $ conj) <> ";",
              ""
            ]
       where

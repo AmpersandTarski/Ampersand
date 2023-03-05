@@ -114,7 +114,7 @@ pNameWithoutLabel ns typ
                 "\n  "
                 [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
                   tshow . text1ToText $ txt,
-                  "   should be replaced by:",
+                  "   should be replaced by something like:",
                   text1ToText
                     ( case nmTxt of
                         Nothing -> fatal "This should not be possible."
@@ -148,7 +148,7 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
                 "\n  "
                 [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
                   tshow . text1ToText $ txt,
-                  "   should be replaced by:",
+                  "   should be replaced by something like:",
                   text1ToText
                     ( case nmTxt of
                         Nothing -> fatal "This should not be possible."
@@ -338,49 +338,54 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-      <*> optional (pNameWithOptionalLabelAndColon ns RuleName)
-      <*> pRule ns
+      <*> pNameLabelTerm
       <*> many pMeaning
       <*> many pMessage
       <*> pMaybe pViolation
   where
+    pNameLabelTerm :: AmpParser (Maybe (Name, Maybe Label), Term TermPrim)
+    pNameLabelTerm = try pNameAndLabel <|> pNoName
+      where
+        pNoName :: AmpParser (Maybe (Name, Maybe Label), Term TermPrim)
+        pNoName = buildWithoutName <$> pRule ns
+          where
+            buildWithoutName :: Term TermPrim -> (Maybe (Name, Maybe Label), Term TermPrim)
+            buildWithoutName term = (Nothing, term)
+        pNameAndLabel :: AmpParser (Maybe (Name, Maybe Label), Term TermPrim)
+        pNameAndLabel = buildWithName <$> pNameWithOptionalLabelAndColon ns RuleName <*> pRule ns
+          where
+            buildWithName :: (Name, Maybe Label) -> Term TermPrim -> (Maybe (Name, Maybe Label), Term TermPrim)
+            buildWithName (nm, lbl) term = (Just (nm, lbl), term)
     build ::
       Origin ->
-      Maybe (Name, Maybe Label) ->
-      Term a ->
+      (Maybe (Name, Maybe Label), Term a) ->
       [PMeaning] ->
       [PMessage] ->
       Maybe (PairView (Term a)) ->
       P_Rule a
-    build
-      orig
-      maybeNameDefLbl
-      term
-      meanings
-      messages
-      mViolation =
-        P_Rule
-          { pos = orig,
-            rr_nm = nameDef,
-            rr_lbl = lbl,
-            rr_exp = term,
-            rr_mean = meanings,
-            rr_msg = messages,
-            rr_viol = mViolation
-          }
-        where
-          (nameDef, lbl) =
-            fromMaybe
-              (origToName, Just . Label $ "The rule defined at " <> tshow orig)
-              maybeNameDefLbl
-          origToName =
-            mkName RuleName $
-              ( PARTIAL.fromJust
-                  . tmpDoubleQuotedStringToNameVERYUNSAFE
-                  . toText1Unsafe
-                  $ ("TheRuleDefinedAt" <> tshow orig)
-              )
-                NE.:| []
+    build orig (maybeNameDefLbl, term) meanings messages mViolation =
+      P_Rule
+        { pos = orig,
+          rr_nm = nameDef,
+          rr_lbl = lbl,
+          rr_exp = term,
+          rr_mean = meanings,
+          rr_msg = messages,
+          rr_viol = mViolation
+        }
+      where
+        (nameDef, lbl) =
+          fromMaybe
+            (origToName, Just . Label $ "The rule defined at " <> tshow orig)
+            maybeNameDefLbl
+        origToName =
+          mkName RuleName $
+            ( PARTIAL.fromJust
+                . tmpDoubleQuotedStringToNameVERYUNSAFE
+                . toText1Unsafe
+                $ ("TheRuleDefinedAt" <> tshow orig)
+            )
+              NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView

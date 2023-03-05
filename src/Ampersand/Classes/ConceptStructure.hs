@@ -243,5 +243,5 @@ instance ConceptStructure AClassify where
   expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n" <> tshow g)
 
 instance ConceptStructure Conjunct where
-  concs = concs . rc_conjunct
-  expressionsIn = expressionsIn . rc_conjunct
+  concs = concs . rcConjunct
+  expressionsIn = expressionsIn . rcConjunct
