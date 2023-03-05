@@ -20,6 +20,7 @@ import Ampersand.Input.ADL1.Lexer (isSafeIdChar)
 import Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
+import qualified RIO.Partial as PARTIAL (fromJust)
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
@@ -337,22 +338,49 @@ pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
   build <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-    <*> pNameWithOptionalLabelAndColon ns RuleName
-    <*> pRule ns
-    <*> many pMeaning
-    <*> many pMessage
-    <*> pMaybe pViolation
+      <*> optional (pNameWithOptionalLabelAndColon ns RuleName)
+      <*> pRule ns
+      <*> many pMeaning
+      <*> many pMessage
+      <*> pMaybe pViolation
   where
-    build orig (nameDef, lbl) term meanings messages mViolation =
-      P_Rule
-        { pos = orig,
-          rr_nm = nameDef,
-          rr_lbl = lbl,
-          rr_exp = term,
-          rr_mean = meanings,
-          rr_msg = messages,
-          rr_viol = mViolation
-        }
+    build ::
+      Origin ->
+      Maybe (Name, Maybe Label) ->
+      Term a ->
+      [PMeaning] ->
+      [PMessage] ->
+      Maybe (PairView (Term a)) ->
+      P_Rule a
+    build
+      orig
+      maybeNameDefLbl
+      term
+      meanings
+      messages
+      mViolation =
+        P_Rule
+          { pos = orig,
+            rr_nm = nameDef,
+            rr_lbl = lbl,
+            rr_exp = term,
+            rr_mean = meanings,
+            rr_msg = messages,
+            rr_viol = mViolation
+          }
+        where
+          (nameDef, lbl) =
+            fromMaybe
+              (origToName, Just . Label $ "The rule defined at " <> tshow orig)
+              maybeNameDefLbl
+          origToName =
+            mkName RuleName $
+              ( PARTIAL.fromJust
+                  . tmpDoubleQuotedStringToNameVERYUNSAFE
+                  . toText1Unsafe
+                  $ ("TheRuleDefinedAt" <> tshow orig)
+              )
+                NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView
