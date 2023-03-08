@@ -7,7 +7,7 @@ Thank you for being curious.
 
 Ampersand automates the development of software for information systems.
 Ampersand is many things:
-* It is a [programming language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can define your * information systems.
+* It is a [programming language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can define your own information systems.
 * It is a way of formalizing domain models to standardize language and produce software at the same time.
 * It is a scientific quest into generative software, making formal theories useful for practitioners.
 * It is a [development environment](https://rap.cs.ou.nl) in which you can make your prototypes.
@@ -146,7 +146,7 @@ The governance of Ampersand is founded on the following principles:
 * We continually draw on best practices from others to improve our productivity.
 
 ### Future directions
-We lay out the future directions in terms of research questions.
+We lay out the [future directions](ampersand/future-plans) in terms of research questions.
 Such topics are usually discussed on Ampersand days or physical meetings of the core team.
 [Stef Joosten](https://github.com/stefjoosten) has a final say in this, to ensure progress.
 

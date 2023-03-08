@@ -13,6 +13,6 @@ Interested? Here are some frequently asked questions. Click for the answers.
 * [Which research results have been produced?](/ampersand/research#Results)
 * [What is an information system according to Ampersand?](/ampersand/conceptual/theory.md)
 * [How is the Ampersand project being run?](./1-interested-visitor.md#Governance)
-* [What are the plans for the future?]
+* [What are the plans for the future?](ampersand/future-plans)
 * [What is needed?]
 * [Who are involved?]

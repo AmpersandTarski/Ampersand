@@ -1,11 +1,11 @@
 ---
-title: For software engineers
+title: For users of Ampersand
 ---
 
 # How can I build an information system?
 If you want to build information systems with Ampersand, you have come to the right place.
 
-You can build a working prototype of your information system and run it.
+This page will help you build a working prototype of your information system and run it.
 
 ## Get started
 * Do the [tutorial](../tutorial-rap4)

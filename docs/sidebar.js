@@ -18,9 +18,9 @@ module.exports = {
             id: 'ampersand/landingpage/student'
         },
         {
-            label: 'Software engineer',
+            label: 'Ampersand User',
             type: 'doc',
-            id: 'ampersand/landingpage/software-engineer'
+            id: 'ampersand/landingpage/ampersand-user'
         },
         {
             label: 'Scientist',
@@ -34,10 +34,6 @@ module.exports = {
         }
     ],
     ampersandTheorySidebar: [
-        {
-            type: 'doc',
-            id: 'ampersand/landingpage/interested-visitor'
-        },
         {
             type: 'doc',
             id: 'ampersand/conceptual/theory'
