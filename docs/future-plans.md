@@ -7,8 +7,12 @@ description: >-
 # Future plans
 
 ## Summary
+Our goal is to make it fast and easy to build and maintain large information systems.
+You know, the ones that tend to cost millions in projects that spin out of control and sometimes end in disaster.
+For this to happen, we must overcome every single impediment.
+But our quaest is shaping up. Already we can generate complete prototypes and do interesting stuff with them.
 
-This chapter discusses future plans. Click on the hyperlinks for details
+This chapter discusses our plans for the near future. Click on the hyperlinks for details
 
 * In this [video](https://youtu.be/SAzFxZ7Cz9I) discusses the plans in 7min30 \(in Dutch\)
 
@@ -26,46 +30,54 @@ The architecture is explained in more detail in [this chapter](./architecture-of
 
 
 ## NoSQL storage
+The current architecture builds on an SQL database, using MariaDB (formerly known as MySQL)
+Instead of storing data to an SQL database only, we want to other types of databases to work with Ampersand as well.
+Especially NoSQL databases \(e.g. triple stores, graph databases, persistent event streaming\) seem very suited for Ampersand.
 
-Instead of storing data to an SQL database only, we want to other types of databases to work with Ampersand as well. Especially NoSQL databases \(e.g. triple stores, graph databases, persistent event streaming\) seem very suited for Ampersand.
+This enhancement will gain traction when some party (e.g. a database vendor) sees benefits in this research and is willing to sponsor it (either in kind or in cash).
 ### Purpose
+The problem is that modern persistent stores come in many sorts and shapes.
+There are triple stores, graph databases, persistent event streaming, to name but a few technologies that have conquered the landscap of persistent data. We want Ampersand to link up with such technologies to serve a wider spectrum of problems.
+We also want to experiment with the performance of different storage types, do research in optimization algorithms, connect to existing datasets and so on.
 
-Data storage is a diverse landscape of technologies. Triple stores, graph databases, persistent event streaming are but a few technologies that have become commonplace. We want Ampersand to link up with such technologies to serve a wider spectrum of problems.
-
-Ampersand is prepared for this by the plug-mechanism.
+Ampersand is already prepared for this by the plug-mechanism.
+So, this is an enhancement rather than a refactoring.
 
 ![Towards multiple types of persistence](<./.gitbook/assets/towards-multiple-types-of-persistence.png>)
 
 
-
 ## API documentation
-We also want to generate documentation of the (generated) API to make it more useful in real life.
+We want to generate documentation of the (generated) API to make it more useful in real life.
+This addresses a real problem. If we generate a prototype that works together with other application components,
+we need to communicate with other teams to get things done.
+This communication will be greatly simplified if Open API documentation can be generated.
 ### Purpose
+To take an API in production, it needs to be documented. For this purpose we want to generate Open API documentation.
 
-To take an API in production, it needs to be documented. For this purpose we want to generate Swagger files.
-
-![Generating a Swagger file](<./.gitbook/assets/Untitled Diagram (8).png>)
+![Generating Open API documentation](<./.gitbook/assets/Untitled Diagram (8).png>)
 
 
 
 ## OWL and RDFS input
-To work closer in sync with the semantic web we want to accept OWL and RDFS input. Currently Ampersand accepts Ampersand-syntax, Archimate-xml, and Excel as input.
+To work closer in sync with the semantic web we want to accept OWL and RDFS input. Currently Ampersand accepts only Ampersand-syntax, Archimate files, and Excel as input.
 ### Purpose
-
+To work closer together with the semantic web community requires that Ampersand can deal with OWL and RDFS.
 Ampersand and semantic web technologies have much in common. To explore this topic and to benefit from available ontologies expressed in RDF and OWL, we want to make an OWL/RDFS parser so we can interpret ontologies in Ampersand.
 
 ![An extra parser, specifically for OWL/RDFS](./.gitbook/assets/untitled-diagram-7%20%281%29.png)
 
 
-
-
-
-
-
 ## Refactor the front-end
-
 To generate reactive web-applications instead of a classical object-oriented web-application is why we want to refactor the Ampersand front-end.
-
 The current front-end is based on the Angular-JS framework. To enter the world of reactive programming, we want to refactor the front-end.
 
 ![Refactoring the front-end (pink items)](<./.gitbook/assets/Untitled Diagram (6).png>)
+This issue is currently underway, sponsored in kind by Ordina. We expect the first results in the summer of 2023.
+
+
+## Allow GraphQL on the back-end
+GraphQL and Ampersand share the theory of triples. This makes it obvious to build an API that speaks GraphQL.
+
+### Purpose
+Ampersand is still linked to classical database applications.
+To increase its appeal to the NoSQL-community, it is nice to allow GraphQL applications to tap into information systems that are generated by Ampersand.
