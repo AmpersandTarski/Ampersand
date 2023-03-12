@@ -60,7 +60,7 @@ If there is no executable for your operating system, or if you prefer to build a
 > 1. Install stack, the haskell tool stack. [instructions are here](http://docs.haskellstack.org/en/stable/install\_and\_upgrade.html)
 > 2. use [git](https://git-scm.com/) to clone the latest version of Ampersand. The code can be found at [github](https://github.com/AmpersandTarski/Ampersand/tree/master). (the master branch is our stable branch)
 > 3. Open a command line terminal, and go to the directory that contains the file named `ampersand.cabal`
-> 4. Then, close your command line terminal and reopen another one (this helps to reload the environment variables that the `stack` installation may have added or modified),&#x20;
+> 4. Then, close your command line terminal and reopen another one (this helps to reload the environment variables that the `stack` installation may have added or modified),
 > 5.  Let `stack` install everything you need to compile (see the Notes below!) by executing:
 >
 >     `$ stack setup`

@@ -24,7 +24,7 @@ We present the semantics of terms in 5 different (but equivalent) ways: one expl
 
 #### Relations
 
-When a [relation](../relations.md) is used in a term, it stands for all pairs it contains at the moment it is evaluated. Those pairs (also referred to as the _**contents**_ or _**population**_ of the relation) can change over time as users add or delete pairs from it.
+When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for all pairs it contains at the moment it is evaluated. Those pairs (also referred to as the _**contents**_ or _**population**_ of the relation) can change over time as users add or delete pairs from it.
 
 When a relation is used in a term, we can just use its name if that is unambiguous. For instance  the name `owner`  refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -90,7 +90,7 @@ If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$
 The composition operator is denoted by a semicolon $$;$$ between two terms. It is pronounced as 'composed with'. Let us take a look at $$r$$ composed with $$s$$. Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$ is defined by:
 
 $$
-a(r;s)c\ \Leftrightarrow\ ∃ b∈B\ ∙\ a\ r\ b ∧ b\ s\ c
+a(r;s)c\ \Leftrightarrow\ ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c
 $$
 
 If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ has type $$[A\times C]$$.
@@ -120,7 +120,7 @@ If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ h
 
 #### Relations
 
-When a [relation](../relations.md) is used in a term, it stands for a set of facts that are assumed true on the current time in the current context. Those facts \(also referred to as the contents or the population of the relation\) can change over time as users add or delete facts from it.
+When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for a set of facts that are assumed true on the current time in the current context. Those facts \(also referred to as the contents or the population of the relation\) can change over time as users add or delete facts from it.
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance  the name `owner`  refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -147,17 +147,17 @@ Also assume another relation `wantsa[Person*LaptopType]`, which contains the per
 #### Union
 
 The sentence: "Peter owns a MacBook or Peter wants a MacBook." is represented as\
-&#x20;`"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
+`"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
 
 #### Intersection
 
 The sentence: "Peter owns a MacBook and Peter wants a MacBook." is represented as\
-&#x20;`"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
+`"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
 
 #### Difference
 
 The sentence: "Peter owns a MacBook and Peter does not want a MacBook." is represented as\
-&#x20;`"peter"` (`label` $$-$$ `colour`) `"macbook"`.
+`"peter"` (`label` $$-$$ `colour`) `"macbook"`.
 
 #### Natural language templates
 
@@ -232,7 +232,7 @@ There is a pattern to this. A computer can generate a literal translation from t
 
 #### Relations
 
-When a [relation](../relations.md) is used in a term, it stands for the set of pairs it contains at the moment it is evaluated. That set \(also referred to as the contents of the relation\) can change over time as users add or delete pairs from it.
+When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for the set of pairs it contains at the moment it is evaluated. That set \(also referred to as the contents of the relation\) can change over time as users add or delete pairs from it.
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance  the name `owner`  refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -296,7 +296,7 @@ If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]
 
 The composition operator is denoted by a semicolon ; between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
 
-The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$, is a relation with signature $$(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ ∙\ a\ r\ b ∧ b\ s\ c \}$$
+The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$, is a relation with signature $$(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c \}$$
 
 
 
@@ -423,7 +423,7 @@ Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. Th
 
 ![Venn-diagram for 'traveler' and 'dest'](<../../.gitbook/assets/venntrips (1) (1).svg>)
 
-Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:&#x20;
+Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
 | Fact                          | Fact                         |
 | ----------------------------- | ---------------------------- |

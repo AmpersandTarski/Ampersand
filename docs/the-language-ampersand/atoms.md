@@ -56,7 +56,7 @@ Violations are currently signaled at runtime, but future versions of Ampersand w
 ## Miscellaneous
 
 * Every atom whose atomic type is marked "yes" in the column "eq" can be compared for equality. For all other atoms, equality is not defined.
-* The following Ampersand statement declares the atomic type of a [concept](the-concept-statement.md):
+* The following Ampersand statement declares the atomic type of a [concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement):
 
   ```text
   REPRESENT <Concepts> TYPE <Atomic type>

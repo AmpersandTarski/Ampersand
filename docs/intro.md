@@ -1,5 +1,6 @@
 ---
-slug: /Ampersand
+title: Introduction
+id: intro
 ---
 
 # Introduction
@@ -8,10 +9,10 @@ Do you want to avoid unnecessary reading? Take a moment to decide which statemen
 
 ## What makes you curious?...
 
-1. "I'm just interested to know who might use Ampersand and for which purposes."\
-   [Click here](why-ampersand/) to learn why you might want Ampersand.
+1. "I'm just interested to know who might use Ampersand and for which purposes."
+   [Click here](./landingpage/1-interested-visitor.md#whyAmpersand) to learn why you might want Ampersand.
 2. "I am a _student_ wanting to use Ampersand in class."\
-   [This tutorial](tutorial-rap3/) was made just for you. Students who like something different will love it.
+   [This tutorial](tutorial-rap4) was made just for you. Students who like something different will love it.
 3. "I am a _computer professional_ in need of a good method for designing an information system."\
    Computer professionals who like fast results will be thrilled, provided they make the effort of learning.
 4. "I am a _scientific researcher_ and I want to learn more about the [research behind Ampersand](research.md)."\

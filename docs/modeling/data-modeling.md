@@ -15,7 +15,7 @@ Let us start by looking at an example:
 | 3 | Calvin | Coolidge | July 4, 1872 |
 | 4 | Dwight | Eisenhower | October 14, 1890 |
 
-Since Ampersand works with [relations](../the-language-ampersand/relations.md), it must represent this table as relations. Three relations can do the job in the following manner:
+Since Ampersand works with [relations](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement), it must represent this table as relations. Three relations can do the job in the following manner:
 
 ```text
 POPULATION firstname[President*Name] CONTAINS
@@ -42,7 +42,7 @@ POPULATION birth[President*Date] CONTAINS
 
 ## Extract relations from tables
 
-In our example, each row in the spreadsheet represents a president. So, the [source concept](../the-language-ampersand/relations.md#examples) of each relation is `President`. Each column represents a different relation. So we can use the name of each column as relation name. Then, we invent names to describe the content of each column: `Name`, `Surname`, `Date`.
+In our example, each row in the spreadsheet represents a president. So, the source concept of each relation is `President`. Each column represents a different relation. So we can use the name of each column as relation name. Then, we invent names to describe the content of each column: `Name`, `Surname`, `Date`.
 
 When things get bigger, it is useful to draw the relations on a whiteboard or in your notebook. This helps you keep overview. Here is how it is done:
 
@@ -196,7 +196,7 @@ Five decisions have been made here:
 4. Only one state of birth will be registered, as a result of constraining the relation `state` to be univalent
 5. Every state has only one capital city and every city is capital to only one state, as a result of constraining the relation `capital` to be univalent and injective.
 
-Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP3. Ampersand will produce the following data model: ![Data model for presidents](../.gitbook/assets/presidents-data-model.png)
+Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP4. Ampersand will produce the following data model: ![Data model for presidents](../.gitbook/assets/presidents-data-model.png)
 
 ## Bonus
 
