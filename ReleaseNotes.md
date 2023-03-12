@@ -2,6 +2,10 @@
 
 ## Unreleased changes
 
+## v4.7.6 (26 february 2023)
+## v4.7.5 (25 february 2023)
+* [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
+
 ## v4.7.4 (20 february 2023)
 
 - [Issue #1281 (extra fix after reopening of issue)](https://github.com/AmpersandTarski/Ampersand/issues/1281#issuecomment-1159623865) Final fix an omision in typecheck of ENFORCE statement.
