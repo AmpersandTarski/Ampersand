@@ -1060,22 +1060,26 @@ pCtx2aCtx
                 delPair = mkRule "DelPair" (EInc (bindedRel, expr))
                 bindedRel = EDcD rel
                 mkRule command fExpr =
-                  Ru
-                    { rrnm = "Compute " <> showRel rel <> " using " <> command,
+                  Rule
+                    { rrnm = mkName RelationName (toText1Unsafe ("Compute" <> tshow (hash lbl')) NE.:| []),
+                      rrlbl = Just (Label lbl'),
                       formalExpression = fExpr,
                       rrfps = pos',
                       rrmean = [],
                       rrmsg = [],
                       rrviol =
                         Just . PairView $
-                          PairViewText pos' ("{EX} " <> command <> ";" <> name rel <> ";" <> name (source rel) <> ";")
+                          PairViewText pos' ("{EX} " <> command <> ";" <> tshow (name rel) <> ";" <> (tshow . name . source) rel <> ";")
                             NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
-                                    PairViewText pos' $ ";" <> name (target rel) <> ";",
+                                    PairViewText pos' $ ";" <> (tshow . name . target) rel <> ";",
                                     PairViewExp pos' Tgt (EDcI (target rel))
                                   ],
                       rrpat = mPat,
                       rrkind = Enforce
                     }
+                  where
+                    lbl' :: Text
+                    lbl' = "Compute " <> tshow rel <> " using " <> command
       pIdentity2aIdentity ::
         ContextInfo ->
         Maybe Name -> -- name of pattern the rule is defined in (if any)

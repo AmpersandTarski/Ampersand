@@ -164,39 +164,3 @@ roleRuleFromEnforceRule = map mkRoleRule . enfRules
           arRoles = Role nameOfExecEngineRole NE.:| [],
           arRules = name rul NE.:| []
         }
-
-enforce2Rules :: AEnforce -> [Rule]
-enforce2Rules (AEnforce orig rel op expr mPat) =
-  case op of
-    IsSuperSet {} -> [insPair]
-    IsSubSet {} -> [delPair]
-    IsSameSet {} -> [insPair, delPair]
-  where
-    insPair = mkRule "InsPair" (EInc (expr, bindedRel))
-    delPair = mkRule "DelPair" (EInc (bindedRel, expr))
-    bindedRel = EDcD rel
-    mkRule :: Text -> Expression -> Rule
-    mkRule command fExpr =
-      Rule
-        { rrnm =
-            withNameSpace
-              (nameSpaceOf rel)
-              . mkName
-                RuleName
-              $ (toText1Unsafe ("Compute_" <> tshow rel <> "_using_" <> command) NE.:| []),
-          rrlbl = Just . Label $ "Compute " <> tshow rel <> " by using " <> command,
-          formalExpression = fExpr,
-          rrfps = orig,
-          rrmean = [],
-          rrmsg = [],
-          rrviol =
-            Just . PairView $
-              PairViewText orig ("{EX} " <> command <> ";")
-                NE.:| [ PairViewText orig $ (text1ToText . tName) rel <> ";" <> (text1ToText . tName) (source rel) <> ";",
-                        PairViewExp orig Src (EDcI (source rel)),
-                        PairViewText orig $ ";" <> (text1ToText . tName) (target rel) <> ";",
-                        PairViewExp orig Tgt (EDcI (target rel))
-                      ],
-          rrpat = mPat,
-          rrkind = Enforce
-        }

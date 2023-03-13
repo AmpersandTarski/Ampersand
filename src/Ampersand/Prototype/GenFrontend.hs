@@ -81,7 +81,7 @@ buildConcepts fSpec =
   map
     ( \cpt ->
         FEConcept
-          { cptId = idWithoutType cpt,
+          { cptId = text1ToText $ idWithoutType cpt,
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
@@ -92,7 +92,7 @@ buildViews fSpec =
   map
     ( \viewDef' ->
         FEView
-          { viewId = toPascal . vdlbl $ viewDef',
+          { viewId = toPascal . tshow . vdname $ viewDef',
             viewSegments = map buildViewSegment $ segments viewDef',
             viewIsEmpty = null . segments $ viewDef'
           }
@@ -104,7 +104,7 @@ buildViews fSpec =
 buildViewSegment :: ViewSegment -> FEViewSegment
 buildViewSegment viewSegment =
   FEViewSegment
-    { segmentLabel = fromMaybe "" $ vsmlabel viewSegment,
+    { segmentLabel = maybe "" text1ToText (vsmlabel viewSegment),
       segmentTypescriptType = case vsmLoad viewSegment of
         ViewExp {} -> "string"
         ViewText {} -> "'" <> (vsgmTxt . vsmLoad $ viewSegment) <> "'"
@@ -122,13 +122,13 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       return
         FEInterface
           { ifcName = text1ToText . escapeIdentifier . tName $ ifc,
-            ifcNameKebab = toKebab . safechars $name ifc,
-            ifcNamePascal = toPascal . safechars $ name ifc,
+            ifcNameKebab = toKebab . safechars . tshow $ name ifc,
+            ifcNamePascal = toPascal . safechars . tshow $ name ifc,
             ifcLabel = text1ToText . tName $ ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
-            srcConcept = idWithoutType . source . objExp $ obj,
+            srcConcept = text1ToText . idWithoutType . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
           }
@@ -140,12 +140,11 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             let object = substituteReferenceObjectDef fSpec object'
             let feExp = fromExpr . conjNF env $ objExpression object
             let tgt = target feExp
-            let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
+            let mView = maybe (getDefaultViewForConcept fSpec tgt) (lookupView fSpec) (objmView object)
             (aOrB, iExp') <-
               case objmsub object of
                 Nothing -> do
-                  let tgt = target feExp
-                  let mView = maybe (getDefaultViewForConcept fSpec tgt) (lookupView fSpec) (objmView object)
+                  let tgt' = target feExp
                   mSpecificTemplatePath <-
                     case mView of
                       Just Vd {vdhtml = Just (ViewHtmlTemplateFile fName), vdats = viewSegs} ->
@@ -153,13 +152,13 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                       _ -> do
                         -- no view, or no view with an html template, so we fall back to target-concept template
                         -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType $ tgt) <.> ".html"
+                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType $ tgt') <.> ".html"
                         hasSpecificTemplate <- doesTemplateExist templatePath
                         return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                   return
                     ( FEAtomic
                         { objMPrimTemplate = mSpecificTemplatePath,
-                          viewDef = mView
+                          viewDef = maybe (getDefaultViewForConcept fSpec tgt') (lookupView fSpec) (objmView object)
                         },
                       feExp
                     )
@@ -199,6 +198,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             return
               FEObjE
                 { objName = maybe "" text1ToText . objPlainName $ object,
+                  objLabel = text1ToText <$> objPlainName object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
