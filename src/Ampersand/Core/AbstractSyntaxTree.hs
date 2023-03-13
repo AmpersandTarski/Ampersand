@@ -241,7 +241,8 @@ data AEnforce = AEnforce
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
     -- | If the Enforce is defined in the context of a pattern, the name of that pattern.
-    enfPatName :: !(Maybe Name)
+    enfPatName :: !(Maybe Name),
+    enfRules :: ![Rule]
   }
   deriving (Eq)
 
@@ -550,7 +551,7 @@ data ViewDef = Vd
     -- | the constituent attributes (i.e. name/term pairs) of this view.
     vdats :: ![ViewSegment]
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 instance Named ViewDef where
   name = vdname
@@ -573,7 +574,7 @@ data ViewSegment = ViewSegment
     vsmSeqNr :: !Integer,
     vsmLoad :: !ViewSegmentPayLoad
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 instance Traced ViewSegment where
   origin = vsmpos
@@ -585,7 +586,7 @@ data ViewSegmentPayLoad
   | ViewText
       { vsgmTxt :: !Text
       }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
@@ -789,7 +790,7 @@ data Cruds = Cruds
     crudU :: !Bool,
     crudD :: !Bool
   }
-  deriving (Show)
+  deriving (Show, Data)
 
 data SubInterface
   = Box

@@ -79,10 +79,12 @@ class HasProtoOpts a => HasDirPrototype a where
   getTemplateDir x =
     getDirPrototype x </> case view frontendVersionL x of
       AngularJS -> "templates"
-      Angular -> "angular-app/templates"
+      Angular -> ".templates"
   getAppDir :: a -> FilePath
   getAppDir x =
-    getDirPrototype x </> "public" </> "app" </> "project"
+    getDirPrototype x </> case view frontendVersionL x of
+      AngularJS -> "public" </> "app" </> "project"
+      Angular -> ""
   getGenericsDir :: a -> FilePath
   getGenericsDir x =
     getDirPrototype x </> "generics"

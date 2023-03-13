@@ -1,0 +1,10 @@
+CONTEXT Issue1281
+
+   CLASSIFY Vrijwilliger ISA Person
+
+   RELATION personalia[AanmeldingVrijwilliger*Vrijwilliger]
+   RELATION nationaliteit[Person*Tekst]
+   RELATION nationaliteit[AanmeldingVrijwilliger*Tekst]
+   ENFORCE nationaliteit[Person*Tekst] >: personalia~;nationaliteit
+   
+ENDCONTEXT

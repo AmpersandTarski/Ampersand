@@ -17,17 +17,11 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
-import qualified RIO.List as L
 import qualified RIO.Text as T
 import System.FilePath
 import Text.StringTemplate
   ( StringTemplate,
-    Stringable,
-    checkTemplateDeep,
-    newSTMP,
-    render,
     setAttribute,
-    toString,
   )
 import Text.StringTemplate.GenericStandard ()
 
@@ -60,14 +54,6 @@ genRouteProvider fSpec ifcs = do
   mapM_ (logDebug . display) $ "Generated template: " : (map ("   " <>) . T.lines $ contents)
   writePrototypeAppFile "routeProvider.config.js" contents
   logDebug "Finish genRouteProvider."
-
-showTemplate :: Template -> [Text]
-showTemplate (Template a b) =
-  T.lines . T.intercalate "\n" $
-    ("Template (" <> T.pack b <> ")") :
-    map
-      ("  " <>)
-      [T.pack $ toString a]
 
 ------ Generate view html code
 isTopLevel :: A_Concept -> Bool

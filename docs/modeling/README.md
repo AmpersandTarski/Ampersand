@@ -30,3 +30,6 @@ To specify an information system, take the following steps:\
 An ampersand model describes the rules, relations and concepts that define a business system. Using this specification, a software system can be built that can hold structured information as a set of facts. Based on the rules, the set of facts can be checked automatically to detect violations of rules.
 
 In an Ampersand model, services can be defined too, enabling the definition of changes to the set of facts.
+
+# Architecture modeling{#architecture}
+

@@ -27,7 +27,7 @@ To understand this fragment, take notice of:
 1. The name of this service is `Person`. This name immediately follows the keyword `INTERFACE`.
 2. The term following the colon, `I[Person]`, is the interface term of this service.
 3. The service can be applied to any atom from the _domain of the interface term_. So this particular service is applicable to any atom of type `Person`. In the screenshot, it applies to `"J. Lovell"`.
-4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface. &#x20;
+4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface. 
 5. Each term at the right of a field name specifies which data is presented in the field. For this reason it is called the _field term_ for that field. Field name and field term are separated by a colon.
 6. Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`. A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
 7.  Field terms are subject to type checking. The following relations provide an example for getting a type-correct service:

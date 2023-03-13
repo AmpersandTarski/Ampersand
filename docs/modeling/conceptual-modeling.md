@@ -12,7 +12,7 @@ Domain modeling is used for various purposes:
 The Ampersand way of domain modeling is classic in the sense that a conceptual model is made of a domain of your choice. It differs from other approaches in specific ways:
 
 1. Your model can be interpreted by a computer to create specific useful artifacts, such as a data model, a prototype implementation, or documentation;
-2. Your model has an interpretation in natural language, which you can use to calibrate and uniform the language of the business.&#x20;
+2. Your model has an interpretation in natural language, which you can use to calibrate and uniform the language of the business.
 
 ## Steps
 

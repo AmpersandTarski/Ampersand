@@ -1,4 +1,6 @@
 ---
+title: Reactive programming
+id: reactive-programming
 description: >-
   Ampersand adheres to the reactive programming paradigm. This chapter tells the
   story...

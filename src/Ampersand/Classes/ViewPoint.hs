@@ -1,4 +1,4 @@
-module Ampersand.Classes.ViewPoint (Language (..), enforce2Rules, ruleFromIdentity) where
+module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
@@ -34,7 +34,7 @@ class Language a where
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforce rules that are maintained within this viewpoint.
-  enforceRules x = Set.fromList . concatMap enforce2Rules . enforces $ x
+  enforceRules x = Set.fromList . concatMap enfRules . enforces $ x
   allRules :: a -> Rules
   allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x
   identities ::
@@ -156,7 +156,7 @@ instance Language Pattern where
   udefRoleRules = ptrrs
 
 roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
-roleRuleFromEnforceRule = map mkRoleRule . enforce2Rules
+roleRuleFromEnforceRule = map mkRoleRule . enfRules
   where
     mkRoleRule rul =
       A_RoleRule

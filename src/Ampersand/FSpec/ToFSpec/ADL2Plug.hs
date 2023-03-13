@@ -219,7 +219,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
           Att
             { attSQLColName = text1ToSqlColumName $ tName . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
-              attType = repr (target domExpr),
+              attType = repr (target codExpr),
               attUse =
                 if suitableAsKey . repr . target $ codExpr
                   then ForeignKey (target codExpr)
