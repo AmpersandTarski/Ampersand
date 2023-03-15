@@ -2,7 +2,16 @@
 
 ## Use `PURPOSE`-statements abundantly
 
-The purpose of a `PURPOSE`-statement is to explain why something exists. Readers of your script will understand the script ten times better if they know why things exist. A good practice is not to cut corners and specify your purposes carefully and for as many things as you can.
+Curious people want to know the purpose of everything.
+Give purpose and people will make sense of what you do.
+
+For this reason, we tell Ampersand users to provide as many `PURPOSE`-statements as possible, preferrably one for every definition in their script.
+
+The purpose of a `PURPOSE`-statement is to explain why something exists. The Ampersand compiler uses `PURPOSE`-statements only for generating documentation.
+It has no consequence in the generated prototype.
+
+The ideal moment for writing a `PURPOSE`-statement is now, i.e. when you are in the flow of writing Ampersand statements.
+At that moment you have your reasons in the top of your mind.
 
 ## Distinguish between requirements and specifications
 
@@ -25,11 +34,16 @@ Making a good Ampersand script is difficult. Working in pairs increases your spe
 
 ## Change your ontology frequently
 
-The ontology serves to codify language. Don't hesitate to change it as insights develop. Especially database builders who are careful to change their data models might have to acquire new reflexes, as for them the ontology may feel like a data model.
+An ontology consists of relations and rules. It serves to codify language. Don't hesitate to change it as insights develop.
+
+If you have a history in database engineering, you might see the resemblance between the ontology (in Ampersand) and a data model.
+Don't let this trick you into hesitating to change the ontology.
+If relations change, you might need to change some rules and interfaces.
+The type checker will guide you through the process.
 
 ## Iterate and test frequently
 
-Start with the tiniest thing that works. As you expand it, see to it that it stays working. Taking tiny steps, compile and run eaoch one before taking the next step. Keep an eye on your data model as your model grows. And run a diagnosis every now and then.
+Start with the tiniest thing that works. As you expand it, see to it that it stays working. Taking tiny steps, compile and run each one before taking the next step. Keep an eye on your data model as your model grows. And run a diagnosis every now and then.
 
 ## Orthogonal design
 
