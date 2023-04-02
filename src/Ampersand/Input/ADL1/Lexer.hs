@@ -19,7 +19,6 @@ module Ampersand.Input.ADL1.Lexer
     lexemeText,
     initPos,
     FilePos (..),
-    isSafeIdChar,
   )
 where
 
@@ -284,13 +283,6 @@ isOperator str = str `elem` operators
 
 prefixIsOperator :: Text -> Bool
 prefixIsOperator str = any ((`T.isPrefixOf` str) . text1ToText) operators
-
--- | Tells if a character is valid as character in an identifier. Because there are
---   different rules for the first character of an identifier and the rest of the
---   characters of an identifier, a boolean is required that tells if this is the
---   first character.
-isSafeIdChar :: Bool -> Char -> Bool
-isSafeIdChar isFirst c = isLower c || isUpper c || (not isFirst && isAlphaNum c)
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)

@@ -16,7 +16,6 @@ where
 
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (isSafeIdChar)
 import Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL

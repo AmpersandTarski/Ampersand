@@ -5,7 +5,7 @@ module Ampersand.Test.Parser.ArbitraryTree () where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (isSafeIdChar, keywords)
+import Ampersand.Input.ADL1.Lexer (keywords)
 import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE

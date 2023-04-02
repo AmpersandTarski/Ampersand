@@ -5,6 +5,7 @@ module Ampersand.Basics.String
     urlEncode,
     escapeIdentifier,
     escapeLatex,
+    isSafeIdChar,
     toLatexVariable,
     optionalQuote,
     mapText,
@@ -82,6 +83,13 @@ escapeIdentifier (Text1 c0 cs) =
       | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = Text1 c mempty
       | c == '_' = toText1Unsafe "__" -- shorthand for '_' to improve readability
       | otherwise = Text1 '_' $ tshow (ord c) <> "_"
+
+-- | Tells if a character is valid as character in an identifier. Because there are
+--   different rules for the first character of an identifier and the rest of the
+--   characters of an identifier, a boolean is required that tells if this is the
+--   first character.
+isSafeIdChar :: Bool -> Char -> Bool
+isSafeIdChar isFirst c = isLower c || isUpper c || (not isFirst && isAlphaNum c)
 
 toText1Unsafe :: Text -> Text1
 toText1Unsafe txt = case T.uncons txt of

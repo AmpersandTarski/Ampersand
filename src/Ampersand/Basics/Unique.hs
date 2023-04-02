@@ -13,7 +13,8 @@ module Ampersand.Basics.Unique
 where
 
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (escapeIdentifier, text1ToText, toText1Unsafe)
+import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe)
+import Ampersand.Basics.Version (fatal)
 import Data.Hashable
 import Data.Typeable
 import qualified RIO.Set as Set
@@ -44,18 +45,29 @@ class (Typeable e, Eq e) => Unique e where
   idWithoutType :: e -> Text1
   idWithoutType =
     uniqueButNotTooLong -- because it could be stored in an SQL database
-      . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
+    --  . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
+      . checkProperId
       . showUnique
 
   idWithType :: e -> Text1
   idWithType e =
     uniqueButNotTooLong -- because it could be stored in an SQL database
       . addType e
-      . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
+      --  . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
+      . checkProperId
       $ showUnique e
 
   addType :: e -> Text1 -> Text1
   addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
+
+-- | This function
+checkProperId :: Text1 -> Text1
+checkProperId t@(Text1 h tl) =
+  if isProper
+    then t
+    else fatal $ "Not a proper Id: " <> text1ToText t
+  where
+    isProper = and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
 
 uniqueButNotTooLong :: Text1 -> Text1
 uniqueButNotTooLong txt =
