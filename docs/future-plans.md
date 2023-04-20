@@ -14,9 +14,6 @@ But our quaest is shaping up. Already we can generate complete prototypes and do
 
 This chapter discusses our plans for the near future. Click on the hyperlinks for details
 
-* In this [video](https://youtu.be/SAzFxZ7Cz9I) discusses the plans in 7min30 \(in Dutch\)
-
-
 ## Current State
 
 To understand future developments, you may want to know where we stand now.
@@ -90,3 +87,24 @@ If the Ampersand interface could somehow mimic spreadsheet features, that would 
 If only the user of an Ampersand prototype could edit data as easily as in a spreadsheet...
 
 This feature is [discussed on github](https://github.com/AmpersandTarski/Ampersand/issues/1166).
+
+## Kleene operators `+` and `*`.
+To increase the expressive power of Ampersand, we would like to expand the language to include terms of the form `<term>+` and `<term>*`.
+
+In order to do this, we must precompile rules that contain a Kleene operator to rules without such operators.
+This is possible by introducing a new relation and a new rule for every term `t*`.
+Assuming that the term `t` has type `[A*B]`,
+the compiler must add the following code:
+```Ampersand
+RELATION rel-t-plus[A*B]
+RELATION rel-t-plus[A*B]
+RELATION rel-t-minus[A*B]
+ENFORCE rel-t-plus >: t;rel-t-plus
+ENFORCE rel-t-star >: I\/rel-t-plus
+ENFORCE
+```
+Then, the compiler must substitute every occurrence of `t+` by `rel-t-plus`
+and every occurrence of `t*` by `rel-t-star`.
+
+This solution has one problem: if `t` shrinks, even by one pair, `rel-t-plus`
+and `rel-t-star` must be made empty.
