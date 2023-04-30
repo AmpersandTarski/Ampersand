@@ -19,7 +19,6 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
-import qualified RIO.Partial as PARTIAL (fromJust)
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
@@ -103,27 +102,26 @@ pNameWithoutLabel ns typ
     properParser :: AmpParser Name
     properParser = withNameSpace ns <$> pName typ
     depricatedParser :: AmpParser Name
-    depricatedParser =
-      do
-        orig <- currPos
-        txt <- pDoubleQuotedString1
-        let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
-            warn =
-              T.intercalate
-                "\n  "
-                [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
-                  tshow . text1ToText $ txt,
-                  "   should be replaced by something like:",
-                  text1ToText
-                    ( case nmTxt of
-                        Nothing -> fatal "This should not be possible."
-                        Just te -> te
-                    )
-                ]
-        addParserWarning orig warn
-        case nmTxt of
-          Nothing -> unexpected "doublequoted string without valid characters."
-          Just nm -> return (mkName typ (nm NE.:| []))
+    depricatedParser = do
+      orig <- currPos
+      txt <- pDoubleQuotedString1
+      let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
+          warn =
+            T.intercalate
+              "\n  "
+              [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
+                tshow . text1ToText $ txt,
+                "   should be replaced by something like:",
+                text1ToText
+                  ( case nmTxt of
+                      Nothing -> fatal "This should not be possible."
+                      Just te -> te
+                  )
+              ]
+      addParserWarning orig warn
+      case nmTxt of
+        Nothing -> unexpected "doublequoted string with invalid characters."
+        Just nm -> return (mkName typ (toNamePartUnsafe1 nm NE.:| []))
 
 pNameWithOptionalLabel :: NameSpace -> NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
@@ -160,8 +158,8 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
                 ]
         addParserWarning orig warn
         case nmTxt of
-          Nothing -> unexpected "doublequoted string without valid characters."
-          Just nm -> return (mkName typ (nm NE.:| []), mLab)
+          Nothing -> unexpected "doublequoted string with invalid characters."
+          Just nm -> return (mkName typ (toNamePartUnsafe1 nm NE.:| []), mLab)
 
 tmpDoubleQuotedStringToNameVERYUNSAFE :: Text1 -> Maybe Text1
 tmpDoubleQuotedStringToNameVERYUNSAFE txt =
@@ -379,11 +377,7 @@ pRuleDef ns =
             maybeNameDefLbl
         origToName =
           mkName RuleName $
-            ( PARTIAL.fromJust
-                . tmpDoubleQuotedStringToNameVERYUNSAFE
-                . toText1Unsafe
-                $ ("TheRuleDefinedAt" <> tshow orig)
-            )
+            toNamePartUnsafe ("TheRuleDefinedAt" <> tshow orig)
               NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))

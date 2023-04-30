@@ -62,9 +62,9 @@ toTransformer :: NameSpace -> (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -
 toTransformer namespace (rel, src, tgt, props, tuples) =
   Transformer rel' src' tgt' props tuples'
   where
-    rel' = withNameSpace namespace . mkName RelationName $ toText1Unsafe rel NE.:| []
-    src' = withNameSpace namespace . mkName ConceptName $ toText1Unsafe src NE.:| []
-    tgt' = withNameSpace namespace . mkName ConceptName $ toText1Unsafe tgt NE.:| []
+    rel' = withNameSpace namespace . mkName RelationName $ toNamePartUnsafe rel NE.:| []
+    src' = withNameSpace namespace . mkName ConceptName $ toNamePartUnsafe src NE.:| []
+    tgt' = withNameSpace namespace . mkName ConceptName $ toNamePartUnsafe tgt NE.:| []
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =
@@ -77,7 +77,7 @@ toTransformer namespace (rel, src, tgt, props, tuples) =
         PopInt i -> ScriptInt MeatGrinder i
 
 nameSpaceFormalAmpersand :: NameSpace
-nameSpaceFormalAmpersand = [toText1Unsafe "FormalAmpersand"]
+nameSpaceFormalAmpersand = [toNamePartUnsafe "FormalAmpersand"]
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
@@ -1151,7 +1151,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 nameSpacePrototypeContext :: NameSpace
-nameSpacePrototypeContext = [toText1Unsafe "PrototypeContext"]
+nameSpacePrototypeContext = [toNamePartUnsafe "PrototypeContext"]
 
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.

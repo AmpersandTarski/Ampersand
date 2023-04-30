@@ -323,6 +323,9 @@ data PlugSQL
 instance Named PlugSQL where
   name = sqlname
 
+instance Rename PlugSQL where
+  rename p txt1 = p {sqlname = updatedName txt1 p}
+
 instance Eq PlugSQL where
   a == b = compare a b == EQ
 

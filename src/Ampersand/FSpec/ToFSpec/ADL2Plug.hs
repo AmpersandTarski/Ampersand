@@ -12,6 +12,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
+import RIO.Char (toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -66,9 +67,13 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                 ([], h : tl) -> f (insert (Right h) names) ([], tl)
                 (h : tl, _) -> f (insert (Left h) names) (tl, ds)
             insert :: Either A_Concept Relation -> [(Either A_Concept Relation, SqlColumName)] -> [(Either A_Concept Relation, SqlColumName)]
-            insert item mp = (item, mkNewSqlColumName item $ map snd mp) : mp
+            insert item mp = (item, mkNewSqlColumName itemName $ map snd mp) : mp
+              where
+                itemName = case item of
+                  Right rel -> name rel
+                  Left cpt -> name cpt
             -- Find the next free SqlColumName
-            mkNewSqlColumName :: Either A_Concept Relation -> [SqlColumName] -> SqlColumName
+            mkNewSqlColumName :: Name -> [SqlColumName] -> SqlColumName
             mkNewSqlColumName nm forbiddens = firstFree 0
               where
                 firstFree :: Integer -> SqlColumName
@@ -76,17 +81,20 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                   if toSqlColName i `elem` forbiddens
                     then firstFree (i + 1)
                     else toSqlColName i
+                toSqlColName :: Integer -> SqlColumName
                 toSqlColName i =
-                  text1ToSqlColumName
-                    . toText1Unsafe
-                    . T.intercalate "__"
-                    . map text1ToText
-                    $ either nameSpaceOf nameSpaceOf nm <> [addPostfix (either plainNameOf1 plainNameOf1 nm) (if i == 0 then Nothing else Just (toText1Unsafe ("_" <> tshow i)))]
-                addPostfix :: Text1 -> Maybe Text1 -> Text1
-                addPostfix x pst = case pst of
-                  Nothing -> x
-                  Just y -> x <> y
-
+                  text1ToSqlColumName . toText1Unsafe . T.pack $
+                    firstpart (nameSpaceOf nm)
+                      <> lastpart (plainNameOf1 nm)
+                      <> (if i > 0 then show i else mempty)
+                  where
+                    firstpart =
+                      concatMap
+                        ( \ns -> case show ns of
+                            "" -> fatal "inpossible to have an empty nameSpace."
+                            h : _ -> toUpper h : "__"
+                        )
+                    lastpart = show
         tableKey = tyroot typ
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]

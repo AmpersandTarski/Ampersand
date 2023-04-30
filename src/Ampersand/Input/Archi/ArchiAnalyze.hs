@@ -122,7 +122,7 @@ mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops =
   pure
     PCtx
-      { ctx_nm = withNameSpace archiNameSpace . mkName PatternName $ archRepoName archiRepo NE.:| [],
+      { ctx_nm = withNameSpace archiNameSpace . mkName PatternName $ toNamePartUnsafe1 (archRepoName archiRepo) NE.:| [],
         ctx_pos = [],
         ctx_lbl = Nothing,
         ctx_lang = Just Dutch,
@@ -161,7 +161,7 @@ mkArchiContext [archiRepo] pops =
           participatingRel :: ArchiGrain -> Bool
           participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (mkArchiConcept . toText1Unsafe) ["Relationship", "Property", "View"]
           mkArchiConcept :: Text1 -> P_Concept
-          mkArchiConcept x = PCpt . withNameSpace archiNameSpace . mkName ConceptName $ x NE.:| []
+          mkArchiConcept x = PCpt . withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 x NE.:| []
       _ -> fatal "May not call vwAts on a non-view element"
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
@@ -200,7 +200,7 @@ mkArchiContext [archiRepo] pops =
         mkPattern vw =
           P_Pat
             { pos = OriginUnknown,
-              pt_nm = withNameSpace archiNameSpace . mkName PatternName $ viewName vw NE.:| [],
+              pt_nm = withNameSpace archiNameSpace . mkName PatternName $ toNamePartUnsafe1 (viewName vw) NE.:| [],
               pt_lbl = Nothing,
               pt_rls = [],
               pt_gns = [],
@@ -636,9 +636,9 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           }
     }
   where
-    relName' = withNameSpace archiNameSpace . mkName RelationName $ plainNm NE.:| []
-    srcName = withNameSpace archiNameSpace . mkName ConceptName $ plainSrcName NE.:| []
-    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ plainTgtName NE.:| []
+    relName' = withNameSpace archiNameSpace . mkName RelationName $ toNamePartUnsafe1 plainNm NE.:| []
+    srcName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 plainSrcName NE.:| []
+    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 plainTgtName NE.:| []
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel

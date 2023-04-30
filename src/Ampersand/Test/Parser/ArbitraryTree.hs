@@ -52,14 +52,14 @@ identifier =
 
 -- Genrates a valid ADL lower-case name
 lowercaseName :: Gen Name
-lowercaseName = arbitrary `suchThat` (firstLowercase . plainNameOf1)
+lowercaseName = arbitrary `suchThat` (firstLowercase . namePartToText1 . plainNameOf1)
   where
     firstLowercase :: Text1 -> Bool
     firstLowercase (Text1 c _) = isLower c
 
 -- Genrates a valid ADL upper-case name
 uppercaseName :: Gen Name
-uppercaseName = arbitrary `suchThat` (firstUppercase . plainNameOf1)
+uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . plainNameOf1)
   where
     firstUppercase :: Text1 -> Bool
     firstUppercase (Text1 c _) = isUpper c
@@ -141,8 +141,8 @@ instance Arbitrary Name where
   arbitrary =
     mkName <$> arbitrary <*> listOf1 safeNamePart
     where
-      safeNamePart :: Gen Text1
-      safeNamePart = identifier `suchThat` requirements
+      safeNamePart :: Gen NamePart
+      safeNamePart = toNamePartUnsafe1 <$> identifier `suchThat` requirements
       requirements t =
         T.all (/= '.') . text1ToText $ t
 

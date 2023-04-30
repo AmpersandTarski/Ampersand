@@ -73,6 +73,7 @@ module Ampersand.Input.ADL1.ParsingLib
 where
 
 import Ampersand.Basics hiding (many, try)
+import Ampersand.Basics.Name
 import Ampersand.Input.ADL1.FilePos (FilePos (..), Origin (..))
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Input.ADL1.LexerToken
@@ -286,25 +287,26 @@ pName typ =
     <$> many namespacePart
     <*> namePart
   where
-    build :: [Text1] -> Text1 -> Name
+    build :: [NamePart] -> NamePart -> Name
     build ns nm =
       mkName typ . NE.reverse $ nm NE.:| reverse ns
-    namePart :: AmpParser Text1
-    namePart = case typ of
-      ConceptName -> pUpperCaseID
-      RelationName -> pLowerCaseID
-      RuleName -> pUnrestrictedID
-      PatternName -> pUpperCaseID
-      ContextName -> pUpperCaseID
-      RoleName -> pUnrestrictedID
-      ViewName -> pUnrestrictedID
-      IdentName -> pUnrestrictedID
-      InterfaceName -> pUnrestrictedID
-      PropertyName -> pUpperCaseID
-      SqlAttributeName -> pUnrestrictedID
-      SqlTableName -> pUnrestrictedID
-    namespacePart :: AmpParser Text1
-    namespacePart = fst <$> try nameAndDot
+    namePart :: AmpParser NamePart
+    namePart =
+      toNamePartUnsafe . text1ToText <$> case typ of
+        ConceptName -> pUpperCaseID
+        RelationName -> pLowerCaseID
+        RuleName -> pUnrestrictedID
+        PatternName -> pUpperCaseID
+        ContextName -> pUpperCaseID
+        RoleName -> pUnrestrictedID
+        ViewName -> pUnrestrictedID
+        IdentName -> pUnrestrictedID
+        InterfaceName -> pUnrestrictedID
+        PropertyName -> pUpperCaseID
+        SqlAttributeName -> pUnrestrictedID
+        SqlTableName -> pUnrestrictedID
+    namespacePart :: AmpParser NamePart
+    namespacePart = toNamePartUnsafe . text1ToText . fst <$> try nameAndDot
       where
         nameAndDot = (,) <$> pUnrestrictedID <*> pDot
 

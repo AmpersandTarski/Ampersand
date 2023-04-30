@@ -133,7 +133,7 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
 
 tempDbName :: FSpec -> Text
-tempDbName fSpec = "TempDB_" <> (text1ToText . plainNameOf1) fSpec
+tempDbName fSpec = "TempDB_" <> plainNameOf fSpec
 
 -- | Database name should not contain specific characters. Also, it has some maximum length.
 -- mkValidDBName :: Text -> Text

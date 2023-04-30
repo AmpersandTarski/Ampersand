@@ -1061,7 +1061,7 @@ pCtx2aCtx
                 bindedRel = EDcD rel
                 mkRule command fExpr =
                   Rule
-                    { rrnm = mkName RelationName (toText1Unsafe ("Compute" <> tshow (hash lbl')) NE.:| []),
+                    { rrnm = mkName RelationName (toNamePartUnsafe ("Compute" <> tshow (hash lbl')) NE.:| []),
                       rrlbl = Just (Label lbl'),
                       formalExpression = fExpr,
                       rrfps = pos',

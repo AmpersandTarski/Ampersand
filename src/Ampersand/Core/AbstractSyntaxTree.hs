@@ -1373,8 +1373,8 @@ data Type
 instance Named Type where
   name t = case t of
     UserConcept nm -> nm
-    BuiltIn tt -> mkName ConceptName . fmap toText1Unsafe $ ("AmpersandBuiltIn" NE.:| [tshow tt])
-    RepresentSeparator -> mkName ConceptName . fmap toText1Unsafe $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
+    BuiltIn tt -> mkName ConceptName . fmap toNamePartUnsafe $ ("AmpersandBuiltIn" NE.:| [tshow tt])
+    RepresentSeparator -> mkName ConceptName . fmap toNamePartUnsafe $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
 
 instance Show Type where
   show a = T.unpack $ case a of

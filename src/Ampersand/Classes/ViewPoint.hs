@@ -79,7 +79,7 @@ ruleFromIdentity identity =
               (nameSpaceOf identity)
               . mkName
                 RuleName
-              $ (toText1Unsafe ("identity_" <> tshow identity) NE.:| []),
+              $ (toNamePartUnsafe ("identity_" <> tshow identity) NE.:| []),
           rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file

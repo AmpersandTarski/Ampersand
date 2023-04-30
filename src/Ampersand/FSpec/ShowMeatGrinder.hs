@@ -53,7 +53,7 @@ metaModel mmLabel =
     modelName =
       withNameSpace nameSpace
         . mkName ContextName
-        $ (toText1Unsafe ("MetaModel_" <> tshow mmLabel) NE.:| [])
+        $ (toNamePartUnsafe ("MetaModel_" <> tshow mmLabel) NE.:| [])
     transformers = case mmLabel of
       FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
       PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName
@@ -67,7 +67,7 @@ metaModel mmLabel =
 grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
 grind ns fun userFspec =
   PCtx
-    { ctx_nm = withNameSpace ns . mkName ContextName $ (toText1Unsafe "Grinded_" <> tName userFspec) NE.:| [],
+    { ctx_nm = prependToPlainName "Grinded_" $ withNameSpace ns . mkName ContextName $ plainNameOf1 userFspec NE.:| [],
       ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,

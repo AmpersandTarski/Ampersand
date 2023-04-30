@@ -60,7 +60,7 @@ instance Named PictureTyp where -- for displaying a fatal error
     PTTechnicalDM -> mkName' "PTTechnicalDM"
     where
       mkName' :: Text -> Name
-      mkName' = withNameSpace nameSpaceFormalAmpersand . mkName ContextName . (:| []) . toText1Unsafe
+      mkName' = withNameSpace nameSpaceFormalAmpersand . mkName ContextName . (:| []) . toNamePartUnsafe
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
@@ -401,7 +401,7 @@ class HasDotParts a where
 baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
   case lookup c (zip (allCpts x) [(1 :: Int) ..]) of
-    Just i -> mkName ConceptName . (:| []) . toText1Unsafe $ "cpt_" <> tshow i
+    Just i -> mkName ConceptName . (:| []) . toNamePartUnsafe $ "cpt_" <> tshow i
     _ -> fatal ("element " <> (text1ToText . tName) c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]

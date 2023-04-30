@@ -16,7 +16,6 @@ import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.Misc.HasClasses
-import qualified Data.Text1 as T1
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -299,13 +298,13 @@ makeFSpec env context =
     allplugs = genPlugs -- all generated plugs
     genPlugs =
       [ InternalPlug (rename p (plainNameOf1 p))
-        | p <- uniqueNames [] (qlfname <$> makeGeneratedSqlPlugs env context)
+        | p <- mkUniqueNames [] (qlfname <$> makeGeneratedSqlPlugs env context)
       ]
       where
         qlfname :: PlugSQL -> PlugSQL
         qlfname x = case T.uncons . view namespaceL $ env of
           Nothing -> x
-          Just (c, tl) -> x {sqlname = withNameSpace [Text1 c tl] $ name x}
+          Just (c, tl) -> x {sqlname = withNameSpace [toNamePartUnsafe (T.cons c tl)] $ name x}
     --TODO151210 -> Plug A is overbodig, want A zit al in plug r
     --CONTEXT Temp
     --PATTERN Temp
@@ -492,12 +491,12 @@ makeFSpec env context =
               nm' 0 =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toText1Unsafe . plural (ctxlang context) . plainNameOf $ c)
+                  $ (toNamePartUnsafe . plural (ctxlang context) . plainNameOf $ c)
                     NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toText1Unsafe . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                  $ (toNamePartUnsafe . plural (ctxlang context) $ plainNameOf c <> tshow i)
                     NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"
@@ -527,21 +526,6 @@ makeifcConjuncts params allConjs =
       -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
       -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
   ]
-
-class Named a => Rename a where
-  rename :: a -> Text1 -> a
-
-  -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
-  uniqueNames :: [Name] -> [a] -> [a]
-  uniqueNames taken xs =
-    [ p | cl <- eqCl (T.toLower . text1ToText . tName) xs, p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-                                                             if name (NE.head cl) `elem` taken || length cl > 1
-                                                               then [rename p (plainNameOf1 p T1.<>. tshow i) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
-                                                               else NE.toList cl
-    ]
-
-instance Rename PlugSQL where
-  rename p txt1 = p {sqlname = updatedName txt1 p}
 
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug =

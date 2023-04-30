@@ -12,9 +12,9 @@ module Ampersand.Basics.Unique
   )
 where
 
+import Ampersand.Basics.Name (checkProperId)
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe)
-import Ampersand.Basics.Version (fatal)
+import Ampersand.Basics.String (text1ToText, toText1Unsafe)
 import Data.Hashable
 import Data.Typeable
 import qualified RIO.Set as Set
@@ -59,15 +59,6 @@ class (Typeable e, Eq e) => Unique e where
 
   addType :: e -> Text1 -> Text1
   addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
-
--- | This function
-checkProperId :: Text1 -> Text1
-checkProperId t@(Text1 h tl) =
-  if isProper
-    then t
-    else fatal $ "Not a proper Id: " <> text1ToText t
-  where
-    isProper = and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
 
 uniqueButNotTooLong :: Text1 -> Text1
 uniqueButNotTooLong txt =
