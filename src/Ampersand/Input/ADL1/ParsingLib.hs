@@ -73,7 +73,6 @@ module Ampersand.Input.ADL1.ParsingLib
 where
 
 import Ampersand.Basics hiding (many, try)
-import Ampersand.Basics.Name
 import Ampersand.Input.ADL1.FilePos (FilePos (..), Origin (..))
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Input.ADL1.LexerToken
