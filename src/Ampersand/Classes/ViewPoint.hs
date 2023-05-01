@@ -3,6 +3,7 @@ module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
 import Ampersand.Classes.Relational (HasProps (properties))
+import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -77,9 +78,8 @@ ruleFromIdentity identity =
         { rrnm =
             withNameSpace
               (nameSpaceOf identity)
-              . mkName
-                RuleName
-              $ (toNamePartUnsafe ("identity_" <> tshow identity) NE.:| []),
+              . mkName RuleName
+              $ (toNamePartUnsafe ("identity_" <> (tshow . abs . hash . tshow $ identity)) NE.:| []),
           rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file

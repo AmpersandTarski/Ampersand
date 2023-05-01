@@ -346,7 +346,7 @@ instance Unique Rule where
   showUnique = tName
 
 instance Ord Rule where
-  compare = compare `on` rrnm -- Origin should not be here: A check that they all have unique names is done before typechecking.
+  compare = compare `on` name -- Origin should not be here: A check that they all have unique names is done before typechecking.
 
 instance Show Rule where
   show x =

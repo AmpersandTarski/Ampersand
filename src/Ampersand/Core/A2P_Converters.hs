@@ -98,7 +98,7 @@ aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
   P_Rule
     { pos = rrfps rul,
-      rr_nm = rrnm rul,
+      rr_nm = name rul,
       rr_lbl = rrlbl rul,
       rr_exp = aExpression2pTermPrim (formalExpression rul),
       rr_mean = map aMeaning2pMeaning (rrmean rul),

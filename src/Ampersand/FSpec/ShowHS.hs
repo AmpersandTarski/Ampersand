@@ -544,7 +544,7 @@ instance ShowHS Rule where
   showHS env indent r =
     T.intercalate
       indent
-      [ "Ru{ rrnm   = " <> tshow (rrnm r),
+      [ "Ru{ rrnm   = " <> tshow (name r),
         "  , formalExpression  = -- " <> showA (formalExpression r) <> indent <> "             " <> showHS env (indent <> "             ") (formalExpression r),
         "  , rrfps  = " <> showHS env "" (rrfps r),
         "  , rrmean = " <> showHS env (indent <> "             ") (rrmean r),

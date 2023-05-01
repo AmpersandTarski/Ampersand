@@ -10,6 +10,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
+import Data.Hashable
 import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
@@ -45,9 +46,8 @@ rulefromProp prp rel =
     { rrnm =
         withNameSpace
           (nameSpaceOf rel)
-          . mkName
-            RuleName
-          $ (toNamePartUnsafe (tshow prp <> "_" <> tshow rel) NE.:| []),
+          . mkName RuleName
+          $ (toNamePartUnsafe (tshow prp <> "_" <> (tshow . abs . hash . tshow $ rel)) NE.:| []),
       rrlbl = Just . Label $ tshow prp <> " rule for relation " <> tshow rel,
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),
