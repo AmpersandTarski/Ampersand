@@ -80,10 +80,10 @@ instance Named Name where
 instance GVP.PrintDot Name where
   unqtDot = GVP.text . TL.fromStrict . text1ToText . tName
 
--- | toNamePartUnsafe will convert a Text to a NamePart. The Text must be a proper ID. (See checkProperId)
+-- | toNamePart will convert a Text to a NamePart, iff the Text is a proper ID. (See checkProperId)
 toNamePart :: Text -> Maybe NamePart
 toNamePart txt = case T.uncons txt of
-  Nothing -> fatal "toText1Unsafe must not be used unless you are certain that it is safe!"
+  Nothing -> Nothing
   Just (h, tl) -> toNamePart1 $ Text1 h tl
 
 -- | toNamePart1 will convert a Text1 to a NamePart, iff the Text1 is a proper ID. (See checkProperId)
