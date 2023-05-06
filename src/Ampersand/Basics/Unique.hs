@@ -46,12 +46,22 @@ class (Typeable e, Eq e) => Unique e where
   idWithoutType :: e -> Text1
   idWithoutType x =
     uniqueButNotTooLong -- because it could be stored in an SQL database
-    --  . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
-      ( case checkProperId $ showUnique x of
-          Nothing -> fatal $ "Not a proper namepart: " <> text1ToText (showUnique x)
-          Just np -> np
-      )
-
+      . toText1Unsafe
+      $ nameParts
+    where
+      theName = text1ToText . showUnique $ x
+      nameParts = addDots . map (checkProperId' . checkLength) . T.split (== '.') $ theName
+      checkProperId' :: Text1 -> Text1
+      checkProperId' t = case checkProperId t of
+        Nothing -> fatal $ "Not a valid Name: " <> theName
+        Just t1 -> t1
+      checkLength :: Text -> Text1
+      checkLength t = case T.uncons t of
+        Nothing -> fatal $ "Not a valid Name: " <> theName
+        Just (h, tl) -> Text1 h tl
+      addDots :: [Text1] -> Text
+      addDots [] = mempty
+      addDots (h : tl) = text1ToText h <> "." <> addDots tl
   addType :: e -> Text1 -> Text1
   addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
 
