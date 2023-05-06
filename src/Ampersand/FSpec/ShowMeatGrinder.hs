@@ -53,7 +53,10 @@ metaModel mmLabel =
     modelName =
       withNameSpace nameSpace
         . mkName ContextName
-        $ (toNamePartUnsafe ("MetaModel_" <> tshow mmLabel) NE.:| [])
+        $ ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
+              Nothing -> fatal "Not a proper NamePart."
+              Just np -> np NE.:| []
+          )
     transformers = case mmLabel of
       FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
       PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName

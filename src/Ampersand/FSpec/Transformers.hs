@@ -62,9 +62,13 @@ toTransformer :: NameSpace -> (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -
 toTransformer namespace (rel, src, tgt, props, tuples) =
   Transformer rel' src' tgt' props tuples'
   where
-    rel' = withNameSpace namespace . mkName RelationName $ toNamePartUnsafe rel NE.:| []
-    src' = withNameSpace namespace . mkName ConceptName $ toNamePartUnsafe src NE.:| []
-    tgt' = withNameSpace namespace . mkName ConceptName $ toNamePartUnsafe tgt NE.:| []
+    rel' = withNameSpace namespace . mkName RelationName $ toNamePart' rel NE.:| []
+    src' = withNameSpace namespace . mkName ConceptName $ toNamePart' src NE.:| []
+    tgt' = withNameSpace namespace . mkName ConceptName $ toNamePart' tgt NE.:| []
+    toNamePart' :: Text -> NamePart
+    toNamePart' x = case toNamePart x of
+      Nothing -> fatal "Not a valid NamePart."
+      Just np -> np
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =
@@ -77,7 +81,11 @@ toTransformer namespace (rel, src, tgt, props, tuples) =
         PopInt i -> ScriptInt MeatGrinder i
 
 nameSpaceFormalAmpersand :: NameSpace
-nameSpaceFormalAmpersand = [toNamePartUnsafe "FormalAmpersand"]
+nameSpaceFormalAmpersand =
+  [ case toNamePart "FormalAmpersand" of
+      Nothing -> fatal "Not a valid NamePart."
+      Just np -> np
+  ]
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
@@ -1151,7 +1159,11 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 nameSpacePrototypeContext :: NameSpace
-nameSpacePrototypeContext = [toNamePartUnsafe "PrototypeContext"]
+nameSpacePrototypeContext =
+  [ case toNamePart "PrototypeContext" of
+      Nothing -> fatal "Not a valid NamePart."
+      Just np -> np
+  ]
 
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.

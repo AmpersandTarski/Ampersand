@@ -1061,7 +1061,15 @@ pCtx2aCtx
                 bindedRel = EDcD rel
                 mkRule command fExpr =
                   Rule
-                    { rrnm = mkName RuleName (toNamePartUnsafe ("Compute" <> (tshow . abs . hash $ lbl')) NE.:| []),
+                    { rrnm =
+                        mkName
+                          RuleName
+                          ( ( case toNamePart $ "Compute" <> (tshow . abs . hash $ lbl') of
+                                Nothing -> fatal "Not a proper NamePart."
+                                Just np -> np
+                            )
+                              NE.:| []
+                          ),
                       rrlbl = Just (Label lbl'),
                       formalExpression = fExpr,
                       rrfps = pos',

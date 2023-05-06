@@ -117,13 +117,20 @@ samePurp prp prp' = pexObj prp == pexObj prp' && mString (pexMarkup prp) == mStr
 archiNameSpace :: NameSpace
 archiNameSpace = []
 
+toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
+toNamePartGuarded orig t = case toNamePart1 t of
+  Nothing -> mustBeValidNamePart orig t
+  Just np -> pure np
+
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
-mkArchiContext [archiRepo] pops =
+mkArchiContext [archiRepo] pops = do
+  let orig = Origin "Somewhere during reading an ArchiMate file."
+  nm <- mkName PatternName . (NE.:| []) <$> toNamePartGuarded orig (archRepoName archiRepo)
   pure
     PCtx
-      { ctx_nm = withNameSpace archiNameSpace . mkName PatternName $ toNamePartUnsafe1 (archRepoName archiRepo) NE.:| [],
-        ctx_pos = [],
+      { ctx_nm = withNameSpace archiNameSpace nm,
+        ctx_pos = [orig],
         ctx_lbl = Nothing,
         ctx_lang = Just Dutch,
         ctx_markup = Nothing,
@@ -161,7 +168,13 @@ mkArchiContext [archiRepo] pops =
           participatingRel :: ArchiGrain -> Bool
           participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (mkArchiConcept . toText1Unsafe) ["Relationship", "Property", "View"]
           mkArchiConcept :: Text1 -> P_Concept
-          mkArchiConcept x = PCpt . withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 x NE.:| []
+          mkArchiConcept x =
+            PCpt . withNameSpace archiNameSpace . mkName ConceptName $
+              ( case toNamePart1 x of
+                  Nothing -> fatal "Not a valid NamePart."
+                  Just np -> np
+              )
+                NE.:| []
       _ -> fatal "May not call vwAts on a non-view element"
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
@@ -200,7 +213,13 @@ mkArchiContext [archiRepo] pops =
         mkPattern vw =
           P_Pat
             { pos = OriginUnknown,
-              pt_nm = withNameSpace archiNameSpace . mkName PatternName $ toNamePartUnsafe1 (viewName vw) NE.:| [],
+              pt_nm =
+                withNameSpace archiNameSpace . mkName PatternName $
+                  ( case toNamePart1 (viewName vw) of
+                      Nothing -> fatal $ "Not a valid NamePart: " <> tshow (viewName vw)
+                      Just np -> np
+                  )
+                    NE.:| [],
               pt_lbl = Nothing,
               pt_rls = [],
               pt_gns = [],
@@ -636,9 +655,13 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           }
     }
   where
-    relName' = withNameSpace archiNameSpace . mkName RelationName $ toNamePartUnsafe1 plainNm NE.:| []
-    srcName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 plainSrcName NE.:| []
-    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePartUnsafe1 plainTgtName NE.:| []
+    toNamePart1' :: Text1 -> NamePart
+    toNamePart1' x = case toNamePart1 x of
+      Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+      Just np -> np
+    relName' = withNameSpace archiNameSpace . mkName RelationName $ toNamePart1' plainNm NE.:| []
+    srcName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePart1' plainSrcName NE.:| []
+    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePart1' plainTgtName NE.:| []
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel

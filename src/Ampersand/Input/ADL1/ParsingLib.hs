@@ -291,7 +291,7 @@ pName typ =
       mkName typ . NE.reverse $ nm NE.:| reverse ns
     namePart :: AmpParser NamePart
     namePart =
-      toNamePartUnsafe . text1ToText <$> case typ of
+      toNamePart1' <$> case typ of
         ConceptName -> pUpperCaseID
         RelationName -> pLowerCaseID
         RuleName -> pUnrestrictedID
@@ -304,8 +304,12 @@ pName typ =
         PropertyName -> pUpperCaseID
         SqlAttributeName -> pUnrestrictedID
         SqlTableName -> pUnrestrictedID
+    toNamePart1' :: Text1 -> NamePart
+    toNamePart1' t = case toNamePart1 t of
+      Nothing -> fatal $ "Not a valid NamePart: " <> tshow t
+      Just np -> np
     namespacePart :: AmpParser NamePart
-    namespacePart = toNamePartUnsafe . text1ToText . fst <$> try nameAndDot
+    namespacePart = toNamePart1' . fst <$> try nameAndDot
       where
         nameAndDot = (,) <$> pUnrestrictedID <*> pDot
 

@@ -142,7 +142,13 @@ instance Arbitrary Name where
     mkName <$> arbitrary <*> listOf1 safeNamePart
     where
       safeNamePart :: Gen NamePart
-      safeNamePart = toNamePartUnsafe1 <$> identifier `suchThat` requirements
+      safeNamePart =
+        ( \x -> case toNamePart1 x of
+            Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+            Just np -> np
+        )
+          <$> identifier
+          `suchThat` requirements
       requirements t =
         T.all (/= '.') . text1ToText $ t
 

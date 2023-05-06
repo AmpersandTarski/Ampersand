@@ -47,7 +47,10 @@ rulefromProp prp rel =
         withNameSpace
           (nameSpaceOf rel)
           . mkName RuleName
-          $ (toNamePartUnsafe (tshow prp <> "_" <> (tshow . abs . hash . tshow $ rel)) NE.:| []),
+          $ ( case toNamePart (tshow prp <> "_" <> (tshow . abs . hash . tshow $ rel)) of
+                Nothing -> fatal "Not a proper namepart."
+                Just np -> np NE.:| []
+            ),
       rrlbl = Just . Label $ tshow prp <> " rule for relation " <> tshow rel,
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),

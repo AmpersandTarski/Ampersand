@@ -366,7 +366,16 @@ instance Named CptCont where
   name = name . cCpt
 
 instance Named ThemeContent where
-  name tc = maybe (mkName PatternName . (:| []) $ toNamePartUnsafe "Outside_of_patterns") name (patOfTheme tc)
+  name tc =
+    maybe
+      ( mkName PatternName . (:| []) $
+          ( case toNamePart "Outside_of_patterns" of
+              Nothing -> fatal "Not a valid NamePart."
+              Just np -> np
+          )
+      )
+      name
+      (patOfTheme tc)
 
 -- | orderingByTheme collects materials from the fSpec to distribute over themes.
 --   It ensures that all rules, relations and concepts from the context are included in the specification.

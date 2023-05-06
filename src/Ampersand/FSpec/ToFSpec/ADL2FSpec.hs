@@ -304,7 +304,16 @@ makeFSpec env context =
         qlfname :: PlugSQL -> PlugSQL
         qlfname x = case T.uncons . view namespaceL $ env of
           Nothing -> x
-          Just (c, tl) -> x {sqlname = withNameSpace [toNamePartUnsafe (T.cons c tl)] $ name x}
+          Just (c, tl) ->
+            x
+              { sqlname =
+                  withNameSpace
+                    [ case toNamePart (T.cons c tl) of
+                        Nothing -> fatal "Not a valid NamePart."
+                        Just np -> np
+                    ]
+                    $ name x
+              }
     --TODO151210 -> Plug A is overbodig, want A zit al in plug r
     --CONTEXT Temp
     --PATTERN Temp
@@ -486,17 +495,20 @@ makeFSpec env context =
             ifcRoles = []
           }
         | ifcc <- step4a,
-          let c = source (objExpression (ifcObj ifcc))
+          let toNamePart' txt = case toNamePart txt of
+                Nothing -> fatal "Not a valid NamePart."
+                Just np -> np
+              c = source (objExpression (ifcObj ifcc))
               nm' :: Int -> Name
               nm' 0 =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePartUnsafe . plural (ctxlang context) . plainNameOf $ c)
+                  $ (toNamePart' . plural (ctxlang context) . plainNameOf $ c)
                     NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePartUnsafe . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                  $ (toNamePart' . plural (ctxlang context) $ plainNameOf c <> tshow i)
                     NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"

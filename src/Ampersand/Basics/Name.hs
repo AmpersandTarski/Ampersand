@@ -19,8 +19,8 @@ module Ampersand.Basics.Name
     splitOnDots,
     namePartToText,
     namePartToText1,
-    toNamePartUnsafe,
-    toNamePartUnsafe1,
+    toNamePart,
+    toNamePart1,
     checkProperId,
   )
 where
@@ -81,21 +81,23 @@ instance GVP.PrintDot Name where
   unqtDot = GVP.text . TL.fromStrict . text1ToText . tName
 
 -- | toNamePartUnsafe will convert a Text to a NamePart. The Text must be a proper ID. (See checkProperId)
-toNamePartUnsafe :: Text -> NamePart
-toNamePartUnsafe txt = case T.uncons txt of
+toNamePart :: Text -> Maybe NamePart
+toNamePart txt = case T.uncons txt of
   Nothing -> fatal "toText1Unsafe must not be used unless you are certain that it is safe!"
-  Just (h, tl) -> toNamePartUnsafe1 $ Text1 h tl
+  Just (h, tl) -> toNamePart1 $ Text1 h tl
 
--- | toNamePartUnsafe1 will convert a Text1 to a NamePart. The Text1 must be a proper ID. (See checkProperId)
-toNamePartUnsafe1 :: Text1 -> NamePart
-toNamePartUnsafe1 = NamePart . checkProperId
+-- | toNamePart1 will convert a Text1 to a NamePart, iff the Text1 is a proper ID. (See checkProperId)
+toNamePart1 :: Text1 -> Maybe NamePart
+toNamePart1 x = case checkProperId x of
+  Nothing -> Nothing
+  Just np -> Just (NamePart np)
 
 -- | This function checks
-checkProperId :: Text1 -> Text1
+checkProperId :: Text1 -> Maybe Text1
 checkProperId t@(Text1 h tl) =
   if isProper
-    then t
-    else fatal $ "Not a proper Id: " <> text1ToText t
+    then Just t
+    else Nothing
   where
     isProper = and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
 

@@ -17,6 +17,7 @@ where
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
+import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
@@ -121,7 +122,15 @@ pNameWithoutLabel ns typ
       addParserWarning orig warn
       case nmTxt of
         Nothing -> unexpected "doublequoted string with invalid characters."
-        Just nm -> return (mkName typ (toNamePartUnsafe1 nm NE.:| []))
+        Just nm ->
+          return
+            ( mkName
+                typ
+                ( case toNamePart1 nm of
+                    Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
+                    Just np -> np NE.:| []
+                )
+            )
 
 pNameWithOptionalLabel :: NameSpace -> NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
@@ -159,7 +168,16 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
         addParserWarning orig warn
         case nmTxt of
           Nothing -> unexpected "doublequoted string with invalid characters."
-          Just nm -> return (mkName typ (toNamePartUnsafe1 nm NE.:| []), mLab)
+          Just nm ->
+            return
+              ( mkName
+                  typ
+                  ( case toNamePart1 nm of
+                      Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
+                      Just np -> np NE.:| []
+                  ),
+                mLab
+              )
 
 tmpDoubleQuotedStringToNameVERYUNSAFE :: Text1 -> Maybe Text1
 tmpDoubleQuotedStringToNameVERYUNSAFE txt =
@@ -375,9 +393,15 @@ pRuleDef ns =
           fromMaybe
             (origToName, Just . Label $ "The rule defined at " <> tshow orig)
             maybeNameDefLbl
+        plainName = "Rule_" <> (tshow . abs . hash . tshow) orig
         origToName =
-          mkName RuleName $
-            toNamePartUnsafe ("TheRuleDefinedAt" <> tshow orig)
+          withNameSpace ns
+            . mkName
+              RuleName
+            $ ( case toNamePart plainName of
+                  Nothing -> fatal $ "Not a valid NamePart: " <> plainName
+                  Just np -> np
+              )
               NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))

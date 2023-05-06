@@ -46,13 +46,21 @@ parseXlsxFile mFk file =
       env ->
       Xlsx ->
       Guarded P_Context
-    xlsx2pContext env xlsx = Checked pop []
+    xlsx2pContext env xlsx = do
+      let orig = Origin $ "file `" <> tshow file1 <> "`"
+      namepart <- toNamePartGuarded orig file1
+      return $ pop namepart
       where
-        pop =
-          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ toNamePartUnsafe1 file1 NE.:| [])
+        pop namepart =
+          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
             . concatMap (toPops env nameSpaceOfXLXSfiles file)
             . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
+
+toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
+toNamePartGuarded orig t = case toNamePart1 t of
+  Nothing -> mustBeValidNamePart orig t
+  Just np -> pure np
 
 nameSpaceOfXLXSfiles :: NameSpace
 nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn more about namespaces.
@@ -338,8 +346,25 @@ toPops env ns file x = map popForColumn (colNrs x)
                 Nothing -> (fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol), False)
                 Just ('~', rest) -> case T.uncons . T.reverse $ rest of
                   Nothing -> fatal "the `~` symbol should be preceded by a relation name. However, it just isn't there."
-                  Just (h, tl) -> (withNameSpace ns . mkName RelationName $ toNamePartUnsafe (T.cons h tl) :| [], True)
-                Just (h, tl) -> (withNameSpace ns . mkName RelationName $ (toNamePartUnsafe . T.reverse $ T.cons h tl) :| [], False)
+                  Just (h, tl) ->
+                    ( withNameSpace ns . mkName RelationName $
+                        ( case toNamePart (T.cons h tl) of
+                            Nothing -> fatal $ "Not a valid NamePart: " <> T.cons h tl
+                            Just np -> np
+                        )
+                          :| [],
+                      True
+                    )
+                Just (h, tl) ->
+                  let tryNp = T.reverse $ T.cons h tl
+                   in ( withNameSpace ns . mkName RelationName $
+                          ( case toNamePart tryNp of
+                              Nothing -> fatal $ "Not a valid NamePart: " <> tshow tryNp
+                              Just np -> np
+                          )
+                            :| [],
+                        False
+                      )
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -521,9 +546,13 @@ conceptNameWithOptionalDelimiter ns t'
   | otherwise = Nothing
   where
     t = trim t'
-    mkName' x = case T.uncons x of
-      Nothing -> fatal "Empty conceptname should not be possible."
-      Just (h, tl) -> withNameSpace ns . mkName ConceptName $ toNamePartUnsafe (T.cons h tl) :| []
+    mkName' x =
+      withNameSpace ns . mkName ConceptName $
+        ( case toNamePart x of
+            Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+            Just np -> np
+        )
+          :| []
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

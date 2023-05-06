@@ -79,7 +79,10 @@ ruleFromIdentity identity =
             withNameSpace
               (nameSpaceOf identity)
               . mkName RuleName
-              $ (toNamePartUnsafe ("identity_" <> (tshow . abs . hash . tshow $ identity)) NE.:| []),
+              $ ( case toNamePart ("identity_" <> (tshow . abs . hash . tshow $ identity)) of
+                    Nothing -> fatal "Not a proper NamePart"
+                    Just np -> np NE.:| []
+                ),
           rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file

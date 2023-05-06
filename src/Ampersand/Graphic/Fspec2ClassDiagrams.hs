@@ -42,13 +42,18 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
-        { attNm = mkName SqlAttributeName $ (toNamePartUnsafe1 . sqlColumNameToText1 $ attSQLColName att) NE.:| [],
+        { attNm = mkName SqlAttributeName $ (toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [],
           attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att -- optional if NULL is allowed
         }
 
 propTypeName :: Name
-propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePartUnsafe1 (toText1Unsafe "Prop") NE.:| []
+propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop") NE.:| []
+
+toNamePart' :: Text1 -> NamePart
+toNamePart' x = case toNamePart1 x of
+  Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+  Just np -> np
 
 class CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
@@ -306,7 +311,7 @@ tdAnalysis fSpec =
             }
 
 sqlAttToName :: SqlAttribute -> Name
-sqlAttToName att = mkName SqlAttributeName ((toNamePartUnsafe1 . sqlColumNameToText1 $ attSQLColName att) NE.:| [])
+sqlAttToName att = mkName SqlAttributeName ((toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [])
 
 mults :: Expression -> Multiplicities
 mults r =

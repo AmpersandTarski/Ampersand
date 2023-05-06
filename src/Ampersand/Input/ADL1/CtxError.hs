@@ -10,6 +10,7 @@ module Ampersand.Input.ADL1.CtxError
     mustBeOrderedLst,
     mustBeOrderedConcLst,
     mustBeBound,
+    mustBeValidNamePart,
     GetOneGuarded (..),
     uniqueNames,
     unexpectedType,
@@ -620,6 +621,13 @@ mustBeBound o lst =
       "  You could add more types inside the term, or write:"
     ]
       <> ["  " <> writeBind e | (_, e) <- lst]
+
+mustBeValidNamePart :: Origin -> Text1 -> Guarded NamePart
+mustBeValidNamePart orig t1 =
+  Errors . pure . CTXE orig . T.unlines $
+    [ "A single word is expected as name, which must start with a letter and may contain only alphanumerical letters, digits and underscore.",
+      "  the following was found: `" <> tshow t1 <> "`."
+    ]
 
 writeBind :: Expression -> Text
 writeBind (ECpl e) =
