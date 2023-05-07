@@ -12,7 +12,6 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import RIO.Char (toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -83,18 +82,10 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                     else toSqlColName i
                 toSqlColName :: Integer -> SqlColumName
                 toSqlColName i =
-                  text1ToSqlColumName . toText1Unsafe . T.pack $
-                    firstpart (nameSpaceOf nm)
-                      <> lastpart (plainNameOf1 nm)
-                      <> (if i > 0 then show i else mempty)
-                  where
-                    firstpart =
-                      concatMap
-                        ( \ns -> case show ns of
-                            "" -> fatal "inpossible to have an empty nameSpace."
-                            h : _ -> toUpper h : "__"
-                        )
-                    lastpart = show
+                  text1ToSqlColumName . toText1Unsafe $
+                    (T.intercalate "_" . map tshow . nameSpaceOf $ nm)
+                      <> plainNameOf nm
+                      <> (if i > 0 then tshow i else mempty)
         tableKey = tyroot typ
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]
