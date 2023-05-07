@@ -44,7 +44,7 @@ type NameSpace = [NamePart]
 newtype NamePart = NamePart Text1 deriving (Data)
 
 instance Show NamePart where
-  show (NamePart t1) = show t1
+  show (NamePart t1) = T.unpack $ text1ToText t1
 
 data Name = Name
   { -- | A name in a namespace can be seen as a nonempty list of words.
