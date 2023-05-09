@@ -1053,8 +1053,17 @@ instance Hashable Expression where
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
-  showUnique = toText1Unsafe . tshow -- showA is not good enough: epsilons are disguised, so there can be several different
-  -- expressions with the same showA.
+  showUnique e = toText1Unsafe txt
+    where
+      txt =
+        "Expression_"
+          <> ( tshow
+                 . hash
+                 . tshow -- showA is not good enough: epsilons are disguised, so there can be several different
+             )
+            e
+
+-- expressions with the same showA.
 
 instance Unique (PairView Expression) where
   showUnique = toText1Unsafe . tshow
