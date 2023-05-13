@@ -70,7 +70,7 @@ uniqueButNotTooLong txt =
   let (prfx, rest) = T.splitAt safeLength (text1ToText txt)
    in if T.null rest
         then txt
-        else toText1Unsafe $ prfx <> "#" <> tshow (hash . text1ToText $ txt) <> "#"
+        else toText1Unsafe $ prfx <> "#" <> tshow (abs . hash . text1ToText $ txt) <> "#"
   where
     safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the
     -- limitation that DirtyId's are stored in an sql database

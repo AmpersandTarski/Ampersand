@@ -1058,6 +1058,7 @@ instance Unique Expression where
       txt =
         "Expression_"
           <> ( tshow
+                 . abs
                  . hash
                  . tshow -- showA is not good enough: epsilons are disguised, so there can be several different
              )
