@@ -541,7 +541,7 @@ instance Traced PAtomValue where
       ScriptDateTime o _ -> o
 
 instance Unique PAtomValue where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("AtomValue_" <> (tshow . abs . hash . tshow) x)
 
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r =

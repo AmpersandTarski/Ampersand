@@ -491,7 +491,7 @@ showWithSign rel = tName rel <> showSign rel
 newtype Meaning = Meaning {ameaMrk :: Markup} deriving (Show, Eq, Ord, Typeable, Data)
 
 instance Unique Meaning where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("Meaning_" <> (tshow . abs . hash . tshow) x)
 
 instance Named Relation where
   name = decnm
@@ -709,7 +709,7 @@ data BoxItem
   deriving (Eq, Show)
 
 instance Unique BoxItem where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("BoxItem" <> (tshow . abs . hash . tshow) x)
 
 instance Traced BoxItem where
   origin o =
@@ -762,7 +762,7 @@ instance Traced ObjectDef where
   origin = objPos
 
 instance Unique ObjectDef where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("ObjectDef_" <> (tshow . abs . hash . tshow) x)
 
 instance Ord ObjectDef where
   compare a b = case compare (objPlainName a) (objPlainName b) of
@@ -1067,10 +1067,10 @@ instance Unique Expression where
 -- expressions with the same showA.
 
 instance Unique (PairView Expression) where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("PairView_" <> (tshow . abs . hash . tshow) x)
 
 instance Unique (PairViewSegment Expression) where
-  showUnique = toText1Unsafe . tshow
+  showUnique x = toText1Unsafe ("PairViewSegment_Expression_" <> (tshow . abs . hash . tshow) x)
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
