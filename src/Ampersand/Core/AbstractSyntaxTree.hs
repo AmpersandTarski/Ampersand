@@ -477,7 +477,7 @@ instance Ord Relation where
 
 instance Unique Relation where
   showUnique :: Relation -> Text1
-  showUnique = showWithSign
+  showUnique x = toText1Unsafe ("Relation_" <> (tshow . abs . hash . text1ToText . showWithSign) x)
 
 instance Hashable Relation where
   hashWithSalt s Relation {dechash = v} = s `hashWithSalt` v
