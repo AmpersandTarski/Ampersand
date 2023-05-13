@@ -1053,18 +1053,7 @@ instance Hashable Expression where
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
-  showUnique e = toText1Unsafe txt
-    where
-      txt =
-        "Expression_"
-          <> ( tshow
-                 . abs
-                 . hash
-                 . tshow -- showA is not good enough: epsilons are disguised, so there can be several different
-             )
-            e
-
--- expressions with the same showA.
+  showUnique x = toText1Unsafe ("Expression_" <> (tshow . abs . hash . tshow) x)
 
 instance Unique (PairView Expression) where
   showUnique x = toText1Unsafe ("PairView_" <> (tshow . abs . hash . tshow) x)
@@ -1465,20 +1454,20 @@ unsafePAtomVal2AtomValue typ mCpt pav =
       case pav of
         PSingleton o str mval ->
           case typ of
-            Alphanumeric -> Right (AAVString (hash str) typ str)
-            BigAlphanumeric -> Right (AAVString (hash str) typ str)
-            HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-            Password -> Right (AAVString (hash str) typ str)
-            Object -> Right (AAVString (hash str) typ str)
+            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            Password -> Right (AAVString (abs . hash $ str) typ str)
+            Object -> Right (AAVString (abs . hash $ str) typ str)
             _ -> case mval of
               Nothing -> Left (message o str)
               Just x -> unsafePAtomVal2AtomValue typ mCpt x
         ScriptString o str ->
           case typ of
-            Alphanumeric -> Right (AAVString (hash str) typ str)
-            BigAlphanumeric -> Right (AAVString (hash str) typ str)
-            HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-            Password -> Right (AAVString (hash str) typ str)
+            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            Password -> Right (AAVString (abs . hash $ str) typ str)
             Binary -> Left "Binary cannot be populated in an ADL script"
             BigBinary -> Left "Binary cannot be populated in an ADL script"
             HugeBinary -> Left "Binary cannot be populated in an ADL script"
@@ -1488,13 +1477,13 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             Integer -> Left (message o str)
             Float -> Left (message o str)
             TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (hash str) typ str)
+            Object -> Right (AAVString (abs . hash $ str) typ str)
         XlsxString o str ->
           case typ of
-            Alphanumeric -> Right (AAVString (hash str) typ str)
-            BigAlphanumeric -> Right (AAVString (hash str) typ str)
-            HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-            Password -> Right (AAVString (hash str) typ str)
+            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
+            Password -> Right (AAVString (abs . hash $ str) typ str)
             Binary -> Left "Binary cannot be populated in an ADL script"
             BigBinary -> Left "Binary cannot be populated in an ADL script"
             HugeBinary -> Left "Binary cannot be populated in an ADL script"
@@ -1528,7 +1517,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
               Just r -> Right (AAVFloat typ r)
               Nothing -> Left (message o str)
             TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (hash str) typ str)
+            Object -> Right (AAVString (abs . hash $ str) typ str)
         ScriptInt o i ->
           case typ of
             Alphanumeric -> Left (message o i)
