@@ -5,7 +5,6 @@
 module Ampersand.Output.ToJSON.Roles (Roles) where
 
 import Ampersand.Output.ToJSON.JSONutils
-import qualified RIO.Set as Set
 
 newtype Roles = Roles [RoleJson] deriving (Generic, Show)
 

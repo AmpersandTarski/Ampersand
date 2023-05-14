@@ -21,7 +21,6 @@ import Language.SQL.SimpleSQL.Pretty
 import Language.SQL.SimpleSQL.Syntax
 import RIO.List (intercalate, lastMaybe, maximumMaybe, nub, partition, (\\))
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 data SqlQuery

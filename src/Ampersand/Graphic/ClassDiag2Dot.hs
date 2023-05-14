@@ -16,7 +16,6 @@ import qualified Data.GraphViz.Attributes.HTML as Html
 import Data.GraphViz.Types.Canonical hiding (attrs)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 

@@ -8,7 +8,6 @@ import Ampersand.ADL1
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 
 data Rulez = Rulez
   { rulJSONinvariants :: [JsonRule],

@@ -5,7 +5,6 @@ import Ampersand.Basics
 import Ampersand.Classes
 import qualified RIO.List as L
 import qualified RIO.Map as Map
-import qualified RIO.Set as Set
 
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45
 
