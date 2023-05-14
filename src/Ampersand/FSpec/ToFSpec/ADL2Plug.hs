@@ -237,13 +237,13 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
       )
     dist dcls cptLists =
       ( [(t, declsInTable t) | t <- cptLists],
-        [d | d <- Set.elems dcls, isNothing (conceptTableOf d)]
+        [d | d <- toList dcls, isNothing (conceptTableOf d)]
       )
       where
         declsInTable typ =
-          [ dcl | dcl <- Set.elems dcls, case conceptTableOf dcl of
-                                           Nothing -> False
-                                           Just x -> x `elem` tyCpts typ
+          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
+                                        Nothing -> False
+                                        Just x -> x `elem` tyCpts typ
           ]
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
@@ -292,5 +292,5 @@ typologies context =
            { tyroot = c,
              tyCpts = [c]
            }
-         | c <- Set.elems $ concs context Set.\\ concs (gens context)
+         | c <- toList $ concs context Set.\\ concs (gens context)
        ]

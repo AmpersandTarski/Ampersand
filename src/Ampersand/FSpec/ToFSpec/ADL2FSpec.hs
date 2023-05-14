@@ -45,7 +45,7 @@ makeFSpec env context =
       fRoleRuls =
         L.nub
           [ (role', rule) -- fRoleRuls says which roles maintain which rules.
-            | rule <- Set.elems (allRules context),
+            | rule <- toList (allRules context),
               role' <- maintainersOf rule
           ],
       fMaintains = fMaintains',
@@ -96,7 +96,7 @@ makeFSpec env context =
       applyViolText = apply_viol_text,
       allViolations =
         [ (r, vs)
-          | r <- Set.elems (allRules context),
+          | r <- toList (allRules context),
             let vs = ruleviolations r,
             not (null vs)
         ],
@@ -227,12 +227,12 @@ makeFSpec env context =
     allConjs = makeAllConjs env (allRules context)
     fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
     fSpecAllConjsPerRule = converseNE [(conj, rc_orgRules conj) | conj <- allConjs]
-    fSpecAllConjsPerDecl = converse [(conj, Set.elems . bindedRelationsIn $ rcConjunct conj) | conj <- allConjs]
+    fSpecAllConjsPerDecl = converse [(conj, toList . bindedRelationsIn $ rcConjunct conj) | conj <- allConjs]
     fSpecAllConjsPerConcept =
       converse
         [ (conj, L.nub $ smaller (source e) <> smaller (target e))
           | conj <- allConjs,
-            e <- Set.elems . modifyablesByInsOrDel . rcConjunct $ conj
+            e <- toList . modifyablesByInsOrDel . rcConjunct $ conj
         ]
       where
         smaller :: A_Concept -> [A_Concept]
@@ -363,7 +363,7 @@ makeFSpec env context =
     --  Step 1: select and arrange all relations to obtain a set cRels of total relations
     --          to ensure insertability of entities (signal relations are excluded)
     cRels =
-      Set.elems $
+      toList $
         Set.filter isTot toconsider
           `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
       where
@@ -371,7 +371,7 @@ makeFSpec env context =
     --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
     --          to ensure deletability of entities (signal relations are excluded)
     dRels =
-      Set.elems $
+      toList $
         Set.filter isInj toconsider
           `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
       where
@@ -549,7 +549,7 @@ tblcontents ci ps plug =
                 then EFlp . EDcD . rsDcl $ store
                 else EDcD . rsDcl $ store
             ss -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are " <> tshow (length ss))
-       in [[(Just . apLeft) p, (Just . apRight) p] | p <- Set.elems $ fullContents ci ps expr]
+       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ps expr]
     TblSQL {} ->
       --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
       --attributes are assumed to be in the order kernel+other,
@@ -560,10 +560,10 @@ tblcontents ci ps plug =
         [] -> fatal "no attributes in plug."
         f : fs ->
           (L.nub . L.transpose)
-            ( map Just (Set.elems cAtoms) :
+            ( map Just (toList cAtoms) :
                 [ case fExp of
-                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- Set.elems cAtoms]
-                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- Set.elems cAtoms]
+                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
+                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
                   | att <- fs,
                     let fExp = attExpr att
                 ]
@@ -572,7 +572,7 @@ tblcontents ci ps plug =
             cAtoms = (atomValuesOf ci ps . source . attExpr) f
             lkp :: SqlAttribute -> AAtomValue -> AAtomPairs -> Maybe AAtomValue
             lkp att a pairs =
-              case [p | p <- Set.elems pairs, a == apLeft p] of
+              case [p | p <- toList pairs, a == apLeft p] of
                 [] -> Nothing
                 [p] -> Just (apRight p)
                 ps' ->

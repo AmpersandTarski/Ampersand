@@ -19,13 +19,13 @@ import Ampersand.FSpec.ToFSpec.NormalForms
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Text.Pandoc.Builder
+import Text.Pandoc.Builder hiding (toList)
 
 testConfluence :: A_Context -> Blocks
 testConfluence context =
   let tcss =
         [ (expr, tcs)
-          | expr <- Set.elems $ expressionsIn context,
+          | expr <- toList $ expressionsIn context,
             let tcs = dfProofs (conceptMap . ctxInfo $ context) expr,
             length tcs > 1
         ]
@@ -56,7 +56,7 @@ deriveProofs env context =
               <> linebreak
               <> interText linebreak ["     conj: " <> str (showA conj) | conj <- NE.toList $ conjuncts env r]
           )
-        | r <- Set.elems $ allRules context
+        | r <- toList $ allRules context
       ]
     <> mconcat
       [ para (linebreak <> "derivation for:   " <> (str . showA) expr <> linebreak)
@@ -115,5 +115,5 @@ makeAllQuads conjsPerRule =
         qConjuncts = conjs
       }
     | (rule, conjs) <- conjsPerRule,
-      d <- Set.elems $ bindedRelationsIn rule
+      d <- toList $ bindedRelationsIn rule
   ]

@@ -280,4 +280,4 @@ instance CdNode Aggregation where
   nodes (OOAggr _ s t) = map name [s, t]
 
 instance CdNode Generalization where
-  nodes = map name . Set.elems . concs . genAgen
+  nodes = map name . toList . concs . genAgen

@@ -234,13 +234,13 @@ instance ShowHS FSpec where
         ", roleInterfaces  = " <> showRoleInterfaces fSpec,
         ", fRoleRuls       = " <> showHS env indentA (fRoleRuls fSpec),
         wrap ", fRoles          = " indentA (showHS env) (map fst (fRoles fSpec)),
-        wrap ", vrules          = " indentA (const showHSName) (Set.elems $ vrules fSpec),
-        wrap ", grules          = " indentA (const showHSName) (Set.elems $ grules fSpec),
-        wrap ", invariants      = " indentA (const showHSName) (Set.elems $ invariants fSpec),
-        wrap ", fallRules       = " indentA (const showHSName) (Set.elems $ fallRules fSpec),
-        wrap ", allUsedDecls    = " indentA (const showHSName) (Set.elems $ allUsedDecls fSpec),
-        wrap ", vrels           = " indentA (const showHSName) (Set.elems $ vrels fSpec),
-        wrap ", allConcepts     = " indentA (const showHSName) (Set.elems $ allConcepts fSpec),
+        wrap ", vrules          = " indentA (const showHSName) (toList $ vrules fSpec),
+        wrap ", grules          = " indentA (const showHSName) (toList $ grules fSpec),
+        wrap ", invariants      = " indentA (const showHSName) (toList $ invariants fSpec),
+        wrap ", fallRules       = " indentA (const showHSName) (toList $ fallRules fSpec),
+        wrap ", allUsedDecls    = " indentA (const showHSName) (toList $ allUsedDecls fSpec),
+        wrap ", vrels           = " indentA (const showHSName) (toList $ vrels fSpec),
+        wrap ", allConcepts     = " indentA (const showHSName) (toList $ allConcepts fSpec),
         wrap ", vIndices        = " indentA (const showHSName) (vIndices fSpec),
         wrap ", vviews          = " indentA (const showHSName) (vviews fSpec),
         wrap ", vgens           = " indentA (showHS env) (vgens fSpec),
@@ -249,10 +249,10 @@ instance ShowHS FSpec where
         wrap ", vquads          = " indentA (const showHSName) (vquads fSpec),
         wrap ", vpatterns       = " indentA (const showHSName) (vpatterns fSpec),
         wrap ", conceptDefs     = " indentA (showHS env) (conceptDefs fSpec),
-        wrap ", fSexpls         = " indentA (showHS env) (Set.elems (fSexpls fSpec)),
+        wrap ", fSexpls         = " indentA (showHS env) (toList (fSexpls fSpec)),
         ", metas           = allMetas",
         wrap ", allViolations   = " indentA showViolatedRule (allViolations fSpec),
-        wrap ", allExprs        = " indentA (showHS env) (Set.elems (allExprs fSpec)),
+        wrap ", allExprs        = " indentA (showHS env) (toList (allExprs fSpec)),
         "}"
       ]
       <> indent
@@ -306,7 +306,7 @@ instance ShowHS FSpec where
                  then ""
                  else
                    "\n -- *** Declared relations (in total: " <> (tshow . length) ds <> " relations) ***: "
-                     <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- Set.elems ds]
+                     <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList ds]
                      <> "\n"
          )
       <> ( if null (vIndices fSpec)
@@ -327,14 +327,14 @@ instance ShowHS FSpec where
              then ""
              else
                "\n -- *** User defined rules (total: " <> (tshow . length . vrules) fSpec <> " rules) ***: "
-                 <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- Set.elems $ vrules fSpec]
+                 <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList $ vrules fSpec]
                  <> "\n"
          )
       <> ( if null (grules fSpec)
              then ""
              else
                "\n -- *** Generated rules (total: " <> (tshow . length . grules) fSpec <> " rules) ***: "
-                 <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- Set.elems $ grules fSpec]
+                 <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList $ grules fSpec]
                  <> "\n"
          )
       <> ( if null (allConjuncts fSpec)
@@ -389,7 +389,7 @@ instance ShowHS FSpec where
       showAtomsOfConcept c =
         "-- atoms: [ " <> T.intercalate indentC strs <> "]"
         where
-          strs = map showVal . L.sort . Set.elems . atomsInCptIncludingSmaller fSpec $ c
+          strs = map showVal . L.sort . toList . atomsInCptIncludingSmaller fSpec $ c
             where
               showVal val = "`" <> showValADL val <> "`"
           indentC =
@@ -409,7 +409,7 @@ instance ShowHS FSpec where
                 ( let showPair _ p = "( " <> (tshow . showValADL . apLeft) p <> ", " <> (tshow . showValADL . apRight) p <> ")"
                    in showPair
                 )
-                (Set.elems ps)
+                (toList ps)
               <> indent'
               <> " )"
           ]
@@ -450,9 +450,9 @@ instance ShowHS Pattern where
       [ "A_Pat { ptnm  = " <> tshow (name pat),
         ", ptpos = " <> showHS env "" (ptpos pat),
         ", ptend = " <> showHS env "" (ptend pat),
-        ", ptrls = [" <> T.intercalate ", " [showHSName r | r <- Set.elems $ ptrls pat] <> T.concat [" {- no rules -} " | Set.null (ptrls pat)] <> "]",
+        ", ptrls = [" <> T.intercalate ", " [showHSName r | r <- toList $ ptrls pat] <> T.concat [" {- no rules -} " | Set.null (ptrls pat)] <> "]",
         wrap ", ptgns = " indentB (showHS env) (ptgns pat),
-        ", ptdcs = [ " <> T.intercalate (indentB <> ", ") [showHSName d | d <- Set.elems $ ptdcs pat] <> T.concat [" {- no relations -} " | null (ptdcs pat)] <> indentB <> "]",
+        ", ptdcs = [ " <> T.intercalate (indentB <> ", ") [showHSName d | d <- toList $ ptdcs pat] <> T.concat [" {- no relations -} " | null (ptdcs pat)] <> indentB <> "]",
         wrap ", ptups = " indentB (showHS env) (ptups pat),
         wrap ", ptids = " indentB (showHS env) (ptids pat),
         wrap ", ptvds = " indentB (showHS env) (ptvds pat),
@@ -735,7 +735,7 @@ instance ShowHS Relation where
       indent
       [ "Relation { decnm   = " <> tshow (decnm d),
         "         , decsgn  = " <> showHS env "" (sign d),
-        "         , decprps = " <> showL (map (showHS env "") (Set.elems $ decprps d)),
+        "         , decprps = " <> showL (map (showHS env "") (toList $ decprps d)),
         "         , decpr   = " <> showHS env "" (decpr d),
         "         , decMean = " <> tshow (decMean d),
         "         , decfpos = " <> showHS env "" (decfpos d),

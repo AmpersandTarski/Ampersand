@@ -30,5 +30,5 @@ instance JSON (Role, Int) RoleJson where
     RoleJson
       { roleJSONid = text1ToText . idWithoutType $ role',
         roleJSONname = text1ToText . tName $ role',
-        roleJSONmaintains = map (text1ToText . tName) . Set.elems . fMaintains fSpec $ role'
+        roleJSONmaintains = map (text1ToText . tName) . toList . fMaintains fSpec $ role'
       }

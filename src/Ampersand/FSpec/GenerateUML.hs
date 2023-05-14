@@ -11,7 +11,6 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux
 import Control.Monad.State.Lazy (State, evalState, gets, modify)
 import qualified RIO.Map as Map
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 -- TODO: escape
@@ -242,8 +241,8 @@ instance Named Req where
 
 requirements :: (HasOutputLanguage env) => env -> FSpec -> [Req]
 requirements env fSpec =
-  map decl2req (Set.elems $ vrels fSpec)
-    <> map rule2req (Set.elems $ vrules fSpec)
+  map decl2req (toList $ vrels fSpec)
+    <> map rule2req (toList $ vrules fSpec)
   where
     decl2req d =
       Req

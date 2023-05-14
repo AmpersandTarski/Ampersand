@@ -91,7 +91,7 @@ instance Unique a => Unique [a] where
   showUnique xs = toText1Unsafe $ "[" <> T.intercalate ", " (text1ToText . showUnique <$> xs) <> "]"
 
 instance Unique a => Unique (Set.Set a) where
-  showUnique = showUnique . Set.elems
+  showUnique = showUnique . toList
 
 instance Unique Bool where
   showUnique = toText1Unsafe . T.toLower . tshow

@@ -30,17 +30,17 @@ mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where
-    allConcs = [c | c <- Set.elems allConceptsPrim, not $ isONE c || isSESSION c]
+    allConcs = [c | c <- toList allConceptsPrim, not $ isONE c || isSESSION c]
     nonCrudConcpts =
-      (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls)
-        <> (map target . filter isInj . filter isTot . map EDcD . Set.elems $ decls)
+      (map source . filter isUni . filter isSur . map EDcD . toList $ decls)
+        <> (map target . filter isInj . filter isTot . map EDcD . toList $ decls)
     crudCncpts = allConcs L.\\ nonCrudConcpts
 
     transSurjClosureMap :: Map.Map A_Concept [A_Concept]
     transSurjClosureMap =
       transClosureMap' . Map.fromListWith L.union $
-        (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls)
-          <> (map mkMapItem . filter isTot . map EDcD $ Set.elems decls)
+        (map (mkMapItem . flp) . filter isSur . map EDcD $ toList decls)
+          <> (map mkMapItem . filter isTot . map EDcD $ toList decls)
       where
         -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
 

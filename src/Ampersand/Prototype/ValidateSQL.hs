@@ -21,7 +21,7 @@ validateRulesSQL fSpec = do
     viols -> exitWith . ViolationsInDatabase . map toTexts $ viols
       where
         toTexts :: (Rule, AAtomPairs) -> (Text, [Text])
-        toTexts (rule, pairs) = (text1ToText . tName $ rule, f <$> Set.elems pairs)
+        toTexts (rule, pairs) = (text1ToText . tName $ rule, f <$> toList pairs)
           where
             f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
 
@@ -69,12 +69,12 @@ getAllInterfaceExps fSpec =
 
 -- we check the complement of the rule, since that is the term evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
-getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` grules fSpec
+getAllRuleExps fSpec = map getRuleExp . toList $ vrules fSpec `Set.union` grules fSpec
   where
     getRuleExp rule = (notCpl (formalExpression rule), "rule " <> tshow (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
-getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
+getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Set.union` grules fSpec
   where
     getPairViewExps r = case rrviol r of
       Nothing -> []
@@ -124,7 +124,7 @@ validateExp fSpec total (vExp, i) = do
       return (vExp, True)
     (expr, orig) -> do
       violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec) expr
-      let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
+      let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- toList $ pairsInExpr fSpec expr]
       if L.sort violationsSQL == L.sort violationsAmp
         then do
           return (vExp, True)

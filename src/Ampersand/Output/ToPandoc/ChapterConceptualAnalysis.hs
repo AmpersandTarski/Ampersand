@@ -54,8 +54,8 @@ chpConceptualAnalysis env lev fSpec =
         purps = purposes2Blocks env (purposesOf fSpec outputLang' fSpec)
     pictures =
       map pictOfPat (instanceList fSpec)
-        <> map pictOfConcept (Set.elems $ concs fSpec)
-        <> map pictOfRule (Set.elems $ vrules fSpec)
+        <> map pictOfConcept (toList $ concs fSpec)
+        <> map pictOfRule (toList $ vrules fSpec)
     -----------------------------------------------------
     -- the Picture that represents this pattern's conceptual graph
     pictOfPat :: Pattern -> Picture
@@ -99,7 +99,7 @@ chpConceptualAnalysis env lev fSpec =
           <> caRemainingRelations
           <> (
                -- print the rules that are defined in this pattern.
-               case map caRule . Set.elems $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
+               case map caRule . toList $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
                  [] -> mempty
                  blocks ->
                    ( case outputLang' of
@@ -299,11 +299,11 @@ chpConceptualAnalysis env lev fSpec =
                      -- Then the relation of the relation with its properties and its intended meaning
                   <> printMeaning outputLang' d
             ukadjs = if Uni `elem` properties d && Tot `elem` properties d
-                        then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
-                        else commaEng "and" (map adj . Set.elems $ properties d)<>" relation"
+                        then commaEng "and" (map adj . toList $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
+                        else commaEng "and" (map adj . toList $ properties d)<>" relation"
             nladjs = if Uni `elem` properties d && Tot `elem` properties d
-                      then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
-                      else commaNL "en" (map adj . Set.elems $ properties d)<>" relatie"
+                      then commaNL "en" (map adj . toList $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
+                      else commaNL "en" (map adj . toList $ properties d)<>" relatie"
             adj   = propFullName True outputLang'
     -}
 
@@ -339,7 +339,7 @@ chpConceptualAnalysis env lev fSpec =
                             (str ", ")
                             [ hyperLinkTo (XRefConceptualAnalysisRelation d)
                                 <> text (" (" <> (text1ToText . tName) d <> ")")
-                              | d <- Set.elems $ bindedRelationsIn r
+                              | d <- toList $ bindedRelationsIn r
                             ]
                         )
                       <> l

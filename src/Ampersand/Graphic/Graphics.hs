@@ -187,28 +187,28 @@ conceptualStructure fSpec pr =
     --  A conceptual diagram comprising all rules in which c is used
     PTCDConcept c ->
       let cpts' = concs rs
-          rs = [r | r <- Set.elems $ vrules fSpec, c `elem` concs r]
+          rs = [r | r <- toList $ vrules fSpec, c `elem` concs r]
        in CStruct
-            { csCpts = L.nub $ Set.elems cpts' <> [g | (s, g) <- gs, elem g cpts' || elem s cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
-              csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+            { csCpts = L.nub $ toList cpts' <> [g | (s, g) <- gs, elem g cpts' || elem s cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
+              csRels = filter (not . isProp . EDcD) . toList . bindedRelationsIn $ rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
               csIdgs = [(s, g) | (s, g) <- gs, elem g cpts' || elem s cpts'] --  all isa edges
             }
     --  PTCDPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
     --  and rels to prevent disconnected concepts, which can be connected given the entire context.
     PTCDPattern pat ->
-      let orphans = [c | c <- Set.elems cpts, not (c `elem` concs idgs || c `elem` concs rels)]
+      let orphans = [c | c <- toList cpts, not (c `elem` concs idgs || c `elem` concs rels)]
           xrels =
             Set.fromList
-              [ r | c <- orphans, r <- Set.elems $ vrels fSpec, (c == source r && target r `elem` cpts) || (c == target r && source r `elem` cpts), source r /= target r, decusr r
+              [ r | c <- orphans, r <- toList $ vrels fSpec, (c == source r && target r `elem` cpts) || (c == target r && source r `elem` cpts), source r /= target r, decusr r
               ]
           idgs = isaEdges cpts --  all isa edges within the concepts
           cpts = cpts' `Set.union` Set.fromList [g | cl <- eqCl id [g | (s, g) <- gs, s `elem` cpts'], length cl < 3, g <- NE.toList cl] -- up to two more general concepts
           cpts' = concs pat `Set.union` concs rels
           rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
        in CStruct
-            { csCpts = Set.elems cpts,
-              csRels = Set.elems $ rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+            { csCpts = toList cpts,
+              csRels = toList $ rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
               csIdgs = idgs
             }
     -- PTDeclaredInPat makes a picture of relations and gens within pat only
@@ -216,9 +216,9 @@ conceptualStructure fSpec pr =
       let cpts = concs decs `Set.union` concs (gens pat)
           decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
        in CStruct
-            { csCpts = Set.elems cpts,
+            { csCpts = toList cpts,
               csRels =
-                Set.elems
+                toList
                   . Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ decs,
@@ -228,9 +228,9 @@ conceptualStructure fSpec pr =
       let cpts = concs r
           idgs = isaEdges cpts
        in CStruct
-            { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c | (s, g) <- idgs, c <- [g, s]],
+            { csCpts = toList $ concs r `Set.union` Set.fromList [c | (s, g) <- idgs, c <- [g, s]],
               csRels =
-                Set.elems
+                toList
                   . Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ bindedRelationsIn r,
@@ -415,7 +415,7 @@ baseNodeId x c =
     _ -> fatal ("element " <> (text1ToText . tName) c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
-allCpts (CStruct cpts' rels idgs) = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+allCpts (CStruct cpts' rels idgs) = toList $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
 
 edgeLenFactor :: Double -> Attribute
 edgeLenFactor x = Len (4 * x)

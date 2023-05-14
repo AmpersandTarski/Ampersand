@@ -80,7 +80,7 @@ chpDiagnosis env fSpec
                 )
           )
       | otherwise =
-        case filter (isSignal fSpec) . Set.elems $ ruls of
+        case filter (isSignal fSpec) . toList $ ruls of
           [] ->
             para
               ( (emph . str . upCap . text1ToText . tName) fSpec
@@ -161,7 +161,7 @@ chpDiagnosis env fSpec
           [ c | c <- ccs, null (purposesOf fSpec outputLang' c)
           ]
             <> [c | c <- ccs, null (concDefs fSpec c)]
-        ccs = Set.elems . concs . vrels $ fSpec
+        ccs = toList . concs . vrels $ fSpec
 
     unusedConceptDefs :: Blocks
     unusedConceptDefs =
@@ -197,7 +197,7 @@ chpDiagnosis env fSpec
             )
       where
         conceptsInUsedRelation :: [A_Concept]
-        conceptsInUsedRelation = Set.elems . concs . allUsedDecls $ fSpec
+        conceptsInUsedRelation = toList . concs . allUsedDecls $ fSpec
         undefinedConcepts = [cd | cd <- conceptDefs fSpec, name cd `notElem` map name conceptsInUsedRelation]
 
     missingRels :: Blocks
@@ -304,9 +304,9 @@ chpDiagnosis env fSpec
                )
       where
         bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
-        bothMissing = filter (not . hasPurpose) . filter (not . hasMeaning) . Set.elems $ decls
-        purposeOnlyMissing = filter (not . hasPurpose) . filter hasMeaning . Set.elems $ decls
-        meaningOnlyMissing = filter hasPurpose . filter (not . hasMeaning) . Set.elems $ decls
+        bothMissing = filter (not . hasPurpose) . filter (not . hasMeaning) . toList $ decls
+        purposeOnlyMissing = filter (not . hasPurpose) . filter hasMeaning . toList $ decls
+        meaningOnlyMissing = filter hasPurpose . filter (not . hasMeaning) . toList $ decls
         decls = vrels fSpec
         showDclMath = math . tshow
     hasPurpose :: Motivated a => a -> Bool
@@ -375,7 +375,7 @@ chpDiagnosis env fSpec
         notUsed :: [Inlines]
         notUsed =
           [ showMath (EDcD d)
-            | d <- Set.elems (vrels fSpec), -- only relations that are used or defined in the selected themes
+            | d <- toList (vrels fSpec), -- only relations that are used or defined in the selected themes
               decusr d,
               d `notElem` (bindedRelationsIn . vrules) fSpec
           ]
@@ -386,7 +386,7 @@ chpDiagnosis env fSpec
 
     missingRules :: Blocks
     missingRules =
-      case Set.elems $ vrules fSpec of
+      case toList $ vrules fSpec of
         [] -> mempty
         ruls ->
           if all hasMeaning ruls && all hasPurpose ruls
@@ -734,7 +734,7 @@ chpDiagnosis env fSpec
             [(plain . str . text1ToText . tName . source . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p]
-              | p <- take 10 . Set.elems $ ps --max 10 rows
+              | p <- take 10 . toList $ ps --max 10 rows
             ]
         else
           legacyTable -- No caption:
@@ -745,5 +745,5 @@ chpDiagnosis env fSpec
             [(plain . str . text1ToText . tName . source . formalExpression) r, (plain . str . text1ToText . tName . target . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p, (plain . str . showValADL . apRight) p]
-              | p <- take 10 . Set.elems $ ps --max 10 rows
+              | p <- take 10 . toList $ ps --max 10 rows
             ]

@@ -76,9 +76,9 @@ checkPurposes ctx =
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp =
   case explObj purp of
-    ExplConcept concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx)
+    ExplConcept concDef -> let nm = name concDef in nm `notElem` map name (toList $ concs ctx)
     ExplRelation decl -> name decl `notElem` Set.map name (relsDefdIn ctx) -- is already covered by type checker
-    ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx)
+    ExplRule nm -> nm `notElem` map name (toList $ udefrules ctx)
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm -> nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
@@ -135,7 +135,7 @@ checkDanglingRulesInRuleRoles ctx =
   case [ mkDanglingRefError "Rule" nm (arPos rr)
          | rr <- ctxrrules ctx,
            nm <- NE.toList $ arRules rr,
-           nm `notElem` map name (Set.elems $ allRules ctx)
+           nm `notElem` map name (toList $ allRules ctx)
        ] of
     [] -> return ()
     x : xs -> Errors (x NE.:| xs)
@@ -152,7 +152,7 @@ checkOtherAtomsInSessionConcept ctx =
     <> [ mkOtherTupleInSessionError d pr
          | ARelPopu {popsrc = src, poptgt = tgt, popdcl = d, popps = ps} <- ctxpopus ctx,
            isSESSION src || isSESSION tgt,
-           pr <- Set.elems ps,
+           pr <- toList ps,
            (isSESSION src && not (_isPermittedSessionValue (apLeft pr)))
              || (isSESSION tgt && not (_isPermittedSessionValue (apRight pr)))
        ] of
@@ -172,8 +172,8 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
         <> warns (relsDefdIn ctx)
     warns set =
       [ mkCaseProblemWarning x y
-        | x <- Set.elems set,
-          y <- Set.elems set,
+        | x <- toList set,
+          y <- toList set,
           toUpperName x == toUpperName y,
           name x < name y
       ]
@@ -363,7 +363,7 @@ pCtx2aCtx
           gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect [] (map (Set.elems . concs) gns)
+          connectedConcepts = connect [] (map (toList . concs) gns)
 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =

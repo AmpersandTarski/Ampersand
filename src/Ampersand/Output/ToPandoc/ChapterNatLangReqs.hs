@@ -9,7 +9,6 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as T' (splitOn)
 
@@ -177,7 +176,7 @@ chpNatLangReqs env lev fSpec =
                 <> ": "
                 <> xDefInln env fSpec (XRefSharedLangRelation dcl),
               [printMeaning outputLang' dcl]
-                <> ( case Set.elems $ properties dcl of
+                <> ( case toList $ properties dcl of
                        [] -> mempty
                        ps ->
                          [ plain
@@ -211,7 +210,7 @@ chpNatLangReqs env lev fSpec =
       where
         dcl = cDcl . theLoad $ nDcl
 
-        samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
+        samples = take 3 . toList . cDclPairs . theLoad $ nDcl
     printRule :: Numbered RuleCont -> Blocks
     printRule nRul =
       (printPurposes . cRulPurps . theLoad) nRul

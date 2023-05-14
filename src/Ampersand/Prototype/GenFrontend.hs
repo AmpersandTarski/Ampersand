@@ -14,7 +14,6 @@ import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import Data.Hashable (hash)
-import qualified Data.Set as Set
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
@@ -85,7 +84,7 @@ buildConcepts fSpec =
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
-    $ Set.elems . allConcepts $ fSpec
+    $ toList . allConcepts $ fSpec
 
 buildViews :: FSpec -> [FEView]
 buildViews fSpec =

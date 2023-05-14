@@ -167,7 +167,7 @@ transformersFormalAmpersand fSpec =
         {-Inj-}
         [ (dirtyId pat, dirtyId rul)
           | pat :: Pattern <- instanceList fSpec,
-            rul :: Rule <- Set.elems $ allRules pat
+            rul :: Rule <- toList $ allRules pat
         ]
       ),
       ( "allRules",
@@ -176,7 +176,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni {-,Sur-}],
         [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rul :: Rule <- Set.elems $ allRules ctx
+            rul :: Rule <- toList $ allRules ctx
         ]
       ),
       ( "arg",
@@ -211,7 +211,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId pat, dirtyId cpt)
           | pat :: Pattern <- instanceList fSpec,
-            cpt :: A_Concept <- Set.elems $ concs pat
+            cpt :: A_Concept <- toList $ concs pat
         ]
       ),
       ( "rcConjunct",
@@ -291,7 +291,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni, Tot],
         [ (dirtyId rel, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rel :: Relation <- Set.elems $ relsDefdIn ctx
+            rel :: Relation <- toList $ relsDefdIn ctx
         ]
       ),
       ( "ctxds",
@@ -300,7 +300,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rel, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rel :: Relation <- Set.elems $ ctxds ctx
+            rel :: Relation <- toList $ ctxds ctx
         ]
       ),
       ( "ctxrs",
@@ -309,7 +309,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rul :: Rule <- Set.elems . ctxrs $ ctx
+            rul :: Rule <- toList . ctxrs $ ctx
         ]
       ),
       ( "declaredIn",
@@ -318,7 +318,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId rel, dirtyId pat)
           | pat :: Pattern <- instanceList fSpec,
-            rel :: Relation <- Set.elems $ relsDefdIn pat
+            rel :: Relation <- toList $ relsDefdIn pat
         ]
       ),
       ( "decMean",
@@ -434,7 +434,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ identityRules ctx
+            rul <- toList $ identityRules ctx
         ]
       ),
       ( "identityRules",
@@ -443,7 +443,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rul, dirtyId pat)
           | pat :: Pattern <- instanceList fSpec,
-            rul <- Set.elems $ identityRules pat
+            rul <- toList $ identityRules pat
         ]
       ),
       ( "ifcConjuncts",
@@ -610,7 +610,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ proprules ctx
+            rul <- toList $ proprules ctx
         ]
       ),
       ( "proprules",
@@ -619,7 +619,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId rul, dirtyId pat)
           | pat :: Pattern <- instanceList fSpec,
-            rul <- Set.elems $ proprules pat
+            rul <- toList $ proprules pat
         ]
       ),
       ( "propertyRule",
@@ -628,7 +628,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Sur],
         [ (dirtyId rel, dirtyId rul)
           | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ proprules ctx,
+            rul <- toList $ proprules ctx,
             Propty _ rel <- [rrkind rul]
         ]
       ),
@@ -638,7 +638,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Tot],
         [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
           | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ proprules ctx,
+            rul <- toList $ proprules ctx,
             Propty prop _ <- [rrkind rul]
         ]
       ),
@@ -763,7 +763,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId rel, PopAlphaNumeric . tshow $ prop)
           | rel :: Relation <- instanceList fSpec,
-            prop <- Set.elems $ decprps rel
+            prop <- toList $ decprps rel
         ]
       ),
       ( "purpose",
@@ -878,7 +878,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId pat, dirtyId rel)
           | pat :: Pattern <- instanceList fSpec,
-            rel <- Set.elems $ relsDefdIn pat
+            rel <- toList $ relsDefdIn pat
         ]
       ),
       ( "second",
@@ -1017,7 +1017,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ udefrules ctx
+            rul <- toList $ udefrules ctx
         ]
       ),
       ( "udefrules",
@@ -1026,7 +1026,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni],
         [ (dirtyId rul, dirtyId pat)
           | pat :: Pattern <- instanceList fSpec,
-            rul <- Set.elems $ udefrules pat
+            rul <- toList $ udefrules pat
         ]
       ),
       ( "urlEncodedName",
@@ -1059,7 +1059,7 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [ (dirtyId rel, dirtyId expr)
           | expr :: Expression <- instanceList fSpec,
-            rel :: Relation <- Set.elems $ bindedRelationsIn expr
+            rel :: Relation <- toList $ bindedRelationsIn expr
         ]
       ),
       ( "userCpt",

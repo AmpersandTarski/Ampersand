@@ -31,7 +31,7 @@ class Language a where
     Rules
   proprules x =
     Set.fromList $
-      [rulefromProp p d | d <- Set.elems $ relsDefdIn x, p <- Set.elems (properties d)]
+      [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforce rules that are maintained within this viewpoint.
@@ -110,14 +110,14 @@ instance (Eq a, Language a) => Language [a] where
   udefRoleRules = concatMap udefRoleRules
 
 instance (Eq a, Language a) => Language (Set.Set a) where
-  relsDefdIn = Set.unions . map relsDefdIn . Set.elems
-  udefrules = Set.unions . map udefrules . Set.elems
-  identities = L.nub . concatMap identities . Set.elems
-  viewDefs = L.nub . concatMap viewDefs . Set.elems
-  enforces = L.nub . concatMap enforces . Set.elems
-  gens = L.nub . concatMap gens . Set.elems
-  patterns = L.nub . concatMap patterns . Set.elems
-  udefRoleRules = L.nub . concatMap udefRoleRules . Set.elems
+  relsDefdIn = Set.unions . map relsDefdIn . toList
+  udefrules = Set.unions . map udefrules . toList
+  identities = L.nub . concatMap identities . toList
+  viewDefs = L.nub . concatMap viewDefs . toList
+  enforces = L.nub . concatMap enforces . toList
+  gens = L.nub . concatMap gens . toList
+  patterns = L.nub . concatMap patterns . toList
+  udefRoleRules = L.nub . concatMap udefRoleRules . toList
 
 instance Language A_Context where
   relsDefdIn context =
@@ -133,7 +133,7 @@ instance Language A_Context where
         Set.fromList
           . map fun
           . eqClass (==)
-          $ Set.elems ds
+          $ toList ds
         where
           fun :: NE.NonEmpty Relation -> Relation
           fun rels =

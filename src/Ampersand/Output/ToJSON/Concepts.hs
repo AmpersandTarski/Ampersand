@@ -7,7 +7,6 @@ module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 import Ampersand.ADL1
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
-import qualified RIO.Set as Set
 
 newtype Concepts = Concepts [Concept] deriving (Generic, Show)
 
@@ -67,7 +66,7 @@ instance ToJSON TableCols where
   toJSON = amp2Jason
 
 instance JSON FSpec Concepts where
-  fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (Set.elems $ concs fSpec))
+  fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (toList $ concs fSpec))
 
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =

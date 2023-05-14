@@ -41,7 +41,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
 where
 
 import Ampersand.ADL1 hiding (MetaData)
-import Ampersand.Basics hiding (Identity, Reader, link, toList)
+import Ampersand.Basics hiding (Identity, Reader, link)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
@@ -58,7 +58,7 @@ import qualified RIO.Text as T
 import RIO.Time
 import System.FilePath ((</>))
 import Text.Pandoc hiding (Verbosity, getVerbosity, trace)
-import Text.Pandoc.Builder hiding (caption)
+import Text.Pandoc.Builder hiding (caption, toList)
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
@@ -502,8 +502,8 @@ dpRule' env fSpec = dpR
         theBlocks :: Blocks
         theBlocks =
           purposes2Blocks env (purposesOf fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-            <> purposes2Blocks env [p | d <- Set.elems nds, p <- purposesOf fSpec (outputLang env fSpec) d] -- Dan de uitleg van de betreffende relaties
-            <> case (Set.elems . Set.map EDcD $ nds, outputLang env fSpec) of
+            <> purposes2Blocks env [p | d <- toList nds, p <- purposesOf fSpec (outputLang env fSpec) d] -- Dan de uitleg van de betreffende relaties
+            <> case (toList . Set.map EDcD $ nds, outputLang env fSpec) of
               ([], _) -> mempty
               ([d], Dutch) -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie" else "relatie") <> " nodig:")
               ([d], English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
@@ -516,9 +516,9 @@ dpRule' env fSpec = dpR
                       <> str (" zijn de volgende " <> count Dutch (length nds) "in deze paragraaf geformaliseerde relatie" <> " nodig.")
                   )
               (_, English) -> plain ("To arrive at the formalization of " <> hyperLinkTo (XRefSharedLangRule r) <> str (", the following " <> count English (length nds) "relation" <> " are introduced."))
-            <> (bulletList . map (plain . showRef) . Set.elems $ nds)
+            <> (bulletList . map (plain . showRef) . toList $ nds)
             <> ( if null nds
-                   then case Set.elems rds of
+                   then case toList rds of
                      [] -> mempty
                      [rd] ->
                        plain
@@ -536,8 +536,8 @@ dpRule' env fSpec = dpR
                                EN "We formalize this using relations "
                              )
                          )
-                         <> (bulletList . map (plain . showRef) . Set.elems $ rds)
-                   else case Set.elems rds of
+                         <> (bulletList . map (plain . showRef) . toList $ rds)
+                   else case toList rds of
                      [] -> mempty
                      [rd] ->
                        plain
@@ -556,7 +556,7 @@ dpRule' env fSpec = dpR
                                  EN " we also use relations "
                                )
                          )
-                         <> (bulletList . map (plain . showRef) . Set.elems $ rds)
+                         <> (bulletList . fmap (plain . showRef) . toList $ rds)
                )
             <> plain
               ( if isSignal fSpec r
@@ -583,7 +583,7 @@ dpRule' env fSpec = dpR
         showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . tshow) dcl <> ")"
 
         ncs = concs r Set.\\ seenConcs -- newly seen concepts
-        cds = [(c, cd) | c <- Set.elems ncs, cd <- conceptDefs fSpec, name cd == name c] -- ... and their definitions
+        cds = [(c, cd) | c <- toList ncs, cd <- conceptDefs fSpec, name cd == name c] -- ... and their definitions
         ds = bindedRelationsIn r
         nds = ds Set.\\ seenRelations -- newly seen relations
         rds = ds `Set.intersection` seenRelations -- previously seen relations

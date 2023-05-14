@@ -1333,7 +1333,7 @@ sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
   | c == ONE = QName "ONE"
   | otherwise =
-    case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- Set.elems $ concs att, c == c'
+    case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
          ] of
       [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> text1ToText (tName fSpec) <> "\"")
       h : _ -> QName . sqlColumNameToString . attSQLColName $ h

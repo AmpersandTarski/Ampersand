@@ -165,7 +165,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
               L.sortBy (compare `on` name)
                 . filter isKey
                 . L.delete ONE
-                . Set.elems
+                . toList
                 $ concs fSpec
         ]
         <> legacyTable
@@ -186,7 +186,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  ]
             | c <-
                 L.sortBy (compare `on` name)
-                  . Set.elems
+                  . toList
                   . Set.filter (not . isKey)
                   $ concs fSpec
           ]
@@ -469,7 +469,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                 [ header (sectionLevel + 1) . text $ l title,
                   para . text $ l intro
                 ]
-                  <> map (docRule heading) (Set.elems rules)
+                  <> map (docRule heading) (toList rules)
 
         docRule :: LocalizedStr -> Rule -> Blocks
         docRule heading rule =

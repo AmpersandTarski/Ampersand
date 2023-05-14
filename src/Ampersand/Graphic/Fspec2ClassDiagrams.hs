@@ -24,11 +24,11 @@ clAnalysis fSpec =
   OOclassdiagram
     { cdName = prependToPlainName "classification_" $ name fSpec,
       groups = [],
-      classes = map clas . Set.elems . concs . vgens $ fSpec,
+      classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
       aggrs = [],
       geners = map OOGener . vgens $ fSpec,
-      ooCpts = Set.elems . concs $ fSpec
+      ooCpts = toList . concs $ fSpec
     }
   where
     clas :: A_Concept -> Class
@@ -96,7 +96,7 @@ classOf fSpec cpt =
 ooAttr :: Expression -> CdAttribute
 ooAttr r =
   OOAttr
-    { attNm = case Set.elems $ bindedRelationsIn r of
+    { attNm = case toList $ bindedRelationsIn r of
         [] -> fatal $ "No bindedRelations in expression: " <> tshow r
         h : _ -> name h,
       attTyp = if isProp r then propTypeName else (name . target) r,
@@ -104,7 +104,7 @@ ooAttr r =
     }
 
 attribDcls :: FSpec -> [Relation]
-attribDcls fSpec = [d | d <- Set.elems (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
+attribDcls fSpec = [d | d <- toList (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
 
 -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
 --   decl2assocOrAggr :: Relation -> Either Association Aggregation
@@ -143,14 +143,14 @@ instance CDAnalysable Pattern where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens pat),
-        ooCpts = Set.elems (concs pat)
+        ooCpts = toList (concs pat)
       }
     where
-      entities = (filter (isJust . classOf fSpec) . Set.elems . concs) pat
+      entities = (filter (isJust . classOf fSpec) . toList . concs) pat
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
-            . Set.elems
+            . toList
             . ptdcs
         )
           pat
@@ -165,7 +165,7 @@ instance CDAnalysable FSpec where
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens fSpec),
-        ooCpts = Set.elems (concs fSpec)
+        ooCpts = toList (concs fSpec)
       }
     where
       groups' :: [(Name, NonEmpty Class)]
@@ -200,11 +200,11 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-      entities = (filter (cptIsClass fSpec) . Set.elems . concs) fSpec
+      entities = (filter (cptIsClass fSpec) . toList . concs) fSpec
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
-            . Set.elems
+            . toList
             . vrels
         )
           fSpec
@@ -304,7 +304,7 @@ tdAnalysis fSpec =
               asslhr = Just $ sqlAttToName f,
               assTgt = name . getConceptTableFor fSpec . target $ expr,
               assrhm = mults expr,
-              assrhr = case toList . Set.elems $ bindedRelationsIn expr of
+              assrhr = case toList . toList $ bindedRelationsIn expr of
                 h : _ -> Just (name h)
                 _ -> fatal "no relations used in expr",
               assmdcl = Nothing

@@ -55,7 +55,7 @@ instance ToJSON TableCol where
   toJSON = amp2Jason
 
 instance JSON FSpec Relationz where
-  fromAmpersand env fSpec _ = Relationz (map (fromAmpersand env fSpec) (Set.elems $ vrels fSpec))
+  fromAmpersand env fSpec _ = Relationz (map (fromAmpersand env fSpec) (toList $ vrels fSpec))
 
 instance JSON Relation RelationJson where
   fromAmpersand env fSpec dcl =

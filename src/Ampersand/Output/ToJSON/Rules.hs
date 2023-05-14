@@ -58,8 +58,8 @@ instance ToJSON JsonPairViewSegment where
 instance JSON FSpec Rulez where
   fromAmpersand env fSpec _ =
     Rulez
-      { rulJSONinvariants = map (fromAmpersand env fSpec) . Set.elems $ invariants fSpec,
-        rulJSONsignals = map (fromAmpersand env fSpec) . Set.elems $ signals fSpec
+      { rulJSONinvariants = map (fromAmpersand env fSpec) . toList $ invariants fSpec,
+        rulJSONsignals = map (fromAmpersand env fSpec) . toList $ signals fSpec
       }
 
 instance JSON Rule JsonRule where
