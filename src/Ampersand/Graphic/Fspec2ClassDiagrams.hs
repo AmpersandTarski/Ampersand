@@ -15,7 +15,6 @@ import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
