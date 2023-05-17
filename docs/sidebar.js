@@ -33,7 +33,19 @@ module.exports = {
             id: 'ampersand/landingpage/contributor'
         }
     ],
-    ampersandTheorySidebar: [
+    ampersandGuideSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
+        {
+            type: 'doc',
+            id: 'ampersand/reference-material/frequently-asked-questions'
+        },
+    ],
+    ampersandReferenceSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
+        {
+            type: 'doc',
+            id: 'ampersand/reference-material/syntax-of-ampersand'
+        },
         {
             type: 'doc',
             id: 'ampersand/conceptual/theory'
@@ -49,17 +61,6 @@ module.exports = {
         {
             type: 'doc',
             id: 'ampersand/future-plans'
-        },
-
-    ],
-    ampersandGuideSidebar: [
-        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
-    ],
-    ampersandReferenceSidebar: [
-        // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
-        {
-            type: 'doc',
-            id: 'ampersand/reference-material/syntax-of-ampersand'
         },
 
     ],
