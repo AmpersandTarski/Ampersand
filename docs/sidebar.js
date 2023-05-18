@@ -46,6 +46,8 @@ module.exports = {
             type: 'doc',
             id: 'ampersand/reference-material/syntax-of-ampersand'
         },
+    ],
+    ampersandTheorySidebar: [
         {
             type: 'doc',
             id: 'ampersand/conceptual/theory'
@@ -64,7 +66,6 @@ module.exports = {
         },
 
     ],
-
     ampersandGuideElems: [
         'ampersand/configuring-your-application',
         'ampersand/the-excel-importer',
