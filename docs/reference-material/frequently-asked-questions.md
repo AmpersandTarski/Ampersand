@@ -19,8 +19,9 @@ Some questions in this page do not have an answer yet. Please consider that as o
 * How can I deploy an Ampersand application on Kubernetes?
 
 ##  Data
-* How can I get bulk data into an Ampersand application at runtime?<br>
-   You can [import data from Excel files](the-excel-importer.md) by calling the Excel Import Extension from the menu bar in your Ampersand application. The importer is part of the standard runtime environment, so you can use it without any specific configuration.
+* How can I get bulk data into an Ampersand application at runtime?
+
+   You can [import data from Excel files](../the-excel-importer.md) by calling the Excel Import Extension from the menu bar in your Ampersand application. The importer is part of the standard runtime environment, so you can use it without any specific configuration.
 
 ##  Learning
 * Where can I learn about Ampersand?
