@@ -49,7 +49,7 @@ When we then type
 
 , the login functionality disappears and the logout functionality appears:
 
-![interface swap](../../assets/ssh3.png)
+![interface swap](../../../assets/ssh3.png)
 
 When you click the checkbox, you have logged out and will return to the first screen
 
@@ -92,7 +92,7 @@ annotation to
 
 . Then we will see both boxes:
 
-![without hiding](../../assets/ssh4.png)
+![without hiding](../../../assets/ssh4.png)
 
 Notice that both subboxes have the
 
@@ -104,7 +104,7 @@ in their annotations, so in the screeshot above the
 
 subbox remains empty. However, when logged in, the other subbox remains empty:
 
-![without hiding](../../assets/ssh5.png)
+![without hiding](../../../assets/ssh5.png)
 
 ## 
 

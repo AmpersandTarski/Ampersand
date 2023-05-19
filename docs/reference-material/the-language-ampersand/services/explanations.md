@@ -104,7 +104,7 @@ BOX <TABLE>
 
 Notice the effect that these changes have on the user interface.
 
-![Example of formatting by COLS, ROWS, or TABS](../../Figures/InterfaceAlphaBoardFormatted.jpg)
+![Example of formatting by COLS, ROWS, or TABS](../../../Figures/InterfaceAlphaBoardFormatted.jpg)
 
 Notice the following features:\
 1\. The keyword `BOX <TABS>` turns the box into a layout with tabs.\

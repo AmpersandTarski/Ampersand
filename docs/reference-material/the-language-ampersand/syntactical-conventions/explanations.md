@@ -100,7 +100,7 @@ INTERFACE "Project"  : V[SESSION*Project] ROWS
 
 Notice the effect that these changes have on the user interface.
 
-![Example of formatting by COLS, ROWS, or TABS](../../Figures/InterfaceAlphaBoardFormatted.jpg)
+![Example of formatting by COLS, ROWS, or TABS](../../../Figures/InterfaceAlphaBoardFormatted.jpg)
 
 Notice the following features:\
 1\. The keyword `TABS` turns the box into a tabulated layout.\
