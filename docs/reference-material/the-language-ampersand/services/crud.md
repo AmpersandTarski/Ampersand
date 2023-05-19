@@ -31,7 +31,7 @@ BOX <TABS>
 
 The user interface defined by this service is shown as a screenshot below. Notice that the lowercase r in the annotation of the Students box prevents showing the underlying box. The full CRUD functionality in Course yields 'create' functionality (the green plus-button), 'remove pair' functionality (red minus button), and 'delete atom' functionality (the red trash can button). The lowercase c, u, and d in the Modules box prevents displaying that functionality in the user interface.
 
-![Column-oriented layout of a user interface with columns in each row](<../../assets/COLS layout example.png>)
+![Column-oriented layout of a user interface with columns in each row](<../../../assets/COLS layout example.png>)
 
 The next sections give some more detailed information on the runtime semantics for CRUD annotations as implemented in Ampersand.
 
@@ -39,7 +39,7 @@ The next sections give some more detailed information on the runtime semantics f
 
 | CRUD | for a box                                                                                                                                                                                                 | for a field.                                                                                                                                                                                                                                                  |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C    | ![Creating atoms is done by pressing the + button](../../../assets/box-crud-create.png) A + (plus) button is displayed that lets you create a new atom, but only if the box-term is editable. | ![Creating atoms is done by pressing the + button](<../../assets/Create Field.png>) Enter a new atom and a `+` button appears. Click the + to add that atom to the listed set of atoms. If you enter an atom that exists (Peter), you can select it. |
+| C    | ![Creating atoms is done by pressing the + button](../../../assets/box-crud-create.png) A + (plus) button is displayed that lets you create a new atom, but only if the box-term is editable. | ![Creating atoms is done by pressing the + button](../../../assets/create-field.png) Enter a new atom and a `+` button appears. Click the + to add that atom to the listed set of atoms. If you enter an atom that exists (Peter), you can select it. |
 | c    | Atoms cannot be created                                                                                                                                                                                   | Atoms cannot be created                                                                                                                                                                                                                                       |
 
 ## Read

@@ -33,7 +33,7 @@ BOX <TABS>
 
 This service shows three columns in the user interface, **Students**, **Course** and **Modules**. The first column is not readable, because the [CRUD annotation](../crud.md) blocks this column for reading. It would have shown students in each row, because the target of `V[SESSION*Student]`is `Student`. The second column shows courses in two columns, **Course** and **Modules**. The third column shows modules in three columns. This is what the user will see on the screen.
 
-![Column-oriented layout of a user interface with columns in each row](<../../../assets/COLS layout example.png>)
+![Column-oriented layout of a user interface with columns in each row](<../../../../assets/COLS layout example.png>)
 
 ## ROW layout
 

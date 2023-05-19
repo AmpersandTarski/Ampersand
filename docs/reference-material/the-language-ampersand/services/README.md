@@ -41,7 +41,7 @@ BOX <TABS>
 
 This example specifies three tabs. One shows students, one shows courses and one shows modules. This is what it looks like when run in a browser:
 
-![Screenshot of the resulting user interface](../../assets/screenshot.png)
+![Screenshot of the resulting user interface](../../../assets/screenshot.png)
 
 ## Syntax and Meaning
 

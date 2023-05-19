@@ -8,7 +8,7 @@ Note: The service definition must be outside a pattern
 
 The following figure is an example of a user interface, which shows the name, status, e-mail and co-workers of a person called "J. Lovell".
 
-![Example of a user interface](../../Figures/InterfaceLovellRaw.jpg)
+![Example of a user interface](../../../Figures/InterfaceLovellRaw.jpg)
 
 The specification of this user interface is given in the following service definition:
 

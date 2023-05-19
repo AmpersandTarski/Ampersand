@@ -23,7 +23,7 @@ To isolate a data space for one specific user, we use the notion of session. A `
 
 A login service allows a user to log in and log out of the system. Here is what it looks like in a browser:
 
-![login service in browser](../../assets/ssh1.png)
+![login service in browser](../../../assets/ssh1.png)
 
 Wonder what the 25al1rdkdfvmapkkqvuf5sroc5 means? Well this is the session number of the actual browser session. It is the value for which the atom
 
