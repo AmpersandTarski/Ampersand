@@ -41,7 +41,7 @@ In the sequel we will use `ampersand` as an alias for `docker run -it -v "$(pwd)
 
 ## Description
 
-The command `ampersand` takes a file as input. It must contain a valid ampersand script, i.e. a script that complies to the [syntax](./the-language-ampersand/syntactical-conventions/) and semantics of ampersand. The compiler will not generate any output unless the script is valid.
+The command `ampersand` takes  a file as input. It must contain a valid ampersand script, i.e. a script that complies to the [syntax](./the-language-ampersand/syntactical-conventions/) and semantics of ampersand. The compiler will not generate any output unless the script is valid.
 
 
 ## Examples

@@ -43,8 +43,35 @@ module.exports = {
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
-            type: 'doc',
-            id: 'ampersand/reference-material/syntax-of-ampersand'
+            type: 'category',
+            id: 'ampersand/reference-material/the-language-ampersand',
+            items: [
+                'ampersand/the-language-ampersand/README',
+                'ampersand/the-language-ampersand/atoms',
+                'ampersand/the-language-ampersand/best-practices',
+                'ampersand/the-language-ampersand/context',
+                'ampersand/the-language-ampersand/current-date',
+                'ampersand/the-language-ampersand/design-considerations',
+                'ampersand/the-language-ampersand/how-to-read-syntax-statements',
+                'ampersand/the-language-ampersand/language-support',
+                'ampersand/the-language-ampersand/patterns',
+                'ampersand/the-language-ampersand/services/README',
+                'ampersand/the-language-ampersand/services/crud',
+                'ampersand/the-language-ampersand/services/example-client',
+                'ampersand/the-language-ampersand/services/example-login',
+                'ampersand/the-language-ampersand/services/explanations',
+                'ampersand/the-language-ampersand/services/layout-of-user-interfaces/README',
+                'ampersand/the-language-ampersand/services/layout-of-user-interfaces/your-own-widgets-html-and-css',
+                'ampersand/the-language-ampersand/services/syntax-of-interface-statements',
+                'ampersand/the-language-ampersand/syntactical-conventions/README',
+                'ampersand/the-language-ampersand/syntactical-conventions/explanations',
+                'ampersand/the-language-ampersand/syntactical-conventions/language-support',
+                'ampersand/the-language-ampersand/syntactical-conventions/patterns',
+                'ampersand/the-language-ampersand/terms/README',
+                'ampersand/the-language-ampersand/terms/semantics',
+                'ampersand/the-language-ampersand/the-preprocessor',
+                'ampersand/the-language-ampersand/truth',
+                ]
         },
     ],
     ampersandTheorySidebar: [

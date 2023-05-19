@@ -28,3 +28,6 @@ Some questions in this page do not have an answer yet. Please consider that as o
 
 ##  Contributing to Ampersand
 * How can I change the documentation of Ampersand?
+
+##  General interest
+* Why is [declarative](../conceptual/why-declarative.md) a useful property?

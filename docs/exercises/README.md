@@ -8,5 +8,5 @@ This chapter contains material to help you mature your skills in Ampersand. They
 
 There may be exercises in another language than English, usually for a good reason.
 
-Currently, there is only one exercise, the VOG \(Verklaring Omtrent Gedrag\). This exercise requires you to read pieces of Dutch legislation, so this exercise is in Dutch.
+Currently, there is only one exercise, the [VOG \(Verklaring Omtrent Gedrag\)](./vog-in-dutch). This exercise requires you to read pieces of Dutch legislation, so this exercise is in Dutch.
 
