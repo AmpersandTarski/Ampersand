@@ -44,6 +44,7 @@ module.exports = {
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
             type: 'category',
+            label: 'Language Reference',
             id: 'ampersand/reference-material/the-language-ampersand',
             items: [
                 'ampersand/the-language-ampersand/README',
