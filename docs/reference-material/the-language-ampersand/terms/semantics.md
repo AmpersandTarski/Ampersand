@@ -421,7 +421,7 @@ A different way to state the same is:
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips (1) (1).svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../../assets/venntrips.svg>)
 
 Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
@@ -444,7 +444,7 @@ From the diagram, we assume that each pair represents a true statement (i.e. a f
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips (1) (1).svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../../assets/venntrips.svg>)
 
 From this diagram, we can tell which statements are true (i.e. facts). The statements are given both formally and in natural language. The elaborate version is a literate translation of the [semantics in logic](#residual-operators-in-logic). The ordinary version tells the same in a more human sounding manner.
 

@@ -41,7 +41,7 @@ as we would expect
 
 :
 
-![passwd remains invisible](../../assets/ssh2.png)
+![passwd remains invisible](../../../assets/ssh2.png)
 
 When we then type
 

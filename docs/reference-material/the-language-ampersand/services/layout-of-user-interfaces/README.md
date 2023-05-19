@@ -1,6 +1,6 @@
 # Layout of user interfaces
 
-Ampersand is meant for back-end design. It offers no features for front-end design. For that purpose we advise you use contemporary front-end tools for web-based applications. Your Ampersand application is [designed to be adaptable](../../../architecture-of-an-ampersand-application/README.md), especially for this purpose.
+Ampersand is meant for back-end design. It offers no features for front-end design. For that purpose we advise you use contemporary front-end tools for web-based applications. Your Ampersand application is [designed to be adaptable](../../../../architecture-of-an-ampersand-application/README.md), especially for this purpose.
 
 However, Ampersand offers a few layout features that let you place items. It has three built-in layout options, [colums](./#column-layout), [rows](./#row-layout) and [tabs](./#tabular-layout), which you can mix freely.
 
@@ -58,7 +58,7 @@ BOX <FORM>
 
 This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](https://github.com/AmpersandTarski/prototype/tree/master/templates) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](../crud.md) if you are curious about the CRUD annotations. This is what the user will see on the screen.
 
-![Row-oriented layout of a user interface with columns in each row](<../../../assets/ROWS layout example.png>)
+![Row-oriented layout of a user interface with columns in each row](<../../../../assets/ROWS layout example.png>)
 
 ## Tabs layout
 

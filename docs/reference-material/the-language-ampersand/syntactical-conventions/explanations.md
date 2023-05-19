@@ -46,7 +46,7 @@ To understand this fragment, take notice of:
 
 You can create structure in a service by nesting. Here is an example:
 
-![Example of a nested user interface](../../Figures/InterfaceAlphaBoardNested.jpg)
+![Example of a nested user interface](../../../Figures/InterfaceAlphaBoardNested.jpg)
 
 The specification of this service is given in the following code fragment.
 
