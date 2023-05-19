@@ -45,7 +45,6 @@ module.exports = {
         {
             type: 'category',
             label: 'Language Reference',
-            id: 'ampersand/reference-material/the-language-ampersand',
             items: [
                 'ampersand/the-language-ampersand/README',
                 'ampersand/the-language-ampersand/atoms',
