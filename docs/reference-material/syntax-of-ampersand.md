@@ -444,11 +444,11 @@ In practical applications, you might want to reuse data from existing spreadshee
 
 You will find the Excel import function in the menu bar on the top right of your screen:
 
-![](../.gitbook/assets/screenshot-import.png)
+![](../assets/screenshot-import.png)
 
 This is what your upload screen looks like: 
 
-![](../.gitbook/assets/screenshot-upload-excel.png)
+![](../assets/screenshot-upload-excel.png)
 
  You can upload one or more .xlsx-files by dropping them in the drop zone or by selecting them. You have to upload the population with the green 
 

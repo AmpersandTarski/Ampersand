@@ -142,7 +142,6 @@ module.exports = {
                     'ampersand/reference-material/the-language-ampersand/terms/semantics',
                     'ampersand/reference-material/the-language-ampersand/the-preprocessor',
                     'ampersand/reference-material/the-language-ampersand/truth',
-
                 ]
             },
 

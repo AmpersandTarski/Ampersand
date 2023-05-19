@@ -23,7 +23,7 @@ To isolate a data space for one specific user, we use the notion of session. A `
 
 A login service allows a user to log in and log out of the system. Here is what it looks like in a browser:
 
-![login service in browser](../../.gitbook/assets/ssh1.png)
+![login service in browser](../../assets/ssh1.png)
 
 Wonder what the 25al1rdkdfvmapkkqvuf5sroc5 means? Well this is the session number of the actual browser session. It is the value for which the atom
 
@@ -41,7 +41,7 @@ as we would expect
 
 :
 
-![passwd remains invisible](../../.gitbook/assets/ssh2.png)
+![passwd remains invisible](../../assets/ssh2.png)
 
 When we then type
 
@@ -49,7 +49,7 @@ When we then type
 
 , the login functionality disappears and the logout functionality appears:
 
-![interface swap](../../.gitbook/assets/ssh3.png)
+![interface swap](../../assets/ssh3.png)
 
 When you click the checkbox, you have logged out and will return to the first screen
 
@@ -92,7 +92,7 @@ annotation to
 
 . Then we will see both boxes:
 
-![without hiding](../../.gitbook/assets/ssh4.png)
+![without hiding](../../assets/ssh4.png)
 
 Notice that both subboxes have the
 
@@ -104,7 +104,7 @@ in their annotations, so in the screeshot above the
 
 subbox remains empty. However, when logged in, the other subbox remains empty:
 
-![without hiding](../../.gitbook/assets/ssh5.png)
+![without hiding](../../assets/ssh5.png)
 
 ## 
 

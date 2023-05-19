@@ -388,7 +388,7 @@ For a visual presentation of the semantics of terms, we use [Venn-diagrams](http
 
 Consider two relations: `authorized[Account*Person]` and `beneficiary[Account*Person]`. The first relation tells which persons are authorized to which accounts. The diagram shows this as red dashed lines. The second relation tells which persons stand to benefit from which accounts.. It is depicted by dotted blue lines in the diagram.
 
-![](<../../.gitbook/assets/Untitled Diagram (2).png>)
+![](<../../assets/Untitled Diagram (2).png>)
 
 This diagram gives an example population of the relations `authorized[Account*Person]` and `beneficiary[Account*Person]`. Bob is authorized for account DE9382991 and Ann is authorized for account RS746620. Carl stands to benefit from account NL19RABO03992844 and Ann stands to benefit from account RS746620. Formally, we say:
 
@@ -421,7 +421,7 @@ A different way to state the same is:
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../.gitbook/assets/venntrips (1) (1).svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips (1) (1).svg>)
 
 Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
@@ -444,7 +444,7 @@ From the diagram, we assume that each pair represents a true statement (i.e. a f
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../.gitbook/assets/venntrips (1) (1).svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips (1) (1).svg>)
 
 From this diagram, we can tell which statements are true (i.e. facts). The statements are given both formally and in natural language. The elaborate version is a literate translation of the [semantics in logic](#residual-operators-in-logic). The ordinary version tells the same in a more human sounding manner.
 
