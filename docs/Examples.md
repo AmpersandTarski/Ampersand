@@ -6,7 +6,7 @@ description: Examples of Ampersand programs and fragments
 # Examples
 This page is a collection of examples, meant for learning and explaining the language Ampersand.
 ## Example: Client {#services-example-client}
-This example illustrates the structure of [services in Ampersand](./The-language-Ampersand.md#Services)
+This example illustrates the structure of [services in Ampersand](./reference-material/The-language-Ampersand.md#Services)
 
 ### A Client service
 
@@ -70,7 +70,7 @@ To isolate a data space for one specific user, we use the notion of session. A `
 
 A login service allows a user to log in and log out of the system. Here is what it looks like in a browser:
 
-![login service in browser](../../../assets/ssh1.png)
+![login service in browser](./assets/ssh1.png)
 
 Wonder what the 25al1rdkdfvmapkkqvuf5sroc5 means? Well this is the session number of the actual browser session. It is the value for which the atom
 
@@ -88,7 +88,7 @@ as we would expect
 
 :
 
-![passwd remains invisible](../../../assets/ssh2.png)
+![passwd remains invisible](./assets/ssh2.png)
 
 When we then type
 
@@ -96,7 +96,7 @@ When we then type
 
 , the login functionality disappears and the logout functionality appears:
 
-![interface swap](../../../assets/ssh3.png)
+![interface swap](./assets/ssh3.png)
 
 When you click the checkbox, you have logged out and will return to the first screen
 
@@ -216,7 +216,7 @@ BOX <TABS>
 
 This example specifies three tabs. One shows students, one shows courses and one shows modules. This is what it looks like when run in a browser:
 
-![Screenshot of the resulting user interface](../assets/screenshot.png)
+![Screenshot of the resulting user interface](./assets/screenshot.png)
 
 Notice the following features:
 1. The structure of a service is hierarchical. It consists of boxes within a box. This is because a field term may be followed by a `BOX` with a list of subservices. Without it, it is just a field term.
