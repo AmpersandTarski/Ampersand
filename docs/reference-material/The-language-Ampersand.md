@@ -33,7 +33,6 @@ description: Syntax and Semantics, including metasyntax.
       * [Residuals visualized](ampersand/the-language-ampersand/terms/semantics#residual-operators-visualized)
   * [Context](ampersand/the-language-ampersand/context)
   * [Syntactical Conventions](ampersand/the-language-ampersand/syntactical-conventions/)
-    * [Explanation](ampersand/the-language-ampersand/syntactical-conventions/explanations)
     * [Language support](ampersand/the-language-ampersand/syntactical-conventions/language-support)
   * [Patterns](ampersand/the-language-ampersand/patterns)
 ## Services
