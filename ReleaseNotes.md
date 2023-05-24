@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #1284](https://github.com/AmpersandTarski/Ampersand/issues/1284) Docker build for multi platform
 
 ## v4.7.6 (26 february 2023)
 ## v4.7.5 (25 february 2023)

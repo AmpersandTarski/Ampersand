@@ -22,7 +22,7 @@ jobs:
           docker version
 
       - name: Build final image
-        run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+        run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }} --platform=linux/amd64,linux/arm64
 
       # For main branch push latest to DockerHub
       - name: Login to DockerHub

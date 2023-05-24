@@ -61,6 +61,7 @@ jobs:
           build-args: |
             GIT_SHA=${{github.sha}}
             GIT_Branch=${{github.ref}}
+          platforms: linux/amd64,linux/arm64
 
   add-release-artefacts:
     name: Add artefacts to release
