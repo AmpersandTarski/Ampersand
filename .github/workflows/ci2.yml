@@ -16,15 +16,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Prepare for docker
+      - name: Docker version
         run: |
           echo Running on branch ${GITHUB_REF##*/}
           docker version
-          docker buildx create --name mybuilder --driver docker-container --bootstrap
-          docker buildx use mybuilder
+      
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ampersandtarski/ampersand
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-      - name: Build final image
-        run: docker buildx build --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }} --platform linux/amd64,linux/arm64 .
+      - name: Build images
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          tags: ${{ steps.meta.outputs.tags }} # see meta step above
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{github.sha}}
+            GIT_Branch=${{github.ref}}
+          platforms: linux/amd64,linux/arm64
 
       # For main branch push latest to DockerHub
       - name: Login to DockerHub
