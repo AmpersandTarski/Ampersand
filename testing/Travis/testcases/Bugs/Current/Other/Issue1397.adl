@@ -1,0 +1,10 @@
+CONTEXT "Issue1397"
+
+CLASSIFY Application ISA MaintainedItem
+
+RELATION deployed[MaintainedItem*Platform]
+RELATION loaded[Application*Platform]
+
+ENFORCE loaded >: deployed
+
+ENDCONTEXT

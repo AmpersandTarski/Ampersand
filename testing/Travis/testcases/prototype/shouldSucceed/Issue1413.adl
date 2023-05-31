@@ -1,0 +1,10 @@
+CONTEXT Issue1413
+
+REPRESENT Bool TYPE BOOLEAN
+
+RELATION flip[SESSION*Bool] [UNI]
+
+INTERFACE switch : "_SESSION"[SESSION] BOX
+   [ flipje : flip
+   ]
+ENDCONTEXT

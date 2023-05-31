@@ -38,10 +38,10 @@ description: Syntax and Semantics, including metasyntax.
 ## Services
 
 ### Purpose
-Services are meant to expose functionality and data from a [context](../context.md), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
+Services are meant to expose functionality and data from a [context](./the-language-ampersand/context.md), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
 
 ### Description
-A service is a component of an information system that exposes functionality and data from a [context](../context.md), to let users or information systems interact by creating, reading, updating, and deleting data. The first [example](../Examples.md#example-service-structure) introduces a simple service informally. Another [example](../Examples.md#service-introductory-example) introduces the main features of a service with nested interfaces.
+A service is a component of an information system that exposes functionality and data from a [context](./the-language-ampersand/context.md), to let users or information systems interact by creating, reading, updating, and deleting data. The first [example](../Examples.md#example-service-structure) introduces a simple service informally. Another [example](../Examples.md#service-introductory-example) introduces the main features of a service with nested interfaces.
 
 A *service* is a component of an information system. During the time that this service can actually be used, we say it is *deployed*. We also call this the *lifetime* of a service. A typical instance of a service is a user interface based on HTML-CSS that runs in a browser. But an application program interface \(API\) that serves other computers with web services is a perfectly valid instance as well.
 
@@ -107,7 +107,7 @@ Further examples:
 * a [client service](./Examples.md#services-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
 * a [login service](./Examples.md#services-example-login) to demonstrate how to get different interface structures under varying conditions.
 
-### CRUD annotations
+### CRUD annotations {#crud}
 CRUD annotations are used in services to constrain the functionality of fields and boxes in an `INTERFACE`-statement. This allows you to minimize the functionality for your users, to design for easy learning.
 
 Each CRUD annotation comes right after a [term](../terms/README.md), so we can always refer to "the term" to which a CRUD annotation belongs. A CRUD annotation constrains the things your user can do with the target atoms and the pairs of its term.
@@ -213,7 +213,7 @@ BOX <TABS>
      ]
 ```
 
-This service shows three columns in the user interface, **Students**, **Course** and **Modules**. The first column is not readable, because the [CRUD annotation](../crud.md) blocks this column for reading. It would have shown students in each row, because the target of `V[SESSION*Student]`is `Student`. The second column shows courses in two columns, **Course** and **Modules**. The third column shows modules in three columns. This is what the user will see on the screen.
+This service shows three columns in the user interface, **Students**, **Course** and **Modules**. The first column is not readable, because the [CRUD annotation](#crud) blocks this column for reading. It would have shown students in each row, because the target of `V[SESSION*Student]`is `Student`. The second column shows courses in two columns, **Course** and **Modules**. The third column shows modules in three columns. This is what the user will see on the screen.
 
 ![Column-oriented layout of a user interface with columns in each row](<../assets/COLS layout example.png>)
 
