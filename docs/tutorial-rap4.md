@@ -137,11 +137,11 @@ During the remainder of this course, you will compile and run your own scripts i
 
 RAP4 keeps your work together under a student number. So click on the button 'login' on the left top of the screen.
 
-![](<.gitbook/assets/login button.png>)
+![](<assets/login button.png>)
 
 Register with your own student number and e-mail. Create a password. Your student number is your account, but you can fill in a name. This name should not exist yet, so a green plus sign will appear. Click on it and your name is added to the database.
 
-![](<.gitbook/assets/Register button.png>)
+![](<assets/Register button.png>)
 
 Notes:
 
@@ -151,13 +151,13 @@ Notes:
     This login-screen is also the screen to logout later.
 * When RAP4 is updated, probably your account will be reset. You need to register again. We will inform you in the unlikely event that this happens during a course.
 
-![](<.gitbook/assets/insecure password.png>)
+![](<assets/insecure password.png>)
 
 ### Use the system
 
 After logging in, you will see your login name or student number in the RAP4 window.
 
-![](.gitbook/assets/afbeelding.png)
+![](assets/afbeelding.png)
 
 In the menu bar you will find:
 
@@ -174,7 +174,7 @@ Notes:
 
 In the code you can find the MEANING of each relation in natural language. In the model, each relation represents a set of pairs. The relation `takes` is filled with `(Student, Course)` -pairs that each specify a specific course that that specific student is taking. The same student can appear in more pairs and the same course can appear in more pairs. But each combination is unique, a specific pair (x,y) can only appear in the set once.
 
-![conceptual model of Enrollment](<.gitbook/assets/br-course-pagina-1 (1).png>)
+![conceptual model of Enrollment](<assets/br-course-pagina-1 (1).png>)
 
 You have seen the web application Enrollment in action. You have seen the code that defines the system in such a way that Ampersand can generate the web application. Now we will have a look at the conceptual model that is defined in that code. In this tutorial we will only describe the example to make you more familiar with the terminology. Just try to recognize what is described in the code and in the working system.
 
@@ -197,7 +197,7 @@ The goal of the model is to define rules that will govern the behavior of the sy
 
 A conceptual model of Enrollment can be represented with a diagram:
 
-![](<.gitbook/assets/br-course-pagina-1 (1) (1).png>)
+![](<assets/br-course-pagina-1 (1) (1).png>)
 
 Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to learn how we use the words atom, concept, and relation.
 
@@ -246,7 +246,7 @@ Try to reason about the answers to the following questions based on the conceptu
 
 ### What's next?
 
-This concludes your first steps to get acquainted with Ampersand script en RAP4. The Open University Coursebook contains all theoretical background you need to start understanding and creating your own model. This Gitbook offers more practical and up to date information about the language Ampersand script. For the syntax and meaning of Ampersand constructs, consult chapter [The language Ampersand](the-language-ampersand/). For more in depth information about modeling in Ampersand [click here](modeling/). For the rest...have a look around and feel free to ask questions.
+This concludes your first steps to get acquainted with Ampersand script en RAP4. The Open University Coursebook contains all theoretical background you need to start understanding and creating your own model. This Gitbook offers more practical and up to date information about the lang uage Ampersand script. For the syntax and meaning of Ampersand constructs, consult chapter [The language Ampersand](./reference-material/the-language-ampersand/README.md). For more in depth information about modeling in Ampersand [click here](./modeling/README.md). For the rest...have a look around and feel free to ask questions.
 
 
 
@@ -256,14 +256,14 @@ This concludes your first steps to get acquainted with Ampersand script en RAP4.
 
 When you click on the blue plus-sign on the top-right side in the menu bar in your screen, you can make a new script. Clicking this opens an editor screen in which you can type your very first Ampersand script.
 
-![](<.gitbook/assets/Script editor new script.png>)
+![](<assets/Script editor new script.png>)
 
 ### Assignment
 
 * Copy the code for the system enrollment from [this page](#example-system-enrollment) or take it from the OU course-site. The code starts with `CONTEXT` and ends with `ENDCONTEXT`. Paste the script in the RAP4 editor (On rap.cs.ou.nl only:  you now have to click on the big blue button "beware to save your work before leaving the editer field!"). The script is now saved in RAP4.
 * Next, click on the blue Compile button. When RAP4 is finished compiling your script, the compiler message should read "The script of Enrollment contains no type errors" and two blue buttons should be visible below that. Please make it a habit to read the Compiler message carefully each time you compile a script
 
-![](<.gitbook/assets/Finished processing your model.png>)
+![](<assets/Finished processing your model.png>)
 
 * Generate a Prototype: Click the blue button "Prototype" and when RAP4 has finished loading you will see a new link "Launch Prototype". Click the link.
 * Now you see the information system you have just compiled from the code. You are already familiar with the look and feel. Click the Overview button in the top-left of the screen and have a look around.

@@ -141,5 +141,3 @@ In practice, debugging in Ampersand has proven to be hard. We are uncertain why 
 ###	Exec-Engine rules are similar to process algebra rules
 Experiments in 2007 showed that process algebra rules can be derived from the constraints in Ampersand. The rules in the Exec-Engine show similarity to these rules.
 ### To be elaborated further
-	
-

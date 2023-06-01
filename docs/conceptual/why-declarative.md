@@ -10,5 +10,4 @@ Examples of procedural or imperative languages are Perl, make, Java, and C\#. Th
 
 We made Ampersand declarative on purpose, because Ampersand is meant to define things. So if you want to define an information system, Ampersand lets you specify it in terms of constraints \(also known as rules\).
 
-Still wondering whether doughnuts can be declarative? Let's dismiss the question and say that a dougnut is best defined in a declarative way, best produced in a procedural way, and best enjoyed with lots of sugar.
-
+Still wondering whether doughnuts can be declarative? Let's dismiss the question and say that a dougnut is best defined declaratively, best produced procedurally, and best enjoyed with lots of sugar.

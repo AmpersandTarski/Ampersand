@@ -14,9 +14,6 @@ But our quaest is shaping up. Already we can generate complete prototypes and do
 
 This chapter discusses our plans for the near future. Click on the hyperlinks for details
 
-* In this [video](https://youtu.be/SAzFxZ7Cz9I) discusses the plans in 7min30 \(in Dutch\)
-
-
 ## Current State
 
 To understand future developments, you may want to know where we stand now.
@@ -24,7 +21,7 @@ To understand future developments, you may want to know where we stand now.
 
 One purpose of Ampersand is to generate a web-application. Currently, the generator and the generated application follow this architecture:
 
-![Current state of the Ampersand project](<./.gitbook/assets/state-of-ampersand-project-2019.png>)
+![Current state of the Ampersand project](<./assets/state-of-ampersand-project-2019.png>)
 
 The architecture is explained in more detail in [this chapter](./architecture-of-an-ampersand-application/).
 
@@ -43,7 +40,7 @@ We also want to experiment with the performance of different storage types, do r
 Ampersand is already prepared for this by the plug-mechanism.
 So, this is an enhancement rather than a refactoring.
 
-![Towards multiple types of persistence](<./.gitbook/assets/towards-multiple-types-of-persistence.png>)
+![Towards multiple types of persistence](<./assets/towards-multiple-types-of-persistence.png>)
 
 
 ## API documentation
@@ -54,7 +51,7 @@ This communication will be greatly simplified if Open API documentation can be g
 ### Purpose
 To take an API in production, it needs to be documented. For this purpose we want to generate Open API documentation.
 
-![Generating Open API documentation](<./.gitbook/assets/Untitled Diagram (8).png>)
+![Generating Open API documentation](<./assets/Untitled Diagram (8).png>)
 
 
 
@@ -64,14 +61,14 @@ To work closer in sync with the semantic web we want to accept OWL and RDFS inpu
 To work closer together with the semantic web community requires that Ampersand can deal with OWL and RDFS.
 Ampersand and semantic web technologies have much in common. To explore this topic and to benefit from available ontologies expressed in RDF and OWL, we want to make an OWL/RDFS parser so we can interpret ontologies in Ampersand.
 
-![An extra parser, specifically for OWL/RDFS](./.gitbook/assets/untitled-diagram-7%20%281%29.png)
+![An extra parser, specifically for OWL/RDFS](./assets/untitled-diagram-7%20%281%29.png)
 
 
 ## Refactor the front-end
 To generate reactive web-applications instead of a classical object-oriented web-application is why we want to refactor the Ampersand front-end.
 The current front-end is based on the Angular-JS framework. To enter the world of reactive programming, we want to refactor the front-end.
 
-![Refactoring the front-end (pink items)](<./.gitbook/assets/Untitled Diagram (6).png>)
+![Refactoring the front-end (pink items)](<./assets/Untitled Diagram (6).png>)
 This issue is currently underway, sponsored in kind by Ordina. We expect the first results in the summer of 2023.
 
 
@@ -90,3 +87,24 @@ If the Ampersand interface could somehow mimic spreadsheet features, that would 
 If only the user of an Ampersand prototype could edit data as easily as in a spreadsheet...
 
 This feature is [discussed on github](https://github.com/AmpersandTarski/Ampersand/issues/1166).
+
+## Kleene operators `+` and `*`.
+To increase the expressive power of Ampersand, we would like to expand the language to include terms of the form `<term>+` and `<term>*`.
+
+In order to do this, we must precompile rules that contain a Kleene operator to rules without such operators.
+This is possible by introducing a new relation and a new rule for every term `t*`.
+Assuming that the term `t` has type `[A*B]`,
+the compiler must add the following code:
+```Ampersand
+RELATION rel-t-plus[A*B]
+RELATION rel-t-plus[A*B]
+RELATION rel-t-minus[A*B]
+ENFORCE rel-t-plus >: t;rel-t-plus
+ENFORCE rel-t-star >: I\/rel-t-plus
+ENFORCE
+```
+Then, the compiler must substitute every occurrence of `t+` by `rel-t-plus`
+and every occurrence of `t*` by `rel-t-star`.
+
+This solution has one problem: if `t` shrinks, even by one pair, `rel-t-plus`
+and `rel-t-star` must be made empty.

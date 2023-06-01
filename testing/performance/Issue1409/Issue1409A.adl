@@ -1,0 +1,42 @@
+CONTEXT "Issue1409A"
+
+RELATION l[X*A] [UNI]
+RELATION r[X*A] [UNI]
+RELATION t[X*Type]
+
+RELATION van[K*A] [UNI, TOT]
+RELATION naar[K*A] [UNI, TOT]
+RELATION t[K*Type] [UNI, TOT]
+
+RELATION ly[Y*A] [UNI, TOT]
+RELATION ry[Y*A] [UNI, TOT]
+RELATION ty[Y*Type] [UNI, TOT]
+
+ROLE ExecEngine MAINTAINS "startpuntVanRoutes", deelroutes
+RULE startpuntVanRoutes :
+   I[X] /\ l;l~ /\ r;r~ /\ t;t~
+    |- (l;ly~ /\ r;ry~ /\ t;ty~) ; I[Y] ; (ly/l /\ ry/r /\ ty/t)~
+VIOLATION (TXT "{EX} NewStruct;Y"
+               ,TXT ";l;Y;_NEW;A;", SRC l
+               ,TXT ";r;Y;_NEW;A;", SRC r
+               ,TXT ";t;Y;_NEW;Type;", SRC t
+          )
+
+ENFORCE attr1~;attr2 >: expr
+
+
+RULE deelroutes : (l[Y*A];van~/\t;t~);I[K];naar-r |-
+    (r;r~/\t;t~);I[Y];l
+VIOLATION (TXT "{EX} NewStruct;Y"
+               ,TXT ";t;Y;_NEW;Type;", SRC t
+               ,TXT ";l;Y;_NEW;A;", TGT I[A]
+               ,TXT ";r;Y;_NEW;A;", SRC r
+          )
+
+INTERFACE "Koppelingen" FOR User: "_SESSION";V[SESSION*K] BOX
+   [ K : I
+   , van : van
+   , naar : naar
+   ]
+
+ENDCONTEXT

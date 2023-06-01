@@ -59,7 +59,7 @@ The deployment consists of the following steps:
 
     \-file:
 
-    ![](../.gitbook/assets/screenshot-docker-compose.png)
+    ![](../assets/screenshot-docker-compose.png)
 4.  Run docker-compose to deploy your prototype by executing the following command:
 
     ```

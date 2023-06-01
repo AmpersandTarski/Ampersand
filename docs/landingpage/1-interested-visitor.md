@@ -149,6 +149,10 @@ The governance of Ampersand is founded on the following principles:
 We lay out the [future directions](ampersand/future-plans) in terms of research questions.
 Such topics are usually discussed on Ampersand days or physical meetings of the core team.
 [Stef Joosten](https://github.com/stefjoosten) has a final say in this, to ensure progress.
+The following topics are on our wish-list
+* Migration in production, to facilitate changing the schema (i.e. the data model and rules) of an Ampersand application while it is running.
+* Arithmetic, to enable users to do computations in Ampersand.
+* Dynamic deployment of partial applications within a running system, to facilitate the maintenance of large information systems in a flexible way.
 
 ### Decision making
 The core team, consisting of [Stef Joosten](https://github.com/stefjoosten), [Han Joosten](https://github.com/hanjoosten), and [Michiel Stornebrink](https://github.com/Michiel-s),
