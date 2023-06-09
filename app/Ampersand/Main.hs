@@ -1,6 +1,6 @@
 module Main (main) where
 
-import MainApps
+import MainApps 
 
 main :: IO ()
 main = ampersand
