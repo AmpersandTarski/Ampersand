@@ -1,4 +1,4 @@
-FROM ampersandtarski/devcontainer:latest
+FROM ampersandtarski/ampersand-devcontainer:latest
 
 ENV DEBIAN_FRONTEND=dialog
 

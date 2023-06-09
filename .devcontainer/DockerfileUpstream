@@ -5,20 +5,14 @@ ARG GHC_VERSION=8.10.7
 ARG STACK_VERSION=2.9.3
 ARG STACK_RESOLVER=lts-18.28
 ARG CABAL_VERSION=3.6.2.0
-ARG HLS_VERSION=1.9.1.0
-ARG LLVM_VERSION=12
+ARG HLS_VERSION=2.0.0.0
+ARG LLVM_VERSION=16
 
 ENV USERNAME=${USERNAME} \
     USER_UID=1000 \
     USER_GID=1000 \
     DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF8 \
-    GHC_VERSION=${GHC_VERSION} \
-    STACK_RESOLVER=${STACK_RESOLVER} \
-    STACK_VERSION=${STACK_VERSION} \
-    CABAL_VERSION=${CABAL_VERSION} \
-    HLS_VERSION=${HLS_VERSION} \
-    LLVM_VERSION=${LLVM_VERSION}
+    LANG=C.UTF8
 
 RUN ulimit -n 8192
 
@@ -37,12 +31,17 @@ USER ${USER_UID}:${USER_GID}
 WORKDIR /home/${USERNAME}
 ENV PATH="/home/${USERNAME}/.local/bin:/home/${USERNAME}/.cabal/bin:/home/${USERNAME}/.ghcup/bin:$PATH"
 
-RUN echo "export PATH=$PATH" >> /home/$USERNAME/.profile
+RUN echo "export PATH=$PATH" >> /home/${USERNAME}/.profile
 
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE=yes \
     BOOTSTRAP_HASKELL_NO_UPGRADE=yes
 
 FROM base as tooling
+
+ENV GHC_VERSION=${GHC_VERSION} \
+    CABAL_VERSION=${CABAL_VERSION} \
+    STACK_VERSION=${STACK_VERSION} \
+    STACK_RESOLVER=${STACK_RESOLVER}
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
@@ -70,10 +69,12 @@ RUN ((stack ghc -- --version 2>/dev/null) || true) && \
     stack config --system-ghc set resolver $STACK_RESOLVER
 
 # Temporary required, because http2-4.0.0 is broken, and used to build haddock. See https://github.com/kazu-yamamoto/http2/issues/42
-RUN stack install http2-3.0.3
+# RUN stack install http2-3.0.3
 
 # Set global custom defaults for stack.
-RUN printf "ghc-options:\n  \"\$everything\": -haddock\n" >> /home/${USERNAME}/.stack/config.yaml
+RUN printf "ghc-options:\n  \"\$everything\": -haddock\n" >> ~/.stack/config.yaml
+
+ENV HLS_VERSION=${HLS_VERSION} 
 
 # Install hls
 RUN ghcup install hls ${HLS_VERSION} && ghcup set hls ${HLS_VERSION}
