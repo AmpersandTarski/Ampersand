@@ -1,7 +1,8 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
-
+* [Issue #1419] added a test, to be activated in the regression after resolving #1419.
+* [Issue #1420] added a test, to be activated in the regression after resolving #1420.
 
 ## v4.7.6 (26 february 2023)
 ## v4.7.5 (25 february 2023)
