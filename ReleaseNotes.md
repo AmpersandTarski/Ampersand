@@ -1,6 +1,8 @@
 ﻿# Release notes of Ampersand
  
 ## Unreleased changes
+* [Issue #1419] added a test, to be activated in the regression after resolving #1419.
+* [Issue #1420] added a test, to be activated in the regression after resolving #1420.
 * [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
 * Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
 * [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
