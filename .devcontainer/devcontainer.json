@@ -13,7 +13,7 @@
       "LLVM_VERSION": "12"
     },
     "context": "..",
-    "dockerfile": "DockerfileUpstream"
+    "dockerfile": "Dockerfile"
   },
   "customizations": {
     "vscode": {
