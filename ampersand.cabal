@@ -124,6 +124,8 @@ extra-source-files:
     testing/StillUnsupported/Bug335_Kl0Kl1.adl
     testing/StillUnsupported/Issue1397-1.adl
     testing/StillUnsupported/Issue1397.adl
+    testing/StillUnsupported/Issue1419.adl
+    testing/StillUnsupported/Issue1420.adl
     testing/StillUnsupported/Issue166.adl
     testing/StillUnsupported/Issue166_2.adl
     testing/Travis/README.md
