@@ -14,6 +14,7 @@ import Data.Tuple.Extra (both, swap)
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Char
+import RIO.FilePath (takeBaseName)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -38,7 +39,7 @@ parseXlsxFile mFk file =
           liftIO $ B.readFile file
     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
   where
-    file1 = case file of
+    file1 = case takeBaseName file of
       [] -> fatal "Filename must not be empty."
       h : tl -> Text1 h (T.pack tl)
     xlsx2pContext ::
