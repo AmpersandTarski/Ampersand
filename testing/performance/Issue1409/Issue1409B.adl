@@ -1,0 +1,40 @@
+CONTEXT "Issue1409B"
+
+RELATION l[X*A]
+RELATION r[X*A]
+RELATION t[X*Type]
+
+RELATION van[K*A] [UNI, TOT]
+RELATION naar[K*A] [UNI, TOT]
+RELATION t[K*Type] [UNI, TOT]
+
+IDENT K : K(van, naar)
+
+RELATION a[Poort*A] [UNI,TOT]
+RELATION t[Poort*Type] [UNI,TOT]
+
+ROLE ExecEngine MAINTAINS "Define Bs", "Remove Bs"
+
+RULE "Define Bs": van~;t \/ naar~;t |- a~;t
+VIOLATION (TXT "{EX} NewStruct;Poort"
+               ,TXT ";a;Poort;_NEW;A;", SRC I[A]
+               ,TXT ";t;Poort;_NEW;Type;", TGT I[Type]
+          )
+
+RULE "Remove Bs": I[Poort] |- a;(van~;t \/ naar~;t);t~
+VIOLATION (TXT "{EX} DelAtom;Poort;", SRC I)
+
+RELATION link[Poort * Poort]
+ENFORCE link := a;van~;naar;a~ /\ t;t~
+
+VIEW K : K(TXT "van=", van, TXT ", naar=", naar, TXT ", t=", t)
+VIEW Poort : Poort(TXT "a=", a, TXT ", t=", t)
+
+INTERFACE "Koppelingen" FOR User: "_SESSION";V[SESSION*K] BOX
+   [ K : I
+   , poortvan : van;a~/\t;t~
+   , poortnaar : naar;a~/\t;t~
+   , "linkt naar" : (van;a~/\t;t~);link
+   , "linkt van" : (naar;a~/\t;t~);link~
+   ]
+ENDCONTEXT

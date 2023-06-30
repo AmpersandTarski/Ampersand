@@ -1,0 +1,13 @@
+CONTEXT Issue1419
+-- This script should succeed on compile time.
+
+CLASSIFY Ss ISA S
+CLASSIFY Uu ISA U
+
+RELATION r[S*T]
+RELATION s[T*U]
+RELATION t[Ss*Uu]
+
+ENFORCE t >: r;s
+
+ENDCONTEXT

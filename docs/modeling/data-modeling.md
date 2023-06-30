@@ -46,7 +46,7 @@ In our example, each row in the spreadsheet represents a president. So, the sour
 
 When things get bigger, it is useful to draw the relations on a whiteboard or in your notebook. This helps you keep overview. Here is how it is done:
 
- ![Relation diagram for presidents](../.gitbook/assets/concepts-presidents.png) 
+ ![Relation diagram for presidents](../assets/concepts-presidents.png) 
 
 This drawing shows every relation als a line, drawn from source to target. The arrowhead in the middle is only to remind the reader of which is the source and which is the target concept. If you point the arrowhead from source to target, you will always know how the relation is defined.
 
@@ -101,7 +101,7 @@ POPULATION capital[President*City] CONTAINS
   ]
 ```
 
-Notice that this deviates slightly from the previous recipe. Instead of making a new relation `president[President*President]`, we have reused the relation `lastname`. By doing so, we have interpreted the third column of the spreadsheet as the last name of the president. More importantly, we have reused an earlier relation. The drawing can also be extended: ![Relation diagram for presidents](../.gitbook/assets/concepts-presidents-2.png)
+Notice that this deviates slightly from the previous recipe. Instead of making a new relation `president[President*President]`, we have reused the relation `lastname`. By doing so, we have interpreted the third column of the spreadsheet as the last name of the president. More importantly, we have reused an earlier relation. The drawing can also be extended: ![Relation diagram for presidents](../assets/concepts-presidents-2.png)
 
 There seems to be something funny about the relation `capital[President*City]`. In the model this relation pairs presidents to capital cities of the state in which they were born. This meaning can be made more obvious, by redefining one relation somewhat:
 
@@ -115,7 +115,7 @@ POPULATION capital[State*City] CONTAINS
   ]
 ```
 
-![Relation diagram for presidents](../.gitbook/assets/concepts-presidents-3.png)
+![Relation diagram for presidents](../assets/concepts-presidents-3.png)
 
 Obviously, the relation `capital[State*City]` feels more natural. The reason is obvious: a capital city belongs more to the state than it belongs to a president who happens to have been born in that state.
 
@@ -196,7 +196,7 @@ Five decisions have been made here:
 4. Only one state of birth will be registered, as a result of constraining the relation `state` to be univalent
 5. Every state has only one capital city and every city is capital to only one state, as a result of constraining the relation `capital` to be univalent and injective.
 
-Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP4. Ampersand will produce the following data model: ![Data model for presidents](../.gitbook/assets/presidents-data-model.png)
+Note that we can envelop the relation definition in a `CONTEXT` and run it on RAP4. Ampersand will produce the following data model: ![Data model for presidents](../assets/presidents-data-model.png)
 
 ## Bonus
 

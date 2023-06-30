@@ -1,0 +1,12 @@
+CONTEXT Issue1420
+-- This script should fail on runtime, with an error
+-- refering to the univalence of s.
+
+RELATION r[S*T]
+RELATION s[S*T] [UNI]
+POPULATION r[S*T] CONTAINS
+  [ ("aap","noot"), ("aap","mies") ]
+
+ENFORCE s >: r
+
+ENDCONTEXT

@@ -1,0 +1,11 @@
+CONTEXT "Issue1397-1"
+
+CLASSIFY Application ISA MaintainedItem
+
+RELATION deployed[MaintainedItem*Platform]
+RELATION loaded[Application*Platform]
+RELATION flv[Application*Discipline] [UNI]
+
+ENFORCE deployed >: flv#"FLV" - loaded
+
+ENDCONTEXT

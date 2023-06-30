@@ -3,7 +3,7 @@ cabal.sandbox.config
 .dist-buildwrapper
 /dist
 .idea
-
+.ampersand
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto

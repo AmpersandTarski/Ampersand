@@ -7,10 +7,15 @@
 * [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 * Minor update of the devcontainer.
 * [Issue #1369](https://github.com/AmpersandTarski/Ampersand/issues/1369) update of CI/CD stuff.
+* [Issue #1419] added a test, to be activated in the regression after resolving #1419.
+* [Issue #1420] added a test, to be activated in the regression after resolving #1420.
+- Added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general)
 
 ## v4.7.6 (26 february 2023)
+
 ## v4.7.5 (25 february 2023)
-* [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
+
+- [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
 
 ## v4.7.4 (20 february 2023)
 
