@@ -3,15 +3,6 @@
   "remoteUser": "vscode",
   "runArgs": [],
   "build": {
-    "args": { // These contain the values of the arguments that the Docker file takes.
-      "USERNAME": "vscode",
-      "GHC_VERSION": "8.10.7",
-      "STACK_VERSION": "2.9.3",
-      "STACK_RESOLVER": "lts-18.28",
-      "CABAL_VERSION": "3.6.2.0",
-      "HLS_VERSION": "2.0.0.1",
-      "LLVM_VERSION": "12"
-    },
     "context": "..",
     "dockerfile": "Dockerfile"
   },
