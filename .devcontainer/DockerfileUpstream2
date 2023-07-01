@@ -1,0 +1,23 @@
+FROM haskell:8.10
+
+ARG WDIR=/opt/Ampersand
+
+WORKDIR ${WDIR}
+
+RUN cabal update 
+
+# Add just the .cabal file to capture dependencies
+COPY ./ampersand.cabal ${WDIR}/ampersand.cabal
+
+# Docker will cache this command as a layer, freeing us up to
+# modify source code without re-installing dependencies
+# (unless the .cabal file changes!)
+RUN cabal build --only-dependencies -j4
+
+# Add and Install Application Code
+COPY . ${WDIR}
+RUN cabal install
+
+ENV DEBIAN_FRONTEND=dialog
+
+ENTRYPOINT ["/bin/bash"]
