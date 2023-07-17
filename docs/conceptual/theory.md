@@ -254,10 +254,10 @@ role(s) that are administered in $\text{\it maint}$ to do something
 about it.
 
 Automatic enforcement is specified by the developer with a special
-syntax, the *enforce rule*. An enforce rule specifies not only the rule,
+syntax, the *enforcement rule*. An enforcement rule specifies not only the rule,
 but also the way to restore invariance. The system features an engine
-that restores invariance of all enforce rules without unneccessary
-delay. Whenever the dataset violates an enforce rule, this engine will
+that restores invariance of all enforcement rules without unneccessary
+delay. Whenever the dataset violates an enforcement rule, this engine will
 make other changes to the dataset to satisfy that rule. Hence, the rule
 is not satisfied during a small, finite amount of time.
 
