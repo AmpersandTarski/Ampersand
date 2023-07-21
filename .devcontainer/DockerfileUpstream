@@ -36,12 +36,17 @@ COPY ./stack.yaml ${WDIR}/stack.yaml
 RUN stack build --only-dependencies -j4
 
 # Add and Install Application Code
-COPY . ${WDIR}
-COPY .git ${WDIR}/.git
 
-RUN cd .git
-RUN ls
-RUN cd ..
+# Put the SSH key for git private repos to the root directory of this Ampersand repo. Be sure not to commit this to the repo!
+ADD ./stefjoosten-GitHub /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
+# Use git with SSH instead of https
+RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
+# Skip Host verification for git
+RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
+
+COPY . ${WDIR}
+RUN git status
 
 # RUN rm -f .git/index
 # RUN git reset
