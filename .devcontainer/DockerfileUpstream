@@ -1,6 +1,26 @@
 FROM haskell:8.10
 
-ARG WDIR=/opt/Ampersand
+ARG USERNAME=vscode
+
+
+ENV USERNAME=${USERNAME} \
+    USER_UID=1000 \
+    USER_GID=1000 \
+    DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF8 \
+    WDIR=/home/${USERNAME}
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    mkdir -p /etc/sudoers.d && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
+
+USER ${USER_UID}:${USER_GID}
 
 WORKDIR ${WDIR}
 
@@ -17,7 +37,16 @@ RUN stack build --only-dependencies -j4
 
 # Add and Install Application Code
 COPY . ${WDIR}
-RUN stack install
+COPY .git ${WDIR}/.git
+
+RUN cd .git
+RUN ls
+RUN cd ..
+
+# RUN rm -f .git/index
+# RUN git reset
+# RUN git status
+# RUN sudo stack build
 
 ENV DEBIAN_FRONTEND=dialog
 

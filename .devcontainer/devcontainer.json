@@ -1,10 +1,10 @@
 {
   "name": "DevContainer for Haskell (GHC, Stack, Cabal, HIE, LSP, DAP, etc.)",
-  "remoteUser": "vscode",
+  // "remoteUser": "root",
   "runArgs": [],
   "build": {
     "context": "..",
-    "dockerfile": "Dockerfile"
+    "dockerfile": "DockerfileUpstream"
   },
   "customizations": {
     "vscode": {
