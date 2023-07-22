@@ -27,10 +27,14 @@ Now you can compile and check your Ampersand scripts. However, you are likely to
 
 ### Additional software for generating functional SPECIFICATIONS:
 
-If you want to generate functional specifications from ampersand scripts, you need the following additional software (if you don't, don't bother installing them):
+If you want to generate functional specifications from ampersand scripts with pictures, you need the following additional software:
 
-1. In order to generate PDF files that contain your functional specification, you need a LaTeX compiler. On Windows, we recommend [**MiKTeX**](http://miktex.org/). On Linux and MacOS, we recommend [**texlive**](https://www.tug.org/texlive/).
-2. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it. **Make sure** _**dot**_ **and** _**neato**_ **are in your path**  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it. **Make sure** _**dot**_ **and** _**neato**_ **are in your path**  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+
+If you want to generate functional specifications from ampersand scripts in LaTeX, you need the following additional software (if you don't, don't bother installing them):
+
+1. On Windows, we recommend [**MiKTeX**](http://miktex.org/).
+2. On Linux and MacOS, we recommend [**texlive**](https://www.tug.org/texlive/).
 
 ### Additional software for generating functional PROTOTYPES
 
