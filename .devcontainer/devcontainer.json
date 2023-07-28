@@ -1,10 +1,10 @@
 {
-  "name": "DevContainer for Haskell (GHC, Stack, Cabal, HIE, LSP, DAP, etc.)",
+  "name": "DevContainer for Ampersand",
   // "remoteUser": "root",
   "runArgs": [],
   "build": {
     "context": "..",
-    "dockerfile": "DockerfileUpstream"
+    "dockerfile": "Dockerfile"
   },
   "customizations": {
     "vscode": {
