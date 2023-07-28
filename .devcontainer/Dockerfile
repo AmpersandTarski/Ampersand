@@ -1,12 +1,6 @@
 FROM debian:bullseye as base
 # This .devcontainer stuff is shamelessly copied from github.com/vzarytovskii/haskell-dev-env
 ARG USERNAME=vscode
-ARG GHC_VERSION=8.10.7
-ARG STACK_VERSION=2.9.3
-ARG STACK_RESOLVER=lts-18.28
-ARG CABAL_VERSION=3.6.2.0
-ARG HLS_VERSION=2.0.0.1
-ARG LLVM_VERSION=16
 
 ENV USERNAME=${USERNAME} \
     USER_UID=1000 \
@@ -20,6 +14,7 @@ RUN export LANG=C.UTF8
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends apt-utils bash build-essential ca-certificates curl gcc git gnupg libffi-dev libffi7 libgmp-dev libgmp-dev libgmp10 libicu-dev libncurses-dev libncurses5 libnuma1 libnuma-dev libtinfo5 lsb-release make procps software-properties-common sudo wget xz-utils z3 zlib1g-dev
 
+ARG LLVM_VERSION=16
 RUN wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh ${LLVM_VERSION} && rm /tmp/llvm.sh
 
 RUN groupadd --gid $USER_GID $USERNAME && \
@@ -38,6 +33,10 @@ ENV BOOTSTRAP_HASKELL_NONINTERACTIVE=yes \
 
 FROM base as tooling
 
+ARG GHC_VERSION=8.10.7
+ARG CABAL_VERSION=3.6.2.0
+ARG STACK_VERSION=2.9.3
+ARG STACK_RESOLVER=lts-18.28
 ENV GHC_VERSION=${GHC_VERSION} \
     CABAL_VERSION=${CABAL_VERSION} \
     STACK_VERSION=${STACK_VERSION} \
@@ -74,6 +73,7 @@ RUN ((stack ghc -- --version 2>/dev/null) || true) && \
 # Set global custom defaults for stack.
 RUN printf "ghc-options:\n  \"\$everything\": -haddock\n" >> ~/.stack/config.yaml
 
+ARG HLS_VERSION=2.0.0.1
 ENV HLS_VERSION=${HLS_VERSION} 
 
 # Install hls
