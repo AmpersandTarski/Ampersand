@@ -4,7 +4,7 @@
   "runArgs": [],
   "build": {
     "context": "..",
-    "dockerfile": "DockerfileGHCUP"
+    "dockerfile": "Dockerfile"
   },
   "customizations": {
     "vscode": {
