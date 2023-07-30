@@ -1,5 +1,6 @@
-FROM haskell:8.10
-
+FROM ubuntu:focal
+## Inspiration from https://stackoverflow.com/questions/67680726/installing-haskells-cabal-or-ghcup-inside-a-dockerfile-wont-work
+ENV TZ=Europe/Berlin
 ARG USERNAME=vscode
 
 
@@ -10,9 +11,27 @@ ENV USERNAME=${USERNAME} \
     LANG=C.UTF8 \
     WDIR=/home/${USERNAME}
 
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y git
+
+# install dependencies (source: https://www.haskell.org/ghcup/install/ )
+RUN \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    libnuma-dev \
+    zlib1g-dev \
+    libgmp-dev \
+    libgmp10 \
+    git \
+    wget \
+    lsb-release \
+    software-properties-common \
+    gnupg2 \
+    apt-transport-https \
+    gcc \
+    autoconf \
+    automake \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid $USER_GID $USERNAME && \
     useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
@@ -24,7 +43,35 @@ USER ${USER_UID}:${USER_GID}
 
 WORKDIR ${WDIR}
 
-RUN stack update 
+
+# install gpg keys
+# ARG GPG_KEY=BA3CBA3FFE22B574
+# RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY
+# manual installation: see https://www.haskell.org/ghcup/install/#manual-installation
+
+# install ghcup
+# Inspiration: http://haskell.org/ghcup/install
+# Install ghcup as the 'vscode' user
+RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
+# Add ghcup and cabal to the PATH
+ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}"
+
+ARG GHC=8.10.7
+ARG CABAL=3.10.1.0
+ARG HLS=2.0.0.1
+ARG STACK=2.11.1
+
+# install GHC and cabal
+
+RUN ghcup install ghc ${GHC}
+RUN ghcup set ghc ${GHC}
+RUN ghcup install cabal ${CABAL}
+RUN ghcup set cabal ${CABAL}
+RUN ghcup install stack ${STACK}
+RUN ghcup set stack ${STACK}
+RUN ghcup install hls ${HLS}
+RUN ghcup set hls ${HLS}
 
 # Add just the .cabal file to capture dependencies
 COPY ./package.yaml ${WDIR}/package.yaml
@@ -34,24 +81,6 @@ COPY ./stack.yaml ${WDIR}/stack.yaml
 # modify source code without re-installing dependencies
 # (unless one of the copied files changes!)
 RUN stack build --only-dependencies -j4
-
-# Add and Install Application Code
-
-# Put the SSH key for git private repos to the root directory of this Ampersand repo. Be sure not to commit this to the repo!
-ADD ./stefjoosten-GitHub /root/.ssh/id_rsa
-RUN chmod 600 /root/.ssh/id_rsa
-# Use git with SSH instead of https
-RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
-# Skip Host verification for git
-RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
-
-COPY . ${WDIR}
-RUN git status
-
-# RUN rm -f .git/index
-# RUN git reset
-# RUN git status
-# RUN sudo stack build
 
 ENV DEBIAN_FRONTEND=dialog
 
