@@ -55,7 +55,7 @@ WORKDIR ${WDIR}
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
 # Add ghcup and cabal to the PATH
-ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}"
+ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}:${WDIR}/.local/bin:${PATH}"
 
 ARG GHC=8.10.7
 ARG CABAL=3.10.1.0
@@ -64,36 +64,36 @@ ARG STACK=2.11.1
 
 # install GHC and cabal
 
-RUN ghcup install ghc --set ${GHC}
-RUN ghcup install cabal --set ${CABAL}
-RUN ghcup install stack --set ${STACK}
-RUN ghcup install hls --set ${HLS}
+RUN ghcup install ghc --set ${GHC} && \
+    ghcup install cabal --set ${CABAL} && \
+    ghcup install stack --set ${STACK} && \
+    ghcup install hls --set ${HLS}
 
 FROM base as tools
 
 # Install global packages.
 # Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
-RUN cabal install -v haskell-dap-0.0.15.0
+RUN cabal install -v haskell-dap-0.0.15.0 && \
+    cabal install -v stylish-haskell-0.13.0.0 && \
+    cabal install -v ormolu-0.1.3.1
 # RUN cabal install -v ghci-dap-0.0.19.0
 # RUN cabal install -v haskell-debug-adapter-0.0.37.0
 # RUN cabal install -v hlint-3.2.7
 # RUN cabal install -v apply-refact-0.9.3.0
 # RUN cabal install -v retrie-1.1.0.0
-RUN cabal install -v stylish-haskell-0.13.0.0
 # RUN cabal install -v hoogle-5.0.18.3
-RUN cabal install -v ormolu-0.1.3.1
 # RUN cabal install -v liquidhaskell-0.8.10.2
 
 # Generate hoogle db
 # RUN hoogle generate && stack hoogle
 
 # create a `binbin` directory, that contains the executables themselves. In .cabal/bin most (all?) files are symbolic links
-RUN mkdir ${WDIR}/.cabal/binbin
-RUN cp -L ${WDIR}/.cabal/bin/* ${WDIR}/.cabal/binbin
+RUN mkdir ${WDIR}/.cabal/binbin && \
+    cp -L ${WDIR}/.cabal/bin/* ${WDIR}/.cabal/binbin
 
 FROM base as dev
 COPY --from=tools ${WDIR}/.cabal/binbin ${WDIR}/.cabal/bin
-
+ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${WDIR}/.local/bin:${PATH}"
 
 # # Add just the .cabal file to capture dependencies
 COPY ./package.yaml ${WDIR}/package.yaml
