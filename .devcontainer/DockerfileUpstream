@@ -41,7 +41,7 @@ RUN groupadd --gid $USER_GID $USERNAME && \
 
 USER ${USER_UID}:${USER_GID}
 
-WORKDIR ${WDIR}
+RUN ulimit -n 8192
 
 
 # install gpg keys
@@ -99,10 +99,10 @@ ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${WDIR}/.local/bin:${PATH}"
 COPY ./package.yaml ${WDIR}/package.yaml
 COPY ./stack.yaml ${WDIR}/stack.yaml
 
-# Docker will cache this command as a layer, freeing us up to
-# modify source code without re-installing dependencies
-# (unless one of the copied files changes!)
-RUN stack build --only-dependencies -j4
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
 
 ENV DEBIAN_FRONTEND=dialog
 
