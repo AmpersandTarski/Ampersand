@@ -1,6 +1,6 @@
 {
-  "name": "DevContainer for Haskell (GHC, Stack, Cabal, HIE, LSP, DAP, etc.)",
-  "remoteUser": "vscode",
+  "name": "DevContainer for Ampersand",
+  // "remoteUser": "root",
   "runArgs": [],
   "build": {
     "context": "..",
