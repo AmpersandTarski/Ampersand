@@ -152,8 +152,8 @@ instance JSON Cruds JSONCruds where
 instance JSON ObjectDef JSONexpr where
   fromAmpersand env fSpec object =
     JSONexpr
-      { exprJSONsrcConceptId = text1ToText . idWithoutType $ srcConcept,
-        exprJSONtgtConceptId = text1ToText . idWithoutType $ tgtConcept,
+      { exprJSONsrcConceptId = text1ToText . idWithoutType' $ srcConcept,
+        exprJSONtgtConceptId = text1ToText . idWithoutType' $ tgtConcept,
         exprJSONisUni = isUni normalizedInterfaceExp,
         exprJSONisTot = isTot normalizedInterfaceExp,
         exprJSONisIdent = isIdent normalizedInterfaceExp,

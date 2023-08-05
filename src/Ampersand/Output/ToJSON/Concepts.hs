@@ -71,18 +71,18 @@ instance JSON FSpec Concepts where
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
-      { cptJSONid = text1ToText . idWithoutType $ cpt,
+      { cptJSONid = text1ToText . idWithoutType' $ cpt,
         cptJSONlabel = text1ToText . tName $ cpt,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
-        cptJSONgeneralizations = map (text1ToText . idWithoutType) . largerConcepts (vgens fSpec) $ cpt,
-        cptJSONspecializations = map (text1ToText . idWithoutType) . smallerConcepts (vgens fSpec) $ cpt,
-        cptJSONdirectGens = map (text1ToText . idWithoutType) $ L.nub [g | (s, g) <- fsisa fSpec, s == cpt],
-        cptJSONdirectSpecs = map (text1ToText . idWithoutType) $ L.nub [s | (s, g) <- fsisa fSpec, g == cpt],
+        cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts (vgens fSpec) $ cpt,
+        cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts (vgens fSpec) $ cpt,
+        cptJSONdirectGens = map (text1ToText . idWithoutType') $ L.nub [g | (s, g) <- fsisa fSpec, s == cpt],
+        cptJSONdirectSpecs = map (text1ToText . idWithoutType') $ L.nub [s | (s, g) <- fsisa fSpec, g == cpt],
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
         cptJSONinterfaces = fmap (text1ToText . tName) . filter hasAsSourceCpt . interfaceS $ fSpec,
         cptJSONdefaultViewId = fmap (text1ToText . tName) . getDefaultViewForConcept fSpec $ cpt,
         cptJSONconceptTable = fromAmpersand env fSpec cpt,
-        cptJSONlargestConcept = text1ToText . idWithoutType . largestConcept fSpec $ cpt
+        cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
     where
       hasAsSourceCpt :: Interface -> Bool

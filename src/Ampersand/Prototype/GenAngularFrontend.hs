@@ -83,8 +83,8 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
             . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
             . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
             . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
-            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
+            . setAttribute "source" (idWithoutType' . source . ifcExp $ interf)
+            . setAttribute "target" (idWithoutType' . target . ifcExp $ interf)
             . setAttribute "crudC" (objCrudC (feiObj interf))
             . setAttribute "crudR" (objCrudR (feiObj interf))
             . setAttribute "crudU" (objCrudU (feiObj interf))
@@ -125,8 +125,8 @@ objectAttributes obj loglevel =
     . setAttribute "name" (escapeIdentifier' . objName $ obj)
     . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-    . setAttribute "source" (idWithoutType . source . objExp $ obj)
-    . setAttribute "target" (idWithoutType . target . objExp $ obj)
+    . setAttribute "source" (idWithoutType' . source . objExp $ obj)
+    . setAttribute "target" (idWithoutType' . target . objExp $ obj)
     . setAttribute "crudC" (objCrudC obj)
     . setAttribute "crudR" (objCrudR obj)
     . setAttribute "crudU" (objCrudU obj)
@@ -307,7 +307,7 @@ genTypescriptInterface fSpec depth obj =
         maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
-    conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType cpt)
+    conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType' cpt)
 
     viewIdWithImportAlias :: ViewDef -> Text
     viewIdWithImportAlias viewDef' = "views." <> (toPascal . tshow . vdname $ viewDef') <> "View"

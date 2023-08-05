@@ -80,7 +80,7 @@ buildConcepts fSpec =
   map
     ( \cpt ->
         FEConcept
-          { cptId = text1ToText $ idWithoutType cpt,
+          { cptId = text1ToText $ idWithoutType' cpt,
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
@@ -127,7 +127,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
-            srcConcept = text1ToText . idWithoutType . source . objExp $ obj,
+            srcConcept = text1ToText . idWithoutType' . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
           }
@@ -151,7 +151,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                       _ -> do
                         -- no view, or no view with an html template, so we fall back to target-concept template
                         -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType $ tgt') <.> ".html"
+                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType' $ tgt') <.> ".html"
                         hasSpecificTemplate <- doesTemplateExist templatePath
                         return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                   return

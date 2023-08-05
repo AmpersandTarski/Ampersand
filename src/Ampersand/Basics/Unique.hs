@@ -33,7 +33,7 @@ class (Typeable e, Eq e) => Unique e where
 
   -- | representation of a Unique thing into a Text.
   uniqueShowWithType :: e -> Text1
-  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> ("_" <> (text1ToText . showUnique $ x))
+  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "_" <> (text1ToText . showUnique $ x)
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of
@@ -42,23 +42,34 @@ class (Typeable e, Eq e) => Unique e where
   showUnique :: e -> Text1
 
   {-# MINIMAL showUnique #-}
-
-  idWithoutType :: e -> Text1
-  idWithoutType x =
-    uniqueButNotTooLong -- because it could be stored in an SQL database
-      . toText1Unsafe
-      $ nameParts
+  idWithoutType' :: e -> Text1
+  idWithoutType' x = case idWithoutType x of
+    Nothing -> fatal $ "idWithoutType could not be generated. " <> tshow (typeOf x) <> ": " <> (text1ToText . showUnique $ x)
+    Just te -> te
+  idWithoutType :: e -> Maybe Text1
+  idWithoutType x = case nameParts of
+    Nothing -> Nothing
+    Just nps ->
+      Just
+        . uniqueButNotTooLong -- because it could be stored in an SQL database
+        . toText1Unsafe
+        $ nps
     where
       theName = text1ToText . showUnique $ x
-      nameParts = addDots . map (checkProperId' . checkLength) . T.split (== '.') $ theName
-      checkProperId' :: Text1 -> Text1
-      checkProperId' t = case checkProperId t of
-        Nothing -> fatal $ "Not a valid Name: " <> theName
-        Just t1 -> t1
-      checkLength :: Text -> Text1
+      nameParts :: Maybe Text
+      nameParts =
+        if all isJust probes
+          then Just . addDots . catMaybes $ probes
+          else Nothing
+        where
+          probes :: [Maybe Text1]
+          probes = check <$> T.split (== '.') theName
+          check :: Text -> Maybe Text1
+          check t = checkProperId =<< checkLength t
+      checkLength :: Text -> Maybe Text1
       checkLength t = case T.uncons t of
-        Nothing -> fatal $ "Not a valid Name: " <> theName
-        Just (h, tl) -> Text1 h tl
+        Nothing -> Nothing
+        Just (h, tl) -> Just $ Text1 h tl
       addDots :: [Text1] -> Text
       addDots [] = mempty
       addDots (h : tl) = text1ToText h <> "." <> addDots tl

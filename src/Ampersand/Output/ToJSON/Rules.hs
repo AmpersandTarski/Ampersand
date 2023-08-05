@@ -69,8 +69,8 @@ instance JSON Rule JsonRule where
         rulJSONorigin = tshow . origin $ rule,
         rulJSONmeaning = showMeaning,
         rulJSONmessage = showMessage,
-        rulJSONsrcConceptId = text1ToText . idWithoutType . source . formalExpression $ rule,
-        rulJSONtgtConceptId = text1ToText . idWithoutType . target . formalExpression $ rule,
+        rulJSONsrcConceptId = text1ToText . idWithoutType' . source . formalExpression $ rule,
+        rulJSONtgtConceptId = text1ToText . idWithoutType' . target . formalExpression $ rule,
         rulJSONconjunctIds = maybe [] (map (text1ToText . rc_id) . NE.toList) . lookup rule . allConjsPerRule $ fSpec,
         rulJSONpairView = fmap (fromAmpersand env fSpec) (rrviol rule)
       }

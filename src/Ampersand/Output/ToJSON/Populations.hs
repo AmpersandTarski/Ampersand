@@ -64,7 +64,7 @@ instance JSON FSpec Populations where
 instance JSON A_Concept AtomValuesOfConcept where
   fromAmpersand _ fSpec cpt =
     AtomValuesOfConcept
-      { avcJSONconcept = text1ToText . idWithoutType $ cpt,
+      { avcJSONconcept = text1ToText . idWithoutType' $ cpt,
         avcJSONatoms = map showValADL (toList $ atomsBySmallestConcept fSpec cpt)
       }
 
