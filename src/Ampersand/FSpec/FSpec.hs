@@ -261,7 +261,9 @@ instance Eq Quad where
   a == b = compare a b == EQ
 
 instance Unique Quad where
-  showUnique quad = toText1Unsafe $ "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (text1ToText . tName . qRule) quad
+  showUnique quad = toText1Unsafe $ "Quad_" <> (tshow . abs . hash $ readable)
+    where
+      readable = "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (text1ToText . tName . qRule) quad
 
 --
 dnf2expr :: DnfClause -> Expression

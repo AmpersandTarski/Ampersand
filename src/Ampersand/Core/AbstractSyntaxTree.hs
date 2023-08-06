@@ -477,7 +477,9 @@ instance Ord Relation where
 
 instance Unique Relation where
   showUnique :: Relation -> Text1
-  showUnique x = toText1Unsafe ("Relation_" <> (tshow . abs . hash . text1ToText . showWithSign) x)
+  showUnique x = toText1Unsafe $ "Relation_" <> (tshow . abs . hash . text1ToText $ readable)
+    where
+      readable = showWithSign x
 
 instance Hashable Relation where
   hashWithSalt s Relation {dechash = v} = s `hashWithSalt` v
@@ -491,7 +493,9 @@ showWithSign rel = tName rel <> showSign rel
 newtype Meaning = Meaning {ameaMrk :: Markup} deriving (Show, Eq, Ord, Typeable, Data)
 
 instance Unique Meaning where
-  showUnique x = toText1Unsafe ("Meaning_" <> (tshow . abs . hash . tshow) x)
+  showUnique x = toText1Unsafe $ "Meaning_" <> (tshow . abs . hash $ readable)
+    where
+      readable = tshow x
 
 instance Named Relation where
   name = decnm
@@ -560,7 +564,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = tName vd <> toText1Unsafe ("_" <> text1ToText (tName (vdcpt vd)))
+  showUnique vd = toText1Unsafe "ViewDef_" <> tName vd <> toText1Unsafe ("_" <> text1ToText (tName (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -625,10 +629,11 @@ instance Traced AClassify where
   origin = genpos
 
 instance Unique AClassify where
-  showUnique a =
-    case a of
-      Isa {} -> showUnique (genspc a) <> toText1Unsafe " ISA " <> showUnique (gengen a)
-      IsE {} -> showUnique (genspc a) <> toText1Unsafe " IS " <> toText1Unsafe (T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a))
+  showUnique a = toText1Unsafe $ "Classify_" <> (tshow . abs . hash . text1ToText $ readable)
+    where
+      readable = case a of
+        Isa {} -> showUnique (genspc a) <> toText1Unsafe " ISA " <> showUnique (gengen a)
+        IsE {} -> showUnique (genspc a) <> toText1Unsafe " IS " <> toText1Unsafe (T.intercalate " /\\ " (NE.toList . fmap (text1ToText . showUnique) $ genrhs a))
 
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
@@ -709,7 +714,7 @@ data BoxItem
   deriving (Eq, Show)
 
 instance Unique BoxItem where
-  showUnique x = toText1Unsafe ("BoxItem" <> (tshow . abs . hash . tshow) x)
+  showUnique x = toText1Unsafe ("BoxItem_" <> (tshow . abs . hash . tshow) x)
 
 instance Traced BoxItem where
   origin o =
@@ -842,11 +847,10 @@ instance Eq Purpose where
   a == b = compare a b == EQ
 
 instance Unique Purpose where
-  showUnique p =
-    uniqueShowWithType (explMarkup p)
-      <> toText1Unsafe (tshow (typeOf x) <> "_" <> tshow x)
+  showUnique p = toText1Unsafe $ "Purpose_" <> (tshow . abs . hash $ readable)
     where
-      x = origin p
+      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "_" <> tshow orig)
+      orig = origin p
 
 instance Traced Purpose where
   origin = explPos
@@ -865,8 +869,11 @@ data Population -- The user defined populations
   deriving (Eq, Ord, Show)
 
 instance Unique Population where
-  showUnique pop@ARelPopu {} = (uniqueShowWithType . popdcl) pop <> (showUnique . popps) pop
-  showUnique pop@ACptPopu {} = (uniqueShowWithType . popcpt) pop <> (showUnique . popas) pop
+  showUnique pop = toText1Unsafe $ "Population_" <> (tshow . abs . hash $ readable)
+    where
+      readable = text1ToText $ case pop of
+        ARelPopu {} -> (uniqueShowWithType . popdcl) pop <> (showUnique . popps) pop
+        ACptPopu {} -> (uniqueShowWithType . popcpt) pop <> (showUnique . popas) pop
 
 type AAtomPairs = Set.Set AAtomPair
 
@@ -880,7 +887,9 @@ mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = toText1Unsafe "(" <> (showUnique . apLeft) apair <> (toText1Unsafe "," <> ((showUnique . apRight) apair <> toText1Unsafe ")"))
+  showUnique apair = toText1Unsafe $ "AAtomPair_" <> (tshow . abs . hash . text1ToText $ readable)
+    where
+      readable = toText1Unsafe "(" <> (showUnique . apLeft) apair <> (toText1Unsafe "," <> ((showUnique . apRight) apair <> toText1Unsafe ")"))
 
 type AAtomValues = Set.Set AAtomValue
 
@@ -914,13 +923,16 @@ data AAtomValue
   deriving (Eq, Ord, Show, Data)
 
 instance Unique AAtomValue where -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
-  showUnique pop@AAVString {} = (toText1Unsafe . tshow . aavhash) pop
-  showUnique pop@AAVInteger {} = (toText1Unsafe . tshow . aavint) pop
-  showUnique pop@AAVFloat {} = (toText1Unsafe . tshow . aavflt) pop
-  showUnique pop@AAVBoolean {} = (toText1Unsafe . tshow . aavbool) pop
-  showUnique pop@AAVDate {} = (toText1Unsafe . tshow . aadateDay) pop
-  showUnique pop@AAVDateTime {} = (toText1Unsafe . tshow . aadatetime) pop
-  showUnique AtomValueOfONE = tName nameOfONE
+  showUnique value = toText1Unsafe $ "AtomValue_" <> (tshow . abs . hash $ readable)
+    where
+      readable = case value of
+        AAVString {} -> tshow (aavhash value)
+        AAVInteger {} -> tshow (aavint value)
+        AAVFloat {} -> tshow (aavflt value)
+        AAVBoolean {} -> tshow (aavbool value)
+        AAVDate {} -> tshow (aadateDay value)
+        AAVDateTime {} -> tshow (aadatetime value)
+        AtomValueOfONE -> text1ToText (tName nameOfONE)
 
 showValSQL :: AAtomValue -> Text
 showValSQL val =
@@ -968,18 +980,21 @@ data ExplObj
   deriving (Show, Eq, Typeable, Ord)
 
 instance Unique ExplObj where
-  showUnique e =
-    toText1Unsafe "Explanation of "
-      <> ( case e of
-             (ExplConcept cpt) -> uniqueShowWithType cpt
-             (ExplRelation rel) -> uniqueShowWithType rel
-             (ExplRule s) -> toText1Unsafe "a Rule named " <> tName s
-             (ExplIdentityDef s) -> toText1Unsafe "an Ident named " <> tName s
-             (ExplViewDef s) -> toText1Unsafe "a View named " <> tName s
-             (ExplPattern s) -> toText1Unsafe "a Pattern named " <> tName s
-             (ExplInterface s) -> toText1Unsafe "an Interface named " <> tName s
-             (ExplContext s) -> toText1Unsafe "a Context named " <> tName s
-         )
+  showUnique e = toText1Unsafe $ "Explanation_" <> (tshow . abs . hash $ readable)
+    where
+      readable =
+        "Explanation of "
+          <> text1ToText
+            ( case e of
+                (ExplConcept cpt) -> uniqueShowWithType cpt
+                (ExplRelation rel) -> uniqueShowWithType rel
+                (ExplRule s) -> toText1Unsafe "a Rule named " <> tName s
+                (ExplIdentityDef s) -> toText1Unsafe "an Ident named " <> tName s
+                (ExplViewDef s) -> toText1Unsafe "a View named " <> tName s
+                (ExplPattern s) -> toText1Unsafe "a Pattern named " <> tName s
+                (ExplInterface s) -> toText1Unsafe "an Interface named " <> tName s
+                (ExplContext s) -> toText1Unsafe "a Context named " <> tName s
+            )
 
 data Expression
   = -- | equivalence             =
@@ -1053,13 +1068,19 @@ instance Hashable Expression where
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
-  showUnique x = toText1Unsafe ("Expression_" <> (tshow . abs . hash . tshow) x)
+  showUnique x = toText1Unsafe $ "Expression_" <> (tshow . abs . hash $ readable)
+    where
+      readable = tshow x
 
 instance Unique (PairView Expression) where
-  showUnique x = toText1Unsafe ("PairView_" <> (tshow . abs . hash . tshow) x)
+  showUnique x = toText1Unsafe $ "PairView_" <> (tshow . abs . hash $ readable)
+    where
+      readable = tshow x
 
 instance Unique (PairViewSegment Expression) where
-  showUnique x = toText1Unsafe ("PairViewSegment_Expression_" <> (tshow . abs . hash . tshow) x)
+  showUnique x = toText1Unsafe $ "PairViewSegment_Expression_" <> (tshow . abs . hash $ readable)
+    where
+      readable = tshow x
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
@@ -1297,7 +1318,9 @@ instance ShowWithAliases A_Concept where
       xs -> tName cpt <> toText1Unsafe ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
 
 instance Unique (A_Concept, PAtomValue) where
-  showUnique (c, val) = toText1Unsafe (tshow val <> "[") <> (showUnique c <> toText1Unsafe "]")
+  showUnique (c, val) = toText1Unsafe $ "ConceptAtomValue_" <> (tshow . abs . hash $ readable)
+    where
+      readable = tshow val <> "[" <> text1ToText (showUnique c) <> "]"
 
 data Signature = Sign !A_Concept !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 
@@ -1312,7 +1335,9 @@ instance ShowWithAliases Signature where
     toText1Unsafe "[" <> showWithAliases s <> toText1Unsafe "*" <> showWithAliases t <> toText1Unsafe "]"
 
 instance Unique Signature where
-  showUnique (Sign s t) = toText1Unsafe "[" <> showUnique s <> toText1Unsafe "*" <> showUnique t <> toText1Unsafe "]"
+  showUnique (Sign s t) = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ readable)
+    where
+      readable = "[" <> text1ToText (showUnique s) <> "*" <> text1ToText (showUnique t) <> "]"
 
 instance HasSignature Signature where
   source (Sign s _) = s

@@ -72,7 +72,8 @@ class (Typeable e, Eq e) => Unique e where
         Just (h, tl) -> Just $ Text1 h tl
       addDots :: [Text1] -> Text
       addDots [] = mempty
-      addDots (h : tl) = text1ToText h <> "." <> addDots tl
+      addDots [h] = text1ToText h
+      addDots (h : h' : tl) = text1ToText h <> "." <> addDots (h' : tl)
   addType :: e -> Text1 -> Text1
   addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
 

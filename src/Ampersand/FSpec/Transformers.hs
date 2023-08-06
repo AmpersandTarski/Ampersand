@@ -60,15 +60,15 @@ dirtyId x = DirtyId <$> idWithoutType x
 
 dirtyId' :: Unique e => e -> PopAtom
 dirtyId' x = case dirtyId x of
-  Nothing -> fatal $ "Not a valid dirtyId could be generated: " <> tshow (typeOf x) <> text1ToText (showUnique x)
+  Nothing -> fatal $ "Not a valid dirtyId could be generated: " <> tshow (typeOf x) <> ": " <> text1ToText (showUnique x)
   Just pa -> pa
 
 dirtyIdWithoutType :: Unique a => a -> Maybe PopAtom
 dirtyIdWithoutType x = DirtyId <$> idWithoutType x
 
-dirtyIdWithoutType' :: Unique e => Text -> e -> PopAtom
-dirtyIdWithoutType' typ x = case dirtyIdWithoutType x of
-  Nothing -> fatal $ "Not a valid dirtyIdWithoutType could be generated: " <> typ <> text1ToText (showUnique x)
+dirtyIdWithoutType' :: Unique e => e -> PopAtom
+dirtyIdWithoutType' x = case dirtyIdWithoutType x of
+  Nothing -> fatal $ "Not a valid dirtyIdWithoutType could be generated: " <> tshow (typeOf x) <> ": " <> text1ToText (showUnique x)
   Just pa -> pa
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
@@ -1191,7 +1191,7 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Interface",
         Set.fromList [],
-        [ (dirtyIdWithoutType' "Interface" ifc, dirtyIdWithoutType' "Interface" ifc)
+        [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
             ifcIsAPI ifc
         ]
@@ -1202,7 +1202,7 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Interface",
         Set.fromList [],
-        [ (dirtyIdWithoutType' "Interface" ifc, dirtyIdWithoutType' "Interface" ifc)
+        [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
             null (ifcRoles ifc)
         ]
@@ -1212,7 +1212,7 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Label",
         Set.fromList [],
-        [ (dirtyIdWithoutType' "Interface" ifc, PopAlphaNumeric . text1ToText . tName $ ifc)
+        [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . text1ToText . tName $ ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
@@ -1221,7 +1221,7 @@ transformersPrototypeContext fSpec =
         "Role",
         "Label",
         Set.fromList [Uni],
-        [ (dirtyIdWithoutType' "Role" role, PopAlphaNumeric . text1ToText . tName $ role)
+        [ (dirtyIdWithoutType' role, PopAlphaNumeric . text1ToText . tName $ role)
           | role :: Role <- instanceList fSpec
         ]
       ),
@@ -1230,7 +1230,7 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Role",
         Set.fromList [],
-        [ (dirtyIdWithoutType' "Interface" ifc, dirtyIdWithoutType' "Role" role)
+        [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' role)
           | ifc :: Interface <- instanceList fSpec,
             role <- ifcRoles ifc
         ]
