@@ -1,0 +1,1 @@
+This section describes the full language Ampersand. Please use it as a reference rather than an introductory course.

@@ -5,12 +5,11 @@ description: >-
 ---
 
 # The language Ampersand
-
-Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to learn how we use the words atom, concept, and relation. Below is a list of other words with a specific meaning in Ampersand.
+This page is a dictionary. It defines the words we use to talk about Ampersand.
 
 | Word | Meaning | Example | Purpose |
 | ---- | ------- | ------- | ------- |
-| [Atom](atoms.md) | an indivisible item | `"Peter"` | to represent a thing |
+| [Atom](atoms.md) | an indivisible item. Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to learn how we use the words atom, concept, and relation. | `"Peter"` | to represent a thing |
 | [Concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) | a name to categorize similar items | `Person` |   |
 | Pair | two atoms: a source and a target atom | `("Ida",5)` | to state that two atoms are related |
 | [Relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) | a set of pairs that is identifyable in a context by its name and type | `r[A*B]` | to build true statements and store pairs persistently in an application |

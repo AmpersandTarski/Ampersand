@@ -45,7 +45,7 @@ We are currently refactoring our documentation. The navigation at the left is wo
       * [Relational operators visualized](ampersand/the-language-ampersand/terms/semantics#relational-operators-visualized)
       * [Residuals visualized](ampersand/the-language-ampersand/terms/semantics#residual-operators-visualized)
   * [Context](ampersand/the-language-ampersand/context)
-  * [Syntactical Conventions](ampersand/the-language-ampersand/syntactical-conventions/)
+  * [Syntactical Conventions](ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
     * [Language support](ampersand/the-language-ampersand/syntactical-conventions/language-support)
   * [Patterns](ampersand/the-language-ampersand/patterns)
   * [Language support](ampersand/the-language-ampersand/language-support)

@@ -43,29 +43,56 @@ module.exports = {
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
+            label: 'Dictionary',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/README'
+        },
+        {
+            label: 'Meta syntax',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements'
+        },
+        {
+            label: 'Syntax and semantics',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/README'
+        },
+        {
+            label: 'Terms',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/semantics'
+        },
+        {
+            label: 'Best practices',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/best-practices'
+        },
+        {
+            label: 'Preprocessor',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/the-preprocessor'
+        },
+        {
             type: 'category',
             label: 'Language Reference',
             items: [
-                'ampersand/reference-material/the-language-ampersand/README',
                 'ampersand/reference-material/the-language-ampersand/atoms',
-                'ampersand/reference-material/the-language-ampersand/best-practices',
                 'ampersand/reference-material/the-language-ampersand/context',
                 'ampersand/reference-material/the-language-ampersand/current-date',
                 'ampersand/reference-material/the-language-ampersand/design-considerations',
-                'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements',
                 'ampersand/reference-material/the-language-ampersand/language-support',
                 'ampersand/reference-material/the-language-ampersand/patterns',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/README',
                 'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
                 'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
                 'ampersand/reference-material/the-language-ampersand/terms/README',
-                'ampersand/reference-material/the-language-ampersand/terms/semantics',
-                'ampersand/reference-material/the-language-ampersand/the-preprocessor',
-                'ampersand/reference-material/the-language-ampersand/truth',
                 ]
         },
     ],
     ampersandTheorySidebar: [
+        {
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/truth'
+        },
         {
             type: 'doc',
             id: 'ampersand/conceptual/theory'
@@ -117,7 +144,6 @@ module.exports = {
                     'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements',
                     'ampersand/reference-material/the-language-ampersand/language-support',
                     'ampersand/reference-material/the-language-ampersand/patterns',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/README',
                     'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
                     'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
                     'ampersand/reference-material/the-language-ampersand/terms/README',
