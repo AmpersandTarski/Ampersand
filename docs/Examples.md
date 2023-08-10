@@ -56,7 +56,7 @@ because it is familiar. We show this example to demonstrate how to get different
 
 ## Preliminaries
 
-The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](https://github.com/AmpersandTarski/prototype/tree/master/templates) first for details.
+The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../../../prototype/tree/master/templates) first for details.
 
 To link system activities to a person or organisation, we use the notion of `Account`. To log in means to associate a session with the `Account` of the user. This association is made in the relation `sessionAccount`. To log out means to break that link, i.e. to remove the session/account pair from relation `sessionAccount`. When logging in, it is customary that the user identifies herself. In this example we do this with a `UserID` and `Password`.
 
@@ -156,7 +156,7 @@ subbox remains empty. However, when logged in, the other subbox remains empty:
 ## Example {#example-service-structure}
 To understand the structure of a service (keyword: `INTERFACE`), this section introduces a small example of a user interface, which shows the name, status, e-mail and co-workers of a person called "J. Lovell".
 
-![Example of a user interface](./Figures/InterfaceLovellRaw.jpg)
+![Example of a user interface](./assets/InterfaceLovellRaw.jpg)
 
 The specification of this user interface is given in the following service definition:
 

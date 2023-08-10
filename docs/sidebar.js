@@ -53,14 +53,14 @@ module.exports = {
             id: 'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements'
         },
         {
-            label: 'Syntax and semantics',
-            type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/README'
-        },
-        {
             label: 'Terms',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/semantics'
+            id: 'ampersand/reference-material/the-language-ampersand/terms/semantics'
+        },
+        {
+            label: 'Services',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/services'
         },
         {
             label: 'Best practices',
@@ -149,7 +149,7 @@ module.exports = {
                     'ampersand/reference-material/the-language-ampersand/terms/README',
                     'ampersand/reference-material/the-language-ampersand/terms/semantics',
                     'ampersand/reference-material/the-language-ampersand/the-preprocessor',
-                    'ampersand/reference-material/the-language-ampersand/truth',
+                    'ampersand/reference-material/the-language-ampersand/truth'
                 ]
             },
 
@@ -213,11 +213,6 @@ module.exports = {
                 'the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
                 'the-tools-we-use/deploying-with-kubernetes',
                 'the-tools-we-use/functionality-of-rap3/README',
-                'the-tools-we-use/functionality-of-rap3/account-manager',
-                'the-tools-we-use/functionality-of-rap3/graduate-student',
-                'the-tools-we-use/functionality-of-rap3/logging-in',
-                'the-tools-we-use/functionality-of-rap3/student',
-                'the-tools-we-use/functionality-of-rap3/tutor',
                 'the-tools-we-use/git',
                 'the-tools-we-use/gitbook/README',
                 'the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',

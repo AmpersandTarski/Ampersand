@@ -95,7 +95,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `HTML`
   * `LATEX`
   * `MARKDOWN`
-* Keywords for [services](../../The-language-Ampersand.md#syntax-of-interface-statements)
+* Keywords for [services](./services.md#syntax-of-interface-statements)
   * `INTERFACE`
   * `FOR`
   * `LINKTO`

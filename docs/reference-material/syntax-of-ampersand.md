@@ -6,7 +6,7 @@ id: syntax-of-ampersand
 
 This page is about the syntax of ampersand scripts. 
 
-## The CONCEPT statement
+## The CONCEPT statement 
 
 ### Purpose:
 

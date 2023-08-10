@@ -23,7 +23,7 @@ ENDCONTEXT
 
 If you run this program, this is what you'll see
 
-![](../../assets/image.png)
+<!-- ![](../../assets/image.png) -->
 
 ### Explanation
 
