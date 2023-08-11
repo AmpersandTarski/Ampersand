@@ -1,10 +1,90 @@
 ---
 description: >-
-  Semantics tell us about meaning. About how to interpret terms and their
-  operators.
+  This page describes the notion of term. Its subpages provide several
+  interpretations of terms, all of which are valid so you can use each
+  interpretation at your own discretion.
 ---
 
-# Semantics
+# Terms
+
+## Purpose
+
+The purpose of a term is to compute pairs that constitute a relation. We use operators to assemble terms from smaller terms, to express in formal language precisely what is meant in the natural language of the business. The smallest term is a single relation.
+
+We noticed that our readers have different backgrounds. They have different preferences about the way we explain the operators in Ampersand. Some prefer an explanation in logic, others in algebra, and still others in set theory. So we decided to [explain the operators](#semantics) in many different ways simultaneously, hoping that one of them suits your preference.
+
+## Description
+
+A term is a combination of operators and relations. Its meaning is a set of pairs, which is in fact a newly created relation. The word "expression" may be used as a synonym for "term" in the context of Ampersand.
+
+## Examples
+
+`owner`
+
+`r;s~`
+
+`I /\ goalkeeper;goalkeeper~`
+
+`destination;"Algarve" |- spoken;"Portugese"`
+
+## Syntax
+
+Every term is built out of relations, which are combined by operators. An term has one of the following 8 syntactic structures
+
+```
+<Term> <BinaryOperator> <Term>
+<UnaryOpPre> <Term>
+<Term> <UnaryOpPost>
+<RelationRef> <type>?
+I <type>?
+V <type>?
+<atom>
+( <Term> )
+```
+
+## `Operators`
+
+The operators come in families. We advise novices to study only the rule operators, boolean operators and relational operators. There is a wealth of things you can express with just these operators. The residual operators seem harder to learn and the Kleene operators are not fully implemented yet. You can click the hyperlink to navigate to the semantics of each family.
+
+| Family                                                   |                   binary operators | binding power |       unary operators | binding power |
+| -------------------------------------------------------- | ---------------------------------: | ------------- | --------------------: | ------------- |
+| rules                                                    |           $$=$$ and $$\subseteq\$$ | 1 (weakest)   |                       |               |
+| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $$\overline{\strut}$$ | prefix        |
+| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |       $$\smallsmile$$ | postfix       |
+| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                       |               |
+| Kleene                                                   |                                    |               |       $$∗$$ and $$+$$ | postfix       |
+
+## Brackets
+
+Operators with different binding power may be used in the same term without brackets, because the binding power tells how it is interpreted. For example, $$r\cap s;t$$ means $$r\cap(s;t)$$ because $$;$$ has a higher binding power than $$\cap$$.
+
+Operators with the same binding power must be used unambiguously. For example: $$r\cap(s-t)$$ means something different than $$(r\cap s)-t$$. In such cases Ampersand insists on the use of brackets, so readers without knowledge of the binding powers of the operators can read a term unambiguously.
+
+Repeated uses of an associative operator does not require brackets. So $$r\cap s \cap t$$ is allowed because $$\cap$$ is associative.
+
+## Notation on the keyboard
+
+When coding in Ampersand, these operators are typed with characters on the keyboard. The following table shows the operators in math and their equivalent in code:
+
+| operator name                |  code |          math          | remark                                     |
+| ---------------------------- | :---: | :--------------------: | ------------------------------------------ |
+| equivalence (equal)          |  `=`  |          $$=$$         | use only in a rule                         |
+| inclusion                    |  `|-` |      $$\subseteq$$     | use only in a rule                         |
+| intersect                    |  `/\` |          $$∩$$         | associative, commutative, idempotent       |
+| union                        |  `\/` |          $$∪$$         | associative, commutative, idempotent       |
+| difference (minus)           |  `-`  |          $$-$$         |                                            |
+| complement                   |  `-`  | $$\overline{\strut }$$ | in code: Prefix; in math: Overline         |
+| compose                      |  `;`  |          $$;$$         | associative                                |
+| converse (flip)              |  `~`  |     $$\smallsmile$$    | postfix                                    |
+| left residual                |  `/`  |          $$/$$         |                                            |
+| right residual               |  `\`  |     $$\backslash$$     |                                            |
+| diamond                      |  `<>` |      $$\Diamond$$      |                                            |
+| relational product           |  `!`  |       $$\dagger$$      | associative                                |
+| cartesian product            |  `#`  |       $$\times$$       |                                            |
+| reflexive transitive closure |  `*`  |          $$∗$$         | in code: not implemented; in math: Postfix |
+| transitive closure           |  `+`  |          $$+$$         | in code: not implemented; in math: Postfix |
+
+## Semantics
 
 We present the semantics of terms in 5 different (but equivalent) ways: one explanation in terms of logic, one in set theory, one in terms of axioms (algebraically), one in natural language, and one visual explanation. These ways are equivalent, so you can interpret a term in any of the presented ways. Any way will do; take your pick!
 
@@ -18,11 +98,11 @@ We present the semantics of terms in 5 different (but equivalent) ways: one expl
 
 (the pages without hyperlinks are yet to be made).
 
-## Semantics in logic
+### Semantics in logic
 
-### Primitive terms in logic
+#### Primitive terms in logic
 
-#### Relations
+##### Relations
 
 When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for all pairs it contains at the moment it is evaluated. Those pairs (also referred to as the _**contents**_ or _**population**_ of the relation) can change over time as users add or delete pairs from it.
 
@@ -30,7 +110,7 @@ When a relation is used in a term, we can just use its name if that is unambiguo
 
 If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$a\ r\ b$$. Alternatively we may write $$(a,b)\in r$$ , since we know that $$r$$ is a set.
 
-#### Identity
+##### Identity
 
 For every concept $$C$$, the term $$I_{[C]}$$ exists. It refers to the _**identity relation**_. It means that for every $$a\in C$$ and $$b\in C$$ we have:
 
@@ -40,7 +120,7 @@ $$
 
 The type of $$I_{[C]}$$ is $$[C*C]$$. In Ampersand code you write `I[C]`.
 
-#### Complete relation
+##### Complete relation
 
 For every pair of concepts $$A$$ and $$B$$ the term $$V_{[A*B]}$$ refers to the _**complete relation**_. For every $$a\in A$$ and $$b\in B$$ we have:
 
@@ -51,7 +131,7 @@ $$
 The type of $$V_{[A*B]}$$ is $$[A*B]$$. In Ampersand code you write `V[A*B]`.
 
 
-### Boolean operators in logic
+#### Boolean operators in logic
 
 The notation $$a\ r\ b$$ means that the pair (a,b) is in relation $$r$$. This page defines when pair (a,b) is in relation $$r ∩ s$$ (the intersection of $$r$$ and $$s$$), $$r ∪ s$$ (the union of $$r$$ and $$s$$), $$r-s$$ (the difference of $$r$$ and $$s$$).
 
@@ -65,17 +145,17 @@ The complement (or negation) of a relation $$r_{[A x B]}$$ is defined by means o
 
 Note that the complement is defined in terms of $$A$$ and $$B$$. So, two relations with an identical population yet a different type may have different complements.
 
-#### How to type boolean operators in your script
+##### How to type boolean operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can type boolean (and other) operators in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can type boolean (and other) operators in your Ampersand script.
 
-### Relational operators in logic
+#### Relational operators in logic
 
-#### Purpose of relational operators
+##### Purpose of relational operators
 
 To say things such as "the name of the owner", we want to string together multiple relations \(viz. `name` and `owner`\). Relational operators allow us to make such statements.
 
-#### Converse
+##### Converse
 
 A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
@@ -85,7 +165,7 @@ $$
 
 If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
 
-#### Composition
+##### Composition
 
 The composition operator is denoted by a semicolon $$;$$ between two terms. It is pronounced as 'composed with'. Let us take a look at $$r$$ composed with $$s$$. Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$ is defined by:
 
@@ -95,11 +175,11 @@ $$
 
 If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ has type $$[A\times C]$$.
 
-#### How to type boolean operators in your script
+##### How to type boolean operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can type boolean \(and other\) operators in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can type boolean \(and other\) operators in your Ampersand script.
 
-### Residual operators in logic
+#### Residual operators in logic
 
 [Residual operators](https://en.wikipedia.org/wiki/Residuated_Boolean_algebra) are used when "[material implication](https://en.wikipedia.org/wiki/Material_implication_%28rule_of_inference%29)" is involved.
 
@@ -110,15 +190,15 @@ If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ h
 
 * diamond: $$a (r♢s) b\ \Leftrightarrow\ \forall x: a\ r\ x\ =\ x\ s\ b$$. In words: For every $$x$$, both $$a\ r\ x$$ and $$x\ s\ b$$ are true or both are false.
 
-#### How to type boolean operators in your script
+##### How to type boolean operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can type boolean \(and other\) operators in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can type boolean \(and other\) operators in your Ampersand script.
 
-## Semantics in natural language
+### Semantics in natural language
 
-### Primitive terms in natural language
+#### Primitive terms in natural language
 
-#### Relations
+##### Relations
 
 When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for a set of facts that are assumed true on the current time in the current context. Those facts \(also referred to as the contents or the population of the relation\) can change over time as users add or delete facts from it.
 
@@ -126,17 +206,17 @@ When a relation is used in a term, we can simply use its name if that is unambig
 
 If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$a\ r\ b$$ to denote the fact. It means that we consider $$a\ r\ b$$ to be true \(within the current context\).
 
-#### Identity
+##### Identity
 
 Every atom in a concept $$C$$ identifies itself. If for example concept "Person" contains atoms {"Ann", "Bob", "Cecil"}, "Ann" identifies "Ann", "Bob" identifies "Bob", and "Cecil" identifies "Cecil". This makes "Ann" and "Bob" different atoms \(unequal\).
 
-### Boolean operators in natural language
+#### Boolean operators in natural language
 
-#### Purpose of boolean operators
+##### Purpose of boolean operators
 
 To say things such as pair `("peter","macbook")` is either in relation `ownsa`  or `wantsa`,  requires us to use boolean operators $$\cup$$, $$\cap$$, and $$-$$ .
 
-#### Meaning
+##### Meaning
 
 Let us explain the meaning of relational operators $$\cup$$, $$\cap$$, and $$-$$ by means of examples.
 
@@ -144,22 +224,22 @@ Assume we have a relation, `ownsa[Person*LaptopType]`, which contains the person
 
 Also assume another relation `wantsa[Person*LaptopType]`, which contains the persons who want a particular type of laptop. A fact `"peter" wantsa "macbook"` means that Peter wants a MacBook.
 
-#### Union
+##### Union
 
 The sentence: "Peter owns a MacBook or Peter wants a MacBook." is represented as\
 `"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
 
-#### Intersection
+##### Intersection
 
 The sentence: "Peter owns a MacBook and Peter wants a MacBook." is represented as\
 `"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
 
-#### Difference
+##### Difference
 
 The sentence: "Peter owns a MacBook and Peter does not want a MacBook." is represented as\
 `"peter"` (`label` $$-$$ `colour`) `"macbook"`.
 
-#### Natural language templates
+##### Natural language templates
 
 There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](https://ampersandtarski.gitbook.io/documentation/\~/drafts/-LKR7o8ALsxT8aQfWugs/primary/ampersands-own-language/semantics-visualized/semantics-visualized). The systematic translation is given in the following table:
 
@@ -169,13 +249,13 @@ There is a pattern to this. A computer can generate a literal translation from t
 | $$a\ (r\cap s)\ b$$   | `a r b `and `a s b`.      |
 | $$a\ (r-s)\ b$$       | `a r b `and not`a s b`.   |
 
-### Relational operators in natural language
+#### Relational operators in natural language
 
-#### Purpose of relational operators
+##### Purpose of relational operators
 
 To say things such as "the name of the owner", we want to string together multiple relations (viz. `name` and `owner`). Relational operators allow us to make such statements.
 
-#### Meaning
+##### Meaning
 
 The meaning of relational operators $$\smallsmile$$ and $$;$$ is best explained by means of examples.
 
@@ -183,17 +263,17 @@ Assume we have a relation, `label[Contract*Colour]`, which contains the colour o
 
 Also assume another relation `stored[Contract*Location]`, which gives the location where a contract is stored. Fact `"1834" store "cabinet 42"` means that contract 1834 is stored in cabinet 42.
 
-#### Converse
+##### Converse
 
 A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. In natural language, however, the meaning does not change.  So if`"1834" label "blue"` means that contract 1834 has a blue label, `"blue" label~ "1834"` also means that contract 1834 has a blue label.
 
 * The sentence: "All contracts with a blue label are stored in cabinet 42." is represented as `"blue" (label\stored) "cabinet 42"`. Literally it says: For every contract, if it has a blue label, then it is stored in cabinet 42.
 
-#### Composition
+##### Composition
 
 The sentence "A _contract with a blue label is stored in cabinet 42_." can be represented as `"blue" (label~;stored) "cabinet 42"`.  Literally it says: There is a contract that has a blue label and is stored in cabinet 42.
 
-#### Natural language templates
+##### Natural language templates
 
 There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](https://ampersandtarski.gitbook.io/documentation/\~/drafts/-LKR7o8ALsxT8aQfWugs/primary/ampersands-own-language/semantics-visualized/semantics-visualized). The systematic translation is given in the following table:
 
@@ -204,7 +284,7 @@ There is a pattern to this. A computer can generate a literal translation from t
 
 The natural language translation for `b r~ a`is the same as language translation for `a r b`.
 
-### Residual operators in natural language
+#### Residual operators in natural language
 
 The meaning of residual operators $$/$$, $$\backslash$$, and $$\diamond$$ is best explained by means of examples.
 
@@ -216,7 +296,7 @@ Also assume another relation `stored[Contract*Location]`, which gives the locati
 * The sentence: "All contracts that are stored in cabinet 42 have a blue label." is represented as `"blue" (label~/stored~) "cabinet 42"`. Literally it says: For every contract, if it is stored in cabinet 42, then it has a blue label.
 * The sentence: "All blue labeled contracts and no others are stored in cabinet 42." is represented as `"blue" (label~<>stored) "cabinet 42"`. Literally it says: For every contract, if it has a blue label, then it is stored in cabinet 42 and if it is stored in cabinet 42, then it has a blue label.
 
-#### Natural language templates
+##### Natural language templates
 
 There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](#semantics-visualized). The systematic translation is given in the following table:
 
@@ -226,11 +306,11 @@ There is a pattern to this. A computer can generate a literal translation from t
 | `a (r/s) b` | For every `x`: if `b s x` then `a r x`. |
 | `a (r<>s) b` | For every `x`: if `a r x` then `x s b` and if `x s b` then `a r x`. |
 
-## Semantics in set theory
+### Semantics in set theory
 
-### Primitive terms in set theory
+#### Primitive terms in set theory
 
-#### Relations
+##### Relations
 
 When a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) is used in a term, it stands for the set of pairs it contains at the moment it is evaluated. That set \(also referred to as the contents of the relation\) can change over time as users add or delete pairs from it.
 
@@ -238,7 +318,7 @@ When a relation is used in a term, we can simply use its name if that is unambig
 
 If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$(a,b)\in r$$. Alternatively we may write $$a\ r\ b$$.
 
-#### Identity
+##### Identity
 
 For every concept $$C$$, the term $$I_{[C]}$$ represents the _**identity relation**_. It is defined by:
 
@@ -248,7 +328,7 @@ $$
 
 The type of $$I_{[C]}$$ is $$[C*C]$$. In Ampersand code you write `I[C]`.
 
-#### Complete relation
+##### Complete relation
 
 For every pair of concepts $$A$$ and $$B$$ the term $$V_{[A*B]}$$ represents the _**complete relation**_. It is defined by:
 
@@ -258,7 +338,7 @@ $$
 
 The type of $$V_{[A*B]}$$ is $$[A*B]$$. In Ampersand code you write `V[A*B]`.
 
-### Boolean operators in set theory
+#### Boolean operators in set theory
 
 A relation is by definition a subset of the Cartesian Product of the source and target sets. So, if two different relations r and s are defined on the same source A and target B, then the ordinary set operators can be applied to produce a new relation.
 
@@ -272,17 +352,17 @@ The complement \(or negation\) of a relation $$r_{[A x B]}$$ is defined by means
 
 Note that the complement is defined in terms of $$A$$ and $$B$$. So, two relations with the identical population yet a different type may have different complements.
 
-#### How to type boolean operators in your script
+##### How to type boolean operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
 
-### Relational operators in set theory
+#### Relational operators in set theory
 
-#### Purpose of relational operators
+##### Purpose of relational operators
 
 To say things such as "the name of the owner", we want to string together multiple relations \(viz. `name` and `owner`\). Relational operators allow us to make such statements.
 
-#### Converse
+##### Converse
 
 A relation that contains pairs of the form $$(a, b)$$ can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
@@ -292,7 +372,7 @@ $$
 
 If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
 
-#### Composition
+##### Composition
 
 The composition operator is denoted by a semicolon ; between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
 
@@ -300,18 +380,18 @@ The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s
 
 
 
-# Semantics in relational algebra
+## Semantics in relational algebra
 
-## Semantics of primitive terms in relational algebra
+### Semantics of primitive terms in relational algebra
 
 This chapter discusses the [boolean operators](#boolean-operators-in-algebra) and the [relational operators](#relational-operators-in-algebra) in the following sections.
 
 
-### Boolean operators in algebra
+#### Boolean operators in algebra
 
 The boolean operators of Ampersand behave as one would expect in any boolean algebra. Union ($$\cup$$) and intersection ($$\cap$$) are both idempotent, commutative, and associative operators. In Ampersand we use a binary difference operator over with the usual semantics: $$(r-s)\cup(r\cap s) = r$$. The (more customary) complement operator is a partial function, because Ampersand supports heterogeneous relation algebra.
 
-#### Union
+##### Union
 
 The operator $$\cup$$ (union) satisfies the following axioms:
 
@@ -319,32 +399,32 @@ The operator $$\cup$$ (union) satisfies the following axioms:
 2. (associativity of $$\cup$$)        $$r\cup (s\cup t)\ =\ (r\cup s)\cup t$$
 3. (idempotence of $$\cup$$)        $$r\cup r\ =\ r$$
 
-#### Difference
+##### Difference
 
 The difference $$r-s$$ is the smallest relation $$t$$ that satisfies $$r\ \subseteq\ s\cup t$$. Smallest means: If there is a $$t'$$ for which $$s\cup t'=r$$, this implies that $$t\cup t'=t'$$.
 
-#### Intersection
+##### Intersection
 
 The intersection $$\cap$$ is defined as: $$r \cap s = r-(r-s)$$
 
-#### Complement
+##### Complement
 
 The complement operator is defined as $$\overline{t} = V_{[A\times B]} - t$$. The type $$[A\times B]$$ comes from the term(s) in which $$t$$ is embedded. If that type does not exist or if it is ambiguous, Ampersand will refuse to compile with an appropriate error message.
 
-#### How to type boolean operators in your script
+##### How to type boolean operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
 
 
-### Relational operators in algebra
+#### Relational operators in algebra
 
-#### Purpose of relational operators
+##### Purpose of relational operators
 
 To say things such as "the name of the owner", we want to string together multiple relations \(viz. `name` and `owner`\). Relational operators allow us to make such statements.
 
 There are two relational operators: the converse \($$\smallsmile$$\) and the composition \(semicolon $$;$$ \). This page discusses the most important laws about these operators.
 
-#### Converse
+##### Converse
 
 There are two things you should know about the converse operator. The first is that the converse of the converse gives you the relation itself, whatever that relation may be:
 
@@ -358,7 +438,7 @@ $$
 r\smallsmile ; s\smallsmile\ =\ (s;r)\smallsmile
 $$
 
-#### Composition
+##### Composition
 
 The composition operator is denoted by a semicolon \(;\) between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
 
@@ -376,19 +456,19 @@ $$
 I_A;r\ =\ r\ \ \ \text{and}\ \ \ r;I_B\ =\ r
 $$
 
-#### How to type relational operators in your script
+##### How to type relational operators in your script
 
-[This page](../#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
+[This page](#notation-on-the-keyboard) shows how you can write these things in your Ampersand script.
 
-## Semantics visualized
+### Semantics visualized
 
 For a visual presentation of the semantics of terms, we use [Venn-diagrams](https://en.wikipedia.org/wiki/Venn\_diagram).
 
-### Boolean operators visualized
+#### Boolean operators visualized
 
 Consider two relations: `authorized[Account*Person]` and `beneficiary[Account*Person]`. The first relation tells which persons are authorized to which accounts. The diagram shows this as red dashed lines. The second relation tells which persons stand to benefit from which accounts.. It is depicted by dotted blue lines in the diagram.
 
-![](<../../../assets/Untitled Diagram (2).png>)
+![](<../../assets/Untitled Diagram (2).png>)
 
 This diagram gives an example population of the relations `authorized[Account*Person]` and `beneficiary[Account*Person]`. Bob is authorized for account DE9382991 and Ann is authorized for account RS746620. Carl stands to benefit from account NL19RABO03992844 and Ann stands to benefit from account RS746620. Formally, we say:
 
@@ -417,11 +497,11 @@ A different way to state the same is:
 |  `authorized/\beneficiary = {("RS746620", "Ann")}`                                                                                                                                          |
 | <p><code>authorized\/beneficiary =</code> </p><p>  <code>{ ("NL19RABO03992844", "Carl")</code></p><p>  <code>, ("RS746620", "Ann")</code></p><p>  <code>, ("DE9382991", "Bob") }</code></p> |
 
-### Relational operators visualized
+#### Relational operators visualized
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../../assets/venntrips.svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips.svg>)
 
 Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
@@ -440,11 +520,11 @@ From the diagram, we assume that each pair represents a true statement (i.e. a f
 | `"Peter" (traveler~;dest) "Rome"`  | There is a trip that Peter has made, which has Rome as destination.  | Peter has made a trip to Rome. |
 | `"Peter" (traveler~;dest) "Paris"` | There is a trip that Peter has made, which has Paris as destination. | Peter has made a trip to Paris |
 
-### Residual operators visualized
+#### Residual operators visualized
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](<../../../assets/venntrips.svg>)
+![Venn-diagram for 'traveler' and 'dest'](<../../assets/venntrips.svg>)
 
 From this diagram, we can tell which statements are true (i.e. facts). The statements are given both formally and in natural language. The elaborate version is a literate translation of the [semantics in logic](#residual-operators-in-logic). The ordinary version tells the same in a more human sounding manner.
 
@@ -459,4 +539,3 @@ The following statements do _**NOT**_  follow from the population shown in the d
 | `"Peter" (traveler\dest) "Rome"`    | For each trip, if Peter has made the trip then its destination is Rome.   | Every trip that Peter made has Rome as destination.               |
 | `"Peter" (traveler\dest) "Paris"`   | For each trip, if Peter has made the trip then its destination is Paris.  | <p>Every trip that Peter made has</p><p>Paris as destination.</p> |
 | `"Peter" (traveler~/dest~) "Paris"` | For each trip, if Paris is the destination then Peter has made that trip. | Every trip to Paris has been made by Peter.                       |
-

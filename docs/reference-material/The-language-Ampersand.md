@@ -4,37 +4,37 @@ id: language
 description: Syntax and Semantics, including metasyntax.
 ---
 
-* [The language Ampersand](ampersand/the-language-ampersand/)
-  * [How to read syntax statements](ampersand/the-language-ampersand/how-to-read-syntax-statements)
-  * [Truth](ampersand/the-language-ampersand/truth)
-  * [Atoms](ampersand/the-language-ampersand/atoms)
-  * [Terms](ampersand/the-language-ampersand/terms/)
-    * [Semantics](ampersand/the-language-ampersand/terms/semantics)
-    * [Semantics in logic](ampersand/the-language-ampersand/terms/semantics#semantics-in-logic)
-      * [Primitive terms](ampersand/the-language-ampersand/terms/semantics#primitive-terms-in-logic)
-      * [Boolean operators](ampersand/the-language-ampersand/terms/semantics#boolean-operators-in-logic)
-      * [Relational operators](ampersand/the-language-ampersand/terms/semantics#relational-operators-in-logic)
-      * [Residual operators](ampersand/the-language-ampersand/terms/semantics#residual-operators-in-logic)
-    * [Semantics in natural language](ampersand/the-language-ampersand/terms/semantics#semantics-in-natural-language)
-      * [Primitive terms in natural language](ampersand/the-language-ampersand/terms/semantics#primitive-terms-in-natural-language)
-      * [Boolean operators in natural language](ampersand/the-language-ampersand/terms/semantics#boolean-operators-in-natural-language)
-      * [Relational operators in natural language](ampersand/the-language-ampersand/terms/semantics#relational-operators-in-natural-language)
-      * [Residual operators in natural language](ampersand/the-language-ampersand/terms/semantics#residual-operators-in-natural-language)
-    * [Semantics in set theory](ampersand/the-language-ampersand/terms/semantics#semantics-in-set-theory)
-      * [Primitive terms in set theory](ampersand/the-language-ampersand/terms/semantics#semantics-in-set-theory)
-      * [Boolean operators in set theory](ampersand/the-language-ampersand/terms/semantics#boolean-operators-in-set-theory)
-      * [Relational operators in set theory](ampersand/the-language-ampersand/terms/semantics#relational-operators-in-set-theory)
-    * [Semantics of terms, defined algebraically](ampersand/the-language-ampersand/terms/semantics#semantics-in-relational-algebra)
-      * [Boolean operators in algebra](ampersand/the-language-ampersand/terms/semantics#boolean-operators-in-algebra)
-      * [Relational operators in algebra](ampersand/the-language-ampersand/terms/semantics#relational-operators-in-algebra)
-    * [Semantics visualized](ampersand/the-language-ampersand/terms/semantics#semantics-visualized)
-      * [Boolean operators visualized](ampersand/the-language-ampersand/terms/semantics#boolean-operators-visualized)
-      * [Relational operators visualized](ampersand/the-language-ampersand/terms/semantics#relational-operators-visualized)
-      * [Residuals visualized](ampersand/the-language-ampersand/terms/semantics#residual-operators-visualized)
-  * [Context](ampersand/the-language-ampersand/context)
-  * [Syntactical Conventions](ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
-    * [Language support](ampersand/the-language-ampersand/syntactical-conventions/language-support)
-  * [Patterns](ampersand/the-language-ampersand/patterns)
+* [The language Ampersand](/ampersand/reference-material/the-language-ampersand/)
+  * [How to read syntax statements](/ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
+  * [Truth](/ampersand/reference-material/the-language-ampersand/truth)
+  * [Atoms](/ampersand/reference-material/the-language-ampersand/atoms)
+  * [Terms](/ampersand/reference-material/the-language-ampersand/terms/)
+    * [Semantics](/ampersand/reference-material/the-language-ampersand/terms#semantics)
+    * [Semantics in logic](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-logic)
+      * [Primitive terms](/ampersand/reference-material/the-language-ampersand/terms#primitive-terms-in-logic)
+      * [Boolean operators](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-logic)
+      * [Relational operators](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-logic)
+      * [Residual operators](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-in-logic)
+    * [Semantics in natural language](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-natural-language)
+      * [Primitive terms in natural language](/ampersand/reference-material/the-language-ampersand/terms#primitive-terms-in-natural-language)
+      * [Boolean operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-natural-language)
+      * [Relational operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-natural-language)
+      * [Residual operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-in-natural-language)
+    * [Semantics in set theory](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-set-theory)
+      * [Primitive terms in set theory](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-set-theory)
+      * [Boolean operators in set theory](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-set-theory)
+      * [Relational operators in set theory](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-set-theory)
+    * [Semantics of terms, defined algebraically](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-relational-algebra)
+      * [Boolean operators in algebra](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-algebra)
+      * [Relational operators in algebra](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-algebra)
+    * [Semantics visualized](/ampersand/reference-material/the-language-ampersand/terms#semantics-visualized)
+      * [Boolean operators visualized](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-visualized)
+      * [Relational operators visualized](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-visualized)
+      * [Residuals visualized](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-visualized)
+  * [Context](/ampersand/reference-material/the-language-ampersand/context)
+  * [Syntactical Conventions](/ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
+    * [Language support](/ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support)
+  * [Patterns](/ampersand/reference-material/the-language-ampersand/patterns)
 ## Services
 
 ### Purpose
@@ -180,8 +180,8 @@ A top-level Update or Create are common in my own scripts, e.g. to create an ove
 
 Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93\&q=is%3Aissue+label%3Acrud+) functionality.
 
-
-### Layout of user interfaces
+reference-material/The-language-Ampersand.md#layout-of-interfaces
+### Layout of user interfaces {#layout-of-interfaces}
 Ampersand is meant for back-end design. It offers no features for front-end design. For that purpose we advise you use contemporary front-end tools for web-based applications. Your Ampersand application is [designed to be adaptable](../architecture-of-an-ampersand-application/README.md), especially for this purpose.
 
 However, Ampersand offers a few layout features that let you place items. It has three built-in layout options, [colums](./#column-layout), [rows](./#row-layout) and [tabs](./#tabular-layout), which you can mix freely.
@@ -213,13 +213,13 @@ BOX <TABS>
      ]
 ```
 
-This service shows three columns in the user interface, **Students**, **Course** and **Modules**. The first column is not readable, because the [CRUD annotation](#crud) blocks this column for reading. It would have shown students in each row, because the target of `V[SESSION*Student]`is `Student`. The second column shows courses in two columns, **Course** and **Modules**. The third column shows modules in three columns. This is what the user will see on the screen.
+This service shows three columns in the user interface, **Students**, **Course** and **Modules**. The first column is not readable, because the [CRUD annotation](#CRUD) blocks this column for reading. It would have shown students in each row, because the target of `V[SESSION*Student]`is `Student`. The second column shows courses in two columns, **Course** and **Modules**. The third column shows modules in three columns. This is what the user will see on the screen.
 
 ![Column-oriented layout of a user interface with columns in each row](<../assets/COLS layout example.png>)
 
-#### ROW layout
+#### FORM layout
 
-The row layout uses  `BOX <FORM>` to instruct the front-end application to layout the user interface row by row. Here is an example of a service, which uses the row layout on the top level.
+The row layout uses  `BOX <FORM>` to instruct the front-end application to layout the user interface one field on one row, as you would expect in a form. Here is an example of a service, which uses the form layout on the top level.
 
 ```
 INTERFACE Overview : "_SESSION"                  cRud
@@ -238,11 +238,11 @@ BOX <FORM>
      ]
 ```
 
-This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../../../prototype/tree/master/templates) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](./the-language-ampersand/services.md#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](./the-language-ampersand/services.md#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
 
 ![Row-oriented layout of a user interface with columns in each row](<../assets/ROWS layout example.png>)
 
-#### Tabs layout
+#### TABS layout
 
 The column layout uses `BOX <TABS>` to instruct the front-end application to tabs in the user interface. Here is an example of a service, which uses the column layout.
 
@@ -273,10 +273,10 @@ This service shows three tabs in the user interface, **Students**, **Course** an
 
 ![Tab-oriented layout with column layout in tab "Modules"](../assets/untitled.png)
 
-We have discussed the `COLS`, `ROWS`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
+We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
 
 If these options are not enough, you can [enhance your application with your own layouts](../tutorial/services.md#layout-and-widgets).
 
 #### Your own widgets \(HTML and CSS\)
-You don't have to put up with the [Ampersand built-in layout options](../../../prototype/tree/master/templates) if they don't suit your purpose. You can change most anything by including your own code snippets.  \(to be done...\). 
+You don't have to put up with the [Ampersand built-in layout options](#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets.  \(to be done...\). 
 

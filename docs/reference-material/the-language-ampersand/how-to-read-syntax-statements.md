@@ -54,14 +54,14 @@ Keywords in Ampersand are always written in CAPITALS.
   * [`IN`](language-support.md)
   * `ENGLISH`
   * `DUTCH`
-  * [`INCLUDE`](/ampersand/reference-material/syntax-of-ampersand#the-include-statement)
+  * [`INCLUDE`](../syntax-of-ampersand#INCLUDE-statement)
   * `META`
   * `THEMES`
-  * [`PATTERN`](patterns.md)
+  * [`PATTERN`](../syntax-of-ampersand#PATTERN-statement)
   * `ENDPATTERN`
-  * [`CONCEPT`](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement)
-* Keywords for [relations](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement)
-  * [`RELATION`](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement)
+  * [`CONCEPT`](../syntax-of-ampersand#CONCEPT-statement)
+* Keywords for [relations](../syntax-of-ampersand#RELATION-statement)
+  * [`RELATION`](../syntax-of-ampersand#RELATION-statement)
   * `PRAGMA`
   * `UNI`
   * `INJ`
@@ -73,9 +73,9 @@ Keywords in Ampersand are always written in CAPITALS.
   * `RFX`
   * `IRF`
   * `PROP`
-  * [`POPULATION`](/ampersand/reference-material/syntax-of-ampersand#the-population-statement)
+  * [`POPULATION`](../syntax-of-ampersand#POPULATION-statement)
   * `CONTAINS`
-* Keywords for [rules](/ampersand/reference-material/syntax-of-ampersand#the-rule-statement)
+* Keywords for [rules](../syntax-of-ampersand#RULE-statement)
   * `RULE`
   * `MESSAGE`
   * `VIOLATION`
@@ -88,20 +88,20 @@ Keywords in Ampersand are always written in CAPITALS.
   * `ROLE`
   * `MAINTAINS`
 * Keywords for documentation
-  * [`PURPOSE`](/ampersand/reference-material/syntax-of-ampersand#the-purpose-statement)
-  * [`MEANING`](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement)
+  * [`PURPOSE`](../syntax-of-ampersand#PURPOSE-statement)
+  * [`MEANING`](../syntax-of-ampersand#MEANING-statement)
   * `REF`
   * `REST`
   * `HTML`
   * `LATEX`
   * `MARKDOWN`
-* Keywords for [services](./services.md#syntax-of-interface-statements)
+* Keywords for [services](./services.md)
   * `INTERFACE`
   * `FOR`
   * `LINKTO`
   * `BOX`
 * Keywords for identities
-  * [`IDENT`](/ampersand/reference-material/syntax-of-ampersand#the-ident-statement)
+  * [`IDENT`](../syntax-of-ampersand#IDENT-statement)
 * Keywords for views
   * `VIEW`
   * `ENDVIEW`
@@ -109,7 +109,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `TEMPLATE`
   * `HTML`
 * Keywords for generalisations:
-  * `CLASSIFY`
+  * [`CLASSIFY`](../syntax-of-ampersand#CLASSIFY-statement)
   * `ISA`
   * `IS`
 * Keywords for TType:

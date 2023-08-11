@@ -79,7 +79,8 @@ PATTERN "Demo of Sequences"
 ENDPATTERN
 
 INTERFACE overview(insSeq, seq, seqHead, madeIn) : '_SESSION'
-ROWS[ "Name your new sequence here:" : insSeq
+BOX<TABLE>
+    [ "Name your new sequence here:" : insSeq
     , Sequences : V[SESSION*Sequence]
       BOX <TABLE>
           [ sequence : name

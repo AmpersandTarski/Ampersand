@@ -62,7 +62,7 @@ A sub-interface may be defined on the spot (by `<boxKey> <box>`) or it may link 
                  | LINKTO ( INTERFACE | API ) <name>
 ```
 
-The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../../prototype/tree/master/templates) for details.
+The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../The-language-Ampersand.md#layout-of-interfaces) for details.
 
 ```
 <boxKey> ::= BOX '<' <htmlname> '>'
@@ -144,7 +144,7 @@ BOX <FORM>
      ]
 ```
 
-This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../../../prototype/tree/master/templates) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../The-language-Ampersand.md#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
 
 ![Row-oriented layout of a user interface with columns in each row](<../../assets/ROWS layout example.png>)
 
@@ -180,18 +180,18 @@ This service shows three tabs in the user interface, **Students**, **Course** an
 
 ![Tab-oriented layout with column layout in tab "Modules"](../../assets/untitled.png)
 
-We have discussed the `COLS`, `ROWS`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
+We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
 
 <a name="layout-and-widgets"></a>
 ### Your own layout and your own widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](../../../prototype/tree/master/templates) if they don't suit your purpose. You can change most anything by including your own code snippets.  \(to be done...\). 
+You don't have to put up with the [Ampersand built-in layout options](../The-language-Ampersand.md#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets.  \(to be done...\). 
 
 ## CRUD {#CRUD}
 
 CRUD annotations are used in services to constrain the functionality of fields and boxes in an `INTERFACE`-statement. This allows you to minimize the functionality for your users, to design for easy learning.
 
-Each CRUD annotation comes right after a [term](./terms/README.md), so we can always refer to "the term" to which a CRUD annotation belongs. A CRUD annotation constrains the things your user can do with the target atoms and the pairs of its term.
+Each CRUD annotation comes right after a [term](./terms.md), so we can always refer to "the term" to which a CRUD annotation belongs. A CRUD annotation constrains the things your user can do with the target atoms and the pairs of its term.
 
 The CRUD-annotation specifies Create, Read, Update, and Delete rights for the term it follows. Capital = allowed, Non-capital = not allowed. CRUD is the default, so if you specify nothing, everything is allowed. The following service definition illustrates this.
 

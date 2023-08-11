@@ -53,9 +53,14 @@ module.exports = {
             id: 'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements'
         },
         {
+            label: 'Syntax',
+            type: 'doc',
+            id: 'ampersand/reference-material/syntax-of-ampersand'
+        },
+        {
             label: 'Terms',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/terms/semantics'
+            id: 'ampersand/reference-material/the-language-ampersand/terms'
         },
         {
             label: 'Services',
@@ -84,7 +89,6 @@ module.exports = {
                 'ampersand/reference-material/the-language-ampersand/patterns',
                 'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
                 'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
-                'ampersand/reference-material/the-language-ampersand/terms/README',
                 ]
         },
     ],

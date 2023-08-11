@@ -2,11 +2,11 @@
 title: Syntax of Ampersand
 id: syntax-of-ampersand
 ---
-# Syntax of ampersand
+# Syntax and semantics of Ampersand
 
-This page is about the syntax of ampersand scripts. 
+This page defines the syntax and semantics of the [CONCEPT statement](#CONCEPT-statement), the [CONTEXT statement](#CONTEXT-statement), the [CLASSIFY statement](#CLASSIFY-statement), the [ENFORCE statement](#ENFORCE-statement), the [IDENT statement](#IDENT-statement), the [INCLUDE statement](#INCLUDE-statement), the [MEANING statement](#MEANING-statement), the [POPULATION statement](#POPULATION-statement), the [PURPOSE statement](#PURPOSE-statement), the [RELATION statement](#RELATION-statement), the [RULE statement](#RULE-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
 
-## The CONCEPT statement 
+## The CONCEPT statement {#CONCEPT-statement}
 
 ### Purpose:
 
@@ -49,7 +49,7 @@ CONCEPT Criterion "A criterion is a standard on which a judgment or decision may
 * The description will be printed in the functional specification, so please check that your definition is a complete sentence.
 * Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
 
-## The CONTEXT statement
+## The CONTEXT statement {#CONTEXT-statement}
 
 ### Purpose
 
@@ -107,7 +107,7 @@ where  can be one of
 
 \(For details on these formats, see [pandoc.org](http://pandoc.org/)\).
 
-## The CLASSIFY statement
+## The CLASSIFY statement {#CLASSIFY-statement}
 
 ### Purpose
 
@@ -156,7 +156,7 @@ E.g. `RELATION student[Person*Enrollment]`
 
 By adding and removing pairs to that relation, it continuously reflects which persons are a student.
 
-## The ENFORCE statement
+## The ENFORCE statement {#ENFORCE-statement}
 
 ### Purpose
 
@@ -209,7 +209,7 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
 * The relation must be specified in order to use it here, as is the case with any relation used in a term.
 
 
-## The IDENT statement
+## The IDENT statement {#IDENT-statement}
 
 ### Purpose:
 
@@ -256,7 +256,7 @@ Note that
 * in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
 
 
-## The INCLUDE statement
+## The INCLUDE statement {#INCLUDE-statement}
 
 ### Purpose
 
@@ -266,7 +266,7 @@ To facilitate reusing code, Ampersand allows its user to divide code over differ
 
 The `INCLUDE`-statement includes the code of another Ampersand-script or the data of a .xlsx-file into the context.
 
-## Examples
+### Examples
 
 ```text
 INCLUDE "foo.adl"
@@ -296,7 +296,7 @@ Included files may contain `INCLUDE`statements themselves. The files mentioned t
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
 
 
-## The MEANING sub-statement
+## The MEANING sub-statement {#MEANING-statement}
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
 MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
@@ -336,8 +336,84 @@ MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
 Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
 
 
+## Patterns {#PATTERN-statement}
 
-## The POPULATION statement
+### Purpose
+
+Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design\_pattern).
+
+### Description
+
+A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem.
+
+For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
+
+### Example
+
+```
+PATTERN Security 
+
+RELATION required[Subject*Destination]
+MEANING "A subject that you must have passed to qualify for the school trip to a destination"
+
+RELATION pass[Subject*Student]
+MEANING "The subjects that have been passed by specific students"
+
+RELATION attends[Student*Destination]
+
+PURPOSE RULE guardPrerequisites
+{+ This rule prevents students from registering for a trip
+without having passed the required courses. +}
+RULE guardPrerequisites : attends;required |- pass
+
+ENDPATTERN
+```
+
+### Syntax
+
+Every pattern has the following form:
+
+```
+PATTERN <pattern name>
+    <pattern element>*
+ENDPATTERN
+```
+
+A pattern consists of any number of pattern elements in an arbitrary order. The following pattern elements are allowed:
+
+|                    |                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `<rule>`           | a statement that declares a [rule](#RULE-statement)                                                |
+| `<classify>`       | a statement that specifies generalization/specialization of [concepts](#CLASSIFY-statement)        |
+| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#RELATION-statement) within the context      |
+| `<conceptDef>`     | a description of a [concept](#CONCEPT-statement), to document its meaning                          |
+| `<representation>` | a statement that defines the atomic type of a [concept](#CONCEPT-statement) |
+| `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                          |
+| `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                   |
+| `<viewDef>`        | a statement for presenting facts in a readable sentence                                                  |
+| `<purpose>`        | a statement to describe the [purpose](#PURPOSE-statement) of a pattern or a pattern element        |
+| `<population>`     | a statement that sums up the initial [population](#POPULATION-statement) of a relation             |
+
+### Good practice
+
+A model can have as many patterns as you want.\
+It has no effect on how the code is processed.
+
+The service definition must be outside a pattern
+
+A pattern contains rules in an arbitrary order.\
+The context in which these rules are valid must contain the definition for each of the relations that are used in those rules.\
+It is good practice to declare all relations in the pattern itself.\
+That practice makes the pattern self-contained and therefore more suitable for reuse.
+
+Ampersand advocates **one theme in one pattern**. Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
+
+### Restrictions
+
+In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
+
+
+## The POPULATION statement {#POPULATION-statement}
 
 ### Purpose
 
@@ -469,7 +545,7 @@ After finishing your assignment, you have learned:
 * that the contents of the spreadsheet is added to the population of your context, provided this does not lead to any conflict.
 
 
-## The PURPOSE statement
+## The PURPOSE statement {#PURPOSE-statement}
 
 ### Semantics
 
@@ -535,7 +611,7 @@ IN ENGLISH MARKDOWN
 ```
 
 
-## The RELATION statement
+## The RELATION statement {#RELATION-statement}
 
 ### Purpose
 
@@ -652,7 +728,7 @@ For a full discussion of meaning, we refer to [`this page`](#the-meaning-substat
 
 *
 
-## The RULE statement
+## The RULE statement {#RULE-statement}
 
 ### Purpose
 

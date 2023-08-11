@@ -5,12 +5,12 @@ description: >-
 ---
 
 # The language Ampersand
-This page is a dictionary. It defines the words we use to talk about Ampersand.
+This page is a dictionary. It defines the words we use to talk about Ampersand. You can click on the words to navigate to its defining page.
 
 | Word | Meaning | Example | Purpose |
 | ---- | ------- | ------- | ------- |
 | [Atom](atoms.md) | an indivisible item. Watch [this clip](https://player.ou.nl/wowzaportlets/#!production/Cq0M1nv) to learn how we use the words atom, concept, and relation. | `"Peter"` | to represent a thing |
-| [Concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) | a name to categorize similar items | `Person` |   |
+| [Concept](../syntax-of-ampersand#the-concept-statement) | a name to categorize similar items | `Person` |   |
 | Pair | two atoms: a source and a target atom | `("Ida",5)` | to state that two atoms are related |
 | [Relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) | a set of pairs that is identifyable in a context by its name and type | `r[A*B]` | to build true statements and store pairs persistently in an application |
 | [Rule](/ampersand/reference-material/syntax-of-ampersand#the-rule-statement) | a constraint, which is supposed to remain satisfied. | `r;s \|- t` | to provide meaning in a given context |
@@ -22,7 +22,7 @@ This page is a dictionary. It defines the words we use to talk about Ampersand.
 | [Service](../The-language-Ampersand.md#services) | A structure meant for "the outside world" to communicate with the system and possibly change the population. | `INTERFACE Request FOR Customer` | to let "the outside world" communicate with the system in a given context and possibly change its population |
 | Multiplicity | A predefined property of a relation | `UNI`, `TOT`, `SUR`, `INJ` | to constrain a relation with predefined properties |
 | [Term](terms/README.md) | A combination of relations and operators that satisfy the Ampersand syntax | `r;s-t` | to express rules |
-| Operator | a symbol used in combining terms into other terms. | `-`, `~`, `\/`, `/\`, `-`, `;`, `\`, `/`, `\|-`, `=` | to express more complex rules. |
+| Operator | a symbol used in combining terms into other terms. | `-`, `~`, `\/`, `/\`, `-`, `;`, `\`, `/`, `|-`, `=` | to express more complex rules. |
 |                                             |                                                                    |                    |                                                             |
 | [Specialization](/ampersand/reference-material/syntax-of-ampersand#the-classify-statement) | A rule that defines specialization between two (or more) concepts. | `CLASSIFY A ISA B` | To specify a building block for a classification hierarchy. |
 | Role | A name for a group of people | `ROLE Customer MAINTAINS paymentObligation` | to talk about users without having any users |

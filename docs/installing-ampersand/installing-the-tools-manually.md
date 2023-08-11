@@ -104,7 +104,7 @@ ROLE User MAINTAINS "Please click on 'Registration' to specify your name"
 RULE "Please click on 'Registration' to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
 VIOLATION (TXT "You can find the 'Registration' item in the navigationbar (top of the screen).")
 
-INTERFACE Registration: "_SESSION"[SESSION] cRud ROWS
+INTERFACE Registration: "_SESSION"[SESSION] cRud BOX<TABLE>
    [ "My name is" : sessionMyName cRUd 
    ]
 
@@ -115,7 +115,7 @@ VIOLATION (TXT "{EX} SetNavToOnCommit;/Hello_44__32_World"
           ,TXT "{EX} InsPair;sayHelloReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
 
-INTERFACE "Hello, World": "_SESSION"[SESSION] cRud ROWS
+INTERFACE "Hello, World": "_SESSION"[SESSION] cRud BOX<TABLE>
    [ "Hello, world. My name is" : sessionMyName cRud
    ]
 

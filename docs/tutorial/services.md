@@ -77,11 +77,11 @@ Notice the following features:\
 
 ## Formatting
 
-Especially in more complicated services, you will find it nice to adapt the layout of the fields in the user interface. For this purpose, you can substitute the word `BOX` by `COLS`, `ROWS`, or `TABS`, as in the following code fragment. Note that these annotation have no meaning other than to change what the user interface looks like.
+Especially in more complicated services, you will find it nice to adapt the layout of the fields in the user interface. For this purpose, you can refine the word `BOX` with `<FORM>`, `<TABLE>`, or `<TABS>`, as in the following code fragment. Note that these annotation have no meaning other than to change what the user interface looks like.
 
 ```
 INTERFACE "Project"  : V[SESSION*Project]
-BOX <TABLE>
+BOX<TABLE>
   [ "Project"     : I[Project]
   , "Name"        : projectName
   , "Current PL"  : pl
