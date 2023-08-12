@@ -386,7 +386,7 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 | `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement)                            |
 | `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                            |
 | `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                           |
-| `<viewDef>`        | a statement for presenting facts in a readable sentence                                                    |
+| `<viewDef>`        | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.         |
 | `<purpose>`        | a statement to describe the [purpose](#PURPOSE-statement) of a pattern or a pattern element                |
 | `<population>`     | a statement that sums up the initial [population](#POPULATION-statement) of a relation                     |
 
