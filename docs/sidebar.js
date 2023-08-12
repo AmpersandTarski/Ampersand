@@ -58,14 +58,9 @@ module.exports = {
             id: 'ampersand/reference-material/syntax-of-ampersand'
         },
         {
-            label: 'Terms',
+            label: 'Automated Rules',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/terms'
-        },
-        {
-            label: 'Services',
-            type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/services'
+            id: 'ampersand/conceptual/automated-rules'
         },
         {
             label: 'Best practices',
@@ -78,18 +73,14 @@ module.exports = {
             id: 'ampersand/reference-material/the-language-ampersand/the-preprocessor'
         },
         {
-            type: 'category',
-            label: 'Language Reference',
-            items: [
-                'ampersand/reference-material/the-language-ampersand/atoms',
-                'ampersand/reference-material/the-language-ampersand/context',
-                'ampersand/reference-material/the-language-ampersand/current-date',
-                'ampersand/reference-material/the-language-ampersand/design-considerations',
-                'ampersand/reference-material/the-language-ampersand/language-support',
-                'ampersand/reference-material/the-language-ampersand/patterns',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
-                ]
+            label: 'Current date',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/current-date'
+        },
+        {
+            label: 'Design considerations',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-language-ampersand/design-considerations'
         },
     ],
     ampersandTheorySidebar: [
@@ -136,28 +127,6 @@ module.exports = {
         [
 
             {
-                label: 'Reference',
-                type: 'category',
-                items: [
-                    'ampersand/reference-material/the-language-ampersand/README',
-                    'ampersand/reference-material/the-language-ampersand/atoms',
-                    'ampersand/reference-material/the-language-ampersand/best-practices',
-                    'ampersand/reference-material/the-language-ampersand/context',
-                    'ampersand/reference-material/the-language-ampersand/current-date',
-                    'ampersand/reference-material/the-language-ampersand/design-considerations',
-                    'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements',
-                    'ampersand/reference-material/the-language-ampersand/language-support',
-                    'ampersand/reference-material/the-language-ampersand/patterns',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
-                    'ampersand/reference-material/the-language-ampersand/terms/README',
-                    'ampersand/reference-material/the-language-ampersand/terms/semantics',
-                    'ampersand/reference-material/the-language-ampersand/the-preprocessor',
-                    'ampersand/reference-material/the-language-ampersand/truth'
-                ]
-            },
-
-            {
                 label: 'More documents',
                 type: 'category',
                 items: [
@@ -172,9 +141,7 @@ module.exports = {
                     'ampersand/docker/modelling-environment',
                     'ampersand/docker/prototype-database',
                     'ampersand/docker/prototype-multi-stage-build',
-                    'ampersand/exercises/README',
-                    'ampersand/exercises/delivery',
-                    'ampersand/exercises/vog-in-dutch',
+                    'ampersand/exercises',
                     'ampersand/installing-ampersand/README',
                     'ampersand/installing-ampersand/deploying-your-prototype',
                     'ampersand/installing-ampersand/installing-the-tools-manually',
@@ -242,7 +209,6 @@ module.exports = {
 
     ],
     notOnOldSite: [
-        'ampersand/conceptual/theory',
         'ampersand/conceptual/automated-rules',
 
     ]

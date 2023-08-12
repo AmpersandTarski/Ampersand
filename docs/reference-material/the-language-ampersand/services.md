@@ -9,7 +9,7 @@ A service is a component of an information system. Its life starts when it is de
 
 The definition of a service specifies which data is presented to which users. For every different use of the system a different service can be defined. This may lead to a substantial amount of services for large and complex systems. However, one device will show one service only at any given moment in time.
 
-[This page](syntax-of-interface-statements) gives syntactic details of services. Please find tutorial explanations [here](../../tutorial/services.md).
+[This page] gives syntactic details of services. Please find tutorial explanations [here](../../tutorial/services.md).
 
 ## Example
 
@@ -40,8 +40,7 @@ This example specifies three tabs. One shows students, one shows courses and one
 
 ![Screenshot of the resulting user interface](../../assets/screenshot.png)
 
-<a name="syntax-of-interface-statements"></a>
-## Syntax and Meaning
+## Syntax and Meaning {#syntax-of-interface-statements}
 This chapter gives the formal syntax of services for the purpose of reference.
 
 A service specification has the following structure. It is identical for user interfaces (`INTERFACE`) and application programming interfaces (`API`).

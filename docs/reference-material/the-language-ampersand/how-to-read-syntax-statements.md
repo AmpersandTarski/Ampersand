@@ -59,7 +59,7 @@ Keywords in Ampersand are always written in CAPITALS.
   * `THEMES`
   * [`PATTERN`](../syntax-of-ampersand#PATTERN-statement)
   * `ENDPATTERN`
-  * [`CONCEPT`](../syntax-of-ampersand#CONCEPT-statement)
+  * [`CONCEPT`](../syntax-of-ampersand#the-concept-statement)
 * Keywords for [relations](../syntax-of-ampersand#RELATION-statement)
   * [`RELATION`](../syntax-of-ampersand#RELATION-statement)
   * `PRAGMA`

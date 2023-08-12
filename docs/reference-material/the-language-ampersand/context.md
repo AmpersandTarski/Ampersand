@@ -57,15 +57,15 @@ A context may contain different types of statements. The order of statements in 
 | :--- | :--- |
 | `<meta>` | a statement to provide metadata to a script, such as author, company, etc. |
 | `<pattern>` | a block of code that represents rules on a single and specific topic, at the user's discretion |
-| `<rule>` | a statement that declares a [rule](/ampersand/reference-material/syntax-of-ampersand#the-rule-statement) |
-| `<classify>` | a statement that specifies generalization/specialization of [concepts](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) |
-| `<relation>` | a declaration of a relation, stating the existence of a [relation](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement) within the context |
-| `<conceptDef>` | a description of a [concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement), to document its meaning |
-| `<representation>` | a statement that defines the atomic type of a [concept](/ampersand/reference-material/syntax-of-ampersand#the-concept-statement) |
+| `<rule>` | a statement that declares a [rule](../syntax-of-ampersand#the-rule-statement) |
+| `<classify>` | a statement that specifies generalization/specialization of [concepts](../syntax-of-ampersand#the-concept-statement) |
+| `<relation>` | a declaration of a relation, stating the existence of a [relation](../syntax-of-ampersand#the-relation-statement) within the context |
+| `<conceptDef>` | a description of a [concept](../syntax-of-ampersand#the-concept-statement), to document its meaning |
+| `<representation>` | a statement that defines the atomic type of a [concept](../syntax-of-ampersand#the-concept-statement) |
 | `<roleRule>` | a statement that makes a role responsible for satisfying a rule |
 | `<viewDef>` | a statement for presenting facts in a readable sentence |
 | `<service>` | a unit of code that can be run independently and specifies interaction with a user or a computer |
-| `<purpose>` | a statement to describe the [purpose](/ampersand/reference-material/syntax-of-ampersand#the-purpose-statement) of a context or a context element |
-| `<population>` | a statement that sums up the initial [population](/ampersand/reference-material/syntax-of-ampersand#the-population-statement) of a relation |
-| `<include>` | a statement to [include](/ampersand/reference-material/syntax-of-ampersand#the-include-statement) another file in the context |
+| `<purpose>` | a statement to describe the [purpose](../syntax-of-ampersand#the-purpose-statement) of a context or a context element |
+| `<population>` | a statement that sums up the initial [population](../syntax-of-ampersand#the-population-statement) of a relation |
+| `<include>` | a statement to [include](../syntax-of-ampersand#the-include-statement) another file in the context |
 

@@ -4,37 +4,37 @@ id: language
 description: Syntax and Semantics, including metasyntax.
 ---
 
-* [The language Ampersand](/ampersand/reference-material/the-language-ampersand/)
-  * [How to read syntax statements](/ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
-  * [Truth](/ampersand/reference-material/the-language-ampersand/truth)
-  * [Atoms](/ampersand/reference-material/the-language-ampersand/atoms)
-  * [Terms](/ampersand/reference-material/the-language-ampersand/terms/)
-    * [Semantics](/ampersand/reference-material/the-language-ampersand/terms#semantics)
-    * [Semantics in logic](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-logic)
-      * [Primitive terms](/ampersand/reference-material/the-language-ampersand/terms#primitive-terms-in-logic)
-      * [Boolean operators](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-logic)
-      * [Relational operators](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-logic)
-      * [Residual operators](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-in-logic)
-    * [Semantics in natural language](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-natural-language)
-      * [Primitive terms in natural language](/ampersand/reference-material/the-language-ampersand/terms#primitive-terms-in-natural-language)
-      * [Boolean operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-natural-language)
-      * [Relational operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-natural-language)
-      * [Residual operators in natural language](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-in-natural-language)
-    * [Semantics in set theory](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-set-theory)
-      * [Primitive terms in set theory](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-set-theory)
-      * [Boolean operators in set theory](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-set-theory)
-      * [Relational operators in set theory](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-set-theory)
-    * [Semantics of terms, defined algebraically](/ampersand/reference-material/the-language-ampersand/terms#semantics-in-relational-algebra)
-      * [Boolean operators in algebra](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-in-algebra)
-      * [Relational operators in algebra](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-in-algebra)
-    * [Semantics visualized](/ampersand/reference-material/the-language-ampersand/terms#semantics-visualized)
-      * [Boolean operators visualized](/ampersand/reference-material/the-language-ampersand/terms#boolean-operators-visualized)
-      * [Relational operators visualized](/ampersand/reference-material/the-language-ampersand/terms#relational-operators-visualized)
-      * [Residuals visualized](/ampersand/reference-material/the-language-ampersand/terms#residual-operators-visualized)
-  * [Context](/ampersand/reference-material/the-language-ampersand/context)
-  * [Syntactical Conventions](/ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements)
-    * [Language support](/ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support)
-  * [Patterns](/ampersand/reference-material/the-language-ampersand/patterns)
+* [The language Ampersand](./the-language-ampersand/README.md)
+  * [How to read syntax statements](./the-language-ampersand/how-to-read-syntax-statements)
+  * [Truth](./the-language-ampersand/truth)
+  * [Atoms](./the-language-ampersand/atoms)
+  * [Terms](./the-language-ampersand/terms)
+    * [Semantics](./the-language-ampersand/terms#semantics)
+    * [Semantics in logic](./the-language-ampersand/terms#semantics-in-logic)
+      * [Primitive terms](./the-language-ampersand/terms#primitive-terms-in-logic)
+      * [Boolean operators](./the-language-ampersand/terms#boolean-operators-in-logic)
+      * [Relational operators](./the-language-ampersand/terms#relational-operators-in-logic)
+      * [Residual operators](./the-language-ampersand/terms#residual-operators-in-logic)
+    * [Semantics in natural language](./the-language-ampersand/terms#semantics-in-natural-language)
+      * [Primitive terms in natural language](./the-language-ampersand/terms#primitive-terms-in-natural-language)
+      * [Boolean operators in natural language](./the-language-ampersand/terms#boolean-operators-in-natural-language)
+      * [Relational operators in natural language](./the-language-ampersand/terms#relational-operators-in-natural-language)
+      * [Residual operators in natural language](./the-language-ampersand/terms#residual-operators-in-natural-language)
+    * [Semantics in set theory](./the-language-ampersand/terms#semantics-in-set-theory)
+      * [Primitive terms in set theory](./the-language-ampersand/terms#semantics-in-set-theory)
+      * [Boolean operators in set theory](./the-language-ampersand/terms#boolean-operators-in-set-theory)
+      * [Relational operators in set theory](./the-language-ampersand/terms#relational-operators-in-set-theory)
+    * [Semantics of terms, defined algebraically](./the-language-ampersand/terms#semantics-in-relational-algebra)
+      * [Boolean operators in algebra](./the-language-ampersand/terms#boolean-operators-in-algebra)
+      * [Relational operators in algebra](./the-language-ampersand/terms#relational-operators-in-algebra)
+    * [Semantics visualized](./the-language-ampersand/terms#semantics-visualized)
+      * [Boolean operators visualized](./the-language-ampersand/terms#boolean-operators-visualized)
+      * [Relational operators visualized](./the-language-ampersand/terms#relational-operators-visualized)
+      * [Residuals visualized](./the-language-ampersand/terms#residual-operators-visualized)
+  * [Context](./the-language-ampersand/context)
+  * [Syntactical Conventions](./the-language-ampersand/how-to-read-syntax-statements)
+    * [Language support](./syntax-of-ampersand#language-support)
+  * [Patterns](./syntax-of-ampersand#patterns)
 ## Services
 
 ### Purpose
@@ -110,7 +110,7 @@ Further examples:
 ### CRUD annotations {#crud}
 CRUD annotations are used in services to constrain the functionality of fields and boxes in an `INTERFACE`-statement. This allows you to minimize the functionality for your users, to design for easy learning.
 
-Each CRUD annotation comes right after a [term](./the-language-ampersand/terms/README.md), so we can always refer to "the term" to which a CRUD annotation belongs. A CRUD annotation constrains the things your user can do with the target atoms and the pairs of its term.
+Each CRUD annotation comes right after a [term](./the-language-ampersand/terms.md), so we can always refer to "the term" to which a CRUD annotation belongs. A CRUD annotation constrains the things your user can do with the target atoms and the pairs of its term.
 
 The CRUD-annotation specifies Create, Read, Update, and Delete rights for the term it follows. Capital = allowed, Non-capital = not allowed. CRUD is the default, so if you specify nothing, everything is allowed. The following service definition illustrates this.
 

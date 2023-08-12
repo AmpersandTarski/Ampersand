@@ -4,9 +4,9 @@ id: syntax-of-ampersand
 ---
 # Syntax and semantics of Ampersand
 
-This page defines the syntax and semantics of the [CONCEPT statement](#CONCEPT-statement), the [CONTEXT statement](#CONTEXT-statement), the [CLASSIFY statement](#CLASSIFY-statement), the [ENFORCE statement](#ENFORCE-statement), the [IDENT statement](#IDENT-statement), the [INCLUDE statement](#INCLUDE-statement), the [MEANING statement](#MEANING-statement), the [POPULATION statement](#POPULATION-statement), the [PURPOSE statement](#PURPOSE-statement), the [RELATION statement](#RELATION-statement), the [RULE statement](#RULE-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
+This page defines the syntax and semantics of the [CONCEPT statement](#the-concept-statement), the [CONTEXT statement](#CONTEXT-statement), the [CLASSIFY statement](#CLASSIFY-statement), the [ENFORCE statement](#ENFORCE-statement), the [IDENT statement](#IDENT-statement), the [INCLUDE statement](#INCLUDE-statement), the [MEANING statement](#MEANING-statement), the [POPULATION statement](#POPULATION-statement), the [PATTERN statement](#PATTERN-statement), the [PURPOSE statement](#PURPOSE-statement), the [RELATION statement](#RELATION-statement), the [RULE statement](#RULE-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
 
-## The CONCEPT statement {#CONCEPT-statement}
+## The CONCEPT statement
 
 ### Purpose:
 
@@ -299,7 +299,7 @@ For formatting your excel-file see the text on [the Excel Importer](../the-excel
 ## The MEANING sub-statement {#MEANING-statement}
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
-MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
+MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#RELATION-statement), and [RULE](#RULE-statement)-statements, to define the meaning of your concepts, relations, and rules.
 ```text
 MEANING
 {+ This is an example that is
@@ -386,8 +386,8 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 | `<rule>`           | a statement that declares a [rule](#RULE-statement)                                                |
 | `<classify>`       | a statement that specifies generalization/specialization of [concepts](#CLASSIFY-statement)        |
 | `<relation>`       | a declaration of a relation, stating the existence of a [relation](#RELATION-statement) within the context      |
-| `<conceptDef>`     | a description of a [concept](#CONCEPT-statement), to document its meaning                          |
-| `<representation>` | a statement that defines the atomic type of a [concept](#CONCEPT-statement) |
+| `<conceptDef>`     | a description of a [concept](#the-concept-statement), to document its meaning                          |
+| `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement) |
 | `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                          |
 | `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                   |
 | `<viewDef>`        | a statement for presenting facts in a readable sentence                                                  |
@@ -396,14 +396,14 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 
 ### Good practice
 
-A model can have as many patterns as you want.\
+A model can have as many patterns as you want.
 It has no effect on how the code is processed.
 
 The service definition must be outside a pattern
 
-A pattern contains rules in an arbitrary order.\
-The context in which these rules are valid must contain the definition for each of the relations that are used in those rules.\
-It is good practice to declare all relations in the pattern itself.\
+A pattern contains rules in an arbitrary order.
+The context in which these rules are valid must contain the definition for each of the relations that are used in those rules.
+It is good practice to declare all relations in the pattern itself.
 That practice makes the pattern self-contained and therefore more suitable for reuse.
 
 Ampersand advocates **one theme in one pattern**. Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
@@ -543,6 +543,39 @@ After finishing your assignment, you have learned:
 * to upload population to your Ampersand application in the form of a spreadsheet in .xlsx-format;
 * to understand how a `POPULATION`-statement relates to the contents of a spreadsheet;
 * that the contents of the spreadsheet is added to the population of your context, provided this does not lead to any conflict.
+
+
+### Purpose
+
+Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
+
+### Description
+
+A pattern is a set of [rules](#the-rule-statement) that describes a theme or a general reusable solution to a commonly occurring problem.
+
+For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
+
+### Example
+
+```text
+PATTERN Security 
+
+RELATION required[Subject*Destination]
+MEANING "A subject that you must have passed to qualify for the school trip to a destination"
+
+RELATION pass[Subject*Student]
+MEANING "The subjects that have been passed by specific students"
+
+RELATION attends[Student*Destination]
+
+PURPOSE RULE guardPrerequisites
+{+ This rule prevents students from registering for a trip
+without having passed the required courses. +}
+RULE guardPrerequisites : attends;required |- pass
+
+ENDPATTERN
+```
+
 
 
 ## The PURPOSE statement {#PURPOSE-statement}
@@ -850,7 +883,67 @@ By default rules are invariant rules.
 By preceding the rule statement with a role specification for this rule, the rule becomes a process rule.
 
 
+## Language support
 
+### Purpose
 
+To generate documentation, Ampersand is language aware.
 
+### Description
+
+Ampersand assigns a language to every text written as documentation, whether it is a `MEANING`, `PURPOSE` or other text except comment.
+
+Ampersand does not recognize any language, so you must tell which language is meant. To tell Ampersand what language you use, you can append a language directive to a context, a meaning, and to a purpose statement. Currently English and Dutch are supported.
+
+### Syntax
+
+A language directive has the following syntax
+
+```text
+IN <language>
+```
+
+Where `<language>` can be `ENGLISH` or `DUTCH`.
+
+### Semantics by example
+
+The first example is a context declaration in which the language `ENGLISH` is specified.
+
+```text
+CONTEXT Foo IN ENGLISH
+...
+ENDCONTEXT
+```
+
+This means that all natural language elements within this context are written in `ENGLISH`, unless specified otherwise.
+
+The second example is a `MEANING`, which can be used in a `RULE` statement and in a `RELATION` statement. This example uses a `MEANING` in `ENGLISH`:
+
+```text
+RELATION ptpic[Pattern*Image] [UNI]
+MEANING IN ENGLISH "Relation ptpic relates a pattern to the image of its conceptual diagram."
+```
+
+The language directive `IN ENGLISH` means that the meaning of the relation `ptpic[Pattern*Image]` is written in `ENGLISH`.
+
+The third example is a `PURPOSE` statement in which the language `DUTCH` is specified.
+
+```text
+PURPOSE CONCEPT Person IN DUTCH
+{+ Een persoon is een natuurlijke persoon of een rechtspersoon +}
+```
+
+This means that the contents of this purpose statement is written in `DUTCH`.
+
+### Additional information
+
+Ampersand assumes that whatever is written is written in the language denoted in the language directive. It doesn't check whether that language is actually used, because it cannot recognize languages.
+
+If a `CONTEXT` has no language directive, `IN ENGLISH` is used by default. If a `CONTEXT` has a language directive, that language will be the default language of all natural language items within that context.
+
+If a `PURPOSE` statement or a `MEANING` has no language directive, Ampersand assumes this to be the language of its context. So, the user needs to specify a language only if it is an exception to the default.
+
+Documentation generated by the Ampersand-compiler is written in a single language, which is specified when the compiler is called.
+
+Documentation generated by RAP4 is written in `DUTCH`. Natural language items written in any other language are ignored. This is [not a mistake](https://github.com/AmpersandTarski/Ampersand/issues/702), but a feature. RAP4 only "speaks Dutch" and ignores anything else.
 

@@ -15,7 +15,7 @@ Let us start by looking at an example:
 | 3 | Calvin | Coolidge | July 4, 1872 |
 | 4 | Dwight | Eisenhower | October 14, 1890 |
 
-Since Ampersand works with [relations](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement), it must represent this table as relations. Three relations can do the job in the following manner:
+Since Ampersand works with [relations](../reference-material/syntax-of-ampersand#the-relation-statement), it must represent this table as relations. Three relations can do the job in the following manner:
 
 ```text
 POPULATION firstname[President*Name] CONTAINS
