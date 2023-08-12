@@ -1,7 +1,8 @@
 # Syntactical conventions
+
 This section is a reference for meta syntax, syntactical conventions, reserved words, etc.
 
-To keep this documentation readable, the documentation omits some details that we deem irrelevant for most Ampersand modelers. The definitive syntax definition is  [the source code of the parser](https://github.com/AmpersandTarski/Ampersand/blob/master/src/Ampersand/Input/ADL1/Parser.hs), where all EBNF statements are fully detailed in comments.
+To keep this documentation readable, the documentation omits some details that we deem irrelevant for most Ampersand modelers. The definitive syntax definition is [the source code of the parser](https://github.com/AmpersandTarski/Ampersand/blob/master/src/Ampersand/Input/ADL1/Parser.hs), where all EBNF statements are fully detailed in comments.
 
 ## How to read syntax statements
 
@@ -13,8 +14,8 @@ Sometimes, in describing the syntax, we use EBNF-like notation with the followin
 | `<foo>+` | One or more occurrences of `<foo>`  |
 | `<foo>*` | Zero or more occurrences of `<foo>` |
 
-
 ## Syntactical Conventions
+
 ## Symbols
 
 Ampersand has _reserved words_, such as `RELATION`, `CONTEXT`, `CONTAINS`. All reserved words are written in capital letters. They are introduced on the fly. You will find an exhaustive list of reserved words [here](## List of reserved words).
@@ -33,14 +34,15 @@ A comment on a single line starts with `--`. Everything after a `--` symbol is i
 Identifiers always start with a letter. Concepts start with a capital letter, as in `Person`, `Case`, `A`, and `Order`. Relation names start with a lower case letter, as in `contains`, `attr`, `sessionLogin`, or `r`.
 
 ## Terms
+
 Terms specify calculations with relations. They combine relations with operators to produce new relations. There are unary and binary operators. Binary operators may require brackets to avoid ambiguity. To save writing unneccessary brackets, some precedence rules are in place.
 
-| operator category | precedence | operators |
-| :--- | :--- | :--- |
-| logic | 1 \(weakest\) | \|-  \(subset\),  `=` \(equal\) |
-| binary boolean | 2 | `\/` \(union\), `/\` \(intersect\), `-` \(difference\) |
-| binary relational | 3 | `;` \(composition\), `!` \(relational addition\), `\` \(right residual\), `/` \(left residual\), `<>` \(diamond operator\) |
-| unary prefix, unary postfix | 4 \(strongest\) | `-` \(complement\), `~` \(converse\) |
+| operator category           | precedence      | operators                                                                                                                  |
+| :-------------------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| logic                       | 1 \(weakest\)   | \|- \(subset\), `=` \(equal\)                                                                                              |
+| binary boolean              | 2               | `\/` \(union\), `/\` \(intersect\), `-` \(difference\)                                                                     |
+| binary relational           | 3               | `;` \(composition\), `!` \(relational addition\), `\` \(right residual\), `/` \(left residual\), `<>` \(diamond operator\) |
+| unary prefix, unary postfix | 4 \(strongest\) | `-` \(complement\), `~` \(converse\)                                                                                       |
 
 Within an operator category, you must place brackets to disambiguate. E.g. `r/\s\/t` is not allowed. You have to write either `(r/\s)\/t` or `r/\(s\/t)`. Across categories, you may omit brackets because a higher precedence binds stronger. So `r;s\/t` means `(r;s)\/t`. \(Note that `(r;s)\/t` and `r;(s\/t)` have different meanings\). Associative operators \(`\/`, `/\`, `;`\) need not be disambiguated with brackets. So `r\/s\/t` and `(r\/s)\/t` and `r\/(s\/t)` all mean exactly the same.
 
@@ -48,98 +50,98 @@ Within an operator category, you must place brackets to disambiguate. E.g. `r/\s
 
 Keywords in Ampersand are always written in CAPITALS.
 
-* Keywords for the main structure of the code
-  * [`CONTEXT`](./)
-  * `ENDCONTEXT`
-  * [`IN`](language-support.md)
-  * `ENGLISH`
-  * `DUTCH`
-  * [`INCLUDE`](../syntax-of-ampersand#INCLUDE-statement)
-  * `META`
-  * `THEMES`
-  * [`PATTERN`](../syntax-of-ampersand#PATTERN-statement)
-  * `ENDPATTERN`
-  * [`CONCEPT`](../syntax-of-ampersand#the-concept-statement)
-* Keywords for [relations](../syntax-of-ampersand#RELATION-statement)
-  * [`RELATION`](../syntax-of-ampersand#RELATION-statement)
-  * `PRAGMA`
-  * `UNI`
-  * `INJ`
-  * `SUR`
-  * `TOT`
-  * `SYM`
-  * `ASY`
-  * `TRN`
-  * `RFX`
-  * `IRF`
-  * `PROP`
-  * [`POPULATION`](../syntax-of-ampersand#POPULATION-statement)
-  * `CONTAINS`
-* Keywords for [rules](../syntax-of-ampersand#RULE-statement)
-  * `RULE`
-  * `MESSAGE`
-  * `VIOLATION`
-  * `TXT`
-  * `SRC`
-  * `TGT`
-  * `I`
-  * `V`
-  * `ONE`
-  * `ROLE`
-  * `MAINTAINS`
-* Keywords for documentation
-  * [`PURPOSE`](../syntax-of-ampersand#PURPOSE-statement)
-  * [`MEANING`](../syntax-of-ampersand#MEANING-statement)
-  * `REF`
-  * `REST`
-  * `HTML`
-  * `LATEX`
-  * `MARKDOWN`
-* Keywords for [services](./services.md)
-  * `INTERFACE`
-  * `FOR`
-  * `LINKTO`
-  * `BOX`
-* Keywords for identities
-  * [`IDENT`](../syntax-of-ampersand#IDENT-statement)
-* Keywords for views
-  * `VIEW`
-  * `ENDVIEW`
-  * `DEFAULT`
-  * `TEMPLATE`
-  * `HTML`
-* Keywords for generalisations:
-  * [`CLASSIFY`](../syntax-of-ampersand#CLASSIFY-statement)
-  * `ISA`
-  * `IS`
-* Keywords for TType:
-  * `REPRESENT`
-  * `TYPE`
-  * `ALPHANUMERIC`
-  * `BIGALPHANUMERIC`
-  * `HUGEALPHANUMERIC`
-  * `PASSWORD`
-  * `BINARY`
-  * `BIGBINARY`
-  * `HUGEBINARY`
-  * `DATE`
-  * `DATETIME`
-  * `BOOLEAN`
-  * `INTEGER`
-  * `FLOAT`
-  * `AUTOINCREMENT`
-* Reserved words for values of atoms:
-  * `TRUE`
-  * `FALSE` --for booleans
-  * `_SESSION`
-* Reserved words for concepts
-  * `ONE`
-  * `SESSION`
-* Experimental keywords:
-  * `SERVICE`
-  * `EDITS`
-* Deprecated keywords:
-  * `SPEC`
-  * `KEY`
-  * `PROCESS`
-  * `ENDPROCESS`
+- Keywords for the main structure of the code
+  - [`CONTEXT`](./)
+  - `ENDCONTEXT`
+  - [`IN`](language-support.md)
+  - `ENGLISH`
+  - `DUTCH`
+  - [`INCLUDE`](../syntax#INCLUDE-statement)
+  - `META`
+  - `THEMES`
+  - [`PATTERN`](../syntax#PATTERN-statement)
+  - `ENDPATTERN`
+  - [`CONCEPT`](../syntax#the-concept-statement)
+- Keywords for [relations](../syntax#RELATION-statement)
+  - [`RELATION`](../syntax#RELATION-statement)
+  - `PRAGMA`
+  - `UNI`
+  - `INJ`
+  - `SUR`
+  - `TOT`
+  - `SYM`
+  - `ASY`
+  - `TRN`
+  - `RFX`
+  - `IRF`
+  - `PROP`
+  - [`POPULATION`](../syntax#POPULATION-statement)
+  - `CONTAINS`
+- Keywords for [rules](../syntax#RULE-statement)
+  - `RULE`
+  - `MESSAGE`
+  - `VIOLATION`
+  - `TXT`
+  - `SRC`
+  - `TGT`
+  - `I`
+  - `V`
+  - `ONE`
+  - `ROLE`
+  - `MAINTAINS`
+- Keywords for documentation
+  - [`PURPOSE`](../syntax#PURPOSE-statement)
+  - [`MEANING`](../syntax#MEANING-statement)
+  - `REF`
+  - `REST`
+  - `HTML`
+  - `LATEX`
+  - `MARKDOWN`
+- Keywords for [services](./services.md)
+  - `INTERFACE`
+  - `FOR`
+  - `LINKTO`
+  - `BOX`
+- Keywords for identities
+  - [`IDENT`](../syntax#IDENT-statement)
+- Keywords for views
+  - `VIEW`
+  - `ENDVIEW`
+  - `DEFAULT`
+  - `TEMPLATE`
+  - `HTML`
+- Keywords for generalisations:
+  - [`CLASSIFY`](../syntax#CLASSIFY-statement)
+  - `ISA`
+  - `IS`
+- Keywords for TType:
+  - `REPRESENT`
+  - `TYPE`
+  - `ALPHANUMERIC`
+  - `BIGALPHANUMERIC`
+  - `HUGEALPHANUMERIC`
+  - `PASSWORD`
+  - `BINARY`
+  - `BIGBINARY`
+  - `HUGEBINARY`
+  - `DATE`
+  - `DATETIME`
+  - `BOOLEAN`
+  - `INTEGER`
+  - `FLOAT`
+  - `AUTOINCREMENT`
+- Reserved words for values of atoms:
+  - `TRUE`
+  - `FALSE` --for booleans
+  - `_SESSION`
+- Reserved words for concepts
+  - `ONE`
+  - `SESSION`
+- Experimental keywords:
+  - `SERVICE`
+  - `EDITS`
+- Deprecated keywords:
+  - `SPEC`
+  - `KEY`
+  - `PROCESS`
+  - `ENDPROCESS`
