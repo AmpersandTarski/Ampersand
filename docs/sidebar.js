@@ -55,7 +55,7 @@ module.exports = {
         {
             label: 'Syntax',
             type: 'doc',
-            id: 'ampersand/reference-material/syntax-of-ampersand'
+            id: 'ampersand/reference-material/syntax'
         },
         {
             label: 'Automated Rules',
