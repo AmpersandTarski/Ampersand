@@ -1,6 +1,6 @@
 ---
 title: Syntax of Ampersand
-id: syntax-of-ampersand
+id: syntax
 ---
 
 # Syntax and semantics of Ampersand
