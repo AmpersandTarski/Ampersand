@@ -3,12 +3,15 @@ title: Examples
 id: examples
 description: Examples of Ampersand programs and fragments
 ---
+
 # Examples
+
 This page is a collection of examples, meant for learning and explaining the language Ampersand.
 TODO: refactor this documentation to match the latest syntax.
 
 ## Example: Client {#services-example-client}
-This example illustrates the structure of [services in Ampersand](./reference-material/The-language-Ampersand.md#Services)
+
+This example illustrates the structure of [services in Ampersand](./reference-material/the-language-ampersand.md#Services)
 
 ### A Client service
 
@@ -48,8 +51,8 @@ The same term, `I[Client]`, is also used as **box term** for the box that follow
 In this example, the outermost box contains seven **box items** and the innermost box two. Each box item has a label and an term. For example the box item `"Name" : clientName` has `"Name"` as its label and `clientName` as term. The atom `a` from which the box was called is used to select the pairs \(`a`,`x`\) from the term. All `x`-es for which \(`a`,`x`\) is in `clientName` will be displayed. Supposing that the relation `clientName` associates only one name to a client, this specific box item displays just one name. However, in the fifth box item, the term `orderedBy~ - V; orderAccepted~` may contain an arbitrary number of orders to be accepted by provider, all of which are shown.
 
 ---
-description: 'TODO: This example is subject to bitrot. It has to be redone.'
----
+
+## description: 'TODO: This example is subject to bitrot. It has to be redone.'
 
 # Example: Login {#services-example-login}
 
@@ -58,7 +61,7 @@ because it is familiar. We show this example to demonstrate how to get different
 
 ## Preliminaries
 
-The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](./reference-material/The-language-Ampersand.md#layout-of-interfaces) first for details.
+The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](./reference-material/the-language-ampersand.md#layout-of-interfaces) first for details.
 
 To link system activities to a person or organisation, we use the notion of `Account`. To log in means to associate a session with the `Account` of the user. This association is made in the relation `sessionAccount`. To log out means to break that link, i.e. to remove the session/account pair from relation `sessionAccount`. When logging in, it is customary that the user identifies herself. In this example we do this with a `UserID` and `Password`.
 
@@ -156,6 +159,7 @@ subbox remains empty. However, when logged in, the other subbox remains empty:
 ![without hiding](./assets/ssh5.png)
 
 ## Example {#example-service-structure}
+
 To understand the structure of a service (keyword: `INTERFACE`), this section introduces a small example of a user interface, which shows the name, status, e-mail and co-workers of a person called "J. Lovell".
 
 ![Example of a user interface](./assets/InterfaceLovellRaw.jpg)
@@ -168,7 +172,7 @@ BOX
   [ "Name"       : personName
   , "Status"     : personStatus
   , "Email"      : personEmail
-  , "Works with" : workswith 
+  , "Works with" : workswith
   ]
 ```
 
@@ -177,22 +181,24 @@ To understand this fragment, take notice of:
 1. The name of this service is `Person`. This name immediately follows the keyword `INTERFACE`.
 2. The term following the colon, `I[Person]`, is the interface term of this service.
 3. The service can be applied to any atom from the _domain of the interface term_. So this particular service is applicable to any atom of type `Person`. In the screenshot, it applies to `"J. Lovell"`.
-4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface. 
+4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface.
 5. Each term at the right of a field name specifies which data is presented in the field. For this reason it is called the _field term_ for that field. Field name and field term are separated by a colon.
 6. Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`. A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
-7.  Field terms are subject to type checking. The following relations provide an example for getting a type-correct service:
+7. Field terms are subject to type checking. The following relations provide an example for getting a type-correct service:
 
-    ```
-    RELATION personName :: Person * PersonName [UNI]
-    RELATION personStatus :: Person * PersonStatus [UNI]
-    RELATION personEmail :: Person * Email [UNI,TOT]
-    RELATION workswith :: Person * Person
-    ```
+   ```
+   RELATION personName :: Person * PersonName [UNI]
+   RELATION personStatus :: Person * PersonStatus [UNI]
+   RELATION personEmail :: Person * Email [UNI,TOT]
+   RELATION workswith :: Person * Person
+   ```
 
-    The source concepts of a field term must match the target concept of the interface term.
+   The source concepts of a field term must match the target concept of the interface term.
+
 8. Looking at the screenshot, we can tell that `"J. Lovell"` has one personName (which is `"J. Lovell"`), it has no personStatus, one personEmail and three persons to work with in `RELATION workswith`.
 
 ## Example of a Service {#service-introductory-example}
+
 ```text
 INTERFACE Overview : "_SESSION"                  cRud
 BOX <TABS>
@@ -221,9 +227,9 @@ This example specifies three tabs. One shows students, one shows courses and one
 ![Screenshot of the resulting user interface](./assets/screenshot.png)
 
 Notice the following features:
+
 1. The structure of a service is hierarchical. It consists of boxes within a box. This is because a field term may be followed by a `BOX` with a list of subservices. Without it, it is just a field term.
 2. When a field term is followed by a `BOX`, every atom in the _codomain of the field term_ is displayed in a box of its own on the screen. That box behaves like a service with the field term serving as interface term of that subservice.
 3. By this mechanism, the hierarchical structure of the entire service translates directly to the hierarchical structure of the web-page in which it is displayed.
 4. The source concept of a field term must match with the target concept of the field term outside the box.
 5. The target concept of a field term that has a box, must match with the source concepts of each field inside that box.
-

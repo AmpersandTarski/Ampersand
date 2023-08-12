@@ -1,6 +1,7 @@
 # Services
 
 <!-- Purpose -->
+
 A service is a component of an information system that exposes functionality and data from a [context](./context.md), to let users or information systems interact by creating, reading, updating, and deleting data.
 
 ## Description
@@ -41,6 +42,7 @@ This example specifies three tabs. One shows students, one shows courses and one
 ![Screenshot of the resulting user interface](../../assets/screenshot.png)
 
 ## Syntax and Meaning {#syntax-of-interface-statements}
+
 This chapter gives the formal syntax of services for the purpose of reference.
 
 A service specification has the following structure. It is identical for user interfaces (`INTERFACE`) and application programming interfaces (`API`).
@@ -61,7 +63,7 @@ A sub-interface may be defined on the spot (by `<boxKey> <box>`) or it may link 
                  | LINKTO ( INTERFACE | API ) <name>
 ```
 
-The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../The-language-Ampersand.md#layout-of-interfaces) for details.
+The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../the-language-ampersand.md#layout-of-interfaces) for details.
 
 ```
 <boxKey> ::= BOX '<' <htmlname> '>'
@@ -90,6 +92,7 @@ Ampersand is meant for back-end design. It offers no features for front-end desi
 However, Ampersand offers a few layout features that let you place items. It has three built-in layout options, [colums](#table-layout), [rows](#forms-layout) and [tabs](#tabs-layout), which you can mix freely.
 
 <a name="table-layout"></a>
+
 ### Table layout
 
 The column layout uses `BOX <TABLE>` to instruct the front-end application to use a tabular layout in user interfaces. Here is an example of a service, which uses the table layout.
@@ -122,9 +125,10 @@ This service shows three columns in the user interface, **Students**, **Course**
 ![Column-oriented layout of a user interface with columns in each row](<../../assets/COLS layout example.png>)
 
 <a name="forms-layout"></a>
+
 ### ROW layout
 
-The row layout uses  `BOX <FORM>` to instruct the front-end application to layout the user interface row by row. Here is an example of a service, which uses the row layout on the top level.
+The row layout uses `BOX <FORM>` to instruct the front-end application to layout the user interface row by row. Here is an example of a service, which uses the row layout on the top level.
 
 ```
 INTERFACE Overview : "_SESSION"                  cRud
@@ -143,11 +147,12 @@ BOX <FORM>
      ]
 ```
 
-This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../The-language-Ampersand.md#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`.  Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../the-language-ampersand.md#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`. Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
 
 ![Row-oriented layout of a user interface with columns in each row](<../../assets/ROWS layout example.png>)
 
 <a name="tabs-layout"></a>
+
 ### Tabs layout
 
 The column layout uses `BOX <TABS>` to instruct the front-end application to tabs in the user interface. Here is an example of a service, which uses the column layout.
@@ -182,9 +187,10 @@ This service shows three tabs in the user interface, **Students**, **Course** an
 We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
 
 <a name="layout-and-widgets"></a>
+
 ### Your own layout and your own widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](../The-language-Ampersand.md#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets.  \(to be done...\). 
+You don't have to put up with the [Ampersand built-in layout options](../the-language-ampersand.md#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
 
 ## CRUD {#CRUD}
 
@@ -225,31 +231,31 @@ The next sections give some more detailed information on the run time semantics 
 
 ### Create
 
-| CRUD | for a box                                                                                                                                                                                                 | for a field.                                                                                                                                                                                                                                                  |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C    | ![Creating atoms is done by pressing the + button](../../assets/box-crud-create.png) A + (plus) button is displayed that lets you create a new atom, but only if the box-expression is editable. | ![Creating atoms is done by pressing the + button](<../../assets/create-field.png>) Enter a new atom and a `+` button appears. Click the + to add that atom to the listed set of atoms. If you enter an atom that exists (Peter), you can select it. |
-| c    | Atoms cannot be created                                                                                                                                                                                   | Atoms cannot be created                                                                                                                                                                                                                                       |
+| CRUD | for a box                                                                                                                                                                                        | for a field.                                                                                                                                                                                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C    | ![Creating atoms is done by pressing the + button](../../assets/box-crud-create.png) A + (plus) button is displayed that lets you create a new atom, but only if the box-expression is editable. | ![Creating atoms is done by pressing the + button](../../assets/create-field.png) Enter a new atom and a `+` button appears. Click the + to add that atom to the listed set of atoms. If you enter an atom that exists (Peter), you can select it. |
+| c    | Atoms cannot be created                                                                                                                                                                          | Atoms cannot be created                                                                                                                                                                                                                            |
 
 ### Read
 
-| Read | CRUD for boxes      |   | CRUD for fields     |
-| ---- | ------------------- | - | ------------------- |
-| R    | Read is allowed     |   | Read is allowed     |
-| r    | Read is not allowed |   | Read is not allowed |
+| Read | CRUD for boxes      |     | CRUD for fields     |
+| ---- | ------------------- | --- | ------------------- |
+| R    | Read is allowed     |     | Read is allowed     |
+| r    | Read is not allowed |     | Read is not allowed |
 
 ### Update
 
-| Update | CRUD for boxes                                                                                                                                                                                                                                               | CRUD for fields                                                                                                                                                                                                                                                |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Update | CRUD for boxes                                                                                                                                                                                                                                      | CRUD for fields                                                                                                                                                                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | U      | ![Deleting a pair is done with the - button](../../assets/box-crud-update.png) Removing and/or adding a pair (src,tgt) is allowed if expr is editable and the atom exists. Deleting a pair is done with the - button; the atom will NOT be deleted. | ![Deleting a pair is done with the - button](../../assets/field-crud-update.png) Removing and/or adding a pair (src,tgt) is allowed if expr is editable and the atom exists. Deleting a pair is done with the - button; the atom will NOT be deleted. |
-| u      | Update is not allowed                                                                                                                                                                                                                                        | Update is not allowed                                                                                                                                                                                                                                          |
+| u      | Update is not allowed                                                                                                                                                                                                                               | Update is not allowed                                                                                                                                                                                                                                 |
 
 ### Delete
 
-| Delete | CRUD for boxes                                                                                                                                                                          | CRUD for fields                                                                                                                                |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Delete | CRUD for boxes                                                                                                                                                                 | CRUD for fields                                                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | D      | ![Deleting a pair is done with the - button](../../assets/box-crud-delete.png) Deleting a pair is done with the - (minus) button. Deleting an atom is done with the trash bin. | ![Deleting a pair is done with the - button](../../assets/field-crud-delete.png) Delete atom (tgt) and all pairs in which it is used. |
-| d      | delete not allowed                                                                                                                                                                      | delete not allowed                                                                                                                             |
+| d      | delete not allowed                                                                                                                                                             | delete not allowed                                                                                                                    |
 
 A top-level Update or Create are common in my own scripts, e.g. to create an overview of People and be able to create a new Person: `INTERFACE "People" : V[SESSION*Person] CRud COLS []`. And update is also possible.
 
@@ -260,7 +266,7 @@ A top-level Update or Create are common in my own scripts, e.g. to create an ove
 
 ### Background
 
-Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93\&q=is%3Aissue+label%3Acrud+) functionality.
+Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Acrud+) functionality.
 
 ## Using a service
 
@@ -270,6 +276,5 @@ When running an application in your browser, you are watching one user interface
 
 The next sections contain two examples:
 
-* a [client service](../../Examples.md#services-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
-* a [login service](../../Examples.md#services-example-login) to demonstrate how to get different interface structures under varying conditions.
-
+- a [client service](../../Examples.md#services-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
+- a [login service](../../Examples.md#services-example-login) to demonstrate how to get different interface structures under varying conditions.

@@ -1,20 +1,18 @@
 # Tutorial
 
-* Ampersand is meant to develop information systems.
-* This tutorial will get you going with Ampersand. Consult your tutor with questions.
-* You have a [tool](#your-tool-rap4) to experiment with, supplemented by this video (in Dutch) to make your start even easier:
+- Ampersand is meant to develop information systems.
+- This tutorial will get you going with Ampersand. Consult your tutor with questions.
+- You have a [tool](#your-tool-rap4) to experiment with, supplemented by this video (in Dutch) to make your start even easier:
 
 <iframe width="100%" height="444" src="https://www.youtube.com/embed/ZISLjxJqkqw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-
 This tutorial is meant for Business- or IT professionals who want to learn about [information systems](https://player.ou.nl/wowzaportlets/#!production/BDAXK2L) development. Knowledge about Ampersand is not presumed. The text offers pointers for you to find out many things on your own. This tutorial is intended for individual study, but you can always ask your tutor if things are unclear. The required theory is also available in Learning Unit 3 of the coursebook of the course [IM0403, Rule-Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design), taught at the Open University of the Netherlands.
-
 
 ## Overview
 
 1. You will start by [looking at an information system called "Enrollment"](#example-system-enrollment) and learn the basics of its specification. By looking at a small information system you can discuss the purpose of the course with your tutor and peers.
 2. Then you will be introduced to the web-based version of Ampersand, [RAP 4](#your-tool-rap4), in which you can specify an information system and create a working web-based prototype. With this tool, you can make information systems of your own, enabling you to complete the course.
-3. Next, we will have a look at [the conceptual model](#conceptual-model-enrollment) behind the Enrollment system. You will learn to interpret a rule based on the given concepts and relations. You will see some basics of relational algebra. 
+3. Next, we will have a look at [the conceptual model](#conceptual-model-enrollment) behind the Enrollment system. You will learn to interpret a rule based on the given concepts and relations. You will see some basics of relational algebra.
 4. You will [learn how to analyse a "spreadsheet information system"](./reference-material/syntax-of-ampersand#population-in-spreadsheets) and turn it into a well defined information system. This technique allows you to help organizations with organizing and structuring data.
 5. You will learn how to add rules to your data. This will allow you to add meaning to your information system, because you can assure your user community that these rules will remain satisfied.
 
@@ -28,26 +26,26 @@ Try it out on an Ampersand implementation. Copy this example code, make a new sc
 
 ### Assignment
 
-* Who are the three students and what are the courses they take?
-* Is there a module `HRM`?
-  * Add, in the tab Course, the module HRM to the Management course. The system sees that the subject is unknown, and provides a green plus-sign to add it.
-  * Each change will be saved automatically.
-  * Note that this change is also visible in the tab Modules.
-* Now enroll student `John` for the module `Business Rules`. You can do this either in the tab Students or the tab Modules. We will later see why this is the case.
-* Now enroll student `Peter` for the module `Business Rules`.
-  * This will trigger a message because this student does not take the course Business IT.
-  * Click on the message to see details.
-  * Look-up in the code below where this message is defined. It is the line that starts with `RULE`. You don't have to understand the syntax at this point.
-  * Click cancel.
-* Use the trash can icon to remove the course `Business IT` from`Susan` in the tab Students.
-  * This also will trigger an error message because each student can only enroll for a module in courses he has registered in. Get rid of the message by going to the "List all interfaces" in the menu bar and navigate back to the overview.
-  * Look up in the code the definition of the `RELATION takes`. The keyword `[TOT]` is responsible for this message.
-* Note the four icons on the top-right of the screen and click on the second icon (nine dots).
-  * Click on 'Reinstall database'
-  * The Installer screen comes up. Click on the big red button and wait for it to turn green.
-  * Click on 'overview' and the initial data is back.
-  * Have a look at the code below, to find where the initial data is defined.
-* Have a look at the code-part at the end called INTERFACE and compare it with the screen. Note which parts you recognize. The syntax of the code is discussed in the documentation.
+- Who are the three students and what are the courses they take?
+- Is there a module `HRM`?
+  - Add, in the tab Course, the module HRM to the Management course. The system sees that the subject is unknown, and provides a green plus-sign to add it.
+  - Each change will be saved automatically.
+  - Note that this change is also visible in the tab Modules.
+- Now enroll student `John` for the module `Business Rules`. You can do this either in the tab Students or the tab Modules. We will later see why this is the case.
+- Now enroll student `Peter` for the module `Business Rules`.
+  - This will trigger a message because this student does not take the course Business IT.
+  - Click on the message to see details.
+  - Look-up in the code below where this message is defined. It is the line that starts with `RULE`. You don't have to understand the syntax at this point.
+  - Click cancel.
+- Use the trash can icon to remove the course `Business IT` from`Susan` in the tab Students.
+  - This also will trigger an error message because each student can only enroll for a module in courses he has registered in. Get rid of the message by going to the "List all interfaces" in the menu bar and navigate back to the overview.
+  - Look up in the code the definition of the `RELATION takes`. The keyword `[TOT]` is responsible for this message.
+- Note the four icons on the top-right of the screen and click on the second icon (nine dots).
+  - Click on 'Reinstall database'
+  - The Installer screen comes up. Click on the big red button and wait for it to turn green.
+  - Click on 'overview' and the initial data is back.
+  - Have a look at the code below, to find where the initial data is defined.
+- Have a look at the code-part at the end called INTERFACE and compare it with the screen. Note which parts you recognize. The syntax of the code is discussed in the documentation.
 
 This information system was built by the following code:
 
@@ -61,13 +59,13 @@ Students of a course can enroll for any module that is part of the course.
 PATTERN Courses
 -- The concepts
 CONCEPT Student "Someone who wants to study at this institute"
-PURPOSE CONCEPT Student 
+PURPOSE CONCEPT Student
 {+We have to know what person studies at this institute, so the system needs to keep track of them.+}
 CONCEPT Course "A complete course that prepares for a diploma"
-PURPOSE CONCEPT Course 
+PURPOSE CONCEPT Course
 {+We have to know what courses there are, so the system needs to keep track of them.+}
 CONCEPT Module "An educational entity with a single exam"
-PURPOSE CONCEPT Module 
+PURPOSE CONCEPT Module
 {+We have to know what modules exist, so the system needs to keep track of them.+}
 
 -- The relations and the initial population
@@ -145,11 +143,12 @@ Register with your own student number and e-mail. Create a password. Your studen
 
 Notes:
 
-* About the user interface: Each time you change fields (e.g. using Tab), the form is updated. But you will not see what is the next active field. You may have to click again to ensure that your cursor is in the right field.
-*   This application has no connection with the OU database, so be careful to fill in the right number on this and future occasions.
+- About the user interface: Each time you change fields (e.g. using Tab), the form is updated. But you will not see what is the next active field. You may have to click again to ensure that your cursor is in the right field.
+- This application has no connection with the OU database, so be careful to fill in the right number on this and future occasions.
 
-    This login-screen is also the screen to logout later.
-* When RAP4 is updated, probably your account will be reset. You need to register again. We will inform you in the unlikely event that this happens during a course.
+  This login-screen is also the screen to logout later.
+
+- When RAP4 is updated, probably your account will be reset. You need to register again. We will inform you in the unlikely event that this happens during a course.
 
 ![](<assets/insecure password.png>)
 
@@ -161,14 +160,14 @@ After logging in, you will see your login name or student number in the RAP4 win
 
 In the menu bar you will find:
 
-* A horn symbol. Just ignore that for now, because it contains debug settings.
-* a 3x3 grid, which contains some Ampersand extensions.
-* a plus (+) symbol. That is important, because it lets you create a new Ampersand script.
-* a person-like symbol. It lets you switch on/off some role dependent functionalities. If you have more than one role, just try it out and watch functionalities appear and disappear from the menu bar. As a student you typically have just one role (User) so this button is not very relevant for you.
+- A horn symbol. Just ignore that for now, because it contains debug settings.
+- a 3x3 grid, which contains some Ampersand extensions.
+- a plus (+) symbol. That is important, because it lets you create a new Ampersand script.
+- a person-like symbol. It lets you switch on/off some role dependent functionalities. If you have more than one role, just try it out and watch functionalities appear and disappear from the menu bar. As a student you typically have just one role (User) so this button is not very relevant for you.
 
 Notes:
 
-* After a period of not using RAP4, you will be logged out automatically. In the current system, you may get errors or weird behaviour. Please navigate back to the login screen to check whether you are still logged in.
+- After a period of not using RAP4, you will be logged out automatically. In the current system, you may get errors or weird behaviour. Please navigate back to the login screen to check whether you are still logged in.
 
 ## Conceptual Model: Enrollment
 
@@ -180,16 +179,16 @@ You have seen the web application Enrollment in action. You have seen the code t
 
 We have three ingredients:
 
-* CONCEPT
-* RELATION
-* RULE
+- CONCEPT
+- RELATION
+- RULE
 
 Before we discuss these three main ingredients, we will discuss the other keywords you see in the code.
 
-* INTERFACE is not crucial for the conceptual model, but still crucial for the web application. It uses the conceptual model to define the tabs and fields displayed. We will come back to this later.
-* The text after MEANING and PURPOSE is printed in the documentation that RAP4 can generate.
-* MESSAGE and VIOLATION are used to display messages on screen to the user about rule violations.
-* POPULATION provides the web application with actual data to test the rules with. Adding data to the system can also be done with an excel sheet. The data specifies elements that populate the concepts and whether or not these elements are connected to each other in a specific relation.
+- INTERFACE is not crucial for the conceptual model, but still crucial for the web application. It uses the conceptual model to define the tabs and fields displayed. We will come back to this later.
+- The text after MEANING and PURPOSE is printed in the documentation that RAP4 can generate.
+- MESSAGE and VIOLATION are used to display messages on screen to the user about rule violations.
+- POPULATION provides the web application with actual data to test the rules with. Adding data to the system can also be done with an excel sheet. The data specifies elements that populate the concepts and whether or not these elements are connected to each other in a specific relation.
 
 ### The core of the model
 
@@ -241,14 +240,12 @@ Try to reason about the answers to the following questions based on the conceptu
 
 ### What have you learned?
 
-* an information system may be seen as a system of relations and rules that governs data, supplemented by user interfaces that give access to that data.
-* a rule engine executes the rules on all data regularly
+- an information system may be seen as a system of relations and rules that governs data, supplemented by user interfaces that give access to that data.
+- a rule engine executes the rules on all data regularly
 
 ### What's next?
 
 This concludes your first steps to get acquainted with Ampersand script en RAP4. The Open University Coursebook contains all theoretical background you need to start understanding and creating your own model. This Gitbook offers more practical and up to date information about the lang uage Ampersand script. For the syntax and meaning of Ampersand constructs, consult chapter [The language Ampersand](./reference-material/the-language-ampersand/README.md). For more in depth information about modeling in Ampersand [click here](./modeling/README.md). For the rest...have a look around and feel free to ask questions.
-
-
 
 ## Making your first Ampersand script
 
@@ -260,53 +257,51 @@ When you click on the blue plus-sign on the top-right side in the menu bar in yo
 
 ### Assignment
 
-* Copy the code for the system enrollment from [this page](#example-system-enrollment) or take it from the OU course-site. The code starts with `CONTEXT` and ends with `ENDCONTEXT`. Paste the script in the RAP4 editor (On rap.cs.ou.nl only:  you now have to click on the big blue button "beware to save your work before leaving the editer field!"). The script is now saved in RAP4.
-* Next, click on the blue Compile button. When RAP4 is finished compiling your script, the compiler message should read "The script of Enrollment contains no type errors" and two blue buttons should be visible below that. Please make it a habit to read the Compiler message carefully each time you compile a script
+- Copy the code for the system enrollment from [this page](#example-system-enrollment) or take it from the OU course-site. The code starts with `CONTEXT` and ends with `ENDCONTEXT`. Paste the script in the RAP4 editor (On rap.cs.ou.nl only: you now have to click on the big blue button "beware to save your work before leaving the editer field!"). The script is now saved in RAP4.
+- Next, click on the blue Compile button. When RAP4 is finished compiling your script, the compiler message should read "The script of Enrollment contains no type errors" and two blue buttons should be visible below that. Please make it a habit to read the Compiler message carefully each time you compile a script
 
 ![](<assets/Finished processing your model.png>)
 
-* Generate a Prototype: Click the blue button "Prototype" and when RAP4 has finished loading you will see a new link "Launch Prototype". Click the link.
-* Now you see the information system you have just compiled from the code. You are already familiar with the look and feel. Click the Overview button in the top-left of the screen and have a look around.
-* Try to generate documentation: Click on the button Diagnosis. When RAP4 is done, a link will be added below the button. Click on the button Func. spec + pictures and again a link will be added. These two functions create pdf-files with information about the code that has been compiled. During the course you can have a better look there.
+- Generate a Prototype: Click the blue button "Prototype" and when RAP4 has finished loading you will see a new link "Launch Prototype". Click the link.
+- Now you see the information system you have just compiled from the code. You are already familiar with the look and feel. Click the Overview button in the top-left of the screen and have a look around.
+- Try to generate documentation: Click on the button Diagnosis. When RAP4 is done, a link will be added below the button. Click on the button Func. spec + pictures and again a link will be added. These two functions create pdf-files with information about the code that has been compiled. During the course you can have a better look there.
 
 During the remainder of this course you will compile and run your own scripts in this way, so it pays to familiarize yourself with it.
 
 You are now going to change some code and view the results in RAP4. Navigate back to your script editor (wherever you are, you can always go back to it via "MyScripts" in the menu bar).
 
-* If you want to save the original script, go to MyScripts, create a new script and copy the same code in there.
-* Let's add the possibility to register teachers in this system:
-  * Define a new concept with the keyword CONCEPT: `CONCEPT Teacher`with a short description. Note that concept names start with an Uppercase and that all quotes need to be double quotes.
-  * Define the relation between Module and Teacher with the keyword RELATION: `RELATION providedBy[Module*Teacher]` `MEANING "A module is provided by a teacher"` Note that relation names start with lowercase.
-  * You can define an initial set of teachers and relate them to a module following the examples already available in the script. But you can also add the data later using the prototype. (Adding initial data in the script is a lot of work. There is another method, using spreadsheets. This is another topic in this tutorial.)
-  * Add a service for the teachers in the third tab, the one for Modules. Below the codelines for "Modules" and above the line for "Course": `, "Teacher" : providedBy CRUD`
-  * Save, compile, create protype, launch prototype, reinstall database and see the result in the third tab called "Modules". Note that you need to reinstall the database because the old database is still there, but the database structure has changed in the application.
-  * Note that we have not defined any rules about teachers, so anything you fill in, is OK for this system.
-* Try to understand what you see in the script by making other changes, compile and inspect the changes; learn by doing. Try for instance to create a new course with modules and teachers. Demonstrate your changes to your peers and discuss the results.
+- If you want to save the original script, go to MyScripts, create a new script and copy the same code in there.
+- Let's add the possibility to register teachers in this system:
+  - Define a new concept with the keyword CONCEPT: `CONCEPT Teacher`with a short description. Note that concept names start with an Uppercase and that all quotes need to be double quotes.
+  - Define the relation between Module and Teacher with the keyword RELATION: `RELATION providedBy[Module*Teacher]` `MEANING "A module is provided by a teacher"` Note that relation names start with lowercase.
+  - You can define an initial set of teachers and relate them to a module following the examples already available in the script. But you can also add the data later using the prototype. (Adding initial data in the script is a lot of work. There is another method, using spreadsheets. This is another topic in this tutorial.)
+  - Add a service for the teachers in the third tab, the one for Modules. Below the codelines for "Modules" and above the line for "Course": `, "Teacher" : providedBy CRUD`
+  - Save, compile, create protype, launch prototype, reinstall database and see the result in the third tab called "Modules". Note that you need to reinstall the database because the old database is still there, but the database structure has changed in the application.
+  - Note that we have not defined any rules about teachers, so anything you fill in, is OK for this system.
+- Try to understand what you see in the script by making other changes, compile and inspect the changes; learn by doing. Try for instance to create a new course with modules and teachers. Demonstrate your changes to your peers and discuss the results.
 
 ### What have you learned?
 
 After finishing your assignment, you have learned:
 
-* how to use RAP4 to write, save and compile code.
-* the first basic keywords of Ampersand script and their effect on the prototype.
+- how to use RAP4 to write, save and compile code.
+- the first basic keywords of Ampersand script and their effect on the prototype.
 
 ### Want to learn more?
 
 1. How to describe functionality in a [conceptual model](#conceptual-model-enrollment)?
 2. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 
-
-
 ### Want to learn more?
 
-* how can I [make and run my first Ampersand script](#making-your-first-ampersand-script).
-* How can I describe functionality in a [conceptual model](#conceptual-model-enrollment)?
-* How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
+- how can I [make and run my first Ampersand script](#making-your-first-ampersand-script).
+- How can I describe functionality in a [conceptual model](#conceptual-model-enrollment)?
+- How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 
 ### What have you learned?
 
-* where to find the Repository for Ampersand Projects (RAP4)
-* to register yourself in RAP4
+- where to find the Repository for Ampersand Projects (RAP4)
+- to register yourself in RAP4
 
 ### Disclaimer
 
@@ -316,9 +311,9 @@ RAP4 is under development. You can expect to find teething problems (kinderziekt
 
 After finishing your assignment, you have learned:
 
-* to recognize details in the source code of your information system and relate them to the information system "Enrollment" that you have been playing with;
-* that a rule of the business, such as "A student can only enroll for a module that is in the course the student takes" can be formalized in Ampersand.
-* that such a business rule can be used to constrain data in a database.
+- to recognize details in the source code of your information system and relate them to the information system "Enrollment" that you have been playing with;
+- that a rule of the business, such as "A student can only enroll for a module that is in the course the student takes" can be formalized in Ampersand.
+- that such a business rule can be used to constrain data in a database.
 
 ### Want to learn more?
 
@@ -326,14 +321,8 @@ After finishing your assignment, you have learned:
 2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](#conceptual-model-enrollment)
 3. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 
-
-
-
-
-
 ## What have you learned so far?
 
-* Ampersand is meant to develop information systems.
-* This tutorial will get you going with Ampersand. Consult your tutor with questions.
-* You have a tool to experiment with.
-
+- Ampersand is meant to develop information systems.
+- This tutorial will get you going with Ampersand. Consult your tutor with questions.
+- You have a tool to experiment with.

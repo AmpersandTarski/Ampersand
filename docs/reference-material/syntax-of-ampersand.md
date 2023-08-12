@@ -2,6 +2,7 @@
 title: Syntax of Ampersand
 id: syntax-of-ampersand
 ---
+
 # Syntax and semantics of Ampersand
 
 This page defines the syntax and semantics of the [CONCEPT statement](#the-concept-statement), the [CONTEXT statement](#CONTEXT-statement), the [CLASSIFY statement](#CLASSIFY-statement), the [ENFORCE statement](#ENFORCE-statement), the [IDENT statement](#IDENT-statement), the [INCLUDE statement](#INCLUDE-statement), the [MEANING statement](#MEANING-statement), the [POPULATION statement](#POPULATION-statement), the [PATTERN statement](#PATTERN-statement), the [PURPOSE statement](#PURPOSE-statement), the [RELATION statement](#RELATION-statement), the [RULE statement](#RULE-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
@@ -24,9 +25,9 @@ This statement may occur anywhere within a context, either inside or outside a p
 
 This statement means that there exists a concept called `<Uppercase identifier>` in the current context.
 
-* `<Uppercase identifier>` specifies the name of the concept.
-* `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
-* `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
+- `<Uppercase identifier>` specifies the name of the concept.
+- `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
+- `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
 
 ### Examples
 
@@ -44,10 +45,10 @@ CONCEPT Criterion "A criterion is a standard on which a judgment or decision may
 
 ### Miscellaneous
 
-* The name of a concept starts with an uppercase.
-* A concept should be used for immutable concepts. E.g. use a concept `Person` to express that a person will always be a person and will not change in, let us say, a table. However, don't use `Employee`, because termination of an employee's contract causes a person to be an employee no longer. So employees are not immutable. To be an employee is a dynamic property, so model it as a relation.
-* The description will be printed in the functional specification, so please check that your definition is a complete sentence.
-* Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
+- The name of a concept starts with an uppercase.
+- A concept should be used for immutable concepts. E.g. use a concept `Person` to express that a person will always be a person and will not change in, let us say, a table. However, don't use `Employee`, because termination of an employee's contract causes a person to be an employee no longer. So employees are not immutable. To be an employee is a dynamic property, so model it as a relation.
+- The description will be printed in the functional specification, so please check that your definition is a complete sentence.
+- Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
 
 ## The CONTEXT statement {#CONTEXT-statement}
 
@@ -95,7 +96,7 @@ Directly following the optional language definition, you can optionally specify 
 <markupStyle>
 ```
 
-where  can be one of
+where can be one of
 
 `REST`,
 
@@ -121,7 +122,7 @@ CLASSIFY <upper case identifier> ISA <upper case identifier>
 
 In a specialization, e.g. `CLASSIFY Sedan ISA Car`, we call the first concept (`Sedan`) the specific concept and the second (`Car`) the generic concept. The meaning of a specialization is that every atom from the specific concept is an atom from the generic concept as well. So every (atom that is a) Sedan is a Car as well.
 
-So in general:  `CLASSIFY` $$A$$ `ISA` $$B$$ means: $$\forall a: a\in A\Rightarrow a\in B$$.
+So in general: `CLASSIFY` $$A$$ `ISA` $$B$$ means: $$\forall a: a\in A\Rightarrow a\in B$$.
 
 ### Examples
 
@@ -132,8 +133,6 @@ CLASSIFY Monkey ISA Mammal
 ```
 CLASSIFY Sedan ISA Car
 ```
-
-
 
 To save some writing, you may specify
 
@@ -167,7 +166,7 @@ The purpose of this statement is to automatically modify the population of a rel
 Since ampersand 4.4.0 the syntax of this statement is:
 
 ```
-ENFORCE <RelationRef> <type>? 
+ENFORCE <RelationRef> <type>?
         <operator>
         <Term>
 ```
@@ -198,16 +197,15 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
    It will do so by deleting pairs from the contents of canDrive
    without affecting the contents of hasCar /\ hasDriverLicence .
    So, whenever a person can drive, that person needs to have a car and a driver licence.
-   However, if that person has both these assets, it is still possible that he/she 
-   cannot drive. 
+   However, if that person has both these assets, it is still possible that he/she
+   cannot drive.
 -}
 ```
 
 ### Miscellaneous
 
-* Both the sources and the targets of the relation and the term must match. An error message is given otherwise.
-* The relation must be specified in order to use it here, as is the case with any relation used in a term.
-
+- Both the sources and the targets of the relation and the term must match. An error message is given otherwise.
+- The relation must be specified in order to use it here, as is the case with any relation used in a term.
 
 ## The IDENT statement {#IDENT-statement}
 
@@ -229,9 +227,9 @@ As the IDENT statement defines a rule, it can be in the same places as any other
 
 where:
 
-* `<label>` is the name of the rule. It can be a single word or a string \(enclosed by double brackets\). It is followed by a colon \(`:`\) to distinguish the label from the concept that follows.
-* `<Concept>` is the name of the Concept for atoms of which the rule specifies an identity
-* Between brackets are terms whose source concept must be `<Concept>`. This is enforced by the type system.
+- `<label>` is the name of the rule. It can be a single word or a string \(enclosed by double brackets\). It is followed by a colon \(`:`\) to distinguish the label from the concept that follows.
+- `<Concept>` is the name of the Concept for atoms of which the rule specifies an identity
+- Between brackets are terms whose source concept must be `<Concept>`. This is enforced by the type system.
 
 ### Informal Semantics
 
@@ -247,14 +245,13 @@ translates into the following rule:
 
 Note that
 
-* in case every`e`is both univalent and total, `e<>e~` equals `e;e~`, and the rule is equivalent to:
+- in case every`e`is both univalent and total, `e<>e~` equals `e;e~`, and the rule is equivalent to:
 
 ```text
    RULE "Rule Name":  {e1};{e1}~ /\ {e2};{e2}~ /\ ... |- I[C]
 ```
 
-* in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
-
+- in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
 
 ## The INCLUDE statement {#INCLUDE-statement}
 
@@ -284,8 +281,8 @@ This statement specifies files that need to be included before compiling. The fi
 
 Possible files to include are:
 
-* other adl-files 
-* xlsx-files to include population 
+- other adl-files
+- xlsx-files to include population
 
 All code in the included adl-files will become part of the context of the main adl-file.
 
@@ -295,22 +292,22 @@ Included files may contain `INCLUDE`statements themselves. The files mentioned t
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
 
-
 ## The MEANING sub-statement {#MEANING-statement}
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
 MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#RELATION-statement), and [RULE](#RULE-statement)-statements, to define the meaning of your concepts, relations, and rules.
+
 ```text
 MEANING
 {+ This is an example that is
-   spread over multiple lines. 
+   spread over multiple lines.
 +}
 ```
 
 The optional `<language>` is specified as
 
-* `IN ENGLISH` or 
-* `IN DUTCH`.
+- `IN ENGLISH` or
+- `IN DUTCH`.
 
 Example :
 
@@ -322,10 +319,10 @@ This is a way to override the default language \(which is English\).
 
 Sometimes you need formatting in the meaning, such as dotted lists, italics, or mathematical symbols. For this purpose you have a choice in which syntax you specify the meaning. The optional `<markup>` is one of :
 
-* `REST` \(Restructured text. This is the default\)
-* `HTML`
-* `LATEX` 
-* `MARKDOWN`
+- `REST` \(Restructured text. This is the default\)
+- `HTML`
+- `LATEX`
+- `MARKDOWN`
 
 Example :
 
@@ -335,12 +332,11 @@ MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
 
 Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
 
-
 ## Patterns {#PATTERN-statement}
 
 ### Purpose
 
-Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design\_pattern).
+Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
 
 ### Description
 
@@ -351,7 +347,7 @@ For instance, if specific concerns about security arise, you might want to discu
 ### Example
 
 ```
-PATTERN Security 
+PATTERN Security
 
 RELATION required[Subject*Destination]
 MEANING "A subject that you must have passed to qualify for the school trip to a destination"
@@ -381,18 +377,18 @@ ENDPATTERN
 
 A pattern consists of any number of pattern elements in an arbitrary order. The following pattern elements are allowed:
 
-|                    |                                                                                                          |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `<rule>`           | a statement that declares a [rule](#RULE-statement)                                                |
-| `<classify>`       | a statement that specifies generalization/specialization of [concepts](#CLASSIFY-statement)        |
-| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#RELATION-statement) within the context      |
-| `<conceptDef>`     | a description of a [concept](#the-concept-statement), to document its meaning                          |
-| `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement) |
-| `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                          |
-| `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                   |
-| `<viewDef>`        | a statement for presenting facts in a readable sentence                                                  |
-| `<purpose>`        | a statement to describe the [purpose](#PURPOSE-statement) of a pattern or a pattern element        |
-| `<population>`     | a statement that sums up the initial [population](#POPULATION-statement) of a relation             |
+|                    |                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `<rule>`           | a statement that declares a [rule](#RULE-statement)                                                        |
+| `<classify>`       | a statement that specifies generalization/specialization of [concepts](#CLASSIFY-statement)                |
+| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#RELATION-statement) within the context |
+| `<conceptDef>`     | a description of a [concept](#the-concept-statement), to document its meaning                              |
+| `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement)                            |
+| `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                            |
+| `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                           |
+| `<viewDef>`        | a statement for presenting facts in a readable sentence                                                    |
+| `<purpose>`        | a statement to describe the [purpose](#PURPOSE-statement) of a pattern or a pattern element                |
+| `<population>`     | a statement that sums up the initial [population](#POPULATION-statement) of a relation                     |
 
 ### Good practice
 
@@ -412,7 +408,6 @@ Ampersand advocates **one theme in one pattern**. Stakeholders confine their dis
 
 In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
 
-
 ## The POPULATION statement {#POPULATION-statement}
 
 ### Purpose
@@ -425,8 +420,8 @@ All pairs in a relation are called the population of that relation. All atoms in
 
 There are two ways to populate a concept with atoms:
 
-* A `POPULATION` statement defines the initial population of a  concept or a relation.
-* An `INCLUDE` statement defines the initial population from an xlsx-file \(i.e. an Excel speadsheet\)
+- A `POPULATION` statement defines the initial population of a concept or a relation.
+- An `INCLUDE` statement defines the initial population from an xlsx-file \(i.e. an Excel speadsheet\)
 
 [Using spreadsheets](#population-in-spreadsheets) to define an initial population allows you to work with larger populations. Often you can use an existing spreadsheet and adapt it to become acceptable as Ampersand input.
 
@@ -463,12 +458,12 @@ We can consider Ampersand as a finite system of relations. Every relation is a s
 
 Let us look at an example:
 
-|  | firstname | lastname | birth |
-| :--- | :--- | :--- | :--- |
-| 1 | Abraham | Lincoln | February 12, 1809 |
-| 2 | Barack | Obama | August 4, 1961 |
-| 3 | Calvin | Coolidge | July 4, 1872 |
-| 4 | Dwight | Eisenhower | October 14, 1890 |
+|     | firstname | lastname   | birth             |
+| :-- | :-------- | :--------- | :---------------- |
+| 1   | Abraham   | Lincoln    | February 12, 1809 |
+| 2   | Barack    | Obama      | August 4, 1961    |
+| 3   | Calvin    | Coolidge   | July 4, 1872      |
+| 4   | Dwight    | Eisenhower | October 14, 1890  |
 
 Since Ampersand works with relations, it must represent this table as relations. Three relations can do the job in the following manner:
 
@@ -501,14 +496,14 @@ Notice that the column names in the table correspond with the relation names in 
 
 In theory, the population of the Hawaii-script might just as well be given in a spreadsheet. This works in practice too. It looks like this:
 
-| \[Subject\] | pass | required |
-| :--- | :--- | :--- |
-| Subject | Student | Destination |
-| Surfing | Brown | Hawaii |
-| Surfing | Conway |  |
-| Latin | Brown | Rome |
-| World Religions | Applegate |  |
-| World Religions | Brown | Rome |
+| \[Subject\]     | pass      | required    |
+| :-------------- | :-------- | :---------- |
+| Subject         | Student   | Destination |
+| Surfing         | Brown     | Hawaii      |
+| Surfing         | Conway    |             |
+| Latin           | Brown     | Rome        |
+| World Religions | Applegate |             |
+| World Religions | Brown     | Rome        |
 
 Please copy this in a spreadsheet of your own. The element in the first column with square brackets tells Ampersand that a new table starts. The first row contains relation names. The second row contains concept names. The rows that follow contain pairs. Ampersand reconstructs those pairs as in the example above.
 
@@ -522,15 +517,15 @@ You will find the Excel import function in the menu bar on the top right of your
 
 ![](../assets/screenshot-import.png)
 
-This is what your upload screen looks like: 
+This is what your upload screen looks like:
 
 ![](../assets/screenshot-upload-excel.png)
 
- You can upload one or more .xlsx-files by dropping them in the drop zone or by selecting them. You have to upload the population with the green 
+You can upload one or more .xlsx-files by dropping them in the drop zone or by selecting them. You have to upload the population with the green
 
 _Upload_
 
- button. At that time, all population from the .xlsx-file is added to the context and checked for inconsistencies. As a result, you may get errors when uploading. Only error-free spreadsheets will be uploaded successfully. As long as an error remains, the population in your context will not change.
+button. At that time, all population from the .xlsx-file is added to the context and checked for inconsistencies. As a result, you may get errors when uploading. Only error-free spreadsheets will be uploaded successfully. As long as an error remains, the population in your context will not change.
 
 #### Assignment
 
@@ -540,10 +535,9 @@ Make a population of your own for the Hawaii-script and put it in a .xlsx spread
 
 After finishing your assignment, you have learned:
 
-* to upload population to your Ampersand application in the form of a spreadsheet in .xlsx-format;
-* to understand how a `POPULATION`-statement relates to the contents of a spreadsheet;
-* that the contents of the spreadsheet is added to the population of your context, provided this does not lead to any conflict.
-
+- to upload population to your Ampersand application in the form of a spreadsheet in .xlsx-format;
+- to understand how a `POPULATION`-statement relates to the contents of a spreadsheet;
+- that the contents of the spreadsheet is added to the population of your context, provided this does not lead to any conflict.
 
 ### Purpose
 
@@ -558,7 +552,7 @@ For instance, if specific concerns about security arise, you might want to discu
 ### Example
 
 ```text
-PATTERN Security 
+PATTERN Security
 
 RELATION required[Subject*Destination]
 MEANING "A subject that you must have passed to qualify for the school trip to a destination"
@@ -575,8 +569,6 @@ RULE guardPrerequisites : attends;required |- pass
 
 ENDPATTERN
 ```
-
-
 
 ## The PURPOSE statement {#PURPOSE-statement}
 
@@ -643,7 +635,6 @@ IN ENGLISH MARKDOWN
 +}
 ```
 
-
 ## The RELATION statement {#RELATION-statement}
 
 ### Purpose
@@ -675,10 +666,10 @@ MEANING
 
 In this example:
 
-* `contract` is the _**name**_ of the relation,
-* `Order` is the _**source concept**_ of the relation,
-* `ContractID` is the _**target concept**_ of this relation, and
-* `UNI` and `TOT` are _**constraints**_ of this relation.
+- `contract` is the _**name**_ of the relation,
+- `Order` is the _**source concept**_ of the relation,
+- `ContractID` is the _**target concept**_ of this relation, and
+- `UNI` and `TOT` are _**constraints**_ of this relation.
 
 ### Syntax and meaning
 
@@ -759,7 +750,7 @@ For a full discussion of meaning, we refer to [`this page`](#the-meaning-substat
 
 ### Miscellaneous
 
-*
+-
 
 ## The RULE statement {#RULE-statement}
 
@@ -785,38 +776,38 @@ A `<label>` is optional. It can be a single word or a string \(enclosed by doubl
 
 A term can be any of:
 
-* Term BinaryOperator Term
-* UnaryOpPre Term
-* Term UnaryOpPost
-* a \(reference to a\) relation \(including an optional signature, when required to disambiguate\):
-  * A relation by name 
-  * `I` \(the Identity relation\)
-  * `V` \(carthesian product\) Note that this can also be used to denote the empty relation, by using the unary negation operator:  '-v'
-  * A singleton term \(the value of an atom\)
-* a term enclosed in brackets.
+- Term BinaryOperator Term
+- UnaryOpPre Term
+- Term UnaryOpPost
+- a \(reference to a\) relation \(including an optional signature, when required to disambiguate\):
+  - A relation by name
+  - `I` \(the Identity relation\)
+  - `V` \(carthesian product\) Note that this can also be used to denote the empty relation, by using the unary negation operator: '-v'
+  - A singleton term \(the value of an atom\)
+- a term enclosed in brackets.
 
 ##### Operators
 
 The following operators are available to build expressions:
 
-* Binary operators
-  * equivalence: `=`
-  * composition: `;`
-  * inclusion: `|-`
-  * intersection: `/\`
-  * union: `\/`
-  * difference: `-`
-  * left residual: `/`
-  * right residual: `\`
-  * diamond: `<>`
-  * relative addition: `!`
-  * cartesian product: `#`
-* Unary operator \(pre-operator\)
-  * complement: `-`
-* Unary operators \(post-operator\)
-  * conversion \(flip\): `~`
-  * Reflexive, transitive closure: `*` \(Kleene star\) --currently not implemented
-  * transitive closure: `+` \(Kleene plus\) --currently not implemented
+- Binary operators
+  - equivalence: `=`
+  - composition: `;`
+  - inclusion: `|-`
+  - intersection: `/\`
+  - union: `\/`
+  - difference: `-`
+  - left residual: `/`
+  - right residual: `\`
+  - diamond: `<>`
+  - relative addition: `!`
+  - cartesian product: `#`
+- Unary operator \(pre-operator\)
+  - complement: `-`
+- Unary operators \(post-operator\)
+  - conversion \(flip\): `~`
+  - Reflexive, transitive closure: `*` \(Kleene star\) --currently not implemented
+  - transitive closure: `+` \(Kleene plus\) --currently not implemented
 
 #### MEANING\*
 
@@ -832,20 +823,20 @@ MEANING Language? Markup? <text>
 
 The `<text>` part is where the the meaning is written down. We support both:
 
-* a simple string, enclosed by double quotes
-* any text, starting with `{+` and ending with `-}` 
+- a simple string, enclosed by double quotes
+- any text, starting with `{+` and ending with `-}`
 
 The optional language is specified as
 
-* `IN ENGLISH` or 
-* `IN DUTCH`.
+- `IN ENGLISH` or
+- `IN DUTCH`.
 
 The optional Markup is one of :
 
-* `REST` \(Restructured text\)
-* `HTML`
-* `LATEX` 
-* `MARKDOWN`
+- `REST` \(Restructured text\)
+- `HTML`
+- `LATEX`
+- `MARKDOWN`
 
 If you need specific markup, there are several options to do so. The default markup is used, but you can override that here. We rely on [Pandoc](http://pandoc.org/) to read the markup.
 
@@ -867,9 +858,9 @@ VIOLATION (Segment1,Segment2,... )
 
 Every segment must be of one of the following forms:
 
-* `TXT` String
-* `SRC` Term
-* `TGT` Term
+- `TXT` String
+- `SRC` Term
+- `TGT` Term
 
 A rule is violated by a pair of atoms \(source, target\). The source atom is the root of the violation message. In the message the target atoms are printed. With the Identity relation the root atom itself can be printed. You can use a term to print other atoms. Below two examples reporting a violation of the rule that each project must have a project leader. The first prints the project's ID, the second the project's name using the relation projectName:
 
@@ -881,7 +872,6 @@ A rule is violated by a pair of atoms \(source, target\). The source atom is the
 
 By default rules are invariant rules.  
 By preceding the rule statement with a role specification for this rule, the rule becomes a process rule.
-
 
 ## Language support
 
@@ -946,4 +936,3 @@ If a `PURPOSE` statement or a `MEANING` has no language directive, Ampersand ass
 Documentation generated by the Ampersand-compiler is written in a single language, which is specified when the compiler is called.
 
 Documentation generated by RAP4 is written in `DUTCH`. Natural language items written in any other language are ignored. This is [not a mistake](https://github.com/AmpersandTarski/Ampersand/issues/702), but a feature. RAP4 only "speaks Dutch" and ignores anything else.
-

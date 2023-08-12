@@ -1,4 +1,5 @@
 # Services
+
 <!-- This file is a tutorial about services. -->
 
 Services are meant to expose functionality and data from a [context](../reference-material/the-language-ampersand/context.md), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
@@ -19,7 +20,7 @@ BOX
   [ "Name"       : personName
   , "Status"     : personStatus
   , "Email"      : personEmail
-  , "Works with" : workswith 
+  , "Works with" : workswith
   ]
 ```
 
@@ -31,16 +32,17 @@ To understand this fragment, take notice of:
 4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface. &#x20;
 5. Each term at the right of a field name specifies which data is presented in the field. For this reason it is called the _field term_ for that field. Field name and field term are separated by a colon.
 6. Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`. A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
-7.  Field terms are subject to type checking. The following relations provide an example for getting a type-correct service:
+7. Field terms are subject to type checking. The following relations provide an example for getting a type-correct service:
 
-    ```
-    RELATION personName :: Person * PersonName [UNI]
-    RELATION personStatus :: Person * PersonStatus [UNI]
-    RELATION personEmail :: Person * Email [UNI,TOT]
-    RELATION workswith :: Person * Person
-    ```
+   ```
+   RELATION personName :: Person * PersonName [UNI]
+   RELATION personStatus :: Person * PersonStatus [UNI]
+   RELATION personEmail :: Person * Email [UNI,TOT]
+   RELATION workswith :: Person * Person
+   ```
 
-    The source concepts of a field term must match the target concept of the interface term.
+   The source concepts of a field term must match the target concept of the interface term.
+
 8. Looking at the screenshot, we can tell that `"J. Lovell"` has one personName (which is `"J. Lovell"`), it has no personStatus, one personEmail and three persons to work with in `RELATION workswith`.
 
 ## Nesting
@@ -120,10 +122,10 @@ Compile and run the script [Project Administration Example](https://github.com/A
 
 After finishing your assignment, you have learned:
 
-* to explain how a service definition is displayed on the screen of a user.
-* to predict which data items a service applies to, if you know which pairs are in an interface term.
-* to predict which data items are displayed, if you know which pairs are in a field term.
-* to explain which atoms are used in a sub-interface.
-*   to understand what the keywords `TABS`, `COLS`, and `ROWS` do to your display.
+- to explain how a service definition is displayed on the screen of a user.
+- to predict which data items a service applies to, if you know which pairs are in an interface term.
+- to predict which data items are displayed, if you know which pairs are in a field term.
+- to explain which atoms are used in a sub-interface.
+- to understand what the keywords `TABS`, `COLS`, and `ROWS` do to your display.
 
-    More than one service may apply to the same atom. That gives you a choice on runtime to which service you want to navigate. If no service applies, that atom is not navigable.
+  More than one service may apply to the same atom. That gives you a choice on runtime to which service you want to navigate. If no service applies, that atom is not navigable.
