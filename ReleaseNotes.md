@@ -1,11 +1,15 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
-
+* [Issue #1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
+* [Issue #1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
+* [Issue #1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
 
 ## v4.7.6 (26 february 2023)
+
 ## v4.7.5 (25 february 2023)
-* [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
+
+- [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Generate prototype with Angular frontend (alpha version)
 
 ## v4.7.4 (20 february 2023)
 

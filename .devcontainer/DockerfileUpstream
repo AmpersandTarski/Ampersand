@@ -1,0 +1,109 @@
+FROM ubuntu:focal as base
+## Inspiration from https://stackoverflow.com/questions/67680726/installing-haskells-cabal-or-ghcup-inside-a-dockerfile-wont-work
+ENV TZ=Europe/Berlin
+ARG USERNAME=vscode
+
+
+ENV USERNAME=${USERNAME} \
+    USER_UID=1000 \
+    USER_GID=1000 \
+    DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF8 \
+    WDIR=/home/${USERNAME}
+
+
+# install dependencies (source: https://www.haskell.org/ghcup/install/ )
+RUN \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    libnuma-dev \
+    zlib1g-dev \
+    libgmp-dev \
+    libgmp10 \
+    git \
+    wget \
+    lsb-release \
+    software-properties-common \
+    gnupg2 \
+    apt-transport-https \
+    gcc \
+    autoconf \
+    automake \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    mkdir -p /etc/sudoers.d && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
+
+USER ${USER_UID}:${USER_GID}
+
+RUN ulimit -n 8192
+
+
+# install gpg keys
+# ARG GPG_KEY=BA3CBA3FFE22B574
+# RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY
+# manual installation: see https://www.haskell.org/ghcup/install/#manual-installation
+
+# install ghcup
+# Inspiration: http://haskell.org/ghcup/install
+# Install ghcup as the 'vscode' user
+RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
+# Add ghcup and cabal to the PATH
+ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}:${WDIR}/.local/bin:${PATH}"
+
+ARG GHC=8.10.7
+ARG CABAL=3.10.1.0
+ARG HLS=2.0.0.1
+ARG STACK=2.11.1
+
+# install GHC and cabal
+
+RUN ghcup install ghc --set ${GHC} && \
+    ghcup install cabal --set ${CABAL} && \
+    ghcup install stack --set ${STACK} && \
+    ghcup install hls --set ${HLS}
+
+FROM base as tools
+
+# Install global packages.
+# Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
+RUN cabal install -v haskell-dap-0.0.15.0 && \
+    cabal install -v stylish-haskell-0.13.0.0 && \
+    cabal install -v ormolu-0.1.3.1
+# RUN cabal install -v ghci-dap-0.0.19.0
+# RUN cabal install -v haskell-debug-adapter-0.0.37.0
+# RUN cabal install -v hlint-3.2.7
+# RUN cabal install -v apply-refact-0.9.3.0
+# RUN cabal install -v retrie-1.1.0.0
+# RUN cabal install -v hoogle-5.0.18.3
+# RUN cabal install -v liquidhaskell-0.8.10.2
+
+# Generate hoogle db
+# RUN hoogle generate && stack hoogle
+
+# create a `binbin` directory, that contains the executables themselves. In .cabal/bin most (all?) files are symbolic links
+RUN mkdir ${WDIR}/.cabal/binbin && \
+    cp -L ${WDIR}/.cabal/bin/* ${WDIR}/.cabal/binbin
+
+FROM base as dev
+COPY --from=tools ${WDIR}/.cabal/binbin ${WDIR}/.cabal/bin
+ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${WDIR}/.local/bin:${PATH}"
+
+# # Add just the .cabal file to capture dependencies
+COPY ./package.yaml ${WDIR}/package.yaml
+COPY ./stack.yaml ${WDIR}/stack.yaml
+
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
+
+ENV DEBIAN_FRONTEND=dialog
+
+ENTRYPOINT ["/bin/bash"]

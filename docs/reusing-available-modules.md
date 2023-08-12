@@ -1,6 +1,6 @@
 # Reusing Available Modules
 
-## Sessions, Identity and Access Management \(SIAM version 3\)
+## Sessions, Identity and Access Management \(SIAM version 3\) 
 
 You might want to know who is using your application. Or you might want to offer each one of your users some privacy when using your application. Logging in, passwords, authorizations, are typically used for such purposes. This field, also known as Identity and Access Management is covered in [this chapter](#the-siam-module).
 

@@ -1,17 +1,8 @@
 {
-  "name": "DevContainer for Haskell (GHC, Stack, Cabal, HIE, LSP, DAP, etc.)",
-  "remoteUser": "vscode",
+  "name": "DevContainer for Ampersand",
+  // "remoteUser": "root",
   "runArgs": [],
   "build": {
-    "args": {
-      "USERNAME": "vscode",
-      "GHC_VERSION": "8.10.7",
-      "STACK_VERSION": "2.9.3",
-      "STACK_RESOLVER": "lts-18.28",
-      "CABAL_VERSION": "3.6.2.0",
-      "HLS_VERSION": "1.9.1.0",
-      "LLVM_VERSION": "12"
-    },
     "context": "..",
     "dockerfile": "Dockerfile"
   },
