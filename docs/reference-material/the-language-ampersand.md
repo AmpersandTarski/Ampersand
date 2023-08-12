@@ -1,6 +1,6 @@
 ---
 title: The Language Ampersand
-id: language
+id: the-language-ampersand
 description: Syntax and Semantics, including metasyntax.
 ---
 
