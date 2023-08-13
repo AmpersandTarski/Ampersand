@@ -50,6 +50,34 @@ CONCEPT Criterion "A criterion is a standard on which a judgment or decision may
 - The description will be printed in the functional specification, so please check that your definition is a complete sentence.
 - Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
 
+## Structuring your Ampersand specification
+
+Structuring an Ampersand specification effectively is crucial for readability, maintainability, and ease of development. There are several ways that can help:
+
+1. `Include` statements enable you to use multiple files. This can help to separate your statements by concerns.
+2. `Pattern`s can help to devide your rules etc. by theme. The generated documentation takes this into account.
+
+Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
+
+|                          |                                                                                                                | Context | Pattern |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| `<include>`              | a statement to [include](the-include-statement) another file in the context                                    | ✅      | ❌      |
+| `<meta>`                 | a statement to provide metadata to a script, such as author, company, etc.                                     | ✅      | ❌      |
+| `<rule>`                 | a statement that declares a [rule](#the-rule-statement)                                                        | ✅      | ✅      |
+| `<classify>`             | a statement that specifies generalization/specialization of [concepts](#the-classify-statement)                | ✅      | ✅      |
+| `<relation>`             | a declaration of a relation, stating the existence of a [relation](#the-relation-statement) within the context | ✅      | ✅      |
+| `<conceptDef>`           | a description of a [concept](#the-concept-statement), to document its meaning                                  | ✅      | ✅      |
+| `<representation>`       | a statement that defines the atomic type of a [concept](#the-concept-statement)                                | ✅      | ✅      |
+| `<roleRule>`             | a statement that makes a role responsible for satisfying a rule                                                | ✅      | ✅      |
+| `<ident>`                | a rule that defines an [identity](#the-ident-statement) on a concept                                           | ✅      | ✅      |
+| `<viewDef>`              | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.             | ✅      | ✅      |
+| `<purpose>`              | a statement to describe the [purpose](#the-purpose-statement) of a pattern or a pattern element                | ✅      | ✅      |
+| `<population>`           | a statement that sums up the initial [population](#the-population-statement) of a relation                     | ✅      | ✅      |
+| `<pattern>`              | a block of code that represents rules on a single and specific topic, at the user's discretion                 | ✅      | ❌      |
+| `<interface or service>` | a unit of code that can be run independently and specifies interaction with a user or a computer               | ✅      | ❌      |
+| `<purpose>`              | a statement to describe the [purpose](../syntax#the-purpose-statement) of a context or a context element       | ✅      | ✅      |
+| `<population>`           | a statement that sums up the initial [population](../syntax#the-population-statement) of a relation            | ✅      | ✅      |
+
 ## The CONTEXT statement
 
 ### Purpose
@@ -63,7 +91,7 @@ The model is true within its context and there is no knowledge in a model about 
 
 ### Syntax
 
-The model is specified between the keywords CONTEXT and ENDCONTEXT. A context has a name.
+The model is specified between the keywords CONTEXT and ENDCONTEXT. A context has a name. You can optionally specify the language and markup \(see below\).
 
 ```text
 CONTEXT MyModel
@@ -374,21 +402,6 @@ PATTERN <pattern name>
     <pattern element>*
 ENDPATTERN
 ```
-
-A pattern consists of any number of pattern elements in an arbitrary order. The following pattern elements are allowed:
-
-|                    |                                                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `<rule>`           | a statement that declares a [rule](#the-rule-statement)                                                        |
-| `<classify>`       | a statement that specifies generalization/specialization of [concepts](#the-classify-statement)                |
-| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#the-relation-statement) within the context |
-| `<conceptDef>`     | a description of a [concept](#the-concept-statement), to document its meaning                              |
-| `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement)                            |
-| `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                            |
-| `<ident>`          | a rule that defines an [identity](#the-ident-statement) on a concept                                           |
-| `<viewDef>`        | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.         |
-| `<purpose>`        | a statement to describe the [purpose](#the-purpose-statement) of a pattern or a pattern element                |
-| `<population>`     | a statement that sums up the initial [population](#the-population-statement) of a relation                     |
 
 ### Good practice
 

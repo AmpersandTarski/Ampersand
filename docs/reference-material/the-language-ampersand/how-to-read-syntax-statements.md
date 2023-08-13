@@ -51,32 +51,16 @@ Within an operator category, you must place brackets to disambiguate. E.g. `r/\s
 Keywords in Ampersand are always written in CAPITALS.
 
 - Keywords for the main structure of the code
-  - [`CONTEXT`](../syntax#the-context-statement)
-  - `ENDCONTEXT`
-  - [`IN`](../syntax#language-support)
-  - `ENGLISH`
-  - `DUTCH`
+  - [`CONTEXT`, `ENDCONTEXT`](../syntax#the-context-statement)
+  - [`IN`, `ENGLISH`, `DUTCH`](../syntax#language-support)
   - [`INCLUDE`](../syntax#the-include-statement)
-  - `META`
-  - `THEMES`
-  - [`PATTERN`](../syntax#the-pattern-statement)
-  - `ENDPATTERN`
+  - [`PATTERN`, `ENDPATTERN`](../syntax#the-pattern-statement)
   - [`CONCEPT`](../syntax#the-concept-statement)
 - Keywords for [relations](../syntax#the-relation-statement)
   - [`RELATION`](../syntax#the-relation-statement)
   - `PRAGMA`
-  - `UNI`
-  - `INJ`
-  - `SUR`
-  - `TOT`
-  - `SYM`
-  - `ASY`
-  - `TRN`
-  - `RFX`
-  - `IRF`
-  - `PROP`
-  - [`POPULATION`](../syntax#the-population-statement)
-  - `CONTAINS`
+  - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`](../../modeling/properties#properties)
+  - [`POPULATION`, `CONTAINS`](../syntax#the-population-statement)
 - Keywords for [rules](../syntax#the-rule-statement)
   - `RULE`
   - `MESSAGE`
@@ -92,6 +76,7 @@ Keywords in Ampersand are always written in CAPITALS.
 - Keywords for documentation
   - [`PURPOSE`](../syntax#the-purpose-statement)
   - [`MEANING`](../syntax#the-meaning-sub-statement)
+  - `META`
   - `REF`
   - `REST`
   - `HTML`
