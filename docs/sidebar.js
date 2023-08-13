@@ -53,9 +53,9 @@ module.exports = {
             id: 'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements'
         },
         {
-            label: 'Syntax',
+            label: 'Syntax of ADL',
             type: 'doc',
-            id: 'ampersand/reference-material/syntax'
+            id: 'ampersand/reference-material/syntax-of-ampersand'
         },
         {
             label: 'Automated Rules',
