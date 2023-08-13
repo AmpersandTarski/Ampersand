@@ -19,17 +19,18 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ------- |
 | [<include\>](#the-include-statement)        | a statement to include another file in the context                                               | ✅      | ❌      |
 | <meta\>                                     | a statement to provide metadata to a script, such as author, company, etc.                       | ✅      | ❌      |
-| [<rule\>](#the-rule-statement)              | a statement that declares a rule                                                                 | ✅      | ✅      |
-| [<classify\>](#the-classify-statement)      | a statement that specifies generalization/specialization of concepts                             | ✅      | ✅      |
-| [<relation\>](#the-relation-statement)      | a declaration of a relation, stating the existence of a relation within the context              | ✅      | ✅      |
+| [<pattern\>](#the-pattern-statement)        | a block of code that represents rules on a single and specific topic, at the user's discretion   | ✅      | ❌      |
 | [<conceptDef\>](#the-concept-statement)     | a description of a concept, to document its meaning                                              | ✅      | ✅      |
 | [<representation\>](#the-concept-statement) | a statement that defines the atomic type of a concept                                            | ✅      | ✅      |
-| [<roleRule\>](#the-ident-statement)         | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
-| <ident\>                                    | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
+| [<classify\>](#the-classify-statement)      | a statement that specifies generalization/specialization of concepts                             | ✅      | ✅      |
+| [<relation\>](#the-relation-statement)      | a declaration of a relation, stating the existence of a relation within the context              | ✅      | ✅      |
+| [<rule\>](#the-rule-statement)              | a statement that declares a rule                                                                 | ✅      | ✅      |
+| <roleRule\>                                 | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
+| [<enforce\>](the-enforce-statement)         | a statement to declare an automatic enforcement rule                                             | ✅      | ✅      |
+| [<ident\>](#the-ident-statement)            | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
 | <viewDef\>                                  | a statement for presenting facts in a readable sentence                                          | ✅      | ✅      |
 | [<purpose\>](#the-purpose-statement)        | a statement to describe the purpose of a pattern or a pattern element                            | ✅      | ✅      |
 | [<population\>](#the-population-statement)  | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
-| [<pattern\>](#the-pattern-statement)        | a block of code that represents rules on a single and specific topic, at the user's discretion   | ✅      | ❌      |
 | [<interface or service\>](#Services)        | a unit of code that can be run independently and specifies interaction with a user or a computer | ✅      | ❌      |
 | [<purpose\>](#the-purpose-statement)        | a statement to describe the purpose of a context or a context element                            | ✅      | ✅      |
 | [<population\>](#the-population-statement)  | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
@@ -618,46 +619,6 @@ Note that
 
 - in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
 
-## The MEANING sub-statement
-
-A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
-MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
-
-```text
-MEANING
-{+ This is an example that is
-   spread over multiple lines.
-+}
-```
-
-The optional `<language>` is specified as
-
-- `IN ENGLISH` or
-- `IN DUTCH`.
-
-Example :
-
-```text
-MEANING IN DUTCH {+ Dit is een voorbeeld in een (1) regel.+}
-```
-
-This is a way to override the default language \(which is English\).
-
-Sometimes you need formatting in the meaning, such as dotted lists, italics, or mathematical symbols. For this purpose you have a choice in which syntax you specify the meaning. The optional `<markup>` is one of :
-
-- `REST` \(Restructured text. This is the default\)
-- `HTML`
-- `LATEX`
-- `MARKDOWN`
-
-Example :
-
-```text
-MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
-```
-
-Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
-
 ## The POPULATION statement
 
 #### Purpose
@@ -819,135 +780,6 @@ RULE guardPrerequisites : attends;required |- pass
 
 ENDPATTERN
 ```
-
-## The PURPOSE statement
-
-#### Semantics
-
-Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
-
-#### Syntax
-
-`PURPOSE` `<type of thing>` `<name>` `<language>?` `<markup>?`
-
-`{+` `<anything>` `+}`
-
-Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`
-
-The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
-
-#### Examples
-
-```text
-PURPOSE CONCEPT Person {+The concept Person keeps all personal data together.+}
-```
-
-```text
-PURPOSE RELATION accountOwner
-{+ The system shall register all accounts to an owner,
-   so accounts with the same owner are linked in this way.
-+}
-```
-
-When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
-
-```text
-PURPOSE RELATION accountOwner[Account*Owner]
-{+ The system shall register all accounts to an owner,
-   so accounts with the same owner are linked in this way.
-+}
-```
-
-#### Markup
-
-For the purpose of documentation, you may state the language in which you write a purpose. You may also state in which markup language you use. Examples:
-
-```text
-PURPOSE CONCEPT Person IN ENGLISH {+ The concept PERSON keeps all personal data together, which we need to comply with the GDPR.  +}
-```
-
-If you specify the language, Ampersand can restrict the documentation for the language you choose. Currently, you can only choose `DUTCH` or `ENGLISH`. The default language is English.
-
-```text
-PURPOSE RELATION accountOwner LATEX
-{+ The system {\em shall} register all accounts to an owner, so accounts with the same owner are linked in this way.
-+}
-```
-
-By specifying a markup language, Ampersand interprets the text as specified. If you do not specify the markup language, your text is interpreted as REStructured Text \(`REST`\). The available markup languages are `LATEX`, `MARKDOWN`, `HTML`, and `REST`.
-
-```text
-PURPOSE RULE "Check Digit Character"
-IN ENGLISH MARKDOWN
-{+ This rule enforces the use of a check digit character
-   as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
-   This is applicatble to IBAN bank account numbers.
-+}
-```
-
-## Language support
-
-#### Purpose
-
-To generate documentation, Ampersand is language aware.
-
-#### Description
-
-Ampersand assigns a language to every text written as documentation, whether it is a `MEANING`, `PURPOSE` or other text except comment.
-
-Ampersand does not recognize any language, so you must tell which language is meant. To tell Ampersand what language you use, you can append a language directive to a context, a meaning, and to a purpose statement. Currently English and Dutch are supported.
-
-#### Syntax
-
-A language directive has the following syntax
-
-```text
-IN <language>
-```
-
-Where `<language>` can be `ENGLISH` or `DUTCH`.
-
-#### Semantics by example
-
-The first example is a context declaration in which the language `ENGLISH` is specified.
-
-```text
-CONTEXT Foo IN ENGLISH
-...
-ENDCONTEXT
-```
-
-This means that all natural language elements within this context are written in `ENGLISH`, unless specified otherwise.
-
-The second example is a `MEANING`, which can be used in a `RULE` statement and in a `RELATION` statement. This example uses a `MEANING` in `ENGLISH`:
-
-```text
-RELATION ptpic[Pattern*Image] [UNI]
-MEANING IN ENGLISH "Relation ptpic relates a pattern to the image of its conceptual diagram."
-```
-
-The language directive `IN ENGLISH` means that the meaning of the relation `ptpic[Pattern*Image]` is written in `ENGLISH`.
-
-The third example is a `PURPOSE` statement in which the language `DUTCH` is specified.
-
-```text
-PURPOSE CONCEPT Person IN DUTCH
-{+ Een persoon is een natuurlijke persoon of een rechtspersoon +}
-```
-
-This means that the contents of this purpose statement is written in `DUTCH`.
-
-#### Additional information
-
-Ampersand assumes that whatever is written is written in the language denoted in the language directive. It doesn't check whether that language is actually used, because it cannot recognize languages.
-
-If a `CONTEXT` has no language directive, `IN ENGLISH` is used by default. If a `CONTEXT` has a language directive, that language will be the default language of all natural language items within that context.
-
-If a `PURPOSE` statement or a `MEANING` has no language directive, Ampersand assumes this to be the language of its context. So, the user needs to specify a language only if it is an exception to the default.
-
-Documentation generated by the Ampersand-compiler is written in a single language, which is specified when the compiler is called.
-
-Documentation generated by RAP4 is written in `DUTCH`. Natural language items written in any other language are ignored. This is [not a mistake](https://github.com/AmpersandTarski/Ampersand/issues/702), but a feature. RAP4 only "speaks Dutch" and ignores anything else.
 
 ## The INTERFACE statement
 
@@ -1202,3 +1034,172 @@ If these options are not enough, you can [enhance your application with your own
 ###### Your own widgets \(HTML and CSS\)
 
 You don't have to put up with the [Ampersand built-in layout options](#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
+## The PURPOSE statement
+
+#### Semantics
+
+Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
+
+#### Syntax
+
+`PURPOSE` `<type of thing>` `<name>` `<language>?` `<markup>?`
+
+`{+` `<anything>` `+}`
+
+Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`
+
+The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
+
+#### Examples
+
+```text
+PURPOSE CONCEPT Person {+The concept Person keeps all personal data together.+}
+```
+
+```text
+PURPOSE RELATION accountOwner
+{+ The system shall register all accounts to an owner,
+   so accounts with the same owner are linked in this way.
++}
+```
+
+When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
+
+```text
+PURPOSE RELATION accountOwner[Account*Owner]
+{+ The system shall register all accounts to an owner,
+   so accounts with the same owner are linked in this way.
++}
+```
+
+#### Markup
+
+For the purpose of documentation, you may state the language in which you write a purpose. You may also state in which markup language you use. Examples:
+
+```text
+PURPOSE CONCEPT Person IN ENGLISH {+ The concept PERSON keeps all personal data together, which we need to comply with the GDPR.  +}
+```
+
+If you specify the language, Ampersand can restrict the documentation for the language you choose. Currently, you can only choose `DUTCH` or `ENGLISH`. The default language is English.
+
+```text
+PURPOSE RELATION accountOwner LATEX
+{+ The system {\em shall} register all accounts to an owner, so accounts with the same owner are linked in this way.
++}
+```
+
+By specifying a markup language, Ampersand interprets the text as specified. If you do not specify the markup language, your text is interpreted as REStructured Text \(`REST`\). The available markup languages are `LATEX`, `MARKDOWN`, `HTML`, and `REST`.
+
+```text
+PURPOSE RULE "Check Digit Character"
+IN ENGLISH MARKDOWN
+{+ This rule enforces the use of a check digit character
+   as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
+   This is applicatble to IBAN bank account numbers.
++}
+```
+
+## The MEANING sub-statement
+
+A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
+MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
+
+```text
+MEANING
+{+ This is an example that is
+   spread over multiple lines.
++}
+```
+
+The optional `<language>` is specified as
+
+- `IN ENGLISH` or
+- `IN DUTCH`.
+
+Example :
+
+```text
+MEANING IN DUTCH {+ Dit is een voorbeeld in een (1) regel.+}
+```
+
+This is a way to override the default language \(which is English\).
+
+Sometimes you need formatting in the meaning, such as dotted lists, italics, or mathematical symbols. For this purpose you have a choice in which syntax you specify the meaning. The optional `<markup>` is one of :
+
+- `REST` \(Restructured text. This is the default\)
+- `HTML`
+- `LATEX`
+- `MARKDOWN`
+
+Example :
+
+```text
+MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
+```
+
+Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
+
+## Language support
+
+#### Purpose
+
+To generate documentation, Ampersand is language aware.
+
+#### Description
+
+Ampersand assigns a language to every text written as documentation, whether it is a `MEANING`, `PURPOSE` or other text except comment.
+
+Ampersand does not recognize any language, so you must tell which language is meant. To tell Ampersand what language you use, you can append a language directive to a context, a meaning, and to a purpose statement. Currently English and Dutch are supported.
+
+#### Syntax
+
+A language directive has the following syntax
+
+```text
+IN <language>
+```
+
+Where `<language>` can be `ENGLISH` or `DUTCH`.
+
+#### Semantics by example
+
+The first example is a context declaration in which the language `ENGLISH` is specified.
+
+```text
+CONTEXT Foo IN ENGLISH
+...
+ENDCONTEXT
+```
+
+This means that all natural language elements within this context are written in `ENGLISH`, unless specified otherwise.
+
+The second example is a `MEANING`, which can be used in a `RULE` statement and in a `RELATION` statement. This example uses a `MEANING` in `ENGLISH`:
+
+```text
+RELATION ptpic[Pattern*Image] [UNI]
+MEANING IN ENGLISH "Relation ptpic relates a pattern to the image of its conceptual diagram."
+```
+
+The language directive `IN ENGLISH` means that the meaning of the relation `ptpic[Pattern*Image]` is written in `ENGLISH`.
+
+The third example is a `PURPOSE` statement in which the language `DUTCH` is specified.
+
+```text
+PURPOSE CONCEPT Person IN DUTCH
+{+ Een persoon is een natuurlijke persoon of een rechtspersoon +}
+```
+
+This means that the contents of this purpose statement is written in `DUTCH`.
+
+#### Additional information
+
+Ampersand assumes that whatever is written is written in the language denoted in the language directive. It doesn't check whether that language is actually used, because it cannot recognize languages.
+
+If a `CONTEXT` has no language directive, `IN ENGLISH` is used by default. If a `CONTEXT` has a language directive, that language will be the default language of all natural language items within that context.
+
+If a `PURPOSE` statement or a `MEANING` has no language directive, Ampersand assumes this to be the language of its context. So, the user needs to specify a language only if it is an exception to the default.
+
+Documentation generated by the Ampersand-compiler is written in a single language, which is specified when the compiler is called.
+
+Documentation generated by RAP4 is written in `DUTCH`. Natural language items written in any other language are ignored. This is [not a mistake](https://github.com/AmpersandTarski/Ampersand/issues/702), but a feature. RAP4 only "speaks Dutch" and ignores anything else.
+
