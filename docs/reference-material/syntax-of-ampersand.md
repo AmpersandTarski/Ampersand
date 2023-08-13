@@ -5,7 +5,7 @@ id: syntax
 
 # Syntax and semantics of Ampersand
 
-This page defines the syntax and semantics of the [CONCEPT statement](#the-concept-statement), the [CONTEXT statement](#the-context-statement), the [CLASSIFY statement](#the-classify-statement), the [ENFORCE statement](#the-enforce-statement), the [IDENT statement](#the-ident-statement), the [INCLUDE statement](#the-include-statement), the [MEANING statement](#the-meaning-sub-statement), the [POPULATION statement](#the-population-statement), the [PATTERN statement](#patterns), the [PURPOSE statement](#the-purpose-statement), the [RELATION statement](#the-relation-statement), the [RULE statement](#the-rule-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
+This page defines the syntax and semantics of the statements in the Ampersand language. [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
 
 ## The CONCEPT statement
 
