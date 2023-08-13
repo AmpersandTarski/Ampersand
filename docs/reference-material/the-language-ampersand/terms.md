@@ -46,13 +46,13 @@ V <type>?
 
 The operators come in families. We advise novices to study only the rule operators, boolean operators and relational operators. There is a wealth of things you can express with just these operators. The residual operators seem harder to learn and the Kleene operators are not fully implemented yet. You can click the hyperlink to navigate to the semantics of each family.
 
-| Family                                       |                   binary operators | binding power |       unary operators | binding power |
-| -------------------------------------------- | ---------------------------------: | ------------- | --------------------: | ------------- |
-| rules                                        |           $$=$$ and $$\subseteq\$$ | 1 (weakest)   |                       |               |
-| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $$\overline{\strut}$$ | prefix        |
-| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |       $$\smallsmile$$ | postfix       |
-| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                       |               |
-| Kleene                                       |                                    |               |       $$∗$$ and $$+$$ | postfix       |
+| Family                                       |                   binary operators | binding power |       unary operators   | binding power |
+| -------------------------------------------- | ---------------------------------: | ------------- | --------------------:   | ------------- |
+| rules                                        |           $$=$$ and $$\subseteq$$  | 1 (weakest)   |                         |               |
+| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $\overline{\vspace{x}}$ | prefix        |
+| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |       $$\smallsmile$$   | postfix       |
+| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                         |               |
+| Kleene                                       |                                    |               |       $$∗$$ and $$+$$   | postfix       |
 
 ## Brackets
 

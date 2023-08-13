@@ -125,7 +125,7 @@ ENDCONTEXT
 
 ## Your tool: RAP4
 
-This section introduces the tool you will use during the course: RAP4. This tool stores Ampersand-scripts in which you can specify, analyze and build information systems. It runs on the internet, so all you need is a browser. [Click here if you are a student of the Open University](https://rap.cs.ou.nl) or [here if you are not](https://rap.cs.ou.nl) to start using it.
+This section introduces the tool you will use during the course: RAP4. This tool stores Ampersand-scripts in which you can specify, analyze and build information systems. It runs on the internet, so all you need is a browser. [Click here if you are a student of the Open University](https://rap.cs.ou.nl) or [here if you are not](https://rap.tarski.nl) to start using it.
 
 RAP4 is under development. New releases can be done daily. If you find problems with the software, please notify your tutor. If the software is to blame, we will ask you to [make an issue in RAP's issue registration system](https://github.com/AmpersandTarski/RAP/issues). This way you can help improve Ampersand's tooling, for which the Ampersand team is very grateful.
 
