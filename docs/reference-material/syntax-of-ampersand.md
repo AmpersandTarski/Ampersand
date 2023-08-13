@@ -8,11 +8,11 @@ This page defines the syntax and semantics of the statements in the Ampersand la
 
 ## The CONCEPT statement
 
-### Purpose:
+#### Purpose:
 
 A concept statement defines a concept in natural language. A concept is a name for similar things. For example: `Peter`, `John`, and `Barack` are things you might want to call `Person`, whereas `45-NP-88` and `KD-686-D` could be instances of the concept `LicensePlate`.
 
-### Syntax:
+#### Syntax:
 
 ```text
 CONCEPT <Uppercase identifier> <String> <String>?
@@ -20,7 +20,7 @@ CONCEPT <Uppercase identifier> <String> <String>?
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
-### Semantics
+#### Semantics
 
 This statement means that there exists a concept called `<Uppercase identifier>` in the current context.
 
@@ -28,7 +28,7 @@ This statement means that there exists a concept called `<Uppercase identifier>`
 - `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
 - `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
 
-### Examples
+#### Examples
 
 ```text
 CONCEPT Person "A person is a human creature." "Ventroli1997"
@@ -42,7 +42,7 @@ CONCEPT Organization "An organization is a collection of persons that work toget
 CONCEPT Criterion "A criterion is a standard on which a judgment or decision may be based." "Merriam-Webster"
 ```
 
-### Miscellaneous
+#### Miscellaneous
 
 - The name of a concept starts with an uppercase.
 - A concept should be used for immutable concepts. E.g. use a concept `Person` to express that a person will always be a person and will not change in, let us say, a table. However, don't use `Employee`, because termination of an employee's contract causes a person to be an employee no longer. So employees are not immutable. To be an employee is a dynamic property, so model it as a relation.
@@ -61,15 +61,15 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 | element                                    | description                                                                                        | Context | Pattern |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------- | ------- |
 | [<include>](#the-include-statement)        | a statement to include another file in the context                                                 | ✅      | ❌      |
-| [<meta>]()                                 | a statement to provide metadata to a script, such as author, company, etc.                         | ✅      | ❌      |
+| [<meta>]                                 | a statement to provide metadata to a script, such as author, company, etc.                         | ✅      | ❌      |
 | [<rule>](#the-rule-statement)              | a statement that declares a rule                                                                   | ✅      | ✅      |
 | [<classify>](#the-classify-statement)      | a statement that specifies generalization/specialization of concepts                               | ✅      | ✅      |
 | [<relation>](#the-relation-statement)      | a declaration of a relation, stating the existence of a relation within the context                | ✅      | ✅      |
 | [<conceptDef>](#the-concept-statement)     | a description of a concept, to document its meaning                                                | ✅      | ✅      |
 | [<representation>](#the-concept-statement) | a statement that defines the atomic type of a concept                                              | ✅      | ✅      |
 | [<roleRule>](#the-ident-statement)         | a statement that makes a role responsible for satisfying a rule                                    | ✅      | ✅      |
-| [<ident>]()                                | a rule that defines an identity on a concept                                                       | ✅      | ✅      |
-| [<viewDef>]()                              | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations  | ✅      | ✅      |
+| [<ident>]                                | a rule that defines an identity on a concept                                                       | ✅      | ✅      |
+| [<viewDef>]                              | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations  | ✅      | ✅      |
 | [<purpose>](#the-purpose-statement)        | a statement to describe the purpose of a pattern or a pattern element                              | ✅      | ✅      |
 | [<population>](#the-population-statement)  | a statement that sums up the initial population of a relation                                      | ✅      | ✅      |
 | [<pattern>](#the-pattern-statement)        | a block of code that represents rules on a single and specific topic, at the user's discretion     | ✅      | ❌      |
@@ -79,16 +79,16 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 
 ## The CONTEXT statement
 
-### Purpose
+#### Purpose
 
 The data contained in a business system represents a view of \(a very small part of\) the real world. Ideally, this view must be consistent, meaning that there may be no contradictions within that view. Since different business systems have different ways of viewing the real world, and/or look at different parts of the real world, we need to be able to distinguish between such views. We use the term 'Context' to refer to an individual view. Thus, a Context is defined in terms of concepts, relations and rules, and it consists of atoms and links to populate them.
 
-### Semantics
+#### Semantics
 
 Any Ampersand model has one context.  
 The model is true within its context and there is no knowledge in a model about other contexts.
 
-### Syntax
+#### Syntax
 
 The model is specified between the keywords CONTEXT and ENDCONTEXT. A context has a name. You can optionally specify the language and markup \(see below\).
 
@@ -103,9 +103,9 @@ ENDCONTEXT
 
 Other models included with the INCLUDE statement become part of the context they are included in.
 
-#### Optional parts
+###### Optional parts
 
-##### Language definition
+######### Language definition
 
 To tell Ampersand what language your context is in, you can append a language directive to your context. Currently English and Dutch are supported. To do so, directly following the name of your context, you can specify
 
@@ -115,7 +115,7 @@ IN <language>
 
 Where `<language>` can be `ENGLISH` or `DUTCH`.
 
-##### Markup format
+######### Markup format
 
 Directly following the optional language definition, you can optionally specify the format of your texts \(see PURPOSE statement\). Ampersand understands some different markup styles. The default style is REST \(Restructured Text\)
 
@@ -137,11 +137,11 @@ where can be one of
 
 ## The CLASSIFY statement
 
-### Purpose
+#### Purpose
 
 A _**classify statement**_ is also called a _**specialization**_. It specifies that atoms of one concept are atoms of another concept as well. You can use it to buils classifications like [Linnaeus](https://www.britannica.com/science/taxonomy/The-Linnaean-system) did.
 
-### Syntax and meaning
+#### Syntax and meaning
 
 ```
 CLASSIFY <upper case identifier> ISA <upper case identifier>
@@ -151,7 +151,7 @@ In a specialization, e.g. `CLASSIFY Sedan ISA Car`, we call the first concept (`
 
 So in general: `CLASSIFY` $$A$$ `ISA` $$B$$ means: $$\forall a: a\in A\Rightarrow a\in B$$.
 
-### Examples
+#### Examples
 
 ```
 CLASSIFY Monkey ISA Mammal
@@ -175,7 +175,7 @@ CLASSIFY Cow ISA Mammal
 CLASSIFY Human ISA Mammal
 ```
 
-### Best practice
+#### Best practice
 
 A specialization is a static relationship. If you want to say that a student is a person, please consider whether you want this to be static. If a person can enroll to become a student, or graduate or drop out to become non-student again, the dynamics of that cannot be captured in a specialization. Use a relationship instead to model the state of being a student. \
 E.g. `RELATION student[Person*Enrollment]`
@@ -184,11 +184,11 @@ By adding and removing pairs to that relation, it continuously reflects which pe
 
 ## The ENFORCE statement {#the-enforce-statement}
 
-### Purpose
+#### Purpose
 
 The purpose of this statement is to automatically modify the population of a relation based on rules.
 
-### Syntax
+#### Syntax
 
 Since ampersand 4.4.0 the syntax of this statement is:
 
@@ -202,11 +202,11 @@ The `<operator>` can be one of **`:=`,** `:<` or `>:` .
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
-### Semantics
+#### Semantics
 
 This statement means the population of the relation will automatically be kept respectively equal ( **`:=`**), a subset (`:<`) or a superset (`>:`) of the population of the given term.
 
-### Examples
+#### Examples
 
 ```
 ENFORCE r := s;t
@@ -229,14 +229,14 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
 -}
 ```
 
-### Miscellaneous
+#### Miscellaneous
 
 - Both the sources and the targets of the relation and the term must match. An error message is given otherwise.
 - The relation must be specified in order to use it here, as is the case with any relation used in a term.
 
 ## The IDENT statement
 
-### Purpose:
+#### Purpose:
 
 This statement is a rule, which defines an identity on a concept. It is syntactic sugar for specifying a set of relations that identify atoms in a specific concept. For example, if relations `pi` and `rho` determine an atom of concept `T` uniquely, you can write:
 
@@ -246,7 +246,7 @@ IDENT "T uniqueness" :  T (pi, rho)
 
 As the IDENT statement defines a rule, it can be in the same places as any other RULE.
 
-### Syntax
+#### Syntax
 
 ```text
 `IDENT` (<label> `:`)? <Concept> `(` <term>* `)`
@@ -258,7 +258,7 @@ where:
 - `<Concept>` is the name of the Concept for atoms of which the rule specifies an identity
 - Between brackets are terms whose source concept must be `<Concept>`. This is enforced by the type system.
 
-### Informal Semantics
+#### Informal Semantics
 
 ```text
 IDENT "Rule Name" : C (e1, e2, ...)
@@ -282,15 +282,15 @@ Note that
 
 ## The INCLUDE statement
 
-### Purpose
+#### Purpose
 
 To facilitate reusing code, Ampersand allows its user to divide code over different files.
 
-### Description
+#### Description
 
 The `INCLUDE`-statement includes the code of another Ampersand-script or the data of a .xlsx-file into the context.
 
-### Examples
+#### Examples
 
 ```text
 INCLUDE "foo.adl"
@@ -298,7 +298,7 @@ INCLUDE "subdirectory/foo.adl"
 INCLUDE "bar.xlsx"
 ```
 
-### Syntax and meaning
+#### Syntax and meaning
 
 ```text
 INCLUDE <filename>
@@ -361,17 +361,17 @@ Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http:/
 
 ## Patterns
 
-### Purpose
+#### Purpose
 
 Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
 
-### Description
+#### Description
 
 A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem.
 
 For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
 
-### Example
+#### Example
 
 ```
 PATTERN Security
@@ -392,7 +392,7 @@ RULE guardPrerequisites : attends;required |- pass
 ENDPATTERN
 ```
 
-### Syntax
+#### Syntax
 
 Every pattern has the following form:
 
@@ -402,7 +402,7 @@ PATTERN <pattern name>
 ENDPATTERN
 ```
 
-### Good practice
+#### Good practice
 
 A model can have as many patterns as you want.
 It has no effect on how the code is processed.
@@ -416,17 +416,17 @@ That practice makes the pattern self-contained and therefore more suitable for r
 
 Ampersand advocates **one theme in one pattern**. Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
 
-### Restrictions
+#### Restrictions
 
 In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
 
 ## The POPULATION statement
 
-### Purpose
+#### Purpose
 
 To store data in a database corresponds to populating the relations in a context. Atoms are the data and pairs of atoms are inserted and deleted during the lifetime of a relation.
 
-### Description
+#### Description
 
 All pairs in a relation are called the population of that relation. All atoms in a concept constitute the population of that concept. The population of all relations and concepts in a context make the population of that context.
 
@@ -437,7 +437,7 @@ There are two ways to populate a concept with atoms:
 
 [Using spreadsheets](#population-in-spreadsheets) to define an initial population allows you to work with larger populations. Often you can use an existing spreadsheet and adapt it to become acceptable as Ampersand input.
 
-### Syntax
+#### Syntax
 
 You can define atoms separately and you can define the pairs in a relation. Both methods result in added population for each concept.
 
@@ -458,15 +458,15 @@ POPULATION personBank[Person*Bank] CONTAINS
 
 The list of pairs is a comma-separated list between square brackets. Pairs are comma-separated pairs between round brackets. Each atom is enclosed in double quotes.
 
-### Population in spreadsheets
+#### Population in spreadsheets
 
 In this section we will make an Ampersand script that is based on an existing spreadsheet. This technique is useful for quickly adding population to an information system. Ampersand has a facility that allows you to import existing .xlsx files with minimal changes.
 
-#### Theory: tables vs. binary relations
+###### Theory: tables vs. binary relations
 
 We can consider Ampersand as a finite system of relations. Every relation is a set of \(ordered\) pairs and each pair contains two atoms. However, in the real world we also store information in wider tables, as we do in spreadsheets and relational databases. Here is the trick. If we have two pairs that share the same left atom, e.g. \(1, Abraham\) and \(1, Lincoln\), we can put them in the same row. Using the same trick, we can interpret a row in a spreadsheet as a number of pairs.
 
-##### Example
+######### Example
 
 Let us look at an example:
 
@@ -504,7 +504,7 @@ POPULATION birth[President*Date] CONTAINS
 
 Notice that the column names in the table correspond with the relation names in Ampersand. In the table we call them "attributes". So it makes sense to say that a relation in Ampersand can correspond with an attribute in a table.
 
-#### Practice: how to prepare a spreadsheet
+###### Practice: how to prepare a spreadsheet
 
 In theory, the population of the Hawaii-script might just as well be given in a spreadsheet. This works in practice too. It looks like this:
 
@@ -519,11 +519,11 @@ In theory, the population of the Hawaii-script might just as well be given in a 
 
 Please copy this in a spreadsheet of your own. The element in the first column with square brackets tells Ampersand that a new table starts. The first row contains relation names. The second row contains concept names. The rows that follow contain pairs. Ampersand reconstructs those pairs as in the example above.
 
-#### Reusing existing data
+###### Reusing existing data
 
 In practical applications, you might want to reuse data from existing spreadsheets. People tend to have lots of "informal administration" in spreadsheets, which gives you access to authentic population. Surely you need that data organized in rows, but fortunately that is reasonably common. In such cases, you just add two lines above each table to inform Ampersand about the relations that are populated. In other cases, you have some work organizing the spreadsheet for importing it.
 
-#### Uploading your spreadsheet
+###### Uploading your spreadsheet
 
 You will find the Excel import function in the menu bar on the top right of your screen:
 
@@ -539,11 +539,11 @@ _Upload_
 
 button. At that time, all population from the .xlsx-file is added to the context and checked for inconsistencies. As a result, you may get errors when uploading. Only error-free spreadsheets will be uploaded successfully. As long as an error remains, the population in your context will not change.
 
-#### Assignment
+###### Assignment
 
 Make a population of your own for the Hawaii-script and put it in a .xlsx spreadsheet. As described above. Make sure to delete the population statements from your Hawaii source code, to make sure that you get to see the population from your .xlsx-file. Generate a prototype from your Hawaii-application, upload your population in Excel and play around with the results.
 
-#### What have you learned?
+###### What have you learned?
 
 After finishing your assignment, you have learned:
 
@@ -551,17 +551,17 @@ After finishing your assignment, you have learned:
 - to understand how a `POPULATION`-statement relates to the contents of a spreadsheet;
 - that the contents of the spreadsheet is added to the population of your context, provided this does not lead to any conflict.
 
-### Purpose
+#### Purpose
 
 Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
 
-### Description
+#### Description
 
 A pattern is a set of [rules](#the-rule-statement) that describes a theme or a general reusable solution to a commonly occurring problem.
 
 For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
 
-### Example
+#### Example
 
 ```text
 PATTERN Security
@@ -584,11 +584,11 @@ ENDPATTERN
 
 ## The PURPOSE statement
 
-### Semantics
+#### Semantics
 
 Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
 
-### Syntax
+#### Syntax
 
 `PURPOSE` `<type of thing>` `<name>` `<language>?` `<markup>?`
 
@@ -598,7 +598,7 @@ Where `<type of thing>` and `<name>` are the type and name of the thing that is 
 
 The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
 
-### Examples
+#### Examples
 
 ```text
 PURPOSE CONCEPT Person {+The concept Person keeps all personal data together.+}
@@ -620,7 +620,7 @@ PURPOSE RELATION accountOwner[Account*Owner]
 +}
 ```
 
-### Markup
+#### Markup
 
 For the purpose of documentation, you may state the language in which you write a purpose. You may also state in which markup language you use. Examples:
 
@@ -649,19 +649,19 @@ IN ENGLISH MARKDOWN
 
 ## The RELATION statement
 
-### Purpose
+#### Purpose
 
 A _**relation statement**_ says that a relation exists. It introduces (defines, declares) the relation in the context that uses the relation statement.
 
 A _**population statement**_ specifies which pairs (of atoms) are in a relation.
 
-### Description
+#### Description
 
 A relation is a set that contains pairs of atoms. Over time, pairs can be inserted into or deleted from a relation, for example by a user typing data into an Ampersand application. So the content of a relation is changing over time.
 
 When discussing relations, an arbitrary relation is referred to as $$r$$, $$s$$, or $$t$$. To say that a pair $$(a,b)$$ belongs to a relation $$r$$, we write $$a\ r\ b$$ or alternatively $$(a,b)\in r$$.
 
-### Examples
+#### Examples
 
 ```
 RELATION soldBy[Order*Person]
@@ -683,7 +683,7 @@ In this example:
 - `ContractID` is the _**target concept**_ of this relation, and
 - `UNI` and `TOT` are _**constraints**_ of this relation.
 
-### Syntax and meaning
+#### Syntax and meaning
 
 Each relation used in Ampersand has to be declared. This means that the developer tells the system that this particular relation exists. A relation declaration can have one of the following formats:
 
@@ -705,7 +705,7 @@ The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. Th
 
 The name, source concept and target concept together identify a relation uniquely within its context. As a consequence, the name of a relation does not have to be unique. E.g. `name[Book*Name]` can be specified in the same context as `name[Person*Name]`. Because they have different source concepts, these are different relations.
 
-### Properties
+#### Properties
 
 The `<properties>`-part is meant for writing multiplicity constraints in a comma separated list between square brackets '\[' and ']'. E.g. `[UNI,TOT]` . The following properties can be specified on any relation `r[A*B]`
 
@@ -736,7 +736,7 @@ RELATION lives[Person*City][UNI]
 MEANING "A person can live in one city only."
 ```
 
-### PRAGMA
+#### PRAGMA
 
 A pragma is optional and is characterized by the reserved word `PRAGMA`. The `PRAGMA` is followed by two or three strings. It is used to construct sentences in natural language, using pairs from the actual population of a relation. A pragma specifies how we speak (in natural language) about any pair in the relation. Ampersand also uses pragmas to generate examples in the functional specification. Example of a pragma with three strings:
 
@@ -756,23 +756,23 @@ RELATION accepted[Provider * Order] [INJ] PRAGMA "Provider " " has accepted orde
 
 The `PRAGMA` tells us that it makes sense to utter the phrase `"Provider Mario's Pizza's has accepted order 12345."`
 
-### MEANING
+#### MEANING
 
 For a full discussion of meaning, we refer to [`this page`](#the-meaning-substatement\).
 
-### Miscellaneous
+#### Miscellaneous
 
 -
 
 ## The RULE statement
 
-### Purpose
+#### Purpose
 
 The purpose of a rule is to constrain data. Refer to the chapter about rules in the tutorial for examples and a practice oriented explanation.
 
 A rule statement defines something that should be true. It does not define the enforcement.
 
-### Syntax of rules
+#### Syntax of rules
 
 A `<rule>` has the following syntax:
 
@@ -780,11 +780,11 @@ A `<rule>` has the following syntax:
 RULE <label>? <term> <meaning>* <message>* <violation>?
 ```
 
-### Syntax of labels
+#### Syntax of labels
 
 A `<label>` is optional. It can be a single word or a string \(enclosed by double brackets\) followed by a colon \(`:`\).
 
-#### Term
+###### Term
 
 A term can be any of:
 
@@ -798,7 +798,7 @@ A term can be any of:
   - A singleton term \(the value of an atom\)
 - a term enclosed in brackets.
 
-##### Operators
+######### Operators
 
 The following operators are available to build expressions:
 
@@ -821,13 +821,13 @@ The following operators are available to build expressions:
   - Reflexive, transitive closure: `*` \(Kleene star\) --currently not implemented
   - transitive closure: `+` \(Kleene plus\) --currently not implemented
 
-#### MEANING\*
+###### MEANING\*
 
 The meaning of a rule can be written in natural language in the Meaning part of the RULE statement.  
 It is a good habit to specify the meaning! The meaning will be printed in the functional specification.  
 The meaning is optional.
 
-##### Syntax
+######### Syntax
 
 ```text
 MEANING Language? Markup? <text>
@@ -852,7 +852,7 @@ The optional Markup is one of :
 
 If you need specific markup, there are several options to do so. The default markup is used, but you can override that here. We rely on [Pandoc](http://pandoc.org/) to read the markup.
 
-#### MESSAGE\*
+###### MESSAGE\*
 
 Messages may be defined to give feedback whenever the rule is violated. The message is a predefined string. Every message for a rule should be for another Language.
 
@@ -860,7 +860,7 @@ Messages may be defined to give feedback whenever the rule is violated. The mess
 MESSAGE Markup
 ```
 
-#### VIOLATION?
+###### VIOLATION?
 
 A violation message can be constructed so that it gives specific information about the violating atoms:
 
@@ -880,24 +880,24 @@ A rule is violated by a pair of atoms \(source, target\). The source atom is the
 
 `VIOLATION ( TXT "Project ", SRC projectName, TXT " does not have a projectleader")`
 
-### ROLE MAINTAINS
+#### ROLE MAINTAINS
 
 By default rules are invariant rules.  
 By preceding the rule statement with a role specification for this rule, the rule becomes a process rule.
 
 ## Language support
 
-### Purpose
+#### Purpose
 
 To generate documentation, Ampersand is language aware.
 
-### Description
+#### Description
 
 Ampersand assigns a language to every text written as documentation, whether it is a `MEANING`, `PURPOSE` or other text except comment.
 
 Ampersand does not recognize any language, so you must tell which language is meant. To tell Ampersand what language you use, you can append a language directive to a context, a meaning, and to a purpose statement. Currently English and Dutch are supported.
 
-### Syntax
+#### Syntax
 
 A language directive has the following syntax
 
@@ -907,7 +907,7 @@ IN <language>
 
 Where `<language>` can be `ENGLISH` or `DUTCH`.
 
-### Semantics by example
+#### Semantics by example
 
 The first example is a context declaration in which the language `ENGLISH` is specified.
 
@@ -937,7 +937,7 @@ PURPOSE CONCEPT Person IN DUTCH
 
 This means that the contents of this purpose statement is written in `DUTCH`.
 
-### Additional information
+#### Additional information
 
 Ampersand assumes that whatever is written is written in the language denoted in the language directive. It doesn't check whether that language is actually used, because it cannot recognize languages.
 
@@ -951,11 +951,11 @@ Documentation generated by RAP4 is written in `DUTCH`. Natural language items wr
 
 ## The INTERFACE statement
 
-### Purpose
+#### Purpose
 
 Services are meant to expose functionality and data from a [context](#the-context-statement), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
 
-### Description
+#### Description
 
 A service is a component of an information system that exposes functionality and data from a [context](#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data. The first [example](../Examples.md#example-service-structure) introduces a simple service informally. Another [example](../Examples.md#service-introductory-example) introduces the main features of a service with nested interfaces.
 
@@ -963,7 +963,7 @@ A _service_ is a component of an information system. During the time that this s
 
 Please note that the keyword `INTERFACE` is still used. That may be confusing. In a future release of Ampersand the keyword `INTERFACE` will become obsolete and the word `SERVICE` will be used.
 
-### Syntax and Meaning {#syntax-of-interface-statement}
+#### Syntax and Meaning {#syntax-of-interface-statement}
 
 Note: The service definition must be outside a pattern
 
@@ -1015,7 +1015,7 @@ You can specify that a service is available only to actors (i.e. computers or pe
           | <rolename>
 ```
 
-### Using a service
+#### Using a service
 
 On the user screen each atom is displayed in some form as data. If a service exists for that atom, that is shown to the user as a hyperlink to which you can navigate.
 
@@ -1026,7 +1026,7 @@ Further examples:
 - a [client service](../Examples.md#services-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
 - a [login service](../Examples.md#services-example-login) to demonstrate how to get different interface structures under varying conditions.
 
-### CRUD annotations {#crud}
+#### CRUD annotations {#crud}
 
 CRUD annotations are used in services to constrain the functionality of fields and boxes in an `INTERFACE`-statement. This allows you to minimize the functionality for your users, to design for easy learning.
 
@@ -1063,28 +1063,28 @@ The user interface defined by this service is shown as a screenshot below. Notic
 
 The next sections give some more detailed information on the runtime semantics for CRUD annotations as implemented in Ampersand.
 
-#### Create
+###### Create
 
 | CRUD | for a box                                                                                                                                                                               | for a field.                                                                                                                                                                                                                                    |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | C    | ![Creating atoms is done by pressing the + button](../assets/box-crud-create.png) A + (plus) button is displayed that lets you create a new atom, but only if the box-term is editable. | ![Creating atoms is done by pressing the + button](../assets/create-field.png) Enter a new atom and a `+` button appears. Click the + to add that atom to the listed set of atoms. If you enter an atom that exists (Peter), you can select it. |
 | c    | Atoms cannot be created                                                                                                                                                                 | Atoms cannot be created                                                                                                                                                                                                                         |
 
-#### Read
+###### Read
 
 | Read | CRUD for boxes      |     | CRUD for fields     |
 | ---- | ------------------- | --- | ------------------- |
 | R    | Read is allowed     |     | Read is allowed     |
 | r    | Read is not allowed |     | Read is not allowed |
 
-#### Update
+###### Update
 
 | Update | CRUD for boxes                                                                                                                                                                                                                                   | CRUD for fields                                                                                                                                                                                                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | U      | ![Deleting a pair is done with the - button](../assets/box-crud-update.png) Removing and/or adding a pair (src,tgt) is allowed if expr is editable and the atom exists. Deleting a pair is done with the - button; the atom will NOT be deleted. | ![Deleting a pair is done with the - button](../assets/field-crud-update.png) Removing and/or adding a pair (src,tgt) is allowed if expr is editable and the atom exists. Deleting a pair is done with the - button; the atom will NOT be deleted. |
 | u      | Update is not allowed                                                                                                                                                                                                                            | Update is not allowed                                                                                                                                                                                                                              |
 
-#### Delete
+###### Delete
 
 | Delete | CRUD for boxes                                                                                                                                                              | CRUD for fields                                                                                                                    |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -1093,7 +1093,7 @@ The next sections give some more detailed information on the runtime semantics f
 
 A top-level Update or Create are common in my own scripts, e.g. to create an overview of People and be able to create a new Person: `INTERFACE "People" : V[SESSION*Person] CRud COLS []`. And update is also possible.
 
-#### Things to remember
+###### Things to remember
 
 1. The red minus is enabled by `U`. It unlinks an atom (by deleting a pair from a relation) and leaves the atom alone.
 2. The red trash bin is enabled by `D`. It removes an atom and all pairs in which that atom is used.
@@ -1102,13 +1102,13 @@ Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD]
 
 reference-material/syntax-of-ampersand#layout-of-interfaces
 
-### Layout of user interfaces {#layout-of-interfaces}
+#### Layout of user interfaces {#layout-of-interfaces}
 
 Ampersand is meant for back-end design. It offers no features for front-end design. For that purpose we advise you use contemporary front-end tools for web-based applications. Your Ampersand application is [designed to be adaptable](../architecture-of-an-ampersand-application/README.md), especially for this purpose.
 
 However, Ampersand offers a few layout features that let you place items. It has three built-in layout options, [colums](./#column-layout), [rows](./#row-layout) and [tabs](./#tabular-layout), which you can mix freely.
 
-#### Table layout
+###### Table layout
 
 The column layout uses `BOX <TABLE>` to instruct the front-end application to use a tabular layout in user interfaces. Here is an example of a service, which uses the table layout.
 
@@ -1139,7 +1139,7 @@ This service shows three columns in the user interface, **Students**, **Course**
 
 ![Column-oriented layout of a user interface with columns in each row](<../assets/COLS layout example.png>)
 
-#### FORM layout
+###### FORM layout
 
 The row layout uses `BOX <FORM>` to instruct the front-end application to layout the user interface one field on one row, as you would expect in a form. Here is an example of a service, which uses the form layout on the top level.
 
@@ -1164,7 +1164,7 @@ This service shows three rows in the user interface, **Students**, **Course** an
 
 ![Row-oriented layout of a user interface with columns in each row](<../assets/ROWS layout example.png>)
 
-#### TABS layout
+###### TABS layout
 
 The column layout uses `BOX <TABS>` to instruct the front-end application to tabs in the user interface. Here is an example of a service, which uses the column layout.
 
@@ -1199,6 +1199,6 @@ We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note th
 
 If these options are not enough, you can [enhance your application with your own layouts](../tutorial/services.md#layout-and-widgets).
 
-#### Your own widgets \(HTML and CSS\)
+###### Your own widgets \(HTML and CSS\)
 
 You don't have to put up with the [Ampersand built-in layout options](#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
