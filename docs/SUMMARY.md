@@ -44,7 +44,7 @@ We are currently refactoring our documentation. The navigation at the left is wo
       - [Boolean operators visualized](./reference-material/the-language-ampersand/terms#boolean-operators-visualized)
       - [Relational operators visualized](./reference-material/the-language-ampersand/terms#relational-operators-visualized)
       - [Residuals visualized](./reference-material/the-language-ampersand/terms#residual-operators-visualized)
-  - [Context](./reference-material/the-language-ampersand/context)
+  - [Context](./reference-material/syntax-of-ampersand#the-context-statement)
   - [Syntactical Conventions](./reference-material/the-language-ampersand/how-to-read-syntax-statements)
     - [Language support](./reference-material/syntax-of-ampersand#language-support)
   - [Patterns](./reference-material/syntax-of-ampersand#patterns)
