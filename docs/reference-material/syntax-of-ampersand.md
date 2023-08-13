@@ -6,49 +6,6 @@ title: Syntax of Ampersand
 
 This page defines the syntax and semantics of the statements in the Ampersand language. [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
 
-## The CONCEPT statement
-
-#### Purpose:
-
-A concept statement defines a concept in natural language. A concept is a name for similar things. For example: `Peter`, `John`, and `Barack` are things you might want to call `Person`, whereas `45-NP-88` and `KD-686-D` could be instances of the concept `LicensePlate`.
-
-#### Syntax:
-
-```text
-CONCEPT <Uppercase identifier> <String> <String>?
-```
-
-This statement may occur anywhere within a context, either inside or outside a pattern.
-
-#### Semantics
-
-This statement means that there exists a concept called `<Uppercase identifier>` in the current context.
-
-- `<Uppercase identifier>` specifies the name of the concept.
-- `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
-- `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
-
-#### Examples
-
-```text
-CONCEPT Person "A person is a human creature." "Ventroli1997"
-```
-
-```text
-CONCEPT Organization "An organization is a collection of persons that work together to achieve specific objectives."
-```
-
-```text
-CONCEPT Criterion "A criterion is a standard on which a judgment or decision may be based." "Merriam-Webster"
-```
-
-#### Miscellaneous
-
-- The name of a concept starts with an uppercase.
-- A concept should be used for immutable concepts. E.g. use a concept `Person` to express that a person will always be a person and will not change in, let us say, a table. However, don't use `Employee`, because termination of an employee's contract causes a person to be an employee no longer. So employees are not immutable. To be an employee is a dynamic property, so model it as a relation.
-- The description will be printed in the functional specification, so please check that your definition is a complete sentence.
-- Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
-
 ## Structuring your Ampersand specification
 
 Structuring an Ampersand specification effectively is crucial for readability, maintainability, and ease of development. There are several ways that can help:
@@ -58,8 +15,8 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
-| element                                      | description                                                                                      | Context | Pattern |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ------- |
+| element                                     | description                                                                                      | Context | Pattern |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ------- |
 | [<include\>](#the-include-statement)        | a statement to include another file in the context                                               | ✅      | ❌      |
 | <meta\>                                     | a statement to provide metadata to a script, such as author, company, etc.                       | ✅      | ❌      |
 | [<rule\>](#the-rule-statement)              | a statement that declares a rule                                                                 | ✅      | ✅      |
@@ -134,6 +91,110 @@ where can be one of
 `MARKDOWN`.
 
 \(For details on these formats, see [pandoc.org](http://pandoc.org/)\).
+
+## The PATTERN statement
+
+#### Purpose
+
+Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
+
+#### Description
+
+A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem.
+
+For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
+
+#### Example
+
+```
+PATTERN Security
+
+RELATION required[Subject*Destination]
+MEANING "A subject that you must have passed to qualify for the school trip to a destination"
+
+RELATION pass[Subject*Student]
+MEANING "The subjects that have been passed by specific students"
+
+RELATION attends[Student*Destination]
+
+PURPOSE RULE guardPrerequisites
+{+ This rule prevents students from registering for a trip
+without having passed the required courses. +}
+RULE guardPrerequisites : attends;required |- pass
+
+ENDPATTERN
+```
+
+#### Syntax
+
+Every pattern has the following form:
+
+```
+PATTERN <pattern name>
+    <pattern element>*
+ENDPATTERN
+```
+
+#### Good practice
+
+A model can have as many patterns as you want.
+It has no effect on how the code is processed.
+
+The service definition must be outside a pattern
+
+A pattern contains rules in an arbitrary order.
+The context in which these rules are valid must contain the definition for each of the relations that are used in those rules.
+It is good practice to declare all relations in the pattern itself.
+That practice makes the pattern self-contained and therefore more suitable for reuse.
+
+Ampersand advocates **one theme in one pattern**. Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
+
+#### Restrictions
+
+In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
+
+## The CONCEPT statement
+
+#### Purpose:
+
+A concept statement defines a concept in natural language. A concept is a name for similar things. For example: `Peter`, `John`, and `Barack` are things you might want to call `Person`, whereas `45-NP-88` and `KD-686-D` could be instances of the concept `LicensePlate`.
+
+#### Syntax:
+
+```text
+CONCEPT <Uppercase identifier> <String> <String>?
+```
+
+This statement may occur anywhere within a context, either inside or outside a pattern.
+
+#### Semantics
+
+This statement means that there exists a concept called `<Uppercase identifier>` in the current context.
+
+- `<Uppercase identifier>` specifies the name of the concept.
+- `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
+- `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
+
+#### Examples
+
+```text
+CONCEPT Person "A person is a human creature." "Ventroli1997"
+```
+
+```text
+CONCEPT Organization "An organization is a collection of persons that work together to achieve specific objectives."
+```
+
+```text
+CONCEPT Criterion "A criterion is a standard on which a judgment or decision may be based." "Merriam-Webster"
+```
+
+#### Miscellaneous
+
+- The name of a concept starts with an uppercase.
+- A concept should be used for immutable concepts. E.g. use a concept `Person` to express that a person will always be a person and will not change in, let us say, a table. However, don't use `Employee`, because termination of an employee's contract causes a person to be an employee no longer. So employees are not immutable. To be an employee is a dynamic property, so model it as a relation.
+- The description will be printed in the functional specification, so please check that your definition is a complete sentence.
+- Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
 
 ## The CLASSIFY statement
 
@@ -358,67 +419,6 @@ MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
 ```
 
 Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
-
-## Patterns
-
-#### Purpose
-
-Patterns are meant to isolate discussions and make solutions reusable, as known from [design patterns](http://en.wikipedia.org/wiki/Design_pattern).
-
-#### Description
-
-A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem.
-
-For instance, if specific concerns about security arise, you might want to discuss this with stakeholders in security. With them you can discuss which rules in particular constitute your solution. Divide your problem in smaller pieces and discuss each piece with just the right stakeholders. This allows you to go deeper by talking to the right people. It saves time as well by freeing others from having to participate. An even larger benefit arises if you reuse patterns that have been discussed and scrutinized before. The best thing comes once your stakeholders agree. By that time, your pattern represents their agreement formally in Ampersand, so you can use it in the larger context of the information system.
-
-#### Example
-
-```
-PATTERN Security
-
-RELATION required[Subject*Destination]
-MEANING "A subject that you must have passed to qualify for the school trip to a destination"
-
-RELATION pass[Subject*Student]
-MEANING "The subjects that have been passed by specific students"
-
-RELATION attends[Student*Destination]
-
-PURPOSE RULE guardPrerequisites
-{+ This rule prevents students from registering for a trip
-without having passed the required courses. +}
-RULE guardPrerequisites : attends;required |- pass
-
-ENDPATTERN
-```
-
-#### Syntax
-
-Every pattern has the following form:
-
-```
-PATTERN <pattern name>
-    <pattern element>*
-ENDPATTERN
-```
-
-#### Good practice
-
-A model can have as many patterns as you want.
-It has no effect on how the code is processed.
-
-The service definition must be outside a pattern
-
-A pattern contains rules in an arbitrary order.
-The context in which these rules are valid must contain the definition for each of the relations that are used in those rules.
-It is good practice to declare all relations in the pattern itself.
-That practice makes the pattern self-contained and therefore more suitable for reuse.
-
-Ampersand advocates **one theme in one pattern**. Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
-
-#### Restrictions
-
-In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
 
 ## The POPULATION statement
 
