@@ -2,7 +2,7 @@
 
 <!-- Purpose -->
 
-A service is a component of an information system that exposes functionality and data from a [context](./context.md), to let users or information systems interact by creating, reading, updating, and deleting data.
+A service is a component of an information system that exposes functionality and data from a [context](../syntax#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data.
 
 ## Description
 
