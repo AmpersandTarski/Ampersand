@@ -1,6 +1,5 @@
 ---
 title: Syntax of Ampersand
-id: syntax
 ---
 
 # Syntax and semantics of Ampersand
@@ -59,24 +58,24 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
-|                          |                                                                                                                | Context | Pattern |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- | ------- | ------- |
-| `<include>`              | a statement to [include](the-include-statement) another file in the context                                    | ✅      | ❌      |
-| `<meta>`                 | a statement to provide metadata to a script, such as author, company, etc.                                     | ✅      | ❌      |
-| `<rule>`                 | a statement that declares a [rule](#the-rule-statement)                                                        | ✅      | ✅      |
-| `<classify>`             | a statement that specifies generalization/specialization of [concepts](#the-classify-statement)                | ✅      | ✅      |
-| `<relation>`             | a declaration of a relation, stating the existence of a [relation](#the-relation-statement) within the context | ✅      | ✅      |
-| `<conceptDef>`           | a description of a [concept](#the-concept-statement), to document its meaning                                  | ✅      | ✅      |
-| `<representation>`       | a statement that defines the atomic type of a [concept](#the-concept-statement)                                | ✅      | ✅      |
-| `<roleRule>`             | a statement that makes a role responsible for satisfying a rule                                                | ✅      | ✅      |
-| `<ident>`                | a rule that defines an [identity](#the-ident-statement) on a concept                                           | ✅      | ✅      |
-| `<viewDef>`              | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.             | ✅      | ✅      |
-| `<purpose>`              | a statement to describe the [purpose](#the-purpose-statement) of a pattern or a pattern element                | ✅      | ✅      |
-| `<population>`           | a statement that sums up the initial [population](#the-population-statement) of a relation                     | ✅      | ✅      |
-| `<pattern>`              | a block of code that represents rules on a single and specific topic, at the user's discretion                 | ✅      | ❌      |
-| `<interface or service>` | a unit of code that can be run independently and specifies [interaction with a user or a computer](#Services)  | ✅      | ❌      |
-| `<purpose>`              | a statement to describe the [purpose](../syntax#the-purpose-statement) of a context or a context element       | ✅      | ✅      |
-| `<population>`           | a statement that sums up the initial [population](../syntax#the-population-statement) of a relation            | ✅      | ✅      |
+|                          |                                                                                                                       | Context | Pattern |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| `<include>`              | a statement to [include](the-include-statement) another file in the context                                           | ✅      | ❌      |
+| `<meta>`                 | a statement to provide metadata to a script, such as author, company, etc.                                            | ✅      | ❌      |
+| `<rule>`                 | a statement that declares a [rule](#the-rule-statement)                                                               | ✅      | ✅      |
+| `<classify>`             | a statement that specifies generalization/specialization of [concepts](#the-classify-statement)                       | ✅      | ✅      |
+| `<relation>`             | a declaration of a relation, stating the existence of a [relation](#the-relation-statement) within the context        | ✅      | ✅      |
+| `<conceptDef>`           | a description of a [concept](#the-concept-statement), to document its meaning                                         | ✅      | ✅      |
+| `<representation>`       | a statement that defines the atomic type of a [concept](#the-concept-statement)                                       | ✅      | ✅      |
+| `<roleRule>`             | a statement that makes a role responsible for satisfying a rule                                                       | ✅      | ✅      |
+| `<ident>`                | a rule that defines an [identity](#the-ident-statement) on a concept                                                  | ✅      | ✅      |
+| `<viewDef>`              | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.                    | ✅      | ✅      |
+| `<purpose>`              | a statement to describe the [purpose](#the-purpose-statement) of a pattern or a pattern element                       | ✅      | ✅      |
+| `<population>`           | a statement that sums up the initial [population](#the-population-statement) of a relation                            | ✅      | ✅      |
+| `<pattern>`              | a block of code that represents rules on a single and specific topic, at the user's discretion                        | ✅      | ❌      |
+| `<interface or service>` | a unit of code that can be run independently and specifies [interaction with a user or a computer](#Services)         | ✅      | ❌      |
+| `<purpose>`              | a statement to describe the [purpose](../syntax-of-ampersand#the-purpose-statement) of a context or a context element | ✅      | ✅      |
+| `<population>`           | a statement that sums up the initial [population](../syntax-of-ampersand#the-population-statement) of a relation      | ✅      | ✅      |
 
 ## The CONTEXT statement
 
@@ -1101,7 +1100,7 @@ A top-level Update or Create are common in my own scripts, e.g. to create an ove
 
 Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Acrud+) functionality.
 
-reference-material/the-language-ampersand.md#layout-of-interfaces
+reference-material/syntax-of-ampersand#layout-of-interfaces
 
 ### Layout of user interfaces {#layout-of-interfaces}
 

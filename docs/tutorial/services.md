@@ -2,7 +2,7 @@
 
 <!-- This file is a tutorial about services. -->
 
-Services are meant to expose functionality and data from a [context](../reference-material/syntax#the-context-statement), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
+Services are meant to expose functionality and data from a [context](../reference-material/syntax-of-ampersand#the-context-statement), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
 
 Note: The service definition must be outside a pattern
 

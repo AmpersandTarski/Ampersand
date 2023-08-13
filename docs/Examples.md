@@ -11,7 +11,7 @@ TODO: refactor this documentation to match the latest syntax.
 
 ## Example: Client {#services-example-client}
 
-This example illustrates the structure of [services in Ampersand](./reference-material/the-language-ampersand.md#Services)
+This example illustrates the structure of [services in Ampersand](./reference-material/syntax-of-ampersand#the-interface-statement)
 
 ### A Client service
 
@@ -61,7 +61,7 @@ because it is familiar. We show this example to demonstrate how to get different
 
 ## Preliminaries
 
-The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](./reference-material/the-language-ampersand.md#layout-of-interfaces) first for details.
+The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](./reference-material/syntax-of-ampersand#layout-of-interfaces) first for details.
 
 To link system activities to a person or organisation, we use the notion of `Account`. To log in means to associate a session with the `Account` of the user. This association is made in the relation `sessionAccount`. To log out means to break that link, i.e. to remove the session/account pair from relation `sessionAccount`. When logging in, it is customary that the user identifies herself. In this example we do this with a `UserID` and `Password`.
 

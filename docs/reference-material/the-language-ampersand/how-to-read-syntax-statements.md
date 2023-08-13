@@ -51,17 +51,17 @@ Within an operator category, you must place brackets to disambiguate. E.g. `r/\s
 Keywords in Ampersand are always written in CAPITALS.
 
 - Keywords for the main structure of the code
-  - [`CONTEXT`, `ENDCONTEXT`](../syntax#the-context-statement)
-  - [`IN`, `ENGLISH`, `DUTCH`](../syntax#language-support)
-  - [`INCLUDE`](../syntax#the-include-statement)
-  - [`PATTERN`, `ENDPATTERN`](../syntax#the-pattern-statement)
-  - [`CONCEPT`](../syntax#the-concept-statement)
-- Keywords for [relations](../syntax#the-relation-statement)
-  - [`RELATION`](../syntax#the-relation-statement)
+  - [`CONTEXT`, `ENDCONTEXT`](../syntax-of-ampersand#the-context-statement)
+  - [`IN`, `ENGLISH`, `DUTCH`](../syntax-of-ampersand#language-support)
+  - [`INCLUDE`](../syntax-of-ampersand#the-include-statement)
+  - [`PATTERN`, `ENDPATTERN`](../syntax-of-ampersand#the-pattern-statement)
+  - [`CONCEPT`](../syntax-of-ampersand#the-concept-statement)
+- Keywords for [relations](../syntax-of-ampersand#the-relation-statement)
+  - [`RELATION`](../syntax-of-ampersand#the-relation-statement)
   - `PRAGMA`
   - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`](../../modeling/properties#properties)
-  - [`POPULATION`, `CONTAINS`](../syntax#the-population-statement)
-- Keywords for [rules](../syntax#the-rule-statement)
+  - [`POPULATION`, `CONTAINS`](../syntax-of-ampersand#the-population-statement)
+- Keywords for [rules](../syntax-of-ampersand#the-rule-statement)
   - `RULE`
   - `MESSAGE`
   - `VIOLATION`
@@ -74,8 +74,8 @@ Keywords in Ampersand are always written in CAPITALS.
   - `ROLE`
   - `MAINTAINS`
 - Keywords for documentation
-  - [`PURPOSE`](../syntax#the-purpose-statement)
-  - [`MEANING`](../syntax#the-meaning-sub-statement)
+  - [`PURPOSE`](../syntax-of-ampersand#the-purpose-statement)
+  - [`MEANING`](../syntax-of-ampersand#the-meaning-sub-statement)
   - `META`
   - `REF`
   - `REST`
@@ -88,7 +88,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - `LINKTO`
   - `BOX`
 - Keywords for identities
-  - [`IDENT`](../syntax#the-ident-statement)
+  - [`IDENT`](../syntax-of-ampersand#the-ident-statement)
 - Keywords for views
   - `VIEW`
   - `ENDVIEW`
@@ -96,7 +96,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - `TEMPLATE`
   - `HTML`
 - Keywords for generalisations:
-  - [`CLASSIFY`](../syntax#the-classify-statement)
+  - [`CLASSIFY`](../syntax-of-ampersand#the-classify-statement)
   - `ISA`
   - `IS`
 - Keywords for TType:

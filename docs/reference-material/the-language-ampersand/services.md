@@ -2,7 +2,7 @@
 
 <!-- Purpose -->
 
-A service is a component of an information system that exposes functionality and data from a [context](../syntax#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data.
+A service is a component of an information system that exposes functionality and data from a [context](../syntax-of-ampersand#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data.
 
 ## Description
 
@@ -63,7 +63,7 @@ A sub-interface may be defined on the spot (by `<boxKey> <box>`) or it may link 
                  | LINKTO ( INTERFACE | API ) <name>
 ```
 
-The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../the-language-ampersand.md#layout-of-interfaces) for details.
+The boxKey is meant to tell the front-end application what the service looks like. The compiler uses templates to adapt an interface to specific needs regarding its HTML structure. Please read the [documentation of templates](../syntax-of-ampersand#layout-of-interfaces) for details.
 
 ```
 <boxKey> ::= BOX '<' <htmlname> '>'
@@ -147,7 +147,7 @@ BOX <FORM>
      ]
 ```
 
-This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../the-language-ampersand.md#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`. Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+This service shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](../syntax-of-ampersand#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`. Please read the [explanation of CRUD annotations](#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
 
 ![Row-oriented layout of a user interface with columns in each row](<../../assets/ROWS layout example.png>)
 
@@ -190,7 +190,7 @@ We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note th
 
 ### Your own layout and your own widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](../the-language-ampersand.md#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
+You don't have to put up with the [Ampersand built-in layout options](../syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
 
 ## CRUD {#CRUD}
 
