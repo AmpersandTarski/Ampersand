@@ -15,25 +15,25 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
-| element                                     | description                                                                                      | Context | Pattern |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ------- |
-| [<include\>](#the-include-statement)        | a statement to include another file in the context                                               | ✅      | ❌      |
-| <meta\>                                     | a statement to provide metadata to a script, such as author, company, etc.                       | ✅      | ❌      |
-| [<pattern\>](#the-pattern-statement)        | a block of code that represents rules on a single and specific topic, at the user's discretion   | ✅      | ❌      |
-| [<conceptDef\>](#the-concept-statement)     | a description of a concept, to document its meaning                                              | ✅      | ✅      |
-| [<representation\>](#the-concept-statement) | a statement that defines the atomic type of a concept                                            | ✅      | ✅      |
-| [<classify\>](#the-classify-statement)      | a statement that specifies generalization/specialization of concepts                             | ✅      | ✅      |
-| [<relation\>](#the-relation-statement)      | a declaration of a relation, stating the existence of a relation within the context              | ✅      | ✅      |
-| [<rule\>](#the-rule-statement)              | a statement that declares a rule                                                                 | ✅      | ✅      |
-| <roleRule\>                                 | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
-| [<enforce\>](#the-enforce-statement)        | a statement to declare an automatic enforcement rule                                             | ✅      | ✅      |
-| [<ident\>](#the-ident-statement)            | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
-| <viewDef\>                                  | a statement for presenting facts in a readable sentence                                          | ✅      | ✅      |
-| [<purpose\>](#the-purpose-statement)        | a statement to describe the purpose of a pattern or a pattern element                            | ✅      | ✅      |
-| [<population\>](#the-population-statement)  | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
-| [<interface or service\>](#Services)        | a unit of code that can be run independently and specifies interaction with a user or a computer | ✅      | ❌      |
-| [<purpose\>](#the-purpose-statement)        | a statement to describe the purpose of a context or a context element                            | ✅      | ✅      |
-| [<population\>](#the-population-statement)  | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
+| element                                             | description                                                                                      | Context | Pattern |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ------- |
+| [<include\>](#the-include-statement)                | a statement to include another file in the context                                               | ✅      | ❌      |
+| <meta\>                                             | a statement to provide metadata to a script, such as author, company, etc.                       | ✅      | ❌      |
+| [<pattern\>](#the-pattern-statement)                | a block of code that represents rules on a single and specific topic, at the user's discretion   | ✅      | ❌      |
+| [<conceptDef\>](#the-concept-statement)             | a description of a concept, to document its meaning                                              | ✅      | ✅      |
+| [<representation\>](#the-concept-statement)         | a statement that defines the atomic type of a concept                                            | ✅      | ✅      |
+| [<classify\>](#the-classify-statement)              | a statement that specifies generalization/specialization of concepts                             | ✅      | ✅      |
+| [<relation\>](#the-relation-statement)              | a declaration of a relation, stating the existence of a relation within the context              | ✅      | ✅      |
+| [<rule\>](#the-rule-statement)                      | a statement that declares a rule                                                                 | ✅      | ✅      |
+| <roleRule\>                                         | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
+| [<enforce\>](#the-enforce-statement)                | a statement to declare an automatic enforcement rule                                             | ✅      | ✅      |
+| [<ident\>](#the-ident-statement)                    | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
+| <viewDef\>                                          | a statement for presenting facts in a readable sentence                                          | ✅      | ✅      |
+| [<purpose\>](#the-purpose-statement)                | a statement to describe the purpose of a pattern or a pattern element                            | ✅      | ✅      |
+| [<population\>](#the-population-statement)          | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
+| [<interface or service\>](#the-interface-statement) | a unit of code that can be run independently and specifies interaction with a user or a computer | ✅      | ❌      |
+| [<purpose\>](#the-purpose-statement)                | a statement to describe the purpose of a context or a context element                            | ✅      | ✅      |
+| [<population\>](#the-population-statement)          | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
 
 ## The CONTEXT statement
 
