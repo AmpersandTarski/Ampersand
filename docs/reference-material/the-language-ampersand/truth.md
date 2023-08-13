@@ -21,4 +21,4 @@ Ampersand takes a pragmatic stance on truth: You model only things that make sen
 
 ## Truth in context
 
-Truth always has context. If we say "Jack was married to Jackie", this statement is true in a [context](context.md) where "Jack" refers to the 35th president of the United States, John F. Kennedy. However, this statement is not true in a context where there is no Jack. And in a context where marriage doesn't exist, this statement makes no sense.
+Truth always has context. If we say "Jack was married to Jackie", this statement is true in a [context](../syntax#the-context-statement) where "Jack" refers to the 35th president of the United States, John F. Kennedy. However, this statement is not true in a context where there is no Jack. And in a context where marriage doesn't exist, this statement makes no sense.
