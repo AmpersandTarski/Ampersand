@@ -56,14 +56,14 @@ Keywords in Ampersand are always written in CAPITALS.
   - [`IN`](language-support.md)
   - `ENGLISH`
   - `DUTCH`
-  - [`INCLUDE`](../syntax#INCLUDE-statement)
+  - [`INCLUDE`](../syntax#the-include-statement)
   - `META`
   - `THEMES`
-  - [`PATTERN`](../syntax#PATTERN-statement)
+  - [`PATTERN`](../syntax#the-pattern-statement)
   - `ENDPATTERN`
   - [`CONCEPT`](../syntax#the-concept-statement)
-- Keywords for [relations](../syntax#RELATION-statement)
-  - [`RELATION`](../syntax#RELATION-statement)
+- Keywords for [relations](../syntax#the-relation-statement)
+  - [`RELATION`](../syntax#the-relation-statement)
   - `PRAGMA`
   - `UNI`
   - `INJ`
@@ -75,9 +75,9 @@ Keywords in Ampersand are always written in CAPITALS.
   - `RFX`
   - `IRF`
   - `PROP`
-  - [`POPULATION`](../syntax#POPULATION-statement)
+  - [`POPULATION`](../syntax#the-population-statement)
   - `CONTAINS`
-- Keywords for [rules](../syntax#RULE-statement)
+- Keywords for [rules](../syntax#the-rule-statement)
   - `RULE`
   - `MESSAGE`
   - `VIOLATION`
@@ -90,8 +90,8 @@ Keywords in Ampersand are always written in CAPITALS.
   - `ROLE`
   - `MAINTAINS`
 - Keywords for documentation
-  - [`PURPOSE`](../syntax#PURPOSE-statement)
-  - [`MEANING`](../syntax#MEANING-statement)
+  - [`PURPOSE`](../syntax#the-purpose-statement)
+  - [`MEANING`](../syntax#the-meaning-sub-statement)
   - `REF`
   - `REST`
   - `HTML`
@@ -103,7 +103,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - `LINKTO`
   - `BOX`
 - Keywords for identities
-  - [`IDENT`](../syntax#IDENT-statement)
+  - [`IDENT`](../syntax#the-ident-statement)
 - Keywords for views
   - `VIEW`
   - `ENDVIEW`
@@ -111,7 +111,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - `TEMPLATE`
   - `HTML`
 - Keywords for generalisations:
-  - [`CLASSIFY`](../syntax#CLASSIFY-statement)
+  - [`CLASSIFY`](../syntax#the-classify-statement)
   - `ISA`
   - `IS`
 - Keywords for TType:
@@ -139,9 +139,4 @@ Keywords in Ampersand are always written in CAPITALS.
   - `SESSION`
 - Experimental keywords:
   - `SERVICE`
-  - `EDITS`
-- Deprecated keywords:
-  - `SPEC`
-  - `KEY`
-  - `PROCESS`
-  - `ENDPROCESS`
+  - `API`
