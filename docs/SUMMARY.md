@@ -48,7 +48,7 @@ We are currently refactoring our documentation. The navigation at the left is wo
   - [Syntactical Conventions](./reference-material/the-language-ampersand/how-to-read-syntax-statements)
     - [Language support](./reference-material/syntax#language-support)
   - [Patterns](./reference-material/syntax#patterns)
-  - [Language support](./reference-material/the-language-ampersand/language-support)
+  - [Language support](./reference-material/syntax#language-support)
   - [Current date](./reference-material/the-language-ampersand/current-date)
   - [The Preprocessor](./reference-material/the-language-ampersand/the-preprocessor)
   - [Design considerations](./reference-material/the-language-ampersand/design-considerations)

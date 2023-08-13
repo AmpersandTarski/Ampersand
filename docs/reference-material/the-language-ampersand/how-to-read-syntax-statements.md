@@ -51,9 +51,9 @@ Within an operator category, you must place brackets to disambiguate. E.g. `r/\s
 Keywords in Ampersand are always written in CAPITALS.
 
 - Keywords for the main structure of the code
-  - [`CONTEXT`](./)
+  - [`CONTEXT`](../syntax#the-context-statement)
   - `ENDCONTEXT`
-  - [`IN`](language-support.md)
+  - [`IN`](../syntax#language-support)
   - `ENGLISH`
   - `DUTCH`
   - [`INCLUDE`](../syntax#the-include-statement)
