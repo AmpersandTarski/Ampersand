@@ -5,7 +5,7 @@ id: syntax
 
 # Syntax and semantics of Ampersand
 
-This page defines the syntax and semantics of the [CONCEPT statement](#the-concept-statement), the [CONTEXT statement](#CONTEXT-statement), the [CLASSIFY statement](#CLASSIFY-statement), the [ENFORCE statement](#ENFORCE-statement), the [IDENT statement](#IDENT-statement), the [INCLUDE statement](#INCLUDE-statement), the [MEANING statement](#MEANING-statement), the [POPULATION statement](#POPULATION-statement), the [PATTERN statement](#PATTERN-statement), the [PURPOSE statement](#PURPOSE-statement), the [RELATION statement](#RELATION-statement), the [RULE statement](#RULE-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
+This page defines the syntax and semantics of the [CONCEPT statement](#the-concept-statement), the [CONTEXT statement](#the-context-statement), the [CLASSIFY statement](#the-classify-statement), the [ENFORCE statement](#the-enforce-statement), the [IDENT statement](#the-ident-statement), the [INCLUDE statement](#the-include-statement), the [MEANING statement](#the-meaning-sub-statement), the [POPULATION statement](#the-population-statement), the [PATTERN statement](#patterns), the [PURPOSE statement](#the-purpose-statement), the [RELATION statement](#the-relation-statement), the [RULE statement](#the-rule-statement). [Terms](./the-language-ampersand/terms.md) and [services](./the-language-ampersand/services.md) are defined in separate pages.
 
 ## The CONCEPT statement
 
@@ -50,7 +50,7 @@ CONCEPT Criterion "A criterion is a standard on which a judgment or decision may
 - The description will be printed in the functional specification, so please check that your definition is a complete sentence.
 - Concepts need not be defined. If you use a concept without a definition, Ampersand defines it for you \(regardless of whether you defined it or not\).
 
-## The CONTEXT statement {#CONTEXT-statement}
+## The CONTEXT statement
 
 ### Purpose
 
@@ -108,7 +108,7 @@ where can be one of
 
 \(For details on these formats, see [pandoc.org](http://pandoc.org/)\).
 
-## The CLASSIFY statement {#CLASSIFY-statement}
+## The CLASSIFY statement
 
 ### Purpose
 
@@ -155,7 +155,7 @@ E.g. `RELATION student[Person*Enrollment]`
 
 By adding and removing pairs to that relation, it continuously reflects which persons are a student.
 
-## The ENFORCE statement {#ENFORCE-statement}
+## The ENFORCE statement {#the-enforce-statement}
 
 ### Purpose
 
@@ -207,7 +207,7 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
 - Both the sources and the targets of the relation and the term must match. An error message is given otherwise.
 - The relation must be specified in order to use it here, as is the case with any relation used in a term.
 
-## The IDENT statement {#IDENT-statement}
+## The IDENT statement
 
 ### Purpose:
 
@@ -253,7 +253,7 @@ Note that
 
 - in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
 
-## The INCLUDE statement {#INCLUDE-statement}
+## The INCLUDE statement
 
 ### Purpose
 
@@ -292,10 +292,10 @@ Included files may contain `INCLUDE`statements themselves. The files mentioned t
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
 
-## The MEANING sub-statement {#MEANING-statement}
+## The MEANING sub-statement
 
 A meaning is optional and is characterized by the reserved word `MEANING`. It specifies the meaning of a concept, a relation, or a rule in natural language. The meaning is used to generate documentation and is printed in the functional specification. A `<meaning>` can be any text, starting with `{+` and ending with `+}` e.g.
-MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#RELATION-statement), and [RULE](#RULE-statement)-statements, to define the meaning of your concepts, relations, and rules.
+MEANING can be used with [CONCEPT](#the-concept-statement), [RELATION](#the-relation-statement), and [RULE](#the-rule-statement)-statements, to define the meaning of your concepts, relations, and rules.
 
 ```text
 MEANING
@@ -332,7 +332,7 @@ MEANING LATEX {+This is a {\em mathematical} formula $\frac{3}{x+7}$.+}
 
 Ampersand uses Pandoc to offer a choice for your markup. See [pandoc.org](http://pandoc.org/) for details.
 
-## Patterns {#PATTERN-statement}
+## Patterns
 
 ### Purpose
 
@@ -379,16 +379,16 @@ A pattern consists of any number of pattern elements in an arbitrary order. The 
 
 |                    |                                                                                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `<rule>`           | a statement that declares a [rule](#RULE-statement)                                                        |
+| `<rule>`           | a statement that declares a [rule](#the-rule-statement)                                                        |
 | `<classify>`       | a statement that specifies generalization/specialization of [concepts](#CLASSIFY-statement)                |
-| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#RELATION-statement) within the context |
+| `<relation>`       | a declaration of a relation, stating the existence of a [relation](#the-relation-statement) within the context |
 | `<conceptDef>`     | a description of a [concept](#the-concept-statement), to document its meaning                              |
 | `<representation>` | a statement that defines the atomic type of a [concept](#the-concept-statement)                            |
 | `<roleRule>`       | a statement that makes a role responsible for satisfying a rule                                            |
-| `<ident>`          | a rule that defines an [identity](#IDENT-statement) on a concept                                           |
+| `<ident>`          | a rule that defines an [identity](#the-ident-statement) on a concept                                           |
 | `<viewDef>`        | a statement for presenting facts in a readable sentence. It is part of a rule, to show violations.         |
-| `<purpose>`        | a statement to describe the [purpose](#PURPOSE-statement) of a pattern or a pattern element                |
-| `<population>`     | a statement that sums up the initial [population](#POPULATION-statement) of a relation                     |
+| `<purpose>`        | a statement to describe the [purpose](#the-purpose-statement) of a pattern or a pattern element                |
+| `<population>`     | a statement that sums up the initial [population](#the-population-statement) of a relation                     |
 
 ### Good practice
 
@@ -408,7 +408,7 @@ Ampersand advocates **one theme in one pattern**. Stakeholders confine their dis
 
 In the current implementation of Ampersand, patterns are defined within a context. (This will change in a future version.) If you want to reuse patterns, you have to cut-and-paste them from one context to another. In the future, there will be a better mechanism for reusing patterns in different contexts.
 
-## The POPULATION statement {#POPULATION-statement}
+## The POPULATION statement
 
 ### Purpose
 
@@ -570,7 +570,7 @@ RULE guardPrerequisites : attends;required |- pass
 ENDPATTERN
 ```
 
-## The PURPOSE statement {#PURPOSE-statement}
+## The PURPOSE statement
 
 ### Semantics
 
@@ -635,7 +635,7 @@ IN ENGLISH MARKDOWN
 +}
 ```
 
-## The RELATION statement {#RELATION-statement}
+## The RELATION statement
 
 ### Purpose
 
@@ -752,7 +752,7 @@ For a full discussion of meaning, we refer to [`this page`](#the-meaning-substat
 
 -
 
-## The RULE statement {#RULE-statement}
+## The RULE statement
 
 ### Purpose
 
