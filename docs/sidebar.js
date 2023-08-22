@@ -1,11 +1,4 @@
 module.exports = {
-    oldTableOfContent: [
-        {
-            type: 'doc',
-            id: 'ampersand/toc'
-        },
-
-    ],
     ampersandLandingpagesSidebar: [
         {
             label: 'Interested visitor',

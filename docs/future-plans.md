@@ -23,7 +23,7 @@ One purpose of Ampersand is to generate a web-application. Currently, the genera
 
 ![Current state of the Ampersand project](<./assets/state-of-ampersand-project-2019.png>)
 
-The architecture is explained in more detail in [this chapter](./architecture-of-an-ampersand-application/).
+The architecture is explained in more detail in [this chapter](./reference-material/architecture-of-an-ampersand-application).
 
 
 ## NoSQL storage

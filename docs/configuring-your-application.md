@@ -17,6 +17,6 @@ The file localSettings.php contains code and switches to be used in the client-s
 7. database credentials for the application to log into the database
 8. a switch loginEnabled to allow logging into the system
 9. a variable `allowedRolesForImporter` to specify roles with access to the [Excel importer](the-excel-importer.md).
-10. runtime parameters for the [Exec engine](architecture-of-an-ampersand-application/extensions#execengine).
+10. runtime parameters for the [Exec engine](./reference-material/architecture-of-an-ampersand-application#the-execengine).
 11. runtime parameters for extensions such as OAuth.
 

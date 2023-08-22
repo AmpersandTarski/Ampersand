@@ -11,7 +11,7 @@ This page will help you build a working prototype of your information system and
 ## Get started
 
 - Do the [tutorial](../tutorial-rap4), to get an idea of an Ampersand application
-- Understand the [architecture of an Ampersand application](../architecture-of-an-ampersand-application/README.md), so you can build, deploy, and maintain your Ampersand application better.
+- Understand the [architecture of an Ampersand application](../reference-material/architecture-of-an-ampersand-application), so you can build, deploy, and maintain your Ampersand application better.
 - Learn about the [syntax of Ampersand](../reference-material/syntax-of-ampersand), to write correct Ampersand code.
 - Learn about [relation algebra](https://en.wikipedia.org/wiki/Relational_algebra) on Wikipedia, to understand more about this fascinating field of mathematics.
 - Learn about using the [Ampersand compiler](../the-command-line-tool.md) from your command line interface (CLI), if you need to use the compiler as a stand-alone application.
