@@ -1,10 +1,18 @@
-# The ExecEngine
+# Extensions
+
+The prototype framework has some built-in extensions. Some are experimental, others are pretty stable. This chapter describes them.
+
+The extensions are described from a user perspective. You may expect enough information to use the extension you want. If not, please notify the authors.
+
+The extensions are _NOT_ described from an implementors perspective. If you wish to change the extensions, you will need more information than is contained in this text. Please contact the authors for that purpose.
+
+## The ExecEngine
 
 This chapter is meant for Ampersand users that want to build prototypes that automatically fix violations for specific rules. The idea behind this is quite simple: all it takes is another way of specifying violation texts. In practice, however, it takes some effort to learn how to do this correctly. Therefore, we only encourage you to do this if you are sufficiently motivated to spend this effort, i.e. if you are convinced it is worth your while.
 
 Before studying this chapter, make sure you know how to predict violations. You need to understand how Ampersand computes violations, given a certain population.
 
-## Automated rules
+### Automated rules
 
 Did you ever wonder how you can make your computer prevent rules from being violated? For that purpose, you must specify what your prototype will do the moment it signals a violation. This chapter tells you how.
 
@@ -13,8 +21,6 @@ In essence, an Ampersand prototype is a database application that helps its user
 This chapter is about the third category: automated rules. The idea is to prevent violations by acting in time, to satisfy the violated rule. This is nice for your users, who have no concern with those violations.
 
 This chapter introduces automated rules by example. We will first create a rule, which a user must keep satisfied. We will then automate that process by adding instructions for the ExecEngine.
-
-### Learn by experimenting
 
 Most of the examples are taken from the demo script [Project Administration Example](https://github.com/AmpersandTarski/ampersand-models/tree/master/Examples/ProjectAdministration). You can compile and run this script, and reproduce several of the examples that follow.
 
@@ -68,7 +74,7 @@ Note that the violations of rule `r1` are precisely the pairs the ExecEngine mus
 * The examples use `SRC I` or `TGT I` to produce atoms that are to be inserted or deleted. However, `I` may be any term whose source concept is the same as that of the preceeding `SRC` or `TGT`. 
 * The `SRC <term>` and `TGT <term>` is a set of pairs \(a,b\), where a is the source atom or target atom of the violation and b is a set of atoms that is the result of `<term>`. In the examples given, this set of atoms has cardinality 1 \(which is most often the case\). However, if it is empty, that is considered regular behaviour, and this will hence not result in an error. Also, if it has a cardinality &gt; 1, then `InsPair` will insert them all whereas `DelPair` will produce an error. 
 
-## Example \(`InsAtom`\) and \(`{EX}`\)
+### Example \(`InsAtom`\) and \(`{EX}`\)
 
 Consider the following example:
 
@@ -125,7 +131,7 @@ which is passed to the ExecEngine, which splits the text in three statements
 
 and subsequently executes them. Executing the `InsAtom` statement creates a new atom in concept `Assignment` \(let's say it is `Assignment_3495812395`. The keywords `_NEW` in the InsPair statements are then replaced by `Assignment_3495812395`, so that `("Assignment_3495812395", "Zeus-III")` is inserted into relation `project[Assignment*Project]`, and `("Assignment_3495812395", "Rhea")` is inserted into relation `assignee[Assignment*Person]`.
 
-## Example \(`DelAtom`\)
+### Example \(`DelAtom`\)
 
 In our example, whenever a project participant is discharged from his task, the corresponding Assignment needs to be deleted. We can do this by means of an automated rule:
 
@@ -139,7 +145,7 @@ The function 'DelAtom' is predefined, and takes two arguments: 1. the concept fr
 
 Note that when an atom is deleted, also every pair \(in any relation\) is deleted if either its source atom or target atom is the deleted atom.
 
-## Example \(`_;`\)
+### Example \(`_;`\)
 
 When you try to create or delete pairs with atoms that contain texts, you may find that some texts contain the semi-colon. When such a text is used in a violation statement, this will be interpreted as an argument separator, causing all sorts of unexpected results. This can be prevented by using `_;` rather than `;` as an argument separator. However, the ExecEngine must be made aware that this alternative argument separator is used. This is done by mentioning it immediately at the beginning of a function call, as in the below example:
 
@@ -149,7 +155,7 @@ VIOLATION (TXT "{EX}_;InsPair_;r1_;A_;", SRC I, TXT "_;B_;", TGT I)
 
 Of course, if the SRC or TGT atom is a text that contains the characters `_;`, the problem still remains...
 
-## Example \(`TransitiveClosure`\)
+### Example \(`TransitiveClosure`\)
 
 Consider the `r :: A * A [IRF,ASY]`. In relation algebra, terms such as `r+` or `r*` are allowed, designating the transitive closure of `r`. The `+` and `*` operators are currently not supported in Ampersand.
 
@@ -189,7 +195,7 @@ What this does is the following. Any time that `r` is being \(de\)populated, the
 
 Note that if you want to use \(the equivalent of\) `r*` somewhere in an term, the most practical way is to use the term `(I \/ rPlus)` at that spot.
 
-### HELP! I got errors!
+#### HELP! I got errors!
 
 As an Ampersand user, you are used to getting error messages from the compiler. Yet, errors in rules for the Exec-engine are not signalled by the compiler. Instead, you get runtime error message that some inexperienced users find hard to work with, as it requires some knowledge of the backgrounds.
 
@@ -200,7 +206,7 @@ For the time that researchers are working on this problem, you will have to live
 * Keep automated rules simple.
 * Test thoroughly.
 
-### Ways to run the ExecEngine \(one or more times\)
+#### Ways to run the ExecEngine \(one or more times\)
 
 The ExecEngine currently is a simple one. Whenever it executes, it evaluates the automated rules one after another. Whenever an automated rule produces violations, the associated violation text is executed for every such violation.
 
@@ -238,4 +244,3 @@ Here is an example of how `RerunExecEngine` can be used to create a transitive c
            ,TXT "{EX} RerunExecEngine;DelPair on rStar"
            )
 ```
-

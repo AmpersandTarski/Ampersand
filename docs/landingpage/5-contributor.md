@@ -13,5 +13,5 @@ Here are some links that are useful for contributors.
 
 # The tools we use
 
-- [Best Practices](../reference-material/the-language-ampersand/best-practices) describe the do's and don'ts that every contributor should know before committing a contribution.
+- [Best Practices](../reference-material/best-practices) describe the do's and don'ts that every contributor should know before committing a contribution.
 - [Architecture of an Ampersand Application](../architecture-of-an-ampersand-application/README.md) describes what kind of information system Ampersand produces.

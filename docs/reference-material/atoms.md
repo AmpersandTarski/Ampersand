@@ -49,14 +49,14 @@ The distinction between closed and open types is relevant in the following situa
 
 - The complement of a relation, `-r[A*B]`, is defined only if both `A` and `B` are closed.
 - The full relation, `V[A*B]` is defined only if both `A` and `B` are closed.
-- A service `INTERFACE X : e` requires that the target of `e` is closed.
+- An interface `INTERFACE X : e` requires that the target of `e` is closed.
 
 Violations are currently signaled at runtime, but future versions of Ampersand will signal these violations at compile time.
 
 ## Miscellaneous
 
 - Every atom whose atomic type is marked "yes" in the column "eq" can be compared for equality. For all other atoms, equality is not defined.
-- The following Ampersand statement declares the atomic type of a [concept](../syntax-of-ampersand#the-concept-statement):
+- The following Ampersand statement declares the atomic type of a [concept](./syntax-of-ampersand#the-concept-statement):
 
   ```text
   REPRESENT <Concepts> TYPE <Atomic type>

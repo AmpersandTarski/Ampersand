@@ -104,7 +104,7 @@ We present the semantics of terms in 5 different (but equivalent) ways: one expl
 
 ##### Relations
 
-When a [relation](../syntax-of-ampersand#the-relation-statement) is used in a term, it stands for all pairs it contains at the moment it is evaluated. Those pairs (also referred to as the _**contents**_ or _**population**_ of the relation) can change over time as users add or delete pairs from it.
+When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a term, it stands for all pairs it contains at the moment it is evaluated. Those pairs (also referred to as the _**contents**_ or _**population**_ of the relation) can change over time as users add or delete pairs from it.
 
 When a relation is used in a term, we can just use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -199,7 +199,7 @@ If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ h
 
 ##### Relations
 
-When a [relation](../syntax-of-ampersand#the-relation-statement) is used in a term, it stands for a set of facts that are assumed true on the current time in the current context. Those facts \(also referred to as the contents or the population of the relation\) can change over time as users add or delete facts from it.
+When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a term, it stands for a set of facts that are assumed true on the current time in the current context. Those facts \(also referred to as the contents or the population of the relation\) can change over time as users add or delete facts from it.
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -311,7 +311,7 @@ There is a pattern to this. A computer can generate a literal translation from t
 
 ##### Relations
 
-When a [relation](../syntax-of-ampersand#the-relation-statement) is used in a term, it stands for the set of pairs it contains at the moment it is evaluated. That set \(also referred to as the contents of the relation\) can change over time as users add or delete pairs from it.
+When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a term, it stands for the set of pairs it contains at the moment it is evaluated. That set \(also referred to as the contents of the relation\) can change over time as users add or delete pairs from it.
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
@@ -463,7 +463,7 @@ For a visual presentation of the semantics of terms, we use [Venn-diagrams](http
 
 Consider two relations: `authorized[Account*Person]` and `beneficiary[Account*Person]`. The first relation tells which persons are authorized to which accounts. The diagram shows this as red dashed lines. The second relation tells which persons stand to benefit from which accounts.. It is depicted by dotted blue lines in the diagram.
 
-![](<../../assets/Untitled Diagram (2).png>)
+![](<../assets/untitled-diagram-2.png>)
 
 This diagram gives an example population of the relations `authorized[Account*Person]` and `beneficiary[Account*Person]`. Bob is authorized for account DE9382991 and Ann is authorized for account RS746620. Carl stands to benefit from account NL19RABO03992844 and Ann stands to benefit from account RS746620. Formally, we say:
 
@@ -494,7 +494,7 @@ A different way to state the same is:
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](../../assets/venntrips.svg)
+![Venn-diagram for 'traveler' and 'dest'](../assets/venntrips.svg)
 
 Each pair (fact) in the diagram can be written as a fact in two ways, using the converse operator:
 
@@ -517,7 +517,7 @@ From the diagram, we assume that each pair represents a true statement (i.e. a f
 
 Consider two relations: `traveler[Trip*Person]` and `dest[Trip*Destination]`. The first relation tells which persons have traveled on which trip. The diagram shows this as red dashed lines. The second relation links trips to destinations. It is depicted by dotted blue lines in the diagram.
 
-![Venn-diagram for 'traveler' and 'dest'](../../assets/venntrips.svg)
+![Venn-diagram for 'traveler' and 'dest'](../assets/venntrips.svg)
 
 From this diagram, we can tell which statements are true (i.e. facts). The statements are given both formally and in natural language. The elaborate version is a literate translation of the [semantics in logic](#residual-operators-in-logic). The ordinary version tells the same in a more human sounding manner.
 

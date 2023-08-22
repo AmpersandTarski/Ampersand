@@ -8,9 +8,9 @@ description: >-
 
 Let us introduce some language to talk about truth. Consider a fact "Joe Smith lives in New York." from an Ampersand perspective. In Ampersand, we can analyse this as follows:
 
-- Let `Person` and `City` be [_**concepts**_](../syntax-of-ampersand#the-concept-statement)_\*\*\*\*_
+- Let `Person` and `City` be [_**concepts**_](./syntax-of-ampersand#the-concept-statement)_\*\*\*\*_
 - Let `"Joe Smith"` be an [_**atom**_](atoms.md) of the concept `Person` and `"New York"` an atom of the concept `City`.
-- Let us use the [_**relation**_](../syntax-of-ampersand#the-relation-statement) `livesIn[Person*City]` to contain our fact.
+- Let us use the [_**relation**_](./syntax-of-ampersand#the-relation-statement) `livesIn[Person*City]` to contain our fact.
 - `livesIn` is the _**relation name**_ and `[Person*City]` is the _**signature**_ of this relation.
 - `Person` is the _**source**_ of this relation and `City` is the _**target**_.
 - If the pair `("Joe Smith","New York")` is an element of this relation, Ampersand considers the statement `"Joe Smith" livesIn "New York"` to be true. So all pairs in a relation represent _**facts**_, i.e. true statements.
@@ -21,4 +21,4 @@ Ampersand takes a pragmatic stance on truth: You model only things that make sen
 
 ## Truth in context
 
-Truth always has context. If we say "Jack was married to Jackie", this statement is true in a [context](../syntax-of-ampersand#the-context-statement) where "Jack" refers to the 35th president of the United States, John F. Kennedy. However, this statement is not true in a context where there is no Jack. And in a context where marriage doesn't exist, this statement makes no sense.
+Truth always has context. If we say "Jack was married to Jackie", this statement is true in a [context](./syntax-of-ampersand#the-context-statement) where "Jack" refers to the 35th president of the United States, John F. Kennedy. However, this statement is not true in a context where there is no Jack. And in a context where marriage doesn't exist, this statement makes no sense.

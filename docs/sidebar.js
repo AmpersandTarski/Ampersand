@@ -45,12 +45,12 @@ module.exports = {
         {
             label: 'Dictionary',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/README'
+            id: 'ampersand/reference-material/dictionary'
         },
         {
             label: 'Meta syntax',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements'
+            id: 'ampersand/reference-material/how-to-read-syntax-statements'
         },
         {
             label: 'Syntax of ADL',
@@ -65,28 +65,28 @@ module.exports = {
         {
             label: 'Best practices',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/best-practices'
+            id: 'ampersand/reference-material/best-practices'
         },
         {
             label: 'Preprocessor',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/the-preprocessor'
+            id: 'ampersand/reference-material/the-preprocessor'
         },
         {
             label: 'Current date',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/current-date'
+            id: 'ampersand/reference-material/current-date'
         },
         {
             label: 'Design considerations',
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/design-considerations'
+            id: 'ampersand/reference-material/design-considerations'
         },
     ],
     ampersandTheorySidebar: [
         {
             type: 'doc',
-            id: 'ampersand/reference-material/the-language-ampersand/truth'
+            id: 'ampersand/reference-material/truth'
         },
         {
             type: 'doc',
@@ -131,11 +131,6 @@ module.exports = {
                 type: 'category',
                 items: [
                     'ampersand/conceptual/why-declarative',
-                    'ampersand/architecture-of-an-ampersand-application/README',
-                    'ampersand/architecture-of-an-ampersand-application/backend-framework',
-                    'ampersand/architecture-of-an-ampersand-application/extensions/README',
-                    'ampersand/architecture-of-an-ampersand-application/extensions/the-execengine',
-                    'ampersand/architecture-of-an-ampersand-application/hooks',
                     'ampersand/docker/README',
                     'ampersand/docker/compiler',
                     'ampersand/docker/modelling-environment',

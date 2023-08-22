@@ -42,7 +42,7 @@ How does Ampersand encrypt data? _Answer_: It doesn't. All data is stored as-is 
 
 ### Access control for specific purposes
 
-How does an Ampersand application control access for purposes that are known only to the Ampersand application designer? _Answer_: The designer can use the ROLE mechanism to provide different services to different roles. Also, the designer can model these purposes in the Ampersand-script and take it from there. In the latter case, every possible access control scheme can be built.
+How does an Ampersand application control access for purposes that are known only to the Ampersand application designer? _Answer_: The designer can use the ROLE mechanism to provide different interfaces to different roles. Also, the designer can model these purposes in the Ampersand-script and take it from there. In the latter case, every possible access control scheme can be built.
 
 ### Injection
 

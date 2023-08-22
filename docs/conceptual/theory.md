@@ -14,14 +14,14 @@ Information systems are typically used by actors (both users and
 computers) who are distributed and work with data all the time. As a
 consequence, the data in a system changes continually. In practice,
 actors "talk to" the system through an ingress mechanism, which connects
-each user to the right service(s). The ingress function is provided by
+each user to the right interface(s). The ingress function is provided by
 the deployment platform, so it is beyond the scope of this paper. Also,
-every service runs independent of other services, meaning that each
-service can be stopped, (re)started and substituted without disrupting
-the other services.
+every interface runs independent of other interfaces, meaning that each
+interface can be stopped, (re)started and substituted without disrupting
+the other interfaces.
 
 Every system contains a dataset, which represents the state of the
-system. Every service produces and consumes events that may change the
+system. Every interface produces and consumes events that may change the
 state of the system. This state is represented in a persistent store,
 aka the database [^3]. Events that the system detects may cause the
 state to change.
@@ -389,9 +389,9 @@ The following table compares the language used in the world of information syste
 | rules | script | program | theory |
 | data | population | state | model |
 | formal statement | term | condition | term |
-| generator | generator | compiler |
-| store | database | database |
-| service | service | service |
+| generator | generator | compiler | |
+| store | database | database | |
+| interface | interface | interface | |
 
 The following theoretical topics are relevant for Ampersand.
 

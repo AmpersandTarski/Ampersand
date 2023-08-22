@@ -227,7 +227,7 @@ This script contains a `RULE` called `orderInAssortment`. By editing fields you 
 ### What have you learned?
 
 1. By playing with the prototype, you have learned the meaning of `RULE orderInAssortment`. 
-2. You have learned how to include a purpose and a meaning with a rule. Remember that you can add a purpose not just for any rule, but for relations, concepts, services and contexts as well.
+2. You have learned how to include a purpose and a meaning with a rule. Remember that you can add a purpose not just for any rule, but for relations, concepts, interfaces and contexts as well.
 
 
 ## VOG \(in Dutch\)

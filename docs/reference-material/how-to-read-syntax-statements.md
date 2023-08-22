@@ -21,9 +21,9 @@ Sometimes, in describing the syntax, we use EBNF-like notation with the followin
 Ampersand has _reserved words_, such as `RELATION`, `CONTEXT`, `CONTAINS`. All reserved words are written in capital letters. They are introduced on the fly. You will find an exhaustive list of reserved words [here](## List of reserved words).
 
 Untyped atoms are written between double quotes, e.g. `"Peter"` or `"KD-686-D"`. If you want to introduce a double quote inside an atom, escape it with a backslash, e.g. `"the symbol \" is called double quote"`.  
-Numeric atoms always start with a digit, e.g. `4711` or `75.88E3`. The boolean atoms are `TRUE` and `FALSE`. Dates and timestamps follow the Excel-syntax, e.g. ??? The atom `_SESSION` indicates the current user session, and is an instance of concept `SESSION`. It is used in services.
+Numeric atoms always start with a digit, e.g. `4711` or `75.88E3`. The boolean atoms are `TRUE` and `FALSE`. Dates and timestamps follow the Excel-syntax, e.g. ??? The atom `_SESSION` indicates the current user session, and is an instance of concept `SESSION`. It is used in interfaces.
 
-Brackets must always match. For terms, we use round brackets `(` and `)`. For populations and services we use square brackets `[` and `]`.
+Brackets must always match. For terms, we use round brackets `(` and `)`. For populations and interfaces we use square brackets `[` and `]`.
 
 Constructs that contain Ampersand statements are contexts and patterns. They always come in pairs: `PATTERN` and `ENDPATTERN`, and `CONTEXT` and `ENDCONTEXT`.
 
@@ -51,17 +51,17 @@ Within an operator category, you must place brackets to disambiguate. E.g. `r/\s
 Keywords in Ampersand are always written in CAPITALS.
 
 - Keywords for the main structure of the code
-  - [`CONTEXT`, `ENDCONTEXT`](../syntax-of-ampersand#the-context-statement)
-  - [`IN`, `ENGLISH`, `DUTCH`](../syntax-of-ampersand#language-support)
-  - [`INCLUDE`](../syntax-of-ampersand#the-include-statement)
-  - [`PATTERN`, `ENDPATTERN`](../syntax-of-ampersand#the-pattern-statement)
-  - [`CONCEPT`](../syntax-of-ampersand#the-concept-statement)
-- Keywords for [relations](../syntax-of-ampersand#the-relation-statement)
-  - [`RELATION`](../syntax-of-ampersand#the-relation-statement)
+  - [`CONTEXT`, `ENDCONTEXT`](./syntax-of-ampersand#the-context-statement)
+  - [`IN`, `ENGLISH`, `DUTCH`](./syntax-of-ampersand#language-support)
+  - [`INCLUDE`](./syntax-of-ampersand#the-include-statement)
+  - [`PATTERN`, `ENDPATTERN`](./syntax-of-ampersand#the-pattern-statement)
+  - [`CONCEPT`](./syntax-of-ampersand#the-concept-statement)
+- Keywords for [relations](./syntax-of-ampersand#the-relation-statement)
+  - [`RELATION`](./syntax-of-ampersand#the-relation-statement)
   - `PRAGMA`
-  - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`](../../modeling/properties#properties)
-  - [`POPULATION`, `CONTAINS`](../syntax-of-ampersand#the-population-statement)
-- Keywords for [rules](../syntax-of-ampersand#the-rule-statement)
+  - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`](../modeling/properties#properties)
+  - [`POPULATION`, `CONTAINS`](./syntax-of-ampersand#the-population-statement)
+- Keywords for [rules](./syntax-of-ampersand#the-rule-statement)
   - `RULE`
   - `MESSAGE`
   - `VIOLATION`
@@ -74,21 +74,21 @@ Keywords in Ampersand are always written in CAPITALS.
   - `ROLE`
   - `MAINTAINS`
 - Keywords for documentation
-  - [`PURPOSE`](../syntax-of-ampersand#the-purpose-statement)
-  - [`MEANING`](../syntax-of-ampersand#the-meaning-sub-statement)
+  - [`PURPOSE`](./syntax-of-ampersand#the-purpose-statement)
+  - [`MEANING`](./syntax-of-ampersand#the-meaning-sub-statement)
   - `META`
   - `REF`
   - `REST`
   - `HTML`
   - `LATEX`
   - `MARKDOWN`
-- Keywords for [services](./services.md)
+- Keywords for [interfaces](./interfaces.md)
   - `INTERFACE`
   - `FOR`
   - `LINKTO`
   - `BOX`
 - Keywords for identities
-  - [`IDENT`](../syntax-of-ampersand#the-ident-statement)
+  - [`IDENT`](./syntax-of-ampersand#the-ident-statement)
 - Keywords for views
   - `VIEW`
   - `ENDVIEW`
@@ -96,7 +96,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - `TEMPLATE`
   - `HTML`
 - Keywords for generalisations:
-  - [`CLASSIFY`](../syntax-of-ampersand#the-classify-statement)
+  - [`CLASSIFY`](./syntax-of-ampersand#the-classify-statement)
   - `ISA`
   - `IS`
 - Keywords for TType:

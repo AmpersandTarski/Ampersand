@@ -6,7 +6,7 @@ The design considerations of Ampersand are treated as principles, not as laws. I
 
 An Ampersand context presents itself as a universe with constraints. This was chosen to allow for incremental development. Adding a constraint changes nothing to the semantics of other constraints.
 
-One example of this is found in the CRUD annotations: A service provides all possible CRUD-functions, which are constrained by CRUD annotations.
+One example of this is found in the CRUD annotations: An interface provides all possible CRUD-functions, which are constrained by CRUD annotations.
 
 ## No obligations
 
