@@ -1,7 +1,3 @@
----
-title: Frequently Asked Questions
-id: frequently-asked-questions
----
 # Frequently Asked Questions
 
 This page tries to help you by anticipating on the questions you might have.

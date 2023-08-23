@@ -26,13 +26,6 @@ module.exports = {
             id: 'ampersand/landingpage/contributor'
         }
     ],
-    ampersandGuideSidebar: [
-        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
-        {
-            type: 'doc',
-            id: 'ampersand/reference-material/frequently-asked-questions'
-        },
-    ],
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
@@ -51,14 +44,9 @@ module.exports = {
             id: 'ampersand/reference-material/syntax-of-ampersand'
         },
         {
-            label: 'Automated Rules',
+            label: 'Architecture of generated systems',
             type: 'doc',
-            id: 'ampersand/conceptual/automated-rules'
-        },
-        {
-            label: 'Best practices',
-            type: 'doc',
-            id: 'ampersand/reference-material/best-practices'
+            id: 'ampersand/reference-material/architecture-of-an-ampersand-application'
         },
         {
             label: 'Preprocessor',
@@ -66,17 +54,55 @@ module.exports = {
             id: 'ampersand/reference-material/the-preprocessor'
         },
         {
-            label: 'Current date',
+            label: 'Importing data from Excel',
             type: 'doc',
-            id: 'ampersand/reference-material/current-date'
+            id: 'ampersand/the-excel-importer'
         },
+        {
+            label: 'Command line functions',
+            type: 'doc',
+            id: 'ampersand/the-command-line-tool'
+        },
+    ],
+    ampersandGuideSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
+        {
+            label: 'Frequently asked questions',
+            type: 'doc',
+            id: 'ampersand/guides/frequently-asked-questions'
+        },
+        {
+            label: 'Installing Ampersand',
+            type: 'doc',
+            id: 'ampersand/guides/installing-ampersand'
+        },
+        {
+            label: 'Deploying your prototype',
+            type: 'doc',
+            id: 'ampersand/guides/deploying-your-prototype'
+        },
+        {
+            label: 'Manual installation',
+            type: 'doc',
+            id: 'ampersand/guides/best-practices'
+        },
+        {
+            label: 'Best practices',
+            type: 'doc',
+            id: 'ampersand/guides/best-practices'
+        },
+        {
+            label: 'Configuring your application',
+            type: 'doc',
+            id: 'ampersand/reference-material/configuring-your-application'
+        },
+    ],
+    ampersandTheorySidebar: [
         {
             label: 'Design considerations',
             type: 'doc',
             id: 'ampersand/reference-material/design-considerations'
         },
-    ],
-    ampersandTheorySidebar: [
         {
             type: 'doc',
             id: 'ampersand/reference-material/truth'
@@ -97,15 +123,6 @@ module.exports = {
             type: 'doc',
             id: 'ampersand/future-plans'
         },
-
-    ],
-    ampersandGuideElems: [
-        'ampersand/configuring-your-application',
-        'ampersand/the-excel-importer',
-        'ampersand/the-command-line-tool',
-    ],
-    ampersandReferenceElems: [
-        'ampersand/empty'
 
     ],
     ampersandMainSidebar: [
@@ -130,9 +147,6 @@ module.exports = {
                     'ampersand/docker/prototype-database',
                     'ampersand/docker/prototype-multi-stage-build',
                     'ampersand/exercises',
-                    'ampersand/installing-ampersand/README',
-                    'ampersand/installing-ampersand/deploying-your-prototype',
-                    'ampersand/installing-ampersand/installing-the-tools-manually',
                     'ampersand/modeling/README',
                     'ampersand/modeling/architecture',
                     'ampersand/modeling/conceptual-modeling',

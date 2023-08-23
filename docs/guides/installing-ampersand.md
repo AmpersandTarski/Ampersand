@@ -1,11 +1,38 @@
----
-description: >-
-  Please make sure you have a good reason to do this manually. Using the
-  automated procedures is much easier...
----
+# Installing Ampersand
 
-# Installing the tools manually
+Ampersand is great for rapid prototyping. We advise you to use Ampersand on the web because it works without installing anything. But sometimes you want to run your prototypes on your own computer\(s\). For different purposes there are different ways of doing that. This chapter shows you how.
 
+## How to edit Ampersand scripts
+
+You can use any text editor to create Ampersand scripts.
+However, for those that use the [Visual Studio Code \(vscode\)](https://code.visualstudio.com/) editor, there is language support.
+Search for the vscode extension "Ampersand \(ADL\) language support" and install it, and then choose the coloring theme called "Ampersand".
+
+## How to use Ampersand on your own laptop
+
+Using Ampersand offline does not require you to install Ampersand.
+Ampersand runs in Docker so you can use it independently and on almost any platform. [Here is an explanation of how to do this \(don't mind the title of that page\)](deploying-your-prototype.md). It can be summarized as follows:
+
+1. Make sure Docker runs on your laptop or install it if it doesn't.
+2. Copy the files `Dockerfile` and `docker-compose.yml` and adapt them for your own Ampersand prototype. [Read this](deploying-your-prototype.md) if you don't know where to find them.
+3. Run your `.adl`-file on the Docker platform.
+
+### How to compile Ampersand programs manually
+
+To run an Ampersand program, DIY-engineers will need a webserver that can run javascript, PHP7, the PHP composer, and a \(My\)SQL or MariaDB database server. For generating functional specifications, you might use LaTeX, Markdown, Word .docx and other formats. This chapter gives an overview of the Ampersand production line for whoever needs to circumvent the automated process.
+
+### How to install your own copy of RAP4 on a server of your own choosing
+
+RAP4 is an Ampersand repository, in which multiple users can store and use their Ampersand scripts. Consult [the tools we use at Ampersand](https://ampersandtarski.gitbooks.io/the-tools-we-use-for-ampersand/content/installation_of_rap.html). This is work in progress.
+
+### How to change Ampersand itself
+
+If you want to change the Ampersand compiler for your own purposes, you need access to the source files, and a Haskell development environment. This section still has to be written. It will describe the software process for developing Ampersand itself.
+
+The remainder of this chapter explains in detail all the things you need to get you up and running with Ampersand. The instructions presume that you are familiar with your own computers.
+
+
+## Installing the Ampersand compiler manually
 1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it. **Make sure** _**dot**_ **and** _**neato**_ **are in your path**  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
 2. There are several formats that you can generate a functional specification document in. Currently, the best results can be obtained in [docx ](https://www.lifewire.com/docx-file-2620750)or [LaTeX (PDF)](https://en.wikipedia.org/wiki/LaTeX). Depending on your taste, you need appropriate software:
    1. For docx, you could of course use Microsoft Word, but there are [other options](https://www.maketecheasier.com/open-docx-file-without-microsoft-office/) as well.
@@ -13,11 +40,11 @@ description: >-
 
 Ampersand models are written as source code files. Hence, you need a text editor in which you can do so. We recomend [Visual Studio Code](https://code.visualstudio.com/docs/setup/setup-overview), which has [a nice extention for Ampersand scripts](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand). You could however use any text editor that you are familiar with, as long as you make sure it saves files as [UTF8 ](https://en.wikipedia.org/wiki/UTF-8)format.
 
-## Installing an Ampersand compiler
+### Installing an Ampersand compiler
 
 The following instructions presume that you are familiar with the basics of your own computer.
 
-### The easy way: Use a prebuilt executable file
+#### The easy way: Use a prebuilt executable file
 
 The easiest way is by use of available executables. We release frequently. Have a look at [our latest release](https://github.com/AmpersandTarski/Ampersand/releases). For Windows users, there is a file called ampersand.exe in the release. Put it on your disk on a location of your choice, for example /Ampersand/bin/. Make sure [your `$PATH`(or: `PATH`) environment variable contains this location](https://www.google.com/search?q=setting+your+path+variable), so the command "ampersand" is known on the command line. That's all. Note that double-clicking`ampersand.exe`will not work, because it is a command line tool.
 
@@ -25,7 +52,7 @@ Here is a way to test whether or not you have succeeded: open a command line too
 
 Now you can compile and check your Ampersand scripts. However, you are likely to want to do more with such scripts. Currently it is possible to generate functional specifications and/or functional prototypes from such scrips. You will need to install some additional software in order to do that.
 
-### Additional software for generating functional SPECIFICATIONS:
+#### Additional software for generating functional SPECIFICATIONS:
 
 If you want to generate functional specifications from ampersand scripts with pictures, you need the following additional software:
 
@@ -36,7 +63,7 @@ If you want to generate functional specifications from ampersand scripts in LaTe
 1. On Windows, we recommend [**MiKTeX**](http://miktex.org/).
 2. On Linux and MacOS, we recommend [**texlive**](https://www.tug.org/texlive/).
 
-### Additional software for generating functional PROTOTYPES
+#### Additional software for generating functional PROTOTYPES
 
 If you want to generate functional prototypes from ampersand scripts, you need the following additional software (if you don't, don't bother installing them):
 
@@ -57,7 +84,7 @@ If you want to generate functional prototypes from ampersand scripts, you need t
    * The webserver must run on `localhost` . By default you will use port 80, but you could change that if required. See the documentation of you webserver.
 2. You will also need to install [**Composer**](https://getcomposer.org/download/), because at runtime, the prototype has dependencies of libraries . Composer will take care of that.
 
-### The less easy way: Installing from Source
+#### The less easy way: Installing from Source
 
 If there is no executable for your operating system, or if you prefer to build an Ampersand compiler yourself, follow these steps:
 
@@ -85,7 +112,7 @@ Testing your installation
 
     The version number is important to specify, whenever you have a question of like to report an issue. It **really** helps us when you add the version number, **including everything between the brackets** when you contact us.
 
-## Test to see if you can build your first prototype
+### Test to see if you can build your first prototype
 
 Ampersand allows you to generate a working prototype of your ampersand model. An Ampersand prototype is a website that requires a webserver to run on and a (My)SQL database server. This chapter describes the prerequisites for getting such prototypes up, and running.
 
@@ -132,7 +159,7 @@ Then, you can generate the prototype website for the script in file `myModel.adl
  ampersand --proto myModel.adl
 ```
 
-This creates a directory `myModel.proto` (in the current directory), that contains the prototype website. Obviously, you will need a web server and a database server to run the prototype. This is discussed at [Installing Ampersand](installing-the-tools-manually.md).
+This creates a directory `myModel.proto` (in the current directory), that contains the prototype website. Obviously, you will need a web server and a database server to run the prototype.
 
 Usually, you would have some demands regarding particulars of the generation. For example, you may want to generate the website in a specific directory, specify a particular CSS file for this website, etc. For the complete syntax of the Ampersand executable, see the chapter about the [command line interface](../the-command-line-tool/)\*\*\*\*
 
@@ -140,5 +167,3 @@ Usually, you would have some demands regarding particulars of the generation. Fo
 1\. Do **not** use Hackage to get ampersand. It does not contain all non-haskell files. (See [issue #213](https://github.com/AmpersandTarski/ampersand/issues/213))\
 2\. `stack` memory usage may require other applications to be terminated (e.g. on 8GB Windows systems). If `stack` terminates prematurely, re-invoking the command will pick-up where it stopped.\
 3\. `stack` may terminate on various errors [(See this issue)](https://github.com/commercialhaskell/stack/issues/2617), e.g. that it doesn't have permission to access or rename files. Again, if `stack` terminates prematurely, re-invoking the command will pick-up where it stopped. Users have mentioned having to restart `stack` several times before it would finally complete building Ampersand.exe.
-
-#### Footnotes
