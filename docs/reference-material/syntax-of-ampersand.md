@@ -858,7 +858,7 @@ Further examples:
 - a [client interface](../Examples.md#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
 - a [login interface](../Examples.md#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.
 
-#### CRUD annotations
+### CRUD annotations
 
 CRUD annotations are used in interfaces to constrain the functionality of fields and boxes in an `INTERFACE`-statement. This allows you to minimize the functionality for your users, to design for easy learning.
 
@@ -933,13 +933,114 @@ A top-level Update or Create are common in my own scripts, e.g. to create an ove
 Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Acrud+) functionality.
 
 #### Layout of user interfaces
-
+Ampersand lets you define the structure of your interface.
+It lets you place items and offers three built-in layout options, [colums](./#column-layout), [rows](./#row-layout) and [tabs](./#tabular-layout), which you can mix freely.
 Ampersand is meant for back-end design. It offers no features for front-end design. For that purpose we advise you use contemporary front-end tools for web-based applications. Your Ampersand application is [designed to be adaptable](./architecture-of-an-ampersand-application), especially for this purpose.
 
-However, Ampersand offers a few layout features that let you place items. It has three built-in layout options, [colums](./#column-layout), [rows](./#row-layout) and [tabs](./#tabular-layout), which you can mix freely.
+## Interface templates
+Templates are used to generate prototype user interfaces based on Ampersand INTERFACE definitions.
+There are 3 types of templates:
+1. Box template -> 
+2. Atomic templates -> used for interface leaves nodes (without a user defined VIEW specified)
+3. View templates -> used for user defined views
 
-###### Table layout
+#### Example
+```adl
+INTERFACE "Project" : I[Project] cRud BOX           <-- the default FORM box template is used
+  [ "Name"                : projectName             <-- the default atomic template for a alphanumeric type is used
+  , "Description"         : projectDescription
+  , "(Planned) start date": projectStartDate 
+  , "Active"              : projectActive
+  , "Current PL"          : pl <PersonEmail>        <-- a user defined PersonEmail view template is used
+  , "Project members"     : member BOX <TABLE>      <-- the built-in TABLE box template is used
+    [ "Name"              : personFirstName
+    , "Email"             : personEmail
+    ]
+  ]
+```
 
+
+### FORM
+The FORM template is the default BOX template.
+It structures the interface like a form, with each item on a separate line, i.e. a vertical layout style.
+It displays one form for each target atom. The sub interfaces are used as form fields.
+This template replaces former templates: `ROWS`, `HROWS`, `HROWSNL` and `ROWSNL`
+
+Usage `BOX <FORM attributes*>`
+
+For root interface boxes automatically a title is added which equals the interface name. To hide this title use `noRootTitle` attribute.
+
+Examples:
+- `BOX <FORM>`
+- `BOX <FORM hideLabels>`
+- `BOX <FORM hideOnNoRecords>`
+- `BOX <FORM title="Title of your form">`
+- `BOX <FORM hideLabels hideOnNoRecords noRootTitle>`
+
+Possible attributes are:
+| attribute | value | description |
+| --------- | ----- | ----------- |
+| hideOnNoRecords | n.a. | when attribute is set, the complete form is hidden in the interface when there are no records |
+| hideSubOnNoRecords | n.a. | when attribute is set, specific form fields (i.e. sub interfaces) that have no records are hidden |
+| hideLabels | n.a. | when attribute is set, no field labels are shown |
+| title | string | title / description for the forms. Title is shown above the form |
+| noRootTitle | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
+| showNavMenu | n.a. | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
+
+#### Example
+The row layout uses `BOX <FORM>` to instruct the front-end application to layout the user interface one field on one row, as you would expect in a form. Here is an example of an interface, which uses the form layout on the top level.
+
+```
+INTERFACE Overview : "_SESSION"                  cRud
+BOX<FORM>
+     [ Students : V[SESSION*Student]             cRuD
+        BOX <FORM>
+                [ "Student" : I[Student]         CRUD
+                , "Enrolled for" : isEnrolledFor cRUD
+                , "Course" : takes               CRUD
+                ]
+     , Course : V[SESSION*Course]                CRUD
+        BOX <FORM>
+                [ "Course" : I                   cRud
+                , "Modules" : isPartOf~          CRUD
+                ]
+     ]
+```
+
+This interface shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`. Please read the [explanation of CRUD annotations](./interfaces.md#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+
+![Row-oriented layout of a user interface with columns in each row](<../assets/ROWS layout example.png>)
+
+### TABLE
+The TABLE template structures an interface like a table.
+Every target atoms of the interface is displayed as a row as in a table.
+The sub interfaces are used as columns.
+This templates replaces former templates: `COLS`, `SCOLS`, `HCOLS`, `SHCOLS` and `COLSNL`
+
+Usage: `BOX <TABLE attributes*>`
+
+For root interface boxes automatically a title is added which equals the interface name. To hide this title use `noRootTitle` attribute.
+
+Examples:
+- `BOX <TABLE>`                              -- was: COLS
+- `BOX <TABLE noHeader>`
+- `BOX <TABLE hideOnNoRecords>`              -- was: HCOLS
+- `BOX <TABLE title="Title of your table">`
+- `BOX <TABLE noHeader hideOnNoRecords title="Table with title">`
+
+Possible attributes are:
+| attribute | value | description |
+| --------- | ----- | ----------- |
+| hideOnNoRecords | n.a. | when attribute is set, the complete table is hidden in the interface when there are no records |
+| noHeader | n.a. | when attribute is set, no table header is used (all column labels are hidden) |
+| title | string | title / description for the table. Title is shown above table |
+| noRootTitle | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
+| sortable | n.a. | makes table headers clickable to support sorting on some property of the data. Only applies to univalent fields |
+| sortBy | sub interface label | Add default sorting for given sub interface. Use in combination with 'sortable' |
+| order | `desc`, `asc` | Specifies default sorting order. Use in combination with 'sortBy'. Use `desc` for descending, `asc` for ascending |
+| showNavMenu | n.a. | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
+
+#### Example
 The column layout uses `BOX <TABLE>` to instruct the front-end application to use a tabular layout in user interfaces. Here is an example of an interface, which uses the table layout.
 
 ```
@@ -969,35 +1070,31 @@ This interface shows three columns in the user interface, **Students**, **Course
 
 ![Column-oriented layout of a user interface with columns in each row](<../assets/COLS layout example.png>)
 
-###### FORM layout
+### TABS
+Interface template for a form structure with different tabs. For each sub interface a tab is added.
+This template is used best in combination with univalent interface expressions (e.g. `INTERFACE "Test" : univalentExpression BOX <TABS>`), because for each target atom of the expression a complete form (with all tabs) is shown.
 
-The row layout uses `BOX <FORM>` to instruct the front-end application to layout the user interface one field on one row, as you would expect in a form. Here is an example of an interface, which uses the form layout on the top level.
+Usage `BOX <TABS attributes*>`
 
-```
-INTERFACE Overview : "_SESSION"                  cRud
-BOX <FORM>
-     [ Students : V[SESSION*Student]             cRuD
-        BOX <FORM>
-                [ "Student" : I[Student]         CRUD
-                , "Enrolled for" : isEnrolledFor cRUD
-                , "Course" : takes               CRUD
-                ]
-     , Course : V[SESSION*Course]                CRUD
-        BOX <FORM>
-                [ "Course" : I                   cRud
-                , "Modules" : isPartOf~          CRUD
-                ]
-     ]
-```
+For root interface boxes automatically a title is added which equals the interface name. To hide this title use `noRootTitle` attribute.
 
-This interface shows three rows in the user interface, **Students**, **Course** and **Modules**. The first column shows students in each of its rows. Each student is shown in the column layout. The second row shows courses in two columns, **Course** and **Modules**. Please read about [templates](#layout-of-interfaces) if you are curious which other ways of displaying information there are besides `BOX <FORM>`. Please read the [explanation of CRUD annotations](./interfaces.md#CRUD) if you are curious about the CRUD annotations. This is what the user will see on the screen.
+Example:
+- `BOX <TABS>`
+- `BOX <TABS title="Tabs with title">`
+- `BOX <TABS noRootTitle>`
 
-![Row-oriented layout of a user interface with columns in each row](<../assets/ROWS layout example.png>)
+Possible attributes are:
+| attributes | value | description |
+| ---------- | ----- | ----------- |
+| title      | string | title / description for the table. Title is shown above tabs structure |
+| noRootTitle    | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
+| hideOnNoRecords | n.a. | when attribute is set, the complete tab set is hidden in the interface when there are no records |
+| hideSubOnNoRecords | n.a. | when attribute is set, specific tabs (i.e. sub interfaces) that have no records are hidden |
 
-###### TABS layout
 
 The column layout uses `BOX <TABS>` to instruct the front-end application to tabs in the user interface. Here is an example of an interface, which uses the column layout.
 
+#### Example
 ```
 INTERFACE Overview : "_SESSION"                  cRud
 BOX <TABS>
@@ -1027,11 +1124,191 @@ This interface shows three tabs in the user interface, **Students**, **Course** 
 
 We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note that these options do not change the semantics; whatever your options, Ampersand displays the same data in the same fields.
 
+### RAW
+Interface template without any additional styling and without (editing) functionality. Just plain html `<div>` elements
+This template replaces former templates: `DIV`, `CDIV` and `RDIV`
+
+Usage: `BOX <RAW attributes*>`
+
+Examples:
+- `BOX <RAW>`
+- `BOX <RAW form>`
+- `BOX <RAW table>`
+
+Possible attributes are:
+| attribute | value | description |
+| --------- | ----- | ----------- |
+| form      | n.a.  | uses simple form structure to display data. Similar to `FORM` template, but without any functionality nor markup. This is the default layout for `RAW` template.
+| table     | n.a.  | uses simple table structure to display data. Similar to `TABLE` template (see below), but without any functionality, header and styling
+
+### PROPBUTTON
+Interface template that provides a botton that, when clicked, can set, clear and/or toggle/flip the value of a number of property-relations (i.e. a relation that is [PROP] (or: [SYM,ASY]). 
+
+The interface provides means to:
+
+- construct the label (i.e. the text that shows on the button) from fixed texts (i.e. `TXT "some text here"`) as well as valiues of expression. This allows you to create detailed/customized texts on a button.
+- flip, set, and clear (up to 3) property-relations. This allows you to easily create complex state machines, where clicking a single button can flip, set and clear several property-relations simultaneously.
+- specify the color of the button, and a different color for when it is disabled.
+- hide and/or disable the button by specifying an expression (that must be a [PROP]-type).
+- provide a popover text for the button, both when it is enabled and when it is disabled. 
+
+Usage (note that all attributes are optional, and you can rearrange their order as you see fit) :
+```
+expr cRud BOX <PROPBUTTON> 
+  [ "label":  expr or txt    -- text on button = result of expr or txt
+  , "label1": expr or txt    -- text on button = label+label1
+  , "label2": expr or txt    -- text on button = label+label1+label2
+  , "label3": expr or txt    -- text on button = label+label1+label2+label3
+  , "property": propRel cRUd -- value of propRel is flipped when the button is clicked (backward compatible)
+  , "fliprop1": propRel cRUd -- value of propRel is flipped when the button is clicked
+  , "fliprop2": propRel cRUd -- value of propRel is flipped when the button is clicked
+  , "fliprop3": propRel cRUd -- value of propRel is flipped when the button is clicked
+  , "setprop1": propRel cRUd -- value of propRel is set (made true) when the button is clicked
+  , "setprop2": propRel cRUd -- value of propRel is set (made true) when the button is clicked
+  , "setprop3": propRel cRUd -- value of propRel is set (made true) when the button is clicked
+  , "clrprop1": propRel cRUd -- value of propRel is cleared (made false) when the button is clicked
+  , "clrprop2": propRel cRUd -- value of propRel is cleared (made false) when the button is clicked
+  , "clrprop3": propRel cRUd -- value of propRel is cleared (made false) when the button is clicked
+  , "color": color           -- see below for details.
+  , "hide": expr cRud        -- button is hidden (not shown) when expression evaluates to true
+  , "disabled": expr         -- button is disabled (not clickable) when expression evaluates to true
+  , "disabledcolor": color   -- optional; see below for details.
+  , "disabledpopovertext": expr or txt -- text is shown instead of popovertext when button is disabled.
+  , "popovertext": expr or txt -- text that is displayed when hovering the button
+  ]
+```
+where:
+- `propRel` is an & `[PROP]`-type relation, whose value will be toggled when the user clicks the button.
+- `expr` refers to an &-expression that should be univalent (and should be followed by `cRud` except when explicitly mentioned otherwise);
+- `txt` refers to the syntax `TXT "some text here"`;
+- `color` refers to `TXT "colorword"` can be primary (blue), secondary (grey), success (green), warning (yellow), danger (red), info (lightblue), light (grey), dark (black). So, if you want a red button, you write `"color": TXT "danger" -- button is red`.
+It should be possible to precede color names 'outline-' (e.g. 'outline-primary') to make outline buttons (i.e. buttons with only the outline coloured), but that does not yet seem to work properly.
+
+
+Possible attributes are:
+| attribute | value | description |
+| --------- | ----- | ----------- |
+| *currently there are no attributes for this template*
+
+
 If these options are not enough, you can [enhance your application with your own layouts](../tutorial/interfaces.md#layout-and-widgets).
 
-###### Your own widgets \(HTML and CSS\)
+### Your own templates and widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
+You don't have to put up with the [Ampersand built-in layout options](#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be documented...\).
+
+### Atomic templates (i.e. interface leaves)
+
+#### OBJECT
+
+#### ALPHANUMERIC, BIGALPHANUMERIC, HUGEALPHANUMERIC
+
+#### BOOLEAN
+
+#### DATE, DATETIME
+
+#### INTEGER, FLOAT
+
+#### PASSWORD
+
+#### TYPEOFONE
+Special interface for singleton 'ONE' atom. This probably is never used in an prototype user interface. 
+
+#### OBJECTDROPDOWN
+Interface template that can be used to populate a relation (whose target concept MUST BE an object) using a dropdown list.
+Objects are concepts for which there is no `REPRESENT` statement; non-objects (or values) are concepts for which there is (e.g. `REPRESENT SomeConcept TYPE ALPHANUMERIC`). This template can be used for objects. Use `BOX <VALUEDROPDOWN>` for non-objects.
+
+Usage:
+```
+expr cRud BOX <OBJECTDROPDOWN>
+[ "selectfrom": selExpr cRud <ObjectView> -- population from which the user can make a selection.
+, "setrelation": setRel cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
+, "instruction": expr or txt -- Text that shows when nothing is selected yet.
+, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected.
+, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected.
+]
+```
+
+where:
+- `expr` is an expression that, if and only if 'TRUE' causes the dropdown box to be shown.
+- `selExpr cRud` specifies the objects that the user may select from. 
+- `<ObjectView>` the VIEW to be used to show the selectable objects in the dropdown box.
+- `setRel cRUd` is the relation whose population is modified as a result of the users actions. 
+  - If the relation is `[UNI]` the user may overwrite its value (tgt atom) by selecting an object.
+  - If the relation is not `[UNI]`, the user can add values (tgt atoms) by selecting one or more objects.
+  - When the user selects the NO OBJECT, the (list of) tgt atom(s) is cleared.
+- `expr or txt` in the 'instruction' field specifies the text that the user sees when no object has been selected.
+- `selectEventFlag cRUd` specifies a [PROP]-type relation that will be toggled when an object is selected.
+- `deselectEventFlag cRUd` specifies a [PROP]-type relation that toggles when NO OBJECT is selected.
+
+NOTE that the `cRud` and `cRUd` usage must be strictly followed here!
+
+#### VALUEDROPDOWN
+Interface template that can be used to populate a relation (whose target concept is NOT an object) using a dropdown list. Objects are concepts for which there is no `REPRESENT` statement; non-objects (or values) are concepts for which there is (e.g. `REPRESENT SomeConcept TYPE ALPHANUMERIC`). This template can be used for values (non-objects). Use `BOX <OBJECTDROPDOWN>` for concepts that are objects.
+
+Usage:
+```
+expr cRud BOX <VALUEDROPDOWN>
+[ "selectfrom": selExpr cRud <ValueView> -- population from which the user can make a selection.
+, "setrelation": setRel cRUd -- If the relation is [UNI], a newly selected value will replace the existing population.
+, "instruction": expr or txt -- Text that shows when nothing is selected yet.
+, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when VALUE is selected.
+, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO VALUE is selected.
+]
+```
+
+where:
+- `expr` is an expression that, if and only if 'TRUE' causes the dropdown box to be shown.
+- `selExpr cRud` specifies the values that the user may select from. 
+- `<ValueView>` the VIEW to be used to show the selectable values in the dropdown box.
+- `setRel cRUd` is the relation whose population is modified as a result of the users actions. 
+  - If the relation is `[UNI]` the user may overwrite its value (tgt atom) by selecting an value.
+  - If the relation is not `[UNI]`, the user can add values (tgt atoms) by selecting one or more values.
+  - When the user selects the NO VALUE, the (list of) tgt atom(s) is cleared.
+- `expr or txt` in the 'instruction' field specifies the text that the user sees when no value has been selected.
+- `selectEventFlag cRUd` specifies a [PROP]-type relation that will be toggled when an value is selected.
+- `deselectEventFlag cRUd` specifies a [PROP]-type relation that toggles when NO VALUE is selected.
+
+NOTE that the `cRud` and `cRUd` usage must be strictly followed here!
+
+### Built-in VIEW templates
+
+#### FILEOBJECT
+The purpose of this template, and the associated code, is to allow users to download and upload files.
+
+To use: add the following statements to your script:
+
+```
+  IDENT FileObjectName: FileObject (filePath)
+  RELATION filePath[FileObject*FilePath] [UNI,TOT]
+  RELATION originalFileName[FileObject*FileName] [UNI,TOT]
+
+  REPRESENT FilePath,FileName TYPE ALPHANUMERIC
+
+  VIEW FileObject: FileObject DEFAULT 
+  { apiPath  : TXT "api/v1/file"
+  , filePath : filePath
+  , fileName : originalFileName
+  } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
+```
+
+#### LINKTO
+This template can be used to specify the interface to which the user must navigate.
+
+Usage:
+```
+  "label": expr LINKTO INTERFACE "InterfaceName"
+```
+
+where:
+- `expr` is an ampersand expression, as usual
+- `InterfaceName` is the name of an existing interface whose (SRC) concept matches the TGT concept of `expr`.
+
+#### PROPERTY
+
+#### STRONG
+
+#### URL
 
 ## The PURPOSE statement
 
