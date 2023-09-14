@@ -176,6 +176,7 @@ aViewDef2pViewDef vDef =
   P_Vd
     { pos = vdpos vDef,
       vd_nm = vdname vDef,
+      vd_label = vdlabel vDef,
       vd_cpt = aConcept2pConcept (vdcpt vDef),
       vd_isDefault = vdIsDefault vDef,
       vd_html = vdhtml vDef,

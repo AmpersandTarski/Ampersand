@@ -340,9 +340,9 @@ instance Pretty (P_IdentSegmnt TermPrim) where
   pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj
 
 instance Pretty P_ViewDef where
-  pretty (P_Vd _ nm cpt isDefault html ats) =
+  pretty (P_Vd _ nm lbl cpt isDefault html ats) =
     -- improved syntax. Legacy syntax must not be used here anymore.
-    text "VIEW" <~> nm <+> text ":"
+    text "VIEW" <~> nm <~> lbl <+> text ":"
       <~> cpt
       <+> (if isDefault then text "DEFAULT" else empty)
       <+> braces (listOf ats)

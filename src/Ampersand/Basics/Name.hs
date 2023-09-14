@@ -187,6 +187,7 @@ class Named a where
       ws' = NE.reverse (txt1 NE.:| (reverse . NE.tail) ws)
 
 newtype Label = Label Text
+  deriving (Data)
 
 class Named a => Labeled a where
   {-# MINIMAL mLabel #-}
