@@ -13,7 +13,7 @@ newtype Views = Views [View] deriving (Generic, Show)
 data View = View
   { vwJSONname :: !Text,
     vwJSONlabel :: !Text,
-    vwJSONconceptId :: !Text,
+    vwJSONconceptName :: !Text,
     vwJSONisDefault :: !Bool,
     vwJSONsegments :: ![Segment]
   }
@@ -39,7 +39,7 @@ instance JSON ViewDef View where
         vwJSONlabel = case vdlabel vd of
           Nothing -> text1ToText . tName $ vd
           Just (Label txt) -> txt,
-        vwJSONconceptId = text1ToText . idWithoutType' . vdcpt $ vd,
+        vwJSONconceptName = text1ToText . idWithoutType' . vdcpt $ vd,
         vwJSONisDefault = vdIsDefault vd,
         vwJSONsegments = fmap (fromAmpersand env fSpec) . vdats $ vd
       }
