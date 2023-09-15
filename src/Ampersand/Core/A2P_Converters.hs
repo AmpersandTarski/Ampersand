@@ -160,6 +160,7 @@ aIdentityDef2pIdentityDef iDef =
   P_Id
     { pos = idPos iDef,
       ix_name = idName iDef,
+      ix_label = idlabel iDef,
       ix_cpt = aConcept2pConcept (idCpt iDef),
       ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
     }

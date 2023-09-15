@@ -470,6 +470,7 @@ instance Arbitrary P_IdentDef where
   arbitrary =
     P_Id <$> arbitrary
       <*> arbitrary
+      <*> arbitrary
       <*> arbitrary `suchThat` notIsOne
       <*> arbitrary
 

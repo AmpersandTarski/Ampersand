@@ -1098,12 +1098,14 @@ pCtx2aCtx
         case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
           P_Id
             { ix_name = nm,
+              ix_label = lbl',
               ix_ats = isegs
             } ->
               ( \isegs' ->
                   Id
                     { idPos = orig,
                       idName = nm,
+                      idlabel = lbl',
                       idCpt = conc,
                       idPat = mPat,
                       identityAts = isegs'

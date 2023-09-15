@@ -1009,8 +1009,10 @@ data P_IdentDf a -- so this is the parametric data-structure
   = P_Id
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
     pos :: !Origin,
-    -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+    -- | the name of this Identity. The name has no meaning in the Compliant Service Layer, but is used in the generated user interface.
     ix_name :: !Name,
+    -- | a friendly, user readable alternative for the name
+    ix_label :: !(Maybe Label),
     -- | this term describes the instances of this object, related to their context
     ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
@@ -1043,7 +1045,7 @@ instance Functor P_IdentDf where fmap = fmapDefault
 instance Foldable P_IdentDf where foldMap = foldMapDefault
 
 instance Traversable P_IdentDf where
-  traverse f (P_Id a b c lst) = P_Id a b c <$> traverse (traverse f) lst
+  traverse f (P_Id orig nm lbl cpt lst) = P_Id orig nm lbl cpt <$> traverse (traverse f) lst
 
 instance Functor P_IdentSegmnt where fmap = fmapDefault
 
