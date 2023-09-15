@@ -11,34 +11,35 @@ import qualified RIO.Set as Set
 newtype Relationz = Relationz [RelationJson] deriving (Generic, Show)
 
 data RelationJson = RelationJson
-  { relJSONname :: Text,
-    relJSONsignature :: Text,
-    relJSONsrcConceptId :: Text,
-    relJSONtgtConceptId :: Text,
-    relJSONuni :: Bool,
-    relJSONtot :: Bool,
-    relJSONinj :: Bool,
-    relJSONsur :: Bool,
-    relJSONprop :: Bool,
-    relJSONaffectedConjuncts :: [Text],
-    relJSONmysqlTable :: RelTableInfo,
-    relJSONdefaultSrc :: [Text],
-    relJSONdefaultTgt :: [Text]
+  { relJSONname :: !Text,
+    relJSONsignature :: !Text,
+    relJSONlabel :: !Text,
+    relJSONsrcConceptId :: !Text,
+    relJSONtgtConceptId :: !Text,
+    relJSONuni :: !Bool,
+    relJSONtot :: !Bool,
+    relJSONinj :: !Bool,
+    relJSONsur :: !Bool,
+    relJSONprop :: !Bool,
+    relJSONaffectedConjuncts :: ![Text],
+    relJSONmysqlTable :: !RelTableInfo,
+    relJSONdefaultSrc :: ![Text],
+    relJSONdefaultTgt :: ![Text]
   }
   deriving (Generic, Show)
 
 data RelTableInfo = RelTableInfo -- Contains info about where the relation is implemented in SQL
-  { rtiJSONname :: Text,
-    rtiJSONtableOf :: Maybe Text, -- specifies if relation is administrated in table of srcConcept (i.e. "src"), tgtConcept (i.e. "tgt") or its own n-n table (i.e. null).
-    rtiJSONsrcCol :: TableCol,
-    rtiJSONtgtCol :: TableCol
+  { rtiJSONname :: !Text,
+    rtiJSONtableOf :: !(Maybe Text), -- specifies if relation is administrated in table of srcConcept (i.e. "src"), tgtConcept (i.e. "tgt") or its own n-n table (i.e. null).
+    rtiJSONsrcCol :: !TableCol,
+    rtiJSONtgtCol :: !TableCol
   }
   deriving (Generic, Show)
 
 data TableCol = TableCol
-  { tcJSONname :: Text,
-    tcJSONnull :: Bool,
-    tcJSONunique :: Bool
+  { tcJSONname :: !Text,
+    tcJSONnull :: !Bool,
+    tcJSONunique :: !Bool
   }
   deriving (Generic, Show)
 
@@ -62,6 +63,9 @@ instance JSON Relation RelationJson where
     RelationJson
       { relJSONname = text1ToText . tName $ dcl,
         relJSONsignature = (text1ToText . tName) dcl <> (tshow . sign) dcl,
+        relJSONlabel = case declabel dcl of
+          Nothing -> text1ToText . tName $ dcl
+          Just (Label txt) -> txt,
         relJSONsrcConceptId = text1ToText . idWithoutType' . source $ dcl,
         relJSONtgtConceptId = text1ToText . idWithoutType' . target $ dcl,
         relJSONuni = isUni bindedExp,

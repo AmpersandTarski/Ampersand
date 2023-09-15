@@ -644,7 +644,7 @@ translateArchiElem ::
 translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tuples =
   ArchiGrain
     { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
-      grainRel = P_Relation relName' ref_to_signature props [] Nothing [] OriginUnknown,
+      grainRel = P_Relation relName' ref_to_signature Nothing props [] Nothing [] OriginUnknown,
       archiViewname = maybeViewName,
       grainPurp =
         PRef2

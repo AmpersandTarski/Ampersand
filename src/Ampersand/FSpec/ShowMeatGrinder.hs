@@ -99,6 +99,7 @@ metarelation :: Transformer -> P_Relation
 metarelation tr =
   P_Relation
     { dec_nm = tRel tr,
+      dec_label = Nothing,
       dec_sign =
         P_Sign
           (mkPConcept (tSrc tr))

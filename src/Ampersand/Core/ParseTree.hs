@@ -384,6 +384,8 @@ data P_Relation = P_Relation
     dec_nm :: !Name,
     -- | the type. Parser must guarantee it is not empty.
     dec_sign :: !P_Sign,
+    -- | an optional label, which can be a friendly, human readable alternative for the name
+    dec_label :: !(Maybe Label),
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf, Prop)
     dec_prps :: !PProps,
     -- | Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
@@ -437,6 +439,7 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
       P_Relation
         { dec_nm = name r0,
           dec_sign = dec_sign r0,
+          dec_label = dec_label r0,
           dec_prps = Set.unions (dec_prps <$> NE.toList rels),
           dec_defaults = concatMap dec_defaults rels,
           dec_pragma = case mapMaybe dec_pragma (NE.toList rels) of

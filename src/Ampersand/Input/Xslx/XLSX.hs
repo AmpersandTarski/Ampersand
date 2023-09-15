@@ -4,12 +4,16 @@ module Ampersand.Input.Xslx.XLSX (parseXlsxFile) where
 
 import Ampersand.Basics hiding (view, (^.), (^?))
 import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowPStruct -- Just for debugging purposes
+-- Just for debugging purposes
+
+-- ((^?),ix)
+
+import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import Codec.Xlsx
-import Control.Lens hiding (both) -- ((^?),ix)
+import Control.Lens hiding (both)
 import Data.Tuple.Extra (both, swap)
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
@@ -117,6 +121,7 @@ addRelations pCtx = enrichedContext
             [ P_Relation
                 { dec_nm = name pop,
                   dec_sign = P_Sign src' tgt',
+                  dec_label = Nothing,
                   dec_prps = mempty,
                   dec_defaults = mempty,
                   dec_pragma = Nothing,

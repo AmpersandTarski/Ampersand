@@ -610,6 +610,7 @@ rTerm2expr term =
       Relation
         { decnm = nm,
           decsgn = sgn,
+          declabel = Nothing,
           decprps = fatal "Illegal RTerm in rTerm2expr",
           decDefaults = fatal "Illegal RTerm in rTerm2expr",
           decpr = fatal "Illegal RTerm in rTerm2expr",

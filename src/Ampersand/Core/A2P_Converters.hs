@@ -111,6 +111,7 @@ aRelation2pRelation dcl =
   P_Relation
     { dec_nm = decnm dcl,
       dec_sign = aSign2pSign (decsgn dcl),
+      dec_label = declabel dcl,
       dec_prps = aProps2Pprops $ decprps dcl,
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
       dec_pragma = decpr dcl,

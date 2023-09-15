@@ -1348,6 +1348,7 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd =
       Relation
         { decnm = dec_nm pd,
           decsgn = decSign,
+          declabel = dec_label pd,
           decprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
           decDefaults = Set.fromList dflts,
           decpr = dec_pragma pd,
