@@ -543,8 +543,9 @@ newtype IdentitySegment = IdentityExp
 data ViewDef = Vd
   { -- | position of this definition in the text of the Ampersand source file (filename, line number and column number).
     vdpos :: !Origin,
-    -- | the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+    -- | the name of this View. The name has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
     vdname :: !Name,
+    vdlabel :: !(Maybe Label),
     -- | the concept for which this view is applicable
     vdcpt :: !A_Concept,
     -- | whether or not this is the default view for the concept

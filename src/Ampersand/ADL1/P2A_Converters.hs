@@ -588,15 +588,16 @@ pCtx2aCtx
             vd_cpt = cpt, -- Concept
             vd_isDefault = isDefault,
             vd_html = mHtml, -- Html template
-            vd_ats = pvs -- view segments
+            vd_ats = segmnts -- view segments
           } =
           do
-            segments <- traverse typeCheckViewSegment (zip [0 ..] pvs)
+            segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
             uniqueLables orig toLabel . filter hasLabel $ segments
             let avd =
                   Vd
                     { vdpos = orig,
                       vdname = nm,
+                      vdlabel = lbl,
                       vdcpt = pCpt2aCpt (conceptMap ci) cpt,
                       vdIsDefault = isDefault,
                       vdhtml = mHtml,

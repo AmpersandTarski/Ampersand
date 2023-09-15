@@ -636,22 +636,23 @@ pIdentDef ns =
 pViewDef :: NameSpace -> AmpParser P_ViewDef
 pViewDef ns = try (pViewDefImproved ns) <|> pViewDefLegacy ns -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Name Label? ConceptOneRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
 pViewDefImproved :: NameSpace -> AmpParser P_ViewDef
 pViewDefImproved ns =
   mkViewDef <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
-    <*> pNameWithoutLabelAndColon ns ViewName
+    <*> pNameWithOptionalLabelAndColon ns ViewName
     <*> pConceptOneRef ns
     <*> pIsThere ((pKey . toText1Unsafe) "DEFAULT")
     <*> pBraces (pViewSegment Improved ns `sepBy` pComma) `opt` []
     <*> pMaybe pHtmlView
     <* (pKey . toText1Unsafe) "ENDVIEW"
   where
-    mkViewDef pos' nm cpt isDef ats html =
+    mkViewDef pos' (nm, lbl) cpt isDef ats html =
       P_Vd
         { pos = pos',
           vd_nm = nm,
+          vd_label = lbl,
           vd_cpt = cpt,
           vd_isDefault = isDef,
           vd_html = html,
@@ -694,13 +695,28 @@ pViewSegment viewKind ns =
 --- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: NameSpace -> AmpParser P_ViewDef
 pViewDefLegacy ns =
-  P_Vd <$> currPos
+  build <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
-    <*> (withNameSpace ns <$> pNameAndColon ViewName)
+    <*> pNameWithOptionalLabelAndColon ns ViewName
     <*> pConceptOneRef ns
-    <*> return True
-    <*> return Nothing
     <*> pParens (pViewSegment Legacy ns `sepBy` pComma)
+  where
+    build ::
+      Origin ->
+      (Name, Maybe Label) ->
+      P_Concept ->
+      [P_ViewSegment a] ->
+      P_ViewD a
+    build orig (nm, lbl) cpt segments =
+      P_Vd
+        { vd_label = lbl,
+          vd_nm = nm,
+          vd_isDefault = True,
+          vd_html = Nothing,
+          vd_cpt = cpt,
+          vd_ats = segments,
+          pos = orig
+        }
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: NameSpace -> AmpParser P_Interface
@@ -1078,9 +1094,6 @@ pUnrestrictedText1 = (pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1) <?> 
 
 pNameAndColon :: NameType -> AmpParser Name
 pNameAndColon typ = pName typ <* pColon
-
-pNameWithoutLabelAndColon :: NameSpace -> NameType -> AmpParser Name
-pNameWithoutLabelAndColon ns typ = pNameWithoutLabel ns typ <* pColon
 
 pNameWithOptionalLabelAndColon ::
   NameSpace ->

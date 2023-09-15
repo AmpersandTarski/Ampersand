@@ -477,7 +477,10 @@ instance Arbitrary P_IdentSegment where
 
 instance Arbitrary P_ViewDef where
   arbitrary =
-    P_Vd <$> arbitrary <*> arbitrary <*> arbitrary
+    P_Vd <$> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary

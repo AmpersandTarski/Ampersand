@@ -154,19 +154,20 @@ instance Disambiguatable P_ViewD where
   disambInfo
     cptMap
     P_Vd
-      { pos = o,
-        vd_nm = s,
-        vd_cpt = c,
-        vd_isDefault = d,
-        vd_html = h,
-        vd_ats = a
+      { pos = orig,
+        vd_nm = nm,
+        vd_label = lbl,
+        vd_cpt = cpt,
+        vd_isDefault = isDef,
+        vd_html = template,
+        vd_ats = segments
       }
     _ =
-      ( P_Vd o s c d h (fmap (\x -> fst (disambInfo cptMap x constraints)) a),
+      ( P_Vd orig nm lbl cpt isDef template (fmap (\x -> fst (disambInfo cptMap x constraints)) segments),
         constraints
       )
       where
-        constraints = Cnstr [MustBe (pCpt2aCpt cptMap c)] []
+        constraints = Cnstr [MustBe (pCpt2aCpt cptMap cpt)] []
 
 instance Disambiguatable P_Enforce where
   disambInfo cptMap (P_Enforce o a op b) env1 = (P_Enforce o a' op b', propagateConstraints envA envB)

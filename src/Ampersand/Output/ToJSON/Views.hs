@@ -11,10 +11,11 @@ import Ampersand.Output.ToJSON.JSONutils
 newtype Views = Views [View] deriving (Generic, Show)
 
 data View = View
-  { vwJSONlabel :: Text,
-    vwJSONconceptId :: Text,
-    vwJSONisDefault :: Bool,
-    vwJSONsegments :: [Segment]
+  { vwJSONname :: !Text,
+    vwJSONlabel :: !Text,
+    vwJSONconceptId :: !Text,
+    vwJSONisDefault :: !Bool,
+    vwJSONsegments :: ![Segment]
   }
   deriving (Generic, Show)
 
@@ -34,7 +35,10 @@ instance JSON FSpec Views where
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =
     View
-      { vwJSONlabel = text1ToText . tName $ vd,
+      { vwJSONname = text1ToText . tName $ vd,
+        vwJSONlabel = case vdlabel vd of
+          Nothing -> text1ToText . tName $ vd
+          Just (Label txt) -> txt,
         vwJSONconceptId = text1ToText . idWithoutType' . vdcpt $ vd,
         vwJSONisDefault = vdIsDefault vd,
         vwJSONsegments = fmap (fromAmpersand env fSpec) . vdats $ vd
