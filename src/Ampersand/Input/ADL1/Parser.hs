@@ -610,12 +610,20 @@ pAdlTType =
 --- IdentDef ::= 'IDENT' Label ConceptRef '(' IndSegmentList ')'
 pIdentDef :: NameSpace -> AmpParser P_IdentDef
 pIdentDef ns =
-  P_Id <$> currPos
+  build <$> currPos
     <* (pKey . toText1Unsafe) "IDENT"
-    <*> (withNameSpace ns <$> pNameAndColon IdentName)
+    <*> pNameWithOptionalLabelAndColon ns IdentName
     <*> pConceptRef ns
     <*> pParens (pIdentSegment `sepBy1` pComma)
   where
+    build orig (nm, lbl) cpt lst =
+      P_Id
+        { ix_label = lbl,
+          ix_name = nm,
+          ix_cpt = cpt,
+          ix_ats = lst,
+          pos = orig
+        }
     --- IndSegmentList ::= Attr (',' Attr)*
     pIdentSegment :: AmpParser P_IdentSegment
     pIdentSegment = P_IdentExp <$> pAtt
@@ -1093,9 +1101,6 @@ pTex1AndColon = pUnrestrictedText1 <* pColon
 
 pUnrestrictedText1 :: AmpParser Text1
 pUnrestrictedText1 = (pSingleWord <|> pAnyKeyWord <|> pDoubleQuotedString1) <?> "identifier"
-
-pNameAndColon :: NameType -> AmpParser Name
-pNameAndColon typ = pName typ <* pColon
 
 pNameWithOptionalLabelAndColon ::
   NameSpace ->

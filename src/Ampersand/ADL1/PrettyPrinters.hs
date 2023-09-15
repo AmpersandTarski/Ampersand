@@ -333,8 +333,8 @@ instance Pretty (P_SubIfc TermPrim) where
                   )
 
 instance Pretty (P_IdentDf TermPrim) where
-  pretty (P_Id _ nm cpt ats) =
-    text "IDENT" <~> nm <+> text ":" <~> cpt <+> parens (listOf1 ats)
+  pretty (P_Id _ nm lbl cpt ats) =
+    text "IDENT" <~> nm <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
   pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj

@@ -511,8 +511,10 @@ instance Traced Relation where
 data IdentityRule = Id
   { -- | The position of this definition in the text of the Ampersand source file (filename, line number and column number).
     idPos :: !Origin,
-    -- | the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+    -- | the name of this Identity. The name has no meaning in the Compliant Service Layer, but is used in the generated user interface.
     idName :: !Name,
+    -- | a friendly, user readable alternative for the name
+    idlabel :: !(Maybe Label),
     -- | this term describes the instances of this object, related to their context
     idCpt :: !A_Concept,
     -- | if defined within a pattern, then the name of that pattern.
