@@ -12,7 +12,7 @@ import Ampersand.Output.ToJSON.JSONutils
 newtype Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 
 data JSONInterface = JSONInterface
-  { ifcJSONid :: Text,
+  { ifcJSONname :: Text,
     ifcJSONlabel :: Text,
     ifcJSONifcObject :: JSONObjectDef,
     ifcJSONisAPI :: Bool
@@ -134,8 +134,10 @@ instance JSON TemplateKeyValue JSONTemplateKeyValue where
 instance JSON Interface JSONInterface where
   fromAmpersand env fSpec interface =
     JSONInterface
-      { ifcJSONid = text1ToText . escapeIdentifier . tName $ interface,
-        ifcJSONlabel = text1ToText . tName $ interface,
+      { ifcJSONname = text1ToText . tName $ interface,
+        ifcJSONlabel = case ifclbl interface of
+          Nothing -> text1ToText . tName $ interface
+          Just (Label txt) -> txt,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
         ifcJSONisAPI = ifcIsAPI interface
       }
