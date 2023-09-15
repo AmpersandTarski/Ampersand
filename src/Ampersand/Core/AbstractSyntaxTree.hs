@@ -451,6 +451,8 @@ data Relation = Relation
     decnm :: !Name,
     -- | the source and target concepts of the relation
     decsgn :: !Signature,
+    -- | a friendly user-readable alternative for the name
+    declabel :: !(Maybe Label),
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
     decprps :: !AProps,
     -- | the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime

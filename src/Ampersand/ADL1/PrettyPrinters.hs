@@ -137,9 +137,9 @@ instance Pretty P_Pattern where
       <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
-  pretty (P_Relation nm sign prps dflts pragma mean _) =
+  pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack . plainNameOf) nm <~> sign
+      <+> (text . T.unpack . plainNameOf) nm <~> sign <~> lbl
       <+> props
       <+> if null dflts
         then empty

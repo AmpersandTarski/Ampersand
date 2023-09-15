@@ -258,6 +258,7 @@ instance Arbitrary P_Relation where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
+      <*> arbitrary
 
 instance Arbitrary Pragma where
   arbitrary =

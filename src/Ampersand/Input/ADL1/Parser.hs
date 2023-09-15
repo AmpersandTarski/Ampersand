@@ -432,8 +432,8 @@ pRelationDef ns =
     <*> optList ((pOperator . toText1Unsafe) "=" *> pContent)
     <* optional ((pOperator . toText1Unsafe) ".")
   where
-    reorder pos' (nm, sign, fun) prop dflts pragma meanings prs =
-      (P_Relation nm sign props dflts pragma meanings pos', map pair2pop prs)
+    reorder pos' (nm, sign, lbl, fun) prop dflts pragma meanings prs =
+      (P_Relation nm sign lbl props dflts pragma meanings pos', map pair2pop prs)
       where
         props = prop `Set.union` fun
         pair2pop :: PAtomPair -> P_Population
@@ -485,23 +485,25 @@ pRelDefault =
         <|> Tgt <$ (pKey . toText1Unsafe) "TGT"
 
 --- RelationNew ::= 'RELATION' Varid Signature
-pRelationNew :: NameSpace -> AmpParser (Name, P_Sign, PProps)
+pRelationNew :: NameSpace -> AmpParser (Name, P_Sign, Maybe Label, PProps)
 pRelationNew ns =
-  (,,) <$ (pKey . toText1Unsafe) "RELATION"
+  (,,,) <$ (pKey . toText1Unsafe) "RELATION"
     <*> pNameWithoutLabel ns RelationName
     <*> pSign ns
+    <*> optional pLabel
     <*> return Set.empty
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
-pRelationOld :: NameSpace -> AmpParser (Name, P_Sign, PProps)
+pRelationOld :: NameSpace -> AmpParser (Name, P_Sign, Maybe Label, PProps)
 pRelationOld ns =
   relOld <$> pNameWithoutLabel ns RelationName
     <* (pOperator . toText1Unsafe) "::"
     <*> pConceptRef ns
     <*> pFun
     <*> pConceptRef ns
+    <*> optional pLabel
   where
-    relOld nm src fun tgt = (nm, P_Sign src tgt, fun)
+    relOld nm src fun tgt lbl = (nm, P_Sign src tgt, lbl, fun)
 
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser (Set.Set PProp)
