@@ -10,21 +10,22 @@ import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.NonEmpty as NE
 
 data Rulez = Rulez
-  { rulJSONinvariants :: [JsonRule],
-    rulJSONsignals :: [JsonRule]
+  { rulJSONinvariants :: ![JsonRule],
+    rulJSONsignals :: ![JsonRule]
   }
   deriving (Generic, Show)
 
 data JsonRule = JsonRule
-  { rulJSONname :: Text,
-    rulJSONruleAdl :: Text,
-    rulJSONorigin :: Text,
-    rulJSONmeaning :: Text,
-    rulJSONmessage :: Text,
-    rulJSONsrcConceptId :: Text,
-    rulJSONtgtConceptId :: Text,
-    rulJSONconjunctIds :: [Text],
-    rulJSONpairView :: Maybe JsonPairView
+  { rulJSONname :: !Text,
+    rulJSONlabel :: !Text,
+    rulJSONruleAdl :: !Text,
+    rulJSONorigin :: !Text,
+    rulJSONmeaning :: !Text,
+    rulJSONmessage :: !Text,
+    rulJSONsrcConceptId :: !Text,
+    rulJSONtgtConceptId :: !Text,
+    rulJSONconjunctIds :: ![Text],
+    rulJSONpairView :: !(Maybe JsonPairView)
   }
   deriving (Generic, Show)
 
@@ -32,13 +33,13 @@ newtype JsonPairView = JsonPairView [JsonPairViewSegment]
   deriving (Generic, Show)
 
 data JsonPairViewSegment = JsonPairViewSegment
-  { pvsJSONseqNr :: Int,
-    pvsJSONsegType :: Text,
-    pvsJSONtext :: Maybe Text,
-    pvsJSONsrcOrTgt :: Maybe Text,
-    pvsJSONexpTgt :: Maybe Text,
-    pvsJSONexpSQL :: Maybe Text,
-    pvsJSONexpIsIdent :: Maybe Bool
+  { pvsJSONseqNr :: !Int,
+    pvsJSONsegType :: !Text,
+    pvsJSONtext :: !(Maybe Text),
+    pvsJSONsrcOrTgt :: !(Maybe Text),
+    pvsJSONexpTgt :: !(Maybe Text),
+    pvsJSONexpSQL :: !(Maybe Text),
+    pvsJSONexpIsIdent :: !(Maybe Bool)
   }
   deriving (Generic, Show)
 
@@ -65,6 +66,9 @@ instance JSON Rule JsonRule where
   fromAmpersand env fSpec rule =
     JsonRule
       { rulJSONname = text1ToText . tName $ rule,
+        rulJSONlabel = case rrlbl rule of
+          Nothing -> text1ToText . tName $ rule
+          Just (Label txt) -> txt,
         rulJSONruleAdl = showA . formalExpression $ rule,
         rulJSONorigin = tshow . origin $ rule,
         rulJSONmeaning = showMeaning,
