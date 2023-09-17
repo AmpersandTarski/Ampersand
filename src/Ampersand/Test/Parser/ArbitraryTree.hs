@@ -532,7 +532,10 @@ instance Arbitrary P_Concept where
       ]
 
 instance Arbitrary P_Sign where
-  arbitrary = P_Sign <$> arbitrary <*> arbitrary
+  arbitrary =
+    P_Sign
+      <$> arbitrary `suchThat` noLabel
+      <*> arbitrary `suchThat` noLabel
 
 instance Arbitrary PClassify where
   arbitrary =
@@ -568,6 +571,11 @@ noOne = all notIsOneAndnoLabel
 
 notIsOne :: P_Concept -> Bool
 notIsOne = (P_ONE /=)
+
+noLabel :: P_Concept -> Bool
+noLabel cpt = case cpt of
+  PCpt _ lbl -> isNothing lbl
+  P_ONE -> True
 
 notIsOneAndnoLabel :: P_Concept -> Bool
 notIsOneAndnoLabel cpt = case cpt of
