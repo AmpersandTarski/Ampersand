@@ -538,7 +538,7 @@ instance Arbitrary PClassify where
   arbitrary =
     PClassify
       <$> arbitrary
-      <*> arbitrary `suchThat` notIsOne
+      <*> arbitrary `suchThat` notIsOneAndnoLabel
       <*> arbitrary `suchThat` noOne
 
 instance Arbitrary Lang where
@@ -564,10 +564,15 @@ instance Arbitrary PRelationDefault where
       ]
 
 noOne :: Foldable t => t P_Concept -> Bool
-noOne = all notIsOne
+noOne = all notIsOneAndnoLabel
 
 notIsOne :: P_Concept -> Bool
 notIsOne = (P_ONE /=)
+
+notIsOneAndnoLabel :: P_Concept -> Bool
+notIsOneAndnoLabel cpt = case cpt of
+  PCpt _ lbl -> isNothing lbl
+  P_ONE -> False
 
 safePlainName :: Gen Text1
 safePlainName =
