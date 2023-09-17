@@ -1090,7 +1090,7 @@ pSign ns = pBrackets sign
 
 --- ConceptRef ::= ConceptName
 pConceptRef :: NameSpace -> AmpParser P_Concept
-pConceptRef ns = PCpt <$> pNameWithoutLabel ns ConceptName
+pConceptRef ns = PCpt <$> pNameWithoutLabel ns ConceptName <*> pure Nothing
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: NameSpace -> AmpParser P_Concept

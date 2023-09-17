@@ -113,7 +113,7 @@ transformersFormalAmpersand fSpec =
         "ConceptDef",
         "ConceptName",
         Set.fromList [Uni],
-        [ (dirtyId' cdf, PopAlphaNumeric . tshow . acdcpt $ cdf)
+        [ (dirtyId' cdf, PopAlphaNumeric . tshow . acdname $ cdf)
           | cdf :: AConceptDef <- instanceList fSpec
         ]
       ),

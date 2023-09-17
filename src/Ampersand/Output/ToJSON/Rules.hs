@@ -66,9 +66,7 @@ instance JSON Rule JsonRule where
   fromAmpersand env fSpec rule =
     JsonRule
       { rulJSONname = text1ToText . tName $ rule,
-        rulJSONlabel = case rrlbl rule of
-          Nothing -> text1ToText . tName $ rule
-          Just (Label txt) -> txt,
+        rulJSONlabel = label rule,
         rulJSONruleAdl = showA . formalExpression $ rule,
         rulJSONorigin = tshow . origin $ rule,
         rulJSONmeaning = showMeaning,

@@ -762,7 +762,7 @@ instance ShowHS AConceptDef where
     T.intercalate
       indent
       [ "AConceptDef { pos = " <> showHS env "" (origin cd),
-        "            , acdcpt = " <> tshow (acdcpt cd),
+        "            , acdcpt = " <> tshow (acdname cd),
         "            , acddef2 = " <> showHS env "                        " (acddef2 cd),
         "            , acdmean = "
           <> showHS

@@ -32,11 +32,11 @@ import qualified RIO.Text as T
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
-pConcToType p = UserConcept (name p)
+pConcToType p = UserConcept (name p, p_cptlabel p)
 
 aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
-aConcToType p = UserConcept (name p)
+aConcToType p = UserConcept (NE.head $ aliases p)
 
 getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
 getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
@@ -325,7 +325,7 @@ pCtx2aCtx
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
-      cptMap = makeConceptMap allGens
+      cptMap = conceptmap
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [Representation]
@@ -533,7 +533,7 @@ pCtx2aCtx
           specCpt = pCpt2aCpt fun $ specific pg
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
-      userConcept x = UserConcept (name x)
+      userConcept (PCpt nm lbl') = UserConcept (nm, lbl')
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
@@ -1160,7 +1160,7 @@ pCtx2aCtx
           )
             <$> pRefObj2aRefObj ci objref
       pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
-      pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
+      pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s Nothing)
       pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declDisambMap ci) tm
       pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
       pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
@@ -1414,8 +1414,8 @@ pConcDef2aConcDef ::
 pConcDef2aConcDef defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
-      acdcpt = name pCd,
-      acdlbl = mLabel pCd,
+      acdname = name pCd,
+      acdlabel = mLabel pCd,
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd

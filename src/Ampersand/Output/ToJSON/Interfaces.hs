@@ -135,9 +135,7 @@ instance JSON Interface JSONInterface where
   fromAmpersand env fSpec interface =
     JSONInterface
       { ifcJSONname = text1ToText . tName $ interface,
-        ifcJSONlabel = case ifclbl interface of
-          Nothing -> text1ToText . tName $ interface
-          Just (Label txt) -> txt,
+        ifcJSONlabel = label interface,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
         ifcJSONisAPI = ifcIsAPI interface
       }

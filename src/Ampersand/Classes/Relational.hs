@@ -41,7 +41,7 @@ isONE _ = False
 isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
-    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (tName <$> aliases cpt)
+    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (tName . fst <$> aliases cpt)
     ONE -> False
 
 -- The function "properties" does not only provide the properties provided by the Ampersand user,

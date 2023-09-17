@@ -1200,18 +1200,26 @@ instance Traced PPurpose where
 
 data P_Concept
   = -- | The name of this Concept
-    PCpt {p_cptnm :: !Name}
+    PCpt
+      { p_cptnm :: !Name,
+        p_cptlabel :: !(Maybe Label)
+      }
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     P_ONE
-  -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
-  -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
-  deriving (Eq, Ord)
 
-mkPConcept :: Name -> P_Concept
-mkPConcept nm =
+instance Eq P_Concept where
+  -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
+  a == b = compare a b == EQ
+
+instance Ord P_Concept where
+  -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
+  compare a b = compare (name a) (name b)
+
+mkPConcept :: Name -> Maybe Label -> P_Concept
+mkPConcept nm lbl =
   if nm == nameOfONE
     then P_ONE
-    else PCpt {p_cptnm = nm}
+    else PCpt {p_cptnm = nm, p_cptlabel = lbl}
 
 instance Named P_Concept where
   name PCpt {p_cptnm = nm} = nm

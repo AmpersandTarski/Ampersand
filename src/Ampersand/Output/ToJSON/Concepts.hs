@@ -11,7 +11,7 @@ import qualified RIO.List as L
 newtype Concepts = Concepts [Concept] deriving (Generic, Show)
 
 data Concept = Concept
-  { cptJSONid :: Text,
+  { cptJSONname :: Text,
     cptJSONlabel :: Text,
     cptJSONtype :: Text,
     cptJSONgeneralizations :: [Text],
@@ -71,8 +71,8 @@ instance JSON FSpec Concepts where
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
-      { cptJSONid = text1ToText . idWithoutType' $ cpt,
-        cptJSONlabel = text1ToText . tName $ cpt,
+      { cptJSONname = tshow . name $ cpt,
+        cptJSONlabel = label cpt,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
         cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts (vgens fSpec) $ cpt,
         cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts (vgens fSpec) $ cpt,

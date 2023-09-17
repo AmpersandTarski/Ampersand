@@ -63,9 +63,7 @@ instance JSON Relation RelationJson where
     RelationJson
       { relJSONname = text1ToText . tName $ dcl,
         relJSONsignature = (text1ToText . tName) dcl <> (tshow . sign) dcl,
-        relJSONlabel = case declabel dcl of
-          Nothing -> text1ToText . tName $ dcl
-          Just (Label txt) -> txt,
+        relJSONlabel = label dcl,
         relJSONsrcConceptId = text1ToText . idWithoutType' . source $ dcl,
         relJSONtgtConceptId = text1ToText . idWithoutType' . target $ dcl,
         relJSONuni = isUni bindedExp,

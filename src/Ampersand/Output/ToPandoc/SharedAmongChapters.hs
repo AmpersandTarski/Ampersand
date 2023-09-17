@@ -474,7 +474,7 @@ orderingByTheme env fSpec =
             cCptPurps = purposesOf fSpec (outputLang env fSpec) c
           }
       where
-        c = PlainConcept (acdcpt cpt NE.:| [])
+        c = PlainConcept ((acdname cpt, acdlabel cpt) NE.:| [])
 
 dpRule' ::
   (HasDocumentOpts env) =>

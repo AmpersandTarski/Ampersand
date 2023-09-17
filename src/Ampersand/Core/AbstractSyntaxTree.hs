@@ -250,8 +250,8 @@ data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    acdcpt :: !Name,
-    acdlbl :: !(Maybe Label),
+    acdname :: !Name,
+    acdlabel :: !(Maybe Label),
     -- | The textual definition of this concept.
     acddef2 :: !Meaning,
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -262,7 +262,7 @@ data AConceptDef = AConceptDef
   deriving (Show, Typeable)
 
 instance Named AConceptDef where
-  name = acdcpt
+  name = acdname
 
 instance Traced AConceptDef where
   origin = pos
@@ -358,6 +358,9 @@ instance Traced Rule where
 
 instance Named Rule where
   name = rrnm
+
+instance Labeled Rule where
+  mLabel = rrlbl
 
 instance Hashable Rule where
   hashWithSalt s rul =
@@ -502,6 +505,9 @@ instance Unique Meaning where
 instance Named Relation where
   name = decnm
 
+instance Labeled Relation where
+  mLabel = declabel
+
 instance HasSignature Relation where
   sign = decsgn
 
@@ -564,6 +570,9 @@ data ViewDef = Vd
 
 instance Named ViewDef where
   name = vdname
+
+instance Labeled ViewDef where
+  mLabel = vdlabel
 
 instance Traced ViewDef where
   origin = vdpos
@@ -682,6 +691,9 @@ instance Ord Interface where
 
 instance Named Interface where
   name = ifcname
+
+instance Labeled Interface where
+  mLabel = ifclbl
 
 instance Traced Interface where
   origin = ifcPos
@@ -1268,7 +1280,7 @@ getExpressionRelation expr = case getRelation expr of
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
-        aliases :: !(NE.NonEmpty Name)
+        aliases :: !(NE.NonEmpty (Name, Maybe Label))
       }
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
@@ -1298,13 +1310,16 @@ instance Hashable A_Concept where
   hashWithSalt s cpt =
     s
       `hashWithSalt` ( case cpt of
-                         PlainConcept {} -> (0 :: Int) `hashWithSalt` NE.sort (aliases cpt)
+                         PlainConcept {} -> (0 :: Int) `hashWithSalt` (fst . NE.head . NE.sort $ aliases cpt)
                          ONE -> 1 :: Int
                      )
 
 instance Named A_Concept where
-  name PlainConcept {aliases = names} = NE.head names
+  name PlainConcept {aliases = names} = fst . NE.head $ names
   name ONE = nameOfONE
+
+instance Labeled A_Concept where
+  mLabel = snd . NE.head . aliases
 
 instance Show A_Concept where
   show = T.unpack . text1ToText . tName
@@ -1317,8 +1332,8 @@ class Show a => ShowWithAliases a where
 
 instance ShowWithAliases A_Concept where
   showWithAliases ONE = tName ONE
-  showWithAliases cpt@PlainConcept {aliases = names} =
-    case NE.tail names of
+  showWithAliases cpt@PlainConcept {} =
+    case NE.tail (fst <$> aliases cpt) of
       [] -> tName cpt
       xs -> tName cpt <> toText1Unsafe ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
 
@@ -1388,20 +1403,20 @@ data ContextInfo = CI
   }
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
-typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun . mkPConcept $ nameOfONE
-typeOrConcept fun (UserConcept s) = Left . fun . mkPConcept $ s
+typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE Nothing
+typeOrConcept fun (UserConcept (nm, lbl)) = Left . fun $ mkPConcept nm lbl
 typeOrConcept _ (BuiltIn x) = Right (Just x)
 typeOrConcept _ RepresentSeparator = Right Nothing
 
 data Type
-  = UserConcept !Name
+  = UserConcept !(Name, Maybe Label)
   | BuiltIn !TType
   | RepresentSeparator
   deriving (Eq, Ord)
 
 instance Named Type where
   name t = case t of
-    UserConcept nm -> nm
+    UserConcept (nm, _) -> nm
     BuiltIn tt -> mkName ConceptName . fmap toNamePart' $ ("AmpersandBuiltIn" NE.:| [tshow tt])
     RepresentSeparator -> mkName ConceptName . fmap toNamePart' $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
     where
@@ -1412,7 +1427,7 @@ instance Named Type where
 
 instance Show Type where
   show a = T.unpack $ case a of
-    UserConcept nm -> text1ToText . tName $ nm
+    UserConcept (nm, _) -> text1ToText . tName $ nm
     BuiltIn tt -> "BuiltIn " <> tshow tt
     RepresentSeparator -> "RepresentSeparator"
 
@@ -1702,10 +1717,11 @@ makeConceptMap gs = mapFunction
         P_ONE -> ONE
         PCpt {} ->
           PlainConcept
-            { aliases = sorted
+            { aliases = fmap toTuple . NE.nub . NE.sort $ (pCpt NE.:| aliasses)
             }
       where
-        sorted = NE.nub . NE.sort $ (name pCpt NE.:| map name aliasses)
+        toTuple :: P_Concept -> (Name, Maybe Label)
+        toTuple cpt = (name cpt, p_cptlabel cpt)
     edges :: [(P_Concept, [P_Concept])]
     edges = L.nub . map mkEdge . eqCl specific $ gs
     mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])

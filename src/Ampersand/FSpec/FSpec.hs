@@ -238,7 +238,9 @@ concDefs :: FSpec -> A_Concept -> [AConceptDef]
 concDefs fSpec c =
   case c of
     ONE -> []
-    PlainConcept {} -> [cdef | cdef <- conceptDefs fSpec, name cdef `elem` aliases c]
+    PlainConcept {} -> filter isDefinitionOf . conceptDefs $ fSpec
+      where
+        isDefinitionOf cdef = name cdef `elem` fmap fst (aliases c)
 
 instance ConceptStructure FSpec where
   concs = allConcepts

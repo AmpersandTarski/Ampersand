@@ -102,8 +102,8 @@ metarelation tr =
       dec_label = Nothing,
       dec_sign =
         P_Sign
-          (mkPConcept (tSrc tr))
-          (mkPConcept (tTrg tr)),
+          (mkPConcept (tSrc tr) Nothing)
+          (mkPConcept (tTrg tr) Nothing),
       dec_prps = aProps2Pprops $ mults tr,
       dec_defaults = [],
       dec_pragma = Nothing,
@@ -124,8 +124,8 @@ transformer2pop tr =
             p_mbSign =
               Just
                 ( P_Sign
-                    (mkPConcept (tSrc tr))
-                    (mkPConcept (tTrg tr))
+                    (mkPConcept (tSrc tr) Nothing)
+                    (mkPConcept (tTrg tr) Nothing)
                 )
           },
       p_popps = tPairs tr

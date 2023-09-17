@@ -4,7 +4,6 @@ module Ampersand.Core.A2P_Converters
   ( aAtomValue2pAtomValue,
     aConcept2pConcept,
     aCtx2pCtx,
-    aCpt2pCpt,
     aExpression2pTermPrim,
     aExplObj2PRef2Obj,
     aClassify2pClassify,
@@ -68,7 +67,7 @@ aConcDef2pConcDef aCd =
   PConceptDef
     { pos = origin aCd,
       cdname = name aCd,
-      cdlbl = acdlbl aCd,
+      cdlbl = acdlabel aCd,
       cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
       cdmean = map aMeaning2pMeaning $ acdmean aCd,
       cdfrom = acdfrom aCd
@@ -226,7 +225,8 @@ aConcept2pConcept cpt =
     ONE -> P_ONE
     PlainConcept {} ->
       PCpt
-        { p_cptnm = name cpt
+        { p_cptnm = name cpt,
+          p_cptlabel = snd . NE.head . aliases $ cpt
         }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose
@@ -258,14 +258,9 @@ aPopulation2pPopulation p =
     ACptPopu {} ->
       P_CptPopu
         { pos = Origin $ "Origin is not present in Population(" <> (text1ToText . tName) (popcpt p) <> ") from A-Structure",
-          p_cpt = aCpt2pCpt (popcpt p),
+          p_cpt = aConcept2pConcept (popcpt p),
           p_popas = map aAtomValue2pAtomValue (popas p)
         }
-
-aCpt2pCpt :: A_Concept -> P_Concept
-aCpt2pCpt cpt = case cpt of
-  PlainConcept {} -> PCpt {p_cptnm = name cpt}
-  ONE -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
 aObjectDef2pObjectDef x =

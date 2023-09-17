@@ -527,7 +527,7 @@ instance Arbitrary PMessage where
 instance Arbitrary P_Concept where
   arbitrary =
     frequency
-      [ (100, PCpt <$> uppercaseName),
+      [ (100, PCpt <$> uppercaseName <*> arbitrary),
         (1, pure P_ONE)
       ]
 

@@ -169,12 +169,14 @@ mkArchiContext [archiRepo] pops = do
           participatingRel ag = (pSrc . dec_sign . grainRel) ag `L.notElem` map (mkArchiConcept . toText1Unsafe) ["Relationship", "Property", "View"]
           mkArchiConcept :: Text1 -> P_Concept
           mkArchiConcept x =
-            PCpt . withNameSpace archiNameSpace . mkName ConceptName $
-              ( case toNamePart1 x of
-                  Nothing -> fatal "Not a valid NamePart."
-                  Just np -> np
+            PCpt
+              ( withNameSpace archiNameSpace . mkName ConceptName $
+                  ( case toNamePart1 x of
+                      Nothing -> fatal "Not a valid NamePart."
+                      Just np -> np NE.:| []
+                  )
               )
-                NE.:| []
+              Nothing
       _ -> fatal "May not call vwAts on a non-view element"
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
@@ -667,7 +669,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
     ref_to_relation :: P_NamedRel
     ref_to_relation = PNamedRel OriginUnknown relName' (Just ref_to_signature)
     ref_to_signature :: P_Sign
-    ref_to_signature = P_Sign (PCpt srcName) (PCpt tgtName)
+    ref_to_signature = P_Sign (PCpt srcName Nothing) (PCpt tgtName Nothing)
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text1 -> Text1
