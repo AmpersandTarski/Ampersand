@@ -330,12 +330,15 @@ instance Arbitrary TermPrim where
   arbitrary =
     oneof
       [ PI <$> arbitrary,
-        Pid <$> arbitrary <*> arbitrary,
-        Patm <$> arbitrary <*> arbitrary <*> arbitrary,
+        Pid <$> arbitrary <*> arbitrary `suchThat` noLabel,
+        Patm <$> arbitrary <*> arbitrary <*> arbitrary `suchThat` noMaybeLabel,
         PVee <$> arbitrary,
-        Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
+        Pfull <$> arbitrary <*> arbitrary `suchThat` noLabel <*> arbitrary `suchThat` noLabel,
         PNamedR <$> arbitrary
       ]
+    where
+      noMaybeLabel :: Maybe P_Concept -> Bool
+      noMaybeLabel = maybe True noLabel
 
 instance Arbitrary (PairView (Term TermPrim)) where
   arbitrary = PairView <$> arbitrary
