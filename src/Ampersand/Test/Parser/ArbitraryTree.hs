@@ -474,7 +474,7 @@ instance Arbitrary P_IdentDef where
     P_Id <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary `suchThat` notIsOne
+      <*> arbitrary `suchThat` notIsOneAndnoLabel
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
