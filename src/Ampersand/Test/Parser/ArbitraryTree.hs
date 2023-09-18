@@ -569,9 +569,6 @@ instance Arbitrary PRelationDefault where
 noOne :: Foldable t => t P_Concept -> Bool
 noOne = all notIsOneAndnoLabel
 
-notIsOne :: P_Concept -> Bool
-notIsOne = (P_ONE /=)
-
 noLabel :: P_Concept -> Bool
 noLabel cpt = case cpt of
   PCpt _ lbl -> isNothing lbl
