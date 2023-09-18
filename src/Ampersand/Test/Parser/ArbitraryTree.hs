@@ -336,9 +336,6 @@ instance Arbitrary TermPrim where
         Pfull <$> arbitrary <*> arbitrary `suchThat` noLabel <*> arbitrary `suchThat` noLabel,
         PNamedR <$> arbitrary
       ]
-    where
-      noMaybeLabel :: Maybe P_Concept -> Bool
-      noMaybeLabel = maybe True noLabel
 
 instance Arbitrary (PairView (Term TermPrim)) where
   arbitrary = PairView <$> arbitrary
@@ -427,8 +424,8 @@ instance Arbitrary P_Population where
   arbitrary =
     oneof
       [ P_RelPopu
-          <$> arbitrary `suchThat` noOne
-          <*> arbitrary `suchThat` noOne
+          <$> arbitrary `suchThat` notMaybeIsOneAndNoLabel
+          <*> arbitrary `suchThat` notMaybeIsOneAndNoLabel
           <*> arbitrary
           <*> arbitrary
           <*> arbitrary,
@@ -584,6 +581,12 @@ notIsOneAndnoLabel :: P_Concept -> Bool
 notIsOneAndnoLabel cpt = case cpt of
   PCpt _ lbl -> isNothing lbl
   P_ONE -> False
+
+noMaybeLabel :: Maybe P_Concept -> Bool
+noMaybeLabel = maybe True noLabel
+
+notMaybeIsOneAndNoLabel :: Maybe P_Concept -> Bool
+notMaybeIsOneAndNoLabel = maybe False notIsOneAndnoLabel
 
 safePlainName :: Gen Text1
 safePlainName =
