@@ -87,6 +87,11 @@ module.exports = {
             id: 'ampersand/guides/best-practices'
         },
         {
+            label: 'Contributing to Ampersand',
+            type: 'doc',
+            id: 'ampersand/guides/onboarding'
+        },
+        {
             label: 'Best practices',
             type: 'doc',
             id: 'ampersand/guides/best-practices'
