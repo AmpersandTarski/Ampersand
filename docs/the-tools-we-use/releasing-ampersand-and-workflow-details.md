@@ -35,7 +35,7 @@ We release Ampersand in arbitrary time intervals. This is done by attaching a re
 
 [2](releasing-ampersand-and-workflow-details.md#myfootnote2)
 
-![](.gitbook/assets/create-pull-request.PNG)
+![](assets/create-pull-request.PNG)
 
 Press the green button to create the pull request. We create a pull request so the release leaves a proper administrative trail in GitHub, and it triggers the actual release.
 

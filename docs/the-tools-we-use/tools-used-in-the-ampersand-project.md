@@ -69,11 +69,6 @@ description: >-
 |  | in which we keep the  |  |
 |  | [source code of RAP](installation-of-rap/).      |                       |
 +-----------------------+-----------------------+-----------------------+
-| [Travis](https://travis-ci.org/AmpersandTarski/Ampersand)       | a service, which runs automated tests on | [Han](https://github.com/hanjoosten)       |
-|  | every commit of the Ampersand repository  |                       |
-| ![](.gitbook/assets/travisci-full-color-1.png)                  | on Github. Only the successfully tested  |                       |
-|  | commits on the releases branch are released      |                       |
-+-----------------------+-----------------------+-----------------------+
 
 \## Generic tools used in the Ampersand project
 
