@@ -37,24 +37,13 @@ description: >-
 |                       | cannot hyperlink to   |                       |
 |                       | it.                   |                       |
 +-----------------------+-----------------------+-----------------------+
-| [Ampersand repository](https://github.com/AmpersandTarski/Ampersand/) | a                     | all                   |
-|       | [repository](gitbook/getting-started-with-gitbook.md) |                       |
+| [Ampersand repository](https://github.com/AmpersandTarski/Ampersand/) | a repository     | all                   |
 |                       | in which we keep      |                       |
 |                       | Ampersand source code |                       |
 |                       | and manage the issues |                       |
 |                       | wrt Ampersand. It     |                       |
 |                       | resides on            |                       |
 |                       | [GitHub](https://github.com/AmpersandTarski/Ampersand). |                       |
-+-----------------------+-----------------------+-----------------------+
-| [Appveyor](https://ci.appveyor.com/project/hanjoosten/ampersand) | a service that        | [Han](https://github.com/hanjoosten)       |
-|  | generates executable  |  |
-|  | files for Windows     |                       |
-|  | automatically, each   |                       |
-|                       | time a new release of |                       |
-|                       | Ampersand appears. It |                       |
-|                       | [releases the Ampersand compiler](releasing-ampersand-and-workflow-details.md) |                       |
-|                       | for Windows automatically, provided        |                       |
-|                       | all automated tests have passed. |                       |
 +-----------------------+-----------------------+-----------------------+
 | [Docker Hub](https://hub.docker.com/u/ampersandtarski/) | a repository in which | [Stef](https://github.com/stefjoosten) |
 |                  | we keep [Ampersand images](installation-of-rap/making-docker-images.md) |                       |
@@ -96,20 +85,6 @@ description: >-
 |                       | has been integrated   |                       |
 |                       | in the                |                       |
 |                       | RAP-application code. |                       |
-+-----------------------+-----------------------+-----------------------+
-| EditPad               | a text editor that    | [Rieks](https://github.com/RieksJ)         |
-|                       | has long been used in |                       |
-|                       | the Ampersand         |                       |
-|                       | project, but not any  |                       |
-|                       | more. A syntax        |                       |
-|                       | coloring mechanism    |                       |
-|                       | for Ampersand still   |                       |
-|                       | exists. This editor   |                       |
-|                       | has been superseded   |                       |
-|                       | by VScode, because it |                       |
-|                       | is being supported by |                       |
-|                       | a much larger         |                       |
-|                       | community.            |                       |
 +-----------------------+-----------------------+-----------------------+
 | [Docker](https://www.docker.com/)          | the platform for technology agnostic,  | [Stef](https://github.com/stefjoosten) |
 |                       | fully automated       |                       |
