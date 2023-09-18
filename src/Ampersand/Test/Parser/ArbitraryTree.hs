@@ -485,7 +485,7 @@ instance Arbitrary P_ViewDef where
     P_Vd <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary
+      <*> arbitrary `suchThat` noLabel
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
