@@ -214,7 +214,7 @@ instance Arbitrary P_RoleRule where
 instance Arbitrary Representation where
   arbitrary =
     Repr <$> arbitrary
-      <*> arbitrary `suchThat` noOne
+      <*> arbitrary `suchThat` all notIsOneAndnoLabel
       <*> arbitrary `suchThat` (TypeOfOne /=)
 
 instance Arbitrary TType where
@@ -331,7 +331,7 @@ instance Arbitrary TermPrim where
     oneof
       [ PI <$> arbitrary,
         Pid <$> arbitrary <*> arbitrary `suchThat` noLabel,
-        Patm <$> arbitrary <*> arbitrary <*> arbitrary `suchThat` noMaybeLabel,
+        Patm <$> arbitrary <*> arbitrary <*> arbitrary `suchThat` all noLabel,
         PVee <$> arbitrary,
         Pfull <$> arbitrary <*> arbitrary `suchThat` noLabel <*> arbitrary `suchThat` noLabel,
         PNamedR <$> arbitrary
@@ -424,8 +424,8 @@ instance Arbitrary P_Population where
   arbitrary =
     oneof
       [ P_RelPopu
-          <$> arbitrary `suchThat` notMaybeIsOneAndNoLabel
-          <*> arbitrary `suchThat` notMaybeIsOneAndNoLabel
+          <$> arbitrary `suchThat` all notIsOneAndnoLabel
+          <*> arbitrary `suchThat` all notIsOneAndnoLabel
           <*> arbitrary
           <*> arbitrary
           <*> arbitrary,
@@ -542,7 +542,7 @@ instance Arbitrary PClassify where
     PClassify
       <$> arbitrary
       <*> arbitrary `suchThat` notIsOneAndnoLabel
-      <*> arbitrary `suchThat` noOne
+      <*> arbitrary `suchThat` all notIsOneAndnoLabel
 
 instance Arbitrary Lang where
   arbitrary = elements [minBound ..]
@@ -566,9 +566,6 @@ instance Arbitrary PRelationDefault where
         PDefEvalPHP <$> arbitrary <*> safeText
       ]
 
-noOne :: Foldable t => t P_Concept -> Bool
-noOne = all notIsOneAndnoLabel
-
 noLabel :: P_Concept -> Bool
 noLabel cpt = case cpt of
   PCpt _ lbl -> isNothing lbl
@@ -578,12 +575,6 @@ notIsOneAndnoLabel :: P_Concept -> Bool
 notIsOneAndnoLabel cpt = case cpt of
   PCpt _ lbl -> isNothing lbl
   P_ONE -> False
-
-noMaybeLabel :: Maybe P_Concept -> Bool
-noMaybeLabel = maybe True noLabel
-
-notMaybeIsOneAndNoLabel :: Maybe P_Concept -> Bool
-notMaybeIsOneAndNoLabel = maybe False notIsOneAndnoLabel
 
 safePlainName :: Gen Text1
 safePlainName =
