@@ -41,4 +41,4 @@ For these invites, contact [Frank Teusink](<mailto:Frank.Teusink@ordina.nl?subje
 
 ## Next
 
-[Prepare Windows](preparing-windows.md)
+Get your development environment up-and-running
