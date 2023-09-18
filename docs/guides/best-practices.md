@@ -1,4 +1,4 @@
-# Best Practices
+# Best practices For Ampersand Modellers
 
 ## Use `PURPOSE`-statements abundantly
 
