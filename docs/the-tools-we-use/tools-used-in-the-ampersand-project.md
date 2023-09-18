@@ -96,7 +96,7 @@ description: >-
 +-----------------------+-----------------------+-----------------------+
 | [Git](https://git-scm.com/community)       | the versioning system | [Han](https://github.com/hanjoosten),      |
 |                       | in which all source code is kept. It      | [Rieks](https://github.com/RieksJ),        |
-| ![](.gitbook/assets/logo-2x-1.png) | enables us to work collaboratively on multiple features in    | [Michiel](https://github.com/Michiel-s),   |
+| ![](assets/logo-2x-1.png) | enables us to work collaboratively on multiple features in    | [Michiel](https://github.com/Michiel-s),   |
 |                       | parallel, without interfering each other\'s work.        | [Martijn](https://github.com/Oblosys),     |
 |                       |                       | [Stef](https://github.com/stefjoosten),    |
 |                       |                       | [Sebastiaan](https://github.com/sjcjoosten) |
