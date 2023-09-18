@@ -431,7 +431,7 @@ instance Arbitrary P_Population where
           <*> arbitrary,
         P_CptPopu
           <$> arbitrary
-          <*> arbitrary `suchThat` notIsOne
+          <*> arbitrary `suchThat` notIsOneAndnoLabel
           <*> arbitrary
       ]
 
