@@ -2,6 +2,11 @@
 
 List of activities to get a new developer up-to speed with RAP development.
 
+ - Schedule a meeting with [Stef Joosten](<mailto:Stef.Joosten@ordina.nl?subject=Request demo meeting&body=Hi Stef,>) to get an explanation and demo about the Ampersant project.
+ - Join the upcomming sprint review meeting to meet the team.
+ - Request access to the GitHub repository as described below.
+ - Get invited to the different sprint meetings through teams as described below.
+
 ## GitHub memberships
 
 Ensure you have a GitHub account. This can be a 'professional' account connected to your Ordina email or any other account.
@@ -11,7 +16,7 @@ Request membership to
 - [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization and
 - [Ordina A-team](https://github.com/orgs/AmpersandTarski/teams/ordina-a-team/members).
 
-For this, contact [Han Joosten](https://github.com/hanjoosten), and provide him with your Github account name (or URL to your GitHub profile page).
+For this, contact [Han Joosten](<mailto:Han.Joosten@ordina.nl?subject=Request for github access>), and provide him with your Github account name (or URL to your GitHub profile page).
 
 ## Microsoft Teams memberships
 
@@ -23,7 +28,7 @@ Request
 - Tagged as _AmpersandTarski A-team_ (facilitates initiating chats).
 -
 
-For these authorizations, contact [Frank Teusink](<mailto:Frank.Teusink@ordina.nl?subject=Request for A-team authorization>).
+For these authorizations, contact [Fran Slot](<mailto:fran.slot@ordina.nl?subject=Request for A-team authorization>).
 
 ## Meetings
 
@@ -37,8 +42,4 @@ These are currently:
 - A-team: Sprint retrospective; at end of sprint, friday 10:00, 50 minutes
 - A-team: Sprint planning; at end of sprint, friday 11:00, 50 minutes
 
-For these invites, contact [Frank Teusink](<mailto:Frank.Teusink@ordina.nl?subject=Request for invitations of A-team meetings>).
-
-## Next
-
-Get your development environment up-and-running
+For these invites, contact [Fran Slot](<mailto:fran.slot@ordina.nl?subject=Request for invitations of A-team meetings>).
