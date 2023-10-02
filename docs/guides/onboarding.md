@@ -69,7 +69,7 @@ To work on the project you wil need a local version of the different repositorie
 
 <Table>
   <tr>
-    <th> ⚠️WARNING⚠️ </th>
+    <td>⚠️<b>WARNING</b>⚠️</td>
   </tr>
   <tr>
     <td>Make sure to work in the <b><i>documentation branch</i></b> while creating or editing documentation to prevent unnecessary usage of the pipelines. 
