@@ -68,5 +68,5 @@ To work on the project you wil need a local version of the different repositorie
 >For Example a document that references or is meant for RAP needs to be in the RAP repository docs folder.
 
 
-> || ⚠️**WARNING** ||
-> | Make sure to work in the documenation branch while creating or editing documentation to prevent unnecessary usage of the pipelines. |
+|| ⚠️**WARNING** ||
+| Make sure to work in the documenation branch while creating or editing documentation to prevent unnecessary usage of the pipelines. |
