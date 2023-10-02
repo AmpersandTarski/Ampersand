@@ -67,5 +67,5 @@ To work on the project you wil need a local version of the different repositorie
 [The AmpersandTarski.github.io repository](https://github.com/AmpersandTarski/AmpersandTarski.github.io) is used to create the docusaurus documentation webpage. It pulls the different documents from the docs folders of all the repositories. While working this way we need to make sure to work in the correct docs folders.
 >For Example a document that references or is meant for RAP needs to be in the RAP repository docs folder.
 
-> **Warning**
+> [!WARNING]
 > Make sure to work in the documenation branch while creating or editing documentation to prevent unnecessary usage of the pipelines.
