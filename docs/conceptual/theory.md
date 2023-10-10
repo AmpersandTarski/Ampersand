@@ -23,7 +23,7 @@ the other interfaces.
 Every system contains a dataset, which represents the state of the
 system. Every interface produces and consumes events that may change the
 state of the system. This state is represented in a persistent store,
-aka the database [^3]. Events that the system detects may cause the
+aka the database. Events that the system detects may cause the
 state to change.
 
 ![Anatomy of an information system](datamigration-Pre-migration.drawio.png)
@@ -37,7 +37,7 @@ database management systems refer to as integrity rules. The purpose of
 integrity rules is to keep the constraints they represent satisfied.
 
 
-An *information system* is a combination of dataset, schema, and functionality. Each is defined in a separate section.
+An [information system](#information-systems-sctinformation-systems) is a combination of dataset, schema, and functionality. Each is defined in a separate section.
 
 ## Datasets {#sct:Datasets}
 
@@ -203,7 +203,7 @@ As before, a suffix disambiguates the elements of this definition when needed.
 
 *An information system $\mathscr{S}$ is a tuple
 $\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$,
-in which*
+in which:*
 
 -   *dataset
     $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst}}\rangle$ as
@@ -352,7 +352,7 @@ so this is a dataset $\mathscr{D}$ as
 introduced before.
 
 The Ampersand compiler generates a schema $\mathscr{Z}$, which contains
-concepts, relations, and rules. It defines the set of concepts:
+concepts, relations and rules. It defines the set of concepts:
 
 $\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$
 

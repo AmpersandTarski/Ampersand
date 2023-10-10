@@ -60,7 +60,7 @@ Stef Joosten, [Rekenen met Taal](https://www.researchgate.net/publication/236340
 <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
 The application [RAP](https://rap.cs.ou.nl) was built as an educational tool, and developed further into a tool in which anyone can build and run their own prototypes.
 
-The project has contributed to the development of applications in relation algebra, which has lead to numerous publications in the [International Conference of Relation Algebraic Methods in Computer Science](http://www.ramics-conference.org).
+The project has contributed to the development of applications in relation algebra, which has lead to numerous publications in the [International Conference of Relation Algebraic Methods in Computer Science](https://ramics20.lis-lab.fr/).
 
 Numerous students at the Open Universiteit have graduated in the context of Ampersand.
 

@@ -10,8 +10,8 @@ Some questions in this page do not have an answer yet. Please consider that as o
 * How can I inspect the database underneath an Ampersand application?
 
 ## Deployment
-* How can I deploy an Ampersand application on my laptop?
-* How can I deploy an Ampersand application on a virual machine (i.e. a server)
+* [How can I deploy an Ampersand application on my laptop?](installing-ampersand.md)
+* [How can I deploy an Ampersand application on a virual machine (i.e. a server)](installing-ampersand.md)
 * How can I deploy an Ampersand application on Kubernetes?
 
 ##  Data
