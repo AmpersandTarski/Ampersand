@@ -6,7 +6,7 @@ Ampersand is great for rapid prototyping. We advise you to use Ampersand on the 
 
 You can use any text editor to create Ampersand scripts.
 However, for those that use the [Visual Studio Code \(vscode\)](https://code.visualstudio.com/) editor, there is language support.
-Search for the vscode extension "Ampersand \(ADL\) language support" and install it, and then choose the coloring theme called "Ampersand".
+Search for the [vscode extension](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand) "Ampersand \(ADL\) language support" and install it, and then choose the coloring theme called "Ampersand".
 
 ## How to use Ampersand on your own laptop
 
@@ -23,17 +23,28 @@ To run an Ampersand program, DIY-engineers will need a webserver that can run ja
 
 ### How to install your own copy of RAP4 on a server of your own choosing
 
-RAP4 is an Ampersand repository, in which multiple users can store and use their Ampersand scripts. Consult [the tools we use at Ampersand](https://ampersandtarski.gitbooks.io/the-tools-we-use-for-ampersand/content/installation_of_rap.html). This is work in progress.
+RAP4 is an Ampersand repository, in which multiple users can store and use their Ampersand scripts. Consult [the tools we use at Ampersand](../the-tools-we-use/tools-used-in-the-ampersand-project.md). This is work in progress.
 
 ### How to change Ampersand itself
 
 If you want to change the Ampersand compiler for your own purposes, you need access to the source files, and a Haskell development environment. This section still has to be written. It will describe the software process for developing Ampersand itself.
 
-The remainder of this chapter explains in detail all the things you need to get you up and running with Ampersand. The instructions presume that you are familiar with your own computers.
+The remainder of this chapter explains in detail all the things you need to get you up and running with Ampersand. The instructions presume that you are familiar with your own computer(s).
 
 
 ## Installing the Ampersand compiler manually
-1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it. **Make sure** _**dot**_ **and** _**neato**_ **are in your path**  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it.
+<Table>
+  <tr>
+    <td>⚠️<b>WARNING</b>⚠️</td>
+  </tr>
+  <tr>
+    <td>
+     <b>Make sure <i>dot</i> and <i>neato</i> are in your path</b>  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+    </td>
+  </tr>
+</Table>
+
 2. There are several formats that you can generate a functional specification document in. Currently, the best results can be obtained in [docx ](https://www.lifewire.com/docx-file-2620750)or [LaTeX (PDF)](https://en.wikipedia.org/wiki/LaTeX). Depending on your taste, you need appropriate software:
    1. For docx, you could of course use Microsoft Word, but there are [other options](https://www.maketecheasier.com/open-docx-file-without-microsoft-office/) as well.
    2. If you want to generate PDF files, using LaTeX, you need a LaTeX compiler. On Windows, we recommend [**MiKTeX**](http://miktex.org/). On Linux and MacOS, we recommend [**texlive**](https://www.tug.org/texlive/).
@@ -56,7 +67,17 @@ Now you can compile and check your Ampersand scripts. However, you are likely to
 
 If you want to generate functional specifications from ampersand scripts with pictures, you need the following additional software:
 
-1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it. **Make sure** _**dot**_ **and** _**neato**_ **are in your path**  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it.
+<Table>
+  <tr>
+    <td>⚠️<b>WARNING</b>⚠️</td>
+  </tr>
+  <tr>
+    <td>
+     <b>Make sure <i>dot</i> and <i>neato</i> are in your path</b>  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
+    </td>
+  </tr>
+</Table>
 
 If you want to generate functional specifications from ampersand scripts in LaTeX, you need the following additional software (if you don't, don't bother installing them):
 
@@ -89,7 +110,7 @@ If you want to generate functional prototypes from ampersand scripts, you need t
 If there is no executable for your operating system, or if you prefer to build an Ampersand compiler yourself, follow these steps:
 
 > 1. Install stack, the haskell tool stack. [instructions are here](http://docs.haskellstack.org/en/stable/install\_and\_upgrade.html)
-> 2. use [git](https://git-scm.com/) to clone the latest version of Ampersand. The code can be found at [github](https://github.com/AmpersandTarski/Ampersand/tree/master). (the master branch is our stable branch)
+> 2. use [git](https://git-scm.com/) to clone the latest version of Ampersand. The code can be found at [github](https://github.com/AmpersandTarski/Ampersand/tree/main). (the main branch is our stable branch)
 > 3. Open a command line terminal, and go to the directory that contains the file named `ampersand.cabal`
 > 4. Then, close your command line terminal and reopen another one (this helps to reload the environment variables that the `stack` installation may have added or modified),
 > 5.  Let `stack` install everything you need to compile (see the Notes below!) by executing:
@@ -109,8 +130,17 @@ Testing your installation
     Ampersand v3.1.0[master:2fa348f*], build time: 08-Sep-15 14:04:58 West-Europa (z
     omertijd)
     ```
-
-    The version number is important to specify, whenever you have a question of like to report an issue. It **really** helps us when you add the version number, **including everything between the brackets** when you contact us.
+<Table>
+  <tr>
+    <td>⚠️<b>WARNING</b>⚠️</td>
+  </tr>
+  <tr>
+    <td>
+    The version number is important to specify, whenever you have a question of like to report an issue. It <b>really</b> helps us when you add the version number, <b>including everything between the brackets</b> when you contact us.
+    </td>
+  </tr>
+</Table>
+    
 
 ### Test to see if you can build your first prototype
 
