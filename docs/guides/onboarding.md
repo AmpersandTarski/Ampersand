@@ -5,7 +5,7 @@
 Below you wil find a list of activities to get a new contributor up-to speed with Ampersant development.
 
  - Schedule a meeting with [Stef Joosten](<mailto:Stef.Joosten@ordina.nl?subject=Request demo meeting>) to get an explanation and demo about the Ampersant project.
- - Contact [Han Joosten](<mailto:Han.Joosten@ordina.nl?subject=Request for access to ampersant project&body=Hi Han,%0D%0A%0D%0AI am contacting you to get access to the following:%0D%0A &nbsp;- An invite to the upcoming sprint review meeting to meet the team.%0D%0A &nbsp;- Access to the github repository, _Your_Github_Account_Name_Or_Github_Profile_Url_.%0D%0A &nbsp;- Invites to the different sprint meetings that are currently scheduled.>) for the following options to get access to the full ampersant project.
+ - Contact [Han Joosten](<mailto:Han.Joosten@ordina.nl?subject=Request for access to ampersant project&body=Hi Han,%0D%0A%0D%0AI am contacting you to get access to the following:%0D%0A &nbsp;- An invite to the upcoming sprint review meeting to meet the team.%0D%0A &nbsp;- Access to the github repository, _YOUR_GITHUB_ACCOUNTNAME_OR_ACCOUNTLINK_.%0D%0A &nbsp;- Invites to the different sprint meetings that are currently scheduled.%0D%0A &nbsp;- Adding me to the Ampersant-whatsapp group, my phone number is: YOUR_PHONE_NUMBER.>) for the following options to get access to the full ampersant project.
     - Join the upcomming sprint review meeting to meet the team.
     - Request access to the GitHub repository as [described below](#github-memberships). 
     - Get invited to the different sprint meetings through teams as [described below](#microsoft-teams-memberships).
