@@ -86,7 +86,7 @@ class Typeable a => Xreferenceable a where
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
   xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in an <Inlines>.") --you should use xDefBlck instead.
 
-  -- ^ function that defines the target Inlines of something that can e referenced.
+  -- ^ function that defines the target Inlines of something that can be referenced.
 
   hyperLinkTo :: a -> Inlines
   -- ^ function that returns a link to something that can be referenced.
@@ -133,7 +133,7 @@ hyperTarget env fSpec a =
     --                         ("", ["adl"],[("caption",tshow d)])
     --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
     --                  )
-    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow . name $ r)
+    XRefSharedLangRule r -> (Right . spanWith (xSafeLabel a, [], []) . str . label) r
     --   Left $ divWith (xSafeLabel a,[],[])
     --                  (   (para . text $ tshow r)
     --                  --  <>codeBlockWith

@@ -198,7 +198,7 @@ class Named a => Labeled a where
     Just (Label lbl) -> lbl
 
 instance Show Label where
-  show (Label x) = "LABEL " <> T.unpack x
+  show (Label x) = T.unpack x
 
 prependToPlainName :: Text -> Name -> Name
 prependToPlainName t nm =
