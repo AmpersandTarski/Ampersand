@@ -124,7 +124,7 @@ hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Eithe
 hyperTarget env fSpec a =
   case a of
     XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
-    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . text1ToText . tName) pat
+    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . label) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
     XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
     --   Left $ divWith (xSafeLabel a,[],[])

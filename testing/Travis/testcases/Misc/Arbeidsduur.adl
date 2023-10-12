@@ -179,7 +179,7 @@ VIOLATION (TXT "Deze beslissing dient genomen te worden door", SRC arbeidsrelati
 ENDPATTERN
 
 --[Proces: Verzoek behandelen]-----------------------------
-PATTERN VerzoekBehandelen
+PATTERN VerzoekBehandelen LABEL "Verzoek behandelen"
 
 ROLE Werkgever MAINTAINS BeslissenOverVerzoek
 PURPOSE RULE BeslissenOverVerzoek REF "Artikel 2 lid 10"
@@ -211,7 +211,7 @@ VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist e
 ENDPATTERN
 
 --[Proces: Rekenen met datums]-----------------------------
-PATTERN RekenenMetDatums
+PATTERN RekenenMetDatums LABEL "Rekenen met datums"
 PURPOSE PATTERN RekenenMetDatums
 {+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.+}
 
@@ -255,7 +255,7 @@ VIOLATION (TXT "{EX} datimeEQL;datumEQV;Datum;", SRC I, TXT ";", TGT I
 ENDPATTERN
 
 --[Proces: geautomatiseerde procesondersteuning]-----------
-PATTERN GeautomatiseerdeProcesondersteuning
+PATTERN GeautomatiseerdeProcesondersteuning LABEL "Geautomatiseerde procesondersteuning"
 PURPOSE PATTERN GeautomatiseerdeProcesondersteuning
 {+
 Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd.
