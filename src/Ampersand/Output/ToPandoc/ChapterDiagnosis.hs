@@ -112,7 +112,7 @@ chpDiagnosis env fSpec
                   map (plain . str . text1ToText . tName . fst) (fRoles fSpec)
                 )
                 -- Content rows:
-                [ (plain . str . text1ToText . tName) rul :
+                [ (plain . str . label) rul :
                     [f rol rul | (rol, _) <- fRoles fSpec]
                   | rul <- sigs
                 ]
@@ -138,7 +138,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van concept ",
                   EN "The concept "
                 )
-                <> (singleQuoted . str . text1ToText . tName) c
+                <> (singleQuoted . str . label) c
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remains without a purpose."
@@ -150,7 +150,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van de concepten: ",
                   EN "Concepts "
                 )
-                <> commaPandocAnd outputLang' (map (str . text1ToText . tName) xs)
+                <> commaPandocAnd outputLang' (map (str . label) xs)
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remain without a purpose."
@@ -362,7 +362,7 @@ chpDiagnosis env fSpec
                                ( NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in ",
                                  EN " shows a conceptual diagram with all relations declared in "
                                )
-                             <> (singleQuoted . str . text1ToText . tName) pat
+                             <> (singleQuoted . str . label) pat
                              <> "."
                          )
                          <> xDefBlck env fSpec pict
@@ -444,7 +444,7 @@ chpDiagnosis env fSpec
       where
         formalizations rls =
           bulletList
-            [ para ((emph . str . text1ToText . tName) r <> " (" <> (str . tshow . origin) r <> ")")
+            [ para ((emph . str . label) r <> " (" <> (str . tshow . origin) r <> ")")
                 <> (para . showMath . formalExpression) r
                 <> (para . showPredLogic outputLang' . formalExpression) r
               | r <- rls
@@ -488,7 +488,7 @@ chpDiagnosis env fSpec
           Relations -> --The user-defined relations of the pattern / fSpec
           Rules -> -- The user-defined rules of the pattern / fSpec
           [Blocks]
-        mkTableRowPat p = mkTableRow (text1ToText . tName $ p) (relsDefdIn p) (udefrules p)
+        mkTableRowPat p = mkTableRow (label p) (relsDefdIn p) (udefrules p)
         mkTableRow nm rels ruls =
           map
             (plain . str)
@@ -530,7 +530,7 @@ chpDiagnosis env fSpec
               -- Rows:
               [ [(plain . str . text1ToText . tName) rol]
                   <> [(plain . str . maybe "--" (text1ToText . tName) . rrpat) rul | multProcs]
-                  <> [ (plain . str . text1ToText . tName) rul,
+                  <> [ (plain . str . label) rul,
                        (plain . str . maybe "--" (text1ToText . tName) . rrpat) rul
                      ]
                 | (rol, rul) <- fRoleRuls fSpec
@@ -577,7 +577,7 @@ chpDiagnosis env fSpec
               -- Rows:
               [ map
                   (plain . str)
-                  [ (text1ToText . tName) r,
+                  [ (label) r,
                     (tshow . origin) r,
                     (tshow . length) ps
                   ]
@@ -625,19 +625,19 @@ chpDiagnosis env fSpec
         --         else expls
         --         where expls = [Plain (block<>[Space]) | Means l econt<-rrxpl r, l==Just outputLang' || l==Nothing, Para block<-econt]
         quoterule :: Rule -> Inlines
-        quoterule = singleQuoted . str . text1ToText . tName
+        quoterule = singleQuoted . str . label
         oneviol :: Rule -> AAtomPair -> Inlines
         oneviol r p =
           if isEndo (formalExpression r) && apLeft p == apRight p
             then
               singleQuoted
-                ( (str . text1ToText . tName . source . formalExpression) r
+                ( (str . label . source . formalExpression) r
                     <> (str . showValADL . apLeft) p
                 )
             else
-              "(" <> (str . text1ToText . tName . source . formalExpression) r <> (str . showValADL . apLeft) p
+              "(" <> (str . label . source . formalExpression) r <> (str . showValADL . apLeft) p
                 <> ", "
-                <> (str . text1ToText . tName . target . formalExpression) r
+                <> (str . label . target . formalExpression) r
                 <> (str . showValADL . apRight) p
                 <> ")"
         popwork :: [(Rule, AAtomPairs)]
@@ -676,7 +676,7 @@ chpDiagnosis env fSpec
         showViolatedRule (r, ps) =
           (para . emph)
             ( (str . l) (NL "Regel ", EN "Rule ")
-                <> (str . text1ToText . tName) r
+                <> (str . label) r
             )
             <> para
               ( ( if isSignal fSpec r
@@ -692,7 +692,7 @@ chpDiagnosis env fSpec
                       <> (commaPandocOr outputLang' . map (str . text1ToText . tName) . rolesOf $ r)
                   else
                     (str . l) (NL "Overtredingen van invariant ", EN "Violations of invariant ")
-                      <> (str . text1ToText . tName) r
+                      <> (str . label) r
               )
               -- Alignment:
               (replicate 1 (AlignLeft, 1))
@@ -731,7 +731,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             [(AlignLeft, 1.0)]
             -- Header:
-            [(plain . str . text1ToText . tName . source . formalExpression) r]
+            [(plain . str . label . source . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p]
               | p <- take 10 . toList $ ps --max 10 rows
@@ -742,7 +742,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             (replicate 2 (AlignLeft, 1 / 2))
             -- Header:
-            [(plain . str . text1ToText . tName . source . formalExpression) r, (plain . str . text1ToText . tName . target . formalExpression) r]
+            [(plain . str . label . source . formalExpression) r, (plain . str . label . target . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p, (plain . str . showValADL . apRight) p]
               | p <- take 10 . toList $ ps --max 10 rows
