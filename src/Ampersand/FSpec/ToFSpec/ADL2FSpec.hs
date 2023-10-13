@@ -23,7 +23,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
-such as the code generator, the functional-specification generator, and future extentions. -}
+such as the code generator, the functional-specification generator, and future extensions. -}
 makeFSpec ::
   (HasFSpecGenOpts env) =>
   env ->

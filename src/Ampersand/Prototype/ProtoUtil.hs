@@ -192,7 +192,7 @@ writeFile filePath content = do
 
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
--- NOTE: directories with extention .proto are excluded. This would compromise regression tests,
+-- NOTE: directories with extension .proto are excluded. This would compromise regression tests,
 --       where '.proto' is the default output directory (if not specified)
 copyDirRecursively ::
   (HasLogFunc env) =>
@@ -230,7 +230,7 @@ copyDirRecursively srcBase tgtBase
             else
               if takeExtension srcPath == defaultDirPrototype
                 then do
-                  logDebug $ "Skipping " <> display (T.pack srcPath) <> " because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                  logDebug $ "Skipping " <> display (T.pack srcPath) <> " because its extension is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
                 else do
                   logDebug $ " Copying dir... " <> display (T.pack srcPath)
                   logDebug $ "      to dir... " <> display (T.pack tgtPath)
