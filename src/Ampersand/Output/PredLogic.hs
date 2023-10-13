@@ -109,8 +109,8 @@ predLshow lang vMap = charshow 0
         Dom pexpr var -> vMap var <> T.pack " ∈ dom(" <> charshow 8 pexpr <> T.pack ")"
         Cod pexpr var -> vMap var <> T.pack " ∈ cod(" <> charshow 8 pexpr <> T.pack ")"
         R pexpr rel pexpr'
-          | isIdent (EDcD rel) -> wrap i 5 (charshow 5 pexpr) <> T.pack " = " <> wrap i 5 (charshow 5 pexpr')
-          | otherwise ->
+          | isIdent (EDcD rel) -> wrap i 5 (charshow 2 pexpr) <> T.pack " = " <> wrap i 2 (charshow 5 pexpr')
+          | otherwise -> wrap i 5 $
             if T.null (decprL <> decprM <> decprR)
               then d <> T.pack " " <> name rel <> T.pack " " <> c
               else decprL <> d <> decprM <> c <> decprR
@@ -127,7 +127,7 @@ predLshow lang vMap = charshow 0
         Function pexpr rel -> name rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
         Kleene0 rs -> wrap i 6 (charshow 6 rs <> T.pack "*")
         Kleene1 rs -> wrap i 7 (charshow 7 rs <> T.pack "+")
-        Not rs -> wrap i 8 (l (toNL " niet ", toEN " not ") <> charshow 8 rs)
+        Not rs -> wrap i 8 (l (toNL " niet ", toEN " not ") <> charshow 1 rs)
 
 predNormalize :: PredLogic -> PredLogic
 predNormalize predlogic = predlogic --TODO: Fix normalization of PredLogic
