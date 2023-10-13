@@ -529,9 +529,9 @@ chpDiagnosis env fSpec
               )
               -- Rows:
               [ [(plain . str . text1ToText . tName) rol]
-                  <> [(plain . str . maybe "--" (text1ToText . tName) . rrpat) rul | multProcs]
+                  <> [(plain . str . maybe "--" id . rrpat) rul | multProcs]
                   <> [ (plain . str . label) rul,
-                       (plain . str . maybe "--" (text1ToText . tName) . rrpat) rul
+                       (plain . str . maybe "--" id . rrpat) rul
                      ]
                 | (rol, rul) <- fRoleRuls fSpec
               ]

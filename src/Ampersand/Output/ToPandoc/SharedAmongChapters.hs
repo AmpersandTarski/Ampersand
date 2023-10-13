@@ -723,10 +723,7 @@ legacyTable caption' cellspecs headers rows =
         toColSpec :: (Alignment, Double) -> ColSpec
         toColSpec (a, d) = (a, ColWidth d)
     tHead :: TableHead
-    tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers)
-      where
-        toRow :: Alignment -> Blocks -> Row
-        toRow a bs = Row nullAttr (map (toCell a . singleton) $ toList bs)
+    tHead = (TableHead nullAttr . toList . singleton . Row nullAttr . map (toCell AlignDefault)) headers
     toCell :: Alignment -> Blocks -> Cell
     toCell a b = Cell nullAttr a (RowSpan 1) (ColSpan 1) (toList b)
     tBodies :: [TableBody]
