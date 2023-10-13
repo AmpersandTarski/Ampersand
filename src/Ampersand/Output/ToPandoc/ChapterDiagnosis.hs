@@ -119,7 +119,8 @@ chpDiagnosis env fSpec
       where
         ruls = Set.filter (isSignal fSpec) . vrules $ fSpec
         f :: Role -> Rule -> Blocks
-        f _ _ = mempty
+        f rol rul = if (rol,rul) `elem` fRoleRuls fSpec
+                    then (plain . str) "✓" else mempty
 
     missingConceptDefs :: Blocks
     missingConceptDefs =
