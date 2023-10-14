@@ -110,10 +110,11 @@ predLshow lang vMap = charshow 0
         Cod pexpr var -> vMap var <> T.pack " ∈ cod(" <> charshow 8 pexpr <> T.pack ")"
         R pexpr rel pexpr'
           | isIdent (EDcD rel) -> wrap i 5 (charshow 2 pexpr) <> T.pack " = " <> wrap i 2 (charshow 5 pexpr')
-          | otherwise -> wrap i 5 $
-            if T.null (decprL <> decprM <> decprR)
-              then d <> T.pack " " <> name rel <> T.pack " " <> c
-              else decprL <> d <> decprM <> c <> decprR
+          | otherwise ->
+            wrap i 5 $
+              if T.null (decprL <> decprM <> decprR)
+                then d <> T.pack " " <> name rel <> T.pack " " <> c
+                else decprL <> d <> decprM <> c <> decprR
           where
             d = wrap i 5 (charshow 5 pexpr)
             c = wrap i 5 (charshow 5 pexpr')
