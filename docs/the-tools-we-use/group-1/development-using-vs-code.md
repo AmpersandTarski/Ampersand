@@ -26,16 +26,15 @@ In order to use ormolu, you have to make sure it is available. Hopefully, some t
 stack install ormolu
 ```
 
+:::tip 
 
+If you use the devcontainer functionality (available in vscode), your code is auto-formatted by default. In other cases, you can best let vscode take care of it automatically. To do so, in the settings of vscode, enable format-on-save.
 
-:::tip
-
-If you use the devcontainer functionality (available in vscode), your code is auto-formatted by default. In other cases, you need to do that yourself. When merging code into the main branch, it should be formatted correctly. You can autoformat all haskell files with the command:
+In case you do not like to enable the autoformat on save, you can do it manually every time before you commit:
 
 ```bash
 stack exec ormolu -- --mode inplace $(git ls-files '*.hs')
 ```
-
 :::
 
 ### Devcontainer
@@ -47,22 +46,20 @@ We provide a standard developer container to the developers of Ampersand. Docume
 Setting up a Haskell environment with awesome tooling has never been as easy as today.
 
 * Make sure you have vscode installed.
-* Install the \`Remote - Containers\` extension.
+* Install the [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) extension pack.
 * Make sure Docker is running.
 * Go to the directory where your Ampersand stuff resides, and type \`code .\`
-* In the lower right corner, you will see a message:&#x20;
+* In the lower right corner, you will see a message:
 
 ![](<../assets/reopen-in-container.png>)
 
 * Push the button \`Reopen in Container\` and watch the show.
 
 :::info
-
-The first time, opening the development container will take quite some time. It will build some docker images and finally spin up the container. Fortunately, this is one time only.&#x20;
-
+The first time, opening the development container will take quite some time. It will build some docker images and finally spin up the container. Fortunately, this is one time only, for it is stored in the build cache of Docker.
 :::
 
-* While you are waiting, you can watch the progress by inspecting the log. There will be a message containing a link to the log file.&#x20;
+* While you are waiting, you can watch the progress by inspecting the log. There will be a message containing a link to the log file.
 
 <details>
 
@@ -81,4 +78,5 @@ In this case, you can click on the status bar at the place where the 'remote con
 * After everything is set up, open `Main.hs` . This will trigger the Haskell extension of vscode. Also here, the first time will take a while, because the project is being build. That includes all dependencies of Ampersand. If you want to see what is going on, go to the Output tab and open the dropdown called \`tasks\`. You will find the task building Ampersand:
 
 ![](../assets/image.png)
+
 
