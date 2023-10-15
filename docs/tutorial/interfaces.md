@@ -29,7 +29,7 @@ To understand this fragment, take notice of:
 1. The name of this interface is `Person`. This name immediately follows the keyword `INTERFACE`.
 2. The term following the colon, `I[Person]`, is the interface term of this interface.
 3. The interface can be applied to any atom from the _domain of the interface term_. So this particular interface is applicable to any atom of type `Person`. In the screenshot, it applies to `"J. Lovell"`.
-4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface. &#x20;
+4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface.
 5. Each term at the right of a field name specifies which data is presented in the field. For this reason it is called the _field term_ for that field. Field name and field term are separated by a colon.
 6. Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`. A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
 7. Field terms are subject to type checking. The following relations provide an example for getting a type-correct interface:
@@ -74,11 +74,7 @@ INTERFACE "Project"  : I[Project] BOX
 ```
 
 Notice the following features:\
-1\. The structure of an interface is hierarchical. It consists of boxes within a box. This is because a field term may be followed by a `BOX` with a list of subinterfaces. Without it, it is just a field term.
-2. When a field term is followed by a `BOX`, every atom in the _codomain of the field term_ is displayed in a box of its own on the screen. That box behaves like an interface with the field term serving as interface term of that subinterface.
-3. By this mechanism, the hierarchical structure of the entire interface translates directly to the hierarchical structure of the web-page in which it is displayed.
-4. The source concept of a field term must match with the target concept of the field term outside the box.
-5. The target concept of a field term that has a box, must match with the source concepts of each field inside that box.
+1\. The structure of an interface is hierarchical. It consists of boxes within a box. This is because a field term may be followed by a `BOX` with a list of subinterfaces. Without it, it is just a field term. 2. When a field term is followed by a `BOX`, every atom in the _codomain of the field term_ is displayed in a box of its own on the screen. That box behaves like an interface with the field term serving as interface term of that subinterface. 3. By this mechanism, the hierarchical structure of the entire interface translates directly to the hierarchical structure of the web-page in which it is displayed. 4. The source concept of a field term must match with the target concept of the field term outside the box. 5. The target concept of a field term that has a box, must match with the source concepts of each field inside that box.
 
 ## Formatting
 
@@ -118,6 +114,7 @@ Notice the following features:\
 3\. The keyword `BOX <FORM>` is default for any box. It does not change the effect of `BOX`.
 
 ## Layout and Widgets
+
 TODO
 
 ## Assignment

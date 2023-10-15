@@ -20,7 +20,7 @@ Here is an overview of all tasks described on this page. Refer to the related se
 3. Upgrade to a new version of RAP
 4. Upgrade to a new version of Ubuntu
 5. Refresh the configuration\
-   Refreshing the RAP4 configuration is something you need to do only when developers tell you to do that.&#x20;
+   Refreshing the RAP4 configuration is something you need to do only when developers tell you to do that.
 
 ## Connecting to the RAP4 server
 
@@ -34,9 +34,9 @@ This is what you can expect to see:
 
 ```
 stefjoosten$ ssh sjo@rap.cs.ou.nl
-sjo@rap.cs.ou.nl's password: 
+sjo@rap.cs.ou.nl's password:
 Permission denied, please try again.
-sjo@rap.cs.ou.nl's password: 
+sjo@rap.cs.ou.nl's password:
 Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-124-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
@@ -66,7 +66,7 @@ CONTAINER ID        IMAGE                     COMMAND                  CREATED  
 bff782b2da89        ampersandtarski/rap4-db   "docker-entrypoint..."   4 months ago        Up 2 weeks          3306/tcp                         rap3_db_1
 773f7ad86527        dockerampersand_rap3      "docker-php-entryp..."   18 months ago       Up 2 weeks          0.0.0.0:80->80/tcp               dockerampersand_rap3_1
 7525eb7ea95f        dockerampersand_db        "docker-entrypoint..."   18 months ago       Up 2 weeks          3306/tcp                         dockerampersand_db_1
-sjo@lnx-hrl-202v:~/RAP4$ 
+sjo@lnx-hrl-202v:~/RAP4$
 ```
 
 In this case it appears that a fourth container is running. This poses no problem, because other processes may run concurrently without interfering with RAP4.
@@ -80,7 +80,7 @@ drwxrwxr-x  3 sjo  sjo  4096 Oct 25  2018 .
 drwxr-xr-x 18 sjo  sjo  4096 Jan  9  2018 ..
 -rw-rw-r--  1 sjo  sjo   472 Oct 25  2018 docker-compose.yml
 drwxr-xr-x  5 root root 4096 Dec 15  2017 volumes
-sjo@lnx-hrl-202v:~/RAP4$ 
+sjo@lnx-hrl-202v:~/RAP4$
 ```
 
 By inspecting the contents you can see whether the configuration matches what you see in `docker`. This is what you can expect in `docker-compose.yml`:
@@ -100,7 +100,7 @@ services:
     volumes:
       - ./volumes/log:/var/www/html/RAP4/log
       - ./volumes/scripts:/var/www/html/RAP4/scripts
- 
+
   db:
     restart: always
     image: ampersandtarski/rap4-db
@@ -139,7 +139,7 @@ If you need to upgrade RAP4 to the latest release run this command:
 sjo@lnx-hrl-202v:~/RAP4$ docker-compose up -d
 ```
 
-As you can see in the configuration (`docker-compose.yml`)&#x20;
+As you can see in the configuration (`docker-compose.yml`)
 
 ## Upgrade to a new version of Ubuntu
 
@@ -194,6 +194,3 @@ In the rare event that the configuration of RAP4 has changed (to be announced by
 ```
 wget https://raw.githubusercontent.com/AmpersandTarski/RAP/master/docker-compose.yml
 ```
-
-
-
