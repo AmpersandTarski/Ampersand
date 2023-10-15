@@ -30,7 +30,7 @@ stack install ormolu
 
 If you use the devcontainer functionality (available in vscode), your code is auto-formatted by default. In other cases, you can best let vscode take care of it automatically. To do so, in the settings of vscode, enable format-on-save.
 
-In case you do not like to enable the autoformat on save, you can do it manually every time before you commit:
+Alternatively, in case you do not like to enable the autoformat on save, you can do it manually every time before you commit:
 
 ```bash
 stack exec ormolu -- --mode inplace $(git ls-files '*.hs')
