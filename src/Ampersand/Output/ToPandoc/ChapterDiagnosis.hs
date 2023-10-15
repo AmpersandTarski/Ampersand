@@ -119,8 +119,10 @@ chpDiagnosis env fSpec
       where
         ruls = Set.filter (isSignal fSpec) . vrules $ fSpec
         f :: Role -> Rule -> Blocks
-        f rol rul = if (rol,rul) `elem` fRoleRuls fSpec
-                    then (plain . str) "✓" else mempty
+        f rol rul =
+          if (rol, rul) `elem` fRoleRuls fSpec
+            then (plain . str) "✓"
+            else mempty
 
     missingConceptDefs :: Blocks
     missingConceptDefs =
@@ -159,9 +161,9 @@ chpDiagnosis env fSpec
             )
       where
         missing =
-          [ c | c <- ccs, null (purposesOf fSpec outputLang' c)
-          ]
-            <> [c | c <- ccs, null (concDefs fSpec c)]
+          L.nub $
+            [c | c <- ccs, null (purposesOf fSpec outputLang' c)]
+              <> [c | c <- ccs, null (concDefs fSpec c)]
         ccs = toList . concs . vrels $ fSpec
 
     unusedConceptDefs :: Blocks
