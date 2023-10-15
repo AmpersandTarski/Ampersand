@@ -56,7 +56,7 @@ Setting up a Haskell environment with awesome tooling has never been as easy as 
 
 * Push the button \`Reopen in Container\` and watch the show.
 
-:::caution
+:::info
 
 The first time, opening the development container will take quite some time. It will build some docker images and finally spin up the container. Fortunately, this is one time only.&#x20;
 
@@ -72,7 +72,7 @@ This behavior can happen when you clicked 'Don't Show Again...' in the past.&#x2
 
 In this case, you can click on the status bar at the place where the 'remote container' plugin shows the machine you are currently using:
 
-&#x20;<img src="../assets/image (1).png" alt="" data-size="original"></img>
+![](<../assets/image (1).png>)
 
 &#x20;After you clicked, choose the menu-item \`Reopen in container\`
 
