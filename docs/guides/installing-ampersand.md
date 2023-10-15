@@ -34,16 +34,10 @@ The remainder of this chapter explains in detail all the things you need to get 
 
 ## Installing the Ampersand compiler manually
 1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it.
-<Table>
-  <tr>
-    <td>⚠️<b>WARNING</b>⚠️</td>
-  </tr>
-  <tr>
-    <td>
-     <b>Make sure <i>dot</i> and <i>neato</i> are in your path</b>  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
-    </td>
-  </tr>
-</Table>
+
+:::info
+Make sure _dot_ and _neato_ are in your path (set the $PATH environment variable if necessary).
+:::
 
 2. There are several formats that you can generate a functional specification document in. Currently, the best results can be obtained in [docx ](https://www.lifewire.com/docx-file-2620750)or [LaTeX (PDF)](https://en.wikipedia.org/wiki/LaTeX). Depending on your taste, you need appropriate software:
    1. For docx, you could of course use Microsoft Word, but there are [other options](https://www.maketecheasier.com/open-docx-file-without-microsoft-office/) as well.
@@ -68,16 +62,10 @@ Now you can compile and check your Ampersand scripts. However, you are likely to
 If you want to generate functional specifications from ampersand scripts with pictures, you need the following additional software:
 
 1. All graphical output is created using [**GraphViz**](http://www.graphviz.org/). You need to install it.
-<Table>
-  <tr>
-    <td>⚠️<b>WARNING</b>⚠️</td>
-  </tr>
-  <tr>
-    <td>
-     <b>Make sure <i>dot</i> and <i>neato</i> are in your path</b>  (set the $PATH environment variable if necessary). Also, if you compile it from source, make sure you install it with gts support.
-    </td>
-  </tr>
-</Table>
+
+:::caution
+Make sure _dot_ and _neato_ are in your path (set the $PATH environment variable if necessary).
+:::
 
 If you want to generate functional specifications from ampersand scripts in LaTeX, you need the following additional software (if you don't, don't bother installing them):
 
@@ -123,24 +111,15 @@ This will build an Ampersand-compiler named "ampersand.exe" and install it into 
 Testing your installation
 
 * Open a [command prompt](http://www.c3scripts.com/tutorials/msdos/open-window.html).
-*   Type "Ampersand --version". The expected behaviour is that Ampersand replies with the version of Ampersand. It will look something like:
+*   Type "Ampersand --version". The expected behavior is that Ampersand replies with the version of Ampersand. It will look something like:
 
     ```
     C:> ampersand.exe --version
-    Ampersand v3.1.0[master:2fa348f*], build time: 08-Sep-15 14:04:58 West-Europa (z
-    omertijd)
+    Ampersand v3.1.0[master:2fa348f*], build time: 08-Sep-15 14:04:58 West-Europa (zomertijd)
     ```
-<Table>
-  <tr>
-    <td>⚠️<b>WARNING</b>⚠️</td>
-  </tr>
-  <tr>
-    <td>
-    The version number is important to specify, whenever you have a question of like to report an issue. It <b>really</b> helps us when you add the version number, <b>including everything between the brackets</b> when you contact us.
-    </td>
-  </tr>
-</Table>
-    
+:::tip
+The version number is important to specify, whenever you have a question of like to report an issue. It <b>really</b> helps us when you add the version number, **including everything between the brackets** when you contact us.
+:::    
 
 ### Test to see if you can build your first prototype
 
@@ -159,7 +138,7 @@ MEANING "My name can be known in the current session."
 
 ROLE User MAINTAINS "Please click on 'Registration' to specify your name"
 RULE "Please click on 'Registration' to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
-VIOLATION (TXT "You can find the 'Registration' item in the navigationbar (top of the screen).")
+VIOLATION (TXT "You can find the 'Registration' item in the navigation bar (top of the screen).")
 
 INTERFACE Registration: "_SESSION"[SESSION] cRud BOX<TABLE>
    [ "My name is" : sessionMyName cRUd 

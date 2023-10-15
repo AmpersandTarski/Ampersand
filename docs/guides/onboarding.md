@@ -20,15 +20,9 @@ Request membership to
 - [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization and
 - [Ordina A-team](https://github.com/orgs/AmpersandTarski/teams/ordina-a-team/members).
 
-<Table>
-  <tr>
-    <td>⚠️<b>WARNING</b>⚠️</td>
-  </tr>
-  <tr>
-    <td>Make sure when you contact Han about this that you provide him with your Github account name (or URL to your GitHub profile page).
-    </td>
-  </tr>
-</Table>
+:::tip
+Make sure when you contact Han about this that you provide him with your Github account name (or URL to your GitHub profile page).
+:::
 
 ## Microsoft Teams memberships
 
@@ -73,12 +67,6 @@ To work on the project you wil need a local version of the different repositorie
 
 > For Example a document that references or is meant for RAP needs to be in the RAP repository docs folder.
 
-<Table>
-  <tr>
-    <td>⚠️<b>WARNING</b>⚠️</td>
-  </tr>
-  <tr>
-    <td>Make sure to work in the <b><i>documentation branch</i></b> while creating or editing documentation to prevent unnecessary usage of the pipelines. 
-    </td>
-  </tr>
-</Table>
+:::info
+Make sure to work in the ***documentation branch*** while creating or editing documentation to prevent unnecessary usage of the pipelines. 
+:::
