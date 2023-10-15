@@ -7,6 +7,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import System.FilePath
 
 chpDiagnosis ::
   (HasDirOutput env, HasDocumentOpts env) =>
@@ -447,11 +448,21 @@ chpDiagnosis env fSpec
       where
         formalizations rls =
           bulletList
-            [ para ((emph . str . label) r <> " (" <> (str . tshow . origin) r <> ")")
+            [ para ((emph . str . label) r <> " (" <> (str . tShowOrigin) r <> ")")
                 <> (para . showMath . formalExpression) r
                 <> (para . showPredLogic outputLang' . formalExpression) r
               | r <- rls
             ]
+
+    tShowOrigin :: (Traced x) => x -> Text
+    tShowOrigin = tshow . stripDirectory . origin
+      where
+        stripDirectory :: Origin -> Origin
+        stripDirectory (FileLoc pos' x) = FileLoc (f pos') x
+        stripDirectory fileLoc = fileLoc
+        -- data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic, Typeable, Data)
+        f :: FilePos -> FilePos
+        f (FilePos pth line col) = FilePos (takeFileName pth) line col
 
     ruleRelationRefTable :: Blocks
     ruleRelationRefTable =
@@ -581,7 +592,7 @@ chpDiagnosis env fSpec
               [ map
                   (plain . str)
                   [ (label) r,
-                    (tshow . origin) r,
+                    tShowOrigin r,
                     (tshow . length) ps
                   ]
                 | (r, ps) <- popwork
@@ -591,10 +602,9 @@ chpDiagnosis env fSpec
               mconcat
                 [ para
                     ( str (l (NL "Afspraak ", EN "Agreement "))
-                        <> hyperLinkTo (XRefSharedLangRule r)
-                        <> " ( "
+                        -- Pandoc does not yield hyperlinks in Word files, so we cannot do:
+                        -- <> hyperLinkTo (XRefSharedLangRule r) <> " ( " <> quoterule r <> " )"
                         <> quoterule r
-                        <> " )"
                         <> (str . l) (NL " luidt: ", EN " says: ")
                     )
                     <> printMeaning outputLang' r
