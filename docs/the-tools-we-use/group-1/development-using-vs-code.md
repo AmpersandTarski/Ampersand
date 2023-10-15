@@ -6,7 +6,7 @@ description: >-
 
 # Haskell development using VS Code
 
-This section is about
+This section is about being able to hack around in the ampersand generator. It is written in Haskell, so if you want to contribute, you need to have a development environment set up. You also need to know some of our way of working.  
 
 ## Agreements about the development of code
 
