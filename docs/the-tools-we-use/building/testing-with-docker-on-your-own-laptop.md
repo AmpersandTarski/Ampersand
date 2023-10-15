@@ -12,9 +12,11 @@ The proper use of Docker ensures that your application will run on any location 
 
 ## The desired result
 
-{% hint style="success" %}
+:::tip
+
 When the following experiments are successful on your computer, you may consider this requirement to be fulfilled
-{% endhint %}
+
+:::
 
 First demonstrate that an arbitrary internet domain (here: `nu.nl`) is visible.
 
