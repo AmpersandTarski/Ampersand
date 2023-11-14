@@ -39,9 +39,29 @@ module.exports = {
             id: 'ampersand/reference-material/how-to-read-syntax-statements'
         },
         {
-            label: 'Syntax of ADL',
+            label: 'Syntax of Ampersand',
             type: 'doc',
             id: 'ampersand/reference-material/syntax-of-ampersand'
+        },
+        {
+            label: 'Atoms',
+            type: 'doc',
+            id: 'ampersand/reference-material/atoms'
+        },
+        {
+            label: 'Contexts',
+            type: 'doc',
+            id: 'ampersand/reference-material/context'
+        },
+        {
+            label: 'Terms',
+            type: 'doc',
+            id: 'ampersand/reference-material/terms'
+        },
+        {
+            label: 'Interfaces',
+            type: 'doc',
+            id: 'ampersand/reference-material/interfaces'
         },
         {
             label: 'Architecture of generated systems',

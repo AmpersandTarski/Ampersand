@@ -41,7 +41,7 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 
 #### Purpose
 
-The data contained in a business system represents a view of \(a very small part of\) the real world. Ideally, this view must be consistent, meaning that there may be no contradictions within that view. Since different business systems have different ways of viewing the real world, and/or look at different parts of the real world, we need to be able to distinguish between such views. We use the term 'Context' to refer to an individual view. Thus, a Context is defined in terms of concepts, relations and rules, and it consists of atoms and links to populate them.
+The data contained in a business system represents a view of \(a very small part of\) the real world. Ideally, this view must be consistent, meaning that there may be no contradictions within that view. Since different business systems have different ways of viewing the real world, and/or look at different parts of the real world, we need to be able to distinguish between such views. We use the word 'Context' to refer to an individual view. Thus, a Context is defined in terms of concepts, relations and rules, and it consists of atoms and links to populate them.
 
 #### Semantics
 
@@ -436,6 +436,8 @@ A term can be any of:
   - A singleton term \(the value of an atom\)
 - a term enclosed in brackets.
 
+The [semantics of terms](./terms) is documented in a separate page.
+
 ######### Operators
 
 The following operators are available to build expressions:
@@ -512,7 +514,9 @@ Every segment must be of one of the following forms:
 - `SRC` Term
 - `TGT` Term
 
-A rule is violated by a pair of atoms \(source, target\). The source atom is the root of the violation message. In the message the target atoms are printed. With the Identity relation the root atom itself can be printed. You can use a term to print other atoms. Below two examples reporting a violation of the rule that each project must have a project leader. The first prints the project's ID, the second the project's name using the relation projectName:
+A rule is violated by a pair of atoms \(source, target\). The source atom is the root of the violation message. In the message the target atoms are printed. With the Identity relation the root atom itself can be printed. You can use a [term](./terms) to print other atoms.
+The two examples below define a violation of the rule that each project must have a project leader.
+The first prints the project's ID, the second the project's name using the relation projectName:
 
 `VIOLATION ( TXT "Project ", SRC I, TXT " does not have a projectleader")`
 
@@ -545,7 +549,7 @@ This statement may occur anywhere within a context, either inside or outside a p
 
 #### Semantics
 
-This statement means the population of the relation will automatically be kept respectively equal ( **`:=`**), a subset (`:<`) or a superset (`>:`) of the population of the given term.
+This statement means the population of the relation will automatically be kept respectively equal ( **`:=`**), a subset (`:<`) or a superset (`>:`) of the population of the given [term](./terms).
 
 #### Examples
 
@@ -597,7 +601,7 @@ where:
 
 - `<label>` is the name of the rule. It can be a single word or a string \(enclosed by double brackets\). It is followed by a colon \(`:`\) to distinguish the label from the concept that follows.
 - `<Concept>` is the name of the Concept for atoms of which the rule specifies an identity
-- Between brackets are terms whose source concept must be `<Concept>`. This is enforced by the type system.
+- Between brackets are [terms](./terms) whose source concept must be `<Concept>`. This is enforced by the type system.
 
 #### Informal Semantics
 
@@ -806,7 +810,7 @@ INTERFACE <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
 API       <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
 ```
 
-The name of an interface must be unique within the context. The term defines the atoms to which the interface can be applied. The (optional) crud annotation constrains the possible interactions a user can do. The (optional) views determine what the interface will look like. If no view is specified, the interface will look like the screenshot above. Finally the sub-interface contains all the contents, i.e. the fields, field names and the constraints on them.
+The name of an interface must be unique within the context. The [term](./terms) defines the atoms to which the interface can be applied. The (optional) crud annotation constrains the possible interactions a user can do. The (optional) views determine what the interface will look like. If no view is specified, the interface will look like the screenshot above. Finally the sub-interface contains all the contents, i.e. the fields, field names and the constraints on them.
 
 The hierarchy of boxes in an interface comes from the following (recursive) syntax of `<subinterface>`.
 
@@ -1512,7 +1516,7 @@ The following rule defines coworkers. Two different persons are coworker if they
 RULE coworker = (pl\/member)~;(pl\/member)-I
 ```
 
-This rule basically says that `coworker` is shorthand for the much more complicated term `(pl\/member)~;(pl\/member)-I`. Quite useful indeed. Now suppose this rule is satisfied in the system. Then some manager assigns a new person, Harry, to the project Zeus-III. To administer that fact in the system, he adds a pair `("Zeus-III", "Harry")` to the relation `member`. Now there is a problem. The prototype will not accept this input, because our rule is violated. For all present workers in the project now have Harry as a new coworker. That should be administered in the relation `coworker` in order to satisfy the rule.
+This rule basically says that `coworker` is shorthand for the much more complicated [term](./terms) `(pl\/member)~;(pl\/member)-I`. Quite useful indeed. Now suppose this rule is satisfied in the system. Then some manager assigns a new person, Harry, to the project Zeus-III. To administer that fact in the system, he adds a pair `("Zeus-III", "Harry")` to the relation `member`. Now there is a problem. The prototype will not accept this input, because our rule is violated. For all present workers in the project now have Harry as a new coworker. That should be administered in the relation `coworker` in order to satisfy the rule.
 
 One way to do that is to allow the manager to edit the relation coworker. This is not very convenient for that manager. He will be irritated, as he is forced to enter a number of pairs into the relation `coworker` that is equal to the number of persons in the project plus the number of projectleaders of that project. This rule is typically a candidate for automation.
 
@@ -1543,7 +1547,7 @@ Note that the violations of rule `r1` are precisely the pairs the ExecEngine mus
 
 **Notes**:
 
-* The examples use `SRC I` or `TGT I` to produce atoms that are to be inserted or deleted. However, `I` may be any term whose source concept is the same as that of the preceeding `SRC` or `TGT`. 
+* The examples use `SRC I` or `TGT I` to produce atoms that are to be inserted or deleted. However, `I` may be any [term](./terms) whose source concept is the same as that of the preceeding `SRC` or `TGT`. 
 * The `SRC <term>` and `TGT <term>` is a set of pairs \(a,b\), where a is the source atom or target atom of the violation and b is a set of atoms that is the result of `<term>`. In the examples given, this set of atoms has cardinality 1 \(which is most often the case\). However, if it is empty, that is considered regular behaviour, and this will hence not result in an error. Also, if it has a cardinality &gt; 1, then `InsPair` will insert them all whereas `DelPair` will produce an error. 
 
 #### Example \(`InsAtom`\) and \(`{EX}`\)

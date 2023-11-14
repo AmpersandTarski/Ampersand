@@ -6,7 +6,7 @@ Ampersand is great for rapid prototyping. We advise you to use Ampersand on the 
 
 You can use any text editor to create Ampersand scripts.
 However, for those that use the [Visual Studio Code \(vscode\)](https://code.visualstudio.com/) editor, there is language support.
-Search for the [vscode extension](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand) "Ampersand \(ADL\) language support" and install it, and then choose the coloring theme called "Ampersand".
+Search for the [vscode extension](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand) "Ampersand language support" and install it, and then choose the coloring theme called "Ampersand".
 
 ## How to use Ampersand on your own laptop
 
