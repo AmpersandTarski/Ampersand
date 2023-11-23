@@ -8,6 +8,7 @@
   },
   "customizations": {
     "vscode": {
+      "postStartCommand": "stack build",
       "extensions": [
         "haskell.haskell",
         "justusadam.language-haskell",
