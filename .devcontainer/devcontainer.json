@@ -6,9 +6,9 @@
     "context": "..",
     "dockerfile": "Dockerfile"
   },
+  "postStartCommand": "stack build --verbose",
   "customizations": {
     "vscode": {
-      "postStartCommand": "stack build",
       "extensions": [
         "haskell.haskell",
         "justusadam.language-haskell",
