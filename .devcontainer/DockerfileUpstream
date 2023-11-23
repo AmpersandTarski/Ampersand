@@ -58,9 +58,9 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}:${WDIR}/.local/bin:${PATH}"
 
 ARG GHC=8.10.7
-ARG CABAL=3.10.1.0
-ARG HLS=2.2.0.0
-ARG STACK=2.11.1
+ARG CABAL=3.10.2.0
+ARG HLS=2.4.0.0
+ARG STACK=2.13.1
 
 # install GHC and cabal
 
@@ -98,11 +98,6 @@ ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${WDIR}/.local/bin:${PATH}"
 # # Add just the .cabal file to capture dependencies
 COPY ./package.yaml ${WDIR}/package.yaml
 COPY ./stack.yaml ${WDIR}/stack.yaml
-
-RUN groupadd --gid $USER_GID $USERNAME && \
-    useradd -ms /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USER_GID -m $USERNAME && \
-    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
-    chmod 0440 /etc/sudoers.d/$USERNAME
 
 ENV DEBIAN_FRONTEND=dialog
 
