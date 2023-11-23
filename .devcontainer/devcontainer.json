@@ -6,7 +6,7 @@
     "context": "..",
     "dockerfile": "Dockerfile"
   },
-  "postStartCommand": "stack build --verbose",
+  "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
       "extensions": [
