@@ -106,7 +106,7 @@ pNameWithoutLabel ns typ
     depricatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
-      let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
+      let nmTxt = tryToMakeName txt
           warn =
             T.intercalate
               "\n  "
@@ -145,7 +145,7 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
       do
         orig <- currPos
         txt <- pDoubleQuotedString1
-        let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
+        let nmTxt = tryToMakeName txt
             mLab
               | Just txt == nmTxt = Nothing
               | otherwise = Just . Label . text1ToText $ txt
@@ -179,11 +179,11 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
                 mLab
               )
 
-tmpDoubleQuotedStringToNameVERYUNSAFE :: Text1 -> Maybe Text1
-tmpDoubleQuotedStringToNameVERYUNSAFE txt =
-  case T.uncons . T.filter (isSafeIdChar False) . text1ToText $ txt of
-    Nothing -> Nothing
-    Just (h, tl) -> Just $ Text1 h tl
+tryToMakeName :: Text1 -> Maybe Text1
+tryToMakeName (Text1 h tl) =
+  if isSafeIdChar True h
+    then Just . Text1 h . T.filter (isSafeIdChar False) $ tl
+    else Nothing
 
 data ContextElement
   = CMeta MetaData
