@@ -10,6 +10,7 @@
 - [Issue #1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
 - [Issue #1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
 - [Issue #1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
+- Development of Ampersand generator can now be done with codespaces.
 
 ## v4.7.6 (26 february 2023)
 

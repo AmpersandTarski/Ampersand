@@ -6,10 +6,12 @@
     "context": "..",
     "dockerfile": "Dockerfile"
   },
+  "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
       "extensions": [
         "haskell.haskell",
+        "justusadam.language-haskell",
         "phoityne.phoityne-vscode",
         "eriksik2.vscode-ghci",
         "jcanero.hoogle-vscode",
