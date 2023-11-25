@@ -106,31 +106,17 @@ pNameWithoutLabel ns typ
     depricatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
-      let nmTxt = tryToMakeName txt
-          warn =
-            T.intercalate
-              "\n  "
-              [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
-                tshow . text1ToText $ txt,
-                "   should be replaced by something like:",
-                text1ToText
-                  ( case nmTxt of
-                      Nothing -> fatal "This should not be possible."
-                      Just te -> te
-                  )
-              ]
+      let suggestedNamePart = suggestNamePart txt
+          warn = mkWarnText typ txt
       addParserWarning orig warn
-      case nmTxt of
-        Nothing -> unexpected "doublequoted string with invalid characters."
-        Just nm ->
-          return
-            ( mkName
-                typ
-                ( case toNamePart1 nm of
-                    Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
-                    Just np -> np NE.:| []
-                )
+      return
+        ( mkName
+            typ
+            ( case toNamePart1 suggestedNamePart of
+                Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
+                Just np -> np NE.:| []
             )
+        )
 
 pNameWithOptionalLabel :: NameSpace -> NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
@@ -145,45 +131,48 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
       do
         orig <- currPos
         txt <- pDoubleQuotedString1
-        let nmTxt = tryToMakeName txt
-            mLab
-              | Just txt == nmTxt = Nothing
-              | otherwise = Just . Label . text1ToText $ txt
-            warn =
-              T.intercalate
-                "\n  "
-                [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
-                  tshow . text1ToText $ txt,
-                  "   should be replaced by something like:",
-                  text1ToText
-                    ( case nmTxt of
-                        Nothing -> fatal "This should not be possible."
-                        Just te -> te
-                    )
-                    <> ( case mLab of
-                           Nothing -> mempty
-                           Just (Label lbl) -> " LABEL " <> tshow lbl
-                       )
-                ]
+        let suggestedNamePart = suggestNamePart txt
+            mLab =
+              if suggestedNamePart == txt
+                then Nothing
+                else Just . Label . text1ToText $ txt
+            warn = mkWarnText typ txt
         addParserWarning orig warn
-        case nmTxt of
-          Nothing -> unexpected "doublequoted string with invalid characters."
-          Just nm ->
-            return
-              ( mkName
-                  typ
-                  ( case toNamePart1 nm of
-                      Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
-                      Just np -> np NE.:| []
-                  ),
-                mLab
-              )
+        return
+          ( mkName
+              typ
+              ( case toNamePart1 suggestedNamePart of
+                  Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
+                  Just np -> np NE.:| []
+              ),
+            mLab
+          )
 
-tryToMakeName :: Text1 -> Maybe Text1
-tryToMakeName (Text1 h tl) =
+mkWarnText :: NameType -> Text1 -> Text
+mkWarnText typ txt =
+  T.intercalate
+    "\n  "
+    [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
+      tshow . text1ToText $ txt,
+      "   should be replaced by something like:",
+      text1ToText suggestedNamePart
+        <> ( case mLab of
+               Nothing -> mempty
+               Just (Label lbl) -> " LABEL " <> tshow lbl
+           )
+    ]
+  where
+    suggestedNamePart = suggestNamePart txt
+    mLab =
+      if txt == suggestedNamePart
+        then Nothing
+        else Just . Label . text1ToText $ txt
+
+suggestNamePart :: Text1 -> Text1
+suggestNamePart (Text1 h tl) =
   if isSafeIdChar True h
-    then Just . Text1 h . T.filter (isSafeIdChar False) $ tl
-    else Nothing
+    then Text1 h . T.filter (isSafeIdChar False) $ tl
+    else Text1 'A' . T.filter (isSafeIdChar False) $ T.cons h tl
 
 data ContextElement
   = CMeta MetaData
