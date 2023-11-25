@@ -293,17 +293,17 @@ pName typ =
     namePart =
       toNamePart1' <$> case typ of
         ConceptName -> pUpperCaseID
-        RelationName -> pLowerCaseID
-        RuleName -> pUnrestrictedID
-        PatternName -> pUpperCaseID
         ContextName -> pUpperCaseID
-        RoleName -> pUnrestrictedID
-        ViewName -> pUnrestrictedID
         IdentName -> pUnrestrictedID
         InterfaceName -> pUnrestrictedID
+        PatternName -> pUpperCaseID
         PropertyName -> pUpperCaseID
+        RelationName -> pLowerCaseID
+        RoleName -> pUnrestrictedID
+        RuleName -> pUnrestrictedID
         SqlAttributeName -> pUnrestrictedID
         SqlTableName -> pUnrestrictedID
+        ViewName -> pUnrestrictedID
     toNamePart1' :: Text1 -> NamePart
     toNamePart1' t = case toNamePart1 t of
       Nothing -> fatal $ "Not a valid NamePart: " <> tshow t

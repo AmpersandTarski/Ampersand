@@ -23,6 +23,7 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
+import Text.Casing
 
 --- Populations ::= Population+
 
@@ -106,7 +107,7 @@ pNameWithoutLabel ns typ
     depricatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
-      let suggestedNamePart = suggestNamePart txt
+      let suggestedNamePart = suggestNamePart typ txt
           warn = mkWarnText typ txt
       addParserWarning orig warn
       return
@@ -131,7 +132,7 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
       do
         orig <- currPos
         txt <- pDoubleQuotedString1
-        let suggestedNamePart = suggestNamePart txt
+        let suggestedNamePart = suggestNamePart typ txt
             mLab =
               if suggestedNamePart == txt
                 then Nothing
@@ -162,17 +163,37 @@ mkWarnText typ txt =
            )
     ]
   where
-    suggestedNamePart = suggestNamePart txt
+    suggestedNamePart = suggestNamePart typ txt
     mLab =
       if txt == suggestedNamePart
         then Nothing
         else Just . Label . text1ToText $ txt
 
-suggestNamePart :: Text1 -> Text1
-suggestNamePart (Text1 h tl) =
-  if isSafeIdChar True h
-    then Text1 h . T.filter (isSafeIdChar False) $ tl
-    else Text1 'A' . T.filter (isSafeIdChar False) $ T.cons h tl
+suggestNamePart :: NameType -> Text1 -> Text1
+suggestNamePart typ = toText1Unsafe . T.pack . casing . T.unpack . T.map crapToSpace . text1ToText
+  where
+    crapToSpace :: Char -> Char
+    crapToSpace c =
+      if isSafeIdChar False c
+        then c
+        else ' '
+    casing :: String -> String
+    casing = case typ of
+      ConceptName -> upper
+      ContextName -> upper
+      IdentName -> dontcare
+      InterfaceName -> dontcare
+      PatternName -> upper
+      PropertyName -> upper
+      RelationName -> lower
+      RoleName -> dontcare
+      RuleName -> dontcare
+      SqlAttributeName -> dontcare
+      SqlTableName -> dontcare
+      ViewName -> dontcare
+    upper = pascal
+    lower = camel
+    dontcare = pascal
 
 data ContextElement
   = CMeta MetaData
