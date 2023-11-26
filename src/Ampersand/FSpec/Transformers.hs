@@ -1212,13 +1212,8 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Label",
         Set.fromList [],
-        [ ( dirtyIdWithoutType' ifc,
-            case ifclbl ifc of
-              Nothing -> fatal "Impossible, because only 'Just' values are filtered below"
-              Just (Label lbl) -> PopAlphaNumeric lbl
-          )
-          | ifc :: Interface <- instanceList fSpec,
-            isJust (ifclbl ifc)
+        [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . label $ ifc)
+          | ifc :: Interface <- instanceList fSpec
         ]
       ),
       -- the following transformer is called name[Role*RoleName] in FormalAmpersand
@@ -1226,11 +1221,7 @@ transformersPrototypeContext fSpec =
         "Role",
         "Label",
         Set.fromList [Uni],
-        [ ( dirtyIdWithoutType' role,
-            case rlLbl role of
-              Nothing -> fatal "Impossible, because only 'Just' values are filtered below"
-              Just (Label lbl) -> PopAlphaNumeric lbl
-          )
+        [ (dirtyIdWithoutType' role, PopAlphaNumeric . label $ role)
           | role :: Role <- instanceList fSpec,
             isJust (rlLbl role)
         ]
