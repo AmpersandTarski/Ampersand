@@ -246,6 +246,9 @@ data AEnforce = AEnforce
   }
   deriving (Eq)
 
+instance Traced AEnforce where
+  origin = pos
+
 data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,

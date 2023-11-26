@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 
 import Ampersand.ADL1
@@ -159,14 +161,15 @@ instance Language Pattern where
   udefRoleRules = ptrrs
 
 roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
-roleRuleFromEnforceRule = map mkRoleRule . enfRules
+roleRuleFromEnforceRule x = map mkRoleRule . enfRules $ x
   where
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
           arRoles =
             Role
-              { rlName = nameOfExecEngineRole,
+              { pos = origin x,
+                rlName = nameOfExecEngineRole,
                 rlLbl = Nothing,
                 rlIsService = False
               }

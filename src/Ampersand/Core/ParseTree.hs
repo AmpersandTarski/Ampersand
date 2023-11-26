@@ -180,7 +180,8 @@ instance Traced P_RoleRule where
   origin = pos
 
 data Role = Role
-  { rlName :: !Name,
+  { pos :: !Origin,
+    rlName :: !Name,
     rlLbl :: !(Maybe Label),
     rlIsService :: !Bool
   }

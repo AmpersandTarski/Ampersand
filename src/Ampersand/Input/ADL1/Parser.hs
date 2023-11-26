@@ -939,12 +939,13 @@ pServiceRule ns =
 --- RoleList ::= Role (',' Role)*
 pRole :: NameSpace -> Bool -> AmpParser Role
 pRole ns isService =
-  build <$> pNameWithOptionalLabel ns RoleName
+  build <$> currPos <*> pNameWithOptionalLabel ns RoleName
   where
-    build :: (Name, Maybe Label) -> Role
-    build (nm, lbl) =
+    build :: Origin -> (Name, Maybe Label) -> Role
+    build orig (nm, lbl) =
       Role
-        { rlName = nm,
+        { pos = orig,
+          rlName = nm,
           rlLbl = lbl,
           rlIsService = isService
         }

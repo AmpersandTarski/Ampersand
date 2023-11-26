@@ -115,7 +115,7 @@ instance Pretty P_RoleRule where
     text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap pretty $ rules)
 
 instance Pretty Role where
-  pretty (Role nm _ _) = pretty nm -- FIXME:This doesn't take into account the fact that a role could be a service.
+  pretty (Role _ nm _ _) = pretty nm -- FIXME:This doesn't take into account the fact that a role could be a service.
 
 instance Pretty P_Pattern where
   pretty (P_Pat _ nm lbl rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =

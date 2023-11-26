@@ -252,7 +252,8 @@ makeFSpec env context =
         Identity _ -> []
         Enforce ->
           [ Role
-              { rlName = nameOfExecEngineRole,
+              { pos = origin r,
+                rlName = nameOfExecEngineRole,
                 rlLbl = Nothing,
                 rlIsService = False
               }

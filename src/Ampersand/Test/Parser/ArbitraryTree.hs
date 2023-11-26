@@ -222,7 +222,8 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
   arbitrary =
-    Role <$> unrestrictedName
+    Role <$> arbitrary
+      <*> unrestrictedName
       <*> arbitrary
       <*> arbitrary
     where

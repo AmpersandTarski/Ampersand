@@ -425,7 +425,7 @@ instance ShowHS PlugInfo where
     "InternalPlug " <> showHSName p
 
 instance ShowHS Role where
-  showHS _ ind (Role nm lbl isService) =
+  showHS _ ind (Role _ nm lbl isService) =
     ind
       <> (if isService then "Role " else "Service ")
       <> tshow nm
