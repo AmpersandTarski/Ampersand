@@ -193,7 +193,7 @@ generateStaticFileModule = do
           putStrLn $
             unlines
               [ "",
-                "Info: No cache for static files: " show (err :: SomeException),
+                "Info: No cache for static files: " <> show (err :: SomeException),
                 ""
               ]
           return mempty
