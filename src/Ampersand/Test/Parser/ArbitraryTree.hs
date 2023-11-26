@@ -222,10 +222,9 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
   arbitrary =
-    oneof
-      [ Role <$> unrestrictedName,
-        Service <$> unrestrictedName
-      ]
+    Role <$> unrestrictedName
+      <*> arbitrary
+      <*> arbitrary
     where
       unrestrictedName = oneof [lowercaseName, uppercaseName]
 

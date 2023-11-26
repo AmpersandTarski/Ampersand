@@ -168,20 +168,22 @@ instance Traversable P_Enforce where
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule = Maintain
   { -- | position in the Ampersand script
-    pos :: Origin,
+    pos :: !Origin,
     -- | names of a role
-    mRoles :: NE.NonEmpty Role,
+    mRoles :: !(NE.NonEmpty Role),
     -- | names of a Rule
-    mRules :: NE.NonEmpty Name
+    mRules :: !(NE.NonEmpty Name)
   }
   deriving (Show) -- deriving (Show) is just for debugging
 
 instance Traced P_RoleRule where
   origin = pos
 
-data Role
-  = Role !Name
-  | Service !Name
+data Role = Role
+  { rlName :: !Name,
+    rlLbl :: !(Maybe Label),
+    rlIsService :: !Bool
+  }
   deriving (Show, Typeable, Data) -- deriving (Show) is just for debugging
 
 instance Ord Role where
@@ -191,8 +193,10 @@ instance Eq Role where
   a == b = compare a b == EQ
 
 instance Named Role where
-  name (Role nm) = nm
-  name (Service nm) = nm
+  name = rlName
+
+instance Labeled Role where
+  mLabel = rlLbl
 
 instance Unique Role where
   showUnique = tName

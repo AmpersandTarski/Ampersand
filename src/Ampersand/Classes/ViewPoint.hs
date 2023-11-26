@@ -164,6 +164,12 @@ roleRuleFromEnforceRule = map mkRoleRule . enfRules
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
-          arRoles = Role nameOfExecEngineRole NE.:| [],
+          arRoles =
+            Role
+              { rlName = nameOfExecEngineRole,
+                rlLbl = Nothing,
+                rlIsService = False
+              }
+              NE.:| [],
           arRules = name rul NE.:| []
         }

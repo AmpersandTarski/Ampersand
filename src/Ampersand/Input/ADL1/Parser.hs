@@ -750,7 +750,16 @@ pInterface ns =
     <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    build :: Origin -> Bool -> (Name, Maybe Label) -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    build ::
+      Origin ->
+      Bool ->
+      (Name, Maybe Label) ->
+      Maybe (NE.NonEmpty Role) ->
+      Term TermPrim ->
+      Maybe P_Cruds ->
+      Maybe Name ->
+      P_SubInterface ->
+      P_Interface
     build p isAPI (nm, lbl) roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
@@ -926,10 +935,21 @@ pServiceRule ns =
     )
     <*> pNameWithoutLabel ns RuleName `sepBy1` pComma
 
---- Role ::= ADLid
+--- Role ::= ADLid (LABEL doublequotedstring)?
 --- RoleList ::= Role (',' Role)*
 pRole :: NameSpace -> Bool -> AmpParser Role
-pRole ns isService = (if isService then Service else Role) <$> pNameWithoutLabel ns RoleName
+pRole ns isService =
+  build <$> pNameWithOptionalLabel ns RoleName
+  where
+    build :: (Name, Maybe Label) -> Role
+    build (nm, lbl) =
+      Role
+        { rlName = nm,
+          rlLbl = lbl,
+          rlIsService = isService
+        }
+
+--pNameWithoutLabel ns RoleName
 
 --- Meaning ::= 'MEANING' Markup
 pMeaning :: AmpParser PMeaning

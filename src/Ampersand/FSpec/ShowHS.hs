@@ -425,12 +425,12 @@ instance ShowHS PlugInfo where
     "InternalPlug " <> showHSName p
 
 instance ShowHS Role where
-  showHS _ ind r =
+  showHS _ ind (Role nm lbl isService) =
     ind
-      <> ( case r of
-             Role str -> "Role " <> tshow str
-             Service str -> "Service " <> tshow str
-         )
+      <> (if isService then "Role " else "Service ")
+      <> tshow nm
+      <> " "
+      <> tshow lbl
 
 instance ShowHS P_RoleRule where
   showHS env ind rs =
