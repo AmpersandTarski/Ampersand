@@ -6,7 +6,11 @@ CONTEXT PrototypeFramework IN ENGLISH
     
     RELATION label[Role*Label] [UNI,TOT]
         REPRESENT Label TYPE ALPHANUMERIC
-        POPULATION label[Role*Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION label[Role*Label] CONTAINS 
+        [ ("Anonymous", "Anonymous")
+        , ("Administrator", "Administrator")
+        , ("SYSTEM", "SYSTEM")        
+        ]
 
     API AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*Role] BOX
         [ "id"              : I
