@@ -193,9 +193,7 @@ generateStaticFileModule = do
           putStrLn $
             unlines
               [ "",
-                "Warning: Cannot read previously generated " <> sfModulePath <> ":",
-                show (err :: SomeException),
-                "This warning should disappear the next time you build Ampersand. If the error persists, please report this as a bug.",
+                "Info: No cache for static files: " show (err :: SomeException),
                 ""
               ]
           return mempty
