@@ -1322,7 +1322,9 @@ instance Named A_Concept where
   name ONE = nameOfONE
 
 instance Labeled A_Concept where
-  mLabel = snd . NE.head . aliases
+  mLabel cpt = case cpt of
+    PlainConcept {} -> snd . NE.head . aliases $ cpt
+    ONE -> Nothing
 
 instance Show A_Concept where
   show = T.unpack . text1ToText . tName
