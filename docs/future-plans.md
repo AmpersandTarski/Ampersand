@@ -23,7 +23,7 @@ One purpose of Ampersand is to generate a web-application. Currently, the genera
 
 ![Current state of the Ampersand project](<./assets/state-of-ampersand-project-2019.png>)
 
-The architecture is explained in more detail in [this chapter](./architecture-of-an-ampersand-application/).
+The architecture is explained in more detail in [this chapter](./reference-material/architecture-of-an-ampersand-application).
 
 
 ## NoSQL storage
@@ -51,7 +51,7 @@ This communication will be greatly simplified if Open API documentation can be g
 ### Purpose
 To take an API in production, it needs to be documented. For this purpose we want to generate Open API documentation.
 
-![Generating Open API documentation](<./assets/Untitled Diagram (8).png>)
+![Generating Open API documentation](<./assets/untitled-diagram-8.png>)
 
 
 
@@ -68,7 +68,7 @@ Ampersand and semantic web technologies have much in common. To explore this top
 To generate reactive web-applications instead of a classical object-oriented web-application is why we want to refactor the Ampersand front-end.
 The current front-end is based on the Angular-JS framework. To enter the world of reactive programming, we want to refactor the front-end.
 
-![Refactoring the front-end (pink items)](<./assets/Untitled Diagram (6).png>)
+![Refactoring the front-end (pink items)](<./assets/untitled-diagram-6.png>)
 This issue is currently underway, sponsored in kind by Ordina. We expect the first results in the summer of 2023.
 
 

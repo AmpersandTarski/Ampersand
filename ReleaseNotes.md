@@ -230,7 +230,7 @@ New CI workflow for releases to be pushed automatically to DockerHub with semver
 
 ## v3.16.0 (8 april 2019) (few days before scedule)
 
-- New switch: --daemon. This enables automatic checking of your scripts as you type. Very nice in combination with the vscode extension [Ampersand (ADL) language support](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand).
+- New switch: --daemon. This enables automatic checking of your scripts as you type. Very nice in combination with the vscode extension [Ampersand language support](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand).
 - [Issue #920](https://github.com/AmpersandTarski/Ampersand/issues/920) Warnings are generated for concepts/relations with names that are equal except for the caseing.
 
 ## v3.15.0 (15 march 2019)

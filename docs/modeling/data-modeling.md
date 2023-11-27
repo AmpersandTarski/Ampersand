@@ -8,14 +8,14 @@ In this section we will systematically extract concepts and relations based on d
 
 Let us start by looking at an example:
 
-|  | firstname | lastname | birth |
-| :--- | :--- | :--- | :--- |
-| 1 | Abraham | Lincoln | February 12, 1809 |
-| 2 | Barack | Obama | August 4, 1961 |
-| 3 | Calvin | Coolidge | July 4, 1872 |
-| 4 | Dwight | Eisenhower | October 14, 1890 |
+|     | firstname | lastname   | birth             |
+| :-- | :-------- | :--------- | :---------------- |
+| 1   | Abraham   | Lincoln    | February 12, 1809 |
+| 2   | Barack    | Obama      | August 4, 1961    |
+| 3   | Calvin    | Coolidge   | July 4, 1872      |
+| 4   | Dwight    | Eisenhower | October 14, 1890  |
 
-Since Ampersand works with [relations](/ampersand/reference-material/syntax-of-ampersand#the-relation-statement), it must represent this table as relations. Three relations can do the job in the following manner:
+Since Ampersand works with [relations](../reference-material/syntax-of-ampersand#the-relation-statement), it must represent this table as relations. Three relations can do the job in the following manner:
 
 ```text
 POPULATION firstname[President*Name] CONTAINS
@@ -46,7 +46,7 @@ In our example, each row in the spreadsheet represents a president. So, the sour
 
 When things get bigger, it is useful to draw the relations on a whiteboard or in your notebook. This helps you keep overview. Here is how it is done:
 
- ![Relation diagram for presidents](../assets/concepts-presidents.png) 
+![Relation diagram for presidents](../assets/concepts-presidents.png)
 
 This drawing shows every relation als a line, drawn from source to target. The arrowhead in the middle is only to remind the reader of which is the source and which is the target concept. If you point the arrowhead from source to target, you will always know how the relation is defined.
 
@@ -54,23 +54,23 @@ This drawing shows every relation als a line, drawn from source to target. The a
 
 Suppose we have a second table, which also has information
 
-| \[State\] | capital | president |
-| :--- | :--- | :--- |
-| Vermont | Plymouth | Coolidge |
-| Hawaï | Honolulu | Obama |
-| Kentucky | Frankfort | Lincoln |
-| New York | New York | Roosevelt |
-| Georgia | Atlanta | Carter |
+| \[State\] | capital   | president |
+| :-------- | :-------- | :-------- |
+| Vermont   | Plymouth  | Coolidge  |
+| Hawaï     | Honolulu  | Obama     |
+| Kentucky  | Frankfort | Lincoln   |
+| New York  | New York  | Roosevelt |
+| Georgia   | Atlanta   | Carter    |
 
 This table is similar with respect to the interpretation of a row: here too, each row represents a president. However, the presidents aren't numbered in this table, so we have to add these numbers.
 
-|  | \[State\] | capital | president |
-| :--- | :--- | :--- | :--- |
-| 3 | Vermont | Plymouth | Coolidge |
-| 2 | Hawaii | Honolulu | Obama |
-| 1 | Kentucky | Frankfort | Lincoln |
-| 5 | New York | New York | Roosevelt |
-| 6 | Georgia | Atlanta | Carter |
+|     | \[State\] | capital   | president |
+| :-- | :-------- | :-------- | :-------- |
+| 3   | Vermont   | Plymouth  | Coolidge  |
+| 2   | Hawaii    | Honolulu  | Obama     |
+| 1   | Kentucky  | Frankfort | Lincoln   |
+| 5   | New York  | New York  | Roosevelt |
+| 6   | Georgia   | Atlanta   | Carter    |
 
 Numbering rows has the advantage that it is easier to recognise a president.
 
@@ -161,9 +161,9 @@ RELATION birth[President*State] [UNI]
 
 Two properties are relevant for the data model: univalent \(`UNI`\) and injective \(`INJ`\):
 
-* Relation `r[A*B] [UNI]` means that there is at most one pair $$(a,b)$$ in the relation for every $$a$$ in `A`.
-* Relation `r[A*B] [INJ]` means that there is at most one pair $$(a,b)$$ in the relation for every $$b$$ in B.
-* Relation `r[A*B] [UNI,INJ]` means the relation is both univalent and injective.
+- Relation `r[A*B] [UNI]` means that there is at most one pair $$(a,b)$$ in the relation for every $$a$$ in `A`.
+- Relation `r[A*B] [INJ]` means that there is at most one pair $$(a,b)$$ in the relation for every $$b$$ in B.
+- Relation `r[A*B] [UNI,INJ]` means the relation is both univalent and injective.
 
 We have to do this for every relation:
 
@@ -211,11 +211,10 @@ In [this video](https://youtu.be/ruO4UgjA11E) you sit in in a private lecture in
 
 After finishing your assignment, you have learned:
 
-* why it makes sense to analyse actual data samples for creating a data model;
-* how to analyze spreadsheet data and produce relations from it;
-* why it is necessary to document meaning for each relation;
-* how to constrain relations with univalence and injectivity;
-* how easily mistakes are made \(by using the Ampersand compiler in the assignment\);
-* how Ampersand's messages help you fix mistakes;
-* how to make Ampersand create a data model based on your data analysis.
-
+- why it makes sense to analyse actual data samples for creating a data model;
+- how to analyze spreadsheet data and produce relations from it;
+- why it is necessary to document meaning for each relation;
+- how to constrain relations with univalence and injectivity;
+- how easily mistakes are made \(by using the Ampersand compiler in the assignment\);
+- how Ampersand's messages help you fix mistakes;
+- how to make Ampersand create a data model based on your data analysis.
