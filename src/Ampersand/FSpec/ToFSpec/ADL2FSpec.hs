@@ -250,7 +250,14 @@ makeFSpec env context =
           | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
           | otherwise -> rolesFromScript
         Identity _ -> []
-        Enforce -> [Role nameOfExecEngineRole]
+        Enforce ->
+          [ Role
+              { pos = origin r,
+                rlName = nameOfExecEngineRole,
+                rlLbl = Nothing,
+                rlIsService = False
+              }
+          ]
       where
         rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
         forThisRule :: A_RoleRule -> Bool

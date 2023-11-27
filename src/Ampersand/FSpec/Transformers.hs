@@ -1212,7 +1212,7 @@ transformersPrototypeContext fSpec =
         "Interface",
         "Label",
         Set.fromList [],
-        [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . text1ToText . tName $ ifc)
+        [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . label $ ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
@@ -1221,8 +1221,9 @@ transformersPrototypeContext fSpec =
         "Role",
         "Label",
         Set.fromList [Uni],
-        [ (dirtyIdWithoutType' role, PopAlphaNumeric . text1ToText . tName $ role)
-          | role :: Role <- instanceList fSpec
+        [ (dirtyIdWithoutType' role, PopAlphaNumeric . label $ role)
+          | role :: Role <- instanceList fSpec,
+            isJust (rlLbl role)
         ]
       ),
       -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand

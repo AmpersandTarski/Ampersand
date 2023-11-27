@@ -246,6 +246,9 @@ data AEnforce = AEnforce
   }
   deriving (Eq)
 
+instance Traced AEnforce where
+  origin = pos
+
 data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
@@ -1319,7 +1322,9 @@ instance Named A_Concept where
   name ONE = nameOfONE
 
 instance Labeled A_Concept where
-  mLabel = snd . NE.head . aliases
+  mLabel cpt = case cpt of
+    PlainConcept {} -> snd . NE.head . aliases $ cpt
+    ONE -> Nothing
 
 instance Show A_Concept where
   show = T.unpack . text1ToText . tName

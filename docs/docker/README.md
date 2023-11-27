@@ -24,7 +24,7 @@ Ampersand uses the following container images:
 4. **[ampersandtarski/ampersand-rap](https://hub.docker.com/r/ampersandtarski/ampersand-rap)**  
    This image features the RAP development system, which compiles Ampersand scripts into prototypes and documentation.
    RAP is a tool that lets you analyze Ampersand models, generate functional specifications, and make prototypes of information systems.
-   It is the primary tool for students at the [Open University of the Netherlands](www.ou.nl) in the course [Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design). 
+   It is the primary tool for students at the [Open University of the Netherlands](https://www.ou.nl) in the course [Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design). 
    This image is used by the [docker-compose.yml file](https://github.com/AmpersandTarski/RAP/blob/master/docker-compose.yml) that configures the RAP system to deploy RAP.
 5. **[mariadb:10.4](https://hub.docker.com/_/mariadb)**  
    This image features the MariaDB database management system.

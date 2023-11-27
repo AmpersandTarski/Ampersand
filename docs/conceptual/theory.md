@@ -14,16 +14,16 @@ Information systems are typically used by actors (both users and
 computers) who are distributed and work with data all the time. As a
 consequence, the data in a system changes continually. In practice,
 actors "talk to" the system through an ingress mechanism, which connects
-each user to the right service(s). The ingress function is provided by
+each user to the right interface(s). The ingress function is provided by
 the deployment platform, so it is beyond the scope of this paper. Also,
-every service runs independent of other services, meaning that each
-service can be stopped, (re)started and substituted without disrupting
-the other services.
+every interface runs independent of other interfaces, meaning that each
+interface can be stopped, (re)started and substituted without disrupting
+the other interfaces.
 
 Every system contains a dataset, which represents the state of the
-system. Every service produces and consumes events that may change the
+system. Every interface produces and consumes events that may change the
 state of the system. This state is represented in a persistent store,
-aka the database [^3]. Events that the system detects may cause the
+aka the database. Events that the system detects may cause the
 state to change.
 
 ![Anatomy of an information system](datamigration-Pre-migration.drawio.png)
@@ -37,7 +37,7 @@ database management systems refer to as integrity rules. The purpose of
 integrity rules is to keep the constraints they represent satisfied.
 
 
-An *information system* is a combination of dataset, schema, and functionality. Each is defined in a separate section.
+An [information system](#information-systems-sctinformation-systems) is a combination of dataset, schema, and functionality. Each is defined in a separate section.
 
 ## Datasets {#sct:Datasets}
 
@@ -203,7 +203,7 @@ As before, a suffix disambiguates the elements of this definition when needed.
 
 *An information system $\mathscr{S}$ is a tuple
 $\langle\mathscr{D},\mathscr{Z},\mathcal{O},\text{\it maint}\rangle$,
-in which*
+in which:*
 
 -   *dataset
     $\mathscr{D}=\langle{\mathcal{T}},{\text{\it inst}}\rangle$ as
@@ -254,10 +254,10 @@ role(s) that are administered in $\text{\it maint}$ to do something
 about it.
 
 Automatic enforcement is specified by the developer with a special
-syntax, the *enforce rule*. An enforce rule specifies not only the rule,
+syntax, the *enforcement rule*. An enforcement rule specifies not only the rule,
 but also the way to restore invariance. The system features an engine
-that restores invariance of all enforce rules without unneccessary
-delay. Whenever the dataset violates an enforce rule, this engine will
+that restores invariance of all enforcement rules without unneccessary
+delay. Whenever the dataset violates an enforcement rule, this engine will
 make other changes to the dataset to satisfy that rule. Hence, the rule
 is not satisfied during a small, finite amount of time.
 
@@ -352,7 +352,7 @@ so this is a dataset $\mathscr{D}$ as
 introduced before.
 
 The Ampersand compiler generates a schema $\mathscr{Z}$, which contains
-concepts, relations, and rules. It defines the set of concepts:
+concepts, relations and rules. It defines the set of concepts:
 
 $\mathcal{C}=\{ {\tt Module}, {\tt Course}, {\tt Student}\}$
 
@@ -389,9 +389,9 @@ The following table compares the language used in the world of information syste
 | rules | script | program | theory |
 | data | population | state | model |
 | formal statement | term | condition | term |
-| generator | generator | compiler |
-| store | database | database |
-| service | service | service |
+| generator | generator | compiler | |
+| store | database | database | |
+| interface | interface | interface | |
 
 The following theoretical topics are relevant for Ampersand.
 

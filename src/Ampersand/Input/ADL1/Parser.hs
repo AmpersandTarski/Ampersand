@@ -23,6 +23,7 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
+import Text.Casing
 
 --- Populations ::= Population+
 
@@ -106,31 +107,17 @@ pNameWithoutLabel ns typ
     depricatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
-      let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
-          warn =
-            T.intercalate
-              "\n  "
-              [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
-                tshow . text1ToText $ txt,
-                "   should be replaced by something like:",
-                text1ToText
-                  ( case nmTxt of
-                      Nothing -> fatal "This should not be possible."
-                      Just te -> te
-                  )
-              ]
+      let suggestedNamePart = suggestNamePart typ txt
+          warn = mkWarnText typ txt
       addParserWarning orig warn
-      case nmTxt of
-        Nothing -> unexpected "doublequoted string with invalid characters."
-        Just nm ->
-          return
-            ( mkName
-                typ
-                ( case toNamePart1 nm of
-                    Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
-                    Just np -> np NE.:| []
-                )
+      return
+        ( mkName
+            typ
+            ( case toNamePart1 suggestedNamePart of
+                Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
+                Just np -> np NE.:| []
             )
+        )
 
 pNameWithOptionalLabel :: NameSpace -> NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
@@ -145,45 +132,68 @@ pNameWithOptionalLabel ns typ = properParser <|> depricatedParser
       do
         orig <- currPos
         txt <- pDoubleQuotedString1
-        let nmTxt = tmpDoubleQuotedStringToNameVERYUNSAFE txt
-            mLab
-              | Just txt == nmTxt = Nothing
-              | otherwise = Just . Label . text1ToText $ txt
-            warn =
-              T.intercalate
-                "\n  "
-                [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
-                  tshow . text1ToText $ txt,
-                  "   should be replaced by something like:",
-                  text1ToText
-                    ( case nmTxt of
-                        Nothing -> fatal "This should not be possible."
-                        Just te -> te
-                    )
-                    <> ( case mLab of
-                           Nothing -> mempty
-                           Just (Label lbl) -> " LABEL " <> tshow lbl
-                       )
-                ]
+        let suggestedNamePart = suggestNamePart typ txt
+            mLab =
+              if suggestedNamePart == txt
+                then Nothing
+                else Just . Label . text1ToText $ txt
+            warn = mkWarnText typ txt
         addParserWarning orig warn
-        case nmTxt of
-          Nothing -> unexpected "doublequoted string with invalid characters."
-          Just nm ->
-            return
-              ( mkName
-                  typ
-                  ( case toNamePart1 nm of
-                      Nothing -> fatal $ "Not a valid NamePart: " <> tshow nm
-                      Just np -> np NE.:| []
-                  ),
-                mLab
-              )
+        return
+          ( mkName
+              typ
+              ( case toNamePart1 suggestedNamePart of
+                  Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
+                  Just np -> np NE.:| []
+              ),
+            mLab
+          )
 
-tmpDoubleQuotedStringToNameVERYUNSAFE :: Text1 -> Maybe Text1
-tmpDoubleQuotedStringToNameVERYUNSAFE txt =
-  case T.uncons . T.filter (isSafeIdChar False) . text1ToText $ txt of
-    Nothing -> Nothing
-    Just (h, tl) -> Just $ Text1 h tl
+mkWarnText :: NameType -> Text1 -> Text
+mkWarnText typ txt =
+  T.intercalate
+    "\n  "
+    [ "The doublequoted string is deprecated as " <> T.toLower (tshow typ) <> ".",
+      tshow . text1ToText $ txt,
+      "   should be replaced by something like:",
+      text1ToText suggestedNamePart
+        <> ( case mLab of
+               Nothing -> mempty
+               Just (Label lbl) -> " LABEL " <> tshow lbl
+           )
+    ]
+  where
+    suggestedNamePart = suggestNamePart typ txt
+    mLab =
+      if txt == suggestedNamePart
+        then Nothing
+        else Just . Label . text1ToText $ txt
+
+suggestNamePart :: NameType -> Text1 -> Text1
+suggestNamePart typ = toText1Unsafe . T.pack . casing . T.unpack . T.map crapToSpace . text1ToText
+  where
+    crapToSpace :: Char -> Char
+    crapToSpace c =
+      if isSafeIdChar False c
+        then c
+        else ' '
+    casing :: String -> String
+    casing = case typ of
+      ConceptName -> upper
+      ContextName -> upper
+      IdentName -> dontcare
+      InterfaceName -> dontcare
+      PatternName -> upper
+      PropertyName -> upper
+      RelationName -> lower
+      RoleName -> dontcare
+      RuleName -> dontcare
+      SqlAttributeName -> dontcare
+      SqlTableName -> dontcare
+      ViewName -> dontcare
+    upper = pascal
+    lower = camel
+    dontcare = pascal
 
 data ContextElement
   = CMeta MetaData
@@ -740,7 +750,16 @@ pInterface ns =
     <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) -- The view that should be used for this object
     <*> pSubInterface ns
   where
-    build :: Origin -> Bool -> (Name, Maybe Label) -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Name -> P_SubInterface -> P_Interface
+    build ::
+      Origin ->
+      Bool ->
+      (Name, Maybe Label) ->
+      Maybe (NE.NonEmpty Role) ->
+      Term TermPrim ->
+      Maybe P_Cruds ->
+      Maybe Name ->
+      P_SubInterface ->
+      P_Interface
     build p isAPI (nm, lbl) roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
@@ -916,10 +935,22 @@ pServiceRule ns =
     )
     <*> pNameWithoutLabel ns RuleName `sepBy1` pComma
 
---- Role ::= ADLid
+--- Role ::= ADLid (LABEL doublequotedstring)?
 --- RoleList ::= Role (',' Role)*
 pRole :: NameSpace -> Bool -> AmpParser Role
-pRole ns isService = (if isService then Service else Role) <$> pNameWithoutLabel ns RoleName
+pRole ns isService =
+  build <$> currPos <*> pNameWithOptionalLabel ns RoleName
+  where
+    build :: Origin -> (Name, Maybe Label) -> Role
+    build orig (nm, lbl) =
+      Role
+        { pos = orig,
+          rlName = nm,
+          rlLbl = lbl,
+          rlIsService = isService
+        }
+
+--pNameWithoutLabel ns RoleName
 
 --- Meaning ::= 'MEANING' Markup
 pMeaning :: AmpParser PMeaning

@@ -79,7 +79,8 @@ PATTERN "Demo of Sequences"
 ENDPATTERN
 
 INTERFACE overview(insSeq, seq, seqHead, madeIn) : '_SESSION'
-ROWS[ "Name your new sequence here:" : insSeq
+BOX<TABLE>
+    [ "Name your new sequence here:" : insSeq
     , Sequences : V[SESSION*Sequence]
       BOX <TABLE>
           [ sequence : name
@@ -98,7 +99,7 @@ ROWS[ "Name your new sequence here:" : insSeq
 ENDCONTEXT
 ~~~~~~~~
 
-The Ampersand-compiler can translate binary relations together with multiplicity restrictions into the data model of a MySQL-database. Relation algebra terms are used in rules and services. Rules are constraints on the data stored in the relations. Each service is a “window” on the data set, in which data to be displayed is described in terms of relation algebra terms. The example in Figure 1 is reasonably small: it contains 8 relations with 13 multiplicity restrictions, 6 rules, and one service. Every rule in Ampersand is a constraint, but the enforcement of constraints by the software can be one of the following options:
+The Ampersand-compiler can translate binary relations together with multiplicity restrictions into the data model of a MySQL-database. Relation algebra terms are used in rules and interfaces. Rules are constraints on the data stored in the relations. Each interface is a “window” on the data set, in which data to be displayed is described in terms of relation algebra terms. The example in Figure 1 is reasonably small: it contains 8 relations with 13 multiplicity restrictions, 6 rules, and one interface. Every rule in Ampersand is a constraint, but the enforcement of constraints by the software can be one of the following options:
 
 1.  A rule has to be satisfied at all times. Such rules are called invariants. When violated, the system produces an error message and blocks the transaction in which the violation has occurred.
 

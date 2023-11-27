@@ -914,7 +914,11 @@ pCtx2aCtx
                                 ifcname = name pIfc,
                                 ifclbl = mLabel pIfc,
                                 ifcRoles = ifc_Roles pIfc,
-                                ifcObj = o,
+                                ifcObj =
+                                  o
+                                    { objPlainName = Just . tName . name $ pIfc,
+                                      objlbl = Nothing
+                                    },
                                 ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
                                 ifcPos = origin pIfc,
                                 ifcPurpose = ifc_Prp pIfc

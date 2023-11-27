@@ -4,7 +4,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         REPRESENT Role TYPE OBJECT
         POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION label[Role*Label] [UNI,TOT]
+    RELATION label[Role*Label] [UNI] -- Not TOT, for then the labels must be given explicitly. The Ampersand generator generates a label for every role in the script. 
         REPRESENT Label TYPE ALPHANUMERIC
         POPULATION label[Role*Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 

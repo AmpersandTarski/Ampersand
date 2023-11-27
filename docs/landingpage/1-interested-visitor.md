@@ -53,7 +53,7 @@ That means that the result of evaluating a rule only depends on the context and 
 This feature characterizes Ampersand as different from *procedural* languages.
 
 ### Reactive
-Ampersand is a [reactive] language.
+Ampersand is a [reactive](../reactive-programming.md) language.
 It does not follow pre-specified threads of action, but it reacts to events from outside and inside the system.
 
 Reactive programming sets Ampersand apart from multi-threaded programming.
@@ -61,7 +61,7 @@ Reactive programming sets Ampersand apart from multi-threaded programming.
 ### Statically typed
 All relations in a context together form a conceptual model.
 The Ampersand compiler uses this model for type checking the rules you specify in an Ampersand script.
-The word ``static'' refers to type checking by the compiler.
+The word ''static'' refers to type checking by the compiler.
 This prevents many runtime errors, presenting them at compile time as type errors.
 Static typing is known to save modelers much effort and to enhance the quality of the generated code.
 For a novice, static type checking can yield some frustration, which will quickly dissolve as your experience grows.
@@ -146,7 +146,7 @@ The governance of Ampersand is founded on the following principles:
 * We continually draw on best practices from others to improve our productivity.
 
 ### Future directions
-We lay out the [future directions](ampersand/future-plans) in terms of research questions.
+We lay out the [future directions](../future-plans.md) in terms of research questions.
 Such topics are usually discussed on Ampersand days or physical meetings of the core team.
 [Stef Joosten](https://github.com/stefjoosten) has a final say in this, to ensure progress.
 The following topics are on our wish-list
@@ -167,5 +167,5 @@ both have a "main" branch, which contains all releases as tags.
 Contributors make pull requests to merge their branch into the main branch.
 This merge also requires a code review by one of the core team members.
 Automatic testing (by GitHub actions) ensures a minimal amount of hygiene.
-We merge only compilable code that passes the regression test.## What are the plans for the future?
+We merge only compilable code that passes the regression test.
 ## What do you need to use Ampersand?
