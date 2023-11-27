@@ -26,11 +26,11 @@ The current set of modules include:
 
 ## Security
 
-Even though Ampersand was designed for prototyping, we are taking applications such as RAP2 and RAP3 to production. As the development of Ampersand is going in the direction of production software, we must be prepared for questions. Currently, I can hardly answer any questions about security. This page is for the purpose to discuss security questions, such that we are at least on the same ground wrt security. If any changes to Ampersand emerge from that, we should create separate issues for them. Here is a list of questions.
+Even though Ampersand was designed for prototyping, we are taking applications such as RAP4 and Semantic Treehouse to production. As the development of Ampersand is going in the direction of production software, we must be prepared for questions. Currently, I can hardly answer any questions about security. This page is for the purpose to discuss security questions, such that we are at least on the same ground wrt security. If any changes to Ampersand emerge from that, we should create separate issues for them. Here is a list of questions.
 
 ### Access control
 
-How is access control arranged in an Ampersand application? _Answer_: This can be arranged by using the SIAM modules, which provide role-based access controls, login possibilities and password security.
+How is access control arranged in an Ampersand application? _Answer_: An Ampersand programmer can arrange this by using the SIAM modules, which provide role-based access controls, login possibilities and password security. Yet, we advise to let the deployment platform (e.g.\ Kubernetes) take care of access control, keeping the Ampersand code clean and independent of any access control mechanism.
 
 ### Logging
 
@@ -38,11 +38,11 @@ How does an Ampersand application log critical activities, and transactions that
 
 ### Encryption of data
 
-How does Ampersand encrypt data? _Answer_: It doesn't. All data is stored as-is in the database.
+How does Ampersand encrypt data? _Answer_: It doesn't. All data is stored as-is in the database. We advise to put the database in a separate container, which is not connected to the outside world, to minimize the chance of illegal access to the database.
 
 ### Access control for specific purposes
 
-How does an Ampersand application control access for purposes that are known only to the Ampersand application designer? _Answer_: The designer can use the ROLE mechanism to provide different services to different roles. Also, the designer can model these purposes in the Ampersand-script and take it from there. In the latter case, every possible access control scheme can be built.
+How does an Ampersand application control access for purposes that are known only to the Ampersand application designer? _Answer_: The designer can use the ROLE mechanism to provide different interfaces to different roles. Also, the designer can model these purposes in the Ampersand-script and take it from there. In the latter case, every possible access control scheme can be built.
 
 ### Injection
 
@@ -50,7 +50,10 @@ How does an Ampersand application prevent injection flaws, by which hostile data
 
 ### Broken Authentication and Session Management
 
-How can we know that application functions related to authentication and session management are implemented correctly? Is there a chance that attackers can compromise passwords, keys, or session tokens, or exploit other implementation flaws to assume other users’ identities? _Answer_: The authentication and session management are described in the SIAM-module in Ampersand itself. So we have a mathematical handle on this, which gives more certainty than hand-crafted code. We have no security assessment on the SIAM-code for this risk. Of course, when this is embedded in for example a SSO-service, we would have to look for specific risks incurred by that. At the moment I have no idea how good or bad an Ampersand-application will do on this risk.
+How can we know that application functions related to authentication and session management are implemented correctly? Is there a chance that attackers can compromise passwords, keys, or session tokens, or exploit other implementation flaws to assume other users’ identities? _Answer_:
+ * In the browser, Ampersand runs a PHP session strict mode. This prevents a user defined session ID that is never generated
+ * The authentication and session management are described in the SIAM-module in Ampersand itself. So we have a mathematical handle on this, which gives more certainty than hand-crafted code. We have no security assessment on the SIAM-code for this risk. Of course, when this is embedded in for example a SSO-service, we would have to look for specific risks incurred by that.
+ * At the moment I have no idea how good or bad an Ampersand-application will do on this risk.
 
 ### Cross-Site Scripting
 
@@ -67,6 +70,7 @@ How do we know that a secure configuration is defined and deployed, and that sec
 ### Sensitive Data Exposure
 
 Does Ampersand have extra protection for sensitive data, such as credit cards, tax IDs, and authentication credentials? _Answer_: No.
+We have a policy not to publish secrets in the Ampersand repository. GitHub (scans for secrets)[https://github.com/AmpersandTarski/Ampersand/security/secret-scanning], so we get notified of any violations of this policy.
 
 ### Missing Function Level Access Control
 

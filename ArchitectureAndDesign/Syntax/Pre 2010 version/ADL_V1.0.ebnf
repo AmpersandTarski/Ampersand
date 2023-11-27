@@ -4,12 +4,12 @@ Context         ::= 'CONTEXT' Id
                     Declaration  |
                     ConceptDef   |
                     KeyDef       |
-                    Service      |
+                    Interface      |
                     Plug         |
                     Explain      |
                     Population  
                     )* 'ENDCONTEXT'
-Explain        ::= 'EXPLAIN' (( ('CONCEPT'|'RULE'|'KEY'|'PATTERN'|'SERVICE'|'CONTEXT') Id)|'RELATION' Relation Sign)
+Explain        ::= 'EXPLAIN' (( ('CONCEPT'|'RULE'|'KEY'|'PATTERN'|'INTERFACE'|'CONTEXT') Id)|'RELATION' Relation Sign)
                    ('IN' ('DUTCH' | 'ENGLISH'))?
                    ('REF' String)? ExplainString
 Population      ::= 'POPULATION' Relation Sign? 'CONTAINS' Content
@@ -35,7 +35,7 @@ LabelProps      ::= Id ('{' Id (',' (Id Id*))* '}')? ':'
 ConceptDef      ::= 'CONCEPT' Id String String?
 KeyDef          ::= 'KEY' LabelProps Concept '(' (LabelProps? Term)(',' (LabelProps? Term))* ')'
 Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
-Service         ::= 'SERVICE' ('(' (Relation Sign?) (',' (Relation Sign?))* ')')?
+Interface       ::= 'INTERFACE' ('(' (Relation Sign?) (',' (Relation Sign?))* ')')?
                     ('{' (Id ) (','?  Id)*'}')?
                     (':' Expr)
                     ('=' '[' (Obj (',' Obj)*)? ']')?

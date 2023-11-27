@@ -1,11 +1,4 @@
 module.exports = {
-    oldTableOfContent: [
-        {
-            type: 'doc',
-            id: 'ampersand/toc'
-        },
-
-    ],
     ampersandLandingpagesSidebar: [
         {
             label: 'Interested visitor',
@@ -33,39 +26,149 @@ module.exports = {
             id: 'ampersand/landingpage/contributor'
         }
     ],
-    ampersandGuideSidebar: [
-        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
-        {
-            type: 'doc',
-            id: 'ampersand/reference-material/frequently-asked-questions'
-        },
-    ],
     ampersandReferenceSidebar: [
         // This is for all documentation from the Ampersand repo that should go in the `Reference material` part of the menu. 
         {
+            label: 'Dictionary',
+            type: 'doc',
+            id: 'ampersand/reference-material/dictionary'
+        },
+        {
+            label: 'Meta syntax',
+            type: 'doc',
+            id: 'ampersand/reference-material/how-to-read-syntax-statements'
+        },
+        {
+            label: 'Syntax of Ampersand',
+            type: 'doc',
+            id: 'ampersand/reference-material/syntax-of-ampersand'
+        },
+        {
+            label: 'Atoms',
+            type: 'doc',
+            id: 'ampersand/reference-material/atoms'
+        },
+        {
+            label: 'Contexts',
+            type: 'doc',
+            id: 'ampersand/reference-material/context'
+        },
+        {
+            label: 'Terms',
+            type: 'doc',
+            id: 'ampersand/reference-material/terms'
+        },
+        {
+            label: 'Interfaces',
+            type: 'doc',
+            id: 'ampersand/reference-material/interfaces'
+        },
+        {
+            label: 'Architecture of generated systems',
+            type: 'doc',
+            id: 'ampersand/reference-material/architecture-of-an-ampersand-application'
+        },
+        {
+            label: 'Preprocessor',
+            type: 'doc',
+            id: 'ampersand/reference-material/the-preprocessor'
+        },
+        {
+            label: 'Importing data from Excel',
+            type: 'doc',
+            id: 'ampersand/the-excel-importer'
+        },
+        {
+            label: 'Command line functions',
+            type: 'doc',
+            id: 'ampersand/the-command-line-tool'
+        },
+    ],
+    ampersandGuideSidebar: [
+        // This is for all documentation from the Ampersand repo that should go in the `Guides` part of the menu. 
+        {
+            label: 'Frequently asked questions',
+            type: 'doc',
+            id: 'ampersand/guides/frequently-asked-questions'
+        },
+        {
+            label: 'Installing Ampersand',
+            type: 'doc',
+            id: 'ampersand/guides/installing-ampersand'
+        },
+        {
+            label: 'Deploying your prototype',
+            type: 'doc',
+            id: 'ampersand/guides/deploying-your-prototype'
+        },
+        {
+            label: 'Manual installation',
+            type: 'doc',
+            id: 'ampersand/guides/best-practices'
+        },
+        {
+            label: 'Contributor\'s guide',
             type: 'category',
-            label: 'Language Reference',
             items: [
-                'ampersand/reference-material/the-language-ampersand/README',
-                'ampersand/reference-material/the-language-ampersand/atoms',
-                'ampersand/reference-material/the-language-ampersand/best-practices',
-                'ampersand/reference-material/the-language-ampersand/context',
-                'ampersand/reference-material/the-language-ampersand/current-date',
-                'ampersand/reference-material/the-language-ampersand/design-considerations',
-                'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements',
-                'ampersand/reference-material/the-language-ampersand/language-support',
-                'ampersand/reference-material/the-language-ampersand/patterns',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/README',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
-                'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
-                'ampersand/reference-material/the-language-ampersand/terms/README',
-                'ampersand/reference-material/the-language-ampersand/terms/semantics',
-                'ampersand/reference-material/the-language-ampersand/the-preprocessor',
-                'ampersand/reference-material/the-language-ampersand/truth',
-                ]
+                'ampersand/guides/onboarding',
+                'ampersand/the-tools-we-use/README',
+                'ampersand/the-tools-we-use/SUMMARY',
+                'ampersand/the-tools-we-use/ampersand-language-support',
+                'ampersand/the-tools-we-use/authentication-and-access-management-with-oauth',
+                'ampersand/the-tools-we-use/automation-of-releasing-ci-cd/README',
+                'ampersand/the-tools-we-use/automation-of-releasing-ci-cd/github-packages',
+                'ampersand/the-tools-we-use/building/README',
+                'ampersand/the-tools-we-use/building/automated-builds',
+                'ampersand/the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
+                'ampersand/the-tools-we-use/building/haskell',
+                'ampersand/the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
+                'ampersand/the-tools-we-use/deploying-rap3-with-azure',
+                'ampersand/the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
+                'ampersand/the-tools-we-use/deploying-with-kubernetes',
+                'ampersand/the-tools-we-use/functionality-of-rap3/README',
+                'ampersand/the-tools-we-use/git',
+                'ampersand/the-tools-we-use/gitbook/README',
+                'ampersand/the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',
+                'ampersand/the-tools-we-use/gitbook/getting-started-with-gitbook',
+                'ampersand/the-tools-we-use/group-1/development-using-vs-code',
+                'ampersand/the-tools-we-use/installation-of-rap/README',
+                'ampersand/the-tools-we-use/installation-of-rap/deploying-ounl-rap3',
+                'ampersand/the-tools-we-use/installation-of-rap/deploying-rap3-with-azure-on-ubuntu',
+                'ampersand/the-tools-we-use/installation-of-rap/deploying-to-your-own-laptop',
+                'ampersand/the-tools-we-use/installation-of-rap/deployment-configuration',
+                'ampersand/the-tools-we-use/installation-of-rap/details',
+                'ampersand/the-tools-we-use/installation-of-rap/making-docker-images',
+                'ampersand/the-tools-we-use/installation-of-rap/redeploying-rap3',
+                'ampersand/the-tools-we-use/klad',
+                'ampersand/the-tools-we-use/making-images',
+                'ampersand/the-tools-we-use/prototype-framework',
+                'ampersand/the-tools-we-use/rap3-student',
+                'ampersand/the-tools-we-use/rap3-tutor',
+                'ampersand/the-tools-we-use/releasing-ampersand-and-workflow-details',
+                'ampersand/the-tools-we-use/tools-used-in-the-ampersand-project'
+            ]
+        },
+        {
+            label: 'Best practices for Ampersand modellers',
+            type: 'doc',
+            id: 'ampersand/guides/best-practices'
+        },
+        {
+            label: 'Configuring your application',
+            type: 'doc',
+            id: 'ampersand/reference-material/configuring-your-application'
         },
     ],
     ampersandTheorySidebar: [
+        {
+            label: 'Design considerations',
+            type: 'doc',
+            id: 'ampersand/reference-material/design-considerations'
+        },
+        {
+            type: 'doc',
+            id: 'ampersand/reference-material/truth'
+        },
         {
             type: 'doc',
             id: 'ampersand/conceptual/theory'
@@ -84,15 +187,6 @@ module.exports = {
         },
 
     ],
-    ampersandGuideElems: [
-        'ampersand/configuring-your-application',
-        'ampersand/the-excel-importer',
-        'ampersand/the-command-line-tool',
-    ],
-    ampersandReferenceElems: [
-        'ampersand/empty'
-
-    ],
     ampersandMainSidebar: [
 
         {
@@ -105,49 +199,16 @@ module.exports = {
         [
 
             {
-                label: 'Reference',
-                type: 'category',
-                items: [
-                    'ampersand/reference-material/the-language-ampersand/README',
-                    'ampersand/reference-material/the-language-ampersand/atoms',
-                    'ampersand/reference-material/the-language-ampersand/best-practices',
-                    'ampersand/reference-material/the-language-ampersand/context',
-                    'ampersand/reference-material/the-language-ampersand/current-date',
-                    'ampersand/reference-material/the-language-ampersand/design-considerations',
-                    'ampersand/reference-material/the-language-ampersand/how-to-read-syntax-statements',
-                    'ampersand/reference-material/the-language-ampersand/language-support',
-                    'ampersand/reference-material/the-language-ampersand/patterns',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/README',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/language-support',
-                    'ampersand/reference-material/the-language-ampersand/syntactical-conventions/patterns',
-                    'ampersand/reference-material/the-language-ampersand/terms/README',
-                    'ampersand/reference-material/the-language-ampersand/terms/semantics',
-                    'ampersand/reference-material/the-language-ampersand/the-preprocessor',
-                    'ampersand/reference-material/the-language-ampersand/truth',
-                ]
-            },
-
-            {
                 label: 'More documents',
                 type: 'category',
                 items: [
                     'ampersand/conceptual/why-declarative',
-                    'ampersand/architecture-of-an-ampersand-application/README',
-                    'ampersand/architecture-of-an-ampersand-application/backend-framework',
-                    'ampersand/architecture-of-an-ampersand-application/extensions/README',
-                    'ampersand/architecture-of-an-ampersand-application/extensions/the-execengine',
-                    'ampersand/architecture-of-an-ampersand-application/hooks',
                     'ampersand/docker/README',
                     'ampersand/docker/compiler',
                     'ampersand/docker/modelling-environment',
                     'ampersand/docker/prototype-database',
                     'ampersand/docker/prototype-multi-stage-build',
-                    'ampersand/exercises/README',
-                    'ampersand/exercises/delivery',
-                    'ampersand/exercises/vog-in-dutch',
-                    'ampersand/installing-ampersand/README',
-                    'ampersand/installing-ampersand/deploying-your-prototype',
-                    'ampersand/installing-ampersand/installing-the-tools-manually',
+                    'ampersand/exercises',
                     'ampersand/modeling/README',
                     'ampersand/modeling/architecture',
                     'ampersand/modeling/conceptual-modeling',
@@ -168,56 +229,50 @@ module.exports = {
     ),
 
     toolsWeUseMainSidebar: [
-        {
-            label: 'Tools for contributors',
-            type: 'category',
-            items: [
-                'the-tools-we-use/README',
-                'the-tools-we-use/SUMMARY',
-                'the-tools-we-use/ampersand-language-support',
-                'the-tools-we-use/authentication-and-access-management-with-oauth',
-                'the-tools-we-use/automation-of-releasing-ci-cd/README',
-                'the-tools-we-use/automation-of-releasing-ci-cd/github-packages',
-                'the-tools-we-use/building/README',
-                'the-tools-we-use/building/automated-builds',
-                'the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
-                'the-tools-we-use/building/haskell',
-                'the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
-                'the-tools-we-use/deploying-rap3-with-azure',
-                'the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
-                'the-tools-we-use/deploying-with-kubernetes',
-                'the-tools-we-use/functionality-of-rap3/README',
-                'the-tools-we-use/functionality-of-rap3/account-manager',
-                'the-tools-we-use/functionality-of-rap3/graduate-student',
-                'the-tools-we-use/functionality-of-rap3/logging-in',
-                'the-tools-we-use/functionality-of-rap3/student',
-                'the-tools-we-use/functionality-of-rap3/tutor',
-                'the-tools-we-use/git',
-                'the-tools-we-use/gitbook/README',
-                'the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',
-                'the-tools-we-use/gitbook/getting-started-with-gitbook',
-                'the-tools-we-use/group-1/development-using-vs-code',
-                'the-tools-we-use/installation-of-rap/README',
-                'the-tools-we-use/installation-of-rap/deploying-ounl-rap3',
-                'the-tools-we-use/installation-of-rap/deploying-rap3-with-azure-on-ubuntu',
-                'the-tools-we-use/installation-of-rap/deploying-to-your-own-laptop',
-                'the-tools-we-use/installation-of-rap/deployment-configuration',
-                'the-tools-we-use/installation-of-rap/details',
-                'the-tools-we-use/installation-of-rap/making-docker-images',
-                'the-tools-we-use/installation-of-rap/redeploying-rap3',
-                'the-tools-we-use/klad',
-                'the-tools-we-use/making-images',
-                'the-tools-we-use/prototype-framework',
-                'the-tools-we-use/rap3-student',
-                'the-tools-we-use/rap3-tutor',
-                'the-tools-we-use/releasing-ampersand-and-workflow-details',
-                'the-tools-we-use/tools-used-in-the-ampersand-project'
-            ]
-        }
+        // {
+        //     label: 'Tools for contributors',
+        //     type: 'category',
+        //     items: [
+        //         'the-tools-we-use/README',
+        //         'the-tools-we-use/SUMMARY',
+        //         'the-tools-we-use/ampersand-language-support',
+        //         'the-tools-we-use/authentication-and-access-management-with-oauth',
+        //         'the-tools-we-use/automation-of-releasing-ci-cd/README',
+        //         'the-tools-we-use/automation-of-releasing-ci-cd/github-packages',
+        //         'the-tools-we-use/building/README',
+        //         'the-tools-we-use/building/automated-builds',
+        //         'the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
+        //         'the-tools-we-use/building/haskell',
+        //         'the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
+        //         'the-tools-we-use/deploying-rap3-with-azure',
+        //         'the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
+        //         'the-tools-we-use/deploying-with-kubernetes',
+        //         'the-tools-we-use/functionality-of-rap3/README',
+        //         'the-tools-we-use/git',
+        //         'the-tools-we-use/gitbook/README',
+        //         'the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',
+        //         'the-tools-we-use/gitbook/getting-started-with-gitbook',
+        //         'the-tools-we-use/group-1/development-using-vs-code',
+        //         'the-tools-we-use/installation-of-rap/README',
+        //         'the-tools-we-use/installation-of-rap/deploying-ounl-rap3',
+        //         'the-tools-we-use/installation-of-rap/deploying-rap3-with-azure-on-ubuntu',
+        //         'the-tools-we-use/installation-of-rap/deploying-to-your-own-laptop',
+        //         'the-tools-we-use/installation-of-rap/deployment-configuration',
+        //         'the-tools-we-use/installation-of-rap/details',
+        //         'the-tools-we-use/installation-of-rap/making-docker-images',
+        //         'the-tools-we-use/installation-of-rap/redeploying-rap3',
+        //         'the-tools-we-use/klad',
+        //         'the-tools-we-use/making-images',
+        //         'the-tools-we-use/prototype-framework',
+        //         'the-tools-we-use/rap3-student',
+        //         'the-tools-we-use/rap3-tutor',
+        //         'the-tools-we-use/releasing-ampersand-and-workflow-details',
+        //         'the-tools-we-use/tools-used-in-the-ampersand-project'
+        //     ]
+        // }
 
     ],
     notOnOldSite: [
-        'ampersand/conceptual/theory',
         'ampersand/conceptual/automated-rules',
 
     ]

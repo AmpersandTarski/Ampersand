@@ -33,7 +33,7 @@ class Language a where
       [rulefromProp p d | d <- Set.elems $ relsDefdIn x, p <- Set.elems (properties d)]
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
-  enforceRules :: a -> Rules -- all enforce rules that are maintained within this viewpoint.
+  enforceRules :: a -> Rules -- all enforcement rules that are maintained within this viewpoint.
   enforceRules x = Set.fromList . concatMap enfRules . enforces $ x
   allRules :: a -> Rules
   allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x
