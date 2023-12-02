@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- | The intentions behind FSpec (SJ 30 dec 2008):
 -- Generation of functional designs is a core functionality of Ampersand.
@@ -326,9 +327,6 @@ data PlugSQL
 
 instance Named PlugSQL where
   name = sqlname
-
-instance Rename PlugSQL where
-  rename p txt1 = p {sqlname = updatedName txt1 p}
 
 instance Eq PlugSQL where
   a == b = compare a b == EQ

@@ -9,7 +9,6 @@ module Ampersand.Basics.Name
     NameType (..),
     Label (..),
     Labeled (..),
-    Rename (..),
     mkName,
     nameOfONE,
     nameOfExecEngineRole,
@@ -21,11 +20,11 @@ module Ampersand.Basics.Name
     namePartToText1,
     toNamePart,
     toNamePart1,
+    postpend,
     checkProperId,
   )
 where
 
-import Ampersand.Basics.Auxiliaries (eqCl)
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
@@ -221,16 +220,3 @@ prependList ls ne = case ls of
   [] -> ne
   (x : xs) -> x :| xs <> toList ne
 
-class Named a => Rename a where
-  rename :: a -> NamePart -> a
-
-  -- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-  mkUniqueNames :: [Name] -> [a] -> [a]
-  mkUniqueNames taken xs =
-    [ p
-      | cl <- eqCl (T.toLower . text1ToText . tName) xs,
-        p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-          if name (NE.head cl) `elem` taken || length cl > 1
-            then [rename p (postpend (tshow i) (plainNameOf1 p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
-            else NE.toList cl
-    ]

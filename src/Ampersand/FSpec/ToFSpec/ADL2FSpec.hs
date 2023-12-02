@@ -600,3 +600,19 @@ tblcontents ci ps plug =
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
+
+
+-- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
+mkUniqueNames :: [Name] -> [PlugSQL] -> [PlugSQL]
+mkUniqueNames taken xs =
+    [ p
+      | cl <- eqCl (T.toLower . text1ToText . tName) xs,
+        p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+          if name (NE.head cl) `elem` taken || length cl > 1
+            then [rename p (postpend (tshow i) (plainNameOf1 p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
+            else NE.toList cl
+    ]
+
+rename :: PlugSQL -> NamePart -> PlugSQL
+rename p txt1 = p {sqlname = updatedName txt1 p}
+
