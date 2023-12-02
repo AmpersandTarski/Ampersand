@@ -219,4 +219,3 @@ prependList :: [a] -> NonEmpty a -> NonEmpty a
 prependList ls ne = case ls of
   [] -> ne
   (x : xs) -> x :| xs <> toList ne
-
