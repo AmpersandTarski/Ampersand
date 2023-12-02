@@ -20,7 +20,7 @@ data Concept = Concept
     cptJSONdirectSpecs :: [Text],
     cptJSONaffectedConjuncts :: [Text],
     cptJSONinterfaces :: [Text],
-    cptJSONdefaultViewId :: Maybe Text,
+    cptJSONdefaultViewName :: Maybe Text,
     cptJSONconceptTable :: TableCols,
     cptJSONlargestConcept :: Text
   }
@@ -80,7 +80,7 @@ instance JSON A_Concept Concept where
         cptJSONdirectSpecs = map (text1ToText . idWithoutType') $ L.nub [s | (s, g) <- fsisa fSpec, g == cpt],
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
         cptJSONinterfaces = fmap (text1ToText . tName) . filter hasAsSourceCpt . interfaceS $ fSpec,
-        cptJSONdefaultViewId = fmap (text1ToText . tName) . getDefaultViewForConcept fSpec $ cpt,
+        cptJSONdefaultViewName = fmap (text1ToText . tName) . getDefaultViewForConcept fSpec $ cpt,
         cptJSONconceptTable = fromAmpersand env fSpec cpt,
         cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
