@@ -584,11 +584,12 @@ pCtx2aCtx
         ci
         o@P_Vd
           { pos = orig,
-            vd_nm = nm, -- Text
-            vd_cpt = cpt, -- Concept
+            vd_nm = nm,
+            vd_label = lbl',
+            vd_cpt = cpt,
             vd_isDefault = isDefault,
-            vd_html = mHtml, -- Html template
-            vd_ats = segmnts -- view segments
+            vd_html = mHtml,
+            vd_ats = segmnts
           } =
           do
             segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
@@ -597,7 +598,7 @@ pCtx2aCtx
                   Vd
                     { vdpos = orig,
                       vdname = nm,
-                      vdlabel = lbl,
+                      vdlabel = lbl',
                       vdcpt = pCpt2aCpt (conceptMap ci) cpt,
                       vdIsDefault = isDefault,
                       vdhtml = mHtml,
