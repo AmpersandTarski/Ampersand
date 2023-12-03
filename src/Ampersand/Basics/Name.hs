@@ -200,13 +200,29 @@ instance Show Label where
   show (Label x) = "LABEL " <> T.unpack x
 
 prependToPlainName :: Text -> Name -> Name
-prependToPlainName t nm =
-  nm {nameWords = NE.reverse $ prepend t h NE.:| tl}
-  where
-    h NE.:| tl = NE.reverse . nameWords $ nm
-
-prepend :: Text -> NamePart -> NamePart
-prepend t (NamePart txt) = NamePart (t T1..<> txt)
+prependToPlainName
+  txt
+  Name
+    { nameWords = ws,
+      nameType = typ
+    } =
+    Name
+      { nameWords =
+          prependList (NE.init ws)
+            . singleton
+            . prepend txt
+            . NE.last
+            $ ws,
+        nameType = typ
+      }
+    where
+      prepend :: Text -> NamePart -> NamePart
+      prepend t1 (NamePart (Text1 c t2)) =
+        NamePart
+          ( case T.uncons (t1 <> T.cons c t2) of
+              Nothing -> fatal "impossible"
+              Just (h, tl) -> Text1 h tl
+          )
 
 postpend :: Text -> NamePart -> NamePart
 postpend t (NamePart txt) = NamePart (txt T1.<>. t)
@@ -219,3 +235,6 @@ prependList :: [a] -> NonEmpty a -> NonEmpty a
 prependList ls ne = case ls of
   [] -> ne
   (x : xs) -> x :| xs <> toList ne
+
+singleton :: a -> NonEmpty a
+singleton a = a :| []

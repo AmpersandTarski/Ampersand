@@ -303,10 +303,7 @@ makeFSpec env context =
     --making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs =
-      [ InternalPlug (rename p (plainNameOf1 p))
-        | p <- mkUniqueNames [] (qlfname <$> makeGeneratedSqlPlugs env context)
-      ]
+    genPlugs = InternalPlug <$> mkUniqueNames [] (qlfname <$> makeGeneratedSqlPlugs env context)
       where
         qlfname :: PlugSQL -> PlugSQL
         qlfname x = case T.uncons . view namespaceL $ env of
@@ -611,6 +608,6 @@ mkUniqueNames taken xs =
           then [rename p (postpend (tshow i) (plainNameOf1 p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
           else NE.toList cl
   ]
-
-rename :: PlugSQL -> NamePart -> PlugSQL
-rename p txt1 = p {sqlname = updatedName txt1 p}
+  where
+    rename :: PlugSQL -> NamePart -> PlugSQL
+    rename p txt1 = p {sqlname = updatedName txt1 p}
