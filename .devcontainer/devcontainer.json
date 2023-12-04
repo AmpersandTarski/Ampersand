@@ -6,6 +6,7 @@
     "context": "..",
     "dockerfile": "Dockerfile"
   },
+  // "postCreateCommand": "sudo apt-get update && sudo apt-get install -y openssh-client",
   "postStartCommand": "stack build",
   "customizations": {
     "vscode": {

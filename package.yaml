@@ -30,6 +30,8 @@ ghc-options:
   #      - -Wincomplete-record-updates
   #      - -Wincomplete-uni-patterns
   - -Wredundant-constraints
+  - -fwrite-ide-info
+  - -hiedir=.hie
 default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings

@@ -581,7 +581,7 @@ library
   default-extensions:
       NoImplicitPrelude
       OverloadedStrings
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -fwrite-ide-info -hiedir=.hie
   build-depends:
       HStringTemplate ==0.8.*
     , QuickCheck ==2.14.2
@@ -650,7 +650,7 @@ executable ampPreProc
   default-extensions:
       NoImplicitPrelude
       OverloadedStrings
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -fwrite-ide-info -hiedir=.hie -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , QuickCheck ==2.14.2
@@ -722,7 +722,7 @@ executable ampersand
   default-extensions:
       NoImplicitPrelude
       OverloadedStrings
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -fwrite-ide-info -hiedir=.hie -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
     , HStringTemplate ==0.8.*
@@ -794,7 +794,7 @@ test-suite ampersand-test
   default-extensions:
       NoImplicitPrelude
       OverloadedStrings
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -fwrite-ide-info -hiedir=.hie -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , QuickCheck ==2.14.2
