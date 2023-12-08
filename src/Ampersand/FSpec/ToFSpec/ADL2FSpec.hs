@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE InstanceSigs #-}
 
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
   ( makeFSpec,
@@ -17,7 +16,6 @@ import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.Misc.HasClasses
-import Data.Hashable (hash)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -305,48 +303,8 @@ makeFSpec env context =
     --making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs = InternalPlug <$> mkUniqueNames (qlfname <$> makeGeneratedSqlPlugs env context)
-      where
-        qlfname :: PlugSQL -> PlugSQL
-        qlfname x = case T.uncons . view namespaceL $ env of
-          Nothing -> x
-          Just (c, tl) ->
-            x
-              { sqlname =
-                  withNameSpace
-                    [ case toNamePart (T.cons c tl) of
-                        Nothing -> fatal "Not a valid NamePart."
-                        Just np -> np
-                    ]
-                    $ name x
-              }
-    --TODO151210 -> Plug A is overbodig, want A zit al in plug r
-    --CONTEXT Temp
-    --PATTERN Temp
-    --r::A*B[TOT].
-    --t::E*ECps[UNI].
-    --ENDPATTERN
-    --ENDCONTEXT
-    {-
-        **************************************
-        * Plug E                               *
-        * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-        * t  [UNI]                             *
-        **************************************
-        * Plug ECps                            *
-        * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-        **************************************
-        * Plug B                               *
-        * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-        **************************************
-        * Plug A                               *
-        * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-        **************************************
-        * Plug r                               *
-        * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-        * r  [TOT]                             *
-        **************************************
-    -}
+    genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context
+
     -------------------
     --END: making plugs
     -------------------
@@ -599,37 +557,3 @@ tblcontents ci ps plug =
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
-
--- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-mkUniqueNames :: Renamable a => [a] -> [a]
-mkUniqueNames [] = []
-mkUniqueNames xs = concatMap (NE.toList . renameWhenNeeded) . eqCl renamingClassOf $ xs
-  where
-    renamingClassOf :: Named a => a -> Text
-    renamingClassOf = T.toLower . tshow . localName
-    renameWhenNeeded :: Renamable a => NonEmpty a -> NonEmpty a
-    renameWhenNeeded rs =
-      case NE.tail rs of
-        [] -> rs
-        _ -> fmap rename rs
-
-class Named a => Renamable a where
-  rename :: a -> a
-  unoverloadedName :: a -> NamePart
-  unoverloadedName x = case toNamePart . newNametext $ x of
-    Nothing -> fatal $ "Invalid namepart: " <> newNametext x
-    Just np -> np
-  newNametext :: a -> Text
-
-instance Renamable PlugSQL where
-  rename :: PlugSQL -> PlugSQL
-  rename plug = plug {sqlname = updatedName (unoverloadedName plug) plug}
-  newNametext plug =
-    tshow (localName plug)
-      <> (T.take 8 . tshow . abs . hash)
-        ( tshow (name plug)
-            <> ( case cLkpTbl plug of
-                   [] -> mempty
-                   h : _ -> "[" <> tshow (fst h) <> "]"
-               )
-        )
