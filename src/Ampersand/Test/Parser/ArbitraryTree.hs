@@ -52,14 +52,14 @@ identifier =
 
 -- Genrates a valid ADL lower-case name
 lowercaseName :: Gen Name
-lowercaseName = arbitrary `suchThat` (firstLowercase . namePartToText1 . plainNameOf1)
+lowercaseName = arbitrary `suchThat` (firstLowercase . namePartToText1 . localName)
   where
     firstLowercase :: Text1 -> Bool
     firstLowercase (Text1 c _) = isLower c
 
 -- Genrates a valid ADL upper-case name
 uppercaseName :: Gen Name
-uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . plainNameOf1)
+uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . localName)
   where
     firstUppercase :: Text1 -> Bool
     firstUppercase (Text1 c _) = isUpper c

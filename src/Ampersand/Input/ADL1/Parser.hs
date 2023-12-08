@@ -403,13 +403,13 @@ pRuleDef ns =
           fromMaybe
             (origToName, Just . Label $ "The rule defined at " <> tshow orig)
             maybeNameDefLbl
-        plainName = "Rule_" <> (tshow . abs . hash . tshow) orig
+        localNm = "Rule_" <> (tshow . abs . hash . tshow) orig
         origToName =
           withNameSpace ns
             . mkName
               RuleName
-            $ ( case toNamePart plainName of
-                  Nothing -> fatal $ "Not a valid NamePart: " <> plainName
+            $ ( case toNamePart localNm of
+                  Nothing -> fatal $ "Not a valid NamePart: " <> localNm
                   Just np -> np
               )
               NE.:| []
@@ -819,7 +819,7 @@ pSubInterface ns =
 pBoxBodyElement :: NameSpace -> AmpParser P_BoxBodyElement
 pBoxBodyElement ns =
   try pBoxItemTerm
-    <|> try pBoxItemText -- We need `try` because in the Term, the plainName is mandatory, while in Text it is optional.
+    <|> try pBoxItemText -- We need `try` because in the Term, the local name is mandatory, while in Text it is optional.
   where
     pBoxItemTerm :: AmpParser P_BoxBodyElement
     pBoxItemTerm =
@@ -833,9 +833,9 @@ pBoxBodyElement ns =
         <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) --for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
-        build orig localName lbl term mCrud mView msub =
+        build orig localNm lbl term mCrud mView msub =
           P_BoxItemTerm
-            { obj_PlainName = Just localName,
+            { obj_PlainName = Just localNm,
               obj_lbl = lbl,
               pos = orig,
               obj_ctx = term,
