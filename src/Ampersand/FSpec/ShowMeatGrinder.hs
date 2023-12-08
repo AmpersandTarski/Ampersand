@@ -70,7 +70,7 @@ metaModel mmLabel =
 grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
 grind ns fun userFspec =
   PCtx
-    { ctx_nm = prependToPlainName "Grinded_" $ withNameSpace ns . mkName ContextName $ plainNameOf1 userFspec NE.:| [],
+    { ctx_nm = prependToPlainName "Grinded_" $ withNameSpace ns . mkName ContextName $ localName userFspec NE.:| [],
       ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,

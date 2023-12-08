@@ -48,9 +48,9 @@ instance Show NamePart where
 data Name = Name
   { -- | A name in a namespace can be seen as a nonempty list of words.
     --   currently, we only deal with 'absolute' names.
-    --   the separator that is inbetween the nameWords can be depending on the specific environment.
+    --   the separator that is inbetween the nameParts can be depending on the specific environment.
     --   in an .adl file, we will assume a dot `.` as separator.
-    nameWords :: !(NonEmpty NamePart),
+    nameParts :: !(NonEmpty NamePart),
     nameType :: !NameType
   }
   deriving (Data)
@@ -68,7 +68,7 @@ instance Show Name where
       . L.intersperse "."
       . toList
       . fmap namePartToText
-      . nameWords
+      . nameParts
 
 instance Hashable Name where
   hashWithSalt s = hashWithSalt s . text1ToText . tName
@@ -109,21 +109,21 @@ namePartToText1 (NamePart x) = x
 mkName :: NameType -> NonEmpty NamePart -> Name
 mkName typ xs =
   Name
-    { nameWords = xs,
+    { nameParts = xs,
       nameType = typ
     }
 
 nameOfExecEngineRole :: Name
 nameOfExecEngineRole =
   Name
-    { nameWords = NamePart (Text1 'E' "xecEngine") :| [],
+    { nameParts = NamePart (Text1 'E' "xecEngine") :| [],
       nameType = RoleName
     }
 
 nameOfONE :: Name
 nameOfONE =
   Name
-    { nameWords = NamePart (Text1 'O' "NE") :| [],
+    { nameParts = NamePart (Text1 'O' "NE") :| [],
       nameType = ConceptName
     }
 
@@ -145,7 +145,7 @@ data NameType
 withNameSpace :: NameSpace -> Name -> Name
 withNameSpace ns nm =
   Name
-    { nameWords = prependList ns (nameWords nm),
+    { nameParts = prependList ns (nameParts nm),
       nameType = nameType nm
     }
 
@@ -172,13 +172,13 @@ class Named a where
   tName :: a -> Text1
   tName = toText1Unsafe . tshow . name
   nameSpaceOf :: a -> [NamePart]
-  nameSpaceOf = NE.init . nameWords . name
-  plainNameOf1 :: a -> NamePart
-  plainNameOf1 = NE.last . nameWords . name
+  nameSpaceOf = NE.init . nameParts . name
+  localName :: a -> NamePart
+  localName = NE.last . nameParts . name
   plainNameOf :: a -> Text
   plainNameOf nm = T.cons h tl
     where
-      NamePart (Text1 h tl) = plainNameOf1 nm
+      NamePart (Text1 h tl) = localName nm
   updatedName :: NamePart -> a -> Name
   updatedName txt1 x = Name ws' typ
     where
@@ -203,11 +203,11 @@ prependToPlainName :: Text -> Name -> Name
 prependToPlainName
   txt
   Name
-    { nameWords = ws,
+    { nameParts = ws,
       nameType = typ
     } =
     Name
-      { nameWords =
+      { nameParts =
           prependList (NE.init ws)
             . singleton
             . prepend txt

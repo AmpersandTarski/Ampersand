@@ -605,7 +605,7 @@ mkUniqueNames taken xs =
     | cl <- eqCl (T.toLower . text1ToText . tName) xs,
       p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
         if name (NE.head cl) `elem` taken || length cl > 1
-          then [rename p (postpend (tshow i) (plainNameOf1 p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
+          then [rename p (postpend (tshow i) (localName p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
           else NE.toList cl
   ]
   where
