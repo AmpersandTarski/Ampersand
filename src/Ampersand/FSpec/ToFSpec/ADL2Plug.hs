@@ -39,29 +39,25 @@ makeGeneratedSqlPlugs ::
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = map makeTable tableParts
+makeGeneratedSqlPlugs env context = map makeTable components
   where
-    tableParts :: [(Maybe Typology, [Relation])]
-    -- ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
-    -- -- stored into that table. The order of concepts is not modified.
-    --   [Relation] -- The relations that cannot be stored into one of the concept tables.
-    -- )
+    components :: [(Maybe Typology, [Relation])]
 
-    tableParts =
-      [(Just t, declsInTable t) | t <- typologies context]
-        <> [(Nothing, [d]) | d <- toList dcls, isNothing (conceptTableOf d)]
+    components =
+      map componentsForTypology (typologies context)
+        <> (map componentsForOrphanRelation . filter isOrphan $ allRelations)
       where
-        dcls = relsDefdIn context
-        declsInTable typ = filter (relBelongsToTable typ) . toList $ dcls
-        relBelongsToTable :: Typology -> Relation -> Bool
-        relBelongsToTable typ rel = case conceptTableOf rel of
-          Nothing -> False
-          Just x -> x `elem` tyCpts typ
+        componentsForTypology typol =
+          (Just typol, filter (relationBelongsToConceptTable typol) allRelations)
+        componentsForOrphanRelation rel = (Nothing, [rel])
+        isOrphan = isNothing . conceptTableOf
+        allRelations = toList (relsDefdIn context)
+        relationBelongsToConceptTable :: Typology -> Relation -> Bool
+        relationBelongsToConceptTable typ rel =
+          case conceptTableOf rel of
+            Nothing -> False
+            Just x -> x `elem` tyCpts typ
     repr = representationOf (ctxInfo context)
-    -- conceptTables :: [PlugSQL]
-    -- conceptTables = map makeConceptTable conceptTableParts
-    -- linkTables :: [PlugSQL]
-    -- linkTables = map makeLinkTable linkTableParts
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
     makeTable (mTyp, dcls) = case (mTyp, dcls) of
