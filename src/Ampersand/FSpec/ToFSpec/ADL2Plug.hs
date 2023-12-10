@@ -39,39 +39,38 @@ makeGeneratedSqlPlugs ::
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = conceptTables <> linkTables
+makeGeneratedSqlPlugs env context = map makeTable tableParts
   where
-    conceptTableParts :: [(Typology, [Relation])]
-    linkTableParts :: [Relation]
-    (conceptTableParts, linkTableParts) = distributionOfConceptsAndRelations 
-    distributionOfConceptsAndRelations ::
-      ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
-      -- stored into that table. The order of concepts is not modified.
-        [Relation] -- The relations that cannot be stored into one of the concept tables.
-      )
-    distributionOfConceptsAndRelations =
-      ( [(t, declsInTable t) | t <- cptLists],
-        [d | d <- toList dcls, isNothing (conceptTableOf d)]
-      )
+    tableParts :: [(Maybe Typology, [Relation])]
+    -- ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
+    -- -- stored into that table. The order of concepts is not modified.
+    --   [Relation] -- The relations that cannot be stored into one of the concept tables.
+    -- )
+
+    tableParts =
+      [(Just t, declsInTable t) | t <- typologies context]
+        <> [(Nothing, [d]) | d <- toList dcls, isNothing (conceptTableOf d)]
       where
-        dcls :: Relations -- ^ all relations that are to be distributionOfConceptsAndRelationsd
         dcls = relsDefdIn context
-        cptLists :: [Typology]  -- ^ the sets of concepts, each one contains all concepts that will go into a single wide table.
-        cptLists = typologies context
-        declsInTable typ =
-          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
-                                        Nothing -> False
-                                        Just x -> x `elem` tyCpts typ
-          ]
-
-
-    makeConceptTable :: (Typology, [Relation]) -> PlugSQL
+        declsInTable typ = filter (relBelongsToTable typ) . toList $ dcls
+        relBelongsToTable :: Typology -> Relation -> Bool
+        relBelongsToTable typ rel = case conceptTableOf rel of
+          Nothing -> False
+          Just x -> x `elem` tyCpts typ
     repr = representationOf (ctxInfo context)
-    conceptTables :: [PlugSQL]
-    conceptTables = map makeConceptTable conceptTableParts
-    linkTables :: [PlugSQL]
-    linkTables = map makeLinkTable linkTableParts
-    makeConceptTable (typ, dcls) =
+    -- conceptTables :: [PlugSQL]
+    -- conceptTables = map makeConceptTable conceptTableParts
+    -- linkTables :: [PlugSQL]
+    -- linkTables = map makeLinkTable linkTableParts
+
+    makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
+    makeTable (mTyp, dcls) = case (mTyp, dcls) of
+      (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
+      (Nothing, [rel]) -> makeLinkTable rel
+      (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
+      (Just typ, _) -> makeConceptTable typ dcls
+    makeConceptTable :: Typology -> [Relation] -> PlugSQL
+    makeConceptTable typ dcls =
       TblSQL
         { sqlname = name tableKey,
           attributes = map cptAttrib cpts <> map dclAttrib dcls,
