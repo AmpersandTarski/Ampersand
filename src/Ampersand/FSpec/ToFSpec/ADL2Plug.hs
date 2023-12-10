@@ -1,5 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   ( makeGeneratedSqlPlugs,
     typologies,
@@ -327,7 +325,8 @@ class Named a => TableStuff a where
       hasSameClassifier :: Stuff -> Bool
       hasSameClassifier y = classifierOf (toStuff x) == classifierOf y
   toStuff :: a -> Stuff
-  fromStuff :: Stuff -> Maybe a
+
+  --  fromStuff :: Stuff -> Maybe a
   disambiguatedLocalName :: a -> Text1
   disambiguatedLocalName x =
     toText1Unsafe $
@@ -343,14 +342,16 @@ classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName loc
 
 instance TableStuff A_Concept where
   toStuff = Left
-  fromStuff (Right _) = Nothing
-  fromStuff (Left x) = Just x
+
+  --  fromStuff (Right _) = Nothing
+  --  fromStuff (Left x) = Just x
   hashText = tshow . tName
 
 instance TableStuff Relation where
   toStuff = Right
-  fromStuff (Right x) = Just x
-  fromStuff (Left _) = Nothing
+
+  --  fromStuff (Right x) = Just x
+  --  fromStuff (Left _) = Nothing
   hashText rel =
     (tshow . tName) rel
       <> (tshow . tName . source) rel
