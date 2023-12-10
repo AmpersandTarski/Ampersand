@@ -1,3 +1,5 @@
+{-# LANGUAGE InstanceSigs #-}
+
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   ( makeGeneratedSqlPlugs,
     typologies,
@@ -12,6 +14,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
+import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -51,13 +54,14 @@ makeGeneratedSqlPlugs env context = map makeTable components
           (Just typol, filter (relationBelongsToConceptTable typol) allRelations)
         componentsForOrphanRelation rel = (Nothing, [rel])
         isOrphan = isNothing . conceptTableOf
-        allRelations = toList (relsDefdIn context)
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
         relationBelongsToConceptTable typ rel =
           case conceptTableOf rel of
             Nothing -> False
             Just x -> x `elem` tyCpts typ
     repr = representationOf (ctxInfo context)
+    allRelations = toList (relsDefdIn context)
+    --allConcepts = toList (concs context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
     makeTable (mTyp, dcls) = case (mTyp, dcls) of
@@ -68,14 +72,24 @@ makeGeneratedSqlPlugs env context = map makeTable components
     makeConceptTable :: Typology -> [Relation] -> PlugSQL
     makeConceptTable typ dcls =
       TblSQL
-        { sqlname = name tableKey,
+        { sqlname = determineTableName tableKey,
           attributes = map cptAttrib cpts <> map dclAttrib dcls,
           cLkpTbl = conceptLookuptable,
           dLkpTbl = dclLookuptable
         }
       where
         cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
-
+        determineTableName :: A_Concept -> Name
+        determineTableName keyConcept = mkName SqlTableName (namePart NE.:| [])
+          where
+            namePart = case toNamePart1 (determineTableNameText keyConcept) of
+              Nothing -> fatal $ "Not a valid namepart: " <> text1ToText (determineTableNameText keyConcept)
+              Just np -> np
+        determineTableNameText :: A_Concept -> Text1
+        determineTableNameText keyConcept =
+          if hasUnambigousLocalName ((map toStuff . toList . concs $ context) <> (map toStuff . toList . relsDefdIn $ context)) keyConcept
+            then classifierOf . toStuff $ keyConcept
+            else disambiguatedLocalName keyConcept
         colNameMap :: [(Either A_Concept Relation, SqlColumName)]
         colNameMap = f [] (cpts, dcls)
           where
@@ -297,3 +311,47 @@ typologies context =
            }
          | c <- toList $ concs context Set.\\ concs (gens context)
        ]
+
+-- | Stuff is ment to be things that can end up in a database. It is designed
+-- to have Concepts and Relations as instances.
+-- Feel free to give it a better name :)
+type Stuff = Either A_Concept Relation
+
+class Named a => TableStuff a where
+  hasUnambigousLocalName :: [Stuff] -> a -> Bool
+  hasUnambigousLocalName allStuff x = case filter hasSameClassifier allStuff of
+    [] -> fatal "x should have the same classifier as x!"
+    [_] -> True
+    _ -> False
+    where
+      hasSameClassifier :: Stuff -> Bool
+      hasSameClassifier y = classifierOf (toStuff x) == classifierOf y
+  toStuff :: a -> Stuff
+  fromStuff :: Stuff -> Maybe a
+  disambiguatedLocalName :: a -> Text1
+  disambiguatedLocalName x =
+    toText1Unsafe $
+      (namePartToText . localName) x
+        <> "_"
+        <> gitLikeSha x
+  gitLikeSha :: a -> Text
+  gitLikeSha = T.take 7 . tshow . abs . hash . hashText
+  hashText :: a -> Text
+
+classifierOf :: Stuff -> Text1
+classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
+
+instance TableStuff A_Concept where
+  toStuff = Left
+  fromStuff (Right _) = Nothing
+  fromStuff (Left x) = Just x
+  hashText = tshow . tName
+
+instance TableStuff Relation where
+  toStuff = Right
+  fromStuff (Right x) = Just x
+  fromStuff (Left _) = Nothing
+  hashText rel =
+    (tshow . tName) rel
+      <> (tshow . tName . source) rel
+      <> (tshow . tName . target) rel

@@ -176,9 +176,7 @@ class Named a where
   localName :: a -> NamePart
   localName = NE.last . nameParts . name
   plainNameOf :: a -> Text
-  plainNameOf nm = T.cons h tl
-    where
-      NamePart (Text1 h tl) = localName nm
+  plainNameOf = namePartToText . localName
   updatedName :: NamePart -> a -> Name
   updatedName txt1 x = Name ws' typ
     where
