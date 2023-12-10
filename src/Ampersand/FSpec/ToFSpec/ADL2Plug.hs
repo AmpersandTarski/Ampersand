@@ -44,6 +44,27 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
     conceptTableParts :: [(Typology, [Relation])]
     linkTableParts :: [Relation]
     (conceptTableParts, linkTableParts) = distributionOfConceptsAndRelations 
+    distributionOfConceptsAndRelations ::
+      ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
+      -- stored into that table. The order of concepts is not modified.
+        [Relation] -- The relations that cannot be stored into one of the concept tables.
+      )
+    distributionOfConceptsAndRelations =
+      ( [(t, declsInTable t) | t <- cptLists],
+        [d | d <- toList dcls, isNothing (conceptTableOf d)]
+      )
+      where
+        dcls :: Relations -- ^ all relations that are to be distributionOfConceptsAndRelationsd
+        dcls = relsDefdIn context
+        cptLists :: [Typology]  -- ^ the sets of concepts, each one contains all concepts that will go into a single wide table.
+        cptLists = typologies context
+        declsInTable typ =
+          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
+                                        Nothing -> False
+                                        Just x -> x `elem` tyCpts typ
+          ]
+
+
     makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     repr = representationOf (ctxInfo context)
     conceptTables :: [PlugSQL]
@@ -232,25 +253,6 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
-    distributionOfConceptsAndRelations ::
-      ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
-      -- stored into that table. The order of concepts is not modified.
-        [Relation] -- The relations that cannot be stored into one of the concept tables.
-      )
-    distributionOfConceptsAndRelations =
-      ( [(t, declsInTable t) | t <- cptLists],
-        [d | d <- toList dcls, isNothing (conceptTableOf d)]
-      )
-      where
-        dcls :: Relations -- ^ all relations that are to be distributionOfConceptsAndRelationsd
-        dcls = relsDefdIn context
-        cptLists :: [Typology]  -- ^ the sets of concepts, each one contains all concepts that will go into a single wide table.
-        cptLists = typologies context
-        declsInTable typ =
-          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
-                                        Nothing -> False
-                                        Just x -> x `elem` tyCpts typ
-          ]
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
