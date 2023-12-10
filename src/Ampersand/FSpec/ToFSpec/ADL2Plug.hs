@@ -38,14 +38,18 @@ makeGeneratedSqlPlugs ::
   [PlugSQL]
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
---   if the set conains no concepts, a linktable is created.
+--   if the set contains no concepts, a linktable is created.
 makeGeneratedSqlPlugs env context = conceptTables <> linkTables
   where
-    repr = representationOf (ctxInfo context)
-    conceptTables = map makeConceptTable conceptTableParts
-    linkTables = map makeLinkTable linkTableParts
-    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (typologies context)
+    conceptTableParts :: [(Typology, [Relation])]
+    linkTableParts :: [Relation]
+    (conceptTableParts, linkTableParts) = distributionOfConceptsAndRelations 
     makeConceptTable :: (Typology, [Relation]) -> PlugSQL
+    repr = representationOf (ctxInfo context)
+    conceptTables :: [PlugSQL]
+    conceptTables = map makeConceptTable conceptTableParts
+    linkTables :: [PlugSQL]
+    linkTables = map makeLinkTable linkTableParts
     makeConceptTable (typ, dcls) =
       TblSQL
         { sqlname = name tableKey,
@@ -228,18 +232,20 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
-    dist ::
-      Relations -> -- all relations that are to be distributed
-      [Typology] -> -- the sets of concepts, each one contains all concepts that will go into a single table.
+    distributionOfConceptsAndRelations ::
       ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
       -- stored into that table. The order of concepts is not modified.
         [Relation] -- The relations that cannot be stored into one of the concept tables.
       )
-    dist dcls cptLists =
+    distributionOfConceptsAndRelations =
       ( [(t, declsInTable t) | t <- cptLists],
         [d | d <- toList dcls, isNothing (conceptTableOf d)]
       )
       where
+        dcls :: Relations -- ^ all relations that are to be distributionOfConceptsAndRelationsd
+        dcls = relsDefdIn context
+        cptLists :: [Typology]  -- ^ the sets of concepts, each one contains all concepts that will go into a single wide table.
+        cptLists = typologies context
         declsInTable typ =
           [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
                                         Nothing -> False

@@ -41,7 +41,7 @@ fSpecGenOptsParser isForDaemon =
       switch
         ( long "sql-bin-tables"
             <> help
-              ( "Generate binary tables instead of broad tables in SQL "
+              ( "Generate binary tables instead of wide tables in SQL "
                   <> "database, for testing purposes."
               )
         )
