@@ -795,7 +795,7 @@ Interfaces are meant to expose functionality and data from a [context](#the-cont
 
 #### Description
 
-An interface is a component of an information system that exposes functionality and data from a [context](#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data. The first [example](../examples.md#example-interface-structure) introduces a simple interface informally. Another [example](../examples.md#interface-introductory-example) introduces the main features of an interface with nested interfaces.
+An interface is a component of an information system that exposes functionality and data from a [context](#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data. The first [example](../examples#example-interface-structure) introduces a simple interface informally. Another [example](../examples#interface-introductory-example) introduces the main features of an interface with nested interfaces.
 
 A _interface_ is a component of an information system. During the time that this interface can actually be used, we say it is _deployed_. We also call this the _lifetime_ of a interface. A typical instance of a interface is a user interface based on HTML-CSS that runs in a browser. But an application program interface \(API\) that serves other computers with web services is a perfectly valid instance as well.
 
@@ -859,8 +859,8 @@ When running an application in your browser, you are watching one user interface
 
 Further examples:
 
-- a [client interface](../examples.md#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
-- a [login interface](../examples.md#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.
+- a [client interface](../examples#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
+- a [login interface](../examples#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.
 
 ### CRUD annotations
 

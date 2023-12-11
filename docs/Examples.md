@@ -1,5 +1,5 @@
 ---
-title: Examples
+title: examples
 id: examples
 description: Examples of Ampersand programs and fragments
 ---
