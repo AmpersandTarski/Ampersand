@@ -97,36 +97,8 @@ makeGeneratedSqlPlugs env context = map makeTable components
               if hasUnambigousLocalName (map toStuff allConceptsInContext <> map toStuff allRelationsInContext) keyConcept
                 then classifierOf . toStuff $ keyConcept
                 else disambiguatedLocalName keyConcept
-        colNameMap :: [(Either A_Concept Relation, SqlColumName)]
-        colNameMap = f [] (allConceptsInTable, allRelationsInTable)
-          where
-            f :: [(Either A_Concept Relation, SqlColumName)] -> ([A_Concept], [Relation]) -> [(Either A_Concept Relation, SqlColumName)]
-            f names (cs, ds) =
-              case (cs, ds) of
-                ([], []) -> names
-                ([], h : tl) -> f (insert (Right h) names) ([], tl)
-                (h : tl, _) -> f (insert (Left h) names) (tl, ds)
-            insert :: Either A_Concept Relation -> [(Either A_Concept Relation, SqlColumName)] -> [(Either A_Concept Relation, SqlColumName)]
-            insert item mp = (item, mkNewSqlColumName itemName $ map snd mp) : mp
-              where
-                itemName = case item of
-                  Right rel -> name rel
-                  Left cpt -> name cpt
-            -- Find the next free SqlColumName
-            mkNewSqlColumName :: Name -> [SqlColumName] -> SqlColumName
-            mkNewSqlColumName nm forbiddens = firstFree 0
-              where
-                firstFree :: Integer -> SqlColumName
-                firstFree i =
-                  if toSqlColName i `elem` forbiddens
-                    then firstFree (i + 1)
-                    else toSqlColName i
-                toSqlColName :: Integer -> SqlColumName
-                toSqlColName i =
-                  text1ToSqlColumName . toText1Unsafe $
-                    (T.intercalate "_" . map tshow . nameSpaceOf $ nm)
-                      <> plainNameOf nm
-                      <> (if i > 0 then tshow i else mempty)
+        tableStuff = map toStuff allConceptsInTable <> map toStuff allRelationsInTable
+
         tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
@@ -156,10 +128,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) cpt <> "`. "))
-                  (lookup (Left cpt) colNameMap),
+            { attSQLColName = determineAttributeName tableStuff cpt,
               attExpr = expr,
               attType = repr cpt,
               attUse =
@@ -180,10 +149,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) dcl <> "`. "))
-                  (lookup (Right dcl) colNameMap),
+            { attSQLColName = determineAttributeName tableStuff dcl,
               attExpr = dclAttExpression,
               attType = repr (target dclAttExpression),
               attUse =
@@ -345,6 +311,14 @@ class Named a => TableStuff a where
   gitLikeSha :: a -> Text
   gitLikeSha = T.take 7 . tshow . abs . hash . hashText
   hashText :: a -> Text
+  determineAttributeName :: [Stuff] -> a -> SqlColumName
+  determineAttributeName tableStuff x = text1ToSqlColumName determineAttributeNameText
+    where
+      determineAttributeNameText :: Text1
+      determineAttributeNameText =
+        if hasUnambigousLocalName tableStuff x
+          then classifierOf . toStuff $ x
+          else disambiguatedLocalName x
 
 classifierOf :: Stuff -> Text1
 classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
