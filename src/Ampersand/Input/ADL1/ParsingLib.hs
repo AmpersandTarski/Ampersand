@@ -291,27 +291,30 @@ pName typ =
       mkName typ . NE.reverse $ nm NE.:| reverse ns
     localNamePart :: AmpParser NamePart
     localNamePart =
-      toNamePart1' <$> case typ of
-        ConceptName -> pUpperCaseID
-        ContextName -> pUpperCaseID
-        IdentName -> pUnrestrictedID
-        InterfaceName -> pUnrestrictedID
-        PatternName -> pUpperCaseID
-        PropertyName -> pUpperCaseID
-        RelationName -> pLowerCaseID
-        RoleName -> pUnrestrictedID
-        RuleName -> pUnrestrictedID
-        SqlAttributeName -> pUnrestrictedID
-        SqlTableName -> pUnrestrictedID
-        ViewName -> pUnrestrictedID
-    toNamePart1' :: Text1 -> NamePart
-    toNamePart1' t = case toNamePart1 t of
-      Nothing -> fatal $ "Not a valid NamePart: " <> tshow t
-      Just np -> np
+      buildNamePart <$> currPos
+        <*> case typ of
+          ConceptName -> pUpperCaseID
+          ContextName -> pUpperCaseID
+          IdentName -> pUnrestrictedID
+          InterfaceName -> pUnrestrictedID
+          PatternName -> pUpperCaseID
+          PropertyName -> pUpperCaseID
+          RelationName -> pLowerCaseID
+          RoleName -> pUnrestrictedID
+          RuleName -> pUnrestrictedID
+          SqlAttributeName -> pUnrestrictedID
+          SqlTableName -> pUnrestrictedID
+          ViewName -> pUnrestrictedID
     namespacePart :: AmpParser NamePart
-    namespacePart = toNamePart1' . fst <$> nameAndDot
-      where
-        nameAndDot = (,) <$> pUnrestrictedID <*> pDot
+    namespacePart =
+      try $
+        buildNamePart <$> currPos
+          <*> pUnrestrictedID
+          <* pDot
+    buildNamePart :: Origin -> Text1 -> NamePart
+    buildNamePart orig txt1 = case toNamePart1 txt1 of
+      Nothing -> fatal $ "An unrestrictedID should be a valid namepart, but it isn't: " <> tshow txt1 <> "\n   " <> tshow orig
+      Just np -> np
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of
