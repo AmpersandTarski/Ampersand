@@ -907,9 +907,20 @@ pPopulation ::
   AmpParser P_Population
 pPopulation ns =
   (pKey . toText1Unsafe) "POPULATION"
-    *> ( P_RelPopu Nothing Nothing <$> currPos <*> pNamedRel ns <* (pKey . toText1Unsafe) "CONTAINS" <*> pContent
-           <|> P_CptPopu <$> currPos <*> pConceptRef ns <* (pKey . toText1Unsafe) "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma)
-       )
+    *> (try pPopulationCpt <|> pPopulationRel)
+  where
+    pPopulationRel =
+      P_RelPopu Nothing Nothing
+        <$> currPos
+        <*> pNamedRel ns
+        <* (pKey . toText1Unsafe) "CONTAINS"
+        <*> pContent
+    pPopulationCpt =
+      P_CptPopu
+        <$> currPos
+        <*> pConceptRef ns
+        <* (pKey . toText1Unsafe) "CONTAINS"
+        <*> pBrackets (pAtomValue `sepBy` pComma)
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO: Rename the RoleRule to RoleMantains.
