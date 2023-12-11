@@ -907,7 +907,7 @@ pPopulation ::
   AmpParser P_Population
 pPopulation ns =
   (pKey . toText1Unsafe) "POPULATION"
-    *> (try pPopulationCpt <|> pPopulationRel)
+    *> (try pPopulationCpt <|> pPopulationRel) --FIXME: Adding try solved the problem of parsing POPULATION statements. However, it significantly slowed down the quickCheck tests.
   where
     pPopulationRel =
       P_RelPopu Nothing Nothing
