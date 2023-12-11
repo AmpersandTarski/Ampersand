@@ -628,4 +628,4 @@ mkUniqueNames (p : ps) = concatMap (NE.toList . mkSqlTableNameUniqueIFFRequired)
               )
 
     rename :: NamePart -> PlugSQL -> PlugSQL
-    rename txt1 plug = plug {sqlname = updatedName txt1 plug}
+    rename txt1 part = part {sqlname = updatedName txt1 p}
