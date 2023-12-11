@@ -9,6 +9,27 @@ description: Examples of Ampersand programs and fragments
 This page is a collection of examples, meant for learning and explaining the language Ampersand.
 TODO: refactor this documentation to match the latest syntax.
 
+## Example: Multiple files
+This example illustrates how an Ampersand specification can consist of multiple files.
+
+In this example, we have two files. File `foo.adl` contains the following text:
+```Ampersand
+CONTEXT MultifileDemo
+INCLUDE "bar.adl"
+RELATION r[A*B]
+RULE r |- s
+ENDCONTEXT
+```
+and file `bar.adl` contains:
+```Ampersand
+CONTEXT MultifileDemo
+INCLUDE "bar.adl"
+RELATION s[A*B]
+ENDCONTEXT
+```
+Without the `INCLUDE` statement, file `foo.adl` does not compile because relation `s` is undefined.
+The `INCLUDE` statement causes all definitions of `bar.adl` to be included in the context of `foo.adl`, so this example compiles without errors.
+
 ## Example: Client {#interfaces-example-client}
 
 This example illustrates the structure of [interfaces in Ampersand](reference-material/syntax-of-ampersand#the-interface-statement)
