@@ -101,7 +101,9 @@ makeGeneratedSqlPlugs env context = map makeTable components
 
         tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
-        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
+        conceptLookuptable = map toItem allConceptsInTable
+          where
+            toItem cpt = (cpt, cptAttrib cpt)
         dclLookuptable :: [RelStore]
         dclLookuptable = map f allRelationsInTable
           where
@@ -288,18 +290,18 @@ typologies context =
 -- | Stuff is ment to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.
 -- Feel free to give it a better name :)
-type Stuff = Either A_Concept Relation
+type ConceptOrRelation = Either A_Concept Relation
 
 class Named a => TableStuff a where
-  hasUnambigousLocalName :: [Stuff] -> a -> Bool
+  hasUnambigousLocalName :: [ConceptOrRelation] -> a -> Bool
   hasUnambigousLocalName allStuff x = case filter hasSameClassifier allStuff of
     [] -> fatal "x should have the same classifier as x!"
     [_] -> True
     _ -> False
     where
-      hasSameClassifier :: Stuff -> Bool
+      hasSameClassifier :: ConceptOrRelation -> Bool
       hasSameClassifier y = classifierOf (toStuff x) == classifierOf y
-  toStuff :: a -> Stuff
+  toStuff :: a -> ConceptOrRelation
 
   --  fromStuff :: Stuff -> Maybe a
   disambiguatedLocalName :: a -> Text1
@@ -311,7 +313,7 @@ class Named a => TableStuff a where
   gitLikeSha :: a -> Text
   gitLikeSha = T.take 7 . tshow . abs . hash . hashText
   hashText :: a -> Text
-  determineAttributeName :: [Stuff] -> a -> SqlColumName
+  determineAttributeName :: [ConceptOrRelation] -> a -> SqlColumName
   determineAttributeName tableStuff x = text1ToSqlColumName determineAttributeNameText
     where
       determineAttributeNameText :: Text1
@@ -320,7 +322,7 @@ class Named a => TableStuff a where
           then classifierOf . toStuff $ x
           else disambiguatedLocalName x
 
-classifierOf :: Stuff -> Text1
+classifierOf :: ConceptOrRelation -> Text1
 classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
 
 instance TableStuff A_Concept where
