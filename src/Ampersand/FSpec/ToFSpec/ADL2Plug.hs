@@ -52,33 +52,42 @@ makeGeneratedSqlPlugs env context = map makeTable components
         componentsForOrphanRelation rel = (Nothing, [rel])
         isOrphan = isNothing . conceptTableOf
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
-        relationBelongsToConceptTable typ rel =
+        relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
             Nothing -> False
-            Just x -> x `elem` tyCpts typ
+            Just x -> x `elem` tyCpts typol
 
     repr = representationOf (ctxInfo context)
     allRelationsInContext = toList (relsDefdIn context)
     allConceptsInContext = toList (concs context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
-    makeTable (mTyp, dcls) = case (mTyp, dcls) of
+    makeTable (mTypol, rels) = case (mTypol, rels) of
       (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
       (Nothing, [rel]) -> makeLinkTable rel
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
-      (Just typ, _) -> makeConceptTable typ dcls
+      (Just typol, _) -> makeConceptTable typol rels
     makeConceptTable :: Typology -> [Relation] -> PlugSQL
-    makeConceptTable typ dcls =
+    makeConceptTable typol allRelationsInTable =
       TblSQL
         { sqlname = determineTableName tableKey,
-          attributes = map cptAttrib cpts <> map dclAttrib dcls,
+          attributes = map cptAttrib allConceptsInTable <> map dclAttrib allRelationsInTable,
           cLkpTbl = conceptLookuptable,
           dLkpTbl = dclLookuptable
         }
       where
-        cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
+        allConceptsInTable =
+          -- All concepts from the typology, orderd from generic to specific
+          reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
+
         determineTableName :: A_Concept -> Name
-        determineTableName keyConcept = mkName SqlTableName (namePart NE.:| [])
+        determineTableName keyConcept =
+          --   The sql table name of a wide table is ideally the local name of of the root concept, written in lowercase.
+          --   For link tables, it is ideally the local name of the relation, also written in lowercase. However, this
+          --   could lead to name conflicts, as the sql table name of all tables must be unique. In those cases,
+          --   names that would conflict are postfixed with the first 7 digits of a hash that is constructed on uniquely
+          --   identification of the concept or relation.
+          mkName SqlTableName (namePart NE.:| [])
           where
             namePart = case toNamePart1 determineTableNameText of
               Nothing -> fatal $ "Not a valid namepart: " <> text1ToText determineTableNameText
@@ -89,7 +98,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
                 then classifierOf . toStuff $ keyConcept
                 else disambiguatedLocalName keyConcept
         colNameMap :: [(Either A_Concept Relation, SqlColumName)]
-        colNameMap = f [] (cpts, dcls)
+        colNameMap = f [] (allConceptsInTable, allRelationsInTable)
           where
             f :: [(Either A_Concept Relation, SqlColumName)] -> ([A_Concept], [Relation]) -> [(Either A_Concept Relation, SqlColumName)]
             f names (cs, ds) =
@@ -118,11 +127,11 @@ makeGeneratedSqlPlugs env context = map makeTable components
                     (T.intercalate "_" . map tshow . nameSpaceOf $ nm)
                       <> plainNameOf nm
                       <> (if i > 0 then tshow i else mempty)
-        tableKey = tyroot typ
+        tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
-        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]
+        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
-        dclLookuptable = map f dcls
+        dclLookuptable = map f allRelationsInTable
           where
             f d =
               RelStore
@@ -137,10 +146,10 @@ makeGeneratedSqlPlugs env context = map makeTable components
           [] ->
             fatal $
               "Concept `" <> (text1ToText . tName) cpt <> "` is not in the lookuptable."
-                <> "\ncpts: "
-                <> tshow cpts
-                <> "\ndcls: "
-                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) dcls)
+                <> "\nallConceptsInTable: "
+                <> tshow allConceptsInTable
+                <> "\nallRelationsInTable: "
+                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
                 <> "\nlookupTable: "
                 <> tshow (map fst conceptLookuptable)
           x : _ -> x
