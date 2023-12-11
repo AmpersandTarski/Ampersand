@@ -43,13 +43,12 @@ makeGeneratedSqlPlugs ::
 makeGeneratedSqlPlugs env context = map makeTable components
   where
     components :: [(Maybe Typology, [Relation])]
-
     components =
       map componentsForTypology (typologies context)
-        <> (map componentsForOrphanRelation . filter isOrphan $ allRelations)
+        <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
       where
         componentsForTypology typol =
-          (Just typol, filter (relationBelongsToConceptTable typol) allRelations)
+          (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
         componentsForOrphanRelation rel = (Nothing, [rel])
         isOrphan = isNothing . conceptTableOf
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
@@ -57,9 +56,10 @@ makeGeneratedSqlPlugs env context = map makeTable components
           case conceptTableOf rel of
             Nothing -> False
             Just x -> x `elem` tyCpts typ
+
     repr = representationOf (ctxInfo context)
-    allRelations = toList (relsDefdIn context)
-    --allConcepts = toList (concs context)
+    allRelationsInContext = toList (relsDefdIn context)
+    allConceptsInContext = toList (concs context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
     makeTable (mTyp, dcls) = case (mTyp, dcls) of
@@ -80,14 +80,14 @@ makeGeneratedSqlPlugs env context = map makeTable components
         determineTableName :: A_Concept -> Name
         determineTableName keyConcept = mkName SqlTableName (namePart NE.:| [])
           where
-            namePart = case toNamePart1 (determineTableNameText keyConcept) of
-              Nothing -> fatal $ "Not a valid namepart: " <> text1ToText (determineTableNameText keyConcept)
+            namePart = case toNamePart1 determineTableNameText of
+              Nothing -> fatal $ "Not a valid namepart: " <> text1ToText determineTableNameText
               Just np -> np
-        determineTableNameText :: A_Concept -> Text1
-        determineTableNameText keyConcept =
-          if hasUnambigousLocalName ((map toStuff . toList . concs $ context) <> (map toStuff . toList . relsDefdIn $ context)) keyConcept
-            then classifierOf . toStuff $ keyConcept
-            else disambiguatedLocalName keyConcept
+            determineTableNameText :: Text1
+            determineTableNameText =
+              if hasUnambigousLocalName (map toStuff allConceptsInContext <> map toStuff allRelationsInContext) keyConcept
+                then classifierOf . toStuff $ keyConcept
+                else disambiguatedLocalName keyConcept
         colNameMap :: [(Either A_Concept Relation, SqlColumName)]
         colNameMap = f [] (cpts, dcls)
           where
