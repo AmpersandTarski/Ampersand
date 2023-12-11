@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE InstanceSigs #-}
 
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
   ( makeFSpec,
@@ -601,35 +600,32 @@ simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
 
 -- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-mkUniqueNames :: Renamable a => [a] -> [a]
+mkUniqueNames :: [PlugSQL] -> [PlugSQL]
 mkUniqueNames [] = []
-mkUniqueNames xs = concatMap (NE.toList . renameWhenNeeded) . eqCl renamingClassOf $ xs
+mkUniqueNames (p : ps) = concatMap (NE.toList . mkSqlTableNameUniqueIFFRequired) . eqCl classOf $ (p : ps)
   where
-    renamingClassOf :: Named a => a -> Text
-    renamingClassOf = T.toLower . tshow . localName
-    renameWhenNeeded :: Renamable a => NonEmpty a -> NonEmpty a
-    renameWhenNeeded rs =
-      case NE.tail rs of
-        [] -> rs
-        _ -> fmap rename rs
+    classOf :: PlugSQL -> Text
+    classOf = T.toLower . tshow . localName
+    mkSqlTableNameUniqueIFFRequired :: NonEmpty PlugSQL -> NonEmpty PlugSQL
+    mkSqlTableNameUniqueIFFRequired plugs =
+      case NE.tail plugs of
+        [] -> plugs
+        _ -> fmap mkUniqueSqlTableName plugs
+    mkUniqueSqlTableName :: PlugSQL -> PlugSQL
+    mkUniqueSqlTableName plug = rename newNamepart plug
+      where
+        newNamepart = case toNamePart newNametext of
+          Nothing -> fatal $ "Invalid namepart: " <> newNametext
+          Just np -> np
+        newNametext =
+          tshow (localName plug)
+            <> (T.take 8 . tshow . abs . hash)
+              ( tshow (name plug)
+                  <> ( case cLkpTbl plug of
+                         [] -> mempty
+                         h : _ -> "[" <> tshow (fst h) <> "]"
+                     )
+              )
 
-class Named a => Renamable a where
-  rename :: a -> a
-  unoverloadedName :: a -> NamePart
-  unoverloadedName x = case toNamePart . newNametext $ x of
-    Nothing -> fatal $ "Invalid namepart: " <> newNametext x
-    Just np -> np
-  newNametext :: a -> Text
-
-instance Renamable PlugSQL where
-  rename :: PlugSQL -> PlugSQL
-  rename plug = plug {sqlname = updatedName (unoverloadedName plug) plug}
-  newNametext plug =
-    tshow (localName plug)
-      <> (T.take 8 . tshow . abs . hash)
-        ( tshow (name plug)
-            <> ( case cLkpTbl plug of
-                   [] -> mempty
-                   h : _ -> "[" <> tshow (fst h) <> "]"
-               )
-        )
+    rename :: NamePart -> PlugSQL -> PlugSQL
+    rename txt1 plug = plug {sqlname = updatedName txt1 plug}
