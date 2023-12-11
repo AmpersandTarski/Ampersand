@@ -12,7 +12,6 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -32,59 +31,15 @@ attributesOfConcept fSpec c =
 
 --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs,
-  makeGeneratedSqlPlugs' ::
-    (HasFSpecGenOpts env) =>
-    env ->
-    A_Context ->
-    [PlugSQL]
---TODO151210 -> Plug A is overbodig, want A zit al in plug r
---CONTEXT Temp
---PATTERN Temp
---r::A*B[TOT].
---t::E*ECps[UNI].
---ENDPATTERN
---ENDCONTEXT
-{-
-    **************************************
-    * Plug E                               *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * t  [UNI]                             *
-    **************************************
-    * Plug ECps                            *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    **************************************
-    * Plug B                               *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    **************************************
-    * Plug A                               *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    **************************************
-    * Plug r                               *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * r  [TOT]                             *
-    **************************************
--}
-
-makeGeneratedSqlPlugs env context = mkUniqueNames (qlfname <$> makeGeneratedSqlPlugs' env context)
-  where
-    qlfname :: PlugSQL -> PlugSQL
-    qlfname x = case T.uncons . view namespaceL $ env of
-      Nothing -> x
-      Just (c, tl) ->
-        x
-          { sqlname =
-              withNameSpace
-                [ case toNamePart (T.cons c tl) of
-                    Nothing -> fatal "Not a valid NamePart."
-                    Just np -> np
-                ]
-                $ name x
-          }
+makeGeneratedSqlPlugs ::
+  (HasFSpecGenOpts env) =>
+  env ->
+  A_Context ->
+  [PlugSQL]
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs' env context = conceptTables <> linkTables
+makeGeneratedSqlPlugs env context = conceptTables <> linkTables
   where
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
@@ -341,36 +296,3 @@ typologies context =
            }
          | c <- toList $ concs context Set.\\ concs (gens context)
        ]
-
--- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-mkUniqueNames :: Renamable a => [a] -> [a]
-mkUniqueNames [] = []
-mkUniqueNames xs = concatMap (NE.toList . renameWhenNeeded) . eqCl renamingClassOf $ xs
-  where
-    renamingClassOf :: Named a => a -> Text
-    renamingClassOf = T.toLower . tshow . localName
-    renameWhenNeeded :: Renamable a => NonEmpty a -> NonEmpty a
-    renameWhenNeeded rs =
-      case NE.tail rs of
-        [] -> rs
-        _ -> fmap rename rs
-
-class Named a => Renamable a where
-  rename :: a -> a
-  unoverloadedName :: a -> NamePart
-  unoverloadedName x = case toNamePart . newNametext $ x of
-    Nothing -> fatal $ "Invalid namepart: " <> newNametext x
-    Just np -> np
-  newNametext :: a -> Text
-
-instance Renamable PlugSQL where
-  rename plug = plug {sqlname = updatedName (unoverloadedName plug) plug}
-  newNametext plug =
-    tshow (localName plug)
-      <> (T.take 8 . tshow . abs . hash)
-        ( tshow (name plug)
-            <> ( case cLkpTbl plug of
-                   [] -> mempty
-                   h : _ -> "[" <> tshow (fst h) <> "]"
-               )
-        )
