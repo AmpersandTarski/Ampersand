@@ -88,13 +88,11 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
                       <> (if i > 0 then tshow i else mempty)
         tableKey = tyroot typ
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
-        conceptLookuptable = map conceptEntry cpts
-          where
-            conceptEntry cpt = (cpt, cptAttrib cpt)
+        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]
         dclLookuptable :: [RelStore]
-        dclLookuptable = map relationEntry dcls
+        dclLookuptable = map f dcls
           where
-            relationEntry d =
+            f d =
               RelStore
                 { rsDcl = d,
                   rsStoredFlipped = isStoredFlipped d,
