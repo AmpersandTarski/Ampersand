@@ -12,6 +12,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
+import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -38,59 +39,71 @@ makeGeneratedSqlPlugs ::
   [PlugSQL]
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
---   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = conceptTables <> linkTables
+--   if the set contains no concepts, a linktable is created.
+makeGeneratedSqlPlugs env context = map makeTable components
   where
+    components :: [(Maybe Typology, [Relation])]
+    components =
+      map componentsForTypology (typologies context)
+        <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+      where
+        componentsForTypology typol =
+          (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
+        componentsForOrphanRelation rel = (Nothing, [rel])
+        isOrphan = isNothing . conceptTableOf
+        relationBelongsToConceptTable :: Typology -> Relation -> Bool
+        relationBelongsToConceptTable typol rel =
+          case conceptTableOf rel of
+            Nothing -> False
+            Just x -> x `elem` tyCpts typol
+
     repr = representationOf (ctxInfo context)
-    conceptTables = map makeConceptTable conceptTableParts
-    linkTables = map makeLinkTable linkTableParts
-    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (typologies context)
-    makeConceptTable :: (Typology, [Relation]) -> PlugSQL
-    makeConceptTable (typ, dcls) =
+    allRelationsInContext = toList (relsDefdIn context)
+    allConceptsInContext = toList (concs context)
+
+    makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
+    makeTable (mTypol, rels) = case (mTypol, rels) of
+      (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
+      (Nothing, [rel]) -> makeLinkTable rel
+      (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
+      (Just typol, _) -> makeConceptTable typol rels
+    makeConceptTable :: Typology -> [Relation] -> PlugSQL
+    makeConceptTable typol allRelationsInTable =
       TblSQL
-        { sqlname = name tableKey,
-          attributes = map cptAttrib cpts <> map dclAttrib dcls,
+        { sqlname = determineTableName tableKey,
+          attributes = map cptAttrib allConceptsInTable <> map dclAttrib allRelationsInTable,
           cLkpTbl = conceptLookuptable,
           dLkpTbl = dclLookuptable
         }
       where
-        cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
+        allConceptsInTable =
+          -- All concepts from the typology, orderd from generic to specific
+          reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
 
-        colNameMap :: [(Either A_Concept Relation, SqlColumName)]
-        colNameMap = f [] (cpts, dcls)
+        determineTableName :: A_Concept -> Name
+        determineTableName keyConcept =
+          --   The sql table name of a wide table is ideally the local name of of the root concept, written in lowercase.
+          --   For link tables, it is ideally the local name of the relation, also written in lowercase. However, this
+          --   could lead to name conflicts, as the sql table name of all tables must be unique. In those cases,
+          --   names that would conflict are postfixed with the first 7 digits of a hash that is constructed on uniquely
+          --   identification of the concept or relation.
+          mkName SqlTableName (namePart NE.:| [])
           where
-            f :: [(Either A_Concept Relation, SqlColumName)] -> ([A_Concept], [Relation]) -> [(Either A_Concept Relation, SqlColumName)]
-            f names (cs, ds) =
-              case (cs, ds) of
-                ([], []) -> names
-                ([], h : tl) -> f (insert (Right h) names) ([], tl)
-                (h : tl, _) -> f (insert (Left h) names) (tl, ds)
-            insert :: Either A_Concept Relation -> [(Either A_Concept Relation, SqlColumName)] -> [(Either A_Concept Relation, SqlColumName)]
-            insert item mp = (item, mkNewSqlColumName itemName $ map snd mp) : mp
-              where
-                itemName = case item of
-                  Right rel -> name rel
-                  Left cpt -> name cpt
-            -- Find the next free SqlColumName
-            mkNewSqlColumName :: Name -> [SqlColumName] -> SqlColumName
-            mkNewSqlColumName nm forbiddens = firstFree 0
-              where
-                firstFree :: Integer -> SqlColumName
-                firstFree i =
-                  if toSqlColName i `elem` forbiddens
-                    then firstFree (i + 1)
-                    else toSqlColName i
-                toSqlColName :: Integer -> SqlColumName
-                toSqlColName i =
-                  text1ToSqlColumName . toText1Unsafe $
-                    (T.intercalate "_" . map tshow . nameSpaceOf $ nm)
-                      <> plainNameOf nm
-                      <> (if i > 0 then tshow i else mempty)
-        tableKey = tyroot typ
+            namePart = case toNamePart1 determineTableNameText of
+              Nothing -> fatal $ "Not a valid namepart: " <> text1ToText determineTableNameText
+              Just np -> np
+            determineTableNameText :: Text1
+            determineTableNameText =
+              if hasUnambigousLocalName (map toStuff allConceptsInContext <> map toStuff allRelationsInContext) keyConcept
+                then classifierOf . toStuff $ keyConcept
+                else disambiguatedLocalName keyConcept
+        tableStuff = map toStuff allConceptsInTable <> map toStuff allRelationsInTable
+
+        tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
-        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]
+        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
-        dclLookuptable = map f dcls
+        dclLookuptable = map f allRelationsInTable
           where
             f d =
               RelStore
@@ -105,20 +118,17 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
           [] ->
             fatal $
               "Concept `" <> (text1ToText . tName) cpt <> "` is not in the lookuptable."
-                <> "\ncpts: "
-                <> tshow cpts
-                <> "\ndcls: "
-                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) dcls)
+                <> "\nallConceptsInTable: "
+                <> tshow allConceptsInTable
+                <> "\nallRelationsInTable: "
+                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
                 <> "\nlookupTable: "
                 <> tshow (map fst conceptLookuptable)
           x : _ -> x
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) cpt <> "`. "))
-                  (lookup (Left cpt) colNameMap),
+            { attSQLColName = determineAttributeName tableStuff cpt,
               attExpr = expr,
               attType = repr cpt,
               attUse =
@@ -139,10 +149,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) dcl <> "`. "))
-                  (lookup (Right dcl) colNameMap),
+            { attSQLColName = determineAttributeName tableStuff dcl,
               attExpr = dclAttExpression,
               attType = repr (target dclAttExpression),
               attUse =
@@ -228,23 +235,6 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
-    dist ::
-      Relations -> -- all relations that are to be distributed
-      [Typology] -> -- the sets of concepts, each one contains all concepts that will go into a single table.
-      ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
-      -- stored into that table. The order of concepts is not modified.
-        [Relation] -- The relations that cannot be stored into one of the concept tables.
-      )
-    dist dcls cptLists =
-      ( [(t, declsInTable t) | t <- cptLists],
-        [d | d <- toList dcls, isNothing (conceptTableOf d)]
-      )
-      where
-        declsInTable typ =
-          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
-                                        Nothing -> False
-                                        Just x -> x `elem` tyCpts typ
-          ]
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
@@ -294,3 +284,58 @@ typologies context =
            }
          | c <- toList $ concs context Set.\\ concs (gens context)
        ]
+
+-- | Stuff is ment to be things that can end up in a database. It is designed
+-- to have Concepts and Relations as instances.
+-- Feel free to give it a better name :)
+type Stuff = Either A_Concept Relation
+
+class Named a => TableStuff a where
+  hasUnambigousLocalName :: [Stuff] -> a -> Bool
+  hasUnambigousLocalName allStuff x = case filter hasSameClassifier allStuff of
+    [] -> fatal "x should have the same classifier as x!"
+    [_] -> True
+    _ -> False
+    where
+      hasSameClassifier :: Stuff -> Bool
+      hasSameClassifier y = classifierOf (toStuff x) == classifierOf y
+  toStuff :: a -> Stuff
+
+  --  fromStuff :: Stuff -> Maybe a
+  disambiguatedLocalName :: a -> Text1
+  disambiguatedLocalName x =
+    toText1Unsafe $
+      (namePartToText . localName) x
+        <> "_"
+        <> gitLikeSha x
+  gitLikeSha :: a -> Text
+  gitLikeSha = T.take 7 . tshow . abs . hash . hashText
+  hashText :: a -> Text
+  determineAttributeName :: [Stuff] -> a -> SqlColumName
+  determineAttributeName tableStuff x = text1ToSqlColumName determineAttributeNameText
+    where
+      determineAttributeNameText :: Text1
+      determineAttributeNameText =
+        if hasUnambigousLocalName tableStuff x
+          then classifierOf . toStuff $ x
+          else disambiguatedLocalName x
+
+classifierOf :: Stuff -> Text1
+classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
+
+instance TableStuff A_Concept where
+  toStuff = Left
+
+  --  fromStuff (Right _) = Nothing
+  --  fromStuff (Left x) = Just x
+  hashText = tshow . tName
+
+instance TableStuff Relation where
+  toStuff = Right
+
+  --  fromStuff (Right x) = Just x
+  --  fromStuff (Left _) = Nothing
+  hashText rel =
+    (tshow . tName) rel
+      <> (tshow . tName . source) rel
+      <> (tshow . tName . target) rel

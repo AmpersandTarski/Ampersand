@@ -303,7 +303,7 @@ makeFSpec env context =
     --making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs = InternalPlug <$> mkUniqueNames [] (qlfname <$> makeGeneratedSqlPlugs env context)
+    genPlugs = InternalPlug <$> mkUniqueNames (qlfname <$> makeGeneratedSqlPlugs env context)
       where
         qlfname :: PlugSQL -> PlugSQL
         qlfname x = case T.uncons . view namespaceL $ env of
@@ -599,15 +599,17 @@ simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
 
 -- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-mkUniqueNames :: [Name] -> [PlugSQL] -> [PlugSQL]
-mkUniqueNames taken xs =
-  [ p
-    | cl <- eqCl (T.toLower . text1ToText . tName) xs,
-      p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-        if name (NE.head cl) `elem` taken || length cl > 1
-          then [rename p (postpend (tshow i) (localName p)) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
-          else NE.toList cl
-  ]
+mkUniqueNames :: [PlugSQL] -> [PlugSQL]
+mkUniqueNames = go []
   where
-    rename :: PlugSQL -> NamePart -> PlugSQL
-    rename p txt1 = p {sqlname = updatedName txt1 p}
+    go :: [Name] -> [PlugSQL] -> [PlugSQL]
+    go taken xs =
+      [ p
+        | cl <- eqCl (T.toLower . text1ToText . tName) xs,
+          p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+            if name (NE.head cl) `elem` taken || length cl > 1
+              then [setlocalName (postpend (tshow i) (localName p)) p | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
+              else NE.toList cl
+      ]
+    setlocalName :: NamePart -> PlugSQL -> PlugSQL
+    setlocalName np p = p {sqlname = updatedName np p}

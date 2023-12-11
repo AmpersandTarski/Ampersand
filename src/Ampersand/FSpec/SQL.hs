@@ -390,7 +390,7 @@ nonSpecialSelectExpr fSpec expr =
                       [] -> fatal "makeIntersectSelectExpr must not be called with an empty list."
                       hexprs : tlexprs ->
                         -- The story here: If at least one of the conjuncts is I, then
-                        -- we know that all results should be in the broad table where
+                        -- we know that all results should be in the wide table where
                         -- I is in. All expressions that are implemented in that table (esR)
                         -- can be used to efficiently restrict the rows from that table.
                         -- If we still have expressions left over, these have to be dealt with
@@ -444,7 +444,7 @@ nonSpecialSelectExpr fSpec expr =
                               --    esI :: [(Expression,Name)] -- all conjunctions that are of the form I
                               --    esI = mapMaybe isI exprs
                               --      where
-                              esR :: [(Expression, Name)] -- all conjuctions that are of the form r;r~ where r is in the same broad table (and same row!) as I
+                              esR :: [(Expression, Name)] -- all conjuctions that are of the form r;r~ where r is in the same wide table (and same row!) as I
                               esR = mapMaybe isR exprs
                                 where
                                   isR :: Expression -> Maybe (Expression, Name)
