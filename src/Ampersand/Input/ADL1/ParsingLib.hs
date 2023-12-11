@@ -284,13 +284,13 @@ pName :: NameType -> AmpParser Name
 pName typ =
   build
     <$> many namespacePart
-    <*> namePart
+    <*> localNamePart
   where
     build :: [NamePart] -> NamePart -> Name
     build ns nm =
       mkName typ . NE.reverse $ nm NE.:| reverse ns
-    namePart :: AmpParser NamePart
-    namePart =
+    localNamePart :: AmpParser NamePart
+    localNamePart =
       toNamePart1' <$> case typ of
         ConceptName -> pUpperCaseID
         ContextName -> pUpperCaseID
@@ -309,7 +309,7 @@ pName typ =
       Nothing -> fatal $ "Not a valid NamePart: " <> tshow t
       Just np -> np
     namespacePart :: AmpParser NamePart
-    namespacePart = toNamePart1' . fst <$> try nameAndDot
+    namespacePart = toNamePart1' . fst <$> nameAndDot
       where
         nameAndDot = (,) <$> pUnrestrictedID <*> pDot
 
