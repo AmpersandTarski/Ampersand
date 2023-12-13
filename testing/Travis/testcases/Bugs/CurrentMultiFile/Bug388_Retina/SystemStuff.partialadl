@@ -1,7 +1,7 @@
 CONTEXT ServicesEnBerichten IN DUTCH
 -----------------------------------------------------------
-PATTERN ServicesEnBerichten
-PURPOSE PATTERN ServicesEnBerichten REF "Artikel 6 Wbp"
+PATTERN ServicesEnBerichten LABEL "Services en berichten"
+PURPOSE PATTERN ServicesEnBerichten REF "Artikel 6 Wbp LABEL "Services en berichten" REF "Artikel 6 Wbp"
 {+PERSOONSGEGEVENs worden in overeenstemming met de wet en op behoorlijke en zorgvuldige wijze verwerkt (artikel 6 Wbp). Dit pattern bevat de eisen (requirements) voor geautomatiseerde gegevensverwerking teneinde aan dit artikel invulling te geven.+}
 
 --[Definetime]--

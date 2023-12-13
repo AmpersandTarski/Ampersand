@@ -75,7 +75,7 @@ PATTERN ComputeClosures LABEL "Compute Closures"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
-PATTERN Reflexiveisaclosures
+PATTERN ReflexiveISAclosures LABEL "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~

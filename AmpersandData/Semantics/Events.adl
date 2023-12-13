@@ -29,7 +29,7 @@ RELATION compBy[Violation*SatComputation] [UNI,TOT]
 RELATION occured[Event*Session] [UNI,TOT]
 
 CLASSIFY Message ISA Event
-PATTERN "Stream Type System"
+PATTERN StreamTypeSystem LABEL "Stream Type System"
     PURPOSE RULE "Type checking of produced streams"
     {+ We want statically typed streams. So, every stream has a type. The type checker must check for compatibility and generate appropriate error messages upon failure.
     +}
@@ -52,7 +52,7 @@ PATTERN "Stream Type System"
     MEANING "A message can be consumed only by a service that consumes the MsgType of that message."
 ENDPATTERN
 
-PATTERN "Evaluation of actions"
+PATTERN EvaluationOfActions LABEL "Evaluation of actions"
     PURPOSE RULE "Evaluate whether a conjunct is satisfied"
     {+ This rule tells when the exec-engine must kick in. +}
     RULE "Evaluate whether a conjunct is satisfied" :

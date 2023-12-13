@@ -6,7 +6,7 @@ INCLUDE "Atoms.adl"
 --     reference, maar omgekeerd geldt dat niet. Ik heb een 2c-bijdrage gedaan in twee van de 
 --     hiernavolgende beschrijvingen.
 
-PURPOSE PATTERN "Atoms"
+PURPOSE PATTERN Atoms
 {+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
 In fact, representations are the only things an information system can work with.
 In order to unleash the available logical power of relational algebra to its maximum, 

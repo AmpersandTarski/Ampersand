@@ -37,7 +37,7 @@ MEANING "Each field is identified uniquely by the combination of a record and an
 RULE inTable : in = rec~;att;table
 ENDPATTERN
 
-PATTERN "Kernel Tables"
+PATTERN KernelTables LABEL "Kernel Tables"
 RELATION concept[SqlAttribute*Concept] [UNI,TOT] -- concept in a column of a (wide) table
 
 RELATION conceptAttribute[Concept*SqlAttribute] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
@@ -93,7 +93,7 @@ ENDPATTERN
 
 
 
-PATTERN "Attributes for univalent relations"
+PATTERN AttributesUnivalentRelations LABEL "Attributes for univalent relations"
 
 RULE "fill srcAtt for univalent relations" : (I/\prop;"UNI";prop~);source;conceptAttribute |- srcAtt
 MEANING "The concept-table of the source of a univalent relation is the source attribute of that relation."
@@ -125,7 +125,7 @@ ENDPATTERN
 
 
 
-PATTERN "Attributes for injective relations"
+PATTERN AttributesInjectiveRelations LABEL "Attributes for injective relations"
 RULE "fill tgtAtt for injective relations" : ((I/\prop;"INJ";prop~)-prop;"UNI";prop~);target;conceptAttribute |- tgtAtt
 MEANING "The concept-table of the target of a univalent relation is the target attribute of that relation."
 VIOLATION ( TXT "{EX} InsPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
@@ -156,7 +156,7 @@ ENDPATTERN
 
 
 
-PATTERN "Attributes of n-to-m relations"
+PATTERN AttributesNtoMRelations LABEL "Attributes of n-to-m relations"
 RULE "fill table for n-to-m relations (source)" :
      ((I-prop;"INJ";prop~)-prop;"UNI";prop~);source |- srcAtt;concept
 MEANING "The concept of the source attribute of an n-to-m relation is the source concept of that relation."
@@ -210,7 +210,7 @@ ENDPATTERN
 
 
 
-PATTERN "Validation of the tabular structure"
+PATTERN ValidationTabular LABEL "Validation of the tabular structure"
 
 RELATION ttype[Concept*TType] [UNI,TOT]
 MEANING "Each Concept has a technical type."

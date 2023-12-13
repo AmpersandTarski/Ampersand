@@ -1,6 +1,6 @@
 CONTEXT Ticket440 IN DUTCH
 
-PATTERN VoldoenAanNormen
+PATTERN VoldoenAanNormen LABEL "Voldoen aan normen"
 heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan een norm."
 isDeelnormVan :: Norm * Norm [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
 

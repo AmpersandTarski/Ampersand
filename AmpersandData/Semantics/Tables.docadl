@@ -114,7 +114,7 @@ CONCEPT BinSQL "A BinSQL is a table structure, meant to store the population of 
 
 
 
-PURPOSE PATTERN "Kernel Tables"
+PURPOSE PATTERN KernelTables
 {+This pattern specifies the translation of a partially ordered set of concepts to a table structure.
 That structure is called the kernel of the database tables.
 It is used to define database tables for the SQL-database that stores the state (population) of the current context.
@@ -185,7 +185,7 @@ PURPOSE RULE "Insert key of a TblSQL"
 
 
 
-PURPOSE PATTERN "Attributes for univalent relations" LATEX
+PURPOSE PATTERN AttributesUnivalentRelations LABEL "Attributes for univalent relations LATEX"
 {+After translating the partial order of concepts to a table structure,
 the relations must be translated
 There are three different situations:
@@ -280,8 +280,7 @@ ROLE ExecEngine MAINTAINS
 ENDPATTERN
 
 
-
-PATTERN "Attributes of n-to-m relations"
+PATTERN AttributesNtoMRelations LABEL "Attributes of n-to-m relations"
 RULE "fill table for n-to-m relations (source)" :
      ((I-prop;'INJ';prop~)-prop;'UNI';prop~);source |- srcAtt;concept
 MEANING "The concept of the source attribute of an n-to-m relation is the source concept of that relation."

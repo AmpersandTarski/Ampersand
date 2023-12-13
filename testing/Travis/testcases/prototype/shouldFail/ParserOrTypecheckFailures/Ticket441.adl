@@ -1,6 +1,6 @@
 ﻿CONTEXT Ticket441 IN DUTCH
 --------------------------------------------------------
-PATTERN "Organisaties"
+PATTERN Organisaties
 
 IDENT Organisaties: Organisatie(orgID)
 orgID :: Organisatie -> OrganisatieID

@@ -10,7 +10,7 @@ INCLUDE "DomainAnalysis.adl"
 --    RULE SURrelations : I[Relation] |- relations~;relations
 --    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
-PATTERN "Type checking"
+PATTERN TypeChecking LABEL "Type checking"
     RULE "Unambiguous pretype"
      : pretype |- pretype~\I[Concept]
     MESSAGE "Every type-term must be subset of one concept only."
@@ -55,7 +55,7 @@ PATTERN "Type checking"
       ROLE "Type Checker" MAINTAINS checkRightResidual
 ENDPATTERN
 
-PATTERN Reflexiveisaclosures
+PATTERN ReflexiveISAclosures LABEL "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
@@ -82,7 +82,7 @@ ENDPATTERN
 
 
 {- I can't get the following to work...  Grrr!
-PATTERN "Type graph"
+PATTERN TypeGraph LABEL "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew

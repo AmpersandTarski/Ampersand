@@ -1,7 +1,7 @@
 CONTEXT WBPOntologie IN DUTCH
 -----------------------------------------------------------
-PATTERN WbpHoofdstuk1UitgezonderdParagraaf2
-PURPOSE PATTERN WbpHoofdstuk1UitgezonderdParagraaf2
+PATTERN WbpHoofdstuk1 LABEL "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
+PURPOSE PATTERN WbpHoofdstuk1
 {+Dit pattern bevat de terminologie (en de relaties daartussen) welke aansluiten op de Wet Bescherming Persoonsgegevens (Wbp), althans (en vooralsnog) de artikelen 1 t/m 15, en voorzover deze nodig zijn voor het werkwerken van persoonsgegevens bij volledig geautomatiseerde systemen (dat is immers de scope van ons onderzoek). De wet zelf is van toepassing op elke geheel of gedeeltelijk geautomatiseerde verwerking van persoonsgegevens, alsmede op elke niet geautomatiseerde verwerking van persoonsgegevens die in een bestand zijn opgenomen of die bestemd zijn om daarin te worden opgenomen (artikel 2 eerste lid Wbp). Dit pattern definieert een mapping tussen de tekst van de wet en een formele ontologie voor ons systeem.+}
 
 --[Persoonsgegevens]--

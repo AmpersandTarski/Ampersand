@@ -4,7 +4,7 @@ CONTEXT ARM20Test5 IN DUTCH
    Cryptisch-heid redelijk verholpen in Ampersand v2.2.1.1119:1122, build time: 04-Nov-13 22:19:22 UTC
 -}
 ------------------------------------------------------------
-PATTERN "ARM20Test5"
+PATTERN ARM20Test5
 
 critBF   :: Criterium -> Bedrijfsfunctie
 

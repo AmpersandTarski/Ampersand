@@ -99,7 +99,7 @@ BOX[ "Algemeen" : I
    ]
 
 
-PATTERN EEBIALijstInterface
+PATTERN BIAlijstInterface LABEL "{EE} BIA-lijst interface"
 nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
 ROLE ExecEngine MAINTAINS NieuweBiaVerplichtingen

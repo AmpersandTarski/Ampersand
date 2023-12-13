@@ -62,7 +62,7 @@ ENDPATTERN
 -}
 {-
 CONTEXT Test
-PATTERN "Test"
+PATTERN Test
   CLASSIFY "Medewerker" ISA "Persoon"
   CLASSIFY "Klant" ISA "Persoon"
   helptzichzelf :: Medewerker * Klant

@@ -4,7 +4,7 @@ INCLUDE "Concepts.adl"
 INCLUDE "Relations.adl"
 
 
-PATTERN Termdefinitions LABEL "Term definitions"
+PATTERN TermDefinitions LABEL "Term definitions"
     RELATION usedIn[Relation*Term]
     MEANING "The rule expressed in relation algebra."
 --    TODO make transitive closure of usedIn
@@ -90,7 +90,7 @@ REPRESENT ShowADL TYPE BIGALPHANUMERIC
 VIEW Term : Term(showADL)
 
 {- I can't get the following to work...  Grrr!
-PATTERN "Type graph"
+PATTERN TypeGraph LABEL "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew

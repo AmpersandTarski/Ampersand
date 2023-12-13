@@ -2,7 +2,7 @@ CONTEXT RAP IN ENGLISH LATEX
 {- This file contains documentation of the information iystems pattern (IS) in LaTeX format.
    Each concept has its own section, where sections are separated by comments -}
 
-PURPOSE PATTERN "Information Systems"
+PURPOSE PATTERN InformationSystems
 {+The purpose of an information system is to support people (called {\em users})
 in a specific domain (called a {\em context})
 by disclosing and maintaining factual information (represented by {\em data}).
@@ -140,7 +140,7 @@ PURPOSE RULE "def true"
 As the signature of an term defines the truth, we call that term true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
 +}
 
---PURPOSE PATTERN "Documentation"
+--PURPOSE PATTERN Documentation
 --{+Documentation is required for human understanding of rules.
 --It explains why things exist and how things are expressed in natural language.
 ---}

@@ -8,7 +8,7 @@ PATTERN Pairs
     RELATION rAtom[Pair*Atom] [UNI,TOT]
 ENDPATTERN
 
-PATTERN "Compute sources, targets, and populations"
+PATTERN ComputeSourcesSargetsPopulations LABEL "Compute sources, targets, and populations"
     RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
     RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
 

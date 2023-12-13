@@ -448,8 +448,8 @@ POPULATION onderdeel[Dienstonderdeel*Bestuursorgaan] CONTAINS
     ]
 ENDPATTERN
 
-PATTERN IntrekkenVanMandaten -- door Maarten Bernards en Natali Zepackic. Artikel 10:8 lid 2 Awb
-PURPOSE PATTERN IntrekkenVanMandaten LATEX
+PATTERN IntrekkenMandaten LABEL "Intrekken van mandaten -- door Maarten Bernards en Natali Zepackic. Artikel 10:8 lid 2 Awb"
+PURPOSE PATTERN IntrekkenMandaten LATEX"
 {+ Artikel 10:8 lid 2 Awb stelt een beperking in op het intrekken van mandaten:
 Een algemeen mandaat wordt schriftelijk ingetrokken.
 Daartoe moet worden bijgehouden hoe het intrekken van een mandaat is verlopen.

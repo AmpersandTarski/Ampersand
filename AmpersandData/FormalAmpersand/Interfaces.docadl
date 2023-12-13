@@ -2,7 +2,7 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
-PURPOSE PATTERN "Data objects" MARKDOWN
+PURPOSE PATTERN DataObjects MARKDOWN
 {+This pattern describes the invariant semamtics of data objects (concept: Object).
 An `Object` is a runtime thing, which is defined by an `ObjectDef`.
 +}
