@@ -7,7 +7,7 @@ Waar mogelijk verwijst de tekst naar de bron, zodat de lezer afwijkingen die hij
 Daar waar de tekst afwijkt van de bron is die bron uiteraard meer gezaghebbend dan deze tekst.
 
 Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
--}
++}
 
    PATTERN Mandaten
    CONCEPT Mandaat "Een mandaat is de bevoegdheid om in naam van een bestuursorgaan besluiten te nemen." "Artikel 10:1 Awb"
@@ -21,7 +21,7 @@ De naam van de persoon die deze functie vervult, bijvoorbeeld ``E.M. ten Hoorn B
 Door de formatieplaats te noemen in plaats van de persoon kan een eventuele opvolger van deze ambtenaar het werk eenvoudig overnemen en
 de consequenties van besluiten van zijn voorganger op zich nemen.
 Om deze reden gebruiken we het concept ``Formatieplaats'' in plaats van ``Ambtenaar''.
--}
++}
 
    CONCEPT Besluit "Onder besluit wordt verstaan: een schriftelijke beslissing van een bestuursorgaan, inhoudende een publiekrechtelijke rechtshandeling." "Artikel 1:3 lid 1 Awb"
    CONCEPT Beschikking  "Onder beschikking wordt verstaan: een besluit dat niet van algemene strekking is, met inbegrip van de afwijzing van een aanvraag daarvan." "Artikel 1:3 lid 2 Awb"
@@ -29,12 +29,12 @@ Om deze reden gebruiken we het concept ``Formatieplaats'' in plaats van ``Ambten
 {+
 De wet maakt onderscheid tussen besluiten en beschikkingen.
 Beide zijn gedefinieerd in de Awb.
--}
++}
 
    PURPOSE RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid] REF "Artikel 1:3 lid 4 Awb"
 {+De Awb spreekt van ``een bevoegdheid van een bestuursorgaan.''.
 Kennelijk kan een bestuursorgaan bevoegdheden hebben.
--}
++}
    RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid]
    PRAGMA "" " heeft " " als bevoegdheid"
    MEANING "De uitspraak ``Bestuursorgaan $b$ heeft $x$ als bevoegdheid.'' behoort tot de gemeenschappelijke taal."
@@ -48,7 +48,7 @@ Kennelijk kan een bestuursorgaan bevoegdheden hebben.
   
    PURPOSE RELATION beslotenDoor[Besluit*Bestuursorgaan] REF "Artikel 1:3 lid 1 Awb"
 {+In de Awb worden beslissingen consequent door bestuursorganen genomen.
--}
++}
    RELATION beslotenDoor[Besluit*Bestuursorgaan]
    PRAGMA "" " is genomen door "
    MEANING "De uitspraak ``Besluit $b$ is genomen door (bestuursorgaan) $o$.'' behoort tot de gemeenschappelijke taal."
@@ -73,7 +73,7 @@ Kennelijk kan een bestuursorgaan bevoegdheden hebben.
 
    PURPOSE RELATION ondermandaatgever[Mandaatnemer*Formatieplaats] REF "Nota behorende tot de mandaatregeling Bergen 2007"
    {+Er is sprake van ondermandaat als de gemandateerde een aan hem ondergeschikte ambtenaar machtigt om de gemandateerde bevoegdheid uit te oefenen.
-   -}
+   +}
 
    RELATION ondermandaatgever[Mandaatnemer*Formatieplaats]
    PRAGMA "" " machtigt door middel van ondermandaat "
@@ -102,7 +102,7 @@ Kennelijk kan een bestuursorgaan bevoegdheden hebben.
    PURPOSE RELATION namens[Mandaat*Bestuursorgaan] REF "Artikel 10:10 Awb"
 {+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen.
 Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen.
-   -}
++}
    RELATION namens[Mandaat*Bestuursorgaan] [UNI,TOT]  -- ontleend aan Artikel 10:10 Awb
    PRAGMA "" " is verleend in naam van "
    MEANING "De zin ``Mandaat $m$ is verleend in naam van bestuursorgaan $b$.'' behoort tot de gemeenschappelijke taal."
@@ -117,7 +117,7 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
 
    PURPOSE RELATION mandaatgever[Mandaat*Formatieplaats] REF "Artikelen 10:6-9 Awb"
 {+De Awb spreekt van een mandaatgever: de ambtenaar die (een deel van) zijn bevoegdheden mandateert aan ondergeschikte ambtenaren.
--}
++}
    RELATION mandaatgever[Mandaat*Formatieplaats]
    PRAGMA "" " is verleend door "
    MEANING "De zin ``Mandaat $m$ is verleend door (mandaatgever) $a$.'' behoort tot de gemeenschappelijke taal."
@@ -132,7 +132,7 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
 
    PURPOSE RELATION gemandateerde[Mandaat*Formatieplaats] REF "Artikel 10:2 Awb"
 {+De Awb spreekt van een gemandateerde: de ambtenaar die bevoegdheden krijgt van hogerhand.
--}
++}
    RELATION gemandateerde[Mandaat*Formatieplaats]
    PRAGMA "" " is verleend aan "
    MEANING "De uitspraak ``Mandaat $m$ is verleend aan (gemandateerde) $g$.'' behoort tot de gemeenschappelijke taal."
@@ -145,7 +145,7 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
      ]
    PURPOSE RELATION krachtens[Besluit*Mandaat] REF "Artikel 10:10 Awb"
 {+De Awb gebruikt het woord ``krachtens'' om aan te geven dat een besluit is genomen op basis van een een mandaat.
--}
++}
    RELATION krachtens[Besluit*Mandaat]
    PRAGMA "" " is krachtens " " genomen"
    MEANING "De uitspraak ``Besluit $b$ is krachtens (mandaat) $m$ genomen.'' behoort tot de gemeenschappelijke taal."
@@ -164,7 +164,7 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
 De wetstekst spreekt van ``de gemandateerde bevoegdheid''.
 Kennelijk bestaat er voor elk mandaat een bevoegdheid die gemandateerd wordt.
 In de gemeenschappelijke taal wordt het woordje ``tot'' gebruikt om deze bevoegdheid aan te duiden.
--}
++}
    RELATION mandaatbevoegdheid[Mandaat*Bevoegdheid] [TOT]
    PRAGMA "" " tot "
    MEANING "De frase ``een mandaat tot $b$'' behoort tot de gemeenschappelijke taal en duidt de bevoegdheid ($b$) aan die wordt gemandateerd."
@@ -179,7 +179,7 @@ In de gemeenschappelijke taal wordt het woordje ``tot'' gebruikt om deze bevoegd
    PURPOSE RELATION beperking[Mandaat*Beperking] REF "Artikel 10:2 Awb"
 {+De Awb spreekt van ``een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit''.
 Dit impliceert dat er beperkingen kunnen gelden voor een mandaat.
--}
++}
    RELATION beperking[Mandaat*Beperking]
    PRAGMA "" " geldt ten aanzien van aangelegenheden die " " betreffen"
    MEANING "De uitspraak ``Mandaat $m$ geldt ten aanzien van aangelegenheden die (beperking) $b$ betreffen.'' behoort tot de gemeenschappelijke taal."
@@ -187,7 +187,7 @@ Dit impliceert dat er beperkingen kunnen gelden voor een mandaat.
    PURPOSE RELATION voorbehouden[Bevoegdheid*Formatieplaats] REF "Artikel 4 Mandaatregeling hoofddirecteur DJI 2013"
 {+De Mandaatregeling hoofddirecteur DJI 2013 spreekt van ``bevoegdheden die voorbehouden blijven aan een bepaalde ambtenaar.''.
 Dit impliceert dat deze bevoegdheden niet kunnen worden ondergemandateerd.
--}
++}
    RELATION voorbehouden[Bevoegdheid*Formatieplaats]
    PRAGMA "" " is voorbehouden aan "
    MEANING "De uitspraak ``Bevoegdheid $b$ s voorbehouden aan (formatieplaats) $a$.'' behoort tot de gemeenschappelijke taal."
@@ -195,7 +195,7 @@ Dit impliceert dat deze bevoegdheden niet kunnen worden ondergemandateerd.
    PURPOSE RELATION grond[Bevoegdheid*Titel]
 {+Bevoegdheden hebben een wettige grondslag.
 Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bevoegdheid op is gebaseerd.
--}
++}
    RELATION grond[Bevoegdheid*Titel] [TOT]
    PRAGMA "" " op grond van "
    MEANING "De frase ``bevoegd op grond van (titel) $t$'' behoort tot de gemeenschappelijke taal en duidt de wettige grondslag aan van de bedoelde bevoegdheid."
