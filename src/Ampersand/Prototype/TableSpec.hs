@@ -49,7 +49,7 @@ plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug =
   TableSpec
     { tsCmnt =
-        [ "Plug " <> fullName plug,
+        [ "Plug " <> text1ToText (showUnique plug),
           "",
           "attributes:"
         ]
@@ -58,7 +58,7 @@ plug2TableSpec plug =
               ]
               | x <- NE.toList $ plugAttributes plug
             ],
-      tsName = fullName plug,
+      tsName = text1ToText (showUnique plug),
       tsflds = NE.toList . fmap fld2AttributeSpec $ plugAttributes plug,
       tsKey = case (plug, (NE.head . plugAttributes) plug) of
         (BinSQL {}, _) ->
@@ -148,7 +148,7 @@ insertQuery ::
   SomeValue val =>
   Bool -> -- prettyprinted?
   Text -> -- The name of the table
-  NE.NonEmpty SqlColumName -> -- The names of the attributes
+  NE.NonEmpty SqlName -> -- The names of the attributes
   [[Maybe val]] -> -- The rows to insert
   SqlQuery
 insertQuery withComments tableName attNames tblRecords

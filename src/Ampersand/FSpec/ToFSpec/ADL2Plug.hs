@@ -87,16 +87,17 @@ makeGeneratedSqlPlugs env context = map makeTable components
             map cptAttrib allConceptsInTable
               <> map dclAttrib allRelationsInTable,
           cLkpTbl = conceptLookuptable,
-          dLkpTbl = dclLookuptable
+          dLkpTbl = dclLookuptable,
+          mainItem = toConceptOrRelation tableKey
         }
       where
         allConceptsInTable =
           -- All concepts from the typology, orderd from generic to specific
           reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
 
-        determineWideTableName :: A_Concept -> SqlColumName
+        determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
-          determineSqlColumName
+          determineSqlName
             (map toConceptOrRelation allKeyConcepts)
             (toConceptOrRelation keyConcept)
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
@@ -129,7 +130,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
           Att
-            { attSQLColName = determineSqlColumName tableScope (toConceptOrRelation cpt),
+            { attSQLColName = determineSqlName tableScope (toConceptOrRelation cpt),
               attExpr = expr,
               attType = repr cpt,
               attUse =
@@ -150,7 +151,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
-            { attSQLColName = determineSqlColumName tableScope (toConceptOrRelation dcl),
+            { attSQLColName = determineSqlName tableScope (toConceptOrRelation dcl),
               attExpr = dclAttExpression,
               attType = repr (target dclAttExpression),
               attUse =
@@ -187,12 +188,13 @@ makeGeneratedSqlPlugs env context = map makeTable components
           --given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
           --if dcl is TOT, then the concept (source dcl) is stored in this plug
           --if dcl is SUR, then the concept (target dcl) is stored in this plug
-          dLkpTbl = [theRelStore]
+          dLkpTbl = [theRelStore],
+          mainItem = toConceptOrRelation dcl
         }
       where
-        determineLinkTableName :: Relation -> SqlColumName
+        determineLinkTableName :: Relation -> SqlName
         determineLinkTableName rel =
-          determineSqlColumName
+          determineSqlName
             scope
             (toConceptOrRelation rel)
           where
@@ -220,7 +222,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
           | otherwise = bindedExp
         srcAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
+            { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
               attExpr = domExpr,
               attType = repr (source domExpr),
               attUse =
@@ -234,7 +236,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
             }
         trgAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
+            { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
               attType = repr (target codExpr),
               attUse =
@@ -334,9 +336,9 @@ instance TableArtefact A_Concept where
 instance TableArtefact Relation where
   toConceptOrRelation = Right
 
-determineSqlColumName :: [ConceptOrRelation] -> ConceptOrRelation -> SqlColumName
-determineSqlColumName scope conceptOrRelation =
-  text1ToSqlColumName
+determineSqlName :: [ConceptOrRelation] -> ConceptOrRelation -> SqlName
+determineSqlName scope conceptOrRelation =
+  text1ToSqlName
     . (if mustBeDisambiguated then disambiguatedName else fullName1)
     $ conceptOrRelation
   where

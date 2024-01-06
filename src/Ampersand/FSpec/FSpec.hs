@@ -23,10 +23,11 @@ module Ampersand.FSpec.FSpec
     RelStore (..),
     metaValues,
     SqlAttribute (..),
-    SqlColumName,
+    SqlName,
     sqlColumNameToString,
     sqlColumNameToText1,
-    text1ToSqlColumName,
+    sqlColumNameToText,
+    text1ToSqlName,
     isPrimaryKey,
     isForeignKey,
     Typology (..),
@@ -303,7 +304,7 @@ data PlugSQL
     --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
     --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
     TblSQL
-      { sqlname :: !SqlColumName,
+      { sqlname :: !SqlName,
         -- | the first attribute is the concept table of the most general concept (e.g. Person)
         --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
         --   the remaining attributes represent attributes.
@@ -311,7 +312,8 @@ data PlugSQL
         -- | lookup table that links all typology concepts to attributes in the plug
         -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
         cLkpTbl :: ![(A_Concept, SqlAttribute)],
-        dLkpTbl :: ![RelStore]
+        dLkpTbl :: ![RelStore],
+        mainItem :: !(Either A_Concept Relation)
       }
   | -- | stores one relation r in two ordered columns
     --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -319,9 +321,10 @@ data PlugSQL
     --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
     --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
     BinSQL
-      { sqlname :: !SqlColumName,
+      { sqlname :: !SqlName,
         cLkpTbl :: ![(A_Concept, SqlAttribute)],
-        dLkpTbl :: ![RelStore]
+        dLkpTbl :: ![RelStore],
+        mainItem :: !(Either A_Concept Relation)
       }
   deriving (Show, Typeable)
 
@@ -383,31 +386,34 @@ data SqlAttributeUsage
   | PlainAttr -- None of the above
   deriving (Eq, Show)
 
-newtype SqlColumName = SqlColumName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
+newtype SqlName = SqlName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
 
-instance Ord SqlColumName where
+instance Ord SqlName where
   compare = compare `on` foo
     where
-      foo :: SqlColumName -> Text
-      foo (SqlColumName t1) = T.toUpper . text1ToText $ t1
+      foo :: SqlName -> Text
+      foo (SqlName t1) = T.toUpper . text1ToText $ t1
 
-instance Eq SqlColumName where
+instance Eq SqlName where
   a == b = compare a b == EQ
 
-instance Show SqlColumName where
+instance Show SqlName where
   show = sqlColumNameToString
 
-sqlColumNameToString :: SqlColumName -> String
-sqlColumNameToString = T.unpack . text1ToText . sqlColumNameToText1
+sqlColumNameToString :: SqlName -> String
+sqlColumNameToString = T.unpack . sqlColumNameToText
 
-sqlColumNameToText1 :: SqlColumName -> Text1
-sqlColumNameToText1 (SqlColumName t) = t
+sqlColumNameToText1 :: SqlName -> Text1
+sqlColumNameToText1 (SqlName t) = t
 
-text1ToSqlColumName :: Text1 -> SqlColumName
-text1ToSqlColumName = SqlColumName
+sqlColumNameToText :: SqlName -> Text
+sqlColumNameToText = text1ToText . sqlColumNameToText1
+
+text1ToSqlName :: Text1 -> SqlName
+text1ToSqlName = SqlName
 
 data SqlAttribute = Att
-  { attSQLColName :: !SqlColumName,
+  { attSQLColName :: !SqlName,
     -- | De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
     attExpr :: !Expression,
     attType :: !TType,

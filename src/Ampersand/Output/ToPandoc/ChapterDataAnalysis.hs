@@ -249,9 +249,9 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
                  ]
             in case asscs of
-                 [] -> para (text (fullName $ cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
+                 [] -> para (text (fullName cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _ ->
-                   para (text (fullName $ cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                   para (text (fullName cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                      <> simpleTable
                        [ (plain . text . l) (NL "Source", EN "Source"),
                          (plain . text . l) (NL "uniek", EN "unique"),
@@ -343,7 +343,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                   Dutch -> text ("Het technisch datamodel bestaat uit de volgende " <> tshow nrOfTables <> " tabellen:")
                   English -> text ("The technical datamodel consists of the following " <> tshow nrOfTables <> " tables:")
           )
-        <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . fullName)) (plugInfos fSpec), isTable p]
+        <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . text1ToText . showUnique)) (plugInfos fSpec), isTable p]
       where
         isTable :: PlugInfo -> Bool
         isTable (InternalPlug TblSQL {}) = True
@@ -355,7 +355,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             ( case outputLang' of
                 Dutch -> "Tabel: "
                 English -> "Table: "
-                <> (text . fullName) p
+                <> (text . text1ToText . showUnique) p
             )
             <> case p of
               InternalPlug tbl@TblSQL {} ->
@@ -519,15 +519,15 @@ primExpr2pandocMath lang e =
        in case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "
-            <> math (fullName $ srcTable)
+            <> math (fullName srcTable)
     (EDcI c) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (fullName $ c)
+        <> math (fullName c)
     (EEps c _) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (fullName $ c)
+        <> math (fullName c)
     _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)
