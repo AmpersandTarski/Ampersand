@@ -314,7 +314,7 @@ typologies context =
 -- to have Concepts and Relations as instances.
 type ConceptOrRelation = Either A_Concept Relation
 
-class Named a => TableArtefacts a where
+class Named a => TableArtefact a where
   hasUnambigousLocalName :: [ConceptOrRelation] -> a -> Bool
   hasUnambigousLocalName artefacts x = case filter hasSameClassifier artefacts of
     [] -> fatal "x should have the same classifier as x!"
@@ -346,13 +346,13 @@ class Named a => TableArtefacts a where
 classifierOf :: ConceptOrRelation -> Text1
 classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
 
-instance TableArtefacts A_Concept where
+instance TableArtefact A_Concept where
   toConceptOrRelation = Left
-  hashText = tshow . fullName1
+  hashText = fullName
 
-instance TableArtefacts Relation where
+instance TableArtefact Relation where
   toConceptOrRelation = Right
   hashText rel =
-    (tshow . fullName1) rel
-      <> (tshow . fullName1 . source) rel
-      <> (tshow . fullName1 . target) rel
+    fullName rel
+      <> fullName (source rel)
+      <> fullName (target rel)
