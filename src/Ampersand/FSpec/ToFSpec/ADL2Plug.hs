@@ -119,10 +119,10 @@ makeGeneratedSqlPlugs env context = map makeTable components
               Just np -> np
             determineTableNameText :: Text1
             determineTableNameText =
-              if hasUnambigousLocalName (map toStuff allConceptsInContext <> map toStuff allRelationsInContext) keyConcept
-                then classifierOf . toStuff $ keyConcept
+              if hasUnambigousLocalName (map toConceptOrRelation allConceptsInContext <> map toConceptOrRelation allRelationsInContext) keyConcept
+                then classifierOf . toConceptOrRelation $ keyConcept
                 else disambiguatedLocalName keyConcept
-        tableStuff = map toStuff allConceptsInTable <> map toStuff allRelationsInTable
+        tableArtefacts = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
 
         tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
@@ -153,7 +153,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
           Att
-            { attSQLColName = determineAttributeName tableStuff cpt,
+            { attSQLColName = determineAttributeName tableArtefacts cpt,
               attExpr = expr,
               attType = repr cpt,
               attUse =
@@ -174,7 +174,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
-            { attSQLColName = determineAttributeName tableStuff dcl,
+            { attSQLColName = determineAttributeName tableArtefacts dcl,
               attExpr = dclAttExpression,
               attType = repr (target dclAttExpression),
               attUse =
@@ -310,23 +310,21 @@ typologies context =
          | c <- toList $ concs context Set.\\ concs (gens context)
        ]
 
--- | Stuff is ment to be things that can end up in a database. It is designed
+-- | ConceptOrRelation is ment to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.
--- Feel free to give it a better name :)
-type Stuff = Either A_Concept Relation
+type ConceptOrRelation = Either A_Concept Relation
 
-class Named a => TableStuff a where
-  hasUnambigousLocalName :: [Stuff] -> a -> Bool
-  hasUnambigousLocalName allStuff x = case filter hasSameClassifier allStuff of
+class Named a => TableArtefacts a where
+  hasUnambigousLocalName :: [ConceptOrRelation] -> a -> Bool
+  hasUnambigousLocalName artefacts x = case filter hasSameClassifier artefacts of
     [] -> fatal "x should have the same classifier as x!"
     [_] -> True
     _ -> False
     where
-      hasSameClassifier :: Stuff -> Bool
-      hasSameClassifier y = classifierOf (toStuff x) == classifierOf y
-  toStuff :: a -> Stuff
+      hasSameClassifier :: ConceptOrRelation -> Bool
+      hasSameClassifier y = classifierOf (toConceptOrRelation x) == classifierOf y
+  toConceptOrRelation :: a -> ConceptOrRelation
 
-  --  fromStuff :: Stuff -> Maybe a
   disambiguatedLocalName :: a -> Text1
   disambiguatedLocalName x =
     toText1Unsafe $
@@ -336,30 +334,24 @@ class Named a => TableStuff a where
   gitLikeSha :: a -> Text
   gitLikeSha = T.take shaLength . tshow . abs . hash . hashText
   hashText :: a -> Text
-  determineAttributeName :: [Stuff] -> a -> SqlColumName
-  determineAttributeName tableStuff x = text1ToSqlColumName determineAttributeNameText
+  determineAttributeName :: [ConceptOrRelation] -> a -> SqlColumName
+  determineAttributeName tableArtefacts x = text1ToSqlColumName determineAttributeNameText
     where
       determineAttributeNameText :: Text1
       determineAttributeNameText =
-        if hasUnambigousLocalName tableStuff x
-          then classifierOf . toStuff $ x
+        if hasUnambigousLocalName tableArtefacts x
+          then classifierOf . toConceptOrRelation $ x
           else disambiguatedLocalName x
 
-classifierOf :: Stuff -> Text1
+classifierOf :: ConceptOrRelation -> Text1
 classifierOf = toText1Unsafe . T.toLower . namePartToText . either localName localName
 
-instance TableStuff A_Concept where
-  toStuff = Left
-
-  --  fromStuff (Right _) = Nothing
-  --  fromStuff (Left x) = Just x
+instance TableArtefacts A_Concept where
+  toConceptOrRelation = Left
   hashText = tshow . fullName1
 
-instance TableStuff Relation where
-  toStuff = Right
-
-  --  fromStuff (Right x) = Just x
-  --  fromStuff (Left _) = Nothing
+instance TableArtefacts Relation where
+  toConceptOrRelation = Right
   hashText rel =
     (tshow . fullName1) rel
       <> (tshow . fullName1 . source) rel
