@@ -345,7 +345,7 @@ determineSqlName scope conceptOrRelation =
     mustBeDisambiguated :: Bool
     mustBeDisambiguated =
       case filter (conceptOrRelation `elem`) . map toList $ eqClass equality scope of
-        [clazz] -> (T.length . fullName $ conceptOrRelation) > maxLengthOfDatabaseTableName || length clazz == 1
+        [clazz] -> (T.length . fullName $ conceptOrRelation) > maxLengthOfDatabaseTableName || length clazz > 1
         _ -> fatal "Concept must be found exactly in one list."
       where
         equality :: Named a => a -> a -> Bool
