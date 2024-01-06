@@ -78,8 +78,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Classification of " <> (text1ToText . tName) fSpec
-              Dutch -> "Classificatie van " <> (text1ToText . tName) fSpec
+              English -> "Classification of " <> fullName fSpec
+              Dutch -> "Classificatie van " <> fullName fSpec
         }
     PTLogicalDM grouped ->
       Pict
@@ -89,8 +89,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Logical data model of " <> (text1ToText . tName) fSpec
-              Dutch -> "Logisch gegevensmodel van " <> (text1ToText . tName) fSpec
+              English -> "Logical data model of " <> fullName fSpec
+              Dutch -> "Logisch gegevensmodel van " <> fullName fSpec
         }
     PTTechnicalDM ->
       Pict
@@ -100,8 +100,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Technical data model of " <> (text1ToText . tName) fSpec
-              Dutch -> "Technisch gegevensmodel van " <> (text1ToText . tName) fSpec
+              English -> "Technical data model of " <> fullName fSpec
+              Dutch -> "Technisch gegevensmodel van " <> fullName fSpec
         }
     PTCDConcept cpt ->
       Pict
@@ -111,8 +111,8 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of " <> (text1ToText . tName) cpt
-              Dutch -> "Conceptueel diagram van " <> (text1ToText . tName) cpt
+              English -> "Concept diagram of " <> fullName cpt
+              Dutch -> "Conceptueel diagram van " <> fullName cpt
         }
     PTDeclaredInPat pat ->
       Pict
@@ -122,8 +122,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of relations in " <> (text1ToText . tName) pat
-              Dutch -> "Conceptueel diagram van relaties in " <> (text1ToText . tName) pat
+              English -> "Concept diagram of relations in " <> fullName pat
+              Dutch -> "Conceptueel diagram van relaties in " <> fullName pat
         }
     PTCDPattern pat ->
       Pict
@@ -133,8 +133,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of the rules in " <> (text1ToText . tName) pat
-              Dutch -> "Conceptueel diagram van " <> (text1ToText . tName) pat
+              English -> "Concept diagram of the rules in " <> fullName pat
+              Dutch -> "Conceptueel diagram van " <> fullName pat
         }
     PTCDRule rul ->
       Pict
@@ -144,8 +144,8 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of rule " <> (text1ToText . tName) rul
-              Dutch -> "Conceptueel diagram van regel " <> (text1ToText . tName) rul
+              English -> "Concept diagram of rule " <> fullName rul
+              Dutch -> "Conceptueel diagram van regel " <> fullName rul
         }
   where
     outputLang' :: Lang
@@ -236,7 +236,7 @@ conceptualStructure fSpec pr =
                   $ bindedRelationsIn r,
               csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
             }
-    _ -> fatal ("No conceptual graph defined for pictureReq " <> (text1ToText . tName) pr <> ".")
+    _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
     isaEdges cpts = [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
     gs = fsisa fSpec
@@ -412,7 +412,7 @@ baseNodeId x c =
             Nothing -> fatal $ "Not a valid NamePart: " <> "cpt_" <> tshow i
             Just np -> np
         )
-    _ -> fatal ("element " <> (text1ToText . tName) c <> " not found by nodeLabel.")
+    _ -> fatal ("element " <> fullName c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
 allCpts (CStruct cpts' rels idgs) = toList $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
@@ -425,7 +425,7 @@ instance HasDotParts A_Concept where
     [ DotNode
         { nodeID = baseNodeId x cpt,
           nodeAttributes =
-            [ Label . StrLabel . TL.fromStrict . text1ToText . tName $ cpt
+            [ Label . StrLabel . TL.fromStrict . fullName $ cpt
             ]
         }
     ]
@@ -435,12 +435,12 @@ instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
       [ DotNode
-          { nodeID = prependToPlainName (text1ToText . tName . baseNodeId x . source $ rel) $ name rel,
+          { nodeID = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
             nodeAttributes =
               [ Color [WC (X11Color Transparent) Nothing],
                 Shape PlainText,
                 Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  (text1ToText . tName) rel :
+                  fullName rel :
                   case Set.toList . properties $ rel of
                     [] -> []
                     ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
@@ -452,7 +452,7 @@ instance HasDotParts Relation where
     | isEndo rel =
       [ DotEdge
           { fromNode = baseNodeId x . source $ rel,
-            toNode = prependToPlainName (text1ToText . tName . baseNodeId x . source $ rel) $ name rel,
+            toNode = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
             edgeAttributes =
               [ Dir NoDir,
                 edgeLenFactor 0.4,
@@ -466,7 +466,7 @@ instance HasDotParts Relation where
             toNode = baseNodeId x . target $ rel,
             edgeAttributes =
               [ Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  (text1ToText . tName) rel :
+                  fullName rel :
                   case Set.toList . properties $ rel of
                     [] -> []
                     ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]

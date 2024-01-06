@@ -49,7 +49,7 @@ plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug =
   TableSpec
     { tsCmnt =
-        [ "Plug " <> (text1ToText . tName) plug,
+        [ "Plug " <> fullName plug,
           "",
           "attributes:"
         ]
@@ -58,7 +58,7 @@ plug2TableSpec plug =
               ]
               | x <- NE.toList $ plugAttributes plug
             ],
-      tsName = (text1ToText . tName) plug,
+      tsName = fullName plug,
       tsflds = NE.toList . fmap fld2AttributeSpec $ plugAttributes plug,
       tsKey = case (plug, (NE.head . plugAttributes) plug) of
         (BinSQL {}, _) ->
@@ -71,7 +71,7 @@ plug2TableSpec plug =
         (TblSQL {}, primFld) ->
           case attUse primFld of
             PrimaryKey _ -> "PRIMARY KEY (" <> (doubleQuote . text1ToText . sqlColumNameToText1 . attSQLColName) primFld <> ")"
-            ForeignKey c -> fatal ("ForeignKey " <> (text1ToText . tName) c <> "not expected here!")
+            ForeignKey c -> fatal ("ForeignKey " <> fullName c <> "not expected here!")
             PlainAttr -> ""
     }
 

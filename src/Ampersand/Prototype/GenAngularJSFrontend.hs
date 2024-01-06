@@ -78,7 +78,7 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents =
         renderTemplate Nothing template $
-          setAttribute "contextName" (addSlashes . text1ToText . tName $ fSpec)
+          setAttribute "contextName" (addSlashes . fullName $ fSpec)
             . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
@@ -223,7 +223,7 @@ genViewObject fSpec depth obj =
           else "Atomic-" <> show ttp <.> "html"
       where
         ttp = cptTType fSpec cpt
-        cptfn = "Concept-" <> (T.unpack . text1ToText . tName) cpt <.> "html"
+        cptfn = "Concept-" <> (T.unpack . fullName) cpt <.> "html"
 
 ------ Generate controller JavaScript code
 genControllerInterfaces :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()

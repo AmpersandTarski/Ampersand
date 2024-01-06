@@ -71,7 +71,7 @@ instance JSON FSpec Concepts where
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
-      { cptJSONname = tshow . name $ cpt,
+      { cptJSONname = fullName $ cpt,
         cptJSONlabel = label cpt,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
         cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts (vgens fSpec) $ cpt,
@@ -79,8 +79,8 @@ instance JSON A_Concept Concept where
         cptJSONdirectGens = map (text1ToText . idWithoutType') $ L.nub [g | (s, g) <- fsisa fSpec, s == cpt],
         cptJSONdirectSpecs = map (text1ToText . idWithoutType') $ L.nub [s | (s, g) <- fsisa fSpec, g == cpt],
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
-        cptJSONinterfaces = fmap (text1ToText . tName) . filter hasAsSourceCpt . interfaceS $ fSpec,
-        cptJSONdefaultViewName = fmap (text1ToText . tName) . getDefaultViewForConcept fSpec $ cpt,
+        cptJSONinterfaces = fmap fullName . filter hasAsSourceCpt . interfaceS $ fSpec,
+        cptJSONdefaultViewName = fmap fullName . getDefaultViewForConcept fSpec $ cpt,
         cptJSONconceptTable = fromAmpersand env fSpec cpt,
         cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
@@ -92,25 +92,25 @@ instance JSON A_Concept Concept where
 instance JSON A_Concept TableCols where
   fromAmpersand _ fSpec cpt =
     TableCols
-      { tclJSONname = (text1ToText . tName) cptTable,
+      { tclJSONname = fullName cptTable,
         tclJSONcols = case L.nub . map fst $ cols of
           [t] ->
             if t == cptTable
               then map (text1ToText . sqlColumNameToText1 . attSQLColName . snd) cols
-              else fatal $ "Table names should match: " <> (text1ToText . tName) t <> " " <> (text1ToText . tName) cptTable <> "."
+              else fatal $ "Table names should match: " <> fullName t <> " " <> fullName cptTable <> "."
           _ -> fatal "All concepts in a typology should be in exactly one table."
       }
     where
       cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
       cptTable = case lookupCpt fSpec cpt of
         [(table, _)] -> table
-        [] -> fatal ("Concept `" <> (text1ToText . tName) cpt <> "` not found in a table.")
-        _ -> fatal ("Concept `" <> (text1ToText . tName) cpt <> "` found in multiple tables.")
+        [] -> fatal ("Concept `" <> fullName cpt <> "` not found in a table.")
+        _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =
     View
-      { vwJSONlabel = (text1ToText . tName) vd,
+      { vwJSONlabel = fullName vd,
         vwJSONisDefault = vdIsDefault vd,
         vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd,
         vwJSONsegments = fmap (fromAmpersand env fSpec) . vdats $ vd

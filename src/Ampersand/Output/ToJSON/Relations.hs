@@ -61,8 +61,8 @@ instance JSON FSpec Relationz where
 instance JSON Relation RelationJson where
   fromAmpersand env fSpec dcl =
     RelationJson
-      { relJSONname = text1ToText . tName $ dcl,
-        relJSONsignature = (text1ToText . tName) dcl <> (tshow . sign) dcl,
+      { relJSONname = fullName $ dcl,
+        relJSONsignature = fullName dcl <> (tshow . sign) dcl,
         relJSONlabel = label dcl,
         relJSONsrcConceptName = text1ToText . idWithoutType' . source $ dcl,
         relJSONtgtConceptName = text1ToText . idWithoutType' . target $ dcl,
@@ -90,7 +90,7 @@ instance JSON Relation RelationJson where
 instance JSON Relation RelTableInfo where
   fromAmpersand env fSpec dcl =
     RelTableInfo
-      { rtiJSONname = text1ToText . tName $ plug,
+      { rtiJSONname = fullName $ plug,
         rtiJSONtableOf = srcOrtgt,
         rtiJSONsrcCol = fromAmpersand env fSpec . rsSrcAtt $ relstore,
         rtiJSONtgtCol = fromAmpersand env fSpec . rsTrgAtt $ relstore

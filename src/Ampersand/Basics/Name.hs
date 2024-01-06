@@ -40,7 +40,7 @@ type NameSpace = [NamePart]
 
 -- A namepart is a single word, that starts with an alphanumeric character
 -- and may contain of alphanumeric characters and digits only.
-newtype NamePart = NamePart Text1 deriving (Data)
+newtype NamePart = NamePart Text1 deriving (Data, Eq, Ord)
 
 instance Show NamePart where
   show (NamePart t1) = T.unpack $ text1ToText t1
@@ -56,28 +56,22 @@ data Name = Name
   deriving (Data)
 
 instance Ord Name where
-  compare a b = compare (tshow a) (tshow b)
+  compare a b = compare (nameParts a) (nameParts b)
 
 instance Eq Name where
   a == b = compare a b == EQ
 
 instance Show Name where
-  show =
-    T.unpack
-      . mconcat
-      . L.intersperse "."
-      . toList
-      . fmap namePartToText
-      . nameParts
+  show = T.unpack . fullName
 
 instance Hashable Name where
-  hashWithSalt s = hashWithSalt s . text1ToText . tName
+  hashWithSalt s = hashWithSalt s . fullName
 
 instance Named Name where
   name = id
 
 instance GVP.PrintDot Name where
-  unqtDot = GVP.text . TL.fromStrict . text1ToText . tName
+  unqtDot = GVP.text . TL.fromStrict . fullName
 
 -- | toNamePart will convert a Text to a NamePart, iff the Text is a proper ID. (See checkProperId)
 toNamePart :: Text -> Maybe NamePart
@@ -169,8 +163,16 @@ splitOnDots t1 =
 class Named a where
   {-# MINIMAL name #-}
   name :: a -> Name
-  tName :: a -> Text1
-  tName = toText1Unsafe . tshow . name
+  fullName1 :: a -> Text1
+  fullName1 = toText1Unsafe . fullName
+  fullName :: a -> Text
+  fullName =
+    mconcat
+      . L.intersperse "."
+      . toList
+      . fmap namePartToText
+      . nameParts
+      . name
   nameSpaceOf :: a -> [NamePart]
   nameSpaceOf = NE.init . nameParts . name
   localName :: a -> NamePart
@@ -226,7 +228,7 @@ postpend :: Text -> NamePart -> NamePart
 postpend t (NamePart txt) = NamePart (txt T1.<>. t)
 
 urlEncodedName :: Name -> Text1
-urlEncodedName = toText1Unsafe . urlEncode . text1ToText . tName
+urlEncodedName = toText1Unsafe . urlEncode . fullName
 
 -- Should be in RIO.NonEmpty:
 prependList :: [a] -> NonEmpty a -> NonEmpty a

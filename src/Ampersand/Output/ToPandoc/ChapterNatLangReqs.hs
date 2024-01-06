@@ -36,7 +36,7 @@ chpNatLangReqs env lev fSpec =
         Dutch ->
           para
             ( "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
-                <> (singleQuoted . str . text1ToText . tName) fSpec
+                <> (singleQuoted . str . fullName) fSpec
                 <> " in natuurlijke taal. "
                 <> "Het hoofdstuk bevat definities en afspraken. "
                 <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
@@ -45,7 +45,7 @@ chpNatLangReqs env lev fSpec =
         English ->
           para
             ( "This chapter describes functional requirements for "
-                <> (singleQuoted . str . text1ToText . tName) fSpec
+                <> (singleQuoted . str . fullName) fSpec
                 <> " in natural language. "
                 <> "It contains definitions and agreements. "
                 <> "The purpose of this chapter is to create shared understanding among stakeholders. "
@@ -107,7 +107,7 @@ chpNatLangReqs env lev fSpec =
                     ( NL "In het volgende wordt de taal geïntroduceerd ten behoeve van ",
                       EN "The sequel introduces the language of "
                     )
-                    <> (str . text1ToText . tName) pat
+                    <> (str . fullName) pat
                     <> "."
                 )
                 <>
@@ -160,7 +160,7 @@ chpNatLangReqs env lev fSpec =
                 )
           where
             showCpt :: Numbered CptCont -> Inlines
-            showCpt = emph . text . text1ToText . tName . cCpt . theLoad
+            showCpt = emph . text . fullName . cCpt . theLoad
             hasMultipleDefs :: Numbered CptCont -> Bool
             hasMultipleDefs x =
               case cCptDefs (theLoad x) of
@@ -240,7 +240,7 @@ chpNatLangReqs env lev fSpec =
             <> (pragmaShow . l) (NL " correspondeert met ", EN " corresponds to ")
             <> atomShow tgtAtom
             <> (pragmaShow . l) (NL " in de relatie ", EN " in relation ")
-            <> (atomShow . text1ToText . tName) decl
+            <> (atomShow . fullName) decl
             <> "."
         Just pragma ->
           ( if T.null prL

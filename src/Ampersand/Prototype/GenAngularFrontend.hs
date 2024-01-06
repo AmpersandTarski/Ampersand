@@ -72,7 +72,7 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . concatMap indentEOL
           . T.lines
           . renderTemplate Nothing template
-          $ setAttribute "contextName" (addSlashes . tshow . name $ fSpec)
+          $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
             . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
@@ -310,7 +310,7 @@ genTypescriptInterface fSpec depth obj =
     conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType' cpt)
 
     viewIdWithImportAlias :: ViewDef -> Text
-    viewIdWithImportAlias viewDef' = "views." <> (toPascal . tshow . vdname $ viewDef') <> "View"
+    viewIdWithImportAlias viewDef' = "views." <> (toPascal . fullName $ viewDef') <> "View"
 
 toKebab :: Text -> Text
 toKebab = T.intercalate "-" . fmap T.toLower . T.words

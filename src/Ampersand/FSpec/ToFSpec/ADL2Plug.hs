@@ -17,6 +17,12 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
+maxLengthOfDatabaseTableName :: Int
+maxLengthOfDatabaseTableName = 64
+
+shaLength :: Int
+shaLength = 7
+
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c =
   [att | att <- NE.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att) == c]
@@ -60,6 +66,10 @@ makeGeneratedSqlPlugs env context = map makeTable components
     repr = representationOf (ctxInfo context)
     allRelationsInContext = toList (relsDefdIn context)
     allConceptsInContext = toList (concs context)
+    allKeyConcepts = map tyroot . mapMaybe fst $ components
+    allNameClasses = map toList $ eqClass equality allKeyConcepts
+      where
+        equality a b = (T.toLower . fullName) a == (T.toLower . fullName) b
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
     makeTable (mTypol, rels) = case (mTypol, rels) of
@@ -76,19 +86,34 @@ makeGeneratedSqlPlugs env context = map makeTable components
           dLkpTbl = dclLookuptable
         }
       where
+        mustBeDisambiguated :: A_Concept -> Bool
+        mustBeDisambiguated cpt = case filter (cpt `elem`) allNameClasses of
+          [x] -> length x == 1
+          _ -> fatal "Concept must be found exactly in one list."
         allConceptsInTable =
           -- All concepts from the typology, orderd from generic to specific
           reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
 
         determineTableName :: A_Concept -> Name
         determineTableName keyConcept =
-          --   The sql table name of a wide table is ideally the local name of of the root concept, written in lowercase.
-          --   For link tables, it is ideally the local name of the relation, also written in lowercase. However, this
+          -- TODO: Notes van Michiel
+          --   The sql table name of a wide table is ideally the full name of the root concept, if it is not too long.
+          --   For link tables, it is ideally the full name of the relation. However, this
           --   could lead to name conflicts, as the sql table name of all tables must be unique. In those cases,
           --   names that would conflict are postfixed with the first 7 digits of a hash that is constructed on uniquely
           --   identification of the concept or relation.
-          mkName SqlTableName (namePart NE.:| [])
+          if (T.length . fullName $ keyConcept) > maxLengthOfDatabaseTableName || mustBeDisambiguated keyConcept
+            then name keyConcept
+            else
+              fatal $
+                "Your name is too long or unambiguate to create a valid database name." <> "\n  "
+                  <> fullName keyConcept
           where
+            -- mkName SqlTableName ....
+            -- (take (maxLengthOfDatabaseTableName - shaLength - 1) . fullName $ keyConcept)
+            -- <> "_"
+            -- <> gitLikeSha keyConcept
+
             namePart = case toNamePart1 determineTableNameText of
               Nothing -> fatal $ "Not a valid namepart: " <> text1ToText determineTableNameText
               Just np -> np
@@ -117,11 +142,11 @@ makeGeneratedSqlPlugs env context = map makeTable components
         lookupC cpt = case [f | (c', f) <- conceptLookuptable, cpt == c'] of
           [] ->
             fatal $
-              "Concept `" <> (text1ToText . tName) cpt <> "` is not in the lookuptable."
+              "Concept `" <> fullName cpt <> "` is not in the lookuptable."
                 <> "\nallConceptsInTable: "
                 <> tshow allConceptsInTable
                 <> "\nallRelationsInTable: "
-                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
+                <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
                 <> "\nlookupTable: "
                 <> tshow (map fst conceptLookuptable)
           x : _ -> x
@@ -209,7 +234,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
           | otherwise = bindedExp
         srcAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ tName . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
+            { attSQLColName = text1ToSqlColumName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
               attExpr = domExpr,
               attType = repr (source domExpr),
               attUse =
@@ -223,7 +248,7 @@ makeGeneratedSqlPlugs env context = map makeTable components
             }
         trgAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ tName . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
+            { attSQLColName = text1ToSqlColumName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
               attType = repr (target codExpr),
               attUse =
@@ -309,7 +334,7 @@ class Named a => TableStuff a where
         <> "_"
         <> gitLikeSha x
   gitLikeSha :: a -> Text
-  gitLikeSha = T.take 7 . tshow . abs . hash . hashText
+  gitLikeSha = T.take shaLength . tshow . abs . hash . hashText
   hashText :: a -> Text
   determineAttributeName :: [Stuff] -> a -> SqlColumName
   determineAttributeName tableStuff x = text1ToSqlColumName determineAttributeNameText
@@ -328,7 +353,7 @@ instance TableStuff A_Concept where
 
   --  fromStuff (Right _) = Nothing
   --  fromStuff (Left x) = Just x
-  hashText = tshow . tName
+  hashText = tshow . fullName1
 
 instance TableStuff Relation where
   toStuff = Right
@@ -336,6 +361,6 @@ instance TableStuff Relation where
   --  fromStuff (Right x) = Just x
   --  fromStuff (Left _) = Nothing
   hashText rel =
-    (tshow . tName) rel
-      <> (tshow . tName . source) rel
-      <> (tshow . tName . target) rel
+    (tshow . fullName1) rel
+      <> (tshow . fullName1 . source) rel
+      <> (tshow . fullName1 . target) rel

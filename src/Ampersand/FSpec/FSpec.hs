@@ -266,7 +266,7 @@ instance Eq Quad where
 instance Unique Quad where
   showUnique quad = toText1Unsafe $ "Quad_" <> (tshow . abs . hash $ readable)
     where
-      readable = "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (text1ToText . tName . qRule) quad
+      readable = "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (fullName . qRule) quad
 
 --
 dnf2expr :: DnfClause -> Expression
@@ -284,7 +284,7 @@ instance Named PlugInfo where
   name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
-  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> tName psql
+  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> fullName1 psql
 
 instance ConceptStructure PlugInfo where
   concs (InternalPlug psql) = concs psql
@@ -332,7 +332,7 @@ instance Eq PlugSQL where
   a == b = compare a b == EQ
 
 instance Unique PlugSQL where
-  showUnique = tName
+  showUnique = fullName1
 
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
@@ -364,7 +364,7 @@ lookupCpt fSpec cpt =
 -- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
-  [] -> fatal $ "tableFor: No concept table for " <> text1ToText (tName c)
+  [] -> fatal $ "tableFor: No concept table for " <> text1ToText (fullName1 c)
   (t, _) : _ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.

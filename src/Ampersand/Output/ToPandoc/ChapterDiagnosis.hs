@@ -22,7 +22,7 @@ chpDiagnosis env fSpec
               ( NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van ",
                 EN "This chapter provides an analysis of the Ampersand script of "
               )
-              <> (emph . singleQuoted . str . text1ToText . tName) fSpec
+              <> (emph . singleQuoted . str . fullName) fSpec
               <> str ". "
               <> (str . l)
                 ( NL $
@@ -56,7 +56,7 @@ chpDiagnosis env fSpec
       | null (instanceList fSpec :: [Pattern]) = mempty
       | (null . fRoleRuls) fSpec && (not . null . vrules) fSpec =
         plain
-          ( (emph . str . upCap . text1ToText . tName) fSpec
+          ( (emph . str . upCap . fullName) fSpec
               <> (str . l)
                 ( NL " kent geen regels aan rollen toe. ",
                   EN " does not assign rules to roles. "
@@ -73,7 +73,7 @@ chpDiagnosis env fSpec
       | null ruls = mempty
       | null (fRoles fSpec) =
         para
-          ( (emph . str . upCap . text1ToText . tName) fSpec
+          ( (emph . str . upCap . fullName) fSpec
               <> (str . l)
                 ( NL " specificeert geen rollen. ",
                   EN " does not define any roles. "
@@ -83,7 +83,7 @@ chpDiagnosis env fSpec
         case filter (isSignal fSpec) . toList $ ruls of
           [] ->
             para
-              ( (emph . str . upCap . text1ToText . tName) fSpec
+              ( (emph . str . upCap . fullName) fSpec
                   <> (str . l)
                     ( NL " kent geen procesregels. ",
                       EN " does not define any process rules. "
@@ -91,7 +91,7 @@ chpDiagnosis env fSpec
               )
           sigs ->
             para
-              ( (emph . str . upCap . text1ToText . tName) fSpec
+              ( (emph . str . upCap . fullName) fSpec
                   <> (str . l)
                     ( NL " kent regels aan rollen toe. ",
                       EN " assigns rules to roles. "
@@ -109,10 +109,10 @@ chpDiagnosis env fSpec
                 )
                 -- Header row:
                 ( (plain . str . l) (NL "Regel", EN "Rule") :
-                  map (plain . str . text1ToText . tName . fst) (fRoles fSpec)
+                  map (plain . str . fullName . fst) (fRoles fSpec)
                 )
                 -- Content rows:
-                [ (plain . str . text1ToText . tName) rul :
+                [ (plain . str . fullName) rul :
                     [f rol rul | (rol, _) <- fRoles fSpec]
                   | rul <- sigs
                 ]
@@ -138,7 +138,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van concept ",
                   EN "The concept "
                 )
-                <> (singleQuoted . str . text1ToText . tName) c
+                <> (singleQuoted . str . fullName) c
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remains without a purpose."
@@ -150,7 +150,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van de concepten: ",
                   EN "Concepts "
                 )
-                <> commaPandocAnd outputLang' (map (str . text1ToText . tName) xs)
+                <> commaPandocAnd outputLang' (map (str . fullName) xs)
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remain without a purpose."
@@ -180,7 +180,7 @@ chpDiagnosis env fSpec
                 ( NL "Het concept ",
                   EN "The concept "
                 )
-                <> (singleQuoted . str . text1ToText . tName) c
+                <> (singleQuoted . str . fullName) c
                 <> (str . l)
                   ( NL " is gedefinieerd, maar wordt niet gebruikt in een relatie.",
                     EN " is defined, but isn't used in a relation."
@@ -189,7 +189,7 @@ chpDiagnosis env fSpec
         xs ->
           para
             ( (str . l) (NL "De concepten: ", EN "Concepts ")
-                <> (commaPandocAnd outputLang' . map (str . text1ToText . tName) $ xs)
+                <> (commaPandocAnd outputLang' . map (str . fullName) $ xs)
                 <> (str . l)
                   ( NL " zijn gedefinieerd, maar worden niet gebruikt.",
                     EN " are defined, but not used."
@@ -362,7 +362,7 @@ chpDiagnosis env fSpec
                                ( NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in ",
                                  EN " shows a conceptual diagram with all relations declared in "
                                )
-                             <> (singleQuoted . str . text1ToText . tName) pat
+                             <> (singleQuoted . str . fullName) pat
                              <> "."
                          )
                          <> xDefBlck env fSpec pict
@@ -444,7 +444,7 @@ chpDiagnosis env fSpec
       where
         formalizations rls =
           bulletList
-            [ para ((emph . str . text1ToText . tName) r <> " (" <> (str . tshow . origin) r <> ")")
+            [ para ((emph . str . fullName) r <> " (" <> (str . tshow . origin) r <> ")")
                 <> (para . showMath . formalExpression) r
                 <> (para . showPredLogic outputLang' . formalExpression) r
               | r <- rls
@@ -488,7 +488,7 @@ chpDiagnosis env fSpec
           Relations -> --The user-defined relations of the pattern / fSpec
           Rules -> -- The user-defined rules of the pattern / fSpec
           [Blocks]
-        mkTableRowPat p = mkTableRow (text1ToText . tName $ p) (relsDefdIn p) (udefrules p)
+        mkTableRowPat p = mkTableRow (fullName $ p) (relsDefdIn p) (udefrules p)
         mkTableRow nm rels ruls =
           map
             (plain . str)
@@ -528,10 +528,10 @@ chpDiagnosis env fSpec
                      ]
               )
               -- Rows:
-              [ [(plain . str . text1ToText . tName) rol]
-                  <> [(plain . str . maybe "--" (text1ToText . tName) . rrpat) rul | multProcs]
-                  <> [ (plain . str . text1ToText . tName) rul,
-                       (plain . str . maybe "--" (text1ToText . tName) . rrpat) rul
+              [ [(plain . str . fullName) rol]
+                  <> [(plain . str . maybe "--" fullName . rrpat) rul | multProcs]
+                  <> [ (plain . str . fullName) rul,
+                       (plain . str . maybe "--" fullName . rrpat) rul
                      ]
                 | (rol, rul) <- fRoleRuls fSpec
               ]
@@ -577,7 +577,7 @@ chpDiagnosis env fSpec
               -- Rows:
               [ map
                   (plain . str)
-                  [ (text1ToText . tName) r,
+                  [ fullName r,
                     (tshow . origin) r,
                     (tshow . length) ps
                   ]
@@ -600,7 +600,7 @@ chpDiagnosis env fSpec
                           ( NL "Deze regel bevat nog werk (voor ",
                             EN "This rule contains work (for "
                           )
-                          <> (commaPandocOr outputLang' . map (str . text1ToText . tName) . rolesOf $ r)
+                          <> (commaPandocOr outputLang' . map (str . fullName) . rolesOf $ r)
                           <> ")"
                           <> case Set.toList ps of
                             [v] ->
@@ -625,19 +625,19 @@ chpDiagnosis env fSpec
         --         else expls
         --         where expls = [Plain (block<>[Space]) | Means l econt<-rrxpl r, l==Just outputLang' || l==Nothing, Para block<-econt]
         quoterule :: Rule -> Inlines
-        quoterule = singleQuoted . str . text1ToText . tName
+        quoterule = singleQuoted . str . fullName
         oneviol :: Rule -> AAtomPair -> Inlines
         oneviol r p =
           if isEndo (formalExpression r) && apLeft p == apRight p
             then
               singleQuoted
-                ( (str . text1ToText . tName . source . formalExpression) r
+                ( (str . fullName . source . formalExpression) r
                     <> (str . showValADL . apLeft) p
                 )
             else
-              "(" <> (str . text1ToText . tName . source . formalExpression) r <> (str . showValADL . apLeft) p
+              "(" <> (str . fullName . source . formalExpression) r <> (str . showValADL . apLeft) p
                 <> ", "
-                <> (str . text1ToText . tName . target . formalExpression) r
+                <> (str . fullName . target . formalExpression) r
                 <> (str . showValADL . apRight) p
                 <> ")"
         popwork :: [(Rule, AAtomPairs)]
@@ -676,7 +676,7 @@ chpDiagnosis env fSpec
         showViolatedRule (r, ps) =
           (para . emph)
             ( (str . l) (NL "Regel ", EN "Rule ")
-                <> (str . text1ToText . tName) r
+                <> (str . fullName) r
             )
             <> para
               ( ( if isSignal fSpec r
@@ -689,10 +689,10 @@ chpDiagnosis env fSpec
               ( if isSignal fSpec r
                   then
                     (str . l) (NL "Openstaande taken voor ", EN "Tasks yet to be performed by ")
-                      <> (commaPandocOr outputLang' . map (str . text1ToText . tName) . rolesOf $ r)
+                      <> (commaPandocOr outputLang' . map (str . fullName) . rolesOf $ r)
                   else
                     (str . l) (NL "Overtredingen van invariant ", EN "Violations of invariant ")
-                      <> (str . text1ToText . tName) r
+                      <> (str . fullName) r
               )
               -- Alignment:
               (replicate 1 (AlignLeft, 1))
@@ -710,8 +710,8 @@ chpDiagnosis env fSpec
         violationMessage =
           T.unlines $
             [ if length ps == 1
-                then "There is a violation of RULE " <> tshow (name r) <> ":"
-                else "There are " <> tshow (length ps) <> " violations of RULE " <> tshow (name r) <> ":"
+                then "There is a violation of RULE " <> fullName r <> ":"
+                else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
             ]
               <> (map ("  " <>) . listPairs 10 . Set.toList $ ps)
         listPairs :: Int -> [AAtomPair] -> [Text]
@@ -731,7 +731,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             [(AlignLeft, 1.0)]
             -- Header:
-            [(plain . str . text1ToText . tName . source . formalExpression) r]
+            [(plain . str . fullName . source . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p]
               | p <- take 10 . toList $ ps --max 10 rows
@@ -742,7 +742,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             (replicate 2 (AlignLeft, 1 / 2))
             -- Header:
-            [(plain . str . text1ToText . tName . source . formalExpression) r, (plain . str . text1ToText . tName . target . formalExpression) r]
+            [(plain . str . fullName . source . formalExpression) r, (plain . str . fullName . target . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p, (plain . str . showValADL . apRight) p]
               | p <- take 10 . toList $ ps --max 10 rows

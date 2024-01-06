@@ -113,7 +113,7 @@ predLshow lang vMap = charshow 0
           | otherwise ->
             wrap i 5 $
               if T.null (decprL <> decprM <> decprR)
-                then d <> T.pack " " <> (text1ToText . tName) rel <> T.pack " " <> c
+                then d <> T.pack " " <> fullName rel <> T.pack " " <> c
                 else decprL <> d <> decprM <> c <> decprR
           where
             d = wrap i 5 (charshow 5 pexpr)
@@ -125,7 +125,7 @@ predLshow lang vMap = charshow 0
         Constant txt -> txt
         Variable v -> vMap v
         Vee v w -> wrap i 5 (vMap v) <> T.pack " V " <> wrap i 5 (vMap w)
-        Function pexpr rel -> (text1ToText . tName) rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
+        Function pexpr rel -> fullName rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
         Kleene0 rs -> wrap i 6 (charshow 6 rs <> T.pack "*")
         Kleene1 rs -> wrap i 7 (charshow 7 rs <> T.pack "+")
         Not rs -> wrap i 8 (l (toNL " niet ", toEN " not ") <> charshow 1 rs)

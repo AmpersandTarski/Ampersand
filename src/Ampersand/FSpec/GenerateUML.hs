@@ -30,8 +30,8 @@ fSpec2UML env fSpec =
     packageId2 <- mkUnlabeledId "PackageReqs"
     diagramId <- mkUnlabeledId "Diagram"
 
-    mapM_ (mkLabeledId "Datatype" . text1ToText . tName) datatypeNames
-    mapM_ (mkLabeledId "Class" . text1ToText . tName) classNames
+    mapM_ (mkLabeledId "Datatype" . fullName) datatypeNames
+    mapM_ (mkLabeledId "Class" . fullName) classNames
 
     datatypesUML <- mapM genUMLDatatype datatypeNames
     classesUML <- mapM genUMLClass (classes classDiag)
@@ -47,15 +47,15 @@ fSpec2UML env fSpec =
         -- WHY is the exporter not something like `Ampersand` (in the string below)?
         -- BECAUSE then for some reason the importer doesn't show the properties of the requirements.
         " <xmi:Documentation exporter=\"Ampersand\" exporterVersion=\"" <> cabalVersionStr <> "\"/>",
-        " <uml:Model xmi:type=\"uml:Model\" name=\"" <> (text1ToText . tName) contextName <> "\" visibility=\"public\">",
-        "  <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId0 <> " name=" <> tshow contextName <> " visibility=\"public\">"
+        " <uml:Model xmi:type=\"uml:Model\" name=\"" <> fullName contextName <> "\" visibility=\"public\">",
+        "  <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId0 <> " name=" <> fullName contextName <> " visibility=\"public\">"
       ]
-        <> ["   <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId1 <> " name=" <> (text1ToText . tName) (prependToPlainName "classesOf_" contextName) <> " visibility=\"public\">"]
+        <> ["   <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId1 <> " name=" <> fullName (prependToPlainName "classesOf_" contextName) <> " visibility=\"public\">"]
         <> concat datatypesUML
         <> concat classesUML
         <> concat assocsUML
         <> ["   </packagedElement>"]
-        <> ["   <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId2 <> " name=" <> (text1ToText . tName) (prependToPlainName "RequirementsOf_" contextName) <> " visibility=\"public\">"]
+        <> ["   <packagedElement xmi:type=\"uml:Package\" xmi:id=" <> tshow packageId2 <> " name=" <> fullName (prependToPlainName "RequirementsOf_" contextName) <> " visibility=\"public\">"]
         <> concat requirementsUML
         <> ["   </packagedElement>"]
         <> ["  </packagedElement>"]
@@ -64,12 +64,12 @@ fSpec2UML env fSpec =
              " <xmi:Extension extender=\"Enterprise Architect\" extenderID=\"6.5\">",
              "  <elements>"
            ]
-        <> ["    <element xmi:idref=" <> tshow packageId0 <> " xmi:type=\"uml:Package\" name=" <> tshow contextName <> " scope=\"public\">"]
+        <> ["    <element xmi:idref=" <> tshow packageId0 <> " xmi:type=\"uml:Package\" name=" <> fullName contextName <> " scope=\"public\">"]
         <> ["    </element>"]
-        <> ["    <element xmi:idref=" <> tshow packageId1 <> " xmi:type=\"uml:Package\" name=" <> (text1ToText . tName) (prependToPlainName "classesOf_" contextName) <> " scope=\"public\">"]
+        <> ["    <element xmi:idref=" <> tshow packageId1 <> " xmi:type=\"uml:Package\" name=" <> fullName (prependToPlainName "classesOf_" contextName) <> " scope=\"public\">"]
         <> ["     <model package2=" <> tshow packageId1 <> " package=" <> tshow packageId0 <> " tpos=\"0\" ea_eleType=\"package\"/>"]
         <> ["    </element>"]
-        <> ["    <element xmi:idref=" <> tshow packageId2 <> " xmi:type=\"uml:Package\" name=" <> (text1ToText . tName) (prependToPlainName "RequirementsOf_" contextName) <> " scope=\"public\">"]
+        <> ["    <element xmi:idref=" <> tshow packageId2 <> " xmi:type=\"uml:Package\" name=" <> fullName (prependToPlainName "RequirementsOf_" contextName) <> " scope=\"public\">"]
         <> ["     <model package2=" <> tshow packageId2 <> " package=" <> tshow packageId0 <> " tpos=\"0\" ea_eleType=\"package\"/>"]
         <> ["    </element>"]
         <> customReqElements
@@ -89,7 +89,7 @@ fSpec2UML env fSpec =
            ]
   where
     classDiag = cdAnalysis False fSpec fSpec
-    contextName = cdName classDiag
+    contextName = name classDiag
     allConcs = ooCpts classDiag
     classNames = map name (classes classDiag)
     datatypeNames :: [Name]
@@ -105,18 +105,18 @@ genUMLRequirement req =
 genUMLDatatype :: Name -> UML
 genUMLDatatype nm =
   do
-    datatypeId <- refLabeledId . text1ToText . tName $ nm
+    datatypeId <- refLabeledId . fullName $ nm
     addToDiagram datatypeId
-    return ["    <packagedElement xmi:type=\"uml:DataType\" xmi:id=\"" <> datatypeId <> "\" name=\"" <> (text1ToText . tName) nm <> "\" visibility=\"public\"/> "]
+    return ["    <packagedElement xmi:type=\"uml:DataType\" xmi:id=\"" <> datatypeId <> "\" name=\"" <> fullName nm <> "\" visibility=\"public\"/> "]
 
 genUMLClass :: Class -> UML
 genUMLClass cl =
   do
-    classId <- refLabeledId . text1ToText . tName $ clName cl
+    classId <- refLabeledId . fullName $ clName cl
     addToDiagram classId
     attributesUML <- mapM genUMAttribute (clAtts cl)
     return $
-      ["    <packagedElement xmi:type=\"uml:Class\" xmi:id=\"" <> classId <> "\" name=\"" <> (text1ToText . tName) (clName cl) <> "\" visibility=\"public\">"]
+      ["    <packagedElement xmi:type=\"uml:Class\" xmi:id=\"" <> classId <> "\" name=\"" <> fullName (clName cl) <> "\" visibility=\"public\">"]
         <> concat attributesUML
         <> ["    </packagedElement>"]
 
@@ -126,9 +126,9 @@ genUMAttribute (OOAttr nm attrType isOptional) =
     attrId <- mkUnlabeledId "Attr"
     lIntId <- mkUnlabeledId "Int"
     uIntId <- mkUnlabeledId "Int"
-    classId <- refLabeledId . text1ToText . tName $ attrType
+    classId <- refLabeledId . fullName $ attrType
     return
-      [ "       <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\"" <> attrId <> "\" name=\"" <> (text1ToText . tName) nm <> "\" visibility=\"public\" isStatic=\"false\""
+      [ "       <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\"" <> attrId <> "\" name=\"" <> fullName nm <> "\" visibility=\"public\" isStatic=\"false\""
           <> " isReadOnly=\"false\" isDerived=\"false\" isOrdered=\"false\" isUnique=\"true\" isDerivedUnion=\"false\">",
         "        <type xmi:idref=\"" <> classId <> "\"/>",
         "        <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\"" <> lIntId <> "\" value=\"" <> (if isOptional then "0" else "1") <> "\"/>",
@@ -140,10 +140,10 @@ genUMLAssociation :: Association -> UML
 genUMLAssociation ass =
   do
     assocId <- mkUnlabeledId "Assoc"
-    lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (text1ToText . tName $ assSrc ass)
-    rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (text1ToText . tName $ assTgt ass)
+    lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (fullName $ assSrc ass)
+    rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (fullName $ assTgt ass)
     return $
-      [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\"" <> assocId <> "\" name=\"" <> maybe "" (text1ToText . tName) (assrhr ass) <> "\" visibility=\"public\">"
+      [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\"" <> assocId <> "\" name=\"" <> maybe "" fullName (assrhr ass) <> "\" visibility=\"public\">"
       ]
         <> lMemberAndOwnedEnd
         <> rMemberAndOwnedEnd
@@ -246,13 +246,13 @@ requirements env fSpec =
   where
     decl2req d =
       Req
-        { reqId = (text1ToText . tName) d,
+        { reqId = fullName d,
           reqOrig = Right d,
           reqPurposes = purposesOf fSpec (outputLang env fSpec) d
         }
     rule2req r =
       Req
-        { reqId = (text1ToText . tName) r,
+        { reqId = fullName r,
           reqOrig = Left r,
           reqPurposes = purposesOf fSpec (outputLang env fSpec) r
         }

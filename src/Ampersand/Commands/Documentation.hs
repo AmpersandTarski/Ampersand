@@ -20,7 +20,7 @@ doGenDocument fSpec = do
   env <- ask
   fspecFormat <- view fspecFormatL
   now <- getCurrentTime
-  logInfo $ "Generating functional design document for " <> (display . text1ToText . tName) fSpec <> "..."
+  logInfo $ "Generating functional design document for " <> (display . fullName) fSpec <> "..."
   logDebug $ "Requested chapters: " <> displayShow (view chaptersL env)
   let (thePandoc, thePictures) = fSpec2Pandoc env now fSpec
   -- First we need to output the pictures, because they should be present

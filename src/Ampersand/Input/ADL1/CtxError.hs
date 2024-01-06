@@ -265,7 +265,7 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
             <> T.concat ["\n  - " <> showA l | l <- lst]
     where
       showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
-      showP_T (p, (src, tgt)) = (text1ToText . tName) p <> "[" <> showC src <> "*" <> showC tgt <> "]"
+      showP_T (p, (src, tgt)) = fullName p <> "[" <> showC src <> "*" <> showC tgt <> "]"
         where
           showC Nothing = "???"
           showC (Just tp) = showA tp
@@ -349,7 +349,7 @@ uniqueNames nameclass = uniqueBy name messageFor
     messageFor x =
       CTXE
         (origin $ NE.head x)
-        ( "Every " <> nameclass <> " must have a unique name. " <> (tshow . name) (NE.head x) <> ", however, is used at:"
+        ( "Every " <> nameclass <> " must have a unique name. " <> fullName (NE.head x) <> ", however, is used at:"
             <> T.intercalate "\n    " (NE.toList $ fmap (tshow . origin) x)
             <> "."
         )
@@ -425,7 +425,7 @@ mkEndoPropertyError orig ps =
 mkMultipleInterfaceError :: Text -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =
   CTXE (origin ifc) $
-    "Multiple interfaces named " <> tshow (name ifc) <> " for role " <> tshow role' <> ":"
+    "Multiple interfaces named " <> fullName ifc <> " for role " <> tshow role' <> ":"
       <> T.intercalate "\n    " (map (tshow . origin) (ifc : duplicateIfcs))
 
 mkInvalidCRUDError :: Origin -> Text1 -> CtxError
@@ -451,8 +451,8 @@ mkInvariantViolationsError applyViolText (r, ps) =
     violationMessage =
       T.unlines $
         [ if length ps == 1
-            then "There is a violation of RULE " <> tshow (name r) <> ":"
-            else "There are " <> tshow (length ps) <> " violations of RULE " <> tshow (name r) <> ":"
+            then "There is a violation of RULE " <> fullName r <> ":"
+            else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
         ]
           <> (map ("  " <>) . listPairs 10 . toList $ ps)
     listPairs :: Int -> [AAtomPair] -> [Text]
@@ -470,18 +470,18 @@ mkInterfaceRefCycleError cyclicIfcs =
       <> (T.unlines . NE.toList $ fmap showIfc cyclicIfcs)
   where
     showIfc :: Interface -> Text
-    showIfc i = "- " <> tshow (name i) <> " at position " <> tshow (origin i)
+    showIfc i = "- " <> fullName i <> " at position " <> tshow (origin i)
 
 mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
     P_BoxItemTerm {} ->
       CTXE (origin objDef) $
-        "Incompatible interface reference " <> tshow ref
+        "Incompatible interface reference " <> fullName ref
           <> " at field "
           <> maybe "without a label" tshow (obj_PlainName objDef)
           <> ":\nReferenced interface "
-          <> tshow ref
+          <> fullName ref
           <> " has type "
           <> (text1ToText . showWithAliases) refSrc
           <> ", which is not comparable to the target "
@@ -496,7 +496,7 @@ mkMultipleDefaultError vds =
       <> T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
   where
     showViewDef :: ViewDef -> Text
-    showViewDef vd = "VIEW " <> (text1ToText . tName) vd <> " (at " <> tshow (origin vd) <> ")"
+    showViewDef vd = "VIEW " <> fullName vd <> " (at " <> tshow (origin vd) <> ")"
     cpt = case nubOrd . NE.toList . fmap vdcpt $ vds of
       [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
       [c] -> c
@@ -507,15 +507,15 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
     P_BoxItemTerm {} ->
       CTXE (origin objDef) $
-        "Incompatible view annotation <" <> (text1ToText . tName) viewId <> "> at field "
+        "Incompatible view annotation <" <> fullName viewId <> "> at field "
           <> maybe "without a label" tshow (obj_PlainName objDef)
           <> ":"
           <> "\nView "
           <> tshow viewId
           <> " has type "
-          <> (text1ToText . tName) viewCptStr
+          <> fullName viewCptStr
           <> ", which should be equal to or more general than the target "
-          <> (text1ToText . tName) viewRefCptStr
+          <> fullName viewRefCptStr
           <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleViewError."
 
@@ -531,7 +531,7 @@ mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxErro
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
   CTXE (origin ifc) . T.intercalate "\n  " $
     [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-      "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for interface `" <> (text1ToText . tName) ifc <> "`, however is " <> tshow tt <> "."
+      "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for interface `" <> fullName ifc <> "`, however is " <> tshow tt <> "."
     ]
 
 mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
@@ -547,10 +547,10 @@ class ErrorConcept a where
   showEC :: a -> Text
 
 instance ErrorConcept (P_ViewD a) where
-  showEC x = showP (vd_cpt x) <> " given in VIEW " <> (text1ToText . tName) x
+  showEC x = showP (vd_cpt x) <> " given in VIEW " <> fullName x
 
 instance ErrorConcept P_IdentDef where
-  showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> (text1ToText . tName) x
+  showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> fullName x
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
@@ -672,7 +672,7 @@ mkCaseProblemWarning x y =
     T.intercalate
       "\n    "
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
-        tshow (typeOf x) <> " `" <> (text1ToText . tName) x <> "` and `" <> (text1ToText . tName) y <> "`."
+        tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."
       ]
 
 mkParserStateWarning :: Origin -> Text -> Warning

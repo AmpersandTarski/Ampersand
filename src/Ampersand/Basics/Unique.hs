@@ -4,7 +4,7 @@
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where
- showUnique = tName
+ showUnique = fullName1
 -}
 
 module Ampersand.Basics.Unique

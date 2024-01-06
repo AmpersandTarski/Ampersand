@@ -26,7 +26,7 @@ exportAsAdl fSpec = case originalContext fSpec of
   Nothing -> logInfo "To generate a data analysis script, your model should contain a context, but it contains a module."
   Just ctx -> do
     env <- ask
-    logDebug $ "Generating data analysis script (ADL) for " <> (display . text1ToText . tName) fSpec <> "..."
+    logDebug $ "Generating data analysis script (ADL) for " <> (display . fullName) fSpec <> "..."
     liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile' env))
     writeFileUtf8 (outputFile' env) (showA ctx)
     logInfo $ ".adl-file written to: " <> display (T.pack $ outputFile' env)

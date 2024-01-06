@@ -140,7 +140,7 @@ addRelations pCtx = enrichedContext
         recur :: [P_Concept] -> [P_Relation] -> [P_Population] -> [(P_Concept, Set.Set P_Concept)] -> ([P_Relation], [P_Population])
         recur seen unseenrels unseenpops ((g, specs) : invGens) =
           if g `elem` seen
-            then fatal ("Concept " <> (text1ToText . tName) g <> " has caused a cycle error.")
+            then fatal ("Concept " <> fullName g <> " has caused a cycle error.")
             else recur (g : seen) (genericRels <> remainder) (genericPops <> remainPop) invGens
           where
             sameNameTargetRels :: [NE.NonEmpty P_Relation]

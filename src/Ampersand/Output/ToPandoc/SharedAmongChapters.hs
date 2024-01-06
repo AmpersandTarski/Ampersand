@@ -124,7 +124,7 @@ hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Eithe
 hyperTarget env fSpec a =
   case a of
     XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
-    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . text1ToText . tName) pat
+    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . fullName) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
     XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
     --   Left $ divWith (xSafeLabel a,[],[])
@@ -133,7 +133,7 @@ hyperTarget env fSpec a =
     --                         ("", ["adl"],[("caption",tshow d)])
     --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
     --                  )
-    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow . name $ r)
+    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . fullName $ r)
     --   Left $ divWith (xSafeLabel a,[],[])
     --                  (   (para . text $ tshow r)
     --                  --  <>codeBlockWith
@@ -246,13 +246,13 @@ instance Hashable Ident where
 
 instance Show Ident where
   show ident = T.unpack $ case ident of
-    IdentByName nm -> text1ToText . tName $ nm
+    IdentByName nm -> fullName $ nm
     IdentRel nm src tgt ->
-      (text1ToText . tName) nm
+      fullName nm
         <> "["
         <> ( if src == tgt
-               then (text1ToText . tName) src
-               else (text1ToText . tName) src <> "*" <> (text1ToText . tName) tgt
+               then fullName src
+               else fullName src <> "*" <> fullName tgt
            )
         <> "]"
     IdentOverig -> ":overig"
@@ -474,7 +474,7 @@ orderingByTheme env fSpec =
             cCptPurps = purposesOf fSpec (outputLang env fSpec) c
           }
       where
-        c = PlainConcept ((acdname cpt, acdlabel cpt) NE.:| [])
+        c = PlainConcept ((name cpt, acdlabel cpt) NE.:| [])
 
 dpRule' ::
   (HasDocumentOpts env) =>

@@ -178,7 +178,7 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
           name x < name y
       ]
       where
-        toUpperName = T.toUpper . text1ToText . tName
+        toUpperName = T.toUpper . fullName
 
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign ci (P_Sign src tgt) = Sign (pCpt2aCpt ci src) (pCpt2aCpt ci tgt)
@@ -756,7 +756,7 @@ pCtx2aCtx
                 map (mkCrudWarning pc) $
                   [ [ "'C' was specified, but the term ",
                       "  " <> showA expr,
-                      "doesn't allow for the creation of a new atom at its target concept (" <> (text1ToText . tName . target) expr <> ") "
+                      "doesn't allow for the creation of a new atom at its target concept (" <> (fullName . target) expr <> ") "
                     ]
                       <> [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
                            | isFitForCrudU expr,
@@ -778,7 +778,7 @@ pCtx2aCtx
                        ]
                     <> [ [ "'D' was specified, but the term ",
                            "  " <> showA expr,
-                           "doesn't allow for the deletion of an atom from its target concept (" <> (text1ToText . tName . target) expr <> ") "
+                           "doesn't allow for the deletion of an atom from its target concept (" <> (fullName . target) expr <> ") "
                          ]
                          | 'D' `elem` T.unpack crd && not (isFitForCrudD expr)
                        ]
@@ -917,7 +917,7 @@ pCtx2aCtx
                                 ifcRoles = ifc_Roles pIfc,
                                 ifcObj =
                                   o
-                                    { objPlainName = Just . tName . name $ pIfc,
+                                    { objPlainName = Just . fullName1 . name $ pIfc,
                                       objlbl = Nothing
                                     },
                                 ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
@@ -1083,9 +1083,9 @@ pCtx2aCtx
                       rrmsg = [],
                       rrviol =
                         Just . PairView $
-                          PairViewText pos' ("{EX} " <> command <> ";" <> tshow (name rel) <> ";" <> (tshow . name . source) rel <> ";")
+                          PairViewText pos' ("{EX} " <> command <> ";" <> fullName rel <> ";" <> fullName (source rel) <> ";")
                             NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
-                                    PairViewText pos' $ ";" <> (tshow . name . target) rel <> ";",
+                                    PairViewText pos' $ ";" <> fullName (target rel) <> ";",
                                     PairViewExp pos' Tgt (EDcI (target rel))
                                   ],
                       rrpat = mPat,
@@ -1188,7 +1188,7 @@ leastConcept genLattice c str =
   case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
     (True, _) -> c
     (_, True) -> str
-    (_, _) -> fatal ("Either " <> (text1ToText . tName) c <> " or " <> (text1ToText . tName) str <> " should be a subset of the other.")
+    (_, _) -> fatal ("Either " <> fullName c <> " or " <> fullName str <> " should be a subset of the other.")
   where
     leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
 

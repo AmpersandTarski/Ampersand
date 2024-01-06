@@ -160,7 +160,7 @@ mkArchiContext [archiRepo] pops = do
           $ pops
         where
           isRelevant :: ArchiGrain -> Bool
-          isRelevant ag = (text1ToText . tName . grainRel) ag `L.notElem` ["inside", "inView"]
+          isRelevant ag = (fullName . grainRel) ag `L.notElem` ["inside", "inView"]
           inView :: ArchiGrain -> Bool
           inView ag = case archiViewname ag of
             Nothing -> False

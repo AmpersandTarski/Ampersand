@@ -65,7 +65,7 @@ class CDAnalysable a where
 buildClass :: FSpec -> A_Concept -> Class
 buildClass fSpec root =
   case classOf fSpec root of
-    Nothing -> fatal $ "Concept is not a class: `" <> (text1ToText . tName) root <> "`."
+    Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
     Just exprs ->
       OOClass
         { clName = name root,

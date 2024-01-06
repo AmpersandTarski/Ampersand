@@ -98,8 +98,8 @@ ruleFromIdentity identity =
         toMeaning lang =
           Meaning . Markup lang . string2Blocks ReST $
             case lang of
-              English -> "Identity rule, following from identity " <> (text1ToText . tName) identity
-              Dutch -> "Identiteitsregel, volgend uit identiteit " <> (text1ToText . tName) identity
+              English -> "Identity rule, following from identity " <> fullName identity
+              Dutch -> "Identiteitsregel, volgend uit identiteit " <> fullName identity
 
 instance (Eq a, Language a) => Language [a] where
   relsDefdIn = Set.unions . map relsDefdIn

@@ -113,7 +113,7 @@ instance JSON SubInterface JSONSubInterface where
         JSONSubInterface
           { subJSONboxHeader = Nothing,
             subJSONifcObjects = Nothing,
-            subJSONrefSubInterfaceName = Just . text1ToText . escapeIdentifier . tName . siIfcId $ si,
+            subJSONrefSubInterfaceName = Just . text1ToText . escapeIdentifier . fullName1 . siIfcId $ si,
             subJSONrefIsLinkTo = Just . siIsLink $ si
           }
 
@@ -134,7 +134,7 @@ instance JSON TemplateKeyValue JSONTemplateKeyValue where
 instance JSON Interface JSONInterface where
   fromAmpersand env fSpec interface =
     JSONInterface
-      { ifcJSONname = text1ToText . tName $ interface,
+      { ifcJSONname = fullName $ interface,
         ifcJSONlabel = label interface,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
         ifcJSONisAPI = ifcIsAPI interface
@@ -176,7 +176,7 @@ instance JSON BoxItem JSONObjectDef where
           { ifcobjJSONtype = "ObjExpression",
             ifcobjJSONname = maybe "" (text1ToText . escapeIdentifier) (objPlainName object),
             ifcobjJSONlabel = maybe "" text1ToText (objPlainName object),
-            ifcobjJSONviewName = text1ToText . tName <$> viewToUse,
+            ifcobjJSONviewName = fullName <$> viewToUse,
             ifcobjJSONNormalizationSteps = Just $ showPrf showA . cfProof . objExpression $ object,
             ifcobjJSONrelation = tshow . fst <$> mEditableDecl,
             ifcobjJSONrelationIsFlipped = fmap snd mEditableDecl,

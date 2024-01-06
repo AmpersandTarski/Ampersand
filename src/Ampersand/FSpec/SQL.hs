@@ -162,7 +162,7 @@ maybeSpecialCase fSpec expr =
         Just
           . traceComment
             [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))",
-              "  this is an optimized case for: " <> (text1ToText . tName) r <> (text1ToText . showSign) r <> " [TOT]."
+              "  this is an optimized case for: " <> fullName r <> (text1ToText . showSign) r <> " [TOT]."
             ]
           $ let col =
                   Col
@@ -210,7 +210,7 @@ maybeSpecialCase fSpec expr =
               <> (if isFlipped' then "flipped " else "")
               <> "complement of "
               <> ( case expr2 of
-                     (EDcD dcl) -> "`" <> (text1ToText . tName) dcl <> "`"
+                     (EDcD dcl) -> "`" <> fullName dcl <> "`"
                      _ -> "<expr2>"
                  )
               <> ".",
@@ -260,7 +260,7 @@ maybeSpecialCase fSpec expr =
               let (plug, relstore) = getRelationTableInfo fSpec rel
                   s = QName . sqlColumNameToString . attSQLColName . rsSrcAtt $ relstore
                   t = QName . sqlColumNameToString . attSQLColName . rsTrgAtt $ relstore
-                  lt = TRSimple [QName (T.unpack . text1ToText . tName $ plug)] `as` table2
+                  lt = TRSimple [QName (T.unpack . fullName $ plug)] `as` table2
                in if isFlipped'
                     then (t, s, lt)
                     else (s, t, lt)
@@ -757,7 +757,7 @@ nonSpecialSelectExpr fSpec expr =
       let (psrc, fsrc) = fun s
           (ptgt, ftgt) = fun t
           fun :: A_Concept -> (Name, Name)
-          fun cpt = ((QName . T.unpack . text1ToText . tName) plug, (QName . sqlColumNameToString . attSQLColName) att)
+          fun cpt = ((QName . T.unpack . fullName) plug, (QName . sqlColumNameToString . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
        in traceComment ["case: (EDcV (Sign s t))"] $
@@ -964,7 +964,7 @@ nonSpecialSelectExpr fSpec expr =
             posName = Name "pos"
             closedWorldName =
               QName . T.unpack $
-                "cartesian product of " <> (text1ToText . tName . source $ e) <> " and " <> (text1ToText . tName . target $ e)
+                "cartesian product of " <> (fullName . source $ e) <> " and " <> (fullName . target $ e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     EKl1 _ -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
@@ -1139,7 +1139,7 @@ selectRelation fSpec dcl =
                 cAlias = [],
                 cSpecial = Nothing
               },
-          bseTbl = [TRSimple [QName . T.unpack . text1ToText . tName $ plug]],
+          bseTbl = [TRSimple [QName . T.unpack . fullName $ plug]],
           bseWhr =
             Just . conjunctSQL . map notNull $
               [Iden [QName . sqlColumNameToString . attSQLColName $ c] | c <- nub [s, t]]
@@ -1326,7 +1326,7 @@ sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . T.unpack . text1ToText . tName . getConceptTableFor fSpec
+sqlConcept fSpec = QName . T.unpack . fullName . getConceptTableFor fSpec
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
@@ -1334,7 +1334,7 @@ sqlAttConcept fSpec c
   | otherwise =
     case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
          ] of
-      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> text1ToText (tName fSpec) <> "\"")
+      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> text1ToText (fullName1 fSpec) <> "\"")
       h : _ -> QName . sqlColumNameToString . attSQLColName $ h
 
 stringOfName :: Name -> Text

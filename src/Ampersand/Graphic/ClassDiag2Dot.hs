@@ -76,7 +76,7 @@ classdiagram2dot env cd =
         }
       where
         nameLabel :: Named a => a -> TL.Text
-        nameLabel = TL.fromStrict . text1ToText . tName
+        nameLabel = TL.fromStrict . fullName
         nm = fst x
         notInClassNodes :: Name -> Bool
         notInClassNodes n = n `notElem` nodes classesInGroup
@@ -113,7 +113,7 @@ classdiagram2dot env cd =
                             [ Html.Font
                                 [ Html.Color (X11Color White)
                                 ]
-                                [Html.Str . fromString . T.unpack . text1ToText . tName $ cl]
+                                [Html.Str . fromString . T.unpack . fullName $ cl]
                             ]
                         )
                     ]
@@ -126,13 +126,13 @@ classdiagram2dot env cd =
               Html.Cells
                 [ Html.LabelCell
                     [ Html.Align Html.HLeft,
-                      Html.Port . PN . fromString . T.unpack . text1ToText . tName $ a
+                      Html.Port . PN . fromString . T.unpack . fullName $ a
                     ]
                     ( Html.Text
                         [ Html.Str (fromString (if attOptional a then "o " else "+ ")),
-                          Html.Str . fromString . T.unpack . text1ToText . tName $ a,
+                          Html.Str . fromString . T.unpack . fullName $ a,
                           Html.Str (fromString " : "),
-                          Html.Str . fromString . T.unpack . text1ToText . tName . attTyp $ a
+                          Html.Str . fromString . T.unpack . fullName . attTyp $ a
                         ]
                     )
                 ]
@@ -153,7 +153,7 @@ classdiagram2dot env cd =
         { nodeID = x,
           nodeAttributes =
             [ Shape Box3D,
-              Label . StrLabel . fromString . T.unpack . text1ToText . tName $ x
+              Label . StrLabel . fromString . T.unpack . fullName $ x
             ]
         }
 
@@ -179,10 +179,10 @@ classdiagram2dot env cd =
             [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)]), -- No arrowHead
               HeadLabel (mult2Lable (assrhm ass)),
               TailLabel (mult2Lable (asslhm ass)),
-              Label . StrLabel . fromString . T.unpack . maybe mempty (text1ToText . tName) . assrhr $ ass,
+              Label . StrLabel . fromString . T.unpack . maybe mempty fullName . assrhr $ ass,
               LabelFloat True
             ]
-              ++ [TailPort (LabelledPort (PN . fromString . T.unpack . text1ToText . tName . assSrcPort $ ass) Nothing)]
+              ++ [TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)]
         }
       where
         mult2Lable = StrLabel . fromString . mult2Str

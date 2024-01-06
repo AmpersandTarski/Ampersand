@@ -21,7 +21,7 @@ validateRulesSQL fSpec = do
     viols -> exitWith . ViolationsInDatabase . map toTexts $ viols
       where
         toTexts :: (Rule, AAtomPairs) -> (Text, [Text])
-        toTexts (rule, pairs) = (text1ToText . tName $ rule, f <$> toList pairs)
+        toTexts (rule, pairs) = (fullName rule, f <$> toList pairs)
           where
             f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
 
@@ -71,7 +71,7 @@ getAllInterfaceExps fSpec =
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp . toList $ vrules fSpec `Set.union` grules fSpec
   where
-    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> tshow (name rule))
+    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> fullName rule)
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Set.union` grules fSpec
@@ -79,7 +79,7 @@ getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Se
     getPairViewExps r = case rrviol r of
       Nothing -> []
       Just (PairView pvsegs) ->
-        [ (expr, "violation view for rule " <> tshow (name r))
+        [ (expr, "violation view for rule " <> fullName r)
           | PairViewExp _ _ expr <- NE.toList pvsegs
         ]
 
@@ -87,7 +87,7 @@ getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
   where
     getIdExps identity =
-      [ (objExpression objDef, "identity " <> tshow (name identity))
+      [ (objExpression objDef, "identity " <> fullName identity)
         | IdentityExp objDef <- NE.toList $ identityAts identity
       ]
 
@@ -95,7 +95,7 @@ getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
   where
     getViewExps x =
-      [ (expr, "view " <> tshow (name x))
+      [ (expr, "view " <> fullName x)
         | ViewExp expr <- fmap vsmLoad (vdats x)
       ]
 

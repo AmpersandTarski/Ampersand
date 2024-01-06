@@ -70,7 +70,7 @@ separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty Name where
-  pretty = text . T.unpack . tshow
+  pretty = text . T.unpack . fullName
 
 instance Pretty Label where
   pretty (Label x) = text "LABEL" <~> (text . T.unpack . tshow) x
