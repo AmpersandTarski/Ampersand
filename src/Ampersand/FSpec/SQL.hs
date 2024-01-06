@@ -260,7 +260,7 @@ maybeSpecialCase fSpec expr =
               let (plug, relstore) = getRelationTableInfo fSpec rel
                   s = QName . sqlColumNameToString . attSQLColName . rsSrcAtt $ relstore
                   t = QName . sqlColumNameToString . attSQLColName . rsTrgAtt $ relstore
-                  lt = TRSimple [QName (T.unpack . fullName $ plug)] `as` table2
+                  lt = TRSimple [QName (T.unpack . text1ToText . showUnique $ plug)] `as` table2
                in if isFlipped'
                     then (t, s, lt)
                     else (s, t, lt)
@@ -757,7 +757,7 @@ nonSpecialSelectExpr fSpec expr =
       let (psrc, fsrc) = fun s
           (ptgt, ftgt) = fun t
           fun :: A_Concept -> (Name, Name)
-          fun cpt = ((QName . T.unpack . fullName) plug, (QName . sqlColumNameToString . attSQLColName) att)
+          fun cpt = ((QName . T.unpack . text1ToText . showUnique) plug, (QName . sqlColumNameToString . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
        in traceComment ["case: (EDcV (Sign s t))"] $
@@ -1139,7 +1139,7 @@ selectRelation fSpec dcl =
                 cAlias = [],
                 cSpecial = Nothing
               },
-          bseTbl = [TRSimple [QName . T.unpack . fullName $ plug]],
+          bseTbl = [TRSimple [QName . T.unpack . text1ToText . showUnique $ plug]],
           bseWhr =
             Just . conjunctSQL . map notNull $
               [Iden [QName . sqlColumNameToString . attSQLColName $ c] | c <- nub [s, t]]
@@ -1326,7 +1326,7 @@ sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . T.unpack . fullName . getConceptTableFor fSpec
+sqlConcept fSpec = QName . T.unpack . text1ToText . showUnique . getConceptTableFor fSpec
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c

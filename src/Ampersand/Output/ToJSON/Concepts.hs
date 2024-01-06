@@ -71,7 +71,7 @@ instance JSON FSpec Concepts where
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
-      { cptJSONname = fullName $ cpt,
+      { cptJSONname = fullName cpt,
         cptJSONlabel = label cpt,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
         cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts (vgens fSpec) $ cpt,
@@ -92,12 +92,12 @@ instance JSON A_Concept Concept where
 instance JSON A_Concept TableCols where
   fromAmpersand _ fSpec cpt =
     TableCols
-      { tclJSONname = fullName cptTable,
+      { tclJSONname = tshow (sqlname cptTable),
         tclJSONcols = case L.nub . map fst $ cols of
           [t] ->
             if t == cptTable
               then map (text1ToText . sqlColumNameToText1 . attSQLColName . snd) cols
-              else fatal $ "Table names should match: " <> fullName t <> " " <> fullName cptTable <> "."
+              else fatal $ "Table names should match: " <> tshow (sqlname t) <> " " <> tshow (sqlname cptTable) <> "."
           _ -> fatal "All concepts in a typology should be in exactly one table."
       }
     where

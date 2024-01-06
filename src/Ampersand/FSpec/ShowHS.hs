@@ -81,7 +81,7 @@ instance (ShowHSName a, ShowHSName b) => ShowHSName (a, b) where
 --   instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
 --    showHS env indent (a,b) = "("<>showHS env (indent<>" ") a<>","<>showHS env (indent<>" ") b<>")"
 instance ShowHSName PlugSQL where
-  showHSName plug = haskellIdentifier . fullName1 . prependToPlainName "plug_" $ name plug
+  showHSName plug = "plug_" <> text1ToText (showUnique plug)
 
 instance ShowHS PlugSQL where
   showHS env indent plug =
@@ -97,7 +97,7 @@ instance ShowHS PlugSQL where
                 ]
               <> indent
               <> "in",
-            "TblSQL { sqlname    = " <> fullName plug,
+            "TblSQL { sqlname    = " <> tshow (sqlname plug),
             "       , attributes = [" <> T.intercalate ", " (map showHSName (attributes plug)) <> "]",
             "       , cLkpTbl    = [ " <> T.intercalate (indent <> "                      , ") ["(" <> showHSName c <> ", " <> showHSName cn <> ")" | (c, cn) <- cLkpTbl plug] <> "]",
             "       , dLkpTbl    = [ "
@@ -118,7 +118,7 @@ instance ShowHS PlugSQL where
                 ]
               <> indent
               <> "in",
-            "BinSQL { sqlname = " <> fullName plug,
+            "BinSQL { sqlname = " <> tshow (sqlname plug),
             "       , cLkpTbl = [ " <> T.intercalate (indent <> "                   , ") ["(" <> showHSName c <> ", " <> showHSName cn <> ")" | (c, cn) <- cLkpTbl plug] <> "]",
             "       , dLkpTbl    = [ "
               <> T.intercalate
@@ -355,7 +355,7 @@ instance ShowHS FSpec where
              then ""
              else
                "\n -- *** PlugInfos (total: " <> (tshow . length . plugInfos) fSpec <> " plugInfos) ***: "
-                 <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` name) (plugInfos fSpec)]
+                 <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` showUnique) (plugInfos fSpec)]
                  <> "\n"
          )
       <> ( if null (instanceList fSpec :: [Pattern])
@@ -418,7 +418,7 @@ instance ShowHS MetaData where
   showHS f i (MetaData pos' nm val) = "MetaData (" <> showHS f i pos' <> ") " <> " " <> tshow nm <> " " <> tshow val
 
 instance ShowHSName PlugInfo where
-  showHSName (InternalPlug p) = haskellIdentifier . fullName1 . prependToPlainName "ipl_" $ name p
+  showHSName (InternalPlug p) = "ipl_" <> text1ToText (showUnique p)
 
 instance ShowHS PlugInfo where
   showHS _ _ (InternalPlug p) =

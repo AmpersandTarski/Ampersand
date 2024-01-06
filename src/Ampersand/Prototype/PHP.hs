@@ -281,5 +281,5 @@ createTempDatabase fSpec = do
               ) :
               ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
               where
-                query = insertQuery True (fullName $ plug) attrNames tblRecords
+                query = insertQuery True (tshow . sqlname $ plug) attrNames tblRecords
                 attrNames = attSQLColName <$> plugAttributes plug

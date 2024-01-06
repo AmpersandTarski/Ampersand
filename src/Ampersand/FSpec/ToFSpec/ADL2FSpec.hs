@@ -303,21 +303,22 @@ makeFSpec env context =
     --making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs = InternalPlug <$> mkUniqueNames (qlfname <$> makeGeneratedSqlPlugs env context)
-      where
-        qlfname :: PlugSQL -> PlugSQL
-        qlfname x = case T.uncons . view namespaceL $ env of
-          Nothing -> x
-          Just (c, tl) ->
-            x
-              { sqlname =
-                  withNameSpace
-                    [ case toNamePart (T.cons c tl) of
-                        Nothing -> fatal "Not a valid NamePart."
-                        Just np -> np
-                    ]
-                    $ name x
-              }
+    genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context
+    --      where
+    -- qlfname :: PlugSQL -> PlugSQL
+    -- qlfname x = case T.uncons . view namespaceL $ env of
+    --   Nothing -> x
+    --   Just (c, tl) ->
+    --     x
+    --       { sqlname =
+    --           withNameSpace
+    --             [ case toNamePart (T.cons c tl) of
+    --                 Nothing -> fatal "Not a valid NamePart."
+    --                 Just np -> np
+    --             ]
+    --             $ name x
+    --       }
+
     --TODO151210 -> Plug A is overbodig, want A zit al in plug r
     --CONTEXT Temp
     --PATTERN Temp
@@ -582,7 +583,7 @@ tblcontents ci ps plug =
                 ps' ->
                   fatal . T.unlines $
                     [ "There is an attempt to populate multiple values into ",
-                      "     the row of table `" <> fullName plug <> "`, where id = " <> tshow (showValADL a) <> ":",
+                      "     the row of table `" <> text1ToText (showUnique plug) <> "`, where id = " <> tshow (showValADL a) <> ":",
                       "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps'),
                       "",
                       "ps: " <> T.intercalate ("\n  |" <> tshow (length ps) <> " ") (fmap tshow ps),
@@ -599,17 +600,17 @@ simpleBoxHeader :: Origin -> BoxHeader
 simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
 
 -- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
-mkUniqueNames :: [PlugSQL] -> [PlugSQL]
-mkUniqueNames = go []
-  where
-    go :: [Name] -> [PlugSQL] -> [PlugSQL]
-    go taken xs =
-      [ p
-        | cl <- eqCl (T.toLower . fullName) xs,
-          p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-            if name (NE.head cl) `elem` taken || length cl > 1
-              then [setlocalName (postpend (tshow i) (localName p)) p | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
-              else NE.toList cl
-      ]
-    setlocalName :: NamePart -> PlugSQL -> PlugSQL
-    setlocalName np p = p {sqlname = updatedName np p}
+-- mkUniqueNames :: [PlugSQL] -> [PlugSQL]
+-- mkUniqueNames = go []
+--   where
+--     go :: [Name] -> [PlugSQL] -> [PlugSQL]
+--     go taken xs =
+--       [ p
+--         | cl <- eqCl (T.toLower . fullName) xs,
+--           p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+--             if name (NE.head cl) `elem` taken || length cl > 1
+--               then [setlocalName (postpend (tshow i) (localName p)) p | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
+--               else NE.toList cl
+--       ]
+--     setlocalName :: NamePart -> PlugSQL -> PlugSQL
+--     setlocalName np p = p {sqlname = updatedName np p}

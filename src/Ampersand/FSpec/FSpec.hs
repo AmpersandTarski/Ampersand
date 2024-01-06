@@ -280,11 +280,11 @@ dnf2expr dnf =
 newtype PlugInfo = InternalPlug PlugSQL
   deriving (Show, Eq, Typeable)
 
-instance Named PlugInfo where
-  name (InternalPlug psql) = name psql
+--instance Named PlugInfo where
+--  name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
-  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> fullName1 psql
+  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> showUnique psql
 
 instance ConceptStructure PlugInfo where
   concs (InternalPlug psql) = concs psql
@@ -303,7 +303,7 @@ data PlugSQL
     --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
     --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
     TblSQL
-      { sqlname :: !Name,
+      { sqlname :: !SqlColumName,
         -- | the first attribute is the concept table of the most general concept (e.g. Person)
         --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
         --   the remaining attributes represent attributes.
@@ -319,23 +319,23 @@ data PlugSQL
     --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
     --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
     BinSQL
-      { sqlname :: !Name,
+      { sqlname :: !SqlColumName,
         cLkpTbl :: ![(A_Concept, SqlAttribute)],
         dLkpTbl :: ![RelStore]
       }
   deriving (Show, Typeable)
 
-instance Named PlugSQL where
-  name = sqlname
+--instance Named PlugSQL where
+--  name = sqlname
 
 instance Eq PlugSQL where
   a == b = compare a b == EQ
 
 instance Unique PlugSQL where
-  showUnique = fullName1
+  showUnique = sqlColumNameToText1 . sqlname
 
 instance Ord PlugSQL where
-  compare x y = compare (name x) (name y)
+  compare x y = compare (sqlname x) (sqlname y)
 
 plugAttributes :: PlugSQL -> NE.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
