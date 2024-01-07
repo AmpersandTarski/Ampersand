@@ -317,7 +317,7 @@ disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
     firstPart = T.take maxLengthOfDatabaseTableName . fullName $ x
 
 gitLikeSha :: ConceptOrRelation -> Text
-gitLikeSha = T.take shaLength . tshow . abs . hash . hashText
+gitLikeSha = T.reverse . T.take shaLength . T.reverse . tshow . abs . hash . hashText
 
 hashText :: ConceptOrRelation -> Text
 hashText x = case x of
