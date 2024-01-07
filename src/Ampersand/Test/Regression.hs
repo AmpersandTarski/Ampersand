@@ -12,6 +12,7 @@ import Conduit
 import Data.Yaml
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.ByteString.Lazy.Partial as BLPartial
+import RIO.List as L
 import RIO.Process
 import qualified RIO.Text as T
 import System.Directory
@@ -108,7 +109,7 @@ doTestsInDir = awaitForever once
   where
     once x = do
       lift . logInfo $ ">> " <> displayShow (traversalNr x) <> ": " <> (display . T.pack $ path x)
-      let candidates = filter isCandidate (filesOf . dirContent $ x)
+      let candidates = L.sort . filter isCandidate . filesOf . dirContent $ x
             where
               isCandidate :: FilePath -> Bool
               isCandidate fp = "adl" `isExtensionOf` fp
