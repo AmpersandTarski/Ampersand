@@ -162,7 +162,7 @@ maybeSpecialCase fSpec expr =
         Just
           . traceComment
             [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))",
-              "  this is an optimized case for: " <> fullName r <> (text1ToText . showSign) r <> " [TOT]."
+              "  this is an optimized case for: " <> tshow r <> " [TOT]."
             ]
           $ let col =
                   Col
@@ -210,7 +210,7 @@ maybeSpecialCase fSpec expr =
               <> (if isFlipped' then "flipped " else "")
               <> "complement of "
               <> ( case expr2 of
-                     (EDcD dcl) -> "`" <> fullName dcl <> "`"
+                     (EDcD dcl) -> "`" <> tshow dcl <> "`"
                      _ -> "<expr2>"
                  )
               <> ".",
@@ -964,7 +964,7 @@ nonSpecialSelectExpr fSpec expr =
             posName = Name "pos"
             closedWorldName =
               QName . T.unpack $
-                "cartesian product of " <> (fullName . source $ e) <> " and " <> (fullName . target $ e)
+                "cartesian product of " <> (tshow . source $ e) <> " and " <> (tshow . target $ e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     EKl1 _ -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
@@ -1334,7 +1334,7 @@ sqlAttConcept fSpec c
   | otherwise =
     case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
          ] of
-      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> text1ToText (fullName1 fSpec) <> "\"")
+      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> fullName fSpec <> "\"")
       h : _ -> QName . sqlColumNameToString . attSQLColName $ h
 
 stringOfName :: Name -> Text
