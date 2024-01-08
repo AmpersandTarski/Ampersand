@@ -246,7 +246,7 @@ instance Hashable Ident where
 
 instance Show Ident where
   show ident = T.unpack $ case ident of
-    IdentByName nm -> fullName $ nm
+    IdentByName nm -> fullName nm
     IdentRel nm src tgt ->
       fullName nm
         <> "["

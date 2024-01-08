@@ -1432,7 +1432,7 @@ instance Named Type where
 
 instance Show Type where
   show a = T.unpack $ case a of
-    UserConcept (nm, _) -> fullName $ nm
+    UserConcept (nm, _) -> fullName nm
     BuiltIn tt -> "BuiltIn " <> tshow tt
     RepresentSeparator -> "RepresentSeparator"
 
