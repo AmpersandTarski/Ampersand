@@ -117,21 +117,21 @@ We use the term 'Concept' to refer to a class of Atoms.
 We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.
 +}
 
-PURPOSE RULE "Identifiability of concepts"
+PURPOSE RULE IdentifiableConcepts
 {+In order to identify and distinguish concepts, they have a name.
 Throughout the context, this name refers to that particular concept, so there cannot be two distinct concepts with the same name within a context.
 +}
-PURPOSE RULE "TOT in"
+PURPOSE RULE TOTin
 {+To ensure that pairs only exist in relations, Ampersand requires the totality of in.
 This rule is automated.
 When a relation ceases to exist, the application deletes all pairs in that relation.
 +}
-PURPOSE RULE "SUR lAtom and rAtom"
+PURPOSE RULE SURlAtomAndrAtom
 {+To ensure that atoms only exist in pairs, Ampersand automates the surjectivity of lAtom and rAtom.
 When an atom no longer resides in lAtom or rAtom, the application deletes that atom.
 +}
 
-PURPOSE RULE "equality on Atoms"
+PURPOSE RULE equalityAtoms
 {+
 For working with atoms, Ampersand only uses equality on atoms.
 The built-in equality on atoms uses the representation: two atoms that are in the population of the same concept are equal if their representations are equal.
@@ -149,7 +149,7 @@ PURPOSE RELATION isaPlus[Concept*Concept]
 +}
 
 RELATION eq[Atom*Atom]
-RULE "equality on Atoms" : eq = repr;repr~ /\ pop;(isa\/isa~)*;pop~
+RULE equalityAtoms LABEL "equality on Atoms" : eq = repr;repr~ /\ pop;(isa\/isa~)*;pop~
 MEANING "Two atoms are equal if their representations are equal and they share the same concept."
 
 -- The following are derivable relations
@@ -157,11 +157,6 @@ MEANING "Two atoms are equal if their representations are equal and they share t
 PURPOSE CONCEPT Typology
 {+Merriam-Webster defines a typology as ``a system used for putting things into groups according to how they are similar''.
 +}
-CONCEPT Typology "a hierarchy of Concepts"
-{-
-PURPOSE RULE "Integrity of Atoms and populations"
-{+It must be ensured that the representations of ((different) perceptions of) (different) real world entities can be properly distinguished. Any pair of Atoms in the same Concept are distinct (per definition). Thus, we need a rule that expresses when two Atoms that are in different Concepts represent the same (perception of) a real world entity.
-+}
--}
+CONCEPT Typology "A typology is a hierarchy of Concepts"
 
 ENDCONTEXT

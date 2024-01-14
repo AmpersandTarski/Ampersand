@@ -29,13 +29,13 @@ CONTEXT "RAP" IN ENGLISH
   RELATION isPublic[Interface] [PROP]
   MEANING "This property specifies if the interface is considered a public interface, i.e. accessible for everyone"
   
-    RULE "An interface is public when it is a root interface that is not assigned to a role" : isPublic = isRoot-(for;for~)
+  RULE InterfacePublic LABEL "An interface is public when it is a root interface that is not assigned to a role" : isPublic = isRoot-(for;for~)
   
   RELATION for[Interface*Role]   -- This is called ifcRoles[Interface*Role] in FormalAmpersand
   MEANING "The interface is assigned to a role and thereby only accessible for this/these role(s)"
   
   -- The following rule would be superfluous if the interface and its recursive content are separated (as in Interfaces.adl)
-    RULE "Only root interfaces can be assigned to a role" : I /\ for;for~ |- isRoot
+    RULE RootInterfaces LABEL "Only root interfaces can be assigned to a role" : I /\ for;for~ |- isRoot
   
   RELATION label[Interface*Txt] [UNI,TOT]
   MEANING "The textual representation of the interface as display in the user interface"
@@ -72,12 +72,12 @@ CONTEXT "RAP" IN ENGLISH
   RELATION refTo [RefIfc*Interface] [UNI,TOT]
   MEANING "Specifies the interface to which this reference interface refers to"
   
-  RULE "Reference interfaces must refer to root interfaces" : I /\ refTo~;refTo |- isRoot
+  RULE ReferenceInterfaces LABEL "Reference interfaces must refer to root interfaces" : I /\ refTo~;refTo |- isRoot
   
   RELATION isLinkTo [RefIfc] [PROP]
   MEANING "Specifies if this interface links to the referred interface (i.e. in the UI the referred interface is not expanded)"
   
-  RULE "The target concept of a reference interface term must have an object representation (i.e. not scalar)" : I[RefIfc];expr;tgt |-V;isObj
+  RULE ReferenceInterfacesTgt LABEL "The target concept of a reference interface term must have an object representation (i.e. not scalar)" : I[RefIfc];expr;tgt |-V;isObj
   
   -- CRUD rights of reference interfaces must be the same as the CRUD right of the interface it refers to
   RULE refTo;crudC     |- crudC
@@ -96,12 +96,12 @@ CONTEXT "RAP" IN ENGLISH
   RELATION subIfc[BoxIfc*Interface] [INJ]
   MEANING "A box interface can consists of sub interfaces"
   
-  RULE "Sub interfaces of a box ifc cannot be root interfaces" : I /\ subIfc~;subIfc |- -isRoot
+  RULE SubInterfaces LABEL "Sub interfaces of a box ifc cannot be root interfaces" : I /\ subIfc~;subIfc |- -isRoot
   
   RELATION template[BoxIfc*BoxClass] [UNI,TOT]
   MEANING "A box interface has a certain template of how to display it in the UI"
   
-  RULE "The target concept of a box interface term must have an object representation (i.e. not scalar)" : I[BoxIfc];expr;tgt |-V;isObj
+  RULE BoxInterfaceRepresentation LABEL "The target concept of a box interface term must have an object representation (i.e. not scalar)" : I[BoxIfc];expr;tgt |-V;isObj
   
 --[BOXCLASS]---------------------------------------------------------------------------------------
   CONCEPT BoxClass ""

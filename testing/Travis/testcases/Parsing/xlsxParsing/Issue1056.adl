@@ -8,5 +8,5 @@ RELATION r[A * B] [TOT]
 POPULATION r CONTAINS [ ("a1", "b1")
 --                      , ("a1", "b2") -- This is the additional pair that should be read from the .xlsx file
                       ]
-RULE moreThanOne: r |- r;-I[B]
+RULE moreThanOne : r |- r;-I[B]
 ENDCONTEXT

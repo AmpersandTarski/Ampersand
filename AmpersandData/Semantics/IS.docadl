@@ -127,15 +127,15 @@ PURPOSE RELATION equivalued[Query*Query]
 {+It makes sense to say that two queries are called equivalued.
 +}
 
-PURPOSE RULE "def equivalued"
+PURPOSE RULE defEquivalued
 {+In order to define true queries, we must introduce the word equivalued.
 +}
 
-PURPOSE RULE "def sat"
+PURPOSE RULE defSat
 {+The meaning of the word satisfy is given by:
 +}
 
-PURPOSE RULE "def true"
+PURPOSE RULE defTrue
 {+In order to define the notion of truth formally, we must introduce a technical definition.
 As the signature of an term defines the truth, we call that term true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
 +}

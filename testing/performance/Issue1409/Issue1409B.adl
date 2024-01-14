@@ -13,15 +13,15 @@ IDENT K : K(van, naar)
 RELATION a[Poort*A] [UNI,TOT]
 RELATION t[Poort*Type] [UNI,TOT]
 
-ROLE ExecEngine MAINTAINS "Define Bs", "Remove Bs"
+ROLE ExecEngine MAINTAINS DefineBs, RemoveBs
 
-RULE "Define Bs": van~;t \/ naar~;t |- a~;t
+RULE DefineBs LABEL "Define Bs": van~;t \/ naar~;t |- a~;t
 VIOLATION (TXT "{EX} NewStruct;Poort"
                ,TXT ";a;Poort;_NEW;A;", SRC I[A]
                ,TXT ";t;Poort;_NEW;Type;", TGT I[Type]
           )
 
-RULE "Remove Bs": I[Poort] |- a;(van~;t \/ naar~;t);t~
+RULE RemoveBs LABEL "Remove Bs": I[Poort] |- a;(van~;t \/ naar~;t);t~
 VIOLATION (TXT "{EX} DelAtom;Poort;", SRC I)
 
 RELATION link[Poort * Poort]

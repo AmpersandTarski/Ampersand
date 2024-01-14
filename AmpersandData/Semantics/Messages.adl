@@ -71,7 +71,7 @@ PATTERN Atoms -- This pattern is copied from FormalAmpersand
 
     REPRESENT Identifier TYPE ALPHANUMERIC
 
-    RULE "Identifiability of concepts": name;name~ |- I[Concept]
+    RULE IdentifiableConcepts LABEL "Identifiability of concepts" : name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT]
@@ -95,11 +95,11 @@ RELATION sub[Frame*Frame]
 PATTERN MessageTypeSystem LABEL "Message Type System"
     RELATION matchExists[Relation*Frame]
     MEANING "Registers a match between relation and frame"
-    PURPOSE RULE "Definition of matchExists"
+    PURPOSE RULE MatchExists
     {+ To allow shorter JSON messages, a frame does not have to specify its source and target concepts.
     In case this leads to ambiguity, the compiler must signal a mistake and refrain from generating code.
     +}
-    RULE "Definition of matchExists" :
+    RULE MatchExists LABEL "Definition of matchExists" :
          matchExists = name;name~     /\     -- names must match in all cases
                        source/source  /\     -- if the frame has a source, it must match
                        target/target         -- if the frame has a target, it must match
@@ -107,21 +107,21 @@ PATTERN MessageTypeSystem LABEL "Message Type System"
     
     RELATION uniqueMatch[Relation*Frame]
     MEANING "A relation matches to a frame if the type checker says so."
-    PURPOSE RULE "Definition of uniqueMatch"
+    PURPOSE RULE UniqueMatch
     {+ This relation allows the type checker to determine that there is precisely one match for every frame.
     If not, the compiler must signal a mistake and refrain from generating code.
     +}
-    RULE "Definition of uniqueMatch" :
+    RULE UniqueMatch LABEL "Definition of uniqueMatch" :
          uniqueMatch = matchExists - -I;matchExists
     MEANING "f is a unique match to r if there exists only one r for every f."
     
     RELATION acceptable[Service*Message]
     MEANING "A service can only consume a message if it is acceptable to that service."
-    PURPOSE RULE "Definition of acceptable"
+    PURPOSE RULE Acceptable
     {+ If a message contains pairs that do not fit into one of the relations of a service or if it fits in multiple relations, that service cannot interpret this message.
     This definition lets the type checker verify that all pairs will find "a home" inside the service.
     +}
-    RULE "Definition of acceptable" :
+    RULE Acceptable LABEL "Definition of acceptable" :
          acceptable = context~;uniqueMatch;(rel\/relFlp)~
     MEANING "A message is acceptable iff every frame in that message can be matched to one relation."
 ENDPATTERN

@@ -39,7 +39,7 @@ BOX[ "Mandaat"      : I
    ]
 
 PATTERN ToevoegenMandaat
-ROLE Bestuurder MAINTAINS mandaatRegel
+ROLE Bestuurder MAINTAINS Mandaatbesluit
 ENDPATTERN
 
 ENDCONTEXT

@@ -62,7 +62,7 @@ RULE loginChange: ingelogd;accLogin |- sessionLoginnaam
 MEANING "Wanneer de loginnaam van een gebruiker wijzigt gedurende een sessie, wijzigt de sessie-loginnaam mee."
 VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;", TGT I)
 
-RULE "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
+RULE usernamePasswordCombination LABEL "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
 ENDPATTERN

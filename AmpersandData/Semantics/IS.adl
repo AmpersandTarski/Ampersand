@@ -26,13 +26,13 @@ MEANING "We shall use the word equivalued to indicate that executing two queries
 
 CLASSIFY Term ISA Statement
 
-RULE "def equivalued" : equivalued = state;state~ /\ result<>result~
+RULE defEquivalued LABEL "def equivalued" : equivalued = state;state~ /\ result<>result~
 MEANING "Two queries are called equivalued if they produce exactly the same facts from the same state."
 
-RULE "def sat" : sat = state~;true;exp;characteristic~
+RULE defSat LABEL "def sat" : sat = state~;true;exp;characteristic~
 MEANING "For a rule $r$ to satisfy a state $s$ means: the query that executes the rule term of rule $r$ yields true."
 
-RULE "def true" : true = exp;signature;exp~;equivalued
+RULE defTrue LABEL "def true" : true = exp;signature;exp~;equivalued
 MEANING "A query is true if it is equivalued with a query of the signature of its term. I.e. its execution yields the same set of facts as does the signature executed on the same state."
 
 IDENT query : Query(exp, state)

@@ -136,8 +136,8 @@ REPRESENT MyName TYPE ALPHANUMERIC
 sessionMyName :: SESSION * MyName [UNI]
 MEANING "My name can be known in the current session."
 
-ROLE User MAINTAINS "Please click on 'Registration' to specify your name"
-RULE "Please click on 'Registration' to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
+ROLE User MAINTAINS ClickRegistration
+RULE ClickRegistration : "_SESSION LABEL "Please click on 'Registration' to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
 VIOLATION (TXT "You can find the 'Registration' item in the navigation bar (top of the screen).")
 
 INTERFACE Registration: "_SESSION"[SESSION] cRud BOX<TABLE>
@@ -145,8 +145,8 @@ INTERFACE Registration: "_SESSION"[SESSION] cRud BOX<TABLE>
    ]
 
 sayHelloReq :: SESSION * SESSION [PROP]
-ROLE ExecEngine MAINTAINS "Say hello when name is specified"
-RULE "Say hello when name is specified": "_SESSION"[SESSION] /\ sessionMyName;sessionMyName~ |- sayHelloReq
+ROLE ExecEngine MAINTAINS SayHello
+RULE SayHello: "_SESSION LABEL "Say hello when name is specified": "_SESSION"[SESSION] /\ sessionMyName;sessionMyName~ |- sayHelloReq
 VIOLATION (TXT "{EX} SetNavToOnCommit;/Hello_44__32_World"
           ,TXT "{EX} InsPair;sayHelloReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )

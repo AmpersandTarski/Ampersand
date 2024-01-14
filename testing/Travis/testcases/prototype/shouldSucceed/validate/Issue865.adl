@@ -6,7 +6,7 @@ POPULATION isSuccessorOf CONTAINS  [ ("Ass2", "Ass1") ]
 POPULATION isSuccessorOf CONTAINS  [ ("Ass3", "Ass2"), ("aap","aap") ]
 
 
-ROLE Iemand MAINTAINS NietSuccessorVanZichzelf
+ROLE "Iemand" MAINTAINS NietSuccessorVanZichzelf
 RULE NietSuccessorVanZichzelf : I[Assignment] |- -isSuccessorOf  
 
 ENDCONTEXT

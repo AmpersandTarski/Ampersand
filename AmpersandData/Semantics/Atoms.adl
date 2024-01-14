@@ -8,7 +8,7 @@ PATTERN Pairs
 ENDPATTERN
 
 PATTERN Atoms
-    RULE "Identifiability of concepts": name;name~ |- I[Concept]
+    RULE IdentifyConcepts LABEL "Identifiability of concepts" : name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
@@ -26,15 +26,15 @@ PATTERN ComputePopulations LABEL "Compute populations"
     RULE delPop : pop[Atom*Concept] |- lAtom~;in[Pair*Relation];source[Relation*Concept];isaStar \/ rAtom~;in[Pair*Relation];target[Relation*Concept];isaStar
     VIOLATION (TXT "{EX} DelPair;pop[Atom*Concept];Atom;", SRC I, TXT ";Concept;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "TOT in", "TOT in[Pair*Relation]"
-    RULE "TOT in" : I[Pair] |- in[Pair*Relation];in[Pair*Relation]~
+    ROLE ExecEngine MAINTAINS TOTin
+    RULE TOTin : I[Pair] |- in[Pair*Relation];in[Pair*Relation]~
     VIOLATION ( TXT "{EX} DelPair;lAtom;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
               , TXT "{EX} DelPair;rAtom;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
               , TXT "{EX} DelAtom;Pair;", SRC I
               )
 
-    ROLE ExecEngine MAINTAINS "SUR lAtom and rAtom", "SUR lAtom[Pair*Atom]", "SUR rAtom[Pair*Atom]"
-    RULE "SUR lAtom and rAtom" : I[Atom] |- lAtom~;lAtom \/ rAtom~;rAtom
+    ROLE ExecEngine MAINTAINS SURlAtomAndrAtom
+    RULE SURlAtomAndrAtom LABEL "SUR lAtom and rAtom" : I[Atom] |- lAtom~;lAtom \/ rAtom~;rAtom
     VIOLATION ( TXT "{EX} DelAtom;Atom;", SRC I
               )
 ENDPATTERN

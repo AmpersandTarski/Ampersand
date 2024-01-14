@@ -16,9 +16,9 @@ PATTERN Sequences
     RELATION seq[Item*Sequence] [UNI,TOT]
 
 --invariants:
---  RULE "no predecessor of head" : -(head;succ~)
---  RULE "total order" : head;succ* = seq~
---  RULE "transitive succ" : succ*;succ |- succ*
+--  RULE PredHead LABEL "no predecessor of head" : -(head;succ~)
+--  RULE TotalOrder LABEL "total order" : head;succ* = seq~
+--  RULE TransitiveSucc LABEL "transitive succ" : succ*;succ |- succ*
 ENDPATTERN
 
 PATTERN DemoSequences LABEL "Demo of Sequences"

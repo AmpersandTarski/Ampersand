@@ -12,7 +12,7 @@ RELATION ly[Y*A] [UNI, TOT]
 RELATION ry[Y*A] [UNI, TOT]
 RELATION ty[Y*Type] [UNI, TOT]
 
-ROLE ExecEngine MAINTAINS "startpuntVanRoutes", deelroutes
+ROLE ExecEngine MAINTAINS startpuntVanRoutes, deelroutes
 RULE startpuntVanRoutes :
    I[X] /\ l;l~ /\ r;r~ /\ t;t~
     |- (l;ly~ /\ r;ry~ /\ t;ty~) ; I[Y] ; (ly/l /\ ry/r /\ ty/t)~

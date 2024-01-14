@@ -1,0 +1,12 @@
+﻿CONTEXT SingletonTest IN DUTCH
+
+RULE Koning LABEL "Er is een koning" : 'De koning'[Koning]
+
+ENDCONTEXT
+
+{- Purpose:
+This script should fail, because there is no population specified explicitly, so the rule is violated.
+To correct the script, add the following line:
+
+POPULATION Koning : [ "Koning Willem-Alexander" ]
+-}

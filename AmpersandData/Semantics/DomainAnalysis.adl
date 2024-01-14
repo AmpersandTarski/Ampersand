@@ -21,20 +21,20 @@ ENDPATTERN
 PATTERN DefiningTypeTerms LABEL "Defining type terms"
     RELATION dom[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "dom is total"
     RELATION cod[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "cod is total"
-    RELATION popset[Concept*TypeTerm] [UNI]                   -- TOT is maintained in RULE "popset is total"
+    RELATION popset[Concept*TypeTerm] [UNI]                   -- TOT is maintained in RULE popsetTotal
 
-    RULE "dom is total" :                                    
+    RULE DomTotal LABEL "dom is total" :                                    
       I[Term] |- dom;dom~
       VIOLATION (TXT "{EX}_; InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC I, TXT ")")
-      ROLE ExecEngine MAINTAINS "dom is total"
-    RULE "cod is total" :                                     
+      ROLE ExecEngine MAINTAINS DomTotal
+    RULE CodTotal LABEL "cod is total" :                                     
       I[Term] |- cod;cod~
       VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
-      ROLE ExecEngine MAINTAINS "cod is total"
-    RULE "popset is total" : 
+      ROLE ExecEngine MAINTAINS CodTotal
+    RULE popsetTotal : 
       I[Concept] |- popset;popset~
       VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
-      ROLE ExecEngine MAINTAINS "popset is total"
+      ROLE ExecEngine MAINTAINS popsetTotal
 ENDPATTERN
 
 PATTERN DefineOrderTypeTerms LABEL "Define order on type-terms"
@@ -46,14 +46,14 @@ PATTERN DefineOrderTypeTerms LABEL "Define order on type-terms"
     MEANING "s subStar g  means that each element of type-term  s  is (defined or inferred to be) an element of type-term  g."
 
     RELATION subCopy[TypeTerm*TypeTerm] -- necessary only for calling the Transitive closure function.
-    RULE "Compute transitive closure of sub" : sub = subCopy
+    RULE TransitivClosureSub LABEL "Compute transitive closure of sub" : sub = subCopy
     VIOLATION (TXT "{EX} TransitiveClosure;sub;TypeTerm;subCopy;subPlus")
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of sub"
+    ROLE ExecEngine MAINTAINS TransitivClosureSub
 
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of sub by Ins", "Compute transitive closure of sub by Del"
-    RULE "Compute transitive closure of sub by Ins" : subPlus\/I |- subStar
+    ROLE ExecEngine MAINTAINS TransitivClosureSubIns, TransitivClosureSubDel
+    RULE TransitivClosureSubIns LABEL "Compute transitive closure of sub by Ins" : subPlus\/I |- subStar
     VIOLATION (TXT "{EX}_; InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE "Compute transitive closure of sub by Del" : subStar |- subPlus\/I
+    RULE TransitivClosureSubDel LABEL "Compute transitive closure of sub by Del" : subStar |- subPlus\/I
     VIOLATION (TXT "{EX}_; DelPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPATTERN
 
@@ -313,12 +313,12 @@ ENDPATTERN
 PATTERN AnalysingTerms LABEL "Analysing terms"
     RELATION pretype[TypeTerm*Concept]
 
-    ROLE ExecEngine MAINTAINS "Insert into pretype"
-    RULE "Insert into pretype" : subStar;popset~-subStar;popset~;isa |- pretype
+    ROLE ExecEngine MAINTAINS InsPretype
+    RULE InsPretype LABEL "Insert into pretype" : subStar;popset~-subStar;popset~;isa |- pretype
     VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "INS isa INTO sub"
-    RULE "INS isa INTO sub" : popset~;isa;popset |- sub
+    ROLE ExecEngine MAINTAINS INSisa
+    RULE INSisa LABEL "INS isa INTO sub" : popset~;isa;popset |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPATTERN
 

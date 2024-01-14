@@ -22,7 +22,7 @@ IDENT Services: Service(svcNaam)
 svcNaam :: Service * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 svcOmschrijving :: Service * Omschrijving PRAGMA "" " wordt omschreven als "
 
-RULE ServiceOmschrijven: I[Service] |- svcOmschrijving;svcOmschrijving~
+RULE ServiceOmschrijven LABEL "Service omschrijven": I[Service] |- svcOmschrijving;svcOmschrijving~
 MEANING "Elke service moet zijn omschreven"
 VIOLATION (TXT "Van service '", SRC I, TXT "' moet de omschrijving worden ingevuld")
 ROLE User MAINTAINS ServiceOmschrijven
@@ -38,7 +38,7 @@ PRAGMA "" " is een onderdeel van "
 PURPOSE RELATION isDeelsvcVanVerwerking REF "Meldingsformulier Wbp en de Toelichting hierop"
 {+Op enig moment wordt (een deel van) een verwerking geautomatiseerd en ontstaat een Service. Om hierover te kunnen redeneren moeten we de relatie tussen verwerkingen en de geautomatiseerde componenten kennen.+}
 
-RULE ServiceDoelIntegriteit: 
+RULE ServiceDoelIntegriteit LABEL "Service doel integriteit": 
    svcVerwerkingsDoel
 |-    isDeelsvcVanVerwerking; verwerkingsDoel; (I \/ isSubdoelVan~)
    \/ isDeelsvcVan; svcVerwerkingsDoel; isSubdoelVan~
@@ -49,7 +49,7 @@ ROLE User MAINTAINS ServiceDoelIntegriteit
 PURPOSE RULE ServiceDoelIntegriteit
 {+Om te kunnen garanderen dat Services de juiste dingen doen, is het nodig om te eisen dat elk verwerkingsdoel van een service ofwel een doel dient van een service waarvan de eerste service een deelservice is, dan wel een doel dient van een verwerking waarvan die de service (deels) implementeert.+}
 
-RULE ServicesImplementerenVerwerkingsdoelen: isDeelsvcVanVerwerking |- svcVerwerkingsDoel; (I \/ isSubdoelVan); verwerkingsDoel~
+RULE ServicesImplementerenVerwerkingsdoelen LABEL "Services implementeren verwerkingsdoelen": isDeelsvcVanVerwerking |- svcVerwerkingsDoel; (I \/ isSubdoelVan); verwerkingsDoel~
 MEANING "Elke service die een verwerking (deels) implementeert moet een doel nastreven dat gelijk is aan, of een subdoel is van het het doel van de verwerking"
 MESSAGE ""
 VIOLATION (TXT "Service '", SRC I, TXT "' moet een doel hebben dat een (sub)doel is van '", TGT I) 
@@ -64,10 +64,10 @@ PURPOSE RELATION isDeelsvcVan REF "Meldingsformulier Wbp en de Toelichting hiero
 {++}
 
 {-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
-RULE IrreflexiviteitVanDeelsvcZijn: I |- -isDeelsvcVan 
+RULE IrreflexiviteitDeelsvc LABEL "Irreflexiviteit van deelsvc zijn": I |- -isDeelsvcVan 
 MEANING "Een service is geen deelservice van zichzelf"
 
-RULE DeelservicesDienenSubdoelen: isDeelsvcVan |- svcVerwerkingsDoel; isSubdoelVan; svcVerwerkingsDoel~
+RULE DeelservicesDienenSubdoelen LABEL "Deelservices dienen subdoelen": isDeelsvcVan |- svcVerwerkingsDoel; isSubdoelVan; svcVerwerkingsDoel~
 MEANING "Elke deelservice heeft een verwerkingsdoel dat een subdoel is van de service waardoor hij wordt aangereoepen (c.q. waar hij deel van uitmaakt)"
 MESSAGE ""
 VIOLATION (TXT "Service '", SRC I, TXT "' moet tenminste 1 doel hebben die een subdoel is van '", TGT I) 
@@ -87,15 +87,15 @@ svcBewerker :: Service * Partij PRAGMA "De feitelijke (runtime) uitvoering van "
 PURPOSE RELATION svcBewerker REF "Artikel 1 sub e Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.+}
 
-RULE ServiceBewerkersHebbenVerantwoordelijken: I /\ svcBewerker;svcBewerker~ |- svcVerantwoordelijke;svcVerantwoordelijke~
+RULE ServiceBewerkersHebbenVerantwoordelijken LABEL "Service bewerkers hebben verantwoordelijken": I /\ svcBewerker;svcBewerker~ |- svcVerantwoordelijke;svcVerantwoordelijke~
 MEANING "Voor elke bewerker moet de verantwoordelijkheid zijn belegd (Artikel 12 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Voor service '", SRC I, TXT " bestaat wel een verwerker, namelijk ", SRC svcBewerker, TXT ", maar er is geen verantwoordelijke")
-ROLE User MAINTAINS ServiceBewerkersHebbenVerantwoordelijken 
+ROLE User MAINTAINS ServiceBewerkersHebbenVerantwoordelijken
 PURPOSE RULE ServiceBewerkersHebbenVerantwoordelijken REF "Artikel 12 eerste lid Wbp"
 {+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
-RULE ServiceBewerkersHebbenPreciesEenVerantwoordelijke: 
+RULE ServiceBewerkersHebbenPrecies1verantwoordelijke LABEL "Service bewerkers hebben precies 1 verantwoordelijke": 
 {- Onderstaande regel kan gemakkelijker d.m.v.:
 svcVerantwoordelijke~;(I /\ svcBewerker;svcBewerker~);svcVerantwoordelijke
 maar dan kun je geen goede VIOLATION maken. Vandaar de volgende regel: -}
@@ -105,8 +105,8 @@ I /\ svcBewerker;svcBewerker~
 MEANING "Voor elke bewerker moet eenduidig bepaald kunnen worden wie de bijbehorende verantwoordelijke is (Artikel 12 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Omdat service '", SRC I, TXT "' een verwerker heeft, namelijk ", SRC svcBewerker, TXT ", moet de verantwoordelijkheid eenduidig zijn belegd, en niet bij meerdere partijen, zoals ", SRC svcVerantwoordelijke)
-ROLE User MAINTAINS ServiceBewerkersHebbenPreciesEenVerantwoordelijke 
-PURPOSE RULE ServiceBewerkersHebbenPreciesEenVerantwoordelijke REF "Artikel 12 eerste lid Wbp"
+ROLE User MAINTAINS ServiceBewerkersHebbenPrecies1verantwoordelijke
+PURPOSE RULE ServiceBewerkersHebbenPrecies1verantwoordelijke REF "Artikel 12 eerste lid Wbp"
 {+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
 svcVerzamelDoel :: Service * Doel
@@ -121,7 +121,7 @@ PURPOSE RELATION svcVerwerkingsDoel REF "Artikel 11 eerste lid Wbp"
 PURPOSE RELATION svcVerwerkingsDoel REF "Artikel 28 sub b Wbp"
 {+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de svc.+}
 
-RULE DoelVanServices: I[Service] |- svcVerwerkingsDoel;svcVerwerkingsDoel~
+RULE DoelVanServices LABEL "Doel van services": I[Service] |- svcVerwerkingsDoel;svcVerwerkingsDoel~
 MEANING "Elke service dient tenminste 1 doel (Artikel 28 sub b Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Voor service '", SRC I, TXT "' moet het/de doel(en) worden gespecificeerd.")
@@ -142,17 +142,17 @@ e) BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs ve
 g) DERDE: ieder, niet zijnde de BETROKKENE, de VERANTWOORDELIJKE, de BEWERKER, of enig persoon die onder rechtstreeks gezag van de VERANTWOORDELIJKE of de BEWERKER gemachtigd is om PERSOONSGEGEVENs te verwerken.
 -}
 
-RULE VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan: 
+RULE VerzamelenVanPersoonsgegevens LABEL "Verzamelen van persoonsgegevens is het verwerken ervan": 
 svcVerzameltPersoonsgegevensType |- svcVerwerktPersoonsgegevensType
 MEANING "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
 MESSAGE "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
 VIOLATION (TXT "Omdat persoonsgegevens van het type ", TGT I, TXT " worden verzameld door ", SRC I, TXT " moet die laatste ook als 'verwerkende service' zijn geregistreerd")
-ROLE User MAINTAINS VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan
-PURPOSE RULE VerzamelenVanPersoonsgegevensIsHetVerwerkenErvan REF "Artikel 1 sub b Wbp"
+ROLE User MAINTAINS VerzamelenVanPersoonsgegevens
+PURPOSE RULE VerzamelenVanPersoonsgegevens REF "Artikel 1 sub b Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.
 -}
 
-RULE DefineTimeVerwerkingsdoelen:  svcVerwerktPersoonsgegevensType |- svcVerwerkingsDoel;doelGegevensType
+RULE DefineTimeVerwerkingsdoelen LABEL "Define time verwerkingsdoelen":  svcVerwerktPersoonsgegevensType |- svcVerwerkingsDoel;doelGegevensType
 MEANING "PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn (Artikel 11 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Persoonsgegevens van het type '", TGT I, TXT "' mogen niet worden verwerkt in service '", SRC I, TXT "' omdat ze kennelijk niet nodig zijn voor enig doel dat de service dient.")
@@ -160,24 +160,24 @@ ROLE User MAINTAINS DefineTimeVerwerkingsdoelen
 PURPOSE RULE DefineTimeVerwerkingsdoelen REF "Artikel 11 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn.+}
 
-RULE IntegriteitVanHetRechtvaardigenVanVerwerkingsdoelen: svcVerwerkingsDoel |- svcVerantwoordelijke; gerechtvaardigdDoor~
+RULE IntegriteitRechtvaardigenVerwerkingsdoelen LABEL "Integriteit van het rechtvaardigen van verwerkingsdoelen": svcVerwerkingsDoel |- svcVerantwoordelijke; gerechtvaardigdDoor~
 MEANING "Als een service gegevens verwerkt ten behoeve van een zeker doel, dan moet dit doel zijn gerechtvaardigd door de VERANTWOORDELIJKE van de service."
 MESSAGE ""
 VIOLATION (TXT "Van verwerking '", SRC I, TXT "' is het doel '", TGT I, TXT "' niet gerechtvaardigd door de service (verwerkings) verantwoordelijke (", SRC svcVerantwoordelijke, TXT ")")
-ROLE User MAINTAINS IntegriteitVanHetRechtvaardigenVanVerwerkingsdoelen
-PURPOSE RULE IntegriteitVanHetRechtvaardigenVanVerwerkingsdoelen REF "Artikel 1 sub d Wbp"
+ROLE User MAINTAINS IntegriteitRechtvaardigenVerwerkingsdoelen
+PURPOSE RULE IntegriteitRechtvaardigenVerwerkingsdoelen REF "Artikel 1 sub d Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt.+}
 
 svcVerstuurtBerichtSoort :: Service * BerichtSoort
 PRAGMA "Service instanties van de soort " " kunnen berichten versturen (= verwerken) van de soort "
 
-RULE IntegriteitVanVersturenVanBerichtenDoorServices: 
+RULE IntegriteitVersturenBerichten LABEL "Integriteit van versturen van berichten door services": 
 svcVerstuurtBerichtSoort;berichtSoortGegevensType |- svcVerwerktPersoonsgegevensType
 MEANING "Als een service in staat is berichten te versturen waar gegevens van een zeker soort in voorkomen, dan moet die service zulk soort gegevens (kunnen) hebben verwerkt (Artikel 11 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Service ", SRC I, TXT " moet gegevens van het type ", TGT I, TXT " (kunnen) hebben verwerkt, omdat die voorkomen in berichtsoort ", TGT berichtSoortGegevensType~)
-ROLE User MAINTAINS IntegriteitVanVersturenVanBerichtenDoorServices
-PURPOSE RULE IntegriteitVanVersturenVanBerichtenDoorServices REF "Artikel 11 eerste lid Wbp"
+ROLE User MAINTAINS IntegriteitVersturenBerichten
+PURPOSE RULE IntegriteitVersturenBerichten REF "Artikel 11 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. +}
 
 svcOntvangtBerichtSoort :: Service * BerichtSoort
@@ -185,13 +185,13 @@ PRAGMA "Service instanties van de soort " " kunnen berichten ontvangen (= verwer
 PURPOSE RELATION svcOntvangtBerichtSoort REF "Artikel 1 sub h Wbp"
 {+In de Wbp en de daarop berustende bepalingen wordt verstaan onder ONTVANGER: degene aan wie de PERSOONSGEGEVENs worden verstrekt.+}
 
-RULE IntegriteitVanOntvangenVanBerichtenDoorServices: 
+RULE IntegriteitOntvangenBerichten LABEL "Integriteit van ontvangen van berichten door services": 
 svcOntvangtBerichtSoort; berichtSoortGegevensType |- svcVerwerktPersoonsgegevensType
 MEANING "Als een service in staat is berichten te ontvangen waar gegevens van een zeker soort in voorkomen, dan moet die service zulk soort gegevens (kunnen) verwerken (Artikel 11 eerste lid Wbp)"
 MESSAGE ""
 VIOLATION (TXT "Service ", SRC I, TXT " moet gegevens van het type ", TGT I, TXT " kunnen verwerken, omdat die voorkomen in berichtsoort ", TGT berichtSoortGegevensType~)
-ROLE User MAINTAINS IntegriteitVanOntvangenVanBerichtenDoorServices
-PURPOSE RULE IntegriteitVanOntvangenVanBerichtenDoorServices REF "Artikel 11 eerste lid Wbp"
+ROLE User MAINTAINS IntegriteitOntvangenBerichten
+PURPOSE RULE IntegriteitOntvangenBerichten REF "Artikel 11 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. +}
 
 svcSpecificatieSamenvatting :: Service * SpecificatieSamenvatting

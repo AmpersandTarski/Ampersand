@@ -83,8 +83,8 @@ ENDPATTERN
 RELATION showADL[Term*ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 REPRESENT ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
-      ROLE ExecEngine MAINTAINS delunusedShowADL
-      RULE delunusedShowADL LABEL "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
+      ROLE ExecEngine MAINTAINS DelUnusedShowADL
+      RULE DelUnusedShowADL LABEL "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
       MEANING "A ShowADL without Term will be removed."
       VIOLATION ( TXT "{EX}_;DelAtom_;ShowADL_;", SRC I )
 VIEW Term : Term(showADL)
