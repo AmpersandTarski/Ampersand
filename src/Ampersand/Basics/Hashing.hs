@@ -18,10 +18,10 @@ module Ampersand.Basics.Hashing
   )
 where
 
--- import Crypto.Hash hiding (hash)
-
 import Ampersand.Basics.Prelude
+import qualified Crypto.Hash as CH
 import Data.Hashable
+import qualified RIO.Text as T
 
-sha1hash :: Text -> Int
-sha1hash = hash
+sha1hash :: Text -> CH.Digest CH.SHA1
+sha1hash text = CH.hash (T.encodeUtf8 text)
