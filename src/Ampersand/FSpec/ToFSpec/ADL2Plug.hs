@@ -16,6 +16,7 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
 import Data.Hashable (hash)
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -59,9 +60,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           [] -> candidateTables
           xs ->
             fatal . T.intercalate "\n   " $
-              [ "The following generated tables have a name conflict:"
+              [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
               ]
-                <> map tshow xs
+                <> concatMap showNameConflict (L.sortOn sqlname xs)
         xs ->
           fatal . T.intercalate "\n   " $
             [ "The following names are used for different tables:"
@@ -69,7 +70,16 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               <> map tshow xs
       where
         hasNameConflict :: PlugSQL -> Bool
-        hasNameConflict = all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
+        hasNameConflict = not . all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
+        showNameConflict :: PlugSQL -> [Text]
+        showNameConflict plug =
+          -- [T.take 100 . tshow . sqlname $ plug]
+          ("    " <>)
+            <$> [ "Table: " <> tshow (sqlname plug)
+                ]
+              <> ( ("    " <>)
+                     <$> (L.sort . map (tshow . attSQLColName) . toList . plugAttributes $ plug)
+                 )
         sameBy foo a b = foo a == foo b
         isSingleton :: NonEmpty a -> Bool
         isSingleton (_ NE.:| []) = True
