@@ -24,4 +24,4 @@ import Data.Hashable
 import qualified RIO.Text as T
 
 sha1hash :: Text -> CH.Digest CH.SHA1
-sha1hash text = CH.hash (T.encodeUtf8 text)
+sha1hash = CH.hash . T.encodeUtf8
