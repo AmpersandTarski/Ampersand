@@ -15,7 +15,6 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import Data.Hashable (hash)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -353,7 +352,7 @@ disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
     firstPart = T.take maxLengthOfDatabaseTableName . fullName $ x
 
 gitLikeSha :: ConceptOrRelation -> Text
-gitLikeSha = T.reverse . T.take shaLength . T.reverse . tshow . abs . hash . hashText
+gitLikeSha = T.take shaLength . tshow . abs . sha1hash . hashText
 
 hashText :: ConceptOrRelation -> Text
 hashText x = case x of

@@ -13,7 +13,6 @@ import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
-import Data.Hashable (hash)
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time

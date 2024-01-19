@@ -113,7 +113,6 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
-import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Typeable (typeOf)
 import RIO.Char (toUpper)
 import qualified RIO.List as L

@@ -10,7 +10,6 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-import Data.Hashable
 import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool

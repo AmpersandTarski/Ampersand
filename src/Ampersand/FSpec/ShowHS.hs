@@ -9,7 +9,6 @@ import Ampersand.Core.ShowAStruct (AStruct (..)) -- for traceability, we generat
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances (Instances (instanceList))
 import Ampersand.Misc.HasClasses
-import Data.Hashable
 import RIO.Char (isAlphaNum)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE

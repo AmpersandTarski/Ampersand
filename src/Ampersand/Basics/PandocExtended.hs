@@ -8,12 +8,12 @@ module Ampersand.Basics.PandocExtended
   )
 where
 
+import Ampersand.Basics.Hashing
 import Ampersand.Basics.Languages
 import Ampersand.Basics.Prelude hiding (toList)
 import Ampersand.Basics.String (toText1Unsafe)
 import Ampersand.Basics.Unique
 import Ampersand.Basics.Version
-import Data.Hashable (hash)
 import qualified RIO.Text as T
 import Text.Pandoc hiding (Meta)
 import Text.Pandoc.Builder hiding (str)

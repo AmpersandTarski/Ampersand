@@ -17,7 +17,6 @@ where
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
-import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set

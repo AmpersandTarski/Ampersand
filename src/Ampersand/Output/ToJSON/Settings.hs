@@ -4,7 +4,6 @@
 module Ampersand.Output.ToJSON.Settings (Settings) where
 
 import Ampersand.Output.ToJSON.JSONutils
-import Data.Hashable
 
 data Settings = Settings
   { sngJSONglobal_contextName :: Text,
