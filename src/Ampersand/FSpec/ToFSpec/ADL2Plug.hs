@@ -15,7 +15,6 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import Data.Aeson (Value (Bool))
 import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
