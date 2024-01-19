@@ -15,6 +15,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
+import Data.Aeson (Value (Bool))
 import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -49,8 +50,34 @@ makeGeneratedSqlPlugs ::
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = map makeTable components
+makeGeneratedSqlPlugs env context = inspectedCandidateTables
   where
+    inspectedCandidateTables :: [PlugSQL]
+    inspectedCandidateTables
+      | null candidateTables = []
+      | otherwise = case filter (not . isSingleton) . eqCl sqlname $ candidateTables of
+        [] -> case filter hasNameConflict candidateTables of
+          [] -> candidateTables
+          xs ->
+            fatal . T.intercalate "\n   " $
+              [ "The following generated tables have a name conflict:"
+              ]
+                <> map tshow xs
+        xs ->
+          fatal . T.intercalate "\n   " $
+            [ "The following names are used for different tables:"
+            ]
+              <> map tshow xs
+      where
+        hasNameConflict :: PlugSQL -> Bool
+        hasNameConflict = all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
+        sameBy foo a b = foo a == foo b
+        isSingleton :: NonEmpty a -> Bool
+        isSingleton (_ NE.:| []) = True
+        isSingleton (_ NE.:| _) = False
+
+    candidateTables :: [PlugSQL]
+    candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
     components =
       map componentsForTypology (typologies context)
