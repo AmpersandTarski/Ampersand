@@ -62,17 +62,32 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
               ]
                 <> concatMap showNameConflict (L.sortOn sqlname xs)
+                <> hint
         xs ->
           fatal . T.intercalate "\n   " $
             [ "The following names are used for different tables:"
             ]
-              <> map tshow xs
+              <> concatMap myShow xs
+              <> hint
       where
+        hint :: [Text]
+        hint =
+          [ "",
+            "Please report this as a bug! ",
+            "When these fatals are thrown, it is good to know that these sqlnames are disambiguated by adding a gitLikeSha. This is a hash",
+            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough. That is why",
+            "after the generation of the tables this check is done.",
+            "This text is here to help the developer of ampersand to investigate."
+          ]
+        myShow :: NonEmpty PlugSQL -> [Text]
+        myShow x =
+          [ "The name `" <> (tshow . sqlname . NE.head $ x) <> "` is used for " <> (tshow . NE.length $ x) <> " tables:"
+          ]
+            <> map tshow (toList x)
         hasNameConflict :: PlugSQL -> Bool
         hasNameConflict = not . all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
         showNameConflict :: PlugSQL -> [Text]
         showNameConflict plug =
-          -- [T.take 100 . tshow . sqlname $ plug]
           ("    " <>)
             <$> [ "Table: " <> tshow (sqlname plug)
                 ]
