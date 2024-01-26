@@ -12,11 +12,11 @@ module Ampersand.Basics.Unique
   )
 where
 
+import Ampersand.Basics.Hashing
 import Ampersand.Basics.Name (checkProperId)
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.String (text1ToText, toText1Unsafe)
 import Ampersand.Basics.Version (fatal)
-import Data.Hashable
 import Data.Typeable
 import qualified RIO.Set as Set
 import qualified RIO.Text as T

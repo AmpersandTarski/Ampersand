@@ -5,7 +5,6 @@ module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
 import Ampersand.Classes.Relational (HasProps (properties))
-import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set

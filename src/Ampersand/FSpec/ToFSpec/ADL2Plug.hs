@@ -15,7 +15,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
-import Data.Hashable (hash)
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -49,8 +49,58 @@ makeGeneratedSqlPlugs ::
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = map makeTable components
+makeGeneratedSqlPlugs env context = inspectedCandidateTables
   where
+    inspectedCandidateTables :: [PlugSQL]
+    inspectedCandidateTables
+      | null candidateTables = []
+      | otherwise = case filter (not . isSingleton) . eqCl sqlname $ candidateTables of
+        [] -> case filter hasNameConflict candidateTables of
+          [] -> candidateTables
+          xs ->
+            fatal . T.intercalate "\n   " $
+              [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
+              ]
+                <> concatMap showNameConflict (L.sortOn sqlname xs)
+                <> hint
+        xs ->
+          fatal . T.intercalate "\n   " $
+            [ "The following names are used for different tables:"
+            ]
+              <> concatMap myShow xs
+              <> hint
+      where
+        hint :: [Text]
+        hint =
+          [ "",
+            "Please report this as a bug! ",
+            "When these fatals are thrown, it is good to know that these sqlnames are disambiguated by adding a gitLikeSha. This is a hash",
+            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough. That is why",
+            "after the generation of the tables this check is done.",
+            "This text is here to help the developer of ampersand to investigate."
+          ]
+        myShow :: NonEmpty PlugSQL -> [Text]
+        myShow x =
+          [ "The name `" <> (tshow . sqlname . NE.head $ x) <> "` is used for " <> (tshow . NE.length $ x) <> " tables:"
+          ]
+            <> map tshow (toList x)
+        hasNameConflict :: PlugSQL -> Bool
+        hasNameConflict = not . all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
+        showNameConflict :: PlugSQL -> [Text]
+        showNameConflict plug =
+          ("    " <>)
+            <$> [ "Table: " <> tshow (sqlname plug)
+                ]
+              <> ( ("    " <>)
+                     <$> (L.sort . map (tshow . attSQLColName) . toList . plugAttributes $ plug)
+                 )
+        sameBy foo a b = foo a == foo b
+        isSingleton :: NonEmpty a -> Bool
+        isSingleton (_ NE.:| []) = True
+        isSingleton (_ NE.:| _) = False
+
+    candidateTables :: [PlugSQL]
+    candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
     components =
       map componentsForTypology (typologies context)
@@ -317,7 +367,7 @@ disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
     firstPart = T.take maxLengthOfDatabaseTableName . fullName $ x
 
 gitLikeSha :: ConceptOrRelation -> Text
-gitLikeSha = T.reverse . T.take shaLength . T.reverse . tshow . abs . hash . hashText
+gitLikeSha = T.take shaLength . tshow . sha1hash . hashText
 
 hashText :: ConceptOrRelation -> Text
 hashText x = case x of

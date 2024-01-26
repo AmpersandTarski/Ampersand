@@ -113,7 +113,6 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
-import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Typeable (typeOf)
 import RIO.Char (toUpper)
 import qualified RIO.List as L
@@ -1432,7 +1431,7 @@ instance Named Type where
 
 instance Show Type where
   show a = T.unpack $ case a of
-    UserConcept (nm, _) -> fullName $ nm
+    UserConcept (nm, _) -> fullName nm
     BuiltIn tt -> "BuiltIn " <> tshow tt
     RepresentSeparator -> "RepresentSeparator"
 

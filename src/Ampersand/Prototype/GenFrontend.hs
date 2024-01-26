@@ -13,7 +13,6 @@ import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
-import Data.Hashable (hash)
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
@@ -123,7 +122,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
           { ifcName = text1ToText . escapeIdentifier . fullName1 $ ifc,
             ifcNameKebab = toKebab . safechars . fullName $ ifc,
             ifcNamePascal = toPascal . safechars . fullName $ ifc,
-            ifcLabel = fullName $ ifc,
+            ifcLabel = fullName ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,

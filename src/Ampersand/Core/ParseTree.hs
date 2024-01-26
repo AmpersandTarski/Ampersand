@@ -72,7 +72,6 @@ where
 import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
-import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L

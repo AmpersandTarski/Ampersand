@@ -16,7 +16,6 @@ where
 
 import Ampersand.Basics
 import Codec.Xlsx.Types
-import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.Text as T
 

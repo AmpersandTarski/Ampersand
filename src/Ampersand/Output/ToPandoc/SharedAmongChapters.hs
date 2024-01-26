@@ -49,7 +49,6 @@ import Ampersand.Graphic.Graphics
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux
 import Ampersand.Output.PredLogic
-import Data.Hashable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -246,7 +245,7 @@ instance Hashable Ident where
 
 instance Show Ident where
   show ident = T.unpack $ case ident of
-    IdentByName nm -> fullName $ nm
+    IdentByName nm -> fullName nm
     IdentRel nm src tgt ->
       fullName nm
         <> "["
