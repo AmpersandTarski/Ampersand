@@ -114,8 +114,8 @@ doTestsInDir = awaitForever once
               isCandidate :: FilePath -> Bool
               isCandidate fp =
                 takeExtensions fp
-                  `elem` [ "adl", -- .adl files only, so we can use .ifc files etc. in INCLUDE statements, without having to check them separately
-                           "archimate" -- this is to test the archichecker
+                  `elem` [ ".adl", -- .adl files only, so we can use .ifc files etc. in INCLUDE statements, without having to check them separately
+                           ".archimate" -- this is to test the archichecker
                          ]
       if yaml `elem` (filesOf . dirContent $ x)
         then do
