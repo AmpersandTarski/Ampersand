@@ -170,13 +170,11 @@ mkArchiContext [archiRepo] pops = do
           mkArchiConcept :: Text1 -> P_Concept
           mkArchiConcept x =
             PCpt
-              ( withNameSpace archiNameSpace . mkName ConceptName $
-                  ( case toNamePart1 x of
-                      Nothing -> fatal "Not a valid NamePart."
-                      Just np -> np NE.:| []
-                  )
-              )
-              Nothing
+              { p_cptnm = withNameSpace archiNameSpace nm,
+                p_cptlabel = lbl
+              }
+            where
+              (nm, lbl) = suggestName ConceptName x
       _ -> fatal "May not call vwAts on a non-view element"
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
@@ -215,14 +213,8 @@ mkArchiContext [archiRepo] pops = do
         mkPattern vw =
           P_Pat
             { pos = OriginUnknown,
-              pt_nm =
-                withNameSpace archiNameSpace . mkName PatternName $
-                  ( case toNamePart1 (viewName vw) of
-                      Nothing -> fatal $ "Not a valid NamePart: " <> tshow (viewName vw)
-                      Just np -> np
-                  )
-                    NE.:| [],
-              pt_lbl = Nothing,
+              pt_nm = withNameSpace archiNameSpace nm,
+              pt_lbl = lbl,
               pt_rls = [],
               pt_gns = [],
               pt_dcs = sortDecls . map grainRel . vwAts $ vw,
@@ -236,7 +228,8 @@ mkArchiContext [archiRepo] pops = do
               pt_end = OriginUnknown,
               pt_enfs = []
             }
-
+          where
+            (nm, lbl) = suggestName PatternName (viewName vw)
     sortRelPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
     sortRelPops popus =
       [ (NE.head cl) {p_popps = foldr L.union [] [p_popps decl | decl <- NE.toList cl]}
@@ -650,7 +643,17 @@ translateArchiElem ::
 translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tuples =
   ArchiGrain
     { grainPop = P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (tuples2PAtomPairs tuples),
-      grainRel = P_Relation relName' ref_to_signature Nothing props [] Nothing [] OriginUnknown,
+      grainRel =
+        P_Relation
+          { dec_sign = ref_to_signature,
+            dec_prps = props,
+            dec_pragma = Nothing,
+            dec_nm = relName',
+            dec_label = relLabel,
+            dec_defaults = [],
+            dec_Mean = [],
+            pos = OriginUnknown
+          },
       archiViewname = maybeViewName,
       grainPurp =
         PRef2
@@ -661,19 +664,19 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           }
     }
   where
-    toNamePart1' :: Text1 -> NamePart
-    toNamePart1' x = case toNamePart1 x of
-      Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-      Just np -> np
-    relName' = withNameSpace archiNameSpace . mkName RelationName $ toNamePart1' plainNm NE.:| []
-    srcName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePart1' plainSrcName NE.:| []
-    tgtName = withNameSpace archiNameSpace . mkName ConceptName $ toNamePart1' plainTgtName NE.:| []
+    toNameAndLabel :: NameType -> Text1 -> (Name, Maybe Label)
+    toNameAndLabel typ x = (withNameSpace archiNameSpace nm, lbl)
+      where
+        (nm, lbl) = suggestName typ x
+    (relName', relLabel) = toNameAndLabel RelationName plainNm
+    (srcName, srcLabel) = toNameAndLabel ConceptName plainSrcName
+    (tgtName, tgtLabel) = toNameAndLabel ConceptName plainTgtName
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel
     ref_to_relation = PNamedRel OriginUnknown relName' (Just ref_to_signature)
     ref_to_signature :: P_Sign
-    ref_to_signature = P_Sign (PCpt srcName Nothing) (PCpt tgtName Nothing)
+    ref_to_signature = P_Sign (PCpt srcName srcLabel) (PCpt tgtName tgtLabel)
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text1 -> Text1
