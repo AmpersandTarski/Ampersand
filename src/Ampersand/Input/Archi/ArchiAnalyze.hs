@@ -324,7 +324,7 @@ data Child = Child
     --, chldId         :: Text
     --, chldAlgn       :: Text
     --, chldFCol       :: Text
-    chldElem :: Text1,
+    chldElem :: Maybe Text1,
     --, trgtConn       :: Text
     --, bound          :: Bound
     srcConns :: [SourceConnection],
@@ -571,9 +571,10 @@ instance MetaArchi ArchiObj where
       <> [ translateArchiElem (toText1Unsafe "docu") (toText1Unsafe "View", toText1Unsafe "Text") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
            | viewdoc <- viewDocus diagram
          ]
-      <> [ translateArchiElem (toText1Unsafe "inView") (chldType, toText1Unsafe "View") maybeViewName Set.empty [(text1ToText $ chldElem viewelem, text1ToText $ viewId diagram)] -- register the views in which an element is used.
+      <> [ translateArchiElem (toText1Unsafe "inView") (chldType, toText1Unsafe "View") maybeViewName Set.empty [(text1ToText chld, text1ToText $ viewId diagram)] -- register the views in which an element is used.
            | viewelem <- viewChilds diagram,
-             Just chldType <- [typeLookup (chldElem viewelem)]
+             Just chld <- [chldElem viewelem],
+             Just chldType <- [typeLookup chld]
          ]
       <> [ translateArchiElem (toText1Unsafe "viewpoint") (toText1Unsafe "View", toText1Unsafe "ViewPoint") maybeViewName (Set.singleton P_Uni) [(text1ToText $ viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
            | (not . T.null . viewPoint) diagram
@@ -587,9 +588,10 @@ instance MetaArchi Child where
   typeMap _ _ =
     Map.empty
   grindArchi env@(Just viewid, typeLookup, maybeViewName) diagrObj =
-    [ translateArchiElem (toText1Unsafe "inView") (elType, viewtype) maybeViewName Set.empty [(text1ToText $ chldElem child, text1ToText viewid)]
+    [ translateArchiElem (toText1Unsafe "inView") (elType, viewtype) maybeViewName Set.empty [(text1ToText chld, text1ToText viewid)]
       | child <- childs diagrObj,
-        Just elType <- [typeLookup (chldElem child)],
+        Just chld <- [chldElem child],
+        Just elType <- [typeLookup chld],
         Just viewtype <- [typeLookup viewid]
     ]
       <> [ translateArchiElem (toText1Unsafe "inView") (connType, viewtype) maybeViewName Set.empty [(text1ToText $ sConRel conn, text1ToText viewid)]
@@ -597,10 +599,12 @@ instance MetaArchi Child where
              Just connType <- [typeLookup (sConRel conn)],
              Just viewtype <- [typeLookup viewid]
          ]
-      <> [ translateArchiElem (toText1Unsafe "inside") (childtype, objtype) maybeViewName Set.empty [(text1ToText $ chldElem child, text1ToText $ chldElem diagrObj)]
+      <> [ translateArchiElem (toText1Unsafe "inside") (childtype, objtype) maybeViewName Set.empty [(text1ToText chld, text1ToText chlDiag)]
            | child <- childs diagrObj,
-             Just childtype <- [typeLookup (chldElem child)],
-             Just objtype <- [typeLookup (chldElem diagrObj)]
+             Just chld <- [chldElem child],
+             Just childtype <- [typeLookup chld],
+             Just chlDiag <- [chldElem diagrObj],
+             Just objtype <- [typeLookup chlDiag]
          ]
       <> (concatMap (grindArchi env) . childs) diagrObj
   grindArchi (maybeViewid, _, maybeViewName) _ = fatal ("\nmaybeViewid = " <> tshow maybeViewid <> "\nmaybeViewName = " <> tshow maybeViewName)
@@ -862,8 +866,8 @@ processStraight absFilePath =
                   --                      , chldAlgn = T.pack chldAlgn'
                   --                      , chldFCol = T.pack chldFCol'
                   chldElem = case chldElem' of
-                    [] -> fatal "Child element found without archimateElement"
-                    c : s -> Text1 c (T.pack s),
+                    [] -> Nothing
+                    c : s -> Just (Text1 c (T.pack s)),
                   --                      , trgtConn = T.pack trgtConn'
                   --                      , bound    = bound'
                   srcConns = srcConns',
