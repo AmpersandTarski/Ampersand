@@ -42,7 +42,6 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
     AmpersandData/FormalAmpersand/Terms.adl
-    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
@@ -104,6 +103,7 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
+    testing/Sentinel/Tests/ShouldFail/singletontest.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
