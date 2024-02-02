@@ -349,28 +349,19 @@ toPops env ns file x = map popForColumn (colNrs x)
           case value (relNamesRow, targetCol) of
             Just (CellText t) ->
               case T.uncons . T.reverse . trim $ t of
-                Nothing -> (fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol), False)
+                Nothing -> fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol)
                 Just ('~', rest) -> case T.uncons . T.reverse $ rest of
                   Nothing -> fatal "the `~` symbol should be preceded by a relation name. However, it just isn't there."
                   Just (h, tl) ->
-                    ( withNameSpace ns . mkName RelationName $
-                        ( case toNamePart (T.cons h tl) of
-                            Nothing -> fatal $ "Not a valid NamePart: " <> T.cons h tl
-                            Just np -> np
-                        )
-                          :| [],
-                      True
-                    )
+                    let (nm, _) = suggestName RelationName (Text1 h tl)
+                     in (withNameSpace ns nm, True)
                 Just (h, tl) ->
-                  let tryNp = T.reverse $ T.cons h tl
-                   in ( withNameSpace ns . mkName RelationName $
-                          ( case toNamePart tryNp of
-                              Nothing -> fatal $ "Not a valid NamePart: " <> tshow tryNp
-                              Just np -> np
-                          )
-                            :| [],
-                        False
-                      )
+                  let (nm, _) = suggestName RelationName . reverse1 $ Text1 h tl
+                      reverse1 :: Text1 -> Text1
+                      reverse1 t1 = case T.uncons . T.reverse . text1ToText $ t1 of
+                        Nothing -> fatal "Impossible: A Text1 cannot be empty"
+                        Just (h', tl') -> Text1 h' tl'
+                   in (withNameSpace ns nm, False)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
