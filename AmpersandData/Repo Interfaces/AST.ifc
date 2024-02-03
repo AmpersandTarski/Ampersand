@@ -39,7 +39,7 @@ BOX <TABS>
                 gengen[Isa*Concept]~;gengen[Isa*Concept]  /\
               -(genspc[Isa*Concept]~;genspc[Isa*Concept])
              )  INTERFACE IsaTree 
-  , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
+  , l1 LABEL "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE Relation
   , "Roles" : allRoles[Context*Role]

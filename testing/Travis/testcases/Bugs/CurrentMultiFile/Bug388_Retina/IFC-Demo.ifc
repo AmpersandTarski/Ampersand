@@ -31,20 +31,20 @@ BOX[ "Verwerking" : I
    ]
 ------------------------------------------------------------
 INTERFACE ServiceA FOR User : I[Service]
-BOX[ "Service" : I
-   , "svcNaam" : svcNaam
-   , "svcOmschrijving" : svcOmschrijving
-   , "svcSpecificatieSamenvatting" : svcSpecificatieSamenvatting
-   , "isDeelsvcVanVerwerking" : isDeelsvcVanVerwerking
-   , "isDeelsvcVan" : isDeelsvcVan
-   , "svcVerantwoordelijke" :  svcVerantwoordelijke
-   , "svcBewerker" : svcBewerker
-   , "svcVerzamelDoel" :  svcVerzamelDoel
-   , "svcVerwerkingsDoel" : svcVerwerkingsDoel
-   , "svcVerzameltPersoonsgegevensType" :  svcVerzameltPersoonsgegevensType
-   , "svcVerwerktPersoonsgegevensType" :  svcVerwerktPersoonsgegevensType
-   , "svcVerstuurtBerichtSoort" :  svcVerstuurtBerichtSoort
-   , "svcOntvangtBerichtSoort" :  svcOntvangtBerichtSoort
+BOX[ Service : I
+   , svcNaam : svcNaam
+   , svcOmschrijving : svcOmschrijving
+   , svcSpecificatieSamenvatting : svcSpecificatieSamenvatting
+   , isDeelsvcVanVerwerking : isDeelsvcVanVerwerking
+   , isDeelsvcVan : isDeelsvcVan
+   , svcVerantwoordelijke :  svcVerantwoordelijke
+   , svcBewerker : svcBewerker
+   , svcVerzamelDoel :  svcVerzamelDoel
+   , svcVerwerkingsDoel : svcVerwerkingsDoel
+   , svcVerzameltPersoonsgegevensType :  svcVerzameltPersoonsgegevensType
+   , svcVerwerktPersoonsgegevensType :  svcVerwerktPersoonsgegevensType
+   , svcVerstuurtBerichtSoort :  svcVerstuurtBerichtSoort
+   , svcOntvangtBerichtSoort :  svcOntvangtBerichtSoort
    ]
 ------------------------------------------------------------
 --[Doelen]--------------------------------------------------
