@@ -411,14 +411,14 @@ In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverl
    PURPOSE RELATION isanietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
 
   -- RULE Uitgewerkt door Chris Haveman en Henk Boer, aangepast op 9 mei 2013 (HB)
-  RULE Gemandateerde LABEL "Artikel 10:4 Awb - gemandateerde" : isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
+  RULE Gemandateerde LABEL "Artikel 10:4 Awb - gemandateerde" : isanietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening de instemming van de gemandateerde, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien"
 
   PURPOSE RULE Gemandateerde LATEX REF "Artikel 10:4 Awb"
   {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien +}
 
   -- RULE Toegevoegd door Chris Haveman en Henk Boer, 02-05-2013.
-  RULE Verantwoordelijke LABEL "Artikel 10:4 Awb - verantwoordelijke" : (isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
+  RULE Verantwoordelijke LABEL "Artikel 10:4 Awb - verantwoordelijke" : (isanietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening (in het voorkomende geval) de instemming van degene onder wiens verantwoordelijkheid hij valt, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien."
 
   PURPOSE RULE Verantwoordelijke LATEX REF "Artikel 10:4 Awb"

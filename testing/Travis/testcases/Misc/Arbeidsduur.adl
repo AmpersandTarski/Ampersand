@@ -212,7 +212,7 @@ PURPOSE PATTERN RekenenDatums
 
 PURPOSE RULE Vandaag1dag
 {+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom "vandaag").+}
-RULE Vandaag1dag LABEL "Vandaag is 1 (enkele) dag": I[Vandaag] = "VANDAAG": I[Vandaag] = "VANDAAG"
+RULE Vandaag1dag LABEL "Vandaag is 1 (enkele) dag": I[Vandaag] = "VANDAAG"
 vandaag :: Vandaag * Datum [UNI]
 PRAGMA "" " is de datum "
 POPULATION Vandaag CONTAINS ["VANDAAG"]
