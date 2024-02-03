@@ -84,10 +84,6 @@ PURPOSE INTERFACE Bestuursorgaan
              ]
       ]
 
-   PATTERN ToevoegenMandaat {- Stef Joosten, 19 April 2013 -}
-   ROLE Bestuurder MAINTAINS Mandaatbesluit
-   ENDPATTERN
-   
    PATTERN Mandaten
    CONCEPT Mandaat "Een mandaat is de bevoegdheid om in naam van een bestuursorgaan besluiten te nemen." "Artikel 10:1 Awb"
 
@@ -508,11 +504,6 @@ Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.
 +}
 ENDPATTERN
 
-   PURPOSE PATTERN ToevoegenBestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
-   PATTERN ToevoegenBestuursorganen
-   ROLE BO MAINTAINS Mandaatbesluit
-   ENDPATTERN
    --
    PURPOSE INTERFACE Bestuursorganen
    {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
