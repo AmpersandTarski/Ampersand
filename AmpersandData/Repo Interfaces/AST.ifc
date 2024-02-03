@@ -1,4 +1,4 @@
-CONTEXT "FormalAmpersand Interface" IN ENGLISH
+CONTEXT FormalAmpersandInterface IN ENGLISH
 
 --INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
 --BOX <TABLE sortable hideEmptyTable>

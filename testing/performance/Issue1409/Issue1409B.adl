@@ -1,4 +1,4 @@
-CONTEXT "Issue1409B"
+CONTEXT Issue1409B
 
 RELATION l[X*A]
 RELATION r[X*A]
@@ -30,7 +30,7 @@ ENFORCE link := a;van~;naar;a~ /\ t;t~
 VIEW K : K(TXT "van=", van, TXT ", naar=", naar, TXT ", t=", t)
 VIEW Poort : Poort(TXT "a=", a, TXT ", t=", t)
 
-INTERFACE Koppelingen FOR User: "_SESSION" FOR User: "_SESSION";V[SESSION*K] BOX
+INTERFACE Koppelingen FOR User: "_SESSION";V[SESSION*K] BOX
    [ K : I
    , poortvan : van;a~/\t;t~
    , poortnaar : naar;a~/\t;t~

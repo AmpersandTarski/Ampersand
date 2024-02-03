@@ -478,7 +478,7 @@ BOX[ "Verzoek" : I
           ]
     ]
 
-INTERFACE VoorstelOngewijzigdAccorderen  FOR Werkgever : I[Verzoek]
+INTERFACE VoorstelOngewijzigdAccorderen FOR Werkgever : I[Verzoek]
 BOX[ "Verzoek" : I
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever

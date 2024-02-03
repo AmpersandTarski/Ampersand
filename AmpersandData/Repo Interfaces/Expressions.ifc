@@ -3,7 +3,7 @@ INCLUDE "Terms.adl"
 INCLUDE "Views.adl"
 INCLUDE "Atoms.adl"
 
-INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Atoms : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
@@ -40,19 +40,19 @@ VIEW Concept : Concept(name)
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+INTERFACE Concept: I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
-INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair: I[Pair]
 BOX [ "relation(s)"  : in[Pair*Relation]
      , lAtom          : lAtom
      , rAtom          : rAtom
      ]
 
-INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+INTERFACE Relation: I[Relation]
 BOX [ name    : name
      , source  : source
      , target  : target

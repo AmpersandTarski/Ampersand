@@ -1,4 +1,4 @@
-CONTEXT "Messaging"
+CONTEXT Messaging
 
 RELATION originatesFrom[Conjunct*Rule] [TOT] -- This rule is copied from FormalAmpersand
 

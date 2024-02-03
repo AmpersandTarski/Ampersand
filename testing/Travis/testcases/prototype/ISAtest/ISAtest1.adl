@@ -42,7 +42,7 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 
 --[Bedrijfsfuncties]---------------------------------------
 INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
-    FOR Developer        : I[Bedrijfsfunctie]
+   FOR Developer        : I[Bedrijfsfunctie]
 BOX[ "Naam"               : bfNaam
    , "Obl TAV"            : critBF~;I[Verplichting];critTAV
    , "ExtObl TAV"         : critBF~;I[ExterneVerplichting];critTAV

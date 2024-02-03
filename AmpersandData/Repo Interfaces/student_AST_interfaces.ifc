@@ -132,7 +132,7 @@ Rule 'test4' is broken:
 -}
 
 --CSS refers to all names in this interface
-INTERFACE ExtraFunctions LABEL "Extra functions" (filename,userrole) FOR Student: I[ONE]
+INTERFACE ExtraFunctions LABEL "Extra functions" FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
@@ -160,7 +160,7 @@ BOX ["CLASSIFY" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
-INTERFACE Concept(cptos,atomvalue) FOR Student: I[Concept]
+INTERFACE Concept FOR Student: I[Concept]
 BOX ["PURPOSEs" :cptpurpose
     ,"CONCEPT definition" :cptdf
     ,"name" :cptnm
@@ -173,9 +173,9 @@ BOX ["PURPOSEs" :cptpurpose
     ,"used in RULEs": (relsgn;(src \/ tgt))~;(formalTerm;relsInPlug)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
-INTERFACE Atom(cptos) FOR Student: I[Atom];atomvalue~
+INTERFACE Atom FOR Student: I[Atom];atomvalue~
 BOX ["in POPULATION of": cptos~]
-INTERFACE Relation(decpopu,left,right) FOR Student: I[Relation]
+INTERFACE Relation FOR Student: I[Relation]
 BOX ["PURPOSEs" :purpose
     ,"MEANING" :decMean
     ,"example of basic sentence" :decexample

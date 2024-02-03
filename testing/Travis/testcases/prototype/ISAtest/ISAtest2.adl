@@ -76,14 +76,14 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 --[Bedrijfsfuncties]---------------------------------------
 
 INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
-   FOR Developer : I[Bedrijfsfunctie]
+  FOR Developer : I[Bedrijfsfunctie]
 BOX[ "ID" : I
    , "Naam" : bfNaam
    , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
    ]
 
 INTERFACE BIALijst -- I[Bedrijfsfunctie]
-   FOR Developer : I[Bedrijfsfunctie]
+  FOR Developer : I[Bedrijfsfunctie]
 BOX[ "Algemeen" : I
    , "Nieuwe verplichtingen" : nieuweVerplichting
       BOX[ Verplichting : I[Verplichting]
@@ -116,7 +116,7 @@ ENDPATTERN
 --[Verplichtingen]-----------------------------------------
 
 INTERFACE Verplichting -- I[Verplichting]
-   FOR Developer : I[Verplichting]
+  FOR Developer : I[Verplichting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
@@ -142,7 +142,7 @@ BOX[ "ID" : I
 --[Verwachtingsverzamelingen en gewetensvragen]------------
 
 INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
-   FOR Developer  : I[Verwachtingsverzameling]
+  FOR Developer  : I[Verwachtingsverzameling]
 BOX[ Verwachtingsverzameling : I
    BOX[ "ID" : I
       , Verplichting : vvVerplichting
@@ -165,7 +165,7 @@ BOX[ Verwachtingsverzameling : I
    ]
 
 INTERFACE Gewetensvraag -- I[Gewetensvraag]
-   FOR Developer : I[Gewetensvraag]
+  FOR Developer : I[Gewetensvraag]
 BOX[ Gewetensvraag: I
    BOX[ "ID"        : I
        
@@ -190,7 +190,7 @@ BOX[ Gewetensvraag: I
 --[Verwachtingen]------------------------------------------
 
 INTERFACE Verwachting -- I[Verwachting]
-   FOR Developer : I[Verwachting]
+  FOR Developer : I[Verwachting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF

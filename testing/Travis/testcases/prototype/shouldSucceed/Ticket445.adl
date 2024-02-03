@@ -1,4 +1,4 @@
-﻿CONTEXT Ticket445 IN DUTCH
+CONTEXT Ticket445 IN DUTCH
 --------------------------------------------------------
 
 sessionAccount :: SESSION * Account [UNI]

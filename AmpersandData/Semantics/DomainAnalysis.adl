@@ -19,8 +19,8 @@ PATTERN Terms
 ENDPATTERN
 
 PATTERN DefiningTypeTerms LABEL "Defining type terms"
-    RELATION dom[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "dom is total"
-    RELATION cod[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "cod is total"
+    RELATION dom[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE DomTotal
+    RELATION cod[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE DomTotal
     RELATION popset[Concept*TypeTerm] [UNI]                   -- TOT is maintained in RULE popsetTotal
 
     RULE DomTotal LABEL "dom is total" :                                    

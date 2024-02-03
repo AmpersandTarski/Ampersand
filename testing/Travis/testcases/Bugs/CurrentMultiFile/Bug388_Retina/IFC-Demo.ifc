@@ -92,7 +92,7 @@ BOX[ "Partij" : I
    ]
 ------------------------------------------------------------
 --[Berichtsoorten]------------------------------------------
-INTERFACE BerichtSoortA  FOR User : I[BerichtSoort]
+INTERFACE BerichtSoortA FOR User : I[BerichtSoort]
 BOX[ "BerichtSoort" : I
    , "berichtSoortNaam" : berichtSoortNaam
    , "berichtSoortGegevensType" : berichtSoortGegevensType
