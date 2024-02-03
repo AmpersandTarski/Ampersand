@@ -41,10 +41,10 @@ BOX <TABS>
              )  INTERFACE IsaTree 
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
-  , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE "Relation"
+  , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE Relation
   , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
-  , "Rules" : context[Rule*Context]~ INTERFACE "Rule"
+  , "Rules" : context[Rule*Context]~ INTERFACE Rule
   ]
 INTERFACE IsaTree FOR Ampersand : I[Concept]
   BOX <FORM noLabels>
@@ -55,12 +55,12 @@ INTERFACE IsaTree FOR Ampersand : I[Concept]
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternName] cRud
     , "context" : context[Pattern*Context] cRud
-    , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
+    , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE Relation
     , "rules"  : patRules[Pattern*Rule] cRud
     , "purpose" : purpose[Pattern*Purpose] cRud
     ]
 
-INTERFACE "Rule" FOR Ampersand : I[Rule]
+INTERFACE Rule FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleName]
     , "valid" : valid[Rule*Context]
     , "context" : context[Rule*Context]
@@ -80,12 +80,12 @@ BOX [ "name" : name[Rule*RuleName]
     , "purpose" : purpose[Rule * Purpose]
     ]
     
-INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
+INTERFACE Conjunct FOR Ampersand : I[Conjunct] BOX
     [ "ID" : I
 --    , "originatesFrom" : originatesFrom[Conjunct*Rule]
 --    , "conjunct"       : rcConjunct[Conjunct*Term]
     ]
-INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
+INTERFACE Concept FOR Ampersand : I[Concept] BOX
     [ concept : I
     , name    : name[Concept*ConceptName]
     , ttype   : ttype
@@ -120,15 +120,15 @@ BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Term
     ]
 INTERFACE Signature FOR Ampersand : I[Signature] cRud
 BOX [ Signature: I[Signature]
-    , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
-    , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
-    , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
-    , "sign~ (Rule)" : sign[Term*Signature]~;formalTerm[Rule*Term]~ LINKTO INTERFACE "Rule"
+    , src : src[Signature*Concept] LINKTO INTERFACE Concept
+    , tgt : tgt[Signature*Concept] LINKTO INTERFACE Concept
+    , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE Relation
+    , "sign~ (Rule)" : sign[Term*Signature]~;formalTerm[Rule*Term]~ LINKTO INTERFACE Rule
     ] 
 
 INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
 BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
-    , "propertyRule~" : propertyRule[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
+    , "propertyRule~" : propertyRule[Relation*PropertyRule]~  LINKTO INTERFACE Relation
     ]
 
 INTERFACE Isa FOR Ampersand : I[Isa]

@@ -33,7 +33,7 @@ VIOLATION (TXT "{EX} NewStruct;Y"
                ,TXT ";r;Y;_NEW;A;", SRC r
           )
 
-INTERFACE "Koppelingen" FOR User: "_SESSION";V[SESSION*K] BOX
+INTERFACE Koppelingen FOR User: "_SESSION" FOR User: "_SESSION";V[SESSION*K] BOX
    [ K : I
    , van : van
    , naar : naar

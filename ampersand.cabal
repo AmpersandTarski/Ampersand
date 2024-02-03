@@ -257,7 +257,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try14.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try15.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try16.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17b.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try18b.adl

@@ -3,7 +3,7 @@ INCLUDE "TypeChecking.adl"
 INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION"
+INTERFACE DomainAnaylsis LABEL "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION" (name[Relation*Identifier], source, target) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
