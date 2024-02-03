@@ -7,8 +7,8 @@ biaVerplichtingDef :: Bedrijfsfunctie * Verplichting [INJ]
 CLASSIFY Verplichting ISA Criterium
 CLASSIFY ExterneVerplichting ISA Verplichting
 
-RULE BIAlijstIntegriteit LABEL "BIAlijst integriteit": -- Invariant
-biaVerplichting_Def |- biaVerplichting_Def;I[ExterneVerplichting]
+RULE BIAlijstIntegriteit LABEL "BIAlijst integriteit" : -- Invariant
+biaVerplichtingDef |- biaVerplichtingDef;I[ExterneVerplichting]
 MEANING "De BIA-lijst bevat alleen externe verplichtingen."
 VIOLATION (TXT "De BIA-lijst van ", SRC I, TXT " mag alleen externe verplichtingen bevatten; ", TGT I[Verplichting], TXT " is dat niet.")
 

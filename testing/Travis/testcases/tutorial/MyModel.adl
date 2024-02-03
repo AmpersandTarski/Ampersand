@@ -10,7 +10,7 @@ sessionMyName :: SESSION * MyName [UNI]
 MEANING "My name can be known in the current session."
 
 ROLE User MAINTAINS ClickRegistration
-RULE ClickRegistration: "_SESSION LABEL "Please click on 'Registration' to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
+RULE ClickRegistration: "_SESSION LABEL "Please click on \"Registration\" to specify your name": "_SESSION"[SESSION] |- sessionMyName;sessionMyName~
 VIOLATION (TXT "You can find the 'Registration' item in the navigationbar (top of the screen).")
 
 INTERFACE Registration: "_SESSION"[SESSION] cRud BOX
