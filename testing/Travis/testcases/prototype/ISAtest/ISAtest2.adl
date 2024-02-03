@@ -34,7 +34,7 @@ RULE Verbod LABEL "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I
 
 --[BIA-lijst]--
 
-biaVerplichting_Def :: Bedrijfsfunctie * ExterneVerplichting [INJ]
+biaVerplichtingDef :: Bedrijfsfunctie * ExterneVerplichting [INJ]
 ROLE Developer MAINTAINS BIAlijstBijhouden
 RULE BIAlijstBijhouden LABEL "BIA-lijst bijhouden": biaVerplichting_Def = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
