@@ -42,7 +42,6 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
     AmpersandData/FormalAmpersand/Terms.adl
-    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
@@ -97,13 +96,14 @@ extra-source-files:
     testing/Sentinel/README.md
     testing/Sentinel/Tests/NoSentinel/Conjuncts.adl
     testing/Sentinel/Tests/NoSentinel/Crud.adl
-    testing/Sentinel/Tests/NoSentinel/Issue191Test.adl
-    testing/Sentinel/Tests/NoSentinel/Issue191Test.xlsx
+    testing/Sentinel/Tests/NoSentinel/Issue1465Test.adl
+    testing/Sentinel/Tests/NoSentinel/Issue1465Test.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
+    testing/Sentinel/Tests/ShouldFail/singletontest.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
@@ -124,6 +124,8 @@ extra-source-files:
     testing/StillUnsupported/Issue166_2.adl
     testing/StillUnsupported/singletontest.adl
     testing/Travis/README.md
+    testing/Travis/testcases/Archimate/repositoryumcu.archimate
+    testing/Travis/testcases/Archimate/testinfo.yaml
     testing/Travis/testcases/Bugs/Current/SQL/ARM20-Test8.adl
     testing/Travis/testcases/Bugs/Current/SQL/testinfo.yaml
     testing/Travis/testcases/Bugs/Current/SQLFail/Bug302_IgnoredV.adl
@@ -255,7 +257,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try14.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try15.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try16.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17b.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try18b.adl

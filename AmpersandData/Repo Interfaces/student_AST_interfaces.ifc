@@ -1,5 +1,5 @@
 CONTEXT RAP IN ENGLISH
-INTERFACE "Atlas (Play)" FOR Student: I[ONE]
+INTERFACE AtlasPlay LABEL "Atlas (Play)" FOR Student: I[ONE]
 BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"number of relations":countdecls,"number of concepts":countcpts] 
     ,"PATTERNs" : V[ONE*Context];ctxpats
     ,"concepts" : V[ONE*Context];ctxcs
@@ -7,11 +7,11 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": propertyRule;declaredthrough] 
     ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
     ]
-INTERFACE "Validate" FOR Student: I[ONE]
+INTERFACE Validate FOR Student: I[ONE]
 BOX ["Click to commit and validate":V[ONE*Context];savecontext
     ]
 --CSS refers to most names in this interface
-INTERFACE "CONTEXT files (Design / reload)" FOR Student: I[ONE]
+INTERFACE CONTEXTfiles LABEL "CONTEXT files (Design / reload)" FOR Student: I[ONE]
 BOX ["loaded into Atlas" : V[ONE*Context] 
     BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
     ,"overview of files" : V[ONE*User]
@@ -21,7 +21,7 @@ BOX ["loaded into Atlas" : V[ONE*Context]
     ]
 
 --css refers to this interface
-INTERFACE "Diagnosis" FOR Student: I[ONE]
+INTERFACE Diagnosis FOR Student: I[ONE]
 BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE term!!
 --SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
 --FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
@@ -32,12 +32,12 @@ BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- TH
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(formalTerm;relsInPlug;reldcl)
     ]
 
-INTERFACE "Syntax error" FOR Student: I[ParseError]
+INTERFACE SyntaxError LABEL "Syntax error" FOR Student: I[ParseError]
 BOX [ "expecting":pe_expecting
     , "position" :pe_position
     , "try"      :pe_action
     ]
-INTERFACE "Type error" FOR Student: I[TypeError]
+INTERFACE TypeError LABEL "Type error" FOR Student: I[TypeError]
 BOX [ "error" : I
     BOX [ "in" :te_origtype
         , "at" :te_position
@@ -62,7 +62,7 @@ ENDPATTERN
 -}
 {-
 CONTEXT Test
-PATTERN "Test"
+PATTERN Test
   CLASSIFY "Medewerker" ISA "Persoon"
   CLASSIFY "Klant" ISA "Persoon"
   helptzichzelf :: Medewerker * Klant
@@ -132,14 +132,14 @@ Rule 'test4' is broken:
 -}
 
 --CSS refers to all names in this interface
-INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
+INTERFACE ExtraFunctions LABEL "Extra functions" FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
     , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
     ]
 
-INTERFACE "CONTEXT" FOR Student: I[Context]
+INTERFACE CONTEXT FOR Student: I[Context]
 BOX ["name" : ctxnm 
     ,"PATTERNs" : ctxpats
     ,"concepts" : ctxcs 
@@ -147,7 +147,7 @@ BOX ["name" : ctxnm
     ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": propertyRule;declaredthrough]
     ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
     ]
-INTERFACE "PATTERN" FOR Student: I[Pattern]
+INTERFACE PATTERN FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
     ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
@@ -155,12 +155,12 @@ BOX ["PURPOSEs" :ptxps
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
     ]
-INTERFACE "ISA-relation" FOR Student: I[Isa]
+INTERFACE ISArelation LABEL ISA-relation FOR Student: I[Isa]
 BOX ["CLASSIFY" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
-INTERFACE "Concept"(cptos,atomvalue) FOR Student: I[Concept]
+INTERFACE Concept FOR Student: I[Concept]
 BOX ["PURPOSEs" :cptpurpose
     ,"CONCEPT definition" :cptdf
     ,"name" :cptnm
@@ -173,9 +173,9 @@ BOX ["PURPOSEs" :cptpurpose
     ,"used in RULEs": (relsgn;(src \/ tgt))~;(formalTerm;relsInPlug)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
-INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
+INTERFACE Atom FOR Student: I[Atom];atomvalue~
 BOX ["in POPULATION of": cptos~]
-INTERFACE Relation(decpopu,left,right) FOR Student: I[Relation]
+INTERFACE Relation FOR Student: I[Relation]
 BOX ["PURPOSEs" :purpose
     ,"MEANING" :decMean
     ,"example of basic sentence" :decexample
@@ -186,7 +186,7 @@ BOX ["PURPOSEs" :purpose
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
     ,"used in RULEs": (formalTerm;relsInPlug;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
-INTERFACE "RULE" FOR Student: I[Rule]
+INTERFACE RULE FOR Student: I[Rule]
 BOX ["PURPOSEs" :purpose
     ,"MEANING" :meaning
     ,"name" :rrnm

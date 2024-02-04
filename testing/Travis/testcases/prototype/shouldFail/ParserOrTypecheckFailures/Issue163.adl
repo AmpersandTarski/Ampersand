@@ -9,7 +9,7 @@ POPULATION A CONTAINS [ 3, 6, 42 ]
 CLASSIFY B ISA A
 REPRESENT B TYPE INTEGER
 
-INTERFACE Issue163 (r,s) : V[SESSION*A]
+INTERFACE Issue163 : V[SESSION*A]
  BOX [ ie : I
      , r  : r
      , s  : s

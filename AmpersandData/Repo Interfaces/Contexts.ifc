@@ -2,7 +2,7 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "Contexts.adl"
 
 VIEW Context : Context(name)
-INTERFACE Contexts (valid,relations) : "_SESSION"[SESSION]
+INTERFACE Contexts : "_SESSION"[SESSION]
 BOX <TABS>
     [ "Contexts" : V[SESSION*Context]
       BOX<TABLE sortable>
@@ -35,7 +35,7 @@ BOX <TABS>
                 ( -(genspc[Isa*Concept]~;genspc[Isa*Concept]))) 
          -- INTERFACE IsaTree 
   , "Concepts" : context[Concept*Context]~
-  , "Relations" : relsDefdIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
+  , "Relations" : relsDefdIn[Relation*Context]~  -- LINKTO INTERFACE Relation
        BOX<TABLE sortable>
            [ relation   : I
            , "declared in pattern" : declaredIn
@@ -43,7 +43,7 @@ BOX <TABS>
            ]
   , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
---  , "Rules" : context[Rule*Context]~ INTERFACE "Rule"
+--  , "Rules" : context[Rule*Context]~ INTERFACE Rule
   ]
 
 ENDCONTEXT

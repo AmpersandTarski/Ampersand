@@ -1,4 +1,4 @@
-﻿CONTEXT Issue865
+CONTEXT Issue865
 
 isSuccessorOf :: Assignment * Assignment [UNI,INJ,ASY] -- IRF,
 

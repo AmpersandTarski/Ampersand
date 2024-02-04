@@ -7,7 +7,7 @@ BOX [ rules : V[ONE*Rule]
           ]
     ]
 
-INTERFACE newRule (characteristic, meaning["Rule"*"NatLang"], purpose["Rule"*"NatLang"]): I[Rule]
+INTERFACE newRule : I[Rule]
 BOX [ rule : I
     , term : characteristic
     ]

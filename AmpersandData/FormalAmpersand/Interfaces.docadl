@@ -2,7 +2,7 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
-PURPOSE PATTERN "Data objects" MARKDOWN
+PURPOSE PATTERN DataObjects MARKDOWN
 {+This pattern describes the invariant semamtics of data objects (concept: Object).
 An `Object` is a runtime thing, which is defined by an `ObjectDef`.
 +}
@@ -57,7 +57,7 @@ That is relevant, because such terms allow the system to open a relation for edi
 So in order to be edited, a relation must occur in this relation.
 +}
 
-PURPOSE RULE "accessible relations"
+PURPOSE RULE AccessibleRelations
 {+The population of every relation may need to change every now and then.
 Changing relations, however, requires an interface.
 The following rule signals the developer if no such interface exists.
@@ -120,13 +120,13 @@ PURPOSE RELATION in[Pair*Term]
 This can be computed by taking the populations of all relations that are used in the term, and by computing the result of applying the relational operators in the term on those relations.
 +}
 
-PURPOSE RULE "atoms in objects"
+PURPOSE RULE AtomsInObjects
 {+The data content of an object is defined by the field terms inside that object.
 +}
-PURPOSE RULE "fields in objects"
+PURPOSE RULE FieldsInObjects
 {+An object may have a number of fields, which are defined in the object's definition.
 +}
-PURPOSE RULE "fields with unique names"
+PURPOSE RULE FieldsWithUniqueNames
 {+In order to identify fields within an object, each field is given a name to identify its field term.
 +}
 
@@ -155,7 +155,7 @@ PURPOSE RELATION changes[Act*Relation]
 {+Since every act operates on precisely one relation, that relation is known through the relation ``changes''.
 +}
 
-PURPOSE RULE "atoms in objects"
+PURPOSE RULE AtomsInObjects
 {+Being an instance of an Objectdef, every object represents one pair of atoms that is in the object term of that object.
 +}
 

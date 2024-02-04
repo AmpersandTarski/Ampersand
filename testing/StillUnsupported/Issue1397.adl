@@ -1,4 +1,4 @@
-CONTEXT "Issue1397"
+CONTEXT Issue1397
 
 CLASSIFY Application ISA MaintainedItem
 

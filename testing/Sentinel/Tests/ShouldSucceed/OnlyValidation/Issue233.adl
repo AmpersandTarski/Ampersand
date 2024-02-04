@@ -5,11 +5,13 @@ sum :: Sum * Integer [UNI]
 arg :: Sum * Integer
 
 -- In other words:
-RULE SumsAreIddByTheirArgs1: arg <> arg~ |- I[Sum]
+RULE Rule1 LABEL "Sums are identified by their args, version 1": arg <> arg~ |- I[Sum]
 
 RULE SumsAreIddByTheirArgs2: (-arg ! arg~) /\ (arg ! -arg~) |- I[Sum]
 
-RULE TestEquivalence: arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
+RULE Rule2 LABEL "Sums are identified by their args, version 2": (-arg ! arg~) /\ (arg ! -arg~) |- I[Sum]
+
+RULE TestEquivalence : arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
 
 POPULATION arg CONTAINS [ ("1+2", "1") ] 
 POPULATION arg CONTAINS [ ("1+2", "2") ] 

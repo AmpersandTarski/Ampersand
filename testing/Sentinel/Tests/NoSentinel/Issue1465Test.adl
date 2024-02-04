@@ -1,0 +1,13 @@
+CONTEXT Issue1465Test IN DUTCH
+INCLUDE "Issue1465Test.xlsx"
+CLASSIFY Auto ISA Voertuig
+RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]
+RELATION aantalWielen [ Auto * Getal]  [UNI,TOT]
+
+REPRESENT Getal TYPE INTEGER
+
+ENDCONTEXT
+
+{* The purpose of this script is to show that the Excel importer (at least the one in Haskell) must be adapted
+because this test should succeed.
+*}

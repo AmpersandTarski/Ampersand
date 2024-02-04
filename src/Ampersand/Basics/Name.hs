@@ -22,6 +22,7 @@ module Ampersand.Basics.Name
     toNamePart1,
     postpend,
     checkProperId,
+    suggestName,
   )
 where
 
@@ -85,7 +86,37 @@ toNamePart1 x = case checkProperId x of
   Nothing -> Nothing
   Just np -> Just (NamePart np)
 
--- | This function checks
+-- | suggestName checks if the given text is a proper name. If not, it proposes a proper name based
+--   on the given text. In that case, the given text is converted into a Label. If the given text
+--   was good enough for a proper name, no Label is retured.
+suggestName :: NameType -> Text1 -> (Name, Maybe Label)
+suggestName typ txt =
+  ( mkName typ . fmap fst $ parts,
+    if and . NE.toList . fmap snd $ parts
+      then Nothing
+      else Just . Label . text1ToText $ txt
+  )
+  where
+    parts = suggestedPart <$> splitOnDots txt
+    suggestedPart :: Text1 -> (NamePart, Bool)
+    suggestedPart x@(Text1 h tl) = case checkProperId x of
+      Just _ -> (NamePart x, True)
+      Nothing -> (NamePart suggestion, False)
+      where
+        suggestion = toText1Unsafe $ pre <> rest
+          where
+            pre =
+              if isSafeIdChar True h
+                then T.singleton h
+                else "X" <> substitute h
+            rest = T.concat $ substitute <$> T.unpack tl
+            substitute :: Char -> Text
+            substitute c =
+              if isSafeIdChar False c
+                then T.singleton c
+                else "_"
+
+-- | This function checks if a text is a proper Id, if so, it returns the text
 checkProperId :: Text1 -> Maybe Text1
 checkProperId t@(Text1 h tl) =
   if isProper

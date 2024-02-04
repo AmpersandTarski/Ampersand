@@ -11,8 +11,8 @@ PATTERN Try11
   t :: A*A
 ENDPATTERN
 
-RULE "Test Try11" : -(r\/s)
-RULE "Test Try11" : t|-s
+RULE Test : -(r\/s)
+RULE Test : t|-s
 
 ENDCONTEXT
 
@@ -25,7 +25,7 @@ ENDCONTEXT
 C:> ampersand check Try11.adl
 Reading file /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl
 /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl:14:1 error:
-  Every rule must have a unique name. "Test Try11", however, is used at:/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl:14:1
+  Every rule must have a unique name. "Test", however, is used at:/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl:14:1
       /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl:15:1.
 ExitFailure 10
 C:>

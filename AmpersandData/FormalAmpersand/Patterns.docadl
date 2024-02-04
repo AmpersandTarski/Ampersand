@@ -1,7 +1,7 @@
 CONTEXT FormalAmpersand IN ENGLISH MARKDOWN
 INCLUDE "Patterns.adl"
 
-    PURPOSE PATTERN "Reusing Definitions"
+    PURPOSE PATTERN ReusingDefinitions
     {+  The rules that govern patterns are brought together in `PATTERN Patterns`,
         in order to formalize patterns and determine their meaning.
     +}

@@ -26,7 +26,7 @@ PURPOSE RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaPlus
 This relation is computed by the system.
 +}
 
-PURPOSE RULE "deterministic choice of View"  -- viewBy~;viewBy |- I
+PURPOSE RULE ChoiceView  -- viewBy~;viewBy |- I
 {+In order to signal a possible ambiguity in the choice of views,
 a process rule is in place to assist the user in maintaining a unique assignment of views.
 +}

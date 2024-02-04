@@ -1,4 +1,4 @@
-﻿CONTEXT Try53 IN DUTCH
+CONTEXT Try53 IN DUTCH
 RELATION r[A*C]
  = [ ("1", "aap")
    ; ("1", "noot")

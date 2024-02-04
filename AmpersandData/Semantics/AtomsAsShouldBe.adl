@@ -8,7 +8,7 @@ PATTERN Pairs
     RELATION rAtom[Pair*Atom] [UNI,TOT]
 ENDPATTERN
 
-PATTERN "Compute sources, targets, and populations"
+PATTERN ComputeSourcesSargetsPopulations LABEL "Compute sources, targets, and populations"
     RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
     RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
 
@@ -87,19 +87,19 @@ REPRESENT Atom TYPE ALPHANUMERIC
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 -- VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")   -- already in Terms.adl
 
-INTERFACE ConceptWithSiblings(name[Concept*ConceptName],isa) : I[Concept]
+INTERFACE ConceptWithSiblings: I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
-INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair: I[Pair]
 BOX [ "relation(s)"  : in[Pair*Relation]
      , lAtom         : lAtom
      , rAtom         : rAtom
      ]
 
-INTERFACE Relation(name[Relation*RelationName],source,target) : I[Relation]
+INTERFACE Relation: I[Relation]
 BOX  [ name    : name
      , source  : source
      , target  : target
