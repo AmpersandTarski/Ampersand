@@ -96,8 +96,8 @@ extra-source-files:
     testing/Sentinel/README.md
     testing/Sentinel/Tests/NoSentinel/Conjuncts.adl
     testing/Sentinel/Tests/NoSentinel/Crud.adl
-    testing/Sentinel/Tests/NoSentinel/Issue191Test.adl
-    testing/Sentinel/Tests/NoSentinel/Issue191Test.xlsx
+    testing/Sentinel/Tests/NoSentinel/Issue1465Test.adl
+    testing/Sentinel/Tests/NoSentinel/Issue1465Test.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
