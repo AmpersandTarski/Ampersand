@@ -606,13 +606,13 @@ where:
 #### Informal Semantics
 
 ```text
-IDENT "Rule Name" : C (e1, e2, ...)
+IDENT RuleName : C (e1, e2, ...)
 ```
 
 translates into the following rule:
 
 ```text
-  RULE "Rule Name":  {e1}<>{e1}~ /\ {e2}<>{e2}~ /\ ... |- I[C]
+  RULE RuleName :  {e1}<>{e1}~ /\ {e2}<>{e2}~ /\ ... |- I[C]
 ```
 
 Note that
@@ -620,7 +620,7 @@ Note that
 - Since for every `e` that is univalent and total `e<>e~` equals `e;e~`, so if `e1`, `e2`, ... are all univalent and total, the rule is equivalent to:
 
    ```text
-      RULE "Rule Name":  {e1};{e1}~ /\ {e2};{e2}~ /\ ... |- I[C]
+      RULE RuleName :  {e1};{e1}~ /\ {e2};{e2}~ /\ ... |- I[C]
    ```
 
 - in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
@@ -1371,7 +1371,7 @@ PURPOSE RELATION accountOwner LATEX
 By specifying a markup language, Ampersand interprets the text as specified. If you do not specify the markup language, your text is interpreted as REStructured Text \(`REST`\). The available markup languages are `LATEX`, `MARKDOWN`, `HTML`, and `REST`.
 
 ```text
-PURPOSE RULE "Check Digit Character"
+PURPOSE RULE CheckDigitCharacter
 IN ENGLISH MARKDOWN
 {+ This rule enforces the use of a check digit character
    as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
@@ -1563,7 +1563,7 @@ RELATION assignee[Assignment*Person] [UNI,TOT]  MEANING "Every Assignment must a
 The following rule states that for every project leader, an assignment must exist that applies to one person and one project, basically assigning that person to be a project leader for the Project.
 
 ```text
-RULE "Require Assignment" : pl |- project~;assignee
+RULE RequireAssignment : pl |- project~;assignee
 ```
 
 This calls for two different things: first, the automated creation of an atom in the concept `Assignment`, and second the consecutive population of relations `project` and `assignee` using this newly created atom.
@@ -1571,8 +1571,8 @@ This calls for two different things: first, the automated creation of an atom in
 This is specified as follows:
 
 ```text
-ROLE "ExecEngine" MAINTAINS "Create Assignment"
-RULE "Create Assignment" : pl |- project~;assignee
+ROLE "ExecEngine" MAINTAINS CreateAssignment
+RULE CreateAssignment : pl |- project~;assignee
 VIOLATION (TXT "{EX} InsAtom;Assignment"
           ,TXT "{EX} InsPair;project;Assignment;_NEW;Project;", SRC I
           ,TXT "{EX} InsPair;assignee;Assignment;_NEW;Person;", TGT I
@@ -1612,8 +1612,8 @@ and subsequently executes them. Executing the `InsAtom` statement creates a new 
 In our example, whenever a project participant is discharged from his task, the corresponding Assignment needs to be deleted. We can do this by means of an automated rule:
 
 ```text
-ROLE "ExecEngine" MAINTAINS "Delete Assignment"
-RULE "Delete Assignment" :  project~;assignee |- pl\/member
+ROLE "ExecEngine" MAINTAINS DeleteAssignment
+RULE DeleteAssignment :  project~;assignee |- pl\/member
 VIOLATION ( TXT "DelAtom;Assignment;", SRC I)
 ```
 
@@ -1638,20 +1638,20 @@ Consider the `r :: A * A [IRF,ASY]`. In relation algebra, terms such as `r+` or 
 This section describes a workaround that allows you to use transitive closures.To do so, we simply define a relation `rPlus :: A * A` and/or `rStar :: A * A`, and define the following automated rules to populate these relations:
 
 ```text
- ROLE ExecEngine MAINTAINS "Grow rPlus"
- RULE "Grow rPlus": r;rPlus \/ rPlus;r |- rPlus
+ ROLE ExecEngine MAINTAINS GrowRPlus
+ RULE GrowRPlus : r;rPlus \/ rPlus;r |- rPlus
  VIOLATION (TXT "{EX} InsPair;rPlus;A;", SRC I, TXT ";A;", TGT I)
 
- ROLE ExecEngine MAINTAINS "Shrink rPlus"
- RULE "Shrink rPlus": rPlus |- r;rPlus \/ rPlus;r
+ ROLE ExecEngine MAINTAINS ShrinkRPlus
+ RULE ShrinkRPlus : rPlus |- r;rPlus \/ rPlus;r
  VIOLATION (TXT "{EX} DelPair;rPlus;A;", SRC I, TXT ";A;", TGT I)
 
- ROLE ExecEngine MAINTAINS "Grow rStar"
- RULE "Grow rStar": r \/ r;rStar \/ rStar;r |- rStar
+ ROLE ExecEngine MAINTAINS GrowRStar
+ RULE GrowRStar : r \/ r;rStar \/ rStar;r |- rStar
  VIOLATION (TXT "{EX} InsPair;rStar;A;", SRC I, TXT ";A;", TGT I)
 
- ROLE ExecEngine MAINTAINS "Shrink rStar"
- RULE "Shrink rStar": rStar |- r \/ r;rStar \/ rStar;r
+ ROLE ExecEngine MAINTAINS ShrinkRStar
+ RULE ShrinkRStar : rStar |- r \/ r;rStar \/ rStar;r
  VIOLATION (TXT "{EX} DelPair;rStar;A;", SRC I, TXT ";A;", TGT I)
 ```
 
@@ -1662,8 +1662,8 @@ While this works \(certainly in theory\), a practical issue is that it quickly b
  MEANING "a copy of the relation `r`, needed to detect deletions in `r`"
 
  rPlus :: A * A 
- ROLE ExecEngine MAINTAINS "Warshall on r"
- RULE "Warshall on r": rCopy = r
+ ROLE ExecEngine MAINTAINS WarshallR
+ RULE WarshallR LABEL "Warshall on r" : rCopy = r
  VIOLATION (TXT "{EX} TransitiveClosure;r;A;rCopy;rPlus")
 ```
 
@@ -1717,13 +1717,13 @@ Here is an example of how `RerunExecEngine` can be used to create a transitive c
  r :: A * A [ASY]
  rStar :: A * A -- This will contain a transitive closure
 
- ROLE ExecEngine MAINTAINS "InsPair on rStar"
- RULE "InsPair on rStar": r \/ r;rStar \/ rStar;r |- rStar
+ ROLE ExecEngine MAINTAINS InsPairRStar
+ RULE InsPairRStar LABEL "InsPair on rStar" : r \/ r;rStar \/ rStar;r |- rStar
  VIOLATION (TXT "{EX} InsPair;rStar;A;", SRC I, TXT ";A;", TGT I
            ,TXT "{EX} RerunExecEngine;InsPair on rStar"
            )
- ROLE ExecEngine MAINTAINS "DelPair on rStar"
- RULE "DelPair on rStar": rStar |- r \/ r;rStar \/ rStar;r
+ ROLE ExecEngine MAINTAINS DelPairRStar
+ RULE DelPairRStar LABEL "DelPair on rStar" : rStar |- r \/ r;rStar \/ rStar;r
  VIOLATION (TXT "{EX} DelPair;rStar;A;", SRC I, TXT ";A;", TGT I
            ,TXT "{EX} RerunExecEngine;DelPair on rStar"
            )
@@ -1737,8 +1737,8 @@ CONTEXT CurrentDate
 
    RELATION sessionToday[SESSION*Date] -- or whatever the DateTime concept is called
    REPRESENT Date TYPE DATE
-   ROLE ExecEngine MAINTAINS "Initialize today's date"
-   RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
+   ROLE ExecEngine MAINTAINS InitDate
+   RULE InitDate LABEL "Initialize today's date" : I[SESSION] |- sessionToday;sessionToday~
    VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date")
 
 INTERFACE Overview : "_SESSION" cRud

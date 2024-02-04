@@ -5,6 +5,6 @@ CONTEXT Issue1261
 -- For system bootstrapping purposes, we need a "God"-account that has all permissions/roles.
 POPULATION Account CONTAINS [ "god" ]
 
-RULE "rulename": "god"[Account]
+RULE godRule: "god"[Account]
 
 ENDCONTEXT

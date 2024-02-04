@@ -43,12 +43,15 @@ proto fSpec = do
     then do doGenMetaModel fSpec
     else do logDebug "  Skipping generating metamodel.adl"
 
+-- TODO @StefJoosten, please replace this functionality with exportAsAdl
 doGenMetaModel :: (HasLogFunc env, HasDirPrototype env) => FSpec -> RIO env ()
-doGenMetaModel fSpec = do
-  env <- ask
-  logInfo "Generating metamodel ..."
-  let dir = getMetamodelDir env
-      filepath = dir </> "metamodel.adl"
-  logDebug $ "  Generating " <> display (T.pack filepath)
-  liftIO $ createDirectoryIfMissing True dir
-  writeFileUtf8 filepath (showA (originalContext fSpec))
+doGenMetaModel fSpec = case originalContext fSpec of
+  Nothing -> logInfo "To generate a metamodel, your model should contain a context, but it contains a module."
+  Just ctx -> do
+    env <- ask
+    logInfo "Generating metamodel ..."
+    let dir = getMetamodelDir env
+        filepath = dir </> "metamodel.adl"
+    logDebug $ "  Generating " <> display (T.pack filepath)
+    liftIO $ createDirectoryIfMissing True dir
+    writeFileUtf8 filepath (showA ctx)

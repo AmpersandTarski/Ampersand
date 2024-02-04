@@ -10,33 +10,32 @@ module Ampersand.FSpec.ShowMeatGrinder
 where
 
 import Ampersand.ADL1
-import Ampersand.Basics
+import Ampersand.Basics hiding (Name)
+import qualified Ampersand.Basics as AB (Name)
 import Ampersand.Core.A2P_Converters
 import Ampersand.Core.ParseTree
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers
+import qualified RIO.NonEmpty as NE
+
 -- import qualified RIO.Set as Set
-import qualified RIO.Text as T
 
 data MetaModel = FormalAmpersand | PrototypeContext
   deriving (Eq, Ord, Enum, Bounded, Show)
-
-instance Named MetaModel where
-  name FormalAmpersand = "Formal Ampersand"
-  name PrototypeContext = "Prototype context"
 
 -- | This produces the metamodel of either
 --   "FormalAmpersand" or "PrototypeContext" as defined by their transformers.
 metaModel :: MetaModel -> P_Context
 metaModel mmLabel =
   PCtx
-    { ctx_nm = "MetaModel" <> T.pack (show mmLabel),
+    { ctx_nm = modelName,
+      ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,
       ctx_markup = Nothing,
       ctx_pats = [],
       ctx_rs = [],
-      ctx_ds = map metarelation (transformers emptyFSpec),
+      ctx_ds = map metarelation transformers,
       ctx_cs = [],
       ctx_ks = [],
       ctx_rrules = [],
@@ -50,17 +49,29 @@ metaModel mmLabel =
       ctx_enfs = []
     }
   where
+    modelName :: AB.Name
+    modelName =
+      withNameSpace nameSpace
+        . mkName ContextName
+        $ ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
+              Nothing -> fatal "Not a proper NamePart."
+              Just np -> np NE.:| []
+          )
     transformers = case mmLabel of
-      FormalAmpersand -> transformersFormalAmpersand
-      PrototypeContext -> transformersPrototypeContext
+      FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
+      PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName
+    nameSpace = case mmLabel of
+      FormalAmpersand -> nameSpaceFormalAmpersand
+      PrototypeContext -> nameSpacePrototypeContext
 
 -- | The 'grind' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a P_Context, so it can be merged with other Ampersand results.
-grind :: (FSpec -> [Transformer]) -> FSpec -> P_Context
-grind transformers userFspec =
+grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
+grind ns fun userFspec =
   PCtx
-    { ctx_nm = "Grinded_" <> name userFspec,
+    { ctx_nm = prependToPlainName "Grinded_" $ withNameSpace ns . mkName ContextName $ localName userFspec NE.:| [],
+      ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,
       ctx_markup = Nothing,
@@ -80,17 +91,19 @@ grind transformers userFspec =
       ctx_enfs = []
     }
   where
+    transformers = fun userFspec
     filtered :: [Transformer]
-    filtered = filter (not . null . tPairs) . transformers $ userFspec
+    filtered = filter (not . null . tPairs) transformers
 
 metarelation :: Transformer -> P_Relation
 metarelation tr =
   P_Relation
     { dec_nm = tRel tr,
+      dec_label = Nothing,
       dec_sign =
         P_Sign
-          (mkPConcept (tSrc tr))
-          (mkPConcept (tTrg tr)),
+          (mkPConcept (tSrc tr) Nothing)
+          (mkPConcept (tTrg tr) Nothing),
       dec_prps = aProps2Pprops $ mults tr,
       dec_defaults = [],
       dec_pragma = Nothing,
@@ -111,8 +124,8 @@ transformer2pop tr =
             p_mbSign =
               Just
                 ( P_Sign
-                    (mkPConcept (tSrc tr))
-                    (mkPConcept (tTrg tr))
+                    (mkPConcept (tSrc tr) Nothing)
+                    (mkPConcept (tTrg tr) Nothing)
                 )
           },
       p_popps = tPairs tr

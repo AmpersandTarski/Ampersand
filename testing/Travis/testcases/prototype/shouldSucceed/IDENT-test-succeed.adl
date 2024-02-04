@@ -1,9 +1,9 @@
-﻿CONTEXT Test IN DUTCH
+CONTEXT Test IN DUTCH
 -- We're testing that:
 -- IDENTs work for functional relations
 -- IDENTs work with univalent relations
 
-IDENT "A's": A(r,s)
+IDENT Aas: A(r,s)
 
 r :: A * Uid [UNI,TOT]
 s :: A * PW  [UNI,TOT]
@@ -20,7 +20,7 @@ POPULATION s CONTAINS [ ("a3", "s1") ]
 POPULATION r CONTAINS [ ("a4", "r2") ]
 POPULATION s CONTAINS [ ("a4", "s2") ]
 
-IDENT "B's": B(u,v)
+IDENT Bees: B(u,v)
 
 u :: B * Uid [UNI]
 v :: B * PW  [UNI]

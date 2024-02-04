@@ -5,7 +5,7 @@ PATTERN Try41
 
 RELATION r[A*B]
 
-RULE r\r
+RULE Try41: r\r
 
 ENDPATTERN
 

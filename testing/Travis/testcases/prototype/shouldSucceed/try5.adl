@@ -1,14 +1,14 @@
 CONTEXT Try5 IN ENGLISH
-  CLASSIFY B ISA "B_Or_E_Or_A"
-  CLASSIFY E ISA "B_Or_E_Or_A"
-  CLASSIFY A ISA "B_Or_E_Or_A"
+  CLASSIFY B ISA BOrEOrA
+  CLASSIFY E ISA BOrEOrA
+  CLASSIFY A ISA BOrEOrA
 
 PATTERN Try5
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RELATION u[E*Y]
-RULE r = s;(t/\u)
+RULE Try5: r = s;(t/\u)
 -- was:  RULE r0: I[D] = (I[A]/\I[B])/\I[E]
 --       RULE r1: I[F] = I[B]/\I[E]
 --       RULE r2: I[G] = I[A]/\I[B]

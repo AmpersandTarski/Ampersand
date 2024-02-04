@@ -6,7 +6,7 @@
      RELATION post[Item*SinText] [UNI]
      RELATION spost[Sequence*SinText] [UNI]
      
-     RULE "Issue280":
+     RULE Issue280 :
         (pref;V /\ in;(I-spref;spref~)) \/ (in /\ pref;-I;spref~)
      \/
         (post;V /\ in;(I-spost;spost~)) \/ (in /\ post;-I;spost~)

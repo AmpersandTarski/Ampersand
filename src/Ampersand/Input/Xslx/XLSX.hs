@@ -4,16 +4,21 @@ module Ampersand.Input.Xslx.XLSX (parseXlsxFile) where
 
 import Ampersand.Basics hiding (view, (^.), (^?))
 import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowPStruct -- Just for debugging purposes
+-- Just for debugging purposes
+
+-- ((^?),ix)
+
+import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import Codec.Xlsx
-import Control.Lens hiding (both) -- ((^?),ix)
+import Control.Lens hiding (both)
 import Data.Tuple.Extra (both, swap)
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Char
+import RIO.FilePath (takeBaseName)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -38,24 +43,39 @@ parseXlsxFile mFk file =
           liftIO $ B.readFile file
     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
   where
+    file1 = case takeBaseName file of
+      [] -> fatal "Filename must not be empty."
+      h : tl -> Text1 h (T.pack tl)
     xlsx2pContext ::
       (HasFSpecGenOpts env) =>
       env ->
       Xlsx ->
       Guarded P_Context
-    xlsx2pContext env xlsx = Checked pop []
+    xlsx2pContext env xlsx = do
+      let orig = Origin $ "file `" <> tshow file1 <> "`"
+      namepart <- toNamePartGuarded orig file1
+      return $ pop namepart
       where
-        pop =
-          mkContextOfPops
-            . concatMap (toPops env file)
-            . concatMap theSheetCellsForTable
+        pop namepart =
+          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
+            . concatMap (toPops env nameSpaceOfXLXSfiles file)
+            . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
 
-mkContextOfPops :: [P_Population] -> P_Context
-mkContextOfPops pops =
+toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
+toNamePartGuarded orig t = case toNamePart1 t of
+  Nothing -> mustBeValidNamePart orig t
+  Just np -> pure np
+
+nameSpaceOfXLXSfiles :: NameSpace
+nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn more about namespaces.
+
+mkContextOfPops :: Name -> [P_Population] -> P_Context
+mkContextOfPops nm pops =
   addRelations
     PCtx
-      { ctx_nm = "",
+      { ctx_nm = nm,
+        ctx_lbl = Nothing,
         ctx_pos = [],
         ctx_lang = Nothing,
         ctx_markup = Nothing,
@@ -101,6 +121,7 @@ addRelations pCtx = enrichedContext
             [ P_Relation
                 { dec_nm = name pop,
                   dec_sign = P_Sign src' tgt',
+                  dec_label = Nothing,
                   dec_prps = mempty,
                   dec_defaults = mempty,
                   dec_pragma = Nothing,
@@ -119,7 +140,7 @@ addRelations pCtx = enrichedContext
         recur :: [P_Concept] -> [P_Relation] -> [P_Population] -> [(P_Concept, Set.Set P_Concept)] -> ([P_Relation], [P_Population])
         recur seen unseenrels unseenpops ((g, specs) : invGens) =
           if g `elem` seen
-            then fatal ("Concept " <> name g <> " has caused a cycle error.")
+            then fatal ("Concept " <> fullName g <> " has caused a cycle error.")
             else recur (g : seen) (genericRels <> remainder) (genericPops <> remainPop) invGens
           where
             sameNameTargetRels :: [NE.NonEmpty P_Relation]
@@ -175,9 +196,9 @@ addRelations pCtx = enrichedContext
                 )
         recur _ rels popus [] = (rels, popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
-        srcPop pop@P_CptPopu {} = PCpt (name pop)
+        srcPop pop@P_CptPopu {} = PCpt (name pop) Nothing
         srcPop pop@P_RelPopu {p_src = src} = case src of Just s -> s; _ -> fatal ("srcPop (" <> showP pop <> ") is mistaken.")
-        tgtPop pop@P_CptPopu {} = PCpt (name pop)
+        tgtPop pop@P_CptPopu {} = PCpt (name pop) Nothing
         tgtPop pop@P_RelPopu {p_tgt = tgt} = case tgt of Just t -> t; _ -> fatal ("tgtPop (" <> showP pop <> ") is mistaken.")
 
     sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
@@ -191,11 +212,11 @@ addRelations pCtx = enrichedContext
           spcs <- [[snd c | c <- NE.toList cl, snd c /= g]],
           not (null spcs)
       ]
-    signatur :: P_Relation -> (Text, P_Sign)
+    signatur :: P_Relation -> (Name, P_Sign)
     signatur rel = (name rel, dec_sign rel)
     concepts =
       L.nub $
-        [PCpt (name pop) | pop@P_CptPopu {} <- ctx_pops pCtx]
+        [PCpt (name pop) Nothing | pop@P_CptPopu {} <- ctx_pops pCtx]
           <> [src' | P_RelPopu {p_src = src} <- ctx_pops pCtx, Just src' <- [src]]
           <> [tgt' | P_RelPopu {p_tgt = tgt} <- ctx_pops pCtx, Just tgt' <- [tgt]]
           <> map sourc declaredRelations
@@ -210,7 +231,7 @@ addRelations pCtx = enrichedContext
             p_cpt = c,
             p_popas =
               L.nub $
-                [atom | cpt@P_CptPopu {} <- pps, PCpt (name cpt) == c, atom <- p_popas cpt]
+                [atom | cpt@P_CptPopu {} <- pps, name cpt == name c, atom <- p_popas cpt]
                   <> [ ppLeft pair
                        | pop@P_RelPopu {p_src = src} <- pps,
                          Just src' <- [src],
@@ -255,12 +276,13 @@ toPops ::
   (HasFSpecGenOpts env) =>
   -- |
   env ->
+  NameSpace ->
   -- | The file name is needed for displaying errors in context
   FilePath ->
   -- |
   SheetCellsForTable ->
   [P_Population]
-toPops env file x = map popForColumn (colNrs x)
+toPops env ns file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
@@ -268,7 +290,7 @@ toPops env file x = map popForColumn (colNrs x)
         then
           P_CptPopu
             { pos = popOrigin,
-              p_cpt = mkPConcept sourceConceptName,
+              p_cpt = mkPConcept sourceConceptName Nothing,
               p_popas =
                 concat
                   [ case value (row, i) of
@@ -288,9 +310,9 @@ toPops env file x = map popForColumn (colNrs x)
       where
         src, trg :: Maybe P_Concept
         (src, trg) = case mTargetConceptName of
-          Just tCptName -> both (fmap mkPConcept) $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
+          Just tCptName -> both (fmap mkPConcept') $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
           Nothing -> (Nothing, Nothing)
-
+        mkPConcept' nm = mkPConcept nm Nothing
         popOrigin :: Origin
         popOrigin = originOfCell (relNamesRow, targetCol)
         (relNamesRow, conceptNamesRow) = case headerRowNrs x of
@@ -301,16 +323,16 @@ toPops env file x = map popForColumn (colNrs x)
           [] -> fatal "colNrs x is empty"
           c : _ -> c
         targetCol = i
-        sourceConceptName :: Text
+        sourceConceptName :: Name
         mSourceConceptDelimiter :: Maybe Char
         (sourceConceptName, mSourceConceptDelimiter) =
           case value (conceptNamesRow, sourceCol) of
             Just (CellText t) ->
               fromMaybe
                 (fatal "No valid source conceptname found. This should have been checked before")
-                (conceptNameWithOptionalDelimiter t)
+                (conceptNameWithOptionalDelimiter ns t)
             _ -> fatal "No valid source conceptname found. This should have been checked before"
-        mTargetConceptName :: Maybe Text
+        mTargetConceptName :: Maybe Name
         mTargetConceptDelimiter :: Maybe Char
         (mTargetConceptName, mTargetConceptDelimiter) =
           case value (conceptNamesRow, targetCol) of
@@ -318,18 +340,28 @@ toPops env file x = map popForColumn (colNrs x)
               let (nm, mDel) =
                     fromMaybe
                       (fatal "No valid source conceptname found. This should have been checked before")
-                      (conceptNameWithOptionalDelimiter t)
+                      (conceptNameWithOptionalDelimiter ns t)
                in (Just nm, mDel)
             _ -> (Nothing, Nothing)
-        relationName :: Text
+        relationName :: Name
         isFlipped' :: Bool
         (relationName, isFlipped') =
           case value (relNamesRow, targetCol) of
             Just (CellText t) ->
               case T.uncons . T.reverse . trim $ t of
-                Nothing -> (mempty, False)
-                Just ('~', rest) -> (T.reverse rest, True)
-                Just (h, tl) -> (T.reverse $ T.cons h tl, False)
+                Nothing -> fatal $ "A relation name was expected, but it isn't present." <> tshow (file, relNamesRow, targetCol)
+                Just ('~', rest) -> case T.uncons . T.reverse $ rest of
+                  Nothing -> fatal "the `~` symbol should be preceded by a relation name. However, it just isn't there."
+                  Just (h, tl) ->
+                    let (nm, _) = suggestName RelationName (Text1 h tl)
+                     in (withNameSpace ns nm, True)
+                Just (h, tl) ->
+                  let (nm, _) = suggestName RelationName . reverse1 $ Text1 h tl
+                      reverse1 :: Text1 -> Text1
+                      reverse1 t1 = case T.uncons . T.reverse . text1ToText $ t1 of
+                        Nothing -> fatal "Impossible: A Text1 cannot be empty"
+                        Just (h', tl') -> Text1 h' tl'
+                   in (withNameSpace ns nm, False)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -396,8 +428,8 @@ toPops env file x = map popForColumn (colNrs x)
     value k = theCellMap x ^? ix k . cellValue . _Just
 
 -- This function processes one Excel worksheet and yields every "wide table" (a block of lines in the excel sheet) as a SheetCellsForTable
-theSheetCellsForTable :: (Text, Worksheet) -> [SheetCellsForTable]
-theSheetCellsForTable (sheetName, ws) =
+theSheetCellsForTable :: NameSpace -> (Text, Worksheet) -> [SheetCellsForTable]
+theSheetCellsForTable ns (sheetName, ws) =
   catMaybes [theMapping i | i <- [0 .. length tableStarters - 1]]
   where
     tableStarters :: [(Int, Int)]
@@ -479,7 +511,7 @@ theSheetCellsForTable (sheetName, ws) =
           | otherwise = isProperConceptName (conceptNameRowNr, colNr) && isProperRelName (relationNameRowNr, colNr)
         isProperConceptName k =
           case value k of
-            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter $ t
+            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter ns $ t
             _ -> False
         isProperRelName k =
           case value k of
@@ -487,16 +519,17 @@ theSheetCellsForTable (sheetName, ws) =
             _ -> False
 
 conceptNameWithOptionalDelimiter ::
+  NameSpace ->
   Text ->
   Maybe
-    ( Text {- Conceptname -},
+    ( Name {- Conceptname -},
       Maybe Char {- Delimiter   -}
     )
 -- Cases:  1) "[" <> Conceptname <> delimiter <> "]"
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
-conceptNameWithOptionalDelimiter t'
+conceptNameWithOptionalDelimiter ns t'
   | isBracketed t =
     let mid = T.dropEnd 1 . T.drop 1 $ t
      in case T.uncons . T.reverse $ mid of
@@ -504,12 +537,19 @@ conceptNameWithOptionalDelimiter t'
           Just (d, revInit) ->
             let nm = T.reverse revInit
              in if isDelimiter d && isConceptName nm
-                  then Just (nm, Just d)
+                  then Just (mkName' nm, Just d)
                   else Nothing
-  | isConceptName t = Just (t, Nothing)
+  | isConceptName t = Just (mkName' t, Nothing)
   | otherwise = Nothing
   where
     t = trim t'
+    mkName' x =
+      withNameSpace ns . mkName ConceptName $
+        ( case toNamePart x of
+            Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+            Just np -> np
+        )
+          :| []
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

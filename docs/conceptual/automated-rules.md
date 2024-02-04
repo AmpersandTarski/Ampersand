@@ -10,18 +10,18 @@ Figure 1: example of an Ampersand-script
 ~~~~~~~~~~~~
 CONTEXT Sequence IN ENGLISH
 
-PATTERN "Sequences"
+PATTERN Sequences
     RELATION head[Sequence*Item] [UNI,INJ]
     RELATION succ[Item*Item] [UNI,INJ,IRF]
     RELATION seq[Item*Sequence] [UNI,TOT]
 
 --invariants:
---  RULE "no predecessor of head" : -(head;succ~)
---  RULE "total order" : head;succ* = seq~
---  RULE "transitive succ" : succ*;succ |- succ*
+--  RULE PredHead LABEL "no predecessor of head" : -(head;succ~)
+--  RULE TotalOrder LABEL "total order" : head;succ* = seq~
+--  RULE TransitiveSucc LABEL "transitive succ" : succ*;succ |- succ*
 ENDPATTERN
 
-PATTERN "Demo of Sequences"
+PATTERN DemoSequences LABEL "Demo of Sequences"
     VIEW Sequence : Sequence(name)
 
     RELATION madeIn[Sequence*SESSION] [UNI]

@@ -12,7 +12,7 @@ module Ampersand.FSpec.SQL
 where
 
 import Ampersand.ADL1
-import Ampersand.Basics
+import Ampersand.Basics hiding (Name)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
@@ -21,13 +21,12 @@ import Language.SQL.SimpleSQL.Pretty
 import Language.SQL.SimpleSQL.Syntax
 import RIO.List (intercalate, lastMaybe, maximumMaybe, nub, partition, (\\))
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 data SqlQuery
-  = SqlQueryPlain Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
-  | SqlQueryPretty [Text] -- Human readable, neatly prettyprinted
-  | SqlQuerySimple Text -- Simple sql statement, could be both plain and pretty.
+  = SqlQueryPlain !Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
+  | SqlQueryPretty ![Text] -- Human readable, neatly prettyprinted
+  | SqlQuerySimple !Text -- Simple sql statement, could be both plain and pretty.
 
 placeHolderSQL :: Text
 placeHolderSQL = "_SRCATOM"
@@ -163,7 +162,7 @@ maybeSpecialCase fSpec expr =
         Just
           . traceComment
             [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))",
-              "  this is an optimized case for: " <> name r <> showSign r <> " [TOT]."
+              "  this is an optimized case for: " <> tshow r <> " [TOT]."
             ]
           $ let col =
                   Col
@@ -211,7 +210,7 @@ maybeSpecialCase fSpec expr =
               <> (if isFlipped' then "flipped " else "")
               <> "complement of "
               <> ( case expr2 of
-                     (EDcD dcl) -> "`" <> name dcl <> "`"
+                     (EDcD dcl) -> "`" <> tshow dcl <> "`"
                      _ -> "<expr2>"
                  )
               <> ".",
@@ -259,12 +258,12 @@ maybeSpecialCase fSpec expr =
           case expr2 of
             EDcD rel ->
               let (plug, relstore) = getRelationTableInfo fSpec rel
-                  s = rsSrcAtt relstore
-                  t = rsTrgAtt relstore
-                  lt = TRSimple [QName (T.unpack $ name plug)] `as` table2
+                  s = QName . sqlColumNameToString . attSQLColName . rsSrcAtt $ relstore
+                  t = QName . sqlColumNameToString . attSQLColName . rsTrgAtt $ relstore
+                  lt = TRSimple [QName (T.unpack . text1ToText . showUnique $ plug)] `as` table2
                in if isFlipped'
-                    then ((QName . T.unpack . name) t, (QName . T.unpack . name) s, lt)
-                    else ((QName . T.unpack . name) s, (QName . T.unpack . name) t, lt)
+                    then (t, s, lt)
+                    else (s, t, lt)
             _ ->
               ( sourceAlias,
                 targetAlias,
@@ -391,7 +390,7 @@ nonSpecialSelectExpr fSpec expr =
                       [] -> fatal "makeIntersectSelectExpr must not be called with an empty list."
                       hexprs : tlexprs ->
                         -- The story here: If at least one of the conjuncts is I, then
-                        -- we know that all results should be in the broad table where
+                        -- we know that all results should be in the wide table where
                         -- I is in. All expressions that are implemented in that table (esR)
                         -- can be used to efficiently restrict the rows from that table.
                         -- If we still have expressions left over, these have to be dealt with
@@ -445,13 +444,13 @@ nonSpecialSelectExpr fSpec expr =
                               --    esI :: [(Expression,Name)] -- all conjunctions that are of the form I
                               --    esI = mapMaybe isI exprs
                               --      where
-                              esR :: [(Expression, Name)] -- all conjuctions that are of the form r;r~ where r is in the same broad table (and same row!) as I
+                              esR :: [(Expression, Name)] -- all conjuctions that are of the form r;r~ where r is in the same wide table (and same row!) as I
                               esR = mapMaybe isR exprs
                                 where
                                   isR :: Expression -> Maybe (Expression, Name)
                                   isR e = case attInBroadQuery fSpec (source hexprs) e of
                                     Nothing -> Nothing
-                                    Just att -> Just (e, (QName . T.unpack . name) att)
+                                    Just att -> Just (e, (QName . sqlColumNameToString . attSQLColName) att)
                               --    esRest :: [Expression] -- all other conjuctions
                               --    esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                               optimizedIntersectSelectExpr :: BinQueryExpr
@@ -758,7 +757,7 @@ nonSpecialSelectExpr fSpec expr =
       let (psrc, fsrc) = fun s
           (ptgt, ftgt) = fun t
           fun :: A_Concept -> (Name, Name)
-          fun cpt = ((QName . T.unpack . name) plug, (QName . T.unpack . name) att)
+          fun cpt = ((QName . T.unpack . text1ToText . showUnique) plug, (QName . sqlColumNameToString . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
        in traceComment ["case: (EDcV (Sign s t))"] $
@@ -965,7 +964,7 @@ nonSpecialSelectExpr fSpec expr =
             posName = Name "pos"
             closedWorldName =
               QName . T.unpack $
-                "cartesian product of " <> name (source e) <> " and " <> name (target e)
+                "cartesian product of " <> (tshow . source $ e) <> " and " <> (tshow . target $ e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     EKl1 _ -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
@@ -1129,21 +1128,21 @@ selectRelation fSpec dcl =
           bseSrc =
             Col
               { cTable = [],
-                cCol = [QName . T.unpack . name $ s],
+                cCol = [QName . sqlColumNameToString . attSQLColName $ s],
                 cAlias = [],
                 cSpecial = Nothing
               },
           bseTrg =
             Col
               { cTable = [],
-                cCol = [QName . T.unpack . name $ t],
+                cCol = [QName . sqlColumNameToString . attSQLColName $ t],
                 cAlias = [],
                 cSpecial = Nothing
               },
-          bseTbl = [TRSimple [QName . T.unpack . name $ plug]],
+          bseTbl = [TRSimple [QName . T.unpack . text1ToText . showUnique $ plug]],
           bseWhr =
             Just . conjunctSQL . map notNull $
-              [Iden [QName . T.unpack . name $ c] | c <- nub [s, t]]
+              [Iden [QName . sqlColumNameToString . attSQLColName $ c] | c <- nub [s, t]]
         }
       where
         s = rsSrcAtt relstore
@@ -1327,16 +1326,16 @@ sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . T.unpack . name . getConceptTableFor fSpec
+sqlConcept fSpec = QName . T.unpack . text1ToText . showUnique . getConceptTableFor fSpec
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
   | c == ONE = QName "ONE"
   | otherwise =
-    case [ name f | f <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- Set.elems $ concs f, c == c'
+    case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
          ] of
-      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> name fSpec <> "\"")
-      h : _ -> QName . T.unpack $ h
+      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> fullName fSpec <> "\"")
+      h : _ -> QName . sqlColumNameToString . attSQLColName $ h
 
 stringOfName :: Name -> Text
 stringOfName (Name s) = T.pack s
@@ -1517,8 +1516,8 @@ broadQuery fSpec obj =
                     Just att ->
                       ( Iden
                           ( case tableName of
-                              Nothing -> [QName . T.unpack . name $ att]
-                              Just tab -> [tab, QName . T.unpack . name $ att]
+                              Nothing -> [QName . sqlColumNameToString . attSQLColName $ att]
+                              Just tab -> [tab, QName . sqlColumNameToString . attSQLColName $ att]
                           ),
                         Just
                           ( QName . T.unpack $
@@ -1528,7 +1527,7 @@ broadQuery fSpec obj =
                                 <>
                                 --   2) It must be injective. Because SQL deletes trailing spaces,
                                 --      we have to cope with that:
-                                escapeIdentifier (name col)
+                                maybe mempty (text1ToText . escapeIdentifier) (objPlainName col)
                           )
                       )
                 subThings ::

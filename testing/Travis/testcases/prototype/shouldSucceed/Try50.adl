@@ -6,7 +6,7 @@ RELATION r[G*Iets]
 RELATION s[S*S]
 ENDPATTERN
 
-INTERFACE "Te valideren" : I[G]
+INTERFACE TeValideren : I[G]
 BOX [ iets : s;r ]
 
 ENDCONTEXT

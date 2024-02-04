@@ -37,7 +37,7 @@ And this produces the following fatal error:
 
 -}
 
-INTERFACE Overview (r) : I[ONE]
+INTERFACE Overview : I[ONE]
   BOX [ as : V[ONE*A]
         BOX [ "id"           : I
             , "r"            : r

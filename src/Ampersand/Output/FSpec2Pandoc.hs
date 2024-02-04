@@ -96,7 +96,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
     thePandoc =
       wrap
         . setTitle
-          ( case metaValues "title" fSpec of
+          ( case metaValues (toText1Unsafe "title") fSpec of
               [] ->
                 ( if view chaptersL env == [Diagnosis]
                     then
@@ -117,11 +117,11 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
                               EN "Functional Design of "
                             )
                 )
-                  <> (singleQuoted . text . name) fSpec
+                  <> (singleQuoted . text . fullName) fSpec
               titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
           )
         . setAuthors
-          ( case metaValues "authors" fSpec of
+          ( case metaValues (toText1Unsafe "authors") fSpec of
               [] ->
                 [ (text . l)
                     ( NL "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\"",

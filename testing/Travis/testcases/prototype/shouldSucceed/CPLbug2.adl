@@ -1,4 +1,4 @@
-﻿CONTEXT CPLbug2 IN DUTCH -- Ticket #417
+CONTEXT CPLbug2 IN DUTCH -- Ticket #417
 {- PURPOSE:
 This test exists to demonstrate the feature of populating concepts (as opposed to relations)
 -}

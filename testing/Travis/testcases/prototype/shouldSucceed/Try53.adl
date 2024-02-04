@@ -1,4 +1,4 @@
-﻿CONTEXT Try53 IN DUTCH
+CONTEXT Try53 IN DUTCH
 RELATION r[A*C]
  = [ ("1", "aap")
    ; ("1", "noot")
@@ -8,7 +8,7 @@ RELATION s[B*C]
  = [ ("2", "noot")
    ]
 INTERFACE X : "_SESSION"  BOX
-   [ "" : V[SESSION*A];r - V[SESSION*B];s ]
+   [ "thisMayNotBeEmpty" : V[SESSION*A];r - V[SESSION*B];s ]
 ENDCONTEXT
 {-   ProtoDec2015
 /* case: (ECps es), with two or more elements in es.V[SESSION*B];s */

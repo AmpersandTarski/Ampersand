@@ -4,7 +4,6 @@ module Ampersand.Core.A2P_Converters
   ( aAtomValue2pAtomValue,
     aConcept2pConcept,
     aCtx2pCtx,
-    aCpt2pCpt,
     aExpression2pTermPrim,
     aExplObj2PRef2Obj,
     aClassify2pClassify,
@@ -34,12 +33,13 @@ aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx =
   PCtx
     { ctx_nm = ctxnm ctx,
+      ctx_lbl = ctxlbl ctx,
       ctx_pos = ctxpos ctx,
       ctx_lang = Just $ ctxlang ctx,
       ctx_markup = Just $ ctxmarkup ctx,
       ctx_pats = map aPattern2pPattern . ctxpats $ ctx,
-      ctx_rs = map aRule2pRule . Set.elems . ctxrs $ ctx,
-      ctx_ds = map aRelation2pRelation . Set.elems . ctxds $ ctx,
+      ctx_rs = map aRule2pRule . toList . ctxrs $ ctx,
+      ctx_ds = map aRelation2pRelation . toList . ctxds $ ctx,
       ctx_cs = map aConcDef2pConcDef $ ctxcdsOutPats ctx,
       ctx_ks = map aIdentityDef2pIdentityDef . ctxks $ ctx,
       ctx_rrules = map aRoleRule2pRoleRule . ctxrrules $ ctx,
@@ -66,7 +66,8 @@ aConcDef2pConcDef :: AConceptDef -> PConceptDef
 aConcDef2pConcDef aCd =
   PConceptDef
     { pos = origin aCd,
-      cdcpt = name aCd,
+      cdname = name aCd,
+      cdlbl = acdlabel aCd,
       cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
       cdmean = map aMeaning2pMeaning $ acdmean aCd,
       cdfrom = acdfrom aCd
@@ -77,9 +78,10 @@ aPattern2pPattern pat =
   P_Pat
     { pos = ptpos pat,
       pt_nm = ptnm pat,
-      pt_rls = map aRule2pRule . Set.elems . ptrls $ pat,
+      pt_lbl = ptlbl pat,
+      pt_rls = map aRule2pRule . toList . ptrls $ pat,
       pt_gns = map aClassify2pClassify . ptgns $ pat,
-      pt_dcs = map aRelation2pRelation . Set.elems . ptdcs $ pat,
+      pt_dcs = map aRelation2pRelation . toList . ptdcs $ pat,
       pt_RRuls = map aRoleRule2pRoleRule . udefRoleRules $ pat,
       pt_cds = map aConcDef2pConcDef (ptcds pat),
       pt_Reprs = ptrps pat,
@@ -95,7 +97,8 @@ aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
   P_Rule
     { pos = rrfps rul,
-      rr_nm = rrnm rul,
+      rr_nm = name rul,
+      rr_lbl = rrlbl rul,
       rr_exp = aExpression2pTermPrim (formalExpression rul),
       rr_mean = map aMeaning2pMeaning (rrmean rul),
       rr_msg = map aMarkup2pMessage (rrmsg rul),
@@ -107,6 +110,7 @@ aRelation2pRelation dcl =
   P_Relation
     { dec_nm = decnm dcl,
       dec_sign = aSign2pSign (decsgn dcl),
+      dec_label = declabel dcl,
       dec_prps = aProps2Pprops $ decprps dcl,
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
       dec_pragma = decpr dcl,
@@ -154,7 +158,8 @@ aIdentityDef2pIdentityDef :: IdentityRule -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
   P_Id
     { pos = idPos iDef,
-      ix_lbl = idLbl iDef,
+      ix_name = idName iDef,
+      ix_label = idlabel iDef,
       ix_cpt = aConcept2pConcept (idCpt iDef),
       ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
     }
@@ -171,7 +176,8 @@ aViewDef2pViewDef :: ViewDef -> P_ViewDef
 aViewDef2pViewDef vDef =
   P_Vd
     { pos = vdpos vDef,
-      vd_lbl = vdlbl vDef,
+      vd_nm = name vDef,
+      vd_label = vdlabel vDef,
       vd_cpt = aConcept2pConcept (vdcpt vDef),
       vd_isDefault = vdIsDefault vDef,
       vd_html = vdhtml vDef,
@@ -199,6 +205,7 @@ aInterface2pInterface ifc =
   P_Ifc
     { ifc_IsAPI = ifcIsAPI ifc,
       ifc_Name = name ifc,
+      ifc_lbl = ifclbl ifc,
       ifc_Roles = ifcRoles ifc,
       ifc_Obj = aObjectDef2pObjectDef (BxExpr (ifcObj ifc)),
       pos = origin ifc,
@@ -218,7 +225,8 @@ aConcept2pConcept cpt =
     ONE -> P_ONE
     PlainConcept {} ->
       PCpt
-        { p_cptnm = name cpt
+        { p_cptnm = name cpt,
+          p_cptlabel = snd . NE.head . aliases $ cpt
         }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose
@@ -239,9 +247,9 @@ aPopulation2pPopulation p =
   case p of
     ARelPopu {} ->
       P_RelPopu
-        { pos = Origin $ "Origin is not present in Population(" <> name pDcl <> ") from A-Structure",
+        { pos = Origin $ "Origin is not present in Population(" <> fullName pDcl <> ") from A-Structure",
           p_nmdr = pDcl,
-          p_popps = map aAtomPair2pAtomPair (Set.elems $ popps p),
+          p_popps = map aAtomPair2pAtomPair (toList $ popps p),
           p_src = Nothing,
           p_tgt = Nothing
         }
@@ -249,23 +257,19 @@ aPopulation2pPopulation p =
         pDcl = aRelation2pNamedRel (popdcl p)
     ACptPopu {} ->
       P_CptPopu
-        { pos = Origin $ "Origin is not present in Population(" <> name (popcpt p) <> ") from A-Structure",
-          p_cpt = aCpt2pCpt (popcpt p),
+        { pos = Origin $ "Origin is not present in Population(" <> fullName (popcpt p) <> ") from A-Structure",
+          p_cpt = aConcept2pConcept (popcpt p),
           p_popas = map aAtomValue2pAtomValue (popas p)
         }
 
-aCpt2pCpt :: A_Concept -> P_Concept
-aCpt2pCpt cpt = case cpt of
-  PlainConcept {} -> PCpt {p_cptnm = name cpt}
-  ONE -> P_ONE
-
-aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
+aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
 aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
-      P_BxExpr
-        { obj_nm = name oDef,
-          pos = origin oDef,
+      P_BoxItemTerm
+        { pos = origin oDef,
+          obj_PlainName = objPlainName oDef,
+          obj_lbl = objlbl oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
             Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
@@ -275,9 +279,9 @@ aObjectDef2pObjectDef x =
         }
     BxTxt oDef ->
       P_BxTxt
-        { obj_nm = name oDef,
+        { obj_PlainName = boxPlainName oDef,
           pos = origin oDef,
-          obj_txt = objtxt oDef
+          box_txt = boxtxt oDef
         }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim
@@ -428,7 +432,7 @@ aAtomValue2pAtomValue val =
       _ -> fatal "Unexpected combination of value types"
     TypeOfOne -> fatal "Unexpected combination of value types"
   where
-    o = fatal "Origin is not present in AAtomValue"
+    o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 
 aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
 aSubIfc2pSubIfc sub =
@@ -447,7 +451,12 @@ aSubIfc2pSubIfc sub =
         }
 
 aCruds2pCruds :: Cruds -> P_Cruds
-aCruds2pCruds x = P_Cruds (crudOrig x) (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds x =
+  P_Cruds
+    (crudOrig x)
+    ( toText1Unsafe . T.pack $
+        zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
+    )
   where
     f :: (Bool, Char) -> Char
     f (b, c) = (if b then toUpper else toLower) c

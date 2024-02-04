@@ -1,7 +1,9 @@
 module Ampersand.Basics
   ( module Ampersand.Basics.Auxiliaries,
     module Ampersand.Basics.Exit,
+    module Ampersand.Basics.Hashing,
     module Ampersand.Basics.Languages,
+    module Ampersand.Basics.Name,
     module Ampersand.Basics.PandocExtended,
     module Ampersand.Basics.Prelude,
     module Ampersand.Basics.String,
@@ -12,7 +14,9 @@ where
 
 import Ampersand.Basics.Auxiliaries
 import Ampersand.Basics.Exit
+import Ampersand.Basics.Hashing
 import Ampersand.Basics.Languages
+import Ampersand.Basics.Name
 import Ampersand.Basics.PandocExtended
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.String

@@ -4,14 +4,15 @@
 
 module Ampersand.Output.ToJSON.Roles (Roles) where
 
+import Ampersand.ADL1
 import Ampersand.Output.ToJSON.JSONutils
-import qualified RIO.Set as Set
 
 newtype Roles = Roles [RoleJson] deriving (Generic, Show)
 
 data RoleJson = RoleJson
-  { roleJSONid :: Text,
-    roleJSONname :: Text,
+  { roleJSONname :: Text,
+    roleJSONlabel :: Text,
+    roleJSONisService :: Bool,
     roleJSONmaintains :: [Text]
   }
   deriving (Generic, Show)
@@ -28,7 +29,8 @@ instance JSON FSpec Roles where
 instance JSON (Role, Int) RoleJson where
   fromAmpersand _ fSpec (role', _) =
     RoleJson
-      { roleJSONid = idWithoutType role',
-        roleJSONname = name role',
-        roleJSONmaintains = map name . Set.elems . fMaintains fSpec $ role'
+      { roleJSONname = text1ToText . idWithoutType' $ role',
+        roleJSONlabel = label role',
+        roleJSONisService = rlIsService role',
+        roleJSONmaintains = map fullName . toList . fMaintains fSpec $ role'
       }

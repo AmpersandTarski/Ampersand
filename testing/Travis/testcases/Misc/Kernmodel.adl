@@ -1,4 +1,4 @@
-﻿CONTEXT Mandatering IN DUTCH LATEX
+CONTEXT Mandatering IN DUTCH LATEX
    META "authors" "Groep Ampersand Masterclass 2013"
    PURPOSE CONTEXT Mandatering LATEX
 {+
@@ -34,7 +34,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
    PURPOSE INTERFACE Functie
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Functie (formatie, krachtens, beslotenDoor, namens) FOR Bestuurder: I[Functie] {- Stef Joosten, 19 April 2013 -}
+   INTERFACE Functie FOR Bestuurder: I[Functie] {- Stef Joosten, 19 April 2013 -}
    BOX[ "Functie"      : I
       , "Orgaan": formatie~
       , "Verkregen mandaten": gemandateerde~
@@ -56,7 +56,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
    PURPOSE INTERFACE Mandaat 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Mandaat (mandaatgever) FOR Bestuurder: I[Mandaat]  {- Stef Joosten, 19 April 2013 -}
+   INTERFACE Mandaat FOR Bestuurder: I[Mandaat]  {- Stef Joosten, 19 April 2013 -}
    BOX[ "Mandaat"      : I
       , "Mandaatgever": mandaatgever
       , "gemandateerde": gemandateerde
@@ -67,7 +67,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
 PURPOSE INTERFACE Bestuursorgaan 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
       Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
-   INTERFACE Bestuursorgaan (bevoegdheid,formatie) FOR Bestuurder: I[Bestuursorgaan]  {- Henk Boer Chris Haveman, 2 mei 2013 -}
+   INTERFACE Bestuursorgaan FOR Bestuurder: I[Bestuursorgaan]  {- Henk Boer Chris Haveman, 2 mei 2013 -}
    BOX[ "Bestuursorgaan" : I
       , "Bevoegdheid": bevoegdheid
       , "formatie": formatie
@@ -76,7 +76,7 @@ PURPOSE INTERFACE Bestuursorgaan
 
    PURPOSE INTERFACE Mandaatvoorbehouden 
    {+ Roger Hage en Sebastiaan Hobers +}
-   INTERFACE Mandaatvoorbehouden (mandaatgever) FOR Bestuurder: I[Mandaat] 
+   INTERFACE Mandaatvoorbehouden FOR Bestuurder: I[Mandaat] 
    BOX[ "Mandaat"      : I
       , "Bevoegdheid": mandaatbevoegdheid[Mandaat*Bevoegdheid]
          BOX [ mandaat : I
@@ -84,10 +84,6 @@ PURPOSE INTERFACE Bestuursorgaan
              ]
       ]
 
-   PATTERN ToevoegenMandaat {- Stef Joosten, 19 April 2013 -}
-   ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
-   ENDPATTERN
-   
    PATTERN Mandaten
    CONCEPT Mandaat "Een mandaat is de bevoegdheid om in naam van een bestuursorgaan besluiten te nemen." "Artikel 10:1 Awb"
 
@@ -195,15 +191,15 @@ RELATION departementsleiding[Departement*Functie]
    RELATION gronden[Mandaat*Titel]
    RELATION bevoegde[Bevoegdheid*Functie]
 
-   VIEW "Bevoegdheid" : Bevoegdheid(TXT "bevoegdheid van ", bevoegde, TXT " tot het ", bevoegdheid~ , TXT "op grond van ", gronden)
+   VIEW Bevoegdheid : Bevoegdheid(TXT "bevoegdheid van ", bevoegde, TXT " tot het ", bevoegdheid~ , TXT "op grond van ", gronden)
 {- Voorbeeld: bevoegdheid van de Minister van VROM aanwijzingen te geven aan gemeenten op grond van artikel 37 van de Wet op de Ruimtelijke Ordening -} -- Deze formulering is afkomstig van de Memorie van Toelichting.
-   VIEW "Specifiek Mandaat" : Mandaat (TXT "mandaat door ", mandaatgever, TXT " aan ", gemandateerde, TXT " van ", mandaatbevoegdheid, TXT " op grond van ", gronden) -- Deze formulering is afkomstig van de Memorie van Toelichting.
+   VIEW SpecifiekMandaat : Mandaat (TXT "mandaat door ", mandaatgever, TXT " aan ", gemandateerde, TXT " van ", mandaatbevoegdheid, TXT " op grond van ", gronden) -- Deze formulering is afkomstig van de Memorie van Toelichting.
 {- Voorbeeld: mandaat door de Minister van Justitie aan het hoofd van politie te Groningen van de bevoegdheid te beslissen omtrent een vestigingsvergunning respectievelijk een verblijfsvergunning op grond van de Vreemdelingenwet (Afd. rechtspraak 19 december 1985, AB 1986, 398, en Afd. rechtspraak 24 februari 1986, AB 1987, 190) -}
 
-   RULE "Artikel 10:2 Awb" : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
+   RULE BevoegdheidDoorgeven LABEL "Bevoegdheid doorgeven ex. Artikel 10:2 Awb" : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
    MEANING "Een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit geldt als een besluit van de mandaatgever."
 
-   PURPOSE RULE "Artikel 10:2 Awb" REF "Artikel 10:2 Awb"
+   PURPOSE RULE BevoegdheidDoorgeven REF "Artikel 10:2 Awb"
 {+
 +}
    PURPOSE RELATION namens[Mandaat*Bestuursorgaan] LATEX REF "Artikel 10:10 Awb"
@@ -291,9 +287,9 @@ RELATION departementsleiding[Departement*Functie]
    -- POPULATION krachtens[Besluit*Mandaat] toe te voegen door Gurbinder Singh Garcha en Han Veldhuis
 
   -- RULE toegevoegd door Erik Gubler, 03-04-2013, 10:50
-  RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
+  RULE NamensWie LABEL "NamensWie ex. Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
   MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
-  PURPOSE RULE "Artikel 10:10 Awb" LATEX REF "Artikel 10:10 Awb"
+  PURPOSE RULE NamensWie LATEX REF "Artikel 10:10 Awb"
 {+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. +}
 
 
@@ -351,7 +347,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    PRAGMA "" " valt onder de verantwoordelijkheid van "
    MEANING LATEX "De uitspraak ``Functie $a$ valt onder de verantwoordelijkheid van $b$.'' behoort tot de gemeenschappelijke taal."
 
-   RULE onder |- formatie~;formatie
+   RULE VerantwoordelijkheidBinnenOrgaan : onder |- formatie~;formatie
    MEANING "Een functie (ambtenaar) kan alleen onder de verantwoordelijkheid van een andere vallen wanneer zij tot hetzelfde bestuursorgaan behoren."
 
    -- RULE toegevoegd op 31 maart door Roger Hage en Sebastiaan Hobers 
@@ -359,16 +355,16 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    MEANING "Een bevoegdheid die is gemandateerd is alleen voorbehouden (deze bevoegdheden niet kunnen worden ondergemandateerd) aan elke ambtenaar die deze bevoegdheid van hogerhand heeft gekregen."
 
    -- RULE toegevoegd op 3 april door George de Vries en Tim Ruijters.
-   RULE onder |- -I
+   RULE NietOnderZichzelf: onder |- -I
    MEANING "Een functie mag niet onder de verantwoordelijkheid van zichzelf vallen."
 
    -- RULE toegevoegd op 4 april door George de Vries en Tim Ruijters.
-   RULE onder /\ onder~ |- -V
+   RULE GeenCycles: onder /\ onder~ |- -V
    MEANING "Wanneer functie a onder de verantwoordelijkheid van b valt, dan mag b niet onder de verantwoordelijkheid van a vallen."
 
 
 -- RULE toegevoegd op 4 april door Maarten Bernards en Natali Zepackic en Marcus Krab.
-          RULE mandaatgever /\ gemandateerde  |- -V
+          RULE R1: mandaatgever /\ gemandateerde  |- -V
           MEANING "Een mandaat mag niet door een mandaatgever aan zichzelf verleend worden."
 
 
@@ -385,17 +381,17 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
 
            -- RULE toegevoegd door Roger Hage en Sebastiaan Hobers
 
-    RULE "Artikel 10:3 lid 3 Awb": ( ingediend~ ; ingediend) ; krachtens ; ( gemandateerde \/ mandaatgever) |- - ( krachtens ; ( gemandateerde \/ mandaatgever ) )
+    RULE GeenZelfBeoordeling LABEL "GeenZelfBeoordeling ex. Artikel 10:3 lid 3 Awb" : ( ingediend~ ; ingediend) ; krachtens ; ( gemandateerde \/ mandaatgever) |- - ( krachtens ; ( gemandateerde \/ mandaatgever ) )
     MEANING "Een ingediend bezwaar krachtens genomen besluit door gemandandateerde of mandaatgever mag niet door de gemandanteerde of mandaatgever zelf besloten worden."
-    PURPOSE RULE "Artikel 10:3 lid 3 Awb" LATEX REF "Artikel 10:3 lid 3 Awb"
+    PURPOSE RULE GeenZelfBeoordeling LATEX REF "Artikel 10:3 lid 3 Awb"
 {+ Een ingediend bezwaar krachtens genomen besluit door gemandandateerde of mandaatgever mag niet door de gemandanteerde of mandaatgever zelf besloten worden.
 +}
 
 
    -- RULE nog uit te werken door George de Vries en Tim Ruijters.
-   -- RULE "Artikel 10:4 Awb" : krachtens;namens |- beslotenDoor
+   -- RULE NamensWie LABEL "Artikel 10:4 Awb" : krachtens;namens |- beslotenDoor
    -- MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
-   -- PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
+   -- PURPOSE RULE NamensWie REF "Artikel 10:10 Awb"
    -- Zie [http://beta.wikiversity.org/wiki/Mandatering:_analyse_van_wetten#Artikel_10:4 Eerste aanzet uitwerking]
 
 
@@ -407,21 +403,21 @@ In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverl
 
    --- CLASSIFY MandaatVerleningVoorzien ISA Mandaat
    -- Concept MandaatVerleningVoorzien en relatie isA toegevoegd door Henk Boer, 9 mei 2013; werkt nog niet..
-   RELATION isa_nietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
-   PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
+   RELATION isanietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
+   PURPOSE RELATION isanietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
 
   -- RULE Uitgewerkt door Chris Haveman en Henk Boer, aangepast op 9 mei 2013 (HB)
-  RULE "Artikel 10:4 Awb - gemandateerde" : isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
+  RULE Gemandateerde LABEL "Artikel 10:4 Awb - gemandateerde" : isanietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening de instemming van de gemandateerde, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien"
 
-  PURPOSE RULE "Artikel 10:4 Awb - gemandateerde" LATEX REF "Artikel 10:4 Awb"
+  PURPOSE RULE Gemandateerde LATEX REF "Artikel 10:4 Awb"
   {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien +}
 
   -- RULE Toegevoegd door Chris Haveman en Henk Boer, 02-05-2013.
-  RULE "Artikel 10:4 Awb - verantwoordelijke" : (isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
+  RULE Verantwoordelijke LABEL "Artikel 10:4 Awb - verantwoordelijke" : (isanietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening (in het voorkomende geval) de instemming van degene onder wiens verantwoordelijkheid hij valt, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien."
 
-  PURPOSE RULE "Artikel 10:4 Awb - verantwoordelijke" LATEX REF "Artikel 10:4 Awb"
+  PURPOSE RULE Verantwoordelijke LATEX REF "Artikel 10:4 Awb"
   {+ In de praktijk blijkt behoefte te bestaan aan mandaat aan niet-ondergeschikten.
      Daarom staat de wet dit toe, mits tegelijkertijd wordt verzekerd dat de mandaatgever zijn verantwoordelijkheid kan blijven waarmaken.
      Daartoe wordt in artikel 1A.1.1.4 [10:4] voorgeschreven dat de niet-ondergeschikte slechts als gemandateerde kan optreden
@@ -448,8 +444,8 @@ POPULATION onderdeel[Dienstonderdeel*Bestuursorgaan] CONTAINS
     ]
 ENDPATTERN
 
-PATTERN "Intrekken van mandaten" -- door Maarten Bernards en Natali Zepackic. Artikel 10:8 lid 2 Awb
-PURPOSE PATTERN "Intrekken van mandaten" LATEX
+PATTERN IntrekkenMandaten LABEL "Intrekken van mandaten -- door Maarten Bernards en Natali Zepackic. Artikel 10:8 lid 2 Awb"
+PURPOSE PATTERN IntrekkenMandaten LATEX
 {+ Artikel 10:8 lid 2 Awb stelt een beperking in op het intrekken van mandaten:
 Een algemeen mandaat wordt schriftelijk ingetrokken.
 Daartoe moet worden bijgehouden hoe het intrekken van een mandaat is verlopen.
@@ -496,10 +492,10 @@ POPULATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze]
 
 -- Regel uitgewerkt op 17-4-2013 door Maarten Bernards en Natali Zepackic. Artikel 10:8 lid 2 Awb
 
-RULE "mandaatIntrekkingWijze" : mandaatTyperen~ ; mandaatIntrekken~ ; wijzeMandaatIntrekken |- mandaatIntrekkingWijzeToestaan
+RULE mandaatIntrekkingWijze : mandaatTyperen~ ; mandaatIntrekken~ ; wijzeMandaatIntrekken |- mandaatIntrekkingWijzeToestaan
 MEANING "Het intrekken van een mandaat mag alleen geschieden op de toegestane wijze."
 
-PURPOSE RULE "mandaatIntrekkingWijze" REF "Artikel 10:8 lid 2 Awb"
+PURPOSE RULE mandaatIntrekkingWijze REF "Artikel 10:8 lid 2 Awb"
 {+ Kennelijk bestaan er beperkingen ten aanzien van op welke wijze mandaten ingetrokken mogen worden.
 Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.+}
    -- REALTION en POPULATION ingediend[Bezwaarschrift*Besluit] toegevoegd door Roger Hage en Sebastiaan Hobers
@@ -508,15 +504,10 @@ Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.
 +}
 ENDPATTERN
 
-   PURPOSE PATTERN ToevoegenBestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
-   PATTERN ToevoegenBestuursorganen
-   ROLE BO MAINTAINS "Artikel 10:2 Awb"
-   ENDPATTERN
    --
    PURPOSE INTERFACE Bestuursorganen
    {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
-   INTERFACE Bestuursorganen (mandaatgever) FOR BO: I[Bestuursorgaan]
+   INTERFACE Bestuursorganen FOR BO: I[Bestuursorgaan]
    BOX[ "Bestuursorgaan" : I
       , "Mandaat" : namens~
       , "Formatieplaats" : formatie

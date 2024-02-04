@@ -3,7 +3,7 @@
 the source of: critText [Criterium*Blob] does not match the type of the BOX, Gewetensvraag.
 -}
 critText :: Criterium -> Blob
-INTERFACE "Gewetensvraag" : I[Gewetensvraag]
+INTERFACE Gewetensvraag : I[Gewetensvraag]
 BOX[ gewetensvragen: I[Gewetensvraag]
 BOX[ gewetensvraag: I
 , criterium : critText

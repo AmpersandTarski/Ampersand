@@ -1,7 +1,7 @@
 CONTEXT ARM20Test2 IN DUTCH
 --$ Ondertaand pattern geeft een beoogde fout -}
 ------------------------------------------------------------
-PATTERN "ARM20Test2"
+PATTERN ARM20Test2
 
 critBF :: Criterium -> Bedrijfsfunctie PRAGMA "" " wordt gehanteerd binnen "
 CLASSIFY Verwachting ISA Criterium

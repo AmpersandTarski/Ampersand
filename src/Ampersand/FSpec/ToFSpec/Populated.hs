@@ -64,15 +64,15 @@ atomValuesOf ci pt c =
     PlainConcept {} ->
       let smallerconcs = c : smallerConcepts (ctxiGens ci) c
        in Set.fromList $
-            [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- Set.elems $ popps pop]
-              ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- Set.elems $ popps pop]
+            [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+              ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
               ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl =
   Map.unionsWith
     Set.union
-    [ Map.fromListWith Set.union [(apLeft p, Set.singleton $ apRight p) | p <- Set.elems $ popps pop]
+    [ Map.fromListWith Set.union [(apLeft p, Set.singleton $ apRight p) | p <- toList $ popps pop]
       | pop@ARelPopu {} <- ps,
         name dcl == name (popdcl pop),
         let s = source (popdcl pop) in s `elem` source dcl : smallerConcepts (ctxiGens ci) (source dcl),
@@ -102,30 +102,30 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             ELrs (l, r) ->
               Map.fromListWith
                 Set.union
-                [ (x, Set.singleton y) | x <- Set.elems $ aVals (source l), y <- Set.elems $ aVals (source r), null (lkp y (contents r) Set.\\ lkp x (contents l))
+                [ (x, Set.singleton y) | x <- toList $ aVals (source l), y <- toList $ aVals (source r), null (lkp y (contents r) Set.\\ lkp x (contents l))
                 ]
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
             ERrs (l, r) ->
               Map.fromListWith
                 Set.union
-                [ (x, Set.singleton y) | x <- Set.elems $ aVals (target l), y <- Set.elems $ aVals (target r), null (lkp x (contents (EFlp l)) Set.\\ lkp y (contents (EFlp r)))
+                [ (x, Set.singleton y) | x <- toList $ aVals (target l), y <- toList $ aVals (target r), null (lkp x (contents (EFlp l)) Set.\\ lkp y (contents (EFlp r)))
                 ]
             EDia (l, r) ->
               Map.fromListWith
                 Set.union
-                [ (x, Set.singleton y) | x <- Set.elems $ aVals (source l), y <- Set.elems $ aVals (target r), null (lkp y (contents (EFlp r)) Set.\\ lkp x (contents l)), null (lkp x (contents l) Set.\\ lkp y (contents (EFlp r)))
+                [ (x, Set.singleton y) | x <- toList $ aVals (source l), y <- toList $ aVals (target r), null (lkp y (contents (EFlp r)) Set.\\ lkp x (contents l)), null (lkp x (contents l) Set.\\ lkp y (contents (EFlp r)))
                 ]
             ERad (l, r) ->
               Map.fromListWith
                 Set.union
-                [ (x, Set.singleton y) | x <- Set.elems $ aVals (source l), y <- Set.elems $ aVals (target r), null (aVals (target l) Set.\\ (lkp x (contents l) `Set.union` lkp y (contents (EFlp r))))
+                [ (x, Set.singleton y) | x <- toList $ aVals (source l), y <- toList $ aVals (target r), null (aVals (target l) Set.\\ (lkp x (contents l) `Set.union` lkp y (contents (EFlp r))))
                 ]
             EPrd (l, r) ->
               Map.fromList
                 [ (a, Set.fromList cod)
-                  | let cod = Set.elems $ aVals (target r),
+                  | let cod = toList $ aVals (target r),
                     not (null cod),
-                    a <- Set.elems $ aVals (source l)
+                    a <- toList $ aVals (source l)
                 ]
             ECps (l, r) ->
               Map.fromListWith
@@ -146,14 +146,14 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             ECpl x -> contents (EDcV (sign x) .-. x)
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
-            EDcI c -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals c]
-            EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
+            EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
+            EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals i]
             EDcV sgn ->
               Map.fromList
                 [ (s, Set.fromList cod)
-                  | let cod = Set.elems $ aVals (target sgn),
+                  | let cod = toList $ aVals (target sgn),
                     not (null cod),
-                    s <- Set.elems $ aVals (source sgn)
+                    s <- toList $ aVals (source sgn)
                 ]
             EMp1 val c ->
               if isSESSION c -- prevent populating SESSION with "_SESSION"

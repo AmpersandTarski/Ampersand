@@ -7,6 +7,6 @@ CLASSIFY Specific, SpeciFIK ISA Generic
 xGeneric  :: X * Generic
 xSpecific :: X * Specific
 
-RULE "Specifics are Generics": xSpecific |- xGeneric
+RULE SpecificsAreGenerics : xSpecific |- xGeneric
 
 ENDCONTEXT

@@ -1,4 +1,4 @@
-﻿CONTEXT Issue746 IN DUTCH
+CONTEXT Issue746 IN DUTCH
 
 RULE sinterklaasBestaatNiet : -("Sinterklaas";I[Persoon])
 MEANING "De persoon 'Sinterklaas' bestaat niet."

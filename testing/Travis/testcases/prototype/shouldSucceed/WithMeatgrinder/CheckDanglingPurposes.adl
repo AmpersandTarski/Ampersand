@@ -26,15 +26,15 @@ CONCEPT Concpt1 "{definition of Concpt1}"
 rel :: Concpt1 * Concpt1
 RULE rule: rel
 IDENT ident : Concpt1(I[Concpt1])
-VIEW view: Concpt1("":I[Concpt1])
-INTERFACE Iface : I[ONE] BOX [ "" : I[ONE] ]
+VIEW view: Concpt1(I[Concpt1])
+INTERFACE Iface : I[ONE] BOX [ "I" LABEL "" : I[ONE] ]
 
 PATTERN Patt
   CONCEPT PattConcpt "{definition of PattConcpt}"
   pattRel :: Concpt1 * PattConcpt
   RULE pattRule: rel
   IDENT pattIdent : PattConcpt(I[PattConcpt])
-  VIEW pattView: PattConcpt("":I[PattConcpt])
+  VIEW pattView: PattConcpt(I[PattConcpt])
 
   PURPOSE CONCEPT Concpt2 {+Concept purpose: Concpt2+} -- test purpose inside pattern
 ENDPATTERN
@@ -44,7 +44,7 @@ PATTERN Proc
   procRel :: Concpt1 * ProcConcpt
   RULE procRule: rel
   IDENT procIdent : ProcConcpt(I[ProcConcpt])
-  VIEW procView: ProcConcpt("":I[ProcConcpt])
+  VIEW procView: ProcConcpt(I[ProcConcpt])
 
   PURPOSE CONCEPT Concpt3 {+Concept purpose: Concpt3+} -- test purpose inside process
 ENDPATTERN

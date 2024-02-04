@@ -1,10 +1,10 @@
 CONTEXT InterfaceTest1 IN ENGLISH
 
-  INTERFACE Identifier : I["Business actor"]
+  INTERFACE Identifier : I[BusinessActor]
    BOX[ name : name ]
 
 PATTERN Business
-name :: "Business actor" * Identifier [UNI]
+name :: BusinessActor * Identifier [UNI]
 ENDPATTERN
 
 ENDCONTEXT

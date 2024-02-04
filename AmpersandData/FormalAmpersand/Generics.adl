@@ -32,9 +32,9 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [INJ]
-RELATION rc_conjunct[Conjunct*Term] [TOT]
+RELATION rcConjunct[Conjunct*Term] [TOT]
 ROLE ExecEngine MAINTAINS conjunctTotal
-RULE conjunctTotal : I[Conjunct] |- rc_conjunct;rc_conjunct~
+RULE conjunctTotal : I[Conjunct] |- rcConjunct;rcConjunct~
 -- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
 VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
 

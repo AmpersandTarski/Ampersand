@@ -1,8 +1,8 @@
 CONTEXT Bug IN ENGLISH
 
 PATTERN Developer
-RULE "Triviality" : I[ONE] = I[ONE]
-ROLE Developer MAINTAINS "Triviality"
+RULE Triviality : I[ONE] = I[ONE]
+ROLE Developer MAINTAINS Triviality
 ENDPATTERN
 
 ENDCONTEXT

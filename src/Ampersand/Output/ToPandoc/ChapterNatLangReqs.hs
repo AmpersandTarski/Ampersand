@@ -9,7 +9,6 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as T' (splitOn)
 
@@ -37,7 +36,7 @@ chpNatLangReqs env lev fSpec =
         Dutch ->
           para
             ( "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
-                <> (singleQuoted . str . name) fSpec
+                <> (singleQuoted . str . fullName) fSpec
                 <> " in natuurlijke taal. "
                 <> "Het hoofdstuk bevat definities en afspraken. "
                 <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
@@ -46,7 +45,7 @@ chpNatLangReqs env lev fSpec =
         English ->
           para
             ( "This chapter describes functional requirements for "
-                <> (singleQuoted . str . name) fSpec
+                <> (singleQuoted . str . fullName) fSpec
                 <> " in natural language. "
                 <> "It contains definitions and agreements. "
                 <> "The purpose of this chapter is to create shared understanding among stakeholders. "
@@ -108,7 +107,7 @@ chpNatLangReqs env lev fSpec =
                     ( NL "In het volgende wordt de taal geïntroduceerd ten behoeve van ",
                       EN "The sequel introduces the language of "
                     )
-                    <> (str . name) pat
+                    <> (str . fullName) pat
                     <> "."
                 )
                 <>
@@ -161,7 +160,7 @@ chpNatLangReqs env lev fSpec =
                 )
           where
             showCpt :: Numbered CptCont -> Inlines
-            showCpt = emph . text . name . cCpt . theLoad
+            showCpt = emph . text . fullName . cCpt . theLoad
             hasMultipleDefs :: Numbered CptCont -> Bool
             hasMultipleDefs x =
               case cCptDefs (theLoad x) of
@@ -177,7 +176,7 @@ chpNatLangReqs env lev fSpec =
                 <> ": "
                 <> xDefInln env fSpec (XRefSharedLangRelation dcl),
               [printMeaning outputLang' dcl]
-                <> ( case Set.elems $ properties dcl of
+                <> ( case toList $ properties dcl of
                        [] -> mempty
                        ps ->
                          [ plain
@@ -211,7 +210,7 @@ chpNatLangReqs env lev fSpec =
       where
         dcl = cDcl . theLoad $ nDcl
 
-        samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
+        samples = take 3 . toList . cDclPairs . theLoad $ nDcl
     printRule :: Numbered RuleCont -> Blocks
     printRule nRul =
       (printPurposes . cRulPurps . theLoad) nRul
@@ -234,32 +233,36 @@ chpNatLangReqs env lev fSpec =
         rul = cRul . theLoad $ nRul
     mkPhrase :: Relation -> AAtomPair -> Inlines
     mkPhrase decl pair =
-      -- srcAtom tgtAtom =
+      -- srcAtom tgtAtom
       case decpr decl of
         Nothing ->
           (atomShow . upCap) srcAtom
             <> (pragmaShow . l) (NL " correspondeert met ", EN " corresponds to ")
             <> atomShow tgtAtom
             <> (pragmaShow . l) (NL " in de relatie ", EN " in relation ")
-            <> atomShow (name decl)
+            <> (atomShow . fullName) decl
             <> "."
         Just pragma ->
-          ( if T.null (praLeft pragma)
+          ( if T.null prL
               then mempty
-              else pragmaShow (upCap (praLeft pragma)) <> " "
+              else pragmaShow (upCap prL) <> " "
           )
             <> atomShow srcAtom
             <> " "
-            <> ( if T.null (praMid pragma)
+            <> ( if T.null prM
                    then mempty
-                   else pragmaShow (praMid pragma) <> " "
+                   else pragmaShow prM <> " "
                )
             <> atomShow tgtAtom
-            <> ( if T.null (praRight pragma)
+            <> ( if T.null prR
                    then mempty
-                   else " " <> pragmaShow (praRight pragma)
+                   else " " <> pragmaShow prR
                )
             <> "."
+          where
+            prL = praLeft pragma
+            prM = praMid pragma
+            prR = praRight pragma
       where
         srcAtom = showValADL (apLeft pair)
         tgtAtom = showValADL (apRight pair)

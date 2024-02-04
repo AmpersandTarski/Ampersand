@@ -19,7 +19,7 @@ outputFormatP =
     <$> strOption
       ( long "output-format"
           <> metavar "FORMAT"
-          <> value (show XLSX)
+          <> value (show JSON)
           <> showDefault
           <> completeWith (map show allformats)
           <> help

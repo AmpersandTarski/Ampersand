@@ -39,7 +39,7 @@ dumpSQLqueries env fSpec =
     y = interfaceS fSpec <> interfaceG fSpec
     showInterface :: Interface -> [Text]
     showInterface ifc =
-      header ("INTERFACE: " <> name ifc)
+      header ("INTERFACE: " <> fullName ifc)
         <> (map ("  " <>) . showObjDef . ifcObj) ifc
       where
         showObjDef :: ObjectDef -> [Text]
@@ -57,20 +57,21 @@ dumpSQLqueries env fSpec =
 
     showConjunct :: Conjunct -> [Text]
     showConjunct conj =
-      header (rc_id conj)
+      header (text1ToText . rc_id $ conj)
         <> [ "/*",
              "Conjunct term:",
-             "  " <> (showA . rc_conjunct $ conj),
+             "  " <> (showA . rcConjunct $ conj),
              "Rules for this conjunct:"
            ]
-        <> map showRule (NE.toList $ rc_orgRules conj)
+        <> map (text1ToText . showRule) (NE.toList $ rc_orgRules conj)
         <> [ "*/",
-             (queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";",
+             (queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rcConjunct $ conj) <> ";",
              ""
            ]
       where
+        showRule :: Rule -> Text1
         showRule r =
-          "  - " <> name r <> ": " <> showA r
+          toText1Unsafe "  - " <> (fullName1 r <> toText1Unsafe (": " <> showA r))
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)

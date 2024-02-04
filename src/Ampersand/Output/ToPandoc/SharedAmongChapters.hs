@@ -41,7 +41,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
 where
 
 import Ampersand.ADL1 hiding (MetaData)
-import Ampersand.Basics hiding (Identity, Reader, link, toList)
+import Ampersand.Basics hiding (Identity, Reader, link)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
@@ -49,7 +49,6 @@ import Ampersand.Graphic.Graphics
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux
 import Ampersand.Output.PredLogic
-import Data.Hashable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -58,7 +57,7 @@ import qualified RIO.Text as T
 import RIO.Time
 import System.FilePath ((</>))
 import Text.Pandoc hiding (Verbosity, getVerbosity, trace)
-import Text.Pandoc.Builder hiding (caption)
+import Text.Pandoc.Builder hiding (caption, toList)
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
@@ -113,7 +112,7 @@ instance Xreferenceable CustomSection where
       <> tshow (chapterOfSection x)
       <> typeOfSection x
       <> "-"
-      <> (tshow . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters.
+      <> (tshow . hash . identOfThing $ x) -- Hash, to make sure there are no fancy characters.
     where
       x = refStuff a
   hyperLinkTo = codeGen'
@@ -123,21 +122,21 @@ instance Xreferenceable CustomSection where
 hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines
 hyperTarget env fSpec a =
   case a of
-    XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . nameOfThing . refStuff $ a)
-    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . name) pat
+    XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
+    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . fullName) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
-    XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . showRel $ d)
+    XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
     --   Left $ divWith (xSafeLabel a,[],[])
-    --                  (   (para . str $ showRel d)
+    --                  (   (para . str $ tshow d)
     --                    <>codeBlockWith
-    --                         ("", ["adl"],[("caption",showRel d)])
+    --                         ("", ["adl"],[("caption",tshow d)])
     --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
     --                  )
-    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow . name $ r)
+    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . fullName $ r)
     --   Left $ divWith (xSafeLabel a,[],[])
-    --                  (   (para . text $ name r)
+    --                  (   (para . text $ tshow r)
     --                  --  <>codeBlockWith
-    --                  --       ("", ["adl"],[("caption",name r)])
+    --                  --       ("", ["adl"],[("caption",tshow r)])
     --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")
     --                    <>printMeaning (outputLang env fSpec) r
     --                  )
@@ -206,10 +205,56 @@ pandocEquationWithLabel env fSpec xref x =
 data RefStuff = RefStuff
   { typeOfSection :: Text,
     chapterOfSection :: Chapter,
-    nameOfThing :: Text,
+    identOfThing :: Ident,
     xrefPrefix :: CrossrefType
   }
   deriving (Show)
+
+class Identifyble a where
+  mkId :: a -> Ident
+
+instance Identifyble Relation where
+  mkId rel = IdentRel (name rel) (name . source $ rel) (name . target $ rel)
+
+instance Identifyble AConceptDef where
+  mkId = IdentByName . name
+
+instance Identifyble Rule where
+  mkId = IdentByName . name
+
+instance Identifyble Pattern where
+  mkId = IdentByName . name
+
+instance Identifyble RefStuff where
+  mkId = identOfThing
+
+data Ident
+  = IdentByName Name
+  | IdentRel Name Name Name
+  | IdentOverig -- Used to print the
+
+instance Hashable Ident where
+  hashWithSalt s ident = case ident of
+    IdentByName nm ->
+      s `hashWithSalt` nm
+    IdentRel n1 n2 n3 ->
+      s `hashWithSalt` n1
+        `hashWithSalt` n2
+        `hashWithSalt` n3
+    IdentOverig -> s `hashWithSalt` tshow ident
+
+instance Show Ident where
+  show ident = T.unpack $ case ident of
+    IdentByName nm -> fullName nm
+    IdentRel nm src tgt ->
+      fullName nm
+        <> "["
+        <> ( if src == tgt
+               then fullName src
+               else fullName src <> "*" <> fullName tgt
+           )
+        <> "]"
+    IdentOverig -> ":overig"
 
 refStuff :: CustomSection -> RefStuff
 refStuff x =
@@ -218,56 +263,56 @@ refStuff x =
       RefStuff
         { typeOfSection = relation,
           chapterOfSection = SharedLang,
-          nameOfThing = showRel d,
+          identOfThing = mkId d,
           xrefPrefix = Dfn
         }
     XRefDataAnalysisRule r ->
       RefStuff
         { typeOfSection = rule,
           chapterOfSection = DataAnalysis,
-          nameOfThing = name r,
+          identOfThing = mkId r,
           xrefPrefix = Agr
         }
     XRefSharedLangRule r ->
       RefStuff
         { typeOfSection = rule,
           chapterOfSection = SharedLang,
-          nameOfThing = name r,
+          identOfThing = mkId r,
           xrefPrefix = Agr
         }
     XRefConceptualAnalysisPattern p ->
       RefStuff
         { typeOfSection = pattern',
           chapterOfSection = ConceptualAnalysis,
-          nameOfThing = name p,
+          identOfThing = mkId p,
           xrefPrefix = Sec
         }
     XRefConceptualAnalysisRelation d ->
       RefStuff
         { typeOfSection = relation,
           chapterOfSection = ConceptualAnalysis,
-          nameOfThing = showRel d,
+          identOfThing = mkId d,
           xrefPrefix = Eq
         }
     XRefConceptualAnalysisRule r ->
       RefStuff
         { typeOfSection = rule,
           chapterOfSection = ConceptualAnalysis,
-          nameOfThing = name r,
+          identOfThing = mkId r,
           xrefPrefix = Eq
         }
     XRefConceptualAnalysisExpression r ->
       RefStuff
         { typeOfSection = term,
           chapterOfSection = ConceptualAnalysis,
-          nameOfThing = name r,
+          identOfThing = mkId r,
           xrefPrefix = Eq
         }
     XRefSharedLangTheme mt ->
       RefStuff
         { typeOfSection = theme,
           chapterOfSection = SharedLang,
-          nameOfThing = maybe ":overig" name mt,
+          identOfThing = maybe IdentOverig mkId mt,
           xrefPrefix = Sec
         }
   where
@@ -320,7 +365,16 @@ instance Named CptCont where
   name = name . cCpt
 
 instance Named ThemeContent where
-  name tc = maybe "Outside of patterns" name (patOfTheme tc)
+  name tc =
+    maybe
+      ( mkName PatternName . (:| []) $
+          ( case toNamePart "Outside_of_patterns" of
+              Nothing -> fatal "Not a valid NamePart."
+              Just np -> np
+          )
+      )
+      name
+      (patOfTheme tc)
 
 -- | orderingByTheme collects materials from the fSpec to distribute over themes.
 --   It ensures that all rules, relations and concepts from the context are included in the specification.
@@ -356,10 +410,10 @@ orderingByTheme env fSpec =
     nruless :: NonEmpty [Numbered Rule]
     nconceptss :: NonEmpty [Numbered AConceptDef]
     nrelationss :: NonEmpty [Numbered Relation]
-    nruless = transformNonEmpty (numbering 0 (map Set.toList ruless <> [Set.toList (ctxrs aCtx)]))
+    nruless = transformNonEmpty (numbering 0 (map Set.toList ruless <> [Set.toList (maybe mempty ctxrs aCtx)]))
     nidruless = transformNonEmpty (numbering 0 idruless)
-    nconceptss = transformNonEmpty (numbering 0 (conceptss <> [ctxcdsOutPats aCtx]))
-    nrelationss = transformNonEmpty (numbering 0 (map Set.toList relationss <> [Set.toList (ctxds aCtx)]))
+    nconceptss = transformNonEmpty (numbering 0 (conceptss <> maybe mempty (Set.toList . Set.singleton . ctxcdsOutPats) aCtx))
+    nrelationss = transformNonEmpty (numbering 0 (map Set.toList relationss <> [Set.toList (maybe mempty ctxds aCtx)]))
     transformNonEmpty :: [a] -> NonEmpty a
     transformNonEmpty x = case NE.nonEmpty x of Just ne -> ne; Nothing -> fatal "onbereikbare code"
     aCtx = originalContext fSpec
@@ -370,7 +424,9 @@ orderingByTheme env fSpec =
     (ruless, idruless, conceptss, relationss) =
       L.unzip4
         ( [(ptrls pat, ptids pat, ptcds pat, ptdcs pat) | pat <- vpatterns fSpec]
-            <> [(ctxrs ctx, ctxks ctx, ctxcds ctx, ctxds ctx) | let ctx = originalContext fSpec]
+            <> case originalContext fSpec of
+              Nothing -> []
+              Just ctx -> [(ctxrs ctx, ctxks ctx, ctxcds ctx, ctxds ctx)]
         )
     numbering :: Int -> [[a]] -> [[Numbered a]]
     numbering n (xs : xss) = [Nr i x | (x, i) <- zip xs [n ..]] : numbering (n + length xs) xss
@@ -417,7 +473,7 @@ orderingByTheme env fSpec =
             cCptPurps = purposesOf fSpec (outputLang env fSpec) c
           }
       where
-        c = PlainConcept (acdcpt cpt NE.:| [])
+        c = PlainConcept ((name cpt, acdlabel cpt) NE.:| [])
 
 dpRule' ::
   (HasDocumentOpts env) =>
@@ -433,7 +489,7 @@ dpRule' env fSpec = dpR
     l lstr = text $ localize (outputLang env fSpec) lstr
     dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
     dpR (r : rs) n seenConcs seenRelations =
-      ( ( l (NL "Regel: ", EN "Rule: ") <> (text . name) r,
+      ( ( l (NL "Regel: ", EN "Rule: ") <> (text . tshow . mkId) r,
           [theBlocks]
         ) :
         dpNext,
@@ -445,8 +501,8 @@ dpRule' env fSpec = dpR
         theBlocks :: Blocks
         theBlocks =
           purposes2Blocks env (purposesOf fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-            <> purposes2Blocks env [p | d <- Set.elems nds, p <- purposesOf fSpec (outputLang env fSpec) d] -- Dan de uitleg van de betreffende relaties
-            <> case (Set.elems . Set.map EDcD $ nds, outputLang env fSpec) of
+            <> purposes2Blocks env [p | d <- toList nds, p <- purposesOf fSpec (outputLang env fSpec) d] -- Dan de uitleg van de betreffende relaties
+            <> case (toList . Set.map EDcD $ nds, outputLang env fSpec) of
               ([], _) -> mempty
               ([d], Dutch) -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie" else "relatie") <> " nodig:")
               ([d], English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
@@ -454,14 +510,14 @@ dpRule' env fSpec = dpR
                 plain
                   ( "Om te komen tot de formalisatie van " <> hyperLinkTo (XRefSharedLangRule r)
                       <> " ("
-                      <> (singleQuoted . str . name) r
+                      <> (singleQuoted . str . tshow . mkId) r
                       <> ") "
                       <> str (" zijn de volgende " <> count Dutch (length nds) "in deze paragraaf geformaliseerde relatie" <> " nodig.")
                   )
               (_, English) -> plain ("To arrive at the formalization of " <> hyperLinkTo (XRefSharedLangRule r) <> str (", the following " <> count English (length nds) "relation" <> " are introduced."))
-            <> (bulletList . map (plain . showRef) . Set.elems $ nds)
+            <> (bulletList . map (plain . showRef) . toList $ nds)
             <> ( if null nds
-                   then case Set.elems rds of
+                   then case toList rds of
                      [] -> mempty
                      [rd] ->
                        plain
@@ -479,8 +535,8 @@ dpRule' env fSpec = dpR
                                EN "We formalize this using relations "
                              )
                          )
-                         <> (bulletList . map (plain . showRef) . Set.elems $ rds)
-                   else case Set.elems rds of
+                         <> (bulletList . map (plain . showRef) . toList $ rds)
+                   else case toList rds of
                      [] -> mempty
                      [rd] ->
                        plain
@@ -499,7 +555,7 @@ dpRule' env fSpec = dpR
                                  EN " we also use relations "
                                )
                          )
-                         <> (bulletList . map (plain . showRef) . Set.elems $ rds)
+                         <> (bulletList . fmap (plain . showRef) . toList $ rds)
                )
             <> plain
               ( if isSignal fSpec r
@@ -518,15 +574,15 @@ dpRule' env fSpec = dpR
                        ( l (NL "Dit komt overeen met ", EN "This corresponds to ")
                            <> hyperLinkTo (XRefSharedLangRule r)
                            <> " ("
-                           <> (singleQuoted . str . name) r
+                           <> (singleQuoted . str . tshow . mkId) r
                            <> ")."
                        )
                )
         showRef :: Relation -> Inlines
-        showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
+        showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . tshow) dcl <> ")"
 
         ncs = concs r Set.\\ seenConcs -- newly seen concepts
-        cds = [(c, cd) | c <- Set.elems ncs, cd <- conceptDefs fSpec, name cd == name c] -- ... and their definitions
+        cds = [(c, cd) | c <- toList ncs, cd <- conceptDefs fSpec, name cd == name c] -- ... and their definitions
         ds = bindedRelationsIn r
         nds = ds Set.\\ seenRelations -- newly seen relations
         rds = ds `Set.intersection` seenRelations -- previously seen relations
@@ -713,7 +769,7 @@ printConcept env l nCpt =
         [ ( str (l (NL "Definitie ", EN "Definition "))
               <> ( if fspecFormat `elem` [Fpdf, Flatex]
                      then (str . tshow . theNr) nCpt
-                     else (str . name) cDef
+                     else (str . tshow . mkId) cDef
                  )
               <> str (fromMaybe "" suffx)
               <> ":",

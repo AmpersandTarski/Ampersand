@@ -1,4 +1,4 @@
-CONTEXT ALS_DemoPopulation IN DUTCH
+CONTEXT ALSDemoPopulation IN DUTCH
 -----------------------------------------------------------
 {- POPULATION voor concept Partij
 POPULATION partijNaam                            CONTAINS [ ("Partij_0", "PartijNaam") ]

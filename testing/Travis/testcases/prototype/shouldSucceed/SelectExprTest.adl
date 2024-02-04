@@ -21,7 +21,7 @@ INTERFACE Overview : I[ONE]
             ]
       ]
 
-INTERFACE Id (r,s,t): I[A]
+INTERFACE Id: I[A]
   BOX [ id         : I[A]
       , r          : r
       , s          : s

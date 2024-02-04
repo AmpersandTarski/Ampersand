@@ -104,6 +104,7 @@ data FEViewSegment = FEViewSegment
 data FEObject
   = FEObjE
       { objName :: Text,
+        objLabel :: Maybe Text,
         objExp :: FEExpression,
         objCrud :: Cruds,
         objCrudC :: Bool,
@@ -378,8 +379,8 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
         fun soFar keyVal = soFar . doAttribute keyVal
         doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
         doAttribute h = case tkval h of
-          Nothing -> setAttribute (T.unpack $ tkkey h) True
-          Just val -> setAttribute (T.unpack $ tkkey h) val
+          Nothing -> setAttribute (T.unpack . text1ToText $ tkkey h) True
+          Just val -> setAttribute (T.unpack . text1ToText $ tkkey h) val
 
 showTemplate :: Template -> [Text]
 showTemplate (Template a b) =

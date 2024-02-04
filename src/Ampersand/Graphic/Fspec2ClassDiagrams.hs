@@ -12,22 +12,22 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
+import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
-    { cdName = "classification_" <> name fSpec,
+    { cdName = prependToPlainName "classification_" $ name fSpec,
       groups = [],
-      classes = map clas . Set.elems . concs . vgens $ fSpec,
+      classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
       aggrs = [],
       geners = map OOGener . vgens $ fSpec,
-      ooCpts = Set.elems . concs $ fSpec
+      ooCpts = toList . concs $ fSpec
     }
   where
     clas :: A_Concept -> Class
@@ -41,10 +41,18 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
-        { attNm = attName att,
-          attTyp = if isProp (attExpr att) then "Prop" else (name . target . attExpr) att,
+        { attNm = mkName SqlAttributeName $ (toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [],
+          attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att -- optional if NULL is allowed
         }
+
+propTypeName :: Name
+propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop") NE.:| []
+
+toNamePart' :: Text1 -> NamePart
+toNamePart' x = case toNamePart1 x of
+  Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+  Just np -> np
 
 class CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
@@ -57,7 +65,7 @@ class CDAnalysable a where
 buildClass :: FSpec -> A_Concept -> Class
 buildClass fSpec root =
   case classOf fSpec root of
-    Nothing -> fatal $ "Concept is not a class: `" <> name root <> "`."
+    Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
     Just exprs ->
       OOClass
         { clName = name root,
@@ -87,15 +95,15 @@ classOf fSpec cpt =
 ooAttr :: Expression -> CdAttribute
 ooAttr r =
   OOAttr
-    { attNm = case Set.elems $ bindedRelationsIn r of
+    { attNm = case toList $ bindedRelationsIn r of
         [] -> fatal $ "No bindedRelations in expression: " <> tshow r
         h : _ -> name h,
-      attTyp = if isProp r then "Prop" else (name . target) r,
+      attTyp = if isProp r then propTypeName else (name . target) r,
       attOptional = (not . isTot) r
     }
 
 attribDcls :: FSpec -> [Relation]
-attribDcls fSpec = [d | d <- Set.elems (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
+attribDcls fSpec = [d | d <- toList (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
 
 -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
 --   decl2assocOrAggr :: Relation -> Either Association Aggregation
@@ -108,10 +116,10 @@ decl2assocOrAggr d =
       { assSrc = name $ source d,
         assSrcPort = name d,
         asslhm = mults . flp $ EDcD d,
-        asslhr = "",
+        asslhr = Nothing,
         assTgt = name $ target d,
         assrhm = mults $ EDcD d,
-        assrhr = name d,
+        assrhr = Just $ name d,
         assmdcl = Just d
       }
 
@@ -128,20 +136,20 @@ dclIsShown fSpec nodeConcepts d =
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
     OOclassdiagram
-      { cdName = "logical_" <> name pat,
+      { cdName = prependToPlainName "logical_" $ name pat,
         groups = [],
         classes = map (buildClass fSpec) entities,
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens pat),
-        ooCpts = Set.elems (concs pat)
+        ooCpts = toList (concs pat)
       }
     where
-      entities = (filter (isJust . classOf fSpec) . Set.elems . concs) pat
+      entities = (filter (isJust . classOf fSpec) . toList . concs) pat
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
-            . Set.elems
+            . toList
             . ptdcs
         )
           pat
@@ -150,16 +158,16 @@ instance CDAnalysable Pattern where
 instance CDAnalysable FSpec where
   cdAnalysis grouped _ fSpec =
     OOclassdiagram
-      { cdName = "logical_" <> name fSpec,
+      { cdName = prependToPlainName "logical_" $ name fSpec,
         groups = groups',
         classes = classes',
         assocs = lefts assocsAndAggrs,
         aggrs = rights assocsAndAggrs,
         geners = map OOGener (gens fSpec),
-        ooCpts = Set.elems (concs fSpec)
+        ooCpts = toList (concs fSpec)
       }
     where
-      groups' :: [(Text, NonEmpty Class)]
+      groups' :: [(Name, NonEmpty Class)]
       (groups', classes')
         | grouped =
           ( [ ( name pat,
@@ -191,11 +199,11 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-      entities = (filter (cptIsClass fSpec) . Set.elems . concs) fSpec
+      entities = (filter (cptIsClass fSpec) . toList . concs) fSpec
       assocsAndAggrs =
         ( map decl2assocOrAggr
             . filter (dclIsShown fSpec nodeConcepts)
-            . Set.elems
+            . toList
             . vrels
         )
           fSpec
@@ -206,7 +214,7 @@ instance CDAnalysable FSpec where
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram
-    { cdName = "technical_" <> name fSpec,
+    { cdName = prependToPlainName "technical_" $ name fSpec,
       groups = [],
       classes = allClasses,
       assocs = allAssocs,
@@ -217,7 +225,7 @@ tdAnalysis fSpec =
   where
     allClasses =
       [ OOClass
-          { clName = sqlname table,
+          { clName = name . mainItem $ table,
             clcpt = primKey table,
             clAtts = case table of
               TblSQL {} ->
@@ -230,7 +238,7 @@ tdAnalysis fSpec =
                 where
                   mkOOattr a =
                     OOAttr
-                      { attNm = attName a,
+                      { attNm = sqlAttToName a,
                         attTyp = (name . target . attExpr) a,
                         attOptional = False -- A BinSQL contains pairs, so NULL cannot occur.
                       },
@@ -249,10 +257,10 @@ tdAnalysis fSpec =
     ooAtt :: [SqlAttribute] -> SqlAttribute -> CdAttribute
     ooAtt kernelAtts f =
       OOAttr
-        { attNm = attName f,
+        { attNm = sqlAttToName f,
           attTyp =
             if isProp (attExpr f) && (f `notElem` kernelAtts)
-              then "Prop"
+              then propTypeName
               else (name . target . attExpr) f,
           attOptional = attNull f -- optional if NULL is allowed
         }
@@ -269,13 +277,13 @@ tdAnalysis fSpec =
               where
                 mkOOAssoc a =
                   OOAssoc
-                    { assSrc = sqlname t,
-                      assSrcPort = attName a,
+                    { assSrc = name . mainItem $ t,
+                      assSrcPort = sqlAttToName a,
                       asslhm = Mult MinZero MaxMany,
-                      asslhr = "",
-                      assTgt = name . getConceptTableFor fSpec . target . attExpr $ a,
+                      asslhr = Nothing,
+                      assTgt = name . mainItem . getConceptTableFor fSpec . target . attExpr $ a,
                       assrhm = Mult MinOne MaxOne,
-                      assrhr = "",
+                      assrhr = Nothing,
                       assmdcl = Nothing
                     }
         relOf f =
@@ -289,15 +297,20 @@ tdAnalysis fSpec =
         mkRel :: PlugSQL -> (Expression, SqlAttribute) -> Association
         mkRel t (expr, f) =
           OOAssoc
-            { assSrc = sqlname t,
-              assSrcPort = attName f,
+            { assSrc = name . mainItem $ t,
+              assSrcPort = sqlAttToName f,
               asslhm = (mults . flp) expr,
-              asslhr = attName f,
-              assTgt = name . getConceptTableFor fSpec . target $ expr,
+              asslhr = Just $ sqlAttToName f,
+              assTgt = name . mainItem . getConceptTableFor fSpec . target $ expr,
               assrhm = mults expr,
-              assrhr = case [name d | d <- Set.elems $ bindedRelationsIn expr] of h : _ -> h; _ -> fatal "no relations used in expr",
+              assrhr = case toList . toList $ bindedRelationsIn expr of
+                h : _ -> Just (name h)
+                _ -> fatal "no relations used in expr",
               assmdcl = Nothing
             }
+
+sqlAttToName :: SqlAttribute -> Name
+sqlAttToName att = mkName SqlAttributeName ((toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [])
 
 mults :: Expression -> Multiplicities
 mults r =

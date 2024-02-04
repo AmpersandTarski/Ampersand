@@ -1,4 +1,4 @@
-﻿CONTEXT Issue194 IN DUTCH
+CONTEXT Issue194 IN DUTCH
 INCLUDE "Issue194.xlsx"
 CLASSIFY Auto ISA Voertuig
 RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]

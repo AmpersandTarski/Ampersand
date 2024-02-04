@@ -25,7 +25,7 @@ POPULATION dummy[Tijdregistratie*X] CONTAINS
   ; ("","X")
   ]
 
-INTERFACE Test (dag[Dienst*Dagverantwoording]) : V[ONE*Dagverantwoording]
+INTERFACE Test  : V[ONE*Dagverantwoording]
 BOX [ dag : dag[Dienst*Dagverantwoording]~
     ]
 

@@ -90,7 +90,7 @@ commandLineHandler currentDir _progName args =
     addCommands = do
       addCommand''
         Check
-        "Use ampersand to check your model."
+        "Use ampersand to check your model for syntactical and type errors."
         checkCmd
         (fSpecGenOptsParser False)
       addCommand''
@@ -100,8 +100,8 @@ commandLineHandler currentDir _progName args =
         daemonOptsParser
       addCommand''
         Dataanalysis
-        ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet"
-            <> "must comply to the specific format."
+        ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet "
+            <> "must comply to the specific format. "
             <> "This is an experimental feature."
         )
         (mkAction exportAsAdl)
@@ -153,16 +153,16 @@ commandLineHandler currentDir _progName args =
         umlOptsParser
       addCommand''
         Validate
-        ( "Compare results of rule evaluation in Haskell and SQL, for"
-            <> "testing term semantics. This requires command line php with"
+        ( "Compare results of rule evaluation in Haskell and SQL, for "
+            <> "testing term semantics. This requires command line php with "
             <> "MySQL support."
         )
         (mkAction validate)
         validateOptsParser
       addCommand''
         Test
-        ( "Run testsuites in a given directory. This is meant to do regression testing"
-            <> " during automatic build (e.g. Travis-ci)"
+        ( "Run testsuites in a given directory. This is meant to do regression testing "
+            <> "during automatic build (e.g. Github actions)"
         )
         testCmd
         (testOptsParser ".")
@@ -386,7 +386,7 @@ checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing
   where
     doNothing fSpec = do
-      logInfo $ "This script of " <> display (name fSpec) <> " contains no type errors."
+      logInfo $ "This script of " <> (display . fullName) fSpec <> " contains no type errors."
 
 mkAction ::
   forall a.

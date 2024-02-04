@@ -1,13 +1,13 @@
-﻿CONTEXT Try43 IN ENGLISH
+CONTEXT Try43 IN ENGLISH
 
-PATTERN "Try43"
+PATTERN Try43
 z :: A * B
 t :: A * A
 m :: A * A
 b :: A * A
 ENDPATTERN
 
-INTERFACE "Try43"  : V[ONE*B]
+INTERFACE Try43  : V[ONE*B]
 BOX
 [ 
    "dossiers" : z~ /\ z~;(t /\ (-m \/ -b))

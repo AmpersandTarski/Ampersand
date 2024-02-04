@@ -1,4 +1,4 @@
-﻿CONTEXT Ticket454 IN ENGLISH
+CONTEXT Ticket454 IN ENGLISH
 {-
 PURPOSE:
 Inside the Ampersand compiler, this script causes an EEps term with EEps B (Sign B B)
@@ -10,6 +10,6 @@ CLASSIFY B ISA C
 r :: A * B
 s :: C * C
 
-RULE I[C] /\ r~;r |- s
+RULE Ticket454: I[C] /\ r~;r |- s
 
 ENDCONTEXT

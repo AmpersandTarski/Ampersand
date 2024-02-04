@@ -12,7 +12,7 @@ import Ampersand.Output.ToJSON.JSONutils
 newtype Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 
 data JSONInterface = JSONInterface
-  { ifcJSONid :: Text,
+  { ifcJSONname :: Text,
     ifcJSONlabel :: Text,
     ifcJSONifcObject :: JSONObjectDef,
     ifcJSONisAPI :: Bool
@@ -22,9 +22,9 @@ data JSONInterface = JSONInterface
 data JSONObjectDef = JSONObjectDef
   { ifcobjJSONtype :: Text,
     ifcobjJSONtxt :: Maybe Text,
-    ifcobjJSONid :: Text,
+    ifcobjJSONname :: Text,
     ifcobjJSONlabel :: Text,
-    ifcobjJSONviewId :: Maybe Text,
+    ifcobjJSONviewName :: Maybe Text,
     ifcobjJSONNormalizationSteps :: Maybe [Text], -- Not used in frontend. Just informative for analysis
     ifcobjJSONrelation :: Maybe Text,
     ifcobjJSONrelationIsFlipped :: Maybe Bool,
@@ -37,7 +37,7 @@ data JSONObjectDef = JSONObjectDef
 data JSONSubInterface = JSONSubInterface
   { subJSONboxHeader :: Maybe JSONBoxHeader,
     subJSONifcObjects :: Maybe [JSONObjectDef],
-    subJSONrefSubInterfaceId :: Maybe Text,
+    subJSONrefSubInterfaceName :: Maybe Text,
     subJSONrefIsLinkTo :: Maybe Bool
   }
   deriving (Generic, Show)
@@ -63,8 +63,8 @@ data JSONCruds = JSONCruds
   deriving (Generic, Show)
 
 data JSONexpr = JSONexpr
-  { exprJSONsrcConceptId :: Text,
-    exprJSONtgtConceptId :: Text,
+  { exprJSONsrcConceptName :: Text,
+    exprJSONtgtConceptName :: Text,
     exprJSONisUni :: Bool,
     exprJSONisTot :: Bool,
     exprJSONisIdent :: Bool,
@@ -106,36 +106,36 @@ instance JSON SubInterface JSONSubInterface where
         JSONSubInterface
           { subJSONboxHeader = Just . fromAmpersand env fSpec . siHeader $ si,
             subJSONifcObjects = Just . map (fromAmpersand env fSpec) . siObjs $ si,
-            subJSONrefSubInterfaceId = Nothing,
+            subJSONrefSubInterfaceName = Nothing,
             subJSONrefIsLinkTo = Nothing
           }
       InterfaceRef {} ->
         JSONSubInterface
           { subJSONboxHeader = Nothing,
             subJSONifcObjects = Nothing,
-            subJSONrefSubInterfaceId = Just . escapeIdentifier . siIfcId $ si,
+            subJSONrefSubInterfaceName = Just . text1ToText . escapeIdentifier . fullName1 . siIfcId $ si,
             subJSONrefIsLinkTo = Just . siIsLink $ si
           }
 
 instance JSON BoxHeader JSONBoxHeader where
   fromAmpersand env fSpec header =
     JSONBoxHeader
-      { bhJSONtype = btType header,
+      { bhJSONtype = text1ToText . btType $ header,
         bhJSONkeyVals = map (fromAmpersand env fSpec) $ btKeys header
       }
 
 instance JSON TemplateKeyValue JSONTemplateKeyValue where
   fromAmpersand _ _ x =
     JSONTemplateKeyValue
-      { tkvJSONkey = tkkey x,
+      { tkvJSONkey = text1ToText . tkkey $ x,
         tkvJSONvalue = tkval x
       }
 
 instance JSON Interface JSONInterface where
   fromAmpersand env fSpec interface =
     JSONInterface
-      { ifcJSONid = escapeIdentifier . ifcname $ interface,
-        ifcJSONlabel = ifcname interface,
+      { ifcJSONname = fullName $ interface,
+        ifcJSONlabel = label interface,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
         ifcJSONisAPI = ifcIsAPI interface
       }
@@ -152,8 +152,8 @@ instance JSON Cruds JSONCruds where
 instance JSON ObjectDef JSONexpr where
   fromAmpersand env fSpec object =
     JSONexpr
-      { exprJSONsrcConceptId = idWithoutType srcConcept,
-        exprJSONtgtConceptId = idWithoutType tgtConcept,
+      { exprJSONsrcConceptName = text1ToText . idWithoutType' $ srcConcept,
+        exprJSONtgtConceptName = text1ToText . idWithoutType' $ tgtConcept,
         exprJSONisUni = isUni normalizedInterfaceExp,
         exprJSONisTot = isTot normalizedInterfaceExp,
         exprJSONisIdent = isIdent normalizedInterfaceExp,
@@ -174,11 +174,11 @@ instance JSON BoxItem JSONObjectDef where
       BxExpr object' ->
         JSONObjectDef
           { ifcobjJSONtype = "ObjExpression",
-            ifcobjJSONid = escapeIdentifier . name $ object,
-            ifcobjJSONlabel = name object,
-            ifcobjJSONviewId = fmap name viewToUse,
+            ifcobjJSONname = maybe "" (text1ToText . escapeIdentifier) (objPlainName object),
+            ifcobjJSONlabel = maybe "" text1ToText (objPlainName object),
+            ifcobjJSONviewName = fullName <$> viewToUse,
             ifcobjJSONNormalizationSteps = Just $ showPrf showA . cfProof . objExpression $ object,
-            ifcobjJSONrelation = fmap (showRel . fst) mEditableDecl,
+            ifcobjJSONrelation = tshow . fst <$> mEditableDecl,
             ifcobjJSONrelationIsFlipped = fmap snd mEditableDecl,
             ifcobjJSONcrud = Just $ fromAmpersand env fSpec (objcrud object),
             ifcobjJSONexpr = Just $ fromAmpersand env fSpec object,
@@ -187,7 +187,7 @@ instance JSON BoxItem JSONObjectDef where
           }
         where
           viewToUse = case objmView object of
-            Just nm -> Just $ lookupView fSpec nm
+            Just nm -> lookupView fSpec nm
             Nothing -> getDefaultViewForConcept fSpec tgtConcept
           normalizedInterfaceExp = conjNF env $ objExpression object
           (tgtConcept, mEditableDecl) =
@@ -199,14 +199,14 @@ instance JSON BoxItem JSONObjectDef where
       BxTxt object ->
         JSONObjectDef
           { ifcobjJSONtype = "ObjText",
-            ifcobjJSONid = escapeIdentifier . name $ object,
-            ifcobjJSONlabel = name object,
-            ifcobjJSONviewId = Nothing,
+            ifcobjJSONname = maybe "" (text1ToText . escapeIdentifier) (boxPlainName object),
+            ifcobjJSONlabel = maybe "" text1ToText (boxPlainName object),
+            ifcobjJSONviewName = Nothing,
             ifcobjJSONNormalizationSteps = Nothing,
             ifcobjJSONrelation = Nothing,
             ifcobjJSONrelationIsFlipped = Nothing,
             ifcobjJSONcrud = Nothing,
             ifcobjJSONexpr = Nothing,
             ifcobjJSONsubinterfaces = Nothing,
-            ifcobjJSONtxt = Just $ objtxt object
+            ifcobjJSONtxt = Just . boxtxt $ object
           }

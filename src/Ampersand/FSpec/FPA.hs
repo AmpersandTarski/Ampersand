@@ -27,9 +27,9 @@ data FPType
   deriving (Show)
 
 data FP = FP
-  { fpType :: FPType,
-    fpName :: Text,
-    fpComplexity :: Complexity
+  { fpType :: !FPType,
+    fpName :: !Text1,
+    fpComplexity :: !Complexity
   }
   deriving (Show)
 
@@ -64,7 +64,7 @@ fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 fpaPlugInfo :: PlugInfo -> Maybe FP
 fpaPlugInfo p@(InternalPlug TblSQL {attributes = atts})
   | Just cmplxty <- ilgvComplexity $ length atts =
-    Just $ FP ILGV (name p) cmplxty
+    Just $ FP ILGV (showUnique p) cmplxty
   where
     ilgvComplexity :: Int -> Maybe Complexity
     ilgvComplexity n
@@ -79,7 +79,7 @@ fpaUserTransactions fSpec = map fpaInterface $ interfaceS fSpec
 
 fpaInterface :: Interface -> FP
 fpaInterface ifc =
-  let nm = name ifc
+  let nm = showUnique ifc
       cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
       tp = fatal "TODO: fix to see if the interface contains editable fields"
    in FP tp nm cmplxty

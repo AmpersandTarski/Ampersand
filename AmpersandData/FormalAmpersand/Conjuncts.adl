@@ -4,7 +4,7 @@ PATTERN Conjuncts
     MEANING "All conjuncts in a context."
     RELATION allShifts[DnfClause*DnfClause]
     RELATION conjNF[Term*Term] [UNI,TOT]
-    RELATION rc_conjunct[Conjunct*Term] [TOT]
+    RELATION rcConjunct[Conjunct*Term] [TOT]
     RELATION conjuncts[Rule*Term]
     RELATION exprIsc2list[Term*Term] [TOT]
     RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]
@@ -13,15 +13,15 @@ PATTERN Conjuncts
     RELATION qRule[Quad*Rule] [UNI,TOT]
     RELATION qConjuncts[Quad*Conjunct]
     RELATION rc_orgRules[Conjunct*RuleName] [UNI,TOT]
-    RELATION rc_conjunct[Conjunct*Term] [UNI,TOT]
+    RELATION rcConjunct[Conjunct*Term] [UNI,TOT]
     RELATION rc_dnfClauses[Conjunct*DnfClause]
     RELATION term[Rule*Term][UNI,TOT] --is defined somewhere else too.
 
 
-    RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
+    RULE Conjuncts1 : qConjuncts;rcConjunct |- qRule;conjuncts
     MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."
 
-    RULE Conjuncts2 : rc_conjunct~;rc_dnfClauses = expr2dnfClause;allShifts
+    RULE Conjuncts2 : rcConjunct~;rc_dnfClauses = expr2dnfClause;allShifts
     MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the term in that conjunct."
 
     RULE defconjuncts : conjuncts = term[Rule*Term];conjNF;exprIsc2list

@@ -1,0 +1,9 @@
+CONTEXT Issue1127 IN ENGLISH
+INCLUDE "Issue1127.xlsx"
+
+name :: Concept * ConceptName [UNI]
+name :: Relation * RelationName [UNI]
+
+-- This testcase should fail, because the .xlsx file contains a population for a relation that isn't declared explicitly in this .adl script. 
+
+ENDCONTEXT
