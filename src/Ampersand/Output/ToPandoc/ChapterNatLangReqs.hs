@@ -218,8 +218,7 @@ chpNatLangReqs env lev fSpec =
           [ ( str (l (NL "Afspraak ", EN "Agreement "))
                 <> (text . tshow . theNr $ nRul)
                 <> ": "
-                <> xDefInln env fSpec (XRefSharedLangRule rul)
-                <> ".",
+                <> xDefInln env fSpec (XRefSharedLangRule rul),
               case (cRulMeanings . theLoad) nRul of
                 [] ->
                   [ plain $

@@ -7,6 +7,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import System.FilePath
 
 chpDiagnosis ::
   (HasDirOutput env, HasDocumentOpts env) =>
@@ -112,14 +113,17 @@ chpDiagnosis env fSpec
                   map (plain . str . fullName . fst) (fRoles fSpec)
                 )
                 -- Content rows:
-                [ (plain . str . fullName) rul :
+                [ (plain . str . label) rul :
                     [f rol rul | (rol, _) <- fRoles fSpec]
                   | rul <- sigs
                 ]
       where
         ruls = Set.filter (isSignal fSpec) . vrules $ fSpec
         f :: Role -> Rule -> Blocks
-        f _ _ = mempty
+        f rol rul =
+          if (rol, rul) `elem` fRoleRuls fSpec
+            then (plain . str) "✓"
+            else mempty
 
     missingConceptDefs :: Blocks
     missingConceptDefs =
@@ -138,7 +142,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van concept ",
                   EN "The concept "
                 )
-                <> (singleQuoted . str . fullName) c
+                <> (singleQuoted . str . label) c
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remains without a purpose."
@@ -150,7 +154,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van de concepten: ",
                   EN "Concepts "
                 )
-                <> commaPandocAnd outputLang' (map (str . fullName) xs)
+                <> commaPandocAnd outputLang' (map (str . label) xs)
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remain without a purpose."
@@ -158,9 +162,9 @@ chpDiagnosis env fSpec
             )
       where
         missing =
-          [ c | c <- ccs, null (purposesOf fSpec outputLang' c)
-          ]
-            <> [c | c <- ccs, null (concDefs fSpec c)]
+          L.nub $
+            [c | c <- ccs, null (purposesOf fSpec outputLang' c)]
+              <> [c | c <- ccs, null (concDefs fSpec c)]
         ccs = toList . concs . vrels $ fSpec
 
     unusedConceptDefs :: Blocks
@@ -362,7 +366,7 @@ chpDiagnosis env fSpec
                                ( NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in ",
                                  EN " shows a conceptual diagram with all relations declared in "
                                )
-                             <> (singleQuoted . str . fullName) pat
+                             <> (singleQuoted . str . label) pat
                              <> "."
                          )
                          <> xDefBlck env fSpec pict
@@ -444,11 +448,21 @@ chpDiagnosis env fSpec
       where
         formalizations rls =
           bulletList
-            [ para ((emph . str . fullName) r <> " (" <> (str . tshow . origin) r <> ")")
+            [ para ((emph . str . label) r <> " (" <> (str . tShowOrigin) r <> ")")
                 <> (para . showMath . formalExpression) r
                 <> (para . showPredLogic outputLang' . formalExpression) r
               | r <- rls
             ]
+
+    tShowOrigin :: (Traced x) => x -> Text
+    tShowOrigin = tshow . stripDirectory . origin
+      where
+        stripDirectory :: Origin -> Origin
+        stripDirectory (FileLoc pos' x) = FileLoc (f pos') x
+        stripDirectory fileLoc = fileLoc
+        -- data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic, Typeable, Data)
+        f :: FilePos -> FilePos
+        f (FilePos pth line col) = FilePos (takeFileName pth) line col
 
     ruleRelationRefTable :: Blocks
     ruleRelationRefTable =
@@ -488,7 +502,7 @@ chpDiagnosis env fSpec
           Relations -> --The user-defined relations of the pattern / fSpec
           Rules -> -- The user-defined rules of the pattern / fSpec
           [Blocks]
-        mkTableRowPat p = mkTableRow (fullName $ p) (relsDefdIn p) (udefrules p)
+        mkTableRowPat p = mkTableRow (label p) (relsDefdIn p) (udefrules p)
         mkTableRow nm rels ruls =
           map
             (plain . str)
@@ -528,10 +542,10 @@ chpDiagnosis env fSpec
                      ]
               )
               -- Rows:
-              [ [(plain . str . fullName) rol]
-                  <> [(plain . str . maybe "--" fullName . rrpat) rul | multProcs]
-                  <> [ (plain . str . fullName) rul,
-                       (plain . str . maybe "--" fullName . rrpat) rul
+              [ [(plain . str . label) rol]
+                  <> [(plain . str . fromMaybe "--" . rrpat) rul | multProcs]
+                  <> [ (plain . str . label) rul,
+                       (plain . str . fromMaybe "--" . rrpat) rul
                      ]
                 | (rol, rul) <- fRoleRuls fSpec
               ]
@@ -577,8 +591,8 @@ chpDiagnosis env fSpec
               -- Rows:
               [ map
                   (plain . str)
-                  [ fullName r,
-                    (tshow . origin) r,
+                  [ label r,
+                    tShowOrigin r,
                     (tshow . length) ps
                   ]
                 | (r, ps) <- popwork
@@ -588,10 +602,9 @@ chpDiagnosis env fSpec
               mconcat
                 [ para
                     ( str (l (NL "Afspraak ", EN "Agreement "))
-                        <> hyperLinkTo (XRefSharedLangRule r)
-                        <> " ( "
+                        -- Pandoc does not yield hyperlinks in Word files, so we cannot do:
+                        -- <> hyperLinkTo (XRefSharedLangRule r) <> " ( " <> quoterule r <> " )"
                         <> quoterule r
-                        <> " )"
                         <> (str . l) (NL " luidt: ", EN " says: ")
                     )
                     <> printMeaning outputLang' r
@@ -625,19 +638,19 @@ chpDiagnosis env fSpec
         --         else expls
         --         where expls = [Plain (block<>[Space]) | Means l econt<-rrxpl r, l==Just outputLang' || l==Nothing, Para block<-econt]
         quoterule :: Rule -> Inlines
-        quoterule = singleQuoted . str . fullName
+        quoterule = singleQuoted . str . label
         oneviol :: Rule -> AAtomPair -> Inlines
         oneviol r p =
           if isEndo (formalExpression r) && apLeft p == apRight p
             then
               singleQuoted
-                ( (str . fullName . source . formalExpression) r
+                ( (str . label . source . formalExpression) r
                     <> (str . showValADL . apLeft) p
                 )
             else
-              "(" <> (str . fullName . source . formalExpression) r <> (str . showValADL . apLeft) p
+              "(" <> (str . label . source . formalExpression) r <> (str . showValADL . apLeft) p
                 <> ", "
-                <> (str . fullName . target . formalExpression) r
+                <> (str . label . target . formalExpression) r
                 <> (str . showValADL . apRight) p
                 <> ")"
         popwork :: [(Rule, AAtomPairs)]
@@ -676,7 +689,7 @@ chpDiagnosis env fSpec
         showViolatedRule (r, ps) =
           (para . emph)
             ( (str . l) (NL "Regel ", EN "Rule ")
-                <> (str . fullName) r
+                <> (str . label) r
             )
             <> para
               ( ( if isSignal fSpec r
@@ -692,7 +705,7 @@ chpDiagnosis env fSpec
                       <> (commaPandocOr outputLang' . map (str . fullName) . rolesOf $ r)
                   else
                     (str . l) (NL "Overtredingen van invariant ", EN "Violations of invariant ")
-                      <> (str . fullName) r
+                      <> (str . label) r
               )
               -- Alignment:
               (replicate 1 (AlignLeft, 1))
@@ -731,7 +744,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             [(AlignLeft, 1.0)]
             -- Header:
-            [(plain . str . fullName . source . formalExpression) r]
+            [(plain . str . label . source . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p]
               | p <- take 10 . toList $ ps --max 10 rows
@@ -742,7 +755,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             (replicate 2 (AlignLeft, 1 / 2))
             -- Header:
-            [(plain . str . fullName . source . formalExpression) r, (plain . str . fullName . target . formalExpression) r]
+            [(plain . str . label . source . formalExpression) r, (plain . str . label . target . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p, (plain . str . showValADL . apRight) p]
               | p <- take 10 . toList $ ps --max 10 rows

@@ -1,4 +1,4 @@
-CONTEXT Arbeidsduur IN DUTCH LATEX
+CONTEXT Arbeidsduur IN DUTCH MARKDOWN
 META "authors" "Stef Joosten, Rieks Joosten"
 PURPOSE CONTEXT Arbeidsduur
 {+De Wet aanpassing arbeidsduur (http://wetten.overheid.nl/BWBR0011173, 19 februari 2000) regelt het recht van werknemers om te vragen om aanpassing van de arbeidsduur. Op deze wet is een Ampersand analyse gedaan, om inzicht te krijgen in de wijze van modelleren aan de hand van een klein voorbeeld. Daar waar in deze tekst wordt gerefereerd naar een wetsartikel, zonder de naam van de wet erbij te noemen, wordt de Wet aanpassing arbeidsduur bedoeld.+}
@@ -249,7 +249,13 @@ ENDPATTERN
 --[Proces: geautomatiseerde procesondersteuning]-----------
 PATTERN GeautomatiseerdeProcesondersteuning LABEL "Geautomatiseerde procesondersteuning"
 PURPOSE PATTERN GeautomatiseerdeProcesondersteuning
-{+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd. Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie, daar waar nodig automatisch wordt ingevuld. Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is. Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.+}
+{+
+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd.
+Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie,
+daar waar nodig automatisch wordt ingevuld.
+Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is.
+Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.
++}
 
 nieuwVerzoek :: Arbeidsrelatie * Verzoek [UNI]
 ROLE ExecEngine MAINTAINS EersteVerzoekVerwerken
@@ -333,9 +339,9 @@ PURPOSE RULE BerekenTermijnVanEenJaar
 ROLE ExecEngine MAINTAINS BerekenTermijnVanEenJaar
 RULE BerekenTermijnVanEenJaar LABEL "Berekenen van de termijn van een jaar conform artikel 2 lid 1":
        inDienst~;arbeidsrelatie~;tot;ingang |- minstensEenJaarTrigger
-VIOLATION (TXT "{EX} InsPair;minstensEenJaarTrigger;Datum;", SRC I, TXT ";Datum;", TGT I
-          ,TXT "{EX} DatumDelta;minstensEenJaar;Datum;", SRC I, TXT ";1 Year;", TGT I
+VIOLATION (TXT "{EX} DatumDelta;minstensEenJaar;Datum;", SRC I, TXT ";1 Year;", TGT I
           )
+ENFORCE minstensEenJaarTrigger >: inDienst~;arbeidsrelatie~;tot;ingang
 
 PURPOSE RELATION minstensTweeJaar REF "Artikel 2 lid 3"
 {+Omdat de wet de voorwaarde stelt dat de werknemer die tot aanpassing van zijn arbeidsduur verzoekt, tenminste 2 jaar na een voorafgaand besluit wacht met het indienen van een nieuw verzoek, willen we dat automatisch kunnen uitrekenen. Daarom voeren we een relatie ``minstensTweeJaar'' in.+}
@@ -418,7 +424,8 @@ BOX[ "Arbeidsrelaties" : V[ONE*Arbeidsrelatie]
 ----------------------------------------------- -}
  ]
 
-INTERFACE NieuweArbeidsrelatie FOR Werkgever : I[Arbeidsrelatie]
+INTERFACE NieuweArbeidsrelatie LABEL "NieuweArbeidsrelatie"
+    FOR Werkgever : I[Arbeidsrelatie]
 BOX[ "Werkgever" : werkgever
    , "Werknemer" : werknemer
    , "Arbeidsduur" : arbeidsduur
@@ -435,7 +442,8 @@ BOX[ "Arbeidsrelatie" : I
       ]
    ]
 
-INTERFACE ArbeidsrelatieWerknemer FOR Werknemer : I[Arbeidsrelatie]
+INTERFACE ArbeidsrelatieWerknemer LABEL "ArbeidsrelatieWerknemer"
+    FOR Werknemer : I[Arbeidsrelatie]
 BOX[ "Arbeidsrelatie" : I
    BOX[ "Werkgever" : werkgever
       , "Werknemer" : werknemer
@@ -457,7 +465,8 @@ BOX[ "Arbeidsrelatie" : I
       ]
    ]
 
-INTERFACE GewijzigdeBeslissingNemen FOR Werkgever : I[Verzoek]
+INTERFACE GewijzigdeBeslissingNemen LABEL "GewijzigdeBeslissingNemen"
+    FOR Werkgever : I[Verzoek]
 BOX[ "Verzoek" : I
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever
@@ -542,7 +551,8 @@ BOX[ "tot" : tot
    , "uitersteBeslisdatum" : uitersteBeslisdatum
    ]
 
-INTERFACE BeslissingKlein FOR Werknemer, Werkgever : I[Beslissing]
+INTERFACE BeslissingKlein LABEL "BeslissingKlein"
+    FOR Werknemer, Werkgever : I[Beslissing]
 BOX[ "op" : op
    , "aanp" : aanp
    , "door" : door
@@ -693,26 +703,3 @@ POPULATION medegedeeldAan      CONTAINS [ ("Beslissing b342", "Willem Alexander"
 
 -----------------------------------------------------------------------
 ENDCONTEXT
-
-{-
-[{EE} restored 'Bereken een maand voordien']
-Rule 'Bereken een maand voordien' is broken:
-SetPeriod;eenMaandVoordien;Datum;1-1-2015;-1 Month
-SetPeriod: InsPair(eenMaandVoordien,Datum,1-1-2015,Datum,01-12-2014)
-  Update eenMaandVoordien(Datum*Datum) with (1-1-2015,01-12-2014)
-
-{EE} restored 'Uiterste beslisdatum vaststellen (geautomatiseerd)']
-Rule 'Uiterste beslisdatum vaststellen (geautomatiseerd)' is broken: Van elk verzoek wordt de uiterste belisdatum automatisch vastgesteld.
-InsPair;uitersteBeslisdatum;Verzoek;Verzoek1399448850678000;Datum;01-12-2014
-  Update uitersteBeslisdatum(Verzoek*Datum) with (Verzoek1399448850678000,01-12-2014)
-
-[{EE} restored 'Berekenen van de jaar-termijn conform artikel 2 lid 1']
-Rule 'Berekenen van de jaar-termijn conform artikel 2 lid 1' is broken:
-[[START]]
-InsPair;minstensEenJaarTrigger;Datum;1-2-2013;Datum;1-1-2015
-  INSERT minstensEenJaarTrigger(Datum*Datum) with (1-2-2013,1-1-2015)
-DatumDelta;minstensEenJaar;Datum;1-2-2013;1 Year;1-1-2015
-DatumDelta: InsPair(minstensEenJaar,Datum,1-2-2013,Datum,1-1-2015)
-  INSERT minstensEenJaar(Datum*Datum) with (1-2-2013,1-1-2015)
-[[DONE]]
--}

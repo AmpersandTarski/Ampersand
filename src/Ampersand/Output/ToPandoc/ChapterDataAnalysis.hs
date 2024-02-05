@@ -146,7 +146,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           (plain . text . l) (NL "Aantal", EN "Count"),
           (plain . text . l) (NL "Vullingsgraad", EN "Filling degree")
         ]
-        [ [ (plain . text . fullName) c,
+        [ [ (plain . text . label) c,
             meaningOf c
               <> (mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang') c,
             (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c,
@@ -179,7 +179,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             (plain . text . l) (NL "Voorbeelden", EN "Examples"),
             (plain . text . l) (NL "Aantal", EN "Count")
           ]
-          [ [ (plain . text . fullName) c
+          [ [ (plain . text . label) c
             ] -- max 20 voorbeelden van atomen van concept c
               ++ (map (plain . text . showA) . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
               ++ [ (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
@@ -222,7 +222,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             (plain . text . l) (NL "#uniek", EN "#unique")
           ]
           ( [ [ (plain . text . text1ToText . sqlColumNameToText1 . attSQLColName) attr,
-                (plain . text) ((fullName . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                (plain . text) ((label . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                 (plain . text) (percent (Set.size pairs) n),
                 (plain . text . tshow . Set.size . Set.map apRight) pairs
               ]
@@ -232,7 +232,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                 pairs <- [(pairsInExpr fSpec . attExpr) (attr :: SqlAttribute)]
             ]
               <> [ [ (plain . text . text1ToText . sqlColumNameToText1 . attSQLColName) attr,
-                     (plain . text) ((fullName . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                     (plain . text) ((label . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                      (plain . text) (percent (Set.size pairs) n),
                      (plain . text . tshow . Set.size . Set.map apRight) pairs
                      -- , (plain . text . tshow) nTgtConcept
@@ -259,10 +259,10 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                          (plain . text . l) (NL "Target", EN "Target"),
                          (plain . text . l) (NL "uniek", EN "unique")
                        ]
-                       [ [ (plain . text) ((fullName . source) rel <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
+                       [ [ (plain . text) ((label . source) rel <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept),
-                           (plain . text) (fullName rel <> "(" <> tshow (Set.size pairs) <> ")"),
-                           (plain . text) ((fullName . target) rel <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                           (plain . text) ((label) rel <> "(" <> tshow (Set.size pairs) <> ")"),
+                           (plain . text) ((label . target) rel <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
                          ]
                          | Just rel <- map assmdcl asscs,
@@ -308,11 +308,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         <> mconcat
           [ simpleTable
               [plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D"]
-              [ [ (plainText . fullName) cncpt,
-                  mconcat . map (plainText . fullName) $ ifcsC,
-                  mconcat . map (plainText . fullName) $ ifcsR,
-                  mconcat . map (plainText . fullName) $ ifcsU,
-                  mconcat . map (plainText . fullName) $ ifcsD
+              [ [ (plainText . label) cncpt,
+                  mconcat . map (plainText . label) $ ifcsC,
+                  mconcat . map (plainText . label) $ ifcsR,
+                  mconcat . map (plainText . label) $ ifcsU,
+                  mconcat . map (plainText . label) $ ifcsD
                 ]
                 | (cncpt, (ifcsC, ifcsR, ifcsU, ifcsD)) <- crudObjsPerConcept (crudInfo fSpec)
               ]
@@ -401,7 +401,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                             Dutch -> "Dit attribuut verwijst naar een rij in de tabel "
                             English -> "This attribute is a foreign key to "
                         )
-                          <> (text . fullName) c
+                          <> (text . label) c
                       PlainAttr ->
                         ( case outputLang' of
                             Dutch -> "Dit attribuut implementeert "
@@ -474,7 +474,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         docRule :: LocalizedStr -> Rule -> Blocks
         docRule heading rule =
           mconcat
-            [ plain $ strong (text (l heading <> ": ") <> (emph . text . fullName) rule),
+            [ plain $ strong (text (l heading <> ": ") <> (emph . text . label) rule),
               mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ rule,
               printMeaning outputLang' rule,
               para (showMath rule),
@@ -506,12 +506,12 @@ primExpr2pandocMath lang e =
       case lang of
         Dutch -> text "de relatie "
         English -> text "the relation "
-        <> math ((fullName . source) d <> " \\rightarrow {" <> fullName d <> "} " <> (fullName . target) d)
+        <> math ((label . source) d <> " \\rightarrow {" <> label d <> "} " <> (label . target) d)
     (EFlp (EDcD d)) ->
       case lang of
         Dutch -> text "de relatie "
         English -> text "the relation "
-        <> math ((fullName . source) d <> " \\leftarrow  {" <> fullName d <> "} " <> (fullName . target) d)
+        <> math ((label . source) d <> " \\leftarrow  {" <> label d <> "} " <> (label . target) d)
     (EIsc (r1, _)) ->
       let srcTable = case r1 of
             EDcI c -> c
@@ -519,15 +519,15 @@ primExpr2pandocMath lang e =
        in case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "
-            <> math (fullName srcTable)
+            <> math (label $ srcTable)
     (EDcI c) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (fullName c)
+        <> math (label $ c)
     (EEps c _) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (fullName c)
+        <> math (label $ c)
     _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)

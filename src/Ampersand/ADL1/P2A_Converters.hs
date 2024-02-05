@@ -941,16 +941,16 @@ pCtx2aCtx
 
       pPat2aPat :: ContextInfo -> P_Pattern -> Guarded Pattern
       pPat2aPat ci ppat =
-        f <$> traverse (pRul2aRul ci (Just $ name ppat)) (pt_rls ppat)
-          <*> traverse (pIdentity2aIdentity ci (Just $ name ppat)) (pt_ids ppat)
+        f <$> traverse (pRul2aRul ci (Just $ label ppat)) (pt_rls ppat)
+          <*> traverse (pIdentity2aIdentity ci (Just $ label ppat)) (pt_ids ppat)
           <*> traverse (pPop2aPop ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+          <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> traverse (pure . pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
           <*> traverse (pure . pRoleRule2aRoleRule) (pt_RRuls ppat)
           <*> traverse pure (pt_Reprs ppat)
-          <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
+          <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
@@ -972,13 +972,13 @@ pCtx2aCtx
               }
       pRul2aRul ::
         ContextInfo ->
-        Maybe Name -> -- name of pattern the rule is defined in (if any)
+        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
       pRul2aRul ci mPat = typeCheckRul ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckRul ::
         ContextInfo ->
-        Maybe Name -> -- name of pattern the rule is defined in (if any)
+        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule (TermPrim, DisambPrim) ->
         Guarded Rule
       typeCheckRul
@@ -1010,13 +1010,13 @@ pCtx2aCtx
                 }
       pEnforce2aEnforce ::
         ContextInfo ->
-        Maybe Name -> -- name of pattern the rule is defined in (if any)
+        Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
       pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckEnforce ::
         ContextInfo ->
-        Maybe Name -> -- name of pattern the enforce is defined in (if any)
+        Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce (TermPrim, DisambPrim) ->
         Guarded AEnforce
       typeCheckEnforce
@@ -1095,7 +1095,7 @@ pCtx2aCtx
                     lbl' = "Compute " <> tshow rel <> " using " <> command
       pIdentity2aIdentity ::
         ContextInfo ->
-        Maybe Name -> -- name of pattern the rule is defined in (if any)
+        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
@@ -1340,12 +1340,12 @@ pAtomValue2aAtomValue typ cpt pav =
 pDecl2aDecl ::
   (A_Concept -> TType) ->
   ConceptMap ->
-  Maybe Name -> -- name of pattern the rule is defined in (if any)
+  Maybe Text -> -- label of pattern the rule is defined in (if any), just for documentation purposes
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormat
   P_Relation ->
   Guarded Relation
-pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd =
+pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
   do
     checkEndoProps
     --propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
@@ -1361,7 +1361,7 @@ pDecl2aDecl typ cptMap maybePatName defLanguage defFormat pd =
           decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
           decfpos = origin pd,
           decusr = True,
-          decpat = maybePatName,
+          decpat = maybePatLabel,
           dechash = hash (dec_nm pd) `hashWithSalt` decSign
         }
   where

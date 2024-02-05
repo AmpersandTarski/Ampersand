@@ -324,13 +324,13 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePathRelativeToDirOutput env p =
-    "images" </> filename <.> extention
+    "images" </> filename <.> extension
     where
       filename = pictureFileName . pType $ p
-      extention =
+      extension =
         case view fspecFormatL env of
           Fpdf -> "png" -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
-          Fdocx -> "png" -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in MS-word.
+          Fdocx -> "png" -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in Pandoc.
           Fhtml -> "png"
           _ -> "dot"
 
