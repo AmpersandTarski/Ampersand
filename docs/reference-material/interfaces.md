@@ -276,5 +276,5 @@ When running an application in your browser, you are watching one user interface
 
 The next sections contain two examples:
 
-- a [client interface](../Examples.md#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
-- a [login interface](../Examples.md#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.
+- a [client interface](../examples#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
+- a [login interface](../examples#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.

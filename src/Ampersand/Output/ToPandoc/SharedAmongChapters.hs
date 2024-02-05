@@ -85,7 +85,7 @@ class Typeable a => Xreferenceable a where
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
   xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in an <Inlines>.") --you should use xDefBlck instead.
 
-  -- ^ function that defines the target Inlines of something that can e referenced.
+  -- ^ function that defines the target Inlines of something that can be referenced.
 
   hyperLinkTo :: a -> Inlines
   -- ^ function that returns a link to something that can be referenced.
@@ -123,7 +123,7 @@ hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Eithe
 hyperTarget env fSpec a =
   case a of
     XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
-    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . fullName) pat
+    XRefSharedLangTheme (Just pat) -> (Left . hdr . text . label) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
     XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
     --   Left $ divWith (xSafeLabel a,[],[])
@@ -132,7 +132,7 @@ hyperTarget env fSpec a =
     --                         ("", ["adl"],[("caption",tshow d)])
     --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
     --                  )
-    XRefSharedLangRule r -> Right $ spanWith (xSafeLabel a, [], []) (str . fullName $ r)
+    XRefSharedLangRule r -> (Right . spanWith (xSafeLabel a, [], []) . str . label) r
     --   Left $ divWith (xSafeLabel a,[],[])
     --                  (   (para . text $ tshow r)
     --                  --  <>codeBlockWith
@@ -722,10 +722,7 @@ legacyTable caption' cellspecs headers rows =
         toColSpec :: (Alignment, Double) -> ColSpec
         toColSpec (a, d) = (a, ColWidth d)
     tHead :: TableHead
-    tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers)
-      where
-        toRow :: Alignment -> Blocks -> Row
-        toRow a bs = Row nullAttr (map (toCell a . singleton) $ toList bs)
+    tHead = (TableHead nullAttr . toList . singleton . Row nullAttr . map (toCell AlignDefault)) headers
     toCell :: Alignment -> Blocks -> Cell
     toCell a b = Cell nullAttr a (RowSpan 1) (ColSpan 1) (toList b)
     tBodies :: [TableBody]

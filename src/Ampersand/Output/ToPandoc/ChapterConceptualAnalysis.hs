@@ -84,11 +84,11 @@ chpConceptualAnalysis env lev fSpec =
           <> ( case (outputLang', patOfTheme themeContent) of
                  (Dutch, Just pat) ->
                    -- announce the conceptual diagram
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . fullName) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . label) pat <> ".")
                      -- draw the conceptual diagram
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (English, Just pat) ->
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . fullName) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . label) pat <> ".")
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (_, Nothing) -> mempty
              )
@@ -207,8 +207,8 @@ chpConceptualAnalysis env lev fSpec =
           case rrkind r of
             Identity c ->
               (para . l)
-                ( NL ("Een identiteit op \"" <> fullName c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
-                  EN ("An identity rule for \"" <> fullName c <> "\" is defined, albeit without a purpose.")
+                ( NL ("Een identiteit op \"" <> label c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
+                  EN ("An identity rule for \"" <> label c <> "\" is defined, albeit without a purpose.")
                 )
             _ -> fatal "The result of idRulesOfTheme themeContent has produced a RuleCont whose rrkind is not Identity c."
         caRemainingRelations :: Blocks
@@ -219,7 +219,7 @@ chpConceptualAnalysis env lev fSpec =
                 (plain . l) (NL "Betekenis", EN "Meaning")
               ]
               ( [ [ (plain . text)
-                      ( fullName rel <> " "
+                      ( label rel <> " "
                           <> if null cls
                             then tshow (sign rel)
                             else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map fullName) cls <> ")"
@@ -338,7 +338,7 @@ chpConceptualAnalysis env lev fSpec =
                         ( L.intersperse
                             (str ", ")
                             [ hyperLinkTo (XRefConceptualAnalysisRelation d)
-                                <> text (" (" <> fullName d <> ")")
+                                <> text (" (" <> label d <> ")")
                               | d <- toList $ bindedRelationsIn r
                             ]
                         )
