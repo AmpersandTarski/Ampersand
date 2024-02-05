@@ -49,7 +49,7 @@ plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug =
   TableSpec
     { tsCmnt =
-        [ "Plug " <> name plug,
+        [ "Plug " <> text1ToText (showUnique plug),
           "",
           "attributes:"
         ]
@@ -58,20 +58,20 @@ plug2TableSpec plug =
               ]
               | x <- NE.toList $ plugAttributes plug
             ],
-      tsName = name plug,
+      tsName = text1ToText (showUnique plug),
       tsflds = NE.toList . fmap fld2AttributeSpec $ plugAttributes plug,
       tsKey = case (plug, (NE.head . plugAttributes) plug) of
         (BinSQL {}, _) ->
           if all (suitableAsKey . attType) (plugAttributes plug)
             then
               "PRIMARY KEY ("
-                <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . attName) (plugAttributes plug))
+                <> T.intercalate ", " (NE.toList $ doubleQuote . text1ToText . sqlColumNameToText1 . attSQLColName <$> plugAttributes plug)
                 <> ")"
             else ""
         (TblSQL {}, primFld) ->
           case attUse primFld of
-            PrimaryKey _ -> "PRIMARY KEY (" <> (doubleQuote . attName) primFld <> ")"
-            ForeignKey c -> fatal ("ForeignKey " <> name c <> "not expected here!")
+            PrimaryKey _ -> "PRIMARY KEY (" <> (doubleQuote . text1ToText . sqlColumNameToText1 . attSQLColName) primFld <> ")"
+            ForeignKey c -> fatal ("ForeignKey " <> fullName c <> "not expected here!")
             PlainAttr -> ""
     }
 
@@ -138,7 +138,7 @@ dropTableIfExistsSql tSpec =
 fld2AttributeSpec :: SqlAttribute -> AttributeSpec
 fld2AttributeSpec att =
   AttributeSpec
-    { fsname = name att,
+    { fsname = text1ToText . sqlColumNameToText1 . attSQLColName $ att,
       fstype = attType att,
       fsIsPrimKey = isPrimaryKey att,
       fsDbNull = attDBNull att
@@ -148,14 +148,14 @@ insertQuery ::
   SomeValue val =>
   Bool -> -- prettyprinted?
   Text -> -- The name of the table
-  NE.NonEmpty Text -> -- The names of the attributes
+  NE.NonEmpty SqlName -> -- The names of the attributes
   [[Maybe val]] -> -- The rows to insert
   SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments =
     SqlQueryPretty $
       [ "INSERT INTO " <> doubleQuote tableName,
-        "   (" <> T.intercalate ", " (NE.toList $ fmap doubleQuote attNames) <> ")",
+        "   (" <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames) <> ")",
         "VALUES "
       ]
         <> (T.lines . ("   " <>) . T.intercalate "\n , " $ ["(" <> valuechain md <> ")" | md <- tblRecords])
@@ -164,7 +164,7 @@ insertQuery withComments tableName attNames tblRecords
     SqlQueryPlain $
       "INSERT INTO " <> doubleQuote tableName
         <> " ("
-        <> T.intercalate ", " (NE.toList $ fmap doubleQuote attNames)
+        <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames)
         <> ")"
         <> " VALUES "
         <> T.intercalate ", " ["(" <> valuechain md <> ")" | md <- tblRecords]

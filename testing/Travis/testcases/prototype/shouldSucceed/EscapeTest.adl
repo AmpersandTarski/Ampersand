@@ -25,11 +25,11 @@ special characters on all possible constructs.
 
 PATTERN EscapeTest
   identifies :: Id * Thing       PRAGMA "" " and " " are paired in relation identifies".
-  RULE "identification": I |- identifies;identifies~
+  RULE identification : I |- identifies;identifies~
     MEANING IN ENGLISH "Every Id identifies precisely one Thing"
 ENDPATTERN
 
-INTERFACE "interface ' \"  $ \\ < > &  ? % end" : "_SESSION";I[SESSION]
+INTERFACE TesterdeTest : "_SESSION";I[SESSION]
   BOX [ "label ' \"  $ \\ < > & / ? % end" : V[SESSION*Id]
       , bs : V[SESSION*Thing]
       ]

@@ -10,6 +10,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
+import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
 hasantecedent r =
@@ -39,25 +40,35 @@ isPropertyRule r = case rrkind r of
 
 -- rulefromProp specifies a rule that defines property prp of relation d.
 rulefromProp :: AProp -> Relation -> Rule
-rulefromProp prp d =
-  Ru
-    { rrnm = tshow prp <> " " <> showDcl,
+rulefromProp prp rel =
+  Rule
+    { rrnm =
+        withNameSpace
+          (nameSpaceOf rel)
+          . mkName RuleName
+          $ ( case toNamePart (tshow prp <> "_" <> (tshow . abs . hash . tshow $ rel)) of
+                Nothing -> fatal "Not a proper namepart."
+                Just np -> np NE.:| []
+            ),
+      rrlbl = Just . Label $ tshow prp <> " rule for relation " <> tshow rel,
       formalExpression = rExpr,
-      rrfps = PropertyRule nm (origin d),
+      rrfps = PropertyRule relIdentifier (origin rel),
       rrmean = meanings prp,
       rrmsg = violMsg prp,
       rrviol = Nothing,
-      rrpat = decpat d,
-      rrkind = Propty prp d
+      rrpat = decpat rel,
+      rrkind = Propty prp rel
     }
   where
-    nm = tshow prp <> " " <> showDcl
-    showDcl = showRel d
+    relIdentifier :: Text1
+    relIdentifier = toText1Unsafe $ tshow prp <> "_" <> tshow rel
+    showDcl :: Text
+    showDcl = tshow rel
     r :: Expression
-    r = EDcD d
+    r = EDcD rel
     rExpr =
       if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-        then fatal ("Illegal property of an endo relation " <> tshow (name d))
+        then fatal ("Illegal property of an endo relation " <> fullName rel)
         else case prp of
           Uni -> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
           Tot -> EDcI (source r) .|-. r .:. flp r
@@ -70,39 +81,48 @@ rulefromProp prp d =
           Irf -> r .|-. ECpl (EDcI (source r))
     meanings prop = map (Meaning . markup) [English, Dutch]
       where
-        markup lang = Markup lang (string2Blocks ReST $ f lang)
-        f lang = showDcl <> " is " <> propFullName False lang prop
+        markup lang =
+          Markup
+            { amLang = lang,
+              amPandoc =
+                string2Blocks ReST $
+                  showDcl <> " is " <> propFullName False lang prop
+            }
 
     violMsg prop = [msg lang | lang <- [English, Dutch]]
       where
-        s = name (source d)
-        t = name (target d)
-        msg lang = Markup lang (string2Blocks ReST $ f lang)
-        f lang =
-          case lang of
-            English ->
-              case prop of
-                Sym -> explByFullName lang
-                Asy -> explByFullName lang
-                Trn -> explByFullName lang
-                Rfx -> explByFullName lang
-                Irf -> explByFullName lang
-                Uni -> "Each " <> s <> " may only have one " <> t <> "" <> " in the relation " <> name d
-                Inj -> "Each " <> t <> " may only have one " <> s <> "" <> " in the relation " <> name d
-                Tot -> "Every " <> s <> " must have a " <> t <> "" <> " in the relation " <> name d
-                Sur -> "Every " <> t <> " must have a " <> s <> "" <> " in the relation " <> name d
-            Dutch ->
-              case prop of
-                Sym -> explByFullName lang
-                Asy -> explByFullName lang
-                Trn -> explByFullName lang
-                Rfx -> explByFullName lang
-                Irf -> explByFullName lang
-                Uni -> "Elke " <> s <> " mag slechts één " <> t <> " hebben" <> " in de relatie " <> name d
-                Inj -> "Elke " <> t <> " mag slechts één " <> s <> " hebben" <> " in de relatie " <> name d
-                Tot -> "Elke " <> s <> " dient één " <> t <> " te hebben" <> " in de relatie " <> name d
-                Sur -> "Elke " <> t <> " dient een " <> s <> " te hebben" <> " in de relatie " <> name d
-        explByFullName lang = showDcl <> " is " <> propFullName False lang prop
+        s = fullName1 (source rel)
+        t = fullName1 (target rel)
+        msg lang =
+          Markup
+            { amLang = lang,
+              amPandoc =
+                string2Blocks ReST . text1ToText $
+                  case lang of
+                    English ->
+                      case prop of
+                        Sym -> explByFullName lang
+                        Asy -> explByFullName lang
+                        Trn -> explByFullName lang
+                        Rfx -> explByFullName lang
+                        Irf -> explByFullName lang
+                        Uni -> toText1Unsafe $ "Each " <> text1ToText s <> " may only have one " <> text1ToText t <> " in the relation " <> text1ToText (fullName1 rel)
+                        Inj -> toText1Unsafe $ "Each " <> text1ToText t <> " may only have one " <> text1ToText s <> " in the relation " <> text1ToText (fullName1 rel)
+                        Tot -> toText1Unsafe $ "Every " <> text1ToText s <> " must have a " <> text1ToText t <> " in the relation " <> text1ToText (fullName1 rel)
+                        Sur -> toText1Unsafe $ "Every " <> text1ToText t <> " must have a " <> text1ToText s <> " in the relation " <> text1ToText (fullName1 rel)
+                    Dutch ->
+                      case prop of
+                        Sym -> explByFullName lang
+                        Asy -> explByFullName lang
+                        Trn -> explByFullName lang
+                        Rfx -> explByFullName lang
+                        Irf -> explByFullName lang
+                        Uni -> toText1Unsafe $ "Elke " <> text1ToText s <> " mag slechts één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Inj -> toText1Unsafe $ "Elke " <> text1ToText t <> " mag slechts één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Tot -> toText1Unsafe $ "Elke " <> text1ToText s <> " dient één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Sur -> toText1Unsafe $ "Elke " <> text1ToText t <> " dient één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+            }
+        explByFullName lang = toText1Unsafe $ showDcl <> (" is " <> propFullName False lang prop)
 
 propFullName :: Bool -> Lang -> AProp -> Text
 propFullName isAdjective lang prop =

@@ -98,7 +98,7 @@ BOX <TABS>
          ] 
    ]
    
-INTERFACE Client (clientName, clientAddress, clientCity, orderReceived) FOR Client : I[Client]
+INTERFACE Client FOR Client : I[Client]
 BOX [ "Name"   : clientName
     , "Street" : clientAddress
     , "City"   : clientCity
@@ -112,7 +112,7 @@ BOX [ "Name"   : clientName
     , "Received orders"       : orderReceived~
     ]
 
-INTERFACE ClientInfo (orderAccepted) FOR Vendor : I[Client]
+INTERFACE ClientInfo FOR Vendor : I[Client]
 BOX [ "Name"   : clientName
     , "Street" : clientAddress
     , "City"   : clientCity
@@ -138,7 +138,7 @@ BOX [ "Name"   : clientName
          ] 
     ]
 
-INTERFACE Vendor (vendorName, sells, productName, productPrice, orderAccepted) FOR Vendor: I[Vendor]
+INTERFACE Vendor FOR Vendor: I[Vendor]
 
 BOX [ "Name"     : vendorName
     , "Products" : sells
@@ -163,13 +163,13 @@ BOX [ "Name"     : vendorName
          
     ]
 
-INTERFACE Product (productName, productPrice) FOR Vendor : I[Product]
+INTERFACE Product FOR Vendor : I[Product]
 BOX [ "Name"    : productName
     , "Price"   : productPrice
     , "Vendors" : sells~
     ]
 
-INTERFACE AcceptOrderByVendor (orderAccepted) FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
+INTERFACE AcceptOrderByVendor FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
 BOX [ "Client"  : orderedBy
     , "Vendor"  : orderedAt
     , "Product" : orderOf
@@ -183,7 +183,7 @@ BOX [ "Client"  : orderedBy
     , "sign here to accept" : orderAccepted
     ]
 
-INTERFACE OrdersForClient (orderedBy, orderedAt, orderOf, orderReceived) FOR Client : I[Order]
+INTERFACE OrdersForClient FOR Client : I[Order]
 BOX [ "Client"  : orderedBy
     , "Vendor"  : orderedAt
     , "Product" : orderOf

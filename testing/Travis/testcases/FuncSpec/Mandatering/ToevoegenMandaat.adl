@@ -1,4 +1,4 @@
-﻿CONTEXT ToevoegenMandaat IN DUTCH
+CONTEXT ToevoegenMandaat IN DUTCH
    INCLUDE "Mandatering.adl"
    META "authors" "Stef Joosten Masterclass 2013"
 
@@ -10,7 +10,7 @@ BOX[ "Formatieplaatsen" : V[ONE*Formatieplaats]
    , "Beperkingen" : V[ONE*Beperking]
    ]
 
-INTERFACE Formatieplaats (formatie, krachtens, beslotenDoor, namens) FOR Bestuurder: I[Formatieplaats]
+INTERFACE Formatieplaats FOR Bestuurder: I[Formatieplaats]
 BOX[ "Formatieplaats"      : I
    , "Orgaan": formatie~
    , "Verkregen mandaten": gemandateerde~
@@ -29,7 +29,7 @@ BOX[ "Formatieplaats"      : I
            ]
    ]
 
-INTERFACE Mandaat (mandaatgever) FOR Bestuurder: I[Mandaat]
+INTERFACE Mandaat FOR Bestuurder: I[Mandaat]
 BOX[ "Mandaat"      : I
    , "Mandaatgever": mandaatgever
    , "gemandateerde": gemandateerde
@@ -39,7 +39,7 @@ BOX[ "Mandaat"      : I
    ]
 
 PATTERN ToevoegenMandaat
-ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
+ROLE Bestuurder MAINTAINS Mandaatbesluit
 ENDPATTERN
 
 ENDCONTEXT

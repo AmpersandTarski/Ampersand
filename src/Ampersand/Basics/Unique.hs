@@ -1,23 +1,25 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where
- showUnique = name
+ showUnique = fullName1
 -}
 
-module Ampersand.Basics.Unique (Unique (..), Named (..)) where
+module Ampersand.Basics.Unique
+  ( Unique (..),
+  )
+where
 
+import Ampersand.Basics.Hashing
+import Ampersand.Basics.Name (checkProperId)
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (escapeIdentifier)
-import Data.Hashable
+import Ampersand.Basics.String (text1ToText, toText1Unsafe)
+import Ampersand.Basics.Version (fatal)
 import Data.Typeable
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-
--- | anything could have some label, can't it?
-class Named a where
-  name :: a -> Text
 
 -- | In the context of the haskell code, things can be Unique.
 class (Typeable e, Eq e) => Unique e where
@@ -30,39 +32,57 @@ class (Typeable e, Eq e) => Unique e where
       }
 
   -- | representation of a Unique thing into a Text.
-  uniqueShowWithType :: e -> Text
-  uniqueShowWithType x = tshow (typeOf x) <> "_" <> showUnique x
+  uniqueShowWithType :: e -> Text1
+  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "_" <> (text1ToText . showUnique $ x)
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of
   --   an individual type:
   --        a == b  <==> showUnique a == showUnique b
-  showUnique :: e -> Text
+  showUnique :: e -> Text1
 
   {-# MINIMAL showUnique #-}
+  idWithoutType' :: e -> Text1
+  idWithoutType' x = case idWithoutType x of
+    Nothing -> fatal $ "idWithoutType could not be generated. " <> tshow (typeOf x) <> ": " <> (text1ToText . showUnique $ x)
+    Just te -> te
+  idWithoutType :: e -> Maybe Text1
+  idWithoutType x = case nameParts of
+    Nothing -> Nothing
+    Just nps ->
+      Just
+        . uniqueButNotTooLong -- because it could be stored in an SQL database
+        . toText1Unsafe
+        $ nps
+    where
+      theName = text1ToText . showUnique $ x
+      nameParts :: Maybe Text
+      nameParts =
+        if all isJust probes
+          then Just . addDots . catMaybes $ probes
+          else Nothing
+        where
+          probes :: [Maybe Text1]
+          probes = check <$> T.split (== '.') theName
+          check :: Text -> Maybe Text1
+          check t = checkProperId =<< checkLength t
+      checkLength :: Text -> Maybe Text1
+      checkLength t = case T.uncons t of
+        Nothing -> Nothing
+        Just (h, tl) -> Just $ Text1 h tl
+      addDots :: [Text1] -> Text
+      addDots [] = mempty
+      addDots [h] = text1ToText h
+      addDots (h : h' : tl) = text1ToText h <> "." <> addDots (h' : tl)
+  addType :: e -> Text1 -> Text1
+  addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
 
-  idWithoutType :: e -> Text
-  idWithoutType =
-    uniqueButNotTooLong -- because it could be stored in an SQL database
-      . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
-      . showUnique
-
-  idWithType :: e -> Text
-  idWithType e =
-    uniqueButNotTooLong -- because it could be stored in an SQL database
-      . addType e
-      . escapeIdentifier -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
-      $ showUnique e
-
-  addType :: e -> Text -> Text
-  addType x string = tshow (typeOf x) <> "_" <> string
-
-uniqueButNotTooLong :: Text -> Text
+uniqueButNotTooLong :: Text1 -> Text1
 uniqueButNotTooLong txt =
-  let (prfx, rest) = T.splitAt safeLength txt
+  let (prfx, rest) = T.splitAt safeLength (text1ToText txt)
    in if T.null rest
         then txt
-        else prfx <> "#" <> tshow (hash txt) <> "#"
+        else toText1Unsafe $ prfx <> "#" <> tshow (abs . hash . text1ToText $ txt) <> "#"
   where
     safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the
     -- limitation that DirtyId's are stored in an sql database
@@ -79,11 +99,11 @@ newtype UniqueObj a = UniqueObj
   deriving (Typeable)
 
 instance Unique a => Unique [a] where
-  showUnique [] = "[]"
-  showUnique xs = "[" <> T.intercalate ", " (map showUnique xs) <> "]"
+  showUnique [] = toText1Unsafe "[]"
+  showUnique xs = toText1Unsafe $ "[" <> T.intercalate ", " (text1ToText . showUnique <$> xs) <> "]"
 
 instance Unique a => Unique (Set.Set a) where
-  showUnique = showUnique . Set.elems
+  showUnique = showUnique . toList
 
 instance Unique Bool where
-  showUnique = T.toLower . tshow
+  showUnique = toText1Unsafe . T.toLower . tshow

@@ -2,7 +2,7 @@ CONTEXT Try28 IN ENGLISH
 clientName :: Client -> Name 
 clientAddress :: Client -> Address 
 
-VIEW Client: Client("klantnaam1":clientName, TXT ", ", "klantnaam2":clientAddress)
+VIEW Client: Client(clientName, TXT ", ", clientAddress)
 
 {- Purpose This script demonstrates a bug where the relations in a VIEW are not taken into account in the typechecker.
 The produced message:

@@ -34,7 +34,7 @@ chpConceptualAnalysis env lev fSpec =
           Dutch ->
             para
               ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
-                  <> (singleQuoted . str . name) fSpec
+                  <> (singleQuoted . str . fullName) fSpec
                   <> " te kunnen bespreken. "
                   <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
                   <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
@@ -43,7 +43,7 @@ chpConceptualAnalysis env lev fSpec =
           English ->
             para
               ( "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
-                  <> (singleQuoted . str . name) fSpec
+                  <> (singleQuoted . str . fullName) fSpec
                   <> "."
                   <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
                   <> "The text targets readers with sufficient skill in conceptual modeling."
@@ -54,8 +54,8 @@ chpConceptualAnalysis env lev fSpec =
         purps = purposes2Blocks env (purposesOf fSpec outputLang' fSpec)
     pictures =
       map pictOfPat (instanceList fSpec)
-        <> map pictOfConcept (Set.elems $ concs fSpec)
-        <> map pictOfRule (Set.elems $ vrules fSpec)
+        <> map pictOfConcept (toList $ concs fSpec)
+        <> map pictOfRule (toList $ vrules fSpec)
     -----------------------------------------------------
     -- the Picture that represents this pattern's conceptual graph
     pictOfPat :: Pattern -> Picture
@@ -84,11 +84,11 @@ chpConceptualAnalysis env lev fSpec =
           <> ( case (outputLang', patOfTheme themeContent) of
                  (Dutch, Just pat) ->
                    -- announce the conceptual diagram
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . fullName) pat <> ".")
                      -- draw the conceptual diagram
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (English, Just pat) ->
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . name) pat <> ".")
+                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . fullName) pat <> ".")
                      <> (xDefBlck env fSpec . pictOfPat) pat
                  (_, Nothing) -> mempty
              )
@@ -99,7 +99,7 @@ chpConceptualAnalysis env lev fSpec =
           <> caRemainingRelations
           <> (
                -- print the rules that are defined in this pattern.
-               case map caRule . Set.elems $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
+               case map caRule . toList $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
                  [] -> mempty
                  blocks ->
                    ( case outputLang' of
@@ -125,7 +125,7 @@ chpConceptualAnalysis env lev fSpec =
         -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
         caSubsections :: [(Blocks, [Relation])]
         caSubsections =
-          [ ( header 3 (str (name cl)) <> identityBlocks cpt <> entityBlocks,
+          [ ( header 3 (str . fullName $ cl) <> identityBlocks cpt <> entityBlocks,
               entityRels
             )
             | (cl, cpt) <- entities,
@@ -159,7 +159,7 @@ chpConceptualAnalysis env lev fSpec =
               [ (plain . l) (NL "Attribuut", EN "Attribute"),
                 (plain . l) (NL "Betekenis", EN "Meaning")
               ]
-              ( [ [ (plain . text . name) attr,
+              ( [ [ (plain . text . fullName) attr,
                     defineRel rel
                   ]
                   | attr <- clAtts cl,
@@ -207,8 +207,8 @@ chpConceptualAnalysis env lev fSpec =
           case rrkind r of
             Identity c ->
               (para . l)
-                ( NL ("Een identiteit op \"" <> name c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
-                  EN ("An identity rule for \"" <> name c <> "\" is defined, albeit without a purpose.")
+                ( NL ("Een identiteit op \"" <> fullName c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
+                  EN ("An identity rule for \"" <> fullName c <> "\" is defined, albeit without a purpose.")
                 )
             _ -> fatal "The result of idRulesOfTheme themeContent has produced a RuleCont whose rrkind is not Identity c."
         caRemainingRelations :: Blocks
@@ -218,7 +218,12 @@ chpConceptualAnalysis env lev fSpec =
               [ (plain . l) (NL "Relatie", EN "Relation"),
                 (plain . l) (NL "Betekenis", EN "Meaning")
               ]
-              ( [ [ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")"),
+              ( [ [ (plain . text)
+                      ( fullName rel <> " "
+                          <> if null cls
+                            then tshow (sign rel)
+                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map fullName) cls <> ")"
+                      ),
                     defineRel rel -- use "tshow.attType" for the technical type.
                   ]
                   | rel <- rels,
@@ -294,11 +299,11 @@ chpConceptualAnalysis env lev fSpec =
                      -- Then the relation of the relation with its properties and its intended meaning
                   <> printMeaning outputLang' d
             ukadjs = if Uni `elem` properties d && Tot `elem` properties d
-                        then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
-                        else commaEng "and" (map adj . Set.elems $ properties d)<>" relation"
+                        then commaEng "and" (map adj . toList $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
+                        else commaEng "and" (map adj . toList $ properties d)<>" relation"
             nladjs = if Uni `elem` properties d && Tot `elem` properties d
-                      then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
-                      else commaNL "en" (map adj . Set.elems $ properties d)<>" relatie"
+                      then commaNL "en" (map adj . toList $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
+                      else commaNL "en" (map adj . toList $ properties d)<>" relatie"
             adj   = propFullName True outputLang'
     -}
 
@@ -333,8 +338,8 @@ chpConceptualAnalysis env lev fSpec =
                         ( L.intersperse
                             (str ", ")
                             [ hyperLinkTo (XRefConceptualAnalysisRelation d)
-                                <> text (" (" <> name d <> ")")
-                              | d <- Set.elems $ bindedRelationsIn r
+                                <> text (" (" <> fullName d <> ")")
+                              | d <- toList $ bindedRelationsIn r
                             ]
                         )
                       <> l

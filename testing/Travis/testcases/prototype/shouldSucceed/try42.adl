@@ -2,7 +2,7 @@ CONTEXT Try42 IN ENGLISH
 
 s :: A * B [UNI]
 
-INTERFACE "Interf1" : I[ONE]
+INTERFACE Interf1 : I[ONE]
 BOX[ "Box1" : V[ONE*A];
    (I /\  I /\ s;s~ 
    )

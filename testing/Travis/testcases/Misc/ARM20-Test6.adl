@@ -12,7 +12,7 @@ Observaties:
 2) Als je [INJ] verwijdert is de fout ook weg.
 -}
 ------------------------------------------------------------
-PATTERN "ARM20-Test6"
+PATTERN ARM20Test6 LABEL "ARM20-Test6"
 
 bfEigenaar :: Bedrijfsfunctie * BFeigenaar
 

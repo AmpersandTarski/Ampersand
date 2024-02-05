@@ -46,7 +46,7 @@ defaultWriterVariables env fSpec =
             (Dutch, _) -> "Functioneel Ontwerp van "
             (English, _) -> "Functional Design of "
         )
-          <> name fSpec
+          <> fullName fSpec
       ),
       ("fontsize", "12pt"), --can be overridden by geometry package (see below)
       ( "lang",
@@ -294,10 +294,10 @@ instance ShowMath Expression where
       showExpr (EFlp e) = showExpr (addParensToSuper e) <> inMathFlip
       showExpr (ECpl e) = inMathOverline (showExpr e)
       showExpr (EBrk e) = "(" <> showExpr e <> ")"
-      showExpr (EDcD d) = inMathText (name d)
-      showExpr (EDcI c) = "I_{ \\lbrack " <> inMathText (name c) <> " \\rbrack }"
+      showExpr (EDcD d) = inMathText . fullName $ d
+      showExpr (EDcI c) = "I_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
       showExpr EEps {} = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-      showExpr (EDcV sgn) = "V_{ \\lbrack " <> inMathText (name (source sgn)) <> "*" <> inMathText (name (target sgn)) <> " \\rbrack }"
+      showExpr (EDcV sgn) = "V_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
       showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
 
 atomVal2Math :: PAtomValue -> Text
@@ -324,10 +324,10 @@ addParensToSuper e = e
 instance ShowMath Relation where
   showMath decl =
     math . noBreaking $
-      inMathText (name decl) <> " \\lbrack "
-        <> (inMathText . name . source $ decl)
+      (inMathText . fullName) decl <> " \\lbrack "
+        <> (inMathText . fullName . source) decl
         <> (if isFunction (EDcD decl) then " \\mapsto " else "*")
-        <> (inMathText . name . target $ decl)
+        <> (inMathText . fullName . target) decl
         <> " \\rbrack "
 
 noBreaking :: (IsString a, Semigroup a) => a -> a

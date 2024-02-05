@@ -17,10 +17,14 @@ module Ampersand.Basics.Prelude
     decodeUtf8,
     foldl,
     undefined,
+    Text1 (..),
+    unsnoc,
   )
 where
 
 -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
+
+import Data.Text1 (Text1 (..))
 import RIO hiding (exitWith, undefined, zipWith)
 import qualified RIO as WarnAbout (undefined)
 import qualified RIO.Text as T
@@ -102,3 +106,14 @@ defaultFirstFalse _ = False
 
 decodeUtf8 :: ByteString -> Text
 decodeUtf8 = decodeUtf8With lenientDecode
+
+-- functions missing in RIO
+
+-- | Returns all but the last character and the last character of a
+-- 'Text', or 'Nothing' if empty.
+--
+-- @since 1.2.3.0
+unsnoc :: Text -> Maybe (Text, Char)
+unsnoc t = case T.uncons (T.reverse t) of
+  Nothing -> Nothing
+  Just (h, tl) -> Just (T.reverse tl, h)

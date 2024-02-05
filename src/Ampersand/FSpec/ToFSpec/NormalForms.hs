@@ -16,7 +16,6 @@ import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
-import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -48,6 +47,7 @@ dfProofs cptMap = prfs True
     prfs dnf expr =
       L.nub [(rTerm2expr t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
       where
+        -- FIXME: Function f inside dfproofs does not terminate!! Must be fixed before fDeriveProofs can be made strict.
         f :: RTerm -> [(RTerm, [(RTerm, [Text], Text)])]
         f term =
           [(term, [(term, [], "<=>")]) | null dsteps]
@@ -85,7 +85,7 @@ data RTerm
   | RId A_Concept
   | RVee A_Concept A_Concept
   | RAtm PAtomValue A_Concept
-  | RVar Text A_Concept A_Concept -- relation name, source name, target name.
+  | RVar Name A_Concept A_Concept -- relation name, source name, target name.
   | RConst Expression
   deriving (Eq, Ord, Show)
 
@@ -451,7 +451,7 @@ dSteps drs x = dStps x
         stepTerms template cl -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
           =
           [term' | rule <- NE.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template]
-        vars :: RTerm -> Set Text
+        vars :: RTerm -> Set Name
         vars (RIsc rs) = (Set.unions . map vars . Set.toList) rs
         vars (RUni rs) = (Set.unions . map vars . Set.toList) rs
         vars (RDif l r) = vars l `Set.union` vars r
@@ -609,6 +609,7 @@ rTerm2expr term =
       Relation
         { decnm = nm,
           decsgn = sgn,
+          declabel = Nothing,
           decprps = fatal "Illegal RTerm in rTerm2expr",
           decDefaults = fatal "Illegal RTerm in rTerm2expr",
           decpr = fatal "Illegal RTerm in rTerm2expr",
@@ -643,11 +644,11 @@ instance ShowIT RTerm where
           RKl1 e -> wrap i 9 (showExpr 9 e <> closK1)
           RFlp e -> wrap i 9 (showExpr 9 e <> flp')
           RCpl e -> wrap i 9 (compl (showExpr 10 e))
-          RVar r s t -> r <> lbr <> name s <> star <> name t <> rbr
+          RVar r s t -> fullName r <> lbr <> fullName s <> star <> fullName t <> rbr
           RConst e -> wrap i i (showA e)
-          RId c -> "I" <> lbr <> name c <> rbr
-          RVee s t -> "V" <> lbr <> name s <> star <> name t <> rbr
-          RAtm val c -> showP val <> lbr <> name c <> rbr
+          RId c -> "I" <> lbr <> fullName c <> rbr
+          RVee s t -> "V" <> lbr <> fullName s <> star <> fullName t <> rbr
+          RAtm val c -> showP val <> lbr <> fullName c <> rbr
       wrap :: Int -> Int -> Text -> Text
       wrap i j e' = if i <= j then e' else lpar <> e' <> rpar
 
@@ -779,10 +780,10 @@ weightNF dnf = w
 
 -- If  'matches d expr'  yields  'Just ss', then  'substitute anything ss (lTerm d) == expr'
 
-type Unifier = Set (Text, RTerm)
+type Unifier = Set (Name, RTerm)
 
 instance ShowIT Unifier where
-  showIT s = "{" <> T.intercalate ", " [str <> "->" <> showIT t | (str, t) <- Set.toList s] <> "}"
+  showIT s = "{" <> T.intercalate ", " [fullName nm <> "->" <> showIT t | (nm, t) <- Set.toList s] <> "}"
 
 substitute ::
   Text -> -- A text to document fatals
@@ -810,20 +811,20 @@ substitute ruleDoc unifier term =
     subs (RCpl e) = RCpl (subs e)
     subs (RVar r _ _) = case substExprs r of
       [e] -> e
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> r <> " is not in term " <> showIT term <> " using unifier " <> tshow unifier)
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName r <> " is not in term " <> showIT term <> " using unifier " <> tshow unifier)
       -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RId c) = case substExprs (name c) of
       [e] -> e -- This is e@(RId c')
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RVee s t) = case (substExprs (name s), substExprs (name t)) of
       ([RId s'], [RId t']) -> RVee s' t'
       (_, _) -> fatal ("Rule:  " <> ruleDoc <> "\nSomething wrong with RVee in term " <> showIT term <> " with unifier " <> tshow unifier)
     subs (RAtm a c) = case substExprs (name c) of
       [RId c'] -> RAtm a c'
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> name c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs e@RConst {} = e
     --     subs t            = fatal ("Rule:  "<>ruleDoc<>"\nError: "<>showIT t<>"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
     substExprs x = [e | (v, e) <- Set.toList unifier, v == x]
@@ -1015,7 +1016,7 @@ safezip _ _ = fatal "Zip of two lists with different lengths!"
 tceDerivRules :: ConceptMap -> [DerivRule]
 tceDerivRules cptMap =
   concatMap
-    (dRule cptMap . parseRule)
+    (dRule cptMap . parseRule [])
     --    [ "r[A*B]\\/s[A*B] = s[A*B]\\/r[A*B]"                         --  Commutativity of \/
     --    , "r[A*B]/\\s[A*B] = s[A*B]/\\r[A*B]"                         --  Commutativity of /\
     --    , "(r[A*B]\\/s[A*B])\\/q[A*B] = r[A*B]\\/(s[A*B]\\/q[A*B])"   --  Associativity of \/
@@ -1170,7 +1171,7 @@ normStep
   expr =
     if sign expr == sign res
       then (res, ss, equ)
-      else fatal ("Violation of sign expr==sign res in the normalizer\n  expr: sign( " <> showA expr <> " ) == " <> showSign res <> "\n  res:  sign( " <> showA res <> " ) == " <> showSign res)
+      else fatal ("Violation of sign expr==sign res in the normalizer\n  expr: sign( " <> showA expr <> " ) == " <> (text1ToText . showSign) res <> "\n  res:  sign( " <> showA res <> " ) == " <> (text1ToText . showSign) res)
     where
       {-SJ 20140720: You might wonder why we test sign expr==sign res, which was introduced as a result of ticket #409 (the residu bug)
       It turns out that many rewrite rules in the normalizer change the type of a term; an aspect I have been overlooking all the time.
@@ -1285,7 +1286,7 @@ normStep
         where
           (t, steps, equ') = nM posCpl l []
           (f, steps', equ'') = nM posCpl r (l : rs)
-      nM _ x@(EEps i sgn) _ | source sgn == i && i == target sgn = (EDcI i, ["source and target are equal to " <> name i <> ", so " <> showA x <> "=" <> showA (EDcI i)], "<=>")
+      nM _ x@(EEps i sgn) _ | source sgn == i && i == target sgn = (EDcI i, ["source and target are equal to " <> fullName i <> ", so " <> showA x <> "=" <> showA (EDcI i)], "<=>")
       nM _ (ELrs (ECps (x, y), z)) _ | not eq && y == z = (x, ["(x;y)/y |- x"], "==>")
       nM _ (ELrs (ECps (x, y), z)) _
         | not eq && flp x == z =
@@ -1819,9 +1820,9 @@ allShifts env conjunct = map NE.head . eqClass (==) . filter pnEq . map normDNF 
 makeAllConjs :: env -> Rules -> [Conjunct]
 makeAllConjs env allRls =
   [ Cjct
-      { rc_id = "conj_" <> tshow (i :: Int),
+      { rc_id = toText1Unsafe $ "conj_" <> tshow (i :: Int),
         rc_orgRules = rs,
-        rc_conjunct = expr,
+        rcConjunct = expr,
         rc_dnfClauses = allShifts env (expr2dnfClause expr)
       }
     | (i, (expr, rs)) <- zip [0 ..] conjExprs

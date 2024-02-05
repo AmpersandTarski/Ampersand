@@ -41,7 +41,7 @@ isONE _ = False
 isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
-    PlainConcept {} -> "SESSION" `elem` aliases cpt
+    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
     ONE -> False
 
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
@@ -128,7 +128,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl0 e -> isIdent e || isFalse e
       EKl1 e -> isIdent e
       ECpl e -> isImin e
-      EDcD dcl -> name dcl == "="
+      EDcD _ -> False -- was: name dcl == "="
       EDcI {} -> True
       EEps {} -> False
       EDcV sgn -> isEndo sgn && isONE (source sgn)

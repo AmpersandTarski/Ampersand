@@ -1,7 +1,8 @@
 CONTEXT Propertytests IN ENGLISH
 -- This file aims to provide some quick, but certainly not exhaustive, tests for relational properties.
+-- It serves as a smoke test for the relational properties
 
-RULE "All A's": I[A] = "a1" \/ "a2" \/ "a3"
+POPULATION A CONTAINS [ "a1", "a2", "a3" ]
 
 rfxtest :: A*A [RFX] =[ ("a1", "a1"); ("a2", "a2"); ("a3", "a3") ]
 irftest :: A*A [IRF] =[ ("a1", "a2"); ("a1", "a3") ]

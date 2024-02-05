@@ -2,14 +2,19 @@
 
 ## Unreleased changes
 
+- [Issue #1307](https://github.com/AmpersandTarski/Ampersand/issues/1307) First phase of introducing namespaces in Ampersand.
+- [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
+- Align Ampersand jargon: use the word Term instead of Expression in the documentation and error messages.
+
 ## v4.7.7 (27 november 2023)
 
+- [Project about documentation](https://github.com/orgs/AmpersandTarski/projects/3)Combined documentation of several repositories into a [single site](https://ampersandtarski.github.io/).
 - Brackets in the natural language formatting were erroneous, so Stef fixed it. This helps to resolve a little bit of our technical debt.
-
-* [Issue #1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
-* [Issue #1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
-* [Issue #1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
-* Development of Ampersand generator can now be done with codespaces (Check it out!).
+- [Issue #1369](https://github.com/AmpersandTarski/Ampersand/issues/1369) update of CI/CD stuff.
+- [Issue #1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
+- [Issue #1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
+- [Issue #1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
+- Development of Ampersand generator can now be done with codespaces (Check it out!).
 
 ## v4.7.6 (26 february 2023)
 

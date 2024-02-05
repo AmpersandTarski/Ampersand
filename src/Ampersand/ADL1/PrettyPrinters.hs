@@ -6,9 +6,8 @@ module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
 
 import Ampersand.Basics hiding (view, (<$>))
 import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (keywords)
 import Data.List (nub)
-import RIO.Char (isLetter, toUpper)
+import RIO.Char (toUpper)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -52,28 +51,6 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         =
         Partial.replace needle replacement haystack
 
-isId :: Text -> Bool
-isId xs =
-  case T.uncons xs of
-    Nothing -> False
-    Just (h, _) -> T.all isIdChar xs && isFirstIdChar h && xs `notElem` map T.pack keywords
-      where
-        isFirstIdChar x = x == '_' || isLetter x
-        isIdChar x = isFirstIdChar x || elem x ['0' .. '9']
-
-isUpperId :: Text -> Bool
-isUpperId xs =
-  case T.uncons xs of
-    Nothing -> False
-    Just (h, _) -> isId xs && h `elem` ['A' .. 'Z']
-
-maybeQuote :: Text -> Doc
-maybeQuote a = if isId a then (text . T.unpack) a else quote a
-
--- adds quotes unless it's an upper identifier
-quoteConcept :: Text -> Doc
-quoteConcept a = if isUpperId a then (text . T.unpack) a else quote a
-
 prettyhsep :: Pretty a => [a] -> Doc
 prettyhsep = hsep . map pretty
 
@@ -83,16 +60,26 @@ commas = encloseSep empty empty comma
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 
+listOfBy :: (a -> Doc) -> [a] -> Doc
+listOfBy fun = commas . map fun
+
 listOf1 :: Pretty a => NE.NonEmpty a -> Doc
 listOf1 = listOf . NE.toList
 
 separate :: Pretty a => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
+instance Pretty Name where
+  pretty = text . T.unpack . fullName
+
+instance Pretty Label where
+  pretty (Label x) = text "LABEL" <~> (text . T.unpack . tshow) x
+
 instance Pretty P_Context where
-  pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
+  pretty (PCtx nm lbl _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
-      <+> quoteConcept nm
+      <~> nm
+      <~> lbl
       <~> lang
       <~> markup
       <+\> perline metas
@@ -121,20 +108,20 @@ perlineRelations ds =
 
 instance Pretty MetaData where
   pretty (MetaData _ nm val) =
-    text "META" <+> quote nm <+> quote val
+    text "META" <+> quote (text1ToText nm) <+> quote val
 
 instance Pretty P_RoleRule where
   pretty (Maintain _ roles rules) =
-    text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap maybeQuote $ rules)
+    text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap pretty $ rules)
 
 instance Pretty Role where
-  pretty (Role nm) = maybeQuote nm
-  pretty (Service nm) = maybeQuote nm
+  pretty (Role _ nm _ _) = pretty nm -- FIXME:This doesn't take into account the fact that a role could be a service.
 
 instance Pretty P_Pattern where
-  pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
+  pretty (P_Pat _ nm lbl rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
-      <+> quoteConcept nm
+      <~> nm
+      <~> lbl
       <+\> perline rls
       <+\> perline gns
       <+\> perline dcs
@@ -149,9 +136,9 @@ instance Pretty P_Pattern where
       <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
-  pretty (P_Relation nm sign prps dflts pragma mean _) =
+  pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack) nm <~> sign
+      <+> (text . T.unpack . plainNameOf) nm <~> sign <~> lbl
       <+> props
       <+> if null dflts
         then empty
@@ -212,7 +199,7 @@ instance Pretty TermPrim where
     PNamedR rel -> pretty rel
 
 instance Pretty P_NamedRel where
-  pretty (PNamedRel _ str mpSign) = (text . T.unpack) str <~> mpSign
+  pretty (PNamedRel _ str mpSign) = (text . T.unpack . plainNameOf) str <~> mpSign
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -232,17 +219,12 @@ instance Pretty SrcOrTgt where
   pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
-  pretty (P_Rule _ nm expr mean msg viol) =
-    text "RULE" <+> rName
+  pretty (P_Rule _ nm lbl expr mean msg viol) =
+    text "RULE" <+> pretty nm <+> pretty lbl <+> text ":"
       <~> expr
       <+\> perline mean
       <+\> perline msg
       <~\> viol
-    where
-      rName =
-        if T.null nm
-          then empty
-          else maybeQuote nm <> text ":"
 
 instance Pretty (P_Enforce TermPrim) where
   pretty (P_Enforce _ rel op expr) =
@@ -256,9 +238,9 @@ instance Pretty EnforceOperator where
     IsSameSet _ -> text ":="
 
 instance Pretty PConceptDef where
-  pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
+  pretty (PConceptDef _ nm lbl def mean _) -- from, the last argument, is not used in the parser
     =
-    text "CONCEPT" <+> quoteConcept cpt
+    text "CONCEPT" <~> nm <~> lbl
       <+> pretty def <+\> perline mean
 
 instance Pretty PCDDef where
@@ -284,82 +266,82 @@ instance Pretty TType where
   pretty = text . show
 
 instance Pretty P_Interface where
-  pretty (P_Ifc isAPI nm roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm
+  pretty (P_Ifc isAPI nm lbl roles obj _ _) =
+    text (if isAPI then "API " else "INTERFACE ")
+      <~> nm
+      <~> lbl
       <+> iroles
-      <+> ( case obj of
-              P_BxExpr {} ->
-                nest 2 (text ":" <+> pretty (obj_ctx obj) <$> pretty (obj_msub obj))
-              P_BxTxt {} -> fatal "TXT must not be used directly in a P_Ifc."
-          )
+      <+> interfaceExpression
+      <+> crud (obj_crud obj)
+      <+> prettyObject InterfaceKind obj
     where
       iroles =
         if null roles
           then empty
           else text "FOR" <+> listOf roles
-
-instance Pretty a => Pretty (P_BoxItem a) where
-  pretty obj =
-    maybeQuote (name obj) <+> text ":"
-      <+> case obj of
-        (P_BxExpr _ _ ctx mCrud mView msub) ->
-          nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
-        (P_BxTxt _ _ str) ->
-          text "TXT" <+> quote str
-    where
+      interfaceExpression = text ":" <~> pretty (obj_ctx obj)
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
-      view Nothing = empty
-      view (Just v) = (text . T.unpack) ("<" <> v <> ">")
+
+prettyObject :: ObjectKind -> P_BoxBodyElement -> Doc
+prettyObject objectKind obj =
+  maybeQuoteLabel
+    (obj_PlainName obj)
+    <+> ( case obj of
+            (P_BoxItemTerm _ _ _ ctx mCrud mView msub) -> case objectKind of
+              InterfaceKind -> view mView <$> pretty msub
+              SubInterfaceKind _ -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
+              IdentSegmentKind -> pretty ctx <+> crud mCrud <+> view mView <$> pretty msub
+              ViewSegmentKind -> pretty ctx <+> view mView
+            (P_BxTxt _ _ str) ->
+              text "TXT" <+> quote str
+        )
+  where
+    crud Nothing = empty
+    crud (Just cruds) = pretty cruds
+    view :: Maybe Name -> Doc
+    view Nothing = empty
+    view (Just v) = (text . T.unpack) ("<" <> plainNameOf v <> ">")
+    maybeQuoteLabel :: Maybe Text1 -> Doc
+    maybeQuoteLabel lbl =
+      case lbl of
+        Nothing -> mempty
+        Just t -> case T.words (text1ToText t) of
+          [] -> mempty
+          [word] -> quote word <> text ":" -- quote just to be safe. Otherwise we have to deal with exceptions.
+          _ -> quote (text1ToText t) <> text ":"
 
 instance Pretty P_Cruds where
-  pretty (P_Cruds _ str) = (text . T.unpack) str
+  pretty (P_Cruds _ str) = (text . T.unpack . text1ToText) str
 
-instance Pretty a => Pretty (P_SubIfc a) where
+instance Pretty (P_SubIfc TermPrim) where
   pretty p = case p of
-    P_Box _ c bs -> boxSpec c <+> text "[" <> listOf bs <> text "]"
-    P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <+> maybeQuote str
+    P_Box _ c bs -> boxSpec c <+> text "[" <> listOfBy (prettyObject (SubInterfaceKind 2)) bs <> text "]"
+    P_InterfaceRef _ isLink nm -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <~> nm
     where
       boxSpec :: BoxHeader -> Doc
       boxSpec x = text "BOX " <+> encloseSep (text " <") (text "> ") (text " ") items
         where
-          items = (text . T.unpack . btType $ x) : (map prettyKey . btKeys $ x)
+          items = (text . T.unpack . text1ToText . btType $ x) : (map prettyKey . btKeys $ x)
           prettyKey :: TemplateKeyValue -> Doc
           prettyKey kv =
-            (text . T.unpack . name $ kv)
+            (text . T.unpack . text1ToText . tkkey $ kv)
               <+> ( case tkval kv of
                       Nothing -> mempty
                       Just t -> text " = " <+> (text . show $ t)
                   )
 
 instance Pretty (P_IdentDf TermPrim) where
-  pretty (P_Id _ lbl cpt ats) =
-    text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
+  pretty (P_Id _ nm lbl cpt ats) =
+    text "IDENT" <~> nm <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
-  pretty (P_IdentExp obj) =
-    case obj of
-      (P_BxExpr nm _ ctx _ mView _) ->
-        ( if T.null nm
-            then pretty ctx -- no label
-            else maybeQuote nm <> text ":" <~> ctx
-        )
-          <+> (view . fmap T.unpack) mView
-      (P_BxTxt nm _ str) ->
-        maybeQuote nm
-          <~> text "TXT" <+> quote str
-    where
-      view Nothing = empty
-      view (Just v) = pretty v
+  pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj
 
 instance Pretty P_ViewDef where
-  pretty (P_Vd _ lbl cpt True Nothing ats) =
-    -- legacy syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
-      <~> cpt <+> parens (listOf ats)
-  pretty (P_Vd _ lbl cpt isDefault html ats) =
-    -- new syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
+  pretty (P_Vd _ nm lbl cpt isDefault html ats) =
+    -- improved syntax. Legacy syntax must not be used here anymore.
+    text "VIEW" <~> nm <~> lbl <+> text ":"
       <~> cpt
       <+> (if isDefault then text "DEFAULT" else empty)
       <+> braces (listOf ats)
@@ -373,7 +355,7 @@ instance Pretty (P_ViewSegment TermPrim) where
   pretty (P_ViewSegment mlab _ pl) =
     ( case mlab of
         Nothing -> empty
-        Just str -> maybeQuote str <+> text ":"
+        Just str -> (text . T.unpack . tshow . text1ToText $ str) <+> text ":"
     )
       <~> pretty pl
 
@@ -394,14 +376,14 @@ instance Pretty PPurpose where
 
 instance Pretty PRef2Obj where
   pretty p = case p of
-    PRef2ConceptDef str -> text "CONCEPT" <+> quoteConcept str
+    PRef2ConceptDef nm -> text "CONCEPT" <~> nm
     PRef2Relation namedRel -> text "RELATION" <~> namedRel
-    PRef2Rule str -> text "RULE" <+> maybeQuote str
-    PRef2IdentityDef str -> text "IDENT" <+> maybeQuote str
-    PRef2ViewDef str -> text "VIEW" <+> maybeQuote str
-    PRef2Pattern str -> text "PATTERN" <+> maybeQuote str
-    PRef2Interface str -> text "INTERFACE" <+> maybeQuote str
-    PRef2Context str -> text "CONTEXT" <+> maybeQuote str
+    PRef2Rule nm -> text "RULE" <~> nm
+    PRef2IdentityDef nm -> text "IDENT" <~> nm
+    PRef2ViewDef nm -> text "VIEW" <~> nm
+    PRef2Pattern nm -> text "PATTERN" <~> nm
+    PRef2Interface nm -> text "INTERFACE" <~> nm
+    PRef2Context nm -> text "CONTEXT" <~> nm
 
 instance Pretty PMeaning where
   pretty (PMeaning markup) = text "MEANING" <~> markup
@@ -410,7 +392,7 @@ instance Pretty PMessage where
   pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-  pretty (PCpt nm) = quoteConcept nm
+  pretty (PCpt nm lbl) = pretty nm <~> pretty lbl
   pretty P_ONE = text "ONE"
 
 instance Pretty P_Sign where

@@ -1,0 +1,3416 @@
+{
+    "atoms": [
+        {
+            "atoms": [
+                "Ampersand-v4.7.6 [feature/namespaces-part1:eda1d16be*], build time: 02-Apr-23 14:29:43 UTC"
+            ],
+            "concept": "FormalAmpersand.AmpersandVersion"
+        },
+        {
+            "atoms": [
+                "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#"
+            ],
+            "concept": "FormalAmpersand.BinaryTerm"
+        },
+        {
+            "atoms": [
+                "EDcD ownsLimoranges[Person*Limorange]",
+                "EDcD ownsOranges[Person*Orange]",
+                "EDcD citrusOwnedBy[Citrus*Person]",
+                "EDcD ownsNectarines[Person*Nectarine]",
+                "EDcD limeProperties[Lime*LimeProperty]",
+                "EDcD ownsCitrus[Person*Citrus]",
+                "EDcD ownsLimes[Person*Lime]"
+            ],
+            "concept": "FormalAmpersand.BindedRelation"
+        },
+        {
+            "atoms": [
+                "Lemon",
+                "LimeProperty",
+                "Nectarine",
+                "ONE",
+                "Person",
+                "Citrus",
+                "Fruit",
+                "Lime",
+                "Limorange",
+                "Orange"
+            ],
+            "concept": "FormalAmpersand.Concept"
+        },
+        {
+            "atoms": [
+                "Fruit"
+            ],
+            "concept": "FormalAmpersand.ConceptDef"
+        },
+        {
+            "atoms": [
+                "Lemon",
+                "LimeProperty",
+                "Nectarine",
+                "ONE",
+                "Person",
+                "Citrus",
+                "Fruit",
+                "Lime",
+                "Limorange",
+                "Orange"
+            ],
+            "concept": "FormalAmpersand.ConceptName"
+        },
+        {
+            "atoms": [
+                "SpecEdit"
+            ],
+            "concept": "FormalAmpersand.Context"
+        },
+        {
+            "atoms": [
+                "SpecEdit"
+            ],
+            "concept": "FormalAmpersand.ContextName"
+        },
+        {
+            "atoms": [
+                "Lemon",
+                "LimeProperty",
+                "Nectarine",
+                "ONE",
+                "Person",
+                "Citrus",
+                "Fruit",
+                "Lime",
+                "Limorange",
+                "Orange"
+            ],
+            "concept": "FormalAmpersand.EncodedName"
+        },
+        {
+            "atoms": [
+                "EDcI Citrus",
+                "EEps Limorange [Orange*Limorange]",
+                "EEps Lemon [Citrus*Lemon]",
+                "EDcI Lemon",
+                "EEps Limorange [Lime*Limorange]",
+                "EEps Lime [Lime*Citrus]",
+                "EDcI Orange",
+                "EEps Limorange [Limorange*Orange]",
+                "EDcI ONE",
+                "EDcI Person",
+                "EEps Orange [Orange*Citrus]",
+                "EEps Limorange [Limorange*Lime]",
+                "EDcI Lime",
+                "EEps Lime [Citrus*Lime]",
+                "EEps Orange [Citrus*Orange]"
+            ],
+            "concept": "FormalAmpersand.Epsilon"
+        },
+        {
+            "atoms": [
+                "ObjectDef {objPlainName = Just \"All fruit\", objlbl#4977675641174836225#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Lime]#-3138728341764115927#",
+                "ObjectDef {objPlainName = Just \"All lemons\", objlb#-4856853759770422367#",
+                "ObjectDef {objPlainName = Just \"ownsLimoranges\", o#-5741932268357890381#",
+                "ObjectDef {objPlainName = Just \"All people\", objlb#256677523044490292#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;(I[Lime#-7343711532756087258#",
+                "ObjectDef {objPlainName = Just \"ownsNectarines\", o#-2455827247615612143#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3784344903498796114#",
+                "ObjectDef {objPlainName = Just \"(I [Orange];citrus#1795703263045534743#",
+                "ObjectDef {objPlainName = Just \"(I[Citrus];I[Orang#-1404793119756963358#",
+                "ObjectDef {objPlainName = Just \"Lime atom\", objlbl#-9109744842836836290#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus\", objlb#-9189482092956318354#",
+                "ObjectDef {objPlainName = Just \"All limoranges\", o#-4412818511598320692#",
+                "ObjectDef {objPlainName = Just \"All nectarines\", o#8023261867173159030#",
+                "ObjectDef {objPlainName = Just \"All citrus fruit\",#-5750811029006889036#",
+                "ObjectDef {objPlainName = Just \"Person atom\", objl#-8859069829361856145#",
+                "ObjectDef {objPlainName = Just \"All limes\", objlbl#1003823133633128223#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#4774926842577694781#",
+                "ObjectDef {objPlainName = Just \"^ term\", objlbl = #5537653402812808702#",
+                "ObjectDef {objPlainName = Just \"(citrusOwnedBy~);I#-7245650254561360492#",
+                "ObjectDef {objPlainName = Just \"All oranges\", objl#-5206661193357737402#",
+                "ObjectDef {objPlainName = Just \"ownsOranges\", objl#5703195618819619373#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-5948256306418537707#",
+                "ObjectDef {objPlainName = Just \"limeProperties\", o#106447816812323459#",
+                "ObjectDef {objPlainName = Just \"ownsLimes;I[Orange#-8222208271948986555#",
+                "ObjectDef {objPlainName = Just \"ownsLimes\", objlbl#-2408602381061633110#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3150554193864375740#"
+            ],
+            "concept": "FormalAmpersand.FieldDef"
+        },
+        {
+            "atoms": [
+                "ownsNectarines",
+                "limeProperties",
+                "ownsCitrus;I[Orange]",
+                "(I[Citrus];I[Orange];citrusOwnedBy)~",
+                "All limes",
+                "All fruit",
+                "All people",
+                "All citrus fruit",
+                "ownsCitrus",
+                "ownsLimoranges",
+                "ownsCitrus;(I[Lime];I[Orange])~;I[Citrus]",
+                "(I [Orange];citrusOwnedBy)~",
+                "ownsLimes",
+                "All lemons",
+                "Lime atom",
+                "All nectarines",
+                "ownsCitrus;I[Orange];I[Lime];I[Citrus]",
+                "ownsLimes;I[Orange]",
+                "ownsOranges",
+                "ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon]",
+                "Person atom",
+                "All oranges",
+                "(citrusOwnedBy~);I[Orange]",
+                "All limoranges",
+                "ownsCitrus;I[Lime]",
+                "^ term",
+                "ownsCitrus;I[Orange];I[Lime]"
+            ],
+            "concept": "FormalAmpersand.FieldName"
+        },
+        {
+            "atoms": [
+                "Person",
+                "Overview",
+                "Lime"
+            ],
+            "concept": "FormalAmpersand.Interface"
+        },
+        {
+            "atoms": [
+                "Person",
+                "Overview",
+                "Lime"
+            ],
+            "concept": "FormalAmpersand.InterfaceName"
+        },
+        {
+            "atoms": [
+                "Lime IS Citrus",
+                "Nectarine IS Fruit",
+                "Limorange IS Lime /\\ Orange",
+                "Citrus IS Fruit",
+                "Lemon IS Citrus",
+                "Orange IS Citrus"
+            ],
+            "concept": "FormalAmpersand.IsE"
+        },
+        {
+            "atoms": [
+                "English"
+            ],
+            "concept": "FormalAmpersand.Language"
+        },
+        {
+            "atoms": [
+                "Markup {amLang = English, amPandoc = Many {unMany #-8380169388033527665#"
+            ],
+            "concept": "FormalAmpersand.Markup"
+        },
+        {
+            "atoms": [
+                "ObjectDef {objPlainName = Just \"All fruit\", objlbl#4977675641174836225#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Lime]#-3138728341764115927#",
+                "ObjectDef {objPlainName = Just \"All lemons\", objlb#-4856853759770422367#",
+                "ObjectDef {objPlainName = Just \"ownsLimoranges\", o#-5741932268357890381#",
+                "ObjectDef {objPlainName = Just \"All people\", objlb#256677523044490292#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;(I[Lime#-7343711532756087258#",
+                "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#",
+                "ObjectDef {objPlainName = Just \"ownsNectarines\", o#-2455827247615612143#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3784344903498796114#",
+                "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5681199888046313357#",
+                "ObjectDef {objPlainName = Just \"(I [Orange];citrus#1795703263045534743#",
+                "ObjectDef {objPlainName = Just \"(I[Citrus];I[Orang#-1404793119756963358#",
+                "ObjectDef {objPlainName = Just \"Lime atom\", objlbl#-9109744842836836290#",
+                "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus\", objlb#-9189482092956318354#",
+                "ObjectDef {objPlainName = Just \"All limoranges\", o#-4412818511598320692#",
+                "ObjectDef {objPlainName = Just \"All nectarines\", o#8023261867173159030#",
+                "ObjectDef {objPlainName = Just \"All citrus fruit\",#-5750811029006889036#",
+                "ObjectDef {objPlainName = Just \"Person atom\", objl#-8859069829361856145#",
+                "ObjectDef {objPlainName = Just \"All limes\", objlbl#1003823133633128223#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#4774926842577694781#",
+                "ObjectDef {objPlainName = Just \"^ term\", objlbl = #5537653402812808702#",
+                "ObjectDef {objPlainName = Just \"(citrusOwnedBy~);I#-7245650254561360492#",
+                "ObjectDef {objPlainName = Just \"All oranges\", objl#-5206661193357737402#",
+                "ObjectDef {objPlainName = Just \"ownsOranges\", objl#5703195618819619373#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-5948256306418537707#",
+                "ObjectDef {objPlainName = Just \"limeProperties\", o#106447816812323459#",
+                "ObjectDef {objPlainName = Just \"ownsLimes;I[Orange#-8222208271948986555#",
+                "ObjectDef {objPlainName = Just \"ownsLimes\", objlbl#-2408602381061633110#",
+                "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3150554193864375740#"
+            ],
+            "concept": "FormalAmpersand.ObjectDef"
+        },
+        {
+            "atoms": [
+                "Composition",
+                "Converse"
+            ],
+            "concept": "FormalAmpersand.Operator"
+        },
+        {
+            "atoms": [
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:45:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:58:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:69:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:68:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:38:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:62:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:36:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:56:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:57:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:13:1",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:50:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:41:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:40:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:67:1",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:33:1",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:53:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:47:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:46:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:54:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:55:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:48:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:44:1",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:59:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:61:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:60:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:34:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:35:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:39:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:37:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:52:7",
+                "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:51:7"
+            ],
+            "concept": "FormalAmpersand.Origin"
+        },
+        {
+            "atoms": [
+                "Relation_ownsOranges[Person*Orange][(2903457028615#-3093567347824968752#",
+                "Relation_dummyLemon[Lemon*Lemon][(-145617307775429#7220059011373479741#",
+                "Relation_ownsCitrus[Person*Citrus][(29034570286159#-6037859660064298023#",
+                "Relation_ownsLimoranges[Person*Limorange][(2903457#-3520053900963009135#",
+                "Relation_dummyLimorange[Limorange*Limorange][(-145#3949384232235446630#",
+                "Relation_ownsLimes[Person*Lime][(29034570286159677#7310610424274530057#",
+                "Relation_ownsNectarines[Person*Nectarine][(2903457#2756505952784020524#",
+                "Relation_limeProperties[Lime*LimeProperty][(944788#4281560561220670759#"
+            ],
+            "concept": "FormalAmpersand.Population"
+        },
+        {
+            "atoms": [
+                "Markup_Markup {amLang = English, amPandoc = Many {#-8375188157644311207#"
+            ],
+            "concept": "FormalAmpersand.Purpose"
+        },
+        {
+            "atoms": [
+                "ownsOranges[Person*Orange]",
+                "citrusOwnedBy[Citrus*Person]",
+                "dummyLemon[Lemon*Lemon]",
+                "ownsCitrus[Person*Citrus]",
+                "ownsLimes[Person*Lime]",
+                "ownsLimoranges[Person*Limorange]",
+                "ownsNectarines[Person*Nectarine]",
+                "limeProperties[Lime*LimeProperty]",
+                "dummyLimorange[Limorange*Limorange]"
+            ],
+            "concept": "FormalAmpersand.Relation"
+        },
+        {
+            "atoms": [
+                "ownsNectarines",
+                "dummyLimorange",
+                "limeProperties",
+                "ownsCitrus",
+                "ownsLimoranges",
+                "dummyLemon",
+                "citrusOwnedBy",
+                "ownsLimes",
+                "ownsOranges"
+            ],
+            "concept": "FormalAmpersand.RelationName"
+        },
+        {
+            "atoms": [
+                "ownsLimes [Person*Lime];I[Orange]",
+                "(I[Orange];citrusOwnedBy [Citrus*Person])~",
+                "(citrusOwnedBy [Citrus*Person]~);I[Orange]",
+                "V [ONE*Lemon]",
+                "I[Lime];I[Citrus];I[Lemon]",
+                "I[Orange];I[Lime]",
+                "(I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person])~",
+                "I[Limorange]",
+                "I[Orange];citrusOwnedBy [Citrus*Person]",
+                "V [ONE*Orange]",
+                "V [ONE*Fruit]",
+                "I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person]",
+                "citrusOwnedBy [Citrus*Person]",
+                "I[Orange]",
+                "I[Lemon]",
+                "I[Orange];I[Lime];I[Citrus];I[Lemon]",
+                "ownsOranges [Person*Orange]",
+                "ownsLimoranges [Person*Limorange]",
+                "ownsCitrus [Person*Citrus]",
+                "(citrusOwnedBy [Citrus*Person]~)",
+                "limeProperties [Lime*LimeProperty]",
+                "ownsNectarines [Person*Nectarine]",
+                "I[Lime];I[Citrus]",
+                "I[Person]",
+                "citrusOwnedBy [Citrus*Person]~",
+                "(I[Lime];I[Orange])",
+                "V [ONE*Person]",
+                "(I[Lime];I[Orange])~;I[Citrus]",
+                "I[ONE]",
+                "V [ONE*Citrus]",
+                "ownsCitrus [Person*Citrus];I[Orange]",
+                "ownsCitrus [Person*Citrus];I[Orange];I[Lime];I[Citrus];I[Lemon]",
+                "V [ONE*Limorange]",
+                "I[Orange];I[Lime];I[Citrus]",
+                "(I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person])",
+                "V [ONE*Lime]",
+                "ownsLimes [Person*Lime]",
+                "(I[Lime];I[Orange])~",
+                "(I[Orange];citrusOwnedBy [Citrus*Person])",
+                "V [ONE*Nectarine]",
+                "ownsLimes [Person*Lime];I[Citrus];I[Lemon]",
+                "I[Citrus]",
+                "ownsCitrus [Person*Citrus];I[Lime]",
+                "ownsCitrus [Person*Citrus];I[Orange];I[Lime];I[Citrus]",
+                "I[Citrus];I[Lemon]",
+                "ownsCitrus [Person*Citrus];(I[Lime];I[Orange])~;I[Citrus]",
+                "I[Lime];I[Orange]",
+                "I[Lime]",
+                "ownsCitrus [Person*Citrus];I[Orange];I[Lime]"
+            ],
+            "concept": "FormalAmpersand.ShowADL"
+        },
+        {
+            "atoms": [
+                "[Citrus*Orange]",
+                "[ONE*Limorange]",
+                "[Person*Lemon]",
+                "[Orange*Lemon]",
+                "[ONE*Nectarine]",
+                "[Lime*LimeProperty]",
+                "[ONE*Person]",
+                "[Orange*Citrus]",
+                "[Lime*Citrus]",
+                "[Limorange*Citrus]",
+                "[Limorange*Orange]",
+                "[ONE*Orange]",
+                "[Person*Lime]",
+                "[Citrus*Citrus]",
+                "[ONE*ONE]",
+                "[Orange*Orange]",
+                "[ONE*Citrus]",
+                "[Limorange*Lime]",
+                "[Orange*Person]",
+                "[ONE*Lime]",
+                "[Lime*Limorange]",
+                "[Person*Citrus]",
+                "[Person*Person]",
+                "[Citrus*Lime]",
+                "[Citrus*Person]",
+                "[Person*Nectarine]",
+                "[Person*Limorange]",
+                "[Orange*Lime]",
+                "[Lime*Orange]",
+                "[Lime*Lime]",
+                "[Lime*Lemon]",
+                "[ONE*Lemon]",
+                "[Limorange*Limorange]",
+                "[ONE*Fruit]",
+                "[Person*Orange]",
+                "[Lemon*Lemon]",
+                "[Limorange*Lemon]",
+                "[Orange*Limorange]",
+                "[Citrus*Lemon]"
+            ],
+            "concept": "FormalAmpersand.Signature"
+        },
+        {
+            "atoms": [
+                "OBJECT"
+            ],
+            "concept": "FormalAmpersand.TType"
+        },
+        {
+            "atoms": [
+                "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                "EDcD ownsLimoranges[Person*Limorange]",
+                "EDcI Citrus",
+                "EDcV [ONE*Lime]",
+                "EDcD ownsOranges[Person*Orange]",
+                "EEps Limorange [Orange*Limorange]",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                "EEps Lemon [Citrus*Lemon]",
+                "EDcD citrusOwnedBy[Citrus*Person]",
+                "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                "EDcV [ONE*Nectarine]",
+                "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                "EDcI Lemon",
+                "EDcD ownsNectarines[Person*Nectarine]",
+                "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                "EEps Limorange [Lime*Limorange]",
+                "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                "EDcD limeProperties[Lime*LimeProperty]",
+                "EEps Lime [Lime*Citrus]",
+                "EDcI Orange",
+                "EEps Limorange [Limorange*Orange]",
+                "EDcV [ONE*Orange]",
+                "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                "EDcI ONE",
+                "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                "EDcD ownsCitrus[Person*Citrus]",
+                "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                "EDcV [ONE*Citrus]",
+                "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                "EDcI Person",
+                "EEps Orange [Orange*Citrus]",
+                "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                "EDcV [ONE*Lemon]",
+                "EEps Limorange [Limorange*Lime]",
+                "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                "EDcI Lime",
+                "EDcV [ONE*Limorange]",
+                "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                "EDcD ownsLimes[Person*Lime]",
+                "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#",
+                "EEps Lime [Citrus*Lime]",
+                "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                "EDcV [ONE*Fruit]",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                "EEps Orange [Citrus*Orange]",
+                "EDcV [ONE*Person]",
+                "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#"
+            ],
+            "concept": "FormalAmpersand.Term"
+        },
+        {
+            "atoms": [
+                "Simple context for testing edit operations on narrowed relations"
+            ],
+            "concept": "FormalAmpersand.Text"
+        },
+        {
+            "atoms": [
+                "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#"
+            ],
+            "concept": "FormalAmpersand.UnaryTerm"
+        },
+        {
+            "atoms": [
+                "EDcV [ONE*Lime]",
+                "EDcV [ONE*Nectarine]",
+                "EDcV [ONE*Orange]",
+                "EDcV [ONE*Citrus]",
+                "EDcV [ONE*Lemon]",
+                "EDcV [ONE*Limorange]",
+                "EDcV [ONE*Fruit]",
+                "EDcV [ONE*Person]"
+            ],
+            "concept": "FormalAmpersand.V"
+        },
+        {
+            "atoms": [
+                "1"
+            ],
+            "concept": "ONE"
+        }
+    ],
+    "links": [
+        {
+            "links": [
+                {
+                    "src": "Fruit",
+                    "tgt": "Fruit"
+                }
+            ],
+            "relation": "FormalAmpersand.acdcpt[FormalAmpersand.ConceptDef*FormalAmpersand.ConceptName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Fruit",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:13:1"
+                }
+            ],
+            "relation": "FormalAmpersand.acdpos[FormalAmpersand.ConceptDef*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                    "tgt": "EDcD citrusOwnedBy[Citrus*Person]"
+                },
+                {
+                    "src": "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                    "tgt": "EDcD citrusOwnedBy[Citrus*Person]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                    "tgt": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                    "tgt": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#",
+                    "tgt": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#"
+                }
+            ],
+            "relation": "FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Markup {amLang = English, amPandoc = Many {unMany #-8380169388033527665#",
+                    "tgt": "Simple context for testing edit operations on narrowed relations"
+                }
+            ],
+            "relation": "FormalAmpersand.asMarkdown[FormalAmpersand.Markup*FormalAmpersand.Text]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EDcD ownsLimoranges[Person*Limorange]",
+                    "tgt": "ownsLimoranges[Person*Limorange]"
+                },
+                {
+                    "src": "EDcD ownsOranges[Person*Orange]",
+                    "tgt": "ownsOranges[Person*Orange]"
+                },
+                {
+                    "src": "EDcD citrusOwnedBy[Citrus*Person]",
+                    "tgt": "citrusOwnedBy[Citrus*Person]"
+                },
+                {
+                    "src": "EDcD ownsNectarines[Person*Nectarine]",
+                    "tgt": "ownsNectarines[Person*Nectarine]"
+                },
+                {
+                    "src": "EDcD limeProperties[Lime*LimeProperty]",
+                    "tgt": "limeProperties[Lime*LimeProperty]"
+                },
+                {
+                    "src": "EDcD ownsCitrus[Person*Citrus]",
+                    "tgt": "ownsCitrus[Person*Citrus]"
+                },
+                {
+                    "src": "EDcD ownsLimes[Person*Lime]",
+                    "tgt": "ownsLimes[Person*Lime]"
+                }
+            ],
+            "relation": "FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All fruit\", objlbl#4977675641174836225#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:35:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Lime]#-3138728341764115927#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:52:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All lemons\", objlb#-4856853759770422367#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:41:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimoranges\", o#-5741932268357890381#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:50:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All people\", objlb#256677523044490292#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:34:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;(I[Lime#-7343711532756087258#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:56:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:44:1"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsNectarines\", o#-2455827247615612143#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:46:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3784344903498796114#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:53:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5681199888046313357#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:67:1"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I [Orange];citrus#1795703263045534743#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:59:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I[Citrus];I[Orang#-1404793119756963358#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:58:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Lime atom\", objlbl#-9109744842836836290#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:68:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:33:1"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus\", objlb#-9189482092956318354#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:51:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limoranges\", o#-4412818511598320692#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:39:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All nectarines\", o#8023261867173159030#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:40:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All citrus fruit\",#-5750811029006889036#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:36:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Person atom\", objl#-8859069829361856145#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:45:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limes\", objlbl#1003823133633128223#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:38:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#4774926842577694781#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:57:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"^ term\", objlbl = #5537653402812808702#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:62:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(citrusOwnedBy~);I#-7245650254561360492#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:60:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All oranges\", objl#-5206661193357737402#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:37:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsOranges\", objl#5703195618819619373#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:47:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-5948256306418537707#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:55:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"limeProperties\", o#106447816812323459#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:69:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes;I[Orange#-8222208271948986555#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:61:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes\", objlbl#-2408602381061633110#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:48:7"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3150554193864375740#",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:54:7"
+                }
+            ],
+            "relation": "FormalAmpersand.boxpos[FormalAmpersand.ObjectDef*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lemon",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "LimeProperty",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Nectarine",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Person",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Citrus",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Fruit",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Orange",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Person",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Overview",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lime IS Citrus",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Nectarine IS Fruit",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Limorange IS Lime /\\ Orange",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Citrus IS Fruit",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Lemon IS Citrus",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Orange IS Citrus",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.IsE*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_ownsOranges[Person*Orange][(2903457028615#-3093567347824968752#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_dummyLemon[Lemon*Lemon][(-145617307775429#7220059011373479741#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_ownsCitrus[Person*Citrus][(29034570286159#-6037859660064298023#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_ownsLimoranges[Person*Limorange][(2903457#-3520053900963009135#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_dummyLimorange[Limorange*Limorange][(-145#3949384232235446630#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_ownsLimes[Person*Lime][(29034570286159677#7310610424274530057#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_ownsNectarines[Person*Nectarine][(2903457#2756505952784020524#",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "Relation_limeProperties[Lime*LimeProperty][(944788#4281560561220670759#",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Population*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Fruit",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.ctxcds[FormalAmpersand.ConceptDef*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.ctxds[FormalAmpersand.Relation*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All fruit\", objlbl#4977675641174836225#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Lime]#-3138728341764115927#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All lemons\", objlb#-4856853759770422367#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimoranges\", o#-5741932268357890381#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All people\", objlb#256677523044490292#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;(I[Lime#-7343711532756087258#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsNectarines\", o#-2455827247615612143#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3784344903498796114#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I [Orange];citrus#1795703263045534743#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I[Citrus];I[Orang#-1404793119756963358#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Lime atom\", objlbl#-9109744842836836290#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5681199888046313357#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus\", objlb#-9189482092956318354#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limoranges\", o#-4412818511598320692#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All nectarines\", o#8023261867173159030#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All citrus fruit\",#-5750811029006889036#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Person atom\", objl#-8859069829361856145#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limes\", objlbl#1003823133633128223#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#4774926842577694781#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"^ term\", objlbl = #5537653402812808702#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(citrusOwnedBy~);I#-7245650254561360492#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All oranges\", objl#-5206661193357737402#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsOranges\", objl#5703195618819619373#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-5948256306418537707#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"limeProperties\", o#106447816812323459#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5681199888046313357#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes;I[Orange#-8222208271948986555#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes\", objlbl#-2408602381061633110#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3150554193864375740#",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                }
+            ],
+            "relation": "FormalAmpersand.fieldIn[FormalAmpersand.FieldDef*FormalAmpersand.ObjectDef]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                    "tgt": "EDcI Lime"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                    "tgt": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                    "tgt": "EEps Lime [Lime*Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                    "tgt": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                    "tgt": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                    "tgt": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])"
+                },
+                {
+                    "src": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                    "tgt": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                    "tgt": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                },
+                {
+                    "src": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                    "tgt": "EEps Limorange [Limorange*Lime]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                    "tgt": "EEps Limorange [Limorange*Lime]"
+                },
+                {
+                    "src": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                    "tgt": "EDcI Citrus"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                    "tgt": "EDcD ownsCitrus[Person*Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                },
+                {
+                    "src": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                    "tgt": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))"
+                },
+                {
+                    "src": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                    "tgt": "EEps Orange [Orange*Citrus]"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                    "tgt": "EDcI Lime"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                    "tgt": "EDcD ownsCitrus[Person*Citrus]"
+                },
+                {
+                    "src": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                    "tgt": "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#"
+                },
+                {
+                    "src": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                    "tgt": "EDcD ownsLimes[Person*Lime]"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                    "tgt": "EEps Lime [Lime*Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                    "tgt": "EDcD ownsLimes[Person*Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                    "tgt": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                    "tgt": "EDcI Lime"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                    "tgt": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                    "tgt": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                    "tgt": "EEps Limorange [Limorange*Orange]"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                    "tgt": "EDcI Citrus"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                    "tgt": "EEps Limorange [Limorange*Lime]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                    "tgt": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                }
+            ],
+            "relation": "FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lime IS Citrus",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Nectarine IS Fruit",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Limorange IS Lime /\\ Orange",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "Limorange IS Lime /\\ Orange",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "Citrus IS Fruit",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Lemon IS Citrus",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Orange IS Citrus",
+                    "tgt": "Citrus"
+                }
+            ],
+            "relation": "FormalAmpersand.gengen[FormalAmpersand.IsE*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lime IS Citrus",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "Nectarine IS Fruit",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "Limorange IS Lime /\\ Orange",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "Citrus IS Fruit",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Lemon IS Citrus",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "Orange IS Citrus",
+                    "tgt": "Orange"
+                }
+            ],
+            "relation": "FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Person",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5363288775056444944#"
+                },
+                {
+                    "src": "Overview",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#-2257842333304683284#"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "ObjectDef {objPlainName = Nothing, objlbl = Nothin#5681199888046313357#"
+                }
+            ],
+            "relation": "FormalAmpersand.ifcObj[FormalAmpersand.Interface*FormalAmpersand.ObjectDef]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Person",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:44:1"
+                },
+                {
+                    "src": "Overview",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:33:1"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "/workspaces/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl:67:1"
+                }
+            ],
+            "relation": "FormalAmpersand.ifcPos[FormalAmpersand.Interface*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Person",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "Overview",
+                    "tgt": "Overview"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "Lime"
+                }
+            ],
+            "relation": "FormalAmpersand.isPublic[FormalAmpersand.Interface*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lemon",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Nectarine",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Citrus",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "Orange",
+                    "tgt": "Citrus"
+                }
+            ],
+            "relation": "FormalAmpersand.isa[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All fruit\", objlbl#4977675641174836225#",
+                    "tgt": "All fruit"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Lime]#-3138728341764115927#",
+                    "tgt": "ownsCitrus;I[Lime]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All lemons\", objlb#-4856853759770422367#",
+                    "tgt": "All lemons"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimoranges\", o#-5741932268357890381#",
+                    "tgt": "ownsLimoranges"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All people\", objlb#256677523044490292#",
+                    "tgt": "All people"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;(I[Lime#-7343711532756087258#",
+                    "tgt": "ownsCitrus;(I[Lime];I[Orange])~;I[Citrus]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsNectarines\", o#-2455827247615612143#",
+                    "tgt": "ownsNectarines"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3784344903498796114#",
+                    "tgt": "ownsCitrus;I[Orange]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I [Orange];citrus#1795703263045534743#",
+                    "tgt": "(I [Orange];citrusOwnedBy)~"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(I[Citrus];I[Orang#-1404793119756963358#",
+                    "tgt": "(I[Citrus];I[Orange];citrusOwnedBy)~"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Lime atom\", objlbl#-9109744842836836290#",
+                    "tgt": "Lime atom"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus\", objlb#-9189482092956318354#",
+                    "tgt": "ownsCitrus"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limoranges\", o#-4412818511598320692#",
+                    "tgt": "All limoranges"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All nectarines\", o#8023261867173159030#",
+                    "tgt": "All nectarines"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All citrus fruit\",#-5750811029006889036#",
+                    "tgt": "All citrus fruit"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"Person atom\", objl#-8859069829361856145#",
+                    "tgt": "Person atom"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All limes\", objlbl#1003823133633128223#",
+                    "tgt": "All limes"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#4774926842577694781#",
+                    "tgt": "ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"^ term\", objlbl = #5537653402812808702#",
+                    "tgt": "^ term"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"(citrusOwnedBy~);I#-7245650254561360492#",
+                    "tgt": "(citrusOwnedBy~);I[Orange]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"All oranges\", objl#-5206661193357737402#",
+                    "tgt": "All oranges"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsOranges\", objl#5703195618819619373#",
+                    "tgt": "ownsOranges"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-5948256306418537707#",
+                    "tgt": "ownsCitrus;I[Orange];I[Lime];I[Citrus]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"limeProperties\", o#106447816812323459#",
+                    "tgt": "limeProperties"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes;I[Orange#-8222208271948986555#",
+                    "tgt": "ownsLimes;I[Orange]"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsLimes\", objlbl#-2408602381061633110#",
+                    "tgt": "ownsLimes"
+                },
+                {
+                    "src": "ObjectDef {objPlainName = Just \"ownsCitrus;I[Orang#-3150554193864375740#",
+                    "tgt": "ownsCitrus;I[Orange];I[Lime]"
+                }
+            ],
+            "relation": "FormalAmpersand.label[FormalAmpersand.FieldDef*FormalAmpersand.FieldName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "SpecEdit",
+                    "tgt": "English"
+                }
+            ],
+            "relation": "FormalAmpersand.language[FormalAmpersand.Context*FormalAmpersand.Language]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Markup {amLang = English, amPandoc = Many {unMany #-8380169388033527665#",
+                    "tgt": "English"
+                }
+            ],
+            "relation": "FormalAmpersand.language[FormalAmpersand.Markup*FormalAmpersand.Language]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Markup_Markup {amLang = English, amPandoc = Many {#-8375188157644311207#",
+                    "tgt": "Markup {amLang = English, amPandoc = Many {unMany #-8380169388033527665#"
+                }
+            ],
+            "relation": "FormalAmpersand.markup[FormalAmpersand.Purpose*FormalAmpersand.Markup]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lemon",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "LimeProperty",
+                    "tgt": "LimeProperty"
+                },
+                {
+                    "src": "Nectarine",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "Person",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "Citrus",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Fruit",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "Orange",
+                    "tgt": "Orange"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "SpecEdit",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Person",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "Overview",
+                    "tgt": "Overview"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "Lime"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "ownsOranges"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "citrusOwnedBy"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "dummyLemon"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ownsCitrus"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "ownsLimes"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "ownsLimoranges"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "ownsNectarines"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "limeProperties"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "dummyLimorange"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#",
+                    "tgt": "Composition"
+                }
+            ],
+            "relation": "FormalAmpersand.operator[FormalAmpersand.BinaryTerm*FormalAmpersand.Operator]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                    "tgt": "Converse"
+                },
+                {
+                    "src": "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                    "tgt": "Converse"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                    "tgt": "Converse"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                    "tgt": "Converse"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#",
+                    "tgt": "Converse"
+                }
+            ],
+            "relation": "FormalAmpersand.operator[FormalAmpersand.UnaryTerm*FormalAmpersand.Operator]"
+        },
+        {
+            "links": [
+                {
+                    "src": "SpecEdit",
+                    "tgt": "Markup_Markup {amLang = English, amPandoc = Many {#-8375188157644311207#"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Context*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "SpecEdit"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "SpecEdit"
+                }
+            ],
+            "relation": "FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                    "tgt": "EEps Limorange [Lime*Limorange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                    "tgt": "EDcI Citrus"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#"
+                },
+                {
+                    "src": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                    "tgt": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#"
+                },
+                {
+                    "src": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                    "tgt": "EEps Limorange [Orange*Limorange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                    "tgt": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                    "tgt": "EDcI Lime"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                    "tgt": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#"
+                },
+                {
+                    "src": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                    "tgt": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                    "tgt": "EEps Orange [Citrus*Orange]"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                    "tgt": "EEps Lime [Citrus*Lime]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                    "tgt": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#"
+                },
+                {
+                    "src": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                    "tgt": "EEps Orange [Citrus*Orange]"
+                },
+                {
+                    "src": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                    "tgt": "EDcD citrusOwnedBy[Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                    "tgt": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                    "tgt": "EEps Orange [Citrus*Orange]"
+                },
+                {
+                    "src": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                    "tgt": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)"
+                },
+                {
+                    "src": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                    "tgt": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                    "tgt": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                    "tgt": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                    "tgt": "EDcI Lime"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                    "tgt": "EEps Limorange [Lime*Limorange]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                    "tgt": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                    "tgt": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                    "tgt": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                    "tgt": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                    "tgt": "EEps Lemon [Citrus*Lemon]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                    "tgt": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                    "tgt": "EDcI Orange"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                    "tgt": "EDcI Lemon"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#",
+                    "tgt": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#"
+                }
+            ],
+            "relation": "FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                    "tgt": "I[Lime]"
+                },
+                {
+                    "src": "EDcD ownsLimoranges[Person*Limorange]",
+                    "tgt": "ownsLimoranges [Person*Limorange]"
+                },
+                {
+                    "src": "EDcI Citrus",
+                    "tgt": "I[Citrus]"
+                },
+                {
+                    "src": "EDcV [ONE*Lime]",
+                    "tgt": "V [ONE*Lime]"
+                },
+                {
+                    "src": "EDcD ownsOranges[Person*Orange]",
+                    "tgt": "ownsOranges [Person*Orange]"
+                },
+                {
+                    "src": "EEps Limorange [Orange*Limorange]",
+                    "tgt": "I[Limorange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                    "tgt": "I[Orange];I[Lime];I[Citrus]"
+                },
+                {
+                    "src": "EEps Lemon [Citrus*Lemon]",
+                    "tgt": "I[Lemon]"
+                },
+                {
+                    "src": "EDcD citrusOwnedBy[Citrus*Person]",
+                    "tgt": "citrusOwnedBy [Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                    "tgt": "I[Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                    "tgt": "I[Orange];I[Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                    "tgt": "(I[Lime];I[Orange])"
+                },
+                {
+                    "src": "EDcV [ONE*Nectarine]",
+                    "tgt": "V [ONE*Nectarine]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                    "tgt": "I[Lime];I[Orange]"
+                },
+                {
+                    "src": "EDcI Lemon",
+                    "tgt": "I[Lemon]"
+                },
+                {
+                    "src": "EDcD ownsNectarines[Person*Nectarine]",
+                    "tgt": "ownsNectarines [Person*Nectarine]"
+                },
+                {
+                    "src": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                    "tgt": "(citrusOwnedBy [Citrus*Person]~);I[Orange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                    "tgt": "I[Orange];I[Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                    "tgt": "ownsCitrus [Person*Citrus];(I[Lime];I[Orange])~;I[Citrus]"
+                },
+                {
+                    "src": "EEps Limorange [Lime*Limorange]",
+                    "tgt": "I[Limorange]"
+                },
+                {
+                    "src": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                    "tgt": "I[Orange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                    "tgt": "ownsCitrus [Person*Citrus];I[Orange];I[Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                    "tgt": "I[Lime]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                    "tgt": "I[Lime];I[Citrus]"
+                },
+                {
+                    "src": "EDcD limeProperties[Lime*LimeProperty]",
+                    "tgt": "limeProperties [Lime*LimeProperty]"
+                },
+                {
+                    "src": "EEps Lime [Lime*Citrus]",
+                    "tgt": "I[Lime]"
+                },
+                {
+                    "src": "EDcI Orange",
+                    "tgt": "I[Orange]"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Orange]",
+                    "tgt": "I[Limorange]"
+                },
+                {
+                    "src": "EDcV [ONE*Orange]",
+                    "tgt": "V [ONE*Orange]"
+                },
+                {
+                    "src": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                    "tgt": "I[Orange];citrusOwnedBy [Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                    "tgt": "I[Citrus]"
+                },
+                {
+                    "src": "EDcI ONE",
+                    "tgt": "I[ONE]"
+                },
+                {
+                    "src": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                    "tgt": "(citrusOwnedBy [Citrus*Person]~)"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                    "tgt": "ownsCitrus [Person*Citrus]"
+                },
+                {
+                    "src": "EDcD ownsCitrus[Person*Citrus]",
+                    "tgt": "ownsCitrus [Person*Citrus]"
+                },
+                {
+                    "src": "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                    "tgt": "citrusOwnedBy [Citrus*Person]~"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                    "tgt": "ownsCitrus [Person*Citrus];I[Orange];I[Lime]"
+                },
+                {
+                    "src": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                    "tgt": "(citrusOwnedBy [Citrus*Person]~)"
+                },
+                {
+                    "src": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                    "tgt": "citrusOwnedBy [Citrus*Person]"
+                },
+                {
+                    "src": "EDcV [ONE*Citrus]",
+                    "tgt": "V [ONE*Citrus]"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                    "tgt": "I[Lime];I[Citrus]"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                    "tgt": "ownsCitrus [Person*Citrus]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                    "tgt": "(I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person])~"
+                },
+                {
+                    "src": "EDcI Person",
+                    "tgt": "I[Person]"
+                },
+                {
+                    "src": "EEps Orange [Orange*Citrus]",
+                    "tgt": "I[Orange]"
+                },
+                {
+                    "src": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                    "tgt": "(I[Lime];I[Orange])~;I[Citrus]"
+                },
+                {
+                    "src": "EDcV [ONE*Lemon]",
+                    "tgt": "V [ONE*Lemon]"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Lime]",
+                    "tgt": "I[Limorange]"
+                },
+                {
+                    "src": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                    "tgt": "(I[Orange];citrusOwnedBy [Citrus*Person])"
+                },
+                {
+                    "src": "EDcI Lime",
+                    "tgt": "I[Lime]"
+                },
+                {
+                    "src": "EDcV [ONE*Limorange]",
+                    "tgt": "V [ONE*Limorange]"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                    "tgt": "ownsLimes [Person*Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "EDcD ownsLimes[Person*Lime]",
+                    "tgt": "ownsLimes [Person*Lime]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                    "tgt": "(I[Lime];I[Orange])~"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                    "tgt": "I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                    "tgt": "ownsCitrus [Person*Citrus];I[Lime]"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                    "tgt": "ownsLimes [Person*Lime]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#",
+                    "tgt": "(I[Orange];citrusOwnedBy [Citrus*Person])~"
+                },
+                {
+                    "src": "EEps Lime [Citrus*Lime]",
+                    "tgt": "I[Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                    "tgt": "(I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person])"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                    "tgt": "I[Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                    "tgt": "ownsLimes [Person*Lime];I[Orange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                    "tgt": "I[Citrus];I[Orange];citrusOwnedBy [Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                    "tgt": "I[Orange]"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                    "tgt": "I[Citrus]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                    "tgt": "I[Lime];I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "EDcV [ONE*Fruit]",
+                    "tgt": "V [ONE*Fruit]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                    "tgt": "ownsCitrus [Person*Citrus];I[Orange]"
+                },
+                {
+                    "src": "EEps Orange [Citrus*Orange]",
+                    "tgt": "I[Orange]"
+                },
+                {
+                    "src": "EDcV [ONE*Person]",
+                    "tgt": "V [ONE*Person]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                    "tgt": "I[Citrus];I[Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#",
+                    "tgt": "ownsCitrus [Person*Citrus];I[Orange];I[Lime];I[Citrus]"
+                }
+            ],
+            "relation": "FormalAmpersand.showADL[FormalAmpersand.Term*FormalAmpersand.ShowADL]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "[Citrus*Person]"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "[Lemon*Lemon]"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "[Person*Lime]"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "[Person*Limorange]"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "[Person*Nectarine]"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "[Lime*LimeProperty]"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "[Limorange*Limorange]"
+                }
+            ],
+            "relation": "FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ECps (EDcI Lime,EEps Limorange [Lime*Limorange])",
+                    "tgt": "[Lime*Limorange]"
+                },
+                {
+                    "src": "EDcD ownsLimoranges[Person*Limorange]",
+                    "tgt": "[Person*Limorange]"
+                },
+                {
+                    "src": "EDcI Citrus",
+                    "tgt": "[Citrus*Citrus]"
+                },
+                {
+                    "src": "EDcV [ONE*Lime]",
+                    "tgt": "[ONE*Lime]"
+                },
+                {
+                    "src": "EDcD ownsOranges[Person*Orange]",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "EEps Limorange [Orange*Limorange]",
+                    "tgt": "[Orange*Limorange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-9195971694499773856#",
+                    "tgt": "[Orange*Citrus]"
+                },
+                {
+                    "src": "EEps Lemon [Citrus*Lemon]",
+                    "tgt": "[Citrus*Lemon]"
+                },
+                {
+                    "src": "EDcD citrusOwnedBy[Citrus*Person]",
+                    "tgt": "[Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],EDcI Citrus)",
+                    "tgt": "[Lime*Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#9204150031544896972#",
+                    "tgt": "[Orange*Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Lime,EEps Limorange [Lime*L#4579049625118708777#",
+                    "tgt": "[Lime*Orange]"
+                },
+                {
+                    "src": "EDcV [ONE*Nectarine]",
+                    "tgt": "[ONE*Nectarine]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Lime,EEps Limorange [Lime*Limoran#-4408410197993853396#",
+                    "tgt": "[Lime*Orange]"
+                },
+                {
+                    "src": "EDcI Lemon",
+                    "tgt": "[Lemon*Lemon]"
+                },
+                {
+                    "src": "EDcD ownsNectarines[Person*Nectarine]",
+                    "tgt": "[Person*Nectarine]"
+                },
+                {
+                    "src": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Orange,EEps Limorange [Orange*Lim#-3731003269568551695#",
+                    "tgt": "[Orange*Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "EEps Limorange [Lime*Limorange]",
+                    "tgt": "[Lime*Limorange]"
+                },
+                {
+                    "src": "ECps (EDcI Orange,EEps Limorange [Orange*Limorange#258943365606636008#",
+                    "tgt": "[Orange*Limorange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#",
+                    "tgt": "[Person*Lemon]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],EDcI Lime)",
+                    "tgt": "[Limorange*Lime]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#5391145957083111260#",
+                    "tgt": "[Limorange*Citrus]"
+                },
+                {
+                    "src": "EDcD limeProperties[Lime*LimeProperty]",
+                    "tgt": "[Lime*LimeProperty]"
+                },
+                {
+                    "src": "EEps Lime [Lime*Citrus]",
+                    "tgt": "[Lime*Citrus]"
+                },
+                {
+                    "src": "EDcI Orange",
+                    "tgt": "[Orange*Orange]"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Orange]",
+                    "tgt": "[Limorange*Orange]"
+                },
+                {
+                    "src": "EDcV [ONE*Orange]",
+                    "tgt": "[ONE*Orange]"
+                },
+                {
+                    "src": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#",
+                    "tgt": "[Orange*Person]"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Orange [Citrus*Orange])",
+                    "tgt": "[Citrus*Orange]"
+                },
+                {
+                    "src": "EDcI ONE",
+                    "tgt": "[ONE*ONE]"
+                },
+                {
+                    "src": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#",
+                    "tgt": "[Person*Lime]"
+                },
+                {
+                    "src": "EDcD ownsCitrus[Person*Citrus]",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "EFlp (EDcD citrusOwnedBy[Citrus*Person])",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#",
+                    "tgt": "[Person*Lime]"
+                },
+                {
+                    "src": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#",
+                    "tgt": "[Orange*Person]"
+                },
+                {
+                    "src": "EDcV [ONE*Citrus]",
+                    "tgt": "[ONE*Citrus]"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],EDcI#-1941060149452227494#",
+                    "tgt": "[Lime*Citrus]"
+                },
+                {
+                    "src": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#",
+                    "tgt": "[Person*Citrus]"
+                },
+                {
+                    "src": "EDcI Person",
+                    "tgt": "[Person*Person]"
+                },
+                {
+                    "src": "EEps Orange [Orange*Citrus]",
+                    "tgt": "[Orange*Citrus]"
+                },
+                {
+                    "src": "ECps (EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limor#-3023190890082603837#",
+                    "tgt": "[Orange*Citrus]"
+                },
+                {
+                    "src": "EDcV [ONE*Lemon]",
+                    "tgt": "[ONE*Lemon]"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Lime]",
+                    "tgt": "[Limorange*Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#",
+                    "tgt": "[Orange*Person]"
+                },
+                {
+                    "src": "EDcI Lime",
+                    "tgt": "[Lime*Lime]"
+                },
+                {
+                    "src": "EDcV [ONE*Limorange]",
+                    "tgt": "[ONE*Limorange]"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#",
+                    "tgt": "[Person*Lemon]"
+                },
+                {
+                    "src": "EDcD ownsLimes[Person*Lime]",
+                    "tgt": "[Person*Lime]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (ECps (EDcI Lime,EEps Limorange [#-503165731481990297#",
+                    "tgt": "[Orange*Lime]"
+                },
+                {
+                    "src": "ECps (EEps Lime [Lime*Citrus],ECps (ECps (EDcI Cit#-3618290109854943375#",
+                    "tgt": "[Lime*Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#",
+                    "tgt": "[Person*Lime]"
+                },
+                {
+                    "src": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#",
+                    "tgt": "[Person*Limorange]"
+                },
+                {
+                    "src": "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "EEps Lime [Citrus*Lime]",
+                    "tgt": "[Citrus*Lime]"
+                },
+                {
+                    "src": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#",
+                    "tgt": "[Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EDcI Lime,ECps (EEps Lime [Lime*Citrus],ECps#-2225882456756640097#",
+                    "tgt": "[Lime*Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#",
+                    "tgt": "[Citrus*Person]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Orange],EDcI Orang#2279558730377016904#",
+                    "tgt": "[Limorange*Orange]"
+                },
+                {
+                    "src": "ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])",
+                    "tgt": "[Citrus*Lemon]"
+                },
+                {
+                    "src": "ECps (EEps Limorange [Limorange*Lime],ECps (EDcI L#3890771572435703101#",
+                    "tgt": "[Limorange*Lemon]"
+                },
+                {
+                    "src": "EDcV [ONE*Fruit]",
+                    "tgt": "[ONE*Fruit]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#",
+                    "tgt": "[Person*Orange]"
+                },
+                {
+                    "src": "EEps Orange [Citrus*Orange]",
+                    "tgt": "[Citrus*Orange]"
+                },
+                {
+                    "src": "EDcV [ONE*Person]",
+                    "tgt": "[ONE*Person]"
+                },
+                {
+                    "src": "ECps (ECps (EDcI Citrus,EEps Lemon [Citrus*Lemon])#492297697641535554#",
+                    "tgt": "[Citrus*Lemon]"
+                },
+                {
+                    "src": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#",
+                    "tgt": "[Person*Citrus]"
+                }
+            ],
+            "relation": "FormalAmpersand.sign[FormalAmpersand.Term*FormalAmpersand.Signature]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "Limorange"
+                }
+            ],
+            "relation": "FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "[Citrus*Orange]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[ONE*Limorange]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Person*Lemon]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Orange*Lemon]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Nectarine]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Lime*LimeProperty]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[ONE*Person]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Orange*Citrus]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Lime*Citrus]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Limorange*Citrus]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Limorange*Orange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[ONE*Orange]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Person*Lime]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Citrus*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[ONE*ONE]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Orange*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Citrus]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Limorange*Lime]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Orange*Person]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Lime]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Lime*Limorange]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Person*Citrus]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Person*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Citrus*Lime]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Citrus*Person]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Person*Nectarine]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Person*Limorange]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Orange*Lime]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Lime*Orange]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Lime*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Lime*Lemon]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[ONE*Lemon]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Limorange*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[ONE*Fruit]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Person*Orange]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Lemon*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[Limorange*Lemon]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Orange*Limorange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Citrus*Lemon]",
+                    "tgt": "Citrus"
+                }
+            ],
+            "relation": "FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "dummyLemon[Lemon*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "LimeProperty"
+                },
+                {
+                    "src": "dummyLimorange[Limorange*Limorange]",
+                    "tgt": "Limorange"
+                }
+            ],
+            "relation": "FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "[Citrus*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Person*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[Orange*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[ONE*Nectarine]",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "[Lime*LimeProperty]",
+                    "tgt": "LimeProperty"
+                },
+                {
+                    "src": "[ONE*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Orange*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Lime*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Limorange*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Limorange*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Person*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Citrus*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[ONE*ONE]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "[Orange*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[ONE*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Limorange*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Orange*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[ONE*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Lime*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Person*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "[Person*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Citrus*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Citrus*Person]",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "[Person*Nectarine]",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "[Person*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Orange*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Lime*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Lime*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "[Lime*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[ONE*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[Limorange*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[ONE*Fruit]",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "[Person*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "[Lemon*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[Limorange*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "[Orange*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "[Citrus*Lemon]",
+                    "tgt": "Lemon"
+                }
+            ],
+            "relation": "FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lemon",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "LimeProperty",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Nectarine",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Person",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Citrus",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Fruit",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "OBJECT"
+                },
+                {
+                    "src": "Orange",
+                    "tgt": "OBJECT"
+                }
+            ],
+            "relation": "FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Lemon",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "LimeProperty",
+                    "tgt": "LimeProperty"
+                },
+                {
+                    "src": "Nectarine",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "Person",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "Citrus",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "Fruit",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "Lime",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "Limorange",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "Orange",
+                    "tgt": "Orange"
+                }
+            ],
+            "relation": "FormalAmpersand.urlEncodedName[FormalAmpersand.Concept*FormalAmpersand.EncodedName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ownsOranges[Person*Orange]",
+                    "tgt": "EDcD ownsOranges[Person*Orange]"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EDcD citrusOwnedBy[Citrus*Person]"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "ECps (ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*#-8708241369797747440#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "ECps (EDcI Orange,ECps (EEps Orange [Orange*Citrus#-4205449941660118069#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person]))"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EFlp (EDcD citrusOwnedBy[Citrus*Person])"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "ECps (EBrk (EFlp (EDcD citrusOwnedBy[Citrus*Person#-6784937792708808375#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "ECps (EEps Orange [Orange*Citrus],EDcD citrusOwned#-8022090615395181746#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EFlp (EBrk (ECps (ECps (EDcI Citrus,EEps Orange [C#-5184669549982667172#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EBrk (ECps (EDcI Orange,ECps (EEps Orange [Orange*#-6471164352155884350#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EFlp (EBrk (ECps (EDcI Orange,ECps (EEps Orange [O#-1807297046682416280#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "EBrk (ECps (ECps (EDcI Citrus,EEps Orange [Citrus*#5803291148725470#"
+                },
+                {
+                    "src": "citrusOwnedBy[Citrus*Person]",
+                    "tgt": "ECps (ECps (EDcI Citrus,EEps Orange [Citrus*Orange#8748818777590849263#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#5157927866041167778#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-3440040055046601612#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Lime [Ci#-1971221677202121143#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "EDcD ownsCitrus[Person*Citrus]"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#349217582251500945#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (EDcD ownsCitrus[Person*Citrus],EEps Orange [#5545512643058988305#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Li#6861616334493693159#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#-8385232180194893136#"
+                },
+                {
+                    "src": "ownsCitrus[Person*Citrus]",
+                    "tgt": "ECps (ECps (EDcD ownsCitrus[Person*Citrus],EEps Or#7388762958929472253#"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "ECps (EDcD ownsLimes[Person*Lime],ECps (EEps Lime #9131189388509770870#"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "EDcD ownsLimes[Person*Lime]"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "ECps (EDcD ownsLimes[Person*Lime],EEps Limorange [#-2327974713187834955#"
+                },
+                {
+                    "src": "ownsLimes[Person*Lime]",
+                    "tgt": "ECps (ECps (EDcD ownsLimes[Person*Lime],EEps Limor#-6611811793462372647#"
+                },
+                {
+                    "src": "ownsLimoranges[Person*Limorange]",
+                    "tgt": "EDcD ownsLimoranges[Person*Limorange]"
+                },
+                {
+                    "src": "ownsNectarines[Person*Nectarine]",
+                    "tgt": "EDcD ownsNectarines[Person*Nectarine]"
+                },
+                {
+                    "src": "limeProperties[Lime*LimeProperty]",
+                    "tgt": "EDcD limeProperties[Lime*LimeProperty]"
+                }
+            ],
+            "relation": "FormalAmpersand.usedIn[FormalAmpersand.Relation*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EDcI Citrus",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "EEps Limorange [Orange*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "EEps Lemon [Citrus*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "EDcI Lemon",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "EEps Limorange [Lime*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "EEps Lime [Lime*Citrus]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "EDcI Orange",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Orange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "EDcI ONE",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcI Person",
+                    "tgt": "Person"
+                },
+                {
+                    "src": "EEps Orange [Orange*Citrus]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "EEps Limorange [Limorange*Lime]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "EDcI Lime",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "EEps Lime [Citrus*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "EEps Orange [Citrus*Orange]",
+                    "tgt": "Orange"
+                }
+            ],
+            "relation": "FormalAmpersand.userCpt[FormalAmpersand.Epsilon*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EDcV [ONE*Lime]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Nectarine]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Orange]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Citrus]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Lemon]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Limorange]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Fruit]",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "EDcV [ONE*Person]",
+                    "tgt": "ONE"
+                }
+            ],
+            "relation": "FormalAmpersand.userSrc[FormalAmpersand.V*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "EDcV [ONE*Lime]",
+                    "tgt": "Lime"
+                },
+                {
+                    "src": "EDcV [ONE*Nectarine]",
+                    "tgt": "Nectarine"
+                },
+                {
+                    "src": "EDcV [ONE*Orange]",
+                    "tgt": "Orange"
+                },
+                {
+                    "src": "EDcV [ONE*Citrus]",
+                    "tgt": "Citrus"
+                },
+                {
+                    "src": "EDcV [ONE*Lemon]",
+                    "tgt": "Lemon"
+                },
+                {
+                    "src": "EDcV [ONE*Limorange]",
+                    "tgt": "Limorange"
+                },
+                {
+                    "src": "EDcV [ONE*Fruit]",
+                    "tgt": "Fruit"
+                },
+                {
+                    "src": "EDcV [ONE*Person]",
+                    "tgt": "Person"
+                }
+            ],
+            "relation": "FormalAmpersand.userTgt[FormalAmpersand.V*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "SpecEdit",
+                    "tgt": "Ampersand-v4.7.6 [feature/namespaces-part1:eda1d16be*], build time: 02-Apr-23 14:29:43 UTC"
+                }
+            ],
+            "relation": "FormalAmpersand.versionInfo[FormalAmpersand.Context*FormalAmpersand.AmpersandVersion]"
+        }
+    ]
+}

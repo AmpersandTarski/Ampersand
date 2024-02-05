@@ -104,11 +104,11 @@ propagateConstraints topDown bottomUp =
     }
 
 instance Disambiguatable P_IdentDf where
-  disambInfo cptMap (P_Id o nm c atts) _ = (P_Id o nm c atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
+  disambInfo cptMap (P_Id orig nm lbl cpt atts) _ = (P_Id orig nm lbl cpt atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
     where
       (atts', restr') =
         NE.unzip $
-          fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap c)] [])) atts
+          fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
 
 instance Disambiguatable P_IdentSegmnt where
   disambInfo cptMap (P_IdentExp v) x = (P_IdentExp v', rt)
@@ -116,12 +116,12 @@ instance Disambiguatable P_IdentSegmnt where
       (v', rt) = disambInfo cptMap v x
 
 instance Disambiguatable P_Rule where
-  disambInfo cptMap (P_Rule fps nm expr mean msg Nothing) x =
-    (P_Rule fps nm exp' mean msg Nothing, rt)
+  disambInfo cptMap (P_Rule fps nm lbl expr mean msg Nothing) x =
+    (P_Rule fps nm lbl exp' mean msg Nothing, rt)
     where
       (exp', rt) = disambInfo cptMap expr x
-  disambInfo cptMap (P_Rule fps nm expr mean msg (Just viol)) x =
-    (P_Rule fps nm exp' mean msg (Just viol'), rt)
+  disambInfo cptMap (P_Rule fps nm lbl expr mean msg (Just viol)) x =
+    (P_Rule fps nm lbl exp' mean msg (Just viol'), rt)
     where
       (exp', rt) = disambInfo cptMap expr x
       (PairViewTerm viol', _) -- SJ 20131123: disambiguation does not depend on the contents of this pairview, but must come from outside...
@@ -154,19 +154,20 @@ instance Disambiguatable P_ViewD where
   disambInfo
     cptMap
     P_Vd
-      { pos = o,
-        vd_lbl = s,
-        vd_cpt = c,
-        vd_isDefault = d,
-        vd_html = h,
-        vd_ats = a
+      { pos = orig,
+        vd_nm = nm,
+        vd_label = lbl,
+        vd_cpt = cpt,
+        vd_isDefault = isDef,
+        vd_html = template,
+        vd_ats = segments
       }
     _ =
-      ( P_Vd o s c d h (fmap (\x -> fst (disambInfo cptMap x constraints)) a),
+      ( P_Vd orig nm lbl cpt isDef template (fmap (\x -> fst (disambInfo cptMap x constraints)) segments),
         constraints
       )
       where
-        constraints = Cnstr [MustBe (pCpt2aCpt cptMap c)] []
+        constraints = Cnstr [MustBe (pCpt2aCpt cptMap cpt)] []
 
 instance Disambiguatable P_Enforce where
   disambInfo cptMap (P_Enforce o a op b) env1 = (P_Enforce o a' op b', propagateConstraints envA envB)
@@ -197,25 +198,26 @@ instance Disambiguatable P_SubIfc where
 instance Disambiguatable P_BoxItem where
   disambInfo
     cptMap
-    ( P_BxExpr
-        a
-        b
-        c -- term
+    ( P_BoxItemTerm
+        localNm
+        lbl
+        orig
+        term
         mCrud
-        v
-        d -- (potential) subobject
+        vw
+        sub -- (potential) subobject
       )
     env -- from the environment, only the source is important
       =
-      (P_BxExpr a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
+      (P_BoxItemTerm localNm lbl orig c' mCrud vw d', Cnstr (bottomUpSourceTypes env2) []) -- only source information should be relevant
       where
         (d', env1) =
-          case d of
+          case sub of
             Nothing -> (Nothing, noConstraints)
             Just si -> Control.Arrow.first Just $ disambInfo cptMap si (Cnstr (bottomUpTargetTypes env2) [])
         (c', env2) =
-          disambInfo cptMap c (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
-  disambInfo _ (P_BxTxt a b c) _ = (P_BxTxt a b c, noConstraints)
+          disambInfo cptMap term (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
+  disambInfo _ (P_BxTxt localNm orig txt) _ = (P_BxTxt localNm orig txt, noConstraints)
 
 instance Disambiguatable Term where
   disambInfo cptMap (PFlp o a) env1 = (PFlp o a', Cnstr (bottomUpTargetTypes envA) (bottomUpSourceTypes envA))

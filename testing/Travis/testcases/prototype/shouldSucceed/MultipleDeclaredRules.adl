@@ -1,4 +1,4 @@
-﻿CONTEXT MultipleDeclaredRules IN ENGLISH
+CONTEXT MultipleDeclaredRules IN ENGLISH
 {-
 The purpose of this testcase is to verify that it is possible to declare the same relation multiple times.
 There is also a propertyrule created because of the UNI. Hence, a (property)rule can be declared in more than a single place. 

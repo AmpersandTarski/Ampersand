@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand data-analysis --verbose
+    exitcode: 0

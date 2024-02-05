@@ -19,7 +19,6 @@ module Ampersand.Input.ADL1.Lexer
     lexemeText,
     initPos,
     FilePos (..),
-    isSafeIdChar,
   )
 where
 
@@ -38,20 +37,21 @@ import RIO.Time
 -- | Retrieves a list of keywords accepted by the Ampersand language
 keywords ::
   -- | The keywords
-  [String]
+  [Text1]
 keywords =
-  L.nub $
+  fmap toText1Unsafe . L.nub $
     [ "CONTEXT",
       "ENDCONTEXT",
       "IN"
     ]
-      ++ [ map toUpper $ show x | x :: Lang <- [minBound ..]
+      ++ [ T.toUpper $ tshow x | x :: Lang <- [minBound ..]
          ]
       ++ [ "INCLUDE",
            "META",
            "PATTERN",
            "ENDPATTERN",
            "CONCEPT",
+           "LABEL",
            -- Keywords for Relation-statements
            "RELATION",
            "PRAGMA",
@@ -76,7 +76,7 @@ keywords =
            "VIOLATION",
            "TXT"
          ]
-      ++ [ map toUpper $ show x | x :: SrcOrTgt <- [minBound ..]
+      ++ [ T.toUpper $ tshow x | x :: SrcOrTgt <- [minBound ..]
          ]
       ++ [ "I",
            "V",
@@ -87,7 +87,7 @@ keywords =
            "PURPOSE",
            "REF"
          ]
-      ++ [ map toUpper $ show x | x :: PandocFormat <- [minBound ..]
+      ++ [ T.toUpper $ tshow x | x :: PandocFormat <- [minBound ..]
          ]
       ++
       -- Keywords for interfaces
@@ -112,7 +112,7 @@ keywords =
         "REPRESENT",
         "TYPE"
       ]
-      ++ [ map toUpper $ show tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
+      ++ [ T.toUpper $ tshow tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
          ]
       ++
       -- Keywords for values of atoms:
@@ -127,32 +127,33 @@ keywords =
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators ::
   -- | The operators
-  [String]
+  [Text1]
 operators =
-  [ "|-",
-    "-",
-    "->",
-    "<-",
-    "=",
-    "~",
-    "+",
-    "*",
-    ";",
-    "!",
-    "#",
-    "::",
-    ":",
-    "\\/",
-    "/\\",
-    "\\",
-    "/",
-    "<>",
-    "..",
-    ".",
-    ":=",
-    ">:",
-    ":<"
-  ]
+  toText1Unsafe
+    <$> [ "|-",
+          "-",
+          "->",
+          "<-",
+          "=",
+          "~",
+          "+",
+          "*",
+          ";",
+          "!",
+          "#",
+          "::",
+          ":",
+          "\\/",
+          "/\\",
+          "\\",
+          "/",
+          "<>",
+          "..",
+          ".",
+          ":=",
+          ">:",
+          ":<"
+        ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
 symbols ::
@@ -203,7 +204,7 @@ mainLexer p ('{' : '+' : s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"' : ss) =
   let (s, swidth, rest) = scanString ss
    in case rest of
-        ('"' : xs) -> returnToken (LexDubbleQuotedString s) p mainLexer (addPos (swidth + 2) p) xs
+        ('"' : xs) -> returnToken (LexDubbleQuotedString (T.pack s)) p mainLexer (addPos (swidth + 2) p) xs
         _ -> lexerError (NonTerminatedString s) p
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
@@ -211,20 +212,21 @@ mainLexer p ('"' : ss) =
 
 -- Special case for < since it's the beginning of operators but also a symbol when alone
 mainLexer p ('<' : d : s) =
-  if isOperator ['<', d]
-    then returnToken (LexOperator ['<', d]) p mainLexer (addPos 2 p) s
-    else returnToken (LexSymbol '<') p mainLexer (addPos 1 p) (d : s)
+  let candidate = (Text1 '<' $ T.singleton d)
+   in if isOperator candidate
+        then returnToken (LexOperator candidate) p mainLexer (addPos 2 p) s
+        else returnToken (LexSymbol '<') p mainLexer (addPos 1 p) (d : s)
 mainLexer p cs@(c : s)
   | isSafeIdChar True c =
     let (name', p', s') = scanIdent (addPos 1 p) s
-        name'' = c : name'
+        name'' = Text1 c $ T.pack name'
         tokt
           | iskeyword name'' = LexKeyword name''
           | otherwise = LexSafeID name''
      in returnToken tokt p mainLexer p' s'
-  | prefixIsOperator cs =
+  | prefixIsOperator (T.pack cs) =
     let (name', s') = getOp cs
-     in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
+     in returnToken (LexOperator name') p mainLexer (foldl' updatePos p (T.unpack . text1ToText $ name')) (T.unpack s')
   | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
   | isDigit c =
     case getDateTime cs of
@@ -243,6 +245,22 @@ mainLexer p cs@(c : s)
   where
     beginFile (FilePos _ 1 1) = True
     beginFile _ = False
+    -- Finds the longest prefix of cs occurring in keywordsops
+    getOp :: String -> (Text1, Text)
+    getOp cs' = case s' of
+      [] -> (fatal "prefixIsOperator should have been tested in the only place where getOp is used.", T.pack str)
+      (h : tl) -> (Text1 h $ T.pack tl, T.pack str)
+      where
+        (s', str) = findOper (map (T.unpack . text1ToText) operators) cs' ""
+        findOper :: [String] -> String -> String -> (String, String)
+        findOper [] _ _ = ("", cs')
+        findOper _ [] op = (op, [])
+        findOper ops (c' : rest) op =
+          if null found
+            then (op, c' : rest)
+            else findOper found rest (op ++ [c'])
+          where
+            found = [s'' | o : s'' <- ops, c' == o]
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -254,38 +272,17 @@ mainLexer p cs@(c : s)
 -- Check on keywords - operators - special chars
 -----------------------------------------------------------
 
-iskeyword :: String -> Bool
+iskeyword :: Text1 -> Bool
 iskeyword str = str `elem` keywords
 
 isSymbol :: Char -> Bool
 isSymbol c = c `elem` symbols
 
-isOperator :: String -> Bool
+isOperator :: Text1 -> Bool
 isOperator str = str `elem` operators
 
-prefixIsOperator :: String -> Bool
-prefixIsOperator str = any (`L.isPrefixOf` str) operators
-
--- | Tells if a character is valid as character in an identifier. Because there are
---   different rules for the first character of an identifier and the rest of the
---   characters of an identifier, a boolean is required that tells if this is the
---   first character.
-isSafeIdChar :: Bool -> Char -> Bool
-isSafeIdChar isFirst c = isLetter c || (not isFirst && (isAlphaNum c || c == '_'))
-
--- Finds the longest prefix of cs occurring in keywordsops
-getOp :: String -> (String, String)
-getOp cs = findOper operators cs ""
-  where
-    findOper :: [String] -> String -> String -> (String, String)
-    findOper [] _ _ = ("", cs)
-    findOper _ [] op = (op, [])
-    findOper ops (c : rest) op =
-      if null found
-        then (op, c : rest)
-        else findOper found rest (op ++ [c])
-      where
-        found = [s' | o : s' <- ops, c == o]
+prefixIsOperator :: Text -> Bool
+prefixIsOperator str = any ((`T.isPrefixOf` str) . text1ToText) operators
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
@@ -306,8 +303,9 @@ lexNestComment _ p [] = lexerError UnterminatedComment p
 lexMarkup :: Lexer -> Lexer
 lexMarkup = lexMarkup' ""
   where
+    lexMarkup' :: Text -> t -> FilePos -> [Char] -> LexerMonad [Token]
     lexMarkup' str _ p ('+' : '}' : s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p) s
-    lexMarkup' str c p (x : s) = lexMarkup' (str ++ [x]) c (updatePos p x) s
+    lexMarkup' str c p (x : s) = lexMarkup' (str <> T.singleton x) c (updatePos p x) s
     lexMarkup' _ _ p [] = lexerError UnterminatedMarkup p
 
 -----------------------------------------------------------

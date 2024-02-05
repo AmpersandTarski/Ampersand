@@ -133,8 +133,16 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
 
 tempDbName :: FSpec -> Text
-tempDbName fSpec = "TempDB_" <> name fSpec
+tempDbName fSpec = "TempDB_" <> plainNameOf fSpec
 
+-- | Database name should not contain specific characters. Also, it has some maximum length.
+-- mkValidDBName :: Text -> Text
+-- mkValidDBName = T.reverse . T.take 31 . T.reverse . removeAll [' ', '/', '.']
+--   where
+--     removeAll :: [Char] -> Text -> Text
+--     removeAll cs t = case T.uncons t of
+--       Nothing -> t
+--       Just (h, tl) -> T.cons (if h `elem` cs then h else '_') (removeAll cs tl)
 connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
   [ "// Try to connect to the MySQL server",
@@ -273,6 +281,5 @@ createTempDatabase fSpec = do
               ) :
               ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
               where
-                query = insertQuery True tableName attrNames tblRecords
-                tableName = name plug
-                attrNames = fmap attName . plugAttributes $ plug
+                query = insertQuery True (tshow . sqlname $ plug) attrNames tblRecords
+                attrNames = attSQLColName <$> plugAttributes plug

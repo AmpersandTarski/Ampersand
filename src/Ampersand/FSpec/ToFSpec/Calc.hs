@@ -19,13 +19,13 @@ import Ampersand.FSpec.ToFSpec.NormalForms
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Text.Pandoc.Builder
+import Text.Pandoc.Builder hiding (toList)
 
 testConfluence :: A_Context -> Blocks
 testConfluence context =
   let tcss =
         [ (expr, tcs)
-          | expr <- Set.elems $ expressionsIn context,
+          | expr <- toList $ expressionsIn context,
             let tcs = dfProofs (conceptMap . ctxInfo $ context) expr,
             length tcs > 1
         ]
@@ -33,7 +33,7 @@ testConfluence context =
    in para ("Confluence analysis statistics from " <> (str . tshow . length . expressionsIn) context <> " terms." <> linebreak)
         <> para ("This script contains " <> linebreak <> (str . tshow . length) tcss <> " non-confluent terms " <> linebreak)
         <> para (linebreak <> "Total number of derived terms: " <> (str . tshow) sumt <> linebreak)
-        <> para ("Confluence analysis for " <> (str . name) context)
+        <> para ("Confluence analysis for " <> (str . fullName) context)
         <> mconcat
           [ para (linebreak <> "term:   " <> (str . showA) expr <> linebreak)
               <> bulletList [showProof (para . str . showA) prf | (_, prf) <- tcs]
@@ -44,10 +44,10 @@ deriveProofs :: env -> A_Context -> Blocks
 deriveProofs env context =
   testConfluence context
     <> para (linebreak <> "--------------" <> linebreak)
-    <> para ("Rules and their conjuncts for " <> (str . name) context)
+    <> para ("Rules and their conjuncts for " <> (str . fullName) context)
     <> bulletList
       [ para
-          ( "rule r:   " <> str (name r) <> linebreak
+          ( "rule r:   " <> (str . fullName) r <> linebreak
               <> "formalExpression r:  "
               <> str (showA (formalExpression r))
               <> linebreak
@@ -56,7 +56,7 @@ deriveProofs env context =
               <> linebreak
               <> interText linebreak ["     conj: " <> str (showA conj) | conj <- NE.toList $ conjuncts env r]
           )
-        | r <- Set.elems $ allRules context
+        | r <- toList $ allRules context
       ]
     <> mconcat
       [ para (linebreak <> "derivation for:   " <> (str . showA) expr <> linebreak)
@@ -115,5 +115,5 @@ makeAllQuads conjsPerRule =
         qConjuncts = conjs
       }
     | (rule, conjs) <- conjsPerRule,
-      d <- Set.elems $ bindedRelationsIn rule
+      d <- toList $ bindedRelationsIn rule
   ]

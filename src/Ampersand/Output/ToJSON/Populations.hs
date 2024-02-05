@@ -7,7 +7,6 @@ module Ampersand.Output.ToJSON.Populations (Populations) where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Output.ToJSON.JSONutils
-import qualified RIO.Set as Set
 
 data Populations = Populations
   { epJSONatoms :: [AtomValuesOfConcept],
@@ -48,14 +47,14 @@ instance ToJSON JPair where
 instance JSON FSpec Populations where
   fromAmpersand env _ fSpec =
     Populations
-      { epJSONatoms = map (fromAmpersand env fSpec) (Set.elems $ allConcepts fSpec),
-        epJSONlinks = map (fromAmpersand env fSpec) (Set.elems $ vrels fSpec)
+      { epJSONatoms = map (fromAmpersand env fSpec) (toList $ allConcepts fSpec),
+        epJSONlinks = map (fromAmpersand env fSpec) (toList $ vrels fSpec)
       }
 
 -- instance JSON (MultiFSpecs,Bool) Populations where
 --  fromAmpersand env _ (multi,doMeta) = Populations
---    { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
---    , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+--    { epJSONatoms = map (fromAmpersand env multi) (zip (toList $ allConcepts theFSpec) (L.repeat doMeta))
+--    , epJSONlinks = map (fromAmpersand env multi) (zip (toList $ vrels       theFSpec) (L.repeat doMeta))
 --    }
 --   where
 --    theFSpec
@@ -65,15 +64,15 @@ instance JSON FSpec Populations where
 instance JSON A_Concept AtomValuesOfConcept where
   fromAmpersand _ fSpec cpt =
     AtomValuesOfConcept
-      { avcJSONconcept = idWithoutType cpt,
-        avcJSONatoms = map showValADL (Set.elems $ atomsBySmallestConcept fSpec cpt)
+      { avcJSONconcept = text1ToText . idWithoutType' $ cpt,
+        avcJSONatoms = map showValADL (toList $ atomsBySmallestConcept fSpec cpt)
       }
 
 instance JSON Relation PairsOfRelation where
   fromAmpersand env fSpec dcl =
     PairsOfRelation
-      { porJSONrelation = showRel dcl,
-        porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
+      { porJSONrelation = tshow dcl,
+        porJSONlinks = map (fromAmpersand env fSpec) . toList . pairsInExpr fSpec $ EDcD dcl
       }
 
 instance JSON AAtomPair JPair where

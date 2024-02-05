@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 
 import Ampersand.ADL1
@@ -30,7 +32,7 @@ class Language a where
     Rules
   proprules x =
     Set.fromList $
-      [rulefromProp p d | d <- Set.elems $ relsDefdIn x, p <- Set.elems (properties d)]
+      [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforcement rules that are maintained within this viewpoint.
@@ -73,8 +75,16 @@ ruleFromIdentity identity =
         . identityAts
         $ identity
     mkKeyRule term =
-      Ru
-        { rrnm = "identity_" <> name identity,
+      Rule
+        { rrnm =
+            withNameSpace
+              (nameSpaceOf identity)
+              . mkName RuleName
+              $ ( case toNamePart ("identity_" <> (tshow . abs . hash . tshow $ identity)) of
+                    Nothing -> fatal "Not a proper NamePart"
+                    Just np -> np NE.:| []
+                ),
+          rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file
           rrmean = map toMeaning [minBound ..],
@@ -87,8 +97,8 @@ ruleFromIdentity identity =
         toMeaning lang =
           Meaning . Markup lang . string2Blocks ReST $
             case lang of
-              English -> "Identity rule, following from identity " <> name identity
-              Dutch -> "Identiteitsregel, volgend uit identiteit " <> name identity
+              English -> "Identity rule, following from identity " <> fullName identity
+              Dutch -> "Identiteitsregel, volgend uit identiteit " <> fullName identity
 
 instance (Eq a, Language a) => Language [a] where
   relsDefdIn = Set.unions . map relsDefdIn
@@ -101,14 +111,14 @@ instance (Eq a, Language a) => Language [a] where
   udefRoleRules = concatMap udefRoleRules
 
 instance (Eq a, Language a) => Language (Set.Set a) where
-  relsDefdIn = Set.unions . map relsDefdIn . Set.elems
-  udefrules = Set.unions . map udefrules . Set.elems
-  identities = L.nub . concatMap identities . Set.elems
-  viewDefs = L.nub . concatMap viewDefs . Set.elems
-  enforces = L.nub . concatMap enforces . Set.elems
-  gens = L.nub . concatMap gens . Set.elems
-  patterns = L.nub . concatMap patterns . Set.elems
-  udefRoleRules = L.nub . concatMap udefRoleRules . Set.elems
+  relsDefdIn = Set.unions . map relsDefdIn . toList
+  udefrules = Set.unions . map udefrules . toList
+  identities = L.nub . concatMap identities . toList
+  viewDefs = L.nub . concatMap viewDefs . toList
+  enforces = L.nub . concatMap enforces . toList
+  gens = L.nub . concatMap gens . toList
+  patterns = L.nub . concatMap patterns . toList
+  udefRoleRules = L.nub . concatMap udefRoleRules . toList
 
 instance Language A_Context where
   relsDefdIn context =
@@ -124,7 +134,7 @@ instance Language A_Context where
         Set.fromList
           . map fun
           . eqClass (==)
-          $ Set.elems ds
+          $ toList ds
         where
           fun :: NE.NonEmpty Relation -> Relation
           fun rels =
@@ -150,11 +160,18 @@ instance Language Pattern where
   udefRoleRules = ptrrs
 
 roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
-roleRuleFromEnforceRule = map mkRoleRule . enfRules
+roleRuleFromEnforceRule x = map mkRoleRule . enfRules $ x
   where
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
-          arRoles = Role "ExecEngine" NE.:| [],
+          arRoles =
+            Role
+              { pos = origin x,
+                rlName = nameOfExecEngineRole,
+                rlLbl = Nothing,
+                rlIsService = False
+              }
+              NE.:| [],
           arRules = name rul NE.:| []
         }

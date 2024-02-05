@@ -6,7 +6,7 @@ module Ampersand.Graphic.ClassDiag2Dot
 where
 
 import Ampersand.ADL1 hiding (Box)
-import Ampersand.Basics
+import Ampersand.Basics hiding (Label)
 import Ampersand.Classes
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Misc.HasClasses
@@ -16,12 +16,11 @@ import qualified Data.GraphViz.Attributes.HTML as Html
 import Data.GraphViz.Types.Canonical hiding (attrs)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
-classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph Text
+classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph Name
 classdiagram2dot env cd =
   DotGraph
     { strictGraph = False,
@@ -43,7 +42,7 @@ classdiagram2dot env cd =
             subGraphs = group2subgraph <$> groups cd,
             nodeStmts =
               map class2node (allClasses cd)
-                ++ map nonClass2node (filter isOtherNode $ nodes cd),
+                <> map nonClass2node (filter isOtherNode $ nodes cd),
             edgeStmts =
               map association2edge (assocs cd)
                 ++ map aggregation2edge (aggrs cd)
@@ -52,18 +51,18 @@ classdiagram2dot env cd =
     }
   where
     allClasses x = classes x ++ (concatMap (toList . snd) . groups $ x)
-    isOtherNode :: Text -> Bool
+    isOtherNode :: Name -> Bool
     isOtherNode n = n `notElem` nodes (allClasses cd)
-    group2subgraph :: (Text, NonEmpty Class) -> DotSubGraph Text
+    group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph Name
     group2subgraph x =
       DotSG
         { isCluster = True,
-          subGraphID = Just . Str . TL.fromStrict $ txt,
+          subGraphID = Just . Str . nameLabel $ nm,
           subGraphStmts =
             DotStmts
               { attrStmts =
                   [ GraphAttrs
-                      [ Label . StrLabel . TL.fromStrict $ txt,
+                      [ Label . StrLabel . nameLabel $ nm,
                         BgColor [WC (X11Color GhostWhite) Nothing],
                         URL "https://en.wikipedia.org/wiki/File:Vincent_Willem_van_Gogh_127.jpg"
                       ]
@@ -76,12 +75,14 @@ classdiagram2dot env cd =
               }
         }
       where
-        txt = fst x
-        notInClassNodes :: Text -> Bool
+        nameLabel :: Named a => a -> TL.Text
+        nameLabel = TL.fromStrict . fullName
+        nm = fst x
+        notInClassNodes :: Name -> Bool
         notInClassNodes n = n `notElem` nodes classesInGroup
         classesInGroup = toList . snd $ x
 
-    class2node :: Class -> DotNode Text
+    class2node :: Class -> DotNode Name
     class2node cl =
       DotNode
         { nodeID = name cl,
@@ -112,7 +113,7 @@ classdiagram2dot env cd =
                             [ Html.Font
                                 [ Html.Color (X11Color White)
                                 ]
-                                [Html.Str (fromString (T.unpack $ name cl))]
+                                [Html.Str . fromString . T.unpack . fullName $ cl]
                             ]
                         )
                     ]
@@ -125,13 +126,13 @@ classdiagram2dot env cd =
               Html.Cells
                 [ Html.LabelCell
                     [ Html.Align Html.HLeft,
-                      (Html.Port . PN . fromString) (T.unpack $ attNm a)
+                      Html.Port . PN . fromString . T.unpack . fullName $ a
                     ]
                     ( Html.Text
                         [ Html.Str (fromString (if attOptional a then "o " else "+ ")),
-                          Html.Str (fromString (T.unpack $ name a)),
+                          Html.Str . fromString . T.unpack . fullName $ a,
                           Html.Str (fromString " : "),
-                          Html.Str (fromString (T.unpack $ attTyp a))
+                          Html.Str . fromString . T.unpack . fullName . attTyp $ a
                         ]
                     )
                 ]
@@ -146,13 +147,13 @@ classdiagram2dot env cd =
                     )
                 ]
 
-    nonClass2node :: Text -> DotNode Text
-    nonClass2node str =
+    nonClass2node :: Name -> DotNode Name
+    nonClass2node x =
       DotNode
-        { nodeID = str,
+        { nodeID = x,
           nodeAttributes =
             [ Shape Box3D,
-              Label (StrLabel (fromString . T.unpack $ str))
+              Label . StrLabel . fromString . T.unpack . fullName $ x
             ]
         }
 
@@ -169,19 +170,19 @@ classdiagram2dot env cd =
     -------------------------------
     --        ASSOCIATIONS:      --
     -------------------------------
-    association2edge :: Association -> DotEdge Text
+    association2edge :: Association -> DotEdge Name
     association2edge ass =
       DotEdge
-        { fromNode = assSrc ass,
-          toNode = assTgt ass,
+        { fromNode = name $ assSrc ass,
+          toNode = name $ assTgt ass,
           edgeAttributes =
             [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)]), -- No arrowHead
               HeadLabel (mult2Lable (assrhm ass)),
               TailLabel (mult2Lable (asslhm ass)),
-              Label (StrLabel (fromString (T.unpack $ assrhr ass))),
+              Label . StrLabel . fromString . T.unpack . maybe mempty fullName . assrhr $ ass,
               LabelFloat True
             ]
-              ++ [TailPort (LabelledPort (PN ((fromString . T.unpack . assSrcPort) ass)) Nothing)]
+              ++ [TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)]
         }
       where
         mult2Lable = StrLabel . fromString . mult2Str
@@ -193,7 +194,7 @@ classdiagram2dot env cd =
     -------------------------------
     --        AGGREGATIONS:      --
     -------------------------------
-    aggregation2edge :: Aggregation -> DotEdge Text
+    aggregation2edge :: Aggregation -> DotEdge Name
     aggregation2edge agg =
       DotEdge
         { fromNode = name . aggChild $ agg,
@@ -218,13 +219,14 @@ classdiagram2dot env cd =
     --        GENERALIZATIONS:   --       -- Ampersand statements such as "CLASSIFY Dolphin ISA Animal" are called generalization.
     --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
     -------------------------------
-    generalization2edges :: Generalization -> [DotEdge Text]
+    generalization2edges :: Generalization -> [DotEdge Name]
     generalization2edges ooGen = sub2edges (genAgen ooGen)
       where
         -- SJ 2017-09-22. Drawing generalization arrows from right to left seems to give better pictures.
         -- This is probably because it is more in line with the totality constraint, which governs the drawing
         -- direction of associations. For this purpose we draw a backward facing arrow from generic to specific.
 
+        sub2edges :: AClassify -> [DotEdge Name]
         sub2edges gen =
           [ DotEdge
               { fromNode = name gener,
@@ -247,7 +249,7 @@ classdiagram2dot env cd =
           IsE {} -> [(genspc gen, x) | x <- NE.toList $ genrhs gen]
 
 class CdNode a where
-  nodes :: a -> [Text]
+  nodes :: a -> [Name]
 
 instance CdNode ClassDiag where
   nodes cd =
@@ -261,20 +263,20 @@ instance CdNode ClassDiag where
           )
       )
 
-instance CdNode (Text, NonEmpty Class) where
+instance CdNode (Name, NonEmpty Class) where
   nodes = nodes . toList . snd
 
 instance CdNode Class where
-  nodes cl = [clName cl]
+  nodes cl = [name . clName $ cl]
 
 instance CdNode a => CdNode [a] where
   nodes = concatMap nodes
 
 instance CdNode Association where
-  nodes a = [assSrc a, assTgt a]
+  nodes a = [name . assSrc $ a, name . assTgt $ a]
 
 instance CdNode Aggregation where
   nodes (OOAggr _ s t) = map name [s, t]
 
 instance CdNode Generalization where
-  nodes = map name . Set.elems . concs . genAgen
+  nodes = map name . toList . concs . genAgen

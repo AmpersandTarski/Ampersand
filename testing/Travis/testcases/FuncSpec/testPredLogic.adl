@@ -1,4 +1,4 @@
-CONTEXT "TestPredLogic"
+CONTEXT TestPredLogic
 
 
 RELATION r[A * B] [UNI,TOT]

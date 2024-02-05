@@ -25,16 +25,16 @@ class Typeable a => Instances a where
   {-# MINIMAL instances #-}
 
 instance Instances A_Context where
-  instances = Set.singleton . originalContext
+  instances = maybe mempty Set.singleton . originalContext
 
 instance Instances AClassify where
-  instances = Set.fromList . gens . originalContext
+  instances = maybe mempty (Set.fromList . gens) . originalContext
 
 instance Instances A_Concept where
   instances = concs . originalContext
 
 instance Instances AConceptDef where
-  instances = Set.fromList . ctxcds . originalContext
+  instances = maybe mempty (Set.fromList . ctxcds) . originalContext
 
 instance Instances Conjunct where
   instances = Set.fromList . allConjuncts
@@ -43,10 +43,10 @@ instance Instances Expression where
   instances = expressionInstances
 
 instance Instances IdentityRule where
-  instances = Set.fromList . ctxks . originalContext
+  instances = maybe mempty (Set.fromList . ctxks) . originalContext
 
 instance Instances Rule where
-  instances = allRules . originalContext -- This contains all rules declared inside a context but outside the patterns it contains.
+  instances = maybe mempty allRules . originalContext -- This contains all rules declared inside a context but outside the patterns it contains.
 
 instance Instances Interface where
   instances = interfaceInstances
@@ -71,7 +71,7 @@ instance Instances Pattern where
   instances = Set.fromList . vpatterns
 
 instance Instances Population where
-  instances = Set.fromList . ctxpopus . originalContext
+  instances = maybe mempty (Set.fromList . ctxpopus) . originalContext
 
 instance Instances Purpose where
   instances = purposeInstances
@@ -83,7 +83,7 @@ instance Instances Role where
   instances = Set.fromList . map fst . fRoles
 
 instance Instances A_RoleRule where
-  instances = Set.fromList . ctxrrules . originalContext
+  instances = maybe mempty (Set.fromList . ctxrrules) . originalContext
 
 instance Instances Signature where
   instances fSpec =
@@ -91,7 +91,7 @@ instance Instances Signature where
       `Set.union` (Set.fromList . map sign . Set.toList . expressionInstances $ fSpec)
 
 instance Instances ViewDef where
-  instances = Set.fromList . viewDefs . originalContext
+  instances = maybe mempty (Set.fromList . viewDefs) . originalContext
 
 instance Instances Meaning where
   instances fSpec =
@@ -108,7 +108,7 @@ expressionInstances :: FSpec -> Set.Set Expression
 expressionInstances = allExprs
 
 interfaceInstances :: FSpec -> Set.Set Interface
-interfaceInstances = Set.fromList . ctxifcs . originalContext
+interfaceInstances = maybe mempty (Set.fromList . ctxifcs) . originalContext
 
 meaningInstances :: FSpec -> Set.Set Meaning
 meaningInstances fSpec =
@@ -119,7 +119,7 @@ purposeInstances :: FSpec -> Set.Set Purpose
 purposeInstances = fSexpls
 
 relationInstances :: FSpec -> Set.Set Relation
-relationInstances = relsDefdIn . originalContext
+relationInstances = maybe mempty relsDefdIn . originalContext
 
 ruleInstances :: FSpec -> Set.Set Rule
-ruleInstances = allRules . originalContext
+ruleInstances = maybe mempty allRules . originalContext

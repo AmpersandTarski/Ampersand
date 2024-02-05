@@ -5,7 +5,7 @@ PATTERN Relations
 RELATION relsDefdIn[Relation*Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , relsDefdIn[Relation*Context])
-RULE "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
+RULE eqRelation LABEL "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
                  /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
                  /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
                  |- I[Relation]
@@ -15,8 +15,8 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 RELATION name[Relation*RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
 REPRESENT RelationName TYPE ALPHANUMERIC
-    ROLE ExecEngine MAINTAINS "del unused RelationName"
-    RULE "del unused RelationName" : I[RelationName] |- name~;name
+    ROLE ExecEngine MAINTAINS DelUnusedRelationName
+    RULE DelUnusedRelationName LABEL "del unused RelationName" : I[RelationName] |- name~;name
     MEANING "A RelationName without relation will be removed."
     VIOLATION ( TXT "{EX} DelAtom;RelationName;", SRC I )
 
@@ -26,7 +26,6 @@ MEANING "The signature of a relation."
 
 RELATION src[Signature*Concept] [UNI,TOT]
 MEANING "The source of a signature."
---ROLE Ampersand MAINTAINS "TOT src[Signature*Concept]", "TOT tgt[Signature*Concept]"
 RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
@@ -46,17 +45,17 @@ MEANING "The infix of the pragma of a relation."
 RELATION decprR[Relation*String] [UNI]
 MEANING "The suffix of the pragma of a relation."
 REPRESENT String TYPE BIGALPHANUMERIC
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE EntityIntegrityRelation LABEL "entity integrity of relation" : left;left~ /\ right;right~ /\ in;in~ |- I
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
---RULE "typed domain": decpopu;left;cptos~;order  |- sign;src;order
+--RULE TypedDomain LABEL "typed domain" : decpopu;left;cptos~;order  |- sign;src;order
 --MEANING "The atoms in the domain of a relation belong to the same class as the source of that relation."
 --MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 --VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC sign;src)
 
---RULE "typed codomain": decpopu;right;cptos~;order |- sign;tgt[Signature*Concept];order
+--RULE TypedCodomain LABEL "typed codomain" : decpopu;right;cptos~;order |- sign;tgt[Signature*Concept];order
 --MEANING "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 --MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 --VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;tgt[Signature*Concept])

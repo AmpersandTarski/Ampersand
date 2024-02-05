@@ -1,4 +1,4 @@
-CONTEXT "Issue1293"
+CONTEXT Issue1293
 
    REPRESENT A TYPE INTEGER
 
@@ -6,12 +6,12 @@ CONTEXT "Issue1293"
    RELATION s[A * B] = [ (2,"noot"), (3,"mies") ]
 
 --    ROLE ExecEngine MAINTAINS Issue
-   RULE  r - (I#"aap") |- s
+   RULE  Issue1293: r - (I#"aap") |- s
 --    VIOLATION ( TXT "{EX} InsPair;personPhoneNumber;Person;",SRC I, TXT ";PhoneNumber;", TGT I )
 
 
 {- In order to compile this script with --validate, we need to add the following stuff: -}
-   RELATION label [PF_NavMenuItem*PF_Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+   RELATION label [NavMenuItem*Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
     
 ENDCONTEXT
 {-

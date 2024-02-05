@@ -4,7 +4,6 @@
 module Ampersand.Output.ToJSON.Settings (Settings) where
 
 import Ampersand.Output.ToJSON.JSONutils
-import Data.Hashable
 
 data Settings = Settings
   { sngJSONglobal_contextName :: Text,
@@ -20,7 +19,7 @@ instance ToJSON Settings where
 instance JSON' FSpec Settings where
   fromAmpersand' env fSpec _ =
     Settings
-      { sngJSONglobal_contextName = fsName fSpec,
+      { sngJSONglobal_contextName = fullName fSpec,
         sngJSONcompiler_version = longVersion appVersion,
         sngJSONcompiler_env = tshow env,
         sngJSONcompiler_modelHash = tshow . hash $ fSpec

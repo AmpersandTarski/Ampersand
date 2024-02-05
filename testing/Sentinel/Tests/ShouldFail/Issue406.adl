@@ -1,6 +1,0 @@
-CONTEXT Issue406a IN ENGLISH
-   INTERFACE Foo : I[A]
-   s :: A*B
-ENDCONTEXT
-
-

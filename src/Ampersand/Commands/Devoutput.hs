@@ -35,7 +35,7 @@ doGenHaskell fSpec = do
   env <- ask
   now <- getCurrentTime
   outputFile <- outputFile' <$> ask
-  logDebug $ "Generating Haskell source code for " <> display (name fSpec) <> "..."
+  logDebug $ "Generating Haskell source code for " <> (display . fullName) fSpec <> "..."
   liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
   writeFileUtf8 outputFile (fSpec2Haskell env now fSpec)
   logInfo $ "Haskell written into " <> display (T.pack outputFile)
@@ -49,7 +49,7 @@ doGenSQLdump ::
 doGenSQLdump fSpec = do
   env <- ask
   outputFile <- outputFile' <$> ask
-  logDebug $ "Generating SQL queries dumpfile for " <> display (name fSpec) <> "..."
+  logDebug $ "Generating SQL queries dumpfile for " <> (display . fullName) fSpec <> "..."
   liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
   writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
   logInfo $ "SQL queries dumpfile written into " <> display (T.pack outputFile)

@@ -34,7 +34,7 @@ ROLE role2 MAINTAINS signal2, fancy2
 ROLE role3 MAINTAINS signal3, signal4
 ENDPATTERN
 
-INTERFACE Overview (ri1,ri2,ri3,ri4,rs1,rs2,rs3,rs4)  : I[ONE]
+INTERFACE Overview  : I[ONE]
 BOX[ "ri1"  : V[ONE*A]
      BOX[ "A" : I
         , "X" : ri1
@@ -71,17 +71,17 @@ BOX[ "ri1"  : V[ONE*A]
    , "X"  : V[ONE*X]
    ]
 
-INTERFACE AForRole1 (rs1,rs2) FOR role1 : I[A]
+INTERFACE AForRole1 FOR role1 : I[A]
 BOX [ "rs1" : rs1
     , "rs2" : rs2
     ] 
 
-INTERFACE AForRole2 (rs2,rs3) FOR role2 : I[A]
+INTERFACE AForRole2 FOR role2 : I[A]
 BOX [ "rs2" : rs2
     , "rs3" : rs3
     ]
 
-INTERFACE AForRole3 (rs1,rs2,rs3) FOR role3 : I[A]
+INTERFACE AForRole3 FOR role3 : I[A]
 BOX [ "rs1" : rs1
     , "rs2" : rs2
     , "rs3" : rs3

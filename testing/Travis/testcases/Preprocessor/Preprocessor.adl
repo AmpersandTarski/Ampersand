@@ -1,5 +1,5 @@
-CONTEXT "Preprocessor" IN DUTCH
-PURPOSE CONTEXT "Preprocessor"
+CONTEXT Preprocessor IN DUTCH
+PURPOSE CONTEXT Preprocessor
 {+The purpose of this application is to provide some (limited) testing 
 of the functionality of the Ampersand Preprocessor.
 

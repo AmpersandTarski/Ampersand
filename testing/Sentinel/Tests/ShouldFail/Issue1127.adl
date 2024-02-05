@@ -1,7 +1,0 @@
-CONTEXT Issue1127 IN ENGLISH
-INCLUDE "Issue1127.xlsx"
-
-name :: Concept * ConceptName [UNI]
-name :: Relation * RelationName [UNI]
-
-ENDCONTEXT

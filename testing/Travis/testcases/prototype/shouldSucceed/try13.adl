@@ -3,7 +3,7 @@ CONTEXT Test IN ENGLISH
 PATTERN Test13
 r :: A*A
 -- r :: B*C -- enabled in try15.adl
-RULE r[A*A] = r\/I
+RULE Test: r[A*A] = r\/I
 ENDPATTERN
 
 ENDCONTEXT

@@ -9,6 +9,7 @@ import Ampersand.Output.FSpec2SQL (databaseStructureSql)
 import Ampersand.Output.ToJSON.ToJson
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
+import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import Text.StringTemplate.GenericStandard ()
 
@@ -22,6 +23,8 @@ doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
+  logDebug $ "  generating backend in: " <> displayShow dir
+  liftIO $ createDirectoryIfMissing True dir
   writeFileUtf8 (dir </> "database" <.> "sql") $ databaseStructureSql fSpec
   writeFile (dir </> "settings" <.> "json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations" <.> "json") $ relationsToJSON env fSpec

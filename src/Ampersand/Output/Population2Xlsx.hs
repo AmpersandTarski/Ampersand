@@ -10,7 +10,6 @@ import Data.Time.Clock.POSIX (POSIXTime)
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Text as T
 import RIO.Time
 
 fSpec2PopulationXlsx :: POSIXTime -> FSpec -> BL.ByteString
@@ -23,7 +22,7 @@ plugs2Sheets :: FSpec -> [(Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (Text, Worksheet)
-    plug2sheet (InternalPlug plug) = fmap (name plug,) sheet
+    plug2sheet (InternalPlug plug) = fmap (sqlColumNameToText . sqlname $ plug,) sheet
       where
         sheet :: Maybe Worksheet
         sheet = case matrix of
@@ -50,19 +49,13 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                     toCell
                     [ if isFirstField -- In case of the first field of the table, we put the fieldname inbetween brackets,
                     -- to be able to find the population again by the reader of the .xlsx file
-                        then Just $ "[" <> name att <> "]"
-                        else Just . cleanUpRelName $
+                        then Just $ "[" <> (sqlColumNameToText . attSQLColName $ att) <> "]"
+                        else Just $
                           case plug of
-                            TblSQL {} -> name att
-                            BinSQL {} -> name plug,
-                      Just $ name . target . attExpr $ att
+                            TblSQL {} -> sqlColumNameToText . attSQLColName $ att
+                            BinSQL {} -> sqlColumNameToText . sqlname $ plug,
+                      Just . fullName . target . attExpr $ att
                     ]
-                cleanUpRelName :: Text -> Text
-                --TODO: This is a not-so-nice way to get the relationname from the fieldname.
-                cleanUpRelName orig
-                  | "tgt_" `T.isPrefixOf` orig = T.drop 4 orig
-                  | "src_" `T.isPrefixOf` orig = T.drop 4 orig <> "~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
-                  | otherwise = orig
             content = fmap record2Cells (tableContents fSpec plug)
             record2Cells :: [Maybe AAtomValue] -> [Cell]
             record2Cells = map record2Cell

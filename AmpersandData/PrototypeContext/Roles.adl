@@ -4,11 +4,11 @@ CONTEXT PrototypeFramework IN ENGLISH
         REPRESENT Role TYPE OBJECT
         POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION label[Role*PF_Label] [UNI,TOT]
-        REPRESENT PF_Label TYPE ALPHANUMERIC
-        POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+    RELATION label[Role*Label] [UNI] -- Not TOT, for then the labels must be given explicitly. The Ampersand generator generates a label for every role in the script. 
+        REPRESENT Label TYPE ALPHANUMERIC
+        POPULATION label[Role*Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
-    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role] BOX
+    API AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*Role] BOX
         [ "id"              : I
         , "label"           : label
         -- , "maintains"       : 

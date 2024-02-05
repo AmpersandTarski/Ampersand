@@ -1,4 +1,4 @@
-﻿CONTEXT InterfaceTest2 IN ENGLISH
+CONTEXT InterfaceTest2 IN ENGLISH
 
 PATTERN TryECA1
 RELATION r[A*C]
@@ -10,12 +10,12 @@ ENDPATTERN
 POPULATION r[A*C] CONTAINS
    [ ("Aap", "Cent") ]
 
-INTERFACE overview (r,s) : I[ONE]
+INTERFACE overview : I[ONE]
 BOX [ "As" : V[ONE*A]
     , "Cs" : V[ONE*C]
     ]
 
-INTERFACE edit (r,s): I[A]
+INTERFACE edit: I[A]
 BOX [ "source" : I
     , "target of r" : r
     , "target of s" : s

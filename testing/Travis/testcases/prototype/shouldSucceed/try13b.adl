@@ -3,12 +3,12 @@ CONTEXT Test IN ENGLISH
 PATTERN Test13
 r :: A*A
 r :: B*C
-RULE r = r[A*A]/\I
-RULE r = r[A*A]\/I
-RULE r = r[A*A];I
-RULE r = r[B*C];I
-RULE r = r[A*A]!I
-RULE r = r[B*C]!I
+RULE T1: r = r[A*A]/\I
+RULE T2: r = r[A*A]\/I
+RULE T5: r = r[A*A];I
+RULE T6: r = r[B*C];I
+RULE T7: r = r[A*A]!I
+RULE T8: r = r[B*C]!I
 ENDPATTERN
 
 ENDCONTEXT

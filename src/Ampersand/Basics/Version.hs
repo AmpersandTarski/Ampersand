@@ -31,7 +31,7 @@ fatal msg =
     lazyCutoff n txt = case T.uncons txt of
       Nothing -> mempty
       Just (h, tl)
-        | T.null tl -> mempty
+        | T.null tl -> T.cons h mempty
         | n == 0 -> "\n<Ampersand's fatal-mechanism has removed the rest of this error message.>"
         | otherwise -> T.cons h (lazyCutoff (n -1) tl)
 {-# NOINLINE fatal #-}

@@ -22,7 +22,7 @@ um]       signature: [Verwachting*Criterium]
 
 -}
 ------------------------------------------------------------
-PATTERN "ARM20Test5"
+PATTERN ARM20Test5
 
 critBF   :: Criterium -> Bedrijfsfunctie
 
@@ -34,7 +34,7 @@ expTAV :: Verwachting * Bedrijfsfunctie [UNI]
 
 CLASSIFY VerplichtingVerwachting IS Verplichting /\ Verwachting
 
-RULE "ARM20Test5": I[Criterium] /\ oblTAV;critBF~ |- expTAV;critBF~
+RULE ARM20Test5 : I[Criterium] /\ oblTAV;critBF~ |- expTAV;critBF~
 
 ENDPATTERN
 ------------------------------------------------------------

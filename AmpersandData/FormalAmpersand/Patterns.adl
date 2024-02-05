@@ -11,8 +11,8 @@ PATTERN Patterns
     REPRESENT PatternName TYPE ALPHANUMERIC
     RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
-      ROLE ExecEngine MAINTAINS "del unused PatternName"
-      RULE "del unused PatternName" : I[PatternName] |- name~;name
+      ROLE ExecEngine MAINTAINS DelUnusedPatternName
+      RULE DelUnusedPatternName LABEL "del unused PatternName" : I[PatternName] |- name~;name
       MEANING "A PatternName without Pattern will be removed."
       VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
 
@@ -26,18 +26,18 @@ PATTERN Patterns
     RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
     MEANING "The relations that are declared in a pattern."
 
-    ROLE ExecEngine MAINTAINS "Remove rule atom"
-    RULE "Remove rule atom" : I[Rule] - allRules;I[Context];allRules~ |- -V
+    ROLE ExecEngine MAINTAINS RemoveRuleAtom
+    RULE RemoveRuleAtom LABEL "Remove rule atom" : I[Rule] - allRules;I[Context];allRules~ |- -V
     MEANING "A rule without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
-    ROLE ExecEngine MAINTAINS "Remove relation atom"
-    RULE "Remove relation atom" : I[Relation] - relsDefdIn;I[Context];relsDefdIn~ |- -V
+    ROLE ExecEngine MAINTAINS RemoveRelationAtom
+    RULE RemoveRelationAtom LABEL "Remove relation atom" : I[Relation] - relsDefdIn;I[Context];relsDefdIn~ |- -V
     MEANING "A relation without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
 
-    ROLE User MAINTAINS "self-sustained patterns"
-    RULE "self-sustained patterns" : usedIn;formalTerm~;patRules~ |- declaredIn[Relation*Pattern]
+    ROLE User MAINTAINS SelfSustainedPatterns
+    RULE SelfSustainedPatterns LABEL "self-sustained patterns" : usedIn;formalTerm~;patRules~ |- declaredIn[Relation*Pattern]
     MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
 
 ENDPATTERN

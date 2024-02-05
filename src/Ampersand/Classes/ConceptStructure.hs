@@ -65,8 +65,8 @@ instance ConceptStructure a => ConceptStructure (NE.NonEmpty a) where
   expressionsIn = Set.unions . fmap expressionsIn
 
 instance (Eq a, ConceptStructure a) => ConceptStructure (Set.Set a) where
-  concs = Set.unions . map concs . Set.elems
-  expressionsIn = Set.unions . map expressionsIn . Set.elems
+  concs = Set.unions . map concs . toList
+  expressionsIn = Set.unions . map expressionsIn . toList
 
 instance ConceptStructure A_Context where
   concs ctx =
@@ -243,5 +243,5 @@ instance ConceptStructure AClassify where
   expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n" <> tshow g)
 
 instance ConceptStructure Conjunct where
-  concs = concs . rc_conjunct
-  expressionsIn = expressionsIn . rc_conjunct
+  concs = concs . rcConjunct
+  expressionsIn = expressionsIn . rcConjunct

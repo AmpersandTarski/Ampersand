@@ -32,7 +32,7 @@ makeFSpec ::
 makeFSpec env context =
   FSpec
     { fsName = name context,
-      originalContext = context,
+      originalContext = Just context,
       fspos = ctxpos context,
       plugInfos = allplugs,
       interfaceS = fSpecAllInterfaces, -- interfaces specified in the Ampersand script
@@ -45,7 +45,7 @@ makeFSpec env context =
       fRoleRuls =
         L.nub
           [ (role', rule) -- fRoleRuls says which roles maintain which rules.
-            | rule <- Set.elems (allRules context),
+            | rule <- toList (allRules context),
               role' <- maintainersOf rule
           ],
       fMaintains = fMaintains',
@@ -96,7 +96,7 @@ makeFSpec env context =
       applyViolText = apply_viol_text,
       allViolations =
         [ (r, vs)
-          | r <- Set.elems (allRules context),
+          | r <- toList (allRules context),
             let vs = ruleviolations r,
             not (null vs)
         ],
@@ -123,6 +123,7 @@ makeFSpec env context =
         merge p1 p2 =
           A_Pat
             { ptnm = name p1,
+              ptlbl = mLabel p1 <|> mLabel p2,
               ptpos = ptpos p1,
               ptend = ptend p1,
               ptrls = ptrls p1 <> ptrls p2,
@@ -152,7 +153,7 @@ makeFSpec env context =
     typologyOf' cpt =
       case [t | t <- typologies context, cpt `elem` tyCpts t] of
         [t] -> t
-        _ -> fatal ("concept " <> name cpt <> " should be in exactly one typology!")
+        _ -> fatal ("concept " <> fullName cpt <> " should be in exactly one typology!")
     pairsinexpr :: Expression -> AAtomPairs
     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
     -- Purpose: to write a rule violation in Text as specified in the user's script,
@@ -186,7 +187,7 @@ makeFSpec env context =
         cra = pairsinexpr (antecedent r)
         crc = pairsinexpr (consequent r)
     conjunctViolations :: Conjunct -> AAtomPairs
-    conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
+    conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
     fSpecAllConcepts = concs context
@@ -226,12 +227,12 @@ makeFSpec env context =
     allConjs = makeAllConjs env (allRules context)
     fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
     fSpecAllConjsPerRule = converseNE [(conj, rc_orgRules conj) | conj <- allConjs]
-    fSpecAllConjsPerDecl = converse [(conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs]
+    fSpecAllConjsPerDecl = converse [(conj, toList . bindedRelationsIn $ rcConjunct conj) | conj <- allConjs]
     fSpecAllConjsPerConcept =
       converse
         [ (conj, L.nub $ smaller (source e) <> smaller (target e))
           | conj <- allConjs,
-            e <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj
+            e <- toList . modifyablesByInsOrDel . rcConjunct $ conj
         ]
       where
         smaller :: A_Concept -> [A_Concept]
@@ -249,7 +250,14 @@ makeFSpec env context =
           | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
           | otherwise -> rolesFromScript
         Identity _ -> []
-        Enforce -> [Role "ExecEngine"]
+        Enforce ->
+          [ Role
+              { pos = origin r,
+                rlName = nameOfExecEngineRole,
+                rlLbl = Nothing,
+                rlIsService = False
+              }
+          ]
       where
         rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
         forThisRule :: A_RoleRule -> Bool
@@ -261,12 +269,12 @@ makeFSpec env context =
         Identity _ -> False
         Enforce -> False
     -- Lookup view by id in fSpec.
-    lookupView' :: Text -> ViewDef
+    lookupView' :: Name -> Maybe ViewDef
     lookupView' viewId =
       case filter (\v -> name v == viewId) $ viewDefs context of
-        [] -> fatal ("Undeclared view " <> tshow viewId <> ".") -- Will be caught by static analysis
-        [vd] -> vd
-        vds -> fatal ("Multiple views with id " <> tshow viewId <> ": " <> tshow (map name vds)) -- Will be caught by static analysis
+        [] -> Nothing -- Will be caught by static analysis
+        [vd] -> Just vd
+        vds -> fatal ("Multiple views with id " <> fullName viewId <> ": " <> tshow (map name vds)) -- Will be caught by static analysis
 
     -- get all views for a specific concept and all larger concepts.
     getAllViewsForConcept' :: A_Concept -> [ViewDef]
@@ -295,13 +303,22 @@ makeFSpec env context =
     --making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs =
-      [ InternalPlug (rename p (qlfname (name p)))
-        | p <- uniqueNames [] (makeGeneratedSqlPlugs env context)
-      ]
-    qlfname x = if T.null ns then x else "ns" <> ns <> x
-      where
-        ns = view namespaceL env
+    genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context
+    --      where
+    -- qlfname :: PlugSQL -> PlugSQL
+    -- qlfname x = case T.uncons . view namespaceL $ env of
+    --   Nothing -> x
+    --   Just (c, tl) ->
+    --     x
+    --       { sqlname =
+    --           withNameSpace
+    --             [ case toNamePart (T.cons c tl) of
+    --                 Nothing -> fatal "Not a valid NamePart."
+    --                 Just np -> np
+    --             ]
+    --             $ name x
+    --       }
+
     --TODO151210 -> Plug A is overbodig, want A zit al in plug r
     --CONTEXT Temp
     --PATTERN Temp
@@ -351,7 +368,7 @@ makeFSpec env context =
     --  Step 1: select and arrange all relations to obtain a set cRels of total relations
     --          to ensure insertability of entities (signal relations are excluded)
     cRels =
-      Set.elems $
+      toList $
         Set.filter isTot toconsider
           `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
       where
@@ -359,7 +376,7 @@ makeFSpec env context =
     --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
     --          to ensure deletability of entities (signal relations are excluded)
     dRels =
-      Set.elems $
+      toList $
         Set.filter isInj toconsider
           `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
       where
@@ -382,16 +399,26 @@ makeFSpec env context =
     --          note: based on a theme one can pick a certain set of generated interfaces (there is not one correct set)
     --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
     --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
+    defaultGeneratedCruds :: Cruds
+    defaultGeneratedCruds =
+      Cruds
+        { crudOrig = Origin "Defaults generated by automatic interface generator.",
+          crudC = True,
+          crudR = True,
+          crudU = True,
+          crudD = True
+        }
     interfaceGen = step4a <> step4b
     step4a :: [Interface]
     step4a =
       let recur :: [NE.NonEmpty Expression] -> [ObjectDef]
           recur es =
             [ ObjectDef
-                { objnm = showA t,
-                  objPos = orig,
+                { objPos = orig,
+                  objPlainName = Just . toText1Unsafe . showA $ t,
+                  objlbl = Nothing,
                   objExpression = t,
-                  objcrud = fatal "No default crud in generated interface",
+                  objcrud = defaultGeneratedCruds,
                   objmView = Nothing,
                   objmsub = Just . Box orig (target t) (simpleBoxHeader orig) . map BxExpr $ recur [PARTIAL.fromList pth | pth <- map NE.tail $ NE.toList cl, not (null pth)]
                 }
@@ -428,19 +455,21 @@ makeFSpec env context =
        in [ Ifc
               { ifcIsAPI = False,
                 ifcname = name c,
+                ifclbl = Nothing,
                 ifcObj =
                   let orig = Origin "generated object: step 4a - default theme"
                    in ObjectDef
-                        { objnm = name c,
-                          objPos = orig,
+                        { objPos = orig,
+                          objPlainName = Just $ fullName1 c,
+                          objlbl = Nothing,
                           objExpression = EDcI c,
-                          objcrud = fatal "No default crud in generated interface",
+                          objcrud = defaultGeneratedCruds,
                           objmView = Nothing,
                           objmsub = Just . Box orig c (simpleBoxHeader orig) . map BxExpr $ NE.toList objattributes
                         },
                 ifcConjuncts = makeifcConjuncts params allConjs,
                 ifcPos = Origin "generated interface: step 4a - default theme",
-                ifcPurpose = "Interface " <> name c <> " has been generated by Ampersand.",
+                ifcPurpose = "Interface " <> fullName c <> " has been generated by Ampersand.",
                 ifcRoles = []
               }
             | (c, objattributes) <- mapMaybe f $ eqCl (source . NE.head) plugPaths,
@@ -453,13 +482,15 @@ makeFSpec env context =
       [ Ifc
           { ifcIsAPI = False,
             ifcname = nm,
+            ifclbl = Nothing,
             ifcObj =
               let orig = Origin "generated object: step 4b"
                in ObjectDef
-                    { objnm = nm,
-                      objPos = orig,
+                    { objPos = orig,
+                      objPlainName = Just $ fullName1 nm,
+                      objlbl = Nothing,
                       objExpression = EDcI ONE,
-                      objcrud = fatal "No default crud in generated interface",
+                      objcrud = defaultGeneratedCruds,
                       objmView = Nothing,
                       objmsub = Just . Box orig ONE (simpleBoxHeader orig) $ [BxExpr att]
                     },
@@ -469,19 +500,31 @@ makeFSpec env context =
             ifcRoles = []
           }
         | ifcc <- step4a,
-          let c = source (objExpression (ifcObj ifcc))
-              nm' :: Int -> Text
-              nm' 0 = plural (ctxlang context) (name c)
-              nm' i = plural (ctxlang context) (name c) <> tshow i
+          let toNamePart' txt = case toNamePart txt of
+                Nothing -> fatal "Not a valid NamePart."
+                Just np -> np
+              c = source (objExpression (ifcObj ifcc))
+              nm' :: Int -> Name
+              nm' 0 =
+                mkName ConceptName
+                  . NE.reverse
+                  $ (toNamePart' . plural (ctxlang context) . plainNameOf $ c)
+                    NE.:| reverse (nameSpaceOf (name c))
+              nm' i =
+                mkName ConceptName
+                  . NE.reverse
+                  $ (toNamePart' . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                    NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"
                 h : _ -> h
               att =
                 ObjectDef
-                  { objnm = name c,
-                    objPos = Origin "generated attribute object: step 4b",
+                  { objPos = Origin "generated attribute object: step 4b",
+                    objPlainName = Just $ fullName1 c,
+                    objlbl = Nothing,
                     objExpression = EDcV (Sign ONE c),
-                    objcrud = fatal "No default crud in generated interface.",
+                    objcrud = defaultGeneratedCruds,
                     objmView = Nothing,
                     objmsub = Nothing
                   }
@@ -495,26 +538,11 @@ makeifcConjuncts :: Relations -> [Conjunct] -> [Conjunct]
 makeifcConjuncts params allConjs =
   [ conj
     | conj <- allConjs,
-      (not . null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rc_conjunct conj))
+      (not . null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rcConjunct conj))
       -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
       -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
       -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
   ]
-
-class Named a => Rename a where
-  rename :: a -> Text -> a
-
-  -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
-  uniqueNames :: [Text] -> [a] -> [a]
-  uniqueNames taken xs =
-    [ p | cl <- eqCl (T.toLower . name) xs, p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-                                              if name (NE.head cl) `elem` taken || length cl > 1
-                                                then [rename p (name p <> tshow i) | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
-                                                else NE.toList cl
-    ]
-
-instance Rename PlugSQL where
-  rename p x = p {sqlname = x}
 
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug =
@@ -526,7 +554,7 @@ tblcontents ci ps plug =
                 then EFlp . EDcD . rsDcl $ store
                 else EDcD . rsDcl $ store
             ss -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are " <> tshow (length ss))
-       in [[(Just . apLeft) p, (Just . apRight) p] | p <- Set.elems $ fullContents ci ps expr]
+       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ps expr]
     TblSQL {} ->
       --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
       --attributes are assumed to be in the order kernel+other,
@@ -537,10 +565,10 @@ tblcontents ci ps plug =
         [] -> fatal "no attributes in plug."
         f : fs ->
           (L.nub . L.transpose)
-            ( map Just (Set.elems cAtoms) :
+            ( map Just (toList cAtoms) :
                 [ case fExp of
-                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- Set.elems cAtoms]
-                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- Set.elems cAtoms]
+                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
+                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
                   | att <- fs,
                     let fExp = attExpr att
                 ]
@@ -549,14 +577,18 @@ tblcontents ci ps plug =
             cAtoms = (atomValuesOf ci ps . source . attExpr) f
             lkp :: SqlAttribute -> AAtomValue -> AAtomPairs -> Maybe AAtomValue
             lkp att a pairs =
-              case [p | p <- Set.elems pairs, a == apLeft p] of
+              case [p | p <- toList pairs, a == apLeft p] of
                 [] -> Nothing
                 [p] -> Just (apRight p)
                 ps' ->
                   fatal . T.unlines $
                     [ "There is an attempt to populate multiple values into ",
-                      "     the row of table `" <> name plug <> "`, where id = " <> tshow (showValADL a) <> ":",
-                      "     Values to be inserted in field `" <> name att <> "` are: " <> tshow (map (showValADL . apRight) ps')
+                      "     the row of table `" <> text1ToText (showUnique plug) <> "`, where id = " <> tshow (showValADL a) <> ":",
+                      "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps'),
+                      "",
+                      "ps: " <> T.intercalate ("\n  |" <> tshow (length ps) <> " ") (fmap tshow ps),
+                      "",
+                      "ps': " <> tshow ps'
                     ] --this has happened before due to:
                     --    when using --dev flag
                     --  , when there are violations
@@ -565,4 +597,20 @@ tblcontents ci ps plug =
 
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = "FORM", btKeys = []}
+simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
+
+-- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
+-- mkUniqueNames :: [PlugSQL] -> [PlugSQL]
+-- mkUniqueNames = go []
+--   where
+--     go :: [Name] -> [PlugSQL] -> [PlugSQL]
+--     go taken xs =
+--       [ p
+--         | cl <- eqCl (T.toLower . fullName) xs,
+--           p <- -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+--             if name (NE.head cl) `elem` taken || length cl > 1
+--               then [setlocalName (postpend (tshow i) (localName p)) p | (p, i) <- zip (NE.toList cl) [(1 :: Int) ..]]
+--               else NE.toList cl
+--       ]
+--     setlocalName :: NamePart -> PlugSQL -> PlugSQL
+--     setlocalName np p = p {sqlname = updatedName np p}

@@ -5,7 +5,7 @@ INCLUDE "Atoms.adl"
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Overview : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
@@ -39,7 +39,7 @@ BOX <TABS>
 VIEW Concept : Concept(name)
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+INTERFACE Concept: I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -47,13 +47,13 @@ BOX [ name             : name
 
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 
-INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair: I[Pair]
 BOX [ "relation(s)"  : in
      , lAtom          : lAtom
      , rAtom          : rAtom
      ]
 
-INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+INTERFACE Relation: I[Relation]
 BOX [ name    : name
      , source  : source
      , target  : target
@@ -61,14 +61,14 @@ BOX [ name    : name
 
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 --
---INTERFACE Atom(repr) : I[Atom]
+--INTERFACE Atom: I[Atom]
 --BOX [ repr : repr
 --     , pop  : pop
 --     ]
 --
 --VIEW Concept : Concept(name)
 --
---INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+--INTERFACE Concept: I[Concept]
 --BOX [ name             : name
 --     , generalizations  : isa
 --     , specializations  : isa~
@@ -76,7 +76,7 @@ BOX [ name    : name
 --
 --VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 --
---INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+--INTERFACE Pair: I[Pair]
 --BOX [ pair           : I
 --     , lAtom          : lAtom
 --     , rAtom          : rAtom
@@ -85,7 +85,7 @@ BOX [ name    : name
 --
 --VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 --
---INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+--INTERFACE Relation: I[Relation]
 --BOX [ name    : name
 --     , source  : source
 --     , target  : target

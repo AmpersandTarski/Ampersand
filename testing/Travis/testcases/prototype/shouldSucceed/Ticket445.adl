@@ -1,9 +1,9 @@
-﻿CONTEXT Ticket445 IN DUTCH
+CONTEXT Ticket445 IN DUTCH
 --------------------------------------------------------
 
 sessionAccount :: SESSION * Account [UNI]
 
-INTERFACE "Mijn Account" : V[ONE*SESSION];"_SESSION";sessionAccount 
+INTERFACE MijnAccount : V[ONE*SESSION];"_SESSION";sessionAccount 
 BOX[ "Account"  : I
    ]
 

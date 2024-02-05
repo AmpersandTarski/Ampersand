@@ -72,7 +72,7 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . concatMap indentEOL
           . T.lines
           . renderTemplate Nothing template
-          $ setAttribute "contextName" (addSlashes . fsName $ fSpec)
+          $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
             . setAttribute "isSessionInterface" (isSessionInterface interf)
             . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
             . setAttribute "ampersandVersionStr" (longVersion appVersion)
@@ -83,8 +83,8 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
             . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
             . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
             . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
-            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
+            . setAttribute "source" (idWithoutType' . source . ifcExp $ interf)
+            . setAttribute "target" (idWithoutType' . target . ifcExp $ interf)
             . setAttribute "crudC" (objCrudC (feiObj interf))
             . setAttribute "crudR" (objCrudR (feiObj interf))
             . setAttribute "crudU" (objCrudU (feiObj interf))
@@ -122,11 +122,11 @@ objectAttributes :: FEObject -> LogLevel -> StringTemplate String -> StringTempl
 objectAttributes obj loglevel =
   setAttribute "exprIsUni" (exprIsUni obj)
     . setAttribute "exprIsTot" (exprIsTot obj)
-    . setAttribute "name" (escapeIdentifier . objName $ obj)
+    . setAttribute "name" (escapeIdentifier' . objName $ obj)
     . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-    . setAttribute "source" (idWithoutType . source . objExp $ obj)
-    . setAttribute "target" (idWithoutType . target . objExp $ obj)
+    . setAttribute "source" (idWithoutType' . source . objExp $ obj)
+    . setAttribute "target" (idWithoutType' . target . objExp $ obj)
     . setAttribute "crudC" (objCrudC obj)
     . setAttribute "crudR" (objCrudR obj)
     . setAttribute "crudU" (objCrudU obj)
@@ -134,6 +134,11 @@ objectAttributes obj loglevel =
     . setAttribute "crud" (crudsToString . objCrud $ obj)
     . setAttribute "verbose" (loglevel == LevelDebug)
     . setAttribute "loglevel" (show loglevel)
+
+escapeIdentifier' :: Text -> Text
+escapeIdentifier' txt = case T.uncons txt of
+  Nothing -> mempty
+  Just _ -> text1ToText . escapeIdentifier . toText1Unsafe $ txt
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr
@@ -151,7 +156,7 @@ subObjectAttributes fSpec depth templateFunction subObj = do
     FEObjE {} ->
       return
         SubObjAttr
-          { subObjName = escapeIdentifier $ objName subObj,
+          { subObjName = escapeIdentifier' $ objName subObj,
             subObjLabel = objName subObj, -- no escaping for labels in templates needed
             subObjContents = lns,
             subObjExprIsUni = exprIsUni subObj
@@ -159,7 +164,7 @@ subObjectAttributes fSpec depth templateFunction subObj = do
     FEObjT {} ->
       return
         SubObjAttr
-          { subObjName = escapeIdentifier $ objName subObj,
+          { subObjName = escapeIdentifier' $ objName subObj,
             subObjLabel = objName subObj,
             subObjContents = lns,
             subObjExprIsUni = True
@@ -186,7 +191,7 @@ genHTMLView fSpec depth obj =
           } -> do
             subObjAttrs <- mapM (subObjectAttributes fSpec depth genHTMLView) subObjs
 
-            parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
+            parentTemplate <- readTemplate $ "Box-" <> (T.unpack . text1ToText . btType) header <.> "html"
 
             return
               . indentSubStructure
@@ -216,7 +221,7 @@ genHTMLView fSpec depth obj =
           else "Atomic-" <> show ttp <.> "html"
       where
         ttp = cptTType fSpec cpt
-        cptfn = "Concept-" <> T.unpack (name cpt) <.> "html"
+        cptfn = "Concept-" <> show (name cpt) <.> "html"
 
 -- This function is a helper function to add indentation using the EOL character sequence
 -- Let us explain why! For the html view generator we are using HStringTemplates recursively;
@@ -302,10 +307,10 @@ genTypescriptInterface fSpec depth obj =
         maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
-    conceptIdWithImportAlias cpt = "concepts." <> idWithoutType cpt
+    conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType' cpt)
 
     viewIdWithImportAlias :: ViewDef -> Text
-    viewIdWithImportAlias viewDef' = "views." <> (toPascal . vdlbl $ viewDef') <> "View"
+    viewIdWithImportAlias viewDef' = "views." <> (toPascal . fullName $ viewDef') <> "View"
 
 toKebab :: Text -> Text
 toKebab = T.intercalate "-" . fmap T.toLower . T.words

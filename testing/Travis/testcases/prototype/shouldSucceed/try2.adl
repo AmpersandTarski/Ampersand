@@ -1,13 +1,13 @@
-﻿CONTEXT Test IN ENGLISH
-  CLASSIFY A ISA "A_Or_B"
-  CLASSIFY B ISA "A_Or_B"
+CONTEXT Test IN ENGLISH
+  CLASSIFY A ISA AOrB
+  CLASSIFY B ISA AOrB
 
 PATTERN Test2
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RELATION t[Q*Y]
-RULE r = s;t[B*Y]
+RULE Test: r = s;t[B*Y]
 CLASSIFY D IS A/\B
 -- was:  RULE I[D] = I[A]/\I[B]
 -- RULE 'THING'[A] |- t[B*Y];V[Y*A] -- there is something of A in t

@@ -16,9 +16,15 @@ with the results from Haskell-based Ampersand rule evaluator.
 
 validateRulesSQL :: (HasLogFunc env) => FSpec -> RIO env [Text]
 validateRulesSQL fSpec = do
-  case filter (not . isSignal fSpec . fst) (allViolations fSpec) of
+  case filter (not . isSignal fSpec . fst) . allViolations $ fSpec of
     [] -> return ()
-    viols -> exitWith . ViolationsInDatabase . map stringify $ viols
+    viols -> exitWith . ViolationsInDatabase . map toTexts $ viols
+      where
+        toTexts :: (Rule, AAtomPairs) -> (Text, [Text])
+        toTexts (rule, pairs) = (fullName rule, f <$> toList pairs)
+          where
+            f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
+
   hSetBuffering stdout NoBuffering
 
   logDebug "Initializing temporary database"
@@ -48,11 +54,6 @@ validateRulesSQL fSpec = do
             "Validation error. The following terms failed validation:" :
             map showVExp ves
 
-stringify :: (Rule, AAtomPairs) -> (Text, [Text])
-stringify (rule, pairs) = (name rule, map f . Set.elems $ pairs)
-  where
-    f pair = "(" <> showValADL (apLeft pair) <> ", " <> showValADL (apRight pair) <> ")"
-
 -- functions for extracting all terms from the context
 
 getAllInterfaceExps :: FSpec -> [ValidationExp]
@@ -68,22 +69,25 @@ getAllInterfaceExps fSpec =
 
 -- we check the complement of the rule, since that is the term evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
-getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` grules fSpec
+getAllRuleExps fSpec = map getRuleExp . toList $ vrules fSpec `Set.union` grules fSpec
   where
-    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> tshow (name rule))
+    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> fullName rule)
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
-getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
+getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Set.union` grules fSpec
   where
-    getPairViewExps r@Ru {rrviol = Just (PairView pvsegs)} =
-      [(expr, "violation view for rule " <> tshow (name r)) | PairViewExp _ _ expr <- NE.toList pvsegs]
-    getPairViewExps _ = []
+    getPairViewExps r = case rrviol r of
+      Nothing -> []
+      Just (PairView pvsegs) ->
+        [ (expr, "violation view for rule " <> fullName r)
+          | PairViewExp _ _ expr <- NE.toList pvsegs
+        ]
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
   where
     getIdExps identity =
-      [ (objExpression objDef, "identity " <> tshow (name identity))
+      [ (objExpression objDef, "identity " <> fullName identity)
         | IdentityExp objDef <- NE.toList $ identityAts identity
       ]
 
@@ -91,7 +95,7 @@ getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
   where
     getViewExps x =
-      [ (expr, "view " <> tshow (name x))
+      [ (expr, "view " <> fullName x)
         | ViewExp expr <- fmap vsmLoad (vdats x)
       ]
 
@@ -120,7 +124,7 @@ validateExp fSpec total (vExp, i) = do
       return (vExp, True)
     (expr, orig) -> do
       violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec) expr
-      let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
+      let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- toList $ pairsInExpr fSpec expr]
       if L.sort violationsSQL == L.sort violationsAmp
         then do
           return (vExp, True)

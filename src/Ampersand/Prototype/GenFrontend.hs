@@ -13,8 +13,6 @@ import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
-import Data.Hashable (hash)
-import qualified Data.Set as Set
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
@@ -81,18 +79,18 @@ buildConcepts fSpec =
   map
     ( \cpt ->
         FEConcept
-          { cptId = idWithoutType cpt,
+          { cptId = text1ToText $ idWithoutType' cpt,
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
-    $ Set.elems . allConcepts $ fSpec
+    $ toList . allConcepts $ fSpec
 
 buildViews :: FSpec -> [FEView]
 buildViews fSpec =
   map
     ( \viewDef' ->
         FEView
-          { viewId = toPascal . vdlbl $ viewDef',
+          { viewId = toPascal . fullName $ viewDef',
             viewSegments = map buildViewSegment $ segments viewDef',
             viewIsEmpty = null . segments $ viewDef'
           }
@@ -104,7 +102,7 @@ buildViews fSpec =
 buildViewSegment :: ViewSegment -> FEViewSegment
 buildViewSegment viewSegment =
   FEViewSegment
-    { segmentLabel = fromMaybe "" $ vsmlabel viewSegment,
+    { segmentLabel = maybe "" text1ToText (vsmlabel viewSegment),
       segmentTypescriptType = case vsmLoad viewSegment of
         ViewExp {} -> "string"
         ViewText {} -> "'" <> (vsgmTxt . vsmLoad $ viewSegment) <> "'"
@@ -121,14 +119,14 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       obj <- buildObject (BxExpr $ ifcObj ifc)
       return
         FEInterface
-          { ifcName = escapeIdentifier $ name ifc,
-            ifcNameKebab = toKebab . safechars $name ifc,
-            ifcNamePascal = toPascal . safechars $ name ifc,
-            ifcLabel = name ifc,
+          { ifcName = text1ToText . escapeIdentifier . fullName1 $ ifc,
+            ifcNameKebab = toKebab . safechars . fullName $ ifc,
+            ifcNamePascal = toPascal . safechars . fullName $ ifc,
+            ifcLabel = fullName ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
-            srcConcept = idWithoutType . source . objExp $ obj,
+            srcConcept = text1ToText . idWithoutType' . source . objExp $ obj,
             feiRoles = ifcRoles ifc,
             feiObj = obj
           }
@@ -140,24 +138,25 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             let object = substituteReferenceObjectDef fSpec object'
             let feExp = fromExpr . conjNF env $ objExpression object
             let tgt = target feExp
-            let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
+            let mView = maybe (getDefaultViewForConcept fSpec tgt) (lookupView fSpec) (objmView object)
             (aOrB, iExp') <-
               case objmsub object of
                 Nothing -> do
+                  let tgt' = target feExp
                   mSpecificTemplatePath <-
                     case mView of
                       Just Vd {vdhtml = Just (ViewHtmlTemplateFile fName), vdats = viewSegs} ->
-                        return $ Just (fName, mapMaybe vsmlabel viewSegs)
+                        return $ Just (fName, mapMaybe (fmap text1ToText . vsmlabel) viewSegs)
                       _ -> do
                         -- no view, or no view with an html template, so we fall back to target-concept template
                         -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                        let templatePath = "Atomic-" <> T.unpack (idWithoutType tgt) <.> ".html"
+                        let templatePath = "Atomic-" <> T.unpack (text1ToText . idWithoutType' $ tgt') <.> ".html"
                         hasSpecificTemplate <- doesTemplateExist templatePath
                         return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                   return
                     ( FEAtomic
                         { objMPrimTemplate = mSpecificTemplatePath,
-                          viewDef = mView
+                          viewDef = maybe (getDefaultViewForConcept fSpec tgt') (lookupView fSpec) (objmView object)
                         },
                       feExp
                     )
@@ -175,8 +174,8 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                         )
                     InterfaceRef {} ->
                       case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                        [] -> fatal ("Referenced interface " <> siIfcId si <> " missing")
-                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
+                        [] -> fatal ("Referenced interface " <> (fullName . siIfcId) si <> " missing")
+                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> (fullName . siIfcId) si)
                         [i] ->
                           if siIsLink si
                             then do
@@ -196,7 +195,8 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
             return
               FEObjE
-                { objName = name object,
+                { objName = maybe "" text1ToText . objPlainName $ object,
+                  objLabel = text1ToText <$> objPlainName object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
@@ -212,10 +212,10 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                   atomicOrBox = aOrB
                 }
           BxTxt object' ->
-            pure $
+            return
               FEObjT
-                { objName = name object',
-                  objTxt = objtxt object'
+                { objName = maybe "" text1ToText . boxPlainName $ object',
+                  objTxt = boxtxt object'
                 }
 
 safechars :: Text -> Text
