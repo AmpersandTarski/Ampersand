@@ -62,6 +62,7 @@ import Text.Pandoc.Builder (Blocks)
 data FSpec = FSpec
   { -- | The name of the specification, taken from the Ampersand script
     fsName :: !Name,
+    fsLabel :: !(Maybe Label),
     -- | the original context. (for showA)
     originalContext :: !(Maybe A_Context),
     -- | The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
@@ -249,6 +250,9 @@ instance ConceptStructure FSpec where
 
 instance Named FSpec where
   name = fsName
+
+instance Labeled FSpec where
+  mLabel = fsLabel
 
 data Quad = Quad
   { qDcl :: Relation, -- The relation that, when affected, triggers a restore action.
@@ -508,6 +512,7 @@ emptyFSpec nm =
   FSpec
     { fsName = nm,
       -- The name of the specification, taken from the Ampersand script
+      fsLabel = Nothing,
       originalContext = fatal "Don't ask for the original context in the empty FSpec.",
       -- the original context. (for showA)
       fspos = [],

@@ -32,6 +32,7 @@ makeFSpec ::
 makeFSpec env context =
   FSpec
     { fsName = name context,
+      fsLabel = ctxlbl context,
       originalContext = Just context,
       fspos = ctxpos context,
       plugInfos = allplugs,
