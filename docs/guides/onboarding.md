@@ -20,6 +20,8 @@ Request membership to
 - [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization and
 - [Ordina A-team](https://github.com/orgs/AmpersandTarski/teams/ordina-a-team/members).
 
+Above links only work for members of AmpersandTarski
+
 :::tip
 Make sure when you contact Han about this that you provide him with your Github account name (or URL to your GitHub profile page).
 :::

@@ -119,7 +119,7 @@ TODO
 
 ## Assignment
 
-Compile and run the script [Project Administration Example](https://github.com/AmpersandTarski/ampersand-models/tree/master/Examples/ProjectAdministration). Start by reproducing everything that is shown above. It is quite likely that you will be trying out your own ideas before you get to the end... Have fun!
+Compile and run the script [Project Administration Example](https://github.com/AmpersandTarski/ampersand-models/tree/master/examples/ProjectAdministration). Start by reproducing everything that is shown above. It is quite likely that you will be trying out your own ideas before you get to the end... Have fun!
 
 ## What have you learned?
 
