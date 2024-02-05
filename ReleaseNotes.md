@@ -1,6 +1,9 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased changes
+## v5.0.1 (5 february 2024)
+- Some adaptions to w.r.t. the namespaces, in the generated funcional specification.
+
+## v5.0.0 (4 february 2024)
 
 - [Issue #1307](https://github.com/AmpersandTarski/Ampersand/issues/1307) First phase of introducing namespaces in Ampersand.
 - [Issue #1315](https://github.com/AmpersandTarski/Ampersand/issues/1315) Documentation update: landing pages for target audience, governance info for the Ampersand project added.
