@@ -177,7 +177,7 @@ jobs:
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@main
         with:
-          stack-arguments: "--copy-bins --verbose --flag ampersand:buildAll"
+          stack-arguments: "--copy-bins --flag ampersand:buildAll --verbose"
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:
