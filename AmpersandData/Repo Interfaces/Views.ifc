@@ -4,7 +4,7 @@ INCLUDE "Views.xlsx"
 
 VIEW Session : Session(TXT "demo")
 
-INTERFACE Overview (concept) : "_SESSION"
+INTERFACE Overview : "_SESSION"
 BOX <TABS>
      [ Concepts : V[SESSION*Concept]
        BOX<TABLE sortable>

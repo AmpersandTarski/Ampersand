@@ -65,7 +65,7 @@ class CDAnalysable a where
 buildClass :: FSpec -> A_Concept -> Class
 buildClass fSpec root =
   case classOf fSpec root of
-    Nothing -> fatal $ "Concept is not a class: `" <> (text1ToText . tName) root <> "`."
+    Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
     Just exprs ->
       OOClass
         { clName = name root,
@@ -225,7 +225,7 @@ tdAnalysis fSpec =
   where
     allClasses =
       [ OOClass
-          { clName = sqlname table,
+          { clName = name . mainItem $ table,
             clcpt = primKey table,
             clAtts = case table of
               TblSQL {} ->
@@ -277,11 +277,11 @@ tdAnalysis fSpec =
               where
                 mkOOAssoc a =
                   OOAssoc
-                    { assSrc = sqlname t,
+                    { assSrc = name . mainItem $ t,
                       assSrcPort = sqlAttToName a,
                       asslhm = Mult MinZero MaxMany,
                       asslhr = Nothing,
-                      assTgt = name . getConceptTableFor fSpec . target . attExpr $ a,
+                      assTgt = name . mainItem . getConceptTableFor fSpec . target . attExpr $ a,
                       assrhm = Mult MinOne MaxOne,
                       assrhr = Nothing,
                       assmdcl = Nothing
@@ -297,11 +297,11 @@ tdAnalysis fSpec =
         mkRel :: PlugSQL -> (Expression, SqlAttribute) -> Association
         mkRel t (expr, f) =
           OOAssoc
-            { assSrc = sqlname t,
+            { assSrc = name . mainItem $ t,
               assSrcPort = sqlAttToName f,
               asslhm = (mults . flp) expr,
               asslhr = Just $ sqlAttToName f,
-              assTgt = name . getConceptTableFor fSpec . target $ expr,
+              assTgt = name . mainItem . getConceptTableFor fSpec . target $ expr,
               assrhm = mults expr,
               assrhr = case toList . toList $ bindedRelationsIn expr of
                 h : _ -> Just (name h)

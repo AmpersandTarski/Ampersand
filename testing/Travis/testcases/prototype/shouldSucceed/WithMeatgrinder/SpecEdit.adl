@@ -130,7 +130,7 @@ BOX [ "All people" : V[ONE*Person]
     , "All nectarines" : V[ONE*Nectarine]
     ]
 
-INTERFACE Person (owns[Person*Nectarine]) : I[Person]
+INTERFACE Person : I[Person]
 BOX [ "Atom" : I
     , "Nectarines owned" : owns[Person*Nectarine]
     , "Oranges owned"    : owns[Person*Orange]

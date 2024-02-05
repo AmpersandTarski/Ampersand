@@ -11,8 +11,8 @@ PATTERN Try15
   t :: A*A
 ENDPATTERN
 
-INTERFACE "TEST Try15": I[A] cRud BOX [ id : I ]
-INTERFACE "TEST Try15": I[B] cRud BOX [ id : I ]
+INTERFACE TESTTry15 : I[A] cRud BOX [ id : I ]
+INTERFACE TESTTry15 : I[B] cRud BOX [ id : I ]
 ENDCONTEXT
 
 {- 

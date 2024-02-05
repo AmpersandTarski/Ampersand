@@ -10,18 +10,18 @@ INCLUDE "DomainAnalysis.adl"
 --    RULE SURrelations : I[Relation] |- relations~;relations
 --    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
-PATTERN "Type checking"
-    RULE "Unambiguous pretype"
+PATTERN TypeChecking LABEL "Type checking"
+    RULE UnambiguousPretype
      : pretype |- pretype~\I[Concept]
     MESSAGE "Every type-term must be subset of one concept only."
     VIOLATION (SRC I, TXT " is a subset of ", TGT I, TXT ".")
-    ROLE "Type Checker" MAINTAINS "Unambiguous pretype"
+    ROLE "Type Checker" MAINTAINS UnambiguousPretype
 
-    RULE "Complete pretype"
+    RULE CompletePretype
      : I[TypeTerm] |- pretype;pretype~
     MESSAGE "Every type-term must have one concept as its pretype."
     VIOLATION (SRC I, TXT " has no pretype.")
-    ROLE "Type Checker" MAINTAINS "Complete pretype"
+    ROLE "Type Checker" MAINTAINS CompletePretype
 
     RULE checkComposition :
       I[Composition];first;tgt |- (src~;second~)\isaRfxStar
@@ -55,34 +55,34 @@ PATTERN "Type checking"
       ROLE "Type Checker" MAINTAINS checkRightResidual
 ENDPATTERN
 
-PATTERN Reflexiveisaclosures
+PATTERN ReflexiveISAclosures LABEL "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
     MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
 
     RELATION isaRfx[Concept*Concept] -- isaRfx=isa\/isa~
-    ROLE ExecEngine MAINTAINS ComputeisaRfxIns, ComputeisaRfxDel
-    RULE ComputeisaRfxIns LABEL "Compute isaRfxIns" : isa\/isa~ |- isaRfx
+    ROLE ExecEngine MAINTAINS ComputeIsaRfxIns, ComputeIsaRfxDel
+    RULE ComputeIsaRfxIns : isa\/isa~ |- isaRfx
     VIOLATION (TXT "{EX} InsPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeisaRfxDel LABEL "Compute isaRfxDel" : isaRfx |- isa\/isa~
+    RULE ComputeIsaRfxDel : isaRfx |- isa\/isa~
     VIOLATION (TXT "{EX} DelPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
 
     RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa\\/isa~"
-    RULE "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
+    ROLE ExecEngine MAINTAINS TransitiveClosISAs
+    RULE TransitiveClosISAs LABEL "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
     VIOLATION (TXT "{EX} TransitiveClosure;isaRfx;Concept;isaRfxCopy;isaRfxPlus")
 
-    ROLE ExecEngine MAINTAINS ComputeisaRfxStarbyIns, ComputeisaRfxStarbyDel
-    RULE ComputeisaRfxStarbyIns LABEL "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
+    ROLE ExecEngine MAINTAINS IsaRfxStarIns, IsaRfxStarDel
+    RULE IsaRfxStarIns LABEL "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
     VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE ComputeisaRfxStarbyDel LABEL "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
+    RULE IsaRfxStarDel LABEL "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
 
 {- I can't get the following to work...  Grrr!
-PATTERN "Type graph"
+PATTERN TypeGraph LABEL "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew

@@ -17,7 +17,6 @@ where
 import Ampersand.Basics hiding (many, try)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
-import Data.Hashable (hash)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
@@ -403,13 +402,13 @@ pRuleDef ns =
           fromMaybe
             (origToName, Just . Label $ "The rule defined at " <> tshow orig)
             maybeNameDefLbl
-        plainName = "Rule_" <> (tshow . abs . hash . tshow) orig
+        localNm = "Rule_" <> (tshow . abs . hash . tshow) orig
         origToName =
           withNameSpace ns
             . mkName
               RuleName
-            $ ( case toNamePart plainName of
-                  Nothing -> fatal $ "Not a valid NamePart: " <> plainName
+            $ ( case toNamePart localNm of
+                  Nothing -> fatal $ "Not a valid NamePart: " <> localNm
                   Just np -> np
               )
               NE.:| []
@@ -819,7 +818,7 @@ pSubInterface ns =
 pBoxBodyElement :: NameSpace -> AmpParser P_BoxBodyElement
 pBoxBodyElement ns =
   try pBoxItemTerm
-    <|> try pBoxItemText -- We need `try` because in the Term, the plainName is mandatory, while in Text it is optional.
+    <|> try pBoxItemText -- We need `try` because in the Term, the local name is mandatory, while in Text it is optional.
   where
     pBoxItemTerm :: AmpParser P_BoxBodyElement
     pBoxItemTerm =
@@ -833,9 +832,9 @@ pBoxBodyElement ns =
         <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) --for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
-        build orig localName lbl term mCrud mView msub =
+        build orig localNm lbl term mCrud mView msub =
           P_BoxItemTerm
-            { obj_PlainName = Just localName,
+            { obj_PlainName = Just localNm,
               obj_lbl = lbl,
               pos = orig,
               obj_ctx = term,
@@ -907,9 +906,20 @@ pPopulation ::
   AmpParser P_Population
 pPopulation ns =
   (pKey . toText1Unsafe) "POPULATION"
-    *> ( P_RelPopu Nothing Nothing <$> currPos <*> pNamedRel ns <* (pKey . toText1Unsafe) "CONTAINS" <*> pContent
-           <|> P_CptPopu <$> currPos <*> pConceptRef ns <* (pKey . toText1Unsafe) "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma)
-       )
+    *> (try pPopulationCpt <|> pPopulationRel) --FIXME: Adding try solved the problem of parsing POPULATION statements. However, it significantly slowed down the quickCheck tests.
+  where
+    pPopulationRel =
+      P_RelPopu Nothing Nothing
+        <$> currPos
+        <*> pNamedRel ns
+        <* (pKey . toText1Unsafe) "CONTAINS"
+        <*> pContent
+    pPopulationCpt =
+      P_CptPopu
+        <$> currPos
+        <*> pConceptRef ns
+        <* (pKey . toText1Unsafe) "CONTAINS"
+        <*> pBrackets (pAtomValue `sepBy` pComma)
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO: Rename the RoleRule to RoleMantains.

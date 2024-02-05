@@ -127,12 +127,12 @@ data Method
   deriving (Eq)
 
 instance Show Method where
-  show (OOMethodC nm cs) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> "):handle"
-  show (OOMethodR nm as) = T.unpack $ (text1ToText . tName) nm <> "(handle):[" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- as] <> "]"
-  show (OOMethodS nm ks) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- ks] <> "):handle"
-  show (OOMethodD nm) = T.unpack $ (text1ToText . tName) nm <> "(handle)"
-  show (OOMethodU nm cs) = T.unpack $ (text1ToText . tName) nm <> "(handle," <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> ")"
-  show (OOMethod nm cs r) = T.unpack $ (text1ToText . tName) nm <> "(" <> T.intercalate "," [(text1ToText . tName) n | OOAttr n _ _ <- cs] <> "): " <> (text1ToText . tName) r
+  show (OOMethodC nm cs) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> "):handle"
+  show (OOMethodR nm as) = T.unpack $ fullName nm <> "(handle):[" <> T.intercalate "," [fullName n | OOAttr n _ _ <- as] <> "]"
+  show (OOMethodS nm ks) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- ks] <> "):handle"
+  show (OOMethodD nm) = T.unpack $ fullName nm <> "(handle)"
+  show (OOMethodU nm cs) = T.unpack $ fullName nm <> "(handle," <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> ")"
+  show (OOMethod nm cs r) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> "): " <> fullName r
 
 --
 --   testCD

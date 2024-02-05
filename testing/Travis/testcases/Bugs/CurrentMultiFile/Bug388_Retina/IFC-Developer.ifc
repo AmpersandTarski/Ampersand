@@ -74,7 +74,7 @@ BOX[ "Service" : I
    ]
 ------------------------------------------------------------
 --[Doelen]--------------------------------------------------
-INTERFACE Doel  FOR Developer : I[Doel]
+INTERFACE Doel FOR Developer : I[Doel]
 BOX[ "Doel" : I
    , "doelID" : doelID
    , "gerechtvaardigdDoor" : gerechtvaardigdDoor

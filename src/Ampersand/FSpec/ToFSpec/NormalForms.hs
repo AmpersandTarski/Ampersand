@@ -16,7 +16,6 @@ import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
-import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -645,11 +644,11 @@ instance ShowIT RTerm where
           RKl1 e -> wrap i 9 (showExpr 9 e <> closK1)
           RFlp e -> wrap i 9 (showExpr 9 e <> flp')
           RCpl e -> wrap i 9 (compl (showExpr 10 e))
-          RVar r s t -> (text1ToText . tName) r <> lbr <> (text1ToText . tName) s <> star <> (text1ToText . tName) t <> rbr
+          RVar r s t -> fullName r <> lbr <> fullName s <> star <> fullName t <> rbr
           RConst e -> wrap i i (showA e)
-          RId c -> "I" <> lbr <> (text1ToText . tName) c <> rbr
-          RVee s t -> "V" <> lbr <> (text1ToText . tName) s <> star <> (text1ToText . tName) t <> rbr
-          RAtm val c -> showP val <> lbr <> (text1ToText . tName) c <> rbr
+          RId c -> "I" <> lbr <> fullName c <> rbr
+          RVee s t -> "V" <> lbr <> fullName s <> star <> fullName t <> rbr
+          RAtm val c -> showP val <> lbr <> fullName c <> rbr
       wrap :: Int -> Int -> Text -> Text
       wrap i j e' = if i <= j then e' else lpar <> e' <> rpar
 
@@ -784,7 +783,7 @@ weightNF dnf = w
 type Unifier = Set (Name, RTerm)
 
 instance ShowIT Unifier where
-  showIT s = "{" <> T.intercalate ", " [(text1ToText . tName) nm <> "->" <> showIT t | (nm, t) <- Set.toList s] <> "}"
+  showIT s = "{" <> T.intercalate ", " [fullName nm <> "->" <> showIT t | (nm, t) <- Set.toList s] <> "}"
 
 substitute ::
   Text -> -- A text to document fatals
@@ -812,20 +811,20 @@ substitute ruleDoc unifier term =
     subs (RCpl e) = RCpl (subs e)
     subs (RVar r _ _) = case substExprs r of
       [e] -> e
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) r <> " is not in term " <> showIT term <> " using unifier " <> tshow unifier)
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName r <> " is not in term " <> showIT term <> " using unifier " <> tshow unifier)
       -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RId c) = case substExprs (name c) of
       [e] -> e -- This is e@(RId c')
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RVee s t) = case (substExprs (name s), substExprs (name t)) of
       ([RId s'], [RId t']) -> RVee s' t'
       (_, _) -> fatal ("Rule:  " <> ruleDoc <> "\nSomething wrong with RVee in term " <> showIT term <> " with unifier " <> tshow unifier)
     subs (RAtm a c) = case substExprs (name c) of
       [RId c'] -> RAtm a c'
-      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) c <> " is not in term " <> showIT term)
-      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> (text1ToText . tName) c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs e@RConst {} = e
     --     subs t            = fatal ("Rule:  "<>ruleDoc<>"\nError: "<>showIT t<>"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
     substExprs x = [e | (v, e) <- Set.toList unifier, v == x]
@@ -1287,7 +1286,7 @@ normStep
         where
           (t, steps, equ') = nM posCpl l []
           (f, steps', equ'') = nM posCpl r (l : rs)
-      nM _ x@(EEps i sgn) _ | source sgn == i && i == target sgn = (EDcI i, ["source and target are equal to " <> (text1ToText . tName) i <> ", so " <> showA x <> "=" <> showA (EDcI i)], "<=>")
+      nM _ x@(EEps i sgn) _ | source sgn == i && i == target sgn = (EDcI i, ["source and target are equal to " <> fullName i <> ", so " <> showA x <> "=" <> showA (EDcI i)], "<=>")
       nM _ (ELrs (ECps (x, y), z)) _ | not eq && y == z = (x, ["(x;y)/y |- x"], "==>")
       nM _ (ELrs (ECps (x, y), z)) _
         | not eq && flp x == z =

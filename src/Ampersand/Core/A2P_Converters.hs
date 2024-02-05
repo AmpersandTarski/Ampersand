@@ -176,7 +176,7 @@ aViewDef2pViewDef :: ViewDef -> P_ViewDef
 aViewDef2pViewDef vDef =
   P_Vd
     { pos = vdpos vDef,
-      vd_nm = vdname vDef,
+      vd_nm = name vDef,
       vd_label = vdlabel vDef,
       vd_cpt = aConcept2pConcept (vdcpt vDef),
       vd_isDefault = vdIsDefault vDef,
@@ -247,7 +247,7 @@ aPopulation2pPopulation p =
   case p of
     ARelPopu {} ->
       P_RelPopu
-        { pos = Origin $ "Origin is not present in Population(" <> (text1ToText . tName) pDcl <> ") from A-Structure",
+        { pos = Origin $ "Origin is not present in Population(" <> fullName pDcl <> ") from A-Structure",
           p_nmdr = pDcl,
           p_popps = map aAtomPair2pAtomPair (toList $ popps p),
           p_src = Nothing,
@@ -257,7 +257,7 @@ aPopulation2pPopulation p =
         pDcl = aRelation2pNamedRel (popdcl p)
     ACptPopu {} ->
       P_CptPopu
-        { pos = Origin $ "Origin is not present in Population(" <> (text1ToText . tName) (popcpt p) <> ") from A-Structure",
+        { pos = Origin $ "Origin is not present in Population(" <> fullName (popcpt p) <> ") from A-Structure",
           p_cpt = aConcept2pConcept (popcpt p),
           p_popas = map aAtomValue2pAtomValue (popas p)
         }

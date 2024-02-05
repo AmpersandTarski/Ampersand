@@ -117,7 +117,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
                               EN "Functional Design of "
                             )
                 )
-                  <> (singleQuoted . text . text1ToText . tName) fSpec
+                  <> (singleQuoted . text . fullName) fSpec
               titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
           )
         . setAuthors

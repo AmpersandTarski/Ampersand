@@ -17,15 +17,15 @@ CONTEXT PrototypeFramework IN ENGLISH
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"
 
         -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
-        -- RULE "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
+        -- RULE PublicInterfaceIntegrity LABEL "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
 
     -- EQUIVALENCE ifcRoles[Interface*Role] == isPublic;V[Interface*Role]
-    ROLE ExecEngine MAINTAINS EquivalenceInsPairifcRoles
-    RULE EquivalenceInsPairifcRoles LABEL "Equivalence - InsPair ifcRoles": isPublic;V[Interface*Role] |- ifcRoles
+    ROLE ExecEngine MAINTAINS EquivalenceInsRoles
+    RULE EquivalenceInsRoles LABEL "Equivalence - InsPair ifcRoles" : isPublic;V[Interface*Role] |- ifcRoles
     VIOLATION (TXT "{EX} InsPair;ifcRoles;Interface;", SRC I, TXT ";Role;", TGT I)
     
-    ROLE ExecEngine MAINTAINS EquivalenceDelPairifcRoles
-    RULE EquivalenceDelPairifcRoles LABEL "Equivalence - DelPair ifcRoles": isPublic;ifcRoles |- isPublic;V[Interface*Role]
+    ROLE ExecEngine MAINTAINS EquivalenceDelRoles
+    RULE EquivalenceDelRoles LABEL "Equivalence - DelPair ifcRoles" : isPublic;ifcRoles |- isPublic;V[Interface*Role]
     VIOLATION (TXT "{EX} DelPair;ifcRoles;Interface;", SRC I, TXT ";Role;", TGT I)
 
     RELATION isAPI[Interface*Interface] [PROP]

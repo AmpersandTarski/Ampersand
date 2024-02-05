@@ -192,11 +192,11 @@ lexerUtfChar =
     language
     [ English
         :-> [ "Unrecognized character in the beginning of the file.",
-              "Is it saved with encoding UTF-8 without BOM?"
+              "The expected encoding should be UTF-8 without BOM."
             ],
       Dutch
         :-> [ "Onbekend karakter in het begin van het bestand.",
-              "Is het bestand opgeslagen met encoding UTF-8 zonder BOM?"
+              "De verwachtte encoding is UTF-8 zonder BOM."
             ]
     ]
 

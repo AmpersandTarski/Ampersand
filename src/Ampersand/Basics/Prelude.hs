@@ -18,6 +18,7 @@ module Ampersand.Basics.Prelude
     foldl,
     undefined,
     Text1 (..),
+    unsnoc,
   )
 where
 
@@ -105,3 +106,14 @@ defaultFirstFalse _ = False
 
 decodeUtf8 :: ByteString -> Text
 decodeUtf8 = decodeUtf8With lenientDecode
+
+-- functions missing in RIO
+
+-- | Returns all but the last character and the last character of a
+-- 'Text', or 'Nothing' if empty.
+--
+-- @since 1.2.3.0
+unsnoc :: Text -> Maybe (Text, Char)
+unsnoc t = case T.uncons (T.reverse t) of
+  Nothing -> Nothing
+  Just (h, tl) -> Just (T.reverse tl, h)

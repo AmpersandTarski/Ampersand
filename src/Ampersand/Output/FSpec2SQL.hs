@@ -39,7 +39,7 @@ dumpSQLqueries env fSpec =
     y = interfaceS fSpec <> interfaceG fSpec
     showInterface :: Interface -> [Text]
     showInterface ifc =
-      header ("INTERFACE: " <> (text1ToText . tName) ifc)
+      header ("INTERFACE: " <> fullName ifc)
         <> (map ("  " <>) . showObjDef . ifcObj) ifc
       where
         showObjDef :: ObjectDef -> [Text]
@@ -71,7 +71,7 @@ dumpSQLqueries env fSpec =
       where
         showRule :: Rule -> Text1
         showRule r =
-          toText1Unsafe "  - " <> (tName r <> toText1Unsafe (": " <> showA r))
+          toText1Unsafe "  - " <> (fullName1 r <> toText1Unsafe (": " <> showA r))
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)

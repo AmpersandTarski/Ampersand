@@ -4,11 +4,11 @@ geitCounter   :: Geit   * GeitCounter   [UNI]   REPRESENT GeitCounter   TYPE INT
 schaapCounter :: Schaap * SchaapCounter [UNI]   REPRESENT SchaapCounter TYPE INTEGER
 
 ROLE ExecEngine MAINTAINS InitializeGeitCounters
-RULE InitializeGeitCounters: I[Geit] |- geitCounter;V
+RULE InitializeGeitCounters : I[Geit] |- geitCounter;V
 VIOLATION (TXT "{EX} InsPair;geitCounter;Geit;", SRC I, TXT ";GeitCounter;3")
 
 ROLE ExecEngine MAINTAINS InitializeSchaapCounters
-RULE InitializeSchaapCounters: I[Schaap] |- schaapCounter;schaapCounter~
+RULE InitializeSchaapCounters : I[Schaap] |- schaapCounter;schaapCounter~
 VIOLATION (TXT "{EX} InsPair;schaapCounter;Schaap;", SRC I, TXT ";SchaapCounter;5")
 
 INTERFACE Geiten:  V[SESSION*Geit]   CRuD BOX [ Geit:   I cRud, Number: geitCounter   cRud]

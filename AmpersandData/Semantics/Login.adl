@@ -62,44 +62,44 @@ RULE loginChange: ingelogd;accLogin |- sessionLoginnaam
 MEANING "Wanneer de loginnaam van een gebruiker wijzigt gedurende een sessie, wijzigt de sessie-loginnaam mee."
 VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;", TGT I)
 
-RULE "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
+RULE usernamePasswordCombination LABEL "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
 ENDPATTERN
 
 VIEW SESSION : SESSION(sessionLoginnaam)
 
-INTERFACE "Login" (sessionLoginnaam, sessionPassword) : "_SESSION" - ingelogd;V
+INTERFACE Login : "_SESSION" - ingelogd;V
 BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
     ]
 
 
-INTERFACE "Logout" (sessionLoginnaam) : "_SESSION"/\ingelogd;ingelogd~
+INTERFACE Logout : "_SESSION"/\ingelogd;ingelogd~
 BOX [ "Logout:" : sessionLoginnaam
     ]
 
 
-INTERFACE "Internals" FOR Beheerder: "_SESSION"[SESSION]
+INTERFACE Internals FOR Beheerder: "_SESSION" FOR Beheerder: "_SESSION"[SESSION]
 BOX [ --"Actieve sessies" : V[SESSION*SESSION]
       --BOX [ "Sessie id" : I[SESSION]
       --    , "loginnaam" : ingelogd;accLogin
       --    , "rol"       : ingelogd;accRol
       --    ]
      "Accounts" : V[SESSION*Account]
-      BOX <TABLE> [ loginnaam : I LINKTO INTERFACE "Account"
+      BOX <TABLE> [ loginnaam : I LINKTO INTERFACE Account
            , rol       : accRol
            ]
     ]
 
-INTERFACE "Account" (accLogin, accPassword, accRol) FOR Beheerder: I[Account]
+INTERFACE Account FOR Beheerder: I[Account]
 BOX [ loginnaam: accLogin
     , wachtwoord: accPassword
     , rol: accRol
     ]
 
 -- a) een interface voor het beheren van je eigen account in de MENU bar.
-INTERFACE "Mijn account"
+INTERFACE MijnAccount LABEL "Mijn account"
     (accPassword, sessionPassword, accLogin):
     "_SESSION";ingelogd
 BOX [ "Login naam"  : accLogin
@@ -111,7 +111,7 @@ BOX [ "Login naam"  : accLogin
     ]
 
 -- b) een interface voor het beheren van je account, niet in de MENU bar.
-INTERFACE "Mijn Persoonsgegevens" -- Zelfde, maar dan als 'gewone' INTERFACE.
+INTERFACE MijnPersoonsgegevens LABEL "Mijn Persoonsgegevens" -- Zelfde, maar dan als 'gewone' INTERFACE.
     (accPassword, sessionPassword, accLogin):
     I[Account] /\ ingelogd~;"_SESSION";ingelogd
 BOX [ "Login naam"  : accLogin
@@ -124,7 +124,7 @@ BOX [ "Login naam"  : accLogin
 
 -- c) een interface voor een beheerder om elk account behalve het eigen account te wijzigen.
 --    Het eigen account mag niet gewijzigd worden, omdat zulks de sessie-integriteit zou kunnen verstoren.
-INTERFACE "Beheerde Accounts"
+INTERFACE BeheerdeAccounts LABEL "Beheerde Accounts"
     (accLogin, accPassword, accRol) FOR Beheerder:
     "_SESSION";ingelogd;(accRol;'SystemAdmin';V[Role*Account]-I)
 BOX <TABLE sortable>

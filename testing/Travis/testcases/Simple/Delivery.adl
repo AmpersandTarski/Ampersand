@@ -98,7 +98,7 @@ BOX <TABS>
          ] 
    ]
    
-INTERFACE Client  FOR Client : I[Client]
+INTERFACE Client FOR Client : I[Client]
 BOX [ "Name"   : clientName
     , "Street" : clientAddress
     , "City"   : clientCity
@@ -163,13 +163,13 @@ BOX [ "Name"     : vendorName
          
     ]
 
-INTERFACE Product  FOR Vendor : I[Product]
+INTERFACE Product FOR Vendor : I[Product]
 BOX [ "Name"    : productName
     , "Price"   : productPrice
     , "Vendors" : sells~
     ]
 
-INTERFACE AcceptOrderByVendor  FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
+INTERFACE AcceptOrderByVendor FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
 BOX [ "Client"  : orderedBy
     , "Vendor"  : orderedAt
     , "Product" : orderOf

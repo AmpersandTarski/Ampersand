@@ -113,7 +113,6 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
-import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Typeable (typeOf)
 import RIO.Char (toUpper)
 import qualified RIO.List as L
@@ -168,7 +167,7 @@ data A_Context = ACtx
   deriving (Typeable)
 
 instance Show A_Context where
-  show = T.unpack . text1ToText . tName
+  show = T.unpack . fullName
 
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
@@ -177,7 +176,7 @@ instance Ord A_Context where
   a `compare` b = name a `compare` name b
 
 instance Unique A_Context where
-  showUnique = tName
+  showUnique = fullName1
 
 instance Named A_Context where
   name = ctxnm
@@ -221,7 +220,7 @@ instance Eq Pattern where
   a == b = compare a b == EQ
 
 instance Unique Pattern where
-  showUnique = tName
+  showUnique = fullName1
 
 instance Ord Pattern where
   a `compare` b = name a `compare` name b
@@ -346,7 +345,7 @@ instance Eq Rule where
   a == b = compare a b == EQ
 
 instance Unique Rule where
-  showUnique = tName
+  showUnique = fullName1
 
 instance Ord Rule where
   compare = compare `on` name -- Origin should not be here: A check that they all have unique names is done before typechecking.
@@ -354,7 +353,7 @@ instance Ord Rule where
 instance Show Rule where
   show x =
     T.unpack $
-      "RULE " <> text1ToText (tName x) <> ": " <> tshow (formalExpression x)
+      "RULE " <> text1ToText (fullName1 x) <> ": " <> tshow (formalExpression x)
 
 instance Traced Rule where
   origin = rrfps
@@ -496,7 +495,7 @@ instance Show Relation where
   show = T.unpack . text1ToText . showWithSign
 
 showWithSign :: Relation -> Text1
-showWithSign rel = tName rel <> showSign rel
+showWithSign rel = fullName1 rel <> showSign rel
 
 newtype Meaning = Meaning {ameaMrk :: Markup} deriving (Show, Eq, Ord, Typeable, Data)
 
@@ -540,7 +539,7 @@ instance Traced IdentityRule where
   origin = idPos
 
 instance Unique IdentityRule where
-  showUnique = tName
+  showUnique = fullName1
 
 instance Ord IdentityRule where
   compare a b = name a `compare` name b
@@ -581,13 +580,13 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = toText1Unsafe "ViewDef_" <> tName vd <> toText1Unsafe ("_" <> text1ToText (tName (vdcpt vd)))
+  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("_" <> text1ToText (fullName1 (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
 
 instance Ord ViewDef where
-  a `compare` b = (vdname a, vdcpt a) `compare` (vdname b, vdcpt b)
+  a `compare` b = (name a, vdcpt a) `compare` (name b, vdcpt b)
 
 data ViewSegment = ViewSegment
   { vsmpos :: !Origin,
@@ -702,7 +701,7 @@ instance Traced Interface where
   origin = ifcPos
 
 instance Unique Interface where
-  showUnique = tName
+  showUnique = fullName1
 
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> Name -> Interface
@@ -952,7 +951,7 @@ instance Unique AAtomValue where -- FIXME:  this in incorrect! (AAtomValue shoul
         AAVBoolean {} -> tshow (aavbool value)
         AAVDate {} -> tshow (aadateDay value)
         AAVDateTime {} -> tshow (aadatetime value)
-        AtomValueOfONE -> text1ToText (tName nameOfONE)
+        AtomValueOfONE -> text1ToText (fullName1 nameOfONE)
 
 showValSQL :: AAtomValue -> Text
 showValSQL val =
@@ -1008,12 +1007,12 @@ instance Unique ExplObj where
             ( case e of
                 (ExplConcept cpt) -> uniqueShowWithType cpt
                 (ExplRelation rel) -> uniqueShowWithType rel
-                (ExplRule s) -> toText1Unsafe "a Rule named " <> tName s
-                (ExplIdentityDef s) -> toText1Unsafe "an Ident named " <> tName s
-                (ExplViewDef s) -> toText1Unsafe "a View named " <> tName s
-                (ExplPattern s) -> toText1Unsafe "a Pattern named " <> tName s
-                (ExplInterface s) -> toText1Unsafe "an Interface named " <> tName s
-                (ExplContext s) -> toText1Unsafe "a Context named " <> tName s
+                (ExplRule s) -> toText1Unsafe "a Rule named " <> fullName1 s
+                (ExplIdentityDef s) -> toText1Unsafe "an Ident named " <> fullName1 s
+                (ExplViewDef s) -> toText1Unsafe "a View named " <> fullName1 s
+                (ExplPattern s) -> toText1Unsafe "a Pattern named " <> fullName1 s
+                (ExplInterface s) -> toText1Unsafe "an Interface named " <> fullName1 s
+                (ExplContext s) -> toText1Unsafe "a Context named " <> fullName1 s
             )
 
 data Expression
@@ -1235,7 +1234,7 @@ instance HasSignature Expression where
   sign (EMp1 _ c) = Sign c c
 
 showSign :: HasSignature a => a -> Text1
-showSign x = Text1 '[' $ (text1ToText . tName) s <> "*" <> (text1ToText . tName) t <> "]"
+showSign x = Text1 '[' $ fullName s <> "*" <> fullName t <> "]"
   where
     Sign s t = sign x
 
@@ -1304,7 +1303,7 @@ instance Eq A_Concept where
 -}
 
 instance Unique AConceptDef where
-  showUnique = toText1Unsafe . tshow . name
+  showUnique = toText1Unsafe . fullName
 
 instance Unique A_Concept where
   showUnique = toText1Unsafe . tshow
@@ -1327,7 +1326,7 @@ instance Labeled A_Concept where
     ONE -> Nothing
 
 instance Show A_Concept where
-  show = T.unpack . text1ToText . tName
+  show = T.unpack . fullName
 
 -- | special type of Show, for types that can have aliases. Its purpose is
 --   to use when giving feedback to the ampersand modeler, in cases aliases
@@ -1336,11 +1335,11 @@ class Show a => ShowWithAliases a where
   showWithAliases :: a -> Text1
 
 instance ShowWithAliases A_Concept where
-  showWithAliases ONE = tName ONE
+  showWithAliases ONE = fullName1 ONE
   showWithAliases cpt@PlainConcept {} =
     case NE.tail (fst <$> aliases cpt) of
-      [] -> tName cpt
-      xs -> tName cpt <> toText1Unsafe ("(" <> T.intercalate ", " (text1ToText . tName <$> xs) <> ")")
+      [] -> fullName1 cpt
+      xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fullName <$> xs) <> ")")
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c, val) = toText1Unsafe $ "ConceptAtomValue_" <> (tshow . abs . hash $ readable)
@@ -1432,7 +1431,7 @@ instance Named Type where
 
 instance Show Type where
   show a = T.unpack $ case a of
-    UserConcept (nm, _) -> text1ToText . tName $ nm
+    UserConcept (nm, _) -> fullName nm
     BuiltIn tt -> "BuiltIn " <> tshow tt
     RepresentSeparator -> "RepresentSeparator"
 
@@ -1668,7 +1667,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
           T.intercalate "\n    " $
             [ "Representation mismatch",
               "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
-              "as representation of an atom in concept `" <> text1ToText (tName c) <> "`.",
+              "as representation of an atom in concept `" <> text1ToText (fullName1 c) <> "`.",
               "However, the representation-type of that concept is " <> implicitly,
               "defined as " <> tshow typ <> ". The found value does not match that type."
             ]

@@ -207,7 +207,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
     detailsOfClass cl =
       header
         (sectionLevel + 1)
-        ((text . l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph . strong . text . text1ToText . tName) cl)
+        ((text . l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph . strong . text . fullName) cl)
         <> case clcpt cl of
           Nothing -> mempty
           Just cpt -> purposes2Blocks env (purposesOf fSpec outputLang' cpt)
@@ -249,9 +249,9 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
                  ]
             in case asscs of
-                 [] -> para (text (text1ToText . tName $ cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
+                 [] -> para (text (fullName cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _ ->
-                   para (text (text1ToText . tName $ cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                   para (text (fullName cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                      <> simpleTable
                        [ (plain . text . l) (NL "Source", EN "Source"),
                          (plain . text . l) (NL "uniek", EN "unique"),
@@ -343,7 +343,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                   Dutch -> text ("Het technisch datamodel bestaat uit de volgende " <> tshow nrOfTables <> " tabellen:")
                   English -> text ("The technical datamodel consists of the following " <> tshow nrOfTables <> " tables:")
           )
-        <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . text1ToText . tName)) (plugInfos fSpec), isTable p]
+        <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . text1ToText . showUnique)) (plugInfos fSpec), isTable p]
       where
         isTable :: PlugInfo -> Bool
         isTable (InternalPlug TblSQL {}) = True
@@ -355,7 +355,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             ( case outputLang' of
                 Dutch -> "Tabel: "
                 English -> "Table: "
-                <> (text . text1ToText . tName) p
+                <> (text . text1ToText . showUnique) p
             )
             <> case p of
               InternalPlug tbl@TblSQL {} ->

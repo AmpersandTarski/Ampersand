@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- | The intentions behind FSpec (SJ 30 dec 2008):
 -- Generation of functional designs is a core functionality of Ampersand.
@@ -22,10 +23,11 @@ module Ampersand.FSpec.FSpec
     RelStore (..),
     metaValues,
     SqlAttribute (..),
-    SqlColumName,
+    SqlName,
     sqlColumNameToString,
     sqlColumNameToText1,
-    text1ToSqlColumName,
+    sqlColumNameToText,
+    text1ToSqlName,
     isPrimaryKey,
     isForeignKey,
     Typology (..),
@@ -51,7 +53,6 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.Crud
-import Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -265,7 +266,7 @@ instance Eq Quad where
 instance Unique Quad where
   showUnique quad = toText1Unsafe $ "Quad_" <> (tshow . abs . hash $ readable)
     where
-      readable = "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (text1ToText . tName . qRule) quad
+      readable = "ONCHANGE " <> tshow (qDcl quad) <> " FIX " <> (fullName . qRule) quad
 
 --
 dnf2expr :: DnfClause -> Expression
@@ -279,11 +280,11 @@ dnf2expr dnf =
 newtype PlugInfo = InternalPlug PlugSQL
   deriving (Show, Eq, Typeable)
 
-instance Named PlugInfo where
-  name (InternalPlug psql) = name psql
+--instance Named PlugInfo where
+--  name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
-  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> tName psql
+  showUnique (InternalPlug psql) = toText1Unsafe "SQLTable " <> showUnique psql
 
 instance ConceptStructure PlugInfo where
   concs (InternalPlug psql) = concs psql
@@ -302,7 +303,7 @@ data PlugSQL
     --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
     --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
     TblSQL
-      { sqlname :: !Name,
+      { sqlname :: !SqlName,
         -- | the first attribute is the concept table of the most general concept (e.g. Person)
         --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
         --   the remaining attributes represent attributes.
@@ -310,7 +311,8 @@ data PlugSQL
         -- | lookup table that links all typology concepts to attributes in the plug
         -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
         cLkpTbl :: ![(A_Concept, SqlAttribute)],
-        dLkpTbl :: ![RelStore]
+        dLkpTbl :: ![RelStore],
+        mainItem :: !(Either A_Concept Relation)
       }
   | -- | stores one relation r in two ordered columns
     --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -318,26 +320,24 @@ data PlugSQL
     --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
     --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
     BinSQL
-      { sqlname :: !Name,
+      { sqlname :: !SqlName,
         cLkpTbl :: ![(A_Concept, SqlAttribute)],
-        dLkpTbl :: ![RelStore]
+        dLkpTbl :: ![RelStore],
+        mainItem :: !(Either A_Concept Relation)
       }
   deriving (Show, Typeable)
 
-instance Named PlugSQL where
-  name = sqlname
-
-instance Rename PlugSQL where
-  rename p txt1 = p {sqlname = updatedName txt1 p}
+--instance Named PlugSQL where
+--  name = sqlname
 
 instance Eq PlugSQL where
   a == b = compare a b == EQ
 
 instance Unique PlugSQL where
-  showUnique = tName
+  showUnique = sqlColumNameToText1 . sqlname
 
 instance Ord PlugSQL where
-  compare x y = compare (name x) (name y)
+  compare x y = compare (sqlname x) (sqlname y)
 
 plugAttributes :: PlugSQL -> NE.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
@@ -366,7 +366,7 @@ lookupCpt fSpec cpt =
 -- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
-  [] -> fatal $ "tableFor: No concept table for " <> text1ToText (tName c)
+  [] -> fatal $ "tableFor: No concept table for " <> text1ToText (fullName1 c)
   (t, _) : _ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.
@@ -385,31 +385,34 @@ data SqlAttributeUsage
   | PlainAttr -- None of the above
   deriving (Eq, Show)
 
-newtype SqlColumName = SqlColumName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
+newtype SqlName = SqlName Text1 -- In het kader van namespaces introductie even een specifiek type van gemaakt.
 
-instance Ord SqlColumName where
+instance Ord SqlName where
   compare = compare `on` foo
     where
-      foo :: SqlColumName -> Text
-      foo (SqlColumName t1) = T.toUpper . text1ToText $ t1
+      foo :: SqlName -> Text
+      foo (SqlName t1) = T.toUpper . text1ToText $ t1
 
-instance Eq SqlColumName where
+instance Eq SqlName where
   a == b = compare a b == EQ
 
-instance Show SqlColumName where
+instance Show SqlName where
   show = sqlColumNameToString
 
-sqlColumNameToString :: SqlColumName -> String
-sqlColumNameToString = T.unpack . text1ToText . sqlColumNameToText1
+sqlColumNameToString :: SqlName -> String
+sqlColumNameToString = T.unpack . sqlColumNameToText
 
-sqlColumNameToText1 :: SqlColumName -> Text1
-sqlColumNameToText1 (SqlColumName t) = t
+sqlColumNameToText1 :: SqlName -> Text1
+sqlColumNameToText1 (SqlName t) = t
 
-text1ToSqlColumName :: Text1 -> SqlColumName
-text1ToSqlColumName = SqlColumName
+sqlColumNameToText :: SqlName -> Text
+sqlColumNameToText = text1ToText . sqlColumNameToText1
+
+text1ToSqlName :: Text1 -> SqlName
+text1ToSqlName = SqlName
 
 data SqlAttribute = Att
-  { attSQLColName :: !SqlColumName,
+  { attSQLColName :: !SqlName,
     -- | De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
     attExpr :: !Expression,
     attType :: !TType,

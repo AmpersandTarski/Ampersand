@@ -1,8 +1,8 @@
-﻿CONTEXT "TEST" IN ENGLISH
+﻿CONTEXT TEST IN ENGLISH
 
 r :: A*B =[ ("a", "b") ]
 
-INTERFACE A (r) : I[ONE]
+INTERFACE A : I[ONE]
 BOX[ "A's" : V[ONE*A]
    BOX[ "A" : I
       , "r" : r

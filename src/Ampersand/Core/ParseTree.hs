@@ -72,7 +72,6 @@ where
 import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
-import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -200,7 +199,7 @@ instance Labeled Role where
   mLabel = rlLbl
 
 instance Unique Role where
-  showUnique = tName
+  showUnique = fullName1
 
 data P_Pattern = P_Pat
   { -- | the starting position in the file in which this pattern was declared.
@@ -303,7 +302,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = tName cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
+  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin cd
 
@@ -1231,7 +1230,7 @@ instance Named P_Concept where
   name P_ONE = nameOfONE
 
 instance Show P_Concept where
-  show = T.unpack . text1ToText . tName
+  show = T.unpack . fullName
 
 data P_Sign = P_Sign
   { pSrc :: P_Concept,

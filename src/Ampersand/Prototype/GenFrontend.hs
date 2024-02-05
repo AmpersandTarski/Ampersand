@@ -13,7 +13,6 @@ import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
-import Data.Hashable (hash)
 import RIO.Char
 import qualified RIO.Text as T
 import RIO.Time
@@ -91,7 +90,7 @@ buildViews fSpec =
   map
     ( \viewDef' ->
         FEView
-          { viewId = toPascal . tshow . vdname $ viewDef',
+          { viewId = toPascal . fullName $ viewDef',
             viewSegments = map buildViewSegment $ segments viewDef',
             viewIsEmpty = null . segments $ viewDef'
           }
@@ -120,10 +119,10 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       obj <- buildObject (BxExpr $ ifcObj ifc)
       return
         FEInterface
-          { ifcName = text1ToText . escapeIdentifier . tName $ ifc,
-            ifcNameKebab = toKebab . safechars . tshow $ name ifc,
-            ifcNamePascal = toPascal . safechars . tshow $ name ifc,
-            ifcLabel = text1ToText . tName $ ifc,
+          { ifcName = text1ToText . escapeIdentifier . fullName1 $ ifc,
+            ifcNameKebab = toKebab . safechars . fullName $ ifc,
+            ifcNamePascal = toPascal . safechars . fullName $ ifc,
+            ifcLabel = fullName ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
@@ -175,8 +174,8 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                         )
                     InterfaceRef {} ->
                       case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                        [] -> fatal ("Referenced interface " <> (text1ToText . tName . siIfcId) si <> " missing")
-                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> (text1ToText . tName . siIfcId) si)
+                        [] -> fatal ("Referenced interface " <> (fullName . siIfcId) si <> " missing")
+                        (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> (fullName . siIfcId) si)
                         [i] ->
                           if siIsLink si
                             then do

@@ -10,7 +10,7 @@ import Ampersand.Output.ToJSON.JSONutils
 newtype Roles = Roles [RoleJson] deriving (Generic, Show)
 
 data RoleJson = RoleJson
-  { roleJSONid :: Text,
+  { roleJSONname :: Text,
     roleJSONlabel :: Text,
     roleJSONisService :: Bool,
     roleJSONmaintains :: [Text]
@@ -29,8 +29,8 @@ instance JSON FSpec Roles where
 instance JSON (Role, Int) RoleJson where
   fromAmpersand _ fSpec (role', _) =
     RoleJson
-      { roleJSONid = text1ToText . idWithoutType' $ role',
+      { roleJSONname = text1ToText . idWithoutType' $ role',
         roleJSONlabel = label role',
         roleJSONisService = rlIsService role',
-        roleJSONmaintains = map (text1ToText . tName) . toList . fMaintains fSpec $ role'
+        roleJSONmaintains = map fullName . toList . fMaintains fSpec $ role'
       }

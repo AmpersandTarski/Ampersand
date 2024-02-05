@@ -1,14 +1,14 @@
 CONTEXT Issue1029a
 
-RULE "aap": I[A]
+RULE aap : I[A]
 
 PATTERN Dummy1
-  RULE "aap": I[B] 
-  RULE "aap": I[B] 
+  RULE aap : I[B] 
+  RULE aap : I[B] 
 ENDPATTERN
 
 PATTERN Dummy2
-  RULE "aap": I[C] 
+  RULE aap : I[C] 
 ENDPATTERN
 
 ENDCONTEXT

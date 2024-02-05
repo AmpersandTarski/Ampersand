@@ -12,6 +12,7 @@ import Conduit
 import Data.Yaml
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.ByteString.Lazy.Partial as BLPartial
+import RIO.List as L
 import RIO.Process
 import qualified RIO.Text as T
 import System.Directory
@@ -108,10 +109,14 @@ doTestsInDir = awaitForever once
   where
     once x = do
       lift . logInfo $ ">> " <> displayShow (traversalNr x) <> ": " <> (display . T.pack $ path x)
-      let candidates = filter isCandidate (filesOf . dirContent $ x)
+      let candidates = L.sort . filter isCandidate . filesOf . dirContent $ x
             where
               isCandidate :: FilePath -> Bool
-              isCandidate fp = "adl" `isExtensionOf` fp
+              isCandidate fp =
+                takeExtensions fp
+                  `elem` [ ".adl", -- .adl files only, so we can use .ifc files etc. in INCLUDE statements, without having to check them separately
+                           ".archimate" -- this is to test the archichecker
+                         ]
       if yaml `elem` (filesOf . dirContent $ x)
         then do
           res <- lift parseYaml
@@ -137,7 +142,7 @@ doTestsInDir = awaitForever once
                 failures = 0
               }
       where
-        doFilesWithCommand :: (HasProcessContext env, HasLogFunc env) => [FilePath] -> TestInfo -> RIO env TestResults
+        doFilesWithCommand :: (HasProcessContext env, HasLogFunc env) => [FilePath] -> TestSpec -> RIO env TestResults
         doFilesWithCommand candidates ti =
           runConduit $
             doAll candidates (testCmds ti)
@@ -171,7 +176,7 @@ doTestsInDir = awaitForever once
                     >>= maybe
                       (return sofar)
                       (\result -> loop $! add sofar result)
-        parseYaml :: RIO env (Either ParseException TestInfo)
+        parseYaml :: RIO env (Either ParseException TestSpec)
         parseYaml = liftIO . decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
     sayInstruction x = logDebug $ indent <> "  Command: " <> display (command x) <> if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode " <> display (exitcode x) <> ")."
@@ -205,12 +210,12 @@ yaml = "testinfo.yaml" -- the required name of the file that contains the test i
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the
 -- yaml files in the test suite.
 
-newtype TestInfo = TestInfo
+newtype TestSpec = TestSpec
   { testCmds :: [TestInstruction]
   }
   deriving (Generic)
 
-instance FromJSON TestInfo
+instance FromJSON TestSpec
 
 data TestInstruction = TestInstruction
   { command :: Text,

@@ -19,7 +19,7 @@ PATTERN ARM20Test4
 verplichting :: BIAlijst * Verplichting [INJ]
 biaVaststellingsbesluit :: BIAlijst * JaNee [UNI]
 
-RULE IntegriteitVanHetBiaVaststellingsbesluit:
+RULE IntegriteitBIAvaststellingsbesluit LABEL "Integriteit van het BIA vaststellingsbesluit":
 biaVaststellingsbesluit;"Ja" |- (V[BIAlijst*Verplichting]-verplichting)!((I[Verplichting] /\ oblImpact;oblImpact~);V[Verplichting*JaNee])
 
 CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn

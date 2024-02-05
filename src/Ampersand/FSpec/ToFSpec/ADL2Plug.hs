@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   ( makeGeneratedSqlPlugs,
     typologies,
@@ -12,9 +15,16 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+
+maxLengthOfDatabaseTableName :: Int
+maxLengthOfDatabaseTableName = 64
+
+shaLength :: Int
+shaLength = 7
 
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c =
@@ -38,59 +48,114 @@ makeGeneratedSqlPlugs ::
   [PlugSQL]
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
---   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = conceptTables <> linkTables
+--   if the set contains no concepts, a linktable is created.
+makeGeneratedSqlPlugs env context = inspectedCandidateTables
   where
+    inspectedCandidateTables :: [PlugSQL]
+    inspectedCandidateTables
+      | null candidateTables = []
+      | otherwise = case filter (not . isSingleton) . eqCl sqlname $ candidateTables of
+        [] -> case filter hasNameConflict candidateTables of
+          [] -> candidateTables
+          xs ->
+            fatal . T.intercalate "\n   " $
+              [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
+              ]
+                <> concatMap showNameConflict (L.sortOn sqlname xs)
+                <> hint
+        xs ->
+          fatal . T.intercalate "\n   " $
+            [ "The following names are used for different tables:"
+            ]
+              <> concatMap myShow xs
+              <> hint
+      where
+        hint :: [Text]
+        hint =
+          [ "",
+            "Please report this as a bug! ",
+            "When these fatals are thrown, it is good to know that these sqlnames are disambiguated by adding a gitLikeSha. This is a hash",
+            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough. That is why",
+            "after the generation of the tables this check is done.",
+            "This text is here to help the developer of ampersand to investigate."
+          ]
+        myShow :: NonEmpty PlugSQL -> [Text]
+        myShow x =
+          [ "The name `" <> (tshow . sqlname . NE.head $ x) <> "` is used for " <> (tshow . NE.length $ x) <> " tables:"
+          ]
+            <> map tshow (toList x)
+        hasNameConflict :: PlugSQL -> Bool
+        hasNameConflict = not . all isSingleton . NE.toList . eqClassNE (sameBy attSQLColName) . plugAttributes
+        showNameConflict :: PlugSQL -> [Text]
+        showNameConflict plug =
+          ("    " <>)
+            <$> [ "Table: " <> tshow (sqlname plug)
+                ]
+              <> ( ("    " <>)
+                     <$> (L.sort . map (tshow . attSQLColName) . toList . plugAttributes $ plug)
+                 )
+        sameBy foo a b = foo a == foo b
+        isSingleton :: NonEmpty a -> Bool
+        isSingleton (_ NE.:| []) = True
+        isSingleton (_ NE.:| _) = False
+
+    candidateTables :: [PlugSQL]
+    candidateTables = map makeTable components
+    components :: [(Maybe Typology, [Relation])]
+    components =
+      map componentsForTypology (typologies context)
+        <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+      where
+        componentsForTypology typol =
+          (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
+        componentsForOrphanRelation rel = (Nothing, [rel])
+        isOrphan = isNothing . conceptTableOf
+        relationBelongsToConceptTable :: Typology -> Relation -> Bool
+        relationBelongsToConceptTable typol rel =
+          case conceptTableOf rel of
+            Nothing -> False
+            Just x -> x `elem` tyCpts typol
+
     repr = representationOf (ctxInfo context)
-    conceptTables = map makeConceptTable conceptTableParts
-    linkTables = map makeLinkTable linkTableParts
-    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (typologies context)
-    makeConceptTable :: (Typology, [Relation]) -> PlugSQL
-    makeConceptTable (typ, dcls) =
+    allRelationsInContext = toList (relsDefdIn context)
+
+    makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
+    makeTable (mTypol, rels) = case (mTypol, rels) of
+      (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
+      (Nothing, [rel]) -> makeLinkTable rel
+      (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
+      (Just typol, _) -> makeConceptTable typol rels
+    allKeyConcepts :: [A_Concept]
+    allKeyConcepts = map tyroot . typologies $ context
+    allLinkTableRelations :: [Relation]
+    allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
+    makeConceptTable :: Typology -> [Relation] -> PlugSQL
+    makeConceptTable typol allRelationsInTable =
       TblSQL
-        { sqlname = name tableKey,
-          attributes = map cptAttrib cpts <> map dclAttrib dcls,
+        { sqlname = determineWideTableName tableKey,
+          attributes =
+            map cptAttrib allConceptsInTable
+              <> map dclAttrib allRelationsInTable,
           cLkpTbl = conceptLookuptable,
-          dLkpTbl = dclLookuptable
+          dLkpTbl = dclLookuptable,
+          mainItem = toConceptOrRelation tableKey
         }
       where
-        cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
+        allConceptsInTable =
+          -- All concepts from the typology, orderd from generic to specific
+          reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
 
-        colNameMap :: [(Either A_Concept Relation, SqlColumName)]
-        colNameMap = f [] (cpts, dcls)
-          where
-            f :: [(Either A_Concept Relation, SqlColumName)] -> ([A_Concept], [Relation]) -> [(Either A_Concept Relation, SqlColumName)]
-            f names (cs, ds) =
-              case (cs, ds) of
-                ([], []) -> names
-                ([], h : tl) -> f (insert (Right h) names) ([], tl)
-                (h : tl, _) -> f (insert (Left h) names) (tl, ds)
-            insert :: Either A_Concept Relation -> [(Either A_Concept Relation, SqlColumName)] -> [(Either A_Concept Relation, SqlColumName)]
-            insert item mp = (item, mkNewSqlColumName itemName $ map snd mp) : mp
-              where
-                itemName = case item of
-                  Right rel -> name rel
-                  Left cpt -> name cpt
-            -- Find the next free SqlColumName
-            mkNewSqlColumName :: Name -> [SqlColumName] -> SqlColumName
-            mkNewSqlColumName nm forbiddens = firstFree 0
-              where
-                firstFree :: Integer -> SqlColumName
-                firstFree i =
-                  if toSqlColName i `elem` forbiddens
-                    then firstFree (i + 1)
-                    else toSqlColName i
-                toSqlColName :: Integer -> SqlColumName
-                toSqlColName i =
-                  text1ToSqlColumName . toText1Unsafe $
-                    (T.intercalate "_" . map tshow . nameSpaceOf $ nm)
-                      <> plainNameOf nm
-                      <> (if i > 0 then tshow i else mempty)
-        tableKey = tyroot typ
+        determineWideTableName :: A_Concept -> SqlName
+        determineWideTableName keyConcept =
+          determineSqlName
+            (map toConceptOrRelation allKeyConcepts)
+            (toConceptOrRelation keyConcept)
+        tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
+        tableKey = tyroot typol
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
-        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- cpts]
+        conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
-        dclLookuptable = map f dcls
+        dclLookuptable = map f allRelationsInTable
           where
             f d =
               RelStore
@@ -104,21 +169,18 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
         lookupC cpt = case [f | (c', f) <- conceptLookuptable, cpt == c'] of
           [] ->
             fatal $
-              "Concept `" <> (text1ToText . tName) cpt <> "` is not in the lookuptable."
-                <> "\ncpts: "
-                <> tshow cpts
-                <> "\ndcls: "
-                <> tshow (map (\d -> (text1ToText . tName) d <> tshow (sign d) <> " " <> tshow (properties d)) dcls)
+              "Concept `" <> fullName cpt <> "` is not in the lookuptable."
+                <> "\nallConceptsInTable: "
+                <> tshow allConceptsInTable
+                <> "\nallRelationsInTable: "
+                <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
                 <> "\nlookupTable: "
                 <> tshow (map fst conceptLookuptable)
           x : _ -> x
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) cpt <> "`. "))
-                  (lookup (Left cpt) colNameMap),
+            { attSQLColName = determineSqlName tableScope (toConceptOrRelation cpt),
               attExpr = expr,
               attType = repr cpt,
               attUse =
@@ -139,10 +201,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
-            { attSQLColName =
-                fromMaybe
-                  (fatal ("No name found for `" <> (text1ToText . tName) dcl <> "`. "))
-                  (lookup (Right dcl) colNameMap),
+            { attSQLColName = determineSqlName tableScope (toConceptOrRelation dcl),
               attExpr = dclAttExpression,
               attType = repr (target dclAttExpression),
               attUse =
@@ -174,14 +233,25 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
     makeLinkTable :: Relation -> PlugSQL
     makeLinkTable dcl =
       BinSQL
-        { sqlname = name dcl,
+        { sqlname = determineLinkTableName dcl,
           cLkpTbl = [], --TODO: in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
           --given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
           --if dcl is TOT, then the concept (source dcl) is stored in this plug
           --if dcl is SUR, then the concept (target dcl) is stored in this plug
-          dLkpTbl = [theRelStore]
+          dLkpTbl = [theRelStore],
+          mainItem = toConceptOrRelation dcl
         }
       where
+        determineLinkTableName :: Relation -> SqlName
+        determineLinkTableName rel =
+          determineSqlName
+            scope
+            (toConceptOrRelation rel)
+          where
+            scope =
+              map toConceptOrRelation allKeyConcepts
+                <> map toConceptOrRelation allLinkTableRelations
+
         bindedExp :: Expression
         bindedExp = EDcD dcl
         theRelStore =
@@ -202,7 +272,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
           | otherwise = bindedExp
         srcAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ tName . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
+            { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
               attExpr = domExpr,
               attType = repr (source domExpr),
               attUse =
@@ -216,7 +286,7 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
             }
         trgAtt =
           Att
-            { attSQLColName = text1ToSqlColumName $ tName . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
+            { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
               attType = repr (target codExpr),
               attUse =
@@ -228,23 +298,6 @@ makeGeneratedSqlPlugs env context = conceptTables <> linkTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
-    dist ::
-      Relations -> -- all relations that are to be distributed
-      [Typology] -> -- the sets of concepts, each one contains all concepts that will go into a single table.
-      ( [(Typology, [Relation])], -- tuples of a set of concepts and all relations that can be
-      -- stored into that table. The order of concepts is not modified.
-        [Relation] -- The relations that cannot be stored into one of the concept tables.
-      )
-    dist dcls cptLists =
-      ( [(t, declsInTable t) | t <- cptLists],
-        [d | d <- toList dcls, isNothing (conceptTableOf d)]
-      )
-      where
-        declsInTable typ =
-          [ dcl | dcl <- toList dcls, case conceptTableOf dcl of
-                                        Nothing -> False
-                                        Just x -> x `elem` tyCpts typ
-          ]
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
@@ -294,3 +347,56 @@ typologies context =
            }
          | c <- toList $ concs context Set.\\ concs (gens context)
        ]
+
+-- | ConceptOrRelation is ment to be things that can end up in a database. It is designed
+-- to have Concepts and Relations as instances.
+type ConceptOrRelation = Either A_Concept Relation
+
+instance Named ConceptOrRelation where
+  name (Left x) = name x
+  name (Right x) = name x
+
+disambiguatedName :: ConceptOrRelation -> Text1
+disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
+  where
+    basepart = case unsnoc firstPart of
+      Nothing -> fatal "Impossible to have an empty name."
+      Just (init, last)
+        | last == '.' -> init
+        | otherwise -> firstPart
+    firstPart = T.take maxLengthOfDatabaseTableName . fullName $ x
+
+gitLikeSha :: ConceptOrRelation -> Text
+gitLikeSha = T.take shaLength . tshow . sha1hash . hashText
+
+hashText :: ConceptOrRelation -> Text
+hashText x = case x of
+  Left cpt -> fullName cpt
+  Right rel ->
+    fullName rel
+      <> fullName (source rel)
+      <> fullName (target rel)
+
+class Named a => TableArtefact a where
+  toConceptOrRelation :: a -> ConceptOrRelation
+
+instance TableArtefact A_Concept where
+  toConceptOrRelation = Left
+
+instance TableArtefact Relation where
+  toConceptOrRelation = Right
+
+determineSqlName :: [ConceptOrRelation] -> ConceptOrRelation -> SqlName
+determineSqlName scope conceptOrRelation =
+  text1ToSqlName
+    . (if mustBeDisambiguated then disambiguatedName else fullName1)
+    $ conceptOrRelation
+  where
+    mustBeDisambiguated :: Bool
+    mustBeDisambiguated =
+      case filter (conceptOrRelation `elem`) . map toList $ eqClass equality scope of
+        [clazz] -> (T.length . fullName $ conceptOrRelation) > maxLengthOfDatabaseTableName || length clazz > 1
+        _ -> fatal "Concept must be found exactly in one list."
+      where
+        equality :: Named a => a -> a -> Bool
+        equality a b = (T.toLower . fullName) a == (T.toLower . fullName) b

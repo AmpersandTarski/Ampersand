@@ -10,7 +10,6 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-import Data.Hashable
 import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
@@ -69,7 +68,7 @@ rulefromProp prp rel =
     r = EDcD rel
     rExpr =
       if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-        then fatal ("Illegal property of an endo relation " <> tshow (name rel))
+        then fatal ("Illegal property of an endo relation " <> fullName rel)
         else case prp of
           Uni -> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
           Tot -> EDcI (source r) .|-. r .:. flp r
@@ -92,8 +91,8 @@ rulefromProp prp rel =
 
     violMsg prop = [msg lang | lang <- [English, Dutch]]
       where
-        s = tName (source rel)
-        t = tName (target rel)
+        s = fullName1 (source rel)
+        t = fullName1 (target rel)
         msg lang =
           Markup
             { amLang = lang,
@@ -107,10 +106,10 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> toText1Unsafe $ "Each " <> text1ToText s <> " may only have one " <> text1ToText t <> " in the relation " <> text1ToText (tName rel)
-                        Inj -> toText1Unsafe $ "Each " <> text1ToText t <> " may only have one " <> text1ToText s <> " in the relation " <> text1ToText (tName rel)
-                        Tot -> toText1Unsafe $ "Every " <> text1ToText s <> " must have a " <> text1ToText t <> " in the relation " <> text1ToText (tName rel)
-                        Sur -> toText1Unsafe $ "Every " <> text1ToText t <> " must have a " <> text1ToText s <> " in the relation " <> text1ToText (tName rel)
+                        Uni -> toText1Unsafe $ "Each " <> text1ToText s <> " may only have one " <> text1ToText t <> " in the relation " <> text1ToText (fullName1 rel)
+                        Inj -> toText1Unsafe $ "Each " <> text1ToText t <> " may only have one " <> text1ToText s <> " in the relation " <> text1ToText (fullName1 rel)
+                        Tot -> toText1Unsafe $ "Every " <> text1ToText s <> " must have a " <> text1ToText t <> " in the relation " <> text1ToText (fullName1 rel)
+                        Sur -> toText1Unsafe $ "Every " <> text1ToText t <> " must have a " <> text1ToText s <> " in the relation " <> text1ToText (fullName1 rel)
                     Dutch ->
                       case prop of
                         Sym -> explByFullName lang
@@ -118,10 +117,10 @@ rulefromProp prp rel =
                         Trn -> explByFullName lang
                         Rfx -> explByFullName lang
                         Irf -> explByFullName lang
-                        Uni -> toText1Unsafe $ "Elke " <> text1ToText s <> " mag slechts één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (tName rel)
-                        Inj -> toText1Unsafe $ "Elke " <> text1ToText t <> " mag slechts één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (tName rel)
-                        Tot -> toText1Unsafe $ "Elke " <> text1ToText s <> " dient één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (tName rel)
-                        Sur -> toText1Unsafe $ "Elke " <> text1ToText t <> " dient één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (tName rel)
+                        Uni -> toText1Unsafe $ "Elke " <> text1ToText s <> " mag slechts één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Inj -> toText1Unsafe $ "Elke " <> text1ToText t <> " mag slechts één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Tot -> toText1Unsafe $ "Elke " <> text1ToText s <> " dient één " <> text1ToText t <> " hebben in de relatie " <> text1ToText (fullName1 rel)
+                        Sur -> toText1Unsafe $ "Elke " <> text1ToText t <> " dient één " <> text1ToText s <> " hebben in de relatie " <> text1ToText (fullName1 rel)
             }
         explByFullName lang = toText1Unsafe $ showDcl <> (" is " <> propFullName False lang prop)
 

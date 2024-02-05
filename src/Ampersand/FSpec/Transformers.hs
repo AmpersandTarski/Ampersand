@@ -113,7 +113,7 @@ transformersFormalAmpersand fSpec =
         "ConceptDef",
         "ConceptName",
         Set.fromList [Uni],
-        [ (dirtyId' cdf, PopAlphaNumeric . tshow . acdname $ cdf)
+        [ (dirtyId' cdf, PopAlphaNumeric . fullName $ cdf)
           | cdf :: AConceptDef <- instanceList fSpec
         ]
       ),
@@ -660,7 +660,7 @@ transformersFormalAmpersand fSpec =
         "Concept",
         "ConceptName",
         Set.fromList [Uni],
-        [ (dirtyId' cpt, (PopAlphaNumeric . text1ToText . tName) cpt)
+        [ (dirtyId' cpt, (PopAlphaNumeric . fullName) cpt)
           | cpt :: A_Concept <- instanceList fSpec
         ]
       ),
@@ -668,7 +668,7 @@ transformersFormalAmpersand fSpec =
         "Context",
         "ContextName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' ctx, (PopAlphaNumeric . text1ToText . tName) ctx)
+        [ (dirtyId' ctx, (PopAlphaNumeric . fullName) ctx)
           | ctx :: A_Context <- instanceList fSpec
         ]
       ),
@@ -676,7 +676,7 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "InterfaceName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' ifc, (PopAlphaNumeric . text1ToText . tName) ifc)
+        [ (dirtyId' ifc, (PopAlphaNumeric . fullName) ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
@@ -684,7 +684,7 @@ transformersFormalAmpersand fSpec =
         "Pattern",
         "PatternName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' pat, (PopAlphaNumeric . text1ToText . tName) pat)
+        [ (dirtyId' pat, (PopAlphaNumeric . fullName) pat)
           | pat :: Pattern <- instanceList fSpec
         ]
       ),
@@ -692,7 +692,7 @@ transformersFormalAmpersand fSpec =
         "Relation",
         "RelationName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' rel, (PopAlphaNumeric . text1ToText . tName) rel)
+        [ (dirtyId' rel, (PopAlphaNumeric . fullName) rel)
           | rel :: Relation <- instanceList fSpec
         ]
       ),
@@ -700,7 +700,7 @@ transformersFormalAmpersand fSpec =
         "Role",
         "RoleName",
         Set.fromList [Uni],
-        [ (dirtyId' rol, (PopAlphaNumeric . text1ToText . tName) rol)
+        [ (dirtyId' rol, (PopAlphaNumeric . fullName) rol)
           | rol :: Role <- instanceList fSpec
         ]
       ),
@@ -708,7 +708,7 @@ transformersFormalAmpersand fSpec =
         "Rule",
         "RuleName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' rul, (PopAlphaNumeric . text1ToText . tName) rul)
+        [ (dirtyId' rul, (PopAlphaNumeric . fullName) rul)
           | rul :: Rule <- instanceList fSpec
         ]
       ),
@@ -716,7 +716,7 @@ transformersFormalAmpersand fSpec =
         "View",
         "ViewDefName",
         Set.fromList [Uni, Tot],
-        [ (dirtyId' vd, PopAlphaNumeric . text1ToText . tName $ vd)
+        [ (dirtyId' vd, PopAlphaNumeric . fullName $ vd)
           | vd :: ViewDef <- instanceList fSpec
         ]
       ),
@@ -724,7 +724,7 @@ transformersFormalAmpersand fSpec =
         "ObjectDef",
         "View",
         Set.empty,
-        [ (dirtyId' obj, PopAlphaNumeric . text1ToText . tName $ vw)
+        [ (dirtyId' obj, PopAlphaNumeric . fullName $ vw)
           | obj :: ObjectDef <- instanceList fSpec,
             Just vw <- [objmView obj]
         ]

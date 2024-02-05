@@ -23,25 +23,25 @@ CLASSIFY Verwachting   ISA Criterium
 CLASSIFY Gewetensvraag IS  Verplichting /\ Verwachting
 
 CLASSIFY ExterneVerplichting ISA Verplichting
-RULE ExterneVerplichtingen: I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
+RULE ExterneVerplichtingen LABEL "Externe verplichtingen": I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
 CLASSIFY ExterneVerwachting ISA Verwachting
-RULE ExterneVerwachtingen:  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
+RULE ExterneVerwachtingen LABEL "Externe verwachtingen":  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
 
-RULE Gewetensvragen1: I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
-RULE Gewetensvragen2: I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
+RULE Gewetensvragen1 : I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
+RULE Gewetensvragen2 : I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
 
-RULE VerbodOpNietGekarakteriseerdeCriteria: I[Criterium] |- I[Verplichting] \/ I[Verwachting]
+RULE Verbod LABEL "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting] \/ I[Verwachting]
 
 --[BIA-lijst]--
 
 biaVerplichtingDef :: Bedrijfsfunctie * ExterneVerplichting [INJ]
-ROLE Developer MAINTAINS BiaLijstBijhouden
-RULE BiaLijstBijhouden: biaVerplichtingDef = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
+ROLE Developer MAINTAINS BIAlijstBijhouden
+RULE BIAlijstBijhouden LABEL "BIA-lijst bijhouden": biaVerplichtingDef = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
 --[Afdekkingen]--
 afdekking :: Verplichting * Verwachtingsverzameling [UNI]
 
-RULE AfdekkingenZijnVerwachtingsverzamelingen: afdekking |- vvVerplichting~
+RULE Afdekkingen LABEL "Afdekkingen zijn verwachtingsverzamelingen": afdekking |- vvVerplichting~
 
 --KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBFDef, TXT ":", vvID)
 IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, vvID) -- lokaal in de DB
@@ -50,7 +50,7 @@ vvID :: Verwachtingsverzameling -> VVID
 vvVerplichting :: Verwachtingsverzameling -> Verplichting
 vvVerwachting :: Verwachtingsverzameling * Verwachting
 
-RULE IntegriteitVanVerwachtingsverzamelingen: vvVerplichting~;vvVerwachting |- critBF;critBF~
+RULE Verwachtingsverzamelingen LABEL "Integriteit van verwachtingsverzamelingen": vvVerplichting~;vvVerwachting |- critBF;critBF~
 
 vvBFDef :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
 ROLE ExecEngine MAINTAINS insvvBFDef
@@ -76,14 +76,14 @@ BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
 --[Bedrijfsfuncties]---------------------------------------
 
 INTERFACE Bedrijfsfunctie -- I[Bedrijfsfunctie]
-   FOR Developer : I[Bedrijfsfunctie]
+  FOR Developer : I[Bedrijfsfunctie]
 BOX[ "ID" : I
    , "Naam" : bfNaam
    , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
    ]
 
 INTERFACE BIALijst -- I[Bedrijfsfunctie]
-   FOR Developer : I[Bedrijfsfunctie]
+  FOR Developer : I[Bedrijfsfunctie]
 BOX[ "Algemeen" : I
    , "Nieuwe verplichtingen" : nieuweVerplichting
       BOX[ Verplichting : I[Verplichting]
@@ -99,11 +99,11 @@ BOX[ "Algemeen" : I
    ]
 
 
-PATTERN EEBIALijstInterface
+PATTERN BIAlijstInterface LABEL "{EE} BIA-lijst interface"
 nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
-ROLE ExecEngine MAINTAINS NieuweBiaVerplichtingen
-RULE NieuweBiaVerplichtingen: nieuweVerplichting |- -V
+ROLE ExecEngine MAINTAINS NieuweBIAverplichtingen
+RULE NieuweBIAverplichtingen LABEL "nieuwe BIA verplichtingen": nieuweVerplichting |- -V
 -- bij de 'v'tjes moet 'ExterneVerplichting' staan in plaats van 'Verplichting', hoewel dat laatste ook zou moeten kunnen...
 --                                  vvvvvvvvvvvv
 VIOLATION (TXT "{EX} InsPair;critBF;Verplichting;", TGT I, TXT ";Bedrijfsfunctie;", SRC I
@@ -116,7 +116,7 @@ ENDPATTERN
 --[Verplichtingen]-----------------------------------------
 
 INTERFACE Verplichting -- I[Verplichting]
-   FOR Developer : I[Verplichting]
+  FOR Developer : I[Verplichting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
@@ -142,7 +142,7 @@ BOX[ "ID" : I
 --[Verwachtingsverzamelingen en gewetensvragen]------------
 
 INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
-   FOR Developer  : I[Verwachtingsverzameling]
+  FOR Developer  : I[Verwachtingsverzameling]
 BOX[ Verwachtingsverzameling : I
    BOX[ "ID" : I
       , Verplichting : vvVerplichting
@@ -165,7 +165,7 @@ BOX[ Verwachtingsverzameling : I
    ]
 
 INTERFACE Gewetensvraag -- I[Gewetensvraag]
-   FOR Developer : I[Gewetensvraag]
+  FOR Developer : I[Gewetensvraag]
 BOX[ Gewetensvraag: I
    BOX[ "ID"        : I
        
@@ -190,7 +190,7 @@ BOX[ Gewetensvraag: I
 --[Verwachtingen]------------------------------------------
 
 INTERFACE Verwachting -- I[Verwachting]
-   FOR Developer : I[Verwachting]
+  FOR Developer : I[Verwachting]
 BOX[ "ID" : I
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF

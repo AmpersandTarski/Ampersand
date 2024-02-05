@@ -4,7 +4,7 @@ INCLUDE "Tables.xlsx"
 
 
 
-INTERFACE SQLPlug (table, key, concept): I[TblSQL] CRUD
+INTERFACE SQLPlug : I[TblSQL] CRUD
 BOX [ SQLPlug : I
     , attributes : table~
       BOX [ SqlAttribute : I
@@ -13,7 +13,7 @@ BOX [ SQLPlug : I
     , key : key
     ]
 
-INTERFACE SqlAttribute (concept): I[SqlAttribute] CRUD
+INTERFACE SqlAttribute : I[SqlAttribute] CRUD
 BOX [ SqlAttribute : I
     , concept  : concept
     , sqlPlug : table
@@ -21,7 +21,7 @@ BOX [ SqlAttribute : I
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Overview : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation] CRUD
       BOX<TABLE sortable>
@@ -69,19 +69,19 @@ VIEW Concept : Concept(name)
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept] CRUD
+INTERFACE Concept: I[Concept] CRUD
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
-INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair] CRUD
+INTERFACE Pair: I[Pair] CRUD
 BOX [ "relation(s)"  : in
      , lAtom          : lAtom
      , rAtom          : rAtom
      ]
 
-INTERFACE RelTable(name[Relation*Identifier],source,target) : I[Relation] CRUD
+INTERFACE RelTable: I[Relation] CRUD
 BOX [ name    : name
      , source  : source
      , target  : target

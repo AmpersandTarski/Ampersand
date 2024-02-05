@@ -34,7 +34,7 @@ chpConceptualAnalysis env lev fSpec =
           Dutch ->
             para
               ( "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
-                  <> (singleQuoted . str . text1ToText . tName) fSpec
+                  <> (singleQuoted . str . fullName) fSpec
                   <> " te kunnen bespreken. "
                   <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
                   <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
@@ -43,7 +43,7 @@ chpConceptualAnalysis env lev fSpec =
           English ->
             para
               ( "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
-                  <> (singleQuoted . str . text1ToText . tName) fSpec
+                  <> (singleQuoted . str . fullName) fSpec
                   <> "."
                   <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
                   <> "The text targets readers with sufficient skill in conceptual modeling."
@@ -125,7 +125,7 @@ chpConceptualAnalysis env lev fSpec =
         -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
         caSubsections :: [(Blocks, [Relation])]
         caSubsections =
-          [ ( header 3 (str . text1ToText . tName $ cl) <> identityBlocks cpt <> entityBlocks,
+          [ ( header 3 (str . fullName $ cl) <> identityBlocks cpt <> entityBlocks,
               entityRels
             )
             | (cl, cpt) <- entities,
@@ -159,7 +159,7 @@ chpConceptualAnalysis env lev fSpec =
               [ (plain . l) (NL "Attribuut", EN "Attribute"),
                 (plain . l) (NL "Betekenis", EN "Meaning")
               ]
-              ( [ [ (plain . text . text1ToText . tName) attr,
+              ( [ [ (plain . text . fullName) attr,
                     defineRel rel
                   ]
                   | attr <- clAtts cl,
@@ -207,8 +207,8 @@ chpConceptualAnalysis env lev fSpec =
           case rrkind r of
             Identity c ->
               (para . l)
-                ( NL ("Een identiteit op \"" <> (label) c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
-                  EN ("An identity rule for \"" <> (label) c <> "\" is defined, albeit without a purpose.")
+                ( NL ("Een identiteit op \"" <> label c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
+                  EN ("An identity rule for \"" <> label c <> "\" is defined, albeit without a purpose.")
                 )
             _ -> fatal "The result of idRulesOfTheme themeContent has produced a RuleCont whose rrkind is not Identity c."
         caRemainingRelations :: Blocks
@@ -222,7 +222,7 @@ chpConceptualAnalysis env lev fSpec =
                       ( label rel <> " "
                           <> if null cls
                             then tshow (sign rel)
-                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map (text1ToText . tName)) cls <> ")"
+                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map fullName) cls <> ")"
                       ),
                     defineRel rel -- use "tshow.attType" for the technical type.
                   ]

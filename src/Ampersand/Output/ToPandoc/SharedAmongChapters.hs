@@ -49,7 +49,6 @@ import Ampersand.Graphic.Graphics
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux
 import Ampersand.Output.PredLogic
-import Data.Hashable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -246,13 +245,13 @@ instance Hashable Ident where
 
 instance Show Ident where
   show ident = T.unpack $ case ident of
-    IdentByName nm -> text1ToText . tName $ nm
+    IdentByName nm -> fullName nm
     IdentRel nm src tgt ->
-      (text1ToText . tName) nm
+      fullName nm
         <> "["
         <> ( if src == tgt
-               then (text1ToText . tName) src
-               else (text1ToText . tName) src <> "*" <> (text1ToText . tName) tgt
+               then fullName src
+               else fullName src <> "*" <> fullName tgt
            )
         <> "]"
     IdentOverig -> ":overig"
@@ -474,7 +473,7 @@ orderingByTheme env fSpec =
             cCptPurps = purposesOf fSpec (outputLang env fSpec) c
           }
       where
-        c = PlainConcept ((acdname cpt, acdlabel cpt) NE.:| [])
+        c = PlainConcept ((name cpt, acdlabel cpt) NE.:| [])
 
 dpRule' ::
   (HasDocumentOpts env) =>

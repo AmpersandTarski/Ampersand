@@ -22,7 +22,7 @@ data CrudInfo = CrudInfo
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept, Bool, Bool, Bool, Bool)]
 getCrudObjectsForInterface crudInfo ifc =
   fromMaybe
-    (fatal $ "NO CRUD objects for interface " <> tshow (name ifc))
+    (fatal $ "NO CRUD objects for interface " <> fullName ifc)
     (lookup ifc $ crudObjsPerInterface crudInfo)
 
 mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
@@ -107,7 +107,7 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
               [i] -> getAllInterfaceExprs allIfcs i
           Box {} -> concatMap getExprs' (siObjs si)
           where
-            referencedInterface = text1ToText . tName . siIfcId $ si
+            referencedInterface = fullName . siIfcId $ si
             getExprs' (BxExpr e) = getExprs e
             getExprs' (BxTxt _) = []
 

@@ -142,8 +142,7 @@ PURPOSE RELATION omvang REF "Artikel 2 lid 3"
 
 PURPOSE RULE EenJaarInDienst REF "Artikel 2 lid 1"
 {+Omdat werknemers niet direct na indiensttreding een verzoek tot aanpassing mogen doen, geldt in de wet een termijn van een jaar na indiensttreding.+}
-RULE EenJaarInDienst  LABEL "Een jaar in dienst":
-    arbeidsrelatie~;tot;ingang;(I /\ minstensEenJaar~;minstensEenJaar)  |- inDienst;minstensEenJaar
+RULE EenJaarInDienst LABEL "Een jaar in dienst" : arbeidsrelatie~;tot;ingang;(I /\ minstensEenJaar~;minstensEenJaar)  |- inDienst;minstensEenJaar
 -- Deze regel geeft alleen overtredingen als 'minstensEenJaar' al is uitgerekend, en laat bovendien toe dat 'TGT I' in onderstaande 'VIOLATION' kan worden gebruikt.
 MEANING "De werknemer, die een verzoek indient, dient ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van die aanpassing in dienst te zijn bij die werkgever."
 MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 1:"
@@ -151,22 +150,21 @@ VIOLATION (SRC werknemer, TXT " is minder dan een jaar voorafgaand aan ingangsti
 
 PURPOSE RULE TijdigIndienen REF "Artikel 2 lid 3"
 {+Omdat werkgevers voldoende tijd moeten krijgen voor het beslissen, schrijft de wet voor dat een aanvraag vier maanden voor de beoogde ingangsdatum van de aanpassing moet worden ingediend.+}
-RULE TijdigIndienen  LABEL "Tijdig indienen":
-    tot;ingang;vierMaandenOfMeer~ |- ingediend
+RULE TijdigIndienen LABEL "tijdig indienen" : tot;ingang;vierMaandenOfMeer~ |- ingediend
 MEANING "Deze regel bewaakt dat er minstens vier maanden zijn verstreken tussen het tijdstip van aanvragen en het tijdstip van ingang van de aanpassing."
 MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 3"
 VIOLATION (TXT "Het ", SRC I, TXT " is later dan vier maanden voor de ingangsdatum (", SRC tot;ingang, TXT ") ingediend.")
 
-RULE IndieningsmogelijkhedenBeperkenTotTweeJaar LABEL "Indieningsmogelijkheden beperken tot twee jaar":
-    minstensTweeJaarTrigger /\ beslisdatum~;op;isDirecteVoorloperVan;(I[Verzoek] /\ laatsteVerzoek~;laatsteVerzoek);ingediend |- minstensTweeJaar
+RULE Indieningsmogelijkheden LABEL "Indieningsmogelijkheden beperken tot 2 jaar":
+minstensTweeJaarTrigger /\ beslisdatum~;op;isDirecteVoorloperVan;(I[Verzoek] /\ laatsteVerzoek~;laatsteVerzoek);ingediend |- minstensTweeJaar
 MEANING "De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen"
-PURPOSE RULE IndieningsmogelijkhedenBeperkenTotTweeJaar REF "Artikel 2 lid 3"
+PURPOSE RULE Indieningsmogelijkheden REF "Artikel 2 lid 3"
 {+De wet zegt: 'De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen'. Daarom moet een regel bestaan die dit afdwingt.+}
 
-RULE AlleenOpHetLaatsteVerzoekBesluiten LABEL "Alleen op het laatste verzoek besluiten":
-    arbeidsrelatie~ /\ -laatsteVerzoek |- arbeidsrelatie~;(I /\ op~;op)
+RULE LaatsteVerzoek LABEL "Alleen op het laatste verzoek kan (mogelijk) nog worden besloten": 
+arbeidsrelatie~ /\ -laatsteVerzoek |- arbeidsrelatie~;(I /\ op~;op)
 MEANING "Per arbeidsrelatie mag hoogstens een verzoek bestaan waarover (nog) niet besloten is."
-PURPOSE RULE AlleenOpHetLaatsteVerzoekBesluiten REF "Artikel 2 lid 3"
+PURPOSE RULE LaatsteVerzoek REF "Artikel 2 lid 3"
 {+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, kan er op elk tijdstip en per arbeidsrelatie hoogstens een verzoek bestaan waarop nog niet is besloten. Dat is dan dus tevens het laatste verzoek. Deze eigenschap maakt het mogelijk om eenduidig een opeenvolging van verzoeken per arbeidsrelatie te maken.+}
 
 PURPOSE RULE beslisser REF "Artikel 2 lid 1,5,6,7"
@@ -181,11 +179,10 @@ ENDPATTERN
 --[Proces: Verzoek behandelen]-----------------------------
 PATTERN VerzoekBehandelen LABEL "Verzoek behandelen"
 
-ROLE Werkgever MAINTAINS BeslissenOverVerzoek
-PURPOSE RULE BeslissenOverVerzoek REF "Artikel 2 lid 10"
+ROLE Werkgever MAINTAINS BeslissenVerzoek
+PURPOSE RULE BeslissenVerzoek REF "Artikel 2 lid 10"
 {+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Daarom moet op elk verzoek tijdig een besluit worden genomen.+}
-RULE BeslissenOverVerzoek  LABEL "Beslissen over verzoek":
-    arbeidsrelatie;werkgever |- op~;door
+RULE BeslissenVerzoek LABEL "Beslissen over verzoek" : arbeidsrelatie;werkgever |- op~;door
 MEANING "Degene aan wie een verzoek gericht is dient daarop (tijdig!) een beslissing te nemen."
 MESSAGE "Nog beslissen:"
 VIOLATION (TGT I, TXT " moet voor ", SRC uitersteBeslisdatum, TXT " beslissen over ", SRC I, TXT ".")
@@ -193,17 +190,15 @@ VIOLATION (TGT I, TXT " moet voor ", SRC uitersteBeslisdatum, TXT " beslissen ov
 ROLE Werkgever MAINTAINS BeslissingMededelen
 PURPOSE RULE BeslissingMededelen REF "Artikel 2 lid 7"
 {+De beslissing op het verzoek om aanpassing van de arbeidsduur wordt door de werkgever schriftelijk aan de werknemer meegedeeld.+}
-RULE BeslissingMededelen  LABEL "Beslissing mededelen":
-    op |- medegedeeldAan;werknemer~;arbeidsrelatie~ 
+RULE BeslissingMededelen LABEL "Beslissing mededelen" : op |- medegedeeldAan;werknemer~;arbeidsrelatie~ 
 MEANING "De beslissing op een verzoek dient medegedeeld te worden aan de werknemer"
 MESSAGE "Nog te verzenden besluiten:"
 VIOLATION (TXT "verzoek van ", SRC op;arbeidsrelatie;werknemer, TXT ", die op ", SRC aanp[Beslissing*Aanpassing];ingang, TXT " in effect treedt.")
 
-PURPOSE RULE VerzoekGemotiveerdAfwijzen REF "Artikel 2 lid 7"
+PURPOSE RULE VerzoekAfwijzen REF "Artikel 2 lid 7"
 {+Indien de werkgever het verzoek niet inwilligt of de spreiding van de uren vaststelt in afwijking van de wensen van de werknemer, wordt dit onder schriftelijke opgave van de redenen meegedeeld.
 Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.+}
-RULE VerzoekGemotiveerdAfwijzen  LABEL "Verzoek gemotiveerd afwijzen":
-    I /\ op;tot;-I;aanp~ |- reden;reden~
+RULE VerzoekAfwijzen LABEL "Verzoek gemotiveerd afwijzen" : I /\ op;tot;-I;aanp~ |- reden;reden~
 MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen."
 MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur eist dat als de besloten arbeidsduur afwijkt van hetgeen is verzocht, dit met (schriftelijke) redenen omkleed moet zijn."
 VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist een opgave van de reden(en).")
@@ -211,21 +206,19 @@ VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist e
 ENDPATTERN
 
 --[Proces: Rekenen met datums]-----------------------------
-PATTERN RekenenMetDatums LABEL "Rekenen met datums"
-PURPOSE PATTERN RekenenMetDatums
+PATTERN RekenenDatums LABEL "Rekenen met datums"
+PURPOSE PATTERN RekenenDatums
 {+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.+}
 
-PURPOSE RULE VandaagIsEenEnkeleDag 
+PURPOSE RULE Vandaag1dag
 {+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom "vandaag").+}
-RULE VandaagIsEenEnkeleDag LABEL "Vandaag is een enkele dag":
-    I[Vandaag] = "VANDAAG"
+RULE Vandaag1dag LABEL "Vandaag is 1 (enkele) dag": I[Vandaag] = "VANDAAG"
 vandaag :: Vandaag * Datum [UNI]
 PRAGMA "" " is de datum "
 POPULATION Vandaag CONTAINS ["VANDAAG"]
 
-ROLE ExecEngine MAINTAINS StelDatumVanVandaagVast
-RULE StelDatumVanVandaagVast LABEL "Stel datum van vandaag vast":
-    I[Vandaag] |- vandaag;vandaag~
+ROLE ExecEngine MAINTAINS StelVandaagVast
+RULE StelVandaagVast LABEL "Stel datum van vandaag vast": I[Vandaag] |- vandaag;vandaag~
 VIOLATION (TXT "{EX} SetToday;vandaag;Vandaag;VANDAAG;Datum")
 
 PURPOSE RELATION datumEQV
@@ -243,9 +236,8 @@ PURPOSE RELATION datumGD
 datumGD :: Datum * Datum
 MEANING "De relatie 'datumGD' geeft van elk paar datums weer welke groter dan of gelijk is aan de ander."
 
-ROLE ExecEngine MAINTAINS DatumgerelateerdeRelatiesBerekenen
-RULE DatumgerelateerdeRelatiesBerekenen LABEL "Datumgerelateerde relaties berekenen":
-    V[Datum] |- datumEQV \/ datumNEQ
+ROLE ExecEngine MAINTAINS DatumRelaties
+RULE DatumRelaties LABEL "Datum-gerelateerde relaties berekenen": V[Datum] |- datumEQV \/ datumNEQ
 VIOLATION (TXT "{EX} datimeEQL;datumEQV;Datum;", SRC I, TXT ";", TGT I
           ,TXT "{EX} datimeNEQ;datumNEQ;Datum;", SRC I, TXT ";", TGT I
 --        ,TXT "{EX} datimeLT;datumKD;Datum;", SRC I, TXT ";", TGT I
@@ -267,8 +259,7 @@ Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelinge
 
 nieuwVerzoek :: Arbeidsrelatie * Verzoek [UNI]
 ROLE ExecEngine MAINTAINS EersteVerzoekVerwerken
-RULE EersteVerzoekVerwerken LABEL "Eerste verzoek verwerken":
-    (I /\ -(laatsteVerzoek;laatsteVerzoek~));nieuwVerzoek |- -nieuwVerzoek
+RULE EersteVerzoekVerwerken LABEL "Eerste verzoek verwerken": (I /\ -(laatsteVerzoek;laatsteVerzoek~));nieuwVerzoek |- -nieuwVerzoek
 MEANING "Elk (eerste) verzoek moet worden verwerkt"
 VIOLATION (TXT "{EX} InsPair;laatsteVerzoek;Arbeidsrelatie;", SRC I, TXT ";Verzoek;", TGT I
           ,TXT "{EX} InsPair;arbeidsrelatie;Verzoek;", TGT I, TXT ";Arbeidsrelatie;", SRC I
@@ -276,8 +267,7 @@ VIOLATION (TXT "{EX} InsPair;laatsteVerzoek;Arbeidsrelatie;", SRC I, TXT ";Verzo
           )
 
 ROLE ExecEngine MAINTAINS OpeenvolgendeVerzoekenVerwerken
-RULE OpeenvolgendeVerzoekenVerwerken LABEL "Opeenvolgende verzoeken verwerken":
-    (I /\ laatsteVerzoek;laatsteVerzoek~);nieuwVerzoek |- -nieuwVerzoek
+RULE OpeenvolgendeVerzoekenVerwerken LABEL "Opeenvolgende verzoeken verwerken": (I /\ laatsteVerzoek;laatsteVerzoek~);nieuwVerzoek |- -nieuwVerzoek
 MEANING "Elk (volgend) verzoek moet worden verwerkt"
 VIOLATION (TXT "{EX} InsPair;isDirecteVoorloperVan;Verzoek;", SRC laatsteVerzoek, TXT ";Verzoek;", TGT I
           ,TXT "{EX} InsPair;laatsteVerzoek;Arbeidsrelatie;", SRC I, TXT ";Verzoek;", TGT I
@@ -285,20 +275,19 @@ VIOLATION (TXT "{EX} InsPair;isDirecteVoorloperVan;Verzoek;", SRC laatsteVerzoek
           ,TXT "{EX} DelPair;nieuwVerzoek;Arbeidsrelatie;", SRC I, TXT ";Verzoek;", TGT I
           )
 
-ROLE ExecEngine MAINTAINS ArbeidsrelatieGeautomatiseerdInvullen
-RULE ArbeidsrelatieGeautomatiseerdInvullen LABEL "Arbeidsrelatie geautomatiseerd invullen":
-    arbeidsrelatie;werknemer;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werknemer));werknemer~ |- arbeidsrelatie
+ROLE ExecEngine MAINTAINS ArbeidsrelatieInvullen
+RULE ArbeidsrelatieInvullen LABEL "Arbeidsrelatie invullen (geautomatiseerd)":
+arbeidsrelatie;werknemer;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werknemer));werknemer~ |- arbeidsrelatie
 MEANING "Als een werknemer die om aanpassing verzoekt slechts 1 arbeidsrelatie heeft, dan wordt deze zo nodig automatisch in het verzoek ingevuld."
 VIOLATION (TXT "{EX} InsPair;arbeidsrelatie;Verzoek;", SRC I, TXT ";Arbeidsrelatie;", TGT I)
-PURPOSE RULE ArbeidsrelatieGeautomatiseerdInvullen
+PURPOSE RULE ArbeidsrelatieInvullen
 {+ Gebruikers hoeven de arbeidsrelatie in een verzoek niet in te vullen als deze kan worden afgeleid.+}
 
-ROLE ExecEngine MAINTAINS VerzoeksdatumGeautomatiseerdInvullen
-RULE VerzoeksdatumGeautomatiseerdInvullen LABEL "Verzoeksdatum geautomatiseerd invullen":
-    (I[Verzoek] /\ -(ingediend;ingediend~));V;vandaag |- ingediend
+ROLE ExecEngine MAINTAINS VerzoeksdatumInvullen
+RULE VerzoeksdatumInvullen LABEL "Verzoeksdatum invullen (geautomatiseerd)": (I[Verzoek] /\ -(ingediend;ingediend~));V;vandaag |- ingediend
 MEANING "Als de indieningsdatum van een verzoek niet is ingevuld, dan wordt daarvoor automatisch de datum van vandaag ingevuld."
 VIOLATION (TXT "{EX} InsPair;ingediend;Verzoek;", SRC I, TXT ";Datum;", TGT I)
-PURPOSE RULE VerzoeksdatumGeautomatiseerdInvullen REF "Artikel 2 lid 3"
+PURPOSE RULE VerzoeksdatumInvullen REF "Artikel 2 lid 3"
 {+Van elk verzoek moet de indieningsdatum bekend zijn, zodat onder meer kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.+}
 
 PURPOSE RELATION vierMaandenOfMeer REF "Artikel 2 lid 3"
@@ -309,18 +298,16 @@ PRAGMA "" " ligt minstens vier maanden voor "
 MEANING "De relatie 'vierMaandenOfMeer' bevat alleen paren van datums waarvan de eerste minstens vier maanden voor de tweede valt."
 vierMaandenOfMeerTrigger :: Datum * Datum
 ROLE ExecEngine MAINTAINS BerekenVierMaandenOfMeer
-RULE BerekenVierMaandenOfMeer LABEL "Bereken vier maanden of meer":
-    ingediend~;tot;ingang |- vierMaandenOfMeerTrigger
+RULE BerekenVierMaandenOfMeer LABEL "Bereken vier maanden of meer": ingediend~;tot;ingang |- vierMaandenOfMeerTrigger
 VIOLATION (TXT "{EX} InsPair;vierMaandenOfMeerTrigger;Datum;", SRC I, TXT ";Datum;", TGT I
           ,TXT "{EX} DatumDelta;vierMaandenOfMeer;Datum;", SRC I, TXT ";4 Months;", TGT I
           )
 
-ROLE ExecEngine MAINTAINS UitersteBeslisdatumGeautomatiseerdInvullen
-RULE UitersteBeslisdatumGeautomatiseerdInvullen LABEL "Uiterste beslisdatum geautomatiseerd invullen":
-    (I[Beslissing] /\ -(beslisdatum;beslisdatum~));V;vandaag |- beslisdatum
+ROLE ExecEngine MAINTAINS UitersteBeslisdatum
+RULE UitersteBeslisdatum LABEL "Uiterste beslisdatum invullen (geautomatiseerd)": (I[Beslissing] /\ -(beslisdatum;beslisdatum~));V;vandaag |- beslisdatum
 MEANING "Als de beslisdatum van een beslissing niet is ingevuld, dan wordt daarvoor automatisch de datum van vandaag ingevuld."
 VIOLATION (TXT "{EX} InsPair;beslisdatum;Beslissing;", SRC I, TXT ";Datum;", TGT I)
-PURPOSE RULE UitersteBeslisdatumGeautomatiseerdInvullen REF "Artikel 2 lid 3"
+PURPOSE RULE UitersteBeslisdatum REF "Artikel 2 lid 3"
 {+Van elke beslissing moet de beslisdatum bekend zijn, zodat kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.+}
 
 PURPOSE RELATION eenMaandVoordien REF "Artikel 2 lid 10"
@@ -328,19 +315,16 @@ PURPOSE RELATION eenMaandVoordien REF "Artikel 2 lid 10"
 eenMaandVoordien :: Datum * Datum [INJ,UNI]
 MEANING "De relatie 'eenMaandVoordien' geeft van elke datum waarvoor dat nodig is, aan welke datum een maand voordien was."
 ROLE ExecEngine MAINTAINS BerekenEenMaandVoordien
-RULE BerekenEenMaandVoordien LABEL "Bereken een maand voordien":
-    ingang[Aanpassing*Datum] |- ingang;(I /\ eenMaandVoordien;eenMaandVoordien~)
+RULE BerekenEenMaandVoordien LABEL "Bereken een maand voordien": ingang[Aanpassing*Datum] |- ingang;(I /\ eenMaandVoordien;eenMaandVoordien~)
 VIOLATION (TXT "{EX} SetPeriod;eenMaandVoordien;Datum;", TGT I, TXT ";-1 Month")
 
-ROLE ExecEngine MAINTAINS UitersteBeslisdatumGeautomatiseerdHerzien
-RULE UitersteBeslisdatumGeautomatiseerdHerzien LABEL "Uiterste beslisdatum geautomatiseerd herzien":
-    uitersteBeslisdatum;datumEQV |- tot;ingang;eenMaandVoordien
+ROLE ExecEngine MAINTAINS UitersteBeslisdatumHerzien
+RULE UitersteBeslisdatumHerzien LABEL "Uiterste beslisdatum herzien (geautomatiseerd)": uitersteBeslisdatum;datumEQV |- tot;ingang;eenMaandVoordien
 MEANING "Van elk verzoek wordt, zo nodig, de uiterste belisdatum automatisch herzien."
 VIOLATION (TXT "{EX} DelPair;uitersteBeslisdatum;Verzoek;", SRC I, TXT ";Datum;", TGT I)
 
-ROLE ExecEngine MAINTAINS UitersteBeslisdatumGeautomatiseerdVaststellen
-RULE UitersteBeslisdatumGeautomatiseerdVaststellen LABEL "Uiterste beslisdatum geautomatiseerd vaststellen":
-    tot;ingang;eenMaandVoordien |- uitersteBeslisdatum;datumEQV
+ROLE ExecEngine MAINTAINS UitersteBeslisdatumVaststellen
+RULE UitersteBeslisdatumVaststellen LABEL "Uiterste beslisdatum vaststellen (geautomatiseerd)": tot;ingang;eenMaandVoordien |- uitersteBeslisdatum;datumEQV
 MEANING "Van elk verzoek wordt de uiterste belisdatum automatisch vastgesteld."
 VIOLATION (TXT "{EX} InsPair;uitersteBeslisdatum;Verzoek;", SRC I, TXT ";Datum;", TGT I)
 
@@ -350,11 +334,10 @@ minstensEenJaar :: Datum * Datum
 PRAGMA "" " ligt minstens een jaar voor "
 MEANING "De relatie 'minstensEenJaar' geeft weer of er minstens een jaar zijn verstreken tussen twee tijdstippen."
 minstensEenJaarTrigger :: Datum * Datum
-PURPOSE RULE BerekenenTermijnEenJaar
+PURPOSE RULE BerekenTermijnVanEenJaar
 {+Artikel 2 lid 1 stelt dat voor de berekening van de termijn van een jaar, perioden waarin arbeid wordt verricht en die elkaar opvolgen met een onderbreking van niet meer dan drie maanden, worden samengeteld. Ook stelt dit artikel dat dit geldt als arbeid voor verschillende wergevers wordt verricht die ten aanzien van de verrichte arbeid redelijkerwijs geacht moeten worden elkanders opvolger te zijn. Er is voor gekozen om de bedoelde termijn van een jaar geautomatiseerd te berekenen voor zover deze uit een enkele arbeidsovereenkomst valt af te leiden.+} --! Om geheel aan art 2 lid 1 te voldoen moet dus nog een stukje handmatig proces worden gespecificeerd. !-- 
-ROLE ExecEngine MAINTAINS BerekenenTermijnEenJaar
-RULE BerekenenTermijnEenJaar LABEL "Berekenen termijn een jaar":
-   
+ROLE ExecEngine MAINTAINS BerekenTermijnVanEenJaar
+RULE BerekenTermijnVanEenJaar LABEL "Berekenen van de termijn van een jaar conform artikel 2 lid 1":
        inDienst~;arbeidsrelatie~;tot;ingang |- minstensEenJaarTrigger
 VIOLATION (TXT "{EX} DatumDelta;minstensEenJaar;Datum;", SRC I, TXT ";1 Year;", TGT I
           )
@@ -366,19 +349,18 @@ minstensTweeJaar :: Datum * Datum
 PRAGMA "" " ligt minstens twee jaar voor "
 MEANING "De relatie 'minstensTweeJaar' geeft weer of er minstens twee jaren zijn verstreken tussen twee tijdstippen."
 minstensTweeJaarTrigger :: Datum * Datum
-PURPOSE RULE BerekenenVanDeTermijnVanTweeJaar
+PURPOSE RULE TweeJaar
 {+Artikel 2 lid 3 stelt dat een werknemer ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek kan indienen.+}
-ROLE ExecEngine MAINTAINS BerekenenVanDeTermijnVanTweeJaar
-RULE  BerekenenVanDeTermijnVanTweeJaar LABEL " Berekenen van de termijn van twee jaar":
-   
+ROLE ExecEngine MAINTAINS TweeJaar
+RULE  TweeJaar:
        beslisdatum~;op;isDirecteVoorloperVan~;ingediend |- minstensTweeJaarTrigger
 VIOLATION (TXT "{EX} InsPair;minstensTweeJaarTrigger;Datum;", SRC I, TXT ";Datum;", TGT I
           ,TXT "{EX} DatumDelta;minstensTweeJaar;Datum;", SRC I, TXT ";2 Years;", TGT I
           )
 
-ROLE ExecEngine MAINTAINS  GeautomatiseerdBeslissenOpEenVerzoek
-RULE GeautomatiseerdBeslissenOpEenVerzoek LABEL "Geautomatiseerd beslissen op een verzoek":
-    I[Verzoek] /\ uitersteBeslisdatum;datumGD~;vandaag~;V /\ -(op~;op) |- op~;I[Beslissing];op
+ROLE ExecEngine MAINTAINS  BeslissenOpEenVerzoek
+RULE BeslissenOpEenVerzoek LABEL "Beslissen op een verzoek (geautomatiseerd)": 
+I[Verzoek] /\ uitersteBeslisdatum;datumGD~;vandaag~;V /\ -(op~;op) |- op~;I[Beslissing];op
 MEANING "Voor elk verzoek waarvan de uiterste beslisdatum is verstreken, en waarop geen beslissing is genomen, wordt - conform de wet - automatisch besloten dat de arbeidsduur wordt aangepast overeenkomstig dat verzoek."
 VIOLATION (TXT "{EX} NewStruct;Beslissing"
                ,TXT ";op;Beslissing;NULL;Verzoek;", SRC I 
@@ -388,15 +370,14 @@ VIOLATION (TXT "{EX} NewStruct;Beslissing"
                ,TXT ";beslisdatum;Beslissing;NULL;Datum;", SRC V;vandaag
                ,TXT ";medegedeeldAan;Beslissing;NULL;Persoon;", SRC laatsteVerzoek~;werknemer
           )
-PURPOSE RULE GeautomatiseerdBeslissenOpEenVerzoek REF "Artikel 2 lid 10"
+PURPOSE RULE BeslissenOpEenVerzoek REF "Artikel 2 lid 10"
 {+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Een dergelijk besluit kan geautomatiseerd worden genomen en verstuurd.+}
 
-ROLE ExecEngine MAINTAINS GeautomatiseerdEffectuerenVanBeslissingen
-RULE GeautomatiseerdEffectuerenVanBeslissingen LABEL "Geautomatiseerd effectueren van beslissingen":
-    laatsteVerzoek;op~;aanp;nieuw |- arbeidsduur
+ROLE ExecEngine MAINTAINS EffectuerenBeslissingen
+RULE EffectuerenBeslissingen LABEL "Effectueren van beslissingen (geautomatiseerd)": laatsteVerzoek;op~;aanp;nieuw |- arbeidsduur
 MEANING "Een beslissing tot aanpassing van de arbeidsduur moet worden ge-effectueerd in de arbeidsrelatie."
 VIOLATION (TXT "{EX} InsPair;arbeidsduur;Arbeidsrelatie;", SRC I, TXT ";Arbeidsduur;", TGT I)
-PURPOSE RULE GeautomatiseerdEffectuerenVanBeslissingen
+PURPOSE RULE EffectuerenBeslissingen
 {+Als door (of namens) de werkgever is besloten omtrent de aanpassing van een arbeidsrelatie, dan moet de arbeidsduur in de betreffende arbeidsrelatie worden aangepast. Dat kan automatisch worden uitgevoerd.+}
 
 ENDPATTERN
@@ -506,8 +487,7 @@ BOX[ "Verzoek" : I
           ]
     ]
 
-INTERFACE VoorstelOngewijzigdAccorderen LABEL "VoorstelOngewijzigdAccorderen "
-    FOR Werkgever : I[Verzoek]
+INTERFACE VoorstelOngewijzigdAccorderen FOR Werkgever : I[Verzoek]
 BOX[ "Verzoek" : I
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever

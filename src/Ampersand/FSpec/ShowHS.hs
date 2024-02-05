@@ -9,7 +9,6 @@ import Ampersand.Core.ShowAStruct (AStruct (..)) -- for traceability, we generat
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances (Instances (instanceList))
 import Ampersand.Misc.HasClasses
-import Data.Hashable
 import RIO.Char (isAlphaNum)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -81,7 +80,7 @@ instance (ShowHSName a, ShowHSName b) => ShowHSName (a, b) where
 --   instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
 --    showHS env indent (a,b) = "("<>showHS env (indent<>" ") a<>","<>showHS env (indent<>" ") b<>")"
 instance ShowHSName PlugSQL where
-  showHSName plug = haskellIdentifier . tName . prependToPlainName "plug_" $ name plug
+  showHSName plug = "plug_" <> text1ToText (showUnique plug)
 
 instance ShowHS PlugSQL where
   showHS env indent plug =
@@ -97,7 +96,7 @@ instance ShowHS PlugSQL where
                 ]
               <> indent
               <> "in",
-            "TblSQL { sqlname    = " <> (tshow . name) plug,
+            "TblSQL { sqlname    = " <> tshow (sqlname plug),
             "       , attributes = [" <> T.intercalate ", " (map showHSName (attributes plug)) <> "]",
             "       , cLkpTbl    = [ " <> T.intercalate (indent <> "                      , ") ["(" <> showHSName c <> ", " <> showHSName cn <> ")" | (c, cn) <- cLkpTbl plug] <> "]",
             "       , dLkpTbl    = [ "
@@ -118,7 +117,7 @@ instance ShowHS PlugSQL where
                 ]
               <> indent
               <> "in",
-            "BinSQL { sqlname = " <> (tshow . name) plug,
+            "BinSQL { sqlname = " <> tshow (sqlname plug),
             "       , cLkpTbl = [ " <> T.intercalate (indent <> "                   , ") ["(" <> showHSName c <> ", " <> showHSName cn <> ")" | (c, cn) <- cLkpTbl plug] <> "]",
             "       , dLkpTbl    = [ "
               <> T.intercalate
@@ -170,7 +169,7 @@ instance ShowHS TType where
 
 instance ShowHSName Quad where
   showHSName q =
-    haskellIdentifier . tName . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "_") $ (name . qRule) q
+    haskellIdentifier . fullName1 . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "_") $ (name . qRule) q
 
 instance ShowHS Quad where
   showHS _ indent q =
@@ -209,23 +208,23 @@ instance ShowHS Conjunct where
       indentA = indent <> "                    "
 
 instance ShowHSName FSpec where
-  showHSName = haskellIdentifier . tName . prependToPlainName "fSpc_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "fSpc_" . name
 
 showRoleInterfaces :: FSpec -> Text
 showRoleInterfaces fSpec =
   case map fst (fRoles fSpec) of
     [] -> "[]"
-    rs -> T.intercalate ", " ["(" <> (text1ToText . tName) r <> "," <> (text1ToText . tName) ifc <> ")" | r <- rs, ifc <- roleInterfaces fSpec r]
+    rs -> T.intercalate ", " ["(" <> fullName r <> "," <> fullName ifc <> ")" | r <- rs, ifc <- roleInterfaces fSpec r]
 
 instance ShowHS FSpec where
   showHS env indent fSpec =
     T.intercalate
       (indent <> "     ")
-      [ "FSpec{ fsName          = " <> tshow (name fSpec),
+      [ "FSpec{ fsName          = " <> fullName fSpec,
         ", originalContext = "
           <> ( case originalContext fSpec of
                  Nothing -> "Nothing"
-                 Just ctx -> "Just " <> tshow (name ctx)
+                 Just ctx -> "Just " <> fullName ctx
              ),
         wrap ", fspos           = " indentA (showHS env) (fspos fSpec),
         wrap ", plugInfos       = " indentA (\_ -> showHS env (indentA <> "  ")) (plugInfos fSpec),
@@ -355,7 +354,7 @@ instance ShowHS FSpec where
              then ""
              else
                "\n -- *** PlugInfos (total: " <> (tshow . length . plugInfos) fSpec <> " plugInfos) ***: "
-                 <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` name) (plugInfos fSpec)]
+                 <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` showUnique) (plugInfos fSpec)]
                  <> "\n"
          )
       <> ( if null (instanceList fSpec :: [Pattern])
@@ -418,7 +417,7 @@ instance ShowHS MetaData where
   showHS f i (MetaData pos' nm val) = "MetaData (" <> showHS f i pos' <> ") " <> " " <> tshow nm <> " " <> tshow val
 
 instance ShowHSName PlugInfo where
-  showHSName (InternalPlug p) = haskellIdentifier . tName . prependToPlainName "ipl_" $ name p
+  showHSName (InternalPlug p) = "ipl_" <> text1ToText (showUnique p)
 
 instance ShowHS PlugInfo where
   showHS _ _ (InternalPlug p) =
@@ -441,13 +440,13 @@ instance ShowHS (Role, Rule) where
     "(" <> tshow rol <> ", " <> showHSName rul <> ")"
 
 instance ShowHSName Pattern where
-  showHSName = haskellIdentifier . tName . prependToPlainName "pat_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "pat_" . name
 
 instance ShowHS Pattern where
   showHS env indent pat =
     T.intercalate
       indentA
-      [ "A_Pat { ptnm  = " <> tshow (name pat),
+      [ "A_Pat { ptnm  = " <> fullName pat,
         ", ptpos = " <> showHS env "" (ptpos pat),
         ", ptend = " <> showHS env "" (ptend pat),
         ", ptrls = [" <> T.intercalate ", " [showHSName r | r <- toList $ ptrls pat] <> T.concat [" {- no rules -} " | Set.null (ptrls pat)] <> "]",
@@ -538,13 +537,13 @@ instance ShowHS (PairViewSegment Expression) where
   showHS env _ (PairViewExp _ srcOrTgt e) = "PairViewExp " <> tshow srcOrTgt <> " (" <> showHS env "" e <> ")"
 
 instance ShowHSName Rule where
-  showHSName = haskellIdentifier . tName . prependToPlainName "rule_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "rule_" . name
 
 instance ShowHS Rule where
   showHS env indent r =
     T.intercalate
       indent
-      [ "Ru{ rrnm   = " <> tshow (name r),
+      [ "Ru{ rrnm   = " <> fullName r,
         "  , formalExpression  = -- " <> showA (formalExpression r) <> indent <> "             " <> showHS env (indent <> "             ") (formalExpression r),
         "  , rrfps  = " <> showHS env "" (rrfps r),
         "  , rrmean = " <> showHS env (indent <> "             ") (rrmean r),
@@ -563,7 +562,7 @@ instance ShowHS Meaning where
   showHS env indent (Meaning x) = "Meaning " <> showHS env (indent <> "        ") x
 
 instance ShowHSName IdentityRule where
-  showHSName = haskellIdentifier . tName . prependToPlainName "identity_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "identity_" . name
 
 instance ShowHS IdentityRule where
   showHS env indent identity =
@@ -578,11 +577,11 @@ instance ShowHS IdentitySegment where
   showHS env indent (IdentityExp objDef) = "IdentityExp (" <> showHS env indent objDef <> ")"
 
 instance ShowHSName ViewDef where
-  showHSName = haskellIdentifier . tName . prependToPlainName "vdef_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "vdef_" . name
 
 instance ShowHS ViewDef where
   showHS env indent vd =
-    "Vd (" <> showHS env "" (vdpos vd) <> ") " <> tshow (name vd) <> " " <> showHSName (vdcpt vd)
+    "Vd (" <> showHS env "" (vdpos vd) <> ") " <> fullName vd <> " " <> showHSName (vdcpt vd)
       <> indent
       <> "  [ "
       <> T.intercalate (indent <> "  , ") (showHS env indent <$> vdats vd)
@@ -628,7 +627,7 @@ instance ShowHS Population where
           <> "         }"
 
 --instance ShowHSName ObjectDef where
---  showHSName = haskellIdentifier . tName . prependToPlainName "oDef_" . objPlainName
+--  showHSName = haskellIdentifier . fullName1 . prependToPlainName "oDef_" . objPlainName
 
 instance ShowHS ObjectDef where
   showHS env indent x =
@@ -666,13 +665,13 @@ instance ShowHS Cruds where
       ]
 
 instance ShowHSName Interface where
-  showHSName = haskellIdentifier . tName . prependToPlainName "ifc_" . name
+  showHSName = haskellIdentifier . fullName1 . prependToPlainName "ifc_" . name
 
 instance ShowHS Interface where
   showHS env indent ifc =
     T.intercalate
       indent
-      [ "Ifc { ifcname   = " <> tshow (ifcname ifc),
+      [ "Ifc { ifcname   = " <> fullName ifc,
         "    , ifcRoles  = " <> tshow (ifcRoles ifc),
         "    , ifcObj" <> indent <> "       = " <> showHS env (indent <> "         ") (ifcObj ifc),
         wrap "    , ifcConjuncts = " (indent <> "                  ") (const showHSName) (ifcConjuncts ifc),
@@ -726,8 +725,8 @@ instance ShowHS AClassify where
 
 instance ShowHSName Relation where
   showHSName d
-    | decusr d = haskellIdentifier . tName . prependToPlainName ("rel_" <> (text1ToText . tName) d <> "_" <> (text1ToText . tName) (source d) <> "_") . name . target $ d -- user defined relations
-    | otherwise = haskellIdentifier . tName . prependToPlainName ("vio_" <> (text1ToText . tName) d <> "_" <> (text1ToText . tName) (source d) <> "_") . name . target $d -- relations generated per rule
+    | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- user defined relations
+    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $d -- relations generated per rule
 
 instance ShowHS Relation where
   showHS env indent d =
@@ -762,7 +761,7 @@ instance ShowHS AConceptDef where
     T.intercalate
       indent
       [ "AConceptDef { pos = " <> showHS env "" (origin cd),
-        "            , acdcpt = " <> tshow (acdname cd),
+        "            , acdcpt = " <> fullName cd,
         "            , acddef2 = " <> showHS env "                        " (acddef2 cd),
         "            , acdmean = "
           <> showHS
@@ -774,11 +773,11 @@ instance ShowHS AConceptDef where
 
 instance ShowHSName A_Concept where
   showHSName ONE = haskellIdentifier $ toText1Unsafe "cptOne"
-  showHSName c = haskellIdentifier . tName . prependToPlainName "cpt_" . name $ c
+  showHSName c = haskellIdentifier . fullName1 . prependToPlainName "cpt_" . name $ c
 
 instance ShowHS A_Concept where
   showHS _ _ c = case c of
-    PlainConcept {} -> "PlainConcept " <> tshow (name c)
+    PlainConcept {} -> "PlainConcept " <> fullName c
     ONE -> "ONE"
 
 instance ShowHSName AProp where
