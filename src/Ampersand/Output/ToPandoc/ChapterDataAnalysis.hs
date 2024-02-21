@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Redundant bracket" #-}
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import Ampersand.ADL1
@@ -261,10 +259,10 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                          (plain . text . l) (NL "Target", EN "Target"),
                          (plain . text . l) (NL "uniek", EN "unique")
                        ]
-                       [ [ (plain . text) ((label . source) rel <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
+                       [ [ (plain . text) (label (source rel) <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept),
-                           (plain . text) ((label) rel <> "(" <> tshow (Set.size pairs) <> ")"),
-                           (plain . text) ((label . target) rel <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                           (plain . text) (label rel <> "(" <> tshow (Set.size pairs) <> ")"),
+                           (plain . text) (label (target rel) <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
                          ]
                          | Just rel <- map assmdcl asscs,
