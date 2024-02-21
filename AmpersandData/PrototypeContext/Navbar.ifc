@@ -21,7 +21,7 @@ CONTEXT PrototypeContext IN ENGLISH
         ]
 
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------
-    API PrototypeContext.MenuItems LABEL "Menu items" FOR SYSTEM: sessionActiveRoles[SESSION*PrototypeContext.Role];PrototypeContext.navItemRoles~;PrototypeContext.isVisible BOX
+    API PrototypeContext.MenuItems LABEL "Menu items" FOR SYSTEM: PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role];PrototypeContext.navItemRoles~;PrototypeContext.isVisible BOX
         [ "id"              : I
         , "label"           : PrototypeContext.label
         , "seqNr"           : PrototypeContext.seqNr
