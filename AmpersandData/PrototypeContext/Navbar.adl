@@ -20,7 +20,7 @@ CONTEXT PrototypeContext IN ENGLISH
         MEANING "A navbar item can direct to an interface"
         CONCEPT PrototypeContext.Interface "Representation of an Ampersand interface"
 
-    RULE PrototypeContext.NoRefsToAPIs LABEL "Do not allow references to API interfaces" : ifc;isAPI |- -V
+    RULE PrototypeContext.NoRefsToAPIs LABEL "Do not allow references to API interfaces" : PrototypeContext.ifc;PrototypeContext.isAPI |- -V
         MESSAGE "A navbar item can not reference an API interface"
   
     RELATION PrototypeContext.url[PrototypeContext.NavMenuItem*PrototypeContext.URL] [UNI]
