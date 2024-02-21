@@ -65,7 +65,7 @@ instance JSON FSpec Rulez where
 instance JSON Rule JsonRule where
   fromAmpersand env fSpec rule =
     JsonRule
-      { rulJSONname = fullName $ rule,
+      { rulJSONname = fullName rule,
         rulJSONlabel = label rule,
         rulJSONruleAdl = showA . formalExpression $ rule,
         rulJSONorigin = tshow . origin $ rule,

@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.0.2 (21 february 2024)
+- Eliminated warnings and hints in CI/CD and in Haskell code. Doing some tests for a [strange issue with stack](https://github.com/commercialhaskell/stack/issues/6477)
+
 ## v5.0.1 (5 february 2024)
 - Some adaptions to w.r.t. the namespaces, in the generated funcional specification.
 
