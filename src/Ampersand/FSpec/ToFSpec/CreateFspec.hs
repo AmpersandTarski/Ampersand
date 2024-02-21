@@ -75,20 +75,20 @@ createFspec =
             Grind -> do
               userScr <- userScript
               userFspc <- pCtx2Fspec env userScr
-              return (grind nameSpaceFormalAmpersand transformersFormalAmpersand userFspc)
+              return (grind transformersFormalAmpersand userFspc)
             Prototype -> do
               userPCtx <- userScript
               pcScript <- prototypeContextScript
               let one = userPCtx `mergeContexts` pcScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
-              let two = grind nameSpacePrototypeContext transformersPrototypeContext oneFspec
+              let two = grind transformersPrototypeContext oneFspec
               return (one `mergeContexts` two)
             RAP -> do
               rapPCtx <- userScript
               faScript <- formalAmpersandScript
               let one = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
-              let two = grind nameSpacePrototypeContext transformersPrototypeContext oneFspec
+              let two = grind transformersPrototypeContext oneFspec
               pcScript <- prototypeContextScript
               return (one `mergeContexts` two `mergeContexts` pcScript)
     return (pCtx2Fspec env =<< p_context)

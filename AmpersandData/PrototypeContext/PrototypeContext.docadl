@@ -13,39 +13,39 @@ PATTERN SystemSpecific
   {+Sessies zijn nodig om de dialoog aan te kunnen duiden tussen de gebruiker en de computer+}
   PURPOSE CONCEPT SESSION IN ENGLISH
   {+Sessions are required to allow for associating information with individual visitors+}
-  CONCEPT Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
-  PURPOSE CONCEPT Role IN DUTCH
+  CONCEPT PrototypeContext.Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
+  PURPOSE CONCEPT PrototypeContext.Role IN DUTCH
   {+We hebben rollen nodig om een basale vorm van beveiliging te implementeren, gebaseerd op permissies. +}
-  PURPOSE CONCEPT Role IN ENGLISH
+  PURPOSE CONCEPT PrototypeContext.Role IN ENGLISH
   {+We need roles to implement a basic form of security based on permissions. +}
-  CONCEPT DateTime "een specifiek moment, tijdstip"
-  PURPOSE CONCEPT DateTime IN DUTCH
+  CONCEPT PrototypeContext.DateTime "een specifiek moment, tijdstip"
+  PURPOSE CONCEPT PrototypeContext.DateTime IN DUTCH
   {+Om bewerkingen te kunnen plaatsen in de tijd is het nodig om het over specifieke momenten te kunnen hebben.+}
-  PURPOSE CONCEPT DateTime IN ENGLISH
+  PURPOSE CONCEPT PrototypeContext.DateTime IN ENGLISH
   {+Telling the time enables some ordering of events in time.+}
 
-  RELATION lastAccess[SESSION*DateTime] [UNI] -- This definition is only needed for `MEANING` to be interpreted correctly.
+  RELATION PrototypeContext.lastAccess[SESSION*PrototypeContext.DateTime] [UNI] -- This definition is only needed for `MEANING` to be interpreted correctly.
   MEANING IN DUTCH "het moment waarop de sessie voor het laatst actief was"
   MEANING IN ENGLISH "the last timestamp that a session was active"
-  PURPOSE RELATION lastAccess IN DUTCH
+  PURPOSE RELATION PrototypeContext.lastAccess IN DUTCH
   {+Een sessie kan op een bepaald moment actief zijn. Deze relatie bevat de informatie wanneer dat voor de laatste keer was.+}
-  PURPOSE RELATION lastAccess IN ENGLISH
+  PURPOSE RELATION PrototypeContext.lastAccess IN ENGLISH
   {+A session can be active at some moment in time. This relation holds the information when that was for the last time.+}
 
-  RELATION sessionAllowedRoles[SESSION*Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
+  RELATION PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
   MEANING IN DUTCH "een rol kan zijn toegestaan gedurende een sessie"
   MEANING IN ENGLISH "a role can be allowed during a session"
-  PURPOSE RELATION sessionAllowedRoles IN DUTCH
+  PURPOSE RELATION PrototypeContext.sessionAllowedRoles IN DUTCH
   {+Aan een gebruiker kunnen specifieke rollen zijn toegekend.+}
-  PURPOSE RELATION sessionAllowedRoles IN ENGLISH
+  PURPOSE RELATION PrototypeContext.sessionAllowedRoles IN ENGLISH
   {+A user can be granted specific roles.+}
 
-  RELATION sessionActiveRoles[SESSION*Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
+  RELATION PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
   MEANING IN DUTCH "een rol kan in gebruik zijn gedurende een sessie"
   MEANING IN ENGLISH "a role can be active during a session"
-  PURPOSE RELATION sessionActiveRoles IN DUTCH
+  PURPOSE RELATION PrototypeContext.sessionActiveRoles IN DUTCH
   {+Gedurende een sessie kan een gebruiker over de permissies van specifieke rollen beschikken.+}
-  PURPOSE RELATION sessionActiveRoles IN ENGLISH
+  PURPOSE RELATION PrototypeContext.sessionActiveRoles IN ENGLISH
   {+During a session the user can have roles, that grants permission for specific events.+}
 
   PURPOSE CONCEPT "ONE" IN DUTCH

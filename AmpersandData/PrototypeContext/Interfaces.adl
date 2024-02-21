@@ -1,34 +1,34 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 
     CONCEPT Interface ""
-        REPRESENT Interface TYPE OBJECT
+        REPRESENT PrototypeContext.Interface TYPE OBJECT
 
     -- RELATION label[Interface*Label] needs to be TOT because the prototype framework depends on having an interface label
     -- The identitier of the Interface itself can contain escaped characters, e.g. "Interface_32_label"
     -- We want to show the user "Interface label" instead
     -- The label is added to the population file by the meatgrinder using the Proto build recipe
-    RELATION label[Interface*Label] [UNI,TOT]
-        REPRESENT Label TYPE ALPHANUMERIC
+    RELATION PrototypeContext.label[PrototypeContext.Interface*PrototypeContext.Label] [UNI,TOT]
+        REPRESENT PrototypeContext.Label TYPE ALPHANUMERIC
 
-    RELATION ifcRoles[Interface*Role]
+    RELATION PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role]
         MEANING "This relation contains the roles for which an interface is available"
     
-    RELATION isPublic[Interface*Interface] [PROP]
+    RELATION PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"
 
         -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
         -- RULE PublicInterfaceIntegrity LABEL "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
 
     -- EQUIVALENCE ifcRoles[Interface*Role] == isPublic;V[Interface*Role]
-    ROLE ExecEngine MAINTAINS EquivalenceInsRoles
-    RULE EquivalenceInsRoles LABEL "Equivalence - InsPair ifcRoles" : isPublic;V[Interface*Role] |- ifcRoles
-    VIOLATION (TXT "{EX} InsPair;ifcRoles;Interface;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.EquivalenceInsRoles
+    RULE PrototypeContext.EquivalenceInsRoles LABEL "Equivalence - InsPair ifcRoles" : PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role] |- PrototypeContext.ifcRoles
+    VIOLATION (TXT "{EX} InsPair;PrototypeContext.ifcRoles;PrototypeContext.Interface;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
     
-    ROLE ExecEngine MAINTAINS EquivalenceDelRoles
-    RULE EquivalenceDelRoles LABEL "Equivalence - DelPair ifcRoles" : isPublic;ifcRoles |- isPublic;V[Interface*Role]
-    VIOLATION (TXT "{EX} DelPair;ifcRoles;Interface;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.EquivalenceDelRoles
+    RULE PrototypeContext.EquivalenceDelRoles LABEL "Equivalence - DelPair ifcRoles" : PrototypeContext.isPublic;PrototypeContext.ifcRoles |- PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role]
+    VIOLATION (TXT "{EX} DelPair;PrototypeContext.ifcRoles;PrototypeContext.Interface;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
 
-    RELATION isAPI[Interface*Interface] [PROP]
+    RELATION PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
         MEANING "This property states that an interface is meant as API (machine-2-machine)"
 
 ENDCONTEXT

@@ -23,7 +23,7 @@ import Ampersand.ADL1
   )
 import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
-import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand, nameSpacePrototypeContext)
+import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Input.ADL1.CtxError
   ( CtxError (PE),
     Guarded (..),
@@ -124,7 +124,7 @@ parsePrototypeContext ::
   RIO env (Guarded P_Context)
 parsePrototypeContext =
   parseThing
-    nameSpacePrototypeContext
+    [] --Prototypecontext.adl is self-contained. This has been done to enable the use of the 'SESSION' concept.
     ParseCandidate
       { pcBasePath = Nothing,
         pcOrigin = Just $ Origin "Ampersand specific system context",

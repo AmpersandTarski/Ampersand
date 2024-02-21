@@ -51,26 +51,22 @@ metaModel mmLabel =
   where
     modelName :: AB.Name
     modelName =
-      withNameSpace nameSpace
-        . mkName ContextName
-        $ ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
-              Nothing -> fatal "Not a proper NamePart."
-              Just np -> np NE.:| []
-          )
+      mkName ContextName $
+        ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
+            Nothing -> fatal "Not a proper NamePart."
+            Just np -> np NE.:| []
+        )
     transformers = case mmLabel of
       FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
       PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName
-    nameSpace = case mmLabel of
-      FormalAmpersand -> nameSpaceFormalAmpersand
-      PrototypeContext -> nameSpacePrototypeContext
 
 -- | The 'grind' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a P_Context, so it can be merged with other Ampersand results.
-grind :: NameSpace -> (FSpec -> [Transformer]) -> FSpec -> P_Context
-grind ns fun userFspec =
+grind :: (FSpec -> [Transformer]) -> FSpec -> P_Context
+grind fun userFspec =
   PCtx
-    { ctx_nm = prependToPlainName "Grinded_" $ withNameSpace ns . mkName ContextName $ localName userFspec NE.:| [],
+    { ctx_nm = prependToPlainName "Grinded_" $ mkName ContextName $ localName userFspec NE.:| [],
       ctx_lbl = Nothing,
       ctx_pos = [],
       ctx_lang = Nothing,
