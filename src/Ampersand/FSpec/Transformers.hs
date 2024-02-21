@@ -1185,11 +1185,11 @@ nameSpacePrototypeContext =
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec =
   map
-    (toTransformer [])
+    (toTransformer nameSpacePrototypeContext)
     -- the following transformer is also contained in FormalAmpersand.
-    [ ( "PrototypeContext.isAPI",
-        "PrototypeContext.Interface",
-        "PrototypeContext.Interface",
+    [ ( "isAPI",
+        "Interface",
+        "Interface",
         Set.fromList [],
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
@@ -1198,9 +1198,9 @@ transformersPrototypeContext fSpec =
       ),
       -- the following transformer can be calculated by the Exec Engine.
       -- it is also contained in FormalAmpersand.
-      ( "PrototypeContext.isPublic",
-        "PrototypeContext.Interface",
-        "PrototypeContext.Interface",
+      ( "isPublic",
+        "Interface",
+        "Interface",
         Set.fromList [],
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
@@ -1208,18 +1208,18 @@ transformersPrototypeContext fSpec =
         ]
       ),
       -- the following transformer is also contained in FormalAmpersand.
-      ( "PrototypeContext.label",
-        "PrototypeContext.Interface",
-        "PrototypeContext.Label",
+      ( "label",
+        "Interface",
+        "Label",
         Set.fromList [],
         [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . label $ ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
       -- the following transformer is called name[Role*RoleName] in FormalAmpersand
-      ( "PrototypeContext.label",
-        "PrototypeContext.Role",
-        "PrototypeContext.Label",
+      ( "label",
+        "Role",
+        "Label",
         Set.fromList [Uni],
         [ (dirtyIdWithoutType' role, PopAlphaNumeric . label $ role)
           | role :: Role <- instanceList fSpec,
@@ -1227,9 +1227,9 @@ transformersPrototypeContext fSpec =
         ]
       ),
       -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand
-      ( "PrototypeContext.ifcRoles",
-        "PrototypeContext.Interface",
-        "PrototypeContext.Role",
+      ( "ifcRoles",
+        "Interface",
+        "Role",
         Set.fromList [],
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' role)
           | ifc :: Interface <- instanceList fSpec,
