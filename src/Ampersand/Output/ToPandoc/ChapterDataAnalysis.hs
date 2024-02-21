@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant bracket" #-}
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import Ampersand.ADL1
@@ -519,15 +521,15 @@ primExpr2pandocMath lang e =
        in case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "
-            <> math (label $ srcTable)
+            <> math (label srcTable)
     (EDcI c) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (label $ c)
+        <> math (label c)
     (EEps c _) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (label $ c)
+        <> math (label c)
     _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)

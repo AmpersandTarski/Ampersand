@@ -134,7 +134,7 @@ instance JSON TemplateKeyValue JSONTemplateKeyValue where
 instance JSON Interface JSONInterface where
   fromAmpersand env fSpec interface =
     JSONInterface
-      { ifcJSONname = fullName $ interface,
+      { ifcJSONname = fullName interface,
         ifcJSONlabel = label interface,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
         ifcJSONisAPI = ifcIsAPI interface
