@@ -10,12 +10,12 @@ name: Hadolint
 
 on:
   push:
-    branches: [ "main", master-v3x ]
+    branches: ["main", master-v3x]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
-    - cron: '21 14 * * 1'
+    - cron: "21 14 * * 1"
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run hadolint
         uses: hadolint/hadolint-action@f988afea3da57ee48710a9795b6bb677cc901183
