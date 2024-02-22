@@ -4,11 +4,8 @@ module Ampersand.Basics.String
     upCap,
     urlEncode,
     escapeIdentifier,
-    escapeLatex,
     isSafeIdChar,
-    toLatexVariable,
     optionalQuote,
-    mapText,
     toBaseFileName,
     toText1Unsafe,
     text1ToText,
@@ -44,32 +41,6 @@ upCap txt = case T.uncons txt of
 urlEncode :: Text -> Text
 urlEncode = URI.encodeText
 
--- urlEncode txt = case T.uncons txt of
---  Nothing -> mempty
---  Just (h, tl)
---    | isAlphaNum h && isAscii h -> T.singleton h <> urlEncode tl
---    | otherwise -> T.cons '_' (tshow (ord h)) <> urlEncode tl
-
--- | Make sure that the text can safely be used in LaTeX
-escapeLatex :: Text -> Text
-escapeLatex txt = case T.uncons txt of
-  Nothing -> mempty
-  Just (h, tl)
-    | isAlphaNum h -> T.singleton h <> escapeLatex tl
-    | otherwise -> T.cons '_' (tshow (ord h)) <> escapeLatex tl
-
--- | Make sure that a text can be used safely as a Latex variable.
-toLatexVariable :: Text -> Text
-toLatexVariable txt =
-  case T.uncons txt of
-    Nothing -> mempty
-    Just (h, tl)
-      | h `elem` specialLaTeXChars -> "\\" <> T.singleton h <> toLatexVariable tl
-      | otherwise -> T.singleton h <> toLatexVariable tl
-  where
-    specialLaTeXChars :: [Char] -- Based on https://tex.stackexchange.com/questions/34580/escape-character-in-latex
-    specialLaTeXChars = "&%$#_{}~^\\"
-
 -- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
 -- This function is injective.
 escapeIdentifier :: Text1 -> Text1
@@ -83,6 +54,12 @@ escapeIdentifier (Text1 c0 cs) =
       | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = Text1 c mempty
       | c == '_' = toText1Unsafe "__" -- shorthand for '_' to improve readability
       | otherwise = Text1 '_' $ tshow (ord c) <> "_"
+    -- | convenient function like map on String
+    mapText :: (Char -> Text1) -> Text1 -> Text1
+    mapText fun (Text1 h tl) =
+      case T.uncons tl of
+        Nothing -> fun h
+        Just (h', tl') -> fun h <> mapText fun (Text1 h' tl')
 
 -- | Tells if a character is valid as character in an identifier. Because there are
 --   different rules for the first character of an identifier and the rest of the
@@ -99,12 +76,6 @@ toText1Unsafe txt = case T.uncons txt of
 text1ToText :: Text1 -> Text
 text1ToText (Text1 h tl) = T.cons h tl
 
--- | convenient function like map on String
-mapText :: (Char -> Text1) -> Text1 -> Text1
-mapText fun (Text1 h tl) =
-  case T.uncons tl of
-    Nothing -> fun h
-    Just (h', tl') -> fun h <> mapText fun (Text1 h' tl')
 
 optionalQuote :: Text -> Text
 optionalQuote str
