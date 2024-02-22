@@ -41,8 +41,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
-      # - name: Use cache when available 📦
-      #   uses: freckle/stack-cache-action@main
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -58,8 +56,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
-      # - name: Use cache when available 📦
-      #   uses: freckle/stack-cache-action@main
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -75,15 +71,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
-      # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
-      #   uses: actions/cache@v3.3.2
-      #   # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
-      #   with:
-      #     path: |
-      #       ~/.ghc
-      #       ~/.stack
-      #       ~/.stack-work
-      #     key: ${{ runner.os }}-stack
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
