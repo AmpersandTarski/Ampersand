@@ -1,4 +1,5 @@
 AmpersandData/FormalAmpersand/FormalAmpersand.adl
+AmpersandData/FormalAmpersand/Namespaces.adl
 AmpersandData/PrototypeContext/PrototypeContext.adl
 testing/Travis/testcases/Misc/FraakTest1.adl
 testing/Travis/testcases/Misc/FraakTest2.adl

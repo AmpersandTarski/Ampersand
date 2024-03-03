@@ -34,7 +34,9 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Generics.adl
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
+    AmpersandData/FormalAmpersand/Issue1472
     AmpersandData/FormalAmpersand/MinimalAST.xlsx
+    AmpersandData/FormalAmpersand/Namespaces.adl
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt
@@ -101,6 +103,7 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+    testing/Sentinel/Tests/NoSentinel/~$Issue191Test.xlsx
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
