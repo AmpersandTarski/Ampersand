@@ -21,7 +21,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 parseXlsxFile ::
-  (HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env) =>
   Maybe FileKind ->
   FilePath ->
   RIO env (Guarded P_Context)
@@ -39,7 +39,7 @@ parseXlsxFile mFk file =
     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
   where
     xlsx2pContext ::
-      (HasFSpecGenOpts env) =>
+      (HasTrimXLSXOpts env) =>
       env ->
       Xlsx ->
       Guarded P_Context
@@ -252,7 +252,7 @@ instance Show SheetCellsForTable where --for debugging only
         <> debugInfo x
 
 toPops ::
-  (HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env) =>
   -- |
   env ->
   -- | The file name is needed for displaying errors in context

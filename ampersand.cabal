@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -535,6 +535,7 @@ library
       Ampersand.Basics.BuildInfo_Generated
       Ampersand.Prototype.StaticFiles_Generated
   other-modules:
+      Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
@@ -557,6 +558,7 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Misc.Defaults
+      Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser
