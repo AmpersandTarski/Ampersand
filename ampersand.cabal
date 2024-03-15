@@ -563,6 +563,7 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Misc.Defaults
+      Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser

@@ -66,7 +66,7 @@ import qualified RIO.Text as T
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasFSpecGenOpts env, HasLogFunc env) =>
   RIO env (Guarded FSpec)
 createFspec =
   do
