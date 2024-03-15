@@ -391,8 +391,7 @@ testCmd testOpts =
 
 atlasImportCmd :: AtlasImportOpts -> RIO Runner ()
 atlasImportCmd opts = do
-  formalAmpersand <- fatal "TODO: Find a way to obtain an FSpec of formal ampersand only."
-  extendWith opts (atlasImport formalAmpersand)
+  extendWith opts atlasImport
 
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing

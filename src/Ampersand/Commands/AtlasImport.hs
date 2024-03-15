@@ -12,7 +12,6 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowPStruct
-import Ampersand.FSpec.FSpec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
@@ -21,9 +20,8 @@ import RIO.Text as T
 -- | Read a file containing the population of an Atlas.
 atlasImport ::
   (HasOutputFile env, HasImportFile env, HasRunner env) => --  , Show env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env)
-  FSpec -> -- This will be the FSpec of Formal Ampersand, if we need it at all.
   RIO env ()
-atlasImport _fSpec = do
+atlasImport = do
   env <- ask
   json <- readFileUtf8 (view importFileL env)
   let outputFn = view outputfileL env
