@@ -54,8 +54,8 @@ import Ampersand.Core.ParseTree
     TermPrim (PNamedR),
   )
 import Ampersand.Core.ShowPStruct
-import Ampersand.Input.ADL1.CtxError (Guarded (..))
-import Ampersand.Input.Parsing (parseTerm)
+import Ampersand.FSpec.FSpec
+import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
@@ -68,7 +68,8 @@ import qualified RIO.Text as T
 
 -- | Read a file containing the population of an Atlas.
 atlasImport ::
-  (HasOutputFile env, HasImportFile env, HasRunner env) =>
+  (HasOutputFile env, HasImportFile env, HasRunner env) => --  , Show env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env)
+  FSpec -> -- This will be the FSpec of Formal Ampersand, if we need it at all.
   RIO env ()
 atlasImport = do
   env <- ask
