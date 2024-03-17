@@ -26,7 +26,7 @@ jobs:
       - name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
       - name: Build the project 🌿🌿🌿
-        uses: freckle/stack-action@v3.2.2
+        uses: freckle/stack-action@v5
         with:
           test: false
 

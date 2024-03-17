@@ -153,7 +153,7 @@ jobs:
         with:
           mysql-version: "mariadb-10.6"
       - name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
+        uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
       - name: Upload artifacts (Linux)
@@ -175,7 +175,7 @@ jobs:
         with:
           mysql-version: "mariadb-10.6"
       - name: Build and test  🏗 🧪
-        uses: freckle/stack-action@main
+        uses: freckle/stack-action@v5
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
       - name: Upload artifacts (macOS)
@@ -209,7 +209,7 @@ jobs:
           php-version: "8.0"
           extensions: mysqli
       - name: Build and test 🏗 🧪
-        uses: freckle/stack-action@main
+        uses: freckle/stack-action@v5
         with:
           stack-arguments: "--copy-bins --flag ampersand:buildAll"
       - name: Upload artifacts (Windows)
