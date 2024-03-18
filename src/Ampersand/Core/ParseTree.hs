@@ -117,7 +117,7 @@ data P_Context = PCtx
     -- | The Enforce statements defined in this context, outside the scope of patterns
     ctx_enfs :: ![P_Enforce TermPrim]
   }
-  deriving (Show) --for QuickCheck
+  deriving (Show, Generic) --for QuickCheck
 
 instance Eq P_Context where
   c1 == c2 = name c1 == name c2
@@ -1159,7 +1159,7 @@ data P_Concept
     PCpt {p_cptnm :: Text}
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     P_ONE
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
 
 -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
