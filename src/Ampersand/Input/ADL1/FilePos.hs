@@ -74,6 +74,7 @@ instance Hashable FilePos where
 
 data Origin
   = OriginUnknown
+  | OriginAtlas
   | Origin !Text
   | PropertyRule !Text1 !Origin -- Constructor is used to hold the origin of a propertyrule.
   | FileLoc !FilePos !SymbolName
@@ -176,6 +177,7 @@ instance Show Origin where
   show (Origin str) = T.unpack str
   show OriginUnknown = "Unknown origin"
   show MeatGrinder = "MeatGrinder"
+  show OriginAtlas = "Atlas"
 
 class Traced a where
   origin :: a -> Origin
