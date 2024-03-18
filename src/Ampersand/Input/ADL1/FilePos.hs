@@ -153,6 +153,7 @@ instance Hashable Origin where
         FileLoc a b -> (3 :: Int) `hashWithSalt` a `hashWithSalt` b
         XLSXLoc a b c -> (4 :: Int) `hashWithSalt` a `hashWithSalt` b `hashWithSalt` c
         MeatGrinder -> (5 :: Int)
+        OriginAtlas -> (6 :: Int)
 
 instance Show FilePos where
   show (FilePos fn l c) = fn <> ":" <> show l <> ":" <> show c

@@ -1768,5 +1768,6 @@ originToPopAtom x = case origin x of
   FileLoc {} -> standard
   XLSXLoc {} -> standard
   MeatGrinder -> Nothing
+  OriginAtlas -> Nothing
   where
     standard = Just . PopAlphaNumeric . tshow . origin $ x
