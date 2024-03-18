@@ -810,6 +810,7 @@ instance ShowHSName Origin where
         OriginUnknown -> "OriginUnknown"
         XLSXLoc fPath sheet (a, b) -> "XLSXLoc " <> T.pack fPath <> " " <> sheet <> " " <> tshow (a, b)
         MeatGrinder -> "MeatGrinder"
+        OriginAtlas -> "OriginAtlas"
 
 instance ShowHS Origin where
   showHS env indent (FileLoc l s) = "FileLoc (" <> showHS env indent l <> " " <> s <> ")"
@@ -818,6 +819,7 @@ instance ShowHS Origin where
   showHS _ _ OriginUnknown = "OriginUnknown"
   showHS _ _ (XLSXLoc fPath sheet (a, b)) = "XLSXLoc " <> T.pack fPath <> " " <> sheet <> " " <> tshow (a, b)
   showHS _ _ MeatGrinder = "MeatGrinder"
+  showHS _ _ OriginAtlas = "OriginAtlas"
 
 instance ShowHS Block where
   showHS _ _ = tshow
