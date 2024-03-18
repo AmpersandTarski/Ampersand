@@ -50,7 +50,7 @@ jobs:
       - name: Build and test 🏗 🧪
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
@@ -67,7 +67,7 @@ jobs:
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
@@ -96,4 +96,4 @@ jobs:
       - name: Build and test 🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
