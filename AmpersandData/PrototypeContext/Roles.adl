@@ -1,16 +1,16 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 
-    CONCEPT Role ""
-        REPRESENT Role TYPE OBJECT
-        POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
+    CONCEPT PrototypeContext.Role ""
+        REPRESENT PrototypeContext.Role TYPE OBJECT
+        POPULATION PrototypeContext.Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION label[Role*Label] [UNI] -- Not TOT, for then the labels must be given explicitly. The Ampersand generator generates a label for every role in the script. 
+    RELATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] [UNI] --TODO: Should be TOT as wel, but that still gives problems.
         REPRESENT Label TYPE ALPHANUMERIC
-        POPULATION label[Role*Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
-    API AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*Role] BOX
+    API PrototypeContext.AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*PrototypeContext.Role] BOX
         [ "id"              : I
-        , "label"           : label
+        , "label"           : PrototypeContext.label
         -- , "maintains"       : 
         -- , "interfaces"      :
         ]
