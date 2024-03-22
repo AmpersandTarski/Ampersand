@@ -155,7 +155,8 @@ jobs:
       - name: Build and test 🏗 🧪
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          upgrade-stack: false
       - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
@@ -177,7 +178,8 @@ jobs:
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          upgrade-stack: false
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:
@@ -211,7 +213,8 @@ jobs:
       - name: Build and test 🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          upgrade-stack: false
       - name: Upload artifacts (Windows)
         uses: actions/upload-artifact@v2
         with:

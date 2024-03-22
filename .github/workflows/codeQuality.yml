@@ -29,6 +29,7 @@ jobs:
         uses: freckle/stack-action@v5
         with:
           test: false
+          upgrade-stack: false
 
       # Weeder needs compilation artifacts, so it must still be the same Job
       - uses: freckle/weeder-action@v1.0.2
