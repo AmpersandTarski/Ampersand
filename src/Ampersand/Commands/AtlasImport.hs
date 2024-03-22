@@ -1,10 +1,11 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
+-- Mo: added this myself
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleInstances #-} -- Mo: added this myself
 
 -- | Generate a configuration file for a new project.
 module Ampersand.Commands.AtlasImport
@@ -17,6 +18,8 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree hiding (Object)
 import Ampersand.Core.ShowPStruct
+import Ampersand.Input.ADL1.CtxError (Guarded (..))
+import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import Data.Aeson
@@ -47,7 +50,7 @@ instance FromJSON P_Context where
   parseJSON :: Value -> Parser P_Context
   parseJSON val = case val of
     Object v ->
-      build <$> v.: "context"
+      build <$> v .: "context"
         <*> v .: "relations"
         <*> v .: "concepts"
         <*> v .: "rules"
@@ -58,34 +61,37 @@ instance FromJSON P_Context where
     where
       build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Context
       build nm rels cptdef rules =
-          PCtx
-        { ctx_vs = [],
-          ctx_rs = rules,
-          ctx_rrules = [],
-          ctx_reprs = [],
-          ctx_ps = [],
-          ctx_pos = [],
-          ctx_pops = [],
-          ctx_pats = [],
-          ctx_nm = nm,
-          ctx_metas = [],
-          ctx_markup = Nothing,
-          ctx_lang = Nothing,
-          ctx_ks = [],
-          ctx_ifcs = [],
-          ctx_gs = [],
-          ctx_enfs = [],
-          ctx_ds = rels, -- [P_Relation] is already defined as a list
-          ctx_cs = cptdef
-        }
+        PCtx
+          { ctx_vs = [],
+            ctx_rs = rules,
+            ctx_rrules = [],
+            ctx_reprs = [],
+            ctx_ps = [],
+            ctx_pos = [],
+            ctx_pops = [],
+            ctx_pats = [],
+            ctx_nm = nm,
+            ctx_metas = [],
+            ctx_markup = Nothing,
+            ctx_lang = Nothing,
+            ctx_ks = [],
+            ctx_ifcs = [],
+            ctx_gs = [],
+            ctx_enfs = [],
+            ctx_ds = rels, -- [P_Relation] is already defined as a list
+            ctx_cs = cptdef
+          }
 
 instance FromJSON PCDDef where
   parseJSON val = case val of
-    Object v -> --if object
+    Object v ->
+      --if object
       build <$> v .: "definition"
-    String s -> -- if string 
+    String s ->
+      -- if string
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
-    Array arr -> -- if array
+    Array arr ->
+      -- if array
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
     invalid ->
       prependFailure
@@ -99,7 +105,7 @@ instance FromJSON PConceptDef where
   parseJSON val = case val of
     Object v ->
       build <$> v .: "name"
-          <*> (v .: "definition" >>= parseJSON) -- Use the PCDDef parser here
+        <*> (v .: "definition" >>= parseJSON) -- Use the PCDDef parser here
     invalid ->
       prependFailure
         "parsing PConceptDef failed, "
@@ -108,11 +114,11 @@ instance FromJSON PConceptDef where
       build :: Text -> PCDDef -> PConceptDef
       build cpt def =
         PConceptDef
-          { cdcpt = cpt
-          , cddef2 = def
-          , cdmean = [] -- [PMeaning $ P_Markup Nothing Nothing ""] -- Insert a generic meaning / todo: change out with proper meanign
-          , cdfrom = "" -- Ignored as instructed -- todo: make from
-          , pos = OriginAtlas
+          { cdcpt = cpt,
+            cddef2 = def,
+            cdmean = [], -- [PMeaning $ P_Markup Nothing Nothing ""] -- Insert a generic meaning / todo: change out with proper meanign
+            cdfrom = "", -- Ignored as instructed -- todo: make from
+            pos = OriginAtlas
           }
 
 instance FromJSON P_Concept where
@@ -132,7 +138,7 @@ instance FromJSON PProp where
       "uni" -> pure P_Uni
       "inj" -> pure P_Inj
       "sur" -> pure P_Sur
-      "tot" -> pure P_Tot 
+      "tot" -> pure P_Tot
       "sym" -> pure P_Sym
       "asy" -> pure P_Asy
       "trn" -> pure P_Trn
@@ -180,9 +186,9 @@ instance FromJSON P_Relation where
             pos = OriginAtlas
           }
 
-instance FromJSON PMeaning where        -- todo: checken of dit werkt
+instance FromJSON PMeaning where -- todo: checken of dit werkt
   parseJSON (String txt) =
-    pure $ PMeaning $ P_Markup Nothing Nothing txt  -- todo: change this so that mLang and mFormat are taken into account
+    pure $ PMeaning $ P_Markup Nothing Nothing txt -- todo: change this so that mLang and mFormat are taken into account
   parseJSON (Object v) =
     PMeaning <$> parseJSON (Object v)
   parseJSON invalid =
@@ -192,7 +198,7 @@ instance FromJSON PMeaning where        -- todo: checken of dit werkt
 
 instance FromJSON PMessage where
   parseJSON (String txt) =
-    pure $ PMessage $ P_Markup Nothing Nothing txt  -- todo: change this so that mLang and mFormat are taken into account
+    pure $ PMessage $ P_Markup Nothing Nothing txt -- todo: change this so that mLang and mFormat are taken into account
   parseJSON (Object v) =
     PMessage <$> parseJSON (Object v)
   parseJSON invalid =
@@ -211,12 +217,10 @@ instance FromJSON P_Markup where
       "parsing P_Markup failed, "
       (typeMismatch "Object" invalid)
 
-
-instance FromJSON (P_Rule TermPrim) where  -- ToDo: hulp vragen bij Termen
+instance FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
   parseJSON val = case val of
     Object v ->
       build <$> v .: "name"
-        -- <*> (parseTermPrim <$> v .: "formexp") -- If `rr_exp` expects a `Text`, use this; otherwise, adjust <-- this is a term a
         <*> v .: "formexp"
         <*> v .: "meaning" -- This should parse an array of `PMeaning`
         <*> v .: "message" -- Assuming `rr_msg` is an empty list for now
@@ -225,31 +229,22 @@ instance FromJSON (P_Rule TermPrim) where  -- ToDo: hulp vragen bij Termen
         "parsing P_Rule failed, "
         (typeMismatch "Object" invalid)
     where
-      build :: Text -> String -> [PMeaning] -> [PMessage] -> P_Rule TermPrim
-      -- build :: Text -> P_FormalExpression -> PMeaning -> P_Message-> P_Rule
-      -- build nm exp mean msg
-      build nm formexp mean msg  =
+      build :: Text -> Text -> [PMeaning] -> [PMessage] -> P_Rule TermPrim
+      build nm formexp mean msg =
         P_Rule
-          {      
-            pos = OriginAtlas,
+          { pos = OriginAtlas,
             rr_nm = nm,
-            rr_exp = case stringtoTerm formexp of
-        Nothing -> fatal ( T.pack ("Formal Expression is not parseable: " <> formexp))
-        Just te -> te , -- exp
+            rr_exp = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
+              Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
+              Checked term _ -> term,
             rr_mean = mean,
             rr_msg = msg, -- msg
             rr_viol = Nothing
           }
 
-
-stringtoTerm :: String -> Maybe (Term TermPrim)
-stringtoTerm _ = Just (Prim (PI OriginAtlas))
-
-
 instance FromJSON (Term a) where
   parseJSON :: Value -> Parser (Term a)
   parseJSON val = case val of
-
     invalid ->
       prependFailure
         "parsing PProp failed, "
