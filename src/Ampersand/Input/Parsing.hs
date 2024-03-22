@@ -9,6 +9,7 @@ module Ampersand.Input.Parsing
     parseFormalAmpersand,
     parsePrototypeContext,
     parseRule,
+    parseTerm,
     parseCtx,
     ParseCandidate (..), -- exported for use with --daemon
   )
@@ -41,6 +42,7 @@ import Ampersand.Input.ADL1.Parser
   ( Include (..),
     pContext,
     pRule,
+    pTerm,
   )
 import Ampersand.Input.ADL1.ParsingLib
 import Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
@@ -339,6 +341,9 @@ parseRule str =
   case runParser pRule "inside Haskell code" str of
     Checked result _ -> result
     Errors msg -> fatal ("Parse errors in " <> str <> ":\n   " <> tshow msg)
+
+parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
+parseTerm = runParser pTerm
 
 -- | Parses an Ampersand context
 parseCtx ::
