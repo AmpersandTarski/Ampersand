@@ -50,26 +50,30 @@ instance FromJSON P_Context where
   parseJSON :: Value -> Parser P_Context
   parseJSON val = case val of
     Object v ->
-      build <$> v .: "context"
-        <*> v .: "relations"
-        <*> v .: "concepts"
-        <*> v .: "rules"
+      build <$> v .: "name" -- name of the context
+        <*> v .: "patterns"
+    -- <*> v .: "relations"
+    -- <*> v .: "concepts"
+    -- <*> v .: "rules"
+    -- <*> v .: "purpose"
     invalid ->
       prependFailure
         "parsing P_Sign failed, "
         (typeMismatch "Object" invalid)
     where
-      build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Context
-      build nm rels cptdef rules =
+      -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Context
+      -- build nm pats rels cptdef rules =
+      build :: Text -> [P_Pattern] -> P_Context
+      build nm pats =
         PCtx
           { ctx_vs = [],
-            ctx_rs = rules,
+            ctx_rs = [], -- rules,
             ctx_rrules = [],
             ctx_reprs = [],
             ctx_ps = [],
             ctx_pos = [],
             ctx_pops = [],
-            ctx_pats = [],
+            ctx_pats = pats,
             ctx_nm = nm,
             ctx_metas = [],
             ctx_markup = Nothing,
@@ -78,8 +82,43 @@ instance FromJSON P_Context where
             ctx_ifcs = [],
             ctx_gs = [],
             ctx_enfs = [],
-            ctx_ds = rels, -- [P_Relation] is already defined as a list
-            ctx_cs = cptdef
+            ctx_ds = [], -- rels,
+            ctx_cs = [] -- cptdef
+          }
+
+instance FromJSON P_Pattern where
+  parseJSON :: Value -> Parser P_Pattern
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "name" --name of the patterns
+        <*> v .: "relations"
+        <*> v .: "concepts"
+        <*> v .: "rules"
+        <*> v .: "purpose"
+    invalid ->
+      prependFailure
+        "parsing P_Sign failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
+      build nm rels cptdef rules prps =
+        -- build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Pattern
+        -- build nm rels cptdef rules =
+        P_Pat
+          { pos = OriginAtlas,
+            pt_nm = nm,
+            pt_rls = rules,
+            pt_gns = [],
+            pt_dcs = rels,
+            pt_RRuls = [],
+            pt_cds = cptdef,
+            pt_Reprs = [],
+            pt_ids = [],
+            pt_vds = [],
+            pt_xps = prps,
+            pt_pop = [],
+            pt_end = OriginAtlas,
+            pt_enfs = []
           }
 
 instance FromJSON PCDDef where
@@ -242,10 +281,65 @@ instance FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
             rr_viol = Nothing
           }
 
-instance FromJSON (Term a) where
+instance FromJSON (Term a) where -- todo: not sure whether this is still in use
   parseJSON :: Value -> Parser (Term a)
   parseJSON val = case val of
     invalid ->
       prependFailure
         "parsing PProp failed, "
         (typeMismatch "String" invalid)
+
+instance FromJSON PPurpose where
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "markup"
+        <*> v .: "object"
+    -- <*> v .: "reference"
+    invalid ->
+      prependFailure
+        "parsing PPurpose failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: P_Markup -> PRef2Obj -> PPurpose
+      build mrk refob =
+        PRef2
+          { pos = OriginAtlas, -- the position in the Ampersand script of this purpose definition
+            pexObj = refob, -- the reference to the object whose purpose is explained
+            pexMarkup = mrk, -- the piece of text, including markup and language info
+            pexRefIDs = ["test"] -- the references (for traceability)
+          }
+
+instance FromJSON PRef2Obj where
+  parseJSON (String s) = pure $ PRef2ConceptDef s
+  -- Example JSON for PRef2Relation, assuming it could be an object with a specific structure
+  -- You'll need to adjust this based on your actual JSON and the data structure of P_NamedRel
+  parseJSON (Object v) = do
+    objType <- v .: "type" -- A field in your JSON that indicates the type of PRef2Obj
+    case objType of
+      "Relation" -> PRef2Relation <$> undefined
+      "Rule" -> PRef2Rule <$> v .: "value"
+      "IdentityDef" -> PRef2IdentityDef <$> v .: "value"
+      "ViewDef" -> PRef2ViewDef <$> v .: "value"
+      "Pattern" -> PRef2Pattern <$> v .: "value"
+      "Interface" -> PRef2Interface <$> v .: "value"
+      "Context" -> PRef2Context <$> v .: "value"
+      _ -> fail $ "Unknown PRef2Obj type: " ++ objType
+  parseJSON invalid = prependFailure "parsing PRef2Obj failed, " (typeMismatch "Expected a String or Object for PRef2Obj" invalid)
+
+-- data PRef2Obj
+--   = PRef2ConceptDef Text
+--   | PRef2Relation P_NamedRel
+--   | PRef2Rule Text
+--   | PRef2IdentityDef Text
+--   | PRef2ViewDef Text
+--   | PRef2Pattern Text
+--   | PRef2Interface Text
+--   | PRef2Context Text
+--   deriving (Show, Eq)
+
+--   data P_NamedRel = PNamedRel {
+--     pos :: Origin,
+--     p_nrnm :: Text,
+--     p_mbSign :: Maybe P_Sign}
+
+--   deriving (Show)

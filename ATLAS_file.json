@@ -1,109 +1,131 @@
 {
-    "context": "Enrollment",
+    "name": "Enrollment",
     "patterns": [
-        "Courses"
-    ],
-    "concepts": [
         {
-            "name": "Student",
-            "definition": [
-                "We have to know what person studies at this institute, so the system needs to keep track of them."
+            "name": "Courses",
+            "concepts": [
+                {
+                    "name": "Student",
+                    "definition": [],
+                    "purpose": [
+                        {
+                            "markup": "We have to know what person studies at this institute, so the system needs to keep track of them.",
+                            "object": [
+                                "Student"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Module",
+                    "definition": [],
+                    "purpose": [
+                        {
+                            "markup": "We have to know what modules exist, so the system needs to keep track of them.",
+                            "object": [
+                                "Module"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Course",
+                    "definition": [],
+                    "purpose": [
+                        {
+                            "markup": "We have to know what courses there are, so the system needs to keep track of them.",
+                            "object": [
+                                "Course"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "SESSION",
+                    "definition": [],
+                    "purpose": []
+                }
             ],
-            "purpose": [
-                "We have to know what person studies at this institute, so the system needs to keep track of them."
-            ]
-        },
-        {
-            "name": "ONE",
-            "definition": [],
+            "rules": [
+                {
+                    "name": "TOT takes[Student*Course]",
+                    "formexp": "I[Student] |- takes [Student*Course];takes [Student*Course]~",
+                    "meaning": [
+                        "takes[Student*Course] is total",
+                        "takes[Student*Course] is totaal"
+                    ],
+                    "purpose": [],
+                    "message": []
+                },
+                {
+                    "name": "TestRule",
+                    "formexp": "\"_SESSION\"[SESSION]",
+                    "meaning": [],
+                    "purpose": [],
+                    "message": []
+                },
+                {
+                    "name": "ModuleEnrollment",
+                    "formexp": "isEnrolledFor [Student*Module] |- takes [Student*Course];isPartOf [Module*Course]~",
+                    "meaning": [
+                        "A student can enroll for any module that is part of the course the student takes"
+                    ],
+                    "purpose": [],
+                    "message": []
+                }
+            ],
+            "relations": [
+                {
+                    "name": "isPartOf",
+                    "sign": {
+                        "source": "Module",
+                        "target": "Course"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "A module part of a complete course"
+                    ],
+                    "purpose": []
+                },
+                {
+                    "name": "takes",
+                    "sign": {
+                        "source": "Student",
+                        "target": "Course"
+                    },
+                    "properties": [
+                        "TOT"
+                    ],
+                    "meaning": [
+                        "A student takes a complete course"
+                    ],
+                    "purpose": []
+                },
+                {
+                    "name": "isEnrolledFor",
+                    "sign": {
+                        "source": "Student",
+                        "target": "Module"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "Students enroll for each module in the course separately"
+                    ],
+                    "purpose": []
+                }
+            ],
+            "properties": [
+                "TOT"
+            ],
             "purpose": []
-        },
-        {
-            "name": "SESSION",
-            "definition": [],
-            "purpose": []
-        },
-        {
-            "name": "Module",
-            "definition": [
-                "We have to know what modules exist, so the system needs to keep track of them."
-            ],
-            "purpose": [
-                "We have to know what modules exist, so the system needs to keep track of them."
-            ]
-        },
-        {
-            "name": "Course",
-            "definition": [
-                "We have to know what courses there are, so the system needs to keep track of them."
-            ],
-            "purpose": [
-                "We have to know what courses there are, so the system needs to keep track of them."
-            ]
         }
     ],
     "purpose": [
         {
-            "name": "A complete course consists of several modules.Students of a course can enroll for any module that is part of the course."
-        }
-    ],
-    "rules": [
-        {
-            "name": "TOT takes[Student*Course]",
-            "formexp": "isEnrolledFor [Student*Module] |- takes [Student*Course];isPartOf [Module*Course]~",
-            "meaning": [
-                "takes[Student*Course] is total",
-                "takes[Student*Course] is totaal"
-            ],
-            "purpose": [],
-            "message": []
-        }
-    ],
-    "properties": [
-        {
-            "property": [
-                "TOT"
+            "markup": "A complete course consists of several modules.Students of a course can enroll for any module that is part of the course.",
+            "object": [
+                "Enrollment"
             ]
-        }
-    ],
-    "relations": [
-        {
-            "name": "isPartOf",
-            "sign": {
-                "source": "Module",
-                "target": "Course"
-            },
-            "properties": [],
-            "meaning": [
-                "A module part of a complete course"
-            ],
-            "purpose": []
-        },
-        {
-            "name": "takes",
-            "sign": {
-                "source": "Student",
-                "target": "Course"
-            },
-            "properties": [
-                "TOT"
-            ],
-            "meaning": [
-                "A student takes a complete course"
-            ],
-            "purpose": []
-        },
-        {
-            "name": "isEnrolledFor",
-            "sign": {
-                "source": "Student",
-                "target": "Module"
-            },
-            "properties": [],
-            "meaning": [
-                "Students enroll for each module in the course separately"
-            ],
-            "purpose": []
         }
     ],
     "versionInfo": "Ampersand-v4.7.6 [d53919f85b8b0e958baa31e0a183a403730be3d7:refs/tags/v4.7.6], build time: 26-Feb-23 13:28:41 UTC",
