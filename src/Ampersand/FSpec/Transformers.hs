@@ -5,7 +5,6 @@
 module Ampersand.FSpec.Transformers
   ( nameSpaceFormalAmpersand,
     transformersFormalAmpersand,
-    nameSpacePrototypeContext,
     transformersPrototypeContext,
     Transformer (..),
     PopAtom (..),
@@ -72,17 +71,19 @@ dirtyIdWithoutType' x = case dirtyIdWithoutType x of
   Just pa -> pa
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
-toTransformer :: NameSpace -> (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -> Transformer
-toTransformer namespace (rel, src, tgt, props, tuples) =
+toTransformer :: (Text, Text, Text, AProps, [(PopAtom, PopAtom)]) -> Transformer
+toTransformer (rel, src, tgt, props, tuples) =
   Transformer rel' src' tgt' props tuples'
   where
-    rel' = withNameSpace namespace . mkName RelationName $ toNamePart' rel NE.:| []
-    src' = withNameSpace namespace . mkName ConceptName $ toNamePart' src NE.:| []
-    tgt' = withNameSpace namespace . mkName ConceptName $ toNamePart' tgt NE.:| []
-    toNamePart' :: Text -> NamePart
-    toNamePart' x = case toNamePart x of
-      Nothing -> fatal "Not a valid NamePart."
-      Just np -> np
+    rel' = mkName RelationName $ toNameParts rel
+    src' = mkName ConceptName $ toNameParts src
+    tgt' = mkName ConceptName $ toNameParts tgt
+    toNameParts :: Text -> NonEmpty NamePart
+    toNameParts x = case T.uncons x of
+      Nothing -> fatal $ "Not a valid NamePart: `" <> x <> "`"
+      Just (h, tl) -> case catMaybes . toList $ toNamePart1 <$> splitOnDots (Text1 h tl) of
+        [] -> fatal $ "Not a valid NamePart: `" <> x <> "`"
+        h' : tl' -> h' :| tl'
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =
@@ -105,7 +106,7 @@ nameSpaceFormalAmpersand =
 transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec =
   map
-    (toTransformer nameSpaceFormalAmpersand)
+    toTransformer
     [ {-
       -}
       --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
@@ -1169,13 +1170,6 @@ transformersFormalAmpersand fSpec =
       )
     ]
 
-nameSpacePrototypeContext :: NameSpace
-nameSpacePrototypeContext =
-  [ case toNamePart "PrototypeContext" of
-      Nothing -> fatal "Not a valid NamePart."
-      Just np -> np
-  ]
-
 -- | The following transformers provide the metamodel needed to run a prototype.
 --   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
 --   You might do this by dropping all prefixes "" and "" and doing
@@ -1185,7 +1179,7 @@ nameSpacePrototypeContext =
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec =
   map
-    (toTransformer nameSpacePrototypeContext)
+    toTransformer
     -- the following transformer is also contained in FormalAmpersand.
     [ ( "isAPI",
         "Interface",
