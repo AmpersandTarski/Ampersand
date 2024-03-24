@@ -70,7 +70,7 @@ PATTERN FormalAmpersand.Context
     MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
     VIOLATION (TXT "{EX} InsPair;FormalAmpersand.udefrules;FormalAmpersand.Rule;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
 
-    PURPOSE RULE RelationDeclaredOutsidePattern
+    PURPOSE RULE FormalAmpersand.RelationDeclaredOutsidePattern
     {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
     +}
     ROLE ExecEngine MAINTAINS FormalAmpersand.RelationDeclaredOutsidePattern
@@ -81,7 +81,7 @@ PATTERN FormalAmpersand.Context
     PURPOSE RULE FormalAmpersand.PatternIsUsed
     {+Patterns can be defined inside a context. This means that all declarations in that pattern are used in that context.
     +}
-    ROLE ExecEngine MAINTAINS PatternIsUsed
+    ROLE ExecEngine MAINTAINS FormalAmpersand.PatternIsUsed
     RULE FormalAmpersand.PatternIsUsed LABEL "pat defined in means used in" : FormalAmpersand.context[FormalAmpersand.Pattern*FormalAmpersand.Context] |- FormalAmpersand.uses[FormalAmpersand.Context*FormalAmpersand.Pattern]~
     MEANING "Every pattern defined in a context is used in that context."
     VIOLATION (TXT "{EX} InsPair;FormalAmpersand.uses;FormalAmpersand.Context;", TGT I, TXT ";FormalAmpersand.Pattern;", SRC I)

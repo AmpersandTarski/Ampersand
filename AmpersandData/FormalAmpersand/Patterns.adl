@@ -85,7 +85,7 @@ PATTERN Patterns
     {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
     +}
     
-    RULE fromInstance = FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.fst;FormalAmpersand.instantiatesAs~
+    RULE FormalAmpersand.fromInstance = FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.fst;FormalAmpersand.instantiatesAs~
     MEANING "The first part of the string combination determines the pattern instance of the entity."
     
     RULE FormalAmpersand.exposes = FormalAmpersand.fromInstance~ /\ FormalAmpersand.consumer;FormalAmpersand.existsIn~
@@ -104,9 +104,9 @@ PATTERN Patterns
     RULE I[FormalAmpersand.ExternalEntity] - I[FormalAmpersand.Definition] = I[FormalAmpersand.ExternalEntity]
     MEANING "Each external entity is never local"
 
-    RULE definition /\ V[FormalAmpersand.Definition*FormalAmpersand.Definition] = I /\ FormalAmpersand.xistsIn;FormalAmpersand.declaredIn~
+    RULE FormalAmpersand.definition /\ V[FormalAmpersand.Definition*FormalAmpersand.Definition] = I /\ FormalAmpersand.existsIn;FormalAmpersand.declaredIn~
 
-    RULE definition /\ V[FormalAmpersand.ExternalEntity*FormalAmpersand.Definition]
+    RULE FormalAmpersand.definition /\ V[FormalAmpersand.ExternalEntity*FormalAmpersand.Definition]
                 =   FormalAmpersand.exposes~;FormalAmpersand.including  /\ FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.snd;FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String]~ -- second part of the string names the declaration
     
     RULE FormalAmpersand.excluding \/ FormalAmpersand.including = FormalAmpersand.consumes;FormalAmpersand.declaredIn~

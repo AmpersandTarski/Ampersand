@@ -14,8 +14,8 @@ PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
 
     RELATION FormalAmpersand.sign[FormalAmpersand.Term*FormalAmpersand.Signature] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 
-    VIEW FormalAmpersand.Equivalence        : FormalAmpersand.Equivalence(TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " = ", second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
-    VIEW FormalAmpersand.Inclusion          : FormalAmpersand.Inclusion  (TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " |- ", second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
+    VIEW FormalAmpersand.Equivalence        : FormalAmpersand.Equivalence(TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " = ", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
+    VIEW FormalAmpersand.Inclusion          : FormalAmpersand.Inclusion  (TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " |- ", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
   --  VIEW Truth              : Truth      (TXT "RULE ", I[Term])
     VIEW FormalAmpersand.Relation           : FormalAmpersand.Relation(FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName], TXT "[", FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept];FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName], TXT "*", FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept];FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName], TXT "]")
     VIEW FormalAmpersand.UnaryMinus         : FormalAmpersand.UnaryMinus(TXT "-", FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term])
@@ -86,7 +86,7 @@ REPRESENT FormalAmpersand.ShowADL TYPE BIGALPHANUMERIC
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedShowADL
       RULE FormalAmpersand.DelUnusedShowADL LABEL "del unused ShowADL" : I[FormalAmpersand.ShowADL] |- FormalAmpersand.showADL~;FormalAmpersand.showADL
       MEANING "A ShowADL without Term will be removed."
-      VIOLATION ( TXT "{EX}_;DelAtom_;FormalAmpersand.ShowADL_;", SRC FormalAmpersand.I )
+      VIOLATION ( TXT "{EX}_;DelAtom_;FormalAmpersand.ShowADL_;", SRC I )
 VIEW FormalAmpersand.Term : FormalAmpersand.Term(FormalAmpersand.showADL)
 
 {- I can't get the following to work...  Grrr!

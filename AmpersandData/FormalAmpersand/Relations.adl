@@ -4,14 +4,14 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 PATTERN FormalAmpersand.Relations
 RELATION FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
-IDENT Relation: Relation( 
+IDENT FormalAmpersand.Relation: FormalAmpersand.Relation( 
     FormalAmpersand.name, 
     FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept], 
     FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept], 
     FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context])
 RULE FormalAmpersand.eqRelation LABEL "eq relation": FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName];FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]~ 
-                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept];(sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
-                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept];(sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
+                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept];(FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
+                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept];(FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
                  |- I[FormalAmpersand.Relation]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
