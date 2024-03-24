@@ -25,8 +25,6 @@ extra-source-files:
     ReleaseNotes.md
     AmpersandData/FormalAmpersand/Concepts.adl
     AmpersandData/FormalAmpersand/Concepts.docadl
-    AmpersandData/FormalAmpersand/Conjuncts.adl
-    AmpersandData/FormalAmpersand/Conjuncts.docadl
     AmpersandData/FormalAmpersand/Contexts.adl
     AmpersandData/FormalAmpersand/Contexts.docadl
     AmpersandData/FormalAmpersand/Documentation.adl
@@ -34,9 +32,6 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Generics.adl
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
-    AmpersandData/FormalAmpersand/Issue1472
-    AmpersandData/FormalAmpersand/MinimalAST.xlsx
-    AmpersandData/FormalAmpersand/Namespaces.adl
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt

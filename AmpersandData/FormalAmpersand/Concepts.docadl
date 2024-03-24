@@ -2,26 +2,26 @@ CONTEXT FormalAmpersand IN ENGLISH
 
 -- TODO add purposes for the metamodel of concepts
 
-PATTERN Pairs
-    RELATION in[Pair*Relation] [UNI,TOT]
-    RELATION lAtom[Pair*Atom] [UNI,TOT]
-    RELATION rAtom[Pair*Atom] [UNI,TOT]
+PATTERN FormalAmpersand.Pairs
+    RELATION FormalAmpersand.in[FormalAmpersand.Pair*FormalAmpersand.Relation] [UNI,TOT]
+    RELATION FormalAmpersand.lAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
+    RELATION FormalAmpersand.rAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
 ENDPATTERN
 
 --    RULE IdentifiabilityConcepts : name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
-PATTERN Specialization
+PATTERN FormalAmpersand.Specialization
 --    VIEW Isa: Isa( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
 --    RULE eqGen : gengen;gengen~ /\ genspc;genspc~ |- I
 --    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 -- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
-    RELATION gengen[Isa*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.gengen[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
-    RELATION genspc[Isa*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.genspc[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
-    RELATION gengen[IsE*Concept] [TOT]
+    RELATION FormalAmpersand.gengen[FormalAmpersand.IsE*FormalAmpersand.Concept] [TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
-    RELATION genspc[IsE*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
 
 --PURPOSE RULE specialization
