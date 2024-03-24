@@ -82,7 +82,6 @@ roundtrip :: P_Context -> Guarded P_Context
 roundtrip pCtx =
   fst
     <$> parseCtx
-      []
       ( "❗❗❗ ERROR: There is something wrong with the parser and/or with the\n"
           <> "           way an arbitrary P_Context is defined. (See ArbitraryTree.hs)\n"
           <> "           Below file at position"
