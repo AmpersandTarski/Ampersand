@@ -157,6 +157,7 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          cache-save-always: true
       - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
@@ -178,8 +179,9 @@ jobs:
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll --no-test" # No test on macOS, because for some reason it takes way too long, and there is no aditional benefit. Tests are still run on linux and windows.
           upgrade-stack: false
+          cache-save-always: true
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:
@@ -215,6 +217,7 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          cache-save-always: true
       - name: Upload artifacts (Windows)
         uses: actions/upload-artifact@v2
         with:

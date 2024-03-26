@@ -52,6 +52,7 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          cache-save-always: true
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
@@ -70,6 +71,7 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          cache-save-always: true
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
@@ -100,3 +102,5 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          cache-save-always: true
+          
