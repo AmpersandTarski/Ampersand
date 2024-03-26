@@ -22,6 +22,7 @@ import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
+--import qualified Data.HashMap.Strict as HM
 import Data.Aeson
 import Data.Aeson.Types
 import qualified RIO.ByteString.Lazy as B
@@ -58,7 +59,7 @@ instance FromJSON P_Context where
     -- <*> v .: "purpose"
     invalid ->
       prependFailure
-        "parsing P_Sign failed, "
+        "parsing P_Context failed, "
         (typeMismatch "Object" invalid)
     where
       -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Context
@@ -94,10 +95,10 @@ instance FromJSON P_Pattern where
         <*> v .: "relations"
         <*> v .: "concepts"
         <*> v .: "rules"
-        <*> v .: "purpose"
+        <*> v .: "purposes"
     invalid ->
       prependFailure
-        "parsing P_Sign failed, "
+        "parsing P_PAttern failed, "
         (typeMismatch "Object" invalid)
     where
       build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
@@ -292,54 +293,76 @@ instance FromJSON (Term a) where -- todo: not sure whether this is still in use
 instance FromJSON PPurpose where
   parseJSON val = case val of
     Object v ->
-      build <$> v .: "markup"
-        <*> v .: "object"
-    -- <*> v .: "reference"
+      build <$> v .: "meaning"
+        <*> parseJSON val
     invalid ->
       prependFailure
         "parsing PPurpose failed, "
         (typeMismatch "Object" invalid)
     where
-      build :: P_Markup -> PRef2Obj -> PPurpose
-      build mrk refob =
+      build :: Text -> PRef2Obj -> PPurpose
+      build mrk obj =
         PRef2
-          { pos = OriginAtlas, -- the position in the Ampersand script of this purpose definition
-            pexObj = refob, -- the reference to the object whose purpose is explained
-            pexMarkup = mrk, -- the piece of text, including markup and language info
-            pexRefIDs = ["test"] -- the references (for traceability)
+          { pos = OriginAtlas, -- Voorbeeldwaarde
+            pexObj = obj, -- Je moet bepalen hoe je PRef2Obj wilt invullen
+            pexMarkup = P_Markup Nothing Nothing mrk, -- Direct gebruik van `meaning` als pexMarkup
+            pexRefIDs = ["test"] -- Voorbeeldlijst
           }
 
 instance FromJSON PRef2Obj where
-  parseJSON (String s) = pure $ PRef2ConceptDef s
-  -- Example JSON for PRef2Relation, assuming it could be an object with a specific structure
-  -- You'll need to adjust this based on your actual JSON and the data structure of P_NamedRel
-  parseJSON (Object v) = do
-    objType <- v .: "type" -- A field in your JSON that indicates the type of PRef2Obj
-    case objType of
-      "Relation" -> PRef2Relation <$> undefined
-      "Rule" -> PRef2Rule <$> v .: "value"
-      "IdentityDef" -> PRef2IdentityDef <$> v .: "value"
-      "ViewDef" -> PRef2ViewDef <$> v .: "value"
-      "Pattern" -> PRef2Pattern <$> v .: "value"
-      "Interface" -> PRef2Interface <$> v .: "value"
-      "Context" -> PRef2Context <$> v .: "value"
-      _ -> fail $ "Unknown PRef2Obj type: " ++ objType
-  parseJSON invalid = prependFailure "parsing PRef2Obj failed, " (typeMismatch "Expected a String or Object for PRef2Obj" invalid)
+  parseJSON (Object v) =
+    (PRef2ConceptDef <$> v .: "conceptName")
+      -- <|> (PRef2Relation <$> v .: "relation") -- this should be P_NamedRel
+      <|> (PRef2Rule <$> v .: "ruleName")
+      <|> (PRef2IdentityDef <$> v .: "identityDefName")
+      <|> (PRef2ViewDef <$> v .: "viewName")
+      <|> (PRef2Pattern <$> v .: "patternName")
+      <|> (PRef2Interface <$> v .: "interfaceName")
+      <|> (PRef2Context <$> v .: "contextName")
+      <|> fail "Geen geldige sleutel gevonden met een waarde."
+  parseJSON _ = mzero
 
--- data PRef2Obj
---   = PRef2ConceptDef Text
---   | PRef2Relation P_NamedRel
---   | PRef2Rule Text
---   | PRef2IdentityDef Text
---   | PRef2ViewDef Text
---   | PRef2Pattern Text
---   | PRef2Interface Text
---   | PRef2Context Text
---   deriving (Show, Eq)
+instance FromJSON P_NamedRel where
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "relationName"
+        <*> v .: "sign"
+    -- <*> v .: "reference"
+    invalid ->
+      prependFailure
+        "parsing P_NamedRel failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: Text -> Maybe P_Sign -> P_NamedRel
+      build txt sgn =
+        PNamedRel
+          { pos = OriginAtlas,
+            p_nrnm = txt, -- name of Relation
+            p_mbSign = sgn -- Sign of relation
+          }
 
---   data P_NamedRel = PNamedRel {
---     pos :: Origin,
---     p_nrnm :: Text,
---     p_mbSign :: Maybe P_Sign}
-
---   deriving (Show)
+-- instance FromJSON P_Interface where
+--   parseJSON val = case val of
+--     Object v ->
+--       build <$> v .: "relationName"
+--         <*> v .: "sign"
+--     -- <*> v .: "reference"
+--     invalid ->
+--       prependFailure
+--         "parsing PPurpose failed, "
+--         (typeMismatch "Object" invalid)
+--     where
+--       build :: Text -> Maybe P_Sign -> P_Interface
+--       build txt sgn =
+--         P_Ifc
+--           { -- | The interface is of type API
+--             ifc_IsAPI = Bool,
+--             -- | the name of the interface
+--             ifc_Name = Text,
+--             -- | a list of roles that may use this interface
+--             ifc_Roles = [Role],
+--             -- | the context term (mostly: I[c])
+--             ifc_Obj = P_BoxItemTermPrim,
+--             pos = Origin,
+--             ifc_Prp = Text
+--           }
