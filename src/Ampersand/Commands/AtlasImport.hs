@@ -53,25 +53,25 @@ instance FromJSON P_Context where
     Object v ->
       build <$> v .: "name" -- name of the context
         <*> v .: "patterns"
-    -- <*> v .: "relations"
-    -- <*> v .: "concepts"
-    -- <*> v .: "rules"
-    -- <*> v .: "purpose"
+        <*> v .: "purposes" -- purposes within whole CONTEXT
+        -- <*> v .: "relations"
+        -- <*> v .: "concepts"
+        -- <*> v .: "rules"
     invalid ->
       prependFailure
         "parsing P_Context failed, "
         (typeMismatch "Object" invalid)
     where
-      -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Context
+      -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Context
       -- build nm pats rels cptdef rules =
-      build :: Text -> [P_Pattern] -> P_Context
-      build nm pats =
+      build :: Text -> [P_Pattern] -> [PPurpose] -> P_Context
+      build nm pats prps =
         PCtx
           { ctx_vs = [],
             ctx_rs = [], -- rules,
             ctx_rrules = [],
             ctx_reprs = [],
-            ctx_ps = [],
+            ctx_ps = prps,
             ctx_pos = [],
             ctx_pops = [],
             ctx_pats = pats,
@@ -103,8 +103,6 @@ instance FromJSON P_Pattern where
     where
       build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
       build nm rels cptdef rules prps =
-        -- build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> P_Pattern
-        -- build nm rels cptdef rules =
         P_Pat
           { pos = OriginAtlas,
             pt_nm = nm,
@@ -311,21 +309,28 @@ instance FromJSON PPurpose where
 
 instance FromJSON PRef2Obj where
   parseJSON (Object v) =
-    (PRef2ConceptDef <$> v .: "conceptName")
-      -- <|> (PRef2Relation <$> v .: "relation") -- this should be P_NamedRel
-      <|> (PRef2Rule <$> v .: "ruleName")
-      <|> (PRef2IdentityDef <$> v .: "identityDefName")
-      <|> (PRef2ViewDef <$> v .: "viewName")
-      <|> (PRef2Pattern <$> v .: "patternName")
-      <|> (PRef2Interface <$> v .: "interfaceName")
-      <|> (PRef2Context <$> v .: "contextName")
-      <|> fail "Geen geldige sleutel gevonden met een waarde."
+    (PRef2ConceptDef <$> parseFirstField v "conceptPurp")
+      <|> (PRef2Relation <$> (v .: "relationPurp" >>= parseJSON)) -- this should be P_NamedRel
+      <|> (PRef2Rule <$> parseFirstField v "rulePurp")
+      <|> (PRef2IdentityDef <$> parseFirstField v "identPurp")
+      <|> (PRef2ViewDef <$> parseFirstField v "viewPurp")
+      <|> (PRef2Pattern <$> parseFirstField v "patternPurp")
+      <|> (PRef2Interface <$> parseFirstField v "interfacePurp")
+      <|> (PRef2Context <$> parseFirstField v "contextPurp")
+      <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
   parseJSON _ = mzero
+
+parseFirstField :: Object -> T.Text -> Parser T.Text
+parseFirstField obj key = do
+  texts <- obj .:? key .!= []
+  case listToMaybe texts of
+    Just txt -> return txt -- Als er een waarde is, geef deze terug
+    Nothing -> mzero
 
 instance FromJSON P_NamedRel where
   parseJSON val = case val of
     Object v ->
-      build <$> v .: "relationName"
+      build <$> v .: "relation"
         <*> v .: "sign"
     -- <*> v .: "reference"
     invalid ->
