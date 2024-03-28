@@ -1,18 +1,25 @@
 CONTEXT Enrollment  
 
-
+PURPOSE CONTEXT Enrollment  REF "test"
+{+
+Dit is een test Purpose voor CONTEXT Enrollment
++}
+PURPOSE INTERFACE Overview  REF "test"
+{+
+Dit is de test purpose voor INTERFACE Overview
++}
 PATTERN Courses
 RULE "TOT takes[Student*Course]": I[Student]
 MEANING   "takes[Student*Course] is total"
 MEANING   "takes[Student*Course] is totaal"
 
 
-RULE TestRule: "_SESSION"[SESSION]
-
-
-
 RULE ModuleEnrollment: isEnrolledFor [Student*Module]
 MEANING   "A student can enroll for any module that is part of the course the student takes"
+
+
+RULE TestRule: "_SESSION"[SESSION]
+
 
 
 
@@ -20,17 +27,33 @@ CONCEPT Student   "definition not working"
 CONCEPT Module   "definition not working"
 CONCEPT Course   "definition not working"
 CONCEPT SESSION   "definition not working"
-RELATION isPartOf [Module*Course] 
-MEANING   "A module part of a complete course" 
 RELATION takes [Student*Course] [SUR]
 MEANING   "A student takes a complete course" 
+RELATION isPartOf [Module*Course] 
+MEANING   "A module part of a complete course" 
 RELATION isEnrolledFor [Student*Module] 
 MEANING   "Students enroll for each module in the course separately" 
 
 
 
 
-
+PURPOSE PATTERN Courses  REF "test"
+{+ Dit is een test Purpose voor PATTERN courses
++}
+PURPOSE CONCEPT Module  REF "test"
+{+
+Dit is de tweede test purpose voor CONCEPT module
++}
+PURPOSE CONCEPT Module  REF "test"
+{+
+Dit is de eerste test purpose voor CONCEPT Module
++}
+PURPOSE RELATION isPartOf [Student*Course]  REF "test"
+{+ Dit is de test purpose voor RELATION takes +}
+PURPOSE RELATION takes [Student*Course]  REF "test"
+{+ Dit is de test purpose voor RELATION takes +}
+PURPOSE RULE TestRule  REF "test"
+{+ Dit is de test purpose voor RULE TestRule +}
 
 
 ENDPATTERN

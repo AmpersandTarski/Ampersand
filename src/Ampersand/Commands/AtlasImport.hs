@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 -- Mo: added this myself
@@ -308,17 +309,25 @@ instance FromJSON PPurpose where
           }
 
 instance FromJSON PRef2Obj where
-  parseJSON (Object v) =
-    (PRef2ConceptDef <$> parseFirstField v "conceptPurp")
-      <|> (PRef2Relation <$> (v .: "relationPurp" >>= parseJSON)) -- this should be P_NamedRel
-      <|> (PRef2Rule <$> parseFirstField v "rulePurp")
-      <|> (PRef2IdentityDef <$> parseFirstField v "identPurp")
-      <|> (PRef2ViewDef <$> parseFirstField v "viewPurp")
-      <|> (PRef2Pattern <$> parseFirstField v "patternPurp")
-      <|> (PRef2Interface <$> parseFirstField v "interfacePurp")
-      <|> (PRef2Context <$> parseFirstField v "contextPurp")
-      <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
-  parseJSON _ = mzero
+  parseJSON val = case val of
+    Object v ->
+      (PRef2ConceptDef <$> parseFirstField v "conceptPurp")
+        <|> (v .:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
+        <|> (PRef2Rule <$> parseFirstField v "rulePurp")
+        <|> (PRef2IdentityDef <$> parseFirstField v "identPurp")
+        <|> (PRef2ViewDef <$> parseFirstField v "viewPurp")
+        <|> (PRef2Pattern <$> parseFirstField v "patternPurp")
+        <|> (PRef2Interface <$> parseFirstField v "interfacePurp")
+        <|> (PRef2Context <$> parseFirstField v "contextPurp")
+    -- <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
+    invalid ->
+      prependFailure
+        "parsing PRef2Obj failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: Maybe P_NamedRel -> Parser PRef2Obj
+      build (Just rel) = pure $ PRef2Relation rel
+      build Nothing = fail "relationPurp list is empty"
 
 parseFirstField :: Object -> T.Text -> Parser T.Text
 parseFirstField obj key = do

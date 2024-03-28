@@ -127,7 +127,7 @@
                     "conceptPurp": [],
                     "relationPurp": [
                         {
-                            "relation": "isPartOf",
+                            "relation": "takes",
                             "sign": {
                                 "source": "Student",
                                 "target": "Course"
@@ -145,7 +145,7 @@
                     "conceptPurp": [],
                     "relationPurp": [
                         {
-                            "relation": "takes",
+                            "relation": "isPartOf",
                             "sign": {
                                 "source": "Student",
                                 "target": "Course"
@@ -157,7 +157,7 @@
                     "patternPurp": [],
                     "interfacePurp": [],
                     "contextPurp": [],
-                    "meaning": "Dit is de test purpose voor RELATION takes"
+                    "meaning": "Dit is de test purpose voor RELATION isPartOf"
                 },
                 {
                     "conceptPurp": [],
