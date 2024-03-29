@@ -23,10 +23,10 @@ import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
---import qualified Data.HashMap.Strict as HM
 import Data.Aeson
 import Data.Aeson.Types
 import qualified RIO.ByteString.Lazy as B
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 -- | Read a file containing the population of an Atlas.
@@ -54,10 +54,12 @@ instance FromJSON P_Context where
     Object v ->
       build <$> v .: "name" -- name of the context
         <*> v .: "patterns"
+        -- <*> v .: "interfaces"
+        <*> v .: "conceptsCtx"
+        <*> v .: "representationsCtx"
+        <*> v .: "rulesCtx"
+        <*> v .: "relationsCtx"
         <*> v .: "purposes" -- purposes within whole CONTEXT
-        -- <*> v .: "relations"
-        -- <*> v .: "concepts"
-        -- <*> v .: "rules"
     invalid ->
       prependFailure
         "parsing P_Context failed, "
@@ -65,13 +67,13 @@ instance FromJSON P_Context where
     where
       -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Context
       -- build nm pats rels cptdef rules =
-      build :: Text -> [P_Pattern] -> [PPurpose] -> P_Context
-      build nm pats prps =
+      build :: Text -> [P_Pattern] -> [PConceptDef] -> [Representation] -> [P_Rule TermPrim] -> [P_Relation] -> [PPurpose] -> P_Context
+      build nm pats cpts reprs rules rels prps =
         PCtx
           { ctx_vs = [],
-            ctx_rs = [], -- rules,
+            ctx_rs = rules,
             ctx_rrules = [],
-            ctx_reprs = [],
+            ctx_reprs = reprs,
             ctx_ps = prps,
             ctx_pos = [],
             ctx_pops = [],
@@ -84,8 +86,8 @@ instance FromJSON P_Context where
             ctx_ifcs = [],
             ctx_gs = [],
             ctx_enfs = [],
-            ctx_ds = [], -- rels,
-            ctx_cs = [] -- cptdef
+            ctx_ds = rels, -- rels,
+            ctx_cs = cpts -- cptdef
           }
 
 instance FromJSON P_Pattern where
@@ -95,6 +97,7 @@ instance FromJSON P_Pattern where
       build <$> v .: "name" --name of the patterns
         <*> v .: "relations"
         <*> v .: "concepts"
+        <*> v .: "representations"
         <*> v .: "rules"
         <*> v .: "purposes"
     invalid ->
@@ -102,8 +105,8 @@ instance FromJSON P_Pattern where
         "parsing P_PAttern failed, "
         (typeMismatch "Object" invalid)
     where
-      build :: Text -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
-      build nm rels cptdef rules prps =
+      build :: Text -> [P_Relation] -> [PConceptDef] -> [Representation] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
+      build nm rels cptdef reprs rules prps =
         P_Pat
           { pos = OriginAtlas,
             pt_nm = nm,
@@ -112,7 +115,7 @@ instance FromJSON P_Pattern where
             pt_dcs = rels,
             pt_RRuls = [],
             pt_cds = cptdef,
-            pt_Reprs = [],
+            pt_Reprs = reprs,
             pt_ids = [],
             pt_vds = [],
             pt_xps = prps,
@@ -142,9 +145,9 @@ instance FromJSON PCDDef where
 
 instance FromJSON PConceptDef where
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> (v .: "definition" >>= parseJSON) -- Use the PCDDef parser here
+    Object v -> do
+      build <$> v .: "name" -- alleen builden als het van type OBJECT is   TODO: Han vragen of dit zo kan
+        <*> (v .: "definition" >>= parseJSON)
     invalid ->
       prependFailure
         "parsing PConceptDef failed, "
@@ -171,7 +174,51 @@ instance FromJSON P_Concept where
       "parsing P_Concept failed, "
       (typeMismatch "Object or String" invalid)
 
+instance FromJSON Representation where
+  parseJSON :: Value -> Parser Representation
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "name"
+        <*> v .: "type" -- Use the PCDDef parser here
+    invalid ->
+      prependFailure
+        "parsing Representation failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: P_Concept -> TType -> Representation
+      build cpt ttype =
+        Repr
+          { pos = OriginAtlas,
+            reprcpts = cpt NE.:| [], -- NE.NonEmpty P_Concept,      -- Todo: Han vragen of dit de juiste manier is
+            reprdom = ttype
+          }
+
+instance FromJSON TType where
+  parseJSON :: Value -> Parser TType
+  parseJSON val = case val of
+    String x -> case T.toUpper x of
+      "ALPHANUMERIC" -> pure Alphanumeric
+      "BIGALPHANUMERIC" -> pure BigAlphanumeric
+      "HUGEALPHANUMERIC" -> pure HugeAlphanumeric
+      "PASSWORD" -> pure Password
+      "BINARY" -> pure Binary
+      "BIGBINARY" -> pure BigBinary
+      "HUGEBINARY" -> pure HugeBinary
+      "DATE" -> pure Date
+      "DATETIME" -> pure DateTime
+      "BOOLEAN" -> pure Boolean
+      "INTEGER" -> pure Integer
+      "FLOAT" -> pure Float
+      "OBJECT" -> pure TypeOfOne -- this is a normal concept, but 'Object' is already in use TODO: Han vragen hoe dit op te lossen is
+      "TYPEOFONE" -> pure TypeOfOne
+      _ -> unexpected val
+    invalid ->
+      prependFailure
+        "parsing TType failed, "
+        (typeMismatch "String" invalid)
+
 instance FromJSON PProp where
+  parseJSON :: Value -> Parser PProp
   parseJSON val = case val of
     String x -> case T.toLower x of
       "uni" -> pure P_Uni
@@ -319,7 +366,7 @@ instance FromJSON PRef2Obj where
         <|> (PRef2Pattern <$> parseFirstField v "patternPurp")
         <|> (PRef2Interface <$> parseFirstField v "interfacePurp")
         <|> (PRef2Context <$> parseFirstField v "contextPurp")
-    -- <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
+        <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
     invalid ->
       prependFailure
         "parsing PRef2Obj failed, "

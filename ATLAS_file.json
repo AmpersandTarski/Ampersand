@@ -5,20 +5,46 @@
             "name": "Courses",
             "concepts": [
                 {
-                    "name": "Student",
-                    "definition": []
-                },
-                {
-                    "name": "Module",
-                    "definition": []
-                },
-                {
                     "name": "Course",
-                    "definition": []
+                    "definition": [],
+                    "type": "OBJECT"
                 },
                 {
                     "name": "SESSION",
-                    "definition": []
+                    "definition": [],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Module",
+                    "definition": [],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Student",
+                    "definition": [],
+                    "type": "OBJECT"
+                }
+            ],
+            "representations": [
+                {
+                    "name": "Course",
+                    "definition": [],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "SESSION",
+                    "definition": [],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Module",
+                    "definition": [],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Student",
+                    "definition": [],
+                    "type": "OBJECT"
                 }
             ],
             "rules": [
@@ -26,9 +52,15 @@
                     "name": "TOT takes[Student*Course]",
                     "formexp": "I[Student] |- takes [Student*Course];takes [Student*Course]~",
                     "meaning": [
-                        "takes[Student*Course] is total",
-                        "takes[Student*Course] is totaal"
+                        "takes[Student*Course] is totaal",
+                        "takes[Student*Course] is total"
                     ],
+                    "message": []
+                },
+                {
+                    "name": "TestRule",
+                    "formexp": "\"_SESSION\"[SESSION]",
+                    "meaning": [],
                     "message": []
                 },
                 {
@@ -38,28 +70,9 @@
                         "A student can enroll for any module that is part of the course the student takes"
                     ],
                     "message": []
-                },
-                {
-                    "name": "TestRule",
-                    "formexp": "\"_SESSION\"[SESSION]",
-                    "meaning": [],
-                    "message": []
                 }
             ],
             "relations": [
-                {
-                    "name": "takes",
-                    "sign": {
-                        "source": "Student",
-                        "target": "Course"
-                    },
-                    "properties": [
-                        "TOT"
-                    ],
-                    "meaning": [
-                        "A student takes a complete course"
-                    ]
-                },
                 {
                     "name": "isPartOf",
                     "sign": {
@@ -80,6 +93,19 @@
                     "properties": [],
                     "meaning": [
                         "Students enroll for each module in the course separately"
+                    ]
+                },
+                {
+                    "name": "takes",
+                    "sign": {
+                        "source": "Student",
+                        "target": "Course"
+                    },
+                    "properties": [
+                        "TOT"
+                    ],
+                    "meaning": [
+                        "A student takes a complete course"
                     ]
                 }
             ],
@@ -109,7 +135,7 @@
                     "patternPurp": [],
                     "interfacePurp": [],
                     "contextPurp": [],
-                    "meaning": "Dit is de tweede test purpose voor CONCEPT module"
+                    "meaning": "Dit is de eerste test purpose voor CONCEPT Module"
                 },
                 {
                     "conceptPurp": [
@@ -121,13 +147,13 @@
                     "patternPurp": [],
                     "interfacePurp": [],
                     "contextPurp": [],
-                    "meaning": "Dit is de eerste test purpose voor CONCEPT Module"
+                    "meaning": "Dit is de tweede test purpose voor CONCEPT module"
                 },
                 {
                     "conceptPurp": [],
                     "relationPurp": [
                         {
-                            "relation": "isPartOf",
+                            "relation": "takes",
                             "sign": {
                                 "source": "Student",
                                 "target": "Course"
@@ -180,8 +206,204 @@
             "roles": [],
             "isAPI": [],
             "conjunct": [],
-            "objectDef": "ObjectName_1fe4cc62-c445-4d90-acf2-fef01e1e1796",
+            "objectDef": {
+                "name": "ObjectName_eb72b2b1-3d86-4093-8637-2260530402bd",
+                "view": null,
+                "fields": [
+                    {
+                        "name": "Overview",
+                        "def": [],
+                        "edit": [],
+                        "editFlp": [],
+                        "fieldIn": [
+                            "ObjectDef_af28cd74-8f96-4f45-94db-c052cbc0b0e9"
+                        ]
+                    },
+                    {
+                        "name": "Overview",
+                        "def": [],
+                        "edit": [],
+                        "editFlp": [],
+                        "fieldIn": [
+                            "ObjectDef_af28cd74-8f96-4f45-94db-c052cbc0b0e9"
+                        ]
+                    },
+                    {
+                        "name": "Overview",
+                        "def": [],
+                        "edit": [],
+                        "editFlp": [],
+                        "fieldIn": [
+                            "ObjectDef_af28cd74-8f96-4f45-94db-c052cbc0b0e9"
+                        ]
+                    }
+                ]
+            },
             "quad": []
+        }
+    ],
+    "objects": [
+        {
+            "name": null,
+            "view": null,
+            "fields": []
+        }
+    ],
+    "conceptsCtx": [
+        {
+            "name": "FilePath",
+            "definition": [],
+            "type": "ALPHANUMERIC"
+        },
+        {
+            "name": "FileName",
+            "definition": [],
+            "type": "ALPHANUMERIC"
+        },
+        {
+            "name": "Context1concept",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "ONE",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "Context2concept",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "FileObject",
+            "definition": [],
+            "type": "OBJECT"
+        }
+    ],
+    "representationsCtx": [
+        {
+            "name": "FilePath",
+            "definition": [],
+            "type": "ALPHANUMERIC"
+        },
+        {
+            "name": "FileName",
+            "definition": [],
+            "type": "ALPHANUMERIC"
+        },
+        {
+            "name": "Context1concept",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "ONE",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "Context2concept",
+            "definition": [],
+            "type": "OBJECT"
+        },
+        {
+            "name": "FileObject",
+            "definition": [],
+            "type": "OBJECT"
+        }
+    ],
+    "rulesCtx": [
+        {
+            "name": "TOT originalFileName[FileObject*FileName]",
+            "formexp": "I[FileObject] |- originalFileName [FileObject*FileName];originalFileName [FileObject*FileName]~",
+            "meaning": [
+                "originalFileName[FileObject*FileName] is totaal",
+                "originalFileName[FileObject*FileName] is total"
+            ],
+            "message": []
+        },
+        {
+            "name": "TOT filePath[FileObject*FilePath]",
+            "formexp": "I[FileObject] |- filePath [FileObject*FilePath];filePath [FileObject*FilePath]~",
+            "meaning": [
+                "filePath[FileObject*FilePath] is totaal",
+                "filePath[FileObject*FilePath] is total"
+            ],
+            "message": []
+        },
+        {
+            "name": "UNI filePath[FileObject*FilePath]",
+            "formexp": "filePath [FileObject*FilePath]; -I[FilePath];filePath [FileObject*FilePath]~ |-  -I[FileObject]",
+            "meaning": [
+                "filePath[FileObject*FilePath] is univalent"
+            ],
+            "message": []
+        },
+        {
+            "name": "UNI originalFileName[FileObject*FileName]",
+            "formexp": "originalFileName [FileObject*FileName]; -I[FileName];originalFileName [FileObject*FileName]~ |-  -I[FileObject]",
+            "meaning": [
+                "originalFileName[FileObject*FileName] is univalent"
+            ],
+            "message": []
+        },
+        {
+            "name": "TOT contextRelation[Context1concept*Context2concept]",
+            "formexp": "I[Context1concept] |- contextRelation [Context1concept*Context2concept];contextRelation [Context1concept*Context2concept]~",
+            "meaning": [
+                "contextRelation[Context1concept*Context2concept] is total",
+                "contextRelation[Context1concept*Context2concept] is totaal"
+            ],
+            "message": []
+        },
+        {
+            "name": "identity_FileObjectName",
+            "formexp": "filePath [FileObject*FilePath];filePath [FileObject*FilePath]~ |- I[FileObject]",
+            "meaning": [
+                "Identity rule, following from identity FileObjectName",
+                "Identiteitsregel, volgend uit identiteit FileObjectName"
+            ],
+            "message": []
+        }
+    ],
+    "relationsCtx": [
+        {
+            "name": "contextRelation",
+            "sign": {
+                "source": "Context1concept",
+                "target": "Context2concept"
+            },
+            "properties": [
+                "TOT"
+            ],
+            "meaning": [
+                "kan een context een Relation hebben? 2"
+            ]
+        },
+        {
+            "name": "originalFileName",
+            "sign": {
+                "source": "FileObject",
+                "target": "FileName"
+            },
+            "properties": [
+                "TOT",
+                "UNI"
+            ],
+            "meaning": []
+        },
+        {
+            "name": "filePath",
+            "sign": {
+                "source": "FileObject",
+                "target": "FilePath"
+            },
+            "properties": [
+                "TOT",
+                "UNI"
+            ],
+            "meaning": []
         }
     ],
     "purposes": [
