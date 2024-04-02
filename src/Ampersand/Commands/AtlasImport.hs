@@ -60,6 +60,8 @@ instance FromJSON P_Context where
         <*> v .: "rulesCtx"
         <*> v .: "relationsCtx"
         <*> v .: "purposes" -- purposes within whole CONTEXT
+        <*> v .:? "language"
+        <*> v .: "idents"
     invalid ->
       prependFailure
         "parsing P_Context failed, "
@@ -67,8 +69,18 @@ instance FromJSON P_Context where
     where
       -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Context
       -- build nm pats rels cptdef rules =
-      build :: Text -> [P_Pattern] -> [PConceptDef] -> [Representation] -> [P_Rule TermPrim] -> [P_Relation] -> [PPurpose] -> P_Context
-      build nm pats cpts reprs rules rels prps =
+      build ::
+        Text ->
+        [P_Pattern] ->
+        [PConceptDef] ->
+        [Representation] ->
+        [P_Rule TermPrim] ->
+        [P_Relation] ->
+        [PPurpose] ->
+        Maybe Lang ->
+        [P_IdentDef] ->
+        P_Context
+      build nm pats cpts reprs rules rels prps lang ident =
         PCtx
           { ctx_vs = [],
             ctx_rs = rules,
@@ -81,8 +93,8 @@ instance FromJSON P_Context where
             ctx_nm = nm,
             ctx_metas = [],
             ctx_markup = Nothing,
-            ctx_lang = Nothing,
-            ctx_ks = [],
+            ctx_lang = lang,
+            ctx_ks = ident, -- IDENT
             ctx_ifcs = [],
             ctx_gs = [],
             ctx_enfs = [],
@@ -146,7 +158,7 @@ instance FromJSON PCDDef where
 instance FromJSON PConceptDef where
   parseJSON val = case val of
     Object v -> do
-      build <$> v .: "name" -- alleen builden als het van type OBJECT is   TODO: Han vragen of dit zo kan
+      build <$> v .: "name"
         <*> (v .: "definition" >>= parseJSON)
     invalid ->
       prependFailure
@@ -333,7 +345,7 @@ instance FromJSON (Term a) where -- todo: not sure whether this is still in use
   parseJSON val = case val of
     invalid ->
       prependFailure
-        "parsing PProp failed, "
+        "parsing Term failed, "
         (typeMismatch "String" invalid)
 
 instance FromJSON PPurpose where
@@ -401,6 +413,53 @@ instance FromJSON P_NamedRel where
             p_nrnm = txt, -- name of Relation
             p_mbSign = sgn -- Sign of relation
           }
+
+instance FromJSON Lang where
+  parseJSON = withText "Lang" $ \t -> case T.toUpper t of
+    "DUTCH" -> pure Dutch
+    "ENGLISH" -> pure English
+    _ -> fail $ "Unexpected language: " ++ show t
+
+instance FromJSON P_IdentDef where
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "name"
+        <*> (v .: "concept" >>= parseJSON)
+        <*> v .: "ident"
+    invalid ->
+      prependFailure
+        "parsing P_Rule failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: Text -> P_Concept -> P_IdentSegmnt TermPrim -> P_IdentDf TermPrim
+      build lbl cpt ident =
+        P_Id
+          { pos = OriginAtlas,
+            ix_lbl = lbl,
+            ix_cpt = cpt, -- P_Concept
+            ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
+          }
+
+instance FromJSON (P_IdentSegmnt a) where -- todo: deze kan eigenlijk op 2 manieren, andere deel nog doen
+  parseJSON :: Value -> Parser (P_IdentSegmnt a)
+  parseJSON val = case val of
+    Object v ->
+      build <$> v .: "name"
+        <*> v .: "text"
+    invalid ->
+      prependFailure
+        "parsing P_IdentSegmnt failed, "
+        (typeMismatch "Object" invalid)
+    where
+      build :: Text -> Text -> P_IdentSegmnt a
+      build nm text =
+        P_IdentExp
+          ( P_BxTxt
+              { obj_nm = nm,
+                pos = OriginAtlas,
+                obj_txt = "opvultext"
+              }
+          )
 
 -- instance FromJSON P_Interface where
 --   parseJSON val = case val of
