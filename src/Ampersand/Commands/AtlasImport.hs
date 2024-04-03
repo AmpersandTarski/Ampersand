@@ -17,14 +17,14 @@ module Ampersand.Commands.AtlasImport
 where
 
 import Ampersand.Basics
-import Ampersand.Core.ParseTree hiding (Object)
+import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
-import Data.Aeson
-import Data.Aeson.Types
+import qualified Data.Aeson as JSON
+import qualified Data.Aeson.Types as JSON
 import qualified RIO.ByteString.Lazy as B
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -46,26 +46,26 @@ atlasImport = do
       logInfo . display . T.pack $ outputFn <> " written"
 
 myDecode :: B.ByteString -> Either String P_Context
-myDecode = eitherDecode
+myDecode = JSON.eitherDecode
 
-instance FromJSON P_Context where
-  parseJSON :: Value -> Parser P_Context
+instance JSON.FromJSON P_Context where
+  parseJSON :: JSON.Value -> JSON.Parser P_Context
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name" -- name of the context
-        <*> v .: "patterns"
-        -- <*> v .: "interfaces"
-        <*> v .: "conceptsCtx"
-        <*> v .: "representationsCtx"
-        <*> v .: "rulesCtx"
-        <*> v .: "relationsCtx"
-        <*> v .: "purposes" -- purposes within whole CONTEXT
-        <*> v .:? "language"
-        <*> v .: "idents"
+    JSON.Object v ->
+      build <$> v JSON..: "name" -- name of the context
+        <*> v JSON..: "patterns"
+        -- <*> v JSON..: "interfaces"
+        <*> v JSON..: "conceptsCtx" -- alle concepten met definitie
+        <*> v JSON..: "representationsCtx" -- alle JSON.en
+        <*> v JSON..: "rulesCtx"
+        <*> v JSON..: "relationsCtx"
+        <*> v JSON..: "purposes" -- purposes within whole CONTEXT
+        <*> v JSON..:? "language"
+        <*> v JSON..: "idents"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_Context failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Context
       -- build nm pats rels cptdef rules =
@@ -102,20 +102,20 @@ instance FromJSON P_Context where
             ctx_cs = cpts -- cptdef
           }
 
-instance FromJSON P_Pattern where
-  parseJSON :: Value -> Parser P_Pattern
+instance JSON.FromJSON P_Pattern where
+  parseJSON :: JSON.Value -> JSON.Parser P_Pattern
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name" --name of the patterns
-        <*> v .: "relations"
-        <*> v .: "concepts"
-        <*> v .: "representations"
-        <*> v .: "rules"
-        <*> v .: "purposes"
+    JSON.Object v ->
+      build <$> v JSON..: "name" --name of the patterns
+        <*> v JSON..: "relations"
+        <*> v JSON..: "concepts"
+        <*> v JSON..: "representations"
+        <*> v JSON..: "rules"
+        <*> v JSON..: "purposes"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_PAttern failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> [P_Relation] -> [PConceptDef] -> [Representation] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
       build nm rels cptdef reprs rules prps =
@@ -136,34 +136,34 @@ instance FromJSON P_Pattern where
             pt_enfs = []
           }
 
-instance FromJSON PCDDef where
+instance JSON.FromJSON PCDDef where
   parseJSON val = case val of
-    Object v ->
+    JSON.Object v ->
       --if object
-      build <$> v .: "definition"
-    String s ->
+      build <$> v JSON..: "definition"
+    JSON.String s ->
       -- if string
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
-    Array arr ->
+    JSON.Array arr ->
       -- if array
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing PCDDef failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> PCDDef
       build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def) -- Here we construct PCDDefNew
 
-instance FromJSON PConceptDef where
+instance JSON.FromJSON PConceptDef where
   parseJSON val = case val of
-    Object v -> do
-      build <$> v .: "name"
-        <*> (v .: "definition" >>= parseJSON)
+    JSON.Object v -> do
+      build <$> v JSON..: "name"
+        <*> (v JSON..: "definition" >>= JSON.parseJSON)
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing PConceptDef failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> PCDDef -> PConceptDef
       build cpt def =
@@ -175,40 +175,40 @@ instance FromJSON PConceptDef where
             pos = OriginAtlas
           }
 
-instance FromJSON P_Concept where
-  parseJSON :: Value -> Parser P_Concept
-  parseJSON (Object v) =
-    PCpt <$> v .: "concept"
-  parseJSON (String txt) =
+instance JSON.FromJSON P_Concept where
+  parseJSON :: JSON.Value -> JSON.Parser P_Concept
+  parseJSON (JSON.Object v) =
+    PCpt <$> v JSON..: "concept"
+  parseJSON (JSON.String txt) =
     pure (PCpt txt)
   parseJSON invalid =
-    prependFailure
+    JSON.prependFailure
       "parsing P_Concept failed, "
-      (typeMismatch "Object or String" invalid)
+      (JSON.typeMismatch "JSON. or String" invalid)
 
-instance FromJSON Representation where
-  parseJSON :: Value -> Parser Representation
+instance JSON.FromJSON Representation where
+  parseJSON :: JSON.Value -> JSON.Parser Representation
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> v .: "type" -- Use the PCDDef parser here
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> v JSON..: "type" -- Use the PCDDef JSON.parser here
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing Representation failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: P_Concept -> TType -> Representation
       build cpt ttype =
         Repr
           { pos = OriginAtlas,
-            reprcpts = cpt NE.:| [], -- NE.NonEmpty P_Concept,      -- Todo: Han vragen of dit de juiste manier is
+            reprcpts = cpt NE.:| [], -- NE.NonEmpty P_Concept,      -- todo: werkt dit met meerdere statements?
             reprdom = ttype
           }
 
-instance FromJSON TType where
-  parseJSON :: Value -> Parser TType
+instance JSON.FromJSON TType where
+  parseJSON :: JSON.Value -> JSON.Parser TType
   parseJSON val = case val of
-    String x -> case T.toUpper x of
+    JSON.String x -> case T.toUpper x of
       "ALPHANUMERIC" -> pure Alphanumeric
       "BIGALPHANUMERIC" -> pure BigAlphanumeric
       "HUGEALPHANUMERIC" -> pure HugeAlphanumeric
@@ -221,18 +221,18 @@ instance FromJSON TType where
       "BOOLEAN" -> pure Boolean
       "INTEGER" -> pure Integer
       "FLOAT" -> pure Float
-      "OBJECT" -> pure TypeOfOne -- this is a normal concept, but 'Object' is already in use TODO: Han vragen hoe dit op te lossen is
+      "OBJECT" -> pure Object -- this is a normal concept, but 'Object' is already in use TODO: Han vragen hoe dit op te lossen is
       "TYPEOFONE" -> pure TypeOfOne
-      _ -> unexpected val
+      _ -> JSON.unexpected val
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing TType failed, "
-        (typeMismatch "String" invalid)
+        (JSON.typeMismatch "String" invalid)
 
-instance FromJSON PProp where
-  parseJSON :: Value -> Parser PProp
+instance JSON.FromJSON PProp where
+  parseJSON :: JSON.Value -> JSON.Parser PProp
   parseJSON val = case val of
-    String x -> case T.toLower x of
+    JSON.String x -> case T.toLower x of
       "uni" -> pure P_Uni
       "inj" -> pure P_Inj
       "sur" -> pure P_Sur
@@ -244,33 +244,33 @@ instance FromJSON PProp where
       "irf" -> pure P_Irf
       "prop" -> pure P_Prop
       _ ->
-        unexpected val
+        JSON.unexpected val
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing PProp failed, "
-        (typeMismatch "String" invalid)
+        (JSON.typeMismatch "String" invalid)
 
-instance FromJSON P_Sign where
+instance JSON.FromJSON P_Sign where
   parseJSON val = case val of
-    (Object v) ->
-      P_Sign <$> v .: "source"
-        <*> v .: "target"
+    (JSON.Object v) ->
+      P_Sign <$> v JSON..: "source"
+        <*> v JSON..: "target"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_Sign failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
 
-instance FromJSON P_Relation where
+instance JSON.FromJSON P_Relation where
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> v .: "sign"
-        <*> v .: "properties"
-        <*> v .: "meaning"
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> v JSON..: "sign"
+        <*> v JSON..: "properties"
+        <*> v JSON..: "meaning"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_Relation failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> P_Sign -> PProps -> [PMeaning] -> P_Relation
       build nm sig prps mean =
@@ -284,48 +284,48 @@ instance FromJSON P_Relation where
             pos = OriginAtlas
           }
 
-instance FromJSON PMeaning where -- todo: checken of dit werkt
-  parseJSON (String txt) =
+instance JSON.FromJSON PMeaning where -- todo: checken of dit werkt
+  parseJSON (JSON.String txt) =
     pure $ PMeaning $ P_Markup Nothing Nothing txt -- todo: change this so that mLang and mFormat are taken into account
-  parseJSON (Object v) =
-    PMeaning <$> parseJSON (Object v)
+  parseJSON (JSON.Object v) =
+    PMeaning <$> JSON.parseJSON (JSON.Object v)
   parseJSON invalid =
-    prependFailure
+    JSON.prependFailure
       "parsing PMeaning failed, "
-      (typeMismatch "String or Object" invalid)
+      (JSON.typeMismatch "String or Object" invalid)
 
-instance FromJSON PMessage where
-  parseJSON (String txt) =
+instance JSON.FromJSON PMessage where
+  parseJSON (JSON.String txt) =
     pure $ PMessage $ P_Markup Nothing Nothing txt -- todo: change this so that mLang and mFormat are taken into account
-  parseJSON (Object v) =
-    PMessage <$> parseJSON (Object v)
+  parseJSON (JSON.Object v) =
+    PMessage <$> JSON.parseJSON (JSON.Object v)
   parseJSON invalid =
-    prependFailure
+    JSON.prependFailure
       "parsing PMessage failed, "
-      (typeMismatch "String or Object" invalid)
+      (JSON.typeMismatch "String or Object" invalid)
 
-instance FromJSON P_Markup where
-  parseJSON (Object v) =
+instance JSON.FromJSON P_Markup where
+  parseJSON (JSON.Object v) =
     P_Markup
       <$> pure Nothing -- Ignore mLang
       <*> pure Nothing -- Ignore mFormat
-      <*> v .: "meaning"
+      <*> v JSON..: "meaning"
   parseJSON invalid =
-    prependFailure
+    JSON.prependFailure
       "parsing P_Markup failed, "
-      (typeMismatch "Object" invalid)
+      (JSON.typeMismatch "Object" invalid)
 
-instance FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
+instance JSON.FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> v .: "formexp"
-        <*> v .: "meaning" -- This should parse an array of `PMeaning`
-        <*> v .: "message" -- Assuming `rr_msg` is an empty list for now
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> v JSON..: "formexp"
+        <*> v JSON..: "meaning" -- This should parse an array of `PMeaning`
+        <*> v JSON..: "message" -- Assuming `rr_msg` is an empty list for now
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_Rule failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> Text -> [PMeaning] -> [PMessage] -> P_Rule TermPrim
       build nm formexp mean msg =
@@ -340,23 +340,23 @@ instance FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
             rr_viol = Nothing
           }
 
-instance FromJSON (Term a) where -- todo: not sure whether this is still in use
-  parseJSON :: Value -> Parser (Term a)
+instance JSON.FromJSON (Term a) where -- todo: not sure whether this is still in use
+  parseJSON :: JSON.Value -> JSON.Parser (Term a)
   parseJSON val = case val of
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing Term failed, "
-        (typeMismatch "String" invalid)
+        (JSON.typeMismatch "String" invalid)
 
-instance FromJSON PPurpose where
+instance JSON.FromJSON PPurpose where
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "meaning"
-        <*> parseJSON val
+    JSON.Object v ->
+      build <$> v JSON..: "meaning"
+        <*> JSON.parseJSON val
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing PPurpose failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> PRef2Obj -> PPurpose
       build mrk obj =
@@ -367,11 +367,11 @@ instance FromJSON PPurpose where
             pexRefIDs = ["test"] -- Voorbeeldlijst
           }
 
-instance FromJSON PRef2Obj where
+instance JSON.FromJSON PRef2Obj where
   parseJSON val = case val of
-    Object v ->
+    JSON.Object v ->
       (PRef2ConceptDef <$> parseFirstField v "conceptPurp")
-        <|> (v .:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
+        <|> (v JSON..:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
         <|> (PRef2Rule <$> parseFirstField v "rulePurp")
         <|> (PRef2IdentityDef <$> parseFirstField v "identPurp")
         <|> (PRef2ViewDef <$> parseFirstField v "viewPurp")
@@ -380,31 +380,31 @@ instance FromJSON PRef2Obj where
         <|> (PRef2Context <$> parseFirstField v "contextPurp")
         <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" --todo: betere fail statement
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing PRef2Obj failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
-      build :: Maybe P_NamedRel -> Parser PRef2Obj
+      build :: Maybe P_NamedRel -> JSON.Parser PRef2Obj
       build (Just rel) = pure $ PRef2Relation rel
       build Nothing = fail "relationPurp list is empty"
 
-parseFirstField :: Object -> T.Text -> Parser T.Text
+parseFirstField :: JSON.Object -> T.Text -> JSON.Parser T.Text
 parseFirstField obj key = do
-  texts <- obj .:? key .!= []
+  texts <- obj JSON..:? key JSON..!= []
   case listToMaybe texts of
     Just txt -> return txt -- Als er een waarde is, geef deze terug
     Nothing -> mzero
 
-instance FromJSON P_NamedRel where
+instance JSON.FromJSON P_NamedRel where
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "relation"
-        <*> v .: "sign"
-    -- <*> v .: "reference"
+    JSON.Object v ->
+      build <$> v JSON..: "relation"
+        <*> v JSON..: "sign"
+    -- <*> v JSON..: "reference"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_NamedRel failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> Maybe P_Sign -> P_NamedRel
       build txt sgn =
@@ -414,22 +414,22 @@ instance FromJSON P_NamedRel where
             p_mbSign = sgn -- Sign of relation
           }
 
-instance FromJSON Lang where
-  parseJSON = withText "Lang" $ \t -> case T.toUpper t of
+instance JSON.FromJSON Lang where
+  parseJSON = JSON.withText "Lang" $ \t -> case T.toUpper t of
     "DUTCH" -> pure Dutch
     "ENGLISH" -> pure English
-    _ -> fail $ "Unexpected language: " ++ show t
+    _ -> fail $ "JSON.Unexpected language: " ++ show t
 
-instance FromJSON P_IdentDef where
+instance JSON.FromJSON P_IdentDef where
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> (v .: "concept" >>= parseJSON)
-        <*> v .: "ident"
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> (v JSON..: "concept" >>= JSON.parseJSON)
+        <*> v JSON..: "ident"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_Rule failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> P_Concept -> P_IdentSegmnt TermPrim -> P_IdentDf TermPrim
       build lbl cpt ident =
@@ -440,16 +440,16 @@ instance FromJSON P_IdentDef where
             ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
           }
 
-instance FromJSON (P_IdentSegmnt a) where -- todo: deze kan eigenlijk op 2 manieren, andere deel nog doen
-  parseJSON :: Value -> Parser (P_IdentSegmnt a)
+instance JSON.FromJSON (P_IdentSegmnt a) where -- todo: deze kan eigenlijk op 2 manieren, andere deel nog doen
+  parseJSON :: JSON.Value -> JSON.Parser (P_IdentSegmnt a)
   parseJSON val = case val of
-    Object v ->
-      build <$> v .: "name"
-        <*> v .: "text"
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> v JSON..: "text"
     invalid ->
-      prependFailure
+      JSON.prependFailure
         "parsing P_IdentSegmnt failed, "
-        (typeMismatch "Object" invalid)
+        (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> Text -> P_IdentSegmnt a
       build nm text =
@@ -461,16 +461,16 @@ instance FromJSON (P_IdentSegmnt a) where -- todo: deze kan eigenlijk op 2 manie
               }
           )
 
--- instance FromJSON P_Interface where
+-- instance JSON.FromJSON P_Interface where
 --   parseJSON val = case val of
 --     Object v ->
---       build <$> v .: "relationName"
---         <*> v .: "sign"
---     -- <*> v .: "reference"
+--       build <$> v JSON..: "relationName"
+--         <*> v JSON..: "sign"
+--     -- <*> v JSON..: "reference"
 --     invalid ->
---       prependFailure
+--       JSON.prependFailure
 --         "parsing PPurpose failed, "
---         (typeMismatch "Object" invalid)
+--         (JSON.typeMismatch "Object" invalid)
 --     where
 --       build :: Text -> Maybe P_Sign -> P_Interface
 --       build txt sgn =
