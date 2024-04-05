@@ -25,6 +25,7 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
+import Data.IntMap
 import qualified RIO.ByteString.Lazy as B
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -340,14 +341,6 @@ instance JSON.FromJSON (P_Rule TermPrim) where -- ToDo: hulp vragen bij Termen
             rr_viol = Nothing
           }
 
-instance JSON.FromJSON (Term a) where -- todo: not sure whether this is still in use
-  parseJSON :: JSON.Value -> JSON.Parser (Term a)
-  parseJSON val = case val of
-    invalid ->
-      JSON.prependFailure
-        "parsing Term failed, "
-        (JSON.typeMismatch "String" invalid)
-
 instance JSON.FromJSON PPurpose where
   parseJSON val = case val of
     JSON.Object v ->
@@ -440,26 +433,182 @@ instance JSON.FromJSON P_IdentDef where
             ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
           }
 
-instance JSON.FromJSON (P_IdentSegmnt a) where -- todo: deze kan eigenlijk op 2 manieren, andere deel nog doen
-  parseJSON :: JSON.Value -> JSON.Parser (P_IdentSegmnt a)
+instance (JSON.FromJSON a) => JSON.FromJSON (P_IdentSegmnt a) where
+  parseJSON val = P_IdentExp <$> JSON.parseJSON val
+
+instance JSON.FromJSON a => JSON.FromJSON (P_BoxItem a) where
+  parseJSON :: JSON.Value -> JSON.Parser (P_BoxItem a)
   parseJSON val = case val of
     JSON.Object v ->
-      build <$> v JSON..: "name"
-        <*> v JSON..: "text"
+      if has "text" v
+        then
+          buildTxt
+            <$> v JSON..: "name"
+              <*> v JSON..: "text"
+        else
+          buildExpr
+            <$> v JSON..: "name"
+              <*> v JSON..: "ctx"
+              <*> v JSON..:? "crud"
+              <*> v JSON..:? "mview"
+              <*> v JSON..:? "msub"
+    _ -> JSON.typeMismatch "Object" val
+    where
+      has :: Text -> JSON.Object -> Bool -- todo: Han  is dit een goede manier hiervoor?
+      has key obj = case JSON.fromJSON (JSON.Object obj) :: JSON.Result (Maybe Text) of
+        JSON.Success _ -> True
+        _ -> False
+
+      buildExpr :: Text -> Term a -> Maybe P_Cruds -> Maybe Text -> Maybe (P_SubIfc a) -> P_BoxItem a
+      buildExpr nm term crud view sub =
+        P_BxExpr
+          { obj_nm = nm,
+            pos = OriginAtlas,
+            obj_ctx = term,
+            obj_crud = crud,
+            obj_mView = view,
+            obj_msub = sub
+          }
+      buildTxt :: Text -> Text -> P_BoxItem a
+      buildTxt nm txt =
+        P_BxTxt
+          { obj_nm = nm,
+            pos = OriginAtlas,
+            obj_txt = txt
+          }
+
+instance JSON.FromJSON P_Cruds where
+  parseJSON :: JSON.Value -> JSON.Parser P_Cruds
+  parseJSON (JSON.Object v) =
+    P_Cruds <$> pure OriginAtlas
+      <*> v JSON..: "crud"
+  parseJSON invalid = JSON.typeMismatch "P_Cruds" invalid
+
+instance (JSON.FromJSON a) => JSON.FromJSON (P_SubIfc a) where
+  parseJSON :: JSON.Value -> JSON.Parser (P_SubIfc a)
+  parseJSON val = case val of
+    JSON.Object v ->
+      if has "si_str" v
+        then
+          buildInterfaceRef
+            <$> v JSON..: "si_isLink"
+            <*> v JSON..: "si_str"
+        else
+          buildBox
+            <$> v JSON..: "si_header"
+            <*> v JSON..: "si_box"
+    _ -> JSON.typeMismatch "P_SubIfc" val
+    where
+      has :: Text -> JSON.Object -> Bool
+      has key obj = case JSON.fromJSON (JSON.Object obj) :: JSON.Result (Maybe Text) of
+        JSON.Success _ -> True
+        _ -> False
+
+      buildInterfaceRef :: Bool -> Text -> P_SubIfc a
+      buildInterfaceRef isLink str =
+        P_InterfaceRef
+          { pos = OriginAtlas,
+            si_isLink = isLink,
+            si_str = str
+          }
+
+      buildBox :: BoxHeader -> [P_BoxItem a] -> P_SubIfc a
+      buildBox header items =
+        P_Box
+          { pos = OriginAtlas,
+            si_header = header,
+            si_box = items
+          }
+
+instance JSON.FromJSON BoxHeader where
+  parseJSON :: JSON.Value -> JSON.Parser BoxHeader
+  parseJSON val = case val of
+    JSON.Object v ->
+      build <$> v JSON..: "btType"
+        <*> v JSON..: "btKeys"
     invalid ->
       JSON.prependFailure
-        "parsing P_IdentSegmnt failed, "
+        "parsing BoxHeader failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> Text -> P_IdentSegmnt a
-      build nm text =
-        P_IdentExp
-          ( P_BxTxt
-              { obj_nm = nm,
-                pos = OriginAtlas,
-                obj_txt = "opvultext"
-              }
-          )
+      build :: Text -> [TemplateKeyValue] -> BoxHeader
+      build ttype keys =
+        BoxHeader
+          { pos = OriginAtlas,
+            btType = ttype,
+            btKeys = keys
+          }
+
+instance JSON.FromJSON TemplateKeyValue where
+  parseJSON :: JSON.Value -> JSON.Parser TemplateKeyValue
+  parseJSON val = case val of
+    JSON.Object v ->
+      build <$> v JSON..: "tkkey"
+        <*> v JSON..:? "tkval"
+    invalid ->
+      JSON.prependFailure
+        "parsing TemplateKeyValue failed, "
+        (JSON.typeMismatch "Object" invalid)
+    where
+      build :: Text -> Maybe Text -> TemplateKeyValue
+      build ttype kval =
+        TemplateKeyValue
+          { pos = OriginAtlas,
+            tkkey = ttype,
+            tkval = kval
+          }
+
+instance JSON.FromJSON a => JSON.FromJSON (Term a) where
+  parseJSON = JSON.withObject "Term" $ \v -> do
+    termType <- v JSON..: "type"
+    origin <- pure OriginAtlas
+    case termType of
+      "Prim" -> Prim <$> v JSON..: "value"
+      "PEqu" -> PEqu origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PInc" -> PInc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      -- Add cases for other constructors
+      "PIsc" -> PIsc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PUni" -> PUni origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PDif" -> PDif origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PLrs" -> PLrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PRrs" -> PRrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PDia" -> PDia origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PCps" -> PCps origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PRad" -> PRad origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PPrd" -> PPrd origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      "PKl0" -> PKl0 origin <$> v JSON..: "term"
+      "PKl1" -> PKl1 origin <$> v JSON..: "term"
+      "PFlp" -> PFlp origin <$> v JSON..: "term"
+      "PCpl" -> PCpl origin <$> v JSON..: "term"
+      "PBrk" -> PBrk origin <$> v JSON..: "term"
+      _ -> fail $ "Unknown term type: " ++ T.unpack termType
+
+instance JSON.FromJSON TermPrim where
+  parseJSON = JSON.withObject "TermPrim" $ \v -> do
+    constructorType <- v JSON..: "type"
+    case constructorType of
+      "PI" -> pure $ PI OriginAtlas
+      "Pid" -> Pid OriginAtlas <$> v JSON..: "concept"
+      "Patm" -> Patm OriginAtlas <$> v JSON..: "atomValue" <*> v JSON..:? "concept"
+      "PVee" -> pure $ PVee OriginAtlas
+      "Pfull" -> Pfull OriginAtlas <$> v JSON..: "concept1" <*> v JSON..: "concept2"
+      "PNamedR" -> PNamedR <$> v JSON..: "namedRel"
+      _ -> fail $ "Unknown TermPrim constructor: " ++ constructorType
+
+instance JSON.FromJSON PAtomValue where
+  parseJSON = JSON.withObject "PAtomValue" $ \v -> do
+    constructorType <- v JSON..: "type"
+    case constructorType of
+      "PSingleton" -> PSingleton OriginAtlas <$> v JSON..: "text" <*> v JSON..:? "atomValue"
+      "ScriptString" -> ScriptString OriginAtlas <$> v JSON..: "text"
+      "XlsxString" -> XlsxString OriginAtlas <$> v JSON..: "text"
+      "ScriptInt" -> ScriptInt OriginAtlas <$> v JSON..: "integer"
+      "ScriptFloat" -> ScriptFloat OriginAtlas <$> v JSON..: "double"
+      "XlsxDouble" -> XlsxDouble OriginAtlas <$> v JSON..: "double"
+      "ComnBool" -> ComnBool OriginAtlas <$> v JSON..: "bool"
+      "ScriptDate" -> ScriptDate OriginAtlas <$> v JSON..: "day"
+      "ScriptDateTime" -> ScriptDateTime OriginAtlas <$> v JSON..: "utcTime"
+      _ -> fail $ "Unknown PAtomValue constructor: " ++ constructorType
 
 -- instance JSON.FromJSON P_Interface where
 --   parseJSON val = case val of
