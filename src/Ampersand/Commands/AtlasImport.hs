@@ -417,7 +417,7 @@ instance JSON.FromJSON P_IdentDef where
   parseJSON val = case val of
     JSON.Object v ->
       build <$> v JSON..: "name"
-        <*> (v JSON..: "concept" >>= JSON.parseJSON)
+        <*> (v JSON..: "concept")
         <*> v JSON..: "ident"
     invalid ->
       JSON.prependFailure
