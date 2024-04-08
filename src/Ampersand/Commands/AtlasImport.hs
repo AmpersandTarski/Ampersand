@@ -429,7 +429,7 @@ instance JSON.FromJSON P_IdentDef where
         P_Id
           { pos = OriginAtlas,
             ix_lbl = lbl,
-            ix_cpt = cpt, -- P_Concept
+            ix_cpt = cpt,
             ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
           }
 
@@ -437,7 +437,6 @@ instance (JSON.FromJSON a) => JSON.FromJSON (P_IdentSegmnt a) where
   parseJSON val = P_IdentExp <$> JSON.parseJSON val
 
 instance JSON.FromJSON a => JSON.FromJSON (P_BoxItem a) where
-  parseJSON :: JSON.Value -> JSON.Parser (P_BoxItem a)
   parseJSON val = case val of
     JSON.Object v ->
       if has "text" v
@@ -464,7 +463,7 @@ instance JSON.FromJSON a => JSON.FromJSON (P_BoxItem a) where
         P_BxExpr
           { obj_nm = nm,
             pos = OriginAtlas,
-            obj_ctx = term,
+            obj_ctx = term, -- todo: Han vragen ...
             obj_crud = crud,
             obj_mView = view,
             obj_msub = sub
@@ -474,15 +473,19 @@ instance JSON.FromJSON a => JSON.FromJSON (P_BoxItem a) where
         P_BxTxt
           { obj_nm = nm,
             pos = OriginAtlas,
-            obj_txt = txt
+            obj_txt = txt -- todo: kan hier niet gewoon die parser?
           }
 
 instance JSON.FromJSON P_Cruds where
   parseJSON :: JSON.Value -> JSON.Parser P_Cruds
-  parseJSON (JSON.Object v) =
-    P_Cruds <$> pure OriginAtlas
-      <*> v JSON..: "crud"
-  parseJSON invalid = JSON.typeMismatch "P_Cruds" invalid
+  parseJSON val = case val of
+    JSON.Object v ->
+      P_Cruds <$> pure OriginAtlas
+        <*> v JSON..: "crud"
+    invalid ->
+      JSON.prependFailure
+        "parsing P_Cruds failed, "
+        (JSON.typeMismatch "Object" invalid)
 
 instance (JSON.FromJSON a) => JSON.FromJSON (P_SubIfc a) where
   parseJSON :: JSON.Value -> JSON.Parser (P_SubIfc a)
@@ -560,28 +563,29 @@ instance JSON.FromJSON TemplateKeyValue where
 
 instance JSON.FromJSON a => JSON.FromJSON (Term a) where
   parseJSON = JSON.withObject "Term" $ \v -> do
-    termType <- v JSON..: "type"
+    termType <- v JSON..:? "operator"
     origin <- pure OriginAtlas
     case termType of
-      "Prim" -> Prim <$> v JSON..: "value"
-      "PEqu" -> PEqu origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PInc" -> PInc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      -- Add cases for other constructors
-      "PIsc" -> PIsc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PUni" -> PUni origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PDif" -> PDif origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PLrs" -> PLrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PRrs" -> PRrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PDia" -> PDia origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PCps" -> PCps origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PRad" -> PRad origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PPrd" -> PPrd origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
-      "PKl0" -> PKl0 origin <$> v JSON..: "term"
-      "PKl1" -> PKl1 origin <$> v JSON..: "term"
-      "PFlp" -> PFlp origin <$> v JSON..: "term"
-      "PCpl" -> PCpl origin <$> v JSON..: "term"
-      "PBrk" -> PBrk origin <$> v JSON..: "term"
-      _ -> fail $ "Unknown term type: " ++ T.unpack termType
+      Nothing -> Prim <$> v JSON..: "constructor" -- Handling null operator
+      Just "" -> Prim <$> v JSON..: "constructor"
+      Just "PEqu" -> PEqu origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "Inclusion" -> PInc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      -- Add cases for other constructors similarly prefixed with Just
+      Just "PIsc" -> PIsc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "Union" -> PUni origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PDif" -> PDif origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PLrs" -> PLrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PRrs" -> PRrs origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PDia" -> PDia origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "Composition" -> PCps origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PRad" -> PRad origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PPrd" -> PPrd origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+      Just "PKl0" -> PKl0 origin <$> v JSON..: "term"
+      Just "PKl1" -> PKl1 origin <$> v JSON..: "term"
+      Just "PFlp" -> PFlp origin <$> v JSON..: "term"
+      Just "PCpl" -> PCpl origin <$> v JSON..: "term"
+      Just "PBrk" -> PBrk origin <$> v JSON..: "term"
+      _ -> fail $ "Unknown term type: " ++ T.unpack (fromMaybe "" termType)
 
 instance JSON.FromJSON TermPrim where
   parseJSON = JSON.withObject "TermPrim" $ \v -> do
@@ -591,8 +595,8 @@ instance JSON.FromJSON TermPrim where
       "Pid" -> Pid OriginAtlas <$> v JSON..: "concept"
       "Patm" -> Patm OriginAtlas <$> v JSON..: "atomValue" <*> v JSON..:? "concept"
       "PVee" -> pure $ PVee OriginAtlas
-      "Pfull" -> Pfull OriginAtlas <$> v JSON..: "concept1" <*> v JSON..: "concept2"
-      "PNamedR" -> PNamedR <$> v JSON..: "namedRel"
+      "Pfull" -> Pfull OriginAtlas <$> v JSON..: "concept" <*> v JSON..: "concept2"
+      "relation" -> PNamedR <$> v JSON..: "namedRel"
       _ -> fail $ "Unknown TermPrim constructor: " ++ constructorType
 
 instance JSON.FromJSON PAtomValue where
