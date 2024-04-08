@@ -92,12 +92,12 @@ instance JSON.FromJSON P_Context where
             ctx_pops = [],
             ctx_pats = pats,
             ctx_nm = nm,
-            ctx_metas = [],
+            ctx_metas = [], -- staat klaar
             ctx_markup = Nothing,
             ctx_lang = lang,
             ctx_ks = ident, -- IDENT
             ctx_ifcs = [],
-            ctx_gs = [],
+            ctx_gs = [], -- staat klaar
             ctx_enfs = [],
             ctx_ds = rels, -- rels,
             ctx_cs = cpts -- cptdef
@@ -124,7 +124,7 @@ instance JSON.FromJSON P_Pattern where
           { pos = OriginAtlas,
             pt_nm = nm,
             pt_rls = rules,
-            pt_gns = [],
+            pt_gns = [], -- staat klaar
             pt_dcs = rels,
             pt_RRuls = [],
             pt_cds = cptdef,
@@ -639,3 +639,39 @@ instance JSON.FromJSON PAtomValue where
 --             pos = Origin,
 --             ifc_Prp = Text
 --           }
+
+instance JSON.FromJSON PClassify where
+  parseJSON val = case val of
+    JSON.Object v ->
+      build <$> v JSON..: "specific"
+        <*> v JSON..: "generic"
+    invalid ->
+      JSON.prependFailure
+        "parsing PClassify failed, "
+        (JSON.typeMismatch "Object" invalid)
+    where
+      build :: P_Concept -> P_Concept -> PClassify
+      build spec gen =
+        PClassify
+          { pos = OriginAtlas,
+            specific = spec,
+            generics = gen NE.:| []
+          }
+
+instance JSON.FromJSON MetaData where
+  parseJSON val = case val of
+    JSON.Object v ->
+      build <$> v JSON..: "name"
+        <*> v JSON..: "value"
+    invalid ->
+      JSON.prependFailure
+        "parsing MetaData failed, "
+        (JSON.typeMismatch "Object" invalid)
+    where
+      build :: Text -> Text -> MetaData
+      build nm val =
+        MetaData
+          { pos = OriginAtlas,
+            mtName = nm,
+            mtVal = val
+          }
