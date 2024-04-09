@@ -41,7 +41,9 @@ safeFilePath = T.unpack <$> safeText
 --   characters are all alphanumerical or '_'. Keywords are excluded from identifiers
 identifier :: Gen Text1
 identifier =
-  ( Text1 <$> arbitrary `suchThat` isSafeIdChar' True
+  ( Text1
+      <$> arbitrary
+      `suchThat` isSafeIdChar' True
       <*> (T.pack <$> listOf (arbitrary `suchThat` isSafeIdChar' False))
   )
     `suchThat` (not . isKeyword)
@@ -66,17 +68,17 @@ uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . localNa
 
 makeObj :: ObjectKind -> Gen P_BoxBodyElement
 makeObj objectKind =
-  oneof $
-    ( P_BoxItemTerm
-        <$> plainNameGenerator
-        <*> arbitrary
-        <*> arbitrary
-        <*> term
-        <*> cruds
-        <*> view'
-        <*> subInterface objectKind
-    ) :
-      [ P_BxTxt
+  oneof
+    $ ( P_BoxItemTerm
+          <$> plainNameGenerator
+          <*> arbitrary
+          <*> arbitrary
+          <*> term
+          <*> cruds
+          <*> view'
+          <*> subInterface objectKind
+      )
+    : [ P_BxTxt
           <$> plainNameGenerator
           <*> arbitrary
           <*> safeText
@@ -124,7 +126,7 @@ makeObj objectKind =
             [ P_Box
                 <$> arbitrary
                 <*> arbitrary
-                <*> smallListOf (makeObj (SubInterfaceKind {siMaxDepth = min (n -1) 2})),
+                <*> smallListOf (makeObj (SubInterfaceKind {siMaxDepth = min (n - 1) 2})),
               P_InterfaceRef
                 <$> arbitrary
                 <*> arbitrary
@@ -174,7 +176,8 @@ instance Arbitrary TemplateKeyValue where
 
 instance Arbitrary P_Cruds where
   arbitrary =
-    P_Cruds <$> arbitrary
+    P_Cruds
+      <$> arbitrary
       <*> (toText1Unsafe . T.pack <$> (sublistOf "cCrRuUdD" `suchThat` requirements))
     where
       requirements cs = length cs `elem` [1 .. 4] && map toUpper cs == (L.nub . map toUpper $ cs)
@@ -213,16 +216,20 @@ instance Arbitrary P_RoleRule where
 
 instance Arbitrary Representation where
   arbitrary =
-    Repr <$> arbitrary
-      <*> arbitrary `suchThat` all notIsOneAndnoLabel
-      <*> arbitrary `suchThat` (TypeOfOne /=)
+    Repr
+      <$> arbitrary
+      <*> arbitrary
+      `suchThat` all notIsOneAndnoLabel
+      <*> arbitrary
+      `suchThat` (TypeOfOne /=)
 
 instance Arbitrary TType where
   arbitrary = elements [minBound ..]
 
 instance Arbitrary Role where
   arbitrary =
-    Role <$> arbitrary
+    Role
+      <$> arbitrary
       <*> unrestrictedName
       <*> arbitrary
       <*> arbitrary
@@ -233,20 +240,20 @@ instance Arbitrary P_Pattern where
   arbitrary =
     P_Pat
       <$> arbitrary
-        <*> uppercaseName
-        <*> arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> smallListOf arbitrary
-        <*> arbitrary
-        <*> smallListOf arbitrary
+      <*> uppercaseName
+      <*> arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
+      <*> arbitrary
+      <*> smallListOf arbitrary
 
 instance Arbitrary P_Relation where
   arbitrary =
@@ -375,8 +382,10 @@ instance Arbitrary (P_Rule TermPrim) where
 
 instance Arbitrary (P_Enforce TermPrim) where
   arbitrary =
-    P_Enforce <$> arbitrary
-      <*> arbitrary `suchThat` isNamedRelation
+    P_Enforce
+      <$> arbitrary
+      <*> arbitrary
+      `suchThat` isNamedRelation
       <*> arbitrary
       <*> genNonRuleTerm
     where
@@ -424,14 +433,17 @@ instance Arbitrary P_Population where
   arbitrary =
     oneof
       [ P_RelPopu
-          <$> arbitrary `suchThat` all notIsOneAndnoLabel
-          <*> arbitrary `suchThat` all notIsOneAndnoLabel
+          <$> arbitrary
+          `suchThat` all notIsOneAndnoLabel
+          <*> arbitrary
+          `suchThat` all notIsOneAndnoLabel
           <*> arbitrary
           <*> arbitrary
           <*> arbitrary,
         P_CptPopu
           <$> arbitrary
-          <*> arbitrary `suchThat` notIsOneAndnoLabel
+          <*> arbitrary
+          `suchThat` notIsOneAndnoLabel
           <*> arbitrary
       ]
 
@@ -458,7 +470,8 @@ instance Arbitrary PAtomValue where
 
 instance Arbitrary P_Interface where
   arbitrary =
-    P_Ifc <$> arbitrary
+    P_Ifc
+      <$> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -468,10 +481,12 @@ instance Arbitrary P_Interface where
 
 instance Arbitrary P_IdentDef where
   arbitrary =
-    P_Id <$> arbitrary
+    P_Id
+      <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary `suchThat` notIsOneAndnoLabel
+      <*> arbitrary
+      `suchThat` notIsOneAndnoLabel
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
@@ -479,10 +494,12 @@ instance Arbitrary P_IdentSegment where
 
 instance Arbitrary P_ViewDef where
   arbitrary =
-    P_Vd <$> arbitrary
+    P_Vd
+      <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary `suchThat` noLabel
+      <*> arbitrary
+      `suchThat` noLabel
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -503,7 +520,7 @@ instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
       ]
 
 instance Arbitrary PPurpose where
-  arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeText
+  arbitrary = PPurpose <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeText
 
 instance Arbitrary PRef2Obj where
   arbitrary =
@@ -534,15 +551,19 @@ instance Arbitrary P_Concept where
 instance Arbitrary P_Sign where
   arbitrary =
     P_Sign
-      <$> arbitrary `suchThat` noLabel
-      <*> arbitrary `suchThat` noLabel
+      <$> arbitrary
+      `suchThat` noLabel
+      <*> arbitrary
+      `suchThat` noLabel
 
 instance Arbitrary PClassify where
   arbitrary =
     PClassify
       <$> arbitrary
-      <*> arbitrary `suchThat` notIsOneAndnoLabel
-      <*> arbitrary `suchThat` all notIsOneAndnoLabel
+      <*> arbitrary
+      `suchThat` notIsOneAndnoLabel
+      <*> arbitrary
+      `suchThat` all notIsOneAndnoLabel
 
 instance Arbitrary Lang where
   arbitrary = elements [minBound ..]
