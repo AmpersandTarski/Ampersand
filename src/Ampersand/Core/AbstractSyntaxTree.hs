@@ -1498,14 +1498,14 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             AAVDateTime t x ->
               -- Rounding is needed, to maximize the number of databases
               -- on wich this runs. (MySQL 5.5 only knows seconds)
-              AAVDateTime t (truncateByFormat x)
+              AAVDateTime t roundBySeconds
               where
-                truncateByFormat :: UTCTime -> UTCTime
-                truncateByFormat = f (parseTimeOrError True) . f formatTime
+                picosecondsInASecond = 1000000000000
+                roundBySeconds :: UTCTime
+                roundBySeconds = x {utctDayTime = rounded (utctDayTime x)}
                   where
-                    format = iso8601DateFormat (Just "%H:%M:%S")
-                    --    f:: TimeLocale -> Text -> typ
-                    f fun = fun defaultTimeLocale format
+                    rounded :: DiffTime -> DiffTime
+                    rounded = picosecondsToDiffTime . quot picosecondsInASecond . diffTimeToPicoseconds
             _ -> rawVal
   where
     unsafePAtomVal2AtomValue' :: Either Text AAtomValue
