@@ -63,7 +63,7 @@ ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}:${WDIR}/.local/bin:${PAT
 ARG GHC=9.6.4
 ARG CABAL=3.10.2.1
 ARG HLS=2.7.0.0
-ARG STACK=2.13.1
+ARG STACK=2.15.5
 
 # install GHC and cabal
 
