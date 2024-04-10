@@ -27,10 +27,13 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
         sheet :: Maybe Worksheet
         sheet = case matrix of
           Nothing -> Nothing
-          Just m -> Just def {_wsCells = fromRows . numberList . map numberList $ m}
+          Just m -> Just def {_wsCells = fromRows . rowsToMatrix . map cellsToRow $ m}
           where
-            numberList :: [c] -> [(Int, c)]
-            numberList = zip [1 ..]
+            cellsToRow :: [Cell] -> [(ColumnIndex, Cell)]
+            cellsToRow = zip [ColumnIndex 1 ..]
+            -- rowsToMatrix :: [[(ColumnIndex, Cell)]] -> [(RowIndex, (ColumnIndex, Cell))]
+            rowsToMatrix :: [b] -> [(RowIndex, b)]
+            rowsToMatrix = zip [RowIndex 1 ..]
         matrix :: Maybe [[Cell]]
         matrix =
           case plug of
@@ -50,8 +53,8 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                     [ if isFirstField -- In case of the first field of the table, we put the fieldname inbetween brackets,
                     -- to be able to find the population again by the reader of the .xlsx file
                         then Just $ "[" <> (sqlColumNameToText . attSQLColName $ att) <> "]"
-                        else Just $
-                          case plug of
+                        else Just
+                          $ case plug of
                             TblSQL {} -> sqlColumNameToText . attSQLColName $ att
                             BinSQL {} -> sqlColumNameToText . sqlname $ plug,
                       Just . fullName . target . attExpr $ att
@@ -65,8 +68,8 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                 { _cellStyle = Nothing,
                   _cellValue = case mVal of
                     Nothing -> Nothing
-                    Just aVal -> Just $
-                      case aVal of
+                    Just aVal -> Just
+                      $ case aVal of
                         AAVString {} -> CellText $ aavtxt aVal
                         AAVInteger _ int -> CellDouble (fromInteger int)
                         AAVFloat _ x -> CellDouble x
