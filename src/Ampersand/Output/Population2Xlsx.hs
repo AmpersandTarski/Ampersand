@@ -22,7 +22,7 @@ plugs2Sheets :: FSpec -> [(Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (Text, Worksheet)
-    plug2sheet (InternalPlug plug) = fmap (sqlColumNameToText . sqlname $ plug,) sheet
+    plug2sheet (InternalPlug plug) = fmap (tshow . sqlname $ plug,) sheet
       where
         sheet :: Maybe Worksheet
         sheet = case matrix of
@@ -52,11 +52,11 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                     toCell
                     [ if isFirstField -- In case of the first field of the table, we put the fieldname inbetween brackets,
                     -- to be able to find the population again by the reader of the .xlsx file
-                        then Just $ "[" <> (sqlColumNameToText . attSQLColName $ att) <> "]"
+                        then Just $ "[" <> (tshow . attSQLColName $ att) <> "]"
                         else Just
                           $ case plug of
-                            TblSQL {} -> sqlColumNameToText . attSQLColName $ att
-                            BinSQL {} -> sqlColumNameToText . sqlname $ plug,
+                            TblSQL {} -> tshow . attSQLColName $ att
+                            BinSQL {} -> tshow . sqlname $ plug,
                       Just . fullName . target . attExpr $ att
                     ]
             content = fmap record2Cells (tableContents fSpec plug)

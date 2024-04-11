@@ -24,9 +24,7 @@ module Ampersand.FSpec.FSpec
     metaValues,
     SqlAttribute (..),
     SqlName,
-    sqlColumNameToString,
     sqlColumNameToText1,
-    sqlColumNameToText,
     text1ToSqlName,
     isPrimaryKey,
     isForeignKey,
@@ -170,7 +168,7 @@ instance Eq FSpec where
 instance Unique FSpec where
   showUnique = maybe fatalmsg showUnique . originalContext
     where
-      fatalmsg = fatal "showUnique is not expected to be called on an FSpec derived from a module. " --TODO: Either make sure that this is te case, or fix it. See https://github.com/AmpersandTarski/Ampersand/issues/1307
+      fatalmsg = fatal "showUnique is not expected to be called on an FSpec derived from a module. " -- TODO: Either make sure that this is te case, or fix it. See https://github.com/AmpersandTarski/Ampersand/issues/1307
 
 metaValues :: Text1 -> FSpec -> [Text]
 metaValues key fSpec = [mtVal m | m <- metas fSpec, mtName m == key]
@@ -189,7 +187,7 @@ instance Hashable FSpec where
       `composeHash` (L.sort . fmap conceptAndTType . Set.toList . allConcepts)
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
     where
-      composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
+      composeHash :: (Hashable a) => Int -> (FSpec -> a) -> Int
       composeHash s fun = s `hashWithSalt` fun fSpec
       conceptAndTType :: A_Concept -> (A_Concept, TType)
       conceptAndTType cpt = (cpt, cptTType fSpec cpt)
@@ -284,7 +282,7 @@ dnf2expr dnf =
 newtype PlugInfo = InternalPlug PlugSQL
   deriving (Show, Eq, Typeable)
 
---instance Named PlugInfo where
+-- instance Named PlugInfo where
 --  name (InternalPlug psql) = name psql
 
 instance Unique PlugInfo where
@@ -331,7 +329,7 @@ data PlugSQL
       }
   deriving (Show, Typeable)
 
---instance Named PlugSQL where
+-- instance Named PlugSQL where
 --  name = sqlname
 
 instance Eq PlugSQL where
@@ -352,9 +350,9 @@ plugAttributes plug = case plug of
     let store = case dLkpTbl plug of
           [x] -> x
           _ ->
-            fatal $
-              "Relation lookup table of a binary table should contain exactly one element:\n"
-                <> tshow (dLkpTbl plug)
+            fatal
+              $ "Relation lookup table of a binary table should contain exactly one element:\n"
+              <> tshow (dLkpTbl plug)
      in rsSrcAtt store NE.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
@@ -401,16 +399,10 @@ instance Eq SqlName where
   a == b = compare a b == EQ
 
 instance Show SqlName where
-  show = sqlColumNameToString
-
-sqlColumNameToString :: SqlName -> String
-sqlColumNameToString = T.unpack . sqlColumNameToText
+  show (SqlName t) = show t
 
 sqlColumNameToText1 :: SqlName -> Text1
 sqlColumNameToText1 (SqlName t) = t
-
-sqlColumNameToText :: SqlName -> Text
-sqlColumNameToText = text1ToText . sqlColumNameToText1
 
 text1ToSqlName :: Text1 -> SqlName
 text1ToSqlName = SqlName
