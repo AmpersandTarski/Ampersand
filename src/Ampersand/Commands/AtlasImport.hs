@@ -26,6 +26,8 @@ import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
 import Data.IntMap
+import qualified Data.IntSet as NE
+import GHC.Exts (build)
 import qualified RIO.ByteString.Lazy as B
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -59,6 +61,7 @@ instance JSON.FromJSON P_Context where
         <*> v JSON..: "conceptsCtx" -- alle concepten met definitie
         <*> v JSON..: "representationsCtx" -- alle JSON.en
         <*> v JSON..: "rulesCtx"
+        <*> v JSON..: "rolerules"
         <*> v JSON..: "relationsCtx"
         <*> v JSON..: "purposes" -- purposes within whole CONTEXT
         <*> v JSON..:? "language"
@@ -76,20 +79,21 @@ instance JSON.FromJSON P_Context where
         [PConceptDef] ->
         [Representation] ->
         [P_Rule TermPrim] ->
+        [P_RoleRule] ->
         [P_Relation] ->
         [PPurpose] ->
         Maybe Lang ->
         [P_IdentDef] ->
         P_Context
-      build nm pats cpts reprs rules rels prps lang ident =
+      build nm pats cpts reprs rules rolerules rels prps lang ident =
         PCtx
           { ctx_vs = [],
             ctx_rs = rules,
-            ctx_rrules = [],
+            ctx_rrules = rolerules,
             ctx_reprs = reprs,
             ctx_ps = prps,
             ctx_pos = [],
-            ctx_pops = [],
+            ctx_pops = [], -- niet in RAP
             ctx_pats = pats,
             ctx_nm = nm,
             ctx_metas = [], -- staat klaar
@@ -461,9 +465,9 @@ instance JSON.FromJSON a => JSON.FromJSON (P_BoxItem a) where
       buildExpr :: Text -> Term a -> Maybe P_Cruds -> Maybe Text -> Maybe (P_SubIfc a) -> P_BoxItem a
       buildExpr nm term crud view sub =
         P_BxExpr
-          { obj_nm = nm,
+          { obj_nm = T.empty, -- todo: deze wordt niet meegegeven aan RAP
             pos = OriginAtlas,
-            obj_ctx = term, -- todo: Han vragen ...
+            obj_ctx = term, -- todo: Stef vragen of er dus de reocurring gefixt kan worden
             obj_crud = crud,
             obj_mView = view,
             obj_msub = sub
@@ -574,7 +578,7 @@ instance JSON.FromJSON a => JSON.FromJSON (Term a) where
     where
       parseBinaryOperator :: JSON.FromJSON a => JSON.Object -> Origin -> T.Text -> JSON.Parser (Term a)
       parseBinaryOperator v origin op = case T.unpack op of
-        "PEqu" -> PEqu origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
+        "Equivalence" -> PEqu origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
         "Inclusion" -> PInc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
         -- Add cases for other constructors similarly prefixed wi      "PIsc" -> PIsc origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
         "Union" -> PUni origin <$> v JSON..: "lhs" <*> v JSON..: "rhs"
@@ -596,18 +600,6 @@ instance JSON.FromJSON a => JSON.FromJSON (Term a) where
         "PBrk" -> PBrk origin <$> v JSON..: "term"
         _ -> fail $ "Unknown unary operator: " ++ T.unpack op
 
--- instance JSON.FromJSON TermPrim where
---   parseJSON = JSON.withObject "TermPrim" $ \v -> do
---     constructorType <- v JSON..: "type"
---     case constructorType of
---       "PI" -> pure $ PI OriginAtlas
---       "Pid" -> Pid OriginAtlas <$> v JSON..: "concept"
---       "Patm" -> Patm OriginAtlas <$> v JSON..: "atomValue" <*> v JSON..:? "concept"
---       "PVee" -> pure $ PVee OriginAtlas
---       "Pfull" -> Pfull OriginAtlas <$> v JSON..: "concept" <*> v JSON..: "concept2"
---       "relation" -> PNamedR <$> v JSON..: "namedRel"
---       _ -> fail $ "Unknown TermPrim constructor: " ++ constructorType
-
 instance JSON.FromJSON TermPrim where
   parseJSON = JSON.withObject "TermPrim" $ \v ->
     -- (PI OriginAtlas <$ (v JSON..: "type" >>= guard . (== "PI")))
@@ -615,7 +607,7 @@ instance JSON.FromJSON TermPrim where
       <|> (Patm OriginAtlas <$> v JSON..: "atomValue" <*> v JSON..:? "concept")
       -- <|> (PVee OriginAtlas <$ (v JSON..: "type" >>= guard . (== "PVee")))
       <|> (Pfull OriginAtlas <$> v JSON..: "concept" <*> v JSON..: "concept2")
-      <|> (PNamedR <$> v JSON..: "namedRel")
+      <|> (PNamedR <$> v JSON..: "relation")
       <|> fail "Unknown or incomplete TermPrim"
 
 instance JSON.FromJSON PAtomValue where
@@ -688,9 +680,37 @@ instance JSON.FromJSON MetaData where
         (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> Text -> MetaData
-      build nm val =
+      build nm value =
         MetaData
           { pos = OriginAtlas,
             mtName = nm,
-            mtVal = val
+            mtVal = value
           }
+
+instance JSON.FromJSON P_RoleRule where
+  parseJSON val = case val of
+    JSON.Object v -> do
+      role <- v JSON..: "role" -- this is the label of the role
+      rules <- v JSON..: "rule" -- the rule
+      case NE.nonEmpty rules of
+        Just neRules -> return $ build role neRules
+        Nothing -> fail "The 'rule' array cannot be empty"
+    invalid ->
+      JSON.prependFailure
+        "parsing P_RoleRule failed, "
+        (JSON.typeMismatch "Object" invalid)
+    where
+      build :: Role -> NE.NonEmpty Text -> P_RoleRule
+      build role neRules =
+        Maintain
+          { pos = OriginAtlas,
+            mRoles = role NE.:| [],
+            mRules = neRules
+          }
+
+instance JSON.FromJSON Role where
+  parseJSON = JSON.withObject "role" $ \v ->
+    -- (PI OriginAtlas <$ (v JSON..: "type" >>= guard . (== "PI")))
+    (Role <$> v JSON..: "role")
+      <|> (Service <$> v JSON..: "service")
+      <|> fail "Unknown or incomplete Role"
