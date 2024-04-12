@@ -177,7 +177,7 @@ data P_RoleRule = Maintain
   deriving (Show) -- deriving (Show) is just for debugging
 
 instance Traced P_RoleRule where
-  origin (Maintain {pos = orig}) = orig
+  origin Maintain {pos = orig} = orig
 
 data Role = Role
   { pos :: !Origin,
