@@ -9,7 +9,6 @@ import Ampersand.Classes
 -- TODO Use NonEmpty
 -- import qualified RIO.Map as M
 
-import qualified Data.List.NonEmpty as NE
 import qualified RIO.List as L
 import qualified RIO.List.Partial as P
 import qualified RIO.NonEmpty as NE
@@ -70,7 +69,7 @@ predLshow lang vMap = charshow 0
     l :: LocalizedStr -> Text
     l = localize lang
     listVars :: Text -> NE.NonEmpty Var -> Text
-    listVars sep vars = T.intercalate sep . NE.toList . fmap vMap $ vars
+    listVars sep = T.intercalate sep . NE.toList . fmap vMap
 
     wrap :: Integer -> Integer -> Text -> Text
     wrap i j txt = if i <= j then txt else T.pack "(" <> txt <> T.pack ")"
