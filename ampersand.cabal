@@ -615,6 +615,8 @@ library
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
@@ -685,6 +687,8 @@ executable ampPreProc
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
@@ -758,6 +762,8 @@ executable ampersand
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
@@ -829,6 +835,8 @@ test-suite ampersand-test
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio

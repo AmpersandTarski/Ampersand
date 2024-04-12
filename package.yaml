@@ -65,6 +65,8 @@ dependencies:
   - pandoc-crossref
   - pandoc-types
   - parsec
+  - prettyprinter
+  - prettyprinter-ansi-terminal
   - process
   - QuickCheck
   - quickcheck-instances
@@ -81,7 +83,7 @@ dependencies:
   - transformers
   - typed-process
   - uri-encode
-  - wl-pprint
+  - wl-pprint # to be replaced with prettyprinter stuff
   - xlsx
   - yaml
   # - yaml-config
