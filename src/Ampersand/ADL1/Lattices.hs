@@ -24,11 +24,12 @@ module Ampersand.ADL1.Lattices
 where
 
 import Ampersand.Basics hiding (toList)
+import Data.IntMap (Key)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified RIO.List as L
 import qualified RIO.Map as Map
-import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions
+import qualified RIO.Map.Partial as PARTIAL -- TODO: Get rid of partial functions
 import qualified RIO.Set as Set
 
 -- optimisations possible for the EqualitySystem(s):
@@ -98,7 +99,7 @@ findUpperbounds :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> [Set.Set a
 findUpperbounds = findWith findSubsetInRevMap (\x -> [fromList [x]])
 
 findWith ::
-  Ord a =>
+  (Ord a) =>
   ([Int] -> RevMap a -> b) -> -- Function that finds the normalized form
   (a -> b) -> -- Shorthand in case the FreeLattice does not need to go through the translation process
   Op1EqualitySystem a -> -- system in which the FreeLattice elements can be found
@@ -135,7 +136,7 @@ findWith f f2 es@(ES1 _ back _) trmUnsimplified =
 simplifySet :: Op1EqualitySystem t -> IntSet.IntSet -> IntSet.IntSet
 simplifySet (ES1 _ _ imap) x = imapTranslate imap x IntSet.empty
 
-latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> Maybe [IntSet.IntSet]
+latticeToTranslatable :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> Maybe [IntSet.IntSet]
 latticeToTranslatable (ES1 m _ _) = t
   where
     t (Atom a) = do r <- Map.lookup a m; return [r]
@@ -212,10 +213,13 @@ reverseMap lst =
   RevMap (Set.fromList (map fst empties)) (buildMap rest)
   where
     (empties, rest) = L.partition (null . snd) lst
-    buildMap [] = IntMap.empty
-    buildMap o@((_, ~(f : _)) : _) =
-      IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
-      where
+    buildMap :: (Ord a) => [(a, [Key])] -> IntMap (RevMap a)
+    buildMap o = case o of
+      [] -> IntMap.empty
+      ((_,[]) : _ ) -> fatal "This should be impossible, for the empties are taken out before."
+      ((_,f:_) : _ ) -> IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
+        where
+        tail2 :: (a, [IntMap.Key]) -> (a, [IntMap.Key])
         tail2 (a, b) = (a, tail b)
         (h, tl) = L.partition ((== f) . head . snd) o
         tail [] = fatal "tail called on empty list"
@@ -224,7 +228,7 @@ reverseMap lst =
         head (x : _) = x
 
 -- | Change the system into one with fast reverse lookups
-optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
+optimize1 :: (Ord a) => EqualitySystem a -> Op1EqualitySystem a
 optimize1 (ES oldmap oldimap) =
   ES1
     newmap
@@ -308,10 +312,10 @@ instance SetLike Set.Set where
 
 -- | A single set of operations to use both for ordered lists and for sets
 class SetLike x where -- I dislike having to put Ord everywhere, is there another way? (Without including a in the class)
-  toList :: Ord a => x a -> [a]
-  fromList :: Ord a => [a] -> x a
-  fromSet :: Ord a => Set.Set a -> x a
-  slEmpty :: Ord a => x a
+  toList :: (Ord a) => x a -> [a]
+  fromList :: (Ord a) => [a] -> x a
+  fromSet :: (Ord a) => Set.Set a -> x a
+  slEmpty :: (Ord a) => x a
   slEmpty = fromList []
-  slNull :: Ord a => x a -> Bool
+  slNull :: (Ord a) => x a -> Bool
   slNull = null . toList
