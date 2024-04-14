@@ -249,7 +249,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         normal :: Parser (a -> a)
         normal =
           infoOption
-            (T.unpack $ shortVersion appVersion)
+            (T.unpack $ longVersion appVersion)
             ( short 'V'
                 <> long "version"
                 <> help "Show version"
