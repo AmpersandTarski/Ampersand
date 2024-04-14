@@ -317,20 +317,13 @@ getDateTime :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, Str
 getDateTime cs =
   case getDate cs of
     Nothing -> Nothing
-    Just (_, day, ld, rd) ->
-      case getTime rd of
-        Nothing -> case rd of
-          'T' : _ -> Just . Left $ ProblematicISO8601DateTime
-          _ -> getDateTime' cs -- Here we try the ohter notation of time
-        Just (timeOfDay, tzoneOffset, lt, rt) ->
-          let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
-           in Just
-                . Right
-                $ ( LexDateTime ucttime,
-                    ucttime,
-                    ld + lt,
-                    rt
-                  )
+    Just (_, day, ld, rd) -> case getTime rd of
+      Nothing -> case rd of
+        'T' : _ -> Just . Left $ ProblematicISO8601DateTime
+        _ -> getDateTime' cs -- Here we try the ohter notation of time
+      Just (timeOfDay, tzoneOffset, lt, rt) ->
+        let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
+         in Just . Right $ (LexDateTime ucttime, ucttime, ld + lt, rt)
 
 getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
@@ -385,13 +378,11 @@ getFraction cs =
     _ -> (0, 0, cs)
 
 getTZD :: String -> Maybe (NominalDiffTime, Int, String)
-getTZD cs =
-  case cs of
-    'Z' : rest -> Just (0, 1, rest)
-    '+' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (+)
-    '-' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (-)
-    ' ' : 'U' : 'T' : 'C' : rest -> Just (0, T.length " UTC", rest)
-    _ -> Nothing
+getTZD cs = case cs of
+  'Z' : rest -> Just (0, 1, rest)
+  '+' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (+)
+  '-' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (-)
+  _ -> Nothing
   where
     mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int, String)
     mkOffset hs ms rest op =
@@ -421,7 +412,9 @@ getDateTime' cs = case readUniversalTime cs of
     best :: [(UTCTime, String)] -> Maybe (UTCTime, String)
     best candidates = case reverse . L.sortBy myOrdering $ candidates of
       [] -> Nothing
-      (h : _) -> Just h
+      ((tim, rst) : _) -> case rst of
+        ' ' : 'U' : 'T' : 'C' : x -> Just (tim, x)
+        _ -> Just (tim, rst)
     myOrdering :: (Show a) => (a, b) -> (a, b) -> Ordering
     myOrdering (x, _) (y, _) = compare (length . show $ x) (length . show $ y)
 
