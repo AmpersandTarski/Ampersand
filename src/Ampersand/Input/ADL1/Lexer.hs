@@ -394,26 +394,21 @@ getTZD cs =
   where
     mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int, String)
     mkOffset hs ms rest op =
-      join $ total <$> hours <*> minutes
-      where
-        hours = case getNumber hs of
-          (_, Left val, _, _) -> Just val
-          _ -> Nothing
-        minutes = case getNumber ms of
-          (_, Left val, _, _) -> Just val
-          _ -> Nothing
-        total :: Int -> Int -> Maybe (NominalDiffTime, Int, String)
-        total hs' ms' =
-          if tot < 24 * 60
+      let hours = case getNumber hs of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for h1 and h2 are digits"
+          minutes = case getNumber ms of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for m1 and m2 are digits"
+          total = hours * 60 + minutes
+       in if hours <= 24 && minutes < 60
             then
               Just
-                ( fromRational . toRational $ 0 `op` tot,
+                ( fromRational . toRational $ 0 `op` total,
                   6,
                   rest
                 )
             else Nothing
-          where
-            tot = hs' * 60 + ms'
 
 getDateTime' :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
 getDateTime' cs = case readUniversalTime cs of
@@ -440,14 +435,14 @@ getDate cs =
         else Nothing
       where
         year = case getNumber [y1, y2, y3, y4] of
-          (_, Left x, _, _) -> x
-          _ -> fatal "Impossible, [y1, y2, y3, y4] are digits."
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for [y1, y2, y3, y4] are digits"
         month = case getNumber [m1, m2] of
-          (_, Left x, _, _) -> x
-          _ -> fatal "Impossible, [m1, m2] are digits."
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for m1 and m2 are digits"
         day = case getNumber [d1, d2] of
-          (_, Left x, _, _) -> x
-          _ -> fatal "Impossible, [d1, d2] are digits."
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for d1 and d2 are digits"
     _ -> Nothing
 
 -----------------------------------------------------------
