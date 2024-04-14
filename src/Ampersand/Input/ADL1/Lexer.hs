@@ -390,6 +390,7 @@ getTZD cs =
     'Z' : rest -> Just (0, 1, rest)
     '+' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (+)
     '-' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (-)
+    ' ' : 'U' : 'T' : 'C' : rest -> Just (0, T.length " UTC", rest)
     _ -> Nothing
   where
     mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int, String)
