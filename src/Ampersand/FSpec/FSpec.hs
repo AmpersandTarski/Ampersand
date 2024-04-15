@@ -399,7 +399,7 @@ instance Eq SqlName where
   a == b = compare a b == EQ
 
 instance Show SqlName where
-  show (SqlName t) = show t
+  show (SqlName t) = T.unpack (text1ToText t)
 
 sqlColumNameToText1 :: SqlName -> Text1
 sqlColumNameToText1 (SqlName t) = t
