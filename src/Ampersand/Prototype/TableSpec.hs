@@ -157,8 +157,8 @@ insertQuery ::
 insertQuery withComments tableName attNames tblRecords
   | withComments =
       SqlQueryPretty
-        $ [ "INSERT INTO " <> tshow tableName,
-            "   (" <> T.intercalate ", " (NE.toList $ fmap (text1ToText . sqlColumNameToText1) attNames) <> ")",
+        $ [ "INSERT INTO " <> doubleQuote (tshow tableName),
+            "   (" <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames) <> ")",
             "VALUES "
           ]
         <> (T.lines . ("   " <>) . T.intercalate "\n , " $ ["(" <> valuechain md <> ")" | md <- tblRecords])
@@ -166,9 +166,9 @@ insertQuery withComments tableName attNames tblRecords
   | otherwise =
       SqlQueryPlain
         $ "INSERT INTO "
-        <> tshow tableName
+        <> doubleQuote (tshow tableName)
         <> " ("
-        <> T.intercalate ", " (NE.toList $ fmap (text1ToText . sqlColumNameToText1) attNames)
+        <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames)
         <> ")"
         <> " VALUES "
         <> T.intercalate ", " ["(" <> valuechain md <> ")" | md <- tblRecords]
