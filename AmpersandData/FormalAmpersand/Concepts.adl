@@ -14,11 +14,11 @@ PATTERN FormalAmpersand.Concepts
     VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptName;", SRC I )
     
     
-    REPRESENT FormalAmpersand.ConceptDefinition TYPE BIGALPHANUMERIC
-    RELATION FormalAmpersand.definition[FormalAmpersand.Concept*FormalAmpersand.ConceptDefinition][UNI]
-    RULE FormalAmpersand.delUnusedConceptDefintion : I[FormalAmpersand.ConceptDefinition] |- FormalAmpersand.definition~;FormalAmpersand.definition
-    MEANING "A ConceptDefinition without Concept will be removed."
-    VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDefinition;", SRC I )
+    REPRESENT FormalAmpersand.ConceptDef TYPE BIGALPHANUMERIC
+    RELATION FormalAmpersand.acdcpt[FormalAmpersand.Concept*FormalAmpersand.ConceptDef][UNI]
+    RULE FormalAmpersand.delUnusedConceptDef : I[FormalAmpersand.ConceptDef] |- FormalAmpersand.acdcpt~;FormalAmpersand.acdcpt
+    MEANING "A ConceptDef without Concept will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDef;", SRC I )
 
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType][UNI]
