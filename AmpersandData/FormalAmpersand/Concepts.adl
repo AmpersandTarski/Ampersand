@@ -13,6 +13,14 @@ PATTERN FormalAmpersand.Concepts
     MEANING "A ConceptName without Concept will be removed."
     VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptName;", SRC I )
     
+    
+    REPRESENT FormalAmpersand.ConceptDefinition TYPE BIGALPHANUMERIC
+    RELATION FormalAmpersand.definition[FormalAmpersand.Concept*FormalAmpersand.ConceptDefinition][UNI]
+    RULE FormalAmpersand.delUnusedConceptDefintion : I[FormalAmpersand.ConceptDefinition] |- FormalAmpersand.definition~;FormalAmpersand.definition
+    MEANING "A ConceptDefinition without Concept will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDefinition;", SRC I )
+
+    RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType][UNI]
     RULE FormalAmpersand.enumerationOfTType : I[FormalAmpersand.TType] = 
       "ALPHANUMERIC" \/ "BIGALPHANUMERIC" \/ "HUGEALPHANUMERIC" \/ "PASSWORD" \/ "BINARY" \/ "BIGBINARY" \/ "HUGEBINARY" \/ "DATE" \/ "DATETIME" \/ "BOOLEAN" \/ "INTEGER" \/ "FLOAT" \/ "OBJECT"
