@@ -10,11 +10,11 @@ PATTERN Concepts
     
     IDENT Concept : Concept(name,context[Concept*Context])
 
-    REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
-    RELATION definition[Concept*ConceptDefinition][UNI]
-    RULE delUnusedConceptDefintion : I[ConceptDefinition] |- definition~;definition
-    MEANING "A ConceptDefinition without Concept will be removed."
-    VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
+    REPRESENT ConceptDef TYPE BIGALPHANUMERIC
+    RELATION acdcpt[Concept*ConceptDef][UNI]
+    RULE delUnusedConceptDef : I[ConceptDef] |- acdcpt~;acdcpt
+    MEANING "A ConceptDef without Concept will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;ConceptDef;", SRC I )
 
     RELATION name[Relation*RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
