@@ -3,8 +3,7 @@ PURPOSE PATTERN Documentation
 {+
 +}
 PATTERN Documentation
-    REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
-
+    
     REPRESENT MarkupText TYPE BIGALPHANUMERIC    
     RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
     MEANING "The meanings of a relation."

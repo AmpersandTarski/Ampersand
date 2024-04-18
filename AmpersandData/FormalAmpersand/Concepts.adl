@@ -10,6 +10,12 @@ PATTERN Concepts
     
     IDENT Concept : Concept(name,context[Concept*Context])
 
+    REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
+    RELATION definition[Concept*ConceptDefinition][UNI]
+    RULE delUnusedConceptDefintion : I[ConceptDefinition] |- definition~;definition
+    MEANING "A ConceptDefinition without Concept will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
+
     RELATION name[Relation*RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION source[Relation*Concept] [UNI,TOT]
