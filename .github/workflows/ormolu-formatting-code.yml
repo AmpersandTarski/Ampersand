@@ -19,4 +19,4 @@ jobs:
       # The checkout step is needed since the enforcer relies on local git commands
       - uses: actions/checkout@v3
 
-      - uses: mrkkrp/ormolu-action@v4 # BEWARE: Do not upgrade unless we use ghc 9 or higher. v4 does not work for ghc less then 9.
+      - uses: mrkkrp/ormolu-action@v4

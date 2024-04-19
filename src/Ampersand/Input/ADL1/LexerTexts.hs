@@ -104,7 +104,7 @@ lexerNonTerminatedString =
 
 -- | Translates 'Close bracket but no open bracket' into the chosen language
 lexerTooManyClose ::
-  Show a =>
+  (Show a) =>
   a ->
   -- | The translated string
   String

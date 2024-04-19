@@ -8,49 +8,49 @@ import qualified RIO.Text as T
 import RIO.Time
 import Text.Pandoc.CrossRef
 
---DESCR ->
---The functional design document starts with an introduction
---The second chapter defines the functionality of the system for stakeholders.
---Because we assume these stakeholders to speak the language of the primary process without any technical knowledge,
---the second chapter contains natural language only.
---The third chapter is intended for the analyst. It contains all the rules mentioned in
---natural language in the second chapter. It presents the trace from natural language
---to the formal rule.
---The fourth chapter presents a datamodel together with all the property rules.
+-- DESCR ->
+-- The functional design document starts with an introduction
+-- The second chapter defines the functionality of the system for stakeholders.
+-- Because we assume these stakeholders to speak the language of the primary process without any technical knowledge,
+-- the second chapter contains natural language only.
+-- The third chapter is intended for the analyst. It contains all the rules mentioned in
+-- natural language in the second chapter. It presents the trace from natural language
+-- to the formal rule.
+-- The fourth chapter presents a datamodel together with all the property rules.
 -- by datasets and rules.
---Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept,
---also called the theme. Functionalities defined on the theme by one or more plugs are
---described together with the rules that apply to the dataset. Rules not described by
---the dataset are described in the last section of chapter 2.
---The following chapters each present one INTERFACE
---The specification end with a glossary.
+-- Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept,
+-- also called the theme. Functionalities defined on the theme by one or more plugs are
+-- described together with the rules that apply to the dataset. Rules not described by
+-- the dataset are described in the last section of chapter 2.
+-- The following chapters each present one INTERFACE
+-- The specification end with a glossary.
 
---TODO: Invent a syntax for meta information that is included in the source file...
+-- TODO: Invent a syntax for meta information that is included in the source file...
 
---The following general requirements apply to the functional design document:
---Descriptive title, number, identifier, etc. of the specification
---Date of last effective revision and revision designation
---A logo (trademark recommended) to declare the document copyright, ownership and origin
---Table of Contents
---Person, office, or agency responsible for questions on the specification, updates, and deviations.
---The significance, scope or importance of the specification and its intended use.
---Terminology, definitions and abbreviations to clarify the meanings of the specification
---Test methods for measuring all specified characteristics
---Material requirements: physical, mechanical, electrical, chemical, etc. Targets and tolerances.
---Performance testing requirements. Targets and tolerances.
---Drawings, photographs, or technical illustrations
---Workmanship
---Certifications required.
---Safety considerations and requirements
---Environmental considerations and requirements
---Quality control requirements, Sampling (statistics), inspections, acceptance criteria
---Person, office, or agency responsible for enforcement of the specification.
---Completion and delivery.
---Provisions for rejection, reinspection, rehearing, corrective measures
---References and citations for which any instructions in the content maybe required to fulfill the traceability and clarity of the document
---Signatures of approval, if necessary
---Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
---Annexes and Appendices that are expand details, add clarification, or offer options.
+-- The following general requirements apply to the functional design document:
+-- Descriptive title, number, identifier, etc. of the specification
+-- Date of last effective revision and revision designation
+-- A logo (trademark recommended) to declare the document copyright, ownership and origin
+-- Table of Contents
+-- Person, office, or agency responsible for questions on the specification, updates, and deviations.
+-- The significance, scope or importance of the specification and its intended use.
+-- Terminology, definitions and abbreviations to clarify the meanings of the specification
+-- Test methods for measuring all specified characteristics
+-- Material requirements: physical, mechanical, electrical, chemical, etc. Targets and tolerances.
+-- Performance testing requirements. Targets and tolerances.
+-- Drawings, photographs, or technical illustrations
+-- Workmanship
+-- Certifications required.
+-- Safety considerations and requirements
+-- Environmental considerations and requirements
+-- Quality control requirements, Sampling (statistics), inspections, acceptance criteria
+-- Person, office, or agency responsible for enforcement of the specification.
+-- Completion and delivery.
+-- Provisions for rejection, reinspection, rehearing, corrective measures
+-- References and citations for which any instructions in the content maybe required to fulfill the traceability and clarity of the document
+-- Signatures of approval, if necessary
+-- Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
+-- Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc ::
   (HasDirOutput env, HasDocumentOpts env) =>
@@ -91,7 +91,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
               [ (str . l) (NL "hoofdstuk", EN "chapter"),
                 (str . l) (NL "hoofdstukken", EN "chapters")
               ]
-            <> cref True --required for pandoc-crossref to do its work properly
+            <> cref True -- required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
     thePandoc =
       wrap
@@ -118,7 +118,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
                             )
                 )
                   <> (singleQuoted . text . fullName) fSpec
-              titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
+              titles -> (text . T.concat . L.nub) titles -- reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
           )
         . setAuthors
           ( case metaValues (toText1Unsafe "authors") fSpec of
@@ -128,7 +128,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
                       EN "Specify authors in Ampersand with: META \"authors\" \"<author names>\""
                     )
                 ]
-              xs -> text <$> L.nub xs --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
+              xs -> text <$> L.nub xs -- reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
           )
         . setDate (text (T.pack $ formatTime (lclForLang outputLang') "%-d %B %Y" now))
         . doc

@@ -136,19 +136,21 @@ instance Yaml.FromJSON ColorWhen where
       "auto" -> return ColorAuto
       _ ->
         fail
-          ( "Unknown color use: " <> s <> ". Expected values of "
+          ( "Unknown color use: "
+              <> s
+              <> ". Expected values of "
               <> "option are 'never', 'always', or 'auto'."
           )
 
 -- | The top-level Stackage configuration.
 newtype Config = Config
   { -- | this allows to override .stack-work directory
-    configWorkDir :: FilePath --Dummy, to make sure Config has some stuff in it.
+    configWorkDir :: FilePath -- Dummy, to make sure Config has some stuff in it.
   }
 
 -- An uninterpreted representation of configuration options.
 -- Configurations may be "cascaded" using mappend (left-biased).
---data ConfigMonoid =
+-- data ConfigMonoid =
 --  ConfigMonoid
 --    {configMonoidWorkDir :: !(First FilePath)
 --    -- ^ See: 'configWorkDir'.
@@ -175,40 +177,40 @@ data ExtendedRunner a = ExtendedRunner
 cmdOptsL :: Lens' (ExtendedRunner a) a
 cmdOptsL = lens eCmdOpts (\x y -> x {eCmdOpts = y})
 
-instance HasOutputLanguage a => HasOutputLanguage (ExtendedRunner a) where
+instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
   languageL = cmdOptsL . languageL
 
-instance HasFSpecGenOpts a => HasFSpecGenOpts (ExtendedRunner a) where
+instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
 
-instance HasDocumentOpts a => HasDocumentOpts (ExtendedRunner a) where
+instance (HasDocumentOpts a) => HasDocumentOpts (ExtendedRunner a) where
   documentOptsL = cmdOptsL . documentOptsL
 
-instance HasDaemonOpts a => HasDaemonOpts (ExtendedRunner a) where
+instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where
   daemonOptsL = cmdOptsL . daemonOptsL
 
-instance HasTestOpts a => HasTestOpts (ExtendedRunner a) where
+instance (HasTestOpts a) => HasTestOpts (ExtendedRunner a) where
   testOptsL = cmdOptsL . testOptsL
 
-instance HasGenerateFrontend a => HasGenerateFrontend (ExtendedRunner a) where
+instance (HasGenerateFrontend a) => HasGenerateFrontend (ExtendedRunner a) where
   generateFrontendL = cmdOptsL . generateFrontendL
 
-instance HasGenerateBackend a => HasGenerateBackend (ExtendedRunner a) where
+instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where
   generateBackendL = cmdOptsL . generateBackendL
 
-instance HasGenerateMetamodel a => HasGenerateMetamodel (ExtendedRunner a) where
+instance (HasGenerateMetamodel a) => HasGenerateMetamodel (ExtendedRunner a) where
   generateMetamodelL = cmdOptsL . generateMetamodelL
 
 instance (HasFSpecGenOpts a, HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
 
-instance HasProtoOpts a => HasProtoOpts (ExtendedRunner a) where
+instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
 
-instance HasPopulationOpts a => HasPopulationOpts (ExtendedRunner a) where
+instance (HasPopulationOpts a) => HasPopulationOpts (ExtendedRunner a) where
   populationOptsL = cmdOptsL . populationOptsL
 
-instance HasOutputFile a => HasOutputFile (ExtendedRunner a) where
+instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
   outputfileL = cmdOptsL . outputfileL
 
 instance HasRunner (ExtendedRunner a) where
@@ -223,5 +225,5 @@ instance HasProcessContext (ExtendedRunner a) where
 instance HasDirOutput (ExtendedRunner a) where
   dirOutputL = runnerL . dirOutputL
 
-instance HasBlackWhite a => HasBlackWhite (ExtendedRunner a) where
+instance (HasBlackWhite a) => HasBlackWhite (ExtendedRunner a) where
   blackWhiteL = cmdOptsL . blackWhiteL

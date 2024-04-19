@@ -26,8 +26,8 @@ doGenDocument fSpec = do
   -- First we need to output the pictures, because they should be present
   -- before the actual document is written
   genGraphics <- view genGraphicsL
-  when (genGraphics && fspecFormat /= FPandoc) $
-    mapM_ writePicture thePictures
+  when (genGraphics && fspecFormat /= FPandoc)
+    $ mapM_ writePicture thePictures
   genText <- view genTextL
-  when genText $
-    writepandoc fSpec thePandoc
+  when genText
+    $ writepandoc fSpec thePandoc

@@ -24,5 +24,5 @@ getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL, SqlAttribute)
 getConceptTableInfo fSpec cpt =
   case lookupCpt fSpec cpt of
     [] -> fatal ("No plug found for concept '" <> fullName cpt <> "'.")
-    [x] -> x --Any of the resulting plugs should do.
+    [x] -> x -- Any of the resulting plugs should do.
     xs -> fatal ("Only one result expected:" <> tshow xs)

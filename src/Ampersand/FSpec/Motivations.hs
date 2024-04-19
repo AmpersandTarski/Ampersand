@@ -1,4 +1,4 @@
---TODO -> Maybe this module is useful at more places than just func spec rendering.
+-- TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 
 module Ampersand.FSpec.Motivations
@@ -24,7 +24,7 @@ import qualified RIO.Set as Set
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
 
-class Named a => Motivated a where
+class (Named a) => Motivated a where
   isForObject ::
     a ->
     ExplObj ->
@@ -66,7 +66,7 @@ instance Motivated Interface where
   isForObject x (ExplInterface str) = name x == str
   isForObject _ _ = False
 
-class Named a => HasMeaning a where
+class (Named a) => HasMeaning a where
   meaning :: Lang -> a -> Maybe Meaning
   meaning l x =
     case filter (\(Meaning m) -> l == amLang m) (meanings x) of

@@ -98,11 +98,11 @@ newtype UniqueObj a = UniqueObj
   }
   deriving (Typeable)
 
-instance Unique a => Unique [a] where
+instance (Unique a) => Unique [a] where
   showUnique [] = toText1Unsafe "[]"
   showUnique xs = toText1Unsafe $ "[" <> T.intercalate ", " (text1ToText . showUnique <$> xs) <> "]"
 
-instance Unique a => Unique (Set.Set a) where
+instance (Unique a) => Unique (Set.Set a) where
   showUnique = showUnique . toList
 
 instance Unique Bool where
