@@ -75,15 +75,12 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
-      #   uses: actions/cache@v3.3.2
-      #   # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
-      #   with:
-      #     path: |
-      #       ~/.ghc
-      #       ~/.stack
-      #       ~/.stack-work
-      #     key: ${{ runner.os }}-stack
+      - uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
+        id: expatLibraryZip  # Remember to give an ID if you need the output filename
+        name: Download the expat library
+        with:
+          url: "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-win32bin-2.6.2.zip"
+          target: public/
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
