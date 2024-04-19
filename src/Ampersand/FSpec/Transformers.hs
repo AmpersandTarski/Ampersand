@@ -110,52 +110,58 @@ transformersFormalAmpersand fSpec =
     toTransformer
     [ {-
       -}
-      -- --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-      -- ( "FormalAmpersand.acdcpt",
-      --   "FormalAmpersand.ConceptDef",
-      --   "FormalAmpersand.ConceptName",
-      --   [ (dirtyId' cdf, PopAlphaNumeric . fullName $ cdf)
-      --     | cdf :: AConceptDef <- instanceList fSpec
-      --   ]
-      -- ),
-      -- --    RELATION acddef2[ConceptDef*Meaning] [UNI]  -- ^ The textual definition of this concept.
-      -- ( "FormalAmpersand.acddef2",
-      --   "FormalAmpersand.ConceptDef",
-      --   "FormalAmpersand.Meaning",
-      --   [ (dirtyId' cdf, dirtyId' mean)
-      --     | cdf :: AConceptDef <- instanceList fSpec,
-      --       mean :: Meaning <- acdmean cdf
-      --   ]
-      -- ),
-      -- --    RELATION acdfrom[ConceptDef*Pattern] [UNI]  -- ^ The name of the pattern or context in which this concept definition was made
-      -- ( "FormalAmpersand.acdfrom",
-      --   "FormalAmpersand.ConceptDef",
-      --   "FormalAmpersand.Pattern",
-      --   [ (dirtyId' cdf, dirtyId' pat)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       cdf :: AConceptDef <- ptcds pat
-      --   ]
-      -- ),
-      -- --    RELATION acdmean[ConceptDef*Meaning] [UNI]  -- ^ User-specified meanings, possibly more than one, for multiple languages.
-      -- ( "FormalAmpersand.acdmean",
-      --   "FormalAmpersand.ConceptDef",
-      --   "FormalAmpersand.Meaning",
-      --   [ (dirtyId' cdf, dirtyId' mean)
-      --     | cdf :: AConceptDef <- instanceList fSpec,
-      --       mean :: Meaning <- acdmean cdf
-      --   ]
-      -- ),
-      -- --    RELATION acdpos[ConceptDef*Origin] [UNI]      -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-      -- ( "FormalAmpersand.acdpos",
-      --   "FormalAmpersand.ConceptDef",
-      --   "FormalAmpersand.Origin",
-      --   [ (dirtyId' cdf, PopAlphaNumeric . tshow . origin $ cdf)
-      --     | cdf :: AConceptDef <- instanceList fSpec
-      --   ]
-      -- ),
+      --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+      ( "FormalAmpersand.acdcpt",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.ConceptName",
+        Set.fromList [Uni],
+        [ (dirtyId' cdf, PopAlphaNumeric . acdcpt $ cdf)
+          | cdf :: AConceptDef <- instanceList fSpec
+        ]
+      ),
+      --    RELATION acddef2[ConceptDef*Meaning] [UNI]  -- ^ The textual definition of this concept.
+      ( "FormalAmpersand.acddef2",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Meaning",
+        Set.fromList [Uni],
+        [ (dirtyId' cdf, dirtyId' mean)
+          | cdf :: AConceptDef <- instanceList fSpec,
+            mean :: Meaning <- acdmean cdf
+        ]
+      ),
+      --    RELATION acdfrom[ConceptDef*Pattern] [UNI]  -- ^ The name of the pattern or context in which this concept definition was made
+      ( "FormalAmpersand.acdfrom",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Pattern",
+        Set.fromList [Uni],
+        [ (dirtyId' cdf, dirtyId' pat)
+          | pat :: Pattern <- instanceList fSpec,
+            cdf :: AConceptDef <- ptcds pat
+        ]
+      ),
+      --    RELATION acdmean[ConceptDef*Meaning] [UNI]  -- ^ User-specified meanings, possibly more than one, for multiple languages.
+      ( "FormalAmpersand.acdmean",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Meaning",
+        Set.empty,
+        [ (dirtyId' cdf, dirtyId' mean)
+          | cdf :: AConceptDef <- instanceList fSpec,
+            mean :: Meaning <- acdmean cdf
+        ]
+      ),
+      --    RELATION acdpos[ConceptDef*Origin] [UNI]      -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
+      ( "FormalAmpersand.acdpos",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Origin",
+        Set.fromList [Uni],
+        [ (dirtyId' cdf, PopAlphaNumeric . tshow . origin $ cdf)
+          | cdf :: AConceptDef <- instanceList fSpec
+        ]
+      ),
       ( "FormalAmpersand.allConjuncts",
         "FormalAmpersand.Context",
         "FormalAmpersand.Conjunct",
+        Set.fromList [Inj],
         [ (dirtyId' ctx, dirtyId' conj)
           | ctx :: A_Context <- instanceList fSpec,
             conj :: Conjunct <- instanceList fSpec
