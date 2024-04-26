@@ -34,6 +34,11 @@ module.exports = {
             id: 'ampersand/reference-material/dictionary'
         },
         {
+            label: 'Video tutorials',
+            type: 'doc',
+            id: 'ampersand/video-tutorials'
+        },
+        {
             label: 'Meta syntax',
             type: 'doc',
             id: 'ampersand/reference-material/how-to-read-syntax-statements'
