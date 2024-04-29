@@ -22,11 +22,11 @@ REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 RELATION pairView[Rule*PairView] -- e.g. 
 RELATION segment[PairView*PairViewSegment] [SUR,INJ]
 RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
-RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
+-- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
 RELATION text[PairViewSegment*String] [UNI] -- IFF segmentType == 'Text'
 RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
 RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
-RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 
 

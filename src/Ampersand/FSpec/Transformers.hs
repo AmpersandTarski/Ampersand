@@ -12,6 +12,7 @@ module Ampersand.FSpec.Transformers
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1 (PairView (ppv_segs))
 import Ampersand.Basics hiding (first, second)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
@@ -20,7 +21,8 @@ import Ampersand.FSpec.Instances
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import qualified Text.Pandoc.Shared as P
+
+-- import qualified Text.Pandoc.Shared as P
 
 -- | The function that retrieves the population of
 --   some relation of Formal Ampersand of a given
@@ -340,12 +342,6 @@ transformersFormalAmpersand fSpec =
           | rel :: Relation <- instanceList fSpec,
             (not . T.null . decprR) rel
         ]
-      ),
-      ( "expSQL",
-        "PairViewSegment",
-        "MySQLQuery",
-        Set.empty,
-        [] --TODO
       ),
       ( "expTgt",
         "PairViewSegment",
@@ -878,14 +874,11 @@ transformersFormalAmpersand fSpec =
       ( "segment",
         "PairView",
         "PairViewSegment",
-        Set.empty,
-        [] --TODO
-      ),
-      ( "segmentType",
-        "PairViewSegment",
-        "PairViewSegmentType",
-        Set.empty,
-        [] --TODO
+        Set.fromList [Sur, Inj],
+        [ (dirtyId pv, dirtyId pvs)
+          | pv :: PairView Expression <- instanceList fSpec,
+            pvs <- NE.toList (ppv_segs pv)
+        ]
       ),
       ( "sequenceNr",
         "PairViewSegment",
