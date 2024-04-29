@@ -344,17 +344,11 @@ transformersFormalAmpersand fSpec =
             (not . T.null . decprR) rel
         ]
       ),
-      ( "expTgt",
+      ( "pvsExp",
         "PairViewSegment",
         "Concept",
+        Set.empty,
         [] -- TODO
-      ),
-      ( "FormalAmpersand.pvsExp",
-        "FormalAmpersand.PairViewSegment",
-        "FormalAmpersand.Term",
-        [ (dirtyId' pvs, dirtyId' (pvsExp pvs))
-          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
-        ]
       ),
       -- ( "FormalAmpersand.fieldIn",
       --   "FormalAmpersand.FieldDef",
@@ -777,15 +771,18 @@ transformersFormalAmpersand fSpec =
             Just x <- [second expr]
         ]
       ),
-      ( "segment",
-        "PairView",
-        "PairViewSegment",
+      ( "FormalAmpersand.segment",
+        "FormalAmpersand.PairView",
+        "FormalAmpersand.PairViewSegment",
         [] -- TODO
       ),
-      ( "segmentType",
-        "PairViewSegment",
-        "PairViewSegmentType",
-        [] -- TODO
+      ( "FormalAmpersand.segmentType",
+        "FormalAmpersand.PairViewSegment",
+        "FormalAmpersand.SequenceNumber",
+        [ (dirtyId pvs, PopInt nr)
+          | pv :: PairView Expression <- instanceList fSpec,
+            (pvs, nr) <- zip (NE.toList . ppv_segs $ pv) [0 ..]
+        ]
       ),
       ( "FormalAmpersand.sequenceNr",
         "FormalAmpersand.PairViewSegment",

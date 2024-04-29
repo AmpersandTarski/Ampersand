@@ -111,6 +111,12 @@ instance Instances (PairView Expression) where
 instance Instances (PairViewSegment Expression) where
   instances = Set.fromList . concatMap (NE.toList . ppv_segs) . instanceList
 
+instance Instances (PairView Expression) where
+  instances = pairViewInstances
+
+instance Instances (PairViewSegment Expression) where
+  instances = Set.fromList . concatMap NE.toList . fmap ppv_segs . instanceList
+
 -- Set.toList . purposeInstances
 
 -- --WARNING: Beware of loops!
@@ -140,6 +146,9 @@ meaningInstances fSpec =
   (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
     `Set.union` (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
     `Set.union` (Set.fromList . concatMap meanings . Set.toList . conceptDefInstances $ fSpec)
+
+pairViewInstances :: FSpec -> Set.Set (PairView Expression)
+pairViewInstances = Set.fromList . mapMaybe rrviol . Set.toList . ruleInstances
 
 pairViewInstances :: FSpec -> Set.Set (PairView Expression)
 pairViewInstances = Set.fromList . mapMaybe rrviol . Set.toList . ruleInstances
