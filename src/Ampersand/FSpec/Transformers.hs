@@ -12,7 +12,6 @@ module Ampersand.FSpec.Transformers
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1 (PairView (ppv_segs))
 import Ampersand.Basics hiding (first, second)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
@@ -343,11 +342,13 @@ transformersFormalAmpersand fSpec =
             (not . T.null . decprR) rel
         ]
       ),
-      ( "expTgt",
+      ( "pvsExp",
         "PairViewSegment",
-        "Concept",
-        Set.empty,
-        [] --TODO
+        "Term",
+        Set.fromList [Uni],
+        [ (dirtyId pvs, dirtyId (pvsExp pvs))
+          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
+        ]
       ),
       -- ( "fieldIn",
       --   "FieldDef",
@@ -882,9 +883,12 @@ transformersFormalAmpersand fSpec =
       ),
       ( "sequenceNr",
         "PairViewSegment",
-        "Int",
-        Set.empty,
-        [] --TODO
+        "SequenceNumber",
+        Set.fromList [Uni, Tot],
+        [ (dirtyId pvs, PopInt nr)
+          | pv :: PairView Expression <- instanceList fSpec,
+            (pvs, nr) <- zip (NE.toList . ppv_segs $ pv) [0 ..]
+        ]
       ),
       -- ( "sessAtom",
       --   "SESSION",
@@ -956,8 +960,10 @@ transformersFormalAmpersand fSpec =
       ( "srcOrTgt",
         "PairViewSegment",
         "SourceOrTarget",
-        Set.fromList [Uni, Tot],
-        [] --TODO
+        Set.fromList [Uni],
+        [ (dirtyId pvs, PopAlphaNumeric . tshow . pvsSoT $ pvs)
+          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
+        ]
       ),
       ( "target",
         "Relation",
@@ -970,8 +976,10 @@ transformersFormalAmpersand fSpec =
       ( "text",
         "PairViewSegment",
         "String",
-        Set.fromList [Uni, Tot],
-        [] --TODO
+        Set.fromList [Uni],
+        [ (dirtyId pvs, PopAlphaNumeric . pvsStr $ pvs)
+          | pvs@PairViewText {} :: PairViewSegment Expression <- instanceList fSpec
+        ]
       ),
       ( "tgt",
         "Signature",
