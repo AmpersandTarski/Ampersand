@@ -123,7 +123,7 @@ checkPrototypeContextTransformers env x =
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
-  ([], []) -> pure ()
+  ([], []) -> addWarnings theWarnings $ pure ()
   (ts', rs') ->
     fatal . T.intercalate "\n  " $
       [ "Error: There are one or more unmatched relations and transformers that are not in sync.",
@@ -137,7 +137,7 @@ compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmat
         [ (src <> tgt <> nm, nm <> "[" <> src <> "*" <> tgt <> "] is in transformers.hs, but not in .adl")
           | Transformer nm src tgt _ _ <- ts'
         ]
-          <> [ (tshow (source rel) <> tshow (target rel) <> name rel, showRel rel <> " is in "<> tshow (origin rel)<>", but not in transformers.hs" )
+          <> [ (tshow (source rel) <> tshow (target rel) <> name rel, showRel rel <> " is in " <> tshow (origin rel) <> ", but not in transformers.hs")
                | rel <- rs'
              ]
   where
@@ -150,3 +150,15 @@ compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmat
       name rel == nm
         && name (source rel) == src
         && name (target rel) == tgt
+    matches :: [Transformer] -> [(Transformer, Relation)]
+    matches ts' = case ts' of
+      [] -> []
+      h : tl -> (h, rel) : matches tl
+        where
+          rel = case filter (isMatch h) rs of
+            [] -> fatal "This should not be possible, because this case is caught as a fatel in `compareSync`."
+            re : _ -> re
+    theWarnings = concatMap foo (matches ts)
+      where
+        foo :: (Transformer, Relation) -> [Warning]
+        foo (Transformer _ _ _ ps _, r) = mkUnmatchedPropertiesWarning MeatGrinder r ps
