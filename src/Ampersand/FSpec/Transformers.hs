@@ -733,11 +733,13 @@ transformersFormalAmpersand fSpec =
             origin rul `notElem` [OriginUnknown, MeatGrinder]
         ]
       ),
-      ( "pairView",
+      ( "rrviol",
         "Rule",
         "PairView",
-        Set.empty,
-        [] --TODO
+        Set.fromList [Uni],
+        [ (dirtyId rul, dirtyId pv)
+          | rul@Ru {rrviol = Just pv} :: Rule <- instanceList fSpec
+        ]
       ),
       ( "prop",
         "Relation",

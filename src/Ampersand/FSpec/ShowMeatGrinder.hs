@@ -70,7 +70,7 @@ grind transformers userFspec =
       ctx_cs = [],
       ctx_ks = [],
       ctx_rrules = [],
-      ctx_reprs = [],
+      ctx_reprs = reprList . fcontextInfo $ userFspec,
       ctx_vs = [],
       ctx_gs = [],
       ctx_ifcs = [],
@@ -101,8 +101,8 @@ metarelation tr =
 transformer2pop :: Transformer -> P_Population
 transformer2pop tr =
   P_RelPopu
-    { p_src = Nothing,
-      p_tgt = Nothing,
+    { p_src = Nothing {- of moet dit zijn: Just (mkPConcept (tSrc tr)) ?? -},
+      p_tgt = Nothing {- of moet dit zijn: Just (mkPConcept (tTrg tr)) ?? -},
       pos = MeatGrinder, -- TODO trace to origin
       p_nmdr =
         PNamedRel

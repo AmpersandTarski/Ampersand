@@ -19,7 +19,7 @@ REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 --Definitions for Rules are found in Rules.adl and documented in Rules.docadl.
 
 --[PairViews]--
-RELATION pairView[Rule*PairView] -- e.g. 
+RELATION rrviol[Rule*PairView] [UNI]-- The 'template' for violation messages
 RELATION segment[PairView*PairViewSegment] [SUR,INJ]
 RELATION sequenceNr[PairViewSegment*SequenceNumber] [UNI,TOT]
    REPRESENT SequenceNumber TYPE INTEGER
