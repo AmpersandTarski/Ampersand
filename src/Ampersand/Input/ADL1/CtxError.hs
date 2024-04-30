@@ -1,6 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
   ( CtxError (PE),
@@ -44,6 +47,7 @@ module Ampersand.Input.ADL1.CtxError
     mkCrudWarning,
     mkBoxRowsnhWarning,
     mkCaseProblemWarning,
+    mkUnmatchedPropertiesWarning,
     uniqueLables,
     mkNoBoxItemsWarning,
     Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
@@ -73,6 +77,7 @@ import Ampersand.Input.ADL1.FilePos ()
 import Ampersand.Input.ADL1.LexerMessage
 import Data.Typeable
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Text.Parsec
 

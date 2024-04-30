@@ -141,7 +141,7 @@ checkPrototypeContextTransformers env x =
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
-  ([], []) -> pure ()
+  ([], []) -> addWarnings theWarnings $ pure ()
   (ts', rs') ->
     fatal
       . T.intercalate "\n  "
