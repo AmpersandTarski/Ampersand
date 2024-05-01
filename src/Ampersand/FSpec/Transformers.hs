@@ -1687,27 +1687,23 @@ tmpNewTransformerDefsFA fSpec =
             name cpt == name cd
         ]
       ),
-      ( "FormalAmpersand.objDef",
-        "FormalAmpersand.BxExpr",
-        "FormalAmpersand.ObjectDef",
-        [ (dirtyId' item, dirtyId' obj)
-          | item@BxExpr {objE = obj} <- instanceList fSpec
-        ]
+      ( "patRules",
+        "Pattern",
+        "Rule",
+        Set.fromList [],
+        [] -- TODO
       ),
-      ( "FormalAmpersand.text",
-        "FormalAmpersand.BxTxt",
-        "FormalAmpersand.Text",
-        [ (dirtyId' item, PopAlphaNumeric (boxtxt x))
-          | item@BxTxt {objT = x} <- instanceList fSpec
-        ]
+      ( "proprules",
+        "Rule",
+        "Context",
+        Set.fromList [],
+        [] -- TODO
       ),
-      ( "FormalAmpersand.meaning",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.Meaning",
-        [ (dirtyId' cd, dirtyId' mean)
-          | cd :: AConceptDef <- instanceList fSpec,
-            mean <- acddef2 cd : acdmean cd
-        ]
+      ( "proprules",
+        "Rule",
+        "Pattern",
+        Set.fromList [],
+        [] -- TODO
       ),
       ( "FormalAmpersand.language",
         "FormalAmpersand.Markup",
@@ -1738,13 +1734,11 @@ tmpNewTransformerDefsFA fSpec =
             Just popatom <- [originToPopAtom prp]
         ]
       ),
-      ( "FormalAmpersand.explRefIds",
-        "FormalAmpersand.Purpose",
-        "FormalAmpersand.Text",
-        [ (dirtyId' prp, PopAlphaNumeric txt)
-          | prp :: Purpose <- instanceList fSpec,
-            txt <- explRefIds prp
-        ]
+      ( "valid",
+        "Concept",
+        "Context",
+        Set.fromList [],
+        [] -- TODO
       ),
       ( "FormalAmpersand.decMean",
         "FormalAmpersand.Relation",
@@ -1754,23 +1748,10 @@ tmpNewTransformerDefsFA fSpec =
             mean <- decMean rel
         ]
       ),
-      ( "FormalAmpersand.showADL",
-        "FormalAmpersand.PairView",
-        "FormalAmpersand.ShowADL",
-        [ (dirtyId' pv, PopAlphaNumeric (showA pv))
-          | pv :: PairView Expression <- instanceList fSpec
-        ]
+      ( "valid",
+        "Rule",
+        "Context",
+        Set.fromList [],
+        [] -- TODO
       )
     ]
-
-originToPopAtom :: (Traced a) => a -> Maybe PopAtom
-originToPopAtom x = case origin x of
-  OriginUnknown -> Nothing
-  Origin txt -> Just (PopAlphaNumeric txt)
-  PropertyRule {} -> standard
-  FileLoc {} -> standard
-  XLSXLoc {} -> standard
-  MeatGrinder -> Nothing
-  OriginAtlas -> Nothing
-  where
-    standard = Just . PopAlphaNumeric . tshow . origin $ x
