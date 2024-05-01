@@ -30,7 +30,10 @@ PATTERN "Static Interface Structure"
     MEANING "The position in the file (filename, line- and column number)."
     RELATION ifcPurpose[Interface*Purpose] [UNI]
     MEANING "The purpose of each interface is being registered."
-
+    RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
+    MEANING "This is the syntactic link between the Interface and its ObjectDef."
+    RELATION isAPI[Interface*Interface] [PROP]
+    MEANING "This property states that an interface is meant as API (machine-2-machine)"
     RELATION label[FieldDef*FieldName] [UNI,TOT]
     MEANING "Every field definition has a label."
     REPRESENT FieldName TYPE ALPHANUMERIC
@@ -42,6 +45,18 @@ PATTERN "Static Interface Structure"
     MEANING "If a relation is used in an term, this is registered in usedIn."
     RELATION formalTerm[Rule*Term] 
     MEANING "The term, of which a rule consists, is accessible via the relation formalTerm."
+
+    RELATION isPublic[Interface*Interface] [PROP]
+        MEANING "This property states that an interface is accessible for all roles (i.e. public)"
+
+        -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
+        -- RULE "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
+    -- TODO: This should be implemented in the Atlas, see issue #1479
+    -- EQUIVALENCE ifcRoles[Interface*Role] == isPublic;V[Interface*Role]
+    ROLE ExecEngine MAINTAINS "Equivalence - InsPair ifcRoles"
+    RULE "Equivalence - InsPair ifcRoles": isPublic;V[Interface*Role] |- ifcRoles
+    VIOLATION (TXT "{EX} InsPair;ifcRoles;Interface;", SRC I, TXT ";Role;", TGT I)
+
 
     PURPOSE RELATION edit[FieldDef*Relation]
     {+ To allow editing to insert, update and delete links,

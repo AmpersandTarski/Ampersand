@@ -440,21 +440,21 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "Relation",
         Set.empty,
-        [] --TODO
+        [] --TODO future work
       ),
-      -- ( "ifcObj",
-      --   "Interface",
-      --   "ObjectDef",
-      --   Set.fromList [Uni, Tot],
-      --   [ (dirtyId ifc, dirtyId (ifcObj ifc))
-      --     | ifc :: Interface <- instanceList fSpec
-      --   ]
-      -- ),
+      ( "ifcObj",
+        "Interface",
+        "ObjectDef",
+        Set.fromList [Uni, Tot, Inj],
+        [ (dirtyId ifc, dirtyId (ifcObj ifc))
+          | ifc :: Interface <- instanceList fSpec
+        ]
+      ),
       ( "ifcOutputs",
         "Interface",
         "Relation",
         Set.empty,
-        [] --TODO
+        [] --TODO future work
       ),
       ( "ifcPos",
         "Interface",
@@ -483,25 +483,24 @@ transformersFormalAmpersand fSpec =
             rol <- ifcRoles ifc
         ]
       ),
-      -- ( "isAPI",
-      --   "Interface",
-      --   "Interface",
-      --   Set.fromList [Asy, Sym],
-      --   [ (dirtyId ifc, dirtyId ifc)
-      --     | ifc :: Interface <- instanceList fSpec,
-      --       ifcIsAPI ifc
-      --   ]
-      -- ),
-      -- -- the following transformer can be calculated by the Exec Engine. So it can be removed here if so desired.
-      -- ( "isPublic",
-      --   "Interface",
-      --   "Interface",
-      --   Set.fromList [Asy, Sym],
-      --   [ (dirtyId ifc, dirtyId ifc)
-      --     | ifc :: Interface <- instanceList fSpec,
-      --       null (ifcRoles ifc)
-      --   ]
-      -- ),
+      ( "isAPI",
+        "Interface",
+        "Interface",
+        Set.fromList [Asy, Sym],
+        [ (dirtyId ifc, dirtyId ifc)
+          | ifc :: Interface <- instanceList fSpec,
+            ifcIsAPI ifc
+        ]
+      ),
+      ( "isPublic",
+        "Interface",
+        "Interface",
+        Set.fromList [Asy, Sym],
+        [ (dirtyId ifc, dirtyId ifc)
+          | ifc :: Interface <- instanceList fSpec,
+            null (ifcRoles ifc)
+        ]
+      ),
       ( "isa",
         "Concept",
         "Concept",
@@ -578,24 +577,6 @@ transformersFormalAmpersand fSpec =
         Set.empty,
         [] --TODO
       ),
-      -- ( "proprules",
-      --   "PropertyRule",
-      --   "Context",
-      --   Set.empty,
-      --   [ (dirtyId rul, dirtyId ctx)
-      --     | ctx :: A_Context <- instanceList fSpec,
-      --       rul <- Set.elems $ proprules ctx
-      --   ]
-      -- ),
-      -- ( "proprules",
-      --   "PropertyRule",
-      --   "Pattern",
-      --   Set.empty,
-      --   [ (dirtyId rul, dirtyId pat)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       rul <- Set.elems $ proprules pat
-      --   ]
-      -- ),
       ( "propertyRule",
         "Relation",
         "PropertyRule",
@@ -854,15 +835,6 @@ transformersFormalAmpersand fSpec =
       --   [ (dirtyId conj, dirtyId rul)
       --     | conj :: Conjunct <- instanceList fSpec,
       --       rul <- NE.toList $ rc_orgRules conj
-      --   ]
-      -- ),
-      -- ( "relsDefdIn",
-      --   "Pattern",
-      --   "Relation",
-      --   Set.empty,
-      --   [ (dirtyId pat, dirtyId rel)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       rel <- Set.elems $ relsDefdIn pat
       --   ]
       -- ),
       ( "second",
@@ -1139,7 +1111,7 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "Rule",
         Set.empty,
-        [] --TODO
+        [] --TODO future work
       )
     ]
     <> tmpNewTransformerDefsFA fSpec
@@ -1630,33 +1602,9 @@ tmpNewTransformerDefsFA fSpec =
         Set.fromList [],
         [] --TODO
       ),
-      ( "consumer",
-        "Instance",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "consumes",
-        "Instance",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
-      ),
       ( "context",
         "Rule",
         "Context",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "declaredIn",
-        "Definition",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "definition",
-        "Entity",
-        "Definition",
         Set.fromList [],
         [] --TODO
       ),
@@ -1664,41 +1612,11 @@ tmpNewTransformerDefsFA fSpec =
         "FieldDef",
         "Relation",
         Set.fromList [],
-        [] --TODO
+        [] --TODO Future work
       ),
       ( "editFlp",
         "FieldDef",
         "Relation",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "excluding",
-        "Instance",
-        "Definition",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "existsIn",
-        "Entity",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "exposes",
-        "Instance",
-        "ExternalEntity",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "fromEntity",
-        "ExternalEntity",
-        "Entity",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "fromInstance",
-        "ExternalEntity",
-        "Instance",
         Set.fromList [],
         [] --TODO
       ),
@@ -1712,37 +1630,25 @@ tmpNewTransformerDefsFA fSpec =
         "Interface",
         "Quad",
         Set.fromList [],
-        [] --TODO
-      ),
-      ( "including",
-        "Instance",
-        "Definition",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "instantiatesAs",
-        "Instance",
-        "String",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "instantiates",
-        "Pattern",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
+        [] --TODO future work
       ),
       ( "interfaces",
         "Context",
         "Interface",
-        Set.fromList [],
-        [] --TODO
+        Set.fromList [Inj],
+        [ (dirtyId ctx, dirtyId ifc)
+          | ctx :: A_Context <- instanceList fSpec,
+            ifc :: Interface <- instanceList fSpec
+        ]
       ),
       ( "interfaces",
         "Role",
         "Interface",
         Set.fromList [],
-        [] --TODO
+        [ (dirtyId rol, dirtyId ifc)
+          | ifc :: Interface <- instanceList fSpec,
+            rol <- ifcRoles ifc
+        ]
       ),
       ( "isaCopy",
         "Concept",
@@ -1786,18 +1692,6 @@ tmpNewTransformerDefsFA fSpec =
         Set.fromList [],
         [] --TODO
       ),
-      ( "locator",
-        "Definition",
-        "Locator",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "name",
-        "Entity",
-        "String",
-        Set.fromList [],
-        [] --TODO
-      ),
       ( "originatesFrom",
         "Conjunct",
         "Rule",
@@ -1808,19 +1702,10 @@ tmpNewTransformerDefsFA fSpec =
         "Pattern",
         "Rule",
         Set.fromList [],
-        [] --TODO
-      ),
-      ( "proprules",
-        "Rule",
-        "Context",
-        Set.fromList [],
-        [] --TODO
-      ),
-      ( "proprules",
-        "Rule",
-        "Pattern",
-        Set.fromList [],
-        [] --TODO
+        [ (dirtyId pat, dirtyId rul)
+          | pat :: Pattern <- instanceList fSpec,
+            rul <- Set.toList (ptrls pat)
+        ]
       ),
       ( "result",
         "CombineStrings",
@@ -1834,34 +1719,28 @@ tmpNewTransformerDefsFA fSpec =
         Set.fromList [],
         [] --TODO
       ),
-      ( "type",
-        "Entity",
-        "SyntacticCategory",
-        Set.fromList [],
-        [] --TODO
-      ),
       ( "uses",
         "Context",
         "Pattern",
         Set.fromList [],
-        [] --TODO
+        [] --TODO Future work
       ),
       ( "valid",
         "Concept",
         "Context",
         Set.fromList [],
-        [] --TODO
+        [] --TODO Future work
       ),
       ( "valid",
         "Relation",
         "Context",
         Set.fromList [],
-        [] --TODO
+        [] --TODO Future work
       ),
       ( "valid",
         "Rule",
         "Context",
         Set.fromList [],
-        [] --TODO
+        [] --TODO Future work
       )
     ]
