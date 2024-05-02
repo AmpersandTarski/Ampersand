@@ -1,5 +1,5 @@
 {
-  "name": "DevContainer for Ampersand",
+  "name": "Ampersand 4 devcontainer ",
   // "remoteUser": "root",
   "runArgs": [],
   "build": {

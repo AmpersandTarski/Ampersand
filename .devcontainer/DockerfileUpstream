@@ -16,21 +16,22 @@ ENV USERNAME=${USERNAME} \
 RUN \
     apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    curl \
-    libnuma-dev \
-    zlib1g-dev \
-    libgmp-dev \
-    libgmp10 \
-    git \
-    wget \
-    lsb-release \
-    software-properties-common \
-    gnupg2 \
     apt-transport-https \
-    gcc \
     autoconf \
     automake \
     build-essential \
+    curl \
+    gcc \
+    git \
+    gnupg2 \
+    graphviz \
+    libgmp-dev \
+    libgmp10 \
+    libnuma-dev \
+    lsb-release \
+    software-properties-common \
+    wget \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid $USER_GID $USERNAME && \
