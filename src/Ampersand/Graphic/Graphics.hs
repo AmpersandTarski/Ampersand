@@ -61,11 +61,13 @@ instance Named PictureTyp where -- for displaying a fatal error
     where
       mkName' :: Text -> Name
       mkName' x =
-        withNameSpace nameSpaceFormalAmpersand . mkName ContextName . (:| []) $
-          ( case toNamePart x of
-              Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-              Just np -> np
-          )
+        withNameSpace nameSpaceFormalAmpersand
+          . mkName ContextName
+          . (:| [])
+          $ ( case toNamePart x of
+                Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+                Just np -> np
+            )
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
@@ -169,8 +171,8 @@ makePicture env fSpec pr =
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
 --   File names are urlEncoded to cater for the entire alphabet.
 pictureFileName :: PictureTyp -> FilePath
-pictureFileName pr = toBaseFileName $
-  case pr of
+pictureFileName pr = toBaseFileName
+  $ case pr of
     PTClassDiagram -> "Classification"
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
     PTTechnicalDM -> "TechnicalDataModel"
@@ -255,7 +257,7 @@ writePicture pict = do
   liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
   writeDot imagePathRelativeToCurrentDir Canon -- To obtain the Graphviz source code of the images
   --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
-  writeDot imagePathRelativeToCurrentDir Png --handy format to include in github comments/issues
+  writeDot imagePathRelativeToCurrentDir Png -- handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file
   where
@@ -268,7 +270,7 @@ writePicture pict = do
     writeDotPostProcess ::
       (HasBlackWhite env, HasLogFunc env) =>
       FilePath ->
-      Maybe (FilePath -> RIO env ()) -> --Optional postprocessor
+      Maybe (FilePath -> RIO env ()) -> -- Optional postprocessor
       GraphvizOutput ->
       RIO env ()
     writeDotPostProcess fp postProcess gvOutput =
@@ -278,8 +280,9 @@ writePicture pict = do
         let dotSource = mkDotGraph env pict
         --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
         path <-
-          liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $
-            dropExtension fp
+          liftIO
+            . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
+            $ dropExtension fp
         absPath <- liftIO . makeAbsolute $ path
         logInfo $ display (T.pack absPath) <> " written."
         case postProcess of
@@ -394,9 +397,9 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
           }
     }
   where
-    nodes :: HasDotParts a => a -> [DotNode Name]
+    nodes :: (HasDotParts a) => a -> [DotNode Name]
     nodes = dotNodes cs
-    edges :: HasDotParts a => a -> [DotEdge Name]
+    edges :: (HasDotParts a) => a -> [DotEdge Name]
     edges = dotEdges cs
 
 class HasDotParts a where
@@ -407,11 +410,12 @@ baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
   case lookup c (zip (allCpts x) [(1 :: Int) ..]) of
     Just i ->
-      mkName ConceptName . (:| []) $
-        ( case toNamePart $ "cpt_" <> tshow i of
-            Nothing -> fatal $ "Not a valid NamePart: " <> "cpt_" <> tshow i
-            Just np -> np
-        )
+      mkName ConceptName
+        . (:| [])
+        $ ( case toNamePart $ "cpt_" <> tshow i of
+              Nothing -> fatal $ "Not a valid NamePart: " <> "cpt_" <> tshow i
+              Just np -> np
+          )
     _ -> fatal ("element " <> fullName c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
@@ -434,45 +438,51 @@ instance HasDotParts A_Concept where
 instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
-      [ DotNode
-          { nodeID = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
-            nodeAttributes =
-              [ Color [WC (X11Color Transparent) Nothing],
-                Shape PlainText,
-                Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  fullName rel :
-                  case Set.toList . properties $ rel of
-                    [] -> []
-                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-              ]
-          }
-      ]
+        [ DotNode
+            { nodeID = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+              nodeAttributes =
+                [ Color [WC (X11Color Transparent) Nothing],
+                  Shape PlainText,
+                  Label
+                    . StrLabel
+                    . TL.fromStrict
+                    . T.intercalate "\n"
+                    $ fullName rel
+                    : case Set.toList . properties $ rel of
+                      [] -> []
+                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                ]
+            }
+        ]
     | otherwise = []
   dotEdges x rel
     | isEndo rel =
-      [ DotEdge
-          { fromNode = baseNodeId x . source $ rel,
-            toNode = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
-            edgeAttributes =
-              [ Dir NoDir,
-                edgeLenFactor 0.4,
-                Label . StrLabel . fromString $ ""
-              ]
-          }
-      ]
+        [ DotEdge
+            { fromNode = baseNodeId x . source $ rel,
+              toNode = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+              edgeAttributes =
+                [ Dir NoDir,
+                  edgeLenFactor 0.4,
+                  Label . StrLabel . fromString $ ""
+                ]
+            }
+        ]
     | otherwise =
-      [ DotEdge
-          { fromNode = baseNodeId x . source $ rel,
-            toNode = baseNodeId x . target $ rel,
-            edgeAttributes =
-              [ Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  fullName rel :
-                  case Set.toList . properties $ rel of
-                    [] -> []
-                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-              ]
-          }
-      ]
+        [ DotEdge
+            { fromNode = baseNodeId x . source $ rel,
+              toNode = baseNodeId x . target $ rel,
+              edgeAttributes =
+                [ Label
+                    . StrLabel
+                    . TL.fromStrict
+                    . T.intercalate "\n"
+                    $ fullName rel
+                    : case Set.toList . properties $ rel of
+                      [] -> []
+                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                ]
+            }
+        ]
 
 instance HasDotParts (A_Concept, A_Concept) where
   dotNodes _ _ = []

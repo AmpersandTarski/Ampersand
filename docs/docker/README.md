@@ -7,7 +7,7 @@ description: >-
 
 # Ampersand and [Docker](https://docs.docker.com/get-started/overview/#images)
 Ampersand uses the following container images:
-1. **haskell:8.10.7(https://hub.docker.com/r/haskell:8.10.7)**  
+1. **haskell:9.6.4(https://hub.docker.com/r/haskell:9.6.4)**  
    This image features the Haskell compiler, which is used to compile the Ampersand compiler.
    It is used by ~/git/Ampersand/Dockerfile.
 2. **[debian:bullseye](https://hub.docker.com/_/debian)**  

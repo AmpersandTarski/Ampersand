@@ -11,4 +11,4 @@ umlOptsParser :: Parser UmlOpts
 umlOptsParser =
   UmlOpts
     <$> fSpecGenOptsParser False
-      <*> outputLanguageP
+    <*> outputLanguageP

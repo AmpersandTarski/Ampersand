@@ -31,7 +31,7 @@ module Options.Applicative.Builder.Extra
   )
 where
 
---import Path hiding ((</>))
+-- import Path hiding ((</>))
 import Ampersand.Basics
 import Data.List (isPrefixOf)
 import Data.Monoid hiding ((<>))
@@ -52,8 +52,8 @@ boolFlags ::
   Mod FlagFields Bool ->
   Parser Bool
 boolFlags defaultValue name' helpSuffix =
-  enableDisableFlags defaultValue True False name' $
-    concat
+  enableDisableFlags defaultValue True False name'
+    $ concat
       [ helpSuffix,
         " (default: ",
         if defaultValue then "enabled" else "disabled",
@@ -90,7 +90,8 @@ firstBoolFlagsTrue name' helpSuffix =
     (FirstTrue (Just True))
     (FirstTrue (Just False))
     name'
-    $ helpSuffix ++ " (default: enabled)"
+    $ helpSuffix
+    ++ " (default: enabled)"
 
 -- | Flag with a Semigroup instance and a default of False
 firstBoolFlagsFalse :: String -> String -> Mod FlagFields FirstFalse -> Parser FirstFalse
@@ -100,7 +101,8 @@ firstBoolFlagsFalse name' helpSuffix =
     (FirstFalse (Just True))
     (FirstFalse (Just False))
     name'
-    $ helpSuffix ++ " (default: disabled)"
+    $ helpSuffix
+    ++ " (default: disabled)"
 
 -- | Enable/disable flags for any type.
 enableDisableFlags ::
@@ -198,35 +200,35 @@ textArgument :: Mod ArgumentFields Text -> Parser Text
 textArgument = argument (T.pack <$> readerAsk)
 
 -- | Like 'optional', but returning a 'First'.
-optionalFirst :: Alternative f => f a -> f (First a)
+optionalFirst :: (Alternative f) => f a -> f (First a)
 optionalFirst = fmap First . optional
 
 -- | Like 'optional', but returning a 'FirstTrue'.
-optionalFirstTrue :: Alternative f => f Bool -> f FirstTrue
+optionalFirstTrue :: (Alternative f) => f Bool -> f FirstTrue
 optionalFirstTrue = fmap FirstTrue . optional
 
 -- | Like 'optional', but returning a 'FirstFalse'.
-optionalFirstFalse :: Alternative f => f Bool -> f FirstFalse
+optionalFirstFalse :: (Alternative f) => f Bool -> f FirstFalse
 optionalFirstFalse = fmap FirstFalse . optional
 
---absFileOption :: Mod OptionFields (Path Abs File) -> Parser (Path Abs File)
---absFileOption mods = option (eitherReader' parseAbsFile) $
+-- absFileOption :: Mod OptionFields (Path Abs File) -> Parser (Path Abs File)
+-- absFileOption mods = option (eitherReader' parseAbsFile) $
 --  completer (pathCompleterWith defaultPathCompleterOpts { pcoRelative = False }) <> mods
 
---relFileOption :: Mod OptionFields (Path Rel File) -> Parser (Path Rel File)
---relFileOption mods = option (eitherReader' parseRelFile) $
+-- relFileOption :: Mod OptionFields (Path Rel File) -> Parser (Path Rel File)
+-- relFileOption mods = option (eitherReader' parseRelFile) $
 --  completer (pathCompleterWith defaultPathCompleterOpts { pcoAbsolute = False }) <> mods
 
---absDirOption :: Mod OptionFields (Path Abs Dir) -> Parser (Path Abs Dir)
---absDirOption mods = option (eitherReader' parseAbsDir) $
+-- absDirOption :: Mod OptionFields (Path Abs Dir) -> Parser (Path Abs Dir)
+-- absDirOption mods = option (eitherReader' parseAbsDir) $
 --  completer (pathCompleterWith defaultPathCompleterOpts { pcoRelative = False, pcoFileFilter = const False }) <> mods
 
---relDirOption :: Mod OptionFields (Path Rel Dir) -> Parser (Path Rel Dir)
---relDirOption mods = option (eitherReader' parseRelDir) $
+-- relDirOption :: Mod OptionFields (Path Rel Dir) -> Parser (Path Rel Dir)
+-- relDirOption mods = option (eitherReader' parseRelDir) $
 --  completer (pathCompleterWith defaultPathCompleterOpts { pcoAbsolute = False, pcoFileFilter = const False }) <> mods
 
 -- | Like 'eitherReader', but accepting any @'Show' e@ on the 'Left'.
-eitherReader' :: Show e => (String -> Either e a) -> ReadM a
+eitherReader' :: (Show e) => (String -> Either e a) -> ReadM a
 eitherReader' f = eitherReader (mapLeft show . f)
 
 data PathCompleterOpts = PathCompleterOpts
@@ -277,8 +279,9 @@ pathCompleterWith PathCompleterOpts {..} = mkCompleter $ \inputRaw -> do
       | otherwise -> return []
     Just searchDir -> do
       entries <- getDirectoryContents searchDir `catch` \(_ :: IOException) -> return []
-      fmap catMaybes $
-        forM entries $ \entry ->
+      fmap catMaybes
+        $ forM entries
+        $ \entry ->
           -- Skip . and .. unless user is typing . or ..
           if entry `elem` ["..", "."] && searchPrefix `notElem` ["..", "."]
             then return Nothing

@@ -72,7 +72,7 @@ ampersandDefault = defaultOptions {AT.fieldLabelModifier = alterLabel}
 
 -- | Replaces all instances of a value in a list by another value.
 replace ::
-  Eq a =>
+  (Eq a) =>
   -- | Value to look for
   a ->
   -- | Value to replace it with

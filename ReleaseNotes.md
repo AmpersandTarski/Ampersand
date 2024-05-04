@@ -1,5 +1,10 @@
 ﻿# Release notes of Ampersand
 
+## v5.1.0 (29 april 2024)
+
+- Upgrade development toolstack to ghc 9.6.4 This involved upgrades of several dependencies. 
+- We discontinue support for Windows. This is due to the upgrade of xlsx (used for the .xlsx reader/writer), which now uses hexpat. We see no longer value in supporting windows, because of the Docker support we have.
+
 ## v5.0.2 (21 february 2024)
 - Eliminated warnings and hints in CI/CD and in Haskell code. Doing some tests for a [strange issue with stack](https://github.com/commercialhaskell/stack/issues/6477)
 

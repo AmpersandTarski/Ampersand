@@ -11,11 +11,12 @@ populationOptsParser :: Parser PopulationOpts
 populationOptsParser =
   PopulationOpts
     <$> fSpecGenOptsParser False
-      <*> outputFormatP
+    <*> outputFormatP
 
 outputFormatP :: Parser PopulationOutputFormat
 outputFormatP =
-  toFormat . T.pack
+  toFormat
+    . T.pack
     <$> strOption
       ( long "output-format"
           <> metavar "FORMAT"
@@ -35,16 +36,16 @@ outputFormatP =
       -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
       --        See https://hackage.haskell.org/package/optparse-applicative
       [] ->
-        fatal $
-          T.unlines
+        fatal
+          $ T.unlines
             [ "No matching recipe found. Possible recipes are:",
               "  " <> T.intercalate ", " (map tshow allformats),
               "  You specified: `" <> s <> "`"
             ]
       [f] -> f
       xs ->
-        fatal $
-          T.unlines
+        fatal
+          $ T.unlines
             [ "Ambiguous recipe specified. Possible matches are:",
               "  " <> T.intercalate ", " (map tshow xs)
             ]

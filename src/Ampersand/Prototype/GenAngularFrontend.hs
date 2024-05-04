@@ -73,28 +73,28 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . T.lines
           . renderTemplate Nothing template
           $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
-            . setAttribute "isSessionInterface" (isSessionInterface interf)
-            . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcName" (ifcName interf)
-            . setAttribute "ifcNamePascal" (ifcNamePascal interf)
-            . setAttribute "ifcNameKebab" (ifcNameKebab interf)
-            . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
-            . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-            . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
-            . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
-            . setAttribute "source" (idWithoutType' . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType' . target . ifcExp $ interf)
-            . setAttribute "crudC" (objCrudC (feiObj interf))
-            . setAttribute "crudR" (objCrudR (feiObj interf))
-            . setAttribute "crudU" (objCrudU (feiObj interf))
-            . setAttribute "crudD" (objCrudD (feiObj interf))
-            . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
-            . setAttribute "contents" lns
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
-            . setAttribute "templateFilePath" templateFilePath
-            . setAttribute "targetFilePath" targetFilePath
+          . setAttribute "isSessionInterface" (isSessionInterface interf)
+          . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "ampersandVersionStr" (longVersion appVersion)
+          . setAttribute "ifcName" (ifcName interf)
+          . setAttribute "ifcNamePascal" (ifcNamePascal interf)
+          . setAttribute "ifcNameKebab" (ifcNameKebab interf)
+          . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
+          . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
+          . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
+          . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
+          . setAttribute "source" (idWithoutType' . source . ifcExp $ interf)
+          . setAttribute "target" (idWithoutType' . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC (feiObj interf))
+          . setAttribute "crudR" (objCrudR (feiObj interf))
+          . setAttribute "crudU" (objCrudU (feiObj interf))
+          . setAttribute "crudD" (objCrudD (feiObj interf))
+          . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
+          . setAttribute "contents" lns
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
+          . setAttribute "templateFilePath" templateFilePath
+          . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
 genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FESpec -> FilePath -> FilePath -> RIO env ()
@@ -104,18 +104,18 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
   template <- readTemplate templateFilePath
   mapM_ (logDebug . display) (showTemplate template)
   let contents =
-        renderTemplate Nothing template $
-          setAttribute "contextName" (fsName fSpec)
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcs" (interfaces feSpec) -- all interfaces
-            . setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
-            . setAttribute "apis" (filter isApi $ interfaces feSpec) -- only the interfaces that have API (no UI)
-            . setAttribute "concepts" (concepts feSpec)
-            . setAttribute "views" (views feSpec)
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
-            . setAttribute "templateFilePath" templateFilePath
-            . setAttribute "targetFilePath" targetFilePath
+        renderTemplate Nothing template
+          $ setAttribute "contextName" (fsName fSpec)
+          . setAttribute "ampersandVersionStr" (longVersion appVersion)
+          . setAttribute "ifcs" (interfaces feSpec) -- all interfaces
+          . setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
+          . setAttribute "apis" (filter isApi $ interfaces feSpec) -- only the interfaces that have API (no UI)
+          . setAttribute "concepts" (concepts feSpec)
+          . setAttribute "views" (views feSpec)
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
+          . setAttribute "templateFilePath" templateFilePath
+          . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
 objectAttributes :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
@@ -181,7 +181,8 @@ genHTMLView fSpec depth obj =
           let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
           template <- readTemplate templateFilename
 
-          return . T.intercalate eol
+          return
+            . T.intercalate eol
             . T.lines
             . renderTemplate Nothing template
             $ objectAttributes obj (logLevel runner)
@@ -197,8 +198,8 @@ genHTMLView fSpec depth obj =
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ objectAttributes obj (logLevel runner)
-                . setAttribute "isRoot" (depth == 0)
-                . setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "<span>" <> objTxt obj <> "</span>"
   where
     getTemplateForObject ::
@@ -207,7 +208,7 @@ genHTMLView fSpec depth obj =
     getTemplateForObject
       | relIsProp obj && (not . exprIsIdent) obj -- special 'checkbox-like' template for propery relations
         =
-        return $ "View-PROPERTY" <> ".html"
+          return $ "View-PROPERTY" <> ".html"
       | otherwise = getTemplateForConcept . target . objExp $ obj
     getTemplateForConcept ::
       (HasDirPrototype env) =>
@@ -215,8 +216,8 @@ genHTMLView fSpec depth obj =
       RIO env FilePath
     getTemplateForConcept cpt = do
       exists <- doesTemplateExist cptfn
-      return $
-        if exists
+      return
+        $ if exists
           then cptfn
           else "Atomic-" <> show ttp <.> "html"
       where
@@ -237,8 +238,8 @@ indentEOL :: Text -> [Text]
 indentEOL x = case Partial.splitOn eol x of
   [] -> []
   (h : tl) ->
-    h :
-    map (prefix <>) tl
+    h
+      : map (prefix <>) tl
   where
     prefix = T.takeWhile (== ' ') x
 
@@ -270,8 +271,8 @@ genTypescriptInterface fSpec depth obj =
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) boxTemplate
               $ objectAttributes obj (logLevel runner)
-                . setAttribute "isRoot" (depth == 0)
-                . setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "'" <> objTxt obj <> "'"
   where
     tgtCpt = target . objExp $ obj
@@ -287,14 +288,15 @@ genTypescriptInterface fSpec depth obj =
       | exprIsUni obj = typescriptTypeForConcept tgtCpt -- for univalent expressions use the Typescript type for target concept
       | cptTType fSpec tgtCpt == Object -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
         =
-        "Array<\n"
-          <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
-          <> "\n>"
+          "Array<\n"
+            <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
+            <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
     typescriptTypeForConcept :: A_Concept -> Text
     typescriptTypeForConcept cpt = case cptTType fSpec cpt of
       Object ->
-        conceptIdWithImportAlias cpt <> " & {\n"
+        conceptIdWithImportAlias cpt
+          <> " & {\n"
           <> prefixAllLines "  " ("_view_: " <> addViewDefinition <> ";")
           <> "\n}"
       _ -> conceptIdWithImportAlias cpt

@@ -85,8 +85,10 @@ rulefromProp prp rel =
           Markup
             { amLang = lang,
               amPandoc =
-                string2Blocks ReST $
-                  showDcl <> " is " <> propFullName False lang prop
+                string2Blocks ReST
+                  $ showDcl
+                  <> " is "
+                  <> propFullName False lang prop
             }
 
     violMsg prop = [msg lang | lang <- [English, Dutch]]
@@ -97,8 +99,9 @@ rulefromProp prp rel =
           Markup
             { amLang = lang,
               amPandoc =
-                string2Blocks ReST . text1ToText $
-                  case lang of
+                string2Blocks ReST
+                  . text1ToText
+                  $ case lang of
                     English ->
                       case prop of
                         Sym -> explByFullName lang
@@ -138,8 +141,8 @@ propFullName isAdjective lang prop =
         Sur -> "surjective"
         Inj -> "injective"
         Tot -> "total"
-    Dutch -> (if isAdjective then snd else fst) $
-      case prop of
+    Dutch -> (if isAdjective then snd else fst)
+      $ case prop of
         Sym -> ("symmetrisch", "symmetrische")
         Asy -> ("antisymmetrisch", "antisymmetrische")
         Trn -> ("transitief", "transitieve")

@@ -57,11 +57,12 @@ initialState = do
             map T.unpack
               . filter
                 ( \fn ->
-                    T.length fn > 0 --discard empty lines
+                    T.length fn
+                      > 0 -- discard empty lines
                       && not ("#" `T.isPrefixOf` fn) -- line commented out yaml style
                       && not ("--" `T.isPrefixOf` fn) -- line commented out haskellish style
                 )
-              . L.nub --discard doubles
+              . L.nub -- discard doubles
               . T.lines
               $ content
       (ls, loadedFiles) <- do
@@ -70,17 +71,18 @@ initialState = do
           ( L.nub . concatMap fst $ xs,
             L.nub . concatMap snd $ xs
           )
-      return $
-        Right
+      return
+        $ Right
           DaemonState
             { loads = ls,
               loadResults = L.nub $ dotAmpersand : loadedFiles
             }
     Left err ->
-      return . Left $
-        [ tshow err,
-          "File not found: " <> T.pack dotAmpersand,
-          "  Your workspace should contain a file called .ampersand. However,",
-          "  it could not be found. Please provide that file, containing the ",
-          "  name of the top file(s) of your Ampersand project. One name per line."
-        ]
+      return
+        . Left
+        $ [ tshow err,
+            "File not found: " <> T.pack dotAmpersand,
+            "  Your workspace should contain a file called .ampersand. However,",
+            "  it could not be found. Please provide that file, containing the ",
+            "  name of the top file(s) of your Ampersand project. One name per line."
+          ]

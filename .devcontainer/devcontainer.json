@@ -1,5 +1,5 @@
 {
-  "name": "DevContainer for Ampersand",
+  "name": "Ampersand 5 devcontainer",
   // "remoteUser": "root",
   "runArgs": [],
   "build": {
@@ -24,7 +24,8 @@
         "mhutchie.git-graph",
         "editorconfig.editorconfig",
         // Because of bug (see https://github.com/Microsoft/vscode/issues/45997):
-        "bdsoftware.format-on-auto-save"
+        "bdsoftware.format-on-auto-save",
+        "rcook.ghci-helper"
       ],
       "settings": {
         "editor.formatonsave": true,
