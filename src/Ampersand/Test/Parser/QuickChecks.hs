@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
---to avoid warning for trace
+-- to avoid warning for trace
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
 module Ampersand.Test.Parser.QuickChecks
@@ -76,9 +76,10 @@ prop_parserRoundtrip pCtx =
   case roundtrip pCtx of
     Checked _ _ -> True
     Errors err ->
-      exitWith . SomeTestsFailed $
-        T.lines (tshow err)
-          <> T.lines (prettyCtx pCtx)
+      exitWith
+        . SomeTestsFailed
+        $ T.lines (tshow err)
+        <> T.lines (prettyCtx pCtx)
 
 roundtrip :: P_Context -> Guarded P_Context
 roundtrip pCtx =
@@ -91,11 +92,16 @@ roundtrip pCtx =
       (prettyCtx pCtx)
 
 prettyCtx :: P_Context -> Text
-prettyCtx =
-  T.unlines
-    . zipWith (curry includeLineNr) [1 ..]
-    . T.lines
-    . prettyPrint
+prettyCtx ctx =
+  ( T.unlines
+      . zipWith (curry includeLineNr) [1 ..]
+      . T.lines
+      . prettyPrint
+      $ ctx
+  )
+    <> "\n\n\n"
+    <> tshow ctx
+    <> "\n\n"
   where
     includeLineNr :: (Int, Text) -> Text
     includeLineNr (nr, str) = "{-" <> T.replicate (4 - T.length (tshow nr)) "0" <> tshow nr <> "-} " <> str
