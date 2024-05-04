@@ -64,7 +64,7 @@ jobs:
 
   add-release-artefacts:
     name: Add artefacts to release
-    needs: [build-and-test-ubuntu, build-and-test-macOS]
+    needs: [build-without-test-ubuntu, build-without-test-macOS]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
@@ -140,8 +140,8 @@ jobs:
       #     asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
       #     asset_content_type: application/zip
 
-  build-and-test-ubuntu:
-    name: Build and test on ubuntu-latest 🏗 🧪
+  build-without-test-ubuntu:
+    name: Build without test on ubuntu-latest 🏗 🧪
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
@@ -150,7 +150,7 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: "mariadb-10.6"
-      - name: Build and test 🏗 🧪
+      - name: build without test 🏗 🧪
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
@@ -162,8 +162,8 @@ jobs:
           name: Linux-binaries
           path: /home/runner/.local/bin/*
 
-  build-and-test-macOS:
-    name: Build and test on macOS  🏗 🧪
+  build-without-test-macOS:
+    name: Build without test on macOS  🏗 🧪
     runs-on: macos-latest
     steps:
       - name: Checkout project contents 📡
@@ -172,9 +172,10 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: "mariadb-10.6"
-      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack
+      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
       - run: curl -sSL https://get.haskellstack.org/ | sh
-      - name: Build and test  🏗 🧪
+      - run: brew install php
+      - name: Build without test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
@@ -186,8 +187,8 @@ jobs:
           name: macOS-binaries
           path: /Users/runner/.local/bin/*
 
-  # build-and-test-windows:
-  #   name: Build and test on Windows 🏗 🧪
+  # build-without-test-windows:
+  #   name: build without test on Windows 🏗 🧪
   #   runs-on: windows-latest
   #   steps:
   #     - name: Checkout project contents 📡
@@ -210,10 +211,11 @@ jobs:
   #       with:
   #         php-version: "8.0"
   #         extensions: mysqli
-  #     - name: Build and test 🏗 🧪
+  #     - name: build without test 🏗 🧪
   #       uses: freckle/stack-action@v5
   #       with:
   #         stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+  #         test: false
   #     - name: Upload artifacts (Windows)
   #       uses: actions/upload-artifact@v2
   #       with:
