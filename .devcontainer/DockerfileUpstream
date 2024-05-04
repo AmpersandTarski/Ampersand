@@ -24,6 +24,7 @@ RUN \
     gcc \
     git \
     gnupg2 \
+    graphviz \
     libbz2-dev \
     libexpat1-dev \
     libgmp-dev \
