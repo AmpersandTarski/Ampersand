@@ -60,6 +60,8 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: "mariadb-10.6"
+      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack
+      - run: curl -sSL https://get.haskellstack.org/ | sh
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
