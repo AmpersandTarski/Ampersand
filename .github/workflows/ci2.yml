@@ -54,7 +54,7 @@ jobs:
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
-    runs-on: macos-latest
+    runs-on: macos-12 
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
@@ -67,7 +67,6 @@ jobs:
       # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
       - run: curl -sSL https://get.haskellstack.org/ | sh
       - run: brew install php
-      - run: brew install llvm # Need this for otherwise ghc cannot find `opt`. See https://haskell-cafe.haskell.narkive.com/WxaFromX/ghc-could-not-execute-opt
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
