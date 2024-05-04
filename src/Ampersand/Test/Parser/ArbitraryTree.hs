@@ -23,7 +23,11 @@ printable = suchThat arbitrary isValid
 
 -- | Generates a simple string of ascii characters
 safeStr :: Gen Text
-safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
+safeStr = (T.pack <$> listOf printable) `suchThat` noEsc `suchThat` noKeyword
+
+noKeyword :: Text -> Bool
+noKeyword x = x `notElem` map T.pack keywords
+
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen Text
@@ -49,8 +53,6 @@ identifier =
     firstChar = idChar True
     restChar :: Gen Char
     restChar = idChar False
-    noKeyword :: Text -> Bool
-    noKeyword x = x `notElem` map T.pack keywords
     idChar :: Bool -> Gen Char
     idChar isFirst = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar isFirst
 
