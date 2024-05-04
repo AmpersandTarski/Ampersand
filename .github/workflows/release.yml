@@ -146,8 +146,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      # - name: Use cache when available 📦
-      #   uses: freckle/stack-cache-action@main
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -157,6 +155,7 @@ jobs:
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          test: false
       - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
@@ -169,8 +168,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      # - name: Use cache when available 📦
-      #   uses: freckle/stack-cache-action@main
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -178,8 +175,9 @@ jobs:
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
-          stack-build-arguments: "--copy-bins --flag ampersand:buildAll --verbose"
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
+          test: false
       - name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:

@@ -23,10 +23,8 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3.1.0
-      - name: Use cache when available 📦
-        uses: freckle/stack-cache-action@main
       - name: Build the project 🌿🌿🌿
-        uses: freckle/stack-action@v4
+        uses: freckle/stack-action@v5
         with:
           test: false
 
