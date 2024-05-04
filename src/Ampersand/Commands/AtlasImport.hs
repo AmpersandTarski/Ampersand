@@ -25,9 +25,6 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
-import Data.IntMap
-import qualified Data.IntSet as NE
-import GHC.Exts (build)
 import qualified RIO.ByteString.Lazy as B
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -152,7 +149,7 @@ instance JSON.FromJSON PCDDef where
     JSON.String s ->
       -- if string
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
-    JSON.Array arr ->
+    JSON.Array _arr ->
       -- if array
       pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
     invalid ->
@@ -315,9 +312,9 @@ instance JSON.FromJSON PMessage where
 instance JSON.FromJSON P_Markup where
   parseJSON (JSON.Object v) =
     P_Markup
-      <$> pure Nothing -- Ignore mLang
-      <*> pure Nothing -- Ignore mFormat
-      <*> v JSON..: "meaning"
+      Nothing -- Ignore mLang
+      Nothing -- Ignore mFormat
+      <$> v JSON..: "meaning"
   parseJSON invalid =
     JSON.prependFailure
       "parsing P_Markup failed, "
@@ -437,9 +434,7 @@ instance JSON.FromJSON PRef2Obj where
 parseFirstField :: JSON.Object -> T.Text -> JSON.Parser T.Text
 parseFirstField obj key = do
   texts <- obj JSON..:? key JSON..!= []
-  case listToMaybe texts of
-    Just txt -> return txt -- Als er een waarde is, geef deze terug
-    Nothing -> mzero
+  maybe mzero return (listToMaybe texts) -- Als er een waarde is, geef deze terug
 
 instance JSON.FromJSON P_NamedRel where
   parseJSON val = case val of
@@ -508,14 +503,14 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
     _ -> JSON.typeMismatch "Object" val
     where
       has :: Text -> JSON.Object -> Bool -- todo: Han  is dit een goede manier hiervoor?
-      has key obj = case JSON.fromJSON (JSON.Object obj) :: JSON.Result (Maybe Text) of
+      has _key obj = case JSON.fromJSON (JSON.Object obj) :: JSON.Result (Maybe Text) of
         JSON.Success _ -> True
         _ -> False
 
       -- buildExpr :: Text -> Text -> Maybe P_Cruds -> Maybe Text -> Maybe (P_SubIfc TermPrim) -> P_BoxItem TermPrim
       -- buildExpr nm formexp crud view sub =
       buildExpr :: Text -> Text -> Maybe P_Cruds -> Maybe Text -> P_BoxItem TermPrim
-      buildExpr nm formexp crud view =
+      buildExpr nm formexp crud _view =
         P_BxExpr
           { obj_nm = T.empty, -- todo: deze wordt niet meegegeven aan RAP
             pos = OriginAtlas,
@@ -538,8 +533,8 @@ instance JSON.FromJSON P_Cruds where -- niet in gebruik
   parseJSON :: JSON.Value -> JSON.Parser P_Cruds
   parseJSON val = case val of
     JSON.Object v ->
-      P_Cruds <$> pure OriginAtlas
-        <*> v JSON..: "crud"
+      P_Cruds OriginAtlas
+        <$> v JSON..: "crud"
     invalid ->
       JSON.prependFailure
         "parsing P_Cruds failed, "
