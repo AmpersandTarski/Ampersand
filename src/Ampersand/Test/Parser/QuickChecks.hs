@@ -92,16 +92,11 @@ roundtrip pCtx =
       (prettyCtx pCtx)
 
 prettyCtx :: P_Context -> Text
-prettyCtx ctx =
-  ( T.unlines
-      . zipWith (curry includeLineNr) [1 ..]
-      . T.lines
-      . prettyPrint
-      $ ctx
-  )
-    <> "\n\n\n"
-    <> tshow ctx
-    <> "\n\n"
+prettyCtx =
+  T.unlines
+    . zipWith (curry includeLineNr) [1 ..]
+    . T.lines
+    . prettyPrint
   where
     includeLineNr :: (Int, Text) -> Text
     includeLineNr (nr, str) = "{-" <> T.replicate (4 - T.length (tshow nr)) "0" <> tshow nr <> "-} " <> str

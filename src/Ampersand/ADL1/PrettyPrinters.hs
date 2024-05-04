@@ -52,20 +52,6 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         =
         Partial.replace needle replacement haystack
 
-quoteMeaning :: Text -> Doc
-quoteMeaning m = text "\"" <> escapeExpl m <> text "\""
-  where
-    escapeExpl = text . T.unpack . escapeCommentStart . escapeLineComment . escapeExplEnd
-    escapeCommentStart = escape "{-"
-    escapeLineComment = escape "--"
-    escapeExplEnd = escape "\""
-    escape x = replace' x (T.intersperse ' ' x)
-    replace' :: Text -> Text -> Text -> Text
-    replace' needle replacement haystack
-      | T.null needle = fatal "Empty needle."
-      | otherwise =
-        Partial.replace needle replacement haystack
-
 isId :: Text -> Bool
 isId xs =
   case T.uncons xs of
@@ -113,8 +99,8 @@ instance Pretty P_Context where
       <+\> perline ps
       <+\> perline pats
       <+\> perline rs
-      <+\> perline cs
       <+\> perlineRelations ds
+      <+\> perline cs
       <+\> perline ks
       <+\> perline rrules
       <+\> perline reprs
@@ -151,9 +137,9 @@ instance Pretty P_Pattern where
       <+> quoteConcept nm
       <+\> perline rls
       <+\> perline gns
-      <+\> perline reprs
       <+\> perline dcs
       <+\> perline rruls
+      <+\> perline reprs
       <+\> perline cds
       <+\> perline ids
       <+\> perline vds
@@ -167,8 +153,6 @@ instance Pretty P_Relation where
     text "RELATION"
       <+> (text . T.unpack) nm <~> sign
       <+> props
-      <+\> prettyhsep mean -- add meaning to relations
-      -- todo should add something for Purpose here
       <+> if null dflts
         then empty
         else
@@ -272,17 +256,13 @@ instance Pretty EnforceOperator where
     IsSameSet _ -> text ":="
 
 instance Pretty PConceptDef where
-  pretty (PConceptDef _ cpt def _mean _) -- from, the last argument, is not used in the parser
+  pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
     =
     text "CONCEPT" <+> quoteConcept cpt
-      <+> pretty def -- <+> prettyhsep mean
-      -- todo: prettyhsep mean - might be changed to PURPOSE instead of mean
-      -- todo: purpose toevoegen
+      <+> pretty def <+\> perline mean
 
 instance Pretty PCDDef where
-  pretty (PCDDefNew mean) =
-    let prettyNoMeaning (PMeaning markup) = pretty markup -- Local function to adjust printing
-     in prettyNoMeaning mean -- Use the local function for pretty printing
+  pretty (PCDDefNew mean) = pretty mean
   pretty (PCDDefLegacy def ref) = quote def <+> maybeText ("[" <> ref <> "]")
     where
       maybeText txt =
@@ -424,7 +404,7 @@ instance Pretty PRef2Obj where
     PRef2Context str -> text "CONTEXT" <+> maybeQuote str
 
 instance Pretty PMeaning where
-  pretty (PMeaning markup) = text "MEANING" <~> markup -- todo: zorgen dat hier geregeld wordt dat MEANING altijd op een nieuwe regel begint
+  pretty (PMeaning markup) = text "MEANING" <~> markup
 
 instance Pretty PMessage where
   pretty (PMessage markup) = text "MESSAGE" <~> markup
@@ -451,7 +431,7 @@ instance Pretty Lang where
 
 instance Pretty P_Markup where
   pretty (P_Markup lang format str) =
-    pretty lang <~> format <+> quoteMeaning str -- changed
+    pretty lang <~> format <+\> quotePurpose str
 
 instance Pretty PandocFormat where
   pretty = text . map toUpper . show
