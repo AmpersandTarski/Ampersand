@@ -76,14 +76,15 @@ createFspec =
           case recipe of
             Standard -> userScript
             Grind -> do
-              checkFormalAmpersandTransformers env =<< formalAmpersandScript
+              faScript <- formalAmpersandScript
+              checkFormalAmpersandTransformers env faScript
               userScr <- userScript
               userFspc <- pCtx2Fspec env userScr
               return (grind transformersFormalAmpersand userFspc)
             Prototype -> do
               userPCtx <- userScript
               pcScript <- prototypeContextScript
-              checkPrototypeContextTransformers env pcScript
+              --   checkPrototypeContextTransformers env pcScript
               let one = userPCtx `mergeContexts` pcScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
@@ -95,7 +96,7 @@ createFspec =
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
               pcScript <- prototypeContextScript
-              checkPrototypeContextTransformers env pcScript
+              --  checkPrototypeContextTransformers env pcScript
               return (one `mergeContexts` two `mergeContexts` pcScript)
     return (pCtx2Fspec env =<< pContext)
 
