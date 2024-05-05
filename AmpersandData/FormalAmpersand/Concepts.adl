@@ -10,6 +10,11 @@ PATTERN Concepts
     
     IDENT Concept : Concept(name,context[Concept*Context])
 
+    RELATION cddef2[ConceptDef*Meaning][UNI]
+    -- RULE delUnusedMeaning : I[Meaning] |- cddef2~;cddef2
+    -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
+    -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
+
     RELATION name[Relation*RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION source[Relation*Concept] [UNI,TOT]

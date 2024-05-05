@@ -1,6 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
   ( CtxError (PE),
@@ -43,6 +46,7 @@ module Ampersand.Input.ADL1.CtxError
     mkCrudWarning,
     mkBoxRowsnhWarning,
     mkCaseProblemWarning,
+    mkUnmatchedPropertiesWarning,
     uniqueLables,
     mkNoBoxItemsWarning,
     Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
@@ -71,6 +75,7 @@ import Ampersand.Input.ADL1.FilePos ()
 import Ampersand.Input.ADL1.LexerMessage
 import Data.Typeable
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Text.Parsec
 
@@ -661,6 +666,23 @@ mkCaseProblemWarning x y =
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> name x <> "` and `" <> name y <> "`."
       ]
+
+mkUnmatchedPropertiesWarning :: Origin -> Relation -> AProps -> [Warning]
+mkUnmatchedPropertiesWarning orig rel ps =
+  (notInTransformerWarning . Set.toList . Set.difference (decprps rel) $ ps)
+    <> (notInRelationWarning . Set.toList . Set.difference ps $ decprps rel)
+  where
+    notInTransformerWarning prps
+      | null prps = []
+      | otherwise = [Warning orig $ "Property mismatch for " <> showRel rel <> " : " <> tshow prps <> " " <> isOrAre prps <> " in .adl, but missing in transformer.hs"]
+    notInRelationWarning prps
+      | null prps = []
+      | otherwise = [Warning orig $ "Property mismatch for " <> showRel rel <> " : " <> tshow prps <> " " <> isOrAre prps <> " in transformer.hs, but missing in .adl"]
+    isOrAre :: [a] -> Text
+    isOrAre s = case s of
+      [] -> fatal "Empty set should not occur here"
+      [_] -> "is"
+      _ -> "are"
 
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a

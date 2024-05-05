@@ -19,14 +19,16 @@ REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 --Definitions for Rules are found in Rules.adl and documented in Rules.docadl.
 
 --[PairViews]--
-RELATION pairView[Rule*PairView] -- e.g. 
+RELATION rrviol[Rule*PairView] [UNI]-- The 'template' for violation messages
 RELATION segment[PairView*PairViewSegment] [SUR,INJ]
-RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
-RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
+RELATION sequenceNr[PairViewSegment*SequenceNumber] [UNI,TOT]
+   REPRESENT SequenceNumber TYPE INTEGER
+-- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
 RELATION text[PairViewSegment*String] [UNI] -- IFF segmentType == 'Text'
 RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
-RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
-RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary: RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+RELATION pvsExp[PairViewSegment*Term] [UNI]
 
 
 

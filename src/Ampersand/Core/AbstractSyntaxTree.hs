@@ -1249,7 +1249,7 @@ instance Eq A_Concept where
 -}
 
 instance Unique AConceptDef where
-  showUnique = tshow . name
+  showUnique = name
 
 instance Unique A_Concept where
   showUnique = tshow

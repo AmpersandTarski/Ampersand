@@ -41,8 +41,6 @@ jobs:
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
-      - name: Use cache when available 📦
-        uses: freckle/stack-cache-action@main
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -56,7 +54,7 @@ jobs:
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
-    runs-on: macos-latest
+    runs-on: macos-12 
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v3
@@ -66,6 +64,9 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: "mariadb-10.6"
+      # # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
+      # - run: curl -sSL https://get.haskellstack.org/ | sh
+      - run: brew install php
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
@@ -103,4 +104,3 @@ jobs:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
           cache-save-always: true
-          

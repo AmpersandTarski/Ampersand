@@ -683,7 +683,7 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance Hashable a => Hashable (PairView a)
 

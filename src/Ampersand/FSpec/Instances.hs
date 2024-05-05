@@ -12,6 +12,7 @@ import Ampersand.Basics hiding (first, second)
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- | Within a specific context there are all kinds of things.
@@ -98,6 +99,12 @@ instance Instances Meaning where
     (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
       `Set.union` (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
 
+instance Instances (PairView Expression) where
+  instances = pairViewInstances
+
+instance Instances (PairViewSegment Expression) where
+  instances = Set.fromList . concatMap NE.toList . fmap ppv_segs . instanceList
+
 -- Set.toList . purposeInstances
 
 -- --WARNING: Beware of loops!
@@ -114,6 +121,9 @@ meaningInstances :: FSpec -> Set.Set Meaning
 meaningInstances fSpec =
   (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
     `Set.union` (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
+
+pairViewInstances :: FSpec -> Set.Set (PairView Expression)
+pairViewInstances = Set.fromList . mapMaybe rrviol . Set.toList . ruleInstances
 
 purposeInstances :: FSpec -> Set.Set Purpose
 purposeInstances = fSexpls

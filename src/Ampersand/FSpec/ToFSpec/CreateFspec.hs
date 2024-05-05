@@ -16,11 +16,14 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Instances
 import Ampersand.FSpec.MetaModels
 import Ampersand.FSpec.ShowMeatGrinder
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
 import Ampersand.Misc.HasClasses
+import RIO.List (sortOn)
+import qualified RIO.Text as T
 
 -- | creating an FSpec is based on command-line options.
 --   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
@@ -73,12 +76,15 @@ createFspec =
           case recipe of
             Standard -> userScript
             Grind -> do
+              faScript <- formalAmpersandScript
+              checkFormalAmpersandTransformers env faScript
               userScr <- userScript
               userFspc <- pCtx2Fspec env userScr
               return (grind transformersFormalAmpersand userFspc)
             Prototype -> do
               userPCtx <- userScript
               pcScript <- prototypeContextScript
+              --   checkPrototypeContextTransformers env pcScript
               let one = userPCtx `mergeContexts` pcScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
@@ -90,5 +96,70 @@ createFspec =
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
               pcScript <- prototypeContextScript
+              --  checkPrototypeContextTransformers env pcScript
               return (one `mergeContexts` two `mergeContexts` pcScript)
     return (pCtx2Fspec env =<< pContext)
+
+-- | make sure that the relations defined in formalampersand.adl are in sync with the transformers of formal ampersand.
+checkFormalAmpersandTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkFormalAmpersandTransformers env x =
+  case pCtx2Fspec env x of
+    Errors err ->
+      fatal
+        . T.intercalate "\n  "
+        $ ["Formal Ampersand script does not compile:"]
+          <> T.lines (tshow err)
+    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+
+-- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
+checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkPrototypeContextTransformers env x =
+  case pCtx2Fspec env x of
+    Errors err ->
+      fatal
+        . T.intercalate "\n  "
+        $ ["PrototypeContext script does not compile:"]
+          <> T.lines (tshow err)
+    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+
+compareSync :: [Transformer] -> [Relation] -> Guarded ()
+compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
+  ([], []) -> addWarnings theWarnings $ pure ()
+  (ts', rs') ->
+    fatal . T.intercalate "\n  " $
+      [ "Error: There are one or more unmatched relations and transformers that are not in sync.",
+        "Please report this to the AmpersandTarski team at",
+        "https://github.com/AmpersandTarski/Ampersand/issues/new/choose",
+        ""
+      ]
+        <> (snd <$> sortOn fst errorItems)
+    where
+      errorItems =
+        [ (src <> tgt <> nm, nm <> "[" <> src <> "*" <> tgt <> "] is in transformers.hs, but not in .adl")
+          | Transformer nm src tgt _ _ <- ts'
+        ]
+          <> [ (tshow (source rel) <> tshow (target rel) <> name rel, showRel rel <> " is in " <> tshow (origin rel) <> ", but not in transformers.hs")
+               | rel <- rs'
+             ]
+  where
+    hasmatchingRel :: Transformer -> Bool
+    hasmatchingRel t = any (isMatch t) rs
+    hasmatchingTransformer :: Relation -> Bool
+    hasmatchingTransformer rel = any (`isMatch` rel) ts
+    isMatch :: Transformer -> Relation -> Bool
+    isMatch (Transformer nm src tgt _ _) rel =
+      name rel == nm
+        && name (source rel) == src
+        && name (target rel) == tgt
+    matches :: [Transformer] -> [(Transformer, Relation)]
+    matches ts' = case ts' of
+      [] -> []
+      h : tl -> (h, rel) : matches tl
+        where
+          rel = case filter (isMatch h) rs of
+            [] -> fatal "This should not be possible, because this case is caught as a fatel in `compareSync`."
+            re : _ -> re
+    theWarnings = concatMap foo (matches ts)
+      where
+        foo :: (Transformer, Relation) -> [Warning]
+        foo (Transformer _ _ _ ps _, r) = mkUnmatchedPropertiesWarning MeatGrinder r ps
