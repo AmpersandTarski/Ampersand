@@ -84,7 +84,7 @@ createFspec =
             Prototype -> do
               userPCtx <- userScript
               pcScript <- prototypeContextScript
-              --   checkPrototypeContextTransformers env pcScript
+              checkPrototypeContextTransformers env pcScript
               let one = userPCtx `mergeContexts` pcScript
               oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
               let two = grind transformersPrototypeContext oneFspec
