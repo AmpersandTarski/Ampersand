@@ -113,7 +113,7 @@ createFspec =
             pcScript <- prototypeContextScript
             one <- guardedOne
             two <- guardedTwo
-            -- checkPrototypeContextTransformers env pcScript
+            checkPrototypeContextTransformers env pcScript
             pure (one `mergeContexts` two `mergeContexts` pcScript)
     pure (pCtx2Fspec env =<< pContext)
 
