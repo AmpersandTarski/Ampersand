@@ -11,7 +11,6 @@ module Ampersand.Core.A2P_Converters
     aIdentityDef2pIdentityDef,
     aObjectDef2pObjectDef,
     aRelation2pRelation,
-    aProps2Pprops,
     aPopulation2pPopulation,
     aRule2pRule,
     aSign2pSign,

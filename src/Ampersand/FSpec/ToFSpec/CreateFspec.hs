@@ -17,7 +17,7 @@ where
 import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
-import Ampersand.Core.A2P_Converters (aProps2Pprops, aRelation2pRelation)
+import Ampersand.Core.A2P_Converters (aRelation2pRelation)
 import Ampersand.Core.ParseTree (mkPConcept)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
@@ -97,7 +97,8 @@ createFspec =
           let guardedOne = do
                 rapPCtx <- userScript
                 faScript <- formalAmpersandScript
-                return $ rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
+                pcScript <- prototypeContextScript
+                return $ rapPCtx `mergeContexts` pcScript `mergeContexts` faScript
           let oneFspec = pCtx2Fspec env =<< guardedOne -- this is done to typecheck the combination
           guardedTwo <- grindInto PrototypeContext oneFspec
           pure $ do
@@ -128,7 +129,7 @@ checkPrototypeContextTransformers env x =
         . T.intercalate "\n  "
         $ ["PrototypeContext script does not compile:"]
           <> T.lines (tshow err)
-    Checked fSpecOfx ws -> addWarnings ws $ compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+    Checked fSpecOfx ws -> addWarnings ws $ compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
@@ -179,50 +180,6 @@ instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
   name PrototypeContext = "Prototype context"
 
--- | This produces the metamodel of either
---   "FormalAmpersand" or "PrototypeContext" as defined by their transformers.
-metaModel :: MetaModel -> P_Context
-metaModel mmLabel =
-  PCtx
-    { ctx_nm = "MetaModel" <> T.pack (show mmLabel),
-      ctx_pos = [],
-      ctx_lang = Nothing,
-      ctx_markup = Nothing,
-      ctx_pats = [],
-      ctx_rs = [],
-      ctx_ds = map metarelation (transformers emptyFSpec),
-      ctx_cs = [],
-      ctx_ks = [],
-      ctx_rrules = [],
-      ctx_reprs = [],
-      ctx_vs = [],
-      ctx_gs = [],
-      ctx_ifcs = [],
-      ctx_ps = [],
-      ctx_pops = [],
-      ctx_metas = [],
-      ctx_enfs = []
-    }
-  where
-    transformers = case mmLabel of
-      FormalAmpersand -> transformersFormalAmpersand
-      PrototypeContext -> transformersPrototypeContext
-
-metarelation :: Transformer -> P_Relation
-metarelation tr =
-  P_Relation
-    { dec_nm = tRel tr,
-      dec_sign =
-        P_Sign
-          (mkPConcept (tSrc tr))
-          (mkPConcept (tTrg tr)),
-      dec_prps = aProps2Pprops $ mults tr,
-      dec_defaults = [],
-      dec_pragma = Nothing,
-      dec_Mean = [],
-      pos = MeatGrinder
-    }
-
 transformer2pop :: Transformer -> P_Population
 transformer2pop tr =
   P_RelPopu
@@ -248,7 +205,10 @@ transformer2pop tr =
 --   The result is delivered as a (Guarded) P_Context, so it can be merged with other Ampersand results.
 grindInto :: (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
 grindInto metamodel specification = do
-  fSpecOfMetaModel <- getFSpecForMetaModel metamodel
+  env <- ask
+  pContextOfMetaModel <- case metamodel of
+    FormalAmpersand -> parseFormalAmpersand
+    PrototypeContext -> parsePrototypeContext
   let pCtx = do
         let transformers =
               ( case metamodel of
@@ -256,7 +216,8 @@ grindInto metamodel specification = do
                   PrototypeContext -> transformersPrototypeContext <$> specification
               )
         filtered <- filter (not . null . tPairs) <$> transformers
-        fSpecOfMetaModel' <- fSpecOfMetaModel
+        guardedFSpecOfMetaModel <- pCtx2Fspec env <$> pContextOfMetaModel
+        fSpecOfMetaModel <- guardedFSpecOfMetaModel
         specName <- name <$> specification
         pure
           PCtx
@@ -266,11 +227,11 @@ grindInto metamodel specification = do
               ctx_markup = Nothing,
               ctx_pats = [],
               ctx_rs = [],
-              ctx_ds = aRelation2pRelation <$> instanceList fSpecOfMetaModel',
+              ctx_ds = aRelation2pRelation <$> instanceList fSpecOfMetaModel,
               ctx_cs = [],
               ctx_ks = [],
               ctx_rrules = [],
-              ctx_reprs = reprList . fcontextInfo $ fSpecOfMetaModel',
+              ctx_reprs = reprList . fcontextInfo $ fSpecOfMetaModel,
               ctx_vs = [],
               ctx_gs = [],
               ctx_ifcs = [],
@@ -280,16 +241,6 @@ grindInto metamodel specification = do
               ctx_enfs = []
             }
   return pCtx
-
-getFSpecForMetaModel :: (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (Guarded FSpec)
-getFSpecForMetaModel metamodel = do
-  env <- ask
-  pStructOfMetaModel <-
-    ( case metamodel of
-        FormalAmpersand -> parseFormalAmpersand
-        PrototypeContext -> parsePrototypeContext
-      )
-  return (pStructOfMetaModel >>= pCtx2Fspec env)
 
 pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
