@@ -9,7 +9,7 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Daemon.Types
-import Ampersand.FSpec.ToFSpec.CreateFspec
+import Ampersand.FSpec.ToFSpec.CreateFspec (pCtx2Fspec)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.Parsing
 import Ampersand.Misc.HasClasses (HasDaemonOpts (..), HasRootFile (..), Roots (..), rootFileL, showWarningsL)

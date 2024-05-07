@@ -126,7 +126,7 @@ checkFormalAmpersandTransformers env x =
         . T.intercalate "\n  "
         $ ["Formal Ampersand script does not compile:"]
         <> T.lines (tshow err)
-    Checked fSpecOfx ws -> addWarnings ws $ compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
 checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
@@ -137,7 +137,7 @@ checkPrototypeContextTransformers env x =
         . T.intercalate "\n  "
         $ ["PrototypeContext script does not compile:"]
         <> T.lines (tshow err)
-    Checked fSpecOfx ws -> addWarnings ws $ compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
+    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
