@@ -90,7 +90,7 @@ createFspec =
           let oneFspec = do
                 userPCtx <- userScript
                 pcScript <- prototypeContextScript
-                -- checkPrototypeContextTransformers env pcScript
+                checkPrototypeContextTransformers env pcScript
                 pCtx2Fspec env (userPCtx `mergeContexts` pcScript) -- this is done to typecheck the combination
           grindInto PrototypeContext oneFspec
         RAP -> do
@@ -104,7 +104,7 @@ createFspec =
             pcScript <- prototypeContextScript
             one <- guardedOne
             two <- guardedTwo
-            -- checkPrototypeContextTransformers env pcScript
+            --checkPrototypeContextTransformers env pcScript
             pure (one `mergeContexts` two `mergeContexts` pcScript)
     pure (pCtx2Fspec env =<< pContext)
 
@@ -120,8 +120,8 @@ checkFormalAmpersandTransformers env x =
     Checked fSpecOfx ws -> addWarnings ws $ compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
-_checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
-_checkPrototypeContextTransformers env x =
+checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkPrototypeContextTransformers env x =
   case pCtx2Fspec env x of
     Errors err ->
       fatal
