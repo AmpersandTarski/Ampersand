@@ -1177,6 +1177,72 @@ transformersPrototypeContext fSpec =
           | ifc :: Interface <- instanceList fSpec,
             role <- ifcRoles ifc
         ]
+      ),
+      ( "ifc",
+        "PF_NavMenuItem",
+        "PF_Interface",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "label",
+        "PF_NavMenuItem",
+        "PF_Label",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "isSubItemOf",
+        "PF_NavMenuItem",
+        "PF_NavMenuItem",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "isVisible",
+        "PF_NavMenuItem",
+        "PF_NavMenuItem",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "isPartOf",
+        "PF_NavMenuItem",
+        "PF_NavMenu",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "seqNr",
+        "PF_NavMenuItem",
+        "PF_SeqNr",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "url",
+        "PF_NavMenuItem",
+        "PF_URL",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "pf_navItemRoles",
+        "PF_NavMenuItem",
+        "Role",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "lastAccess",
+        "SESSION",
+        "DateTime",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "sessionActiveRoles",
+        "SESSION",
+        "Role",
+        Set.fromList [],
+        [] --TODO
+      ),
+      ( "sessionAllowedRoles",
+        "SESSION",
+        "Role",
+        Set.fromList [],
+        [] --TODO
       )
     ]
 

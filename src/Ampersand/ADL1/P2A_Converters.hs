@@ -117,19 +117,6 @@ checkInterfaceCycles ctx =
       [ifc] -> ifc
       _ -> fatal "Interface lookup returned zero or more than one result"
 
--- Check whether each concept has at most one default view
-checkMultipleDefaultViews :: A_Context -> Guarded ()
-checkMultipleDefaultViews ctx =
-  case conceptsWithMultipleViews of
-    [] -> return ()
-    x : xs -> Errors $ fmap mkMultipleDefaultError (x NE.:| xs)
-  where
-    conceptsWithMultipleViews =
-      filter (\x -> NE.length x > 1)
-        . eqClass ((==) `on` vdcpt)
-        . filter vdIsDefault
-        $ ctxvs ctx
-
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx =
   case [ mkDanglingRefError "Rule" nm (arPos rr)
