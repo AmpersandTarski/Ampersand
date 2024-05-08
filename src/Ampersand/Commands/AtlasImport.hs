@@ -16,9 +16,10 @@ module Ampersand.Commands.AtlasImport
   )
 where
 
+import Ampersand.ADL1.PrinterMo (prettyMo, prettyMoText) -- Importing customShowP instead of showP
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowPStruct
+--import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
@@ -42,7 +43,7 @@ atlasImport = do
     Left msg -> fatal . T.pack $ "Couldn't read " <> view importFileL env <> ": " <> msg
     Right x -> do
       let outputFn = view outputfileL env
-      writeFileUtf8 outputFn (showP x)
+      writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
       logInfo . display . T.pack $ outputFn <> " written"
 
 myDecode :: B.ByteString -> Either String P_Context
