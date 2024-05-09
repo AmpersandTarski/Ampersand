@@ -37,14 +37,33 @@ PATTERN "Static Interface Structure"
     RELATION label[FieldDef*FieldName] [UNI,TOT]
     MEANING "Every field definition has a label."
     REPRESENT FieldName TYPE ALPHANUMERIC
-    RELATION objpos[ObjectDef*Origin] [UNI]
+    RELATION origin[ObjectDef*Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
+    RELATION objTerm[ObjectDef*Term] [UNI {- HJO, 20240509: TOT gives errors: ,TOT-}]
+    MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
+    RELATION objcrud[ObjectDef*Crud]
+    MEANING "The CRUD annotation that comes with a specific ObjectDef"  
     RELATION objView[ObjectDef*View] [UNI]
     MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
+    RELATION objSub[ObjectDef * SubInterface] [UNI]
     RELATION usedIn[Relation*Term]
     MEANING "If a relation is used in an term, this is registered in usedIn."
     RELATION formalTerm[Rule*Term] 
     MEANING "The term, of which a rule consists, is accessible via the relation formalTerm."
+
+    RELATION origin[SubInterface*Origin][UNI]
+    CLASSIFY Box,InterfaceRef ISA SubInterface
+    RELATION siConcept[Box*Concept][UNI,TOT]
+    MEANING "The box concept is the type of the runtime atom of the box."
+    RELATION siHeader[Box*BoxHeader][UNI,TOT]
+    MEANING "The boxheader is the definition of the way the box is drawn on the screen."
+    RELATION siObjs[Box*BoxItem]
+    MEANING "The (ordered) elements/items in the box."
+    RELATION isLink[InterfaceRef*InterfaceRef][PROP]
+    MEANING "Is the interface expanded or drawn as hyperlink?"
+    RELATION references[InterfaceRef*Interface][UNI,TOT]
+
+
 
     RELATION isPublic[Interface*Interface] [PROP]
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"

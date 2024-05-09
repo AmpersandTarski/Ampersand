@@ -678,7 +678,7 @@ transformersFormalAmpersand fSpec =
             Just vw <- [objmView obj]
         ]
       ),
-      ( "objpos",
+      ( "origin",
         "ObjectDef",
         "Origin",
         Set.fromList [Uni],
@@ -1808,5 +1808,65 @@ tmpNewTransformerDefsFA fSpec =
         "Context",
         Set.fromList [],
         [] --TODO Future work
+      ),
+      ( "siHeader",
+        "Box",
+        "BoxHeader",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "siConcept",
+        "Box",
+        "Concept",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "objcrud",
+        "ObjectDef",
+        "Crud",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "origin",
+        "ObjectDef",
+        "Origin",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "objSub",
+        "ObjectDef",
+        "SubInterface",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "objTerm",
+        "ObjectDef",
+        "Term",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "origin",
+        "SubInterface",
+        "Origin",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "siObjs",
+        "Box",
+        "BoxItem",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "isLink",
+        "InterfaceRef",
+        "InterfaceRef",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
+      ),
+      ( "references",
+        "InterfaceRef",
+        "Interface",
+        Set.fromList [],
+        [] --TODO HAN invuloefening
       )
     ]
