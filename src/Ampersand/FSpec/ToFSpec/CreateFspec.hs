@@ -133,7 +133,7 @@ checkPrototypeContextTransformers env x =
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
-  ([], []) -> addWarnings theWarnings $ pure ()
+  ([], []) -> pure ()
   (ts', rs') ->
     fatal . T.intercalate "\n  " $
       [ "Error: There are one or more unmatched relations and transformers that are not in sync.",
@@ -145,7 +145,7 @@ compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmat
     where
       errorItems =
         [ (src <> tgt <> nm, nm <> "[" <> src <> "*" <> tgt <> "] is in transformers.hs, but not in .adl")
-          | Transformer nm src tgt _ _ <- ts'
+          | Transformer nm src tgt _ <- ts'
         ]
           <> [ (tshow (source rel) <> tshow (target rel) <> name rel, showRel rel <> " is in " <> tshow (origin rel) <> ", but not in transformers.hs")
                | rel <- rs'
@@ -156,22 +156,10 @@ compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmat
     hasmatchingTransformer :: Relation -> Bool
     hasmatchingTransformer rel = any (`isMatch` rel) ts
     isMatch :: Transformer -> Relation -> Bool
-    isMatch (Transformer nm src tgt _ _) rel =
+    isMatch (Transformer nm src tgt _) rel =
       name rel == nm
         && name (source rel) == src
         && name (target rel) == tgt
-    matches :: [Transformer] -> [(Transformer, Relation)]
-    matches ts' = case ts' of
-      [] -> []
-      h : tl -> (h, rel) : matches tl
-        where
-          rel = case filter (isMatch h) rs of
-            [] -> fatal "This should not be possible, because this case is caught as a fatel in `compareSync`."
-            re : _ -> re
-    theWarnings = concatMap foo (matches ts)
-      where
-        foo :: (Transformer, Relation) -> [Warning]
-        foo (Transformer _ _ _ ps _, r) = mkUnmatchedPropertiesWarning MeatGrinder r ps
 
 data MetaModel = FormalAmpersand | PrototypeContext
   deriving (Eq, Ord, Enum, Bounded, Show)
