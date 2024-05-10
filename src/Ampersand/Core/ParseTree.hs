@@ -900,6 +900,15 @@ data BoxHeader = BoxHeader
   }
   deriving (Show, Data)
 
+instance Unique BoxHeader where
+  showUnique x = btType x <> (showUnique . L.sort . btKeys $ x)
+
+instance Ord BoxHeader where
+  compare a b = compare (btType a, L.sort (btKeys a)) (btType b, L.sort (btKeys b))
+
+instance Eq BoxHeader where
+  a == b = compare a b == EQ
+
 instance Traced BoxHeader where
   origin = pos
 
@@ -911,6 +920,15 @@ data TemplateKeyValue = TemplateKeyValue
     tkval :: !(Maybe Text)
   }
   deriving (Show, Data)
+
+instance Ord TemplateKeyValue where
+  compare a b = compare (tkkey a, tkval a) (tkkey b, tkval b)
+
+instance Eq TemplateKeyValue where
+  a == b = compare a b == EQ
+
+instance Unique TemplateKeyValue where
+  showUnique x = tshow (tkkey x) <> tshow (tkval x)
 
 instance Named TemplateKeyValue where
   name = tkkey

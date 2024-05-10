@@ -687,7 +687,7 @@ instance Object ObjectDef where
 data BoxItem
   = BxExpr {objE :: ObjectDef}
   | BxTxt {objT :: BoxTxt}
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 instance Unique BoxItem where
   showUnique = tshow
@@ -791,6 +791,20 @@ data SubInterface
         siIfcId :: !Text --id of the interface that is referenced to
       }
   deriving (Show)
+
+instance Ord SubInterface where
+  compare a b = case (a, b) of
+    (Box {}, Box {}) -> compare (siConcept a, siHeader a, siObjs a) (siConcept b, siHeader b, siObjs b)
+    (Box {}, InterfaceRef {}) -> GT
+    (InterfaceRef {}, InterfaceRef {}) -> compare (siIsLink a, siIfcId a) (siIsLink b, siIfcId b)
+    (InterfaceRef {}, Box {}) -> LT
+
+instance Eq SubInterface where
+  a == b = compare a b == EQ
+
+instance Unique SubInterface where
+  showUnique si@Box {} = (showUnique . siHeader) si <> (showUnique . siObjs) si
+  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si <> siIfcId si
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

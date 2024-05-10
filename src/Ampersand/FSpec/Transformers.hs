@@ -1675,27 +1675,29 @@ tmpNewTransformerDefsFA fSpec =
       ( "siHeader",
         "Box",
         "BoxHeader",
-        [] --TODO HAN invuloefening
+        [ (dirtyId box, dirtyId (siHeader box))
+          | box@Box {} <- instanceList fSpec
+        ]
       ),
       ( "siConcept",
         "Box",
         "Concept",
-        [] --TODO HAN invuloefening
+        [ (dirtyId box, dirtyId (siConcept box))
+          | box@Box {} <- instanceList fSpec
+        ]
       ),
       ( "objcrud",
         "ObjectDef",
         "Crud",
         [] --TODO HAN invuloefening
       ),
-      ( "origin",
-        "ObjectDef",
-        "Origin",
-        [] --TODO HAN invuloefening
-      ),
       ( "objSub",
         "ObjectDef",
         "SubInterface",
-        [] --TODO HAN invuloefening
+        [ (dirtyId si, dirtyId od)
+          | od :: ObjectDef <- instanceList fSpec,
+            Just si <- [objmsub od]
+        ]
       ),
       ( "objTerm",
         "ObjectDef",

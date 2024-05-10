@@ -52,6 +52,9 @@ instance Instances Rule where
 instance Instances Interface where
   instances = interfaceInstances
 
+instance Instances SubInterface where
+  instances = subInterfaceInstances
+
 --instance Instances Meaning where
 --  instances = meaningInstances
 instance Instances Markup where
@@ -60,13 +63,7 @@ instance Instances Markup where
       `Set.union` (Set.fromList . map ameaMrk . Set.toList . meaningInstances $ fSpec)
 
 instance Instances ObjectDef where
-  instances fSpec =
-    Set.fromList . concatMap (objects . ifcObj)
-      . interfaceInstances
-      $ fSpec
-    where
-      objects :: ObjectDef -> [ObjectDef]
-      objects obj = obj : fields obj
+  instances = objectDefInstances
 
 instance Instances Pattern where
   instances = Set.fromList . vpatterns
@@ -116,6 +113,18 @@ expressionInstances = allExprs
 
 interfaceInstances :: FSpec -> Set.Set Interface
 interfaceInstances = Set.fromList . ctxifcs . originalContext
+
+subInterfaceInstances :: FSpec -> Set.Set SubInterface
+subInterfaceInstances = Set.fromList . mapMaybe objmsub . Set.toList . objectDefInstances
+
+objectDefInstances :: FSpec -> Set.Set ObjectDef
+objectDefInstances =
+  Set.fromList
+    . concatMap (objects . ifcObj)
+    . interfaceInstances
+  where
+    objects :: ObjectDef -> [ObjectDef]
+    objects obj = obj : fields obj
 
 meaningInstances :: FSpec -> Set.Set Meaning
 meaningInstances fSpec =
