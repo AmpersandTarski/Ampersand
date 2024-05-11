@@ -24,7 +24,10 @@ PATTERN "Static Interface Structure"
 
     RELATION context[Interface*Context][UNI]
     CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
-
+    CONCEPT SubInterface "What exactly is a subinterface?"
+    CONCEPT InterfaceRef "A subinterface that references an Interface."
+    CONCEPT Box "A subinterface containing a list of boxitems."
+    
     REPRESENT Origin TYPE ALPHANUMERIC
     RELATION ifcPos[Interface*Origin] [UNI]
     MEANING "The position in the file (filename, line- and column number)."
@@ -39,7 +42,7 @@ PATTERN "Static Interface Structure"
     REPRESENT FieldName TYPE ALPHANUMERIC
     RELATION origin[ObjectDef*Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-    RELATION objTerm[ObjectDef*Term] [UNI {- HJO, 20240509: TOT gives errors: ,TOT-}]
+    RELATION objTerm[ObjectDef*Term] [UNI, TOT]
     MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
     RELATION objcruds[ObjectDef*Cruds][UNI,TOT] -- TODO: Refactor Cruds in Haskell to a set of enumerations
     MEANING "The CRUD annotation that comes with a specific ObjectDef"  
@@ -91,7 +94,7 @@ PATTERN "Static Interface Structure"
 ENDPATTERN
 
 PATTERN Interfaces
-RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
+RELATION ifcInputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION ifcOutputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."
