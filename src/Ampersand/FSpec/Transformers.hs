@@ -1702,12 +1702,16 @@ tmpNewTransformerDefsFA fSpec =
       ( "objTerm",
         "ObjectDef",
         "Term",
-        [] --TODO HAN invuloefening
+        [ (dirtyId od, dirtyId (objExpression od))
+          | od :: ObjectDef <- instanceList fSpec
+        ]
       ),
       ( "origin",
         "SubInterface",
         "Origin",
-        [] --TODO HAN invuloefening
+        [ (dirtyId si, PopAlphaNumeric . tshow . origin $ si)
+          | si :: SubInterface <- instanceList fSpec
+        ]
       ),
       ( "siObjs",
         "Box",
@@ -1717,11 +1721,18 @@ tmpNewTransformerDefsFA fSpec =
       ( "isLink",
         "InterfaceRef",
         "InterfaceRef",
-        [] --TODO HAN invuloefening
+        [ (dirtyId ref, dirtyId ref)
+          | ref@InterfaceRef {} <- instanceList fSpec,
+            siIsLink ref
+        ]
       ),
       ( "references",
         "InterfaceRef",
         "Interface",
-        [] --TODO HAN invuloefening
+        [ (dirtyId ref, dirtyId ifc)
+          | ref@InterfaceRef {} <- instanceList fSpec,
+            ifc :: Interface <- instanceList fSpec,
+            name ifc == siIfcId ref
+        ]
       )
     ]

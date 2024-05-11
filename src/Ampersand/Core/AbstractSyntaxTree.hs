@@ -806,6 +806,9 @@ instance Unique SubInterface where
   showUnique si@Box {} = (showUnique . siHeader) si <> (showUnique . siObjs) si
   showUnique si@InterfaceRef {} = (showUnique . siIsLink) si <> siIfcId si
 
+instance Traced SubInterface where
+  origin = pos
+
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
 data Purpose = Expl
