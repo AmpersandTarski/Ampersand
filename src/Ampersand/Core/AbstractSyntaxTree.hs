@@ -114,7 +114,7 @@ import Ampersand.Core.ParseTree
 import Data.Default (Default (..))
 import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Typeable (typeOf)
-import RIO.Char (toUpper)
+import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -673,7 +673,7 @@ class Object a where
   contextOf :: a -> Expression -- the context term
 
 instance Object ObjectDef where
-  concept obj = target (objExpression obj)
+  concept = target . objExpression
   fields obj = case objmsub obj of
     Nothing -> []
     Just InterfaceRef {} -> []
@@ -776,7 +776,16 @@ data Cruds = Cruds
     crudU :: Bool,
     crudD :: Bool
   }
-  deriving (Show, Data)
+  deriving (Data)
+
+instance Show Cruds where
+  show x =
+    uncurry (\upper -> if upper then toUpper else toLower)
+      <$> [ (crudC x, 'C'),
+            (crudR x, 'R'),
+            (crudU x, 'U'),
+            (crudD x, 'D')
+          ]
 
 data SubInterface
   = Box

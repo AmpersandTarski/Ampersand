@@ -829,7 +829,7 @@ transformersFormalAmpersand fSpec =
       ( "singleton",
         "Singleton",
         "AtomValue",
-        [ (dirtyId expr, dirtyId x)
+        [ (dirtyId expr, PopAlphaNumeric (tshow x))
           | expr :: Expression <- instanceList fSpec,
             Just x <- [singleton expr]
         ]
@@ -1686,15 +1686,17 @@ tmpNewTransformerDefsFA fSpec =
           | box@Box {} <- instanceList fSpec
         ]
       ),
-      ( "objcrud",
+      ( "objcruds",
         "ObjectDef",
-        "Crud",
-        [] --TODO HAN invuloefening
+        "Cruds",
+        [ (dirtyId od, PopAlphaNumeric . tshow . objcrud $ od)
+          | od :: ObjectDef <- instanceList fSpec
+        ]
       ),
       ( "objSub",
         "ObjectDef",
         "SubInterface",
-        [ (dirtyId si, dirtyId od)
+        [ (dirtyId od, dirtyId si)
           | od :: ObjectDef <- instanceList fSpec,
             Just si <- [objmsub od]
         ]
@@ -1716,7 +1718,10 @@ tmpNewTransformerDefsFA fSpec =
       ( "siObjs",
         "Box",
         "BoxItem",
-        [] --TODO HAN invuloefening
+        [ (dirtyId bx, dirtyId item)
+          | bx@Box {} <- instanceList fSpec,
+            item <- siObjs bx
+        ]
       ),
       ( "isLink",
         "InterfaceRef",

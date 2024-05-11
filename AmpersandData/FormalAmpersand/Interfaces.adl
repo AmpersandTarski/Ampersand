@@ -41,7 +41,7 @@ PATTERN "Static Interface Structure"
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
     RELATION objTerm[ObjectDef*Term] [UNI {- HJO, 20240509: TOT gives errors: ,TOT-}]
     MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
-    RELATION objcrud[ObjectDef*Crud]
+    RELATION objcruds[ObjectDef*Cruds][UNI,TOT] -- TODO: Refactor Cruds in Haskell to a set of enumerations
     MEANING "The CRUD annotation that comes with a specific ObjectDef"  
     RELATION objView[ObjectDef*View] [UNI]
     MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
