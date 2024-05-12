@@ -2,7 +2,7 @@
     "atoms": [
         {
             "atoms": [
-                "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:eb47cc3c7], build time: 11-May-24 16:59:29 CEST"
+                "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:83c830c9f*], build time: 12-May-24 18:46:26 CEST"
             ],
             "concept": "AmpersandVersion"
         },
@@ -9847,7 +9847,636 @@
             "relation": "context[Pattern*Context]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "UNI_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_genspc_91_IsE_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_isAPI_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_gengen_91_Isa_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_second_91_BinaryTerm_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "ASY_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_isaRfxStar_32_by_32_Del",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_versionInfo_91_Context_42_AmpersandVersion_#4267394955155404651#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SUR_32_segment_91_PairView_42_PairViewSegment_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_transitive_32_closure_32_of_32_isa",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_allRoles_91_Context_42_Role_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "identity__CombineStrings",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_siConcept_91_Box_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_src_91_Signature_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_userSrc_91_V_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "identity__Pattern",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_ifcPos_91_Interface_42_Origin_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "eq_32_relation",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_objView_91_ObjectDef_42_View_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_singleton_91_Singleton_42_AtomValue_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_urlEncodedName_91_Pattern_42_EncodedName_93#503675039626755352#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "validConcepts",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_fst_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SUR_32_propertyRule_91_Relation_42_PropertyRule_93#5913606101960334993#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_decprR_91_Relation_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#6931921926711864875#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_relsDefdIn_91_Relation_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_result_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Equivalence_32__45__32_InsPair_32_ifcRoles",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_references_91_InterfaceRef_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_isAPI_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_genspc_91_IsE_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_Concept_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_cddef2_91_ConceptDef_42_Meaning_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "identity__Concept",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SYM_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_objcruds_91_ObjectDef_42_Cruds_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_ShowADL",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_srcOrTgt_91_PairViewSegment_42_SourceOrTarg#1248188274959723394#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_ifcPurpose_91_Interface_42_Purpose_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_showADL_91_Term_42_ShowADL_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "identity__Relation",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_operator_91_UnaryTerm_42_Operator_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_ifcObj_91_Interface_42_ObjectDef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "property_32_enum",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_gengen_91_IsE_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_target_91_Relation_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "pat_32_defined_32_in_32_means_32_used_32_in",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_references_91_InterfaceRef_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_decprL_91_Relation_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_versionInfo_91_Context_42_AmpersandVersion_#7490696019084297764#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "validRules",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_ConceptName",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Context_42_ContextName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_name_91_Relation_42_RelationName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_udefrules_91_Rule_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_objcruds_91_ObjectDef_42_Cruds_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_isaRfxDel",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "AllValidRules",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_Isa_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_result_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_isaRfxIns",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SUR_32_name_91_Concept_42_ConceptName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Concept_42_ConceptName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_text_91_PairViewSegment_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_source_91_Relation_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_arg_91_UnaryTerm_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_origin_91_SubInterface_42_Origin_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_userCpt_91_Epsilon_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_userTgt_91_V_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Rule_42_RuleName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_PatternName",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SYM_32_isAPI_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_RelationName",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Role_42_RoleName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_bind_91_BindedRelation_42_Relation_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_urlEncodedName_91_Concept_42_EncodedName_93#-2996326077881998632#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "bindUsedIn",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_allConjuncts_91_Context_42_Conjunct_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_ifcObj_91_Interface_42_ObjectDef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_sign_91_Relation_42_Signature_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "conjunctTotal",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_formalTerm_91_Rule_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_target_91_Relation_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Remove_32_relation_32_atom",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_Pattern_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_first_91_BinaryTerm_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_ctxrs_91_Rule_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_name_91_Pattern_42_PatternName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Relation_42_RelationName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_snd_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "ASY_32_isAPI_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_genspc_91_Isa_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "validity_32_of_32_concepts_32_in_32_a_32_context",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_origin_91_Rule_42_Origin_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_isPublic_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_interfaces_91_Context_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_origin_91_ObjectDef_42_Origin_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "AllValidConcepts",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SYM_32_isPublic_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "originatesFromTotal",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Remove_32_rule_32_atom",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_siHeader_91_Box_42_BoxHeader_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_tgt_91_Signature_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_gengen_91_Isa_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_objSub_91_ObjectDef_42_SubInterface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Pattern_42_PatternName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_ctxds_91_Relation_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_fst_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_isPublic_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_name_91_Interface_42_InterfaceName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "relation_32_declared_32_outside_32_pattern",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_rc__conjunct_91_Conjunct_42_Term_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "identity__Rules",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_identityRules_91_Rule_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_sequenceNr_91_PairViewSegment_42_SequenceNu#-6955018750588616609#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_src_91_Signature_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_transitive_32_closure_32_of_32_isa_91_C#2622753803406027475#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_ContextName",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "rule_32_declared_32_outside_32_pattern",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "del_32_unused_32_RuleName",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_siHeader_91_Box_42_BoxHeader_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_genspc_91_Isa_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_sign_91_Term_42_Signature_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_name_91_Interface_42_InterfaceName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "SUR_32_name_91_Pattern_42_PatternName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "ASY_32_isPublic_91_Interface_42_Interface_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_IsE_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_segment_91_PairView_42_PairViewSegment_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "validRelations",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_label_91_FieldDef_42_FieldName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "violatableByInterface",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_operator_91_BinaryTerm_42_Operator_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_Interface_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_snd_91_CombineStrings_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_context_91_IsE_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_urlEncodedName_91_Rule_42_EncodedName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_sequenceNr_91_PairViewSegment_42_SequenceNu#4070984724684794008#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_siConcept_91_Box_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_decprM_91_Relation_42_String_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_tgt_91_Signature_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_label_91_FieldDef_42_FieldName_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "self_45_sustained_32_patterns",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "bindTotal",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_context_91_Isa_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_rrviol_91_Rule_42_PairView_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_source_91_Relation_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "ASY_32_isa_91_Concept_42_Concept_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_declaredthrough_91_PropertyRule_42_Property#2910065811650979981#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "UNI_32_context_91_Rule_42_Context_93_",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "Compute_32_isaRfxStar_32_by_32_Ins",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "INJ_32_ifcObj_91_Interface_42_ObjectDef_93_",
+                    "tgt": "FormalAmpersand"
+                }
+            ],
             "relation": "context[Rule*Context]"
         },
         {
@@ -50566,7 +51195,68 @@
             "relation": "userTgt[V*Concept]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Compute_32_Closures"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "StringCombination"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Documentation"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Reflexive_32_isa_32_closures"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Concepts"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Rules"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Interfaces"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "PropertyRules"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Term_32_definitions"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Patterns"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Specialization"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Validity"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Static_32_Interface_32_Structure"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Context"
+                },
+                {
+                    "src": "FormalAmpersand",
+                    "tgt": "Relations"
+                }
+            ],
             "relation": "uses[Context*Pattern]"
         },
         {
@@ -50585,7 +51275,7 @@
             "links": [
                 {
                     "src": "FormalAmpersand",
-                    "tgt": "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:eb47cc3c7], build time: 11-May-24 16:59:29 CEST"
+                    "tgt": "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:83c830c9f*], build time: 12-May-24 18:46:26 CEST"
                 }
             ],
             "relation": "versionInfo[Context*AmpersandVersion]"

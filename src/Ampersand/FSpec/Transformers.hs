@@ -1556,7 +1556,10 @@ tmpNewTransformerDefsFA fSpec =
       ( "context",
         "Rule",
         "Context",
-        [] --TODO
+        [ (dirtyId rul, dirtyId ctx)
+          | ctx :: A_Context <- instanceList fSpec,
+            rul :: Rule <- instanceList fSpec
+        ]
       ),
       ( "edit",
         "FieldDef",
@@ -1655,7 +1658,10 @@ tmpNewTransformerDefsFA fSpec =
       ( "uses",
         "Context",
         "Pattern",
-        [] --TODO Future work
+        [ (dirtyId ctx, dirtyId pat)
+          | ctx :: A_Context <- instanceList fSpec,
+            pat :: Pattern <- instanceList fSpec
+        ]
       ),
       ( "valid",
         "Concept",
