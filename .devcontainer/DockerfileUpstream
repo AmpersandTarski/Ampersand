@@ -31,6 +31,7 @@ RUN \
     libgmp10 \
     libnuma-dev \
     lsb-release \
+    openssh-server \
     pkg-config \
     software-properties-common \
     wget \

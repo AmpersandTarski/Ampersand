@@ -6,8 +6,12 @@
     "context": "..",
     "dockerfile": "Dockerfile"
   },
+  "mounts": [
+    "type=bind,source=${localWorkspaceFolder},target=/work",
+    "type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
+  ],
   // "postCreateCommand": "sudo apt-get update && sudo apt-get install -y openssh-client",
-  "postStartCommand": "stack build",
+  //  "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
       "extensions": [
