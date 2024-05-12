@@ -2,7 +2,7 @@
     "atoms": [
         {
             "atoms": [
-                "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:3b7f3da36*], build time: 11-May-24 11:26:51 CEST"
+                "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:eb47cc3c7], build time: 11-May-24 16:59:29 CEST"
             ],
             "concept": "AmpersandVersion"
         },
@@ -67,6 +67,7 @@
                 "ECps_32__40_EDcD_32_source_91_Relation_42_Concept_#3056994890317588970#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_EncodedName_41__44#-6819498135110779199#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_Interface_41__44_E#-9127918049366277716#",
+                "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
                 "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
                 "EInc_32__40_ECps_32__40_ECps_32__40_EDcD_32_arg_91#-4132458339646751887#",
                 "ECps_32__40_ECps_32__40_EDcD_32_udefrules_91_Rule_#-2798090617344457308#",
@@ -299,6 +300,7 @@
                 "EInc_32__40_ECps_32__40_ECps_32__40_EDcD_32_siConc#8873711163267622389#",
                 "EUni_32__40_EMp1_32__34_SYM_34__32_Property_44_EUn#-8322351357305669586#",
                 "EInc_32__40_EDcI_32_PropertyRule_44_ECps_32__40_EF#2616243642196292972#",
+                "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
                 "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                 "ECps_32__40_EDcD_32_snd_91_CombineStrings_42_Strin#2241489785639142858#",
                 "EUni_32__40_ECpl_32__40_EDcI_32_Box_41__44_ECps_32#8813600159257890532#",
@@ -509,6 +511,7 @@
                 "EInc_32__40_EDcI_32_Interface_44_ECps_32__40_EDcD_#1487547514558400920#",
                 "ECps_32__40_EDcD_32_context_91_Isa_42_Context_93__#8727643835430091554#",
                 "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
+                "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_Term_41__44_EFlp_3#-4981301994078169804#",
                 "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#-1851486567500675163#",
@@ -1195,6 +1198,7 @@
                 "conj__99",
                 "conj__98",
                 "conj__158",
+                "conj__159",
                 "conj__150",
                 "conj__151",
                 "conj__152",
@@ -1469,6 +1473,7 @@
                 "RuleName",
                 "originatesFromTotal",
                 "SUR_32segment_91PairView_42PairViewSegment_93",
+                "TOT_32objTerm_91ObjectDef_42Term_93",
                 "UNI_32ifcObj_91Interface_42ObjectDef_93",
                 "UNI_32name_91Interface_42InterfaceName_93",
                 "UNI_32context_91IsE_42Context_93",
@@ -1886,6 +1891,7 @@
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7430275048399339267#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7180147297837720052#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#3421805644283911178#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6472855841806829399#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7894895308313093402#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#1830550536284521224#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#5658630927729224105#",
@@ -1961,6 +1967,7 @@
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7737089468419858313#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7678371599721558603#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#4188000278440397518#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7519509588236892560#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-300234928469960100#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-4426677441116608912#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7454525383409133948#",
@@ -2011,24 +2018,24 @@
         },
         {
             "atoms": [
+                "PropertyRule for UNI isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5",
                 "PropertyRule for UNI sign[Relation*Signature] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:24:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:146:5",
                 "PropertyRule for UNI name[Role*RoleName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:54:1",
-                "PropertyRule for TOT siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:56:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:7:5",
                 "PropertyRule for TOT genspc[Isa*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:33:5",
                 "PropertyRule for UNI origin[Rule*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:24:5",
-                "PropertyRule for UNI siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:56:5",
+                "PropertyRule for UNI origin[SubInterface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:57:5",
                 "PropertyRule for UNI context[Isa*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:41:5",
+                "PropertyRule for ASY isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:86:5",
                 "PropertyRule for UNI first[BinaryTerm*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:38:5",
                 "PropertyRule for UNI name[Context*ContextName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:29:5",
+                "PropertyRule for UNI ifcPurpose[Interface*Purpose] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:34:5",
                 "PropertyRule for SUR name[Concept*ConceptName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:4:5",
-                "PropertyRule for ASY isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:30:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:87:7",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:106:5",
-                "PropertyRule for UNI origin[SubInterface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:54:5",
                 "PropertyRule for INJ allConjuncts[Context*Conjunct] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:36:1",
                 "PropertyRule for UNI source[Relation*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:20:5",
                 "PropertyRule for UNI cddef2[ConceptDef*Meaning] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:13:5",
@@ -2036,131 +2043,132 @@
                 "PropertyRule for UNI ctxrs[Rule*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:53:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:114:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:109:5",
-                "PropertyRule for UNI isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5",
                 "PropertyRule for UNI text[PairViewSegment*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:27:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:32:7",
                 "PropertyRule for UNI identityRules[Rule*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:58:5",
                 "PropertyRule for UNI genspc[Isa*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:33:5",
-                "PropertyRule for UNI references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:64:5",
                 "PropertyRule for UNI context[Concept*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:25:5",
                 "PropertyRule for TOT declaredthrough[PropertyRule*Property] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:33:5",
+                "PropertyRule for UNI isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5",
                 "PropertyRule for TOT sequenceNr[PairViewSegment*SequenceNumber] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:24:1",
+                "PropertyRule for TOT ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5",
                 "PropertyRule for TOT result[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:56:3",
-                "PropertyRule for UNI isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5",
                 "PropertyRule for TOT rc_conjunct[Conjunct*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:37:1",
+                "PropertyRule for UNI references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:67:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:39:1",
                 "PropertyRule for TOT fst[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:54:3",
-                "PropertyRule for INJ isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5",
-                "PropertyRule for INJ isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5",
+                "PropertyRule for UNI ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:57:3",
+                "PropertyRule for TOT objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:47:5",
                 "PropertyRule for TOT source[Relation*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:20:5",
-                "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:108:1",
                 "PropertyRule for TOT target[Relation*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:21:5",
                 "PropertyRule for UNI genspc[IsE*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:37:5",
                 "PropertyRule for UNI context[Pattern*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:62:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:142:5",
-                "PropertyRule for ASY isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5",
                 "PropertyRule for INJ segment[PairView*PairViewSegment] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:23:1",
                 "PropertyRule for UNI src[Signature*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:27:1",
-                "PropertyRule for SYM isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5",
+                "PropertyRule for TOT references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:67:5",
                 "PropertyRule for UNI showADL[Term*ShowADL] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:83:1",
+                "PropertyRule for TOT label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5",
                 "PropertyRule for TOT name[Relation*RelationName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:18:5",
                 "PropertyRule for UNI result[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:56:3",
+                "PropertyRule for UNI origin[ObjectDef*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:43:5",
+                "PropertyRule for SYM isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5",
                 "PropertyRule for UNI name[Pattern*PatternName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:12:5",
                 "PropertyRule for TOT name[Pattern*PatternName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:12:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:8:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:89:5",
-                "PropertyRule for TOT label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:37:5",
+                "PropertyRule for SYM isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5",
+                "PropertyRule for INJ ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5",
                 "PropertyRule for TOT snd[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:55:3",
                 "PropertyRule for UNI urlEncodedName[Concept*EncodedName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:23:5",
-                "PropertyRule for UNI ifcPos[Interface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:29:5",
                 "PropertyRule for UNI decprL[Relation*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:42:1",
                 "PropertyRule for UNI decprM[Relation*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:44:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:35:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:72:5",
-                "PropertyRule for UNI label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:37:5",
+                "PropertyRule for ASY isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5",
                 "PropertyRule for UNI sign[Term*Signature] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:15:5",
                 "PropertyRule for UNI userCpt[Epsilon*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:58:5",
-                "PropertyRule for UNI objView[ObjectDef*View] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:46:5",
-                "PropertyRule for SYM isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5",
                 "PropertyRule for TOT gengen[Isa*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:31:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:7:5",
+                "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:79:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:36:5",
+                "PropertyRule for UNI objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:45:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:43:5",
                 "PropertyRule for UNI formalTerm[Rule*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:29:5",
+                "PropertyRule for UNI objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:47:5",
+                "PropertyRule for UNI label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5",
                 "PropertyRule for UNI udefrules[Rule*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:55:5",
                 "PropertyRule for UNI context[Interface*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:25:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:128:5",
+                "PropertyRule for SYM isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:69:5",
                 "PropertyRule for UNI name[Interface*InterfaceName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:21:5",
                 "PropertyRule for TOT versionInfo[Context*AmpersandVersion] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:8:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:59:5",
-                "PropertyRule for INJ isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5",
+                "PropertyRule for INJ isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:45:1",
-                "PropertyRule for TOT references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:64:5",
                 "PropertyRule for UNI userSrc[V*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:53:5",
                 "PropertyRule for ASY isa[Concept*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:42:5",
                 "PropertyRule for UNI bind[BindedRelation*Relation] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:33:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:40:5",
+                "PropertyRule for ASY isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5",
+                "PropertyRule for INJ isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5",
+                "PropertyRule for UNI siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:61:5",
+                "PropertyRule for TOT objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:45:5",
                 "PropertyRule for UNI srcOrTgt[PairViewSegment*SourceOrTarget] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:28:1",
                 "PropertyRule for SUR propertyRule[Relation*PropertyRule] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:35:5",
-                "PropertyRule for UNI isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5",
+                "PropertyRule for UNI siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:59:5",
+                "PropertyRule for TOT siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:59:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:15:7",
-                "PropertyRule for SYM isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5",
                 "PropertyRule for UNI context[IsE*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:42:5",
-                "PropertyRule for UNI ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5",
                 "PropertyRule for UNI name[Concept*ConceptName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:4:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:19:5",
                 "PropertyRule for UNI name[Relation*RelationName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:18:5",
-                "PropertyRule for UNI siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:58:5",
                 "PropertyRule for SUR name[Pattern*PatternName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:12:5",
                 "PropertyRule for UNI tgt[Signature*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:30:1",
                 "PropertyRule for UNI ctxds[Relation*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:49:5",
                 "PropertyRule for UNI operator[UnaryTerm*Operator] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:45:5",
                 "PropertyRule for TOT src[Signature*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:27:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:81:5",
-                "PropertyRule for UNI objSub[ObjectDef*SubInterface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:48:5",
-                "PropertyRule for INJ ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5",
                 "PropertyRule for TOT context[Isa*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:41:5",
-                "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:76:5",
-                "PropertyRule for UNI objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:42:5",
-                "PropertyRule for TOT objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:44:5",
+                "PropertyRule for UNI isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5",
                 "PropertyRule for UNI urlEncodedName[Rule*EncodedName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:21:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:77:5",
                 "PropertyRule for UNI context[Rule*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:10:5",
                 "PropertyRule for UNI userTgt[V*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:54:5",
-                "PropertyRule for UNI ifcPurpose[Interface*Purpose] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:31:5",
                 "PropertyRule for TOT name[Interface*InterfaceName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:21:5",
+                "PropertyRule for UNI objSub[ObjectDef*SubInterface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:51:5",
+                "PropertyRule for UNI ifcPos[Interface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:32:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:11:5",
                 "PropertyRule for UNI versionInfo[Context*AmpersandVersion] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:8:1",
                 "PropertyRule for UNI name[Rule*RuleName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:14:5",
-                "PropertyRule for ASY isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:75:5",
                 "PropertyRule for UNI fst[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:54:3",
+                "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:111:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:35:1",
                 "PropertyRule for UNI pvsExp[PairViewSegment*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:31:1",
                 "PropertyRule for UNI sequenceNr[PairViewSegment*SequenceNumber] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:24:1",
                 "PropertyRule for UNI relsDefdIn[Relation*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:51:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:12:5",
+                "PropertyRule for TOT siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:61:5",
                 "PropertyRule for UNI urlEncodedName[Pattern*EncodedName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:22:5",
                 "PropertyRule for SUR segment[PairView*PairViewSegment] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:23:1",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:51:5",
                 "PropertyRule for TOT genspc[IsE*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:37:5",
+                "PropertyRule for UNI objView[ObjectDef*View] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:49:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Rules.adl:17:7",
                 "PropertyRule for UNI operator[BinaryTerm*Operator] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:40:5",
-                "PropertyRule for UNI objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:44:5",
-                "PropertyRule for TOT ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5",
-                "PropertyRule for TOT siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:58:5",
                 "PropertyRule for UNI singleton[Singleton*AtomValue] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:49:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:7:1",
                 "PropertyRule for TOT tgt[Signature*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:30:1",
                 "PropertyRule for UNI decprR[Relation*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Relations.adl:46:1",
                 "PropertyRule for TOT context[IsE*Context] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Contexts.adl:42:5",
                 "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:56:5",
-                "PropertyRule for UNI origin[ObjectDef*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5",
                 "PropertyRule for UNI target[Relation*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:21:5",
                 "PropertyRule for UNI second[BinaryTerm*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Terms.adl:39:5",
                 "PropertyRule for UNI gengen[Isa*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:31:5",
+                "PropertyRule for INJ isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5",
                 "PropertyRule for INJ allRoles[Context*Role] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Generics.adl:53:1",
                 "PropertyRule for UNI snd[CombineStrings*String] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Patterns.adl:55:3",
                 "PropertyRule for TOT gengen[IsE*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:35:5",
@@ -2188,6 +2196,7 @@
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-6894774565060112709#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#6574872480914920123#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-2076316000675389397#",
+                "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-6695776832735558197#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#915672339567457419#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-4867946379673273774#",
@@ -2196,7 +2205,6 @@
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-3239316046275702880#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#567917987771876352#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-6757106651719722837#",
-                "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#-3996174637997282904#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#6061647520738656135#",
                 "PairView_32__123_ppv__segs_32__61__32_PairViewText#2632346065866112146#",
@@ -2216,6 +2224,7 @@
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-554393805447675116#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#1714127487052647468#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-1884683064267465899#",
+                "PairViewText_32__123_pos_32__61__32__47_workspaces#6404956908148787715#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-2410634182281203740#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5363706261334871523#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5502552581683536947#",
@@ -2245,9 +2254,9 @@
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-5886358210262621572#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-1262121306171329034#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#4574390007086695891#",
-                "PairViewText_32__123_pos_32__61__32__47_workspaces#-4396887134297260285#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#8266645249670394348#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6582250898964540716#",
+                "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6929994025402579025#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#7276621129416797021#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#1256431558988787049#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#1593882437774785836#",
@@ -2257,8 +2266,8 @@
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-7601344656278411227#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#1239230012924432624#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-385928994464317846#",
+                "PairViewText_32__123_pos_32__61__32__47_workspaces#-2782494296001537405#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-7488721160847652111#",
-                "PairViewText_32__123_pos_32__61__32__47_workspaces#-404742965761536381#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#8570290245054543318#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#3248475837395455227#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#5229170931651876603#",
@@ -2272,11 +2281,11 @@
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#707053205083762759#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-3032995852779228139#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-4345828040823690114#",
-                "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8805566441558765922#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6367020530931582629#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-6309281137758415924#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-7092287465553776561#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-4762048457125952680#",
+                "PairViewExp_32__123_pos_32__61__32__47_workspaces_#2022517626440691726#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-3506032549701410125#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-6712063882251040002#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-1046784457612408913#",
@@ -2288,7 +2297,6 @@
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#2276337229419196542#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6250397311909206418#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5549395786449825577#",
-                "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6438693003504662049#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8467015564487524067#",
                 "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-648791438744889840#",
                 "PairViewText_32__123_pos_32__61__32__47_workspaces#-329316696424104433#",
@@ -2397,6 +2405,7 @@
                 "TOT_32_name_91_Relation_42_RelationName_93_",
                 "UNI_32_udefrules_91_Rule_42_Context_93_",
                 "UNI_32_objcruds_91_ObjectDef_42_Cruds_93_",
+                "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
                 "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
                 "UNI_32_context_91_Isa_42_Context_93_",
                 "UNI_32_result_91_CombineStrings_42_String_93_",
@@ -2477,9 +2486,9 @@
         },
         {
             "atoms": [
+                "Markup__Markup_32__123_amLang_32__61__32_English_4#-5176143135339241061#",
+                "Markup__Markup_32__123_amLang_32__61__32_English_4#6248253104415827592#",
                 "Markup__Markup_32__123_amLang_32__61__32_English_4#-6743298119270283752#",
-                "Markup__Markup_32__123_amLang_32__61__32_English_4#7089776815042133620#",
-                "Markup__Markup_32__123_amLang_32__61__32_English_4#2382150146655214601#",
                 "Markup__Markup_32__123_amLang_32__61__32_English_4#8361800362384578096#",
                 "Markup__Markup_32__123_amLang_32__61__32_English_4#-1051907235427566963#",
                 "Markup__Markup_32__123_amLang_32__61__32_English_4#3392559031527176763#",
@@ -2794,6 +2803,7 @@
                 "Compute_32_isaRfxDel",
                 "AllValidRules",
                 "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
+                "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
                 "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
                 "UNI_32_context_91_Isa_42_Context_93_",
                 "UNI_32_result_91_CombineStrings_42_String_93_",
@@ -2997,6 +3007,7 @@
                 "originatesFromTotal",
                 "UNI source[Relation*Concept]",
                 "validity of concepts in a context",
+                "TOT objTerm[ObjectDef*Term]",
                 "Compute isaRfxIns",
                 "SYM isAPI[Interface*Interface]",
                 "UNI ifcPos[Interface*Origin]",
@@ -3405,6 +3416,7 @@
                 "name [Rule*RuleName];name [Rule*RuleName]~/\\context [Rule*Context];context [Rule*Context]~ |- I[Rule]",
                 "I[ContextName]",
                 "snd [CombineStrings*String]; -I[String]",
+                "I[ObjectDef] |- objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~",
                 "context [Pattern*Context]; -I[Context]",
                 " -context [Pattern*Context]",
                 " -valid [Concept*Context]",
@@ -3626,6 +3638,7 @@
                 " -context [IsE*Context]; -I[Context];context [IsE*Context]~\\/ -I[IsE]",
                 " -I[Isa]\\/context [Isa*Context];context [Isa*Context]~",
                 " -context [Pattern*Context]\\/uses [Context*Pattern]~",
+                "objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~",
                 " -I[CombineStrings]\\/snd [CombineStrings*String];snd [CombineStrings*String]~",
                 " -references [InterfaceRef*Interface]; -I[Interface];references [InterfaceRef*Interface]~\\/ -I[InterfaceRef]",
                 "origin [SubInterface*Origin]; -I[Origin];origin [SubInterface*Origin]~",
@@ -3939,6 +3952,7 @@
                 "objTerm [ObjectDef*Term]; -I[Term];objTerm [ObjectDef*Term]~",
                 " -I[Context];allConjuncts [Context*Conjunct]",
                 "ifcPos [Interface*Origin]; -I[Origin];ifcPos [Interface*Origin]~ |-  -I[Interface]",
+                " -I[ObjectDef]\\/objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~",
                 "I[ConceptName]",
                 " -segment [PairView*PairViewSegment]~; -I[PairView];segment [PairView*PairViewSegment]",
                 "patRules [Pattern*Rule]~;(context [Pattern*Context]\\/uses [Context*Pattern]~)\\/context [Rule*Context]",
@@ -4588,6 +4602,7 @@
                 "ECps_32__40_ECpl_32__40_EDcI_32_Interface_41__44_E#-9127918049366277716#",
                 "EDcD_32_ctxds_91_Relation_42_Context_93_",
                 "EEps_32_KleeneStar_32__91_KleeneStar_42_UnaryTerm_#8911557165523640372#",
+                "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
                 "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
                 "EInc_32__40_ECps_32__40_ECps_32__40_EDcD_32_arg_91#-4132458339646751887#",
                 "EDcD_32_isa_91_Concept_42_Concept_93_",
@@ -4951,6 +4966,7 @@
                 "ECpl_32__40_ECps_32__40_EDcD_32_arg_91_UnaryTerm_4#-8520881108278773323#",
                 "EUni_32__40_EMp1_32__34_SYM_34__32_Property_44_EUn#-8322351357305669586#",
                 "EInc_32__40_EDcI_32_PropertyRule_44_ECps_32__40_EF#2616243642196292972#",
+                "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
                 "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                 "ECps_32__40_EDcD_32_snd_91_CombineStrings_42_Strin#2241489785639142858#",
                 "EUni_32__40_ECpl_32__40_EDcI_32_Box_41__44_ECps_32#8813600159257890532#",
@@ -5270,6 +5286,7 @@
                 "EInc_32__40_EDcI_32_Interface_44_ECps_32__40_EDcD_#1487547514558400920#",
                 "ECps_32__40_EDcD_32_context_91_Isa_42_Context_93__#8727643835430091554#",
                 "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
+                "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
                 "EEps_32_CartesianProduct_32__91_CartesianProduct_4#739703565549989438#",
                 "ECps_32__40_ECpl_32__40_EDcI_32_Term_41__44_EFlp_3#-4981301994078169804#",
@@ -6432,6 +6449,10 @@
                 },
                 {
                     "src": "FormalAmpersand",
+                    "tgt": "conj__159"
+                },
+                {
+                    "src": "FormalAmpersand",
                     "tgt": "conj__150"
                 },
                 {
@@ -6958,6 +6979,10 @@
                 },
                 {
                     "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
+                    "tgt": "FormalAmpersand"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
                     "tgt": "FormalAmpersand"
                 },
                 {
@@ -10800,6 +10825,10 @@
                     "tgt": "UNI"
                 },
                 {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "TOT"
+                },
+                {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
                     "tgt": "UNI"
                 },
@@ -11299,6 +11328,10 @@
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Interface_41__44_E#-9127918049366277716#",
                     "tgt": "ECpl_32__40_EDcI_32_Interface_41_"
+                },
+                {
+                    "src": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
+                    "tgt": "EDcD_32_objTerm_91_ObjectDef_42_Term_93_"
                 },
                 {
                     "src": "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
@@ -12229,6 +12262,10 @@
                     "tgt": "EDcI_32_PropertyRule"
                 },
                 {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
+                    "tgt": "ECpl_32__40_EDcI_32_ObjectDef_41_"
+                },
+                {
                     "src": "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                     "tgt": "ECpl_32__40_EDcI_32_IsE_41_"
                 },
@@ -13067,6 +13104,10 @@
                 {
                     "src": "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
                     "tgt": "EMp1_32__34_UNI_34__32_Property"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
+                    "tgt": "EDcI_32_ObjectDef"
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
@@ -14558,6 +14599,10 @@
                     "tgt": "EInc_32__40_EUni_32__40_EDcD_32_isaPlus_91_Concept#-4558577833180059262#"
                 },
                 {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#"
+                },
+                {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
                     "tgt": "EInc_32__40_ECps_32__40_ECps_32__40_EDcD_32_pvsExp#-5591527483764686232#"
                 },
@@ -15987,6 +16032,14 @@
                 {
                     "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
                     "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-5969998095622603573#"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6472855841806829399#"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7519509588236892560#"
                 },
                 {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
@@ -17783,6 +17836,10 @@
                     "tgt": "Compute transitive closure of isa by Ins"
                 },
                 {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "TOT objTerm[ObjectDef*Term]"
+                },
+                {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
                     "tgt": "UNI pvsExp[PairViewSegment*Term]"
                 },
@@ -18361,6 +18418,10 @@
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Interface_41__44_E#-9127918049366277716#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
                     "tgt": "Composition"
                 },
                 {
@@ -19292,6 +19353,10 @@
                     "tgt": "Inclusion"
                 },
                 {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
+                    "tgt": "Union"
+                },
+                {
                     "src": "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                     "tgt": "Union"
                 },
@@ -20130,6 +20195,10 @@
                 {
                     "src": "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
                     "tgt": "Union"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
+                    "tgt": "Inclusion"
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
@@ -22471,7 +22540,7 @@
             "links": [
                 {
                     "src": "UNI_32_objTerm_91_ObjectDef_42_Term_93_",
-                    "tgt": "PropertyRule for UNI objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:42:5"
+                    "tgt": "PropertyRule for UNI objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:45:5"
                 },
                 {
                     "src": "TOT_32_genspc_91_IsE_42_Concept_93_",
@@ -22479,7 +22548,7 @@
                 },
                 {
                     "src": "UNI_32_isAPI_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for UNI isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5"
+                    "tgt": "PropertyRule for UNI isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5"
                 },
                 {
                     "src": "TOT_32_gengen_91_Isa_42_Concept_93_",
@@ -22491,7 +22560,7 @@
                 },
                 {
                     "src": "ASY_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
-                    "tgt": "PropertyRule for ASY isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5"
+                    "tgt": "PropertyRule for ASY isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5"
                 },
                 {
                     "src": "Compute_32_isaRfxStar_32_by_32_Del",
@@ -22519,7 +22588,7 @@
                 },
                 {
                     "src": "UNI_32_siConcept_91_Box_42_Concept_93_",
-                    "tgt": "PropertyRule for UNI siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:56:5"
+                    "tgt": "PropertyRule for UNI siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:59:5"
                 },
                 {
                     "src": "UNI_32_src_91_Signature_42_Concept_93_",
@@ -22535,7 +22604,7 @@
                 },
                 {
                     "src": "UNI_32_ifcPos_91_Interface_42_Origin_93_",
-                    "tgt": "PropertyRule for UNI ifcPos[Interface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:29:5"
+                    "tgt": "PropertyRule for UNI ifcPos[Interface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:32:5"
                 },
                 {
                     "src": "eq_32_relation",
@@ -22543,7 +22612,7 @@
                 },
                 {
                     "src": "UNI_32_objView_91_ObjectDef_42_View_93_",
-                    "tgt": "PropertyRule for UNI objView[ObjectDef*View] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:46:5"
+                    "tgt": "PropertyRule for UNI objView[ObjectDef*View] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:49:5"
                 },
                 {
                     "src": "UNI_32_singleton_91_Singleton_42_AtomValue_93_",
@@ -22583,15 +22652,15 @@
                 },
                 {
                     "src": "Equivalence_32__45__32_InsPair_32_ifcRoles",
-                    "tgt": "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:76:5"
+                    "tgt": "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:79:5"
                 },
                 {
                     "src": "UNI_32_references_91_InterfaceRef_42_Interface_93_",
-                    "tgt": "PropertyRule for UNI references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:64:5"
+                    "tgt": "PropertyRule for UNI references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:67:5"
                 },
                 {
                     "src": "INJ_32_isAPI_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for INJ isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5"
+                    "tgt": "PropertyRule for INJ isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5"
                 },
                 {
                     "src": "UNI_32_genspc_91_IsE_42_Concept_93_",
@@ -22611,11 +22680,11 @@
                 },
                 {
                     "src": "SYM_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
-                    "tgt": "PropertyRule for SYM isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5"
+                    "tgt": "PropertyRule for SYM isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5"
                 },
                 {
                     "src": "TOT_32_objcruds_91_ObjectDef_42_Cruds_93_",
-                    "tgt": "PropertyRule for TOT objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:44:5"
+                    "tgt": "PropertyRule for TOT objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:47:5"
                 },
                 {
                     "src": "del_32_unused_32_ShowADL",
@@ -22627,7 +22696,7 @@
                 },
                 {
                     "src": "UNI_32_ifcPurpose_91_Interface_42_Purpose_93_",
-                    "tgt": "PropertyRule for UNI ifcPurpose[Interface*Purpose] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:31:5"
+                    "tgt": "PropertyRule for UNI ifcPurpose[Interface*Purpose] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:34:5"
                 },
                 {
                     "src": "UNI_32_showADL_91_Term_42_ShowADL_93_",
@@ -22643,7 +22712,7 @@
                 },
                 {
                     "src": "UNI_32_ifcObj_91_Interface_42_ObjectDef_93_",
-                    "tgt": "PropertyRule for UNI ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5"
+                    "tgt": "PropertyRule for UNI ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5"
                 },
                 {
                     "src": "property_32_enum",
@@ -22663,7 +22732,7 @@
                 },
                 {
                     "src": "TOT_32_references_91_InterfaceRef_42_Interface_93_",
-                    "tgt": "PropertyRule for TOT references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:64:5"
+                    "tgt": "PropertyRule for TOT references[InterfaceRef*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:67:5"
                 },
                 {
                     "src": "UNI_32_decprL_91_Relation_42_String_93_",
@@ -22695,7 +22764,7 @@
                 },
                 {
                     "src": "UNI_32_objcruds_91_ObjectDef_42_Cruds_93_",
-                    "tgt": "PropertyRule for UNI objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:44:5"
+                    "tgt": "PropertyRule for UNI objcruds[ObjectDef*Cruds] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:47:5"
                 },
                 {
                     "src": "Compute_32_isaRfxDel",
@@ -22708,6 +22777,10 @@
                 {
                     "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
                     "tgt": "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Concepts.adl:56:5"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "PropertyRule for TOT objTerm[ObjectDef*Term] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:45:5"
                 },
                 {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
@@ -22747,7 +22820,7 @@
                 },
                 {
                     "src": "UNI_32_origin_91_SubInterface_42_Origin_93_",
-                    "tgt": "PropertyRule for UNI origin[SubInterface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:54:5"
+                    "tgt": "PropertyRule for UNI origin[SubInterface*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:57:5"
                 },
                 {
                     "src": "UNI_32_userCpt_91_Epsilon_42_Concept_93_",
@@ -22767,7 +22840,7 @@
                 },
                 {
                     "src": "SYM_32_isAPI_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for SYM isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5"
+                    "tgt": "PropertyRule for SYM isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5"
                 },
                 {
                     "src": "del_32_unused_32_RelationName",
@@ -22795,7 +22868,7 @@
                 },
                 {
                     "src": "TOT_32_ifcObj_91_Interface_42_ObjectDef_93_",
-                    "tgt": "PropertyRule for TOT ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5"
+                    "tgt": "PropertyRule for TOT ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5"
                 },
                 {
                     "src": "UNI_32_sign_91_Relation_42_Signature_93_",
@@ -22843,7 +22916,7 @@
                 },
                 {
                     "src": "ASY_32_isAPI_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for ASY isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:35:5"
+                    "tgt": "PropertyRule for ASY isAPI[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:38:5"
                 },
                 {
                     "src": "UNI_32_genspc_91_Isa_42_Concept_93_",
@@ -22859,7 +22932,7 @@
                 },
                 {
                     "src": "UNI_32_isPublic_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for UNI isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5"
+                    "tgt": "PropertyRule for UNI isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5"
                 },
                 {
                     "src": "INJ_32_interfaces_91_Context_42_Interface_93_",
@@ -22867,7 +22940,7 @@
                 },
                 {
                     "src": "UNI_32_origin_91_ObjectDef_42_Origin_93_",
-                    "tgt": "PropertyRule for UNI origin[ObjectDef*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5"
+                    "tgt": "PropertyRule for UNI origin[ObjectDef*Origin] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:43:5"
                 },
                 {
                     "src": "AllValidConcepts",
@@ -22875,11 +22948,11 @@
                 },
                 {
                     "src": "SYM_32_isPublic_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for SYM isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5"
+                    "tgt": "PropertyRule for SYM isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5"
                 },
                 {
                     "src": "UNI_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
-                    "tgt": "PropertyRule for UNI isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5"
+                    "tgt": "PropertyRule for UNI isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5"
                 },
                 {
                     "src": "originatesFromTotal",
@@ -22891,7 +22964,7 @@
                 },
                 {
                     "src": "UNI_32_siHeader_91_Box_42_BoxHeader_93_",
-                    "tgt": "PropertyRule for UNI siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:58:5"
+                    "tgt": "PropertyRule for UNI siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:61:5"
                 },
                 {
                     "src": "TOT_32_tgt_91_Signature_42_Concept_93_",
@@ -22903,7 +22976,7 @@
                 },
                 {
                     "src": "UNI_32_objSub_91_ObjectDef_42_SubInterface_93_",
-                    "tgt": "PropertyRule for UNI objSub[ObjectDef*SubInterface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:48:5"
+                    "tgt": "PropertyRule for UNI objSub[ObjectDef*SubInterface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:51:5"
                 },
                 {
                     "src": "UNI_32_name_91_Pattern_42_PatternName_93_",
@@ -22919,7 +22992,7 @@
                 },
                 {
                     "src": "INJ_32_isPublic_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for INJ isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5"
+                    "tgt": "PropertyRule for INJ isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5"
                 },
                 {
                     "src": "UNI_32_name_91_Interface_42_InterfaceName_93_",
@@ -22967,7 +23040,7 @@
                 },
                 {
                     "src": "TOT_32_siHeader_91_Box_42_BoxHeader_93_",
-                    "tgt": "PropertyRule for TOT siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:58:5"
+                    "tgt": "PropertyRule for TOT siHeader[Box*BoxHeader] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:61:5"
                 },
                 {
                     "src": "TOT_32_genspc_91_Isa_42_Concept_93_",
@@ -22987,7 +23060,7 @@
                 },
                 {
                     "src": "ASY_32_isPublic_91_Interface_42_Interface_93_",
-                    "tgt": "PropertyRule for ASY isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:68:5"
+                    "tgt": "PropertyRule for ASY isPublic[Interface*Interface] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:71:5"
                 },
                 {
                     "src": "UNI_32_context_91_IsE_42_Context_93_",
@@ -23003,15 +23076,15 @@
                 },
                 {
                     "src": "TOT_32_label_91_FieldDef_42_FieldName_93_",
-                    "tgt": "PropertyRule for TOT label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:37:5"
+                    "tgt": "PropertyRule for TOT label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5"
                 },
                 {
                     "src": "violatableByInterface",
-                    "tgt": "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:108:1"
+                    "tgt": "/workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:111:1"
                 },
                 {
                     "src": "INJ_32_isLink_91_InterfaceRef_42_InterfaceRef_93_",
-                    "tgt": "PropertyRule for INJ isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:62:5"
+                    "tgt": "PropertyRule for INJ isLink[InterfaceRef*InterfaceRef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:65:5"
                 },
                 {
                     "src": "UNI_32_operator_91_BinaryTerm_42_Operator_93_",
@@ -23039,7 +23112,7 @@
                 },
                 {
                     "src": "TOT_32_siConcept_91_Box_42_Concept_93_",
-                    "tgt": "PropertyRule for TOT siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:56:5"
+                    "tgt": "PropertyRule for TOT siConcept[Box*Concept] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:59:5"
                 },
                 {
                     "src": "UNI_32_decprM_91_Relation_42_String_93_",
@@ -23051,7 +23124,7 @@
                 },
                 {
                     "src": "UNI_32_label_91_FieldDef_42_FieldName_93_",
-                    "tgt": "PropertyRule for UNI label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:37:5"
+                    "tgt": "PropertyRule for UNI label[FieldDef*FieldName] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:40:5"
                 },
                 {
                     "src": "self_45_sustained_32_patterns",
@@ -23091,7 +23164,7 @@
                 },
                 {
                     "src": "INJ_32_ifcObj_91_Interface_42_ObjectDef_93_",
-                    "tgt": "PropertyRule for INJ ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:33:5"
+                    "tgt": "PropertyRule for INJ ifcObj[Interface*ObjectDef] which is defined at /workspaces/4ampersand/AmpersandData/FormalAmpersand/Interfaces.adl:36:5"
                 }
             ],
             "relation": "origin[Rule*Origin]"
@@ -23494,6 +23567,10 @@
                 {
                     "src": "objTerm_91_ObjectDef_42_Term_93_",
                     "tgt": "UNI"
+                },
+                {
+                    "src": "objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "TOT"
                 },
                 {
                     "src": "srcOrTgt_91_PairViewSegment_42_SourceOrTarget_93_",
@@ -23969,6 +24046,10 @@
                     "tgt": "UNI_32_objTerm_91_ObjectDef_42_Term_93_"
                 },
                 {
+                    "src": "objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "TOT_32_objTerm_91_ObjectDef_42_Term_93_"
+                },
+                {
                     "src": "srcOrTgt_91_PairViewSegment_42_SourceOrTarget_93_",
                     "tgt": "UNI_32_srcOrTgt_91_PairViewSegment_42_SourceOrTarg#1248188274959723394#"
                 },
@@ -24192,11 +24273,11 @@
             "links": [
                 {
                     "src": "edit_91_FieldDef_42_Relation_93_",
-                    "tgt": "Markup__Markup_32__123_amLang_32__61__32_English_4#2382150146655214601#"
+                    "tgt": "Markup__Markup_32__123_amLang_32__61__32_English_4#6248253104415827592#"
                 },
                 {
                     "src": "editFlp_91_FieldDef_42_Relation_93_",
-                    "tgt": "Markup__Markup_32__123_amLang_32__61__32_English_4#7089776815042133620#"
+                    "tgt": "Markup__Markup_32__123_amLang_32__61__32_English_4#-5176143135339241061#"
                 }
             ],
             "relation": "purpose[Relation*Purpose]"
@@ -24301,6 +24382,10 @@
                     "tgt": "EDcI_32_Context"
                 },
                 {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6929994025402579025#",
+                    "tgt": "EDcI_32_Interface"
+                },
+                {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#3594353598892776048#",
                     "tgt": "EDcI_32_Context"
                 },
@@ -24353,16 +24438,16 @@
                     "tgt": "EDcI_32_Relation"
                 },
                 {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8805566441558765922#",
-                    "tgt": "EDcI_32_Role"
-                },
-                {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6367020530931582629#",
                     "tgt": "EDcI_32_Conjunct"
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-7092287465553776561#",
                     "tgt": "EDcI_32_Concept"
+                },
+                {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#2022517626440691726#",
+                    "tgt": "EDcI_32_Role"
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-1046784457612408913#",
@@ -24387,10 +24472,6 @@
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5549395786449825577#",
                     "tgt": "EDcI_32_Concept"
-                },
-                {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6438693003504662049#",
-                    "tgt": "EDcI_32_Interface"
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8467015564487524067#",
@@ -24783,43 +24864,47 @@
                 },
                 {
                     "src": "conj__158",
+                    "tgt": "ECpl_32__40_EDif_32__40_EDcI_32_Relation_44_ECps_3#-4721649605958580582#"
+                },
+                {
+                    "src": "conj__159",
                     "tgt": "ECpl_32__40_EDif_32__40_EDcI_32_Rule_44_ECps_32__4#181775705538639546#"
                 },
                 {
                     "src": "conj__150",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#-2882049271868763755#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#-1851486567500675163#"
                 },
                 {
                     "src": "conj__151",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#2096199597483545749#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#-2882049271868763755#"
                 },
                 {
                     "src": "conj__152",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_RelationName_41__4#-3968378341128493976#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#2096199597483545749#"
                 },
                 {
                     "src": "conj__153",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_RuleName_41__44_EC#-7479074581360629800#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_RelationName_41__4#-3968378341128493976#"
                 },
                 {
                     "src": "conj__154",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ShowADL_41__44_ECp#-1120423720904180775#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_RuleName_41__44_EC#-7479074581360629800#"
                 },
                 {
                     "src": "conj__155",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Signature_41__44_E#-9064917324554369105#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ShowADL_41__44_ECp#-1120423720904180775#"
                 },
                 {
                     "src": "conj__156",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Signature_41__44_E#-7526116412807315785#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Signature_41__44_E#-9064917324554369105#"
                 },
                 {
                     "src": "conj__157",
-                    "tgt": "ECpl_32__40_EDif_32__40_EDcI_32_Relation_44_ECps_3#-4721649605958580582#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Signature_41__44_E#-7526116412807315785#"
                 },
                 {
                     "src": "conj__141",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#1091083699576031561#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#"
                 },
                 {
                     "src": "conj__140",
@@ -24827,35 +24912,35 @@
                 },
                 {
                     "src": "conj__143",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PairViewSegment_41#-549062545227957801#"
-                },
-                {
-                    "src": "conj__142",
                     "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PairViewSegment_41#1062731021626850279#"
                 },
                 {
-                    "src": "conj__145",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PatternName_41__44#-7371514286169347286#"
+                    "src": "conj__142",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#1091083699576031561#"
                 },
                 {
-                    "src": "conj__144",
+                    "src": "conj__145",
                     "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Pattern_41__44_ECp#3284062410489217123#"
                 },
                 {
-                    "src": "conj__147",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PropertyRule_41__4#-4765578365111002928#"
+                    "src": "conj__144",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PairViewSegment_41#-549062545227957801#"
                 },
                 {
-                    "src": "conj__146",
+                    "src": "conj__147",
                     "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Property_41__44_EU#7037445153443409301#"
                 },
                 {
+                    "src": "conj__146",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PatternName_41__44#-7371514286169347286#"
+                },
+                {
                     "src": "conj__149",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Relation_41__44_EC#-1851486567500675163#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PropertyRule_41__4#-5681554588603169584#"
                 },
                 {
                     "src": "conj__148",
-                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PropertyRule_41__4#-5681554588603169584#"
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_PropertyRule_41__4#-4765578365111002928#"
                 },
                 {
                     "src": "conj__118",
@@ -25581,7 +25666,7 @@
                 },
                 {
                     "src": "Equivalence_32__45__32_InsPair_32_ifcRoles",
-                    "tgt": "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#"
+                    "tgt": "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#"
                 },
                 {
                     "src": "del_32_unused_32_ShowADL",
@@ -25863,6 +25948,10 @@
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Interface_41__44_E#-9127918049366277716#",
                     "tgt": "EDcD_32_isPublic_91_Interface_42_Interface_93_"
+                },
+                {
+                    "src": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
+                    "tgt": "EFlp_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#5846718068902625391#"
                 },
                 {
                     "src": "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
@@ -26793,6 +26882,10 @@
                     "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_propertyRule_91_Re#2483413020015402282#"
                 },
                 {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
+                    "tgt": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#"
+                },
+                {
                     "src": "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                     "tgt": "ECps_32__40_EDcD_32_context_91_IsE_42_Context_93__#-7172571961216105318#"
                 },
@@ -27631,6 +27724,10 @@
                 {
                     "src": "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
                     "tgt": "EUni_32__40_EMp1_32__34_TOT_34__32_Property_44_EUn#6134336463331586332#"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
+                    "tgt": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#"
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
@@ -29066,6 +29163,22 @@
                     "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-3254094655551564719#"
                 },
                 {
+                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#",
+                    "tgt": "PairViewText_32__123_pos_32__61__32__47_workspaces#6404956908148787715#"
+                },
+                {
+                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#",
+                    "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6929994025402579025#"
+                },
+                {
+                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#",
+                    "tgt": "PairViewText_32__123_pos_32__61__32__47_workspaces#-2782494296001537405#"
+                },
+                {
+                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#3378645247019989944#",
+                    "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#2022517626440691726#"
+                },
+                {
                     "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#-6695776832735558197#",
                     "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5363706261334871523#"
                 },
@@ -29178,22 +29291,6 @@
                     "tgt": "PairViewText_32__123_pos_32__61__32__47_workspaces#-3194976766288887997#"
                 },
                 {
-                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#",
-                    "tgt": "PairViewText_32__123_pos_32__61__32__47_workspaces#-4396887134297260285#"
-                },
-                {
-                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#",
-                    "tgt": "PairViewText_32__123_pos_32__61__32__47_workspaces#-404742965761536381#"
-                },
-                {
-                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#",
-                    "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8805566441558765922#"
-                },
-                {
-                    "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#5114158964397161672#",
-                    "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6438693003504662049#"
-                },
-                {
                     "src": "PairView_32__123_ppv__segs_32__61__32_PairViewText#-3996174637997282904#",
                     "tgt": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-222427934393979460#"
                 },
@@ -29288,6 +29385,10 @@
                 },
                 {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-1884683064267465899#",
+                    "tgt": "0"
+                },
+                {
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#6404956908148787715#",
                     "tgt": "0"
                 },
                 {
@@ -29407,16 +29508,16 @@
                     "tgt": "2"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-4396887134297260285#",
-                    "tgt": "2"
-                },
-                {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#8266645249670394348#",
                     "tgt": "0"
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6582250898964540716#",
                     "tgt": "3"
+                },
+                {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6929994025402579025#",
+                    "tgt": "1"
                 },
                 {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#7276621129416797021#",
@@ -29455,11 +29556,11 @@
                     "tgt": "1"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-7488721160847652111#",
-                    "tgt": "0"
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-2782494296001537405#",
+                    "tgt": "2"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-404742965761536381#",
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-7488721160847652111#",
                     "tgt": "0"
                 },
                 {
@@ -29515,10 +29616,6 @@
                     "tgt": "1"
                 },
                 {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8805566441558765922#",
-                    "tgt": "3"
-                },
-                {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6367020530931582629#",
                     "tgt": "1"
                 },
@@ -29533,6 +29630,10 @@
                 {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-4762048457125952680#",
                     "tgt": "0"
+                },
+                {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#2022517626440691726#",
+                    "tgt": "3"
                 },
                 {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-3506032549701410125#",
@@ -29576,10 +29677,6 @@
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5549395786449825577#",
-                    "tgt": "1"
-                },
-                {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6438693003504662049#",
                     "tgt": "1"
                 },
                 {
@@ -29906,6 +30003,10 @@
                 {
                     "src": "EEps_32_KleeneStar_32__91_KleeneStar_42_UnaryTerm_#8911557165523640372#",
                     "tgt": "I[KleeneStar]"
+                },
+                {
+                    "src": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
+                    "tgt": "objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~"
                 },
                 {
                     "src": "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
@@ -31360,6 +31461,10 @@
                     "tgt": "I[PropertyRule] |- propertyRule [Relation*PropertyRule]~;propertyRule [Relation*PropertyRule]"
                 },
                 {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
+                    "tgt": " -I[ObjectDef]\\/objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~"
+                },
+                {
                     "src": "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                     "tgt": " -I[IsE]\\/context [IsE*Context];context [IsE*Context]~"
                 },
@@ -32634,6 +32739,10 @@
                 {
                     "src": "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
                     "tgt": "\"UNI\"[Property]\\/\"TOT\"[Property]\\/\"INJ\"[Property]\\/\"SUR\"[Property]\\/\"RFX\"[Property]\\/\"IRF\"[Property]\\/\"SYM\"[Property]\\/\"ASY\"[Property]\\/\"TRN\"[Property]\\/\"PROP\"[Property]"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
+                    "tgt": "I[ObjectDef] |- objTerm [ObjectDef*Term];objTerm [ObjectDef*Term]~"
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
@@ -35410,6 +35519,10 @@
                     "tgt": "_91_KleeneStar_42_UnaryTerm_93_"
                 },
                 {
+                    "src": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#",
+                    "tgt": "_91_ObjectDef_42_ObjectDef_93_"
+                },
+                {
                     "src": "ECps_32__40_ECps_32__40_EDcD_32_name_91_Role_42_Ro#9167836748243548288#",
                     "tgt": "_91_Role_42_Role_93_"
                 },
@@ -36862,6 +36975,10 @@
                     "tgt": "_91_PropertyRule_42_PropertyRule_93_"
                 },
                 {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#",
+                    "tgt": "_91_ObjectDef_42_ObjectDef_93_"
+                },
+                {
                     "src": "EUni_32__40_ECpl_32__40_EDcI_32_IsE_41__44_ECps_32#-7105691593096502798#",
                     "tgt": "_91_IsE_42_IsE_93_"
                 },
@@ -38136,6 +38253,10 @@
                 {
                     "src": "EUni_32__40_EMp1_32__34_UNI_34__32_Property_44_EUn#-74167698387606227#",
                     "tgt": "_91_Property_42_Property_93_"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#",
+                    "tgt": "_91_ObjectDef_42_ObjectDef_93_"
                 },
                 {
                     "src": "ECps_32__40_ECpl_32__40_EDcI_32_Context_41__44_EFl#4449188333836355033#",
@@ -41686,6 +41807,10 @@
                     "tgt": "Tgt"
                 },
                 {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6929994025402579025#",
+                    "tgt": "Src"
+                },
+                {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#3594353598892776048#",
                     "tgt": "Tgt"
                 },
@@ -41738,15 +41863,15 @@
                     "tgt": "Src"
                 },
                 {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-8805566441558765922#",
-                    "tgt": "Tgt"
-                },
-                {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6367020530931582629#",
                     "tgt": "Src"
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-7092287465553776561#",
+                    "tgt": "Tgt"
+                },
+                {
+                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#2022517626440691726#",
                     "tgt": "Tgt"
                 },
                 {
@@ -41771,10 +41896,6 @@
                 },
                 {
                     "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-5549395786449825577#",
-                    "tgt": "Src"
-                },
-                {
-                    "src": "PairViewExp_32__123_pos_32__61__32__47_workspaces_#-6438693003504662049#",
                     "tgt": "Src"
                 },
                 {
@@ -42312,6 +42433,10 @@
                     "tgt": "Rule "
                 },
                 {
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#6404956908148787715#",
+                    "tgt": "{EX} InsPair;ifcRoles;Interface;"
+                },
+                {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-2410634182281203740#",
                     "tgt": ";Concept;"
                 },
@@ -42392,10 +42517,6 @@
                     "tgt": ";Context;"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-4396887134297260285#",
-                    "tgt": ";Role;"
-                },
-                {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#8266645249670394348#",
                     "tgt": "{EX} DelAtom;Rule;"
                 },
@@ -42412,12 +42533,12 @@
                     "tgt": "{EX} InsPair;valid;Rule;"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-7488721160847652111#",
-                    "tgt": "{EX} DelAtom;BindedRelation;"
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-2782494296001537405#",
+                    "tgt": ";Role;"
                 },
                 {
-                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-404742965761536381#",
-                    "tgt": "{EX} InsPair;ifcRoles;Interface;"
+                    "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-7488721160847652111#",
+                    "tgt": "{EX} DelAtom;BindedRelation;"
                 },
                 {
                     "src": "PairViewText_32__123_pos_32__61__32__47_workspaces#-7622220362056217632#",
@@ -44292,6 +44413,10 @@
                 {
                     "src": "Compute_32_transitive_32_closure_32_of_32_isa_32_b#1654709666351380328#",
                     "tgt": "Compute_32transitive_32closure_32of_32isa_32by_32Ins"
+                },
+                {
+                    "src": "TOT_32_objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "TOT_32objTerm_91ObjectDef_42Term_93"
                 },
                 {
                     "src": "UNI_32_pvsExp_91_PairViewSegment_42_Term_93_",
@@ -47844,6 +47969,10 @@
                 },
                 {
                     "src": "objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "ECps_32__40_EDcD_32_objTerm_91_ObjectDef_42_Term_9#-1338051568772557286#"
+                },
+                {
+                    "src": "objTerm_91_ObjectDef_42_Term_93_",
                     "tgt": "EUni_32__40_ECpl_32__40_ECps_32__40_EDcD_32_objTer#1746327289302321110#"
                 },
                 {
@@ -47856,11 +47985,19 @@
                 },
                 {
                     "src": "objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_ObjectDef_41__44_E#-1639340282418111671#"
+                },
+                {
+                    "src": "objTerm_91_ObjectDef_42_Term_93_",
                     "tgt": "ECps_32__40_ECps_32__40_EDcD_32_objTerm_91_ObjectD#-1157984770615476369#"
                 },
                 {
                     "src": "objTerm_91_ObjectDef_42_Term_93_",
                     "tgt": "EInc_32__40_ECps_32__40_ECps_32__40_EDcD_32_objTer#2755689963060822738#"
+                },
+                {
+                    "src": "objTerm_91_ObjectDef_42_Term_93_",
+                    "tgt": "EInc_32__40_EDcI_32_ObjectDef_44_ECps_32__40_EDcD_#-6757744774326411603#"
                 },
                 {
                     "src": "objTerm_91_ObjectDef_42_Term_93_",
@@ -50448,7 +50585,7 @@
             "links": [
                 {
                     "src": "FormalAmpersand",
-                    "tgt": "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:3b7f3da36*], build time: 11-May-24 11:26:51 CEST"
+                    "tgt": "Ampersand-v4.7.7 [formalampersand-meatgrinder-update-example:eb47cc3c7], build time: 11-May-24 16:59:29 CEST"
                 }
             ],
             "relation": "versionInfo[Context*AmpersandVersion]"
