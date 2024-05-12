@@ -49,6 +49,8 @@ jobs:
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          upgrade-stack: false
+          cache-save-always: true
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
