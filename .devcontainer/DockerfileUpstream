@@ -29,6 +29,7 @@ RUN \
     libgmp10 \
     libnuma-dev \
     lsb-release \
+    openssh-server \
     software-properties-common \
     wget \
     zlib1g-dev \
