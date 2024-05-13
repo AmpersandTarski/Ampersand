@@ -7,10 +7,9 @@
     "dockerfile": "Dockerfile"
   },
   "mounts": [
-    "type=bind,source=${localWorkspaceFolder},target=/work",
-    // "type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
+    "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/,target=/home/vscode/.ssh,readonly"
   ],
-  "postStartCommand": "stack build",
+  //  "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
       "extensions": [
