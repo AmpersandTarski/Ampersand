@@ -9,7 +9,7 @@
   "mounts": [
     "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/,target=/home/vscode/.ssh,readonly"
   ],
-  //  "postStartCommand": "stack build",
+  "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
       "extensions": [
