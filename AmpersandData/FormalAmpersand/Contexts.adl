@@ -35,7 +35,7 @@ PATTERN Context
 
     IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
 
-    RELATION name[Concept*ConceptName] [UNI,TOT] 
+    RELATION name[Concept*ConceptName] [TOT,SUR] --Not UNI because of aliases
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     REPRESENT ConceptName TYPE ALPHANUMERIC
     RELATION context[Isa*Context] [UNI,TOT]

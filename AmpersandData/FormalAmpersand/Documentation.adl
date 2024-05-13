@@ -4,6 +4,25 @@ PURPOSE PATTERN Documentation
 +}
 PATTERN Documentation
     
+    CONCEPT Purpose ""
+    CONCEPT Meaning ""
+    CLASSIFY Meaning ISA Markup
+    CLASSIFY Markup ISA Meaning
+    CONCEPT MarkupText ""
+    CONCEPT Markup ""
+
+    RELATION language[Markup*Language][UNI,TOT]
+    RELATION text[Markup*MarkupText][UNI,TOT]
+    RULE enumerationOfLanguage : I[Language] = "Dutch" \/ "English" 
+    POPULATION Language CONTAINS ["Dutch", "English" ]
+    RELATION origin[Purpose*Origin][]
+    RELATION explMarkup[Purpose*Markup][TOT,UNI]
+    RELATION explRefIds[Purpose*Text]
+    MEANING "Refers to an authoritative source to legitimize the purpose."
+
+    -- TODO: Specify the rule that each purpose must be the purpose of a concept, pattern relation etc. whatever.
+
+
     REPRESENT MarkupText TYPE BIGALPHANUMERIC    
     RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
     MEANING "The meanings of a relation."
