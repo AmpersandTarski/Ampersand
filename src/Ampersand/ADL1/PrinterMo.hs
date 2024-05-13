@@ -58,7 +58,7 @@ quote :: Text -> Doc
 quote = text . show
 
 quotePurpose :: Text -> Doc
-quotePurpose p = text "{+" <> escapeExpl p <> text "+}"
+quotePurpose p = text "{+ " <> escapeExpl p <> text " +}"
   where
     escapeExpl = text . T.unpack . escapeCommentStart . escapeLineComment . escapeExplEnd
     escapeCommentStart = escape "{-"
