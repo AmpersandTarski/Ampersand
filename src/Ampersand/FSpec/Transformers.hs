@@ -20,6 +20,7 @@ import Ampersand.FSpec.Instances
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Text.Pandoc.Shared (stringify)
 
 -- import qualified Text.Pandoc.Shared as P
 
@@ -1548,12 +1549,7 @@ tmpNewTransformerDefsFA :: FSpec -> [Transformer]
 tmpNewTransformerDefsFA fSpec =
   map
     toTransformer
-    [ ( "cddef2",
-        "ConceptDef",
-        "Meaning",
-        [] --TODO
-      ),
-      ( "context",
+    [ ( "context",
         "Rule",
         "Context",
         [ (dirtyId rul, dirtyId ctx)
@@ -1745,5 +1741,61 @@ tmpNewTransformerDefsFA fSpec =
             ifc :: Interface <- instanceList fSpec,
             name ifc == siIfcId ref
         ]
+      ),
+      ( "origin",
+        "BoxItem",
+        "Origin",
+        [] --TODO han verder invullen
+      ),
+      ( "objDef",
+        "BxExpr",
+        "ObjectDef",
+        [] --TODO han verder invullen
+      ),
+      ( "text",
+        "BxTxt",
+        "Text",
+        [] --TODO han verder invullen
+      ),
+      ( "meaning",
+        "ConceptDef",
+        "Meaning",
+        [] --TODO han verder invullen
+      ),
+      ( "language",
+        "Markup",
+        "Language",
+        [ (dirtyId mkp, PopAlphaNumeric . tshow . amLang $ mkp)
+          | mkp :: Markup <- instanceList fSpec
+        ]
+      ),
+      ( "text",
+        "Markup",
+        "MarkupText",
+        [ (dirtyId mkp, PopAlphaNumeric . stringify . amPandoc $ mkp)
+          | mkp :: Markup <- instanceList fSpec
+        ]
+      ),
+      ( "explMarkup",
+        "Purpose",
+        "Markup",
+        [ (dirtyId prp, dirtyId (explMarkup prp))
+          | prp :: Purpose <- instanceList fSpec
+        ]
+      ),
+      ( "origin",
+        "Purpose",
+        "Origin",
+        [] --TODO han verder invullen
+      ),
+      ( "explRefIds",
+        "Purpose",
+        "Text",
+        [] --TODO han verder invullen
+      ),
+      ( "decMean",
+        "Relation",
+        "Meaning",
+        [] --TODO han verder invullen
       )
     ]

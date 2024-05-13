@@ -7,7 +7,7 @@ PATTERN Documentation
     CONCEPT Purpose ""
     CONCEPT Meaning ""
     CLASSIFY Meaning ISA Markup
-    CLASSIFY Markup ISA Meaning
+    -- CLASSIFY Markup ISA Meaning
     CONCEPT MarkupText ""
     CONCEPT Markup ""
 
@@ -28,6 +28,7 @@ PATTERN Documentation
     MEANING "The meanings of a relation."
     RELATION decMean[Relation * Meaning]
     MEANING "The meanings of a relation."
+    RELATION meaning[ConceptDef*Meaning]
     RELATION purpose[Pattern*Purpose]
     MEANING "The purposes of a pattern."
     RELATION purpose[Relation * Purpose]
