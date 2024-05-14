@@ -1641,7 +1641,7 @@
                 "Intersection_32_IS_32_BinaryTerm",
                 "KleenePlus_32_IS_32_UnaryTerm",
                 "Inclusion_32_IS_32_BinaryTerm",
-                "ObjectDef_32_IS_32_Term",
+                "Meaning_32_IS_32_Markup",
                 "V_32_IS_32_Term",
                 "Singleton_32_IS_32_Term",
                 "BindedRelation_32_IS_32_Term",
@@ -9723,7 +9723,7 @@
                     "tgt": "FormalAmpersand"
                 },
                 {
-                    "src": "ObjectDef_32_IS_32_Term",
+                    "src": "Meaning_32_IS_32_Markup",
                     "tgt": "FormalAmpersand"
                 },
                 {
@@ -15685,8 +15685,8 @@
                     "tgt": "BinaryTerm"
                 },
                 {
-                    "src": "ObjectDef_32_IS_32_Term",
-                    "tgt": "Term"
+                    "src": "Meaning_32_IS_32_Markup",
+                    "tgt": "Markup"
                 },
                 {
                     "src": "V_32_IS_32_Term",
@@ -15806,8 +15806,8 @@
                     "tgt": "Inclusion"
                 },
                 {
-                    "src": "ObjectDef_32_IS_32_Term",
-                    "tgt": "ObjectDef"
+                    "src": "Meaning_32_IS_32_Markup",
+                    "tgt": "Meaning"
                 },
                 {
                     "src": "V_32_IS_32_Term",
@@ -16021,8 +16021,8 @@
                     "tgt": "Identifier"
                 },
                 {
-                    "src": "Interface",
-                    "tgt": "ObjectDef"
+                    "src": "Meaning",
+                    "tgt": "Markup"
                 },
                 {
                     "src": "Composition",
