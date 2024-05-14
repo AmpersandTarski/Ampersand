@@ -6,7 +6,7 @@ PATTERN Documentation
     
     CONCEPT Purpose ""
     CONCEPT Meaning ""
-    CLASSIFY Meaning ISA Markup
+    -- CLASSIFY Meaning ISA Markup See issue https://github.com/AmpersandTarski/Ampersand/issues/1484
     -- CLASSIFY Markup ISA Meaning
     CONCEPT MarkupText ""
     CONCEPT Markup ""
