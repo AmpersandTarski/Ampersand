@@ -419,9 +419,9 @@ transformersFormalAmpersand fSpec =
       ( "ifcPos",
         "Interface",
         "Origin",
-        [ (dirtyId ifc, PopAlphaNumeric . tshow . origin $ ifc)
+        [ (dirtyId ifc, popatom)
           | ifc :: Interface <- instanceList fSpec,
-            origin ifc `notElem` [OriginUnknown, MeatGrinder]
+            Just popatom <- [originToPopAtom ifc]
         ]
       ),
       ( "ifcPurpose",
@@ -621,9 +621,9 @@ transformersFormalAmpersand fSpec =
       ( "origin",
         "ObjectDef",
         "Origin",
-        [ (dirtyId obj, PopAlphaNumeric . tshow . origin $ obj)
+        [ (dirtyId obj, popatom)
           | obj :: ObjectDef <- instanceList fSpec,
-            origin obj `notElem` [OriginUnknown, MeatGrinder]
+            Just popatom <- [originToPopAtom obj]
         ]
       ),
       ( "operator",
@@ -645,9 +645,9 @@ transformersFormalAmpersand fSpec =
       ( "origin",
         "Rule",
         "Origin",
-        [ (dirtyId rul, PopAlphaNumeric . tshow . origin $ rul)
+        [ (dirtyId rul, popatom)
           | rul :: Rule <- instanceList fSpec,
-            origin rul `notElem` [OriginUnknown, MeatGrinder]
+            Just popatom <- [originToPopAtom rul]
         ]
       ),
       ( "rrviol",
@@ -993,9 +993,9 @@ transformersFormalAmpersand fSpec =
       --   "View",
       --   "Origin",
       --
-      --   [ (dirtyId vd, PopAlphaNumeric . tshow . origin $ vd)
+      --   [ (dirtyId vd, popatom)
       --     | vd :: ViewDef <- instanceList fSpec,
-      --       origin vd `notElem` [OriginUnknown, MeatGrinder]
+      --       Just popatom <- [originToPopAtom vd]
       --   ]
       -- ),
       ( "versionInfo",
@@ -1713,8 +1713,9 @@ tmpNewTransformerDefsFA fSpec =
       ( "origin",
         "SubInterface",
         "Origin",
-        [ (dirtyId si, PopAlphaNumeric . tshow . origin $ si)
-          | si :: SubInterface <- instanceList fSpec
+        [ (dirtyId si, popatom)
+          | si :: SubInterface <- instanceList fSpec,
+            Just popatom <- [originToPopAtom si]
         ]
       ),
       ( "siObjs",
@@ -1786,7 +1787,10 @@ tmpNewTransformerDefsFA fSpec =
       ( "origin",
         "Purpose",
         "Origin",
-        [] --TODO han verder invullen
+        [ (dirtyId prp, popatom)
+          | prp :: Purpose <- instanceList fSpec,
+            Just popatom <- [originToPopAtom prp]
+        ]
       ),
       ( "explRefIds",
         "Purpose",
@@ -1796,6 +1800,21 @@ tmpNewTransformerDefsFA fSpec =
       ( "decMean",
         "Relation",
         "Meaning",
-        [] --TODO han verder invullen
+        [ (dirtyId rel, dirtyId mean)
+          | rel :: Relation <- instanceList fSpec,
+            mean <- decMean rel
+        ]
       )
     ]
+
+originToPopAtom :: (Traced a) => a -> Maybe PopAtom
+originToPopAtom x = case origin x of
+  OriginUnknown -> Nothing
+  OriginAtlas -> Nothing
+  Origin txt -> Just (PopAlphaNumeric txt)
+  PropertyRule {} -> standard
+  FileLoc {} -> standard
+  XLSXLoc {} -> standard
+  MeatGrinder -> Nothing
+  where
+    standard = Just . PopAlphaNumeric . tshow . origin $ x
