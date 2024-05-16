@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.1.1 (16 may 2024)
+- Some enhancements for the .devcontainer
+
 ## v5.1.0 (29 april 2024)
 
 - Upgrade development toolstack to ghc 9.6.4 This involved upgrades of several dependencies. 
