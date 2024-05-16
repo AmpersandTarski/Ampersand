@@ -3,7 +3,7 @@ module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 import Ampersand.ADL1
 import Ampersand.FSpec.Crud
 import Ampersand.FSpec.ToFSpec.ADL2Plug
-import Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Ampersand.Graphic.ClassDiagram -- (Class(..),CdAttribute(..))
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
@@ -12,7 +12,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 ------------------------------------------------------------
---DESCR -> the data analysis contains a section for each class diagram in the fSpec
+-- DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and property rules are printed
 chpDataAnalysis ::
   (HasDirOutput env, HasDocumentOpts env) =>
@@ -135,10 +135,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
     -- The second table contains all other concepts.
     conceptTables =
       legacyTable
-        ( text . l $
-            ( NL "Logische gegevensverzamelingen",
-              EN "Logical entity types"
-            )
+        ( text
+            . l
+            $ ( NL "Logische gegevensverzamelingen",
+                EN "Logical entity types"
+              )
         )
         [(AlignLeft, 2 / 8), (AlignLeft, 4 / 8), (AlignLeft, 1 / 8), (AlignLeft, 1 / 8)]
         [ (plain . text . l) (NL "Concept", EN "Concept"),
@@ -169,10 +170,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                 $ concs fSpec
         ]
         <> legacyTable
-          ( text . l $
-              ( NL "Overige attributen",
-                EN "Other attributes"
-              )
+          ( text
+              . l
+              $ ( NL "Overige attributen",
+                  EN "Other attributes"
+                )
           )
           [(AlignLeft, 1 / 6), (AlignLeft, 4 / 6), (AlignLeft, 1 / 6)]
           [ (plain . text . l) (NL "Concept", EN "Concept"),
@@ -429,14 +431,15 @@ chpDataAnalysis env fSpec = (theBlocks, [])
     daRulesSection =
       mconcat
         [ header sectionLevel . text $ l (NL "Regels", EN "Rules"),
-          para . text $
-            l
-              ( NL $
-                  "Nu volgt een opsomming van alle regels door de term van elke regel af te drukken. "
-                    <> "Eerst worden de procesregels gegeven, vervolgens de invarianten.",
-                EN $
-                  "In this section an overview of all rules by printing the term of each rule. "
-                    <> "The process rules are given first, followed by the invariants."
+          para
+            . text
+            $ l
+              ( NL
+                  $ "Nu volgt een opsomming van alle regels door de term van elke regel af te drukken. "
+                  <> "Eerst worden de procesregels gegeven, vervolgens de invarianten.",
+                EN
+                  $ "In this section an overview of all rules by printing the term of each rule. "
+                  <> "The process rules are given first, followed by the invariants."
               ),
           docRules
             (NL "Procesregels", EN "Process rules")
@@ -465,11 +468,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           if null rules
             then (para . text . l) noRules
             else
-              mconcat $
-                [ header (sectionLevel + 1) . text $ l title,
-                  para . text $ l intro
-                ]
-                  <> map (docRule heading) (toList rules)
+              mconcat
+                $ [ header (sectionLevel + 1) . text $ l title,
+                    para . text $ l intro
+                  ]
+                <> map (docRule heading) (toList rules)
 
         docRule :: LocalizedStr -> Rule -> Blocks
         docRule heading rule =

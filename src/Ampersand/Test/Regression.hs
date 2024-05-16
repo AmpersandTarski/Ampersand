@@ -81,8 +81,8 @@ walkDirTree fp = do
       entries <- getDirectoryContents fp >>= filterHidden
       subdirs <- filterM isDir entries
       files <- filterM isFile entries
-      return $
-        DirList
+      return
+        $ DirList
           { filesOf = files,
             subdirsOf = subdirs
           }
@@ -144,15 +144,15 @@ doTestsInDir = awaitForever once
       where
         doFilesWithCommand :: (HasProcessContext env, HasLogFunc env) => [FilePath] -> TestSpec -> RIO env TestResults
         doFilesWithCommand candidates ti =
-          runConduit $
-            doAll candidates (testCmds ti)
-              .| mapMC runTestcase
-              .| sumarizeTestCases
+          runConduit
+            $ doAll candidates (testCmds ti)
+            .| mapMC runTestcase
+            .| sumarizeTestCases
           where
             doAll :: [FilePath] -> [TestInstruction] -> ConduitT () TestCase (RIO env) ()
             doAll cs tis =
-              yieldMany $
-                foo [\nr -> TestCase (traversalNr x, nr) f ti' | f <- cs, ti' <- tis] 1
+              yieldMany
+                $ foo [\nr -> TestCase (traversalNr x, nr) f ti' | f <- cs, ti' <- tis] 1
               where
                 foo :: [Int -> TestCase] -> Int -> [TestCase]
                 foo [] _ = []
@@ -162,8 +162,8 @@ doTestsInDir = awaitForever once
               let instr = instruction tc
                   indnt = ">> " <> (display . fst . testNr $ tc) <> "." <> (display . snd . testNr $ tc) <> ": "
               res <- testAdlfile indnt (path x) (testFile tc) instr
-              return $
-                if res
+              return
+                $ if res
                   then TestResults {successes = 1, failures = 0}
                   else TestResults {successes = 0, failures = 1}
 
@@ -178,9 +178,9 @@ doTestsInDir = awaitForever once
                       (\result -> loop $! add sofar result)
         parseYaml :: RIO env (Either ParseException TestSpec)
         parseYaml = liftIO . decodeFileEither $ path x </> yaml
-    sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
+    sayInstruction :: (HasLogFunc env) => TestInstruction -> RIO env ()
     sayInstruction x = logDebug $ indent <> "  Command: " <> display (command x) <> if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode " <> display (exitcode x) <> ")."
-    indent :: IsString a => a
+    indent :: (IsString a) => a
     indent = "    "
 
 data TestCase = TestCase
@@ -230,12 +230,12 @@ testAdlfile ::
   Utf8Builder -> -- prefix to use in all output
   FilePath -> -- the filepath of the directory where the test should be done
   FilePath -> -- the script that is undergoing the test
-  TestInstruction -> --The instruction to test, so it is known how to test the script
+  TestInstruction -> -- The instruction to test, so it is known how to test the script
   RIO env Bool -- Indicator telling if the test passed or not
 testAdlfile indent dir adl tinfo = do
   logInfo $ indent <> "Start: " <> (display . command $ tinfo) <> " " <> (display . T.pack $ adl)
-  (exit_code, out, err) <- withWorkingDir dir $
-    case words . T.unpack . command $ tinfo of
+  (exit_code, out, err) <- withWorkingDir dir
+    $ case words . T.unpack . command $ tinfo of
       [] -> fatal "No command given!"
       h : tl -> do
         proc h (tl <> [adl]) readProcess
@@ -251,16 +251,19 @@ testAdlfile indent dir adl tinfo = do
       logInfo $ indent <> "✅ Passed."
     failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
     failHandler (exit_code, out, err) = do
-      logError $
-        "❗❗❗ Failed. " <> indent <> (display . T.pack $ adl) <> " "
-          <> "(Expected: "
-          <> ( if exitcode tinfo == 0
-                 then "ExitSuccess"
-                 else "ExitFailure " <> display (exitcode tinfo)
-             )
-          <> ", Actual: "
-          <> display (tshow exit_code)
-          <> ")"
+      logError
+        $ "❗❗❗ Failed. "
+        <> indent
+        <> (display . T.pack $ adl)
+        <> " "
+        <> "(Expected: "
+        <> ( if exitcode tinfo == 0
+               then "ExitSuccess"
+               else "ExitFailure " <> display (exitcode tinfo)
+           )
+        <> ", Actual: "
+        <> display (tshow exit_code)
+        <> ")"
       mapM_ (logError . indnt) . toUtf8Builders $ out
 
       logError . indnt $ "------------------- "

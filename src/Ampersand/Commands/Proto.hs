@@ -39,7 +39,7 @@ proto fSpec = do
     then do doGenBackend fSpec
     else do logDebug "  Skipping generating backend files"
   generateMetamodel <- view generateMetamodelL
-  if generateMetamodel --TODO @stefjoosten, Why should this be generated at the proto command??
+  if generateMetamodel -- TODO @stefjoosten, Why should this be generated at the proto command??
     then do doGenMetaModel fSpec
     else do logDebug "  Skipping generating metamodel.adl"
 

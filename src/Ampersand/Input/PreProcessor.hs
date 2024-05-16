@@ -143,7 +143,8 @@ preProcPrefix = whitespace *> string "--" *> many (char '-') *> whitespace *> ch
 
 ifGuard :: Lexer LexLine
 ifGuard =
-  IfStart . Guard
+  IfStart
+    . Guard
     <$> ( try (string "IF")
             *> whitespace
             *> some alphaNum
@@ -152,7 +153,8 @@ ifGuard =
 
 ifNotGuard :: Lexer LexLine
 ifNotGuard =
-  IfNotStart . Guard
+  IfNotStart
+    . Guard
     <$> ( try (string "IFNOT")
             *> whitespace
             *> some alphaNum
@@ -185,14 +187,14 @@ type Block = [BlockElem]
 -- The first BOOL here determines whether this is an IF or IFNOT block
 data GuardedBlock
   = GuardedBlock
+      -- | This covers whether this is an IF or an IFNOT block. True for IF, false for IFNOT.
       Bool
-      -- ^ This covers whether this is an IF or an IFNOT block. True for IF, false for IFNOT.
+      -- | The guard of the IF or IFNOT
       Guard
-      -- ^ The guard of the IF or IFNOT
+      -- | The actual Block
       Block
-      -- ^ The actual Block
+      -- | An optional ELSE block.
       (Maybe Block)
-      -- ^ An optional ELSE block.
 
 {- (Note that there is a difference between Maybe [] and Nothing here.
 The first represents and empty ELSE block, the second an absent block.

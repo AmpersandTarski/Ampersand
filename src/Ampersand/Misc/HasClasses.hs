@@ -10,10 +10,10 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 
 class HasOptions a where
-  showOptions :: HasLogFunc env => a -> RIO env ()
+  showOptions :: (HasLogFunc env) => a -> RIO env ()
   showOptions opts = mapM_ showOpt . L.sortOn fst . optsList $ opts
     where
-      showOpt :: HasLogFunc env => (Text, Text) -> RIO env ()
+      showOpt :: (HasLogFunc env) => (Text, Text) -> RIO env ()
       showOpt (key, value) =
         logDebug . display $ key <> " " <> value
   optsList :: a -> [(Text, Text)] -- A tuple containing the 'key' and the value of the options.
@@ -22,7 +22,7 @@ class HasOptions a where
 instance (HasOptions a, HasOptions b) => HasOptions (a, b) where
   optsList (a, b) = optsList a <> optsList b
 
---instance (HasOptions a, Foldable f, Functor f) => HasOptions (f a) where
+-- instance (HasOptions a, Foldable f, Functor f) => HasOptions (f a) where
 --  optsList xs = concat . toList . fmap optsList $ xs
 
 class HasFSpecGenOpts a where
@@ -73,7 +73,7 @@ instance HasFSpecGenOpts DaemonOpts where
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x {x1fSpecGenOpts = y})
 
-class HasProtoOpts a => HasDirPrototype a where
+class (HasProtoOpts a) => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
   getTemplateDir :: a -> FilePath
   getTemplateDir x =
@@ -135,7 +135,7 @@ class HasRootFile a where
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
   dirSource = takeDirectory . baseName
 
-instance HasFSpecGenOpts a => HasRootFile a where
+instance (HasFSpecGenOpts a) => HasRootFile a where
   rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x {xrootFile = y})
 
 class HasOutputLanguage a where
@@ -153,13 +153,13 @@ instance HasOutputLanguage UmlOpts where
 class HasShowWarnings a where
   showWarningsL :: Lens' a Bool -- Should warnings be given to the output?
 
-instance HasDaemonOpts a => HasShowWarnings a where
+instance (HasDaemonOpts a) => HasShowWarnings a where
   showWarningsL = daemonOptsL . lens xshowWarnings (\x y -> x {xshowWarnings = y})
 
 class HasDirOutput a where
   dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
-class HasOutputLanguage a => HasDocumentOpts a where
+class (HasOutputLanguage a) => HasDocumentOpts a where
   documentOptsL :: Lens' a DocOpts
   chaptersL :: Lens' a [Chapter]
   chaptersL = documentOptsL . lens xchapters (\x y -> x {xchapters = y})
@@ -269,7 +269,7 @@ data Recipe
   deriving (Show, Enum, Bounded)
 
 data FSpecGenOpts = FSpecGenOpts
-  { xrootFile :: !Roots, --relative paths. Must be set the first time it is read.
+  { xrootFile :: !Roots, -- relative paths. Must be set the first time it is read.
     xsqlBinTables :: !Bool,
     xgenInterfaces :: !Bool, --
     xnamespace :: !Text, -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -325,13 +325,13 @@ data FrontendVersion = Angular | AngularJS
 
 -- | Options for @ampersand export@.
 newtype ExportOpts = ExportOpts
-  { xexport2adl :: FilePath --relative path
+  { xexport2adl :: FilePath -- relative path
   }
 
 -- | Options for @ampersand dataAnalysis@ and @ampersand export@.
 data InputOutputOpts = InputOutputOpts
   { x4fSpecGenOpts :: !FSpecGenOpts,
-    x4outputFile :: !FilePath --relative path
+    x4outputFile :: !FilePath -- relative path
   }
 
 instance HasOptions InputOutputOpts where
@@ -471,7 +471,7 @@ instance HasOptions ValidateOpts where
 data DevOutputOpts = DevOutputOpts
   { -- | Options required to build the fSpec
     x8fSpecGenOpts :: !FSpecGenOpts,
-    x5outputFile :: !FilePath --relative path
+    x5outputFile :: !FilePath -- relative path
   }
   deriving (Show)
 
@@ -482,7 +482,7 @@ instance HasOptions DevOutputOpts where
          ]
 
 newtype TestOpts = TestOpts
-  { rootTestDir :: FilePath --relative path to directory containing test scripts
+  { rootTestDir :: FilePath -- relative path to directory containing test scripts
   }
   deriving (Show)
 

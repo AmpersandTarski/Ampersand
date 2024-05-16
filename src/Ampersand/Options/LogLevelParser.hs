@@ -20,7 +20,8 @@ logLevelOptsParser hide defLogLevel =
     )
     <|> flag'
       (Just verboseLevel)
-      ( short 'v' <> long "verbose"
+      ( short 'v'
+          <> long "verbose"
           <> help ("Enable verbose mode: verbosity level \"" <> showLevel verboseLevel <> "\"")
           <> hideMods hide
       )

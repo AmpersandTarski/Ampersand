@@ -39,10 +39,11 @@ readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where
     handler :: IOException -> RIO env (Either [Text] a)
     handler err =
-      return . Left $
-        [ "File could not be read: " <> T.pack fp,
-          tshow err
-        ]
+      return
+        . Left
+        $ [ "File could not be read: " <> T.pack fp,
+            tshow err
+          ]
 
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith fun = go
@@ -53,7 +54,7 @@ zipWith fun = go
 
 -- Redefine foldl to ensure that we use foldl' everywhere. But make the Haskeller
 -- aware that in fact you should use fold'.
-foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
+foldl :: (Foldable t) => (b -> a -> b) -> b -> t a -> b
 {-# WARNING foldl "Please do not use foldl. Use foldl' instead. It is more performant." #-}
 foldl = foldl'
 

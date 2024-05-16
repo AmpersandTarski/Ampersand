@@ -19,21 +19,25 @@ maxLen = 1500000 -- This trick is to make sure the process is terminated after t
 
 -- | a function to create error message in a structured way, containing the version of Ampersand.
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy.
-fatal :: HasCallStack => Text -> a
+fatal :: (HasCallStack) => Text -> a
 fatal msg =
-  exitWith . Fatal . T.lines $
-    ( "!             " <> shortVersion appVersion <> "\n"
-        <> lazyCutoff maxLen msg
-        <> "\n"
-        <> T.pack (prettyCallStack callStack)
-    )
+  exitWith
+    . Fatal
+    . T.lines
+    $ ( "!             "
+          <> shortVersion appVersion
+          <> "\n"
+          <> lazyCutoff maxLen msg
+          <> "\n"
+          <> T.pack (prettyCallStack callStack)
+      )
   where
     lazyCutoff n txt = case T.uncons txt of
       Nothing -> mempty
       Just (h, tl)
         | T.null tl -> T.cons h mempty
         | n == 0 -> "\n<Ampersand's fatal-mechanism has removed the rest of this error message.>"
-        | otherwise -> T.cons h (lazyCutoff (n -1) tl)
+        | otherwise -> T.cons h (lazyCutoff (n - 1) tl)
 {-# NOINLINE fatal #-}
 
 data VersionInfo = VersionInfo

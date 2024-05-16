@@ -55,18 +55,18 @@ instance Show PopAtom where
       PopAlphaNumeric str -> show str
       PopInt i -> show i
 
-dirtyId :: Unique a => a -> Maybe PopAtom
+dirtyId :: (Unique a) => a -> Maybe PopAtom
 dirtyId x = DirtyId <$> idWithoutType x
 
-dirtyId' :: Unique e => e -> PopAtom
+dirtyId' :: (Unique e) => e -> PopAtom
 dirtyId' x = case dirtyId x of
   Nothing -> fatal $ "Not a valid dirtyId could be generated: " <> tshow (typeOf x) <> ": " <> text1ToText (showUnique x)
   Just pa -> pa
 
-dirtyIdWithoutType :: Unique a => a -> Maybe PopAtom
+dirtyIdWithoutType :: (Unique a) => a -> Maybe PopAtom
 dirtyIdWithoutType x = DirtyId <$> idWithoutType x
 
-dirtyIdWithoutType' :: Unique e => e -> PopAtom
+dirtyIdWithoutType' :: (Unique e) => e -> PopAtom
 dirtyIdWithoutType' x = case dirtyIdWithoutType x of
   Nothing -> fatal $ "Not a valid dirtyIdWithoutType could be generated: " <> tshow (typeOf x) <> ": " <> text1ToText (showUnique x)
   Just pa -> pa
@@ -375,13 +375,13 @@ transformersFormalAmpersand fSpec =
         "PairViewSegment",
         "MySQLQuery",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "expTgt",
         "PairViewSegment",
         "Concept",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "fieldIn",
         "FieldDef",
@@ -473,7 +473,7 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "Relation",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "ifcObj",
         "Interface",
@@ -487,7 +487,7 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "Relation",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "ifcPos",
         "Interface",
@@ -616,7 +616,7 @@ transformersFormalAmpersand fSpec =
         "Rule",
         "Message",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "proprules",
         "PropertyRule",
@@ -769,7 +769,7 @@ transformersFormalAmpersand fSpec =
         "Rule",
         "PairView",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "prop",
         "Relation",
@@ -859,7 +859,7 @@ transformersFormalAmpersand fSpec =
         [ (dirtyId' quad, dirtyId' conj)
           | quad <- vquads fSpec,
             conj <- NE.toList (qConjuncts quad)
-        ] --TODO
+        ] -- TODO
       ),
       ( "qDcl",
         "Quad",
@@ -867,7 +867,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni, Tot],
         [ (dirtyId' quad, dirtyId' (qDcl quad))
           | quad <- vquads fSpec
-        ] --TODO
+        ] -- TODO
       ),
       ( "qRule",
         "Quad",
@@ -875,7 +875,7 @@ transformersFormalAmpersand fSpec =
         Set.fromList [Uni, Tot],
         [ (dirtyId' quad, dirtyId' (qRule quad))
           | quad <- vquads fSpec
-        ] --TODO
+        ] -- TODO
       ),
       ( "rc_orgRules",
         "Conjunct",
@@ -908,19 +908,19 @@ transformersFormalAmpersand fSpec =
         "PairView",
         "PairViewSegment",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "segmentType",
         "PairViewSegment",
         "PairViewSegmentType",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "sequenceNr",
         "PairViewSegment",
         "Int",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "sessAtom",
         "SESSION",
@@ -932,13 +932,13 @@ transformersFormalAmpersand fSpec =
         "SESSION",
         "Interface",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "sessionRole",
         "SESSION",
         "Role",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "showADL",
         "Term",
@@ -993,7 +993,7 @@ transformersFormalAmpersand fSpec =
         "PairViewSegment",
         "SourceOrTarget",
         Set.fromList [Uni, Tot],
-        [] --TODO
+        [] -- TODO
       ),
       ( "target",
         "Relation",
@@ -1007,7 +1007,7 @@ transformersFormalAmpersand fSpec =
         "PairViewSegment",
         "String",
         Set.fromList [Uni, Tot],
-        [] --TODO
+        [] -- TODO
       ),
       ( "tgt",
         "Signature",
@@ -1159,13 +1159,13 @@ transformersFormalAmpersand fSpec =
         "Concept",
         "Concept",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       ),
       ( "violatable",
         "Interface",
         "Rule",
         Set.empty,
-        [] --TODO
+        [] -- TODO
       )
     ]
 
@@ -1238,7 +1238,7 @@ transformersPrototypeContext fSpec =
       )
     ]
 
-class Instances a => HasPurpose a where
+class (Instances a) => HasPurpose a where
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a =
     Set.toList . Set.filter (isFor a) . instances $ fSpec

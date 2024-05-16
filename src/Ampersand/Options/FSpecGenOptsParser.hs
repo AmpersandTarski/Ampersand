@@ -100,7 +100,8 @@ fSpecGenOptsParser isForDaemon =
 
     knownRecipeP :: Parser Recipe
     knownRecipeP =
-      toKnownRecipe . T.pack
+      toKnownRecipe
+        . T.pack
         <$> strOption
           ( long "build-recipe"
               <> metavar "RECIPE"
@@ -120,16 +121,16 @@ fSpecGenOptsParser isForDaemon =
           -- TODO: The fatals here should be plain parse errors. Not sure yet how that should be done.
           --       See https://hackage.haskell.org/package/optparse-applicative
           [] ->
-            fatal $
-              T.unlines
+            fatal
+              $ T.unlines
                 [ "No matching recipe found. Possible recipes are:",
                   "  " <> T.intercalate ", " (map tshow allKnownRecipes),
                   "  You specified: `" <> s <> "`"
                 ]
           [f] -> f
           xs ->
-            fatal $
-              T.unlines
+            fatal
+              $ T.unlines
                 [ "Ambiguous recipe specified. Possible matches are:",
                   "  " <> T.intercalate ", " (map tshow xs)
                 ]

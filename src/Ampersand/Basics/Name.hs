@@ -219,7 +219,7 @@ class Named a where
 newtype Label = Label Text
   deriving (Data, Ord, Eq)
 
-class Named a => Labeled a where
+class (Named a) => Labeled a where
   {-# MINIMAL mLabel #-}
   mLabel :: a -> Maybe Label
   label :: a -> Text

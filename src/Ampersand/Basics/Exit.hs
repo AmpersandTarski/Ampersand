@@ -9,7 +9,7 @@ module Ampersand.Basics.Exit
 where
 
 import Control.Exception hiding (catch)
---import           Ampersand.Basics.Prelude
+-- import           Ampersand.Basics.Prelude
 import RIO hiding (exitWith, zipWith)
 import qualified RIO.Text as T
 import qualified System.Exit as SE
@@ -63,9 +63,11 @@ instance Exception AmpersandExit
 
 instance Show AmpersandExit where
   show x =
-    T.unpack $
-      "[" <> tshow exitcode <> "] "
-        <> T.concat (fmap ("    " <>) message)
+    T.unpack
+      $ "["
+      <> tshow exitcode
+      <> "] "
+      <> T.concat (fmap ("    " <>) message)
     where
       (exitcode, message) = info x
 

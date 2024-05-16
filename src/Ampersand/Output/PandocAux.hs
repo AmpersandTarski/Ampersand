@@ -36,81 +36,81 @@ import qualified Text.Pandoc.UTF8 as UTF8
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> PT.Context Text -- [(Text , Text)]
 defaultWriterVariables env fSpec =
-  mkContext $
-    [ ( "title",
-        ( case (outputLang', view chaptersL env) of
-            (Dutch, [Diagnosis]) -> "Diagnose van "
-            (English, [Diagnosis]) -> "Diagnosis of "
-            (Dutch, [SharedLang]) -> "Taalmodel van "
-            (English, [SharedLang]) -> "Shared language of "
-            (Dutch, _) -> "Functioneel Ontwerp van "
-            (English, _) -> "Functional Design of "
-        )
-          <> fullName fSpec
-      ),
-      ("fontsize", "12pt"), --can be overridden by geometry package (see below)
-      ( "lang",
-        case outputLang' of
-          Dutch -> "nl-NL"
-          English -> "en-US"
-      ),
-      ("papersize", "a4"),
-      ( "babel-lang",
-        case outputLang' of
-          Dutch -> "dutch"
-          English -> "english"
-      ),
-      ("documentclass", "report")
-    ]
-      <> [("toc", "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == view chaptersL env]
-      <> [ ( "header-includes",
-             T.unlines
-               [ "% ============Ampersand specific Begin=================",
-                 "% First a couple of LaTeX packages are included:",
-                 "",
-                 "% The glossaries package supports acronyms and multiple glossaries",
-                 "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents",
-                 "% \\makeglossaries", -- Disabled because of warnings in LaTeX. TODO: Have to generate glossaries using Pandoc, not only for LaTeX.
-                 "",
-                 "% geometry provides a flexible and easy interface to page dimentions",
-                 "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm",
-                 "            , heightrounded, footskip=.5cm",
-                 "            , marginparwidth=2.5cm, marginparsep=0.5cm]{geometry}",
-                 "",
-                 "% breqn – Automatic line breaking of displayed equations",
-                 "\\usepackage{breqn}",
-                 "",
-                 "% colonequals – Colon equals symbols",
-                 "\\usepackage{colonequals}",
-                 "",
-                 "% caption – Customising captions in floating environments",
-                 "\\usepackage{caption}",
-                 "\\captionsetup{format=plain",
-                 "              ,textfont=bf,labelfont=small",
-                 "              ,labelsep=none",
-                 "              ,labelformat=empty",
-                 "              ,width=.85\\textwidth",
-                 "              }",
-                 "",
-                 "% textcomp – LATEX support for the Text Companion fonts -- Disabled because obsolete.",
-                 "% \\usepackage{textcomp}",
-                 "",
-                 "% hypcap – Adjusting the anchors of captions",
-                 "\\usepackage[all]{hypcap}",
-                 "",
-                 "% <Adaptation>: The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are",
-                 "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note",
-                 "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath",
-                 "\\DeclareRobustCommand{\\[}{\\begin{equation}}",
-                 "\\DeclareRobustCommand{\\]}{\\end{equation}}",
-                 "% <End-adaptation>",
-                 "",
-                 "",
-                 "% ============Ampersand specific End==================="
-               ]
-           )
-           | view fspecFormatL env `elem` [Fpdf, Flatex]
-         ]
+  mkContext
+    $ [ ( "title",
+          ( case (outputLang', view chaptersL env) of
+              (Dutch, [Diagnosis]) -> "Diagnose van "
+              (English, [Diagnosis]) -> "Diagnosis of "
+              (Dutch, [SharedLang]) -> "Taalmodel van "
+              (English, [SharedLang]) -> "Shared language of "
+              (Dutch, _) -> "Functioneel Ontwerp van "
+              (English, _) -> "Functional Design of "
+          )
+            <> fullName fSpec
+        ),
+        ("fontsize", "12pt"), -- can be overridden by geometry package (see below)
+        ( "lang",
+          case outputLang' of
+            Dutch -> "nl-NL"
+            English -> "en-US"
+        ),
+        ("papersize", "a4"),
+        ( "babel-lang",
+          case outputLang' of
+            Dutch -> "dutch"
+            English -> "english"
+        ),
+        ("documentclass", "report")
+      ]
+    <> [("toc", "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == view chaptersL env]
+    <> [ ( "header-includes",
+           T.unlines
+             [ "% ============Ampersand specific Begin=================",
+               "% First a couple of LaTeX packages are included:",
+               "",
+               "% The glossaries package supports acronyms and multiple glossaries",
+               "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents",
+               "% \\makeglossaries", -- Disabled because of warnings in LaTeX. TODO: Have to generate glossaries using Pandoc, not only for LaTeX.
+               "",
+               "% geometry provides a flexible and easy interface to page dimentions",
+               "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm",
+               "            , heightrounded, footskip=.5cm",
+               "            , marginparwidth=2.5cm, marginparsep=0.5cm]{geometry}",
+               "",
+               "% breqn – Automatic line breaking of displayed equations",
+               "\\usepackage{breqn}",
+               "",
+               "% colonequals – Colon equals symbols",
+               "\\usepackage{colonequals}",
+               "",
+               "% caption – Customising captions in floating environments",
+               "\\usepackage{caption}",
+               "\\captionsetup{format=plain",
+               "              ,textfont=bf,labelfont=small",
+               "              ,labelsep=none",
+               "              ,labelformat=empty",
+               "              ,width=.85\\textwidth",
+               "              }",
+               "",
+               "% textcomp – LATEX support for the Text Companion fonts -- Disabled because obsolete.",
+               "% \\usepackage{textcomp}",
+               "",
+               "% hypcap – Adjusting the anchors of captions",
+               "\\usepackage[all]{hypcap}",
+               "",
+               "% <Adaptation>: The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are",
+               "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note",
+               "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath",
+               "\\DeclareRobustCommand{\\[}{\\begin{equation}}",
+               "\\DeclareRobustCommand{\\]}{\\end{equation}}",
+               "% <End-adaptation>",
+               "",
+               "",
+               "% ============Ampersand specific End==================="
+             ]
+         )
+         | view fspecFormatL env `elem` [Fpdf, Flatex]
+       ]
   where
     outputLang' :: Lang
     outputLang' = outputLang env fSpec
@@ -120,7 +120,7 @@ defaultWriterVariables env fSpec =
         fun :: (Text, Text) -> (Text, PT.Val Text)
         fun (k, v) = (k, SimpleVal (Text (T.length v) v))
 
---DESCR -> functions to write the pandoc
+-- DESCR -> functions to write the pandoc
 writepandoc ::
   (HasDirOutput env, HasFSpecGenOpts env, HasDocumentOpts env, HasLogFunc env) =>
   FSpec ->
@@ -175,7 +175,9 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
         case res of
           Right pdf -> writeFnBinary (outputFile env) pdf
           Left err' ->
-            liftIO . throwIO . PandocPDFError
+            liftIO
+              . throwIO
+              . PandocPDFError
               . decodeUtf8
               . BL.toStrict
               $ err'
@@ -183,7 +185,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
         output <- runIO (f writerOptions thePandoc) >>= handleError
         writeFileUtf8 (outputFile env) output
   where
-    writer :: PandocMonad m => Writer m
+    writer :: (PandocMonad m) => Writer m
     writer = case lookup writerName writers of
       Nothing -> fatal $ "There is no such Pandoc writer: " <> writerName
       Just w -> w
@@ -194,7 +196,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
         FPandoc -> "native"
         Fhtml -> "html5"
         fmt -> T.toLower . T.drop 1 . tshow $ fmt
-    writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m ()
+    writeFnBinary :: (MonadIO m) => FilePath -> BL.ByteString -> m ()
     writeFnBinary f bs = do
       liftIO $ createDirectoryIfMissing True (takeDirectory f)
       BL.writeFile (UTF8.encodePath f) bs
@@ -257,7 +259,7 @@ chptTitle lang cpt =
     l :: LocalizedStr -> Text
     l = localize lang
 
---DESCR -> pandoc print functions for Ampersand data structures
+-- DESCR -> pandoc print functions for Ampersand data structures
 ---------------------------------------
 -- LaTeX math markup
 ---------------------------------------
@@ -298,7 +300,7 @@ instance ShowMath Expression where
       showExpr (EDcI c) = "I_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
       showExpr EEps {} = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
       showExpr (EDcV sgn) = "V_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
-      showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
+      showExpr (EMp1 val _) = atomVal2Math val -- "\texttt{"<>show val<>"}"
 
 atomVal2Math :: PAtomValue -> Text
 atomVal2Math pav =
@@ -323,12 +325,14 @@ addParensToSuper e = e
 
 instance ShowMath Relation where
   showMath decl =
-    math . noBreaking $
-      (inMathText . fullName) decl <> " \\lbrack "
-        <> (inMathText . fullName . source) decl
-        <> (if isFunction (EDcD decl) then " \\mapsto " else "*")
-        <> (inMathText . fullName . target) decl
-        <> " \\rbrack "
+    math
+      . noBreaking
+      $ (inMathText . fullName) decl
+      <> " \\lbrack "
+      <> (inMathText . fullName . source) decl
+      <> (if isFunction (EDcD decl) then " \\mapsto " else "*")
+      <> (inMathText . fullName . target) decl
+      <> " \\rbrack "
 
 noBreaking :: (IsString a, Semigroup a) => a -> a
 noBreaking x = "{" <> x <> "}"

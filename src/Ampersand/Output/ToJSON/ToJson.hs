@@ -51,7 +51,7 @@ rolesToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Roles)
 populationToJSON :: env -> FSpec -> BL.ByteString
 populationToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Populations)
 
-encodePretty'' :: ToJSON a => a -> BL.ByteString
+encodePretty'' :: (ToJSON a) => a -> BL.ByteString
 encodePretty'' =
   encodePretty'
     Config
