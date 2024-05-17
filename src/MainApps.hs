@@ -45,8 +45,9 @@ ampersandWorker eGlobalRun = do
       global <- globalOptsFromMonoid isTerminal defaultOuptutDir globalMonoid
       -- when (globalLogLevel global == LevelDebug) $ hPutStrLn stderr versionString'
 
-      withRunnerGlobal global $
-        run `catch` \e ->
+      withRunnerGlobal global
+        $ run
+        `catch` \e ->
           -- This special handler stops "ampersand: " from being printed before the
           -- exception
           case fromException e of

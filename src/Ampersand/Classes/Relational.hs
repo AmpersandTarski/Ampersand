@@ -54,15 +54,16 @@ instance HasProps Expression where
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
     EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
-      Set.fromList $
-        --NOT totaal
-        --NOT surjective
+      Set.fromList
+        $
+        -- NOT totaal
+        -- NOT surjective
         [Inj | isONE (source sgn)]
-          ++ [Uni | isONE (target sgn)]
-          ++ [Asy | isEndo sgn, isONE (source sgn)]
-          ++ [Sym | isEndo sgn]
-          ++ [Rfx | isEndo sgn]
-          ++ [Trn | isEndo sgn]
+        ++ [Uni | isONE (target sgn)]
+        ++ [Asy | isEndo sgn, isONE (source sgn)]
+        ++ [Sym | isEndo sgn]
+        ++ [Rfx | isEndo sgn]
+        ++ [Trn | isEndo sgn]
     EBrk f -> properties f
     ECps (l, r) -> Set.filter (\x -> x `elem` [Uni, Tot, Inj, Sur]) (properties l `Set.intersection` properties r)
     EPrd (l, r) -> Set.fromList $ [Tot | isTot l] ++ [Sur | isSur r] ++ [Rfx | isRfx l && isRfx r] ++ [Trn]
@@ -83,8 +84,8 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EDif (l, r) -> isTrue l && isFalse r
       ECps (l, r)
         | isUni l && isTot l -> isTrue r
-        | isInj r && isSur r -> isTrue l --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
-        --SJO, 20220603: Restored this statement because this is the symmetric version of the former
+        | isInj r && isSur r -> isTrue l -- HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+        -- SJO, 20220603: Restored this statement because this is the symmetric version of the former
         | otherwise -> isTrue l && isTrue r
       EPrd (l, r) -> isTrue l && isTrue r -- SJ, 20220604: if you refine this, please consider issue #1293
       EKl0 e -> isTrue e

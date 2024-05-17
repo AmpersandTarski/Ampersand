@@ -6,7 +6,7 @@
 -- Note that in order for this Setup.hs to be used by cabal, the build-type should be Custom.
 module Main where
 
---import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
+-- import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
 import Codec.Archive.Zip
 import Distribution.PackageDescription
 import Distribution.Pretty (prettyShow)
@@ -56,7 +56,8 @@ generateBuildInfoModule cabalVersionStr = do
   content <-
     buildInfoModule cabalVersionStr
       <$> getGitInfoStr
-      <*> ( T.pack . formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z"
+      <*> ( T.pack
+              . formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z"
               <$> (getCurrentTime >>= utcToLocalZonedTime)
           )
   writeFileUtf8 (pathFromModuleName buildInfoModuleName) content
@@ -190,8 +191,8 @@ generateStaticFileModule = do
         reader = readFileUtf8 sfModulePath
         errorHandler err = do
           -- old generated module exists, but we can't read the file or read the contents
-          putStrLn $
-            unlines
+          putStrLn
+            $ unlines
               [ "",
                 "Info: No cache for static files: " <> show (err :: SomeException),
                 ""
@@ -225,11 +226,12 @@ generateStaticFileModule = do
             stripbase fp = case L.stripPrefix (base ++ "/") fp of
               Just stripped -> stripped
               Nothing ->
-                error . L.intercalate "\n" $
-                  [ "ERROR: Reading static files failed:",
-                    "  base: " <> base,
-                    "  fp  : " <> fp
-                  ]
+                error
+                  . L.intercalate "\n"
+                  $ [ "ERROR: Reading static files failed:",
+                      "  base: " <> base,
+                      "  fp  : " <> fp
+                    ]
         base = case fkind of
           PandocTemplates -> "outputTemplates"
           FormalAmpersand -> "AmpersandData/FormalAmpersand"

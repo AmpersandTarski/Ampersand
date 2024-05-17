@@ -291,7 +291,8 @@ pName typ =
       mkName typ . NE.reverse $ nm NE.:| reverse ns
     localNamePart :: AmpParser NamePart
     localNamePart =
-      buildNamePart <$> currPos
+      buildNamePart
+        <$> currPos
         <*> case typ of
           ConceptName -> pUpperCaseID
           ContextName -> pUpperCaseID
@@ -307,10 +308,11 @@ pName typ =
           ViewName -> pUnrestrictedID
     namespacePart :: AmpParser NamePart
     namespacePart =
-      try $
-        buildNamePart <$> currPos
-          <*> pUnrestrictedID
-          <* pDot
+      try
+        $ buildNamePart
+        <$> currPos
+        <*> pUnrestrictedID
+        <* pDot
     buildNamePart :: Origin -> Text1 -> NamePart
     buildNamePart orig txt1 = case toNamePart1 txt1 of
       Nothing -> fatal $ "An unrestrictedID should be a valid namepart, but it isn't: " <> tshow txt1 <> "\n   " <> tshow orig
@@ -348,11 +350,11 @@ pCrudString =
   where
     testCrud :: Text1 -> Maybe Text1
     testCrud (Text1 h tl) =
-      if and $
-        [ not (null s),
-          L.nub caps == caps
-        ]
-          ++ map (`elem` ['C', 'R', 'U', 'D']) caps
+      if and
+        $ [ not (null s),
+            L.nub caps == caps
+          ]
+        ++ map (`elem` ['C', 'R', 'U', 'D']) caps
         then Just (Text1 h tl)
         else Nothing
       where
@@ -377,12 +379,18 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 -- the user can lift the constraints by embeding the value in curly brackets. In
 -- such a case, the user could use a negative number as a singleton term.
 pAtomValInPopulation constrainsApply =
-  VBoolean True <$ pKey (toText1Unsafe "TRUE")
-    <|> VBoolean False <$ pKey (toText1Unsafe "FALSE")
-    <|> VRealString <$> pDoubleQuotedString
-    <|> VDateTime <$> pUTCTime
-    <|> VDate <$> pDay
-    <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
+  VBoolean True
+    <$ pKey (toText1Unsafe "TRUE")
+    <|> VBoolean False
+    <$ pKey (toText1Unsafe "FALSE")
+    <|> VRealString
+    <$> pDoubleQuotedString
+    <|> VDateTime
+    <$> pUTCTime
+    <|> VDate
+    <$> pDay
+    <|> fromNumeric
+    <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
   where
     fromNumeric :: Either Int Double -> Value
     fromNumeric num = case num of
@@ -431,8 +439,10 @@ pIsNeg :: AmpParser Bool
 pIsNeg =
   fromMaybe False
     <$> pMaybe
-      ( True <$ pDash
-          <|> False <$ pPlus
+      ( True
+          <$ pDash
+          <|> False
+          <$ pPlus
       )
 
 pUnsignedNumeric :: AmpParser (Either Int Double)
@@ -477,14 +487,14 @@ pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 -- Token positioning
 -----------------------------------------------------------
 
-posOrigin :: Show a => a -> SourcePos -> Origin
+posOrigin :: (Show a) => a -> SourcePos -> Origin
 posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (tshow sym)
 
 currPos :: AmpParser Origin
 currPos = posOf $ return ()
 
-posOf :: Show a => AmpParser a -> AmpParser Origin
+posOf :: (Show a) => AmpParser a -> AmpParser Origin
 posOf parser = do pos <- getPosition; a <- parser; return (posOrigin a pos)
 
-valPosOf :: Show a => AmpParser a -> AmpParser (a, Origin)
+valPosOf :: (Show a) => AmpParser a -> AmpParser (a, Origin)
 valPosOf parser = do pos <- getPosition; a <- parser; return (a, posOrigin a pos)

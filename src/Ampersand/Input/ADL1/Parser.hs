@@ -37,12 +37,12 @@ pPopulations = many1 . pPopulation
 
 -- | Parses a context
 pContext ::
-  -- |
   NameSpace ->
   -- | The result is the parsed context and a list of include filenames
   AmpParser (P_Context, [Include])
 pContext ns =
-  rebuild <$> (posOf . pKey . toText1Unsafe $ "CONTEXT")
+  rebuild
+    <$> (posOf . pKey . toText1Unsafe $ "CONTEXT")
     <*> pNameWithOptionalLabel ns ContextName
     <*> pMaybe pLanguageRef
     <*> pMaybe pTextMarkup
@@ -78,22 +78,38 @@ pContext ns =
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement
     pContextElement =
-      CMeta <$> pMeta
-        <|> CPat <$> pPatternDef ns
-        <|> CRul <$> pRuleDef ns
-        <|> CCfy <$> pClassify ns
-        <|> CRel <$> pRelationDef ns
-        <|> CCon <$> pConceptDef ns
-        <|> CRep <$> pRepresentation ns
-        <|> Cm <$> pRoleRule ns
-        <|> Cm <$> pServiceRule ns
-        <|> CIndx <$> pIdentDef ns
-        <|> CView <$> pViewDef ns
-        <|> Cifc <$> pInterface ns
-        <|> CPrp <$> pPurpose ns
-        <|> CPop <$> pPopulation ns
-        <|> CIncl <$> pIncludeStatement
-        <|> CEnf <$> pEnforce ns
+      CMeta
+        <$> pMeta
+        <|> CPat
+        <$> pPatternDef ns
+        <|> CRul
+        <$> pRuleDef ns
+        <|> CCfy
+        <$> pClassify ns
+        <|> CRel
+        <$> pRelationDef ns
+        <|> CCon
+        <$> pConceptDef ns
+        <|> CRep
+        <$> pRepresentation ns
+        <|> Cm
+        <$> pRoleRule ns
+        <|> Cm
+        <$> pServiceRule ns
+        <|> CIndx
+        <$> pIdentDef ns
+        <|> CView
+        <$> pViewDef ns
+        <|> Cifc
+        <$> pInterface ns
+        <|> CPrp
+        <$> pPurpose ns
+        <|> CPop
+        <$> pPopulation ns
+        <|> CIncl
+        <$> pIncludeStatement
+        <|> CEnf
+        <$> pEnforce ns
 
 pNameWithoutLabel :: NameSpace -> NameType -> AmpParser Name
 pNameWithoutLabel ns typ
@@ -216,7 +232,8 @@ data Include = Include Origin FilePath [Text]
 --- IncludeStatement ::= 'INCLUDE' Text
 pIncludeStatement :: AmpParser Include
 pIncludeStatement =
-  Include <$> currPos
+  Include
+    <$> currPos
     <* (pKey . toText1Unsafe) "INCLUDE"
     <*> (T.unpack <$> pDoubleQuotedString)
     <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])
@@ -225,17 +242,23 @@ pIncludeStatement =
 pLanguageRef :: AmpParser Lang
 pLanguageRef =
   (pKey . toText1Unsafe) "IN"
-    *> ( Dutch <$ (pKey . toText1Unsafe) "DUTCH"
-           <|> English <$ (pKey . toText1Unsafe) "ENGLISH"
+    *> ( Dutch
+           <$ (pKey . toText1Unsafe) "DUTCH"
+           <|> English
+           <$ (pKey . toText1Unsafe) "ENGLISH"
        )
 
 --- TextMarkup ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
 pTextMarkup :: AmpParser PandocFormat
 pTextMarkup =
-  ReST <$ (pKey . toText1Unsafe) "REST"
-    <|> HTML <$ (pKey . toText1Unsafe) "HTML"
-    <|> LaTeX <$ (pKey . toText1Unsafe) "LATEX"
-    <|> Markdown <$ (pKey . toText1Unsafe) "MARKDOWN"
+  ReST
+    <$ (pKey . toText1Unsafe) "REST"
+    <|> HTML
+    <$ (pKey . toText1Unsafe) "HTML"
+    <|> LaTeX
+    <$ (pKey . toText1Unsafe) "LATEX"
+    <|> Markdown
+    <$ (pKey . toText1Unsafe) "MARKDOWN"
 
 --- MetaData ::= 'META' Text Text
 pMeta :: AmpParser MetaData
@@ -244,7 +267,8 @@ pMeta = MetaData <$> currPos <* (pKey . toText1Unsafe) "META" <*> pDoubleQuotedS
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
 pPatternDef :: NameSpace -> AmpParser P_Pattern
 pPatternDef ns =
-  rebuild <$> currPos
+  rebuild
+    <$> currPos
     <* (pKey . toText1Unsafe) "PATTERN"
     <*> pNameWithOptionalLabel ns PatternName -- The name spaces of patterns and concepts are shared.
     <*> many (pPatElem ns)
@@ -275,18 +299,30 @@ pPatternDef ns =
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population | Enforce
 pPatElem :: NameSpace -> AmpParser PatElem
 pPatElem ns =
-  Pr <$> pRuleDef ns
-    <|> Py <$> pClassify ns
-    <|> Pd <$> pRelationDef ns
-    <|> Pm <$> pRoleRule ns
-    <|> Pm <$> pServiceRule ns
-    <|> Pc <$> pConceptDef ns
-    <|> Prep <$> pRepresentation ns
-    <|> Pk <$> pIdentDef ns
-    <|> Pv <$> pViewDef ns
-    <|> Pe <$> pPurpose ns
-    <|> Pp <$> pPopulation ns
-    <|> Penf <$> pEnforce ns
+  Pr
+    <$> pRuleDef ns
+    <|> Py
+    <$> pClassify ns
+    <|> Pd
+    <$> pRelationDef ns
+    <|> Pm
+    <$> pRoleRule ns
+    <|> Pm
+    <$> pServiceRule ns
+    <|> Pc
+    <$> pConceptDef ns
+    <|> Prep
+    <$> pRepresentation ns
+    <|> Pk
+    <$> pIdentDef ns
+    <|> Pv
+    <$> pViewDef ns
+    <|> Pe
+    <$> pPurpose ns
+    <|> Pp
+    <$> pPopulation ns
+    <|> Penf
+    <$> pEnforce ns
 
 data PatElem
   = Pr (P_Rule TermPrim)
@@ -304,7 +340,8 @@ data PatElem
 --- Enforce ::= 'ENFORCE' Relation (':=' | ':<' | '>:' ) Expression
 pEnforce :: NameSpace -> AmpParser (P_Enforce TermPrim)
 pEnforce ns =
-  P_Enforce <$> currPos
+  P_Enforce
+    <$> currPos
     <* (pKey . toText1Unsafe) "ENFORCE"
     <*> (PNamedR <$> pNamedRel ns)
     <*> pEnforceOperator
@@ -312,7 +349,8 @@ pEnforce ns =
   where
     pEnforceOperator :: AmpParser EnforceOperator
     pEnforceOperator =
-      fun <$> currPos
+      fun
+        <$> currPos
         <*> ( (pOperator . toText1Unsafe) ":="
                 <|> (pOperator . toText1Unsafe) ":<"
                 <|> (pOperator . toText1Unsafe) ">:"
@@ -330,9 +368,11 @@ pEnforce ns =
 --- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
 pClassify :: NameSpace -> AmpParser [PClassify] -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify ns =
-  fun <$> currPos
+  fun
+    <$> currPos
     <* (pKey . toText1Unsafe) "CLASSIFY"
-    <*> pConceptRef ns `sepBy1` pComma
+    <*> pConceptRef ns
+    `sepBy1` pComma
     <*> ( (is <$ (pKey . toText1Unsafe) "IS" <*> pCterm)
             <|> (isa <$ (pKey . toText1Unsafe) "ISA" <*> pConceptRef ns)
         )
@@ -350,7 +390,8 @@ pClassify ns =
     --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
     pCterm = concat <$> pCterm1 `sepBy1` (pOperator . toText1Unsafe) "/\\"
     pCterm1 =
-      pure <$> pConceptRef ns
+      pure
+        <$> pConceptRef ns
         <|> pParens pCterm -- brackets are allowed for educational reasons.
     is :: [P_Concept] -> (Bool, [P_Concept])
     is gens = (False, gens)
@@ -360,12 +401,13 @@ pClassify ns =
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: NameSpace -> AmpParser (P_Rule TermPrim)
 pRuleDef ns =
-  build <$> currPos
+  build
+    <$> currPos
     <* (pKey . toText1Unsafe) "RULE"
-      <*> pNameLabelTerm
-      <*> many pMeaning
-      <*> many pMessage
-      <*> pMaybe pViolation
+    <*> pNameLabelTerm
+    <*> many pMeaning
+    <*> many pMessage
+    <*> pMaybe pViolation
   where
     pNameLabelTerm :: AmpParser (Maybe (Name, Maybe Label), Term TermPrim)
     pNameLabelTerm = try pNameAndLabel <|> pNoName
@@ -411,7 +453,7 @@ pRuleDef ns =
                   Nothing -> fatal $ "Not a valid NamePart: " <> localNm
                   Just np -> np
               )
-              NE.:| []
+            NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView
@@ -425,14 +467,23 @@ pRuleDef ns =
     --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' Text
     pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
     pPairViewSegment =
-      PairViewExp <$> posOf ((pKey . toText1Unsafe) "SRC") <*> return Src <*> pTerm ns
-        <|> PairViewExp <$> posOf ((pKey . toText1Unsafe) "TGT") <*> return Tgt <*> pTerm ns
-        <|> PairViewText <$> posOf ((pKey . toText1Unsafe) "TXT") <*> pDoubleQuotedString
+      PairViewExp
+        <$> posOf ((pKey . toText1Unsafe) "SRC")
+        <*> return Src
+        <*> pTerm ns
+        <|> PairViewExp
+        <$> posOf ((pKey . toText1Unsafe) "TGT")
+        <*> return Tgt
+        <*> pTerm ns
+        <|> PairViewText
+        <$> posOf ((pKey . toText1Unsafe) "TXT")
+        <*> pDoubleQuotedString
 
 --- RelationDef ::= (RelationNew | RelationOld) Props? RelDefaults? ('PRAGMA' Text+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: NameSpace -> AmpParser (P_Relation, [P_Population])
 pRelationDef ns =
-  reorder <$> currPos
+  reorder
+    <$> currPos
     <*> (pRelationNew ns <|> pRelationOld ns)
     <*> optSet pProps
     <*> optList pRelDefaults
@@ -454,7 +505,8 @@ pRelationDef ns =
 pPragma :: AmpParser Pragma
 pPragma =
   build
-    <$> currPos <* (pKey . toText1Unsafe) "PRAGMA"
+    <$> currPos
+    <* (pKey . toText1Unsafe) "PRAGMA"
     <*> pMaybe pDoubleQuotedString
     <*> pMaybe pDoubleQuotedString
     <*> pMaybe pDoubleQuotedString
@@ -475,7 +527,8 @@ pRelDefaults = (pKey . toText1Unsafe) "DEFAULT" *> (toList <$> many1 pRelDefault
 --- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
 pRelDefault :: AmpParser PRelationDefault
 pRelDefault =
-  build <$> pSrcOrTgt
+  build
+    <$> pSrcOrTgt
     <*> pDef
   where
     build :: SrcOrTgt -> Either (NE.NonEmpty PAtomValue) Text -> PRelationDefault
@@ -484,19 +537,24 @@ pRelDefault =
     pDef :: AmpParser (Either (NE.NonEmpty PAtomValue) Text)
     pDef = pAtom <|> pPHP
     pAtom =
-      Left <$ (pKey . toText1Unsafe) "VALUE"
+      Left
+        <$ (pKey . toText1Unsafe) "VALUE"
         <*> sepBy1 pAtomValue pComma
     pPHP =
-      Right <$ (pKey . toText1Unsafe) "EVALPHP"
+      Right
+        <$ (pKey . toText1Unsafe) "EVALPHP"
         <*> pDoubleQuotedString
     pSrcOrTgt =
-      Src <$ (pKey . toText1Unsafe) "SRC"
-        <|> Tgt <$ (pKey . toText1Unsafe) "TGT"
+      Src
+        <$ (pKey . toText1Unsafe) "SRC"
+        <|> Tgt
+        <$ (pKey . toText1Unsafe) "TGT"
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: NameSpace -> AmpParser (Name, P_Sign, Maybe Label, PProps)
 pRelationNew ns =
-  (,,,) <$ (pKey . toText1Unsafe) "RELATION"
+  (,,,)
+    <$ (pKey . toText1Unsafe) "RELATION"
     <*> pNameWithoutLabel ns RelationName
     <*> pSign ns
     <*> optional pLabel
@@ -505,7 +563,8 @@ pRelationNew ns =
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
 pRelationOld :: NameSpace -> AmpParser (Name, P_Sign, Maybe Label, PProps)
 pRelationOld ns =
-  relOld <$> pNameWithoutLabel ns RelationName
+  relOld
+    <$> pNameWithoutLabel ns RelationName
     <* (pOperator . toText1Unsafe) "::"
     <*> pConceptRef ns
     <*> pFun
@@ -541,32 +600,40 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser PProps
 pFun =
-  Set.empty <$ (pOperator . toText1Unsafe) "*"
-    <|> Set.fromList [P_Uni, P_Tot] <$ (pOperator . toText1Unsafe) "->"
-    <|> Set.fromList [P_Sur, P_Inj] <$ (pOperator . toText1Unsafe) "<-"
+  Set.empty
+    <$ (pOperator . toText1Unsafe) "*"
+    <|> Set.fromList [P_Uni, P_Tot]
+    <$ (pOperator . toText1Unsafe) "->"
+    <|> Set.fromList [P_Sur, P_Inj]
+    <$ (pOperator . toText1Unsafe) "<-"
     <|> pBrackets pMults
   where
     --- Mults ::= Mult '-' Mult
     pMults :: AmpParser PProps
     pMults =
-      Set.union <$> optSet (pMult (P_Sur, P_Inj))
+      Set.union
+        <$> optSet (pMult (P_Sur, P_Inj))
         <* pDash
         <*> optSet (pMult (P_Tot, P_Uni))
 
     --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
-    --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
+    -- TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
     pMult :: (PProp, PProp) -> AmpParser PProps
     pMult (ts, ui) =
-      Set.union <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
+      Set.union
+        <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
         <* (pOperator . toText1Unsafe) ".."
         <*> (Set.singleton ui <$ try pOne <|> (Set.empty <$ (pOperator . toText1Unsafe) "*"))
-          <|> Set.empty <$ (pOperator . toText1Unsafe) "*"
-          <|> Set.fromList [ts, ui] <$ try pOne
+        <|> Set.empty
+        <$ (pOperator . toText1Unsafe) "*"
+        <|> Set.fromList [ts, ui]
+        <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
 pConceptDef :: NameSpace -> AmpParser (DefinitionContainer -> PConceptDef)
 pConceptDef ns =
-  build <$> currPos
+  build
+    <$> currPos
     <* (pKey . toText1Unsafe) "CONCEPT"
     <*> pNameWithOptionalLabel ns ConceptName
     <*> pPCDDef2
@@ -577,7 +644,8 @@ pConceptDef ns =
       PConceptDef orig nm mLab x means
     pPCDDef2 :: AmpParser PCDDef
     pPCDDef2 =
-      ( PCDDefLegacy <$> (pDoubleQuotedString <?> "concept definition (string)")
+      ( PCDDefLegacy
+          <$> (pDoubleQuotedString <?> "concept definition (string)")
           <*> (pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
       )
         <|> (PCDDefNew <$> pMeaning)
@@ -585,9 +653,11 @@ pConceptDef ns =
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: NameSpace -> AmpParser Representation
 pRepresentation ns =
-  Repr <$> currPos
+  Repr
+    <$> currPos
     <* (pKey . toText1Unsafe) "REPRESENT"
-    <*> pConceptRef ns `sepBy1` pComma
+    <*> pConceptRef ns
+    `sepBy1` pComma
     <* (pKey . toText1Unsafe) "TYPE"
     <*> pAdlTType
 
@@ -619,7 +689,8 @@ pAdlTType =
 --- IdentDef ::= 'IDENT' Label ConceptRef '(' IndSegmentList ')'
 pIdentDef :: NameSpace -> AmpParser P_IdentDef
 pIdentDef ns =
-  build <$> currPos
+  build
+    <$> currPos
     <* (pKey . toText1Unsafe) "IDENT"
     <*> pNameWithOptionalLabelAndColon ns IdentName
     <*> pConceptRef ns
@@ -658,12 +729,14 @@ pViewDef ns = try (pViewDefImproved ns) <|> pViewDefLegacy ns -- introduces back
 --- FancyViewDef ::= 'VIEW' Name Label? ConceptOneRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
 pViewDefImproved :: NameSpace -> AmpParser P_ViewDef
 pViewDefImproved ns =
-  mkViewDef <$> currPos
+  mkViewDef
+    <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
     <*> pNameWithOptionalLabelAndColon ns ViewName
     <*> pConceptOneRef ns
     <*> pIsThere ((pKey . toText1Unsafe) "DEFAULT")
-    <*> pBraces (pViewSegment Improved ns `sepBy` pComma) `opt` []
+    <*> pBraces (pViewSegment Improved ns `sepBy` pComma)
+    `opt` []
     <*> pMaybe pHtmlView
     <* (pKey . toText1Unsafe) "ENDVIEW"
   where
@@ -689,15 +762,19 @@ pViewDefImproved ns =
 --- ViewSegmentLoad ::= Term | 'TXT' Text
 pViewSegmentLoad :: NameSpace -> AmpParser (P_ViewSegmtPayLoad TermPrim)
 pViewSegmentLoad ns =
-  P_ViewExp <$> pTerm ns
-    <|> P_ViewText <$ (pKey . toText1Unsafe) "TXT" <*> pDoubleQuotedString
+  P_ViewExp
+    <$> pTerm ns
+    <|> P_ViewText
+    <$ (pKey . toText1Unsafe) "TXT"
+    <*> pDoubleQuotedString
 
 data ViewKind = Legacy | Improved
 
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: ViewKind -> NameSpace -> AmpParser (P_ViewSegment TermPrim)
 pViewSegment viewKind ns =
-  build <$> currPos
+  build
+    <$> currPos
     <*> case viewKind of
       Legacy -> pure Nothing
       Improved -> pMaybe pTex1AndColon
@@ -714,7 +791,8 @@ pViewSegment viewKind ns =
 --- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: NameSpace -> AmpParser P_ViewDef
 pViewDefLegacy ns =
-  build <$> currPos
+  build
+    <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
     <*> pNameWithOptionalLabelAndColon ns ViewName
     <*> pConceptOneRef ns
@@ -740,7 +818,8 @@ pViewDefLegacy ns =
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: NameSpace -> AmpParser P_Interface
 pInterface ns =
-  build <$> currPos
+  build
+    <$> currPos
     <*> pInterfaceIsAPI
     <*> pNameWithOptionalLabel ns InterfaceName
     <*> pMaybe pRoles
@@ -776,7 +855,7 @@ pInterface ns =
                 obj_msub = Just sub
               },
           pos = p,
-          ifc_Prp = "" --TODO: Nothing in syntax defined for the purpose of the interface.
+          ifc_Prp = "" -- TODO: Nothing in syntax defined for the purpose of the interface.
         }
     --- Roles ::= 'FOR' RoleList
     pRoles = (pKey . toText1Unsafe) "FOR" *> pRole ns False `sepBy1` pComma
@@ -784,11 +863,15 @@ pInterface ns =
 --- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: NameSpace -> AmpParser P_SubInterface
 pSubInterface ns =
-  P_Box <$> currPos <*> pBoxHeader <*> pBoxBody
+  P_Box
+    <$> currPos
+    <*> pBoxHeader
+    <*> pBoxBody
     <|> P_InterfaceRef
-      <$> currPos
-      <*> pIsThere ((pKey . toText1Unsafe) "LINKTO") <* pInterfaceKey
-      <*> pNameWithoutLabel ns InterfaceName
+    <$> currPos
+    <*> pIsThere ((pKey . toText1Unsafe) "LINKTO")
+    <* pInterfaceKey
+    <*> pNameWithoutLabel ns InterfaceName
   where
     pBoxHeader :: AmpParser BoxHeader
     pBoxHeader =
@@ -800,9 +883,10 @@ pSubInterface ns =
             (typ, keys) = fromMaybe (toText1Unsafe "FORM", []) x
         pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
         pBoxSpecification =
-          pChevrons $
-            (,) <$> (pSingleWord <|> pAnyKeyWord)
-              <*> many pTemplateKeyValue
+          pChevrons
+            $ (,)
+            <$> (pSingleWord <|> pAnyKeyWord)
+            <*> many pTemplateKeyValue
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue =
           TemplateKeyValue
@@ -829,7 +913,7 @@ pBoxBodyElement ns =
         <* pColon
         <*> pTerm ns -- the context term (for example: I[c])
         <*> pMaybe pCruds
-        <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) --for the view
+        <*> pMaybe (pChevrons (pNameWithoutLabel ns ViewName)) -- for the view
         <*> pMaybe (pSubInterface ns) -- the optional subinterface
       where
         build orig localNm lbl term mCrud mView msub =
@@ -864,7 +948,8 @@ pCruds = P_Cruds <$> currPos <*> pCrudString
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: NameSpace -> AmpParser PPurpose
 pPurpose ns =
-  rebuild <$> currPos
+  rebuild
+    <$> currPos
     <* (pKey . toText1Unsafe) "PURPOSE"
     <*> pRef2Obj
     <*> pMaybe pLanguageRef
@@ -874,7 +959,7 @@ pPurpose ns =
   where
     rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty Text) -> Text -> PPurpose
     rebuild orig obj lang fmt refs str =
-      PRef2 orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (maybe [] NE.toList refs))
+      PPurpose orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (maybe [] NE.toList refs))
       where
         -- TODO: This separation should not happen in the parser
         splitOnSemicolon :: Text -> [Text]
@@ -882,14 +967,30 @@ pPurpose ns =
         --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
     pRef2Obj :: AmpParser PRef2Obj
     pRef2Obj =
-      PRef2ConceptDef <$ (pKey . toText1Unsafe) "CONCEPT" <*> pNameWithoutLabel ns ConceptName
-        <|> PRef2Relation <$ (pKey . toText1Unsafe) "RELATION" <*> pNamedRel ns
-        <|> PRef2Rule <$ (pKey . toText1Unsafe) "RULE" <*> pNameWithoutLabel ns RuleName
-        <|> PRef2IdentityDef <$ (pKey . toText1Unsafe) "IDENT" <*> pNameWithoutLabel ns IdentName
-        <|> PRef2ViewDef <$ (pKey . toText1Unsafe) "VIEW" <*> pNameWithoutLabel ns ViewName
-        <|> PRef2Pattern <$ (pKey . toText1Unsafe) "PATTERN" <*> pNameWithoutLabel ns PatternName
-        <|> PRef2Interface <$ pInterfaceKey <*> pNameWithoutLabel ns InterfaceName
-        <|> PRef2Context <$ (pKey . toText1Unsafe) "CONTEXT" <*> pNameWithoutLabel ns ContextName
+      PRef2ConceptDef
+        <$ (pKey . toText1Unsafe) "CONCEPT"
+        <*> pNameWithoutLabel ns ConceptName
+        <|> PRef2Relation
+        <$ (pKey . toText1Unsafe) "RELATION"
+        <*> pNamedRel ns
+        <|> PRef2Rule
+        <$ (pKey . toText1Unsafe) "RULE"
+        <*> pNameWithoutLabel ns RuleName
+        <|> PRef2IdentityDef
+        <$ (pKey . toText1Unsafe) "IDENT"
+        <*> pNameWithoutLabel ns IdentName
+        <|> PRef2ViewDef
+        <$ (pKey . toText1Unsafe) "VIEW"
+        <*> pNameWithoutLabel ns ViewName
+        <|> PRef2Pattern
+        <$ (pKey . toText1Unsafe) "PATTERN"
+        <*> pNameWithoutLabel ns PatternName
+        <|> PRef2Interface
+        <$ pInterfaceKey
+        <*> pNameWithoutLabel ns InterfaceName
+        <|> PRef2Context
+        <$ (pKey . toText1Unsafe) "CONTEXT"
+        <*> pNameWithoutLabel ns ContextName
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789
@@ -906,7 +1007,7 @@ pPopulation ::
   AmpParser P_Population
 pPopulation ns =
   (pKey . toText1Unsafe) "POPULATION"
-    *> (try pPopulationCpt <|> pPopulationRel) --FIXME: Adding try solved the problem of parsing POPULATION statements. However, it significantly slowed down the quickCheck tests.
+    *> (try pPopulationCpt <|> pPopulationRel) -- FIXME: Adding try solved the problem of parsing POPULATION statements. However, it significantly slowed down the quickCheck tests.
   where
     pPopulationRel =
       P_RelPopu Nothing Nothing
@@ -922,28 +1023,34 @@ pPopulation ns =
         <*> pBrackets (pAtomValue `sepBy` pComma)
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
---TODO: Rename the RoleRule to RoleMantains.
+-- TODO: Rename the RoleRule to RoleMantains.
 pRoleRule :: NameSpace -> AmpParser P_RoleRule
 pRoleRule ns =
   try
-    ( Maintain <$> currPos
+    ( Maintain
+        <$> currPos
         <* (pKey . toText1Unsafe) "ROLE"
-        <*> pRole ns False `sepBy1` pComma
+        <*> pRole ns False
+        `sepBy1` pComma
         <* (pKey . toText1Unsafe) "MAINTAINS"
     )
-    <*> pNameWithoutLabel ns RuleName `sepBy1` pComma
+    <*> pNameWithoutLabel ns RuleName
+    `sepBy1` pComma
 
 --- ServiceRule ::= 'SERVICE' RoleList 'MAINTAINS' ADLidList
---TODO: Rename the RoleRule to RoleMantains.
+-- TODO: Rename the RoleRule to RoleMantains.
 pServiceRule :: NameSpace -> AmpParser P_RoleRule
 pServiceRule ns =
   try
-    ( Maintain <$> currPos
+    ( Maintain
+        <$> currPos
         <* (pKey . toText1Unsafe) "SERVICE"
-        <*> pRole ns True `sepBy1` pComma
+        <*> pRole ns True
+        `sepBy1` pComma
         <* (pKey . toText1Unsafe) "MAINTAINS"
     )
-    <*> pNameWithoutLabel ns RuleName `sepBy1` pComma
+    <*> pNameWithoutLabel ns RuleName
+    `sepBy1` pComma
 
 --- Role ::= ADLid (LABEL doublequotedstring)?
 --- RoleList ::= Role (',' Role)*
@@ -960,12 +1067,13 @@ pRole ns isService =
           rlIsService = isService
         }
 
---pNameWithoutLabel ns RoleName
+-- pNameWithoutLabel ns RoleName
 
 --- Meaning ::= 'MEANING' Markup
 pMeaning :: AmpParser PMeaning
 pMeaning =
-  PMeaning <$ (pKey . toText1Unsafe) "MEANING"
+  PMeaning
+    <$ (pKey . toText1Unsafe) "MEANING"
     <*> pMarkup
 
 --- Message ::= 'MESSAGE' Markup
@@ -989,8 +1097,14 @@ pRule ::
   AmpParser (Term TermPrim)
 pRule ns =
   pTerm ns
-    <??> ( invert PEqu <$> currPos <* (pOperator . toText1Unsafe) "=" <*> pTerm ns
-             <|> invert PInc <$> currPos <* (pOperator . toText1Unsafe) "|-" <*> pTerm ns
+    <??> ( invert PEqu
+             <$> currPos
+             <* (pOperator . toText1Unsafe) "="
+             <*> pTerm ns
+             <|> invert PInc
+             <$> currPos
+             <* (pOperator . toText1Unsafe) "|-"
+             <*> pTerm ns
          )
 
 {-
@@ -1011,8 +1125,10 @@ pTerm ::
   AmpParser (Term TermPrim)
 pTerm ns =
   pTrm2 ns
-    <??> ( invertT PIsc <$> rightAssociate PIsc (toText1Unsafe "/\\") (pTrm2 ns)
-             <|> invertT PUni <$> rightAssociate PUni (toText1Unsafe "\\/") (pTrm2 ns)
+    <??> ( invertT PIsc
+             <$> rightAssociate PIsc (toText1Unsafe "/\\") (pTrm2 ns)
+             <|> invertT PUni
+             <$> rightAssociate PUni (toText1Unsafe "\\/") (pTrm2 ns)
          )
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
@@ -1025,9 +1141,18 @@ pTrm2 ns = pTrm3 ns <??> (invert PDif <$> posOf pDash <*> pTrm3 ns)
 pTrm3 :: NameSpace -> AmpParser (Term TermPrim)
 pTrm3 ns =
   pTrm4 ns
-    <??> ( invert PLrs <$> currPos <* (pOperator . toText1Unsafe) "/" <*> pTrm4 ns
-             <|> invert PRrs <$> currPos <* (pOperator . toText1Unsafe) "\\" <*> pTrm4 ns
-             <|> invert PDia <$> currPos <* (pOperator . toText1Unsafe) "<>" <*> pTrm4 ns
+    <??> ( invert PLrs
+             <$> currPos
+             <* (pOperator . toText1Unsafe) "/"
+             <*> pTrm4 ns
+             <|> invert PRrs
+             <$> currPos
+             <* (pOperator . toText1Unsafe) "\\"
+             <*> pTrm4 ns
+             <|> invert PDia
+             <$> currPos
+             <* (pOperator . toText1Unsafe) "<>"
+             <*> pTrm4 ns
          )
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
@@ -1035,16 +1160,20 @@ pTrm3 ns =
 pTrm4 :: NameSpace -> AmpParser (Term TermPrim)
 pTrm4 ns =
   pTrm5 ns
-    <??> ( invertT PCps <$> rightAssociate PCps (toText1Unsafe ";") (pTrm5 ns)
-             <|> invertT PRad <$> rightAssociate PRad (toText1Unsafe "!") (pTrm5 ns)
-             <|> invertT PPrd <$> rightAssociate PPrd (toText1Unsafe "#") (pTrm5 ns)
+    <??> ( invertT PCps
+             <$> rightAssociate PCps (toText1Unsafe ";") (pTrm5 ns)
+             <|> invertT PRad
+             <$> rightAssociate PRad (toText1Unsafe "!") (pTrm5 ns)
+             <|> invertT PPrd
+             <$> rightAssociate PPrd (toText1Unsafe "#") (pTrm5 ns)
          )
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: NameSpace -> AmpParser (Term TermPrim)
---TODO: Separate into prefix and postfix top-level functions
+-- TODO: Separate into prefix and postfix top-level functions
 pTrm5 ns =
-  f <$> many (valPosOf pDash)
+  f
+    <$> many (valPosOf pDash)
     <*> pTrm6 ns
     <*> many
       ( valPosOf
@@ -1065,8 +1194,11 @@ pTrm5 ns =
 --- Trm6 ::= RelationRef | '(' Term ')'
 pTrm6 :: NameSpace -> AmpParser (Term TermPrim)
 pTrm6 ns =
-  Prim <$> pRelationRef ns
-    <|> PBrk <$> currPos <*> pParens (pTerm ns)
+  Prim
+    <$> pRelationRef ns
+    <|> PBrk
+    <$> currPos
+    <*> pParens (pTerm ns)
 
 -- Help function for several terms. The type 't' is each of the terms.
 invert :: (Origin -> t -> t -> t) -> Origin -> t -> t -> t
@@ -1087,10 +1219,20 @@ rightAssociate combinator operator term =
 --- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
 pRelationRef :: NameSpace -> AmpParser TermPrim
 pRelationRef ns =
-  PNamedR <$> pNamedRel ns
-    <|> pid <$> currPos <* (pKey . toText1Unsafe) "I" <*> (pMaybe . pBrackets $ pConceptOneRef ns)
-    <|> pfull <$> currPos <* (pKey . toText1Unsafe) "V" <*> pMaybe (pSign ns)
-    <|> Patm <$> currPos <*> pSingleton <*> (pMaybe . pBrackets $ pConceptOneRef ns)
+  PNamedR
+    <$> pNamedRel ns
+    <|> pid
+    <$> currPos
+    <* (pKey . toText1Unsafe) "I"
+    <*> (pMaybe . pBrackets $ pConceptOneRef ns)
+    <|> pfull
+    <$> currPos
+    <* (pKey . toText1Unsafe) "V"
+    <*> pMaybe (pSign ns)
+    <|> Patm
+    <$> currPos
+    <*> pSingleton
+    <*> (pMaybe . pBrackets $ pConceptOneRef ns)
   where
     pid orig Nothing = PI orig
     pid orig (Just c) = Pid orig c
@@ -1099,7 +1241,8 @@ pRelationRef ns =
 
 pSingleton :: AmpParser PAtomValue
 pSingleton =
-  value2PAtomValue <$> currPos
+  value2PAtomValue
+    <$> currPos
     <*> ( pAtomValInPopulation True
             <|> pBraces (pAtomValInPopulation False)
         )
@@ -1158,7 +1301,8 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
     pRecord :: AmpParser PAtomPair
     pRecord =
       pParens
-        ( PPair <$> currPos
+        ( PPair
+            <$> currPos
             <*> pAtomValue
             <* pComma
             <*> pAtomValue
@@ -1166,5 +1310,6 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 
 pLabel :: AmpParser Label
 pLabel =
-  Label <$ (pKey . toText1Unsafe $ "LABEL")
+  Label
+    <$ (pKey . toText1Unsafe $ "LABEL")
     <*> pDoubleQuotedString

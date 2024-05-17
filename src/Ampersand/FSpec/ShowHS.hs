@@ -56,20 +56,20 @@ class ShowHSName a where
 class ShowHS a where
   showHS :: (HasFSpecGenOpts env) => env -> Text -> a -> Text
 
-instance ShowHSName a => ShowHSName [a] where
+instance (ShowHSName a) => ShowHSName [a] where
   showHSName xs = "[" <> T.intercalate ", " (map showHSName xs) <> "]"
 
-instance ShowHS a => ShowHS [a] where
+instance (ShowHS a) => ShowHS [a] where
   showHS env indent = wrap "" (indent <> " ") (showHS env)
 
-instance ShowHS a => ShowHS (NE.NonEmpty a) where
+instance (ShowHS a) => ShowHS (NE.NonEmpty a) where
   showHS env indent = wrap "" (indent <> " ") (showHS env) . NE.toList
 
-instance ShowHSName a => ShowHSName (Maybe a) where
+instance (ShowHSName a) => ShowHSName (Maybe a) where
   showHSName Nothing = "Nothing"
   showHSName (Just x) = showHSName x
 
-instance ShowHS a => ShowHS (Maybe a) where
+instance (ShowHS a) => ShowHS (Maybe a) where
   showHS _ _ Nothing = "Nothing"
   showHS env indent (Just x) = "Just (" <> showHS env indent x <> ")"
 
@@ -289,14 +289,18 @@ instance ShowHS FSpec where
       ( if null (interfaceS fSpec)
           then ""
           else
-            "\n -- *** User defined interfaces (total: " <> (tshow . length . interfaceS) fSpec <> " interfaces) ***: "
+            "\n -- *** User defined interfaces (total: "
+              <> (tshow . length . interfaceS) fSpec
+              <> " interfaces) ***: "
               <> T.concat [indent <> " " <> showHSName s <> indent <> "  = " <> showHS env (indent <> "    ") s | s <- interfaceS fSpec]
               <> "\n"
       )
       <> ( if null (interfaceG fSpec)
              then ""
              else
-               "\n -- *** Generated interfaces (total: " <> (tshow . length . interfaceG) fSpec <> " interfaces) ***: "
+               "\n -- *** Generated interfaces (total: "
+                 <> (tshow . length . interfaceG) fSpec
+                 <> " interfaces) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- interfaceG fSpec]
                  <> "\n"
          )
@@ -304,63 +308,81 @@ instance ShowHS FSpec where
             in if null ds
                  then ""
                  else
-                   "\n -- *** Declared relations (in total: " <> (tshow . length) ds <> " relations) ***: "
+                   "\n -- *** Declared relations (in total: "
+                     <> (tshow . length) ds
+                     <> " relations) ***: "
                      <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList ds]
                      <> "\n"
          )
       <> ( if null (vIndices fSpec)
              then ""
              else
-               "\n -- *** Indices (total: " <> (tshow . length . vIndices) fSpec <> " indices) ***: "
+               "\n -- *** Indices (total: "
+                 <> (tshow . length . vIndices) fSpec
+                 <> " indices) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- vIndices fSpec]
                  <> "\n"
          )
       <> ( if null (vviews fSpec)
              then ""
              else
-               "\n -- *** Views (total: " <> (tshow . length . vviews) fSpec <> " views) ***: "
+               "\n -- *** Views (total: "
+                 <> (tshow . length . vviews) fSpec
+                 <> " views) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- vviews fSpec]
                  <> "\n"
          )
       <> ( if null (vrules fSpec)
              then ""
              else
-               "\n -- *** User defined rules (total: " <> (tshow . length . vrules) fSpec <> " rules) ***: "
+               "\n -- *** User defined rules (total: "
+                 <> (tshow . length . vrules) fSpec
+                 <> " rules) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList $ vrules fSpec]
                  <> "\n"
          )
       <> ( if null (grules fSpec)
              then ""
              else
-               "\n -- *** Generated rules (total: " <> (tshow . length . grules) fSpec <> " rules) ***: "
+               "\n -- *** Generated rules (total: "
+                 <> (tshow . length . grules) fSpec
+                 <> " rules) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- toList $ grules fSpec]
                  <> "\n"
          )
       <> ( if null (allConjuncts fSpec)
              then ""
              else
-               "\n -- *** Conjuncts (total: " <> (tshow . length . allConjuncts) fSpec <> " conjuncts) ***: "
+               "\n -- *** Conjuncts (total: "
+                 <> (tshow . length . allConjuncts) fSpec
+                 <> " conjuncts) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- allConjuncts fSpec]
                  <> "\n"
          )
       <> ( if null (vquads fSpec)
              then ""
              else
-               "\n -- *** Quads (total: " <> (tshow . length . vquads) fSpec <> " quads) ***: "
+               "\n -- *** Quads (total: "
+                 <> (tshow . length . vquads) fSpec
+                 <> " quads) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- vquads fSpec]
                  <> "\n"
          )
       <> ( if null (plugInfos fSpec)
              then ""
              else
-               "\n -- *** PlugInfos (total: " <> (tshow . length . plugInfos) fSpec <> " plugInfos) ***: "
+               "\n -- *** PlugInfos (total: "
+                 <> (tshow . length . plugInfos) fSpec
+                 <> " plugInfos) ***: "
                  <> T.concat [indent <> " " <> showHSName p <> indent <> "  = " <> showHS env (indent <> "    ") p | InternalPlug p <- L.sortBy (compare `on` showUnique) (plugInfos fSpec)]
                  <> "\n"
          )
       <> ( if null (instanceList fSpec :: [Pattern])
              then ""
              else
-               "\n -- *** Patterns (total: " <> (tshow . length $ (instanceList fSpec :: [Pattern])) <> " patterns) ***: "
+               "\n -- *** Patterns (total: "
+                 <> (tshow . length $ (instanceList fSpec :: [Pattern]))
+                 <> " patterns) ***: "
                  <> T.concat [indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x | x <- vpatterns fSpec]
                  <> "\n"
          )
@@ -372,9 +394,16 @@ instance ShowHS FSpec where
       ( if null (allConcepts fSpec)
           then ""
           else
-            "\n -- *** Concepts (total: " <> (tshow . length . allConcepts) fSpec <> " concepts) ***: "
+            "\n -- *** Concepts (total: "
+              <> (tshow . length . allConcepts) fSpec
+              <> " concepts) ***: "
               <> T.concat
-                [ indent <> " " <> showHSName x <> indent <> "  = " <> showHS env (indent <> "    ") x
+                [ indent
+                    <> " "
+                    <> showHSName x
+                    <> indent
+                    <> "  = "
+                    <> showHS env (indent <> "    ") x
                     <> indent
                     <> "    "
                     <> showAtomsOfConcept x
@@ -399,7 +428,8 @@ instance ShowHS FSpec where
       showViolatedRule indent' (r, ps) =
         T.intercalate
           indent'
-          [ " ( " <> showHSName r
+          [ " ( "
+              <> showHSName r
               <> indent'
               <> " , "
               <> wrap
@@ -464,7 +494,9 @@ instance ShowHS Pattern where
 
 instance ShowHS PPurpose where
   showHS env _ expl =
-    "PRef2 (" <> showHS env "" (origin expl) <> ") "
+    "PPurpose ("
+      <> showHS env "" (origin expl)
+      <> ") "
       <> "("
       <> showHS env "" (pexObj expl)
       <> ") "
@@ -488,7 +520,10 @@ instance ShowHS PRef2Obj where
 
 instance ShowHS Purpose where
   showHS env _ expla =
-    "Expl " <> "(" <> showHS env "" (explPos expla) <> ") "
+    "Expl "
+      <> "("
+      <> showHS env "" (explPos expla)
+      <> ") "
       <> "("
       <> showHS env "" (explObj expla)
       <> ") "
@@ -566,7 +601,13 @@ instance ShowHSName IdentityRule where
 
 instance ShowHS IdentityRule where
   showHS env indent identity =
-    "Id (" <> showHS env "" (idPos identity) <> ") " <> tshow (idName identity) <> " (" <> showHSName (idCpt identity) <> ")"
+    "Id ("
+      <> showHS env "" (idPos identity)
+      <> ") "
+      <> tshow (idName identity)
+      <> " ("
+      <> showHSName (idCpt identity)
+      <> ")"
       <> indent
       <> "  [ "
       <> T.intercalate (indent <> "  , ") (NE.toList . fmap (showHS env indent) $ identityAts identity)
@@ -581,7 +622,12 @@ instance ShowHSName ViewDef where
 
 instance ShowHS ViewDef where
   showHS env indent vd =
-    "Vd (" <> showHS env "" (vdpos vd) <> ") " <> fullName vd <> " " <> showHSName (vdcpt vd)
+    "Vd ("
+      <> showHS env "" (vdpos vd)
+      <> ") "
+      <> fullName vd
+      <> " "
+      <> showHSName (vdcpt vd)
       <> indent
       <> "  [ "
       <> T.intercalate (indent <> "  , ") (showHS env indent <$> vdats vd)
@@ -590,7 +636,9 @@ instance ShowHS ViewDef where
 
 instance ShowHS ViewSegment where
   showHS env indent vs =
-    "ViewSegment " <> showHS env indent (origin vs) <> " "
+    "ViewSegment "
+      <> showHS env indent (origin vs)
+      <> " "
       <> " "
       <> tshow (vsmlabel vs)
       <> " "
@@ -608,8 +656,9 @@ instance ShowHS Population where
   showHS _ indent pop =
     case pop of
       ARelPopu {} ->
-        "ARelPopu { popdcl = " <> showHSName (popdcl pop)
-          --TODOFIX
+        "ARelPopu { popdcl = "
+          <> showHSName (popdcl pop)
+          -- TODOFIX
           --          <>indent<>"         , popps  = [ "<>T.intercalate
           --           (indent<>"                    , ") (map show (popps pop))
           <> indent
@@ -617,8 +666,9 @@ instance ShowHS Population where
           <> indent
           <> "         }"
       ACptPopu {} ->
-        "ACptPopu { popcpt = " <> showHSName (popcpt pop)
-          --TODOFIX
+        "ACptPopu { popcpt = "
+          <> showHSName (popcpt pop)
+          -- TODOFIX
           --          <>indent<>"         , popas  = [ "<>T.intercalate
           --           (indent<>"                    , ") (map show (popas pop))
           <> indent
@@ -626,7 +676,7 @@ instance ShowHS Population where
           <> indent
           <> "         }"
 
---instance ShowHSName ObjectDef where
+-- instance ShowHSName ObjectDef where
 --  showHSName = haskellIdentifier . fullName1 . prependToPlainName "oDef_" . objPlainName
 
 instance ShowHS ObjectDef where
@@ -726,7 +776,7 @@ instance ShowHS AClassify where
 instance ShowHSName Relation where
   showHSName d
     | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- user defined relations
-    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $d -- relations generated per rule
+    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- relations generated per rule
 
 instance ShowHS Relation where
   showHS env indent d =
@@ -810,13 +860,15 @@ instance ShowHSName Origin where
         FileLoc l sym -> "FileLoc (" <> tshow l <> " " <> sym <> ")"
         Origin s -> "Origin " <> tshow s
         PropertyRule str declOrig ->
-          "PropertyRule of " <> text1ToText str <> " "
+          "PropertyRule of "
+            <> text1ToText str
+            <> " "
             <> case declOrig of
               FileLoc l sym -> "declared at FileLoc (" <> tshow l <> " " <> sym <> ")"
               _ ->
-                fatal $
-                  "This should be the origin of a Relation, but it doesn't seem like it is.\n"
-                    <> tshow declOrig
+                fatal
+                  $ "This should be the origin of a Relation, but it doesn't seem like it is.\n"
+                  <> tshow declOrig
         OriginUnknown -> "OriginUnknown"
         XLSXLoc fPath sheet (a, b) -> "XLSXLoc " <> T.pack fPath <> " " <> sheet <> " " <> tshow (a, b)
         MeatGrinder -> "MeatGrinder"

@@ -83,7 +83,9 @@ buildConcepts fSpec =
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
-    $ toList . allConcepts $ fSpec
+    $ toList
+    . allConcepts
+    $ fSpec
 
 buildViews :: FSpec -> [FEView]
 buildViews fSpec =

@@ -75,7 +75,7 @@ data FEInterface = FEInterface
     ifcLabel :: Text,
     ifcExp :: FEExpression,
     isApi :: Bool,
-    isSessionInterface :: Bool, --True if the source concept is the session. (then the interface will show a list of all)
+    isSessionInterface :: Bool, -- True if the source concept is the session. (then the interface will show a list of all)
     srcConcept :: Text,
     feiRoles :: [Role],
     feiObj :: FEObject
@@ -201,22 +201,22 @@ copyDirRecursively ::
   RIO env ()
 copyDirRecursively srcBase tgtBase
   | srcBase == tgtBase =
-    mapM_
-      logError
-      [ "Are you kidding me? I got the instruction to copy ",
-        "     " <> display (T.pack srcBase),
-        "  to itself!"
-      ]
+      mapM_
+        logError
+        [ "Are you kidding me? I got the instruction to copy ",
+          "     " <> display (T.pack srcBase),
+          "  to itself!"
+        ]
   | otherwise = do
-    srcBaseA <- liftIO $ makeAbsolute srcBase
-    tgtBaseA <- liftIO $ makeAbsolute tgtBase
-    mapM_
-      logDebug
-      [ "Recursively copying ",
-        "     " <> display (T.pack srcBaseA),
-        "  to " <> display (T.pack tgtBaseA)
-      ]
-    copy ("." </> tgtBase) ""
+      srcBaseA <- liftIO $ makeAbsolute srcBase
+      tgtBaseA <- liftIO $ makeAbsolute tgtBase
+      mapM_
+        logDebug
+        [ "Recursively copying ",
+          "     " <> display (T.pack srcBaseA),
+          "  to " <> display (T.pack tgtBaseA)
+        ]
+      copy ("." </> tgtBase) ""
   where
     copy shouldSkip fileOrDirPth = do
       let srcPath = srcBase </> fileOrDirPth
@@ -230,7 +230,7 @@ copyDirRecursively srcBase tgtBase
             else
               if takeExtension srcPath == defaultDirPrototype
                 then do
-                  logDebug $ "Skipping " <> display (T.pack srcPath) <> " because its extension is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                  logDebug $ "Skipping " <> display (T.pack srcPath) <> " because its extension is excluded by design" -- This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
                 else do
                   logDebug $ " Copying dir... " <> display (T.pack srcPath)
                   logDebug $ "      to dir... " <> display (T.pack tgtPath)
@@ -243,7 +243,7 @@ copyDirRecursively srcBase tgtBase
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
 removeAllDirectoryFiles ::
-  HasLogFunc env =>
+  (HasLogFunc env) =>
   FilePath ->
   RIO env ()
 removeAllDirectoryFiles dirPath = do
@@ -288,7 +288,7 @@ strReplace src dst inp =
 
 phpIndent :: Int -> Text
 phpIndent i
-  | i < 0 = T.pack " " --space instead of \n
+  | i < 0 = T.pack " " -- space instead of \n
   | otherwise = T.pack $ '\n' : replicate i ' '
 
 addSlashes :: Text -> Text
@@ -348,22 +348,25 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
     --         for each interface provided.
     ([], [], []) -> T.pack $ render appliedTemplate
     (parseErrs@(_ : _), _, _) ->
-      templateError . T.concat $
-        [ T.pack $ "Parse error in " <> tmplt <> " " <> err <> "\n"
-          | (tmplt, err) <- parseErrs
-        ]
+      templateError
+        . T.concat
+        $ [ T.pack $ "Parse error in " <> tmplt <> " " <> err <> "\n"
+            | (tmplt, err) <- parseErrs
+          ]
     ([], attrs@(_ : _), _)
       | isJust userAtts -> T.pack . render . fillInTheBlanks (L.nub attrs) $ appliedTemplate
       | otherwise ->
-        templateError $
-          "The following attributes are expected by the template, but not supplied: " <> tshow attrs
+          templateError
+            $ "The following attributes are expected by the template, but not supplied: "
+            <> tshow attrs
     ([], [], ts@(_ : _)) ->
-      templateError $
-        "Missing invoked templates: " <> tshow ts -- should not happen as we don't invoke templates
+      templateError
+        $ "Missing invoked templates: "
+        <> tshow ts -- should not happen as we don't invoke templates
   where
     templateError msg =
-      exitWith $
-        ReadFileError
+      exitWith
+        $ ReadFileError
           [ "*** TEMPLATE ERROR in:" <> T.pack absPath,
             msg
           ]
@@ -384,8 +387,9 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
 
 showTemplate :: Template -> [Text]
 showTemplate (Template a b) =
-  T.lines . T.intercalate "\n" $
-    ("Template (" <> T.pack b <> ")") :
-    map
+  T.lines
+    . T.intercalate "\n"
+    $ ("Template (" <> T.pack b <> ")")
+    : map
       ("  " <>)
       [T.pack $ toString a]

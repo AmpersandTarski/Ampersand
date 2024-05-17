@@ -39,7 +39,7 @@ attributesOfConcept fSpec c =
       where
         expr = attExpr att
 
---was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
+-- was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
 makeGeneratedSqlPlugs ::
   (HasFSpecGenOpts env) =>
@@ -55,18 +55,20 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     inspectedCandidateTables
       | null candidateTables = []
       | otherwise = case filter (not . isSingleton) . eqCl sqlname $ candidateTables of
-        [] -> case filter hasNameConflict candidateTables of
-          [] -> candidateTables
-          xs ->
-            fatal . T.intercalate "\n   " $
-              [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
-              ]
+          [] -> case filter hasNameConflict candidateTables of
+            [] -> candidateTables
+            xs ->
+              fatal
+                . T.intercalate "\n   "
+                $ [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
+                  ]
                 <> concatMap showNameConflict (L.sortOn sqlname xs)
                 <> hint
-        xs ->
-          fatal . T.intercalate "\n   " $
-            [ "The following names are used for different tables:"
-            ]
+          xs ->
+            fatal
+              . T.intercalate "\n   "
+              $ [ "The following names are used for different tables:"
+                ]
               <> concatMap myShow xs
               <> hint
       where
@@ -91,9 +93,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           ("    " <>)
             <$> [ "Table: " <> tshow (sqlname plug)
                 ]
-              <> ( ("    " <>)
-                     <$> (L.sort . map (tshow . attSQLColName) . toList . plugAttributes $ plug)
-                 )
+            <> ( ("    " <>)
+                   <$> (L.sort . map (tshow . attSQLColName) . toList . plugAttributes $ plug)
+               )
         sameBy foo a b = foo a == foo b
         isSingleton :: NonEmpty a -> Bool
         isSingleton (_ NE.:| []) = True
@@ -168,14 +170,16 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         lookupC :: A_Concept -> SqlAttribute
         lookupC cpt = case [f | (c', f) <- conceptLookuptable, cpt == c'] of
           [] ->
-            fatal $
-              "Concept `" <> fullName cpt <> "` is not in the lookuptable."
-                <> "\nallConceptsInTable: "
-                <> tshow allConceptsInTable
-                <> "\nallRelationsInTable: "
-                <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
-                <> "\nlookupTable: "
-                <> tshow (map fst conceptLookuptable)
+            fatal
+              $ "Concept `"
+              <> fullName cpt
+              <> "` is not in the lookuptable."
+              <> "\nallConceptsInTable: "
+              <> tshow allConceptsInTable
+              <> "\nallRelationsInTable: "
+              <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
+              <> "\nlookupTable: "
+              <> tshow (map fst conceptLookuptable)
           x : _ -> x
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =
@@ -184,8 +188,10 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               attExpr = expr,
               attType = repr cpt,
               attUse =
-                if cpt == tableKey
-                  && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
+                if cpt
+                  == tableKey
+                  && repr cpt
+                  == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                   then PrimaryKey cpt
                   else PlainAttr,
               attNull = cpt /= tableKey, -- column for specializations can be NULL, but not the first column (tableKey)
@@ -218,7 +224,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
             keyToTargetExpr = (attExpr . cptAttrib . source $ dclAttExpression) .:. dclAttExpression
 
     -----------------------------------------
-    --makeLinkTable
+    -- makeLinkTable
     -----------------------------------------
     -- makeLinkTable creates associations (BinSQL) between plugs that represent wide tables.
     -- Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
@@ -234,10 +240,10 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     makeLinkTable dcl =
       BinSQL
         { sqlname = determineLinkTableName dcl,
-          cLkpTbl = [], --TODO: in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
-          --given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
-          --if dcl is TOT, then the concept (source dcl) is stored in this plug
-          --if dcl is SUR, then the concept (target dcl) is stored in this plug
+          cLkpTbl = [], -- TODO: in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
+          -- given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
+          -- if dcl is TOT, then the concept (source dcl) is stored in this plug
+          -- if dcl is SUR, then the concept (target dcl) is stored in this plug
           dLkpTbl = [theRelStore],
           mainItem = toConceptOrRelation dcl
         }
@@ -261,12 +267,12 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               rsSrcAtt = if isStoredFlipped dcl then trgAtt else srcAtt,
               rsTrgAtt = if isStoredFlipped dcl then srcAtt else trgAtt
             }
-        --the expr for the domain of r
+        -- the expr for the domain of r
         domExpr
           | isTot bindedExp = EDcI (source bindedExp)
           | isSur bindedExp = EDcI (target bindedExp)
           | otherwise = EDcI (source bindedExp) ./\. (bindedExp .:. flp bindedExp)
-        --the expr for the codomain of r
+        -- the expr for the codomain of r
         codExpr
           | not (isTot bindedExp) && isSur bindedExp = flp bindedExp
           | otherwise = bindedExp
@@ -377,7 +383,7 @@ hashText x = case x of
       <> fullName (source rel)
       <> fullName (target rel)
 
-class Named a => TableArtefact a where
+class (Named a) => TableArtefact a where
   toConceptOrRelation :: a -> ConceptOrRelation
 
 instance TableArtefact A_Concept where
@@ -398,5 +404,5 @@ determineSqlName scope conceptOrRelation =
         [clazz] -> (T.length . fullName $ conceptOrRelation) > maxLengthOfDatabaseTableName || length clazz > 1
         _ -> fatal "Concept must be found exactly in one list."
       where
-        equality :: Named a => a -> a -> Bool
+        equality :: (Named a) => a -> a -> Bool
         equality a b = (T.toLower . fullName) a == (T.toLower . fullName) b

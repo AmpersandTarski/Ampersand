@@ -26,7 +26,7 @@ import Data.Typeable
 import RIO.List (intersect, nub, union)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
-import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
+import qualified RIO.Map.Partial as PARTIAL -- TODO: Get rid of partial functions.
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
@@ -45,7 +45,7 @@ eqClass f (x : xs) = (x NE.:| [e | e <- xs, f x e]) : eqClass f [e | e <- xs, no
 --   For instance, if you want to have persons with the same name:
 --    'eqCl name persons' produces a list,in which each element is a list of persons with the same name.
 -- Example> eqCl (=='s') "Mississippi" = ["ssss","Miiippi"]
-eqCl :: Ord b => (a -> b) -> [a] -> [NE.NonEmpty a]
+eqCl :: (Ord b) => (a -> b) -> [a] -> [NE.NonEmpty a]
 eqCl _ [] = []
 eqCl f lst = Map.elems (Map.fromListWith (<>) [(f e, e NE.:| []) | e <- lst])
 
@@ -53,7 +53,7 @@ eqCl f lst = Map.elems (Map.fromListWith (<>) [(f e, e NE.:| []) | e <- lst])
 eqClassNE :: (a -> a -> Bool) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
 eqClassNE f = PARTIAL.fromList . eqClass f . NE.toList
 
-eqClNE :: Ord b => (a -> b) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
+eqClNE :: (Ord b) => (a -> b) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
 eqClNE f = PARTIAL.fromList . eqCl f . NE.toList
 
 -- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
@@ -71,34 +71,34 @@ getCycles edges' =
     keyFor v = fromMaybe fatalError $ L.elemIndex v allVertices
       where
         fatalError =
-          fatal $
-            T.intercalate "\n" $
-              [ "v (" <> tshow (typeOf v) <> ") = " <> tshow v,
+          fatal
+            $ T.intercalate "\n"
+            $ [ "v (" <> tshow (typeOf v) <> ") = " <> tshow v,
                 "length edges = " <> tshow (length edges),
                 "edges = "
               ]
-                <> map (("  " <>) . tshow) edges
-                <> [ "allVertices ="
-                   ]
-                <> map (("  " <>) . tshow) allVertices
-                <> [ "graphEdges ="
-                   ]
-                <> map (("  " <>) . tshow) graphEdges
+            <> map (("  " <>) . tshow) edges
+            <> [ "allVertices ="
+               ]
+            <> map (("  " <>) . tshow) allVertices
+            <> [ "graphEdges ="
+               ]
+            <> map (("  " <>) . tshow) graphEdges
 
 -- |  Warshall's transitive closure algorithm
-transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]
+transClosureMap' :: (Ord a) => Map.Map a [a] -> Map.Map a [a]
 transClosureMap' xs =
   foldl' f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
   where
-    f :: Ord a => Map.Map a [a] -> a -> Map.Map a [a] -- The type is given for documentation purposes only
+    f :: (Ord a) => Map.Map a [a] -> a -> Map.Map a [a] -- The type is given for documentation purposes only
     f q x = Map.unionWith union q (Map.fromListWith union (pleasefixthisname q x)) -- FIXME @Stefjoosten: what whould be a good name for this function?
 
 -- |  Warshall's transitive closure algorithm
-transClosureMap :: Ord a => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
+transClosureMap :: (Ord a) => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
 transClosureMap xs =
   foldl' f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
   where
-    f :: Ord a => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
+    f :: (Ord a) => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union (pleasefixthisname q x))
 
 pleasefixthisname :: (Foldable t, Ord k) => Map k (t k) -> k -> [(k, t k)]

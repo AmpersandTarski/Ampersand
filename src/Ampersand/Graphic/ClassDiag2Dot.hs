@@ -32,13 +32,14 @@ classdiagram2dot env cd =
               GraphAttrs
                 [ RankDir FromLeft,
                   bgColor White
-                ] :
-              --    ++ [NodeAttrs  [ ]]
-              [ EdgeAttrs
-                  [ FontSize 11,
-                    MinLen 4
-                  ]
-              ],
+                ]
+                :
+                --    ++ [NodeAttrs  [ ]]
+                [ EdgeAttrs
+                    [ FontSize 11,
+                      MinLen 4
+                    ]
+                ],
             subGraphs = group2subgraph <$> groups cd,
             nodeStmts =
               map class2node (allClasses cd)
@@ -75,7 +76,7 @@ classdiagram2dot env cd =
               }
         }
       where
-        nameLabel :: Named a => a -> TL.Text
+        nameLabel :: (Named a) => a -> TL.Text
         nameLabel = TL.fromStrict . fullName
         nm = fst x
         notInClassNodes :: Name -> Bool
@@ -269,7 +270,7 @@ instance CdNode (Name, NonEmpty Class) where
 instance CdNode Class where
   nodes cl = [name . clName $ cl]
 
-instance CdNode a => CdNode [a] where
+instance (CdNode a) => CdNode [a] where
   nodes = concatMap nodes
 
 instance CdNode Association where
