@@ -22,8 +22,8 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 genericAndSpecifics :: AClassify -> [(A_Concept, A_Concept)]
-genericAndSpecifics gen = filter (uncurry (/=)) $ -- make sure that no tuples where source and target are equal are returned.
-  case gen of
+genericAndSpecifics gen = filter (uncurry (/=))
+  $ case gen of -- make sure that no tuples where source and target are equal are returned.
     Isa {} -> [(genspc gen, gengen gen)]
     IsE {} -> [(genspc gen, g) | g <- NE.toList $ genrhs gen]
 
@@ -63,10 +63,10 @@ atomValuesOf ci pt c =
     ONE -> Set.singleton AtomValueOfONE
     PlainConcept {} ->
       let smallerconcs = c : smallerConcepts (ctxiGens ci) c
-       in Set.fromList $
-            [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-              ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-              ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+       in Set.fromList
+            $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+            ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+            ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl =
@@ -135,11 +135,11 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
               where
                 flipr = contents (EFlp r)
             EKl0 x ->
-              if source x == target x --see #166
+              if source x == target x -- see #166
                 then transClosureMap (Map.unionWith Set.union (contents x) (contents (EDcI (source x))))
                 else fatal ("source and target of " <> tshow x <> tshow (sign x) <> " are not equal.")
             EKl1 x ->
-              if source x == target x --see #166
+              if source x == target x -- see #166
                 then transClosureMap (contents x)
                 else fatal ("source and target of " <> tshow x <> tshow (sign x) <> " are not equal.")
             EFlp x -> Map.fromListWith Set.union [(b, Set.singleton a) | (a, bs) <- Map.assocs (contents x), b <- Set.toList bs]
@@ -157,7 +157,8 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 ]
             EMp1 val c ->
               if isSESSION c -- prevent populating SESSION with "_SESSION"
-                && tshow val == tshow ("_SESSION" :: Text)
+                && tshow val
+                == tshow ("_SESSION" :: Text)
                 then Map.empty
                 else Map.singleton av (Set.singleton av)
               where

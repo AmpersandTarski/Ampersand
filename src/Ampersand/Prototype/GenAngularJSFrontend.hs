@@ -45,12 +45,12 @@ genRouteProvider fSpec ifcs = do
   template <- readTemplate "routeProvider.config.js"
   mapM_ (logDebug . display) (showTemplate template)
   let contents =
-        renderTemplate Nothing template $
-          setAttribute "contextName" (fsName fSpec)
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "ifcs" ifcs
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
+        renderTemplate Nothing template
+          $ setAttribute "contextName" (fsName fSpec)
+          . setAttribute "ampersandVersionStr" (longVersion appVersion)
+          . setAttribute "ifcs" ifcs
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
   mapM_ (logDebug . display) $ "Generated template: " : (map ("   " <>) . T.lines $ contents)
   writePrototypeAppFile "routeProvider.config.js" contents
   logDebug "Finish genRouteProvider."
@@ -77,23 +77,23 @@ genViewInterface fSpec interf = do
   lns <- genViewObject fSpec 0 (feiObj interf)
   template <- readTemplate "interface.html"
   let contents =
-        renderTemplate Nothing template $
-          setAttribute "contextName" (addSlashes . fullName $ fSpec)
-            . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
-            . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "interfaceName" (ifcName interf)
-            . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
-            . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
-            . setAttribute "crudC" (objCrudC (feiObj interf))
-            . setAttribute "crudR" (objCrudR (feiObj interf))
-            . setAttribute "crudU" (objCrudU (feiObj interf))
-            . setAttribute "crudD" (objCrudD (feiObj interf))
-            . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
+        renderTemplate Nothing template
+          $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
+          . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
+          . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "ampersandVersionStr" (longVersion appVersion)
+          . setAttribute "interfaceName" (ifcName interf)
+          . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
+          . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
+          . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
+          . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC (feiObj interf))
+          . setAttribute "crudR" (objCrudR (feiObj interf))
+          . setAttribute "crudU" (objCrudU (feiObj interf))
+          . setAttribute "crudD" (objCrudD (feiObj interf))
+          . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
   let filename :: FilePath
       filename = "ifc" <> (T.unpack . ifcName $ interf) <> ".view.html"
   writePrototypeAppFile filename contents
@@ -152,7 +152,8 @@ genViewObject fSpec depth obj =
           let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
           template <- readTemplate templateFilename
 
-          return . indentation
+          return
+            . indentation
             . T.lines
             . renderTemplate Nothing template
             $ atomicAndBoxAttrs
@@ -164,12 +165,13 @@ genViewObject fSpec depth obj =
 
             parentTemplate <- readTemplate $ "Box-" <> (T.unpack . text1ToText . btType) header <.> "html"
 
-            return . indentation
+            return
+              . indentation
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ atomicAndBoxAttrs
-                . setAttribute "isRoot" (depth == 0)
-                . setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure []
   where
     indentation :: [Text] -> [Text]
@@ -209,7 +211,7 @@ genViewObject fSpec depth obj =
     getTemplateForObject
       | relIsProp obj && (not . exprIsIdent) obj -- special 'checkbox-like' template for propery relations
         =
-        return $ "View-PROPERTY" <> ".html"
+          return $ "View-PROPERTY" <> ".html"
       | otherwise = getTemplateForConcept . target . objExp $ obj
     getTemplateForConcept ::
       (HasDirPrototype env) =>
@@ -217,8 +219,8 @@ genViewObject fSpec depth obj =
       RIO env FilePath
     getTemplateForConcept cpt = do
       exists <- doesTemplateExist cptfn
-      return $
-        if exists
+      return
+        $ if exists
           then cptfn
           else "Atomic-" <> show ttp <.> "html"
       where
@@ -236,23 +238,23 @@ genControllerInterface fSpec interf = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   let contents =
-        renderTemplate Nothing template $
-          setAttribute "contextName" (fsName fSpec)
-            . setAttribute "isRoot" (isTopLevel . source . ifcExp $ interf)
-            . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-            . setAttribute "ampersandVersionStr" (longVersion appVersion)
-            . setAttribute "interfaceName" (ifcName interf)
-            . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
-            . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-            . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
-            . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
-            . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
-            . setAttribute "crudC" (objCrudC (feiObj interf))
-            . setAttribute "crudR" (objCrudR (feiObj interf))
-            . setAttribute "crudU" (objCrudU (feiObj interf))
-            . setAttribute "crudD" (objCrudD (feiObj interf))
-            . setAttribute "verbose" (loglevel' == LevelDebug)
-            . setAttribute "loglevel" (show loglevel')
-            . setAttribute "usedTemplate" controlerTemplateName
+        renderTemplate Nothing template
+          $ setAttribute "contextName" (fsName fSpec)
+          . setAttribute "isRoot" (isTopLevel . source . ifcExp $ interf)
+          . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "ampersandVersionStr" (longVersion appVersion)
+          . setAttribute "interfaceName" (ifcName interf)
+          . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
+          . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
+          . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
+          . setAttribute "source" (idWithoutType . source . ifcExp $ interf)
+          . setAttribute "target" (idWithoutType . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC (feiObj interf))
+          . setAttribute "crudR" (objCrudR (feiObj interf))
+          . setAttribute "crudU" (objCrudU (feiObj interf))
+          . setAttribute "crudD" (objCrudD (feiObj interf))
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
+          . setAttribute "usedTemplate" controlerTemplateName
   let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
   writePrototypeAppFile filename contents

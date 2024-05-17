@@ -76,14 +76,14 @@ data CustomSection
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 
 -- | Things that can be referenced in a document.
-class Typeable a => Xreferenceable a where
+class (Typeable a) => Xreferenceable a where
   xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
-  xDefBlck _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in <Blocks>.") --you should use xDefInln instead.
+  xDefBlck _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in <Blocks>.") -- you should use xDefInln instead.
 
   -- ^ function that defines the target Blocks of something that can be referenced.
 
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
-  xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in an <Inlines>.") --you should use xDefBlck instead.
+  xDefInln _ _ a = fatal ("A " <> tshow (typeOf a) <> " cannot be labeled in an <Inlines>.") -- you should use xDefBlck instead.
 
   -- ^ function that defines the target Inlines of something that can be referenced.
 
@@ -141,22 +141,22 @@ hyperTarget env fSpec a =
     --                    <>printMeaning (outputLang env fSpec) r
     --                  )
     XRefConceptualAnalysisRelation _d ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Relatie ", EN "Relation ")
           --   <> (str . show . numberOf fSpec $ d)
           )
     XRefConceptualAnalysisRule _r ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Regel ", EN "Rule ")
           --   <> (str . show . numberOf fSpec $ r)
           )
     XRefConceptualAnalysisExpression _r ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Regel ", EN "Rule ")
           --   <> (str . show . numberOf fSpec $ r)
@@ -168,7 +168,7 @@ hyperTarget env fSpec a =
     l :: LocalizedStr -> Text
     l = localize (outputLang env fSpec)
 
-codeGen' :: Xreferenceable a => a -> Inlines
+codeGen' :: (Xreferenceable a) => a -> Inlines
 codeGen' a =
   cite
     [ Citation
@@ -238,7 +238,8 @@ instance Hashable Ident where
     IdentByName nm ->
       s `hashWithSalt` nm
     IdentRel n1 n2 n3 ->
-      s `hashWithSalt` n1
+      s
+        `hashWithSalt` n1
         `hashWithSalt` n2
         `hashWithSalt` n3
     IdentOverig -> s `hashWithSalt` tshow ident
@@ -333,7 +334,7 @@ data Numbered t = Nr
     theLoad :: t
   }
 
-instance Named t => Named (Numbered t) where
+instance (Named t) => Named (Numbered t) where
   name = name . theLoad
 
 data RuleCont = CRul
@@ -367,11 +368,12 @@ instance Named CptCont where
 instance Named ThemeContent where
   name tc =
     maybe
-      ( mkName PatternName . (:| []) $
-          ( case toNamePart "Outside_of_patterns" of
-              Nothing -> fatal "Not a valid NamePart."
-              Just np -> np
-          )
+      ( mkName PatternName
+          . (:| [])
+          $ ( case toNamePart "Outside_of_patterns" of
+                Nothing -> fatal "Not a valid NamePart."
+                Just np -> np
+            )
       )
       name
       (patOfTheme tc)
@@ -385,7 +387,7 @@ instance Named ThemeContent where
 --   The story: materials from the patterns are gathered in ruless, conceptss, and relationss.
 --   Numbering of each item is done recursively by `numbered`, while keeping the structure intact.
 --   Finally, the theme content is constructed.
-orderingByTheme :: HasOutputLanguage env => env -> FSpec -> [ThemeContent]
+orderingByTheme :: (HasOutputLanguage env) => env -> FSpec -> [ThemeContent]
 orderingByTheme env fSpec =
   [ Thm
       { themeNr = i,
@@ -491,8 +493,8 @@ dpRule' env fSpec = dpR
     dpR (r : rs) n seenConcs seenRelations =
       ( ( l (NL "Regel: ", EN "Rule: ") <> (text . tshow . mkId) r,
           [theBlocks]
-        ) :
-        dpNext,
+        )
+          : dpNext,
         n',
         seenCs,
         seenDs
@@ -508,7 +510,8 @@ dpRule' env fSpec = dpR
               ([d], English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
               (_, Dutch) ->
                 plain
-                  ( "Om te komen tot de formalisatie van " <> hyperLinkTo (XRefSharedLangRule r)
+                  ( "Om te komen tot de formalisatie van "
+                      <> hyperLinkTo (XRefSharedLangRule r)
                       <> " ("
                       <> (singleQuoted . str . tshow . mkId) r
                       <> ") "
@@ -588,7 +591,7 @@ dpRule' env fSpec = dpR
         rds = ds `Set.intersection` seenRelations -- previously seen relations
         (dpNext, n', seenCs, seenDs) = dpR rs (n + length cds + length nds + 1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
-printMeaning :: HasMeaning a => Lang -> a -> Blocks
+printMeaning :: (HasMeaning a) => Lang -> a -> Blocks
 printMeaning lang = maybe mempty (printMarkup . ameaMrk) . meaning lang
 
 printPurposes :: [Purpose] -> Blocks
@@ -618,7 +621,8 @@ purposes2Blocks env ps =
           ( texOnlyMarginNote
               (T.intercalate "; " (explRefIds purp) <> "\n")
           )
-        | view fspecFormatL env `elem` [Fpdf, Flatex]
+        | view fspecFormatL env
+            `elem` [Fpdf, Flatex]
             && (not . null . explRefIds) purp
       ]
 

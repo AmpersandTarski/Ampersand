@@ -113,5 +113,5 @@ instance JSON (Int, PairViewSegment Expression) JsonPairViewSegment where
           PairViewExp _ _ e -> Just . sqlQuery fSpec $ e,
         pvsJSONexpIsIdent = case pvs of
           PairViewText {} -> Nothing
-          PairViewExp _ _ e -> Just . isIdent $ e --show $ e
+          PairViewExp _ _ e -> Just . isIdent $ e -- show $ e
       }

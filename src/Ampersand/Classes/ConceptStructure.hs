@@ -52,15 +52,15 @@ instance (ConceptStructure a, ConceptStructure b) => ConceptStructure (a, b) whe
   concs (a, b) = concs a `Set.union` concs b
   expressionsIn (a, b) = expressionsIn a `Set.union` expressionsIn b
 
-instance ConceptStructure a => ConceptStructure (Maybe a) where
+instance (ConceptStructure a) => ConceptStructure (Maybe a) where
   concs = maybe Set.empty concs
   expressionsIn = maybe Set.empty expressionsIn
 
-instance ConceptStructure a => ConceptStructure [a] where
+instance (ConceptStructure a) => ConceptStructure [a] where
   concs = Set.unions . map concs
   expressionsIn = Set.unions . map expressionsIn
 
-instance ConceptStructure a => ConceptStructure (NE.NonEmpty a) where
+instance (ConceptStructure a) => ConceptStructure (NE.NonEmpty a) where
   concs = Set.unions . fmap concs
   expressionsIn = Set.unions . fmap expressionsIn
 

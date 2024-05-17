@@ -32,7 +32,7 @@ data Constraints = Cnstr
   }
   deriving (Show)
 
-class Traversable d => Disambiguatable d where
+class (Traversable d) => Disambiguatable d where
   -- To make something Disambiguatable, do the following:
   -- (1) Make sure the type of the Disambiguatable thing has a type variable.
   --     Suppose "Thing" should become disambiguatable, then "Thing" has "TermPrim" inside somewhere.
@@ -60,7 +60,7 @@ class Traversable d => Disambiguatable d where
   --                (b', (ic2,ib)) = disambInfo cptMap b (ic1,ib1)
   disambInfo ::
     ConceptMap -> -- required to turn P_Concepts into proper A_Concepts (see issue #999)
-    d (TermPrim, DisambPrim) -> --the thing that is disabmiguated
+    d (TermPrim, DisambPrim) -> -- the thing that is disabmiguated
     Constraints -> -- the inferred types (from the environment = top down)
     ( d ((TermPrim, DisambPrim), Constraints), -- only the environment for the term (top down)
       Constraints -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
@@ -88,7 +88,7 @@ class Traversable d => Disambiguatable d where
 noConstraints :: Constraints
 noConstraints = Cnstr [] []
 
---TODO: Rename to a more meaningfull name
+-- TODO: Rename to a more meaningfull name
 fullConstraints :: Constraints -> Constraints
 fullConstraints cs =
   Cnstr
@@ -107,8 +107,8 @@ instance Disambiguatable P_IdentDf where
   disambInfo cptMap (P_Id orig nm lbl cpt atts) _ = (P_Id orig nm lbl cpt atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
     where
       (atts', restr') =
-        NE.unzip $
-          fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
+        NE.unzip
+          $ fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
 
 instance Disambiguatable P_IdentSegmnt where
   disambInfo cptMap (P_IdentExp v) x = (P_IdentExp v', rt)
@@ -297,7 +297,7 @@ data DisambPrim
 instance Pretty DisambPrim where
   pretty = text . show
 
-instance Pretty a => Pretty (a, DisambPrim) where
+instance (Pretty a) => Pretty (a, DisambPrim) where
   pretty (t, _) = pretty t
 
 performUpdate ::

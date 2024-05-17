@@ -7,17 +7,17 @@ import Ampersand.Basics
 import Ampersand.Options.LogLevelParser
 import Ampersand.Options.Utils
 import Ampersand.Types.Config
---import           Control.Monad.Trans.Except
---import           Control.Monad.Trans.Writer
+-- import           Control.Monad.Trans.Except
+-- import           Control.Monad.Trans.Writer
 
 import Data.Monoid (First (..)) -- , Any (..), Sum (..), Endo (..))
---import           Options.Applicative.Builder.Internal
---import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
---import           Options.Applicative.Types
---import qualified RIO.List as L
---import qualified System.Directory as D
---import           System.Environment (getProgName, getArgs, withArgs)
---import           System.FilePath (isValid, pathSeparator, takeDirectory)
+-- import           Options.Applicative.Builder.Internal
+-- import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
+-- import           Options.Applicative.Types
+-- import qualified RIO.List as L
+-- import qualified System.Directory as D
+-- import           System.Environment (getProgName, getArgs, withArgs)
+-- import           System.FilePath (isValid, pathSeparator, takeDirectory)
 import Generics.Deriving.Monoid (mappenddefault, memptydefault)
 import Options.Applicative
 import Options.Applicative.Builder.Extra
@@ -87,7 +87,7 @@ globalOptsParser _currentDir defLogLevel =
     hide0 = False
 
 -- | Create GlobalOpts from GlobalOptsMonoid.
-globalOptsFromMonoid :: MonadIO m => Bool -> FilePath -> GlobalOptsMonoid -> m GlobalOpts
+globalOptsFromMonoid :: (MonadIO m) => Bool -> FilePath -> GlobalOptsMonoid -> m GlobalOpts
 globalOptsFromMonoid defaultTerminal defaultOutputDir GlobalOptsMonoid {..} = do
   --  resolver <- for (getFirst globalMonoidResolver) $ \ur -> do
   --    root <-

@@ -39,8 +39,11 @@ makeFSpec env context =
       interfaceS = fSpecAllInterfaces, -- interfaces specified in the Ampersand script
       roleInterfaces = fSpecRoleInterfaces,
       interfaceG =
-        [ ifc | ifc <- interfaceGen, let ctxrel = objExpression (ifcObj ifc), isIdent ctxrel && source ctxrel == ONE
-                                                                                || ctxrel `notElem` map (objExpression . ifcObj) fSpecAllInterfaces, view genInterfacesL env -- generated interfaces
+        [ ifc | ifc <- interfaceGen, let ctxrel = objExpression (ifcObj ifc), isIdent ctxrel
+                                                                                && source ctxrel
+                                                                                == ONE
+                                                                                || ctxrel
+                                                                                `notElem` map (objExpression . ifcObj) fSpecAllInterfaces, view genInterfacesL env -- generated interfaces
         ],
       fDeriveProofs = deriveProofs env context,
       fRoleRuls =
@@ -84,7 +87,7 @@ makeFSpec env context =
       fSexpls = Set.fromList $ ctxps context <> concatMap ptxps (patterns context),
       metas = ctxmetas context,
       crudInfo = mkCrudInfo fSpecAllConcepts relsDefdInContext fSpecAllInterfaces,
-      atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript, --TODO: Write in a nicer way, like `atomsBySmallestConcept`
+      atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript, -- TODO: Write in a nicer way, like `atomsBySmallestConcept`
       atomsBySmallestConcept = \cpt ->
         Set.map apLeft
           . pairsinexpr
@@ -183,7 +186,7 @@ makeFSpec env context =
     ruleviolations r = case formalExpression r of
       EEqu {} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
       EInc {} -> cra Set.\\ crc
-      _ -> pairsinexpr (EDcV (sign (consequent r))) Set.\\ crc --everything not in con
+      _ -> pairsinexpr (EDcV (sign (consequent r))) Set.\\ crc -- everything not in con
       where
         cra = pairsinexpr (antecedent r)
         crc = pairsinexpr (consequent r)
@@ -247,8 +250,8 @@ makeFSpec env context =
       case rrkind r of
         UserDefined -> rolesFromScript
         Propty prp dcl
-          | prp == Uni && isUni (EDcD dcl) -> [] --Enforced by the database
-          | prp == Inj && isInj (EDcD dcl) -> [] --Enforced by the database
+          | prp == Uni && isUni (EDcD dcl) -> [] -- Enforced by the database
+          | prp == Inj && isInj (EDcD dcl) -> [] -- Enforced by the database
           | otherwise -> rolesFromScript
         Identity _ -> []
         Enforce ->
@@ -282,7 +285,8 @@ makeFSpec env context =
     getAllViewsForConcept' concpt =
       concatMap viewsOfThisConcept
         . sortSpecific2Generic (gens context)
-        $ concpt : largerConcepts (gens context) concpt
+        $ concpt
+        : largerConcepts (gens context) concpt
 
     viewsOfThisConcept :: A_Concept -> [ViewDef]
     viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
@@ -296,12 +300,13 @@ makeFSpec env context =
       case filter vdIsDefault
         . concatMap viewsOfThisConcept
         . sortSpecific2Generic (gens context)
-        $ cpt : largerConcepts (gens context) cpt of
+        $ cpt
+        : largerConcepts (gens context) cpt of
         [] -> Nothing
         (vd : _) -> Just vd
 
     --------------
-    --making plugs
+    -- making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
     genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context
@@ -320,13 +325,13 @@ makeFSpec env context =
     --             $ name x
     --       }
 
-    --TODO151210 -> Plug A is overbodig, want A zit al in plug r
-    --CONTEXT Temp
-    --PATTERN Temp
-    --r::A*B[TOT].
-    --t::E*ECps[UNI].
-    --ENDPATTERN
-    --ENDCONTEXT
+    -- TODO151210 -> Plug A is overbodig, want A zit al in plug r
+    -- CONTEXT Temp
+    -- PATTERN Temp
+    -- r::A*B[TOT].
+    -- t::E*ECps[UNI].
+    -- ENDPATTERN
+    -- ENDCONTEXT
     {-
         **************************************
         * Plug E                               *
@@ -348,10 +353,10 @@ makeFSpec env context =
         **************************************
     -}
     -------------------
-    --END: making plugs
+    -- END: making plugs
     -------------------
     -------------------
-    --making interfaces
+    -- making interfaces
     -------------------
     -- interfaces (type BoxItem) can be generated from a basic ontology. That is: they can be derived from a set
     -- of relations together with property constraints. That is what interfaceG does.
@@ -369,17 +374,17 @@ makeFSpec env context =
     --  Step 1: select and arrange all relations to obtain a set cRels of total relations
     --          to ensure insertability of entities (signal relations are excluded)
     cRels =
-      toList $
-        Set.filter isTot toconsider
-          `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
+      toList
+        $ Set.filter isTot toconsider
+        `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
       where
         toconsider = Set.map EDcD relsDefdInContext
     --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
     --          to ensure deletability of entities (signal relations are excluded)
     dRels =
-      toList $
-        Set.filter isInj toconsider
-          `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
+      toList
+        $ Set.filter isInj toconsider
+        `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
       where
         toconsider = Set.map EDcD relsDefdInContext
     --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
@@ -447,7 +452,7 @@ makeFSpec env context =
               [] -> Nothing
               h : tl ->
                 if isIdent (objExpression h) && null tl
-                  then Nothing --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
+                  then Nothing -- exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
                   else
                     Just
                       ( source . NE.head . NE.head $ cl,
@@ -476,9 +481,9 @@ makeFSpec env context =
             | (c, objattributes) <- mapMaybe f $ eqCl (source . NE.head) plugPaths,
               let params = bindedRelationsIn . expressionsIn $ objattributes
           ]
-    --end otherwise: default theme
-    --end stap4a
-    step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
+    -- end otherwise: default theme
+    -- end stap4a
+    step4b -- generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       =
       [ Ifc
           { ifcIsAPI = False,
@@ -510,12 +515,12 @@ makeFSpec env context =
                 mkName ConceptName
                   . NE.reverse
                   $ (toNamePart' . plural (ctxlang context) . plainNameOf $ c)
-                    NE.:| reverse (nameSpaceOf (name c))
+                  NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
                   $ (toNamePart' . plural (ctxlang context) $ plainNameOf c <> tshow i)
-                    NE.:| reverse (nameSpaceOf (name c))
+                  NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"
                 h : _ -> h
@@ -532,7 +537,7 @@ makeFSpec env context =
       ]
 
 ----------------------
---END: making interfaces
+-- END: making interfaces
 ----------------------
 
 makeifcConjuncts :: Relations -> [Conjunct] -> [Conjunct]
@@ -557,22 +562,22 @@ tblcontents ci ps plug =
             ss -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are " <> tshow (length ss))
        in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ps expr]
     TblSQL {} ->
-      --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
-      --attributes are assumed to be in the order kernel+other,
-      --where NULL in a kernel attribute implies NULL in the following kernel attributes
-      --and the first attribute is unique and not null
-      --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
+      -- TODO15122010 -> remove the assumptions (see comment data PlugSQL)
+      -- attributes are assumed to be in the order kernel+other,
+      -- where NULL in a kernel attribute implies NULL in the following kernel attributes
+      -- and the first attribute is unique and not null
+      -- (r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
       case attributes plug of
         [] -> fatal "no attributes in plug."
         f : fs ->
           (L.nub . L.transpose)
-            ( map Just (toList cAtoms) :
-                [ case fExp of
-                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
-                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
-                  | att <- fs,
-                    let fExp = attExpr att
-                ]
+            ( map Just (toList cAtoms)
+                : [ case fExp of
+                      EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
+                      _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
+                    | att <- fs,
+                      let fExp = attExpr att
+                  ]
             )
           where
             cAtoms = (atomValuesOf ci ps . source . attExpr) f
@@ -582,19 +587,20 @@ tblcontents ci ps plug =
                 [] -> Nothing
                 [p] -> Just (apRight p)
                 ps' ->
-                  fatal . T.unlines $
-                    [ "There is an attempt to populate multiple values into ",
-                      "     the row of table `" <> text1ToText (showUnique plug) <> "`, where id = " <> tshow (showValADL a) <> ":",
-                      "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps'),
-                      "",
-                      "ps: " <> T.intercalate ("\n  |" <> tshow (length ps) <> " ") (fmap tshow ps),
-                      "",
-                      "ps': " <> tshow ps'
-                    ] --this has happened before due to:
-                    --    when using --dev flag
-                    --  , when there are violations
-                    --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
-                    --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
+                  fatal
+                    . T.unlines
+                    $ [ "There is an attempt to populate multiple values into ",
+                        "     the row of table `" <> text1ToText (showUnique plug) <> "`, where id = " <> tshow (showValADL a) <> ":",
+                        "     Values to be inserted in field `" <> (text1ToText . sqlColumNameToText1 . attSQLColName $ att) <> "` are: " <> tshow (map (showValADL . apRight) ps'),
+                        "",
+                        "ps: " <> T.intercalate ("\n  |" <> tshow (length ps) <> " ") (fmap tshow ps),
+                        "",
+                        "ps': " <> tshow ps'
+                      ] -- this has happened before due to:
+                      --    when using --dev flag
+                      --  , when there are violations
+                      --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
+                      --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
 
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader

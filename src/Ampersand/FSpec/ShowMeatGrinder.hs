@@ -51,11 +51,11 @@ metaModel mmLabel =
   where
     modelName :: AB.Name
     modelName =
-      mkName ContextName $
-        ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
-            Nothing -> fatal "Not a proper NamePart."
-            Just np -> np NE.:| []
-        )
+      mkName ContextName
+        $ ( case toNamePart ("MetaModel_" <> tshow mmLabel) of
+              Nothing -> fatal "Not a proper NamePart."
+              Just np -> np NE.:| []
+          )
     transformers = case mmLabel of
       FormalAmpersand -> transformersFormalAmpersand . emptyFSpec $ modelName
       PrototypeContext -> transformersPrototypeContext . emptyFSpec $ modelName

@@ -47,7 +47,9 @@ deriveProofs env context =
     <> para ("Rules and their conjuncts for " <> (str . fullName) context)
     <> bulletList
       [ para
-          ( "rule r:   " <> (str . fullName) r <> linebreak
+          ( "rule r:   "
+              <> (str . fullName) r
+              <> linebreak
               <> "formalExpression r:  "
               <> str (showA (formalExpression r))
               <> linebreak
@@ -82,7 +84,7 @@ showProof shw ((expr, ss, equ) : prf) =
               else str equ <> str (" { " <> T.intercalate " and " ss <> " }")
       )
     <> showProof shw prf
---where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
+-- where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
 showProof _ [] = fromList []
 
 -- showPrf is meant to circumvent Pandoc. For example when a proof needs to be shown in debugging texts.

@@ -74,9 +74,10 @@ prop_parserRoundtrip pCtx =
   case roundtrip pCtx of
     Checked _ _ -> True
     Errors err ->
-      exitWith . SomeTestsFailed $
-        T.lines (tshow err)
-          <> T.lines (prettyCtx pCtx)
+      exitWith
+        . SomeTestsFailed
+        $ T.lines (tshow err)
+        <> T.lines (prettyCtx pCtx)
 
 roundtrip :: P_Context -> Guarded P_Context
 roundtrip pCtx =

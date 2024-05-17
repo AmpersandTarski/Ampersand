@@ -55,8 +55,8 @@ import System.Environment (withArgs)
 
 -- Vertically combine only the error component of the first argument with the
 -- error component of the second.
---vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
---vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
+-- vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+-- vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
 
 commandLineHandler ::
   FilePath ->
@@ -169,7 +169,7 @@ commandLineHandler currentDir _progName args =
       where
         -- addCommand hiding global options
         addCommand'' ::
-          HasOptions a =>
+          (HasOptions a) =>
           Command ->
           String ->
           (a -> RIO Runner ()) ->
@@ -197,7 +197,7 @@ type AddCommand =
 
 -- | Generate and execute a complicated options parser.
 complicatedOptions ::
-  Monoid a =>
+  (Monoid a) =>
   -- | header
   Text ->
   -- | program description (displayed between usage and options listing in the help output)
@@ -233,10 +233,10 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         $ infoParser parser
     myPreferences :: ParserPrefs
     myPreferences =
-      prefs $
-        showHelpOnEmpty
-          <> noBacktrack
-          <> disambiguate
+      prefs
+        $ showHelpOnEmpty
+        <> noBacktrack
+        <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
       dullyellow
@@ -332,7 +332,7 @@ addCommand' cmd title footerStr constr commonParser inner =
 
 -- | Generate a complicated options parser.
 complicatedParser ::
-  Monoid a =>
+  (Monoid a) =>
   -- | metavar for the sub-command
   String ->
   -- | common settings
@@ -363,9 +363,9 @@ hsubparser' commandMetavar m = mkParser d g rdr
 -- | Non-hidden help option.
 helpOption :: Parser (a -> a)
 helpOption =
-  abortOption (ShowHelpText $ Just "This is some text, but when does it show??") $
-    long "help"
-      <> help "Show this help text"
+  abortOption (ShowHelpText $ Just "This is some text, but when does it show??")
+    $ long "help"
+    <> help "Show this help text"
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts =
@@ -375,7 +375,7 @@ documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
   (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
   where
-    forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
+    forceAllowInvariants :: (HasFSpecGenOpts env) => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env
 
 testCmd :: TestOpts -> RIO Runner ()
@@ -408,7 +408,8 @@ doOrDie theAction = do
       mapM_ (logWarn . displayShow) ws
       theAction a
     Errors err ->
-      exitWith . NoValidFSpec
+      exitWith
+        . NoValidFSpec
         . T.lines
         . T.intercalate (T.replicate 30 "=" <> "\n")
         . NE.toList

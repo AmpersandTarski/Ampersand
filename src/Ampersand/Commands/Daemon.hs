@@ -47,8 +47,9 @@ mainWithTerminal :: IO TermSize -> ([String] -> RIO (ExtendedRunner DaemonOpts) 
 mainWithTerminal termSize termOutput = goForever
   where
     goForever = work `catch` errorHandler
-    work = forever $
-      withWindowIcon $ do
+    work = forever
+      $ withWindowIcon
+      $ do
         -- On certain Cygwin terminals stdout defaults to BlockBuffering
         hSetBuffering stdout LineBuffering
         hSetBuffering stderr NoBuffering
@@ -58,16 +59,17 @@ mainWithTerminal termSize termOutput = goForever
         logDebug $ "%VERSION: " <> display (shortVersion appVersion)
         env <- ask
         withCurrentDirectory curDir $ do
-          termSize' <- liftIO $
-            return $ do
+          termSize' <- liftIO
+            $ return
+            $ do
               term <- termSize
               -- if we write to the final column of the window then it wraps automatically
               -- so logInfo width 'x' uses up two lines.
               -- Logging *always* ends the line, so we need to substract 1 of the hight as well.
-              return $
-                TermSize
+              return
+                $ TermSize
                   (termWidth term - 1)
-                  (termHeight term -1)
+                  (termHeight term - 1)
                   (termWrap term)
 
           restyle <- liftIO $ do
@@ -76,8 +78,9 @@ mainWithTerminal termSize termOutput = goForever
               --    Always -> return True
               --    Never -> return False
               Auto -> liftIO $ hSupportsANSI stdout
-            when useStyle $
-              liftIO $ do
+            when useStyle
+              $ liftIO
+              $ do
                 h <- lookupEnv "HSPEC_OPTIONS"
                 when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see https://github.com/ndmitchell/ghcid/issues/87
             return $ if useStyle then id else map unescape
@@ -154,32 +157,32 @@ runAmpersand app waiter termSize termOutput = do
         logDebug $ "%LOADED: " <> (displayShow . loaded $ ad)
 
         let (countErrors, countWarnings) =
-              both sum $
-                L.unzip
+              both sum
+                $ L.unzip
                   [if loadSeverity == Error then (1 :: Int, 0 :: Int) else (0, 1) | Message {..} <- messages ad, loadMessage /= []]
 
-        liftIO $
-          unless no_title $
-            setWindowIcon $
-              if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
+        liftIO
+          $ unless no_title
+          $ setWindowIcon
+          $ if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
 
         let updateTitle extra =
-              unless no_title $
-                setTitle $
-                  unescape $
-                    let f n msg = if n == 0 then "" else show n ++ " " ++ msg ++ ['s' | n > 1]
-                     in ( if countErrors == 0 && countWarnings == 0
-                            then allGoodMessage ++ ", at " ++ currTime
-                            else
-                              f countErrors "error"
-                                ++ (if countErrors > 0 && countWarnings > 0 then ", " else "")
-                                ++ f countWarnings "warning"
-                        )
-                          ++ " "
-                          ++ extra
-                          ++ [' ' | extra /= ""]
-                          ++ "- "
-                          ++ project
+              unless no_title
+                $ setTitle
+                $ unescape
+                $ let f n msg = if n == 0 then "" else show n ++ " " ++ msg ++ ['s' | n > 1]
+                   in ( if countErrors == 0 && countWarnings == 0
+                          then allGoodMessage ++ ", at " ++ currTime
+                          else
+                            f countErrors "error"
+                              ++ (if countErrors > 0 && countWarnings > 0 then ", " else "")
+                              ++ f countWarnings "warning"
+                      )
+                        ++ " "
+                        ++ extra
+                        ++ [' ' | extra /= ""]
+                        ++ "- "
+                        ++ project
 
         liftIO $ updateTitle ""
 
@@ -211,7 +214,7 @@ prettyOutput _ _ xs = concatMap loadMessage xs
 -- | A version of 'nubOrd' which operates on a portion of the value.
 --
 -- > nubOrdOn length ["a","test","of","this"] == ["a","test","of"]
-nubOrdOn :: Ord b => (a -> b) -> [a] -> [a]
+nubOrdOn :: (Ord b) => (a -> b) -> [a] -> [a]
 nubOrdOn f = map snd . nubOrdBy (compare `on` fst) . map (f &&& id)
 
 -- | A version of 'nubOrd' with a custom predicate.
@@ -279,19 +282,19 @@ balance a x b = T B a x b
 -- > withTempDir $ \dir -> do writeFile (dir </> "foo.txt") ""; withCurrentDirectory dir $ doesFileExist "foo.txt"
 withCurrentDirectory :: FilePath -> RIO env a -> RIO env a
 withCurrentDirectory dir act =
-  bracket' getCurrentDirectory setCurrentDirectory $
-    const
+  bracket' getCurrentDirectory setCurrentDirectory
+    $ const
       ( do
           liftIO $ setCurrentDirectory dir
           act
       )
   where
     bracket' ::
-      -- | computation to run first (\"acquire resource\")
+      -- \| computation to run first (\"acquire resource\")
       IO a ->
-      -- | computation to run last (\"release resource\")
+      -- \| computation to run last (\"release resource\")
       (a -> IO b) ->
-      -- | computation to run in-between
+      -- \| computation to run in-between
       (a -> RIO env c) ->
       RIO env c -- returns the value from the in-between computation
     bracket' before after thing =

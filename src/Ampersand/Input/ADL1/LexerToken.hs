@@ -97,7 +97,7 @@ lexemeText l = case l of
   LexDateTime val -> tshow val
   LexDate val -> tshow val
 
-toBase :: Integral a => Show a => a -> a -> String
+toBase :: (Integral a) => (Show a) => a -> a -> String
 toBase b x = conv x ""
   where
     conv 0 str = str

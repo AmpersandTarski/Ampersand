@@ -33,7 +33,8 @@ placeHolderSQL = "_SRCATOM"
 
 broadQueryWithPlaceholder :: FSpec -> ObjectDef -> Text
 broadQueryWithPlaceholder fSpec =
-  T.unwords . T.words
+  T.unwords
+    . T.words
     . T.pack
     . prettyQueryExpr theDialect
     . broadQuery fSpec
@@ -61,7 +62,8 @@ class SQLAble a where
 
   doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> Text
   doNonPretty fun fSpec =
-    T.unwords . T.words
+    T.unwords
+      . T.words
       . T.pack
       . prettyQueryExpr theDialect
       . toSQL
@@ -99,7 +101,7 @@ class SQLAble a where
               bqeWithPlaceholder
             (Iden [_, a], _)
               | a == sourceAlias ->
-                bqeWithPlaceholder
+                  bqeWithPlaceholder
               | otherwise -> bqeWithoutPlaceholder
             _ -> bqeWithoutPlaceholder
           BCQE {} ->
@@ -118,8 +120,8 @@ class SQLAble a where
                 bseSrc = bseSrc bqe,
                 bseTrg = bseTrg bqe,
                 bseTbl = bseTbl bqe,
-                bseWhr = Just $
-                  case bseWhr bqe of
+                bseWhr = Just
+                  $ case bseWhr bqe of
                     Nothing -> placeHolder
                     Just whr -> conjunctSQL [placeHolder, whr]
               }
@@ -148,8 +150,8 @@ selectExpr ::
   -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
   -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr =
-  traceExprComment expr [tshow expr] $
-    fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) --special cases for optimized results.
+  traceExprComment expr [tshow expr]
+    $ fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) -- special cases for optimized results.
 
 -- Special cases for optimized SQL generation
 -- Sometimes it is possible to generate queries that perform better. If this is the case for some
@@ -159,31 +161,31 @@ maybeSpecialCase fSpec expr =
   case expr of
     EIsc (EDcI a, ECpl (ECps (EDcD r, EFlp (EDcD r')))) -- I[A] /\ -(r;r~)
       | r == r' ->
-        Just
-          . traceComment
-            [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))",
-              "  this is an optimized case for: " <> tshow r <> " [TOT]."
-            ]
-          $ let col =
-                  Col
-                    { cTable = [Name "notIns"],
-                      cCol = [sqlAttConcept fSpec a],
-                      cAlias = [],
-                      cSpecial = Nothing
+          Just
+            . traceComment
+              [ "case: EIsc (EDcI a, ECpl (ECps (EDcD r,EFlp (EDcD r')) ))",
+                "  this is an optimized case for: " <> tshow r <> " [TOT]."
+              ]
+            $ let col =
+                    Col
+                      { cTable = [Name "notIns"],
+                        cCol = [sqlAttConcept fSpec a],
+                        cAlias = [],
+                        cSpecial = Nothing
+                      }
+                  aAtt = col2ValueExpr col
+                  whereClause =
+                    conjunctSQL
+                      [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r)),
+                        notNull aAtt
+                      ]
+               in BSE
+                    { bseSetQuantifier = SQDefault,
+                      bseSrc = col,
+                      bseTrg = col,
+                      bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"],
+                      bseWhr = Just whereClause
                     }
-                aAtt = col2ValueExpr col
-                whereClause =
-                  conjunctSQL
-                    [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r)),
-                      notNull aAtt
-                    ]
-             in BSE
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc = col,
-                    bseTrg = col,
-                    bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"],
-                    bseWhr = Just whereClause
-                  }
       | otherwise -> Nothing
     EIsc (ECpl (ECps (EDcD r, EFlp (EDcD r'))), EDcI a) -- -(r;r~) /\ I[A]
       | r == r' -> maybeSpecialCase fSpec $ EIsc (EDcI a, ECpl (ECps (EDcD r, EFlp (EDcD r'))))
@@ -240,17 +242,20 @@ maybeSpecialCase fSpec expr =
                   False -- Needs to be false in MySql
                   JLeft
                   leftTable
-                  ( Just . JoinOn . conjunctSQL $
-                      [ BinOp (Iden [table1, sourceAlias]) [Name "="] (Iden [table2, expr2Src]),
-                        BinOp (Iden [table1, targetAlias]) [Name "="] (Iden [table2, expr2trg])
-                      ]
+                  ( Just
+                      . JoinOn
+                      . conjunctSQL
+                      $ [ BinOp (Iden [table1, sourceAlias]) [Name "="] (Iden [table2, expr2Src]),
+                          BinOp (Iden [table1, targetAlias]) [Name "="] (Iden [table2, expr2trg])
+                        ]
                   )
               ],
             bseWhr =
-              Just . disjunctSQL $
-                [ isNull (Iden [table2, expr2Src]),
-                  isNull (Iden [table2, expr2trg])
-                ]
+              Just
+                . disjunctSQL
+                $ [ isNull (Iden [table2, expr2Src]),
+                    isNull (Iden [table2, expr2trg])
+                  ]
           }
       where
         fun = if isFlipped' then flp else id
@@ -285,7 +290,7 @@ nonSpecialSelectExpr fSpec expr =
          -}
       case posVals of
         (_ {-a-} : _ {-b-} : _) ->
-          emptySet --since a /= b, there can be no result.
+          emptySet -- since a /= b, there can be no result.
         [val] ->
           if val `elem` negVals
             then emptySet
@@ -307,8 +312,8 @@ nonSpecialSelectExpr fSpec expr =
           [Expression] -> -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.
           BinQueryExpr
         f specificValue subTerms =
-          traceComment ["case: EIsc{}"] $
-            case subTerms of
+          traceComment ["case: EIsc{}"]
+            $ case subTerms of
               [] -> case specificValue of
                 Nothing -> emptySet -- case might occur with only negMp1Terms??
                 Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
@@ -341,8 +346,9 @@ nonSpecialSelectExpr fSpec expr =
                     case negVals of
                       [] -> Nothing
                       _ ->
-                        Just . conjunctSQL $
-                          map notEqualToValueClause negVals
+                        Just
+                          . conjunctSQL
+                          $ map notEqualToValueClause negVals
                     where
                       notEqualToValueClause :: PAtomValue -> ValueExpr
                       notEqualToValueClause singleton =
@@ -426,19 +432,20 @@ nonSpecialSelectExpr fSpec expr =
                                               },
                                           bseTbl = [TRQueryExpr (toSQL part2) `as` Name "part2"],
                                           bseWhr =
-                                            Just . conjunctSQL $
-                                              [ BinOp (Iden [sourceAlias]) [Name "="] (Iden [targetAlias]),
-                                                In
-                                                  True
-                                                  (Iden [sourceAlias])
-                                                  ( InQueryExpr
-                                                      ( makeSelect
-                                                          { qeSelectList = [(Iden [sourceAlias], Nothing)],
-                                                            qeFrom = [TRQueryExpr (toSQL part1) `as` Name "part1"]
-                                                          }
-                                                      )
-                                                  )
-                                              ]
+                                            Just
+                                              . conjunctSQL
+                                              $ [ BinOp (Iden [sourceAlias]) [Name "="] (Iden [targetAlias]),
+                                                  In
+                                                    True
+                                                    (Iden [sourceAlias])
+                                                    ( InQueryExpr
+                                                        ( makeSelect
+                                                            { qeSelectList = [(Iden [sourceAlias], Nothing)],
+                                                              qeFrom = [TRQueryExpr (toSQL part1) `as` Name "part1"]
+                                                            }
+                                                        )
+                                                    )
+                                                ]
                                         }
                             where
                               --    esI :: [(Expression,Name)] -- all conjunctions that are of the form I
@@ -480,12 +487,13 @@ nonSpecialSelectExpr fSpec expr =
                                           },
                                       bseTbl = [sqlConceptTable fSpec c],
                                       bseWhr =
-                                        Just . conjunctSQL $
-                                          [notNull (Iden [nm]) | nm <- nub (map snd esI <> map snd esR)]
-                                            <> [ BinOp (Iden [nm]) [Name "="] (Iden [sqlAttConcept fSpec c])
-                                                 | nm <- nub (map snd esR),
-                                                   nm /= sqlAttConcept fSpec c
-                                               ]
+                                        Just
+                                          . conjunctSQL
+                                          $ [notNull (Iden [nm]) | nm <- nub (map snd esI <> map snd esR)]
+                                          <> [ BinOp (Iden [nm]) [Name "="] (Iden [sqlAttConcept fSpec c])
+                                               | nm <- nub (map snd esR),
+                                                 nm /= sqlAttConcept fSpec c
+                                             ]
                                     }
                                 where
                                   c = case map fst esI of
@@ -530,8 +538,10 @@ nonSpecialSelectExpr fSpec expr =
                                       },
                                   bseTbl = zipWith tableRef [0 ..] es,
                                   bseWhr =
-                                    Just . conjunctSQL . concatMap constraintsOfTailExpression $
-                                      [1 .. length es -1]
+                                    Just
+                                      . conjunctSQL
+                                      . concatMap constraintsOfTailExpression
+                                      $ [1 .. length es - 1]
                                 }
                             where
                               iSect :: Int -> Name
@@ -614,7 +624,7 @@ nonSpecialSelectExpr fSpec expr =
                     where
                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
                   polesConstraints :: [Maybe ValueExpr]
-                  polesConstraints = map makePole [firstNr .. lastNr - 1] --there is one pole less than fences...
+                  polesConstraints = map makePole [firstNr .. lastNr - 1] -- there is one pole less than fences...
                     where
                       makePole :: Int -> Maybe ValueExpr
                       makePole i =
@@ -649,7 +659,9 @@ nonSpecialSelectExpr fSpec expr =
                               _ -> fatal "there is no reason for having no fenceTable!"
                           (Nothing, Nothing) ->
                             -- This must be the special case: ...;V[A*B];V[B*C];....
-                            Just . SubQueryExpr SqExists . toSQL
+                            Just
+                              . SubQueryExpr SqExists
+                              . toSQL
                               . traceComment ["Case: ...;V[A*B];V[B*C];...."]
                               . selectExpr fSpec
                               . EDcI
@@ -690,8 +702,8 @@ nonSpecialSelectExpr fSpec expr =
       where
         fTable = Name "flipped"
         flipped se =
-          traceComment ["case: EFlp x"] $
-            case se of
+          traceComment ["case: EFlp x"]
+            $ case se of
               BSE {} ->
                 BSE
                   { bseSetQuantifier = bseSetQuantifier se,
@@ -760,8 +772,8 @@ nonSpecialSelectExpr fSpec expr =
           fun cpt = ((QName . T.unpack . text1ToText . showUnique) plug, (QName . sqlColumNameToString . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
-       in traceComment ["case: (EDcV (Sign s t))"] $
-            case (s, t) of
+       in traceComment ["case: (EDcV (Sign s t))"]
+            $ case (s, t) of
               (ONE, ONE) -> one
               (_, ONE) ->
                 BSE
@@ -813,15 +825,15 @@ nonSpecialSelectExpr fSpec expr =
                         TRSimple [ptgt] `as` secnd
                       ],
                     bseWhr =
-                      Just $
-                        conjunctSQL
+                      Just
+                        $ conjunctSQL
                           [notNull (Iden [first', fsrc]), notNull (Iden [secnd, ftgt])]
                   }
                 where
                   first' = Name "fst"
                   secnd = Name "snd"
-    (EDcI c) -> traceComment ["case: EDcI c"] $
-      case c of
+    (EDcI c) -> traceComment ["case: EDcI c"]
+      $ case c of
         ONE ->
           BSE
             { bseSetQuantifier = SQDefault,
@@ -852,8 +864,8 @@ nonSpecialSelectExpr fSpec expr =
                   bseWhr = Just (notNull cAtt)
                 }
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
-    (EEps c _) -> traceComment ["case: EEps c _"] $
-      case c of -- select the population of the most specific concept, which is the source.
+    (EEps c _) -> traceComment ["case: EEps c _"]
+      $ case c of -- select the population of the most specific concept, which is the source.
         ONE ->
           BSE
             { bseSetQuantifier = SQDefault,
@@ -945,43 +957,48 @@ nonSpecialSelectExpr fSpec expr =
                     },
                 bseTbl = [(toTableRef . selectExpr fSpec) theClosedWorldExpression `as` closedWorldName],
                 bseWhr =
-                  Just $
-                    selectNotExists
+                  Just
+                    $ selectNotExists
                       (toTableRef (selectExpr fSpec e) `as` posName)
-                      ( Just . conjunctSQL $
-                          [ BinOp
-                              (Iden [closedWorldName, sourceAlias])
-                              [Name "="]
-                              (Iden [posName, sourceAlias]),
-                            BinOp
-                              (Iden [closedWorldName, targetAlias])
-                              [Name "="]
-                              (Iden [posName, targetAlias])
-                          ]
+                      ( Just
+                          . conjunctSQL
+                          $ [ BinOp
+                                (Iden [closedWorldName, sourceAlias])
+                                [Name "="]
+                                (Iden [posName, sourceAlias]),
+                              BinOp
+                                (Iden [closedWorldName, targetAlias])
+                                [Name "="]
+                                (Iden [posName, targetAlias])
+                            ]
                       )
               }
           where
             posName = Name "pos"
             closedWorldName =
-              QName . T.unpack $
-                "cartesian product of " <> (tshow . source $ e) <> " and " <> (tshow . target $ e)
+              QName
+                . T.unpack
+                $ "cartesian product of "
+                <> (tshow . source $ e)
+                <> " and "
+                <> (tshow . target $ e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     EKl1 _ -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     (EDif (EDcV _, x)) ->
-      traceComment ["case: EDif (EDcV _,x)"] $
-        selectExpr fSpec (notCpl x)
+      traceComment ["case: EDif (EDcV _,x)"]
+        $ selectExpr fSpec (notCpl x)
     -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
     -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l, r) ->
-      traceComment ["case: EEqu (l,r) "] $
-        selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
+      traceComment ["case: EEqu (l,r) "]
+        $ selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
     EInc (l, r) ->
-      traceComment ["case: EInc (l,r) "] $
-        selectExpr fSpec (ECpl l .\/. r)
+      traceComment ["case: EInc (l,r) "]
+        $ selectExpr fSpec (ECpl l .\/. r)
     EDif (l, r) ->
-      traceComment ["case: EDif (l,r) "] $
-        selectExpr fSpec (l ./\. ECpl r)
+      traceComment ["case: EDif (l,r) "]
+        $ selectExpr fSpec (l ./\. ECpl r)
     ERrs (l, r) ->
       -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
       {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
@@ -1011,54 +1028,55 @@ nonSpecialSelectExpr fSpec expr =
             | target l == ONE = fatal ("ONE is unexpected as target of " <> showA l)
             | target r == ONE = fatal ("ONE is unexpected as target of " <> showA r)
             | otherwise =
-              BSE
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
-                    Col
-                      { cTable = [resLeft],
-                        cCol = [mainSrc],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTrg =
-                    Col
-                      { cTable = [resRight],
-                        cCol = [mainTgt],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTbl =
-                    [ sqlConceptTable fSpec (target l) `as` resLeft,
-                      sqlConceptTable fSpec (target r) `as` resRight
-                    ],
-                  bseWhr =
-                    Just . VEComment [BlockComment . T.unpack $ "Left hand side: " <> showA l] $
-                      selectNotExists
-                        (lCode `as` lhs)
-                        ( Just $
-                            conjunctSQL
-                              [ BinOp
-                                  (Iden [resLeft, mainSrc])
-                                  [Name "="]
-                                  (Iden [lhs, targetAlias]),
-                                VEComment [BlockComment . T.unpack $ "Right hand side: " <> showA r] $
-                                  selectNotExists
-                                    (rCode `as` rhs)
-                                    ( Just $
-                                        conjunctSQL
-                                          [ BinOp
-                                              (Iden [rhs, sourceAlias])
-                                              [Name "="]
-                                              (Iden [lhs, sourceAlias]),
-                                            BinOp
-                                              (Iden [rhs, targetAlias])
-                                              [Name "="]
-                                              (Iden [resRight, mainTgt])
-                                          ]
-                                    )
-                              ]
-                        )
-                }
+                BSE
+                  { bseSetQuantifier = SQDefault,
+                    bseSrc =
+                      Col
+                        { cTable = [resLeft],
+                          cCol = [mainSrc],
+                          cAlias = [],
+                          cSpecial = Nothing
+                        },
+                    bseTrg =
+                      Col
+                        { cTable = [resRight],
+                          cCol = [mainTgt],
+                          cAlias = [],
+                          cSpecial = Nothing
+                        },
+                    bseTbl =
+                      [ sqlConceptTable fSpec (target l) `as` resLeft,
+                        sqlConceptTable fSpec (target r) `as` resRight
+                      ],
+                    bseWhr =
+                      Just
+                        . VEComment [BlockComment . T.unpack $ "Left hand side: " <> showA l]
+                        $ selectNotExists
+                          (lCode `as` lhs)
+                          ( Just
+                              $ conjunctSQL
+                                [ BinOp
+                                    (Iden [resLeft, mainSrc])
+                                    [Name "="]
+                                    (Iden [lhs, targetAlias]),
+                                  VEComment [BlockComment . T.unpack $ "Right hand side: " <> showA r]
+                                    $ selectNotExists
+                                      (rCode `as` rhs)
+                                      ( Just
+                                          $ conjunctSQL
+                                            [ BinOp
+                                                (Iden [rhs, sourceAlias])
+                                                [Name "="]
+                                                (Iden [lhs, sourceAlias]),
+                                              BinOp
+                                                (Iden [rhs, targetAlias])
+                                                [Name "="]
+                                                (Iden [resRight, mainTgt])
+                                            ]
+                                      )
+                                ]
+                          )
+                  }
           mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error!!! It is part of the definition of right residu
           mainTgt = (sqlAttConcept fSpec . target) r
           resLeft = Name "RResLeft"
@@ -1071,21 +1089,21 @@ nonSpecialSelectExpr fSpec expr =
             ["case: ERrs (l,r)"]
             rResiduClause
     ELrs (l, r) ->
-      traceComment ["case: ELrs (l,r)"] $
-        selectExpr fSpec (EFlp (flp r .\. flp l))
+      traceComment ["case: ELrs (l,r)"]
+        $ selectExpr fSpec (EFlp (flp r .\. flp l))
     EDia (l, r) ->
-      traceComment ["case: EDia (l,r)"] $
-        selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
+      traceComment ["case: EDia (l,r)"]
+        $ selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
     ERad (l, ECpl r) ->
-      traceComment ["case: ERad (l, ECpl r)"] $
-        selectExpr fSpec (EFlp (r .\. flp l))
+      traceComment ["case: ERad (l, ECpl r)"]
+        $ selectExpr fSpec (EFlp (r .\. flp l))
     ERad (l, r) ->
-      traceComment ["case: ERad (l,r)"] $
-        selectExpr fSpec (flp (notCpl l) .\. r)
+      traceComment ["case: ERad (l,r)"]
+        $ selectExpr fSpec (flp (notCpl l) .\. r)
     EPrd (l, r) ->
       let v = EDcV (Sign (target l) (source r))
-       in traceComment ["case: EPrd (l,r)"] $
-            selectExpr fSpec (l .:. v .:. r)
+       in traceComment ["case: EPrd (l,r)"]
+            $ selectExpr fSpec (l .:. v .:. r)
   where
     traceComment = traceExprComment expr
     singleton2SQL :: A_Concept -> PAtomValue -> ValueExpr
@@ -1094,11 +1112,11 @@ nonSpecialSelectExpr fSpec expr =
 
 traceExprComment :: Expression -> [Text] -> BinQueryExpr -> BinQueryExpr
 traceExprComment expr caseStr =
-  BQEComment $
-    map (BlockComment . T.unpack) caseStr
-      <> [ BlockComment . T.unpack $ "   Expression: " <> showA expr,
-           BlockComment . T.unpack $ "   Signature : " <> tshow (sign expr)
-         ]
+  BQEComment
+    $ map (BlockComment . T.unpack) caseStr
+    <> [ BlockComment . T.unpack $ "   Expression: " <> showA expr,
+         BlockComment . T.unpack $ "   Signature : " <> tshow (sign expr)
+       ]
 
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
@@ -1141,8 +1159,10 @@ selectRelation fSpec dcl =
               },
           bseTbl = [TRSimple [QName . T.unpack . text1ToText . showUnique $ plug]],
           bseWhr =
-            Just . conjunctSQL . map notNull $
-              [Iden [QName . sqlColumNameToString . attSQLColName $ c] | c <- nub [s, t]]
+            Just
+              . conjunctSQL
+              . map notNull
+              $ [Iden [QName . sqlColumNameToString . attSQLColName $ c] | c <- nub [s, t]]
         }
       where
         s = rsSrcAtt relstore
@@ -1332,10 +1352,10 @@ sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
   | c == ONE = QName "ONE"
   | otherwise =
-    case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
-         ] of
-      [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> fullName fSpec <> "\"")
-      h : _ -> QName . sqlColumNameToString . attSQLColName $ h
+      case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
+           ] of
+        [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> fullName fSpec <> "\"")
+        h : _ -> QName . sqlColumNameToString . attSQLColName $ h
 
 stringOfName :: Name -> Text
 stringOfName (Name s) = T.pack s
@@ -1458,7 +1478,7 @@ broadQuery fSpec obj =
   --     the target of the contextExpression, we want to fetch them in this single query.
   --   c) We know the table that is used to get the tgt of the result of a) This could be some intermediate table!
   --   d) we know the conceptTable of the target concept of the expression.
-  --There are the following cases to consider:
+  -- There are the following cases to consider:
   -- 1) There is no subinterface, or the subinterface contains no expressions to consider
   -- 2) The only expression to consider is I[<target of contextExpression>]
   -- 3) The plug used to fetch the contextExpression is the same plug as the conceptTable of the target of that expression.
@@ -1520,14 +1540,16 @@ broadQuery fSpec obj =
                               Just tab -> [tab, QName . sqlColumNameToString . attSQLColName $ att]
                           ),
                         Just
-                          ( QName . T.unpack $
+                          ( QName
+                              . T.unpack
+                              $
                               -- The name is not sufficient for two reasons:
                               --   1) the columname must be unique. For that reason, it is prefixed:
                               "ifc_"
-                                <>
-                                --   2) It must be injective. Because SQL deletes trailing spaces,
-                                --      we have to cope with that:
-                                maybe mempty (text1ToText . escapeIdentifier) (objPlainName col)
+                              <>
+                              --   2) It must be injective. Because SQL deletes trailing spaces,
+                              --      we have to cope with that:
+                              maybe mempty (text1ToText . escapeIdentifier) (objPlainName col)
                           )
                       )
                 subThings ::
