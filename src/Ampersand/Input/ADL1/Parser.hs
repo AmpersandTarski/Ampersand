@@ -641,8 +641,7 @@ pConceptDef =
     <*> many pMeaning
   where
     build :: Origin -> (Name, Maybe Label) -> PCDDef -> [PMeaning] -> (DefinitionContainer -> PConceptDef)
-    build orig (nm, mLab) x means =
-      PConceptDef orig nm mLab x means
+    build orig (nm, mLab) = PConceptDef orig nm mLab
     pPCDDef2 :: AmpParser PCDDef
     pPCDDef2 =
       PCDDefLegacy
@@ -960,7 +959,7 @@ pPurpose =
   where
     rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty Text) -> Text -> PPurpose
     rebuild orig obj lang fmt refs str =
-      PRef2 orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (maybe [] NE.toList refs))
+      PPurpose orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (maybe [] NE.toList refs))
       where
         -- TODO: This separation should not happen in the parser
         splitOnSemicolon :: Text -> [Text]

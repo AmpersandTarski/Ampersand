@@ -1155,7 +1155,7 @@ pCtx2aCtx
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci
-        PRef2
+        PPurpose
           { pos = orig, -- :: Origin
             pexObj = objref, -- :: PRefObj
             pexMarkup = pmarkup, -- :: P_Markup

@@ -6,9 +6,11 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (toList)
 import Ampersand.Classes
-import qualified RIO.List as L
-import qualified RIO.List.Partial as P -- TODO Use NonEmpty
+-- TODO Use NonEmpty
 -- import qualified RIO.Map as M
+
+import qualified RIO.List as L
+import qualified RIO.List.Partial as P
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -67,7 +69,7 @@ predLshow lang vMap = charshow 0
     l :: LocalizedStr -> Text
     l = localize lang
     listVars :: Text -> NE.NonEmpty Var -> Text
-    listVars sep vars = T.intercalate sep . NE.toList . fmap vMap $ vars
+    listVars sep = T.intercalate sep . NE.toList . fmap vMap
 
     wrap :: Integer -> Integer -> Text -> Text
     wrap i j txt = if i <= j then txt else T.pack "(" <> txt <> T.pack ")"
@@ -156,7 +158,7 @@ toPredLogic expr =
         s = mkVar Set.empty (source expr) :: Var
         ss = addVar Set.empty s :: VarSet
         t = mkVar ss (target expr) :: Var
-        Just vars = NE.nonEmpty [s, t]
+        vars = s NE.:| [t]
         vM = addVar ss t :: VarSet
   where
     oneVar :: Var
@@ -242,7 +244,9 @@ toPredLogic expr =
     fencePoles varSet fences (a, b) = (polVs, predLs, varSet'')
       where
         poles = (map source . NE.tail) fences :: [A_Concept] -- the "in between concepts"
-        Just polVs = NE.nonEmpty vars
+        polVs = case vars of
+          [] -> fatal "Can this happen??"
+          (h : tl) -> h NE.:| tl
         (varSet', vars) -- (VarSet,[Var])
           =
           foldr g (varSet, []) poles

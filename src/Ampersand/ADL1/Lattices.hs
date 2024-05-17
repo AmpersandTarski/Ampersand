@@ -24,6 +24,7 @@ module Ampersand.ADL1.Lattices
 where
 
 import Ampersand.Basics hiding (toList)
+import Data.IntMap (Key)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified RIO.List as L
@@ -212,16 +213,19 @@ reverseMap lst =
   RevMap (Set.fromList (map fst empties)) (buildMap rest)
   where
     (empties, rest) = L.partition (null . snd) lst
-    buildMap [] = IntMap.empty
-    buildMap o@((_, ~(f : _)) : _) =
-      IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
-      where
-        tail2 (a, b) = (a, tail b)
-        (h, tl) = L.partition ((== f) . head . snd) o
-        tail [] = fatal "tail called on empty list"
-        tail (_ : t) = t
-        head [] = fatal "head used on empty list."
-        head (x : _) = x
+    buildMap :: (Ord a) => [(a, [Key])] -> IntMap (RevMap a)
+    buildMap o = case o of
+      [] -> IntMap.empty
+      ((_, []) : _) -> fatal "This should be impossible, for the empties are taken out before."
+      ((_, f : _) : _) -> IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
+        where
+          tail2 :: (a, [IntMap.Key]) -> (a, [IntMap.Key])
+          tail2 (a, b) = (a, tail b)
+          (h, tl) = L.partition ((== f) . head . snd) o
+          tail [] = fatal "tail called on empty list"
+          tail (_ : t) = t
+          head [] = fatal "head used on empty list."
+          head (x : _) = x
 
 -- | Change the system into one with fast reverse lookups
 optimize1 :: (Ord a) => EqualitySystem a -> Op1EqualitySystem a

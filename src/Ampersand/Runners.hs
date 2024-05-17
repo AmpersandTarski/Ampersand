@@ -34,7 +34,7 @@ import RIO.Process (mkDefaultProcessContext)
 -- import           Stack.Types.Docker (dockerEnable)
 -- import           Stack.Types.Nix (nixEnable)
 -- import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
-import System.Console.ANSI (hSupportsANSIWithoutEmulation)
+import System.Console.ANSI (hSupportsANSI)
 import System.Console.Terminal.Size (size, width)
 
 -- -- | Ensure that no project settings are used when running 'withConfig'.
@@ -128,15 +128,12 @@ withConfig inner =
 -- action.
 withRunnerGlobal :: GlobalOpts -> RIO Runner a -> IO a
 withRunnerGlobal go inner = do
-  useColor <-
-    fromMaybe True
-      <$> hSupportsANSIWithoutEmulation stderr
+  useColor <- hSupportsANSI stderr
   let defaultTerminalWidth = 100
   termWidth <-
     clipWidth
       <$> maybe
-        ( fromMaybe defaultTerminalWidth
-            <$> (fmap width <$> size)
+        ( maybe defaultTerminalWidth width <$> size
         )
         pure
         (globalTermWidth go)

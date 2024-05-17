@@ -656,7 +656,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           },
       archiViewname = maybeViewName,
       grainPurp =
-        PRef2
+        PPurpose
           { pos = OriginUnknown, -- the position in the Ampersand script of this purpose definition
             pexObj = PRef2Relation ref_to_relation, -- the reference to the object whose purpose is explained
             pexMarkup = P_Markup Nothing Nothing purpText, -- the piece of text, including markup and language info

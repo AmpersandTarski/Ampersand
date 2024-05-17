@@ -169,7 +169,7 @@ instance Show Origin where
       <> "\n   Sheet: "
       <> T.unpack sheet
       <> ", Cell: "
-      <> T.unpack (int2col col)
+      <> (T.unpack . columnIndexToText $ ColumnIndex col)
       <> show row
       <> ". "
   show (PropertyRule dcl o) = "PropertyRule for " <> (T.unpack . text1ToText) dcl <> " which is defined at " <> show o

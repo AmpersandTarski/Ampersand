@@ -243,7 +243,9 @@ insertRB :: (a -> a -> Ordering) -> a -> RB a -> RB a
 insertRB cmp x s =
   T B a z b
   where
-    T _ a z b = ins s
+    (a, z, b) = case ins s of
+      T _ a' z' b' -> (a', z', b')
+      _ -> fatal "This is not supposed to happen"
     ins E = T R E x E
     ins s'@(T B a' y b') = case cmp x y of
       LT -> balance (ins a') y b'

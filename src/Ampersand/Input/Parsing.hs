@@ -297,7 +297,7 @@ parseSingleADL pc =
           Just [chr] -> chr `elem` pathSeparators
           _ -> False
         stripBom :: Text -> Text
-        stripBom s = T.dropPrefix (T.pack ['\239', '\187', '\191']) s
+        stripBom = T.dropPrefix (T.pack ['\239', '\187', '\191'])
         extension = map toLower $ takeExtension filePath
         catchInvalidXlsx :: RIO env a -> RIO env a
         catchInvalidXlsx m = catch m f

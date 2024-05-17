@@ -37,7 +37,7 @@ withWaiterNotify env f =
   runRIO env $ do liftIO (withWaiterNotify' f)
 
 withWaiterNotify' :: (Waiter -> IO a) -> IO a
-withWaiterNotify' f = withManagerConf defaultConfig {confDebounce = NoDebounce} $ \manager -> do
+withWaiterNotify' f = withManagerConf defaultConfig $ \manager -> do
   mvar <- liftIO newEmptyMVar
   var <- liftIO $ newVar Map.empty
   f $ WaiterNotify manager mvar var

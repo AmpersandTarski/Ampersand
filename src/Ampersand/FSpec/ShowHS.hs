@@ -494,7 +494,7 @@ instance ShowHS Pattern where
 
 instance ShowHS PPurpose where
   showHS env _ expl =
-    "PRef2 ("
+    "PPurpose ("
       <> showHS env "" (origin expl)
       <> ") "
       <> "("

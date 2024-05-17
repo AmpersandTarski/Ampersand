@@ -256,9 +256,9 @@ addRelations pCtx = enrichedContext
 data SheetCellsForTable = Mapping
   { theSheetName :: Text,
     theCellMap :: CellMap,
-    headerRowNrs :: [Int], -- The row numbers of the table header
-    popRowNrs :: [Int], -- The row numbers of the population
-    colNrs :: [Int], -- The column numbers that contain a relation
+    headerRowNrs :: [RowIndex], -- The row numbers of the table header
+    popRowNrs :: [RowIndex], -- The row numbers of the population
+    colNrs :: [ColumnIndex], -- The column numbers that contain a relation
     debugInfo :: [Text]
   }
 
@@ -283,7 +283,7 @@ toPops ::
   [P_Population]
 toPops env ns file x = map popForColumn (colNrs x)
   where
-    popForColumn :: Int -> P_Population
+    popForColumn :: ColumnIndex -> P_Population
     popForColumn i =
       if i == sourceCol
         then
@@ -314,10 +314,12 @@ toPops env ns file x = map popForColumn (colNrs x)
         mkPConcept' nm = mkPConcept nm Nothing
         popOrigin :: Origin
         popOrigin = originOfCell (relNamesRow, targetCol)
+        relNamesRow, conceptNamesRow :: RowIndex
         (relNamesRow, conceptNamesRow) = case headerRowNrs x of
           [] -> fatal "headerRowNrs x is empty"
           [rnr] -> (rnr, fatal "headerRowNrs x has only one element")
           rnr : cnr : _ -> (rnr, cnr)
+        sourceCol :: ColumnIndex
         sourceCol = case colNrs x of
           [] -> fatal "colNrs x is empty"
           c : _ -> c
@@ -364,7 +366,7 @@ toPops env ns file x = map popForColumn (colNrs x)
             _ -> fatal ("No valid relation name found. This should have been checked before" <> tshow (relNamesRow, targetCol))
         thePairs :: [PAtomPair]
         thePairs = concat . mapMaybe pairsAtRow . popRowNrs $ x
-        pairsAtRow :: Int -> Maybe [PAtomPair]
+        pairsAtRow :: RowIndex -> Maybe [PAtomPair]
         pairsAtRow r = case ( value (r, sourceCol),
                               value (r, targetCol)
                             ) of
@@ -377,8 +379,8 @@ toPops env ns file x = map popForColumn (colNrs x)
                 ]
           _ -> Nothing
           where
-            origSrc = XLSXLoc file (theSheetName x) (r, sourceCol)
-            origTrg = XLSXLoc file (theSheetName x) (r, targetCol)
+            origSrc = XLSXLoc file (theSheetName x) (unRowIndex r, unColumnIndex sourceCol)
+            origTrg = XLSXLoc file (theSheetName x) (unRowIndex r, unColumnIndex targetCol)
         cellToAtomValues ::
           -- \| the delimiter, if there is any, used as seperator for multiple values in the cell
           Maybe Char ->
@@ -419,23 +421,25 @@ toPops env ns file x = map popForColumn (colNrs x)
             (Just delimiter) -> map trim $ T.split (== delimiter) xs
         handleSpaces = if view trimXLSXCellsL env then trim else id
     originOfCell ::
-      (Int, Int) -> -- (row number,col number)
+      CellIndex -> -- (row number,col number)
       Origin
     originOfCell (r, c) =
-      XLSXLoc file (theSheetName x) (r, c)
+      XLSXLoc file (theSheetName x) (unRowIndex r, unColumnIndex c)
 
-    value :: (Int, Int) -> Maybe CellValue
+    value :: CellIndex -> Maybe CellValue
     value k = theCellMap x ^? ix k . cellValue . _Just
+
+type CellIndex = (RowIndex, ColumnIndex)
 
 -- This function processes one Excel worksheet and yields every "wide table" (a block of lines in the excel sheet) as a SheetCellsForTable
 theSheetCellsForTable :: NameSpace -> (Text, Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable ns (sheetName, ws) =
-  catMaybes [theMapping i | i <- [0 .. length tableStarters - 1]]
+  catMaybes [theMapping (RowIndex i) | i <- [0 .. length tableStarters - 1]]
   where
-    tableStarters :: [(Int, Int)]
+    tableStarters :: [CellIndex]
     tableStarters = filter isStartOfTable $ Map.keys (ws ^. wsCells)
       where
-        isStartOfTable :: (Int, Int) -> Bool
+        isStartOfTable :: CellIndex -> Bool
         isStartOfTable (rowNr, colNr)
           | colNr /= 1 = False
           | rowNr == 1 = isBracketed' (rowNr, colNr)
@@ -443,17 +447,17 @@ theSheetCellsForTable ns (sheetName, ws) =
               isBracketed' (rowNr, colNr)
                 && (not . isBracketed') (rowNr - 1, colNr)
 
-    value :: (Int, Int) -> Maybe CellValue
+    value :: CellIndex -> Maybe CellValue
     value k = (ws ^. wsCells) ^? ix k . cellValue . _Just
-    isBracketed' :: (Int, Int) -> Bool
+    isBracketed' :: CellIndex -> Bool
     isBracketed' k =
       case value k of
         Just (CellText t) -> isBracketed t
         _ -> False
 
-    theMapping :: Int -> Maybe SheetCellsForTable
+    theMapping :: RowIndex -> Maybe SheetCellsForTable
     theMapping indexInTableStarters
-      | length okHeaderRows /= nrOfHeaderRows = Nothing -- Because there are not enough header rows
+      | length okHeaderRows /= unRowIndex nrOfHeaderRows = Nothing -- Because there are not enough header rows
       | otherwise =
           Just
             Mapping
@@ -479,8 +483,9 @@ theSheetCellsForTable ns (sheetName, ws) =
         firstColumNr = snd startOfTable
         relationNameRowNr = firstHeaderRowNr
         conceptNameRowNr = firstHeaderRowNr + 1
+        nrOfHeaderRows :: RowIndex
         nrOfHeaderRows = 2
-        maxRowOfWorksheet :: Int
+        maxRowOfWorksheet :: RowIndex
         maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws ^. wsCells))) of
           Nothing -> fatal "Maximum of an empty list is not defined!"
           Just m -> m
@@ -491,7 +496,7 @@ theSheetCellsForTable ns (sheetName, ws) =
         lastPopRowNr = ((map fst tableStarters <> [maxRowOfWorksheet + 1]) `L.genericIndex` (indexInTableStarters + 1)) - 1
         okHeaderRows = filter isProperRow [firstHeaderRowNr, firstHeaderRowNr + nrOfHeaderRows - 1]
         populationRows = filter isProperRow [firstPopRowNr .. lastPopRowNr]
-        isProperRow :: Int -> Bool
+        isProperRow :: RowIndex -> Bool
         isProperRow rowNr
           | rowNr == relationNameRowNr = True -- The first row was recognized as tableStarter
           | rowNr == conceptNameRowNr = isProperConceptName (rowNr, firstColumNr)
@@ -505,7 +510,7 @@ theSheetCellsForTable ns (sheetName, ws) =
             Just (CellError e) -> fatal $ "Error reading cell " <> tshow e
             Nothing -> False
         theCols = filter isProperCol [1 .. maxColOfWorksheet]
-        isProperCol :: Int -> Bool
+        isProperCol :: ColumnIndex -> Bool
         isProperCol colNr
           | colNr == 1 = isProperConceptName (conceptNameRowNr, colNr)
           | otherwise = isProperConceptName (conceptNameRowNr, colNr) && isProperRelName (relationNameRowNr, colNr)

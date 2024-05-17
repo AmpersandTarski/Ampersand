@@ -520,7 +520,7 @@ instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
       ]
 
 instance Arbitrary PPurpose where
-  arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeText
+  arbitrary = PPurpose <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeText
 
 instance Arbitrary PRef2Obj where
   arbitrary =

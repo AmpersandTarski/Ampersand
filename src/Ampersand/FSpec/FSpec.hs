@@ -24,9 +24,7 @@ module Ampersand.FSpec.FSpec
     metaValues,
     SqlAttribute (..),
     SqlName,
-    sqlColumNameToString,
     sqlColumNameToText1,
-    sqlColumNameToText,
     text1ToSqlName,
     isPrimaryKey,
     isForeignKey,
@@ -401,16 +399,10 @@ instance Eq SqlName where
   a == b = compare a b == EQ
 
 instance Show SqlName where
-  show = sqlColumNameToString
-
-sqlColumNameToString :: SqlName -> String
-sqlColumNameToString = T.unpack . sqlColumNameToText
+  show (SqlName t) = T.unpack (text1ToText t)
 
 sqlColumNameToText1 :: SqlName -> Text1
 sqlColumNameToText1 (SqlName t) = t
-
-sqlColumNameToText :: SqlName -> Text
-sqlColumNameToText = text1ToText . sqlColumNameToText1
 
 text1ToSqlName :: Text1 -> SqlName
 text1ToSqlName = SqlName

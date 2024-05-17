@@ -150,14 +150,14 @@ fld2AttributeSpec att =
 insertQuery ::
   (SomeValue val) =>
   Bool -> -- prettyprinted?
-  Text -> -- The name of the table
+  SqlName -> -- The name of the table
   NE.NonEmpty SqlName -> -- The names of the attributes
   [[Maybe val]] -> -- The rows to insert
   SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments =
       SqlQueryPretty
-        $ [ "INSERT INTO " <> doubleQuote tableName,
+        $ [ "INSERT INTO " <> doubleQuote (tshow tableName),
             "   (" <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames) <> ")",
             "VALUES "
           ]
@@ -166,7 +166,7 @@ insertQuery withComments tableName attNames tblRecords
   | otherwise =
       SqlQueryPlain
         $ "INSERT INTO "
-        <> doubleQuote tableName
+        <> doubleQuote (tshow tableName)
         <> " ("
         <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames)
         <> ")"

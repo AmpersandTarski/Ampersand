@@ -232,6 +232,7 @@ data Ident
   = IdentByName Name
   | IdentRel Name Name Name
   | IdentOverig -- Used to print the
+  deriving (Eq)
 
 instance Hashable Ident where
   hashWithSalt s ident = case ident of

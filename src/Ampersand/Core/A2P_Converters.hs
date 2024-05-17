@@ -236,7 +236,7 @@ aPurpose2pPurpose p =
   if explUserdefd p
     then
       Just
-        PRef2
+        PPurpose
           { pos = explPos p,
             pexObj = aExplObj2PRef2Obj (explObj p),
             pexMarkup = aMarkup2pMarkup (explMarkup p),

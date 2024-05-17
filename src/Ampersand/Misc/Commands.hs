@@ -175,8 +175,8 @@ commandLineHandler currentDir _progName args =
           (a -> RIO Runner ()) ->
           Parser a ->
           AddCommand
-        addCommand'' cmd title constr parser =
-          addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts parser
+        addCommand'' cmd title constr =
+          addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts
           where
             constr' opts = do
               runner <- ask
@@ -239,7 +239,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
-      dullyellow
+      annotate (colorDull Green)
         <$> paragraph (show opt) -- optHelp opt -- "Een of andere optie."
     parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
     desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
@@ -249,7 +249,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         normal :: Parser (a -> a)
         normal =
           infoOption
-            (T.unpack $ shortVersion appVersion)
+            (T.unpack $ longVersion appVersion)
             ( short 'V'
                 <> long "version"
                 <> help "Show version"
@@ -353,8 +353,8 @@ hsubparser' :: String -> Mod CommandFields a -> Parser a
 hsubparser' commandMetavar m = mkParser d g rdr
   where
     Mod _ d g = metavar commandMetavar `mappend` m
-    (groupName, cmds, subs) = mkCommand m
-    rdr = CmdReader groupName cmds (fmap add_helper . subs)
+    (groupName, cmds) = mkCommand m
+    rdr = CmdReader groupName ((fmap . fmap) add_helper cmds)
     add_helper pinfo =
       pinfo
         { infoParser = infoParser pinfo <**> helpOption
@@ -376,7 +376,7 @@ documentationCmd docOpts = do
   (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
   where
     forceAllowInvariants :: (HasFSpecGenOpts env) => RIO env a -> RIO env a
-    forceAllowInvariants env = local (set allowInvariantViolationsL True) env
+    forceAllowInvariants = local (set allowInvariantViolationsL True)
 
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =

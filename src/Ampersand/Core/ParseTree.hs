@@ -139,7 +139,7 @@ data MetaData = MetaData
   deriving (Show)
 
 instance Traced MetaData where
-  origin = pos
+  origin (MetaData p _ _) = p
 
 data EnforceOperator
   = IsSuperSet !Origin
@@ -177,7 +177,7 @@ data P_RoleRule = Maintain
   deriving (Show) -- deriving (Show) is just for debugging
 
 instance Traced P_RoleRule where
-  origin = pos
+  origin Maintain {pos = orig} = orig
 
 data Role = Role
   { pos :: !Origin,
@@ -259,7 +259,7 @@ instance Labeled P_Pattern where
   mLabel = pt_lbl
 
 instance Traced P_Pattern where
-  origin = pos
+  origin P_Pat {pos = p} = p
 
 data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
@@ -310,7 +310,7 @@ instance Unique PConceptDef where
       x = origin cd
 
 instance Traced PConceptDef where
-  origin = pos
+  origin PConceptDef {pos = p} = p
 
 instance Named PConceptDef where
   name = cdname
@@ -343,7 +343,7 @@ data Representation = Repr
   deriving (Show)
 
 instance Traced Representation where
-  origin = pos
+  origin Repr {pos = orig} = orig
 
 data TType
   = Alphanumeric
@@ -418,7 +418,7 @@ data Pragma = Pragma
   deriving (Show, Data, Eq)
 
 instance Traced Pragma where
-  origin = pos
+  origin Pragma {pos = orig} = orig
 
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
@@ -434,7 +434,7 @@ instance Named P_Relation where
   name = dec_nm
 
 instance Traced P_Relation where
-  origin = pos
+  origin P_Relation {pos = orig} = orig
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
@@ -475,7 +475,7 @@ instance Eq PAtomPair where
   a == b = compare a b == EQ
 
 instance Traced PAtomPair where
-  origin = pos
+  origin PPair {pos = orig} = orig
 
 instance Flippable PAtomPair where
   flp pr =
@@ -670,7 +670,8 @@ instance Traversable P_SubIfc where
   traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
-  origin = pos
+  origin P_Box {pos = orig} = orig
+  origin P_InterfaceRef {pos = orig} = orig
 
 instance Functor P_BoxItem where fmap = fmapDefault
 
@@ -763,7 +764,8 @@ instance Ord (PairViewSegment a) where
 instance (Hashable a) => Hashable (PairViewSegment a)
 
 instance Traced (PairViewSegment a) where
-  origin = pos
+  origin PairViewText {pos = orig} = orig
+  origin PairViewExp {pos = orig} = orig
 
 -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
 newtype PairViewTerm a = PairViewTerm (PairView (Term a))
@@ -835,7 +837,7 @@ instance Eq (P_Rule a) where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced (P_Rule a) where
-  origin = pos
+  origin P_Rule {pos = orig} = orig
 
 instance Functor P_Rule where fmap = fmapDefault
 
@@ -882,7 +884,8 @@ instance Named P_Population where
   name P_CptPopu {p_cpt = cpt} = name cpt
 
 instance Traced P_Population where
-  origin = pos
+  origin P_RelPopu {pos = orig} = orig
+  origin P_CptPopu {pos = orig} = orig
 
 data P_Interface = P_Ifc
   { -- | The interface is of type API
@@ -923,7 +926,7 @@ instance Labeled P_Interface where
   mLabel = ifc_lbl
 
 instance Traced P_Interface where
-  origin = pos
+  origin P_Ifc {pos = orig} = orig
 
 type P_SubInterface = P_SubIfc TermPrim
 
@@ -951,7 +954,7 @@ data BoxHeader = BoxHeader
   deriving (Show, Data)
 
 instance Traced BoxHeader where
-  origin = pos
+  origin BoxHeader {pos = orig} = orig
 
 data TemplateKeyValue = TemplateKeyValue
   { pos :: !Origin,
@@ -963,7 +966,7 @@ data TemplateKeyValue = TemplateKeyValue
   deriving (Show, Data)
 
 instance Traced TemplateKeyValue where
-  origin = pos
+  origin TemplateKeyValue {pos = orig} = orig
 
 type P_BoxBodyElement = P_BoxItem TermPrim
 
@@ -1010,7 +1013,8 @@ instance Eq (P_BoxItem a) where
   a == b = compare a b == EQ
 
 instance Traced (P_BoxItem a) where
-  origin = pos
+  origin P_BoxItemTerm {pos = orig} = orig
+  origin P_BxTxt {pos = orig} = orig
 
 data P_Cruds = P_Cruds Origin Text1 deriving (Show)
 
@@ -1050,7 +1054,7 @@ instance Eq (P_IdentDf a) where
   a == b = compare a b == EQ
 
 instance Traced (P_IdentDf a) where
-  origin = pos
+  origin P_Id {pos = orig} = orig
 
 instance Functor P_IdentDf where fmap = fmapDefault
 
@@ -1110,7 +1114,7 @@ instance Eq (P_ViewD a) where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced (P_ViewD a) where
-  origin = pos
+  origin P_Vd {pos = orig} = orig
 
 instance Named (P_ViewD a) where
   name = vd_nm
@@ -1130,7 +1134,7 @@ data P_ViewSegment a = P_ViewSegment
   deriving (Show)
 
 instance Traced (P_ViewSegment a) where
-  origin = pos
+  origin P_ViewSegment {pos = orig} = orig
 
 instance Functor P_ViewSegment where fmap = fmapDefault
 
@@ -1180,7 +1184,7 @@ data PRef2Obj
 --     PRef2Interface str -> str
 --     PRef2Context str -> str
 
-data PPurpose = PRef2
+data PPurpose = PPurpose
   { pos :: Origin, -- the position in the Ampersand script of this purpose definition
     pexObj :: PRef2Obj, -- the reference to the object whose purpose is explained
     pexMarkup :: P_Markup, -- the piece of text, including markup and language info
@@ -1210,7 +1214,7 @@ instance Eq PPurpose where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced PPurpose where
-  origin = pos
+  origin PPurpose {pos = orig} = orig
 
 data P_Concept
   = -- | The name of this Concept
@@ -1273,7 +1277,7 @@ instance Eq PClassify where
   p == q = specific p == specific q && generics p == generics q
 
 instance Traced PClassify where
-  origin = pos
+  origin PClassify {pos = orig} = orig
 
 type PProps = Set PProp
 
