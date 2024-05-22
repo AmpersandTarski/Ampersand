@@ -1746,27 +1746,41 @@ tmpNewTransformerDefsFA fSpec =
       ( "origin",
         "BoxItem",
         "Origin",
-        [] --TODO han verder invullen
+        [ (dirtyId item, popatom)
+          | item :: BoxItem <- instanceList fSpec,
+            Just popatom <- [originToPopAtom item]
+        ]
       ),
       ( "concept",
         "ConceptDef",
         "Concept",
-        [] --TODO han verder invullen
+        [ (dirtyId cd, dirtyId cpt)
+          | cd :: AConceptDef <- instanceList fSpec,
+            cpt :: A_Concept <- instanceList fSpec,
+            name cpt == name cd
+        ]
       ),
       ( "objDef",
         "BxExpr",
         "ObjectDef",
-        [] --TODO han verder invullen
+        [ (dirtyId item, dirtyId obj)
+          | item@BxExpr {objE = obj} <- instanceList fSpec
+        ]
       ),
       ( "text",
         "BxTxt",
         "Text",
-        [] --TODO han verder invullen
+        [ (dirtyId item, PopAlphaNumeric (objtxt x))
+          | item@BxTxt {objT = x} <- instanceList fSpec
+        ]
       ),
       ( "meaning",
         "ConceptDef",
         "Meaning",
-        [] --TODO han verder invullen
+        [ (dirtyId cd, dirtyId mean)
+          | cd :: AConceptDef <- instanceList fSpec,
+            mean <- acddef2 cd : acdmean cd
+        ]
       ),
       ( "language",
         "Markup",
@@ -1800,7 +1814,10 @@ tmpNewTransformerDefsFA fSpec =
       ( "explRefIds",
         "Purpose",
         "Text",
-        [] --TODO han verder invullen
+        [ (dirtyId prp, PopAlphaNumeric txt)
+          | prp :: Purpose <- instanceList fSpec,
+            txt <- explRefIds prp
+        ]
       ),
       ( "decMean",
         "Relation",

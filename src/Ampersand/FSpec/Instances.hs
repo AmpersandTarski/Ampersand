@@ -37,6 +37,17 @@ instance Instances A_Concept where
 instance Instances AConceptDef where
   instances = Set.fromList . ctxcds . originalContext
 
+instance Instances BoxItem where
+  instances =
+    Set.fromList
+      . concatMap siObjs
+      . filter isBox
+      . Set.toList
+      . subInterfaceInstances
+    where
+      isBox Box {} = True
+      isBox _ = False
+
 instance Instances Conjunct where
   instances = Set.fromList . allConjuncts
 
