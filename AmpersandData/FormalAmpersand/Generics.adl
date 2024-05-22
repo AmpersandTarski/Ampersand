@@ -52,7 +52,7 @@ VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
 -- TODO: IDENT Role: Role(name[Role*RoleName], allRoles[Context*Role]~)
 RELATION allRoles[Context*Role] [INJ]
 RELATION name[Role*RoleName] [UNI]
-REPRESENT RoleName TYPE ALPHANUMERIC
+CLASSIFY RoleName ISA Name
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 RELATION interfaces[Role*Interface]
 

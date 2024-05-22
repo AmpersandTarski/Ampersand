@@ -17,7 +17,7 @@ PATTERN "Static Interface Structure"
     -}
     RELATION name[Interface*InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    REPRESENT InterfaceName TYPE ALPHANUMERIC
+    CLASSIFY InterfaceName ISA Name
 
     RELATION context[Interface*Context][UNI]
     CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
@@ -40,7 +40,7 @@ PATTERN "Static Interface Structure"
     MEANING "This property states that an interface is meant as API (machine-2-machine)"
     RELATION label[FieldDef*FieldName] [UNI,TOT]
     MEANING "Every field definition has a label."
-    REPRESENT FieldName TYPE ALPHANUMERIC
+    REPRESENT FieldName TYPE ALPHANUMERIC -- This is not a Name. It is a Label 
     RELATION origin[ObjectDef*Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
     RELATION objTerm[ObjectDef*Term] [UNI, TOT]

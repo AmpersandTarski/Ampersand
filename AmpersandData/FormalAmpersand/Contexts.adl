@@ -25,7 +25,7 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , t
 
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-    REPRESENT ContextName TYPE ALPHANUMERIC
+    CLASSIFY ContextName ISA Name
     RELATION name[Context*ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
       ROLE ExecEngine MAINTAINS "del unused ContextName"
@@ -37,7 +37,6 @@ PATTERN Context
 
     RELATION name[Concept*ConceptName] [TOT,SUR] --Not UNI because of aliases
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-    REPRESENT ConceptName TYPE ALPHANUMERIC
     RELATION context[Isa*Context] [UNI,TOT]
     RELATION context[IsE*Context] [UNI,TOT]
     MEANING "The user-defined generalization rules in a context."

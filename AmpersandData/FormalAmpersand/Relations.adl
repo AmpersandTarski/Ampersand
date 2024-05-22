@@ -18,7 +18,7 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 
 RELATION name[Relation*RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-REPRESENT RelationName TYPE ALPHANUMERIC
+CLASSIFY RelationName ISA Name
     ROLE ExecEngine MAINTAINS "del unused RelationName"
     RULE "del unused RelationName" : I[RelationName] |- name~;name
     MEANING "A RelationName without relation will be removed."

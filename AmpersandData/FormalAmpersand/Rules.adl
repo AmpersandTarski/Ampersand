@@ -12,7 +12,7 @@ PATTERN Rules
     RELATION context[Rule*Context] [UNI]  -- This contains all rules declared inside a context
 
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
-    REPRESENT RuleName TYPE ALPHANUMERIC
+    CLASSIFY RuleName ISA Name
     RELATION name[Rule*RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
       ROLE ExecEngine MAINTAINS "del unused RuleName"
