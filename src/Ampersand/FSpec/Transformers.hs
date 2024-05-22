@@ -1748,6 +1748,11 @@ tmpNewTransformerDefsFA fSpec =
         "Origin",
         [] --TODO han verder invullen
       ),
+      ( "concept",
+        "ConceptDef",
+        "Concept",
+        [] --TODO han verder invullen
+      ),
       ( "objDef",
         "BxExpr",
         "ObjectDef",
