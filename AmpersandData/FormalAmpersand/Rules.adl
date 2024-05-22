@@ -3,7 +3,9 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- This file has been aligned with ShowMeatgrinder on 2017-07-21 by SJ.
 
 PATTERN Rules
-    REPRESENT RuleName TYPE ALPHANUMERIC
+    CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
+    CONCEPT RuleName ""
+    CLASSIFY RuleName ISA Name
     IDENT Rules: Rule(context[Rule*Context],name[Rule*RuleName])
 
     RELATION ctxrs[Rule*Context]  -- This contains all rules declared inside a context but outside the patterns it contains.
@@ -34,6 +36,11 @@ PATTERN Rules
     MEANING "A property is defined as part of the declaration of relation."
     RELATION propertyRule[Relation*PropertyRule] [SUR]
     MEANING "The properties of a relation."
+
+    CONCEPT Conjunct "A conjunct is an term that represents an invariant in an information system."
+    CONCEPT Quad "A quad is a Haskell data structure that corresponds to one rule in an Ampersand script."
+    CONCEPT PairView "A pairview is the definition of an error message for violations or a rule."
+    CONCEPT PairViewSegment "A pairviewsegment is a fragment of a pairview"
 ENDPATTERN
 
 PATTERN PropertyRules

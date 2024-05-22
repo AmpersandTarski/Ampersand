@@ -16,7 +16,7 @@ BOX <TABS>
 INTERFACE Context FOR Ampersand : I[Context]
 BOX <TABS>
   [ "About" : I BOX
-    [ "name"  : name[Context*ContextIdentifier]
+    [ "name"  : name[Context*ContextName]
     , "versionInfo" : versionInfo
 --    , "owner" : owner[Context*Account]
     , "valid rules" : valid[Rule*Context]~

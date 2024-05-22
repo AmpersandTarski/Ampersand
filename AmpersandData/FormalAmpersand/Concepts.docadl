@@ -15,8 +15,8 @@ PATTERN Concepts
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
-    REPRESENT Identifier TYPE ALPHANUMERIC
-    CLASSIFY ConceptName, RelationName ISA Identifier
+    REPRESENT Name TYPE ALPHANUMERIC
+    CLASSIFY ConceptName, RelationName ISA Name
     RELATION context[Concept*Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
 ENDPATTERN
 

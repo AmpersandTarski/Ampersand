@@ -2,6 +2,10 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Relations
+
+CONCEPT Relation "A relation is a set of pairs."
+CONCEPT Signature "A signature is a pair of concepts."
+
 RELATION relsDefdIn[Relation*Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , relsDefdIn[Relation*Context])
@@ -30,6 +34,7 @@ MEANING "The source of a signature."
 RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
+CONCEPT BindedRelation ""
 RELATION bind[BindedRelation*Relation][UNI]
 ROLE ExecEngine MAINTAINS bindTotal
 RULE bindTotal : I[BindedRelation] |- bind;bind~
