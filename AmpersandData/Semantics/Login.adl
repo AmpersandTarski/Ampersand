@@ -22,7 +22,7 @@ POPULATION Role CONTAINS [ "SystemAdmin" ]
 RELATION name[Role*RoleName] [UNI]
 POPULATION name[Role*RoleName] CONTAINS [ ("SystemAdmin","SystemAdmin")]
 VIEW Role : Role(name)
-REPRESENT RoleName ALPHANUMERIC
+CLASSIFY RoleName ISA Name
 
 RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
 MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
