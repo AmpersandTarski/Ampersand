@@ -7,12 +7,9 @@ INCLUDE "Concepts.adl"
 --INCLUDE "AtomsAsShouldBe.adl"
 
 PATTERN "Static Interface Structure"
-    CLASSIFY Interface ISA ObjectDef
     CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
-    CLASSIFY ObjectDef ISA Term
-    CONCEPT Term "Formerly known as Expression." 
-
+    
     {-Han,
     ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
     So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
@@ -20,10 +17,17 @@ PATTERN "Static Interface Structure"
     -}
     RELATION name[Interface*InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    REPRESENT InterfaceName TYPE ALPHANUMERIC
+    CLASSIFY InterfaceName ISA Name
 
     RELATION context[Interface*Context][UNI]
     CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
+    CONCEPT SubInterface "What exactly is a subinterface?"
+    CONCEPT InterfaceRef "A subinterface that references an Interface."
+    CONCEPT Box "A subinterface containing a list of boxitems."
+    CONCEPT BoxItem "A boxitem is an element of a box."
+    CLASSIFY BxExpr , BxTxt ISA BoxItem
+    CONCEPT BxExpr ""
+    CONCEPT BxTxt ""
 
     REPRESENT Origin TYPE ALPHANUMERIC
     RELATION ifcPos[Interface*Origin] [UNI]
@@ -36,15 +40,37 @@ PATTERN "Static Interface Structure"
     MEANING "This property states that an interface is meant as API (machine-2-machine)"
     RELATION label[FieldDef*FieldName] [UNI,TOT]
     MEANING "Every field definition has a label."
-    REPRESENT FieldName TYPE ALPHANUMERIC
-    RELATION objpos[ObjectDef*Origin] [UNI]
+    REPRESENT FieldName TYPE ALPHANUMERIC -- This is not a Name. It is a Label 
+    RELATION origin[ObjectDef*Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
+    RELATION objTerm[ObjectDef*Term] [UNI, TOT]
+    MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
+    RELATION objcruds[ObjectDef*Cruds][UNI,TOT] -- TODO: Refactor Cruds in Haskell to a set of enumerations
+    MEANING "The CRUD annotation that comes with a specific ObjectDef"  
     RELATION objView[ObjectDef*View] [UNI]
     MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
+    RELATION objSub[ObjectDef * SubInterface] [UNI]
     RELATION usedIn[Relation*Term]
     MEANING "If a relation is used in an term, this is registered in usedIn."
     RELATION formalTerm[Rule*Term] 
     MEANING "The term, of which a rule consists, is accessible via the relation formalTerm."
+
+    RELATION origin[SubInterface*Origin][UNI]
+    CLASSIFY Box,InterfaceRef ISA SubInterface
+    RELATION siConcept[Box*Concept][UNI,TOT]
+    MEANING "The box concept is the type of the runtime atom of the box."
+    RELATION siHeader[Box*BoxHeader][UNI,TOT]
+    MEANING "The boxheader is the definition of the way the box is drawn on the screen."
+    RELATION siObjs[Box*BoxItem][INJ,SUR]
+    MEANING "The (ordered) elements/items in the box."
+    RELATION isLink[InterfaceRef*InterfaceRef][PROP]
+    MEANING "Is the interface expanded or drawn as hyperlink?"
+    RELATION references[InterfaceRef*Interface][UNI,TOT]
+    RELATION objDef[BxExpr*ObjectDef][UNI, TOT]
+    MEANING "This relation makes the boxitem refer to the specification of its box. That box is used to paint each atom in the target of the boxexpression."
+    RELATION origin[BoxItem*Origin][UNI]
+    RELATION text[BxTxt*Text][UNI, TOT]
+
 
     RELATION isPublic[Interface*Interface] [PROP]
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"
@@ -72,7 +98,7 @@ PATTERN "Static Interface Structure"
 ENDPATTERN
 
 PATTERN Interfaces
-RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
+RELATION ifcInputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION ifcOutputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."

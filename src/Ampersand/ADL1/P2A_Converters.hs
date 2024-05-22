@@ -862,37 +862,27 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      pIfc2aIfc declMap (pIfc, objDisamb) =
-        build $ pObjDefDisamb2aObjDef declMap objDisamb
-        where
-          build :: Guarded BoxItem -> Guarded Interface
-          build gb =
-            case gb of
-              Errors x -> Errors x
-              Checked obj' ws ->
-                addWarnings ws $
-                  case obj' of
-                    BxExpr o ->
-                      case ttype . target . objExpression $ o of
-                        Object ->
-                          pure
-                            Ifc
-                              { ifcIsAPI = ifc_IsAPI pIfc,
-                                ifcname = name pIfc,
-                                ifcRoles = ifc_Roles pIfc,
-                                ifcObj = o,
-                                ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-                                ifcPos = origin pIfc,
-                                ifcPurpose = ifc_Prp pIfc
-                              }
-                        tt ->
-                          Errors . pure
-                            . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
-                            $ tt
-                    BxTxt _ -> fatal "Unexpected BxTxt" --Interface should not have TXT only. it should have a term object.
-          ttype :: A_Concept -> TType
-          ttype = representationOf declMap
-
+      pIfc2aIfc declMap (pIfc, objDisamb) = do
+        boxItem <- pObjDefDisamb2aObjDef declMap objDisamb
+        case boxItem of
+          BxExpr o ->
+            case representationOf declMap . target . objExpression $ o of
+              Object ->
+                pure
+                  Ifc
+                    { ifcIsAPI = ifc_IsAPI pIfc,
+                      ifcname = name pIfc,
+                      ifcRoles = ifc_Roles pIfc,
+                      ifcObj = o,
+                      ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+                      ifcPos = origin pIfc,
+                      ifcPurpose = ifc_Prp pIfc
+                    }
+              tt ->
+                Errors . pure
+                  . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
+                  $ tt
+          BxTxt _ -> fatal "Unexpected BxTxt" --Interface should not have TXT only. it should have a term object.
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
         A_RoleRule

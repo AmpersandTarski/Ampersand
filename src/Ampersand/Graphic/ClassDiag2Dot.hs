@@ -65,7 +65,7 @@ classdiagram2dot env cd =
                   [ GraphAttrs
                       [ Label . StrLabel . TL.fromStrict $ txt,
                         BgColor [WC (X11Color GhostWhite) Nothing],
-                        URL "https://en.wikipedia.org/wiki/File:Vincent_Willem_van_Gogh_127.jpg"
+                        URL "https://ampersandtarski.github.io/" --TODO: make url point to something more useful
                       ]
                   ],
                 subGraphs = [],

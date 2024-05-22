@@ -5,7 +5,7 @@ INCLUDE "Atoms.adl"
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Overview (name[Concept*Name], name[Relation*Name]) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
@@ -39,7 +39,7 @@ BOX <TABS>
 VIEW Concept : Concept(name)
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+INTERFACE Concept(name[Concept*Name],isa) : I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -53,7 +53,7 @@ BOX [ "relation(s)"  : in
      , rAtom          : rAtom
      ]
 
-INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+INTERFACE Relation(name[Relation*Name],source,target) : I[Relation]
 BOX [ name    : name
      , source  : source
      , target  : target
@@ -68,7 +68,7 @@ BOX [ name    : name
 --
 --VIEW Concept : Concept(name)
 --
---INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+--INTERFACE Concept(name[Concept*Name],isa) : I[Concept]
 --BOX [ name             : name
 --     , generalizations  : isa
 --     , specializations  : isa~
@@ -85,7 +85,7 @@ BOX [ name    : name
 --
 --VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 --
---INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+--INTERFACE Relation(name[Relation*Name],source,target) : I[Relation]
 --BOX [ name    : name
 --     , source  : source
 --     , target  : target

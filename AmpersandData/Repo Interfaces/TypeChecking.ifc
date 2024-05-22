@@ -3,7 +3,7 @@ INCLUDE "TypeChecking.adl"
 INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION"
+INTERFACE "Domain Anaylsis" (name[Relation*Name], source, target) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
@@ -30,7 +30,7 @@ BOX <TABS>
            ]
     ]
 
-INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Atoms (name[Concept*Name], name[Relation*Name]) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
@@ -71,7 +71,7 @@ VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+INTERFACE Concept(name[Concept*Name],isa) : I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -83,7 +83,7 @@ BOX [ "relation(s)"  : in
      , rAtom          : rAtom
      ]
 
-INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+INTERFACE Relation(name[Relation*Name],source,target) : I[Relation]
 BOX [ name    : name
      , source  : source
      , target  : target

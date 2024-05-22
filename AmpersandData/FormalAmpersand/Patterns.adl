@@ -5,10 +5,10 @@ INCLUDE "Rules.adl"
 
 PATTERN Patterns
     CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-    CONCEPT Pattern "A pattern is a file that is meant to contain Ampersand source code."
+--    CONCEPT Pattern "A pattern is a file that is meant to contain Ampersand source code."
     VIEW Pattern: Pattern(name[Pattern*PatternName])
 
-    REPRESENT PatternName TYPE ALPHANUMERIC
+    CLASSIFY PatternName ISA Name
     RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
       ROLE ExecEngine MAINTAINS "del unused PatternName"

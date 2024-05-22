@@ -5,6 +5,7 @@ INCLUDE "Relations.adl"
 
 
 PATTERN "Term definitions"
+    CONCEPT Term "Formerly known as Expression." 
     RELATION usedIn[Relation*Term]
     MEANING "The rule expressed in relation algebra."
 --    TODO make transitive closure of usedIn
@@ -46,6 +47,7 @@ PATTERN "Term definitions"
 
     CONCEPT AtomValue "A value can exist on its own, without having one or more concepts, where it is a value of an atom in it."
     REPRESENT AtomValue TYPE ALPHANUMERIC
+    CONCEPT Singleton ""
     RELATION singleton[Singleton*AtomValue] [UNI]
     
     CONCEPT "V" "The cartesian product."

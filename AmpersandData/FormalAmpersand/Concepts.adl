@@ -1,7 +1,10 @@
 CONTEXT FormalAmpersand IN ENGLISH 
 
 PATTERN Concepts
-    RELATION name[Concept*ConceptName] [UNI,SUR]
+    CONCEPT Concept "A concept is a set of similar atoms."
+    CONCEPT ConceptDef "A conceptdef defines a concept."
+    RELATION concept[ConceptDef*Concept] [UNI,TOT]
+    RELATION name[Concept*ConceptName] [TOT,SUR] --Not UNI because of aliases
 
     ROLE ExecEngine MAINTAINS "del unused ConceptName"
     RULE "del unused ConceptName" : I[ConceptName] |- name~;name
@@ -10,7 +13,7 @@ PATTERN Concepts
     
     IDENT Concept : Concept(name,context[Concept*Context])
 
-    RELATION cddef2[ConceptDef*Meaning][UNI]
+    RELATION meaning[ConceptDef*Meaning][UNI]
     -- RULE delUnusedMeaning : I[Meaning] |- cddef2~;cddef2
     -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
     -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
@@ -20,14 +23,13 @@ PATTERN Concepts
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
-    REPRESENT Identifier TYPE ALPHANUMERIC
-    CLASSIFY ConceptName, RelationName ISA Identifier
+    CLASSIFY ConceptName, RelationName ISA Name
     RELATION context[Concept*Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
-ENDPATTERN
 
 --    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
-PATTERN Specialization
+    CONCEPT Isa ""
+    CONCEPT IsE ""
     RELATION gengen[Isa*Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
     RELATION genspc[Isa*Concept] [UNI,TOT]
