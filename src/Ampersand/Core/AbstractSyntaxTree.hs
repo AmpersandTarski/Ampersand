@@ -669,8 +669,9 @@ getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == 
 
 class Object a where
   concept :: a -> A_Concept -- the type of the object
-  fields :: a -> [ObjectDef] -- the objects defined within the object
+  fields :: a -> [ObjectDef] -- the objects directly defined within the object
   contextOf :: a -> Expression -- the context term
+  fieldsRecursive :: a -> [ObjectDef] -- the objects defined within the object and its subinterfaces
 
 instance Object ObjectDef where
   concept = target . objExpression
@@ -678,16 +679,23 @@ instance Object ObjectDef where
     Nothing -> []
     Just InterfaceRef {} -> []
     Just b@Box {} -> map objE . filter isObjExp $ siObjs b
-    where
-      isObjExp :: BoxItem -> Bool
-      isObjExp BxExpr {} = True
-      isObjExp BxTxt {} = False
   contextOf = objExpression
+  fieldsRecursive obj = fields obj <> subFields obj
+    where
+      subFields :: ObjectDef -> [ObjectDef]
+      subFields x = case objmsub x of
+        Nothing -> []
+        Just si@Box {} -> concatMap (fieldsRecursive . objE) (filter isObjExp . siObjs $ si)
+        Just InterfaceRef {} -> []
 
 data BoxItem
   = BxExpr {objE :: ObjectDef}
   | BxTxt {objT :: BoxTxt}
   deriving (Eq, Ord, Show)
+
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr {} = True
+isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
   showUnique = tshow
