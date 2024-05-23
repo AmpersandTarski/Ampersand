@@ -1,0 +1,5 @@
+CONTEXT Issue1487
+
+CONCEPT Foo "This concept is not used anywhere in the script."
+
+ENDCONTEXT
