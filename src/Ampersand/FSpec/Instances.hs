@@ -135,7 +135,7 @@ objectDefInstances =
     . interfaceInstances
   where
     objects :: ObjectDef -> [ObjectDef]
-    objects obj = obj : fields obj
+    objects obj = obj : fieldsRecursive obj
 
 meaningInstances :: FSpec -> Set.Set Meaning
 meaningInstances fSpec =
