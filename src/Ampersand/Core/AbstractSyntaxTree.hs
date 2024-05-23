@@ -252,6 +252,7 @@ data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    acdcpt :: !A_Concept,
     acdname :: !Name,
     acdlabel :: !(Maybe Label),
     -- | The textual definition of this concept.

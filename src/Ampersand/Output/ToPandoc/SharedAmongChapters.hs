@@ -467,16 +467,16 @@ orderingByTheme env fSpec =
           }
 
     cpt2cptCont :: Numbered AConceptDef -> Numbered CptCont
-    cpt2cptCont (Nr n cpt) =
+    cpt2cptCont (Nr n cd) =
       Nr
         n
         CCpt
           { cCpt = c,
-            cCptDefs = [cpt],
+            cCptDefs = [cd],
             cCptPurps = purposesOf fSpec (outputLang env fSpec) c
           }
       where
-        c = PlainConcept ((name cpt, acdlabel cpt) NE.:| [])
+        c = acdcpt cd
 
 dpRule' ::
   (HasDocumentOpts env) =>
