@@ -718,7 +718,7 @@ getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == 
 
 class Object a where
   concept :: a -> A_Concept -- the type of the object
-  fields :: a -> [ObjectDef] -- the objects defined within the object
+  fields :: a -> [ObjectDef] -- the objects directly defined within the object
   contextOf :: a -> Expression -- the context term
   fieldsRecursive :: a -> [ObjectDef] -- the objects defined within the object and its subinterfaces
 
