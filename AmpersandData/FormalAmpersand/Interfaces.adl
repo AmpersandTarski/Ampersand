@@ -43,9 +43,9 @@ PATTERN "Static Interface Structure"
     REPRESENT FieldName TYPE ALPHANUMERIC -- This is not a Name. It is a Label 
     RELATION origin[ObjectDef*Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-    RELATION objTerm[ObjectDef*Term] [UNI {- FIXME: TOT tijdelijk verwijderd ivm bug -}]
+    RELATION objTerm[ObjectDef*Term] [UNI, TOT]
     MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
-    RELATION objcruds[ObjectDef*Cruds][UNI {- FIXME: TOT tijdelijk verwijderd ivm bug -}] -- TODO: Refactor Cruds in Haskell to a set of enumerations
+    RELATION objcruds[ObjectDef*Cruds][UNI,TOT] -- TODO: Refactor Cruds in Haskell to a set of enumerations
     MEANING "The CRUD annotation that comes with a specific ObjectDef"  
     RELATION objView[ObjectDef*View] [UNI]
     MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
