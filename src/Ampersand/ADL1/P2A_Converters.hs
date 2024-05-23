@@ -285,8 +285,8 @@ pCtx2aCtx
                 ctxrs = Set.fromList rules,
                 ctxds = Set.fromList relations,
                 ctxpopus = udpops, -- the content is copied from p_pops
-                ctxcdsOutPats = allConceptDefsOutPats,
-                ctxcds = allConceptDefs,
+                ctxcdsOutPats = allConceptDefsOutPats contextInfo,
+                ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
                 ctxreprs = representationOf contextInfo,
@@ -899,7 +899,7 @@ pCtx2aCtx
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
-          <*> traverse (pure . pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
+          <*> traverse (pure . pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
           <*> traverse (pure . pRoleRule2aRoleRule) (pt_RRuls ppat)
           <*> traverse pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ name ppat)) (pt_enfs ppat)
@@ -1107,10 +1107,10 @@ pCtx2aCtx
       pRefObj2aRefObj _ (PRef2Pattern s) = pure $ ExplPattern s
       pRefObj2aRefObj _ (PRef2Interface s) = pure $ ExplInterface s
       pRefObj2aRefObj _ (PRef2Context s) = pure $ ExplContext s
-      allConceptDefsOutPats :: [AConceptDef]
-      allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) p_conceptdefs
-      allConceptDefs :: [AConceptDef]
-      allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
+      allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
+      allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
+      allConceptDefs :: ContextInfo -> [AConceptDef]
+      allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
       udefRoleRules' :: [A_RoleRule]
       udefRoleRules' =
         map
@@ -1345,14 +1345,15 @@ pDisAmb2Expr (_, Rel [x]) = pure x
 pDisAmb2Expr (o, dx) = cannotDisambiguate o dx
 
 pConcDef2aConcDef ::
+  ConceptMap ->
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormatPConceptDef
   PConceptDef ->
   AConceptDef
-pConcDef2aConcDef defLanguage defFormat pCd =
+pConcDef2aConcDef conceptmap defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
-      acdcpt = name pCd,
+      acdcpt = pCpt2aCpt conceptmap (PCpt {p_cptnm = name pCd}),
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd

@@ -234,8 +234,8 @@ data AEnforce = AEnforce
 data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
-    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    acdcpt :: !Text,
+    -- | The concept for which this is the definition.
+    acdcpt :: !A_Concept,
     -- | The textual definition of this concept.
     acddef2 :: !Meaning,
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -246,7 +246,7 @@ data AConceptDef = AConceptDef
   deriving (Show, Typeable)
 
 instance Named AConceptDef where
-  name = acdcpt
+  name = name . acdcpt
 
 instance Traced AConceptDef where
   origin = pos
