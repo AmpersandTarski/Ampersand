@@ -1,10 +1,13 @@
-# Interfaces
+This fifth lesson explains interfaces, so the developer can define different ways to let users change the population of the database.
 
-<!-- This file is a tutorial about interfaces. -->
+Key takeaways:
+1. Different types of users require different interfaces.
+2. Application Programming Interfaces (API) and User Interfaces (UI) have the same structure.
+
+## Purpose
 
 Interfaces are meant to expose functionality and data from a [context](../reference-material/syntax-of-ampersand#the-context-statement), to let users or information systems interact with the system by creating, reading, updating, and deleting data.
 
-Note: The interface definition must be outside a pattern
 
 ## Example
 
@@ -12,8 +15,10 @@ The following figure is an example of a user interface, which shows the name, st
 
 ![Example of a user interface](../assets/InterfaceLovellRaw.jpg)
 
-The specification of this user interface is given in the following interface definition:
+The specification of this user interface is given in the following interface declaration:
 
+![Example of a user interface](../assets/anatomy-of-interfaces.drawio.png)
+<!-- contents of this picture:
 ```
 INTERFACE Person : I[Person]
 BOX
@@ -22,17 +27,34 @@ BOX
   , "Email"      : personEmail
   , "Works with" : workswith
   ]
-```
+``` -->
 
-To understand this fragment, take notice of:
+An interface declaration contains:
+1. a name<br>
+   Every interface has a name, which must be unique throughout the name space, so developers can refer to an interface by its name.
+   The name of this interface is `Person`.
+   In the code, the name immediately follows the keyword `INTERFACE`.
+2. the interface term<br>
+   The term following the colon, `I[Person]`, is the interface term of this interface.
+   At run time, an interface is applied to precisely one atom.
+   The interface in the screenshot applies to `"J. Lovell"`.
+   This is always the source atom of a pair in the interface term.
 
-1. The name of this interface is `Person`. This name immediately follows the keyword `INTERFACE`.
-2. The term following the colon, `I[Person]`, is the interface term of this interface.
-3. The interface can be applied to any atom from the _domain of the interface term_. So this particular interface is applicable to any atom of type `Person`. In the screenshot, it applies to `"J. Lovell"`.
-4. The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface.
-5. Each term at the right of a field name specifies which data is presented in the field. For this reason it is called the _field term_ for that field. Field name and field term are separated by a colon.
-6. Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`. A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
-7. Field terms are subject to type checking. The following relations provide an example for getting a type-correct interface:
+   Looking at the screenshot, we can tell that `"J. Lovell"` has one personName (which is `"J. Lovell"`), it has no personStatus, one personEmail and three persons to work with in `RELATION workswith`.
+
+   In other words, the interface applies to one atom, which belongs to the domain of the interface term.
+   A consequence is that an interface has a concept, i.e. the source of the interface term, which is the type of every atom to which the interface applies.
+3. field labels<br>
+   The labels "Name", "Status", "Email", and "Works with" correspond to field names in the user interface.
+   The field labels that are declared show up as labels in the actual user interface.
+   A field name and the corresponding field term are separated by a colon.
+4. field terms<br>
+   Each term at the right of a field name specifies which data is presented in the field.
+   For this reason it is called the _field term_ for that field.
+   Of all pairs `<"J. Lovell", x>` from the field term, the field displays the right atom `x`.
+   A field term always works on one specific atom on the left, which is `"J. Lovell"` in this example.
+
+   For this example to work, this interface assumes that the relations `personName`, `personStatus`, `personEmail`, and `workswith` exist. The example was built with the following relations:
 
    ```
    RELATION personName :: Person * PersonName [UNI]
@@ -40,10 +62,8 @@ To understand this fragment, take notice of:
    RELATION personEmail :: Person * Email [UNI,TOT]
    RELATION workswith :: Person * Person
    ```
+   The source concepts of a field term must match the target concept of the interface term. The type checker enforces this constraint.
 
-   The source concepts of a field term must match the target concept of the interface term.
-
-8. Looking at the screenshot, we can tell that `"J. Lovell"` has one personName (which is `"J. Lovell"`), it has no personStatus, one personEmail and three persons to work with in `RELATION workswith`.
 
 ## Nesting
 
