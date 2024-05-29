@@ -474,7 +474,7 @@ instance JSON.FromJSON PRef2Obj where
       build (Just rel) = pure $ PRef2Relation rel
       build Nothing = fail "relationPurp list is empty"
 
-parseFirstField :: JSON.Object -> T.Text -> JSON.Parser T.Text
+parseFirstField :: JSON.Object -> JSON.Key -> JSON.Parser T.Text
 parseFirstField obj key = do
   texts <- obj JSON..:? key JSON..!= []
   maybe mzero return (listToMaybe texts) -- Als er een waarde is, geef deze terug

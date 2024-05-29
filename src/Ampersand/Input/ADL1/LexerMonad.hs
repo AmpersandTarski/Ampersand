@@ -54,7 +54,6 @@ returnLM x = LM (\pos brackets -> Right (x, [], pos, brackets))
 
 instance Monad LexerMonad where
   (>>=) = bindLM
-  return = returnLM
 
 instance Functor LexerMonad where
   -- fmap :: (a -> b) -> LexerMonad a -> LexerMonad b

@@ -40,89 +40,89 @@ keywords ::
   -- | The keywords
   [String]
 keywords =
-  L.nub $
-    [ "CONTEXT",
-      "ENDCONTEXT",
-      "IN"
+  L.nub
+    $ [ "CONTEXT",
+        "ENDCONTEXT",
+        "IN"
+      ]
+    ++ [ map toUpper $ show x | x :: Lang <- [minBound ..]
+       ]
+    ++ [ "INCLUDE",
+         "META",
+         "PATTERN",
+         "ENDPATTERN",
+         "CONCEPT",
+         -- Keywords for Relation-statements
+         "RELATION",
+         "PRAGMA",
+         "MEANING",
+         "ASY",
+         "INJ",
+         "IRF",
+         "RFX",
+         "SUR",
+         "SYM",
+         "TOT",
+         "TRN",
+         "UNI",
+         "PROP",
+         "VALUE",
+         "EVALPHP",
+         "POPULATION",
+         "CONTAINS",
+         -- Keywords for rules
+         "RULE",
+         "MESSAGE",
+         "VIOLATION",
+         "TXT"
+       ]
+    ++ [ map toUpper $ show x | x :: SrcOrTgt <- [minBound ..]
+       ]
+    ++ [ "I",
+         "V",
+         "ONE",
+         "ROLE",
+         "MAINTAINS",
+         -- Keywords for purposes
+         "PURPOSE",
+         "REF"
+       ]
+    ++ [ map toUpper $ show x | x :: PandocFormat <- [minBound ..]
+       ]
+    ++
+    -- Keywords for interfaces
+    [ "INTERFACE",
+      "FOR",
+      "LINKTO",
+      "API",
+      "BOX",
+      -- Keywords for identitys
+      "IDENT",
+      -- Keywords for views
+      "VIEW",
+      "ENDVIEW",
+      "DEFAULT",
+      "TEMPLATE",
+      "HTML",
+      -- Keywords for generalisations:
+      "CLASSIFY",
+      "ISA",
+      "IS",
+      -- Keywords for TType:
+      "REPRESENT",
+      "TYPE"
     ]
-      ++ [ map toUpper $ show x | x :: Lang <- [minBound ..]
-         ]
-      ++ [ "INCLUDE",
-           "META",
-           "PATTERN",
-           "ENDPATTERN",
-           "CONCEPT",
-           -- Keywords for Relation-statements
-           "RELATION",
-           "PRAGMA",
-           "MEANING",
-           "ASY",
-           "INJ",
-           "IRF",
-           "RFX",
-           "SUR",
-           "SYM",
-           "TOT",
-           "TRN",
-           "UNI",
-           "PROP",
-           "VALUE",
-           "EVALPHP",
-           "POPULATION",
-           "CONTAINS",
-           -- Keywords for rules
-           "RULE",
-           "MESSAGE",
-           "VIOLATION",
-           "TXT"
-         ]
-      ++ [ map toUpper $ show x | x :: SrcOrTgt <- [minBound ..]
-         ]
-      ++ [ "I",
-           "V",
-           "ONE",
-           "ROLE",
-           "MAINTAINS",
-           -- Keywords for purposes
-           "PURPOSE",
-           "REF"
-         ]
-      ++ [ map toUpper $ show x | x :: PandocFormat <- [minBound ..]
-         ]
-      ++
-      -- Keywords for interfaces
-      [ "INTERFACE",
-        "FOR",
-        "LINKTO",
-        "API",
-        "BOX",
-        -- Keywords for identitys
-        "IDENT",
-        -- Keywords for views
-        "VIEW",
-        "ENDVIEW",
-        "DEFAULT",
-        "TEMPLATE",
-        "HTML",
-        -- Keywords for generalisations:
-        "CLASSIFY",
-        "ISA",
-        "IS",
-        -- Keywords for TType:
-        "REPRESENT",
-        "TYPE"
-      ]
-      ++ [ map toUpper $ show tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
-         ]
-      ++
-      -- Keywords for values of atoms:
-      [ "TRUE",
-        "FALSE", --for booleans
-        -- Experimental stuff:
-        "SERVICE",
-        -- Enforce statement:
-        "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
-      ]
+    ++ [ map toUpper $ show tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
+       ]
+    ++
+    -- Keywords for values of atoms:
+    [ "TRUE",
+      "FALSE", -- for booleans
+      -- Experimental stuff:
+      "SERVICE",
+      -- Enforce statement:
+      "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
+    ]
 
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators ::
@@ -192,12 +192,12 @@ mainLexer _ [] = return []
 mainLexer p ('-' : '-' : s) = mainLexer p (skipLine s)
 mainLexer p (c : s)
   | isSpace c =
-    let (spc, next) = span isSpaceNoTab s
-        isSpaceNoTab x = isSpace x && (not . isTab) x
-        isTab = ('\t' ==)
-     in do
-          when (isTab c) (lexerWarning TabCharacter p)
-          mainLexer (foldl' updatePos p (c : spc)) next
+      let (spc, next) = span isSpaceNoTab s
+          isSpaceNoTab x = isSpace x && (not . isTab) x
+          isTab = ('\t' ==)
+       in do
+            when (isTab c) (lexerWarning TabCharacter p)
+            mainLexer (foldl' updatePos p (c : spc)) next
 mainLexer p ('{' : '-' : s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{' : '+' : s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"' : ss) =
@@ -216,26 +216,26 @@ mainLexer p ('<' : d : s) =
     else returnToken (LexSymbol '<') p mainLexer (addPos 1 p) (d : s)
 mainLexer p cs@(c : s)
   | isSafeIdChar True c =
-    let (name', p', s') = scanIdent (addPos 1 p) s
-        name'' = c : name'
-        tokt
-          | iskeyword name'' = LexKeyword name''
-          | otherwise = LexSafeID name''
-     in returnToken tokt p mainLexer p' s'
+      let (name', p', s') = scanIdent (addPos 1 p) s
+          name'' = c : name'
+          tokt
+            | iskeyword name'' = LexKeyword name''
+            | otherwise = LexSafeID name''
+       in returnToken tokt p mainLexer p' s'
   | prefixIsOperator cs =
-    let (name', s') = getOp cs
-     in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
+      let (name', s') = getOp cs
+       in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
   | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
   | isDigit c =
-    case getDateTime cs of
-      Just (Right (tk, _, width, s')) -> returnToken tk p mainLexer (addPos width p) s'
-      Just (Left msg) -> lexerError msg p
-      Nothing ->
-        case getDate cs of
-          Just (tk, _, width, s') -> returnToken tk p mainLexer (addPos width p) s'
-          Nothing ->
-            let (tk, _, width, s') = getNumber cs
-             in returnToken tk p mainLexer (addPos width p) s'
+      case getDateTime cs of
+        Just (Right (tk, _, width, s')) -> returnToken tk p mainLexer (addPos width p) s'
+        Just (Left msg) -> lexerError msg p
+        Nothing ->
+          case getDate cs of
+            Just (tk, _, width, s') -> returnToken tk p mainLexer (addPos width p) s'
+            Nothing ->
+              let (tk, _, width, s') = getNumber cs
+               in returnToken tk p mainLexer (addPos width p) s'
   -- Ignore unexpected characters in the beginning of the file because of the UTF-8 BOM marker.
   -- TODO: Find out the right way of handling the BOM marker.
   | beginFile p = do lexerWarning UtfChar p; mainLexer p s
@@ -325,12 +325,13 @@ getDateTime cs =
           _ -> getDateTime' cs -- Here we try the ohter notation of time
         Just (timeOfDay, tzoneOffset, lt, rt) ->
           let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
-           in Just . Right $
-                ( LexDateTime ucttime,
-                  ucttime,
-                  ld + lt,
-                  rt
-                )
+           in Just
+                . Right
+                $ ( LexDateTime ucttime,
+                    ucttime,
+                    ld + lt,
+                    rt
+                  )
 
 getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
@@ -338,8 +339,12 @@ getTime cs =
     'T' : h1 : h2 : ':' : m1 : m2 : rest ->
       if all isDigit [h1, h2, m1, m2]
         then
-          let (_, Left hours, _, _) = getNumber [h1, h2]
-              (_, Left minutes, _, _) = getNumber [m1, m2]
+          let hours = case getNumber [h1, h2] of
+                (_, Left val, _, _) -> val
+                _ -> fatal "Impossible, for h1 and h2 are digits"
+              minutes = case getNumber [m1, m2] of
+                (_, Left val, _, _) -> val
+                _ -> fatal "Impossible, for m1 and m2 are digits"
               (seconds, ls, rs) = getSeconds rest
            in case getTZD rs of
                 Nothing -> Nothing
@@ -347,12 +352,14 @@ getTime cs =
                   if hours < 24 && minutes < 60 && seconds < 60
                     then
                       Just
-                        ( fromRational . toRational $
-                            ( fromIntegral hours * 60
-                                + fromIntegral minutes
-                            )
-                              * 60
-                              + seconds,
+                        ( fromRational
+                            . toRational
+                            $ ( fromIntegral hours
+                                  * 60
+                                  + fromIntegral minutes
+                              )
+                            * 60
+                            + seconds,
                           offset,
                           1 + 5 + ls + lo,
                           ro
@@ -375,7 +382,7 @@ getSeconds cs =
 getFraction :: String -> (Float, Int, String)
 getFraction cs =
   case readFloat cs of
-    [(a, str)] -> (a, length cs - length str, str) --TODO: Make more efficient.
+    [(a, str)] -> (a, length cs - length str, str) -- TODO: Make more efficient.
     _ -> (0, 0, cs)
 
 getTZD :: String -> Maybe (NominalDiffTime, Int, String)
@@ -388,8 +395,12 @@ getTZD cs =
   where
     mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int, String)
     mkOffset hs ms rest op =
-      let (_, Left hours, _, _) = getNumber hs
-          (_, Left minutes, _, _) = getNumber ms
+      let hours = case getNumber hs of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for h1 and h2 are digits"
+          minutes = case getNumber ms of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for m1 and m2 are digits"
           total = hours * 60 + minutes
        in if hours <= 24 && minutes < 60
             then
@@ -411,7 +422,7 @@ getDateTime' cs = case readUniversalTime cs of
     best candidates = case reverse . L.sortBy myOrdering $ candidates of
       [] -> Nothing
       (h : _) -> Just h
-    myOrdering :: Show a => (a, b) -> (a, b) -> Ordering
+    myOrdering :: (Show a) => (a, b) -> (a, b) -> Ordering
     myOrdering (x, _) (y, _) = compare (length . show $ x) (length . show $ y)
 
 getDate :: String -> Maybe (Lexeme, Day, Int, String)
@@ -424,9 +435,15 @@ getDate cs =
           Just d -> Just (LexDate d, d, 10, rest)
         else Nothing
       where
-        (_, Left year, _, _) = getNumber [y1, y2, y3, y4]
-        (_, Left month, _, _) = getNumber [m1, m2]
-        (_, Left day, _, _) = getNumber [d1, d2]
+        year = case getNumber [y1, y2, y3, y4] of
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for [y1, y2, y3, y4] are digits"
+        month = case getNumber [m1, m2] of
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for m1 and m2 are digits"
+        day = case getNumber [d1, d2] of
+          (_, Left val, _, _) -> val
+          _ -> fatal "Impossible, for d1 and d2 are digits"
     _ -> Nothing
 
 -----------------------------------------------------------
@@ -442,9 +459,9 @@ getNumber str =
     [(dec, rest)] -> (LexDecimal dec, Left dec, length str - length rest, rest)
     _ -> fatal $ "No number to read!\n  " <> T.take 40 (T.pack str)
 
---getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
---getNumber [] = fatal "getNumber"
---getNumber cs@(c:s)
+-- getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+-- getNumber [] = fatal "getNumber"
+-- getNumber cs@(c:s)
 --  | c /= '0'         = num10
 --  | null s           = const0
 --  | hs `elem` "xX"   = num16
@@ -516,14 +533,14 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing, 0, [])
 getEscChar s@(x : xs)
   | isDigit x = case readDec s of
-    [(val, rest)]
-      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val), length s - length rest, rest)
-      | otherwise -> (Nothing, 1, rest)
-    _ -> fatal $ "Impossible! first char is a digit.. " <> T.take 40 (T.pack s)
+      [(val, rest)]
+        | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val), length s - length rest, rest)
+        | otherwise -> (Nothing, 1, rest)
+      _ -> fatal $ "Impossible! first char is a digit.. " <> T.take 40 (T.pack s)
   | x `elem` ['\"', '\''] = (Just x, 2, xs)
   | otherwise = case x `lookup` cntrChars of
-    Nothing -> (Nothing, 0, s)
-    Just c -> (Just c, 1, xs)
+      Nothing -> (Nothing, 0, s)
+      Just c -> (Just c, 1, xs)
   where
     cntrChars =
       [ ('a', '\a'),
