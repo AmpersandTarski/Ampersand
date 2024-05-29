@@ -20,7 +20,9 @@ NB: This action is currently done by Han, no need for other people to do so. It 
 Sometimes there are updates of the Haskell toolchain we use. For instance whenever a new version of the Haskell Language Server is made available, the `DockerfileUpstream` should be updated accordingly. Then, the new image should be built and published at dockerhub. To do so, go to the ampersand root directory and run the following commands:
 
 ```
-docker build -f .devcontainer/DockerfileUpstream -t ampersandtarski/ampersand-devcontainer:ghc8-10-7 .
-docker push ampersandtarski/ampersand-devcontainer:ghc8-10-7
+docker build -f .devcontainer/DockerfileUpstream -t ampersandtarski/ampersand-devcontainer:<tag> .
+docker push ampersandtarski/ampersand-devcontainer:<tag>
 
 ```
+
+where `<tag>` must be replaced with an appropriate new tagname reflecting the version of ghc.
