@@ -297,9 +297,7 @@ makeFSpec env context =
     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
     getDefaultViewForConcept' cpt =
-      case filter vdIsDefault
-        . concatMap viewsOfThisConcept
-        . sortSpecific2Generic (gens context)
+      case (concatMap (filter vdIsDefault . viewsOfThisConcept) . sortSpecific2Generic (gens context))
         $ cpt
         : largerConcepts (gens context) cpt of
         [] -> Nothing
