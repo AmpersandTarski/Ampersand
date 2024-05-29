@@ -1,4 +1,4 @@
-FROM ampersandtarski/ampersand-devcontainer:ghc8-10-7_1
+FROM ampersandtarski/ampersand-devcontainer:ghc9-6-4_1
 
 ENV DEBIAN_FRONTEND=dialog
 

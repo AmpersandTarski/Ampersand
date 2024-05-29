@@ -291,12 +291,12 @@ data ArchiObj
 --   Still, the omitted information is written below, but commented out so you can follow the structure in the ArchiMate-file.
 data Child = Child
   { --  chldType       :: Text
-    --, chldId         :: Text
-    --, chldAlgn       :: Text
-    --, chldFCol       :: Text
+    -- , chldId         :: Text
+    -- , chldAlgn       :: Text
+    -- , chldFCol       :: Text
     chldElem :: Text,
-    --, trgtConn       :: Text
-    --, bound          :: Bound
+    -- , trgtConn       :: Text
+    -- , bound          :: Bound
     srcConns :: [SourceConnection],
     childs :: [Child]
   }
@@ -400,7 +400,7 @@ instance WithProperties ArchiObj where
       { viewProps = [prop {archPropId = Just propId} | (propId, prop) <- zip identifiers (viewProps vw)]
       }
 
-instance WithProperties a => WithProperties [a] where
+instance (WithProperties a) => WithProperties [a] where
   allProps xs = concatMap allProps xs
   identifyProps identifiers xs =
     [identifyProps ids x | (ids, x) <- zip idss xs]
@@ -592,7 +592,7 @@ instance MetaArchi ArchiProp where
         ]
     ]
 
-instance MetaArchi a => MetaArchi [a] where
+instance (MetaArchi a) => MetaArchi [a] where
   typeMap maybeViewName xs = Map.unions [typeMap maybeViewName x | x <- xs]
   grindArchi typeLookup xs = concat [grindArchi typeLookup x | x <- xs]
 
@@ -612,7 +612,7 @@ translateArchiElem label (srcLabel, tgtLabel) maybeViewName props tuples =
       grainRel = P_Relation label ref_to_signature props [] Nothing [] OriginUnknown,
       archiViewname = maybeViewName,
       grainPurp =
-        PRef2
+        PPurpose
           { pos = OriginUnknown, -- the position in the Ampersand script of this purpose definition
             pexObj = PRef2Relation ref_to_relation, -- the reference to the object whose purpose is explained
             pexMarkup = P_Markup Nothing Nothing purpText, -- the piece of text, including markup and language info
@@ -667,7 +667,7 @@ processStraight absFilePath =
         g x = if x == '\\' then '/' else x
         n [] = fatal "absFilePath is an empty list."
         n x@(h : _) = if h /= '/' then '/' : x else x
-    analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
+    analArchiRepo :: (ArrowXml a) => a XmlTree ArchiRepo
     analArchiRepo =
       (atTag "archimate:model" <+> atTag "archimate:ArchimateModel")
         >>> proc l -> do
@@ -686,9 +686,10 @@ processStraight absFilePath =
                   archPurposes = purposes
                 }
 
-    getFolder :: ArrowXml a => Int -> a XmlTree Folder
+    getFolder :: (ArrowXml a) => Int -> a XmlTree Folder
     getFolder level =
-      isElem >>> (hasName "folder" <+> hasName "folders")
+      isElem
+        >>> (hasName "folder" <+> hasName "folders")
         >>> proc l -> do
           fldNm' <- getAttrValue "name" -< l
           fldId' <- getAttrValue "id" -< l
@@ -706,9 +707,10 @@ processStraight absFilePath =
                   fldFolders = subFlds
                 }
 
-    getArchiObj :: ArrowXml a => a XmlTree ArchiObj
+    getArchiObj :: (ArrowXml a) => a XmlTree ArchiObj
     getArchiObj =
-      isElem >>> (hasName "element" <+> hasName "elements")
+      isElem
+        >>> (hasName "element" <+> hasName "elements")
         >>> proc l -> do
           -- don't use atTag, because there is recursion in getFolder.
           objId <- getAttrValue "id" -< l
@@ -765,9 +767,10 @@ processStraight absFilePath =
         then T.drop 10 str
         else str
 
-    getProp :: ArrowXml a => a XmlTree ArchiProp
+    getProp :: (ArrowXml a) => a XmlTree ArchiProp
     getProp =
-      isElem >>> (hasName "property" <+> hasName "properties")
+      isElem
+        >>> (hasName "property" <+> hasName "properties")
         >>> proc l -> do
           propKey <- getAttrValue "key" -< l
           propVal <- getAttrValue "value" -< l
@@ -778,22 +781,25 @@ processStraight absFilePath =
                   archPropId = Nothing, -- error "fatal 315: archPropId not yet defined"
                   archPropVal = T.pack propVal
                 }
-    getPurpose :: ArrowXml a => a XmlTree ArchiPurpose
+    getPurpose :: (ArrowXml a) => a XmlTree ArchiPurpose
     getPurpose =
-      isElem >>> hasName "purpose"
+      isElem
+        >>> hasName "purpose"
         >>> proc l -> do
           purpVal <- text -< l
           returnA -< ArchiPurpose {archPurpVal = T.pack purpVal}
-    getDocu :: ArrowXml a => a XmlTree ArchiDocu
+    getDocu :: (ArrowXml a) => a XmlTree ArchiDocu
     getDocu =
-      isElem >>> hasName "documentation"
+      isElem
+        >>> hasName "documentation"
         >>> proc l -> do
           docuVal <- text -< l
           returnA -< ArchiDocu {archDocuVal = T.pack docuVal}
 
-    getChild :: ArrowXml a => a XmlTree Child
+    getChild :: (ArrowXml a) => a XmlTree Child
     getChild =
-      atTag "child" <+> atTag "children"
+      atTag "child"
+        <+> atTag "children"
         >>> proc l -> do
           --  chldType'  <- getAttrValue "xsi:type"            -< l
           --  chldId'    <- getAttrValue "id"                  -< l
@@ -822,9 +828,11 @@ processStraight absFilePath =
     -- The following does not work yet for recent versions of Archi
     -- which should parse with hasName "sourceConnection", but doesn't. TODO
     -- However, forget about this after the ArchiMate Exchange Format can be parsed.
-    getSrcConn :: ArrowXml a => a XmlTree SourceConnection
+    getSrcConn :: (ArrowXml a) => a XmlTree SourceConnection
     getSrcConn =
-      isElem >>> hasName "sourceConnection" <+> hasName "sourceConnections"
+      isElem
+        >>> hasName "sourceConnection"
+        <+> hasName "sourceConnections"
         >>> proc l -> do
           --  sConType'  <- getAttrValue "xsi:type"              -< l
           --  sConId'    <- getAttrValue "id"                    -< l
@@ -878,8 +886,8 @@ processStraight absFilePath =
 -}
 
 -- | Auxiliaries `atTag` and `text` have been copied from the tutorial papers about arrows
-atTag :: ArrowXml a => Text -> a (NTree XNode) XmlTree
+atTag :: (ArrowXml a) => Text -> a (NTree XNode) XmlTree
 atTag tag = deep (isElem >>> hasName (T.unpack tag))
 
-text :: ArrowXml a => a (NTree XNode) String
+text :: (ArrowXml a) => a (NTree XNode) String
 text = getChildren >>> getText

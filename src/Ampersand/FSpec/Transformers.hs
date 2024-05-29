@@ -53,7 +53,7 @@ instance Show PopAtom where
       PopAlphaNumeric str -> show str
       PopInt i -> show i
 
-dirtyId :: Unique a => a -> PopAtom
+dirtyId :: (Unique a) => a -> PopAtom
 dirtyId = DirtyId . idWithoutType
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
@@ -402,7 +402,7 @@ transformersFormalAmpersand fSpec =
       ( "ifcInputs",
         "Interface",
         "Relation",
-        [] --TODO future work
+        [] -- TODO future work
       ),
       ( "ifcObj",
         "Interface",
@@ -414,7 +414,7 @@ transformersFormalAmpersand fSpec =
       ( "ifcOutputs",
         "Interface",
         "Relation",
-        [] --TODO future work
+        [] -- TODO future work
       ),
       ( "ifcPos",
         "Interface",
@@ -470,8 +470,9 @@ transformersFormalAmpersand fSpec =
       ( "label",
         "FieldDef",
         "FieldName",
-        [ (dirtyId fld, PopAlphaNumeric (name obj))
+        [ (dirtyId fld, PopAlphaNumeric (objnmOD obj))
           | obj :: ObjectDef <- instanceList fSpec,
+            objnmOD obj /= "",
             fld <- fields obj
         ]
       ),
@@ -525,7 +526,7 @@ transformersFormalAmpersand fSpec =
       ( "message",
         "Rule",
         "Message",
-        [] --TODO
+        [] -- TODO
       ),
       ( "propertyRule",
         "Relation",
@@ -1014,12 +1015,12 @@ transformersFormalAmpersand fSpec =
       ( "violatable",
         "Interface",
         "Rule",
-        [] --TODO future work
+        [] -- TODO future work
       )
     ]
     <> tmpNewTransformerDefsFA fSpec
 
-dirtyIdWithoutType :: Unique a => a -> PopAtom
+dirtyIdWithoutType :: (Unique a) => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 -- | The following transformers provide the metamodel needed to run a prototype.
@@ -1079,61 +1080,61 @@ transformersPrototypeContext fSpec =
       ( "ifc",
         "PF_NavMenuItem",
         "PF_Interface",
-        [] --TODO
+        [] -- TODO
       ),
       ( "label",
         "PF_NavMenuItem",
         "PF_Label",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isSubItemOf",
         "PF_NavMenuItem",
         "PF_NavMenuItem",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isVisible",
         "PF_NavMenuItem",
         "PF_NavMenuItem",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isPartOf",
         "PF_NavMenuItem",
         "PF_NavMenu",
-        [] --TODO
+        [] -- TODO
       ),
       ( "seqNr",
         "PF_NavMenuItem",
         "PF_SeqNr",
-        [] --TODO
+        [] -- TODO
       ),
       ( "url",
         "PF_NavMenuItem",
         "PF_URL",
-        [] --TODO
+        [] -- TODO
       ),
       ( "pf_navItemRoles",
         "PF_NavMenuItem",
         "Role",
-        [] --TODO
+        [] -- TODO
       ),
       ( "lastAccess",
         "SESSION",
         "DateTime",
-        [] --TODO
+        [] -- TODO
       ),
       ( "sessionActiveRoles",
         "SESSION",
         "Role",
-        [] --TODO
+        [] -- TODO
       ),
       ( "sessionAllowedRoles",
         "SESSION",
         "Role",
-        [] --TODO
+        [] -- TODO
       )
     ]
 
-class Instances a => HasPurpose a where
+class (Instances a) => HasPurpose a where
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a =
     Set.toList . Set.filter (isFor a) . instances $ fSpec
@@ -1560,22 +1561,22 @@ tmpNewTransformerDefsFA fSpec =
       ( "edit",
         "FieldDef",
         "Relation",
-        [] --TODO Future work
+        [] -- TODO Future work
       ),
       ( "editFlp",
         "FieldDef",
         "Relation",
-        [] --TODO
+        [] -- TODO
       ),
       ( "fst",
         "CombineStrings",
         "String",
-        [] --TODO
+        [] -- TODO
       ),
       ( "ifcQuads",
         "Interface",
         "Quad",
-        [] --TODO future work
+        [] -- TODO future work
       ),
       ( "interfaces",
         "Context",
@@ -1596,42 +1597,42 @@ tmpNewTransformerDefsFA fSpec =
       ( "isaCopy",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaPlus",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaRfx",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaRfxCopy",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaRfxPlus",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaRfxStar",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "isaStar",
         "Concept",
         "Concept",
-        [] --TODO
+        [] -- TODO
       ),
       ( "originatesFrom",
         "Conjunct",
         "Rule",
-        [] --TODO
+        [] -- TODO
       ),
       ( "patRules",
         "Pattern",
@@ -1644,12 +1645,12 @@ tmpNewTransformerDefsFA fSpec =
       ( "result",
         "CombineStrings",
         "String",
-        [] --TODO
+        [] -- TODO
       ),
       ( "snd",
         "CombineStrings",
         "String",
-        [] --TODO
+        [] -- TODO
       ),
       ( "uses",
         "Context",
@@ -1662,17 +1663,17 @@ tmpNewTransformerDefsFA fSpec =
       ( "valid",
         "Concept",
         "Context",
-        [] --TODO Future work
+        [] -- TODO Future work
       ),
       ( "valid",
         "Relation",
         "Context",
-        [] --TODO Future work
+        [] -- TODO Future work
       ),
       ( "valid",
         "Rule",
         "Context",
-        [] --TODO Future work
+        [] -- TODO Future work
       ),
       ( "siHeader",
         "Box",
