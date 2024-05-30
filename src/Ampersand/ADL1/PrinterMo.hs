@@ -130,7 +130,6 @@ instance PrettyMo P_Context where
       <~!> lang
       <~!> markup
       <+\> perline metas
-      <+\> perline ps
       <+\> perline pats
       -- <+\> perline rs
       <+\> perlineRelations ds
@@ -143,6 +142,7 @@ instance PrettyMo P_Context where
       <+\> perline ifcs
       <+\> perline pops
       <+\> perline enfs
+      <+\> perline ps
       <+\> text "ENDCONTEXT"
 
 perlineRelations :: [P_Relation] -> Doc
@@ -185,8 +185,9 @@ instance PrettyMo P_Pattern where
 instance PrettyMo P_Relation where
   prettyMo (P_Relation nm sign prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack) nm <~> sign
-      <+> props
+      <+> (text . T.unpack) nm
+      <~> sign
+      <~!> props
       <+> if null dflts
         then empty
         else
@@ -297,9 +298,9 @@ instance PrettyMo PConceptDef where
       <+> prettyhsep _mean
 
 instance PrettyMo PCDDef where -- aangepast
-  prettyMo (PCDDefNew mean) =
+  prettyMo (PCDDefNew def) =
     let prettyNoMeaning (PMeaning markup) = prettyMo markup -- Local function to adjust printing
-     in prettyNoMeaning mean -- Use the local function for pretty printing
+     in prettyNoMeaning def -- Use the local function for pretty printing
   prettyMo (PCDDefLegacy def ref) = quote def <+> maybeText ("[" <> ref <> "]")
     where
       maybeText txt =
@@ -476,9 +477,18 @@ instance PrettyMo PandocFormat where
 
 instance PrettyMo PProp where
   prettyMo p = case p of
+    P_Uni -> text "UNI"
+    P_Inj -> text "INJ"
     P_Sur -> text "SUR"
-    P_Tot -> text "SUR"
-    _ -> text . map toUpper . show $ p
+    P_Tot -> text "TOT"
+    P_Sym -> text "SYM"
+    P_Asy -> text "ASY"
+    P_Trn -> text "TRN"
+    P_Rfx -> text "RFX"
+    P_Irf -> text "IRF"
+    P_Prop -> text "SYM, ASY"
+
+--_ -> text . map toUpper . show $ p
 
 instance PrettyMo PRelationDefault where
   prettyMo x = case x of

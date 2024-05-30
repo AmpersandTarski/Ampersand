@@ -16,8 +16,44 @@ module Ampersand.Commands.AtlasImport
   )
 where
 
+import Ampersand.ADL1.PrinterMo
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
+  ( BoxHeader (..),
+    EnforceOperator (..),
+    MetaData (..),
+    Origin (OriginAtlas),
+    PAtomValue (..),
+    PCDDef (PCDDefNew),
+    PClassify (..),
+    PConceptDef (..),
+    PMeaning (..),
+    PMessage (..),
+    PProp (..),
+    PProps,
+    PPurpose (..),
+    PRef2Obj (..),
+    P_BoxItem (..),
+    P_Concept (PCpt),
+    P_Context (..),
+    P_Cruds (..),
+    P_Enforce (..),
+    P_IdentDef,
+    P_IdentDf (..),
+    P_IdentSegmnt (P_IdentExp),
+    P_Markup (P_Markup),
+    P_NamedRel (..),
+    P_Pattern (..),
+    P_Relation (..),
+    P_RoleRule (..),
+    P_Rule (..),
+    P_Sign (P_Sign),
+    Representation (..),
+    Role (..),
+    TType (..),
+    TemplateKeyValue (..),
+    TermPrim (PNamedR),
+  )
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseTerm)
@@ -42,8 +78,8 @@ atlasImport = do
     Left msg -> fatal . T.pack $ "Couldn't read " <> view importFileL env <> ": " <> msg
     Right x -> do
       let outputFn = view outputfileL env
-      -- writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
-      writeFileUtf8 outputFn (showP x)
+      writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
+      --writeFileUtf8 outputFn (showP x)
       logInfo . display . T.pack $ outputFn <> " written"
 
 myDecode :: B.ByteString -> Either String P_Context
@@ -142,25 +178,6 @@ instance JSON.FromJSON P_Pattern where
             pt_enfs = []
           }
 
-instance JSON.FromJSON PCDDef where
-  parseJSON val = case val of
-    JSON.Object v ->
-      --if object
-      build <$> v JSON..: "definition"
-    JSON.String s ->
-      -- if string
-      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
-    JSON.Array _arr ->
-      -- if array
-      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
-    invalid ->
-      JSON.prependFailure
-        "parsing PCDDef failed, "
-        (JSON.typeMismatch "Object" invalid)
-    where
-      build :: Text -> PCDDef
-      build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def) -- Here we construct PCDDefNew
-
 instance JSON.FromJSON PConceptDef where
   parseJSON val = case val of
     JSON.Object v -> do
@@ -180,6 +197,25 @@ instance JSON.FromJSON PConceptDef where
             cdfrom = "", -- Ignored as instructed -- todo: make from
             pos = OriginAtlas
           }
+
+instance JSON.FromJSON PCDDef where
+  parseJSON val = case val of
+    JSON.Object v ->
+      --if object
+      build <$> v JSON..: "definition"
+    JSON.String s ->
+      -- if string
+      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
+    JSON.Array _arr ->
+      -- if array
+      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
+    invalid ->
+      JSON.prependFailure
+        "parsing PCDDef failed, "
+        (JSON.typeMismatch "Object" invalid)
+    where
+      build :: Text -> PCDDef
+      build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def) -- Here we construct PCDDefNew
 
 instance JSON.FromJSON P_Concept where
   parseJSON :: JSON.Value -> JSON.Parser P_Concept
@@ -694,7 +730,7 @@ instance JSON.FromJSON MetaData where
 instance JSON.FromJSON P_RoleRule where
   parseJSON val = case val of
     JSON.Object v -> do
-      role <- v JSON..: "role" -- this is the label of the role
+      role <- v JSON..: "role" -- this is the label of the role --todo (v JSON..: "role" >>= JSON.parseJSON) veranderen???
       rules <- v JSON..: "rule" -- the rule
       case NE.nonEmpty rules of
         Just neRules -> return $ build role neRules

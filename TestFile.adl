@@ -1,0 +1,148 @@
+CONTEXT ContextName IN ENGLISH
+
+-- Concepts in CONTEXT
+CONCEPT Concept0Ctx "this is the definition of CONCEPT Concept0Ctx in de CONTEXT"
+-- CLASSIFY Classified1Ctx, Classified2Ctx ISA Concept0Ctx
+
+
+CONCEPT Concept1Ctx "this is the definition of CONCEPT Concept1Ctx in de CONTEXT"
+CONCEPT Concept2Ctx "this is the definition of CONCEPT Concept2Ctx in de CONTEXT"
+CONCEPT Concept3Ctx "this is the definition of CONCEPT Concept3Ctx in de CONTEXT"
+
+-- Relations in CONTEXT
+RELATION relatie1Ctx[Concept0Ctx*Concept0Ctx]
+MEANING "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT"
+RELATION relatie2Ctx[Concept0Ctx*Concept0Ctx]
+MEANING "this is the meaning of the RELATION relatie2Ctx, gedefineerd in de CONTEXT"
+RELATION relatie3Ctx[Concept0Ctx*Concept0Ctx]
+MEANING "this is the meaning of the RELATION relatie3Ctx, gedefineerd in de CONTEXT"
+
+RELATION relatie4Ctx[Concept1Ctx*Concept2Ctx][TOT]
+MEANING "this is the meaning of the RELATION relatie4Ctx, gedefineerd in de CONTEXT"
+RELATION relatie5Ctx[Concept3Ctx*Concept2Ctx]
+MEANING "this is the meaning of the RELATION relatie5Ctx, gedefineerd in de CONTEXT"
+RELATION relatie6Ctx[Concept1Ctx*Concept3Ctx]
+MEANING "this is the meaning of the RELATION relatie6Ctx, gedefineerd in de CONTEXT"
+
+-- Rules in CONTEXT
+ENFORCE relatie1Ctx :< relatie2Ctx /\ relatie3Ctx
+RULE Rule1Ctx : relatie1Ctx |- relatie2Ctx
+
+RULE Rule2Ctx: relatie6Ctx |- relatie4Ctx;relatie5Ctx~
+MEANING "this is the meaning of the RULE Rule2Ctx, gedefineerd in de CONTEXT"
+MESSAGE "this is the message of the RULE Rule2Ctx, gedefineerd in de CONTEXT"
+VIOLATION (TXT "Concept1Ctx ", SRC I, TXT "  is in relatie6Ctx with Concept3Ctx ", TGT I, TXT " which is not part of the Concept2Ctx ", SRC I[Concept1Ctx];relatie4Ctx)
+
+-- populations in CONTEXT
+POPULATION relatie4Ctx CONTAINS
+[ ("Peter", "Management")
+; ("Susan", "Business IT")
+; ("John", "Business IT")
+]
+
+POPULATION relatie5Ctx[Concept3Ctx*Concept2Ctx] CONTAINS
+[ ("Finance", "Management")
+; ("Business Rules", "Business IT")
+; ("Business Analytics", "Business IT")
+; ("IT-Governance", "Business IT")
+; ("IT-Governance", "Management")
+]
+
+
+-- Purpose in CONTEXT
+PURPOSE CONTEXT ContextName
+{+ this is the purpose of the CONTEXT ContextName, gedefineerd in de CONTEXT +}
+PURPOSE CONCEPT Concept0Ctx
+{+ this is the purpose of the CONCEPT Concept0Ctx, gedefineerd in de CONTEXT +}
+-- PURPOSE CONCEPT Classified1Ctx
+-- {+ this is the purpose of the classified CONCEPT Classified1Ctx, gedefineerd in de CONTEXT +}
+PURPOSE RELATION relatie1Ctx
+{+ this is the purpose of the RELATION relatie1Ctx, gedefineerd in de CONTEXT +}
+PURPOSE RULE Rule1Ctx
+{+ this is the purpose of the RULE RuleCtx, gedefineerd in de CONTEXT +}
+
+--------------------------------------------Pattern start here------------------------------------------------
+PATTERN PatternName
+
+-- Concepts in PATTERN
+CONCEPT Concept0Ptn "this is the definition of CONCEPT Concept0Ptn in de PATTERN"
+CONCEPT Classified1Ptn "this is the definition of CONCEPT Classified1Ptn in de PATTERN"
+CONCEPT Classified2Ptn "this is the definition of CONCEPT Classified2Ptn in de PATTERN"
+
+CLASSIFY Classified1Ptn, Classified2Ptn ISA Concept0Ptn
+
+
+CONCEPT Concept1Ptn "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
+CONCEPT Concept2Ptn "this is the definition of CONCEPT Concept2Ptn in de PATTERN"
+CONCEPT Concept3Ptn "this is the definition of CONCEPT Concept3Ptn in de PATTERN"
+
+-- Relations in PATTERN
+RELATION relatie1Ptn[Concept0Ptn*Concept0Ptn]
+MEANING "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN"
+RELATION relatie2Ptn[Concept0Ptn*Concept0Ptn]
+MEANING "this is the meaning of the RELATION relatie2Ptn, gedefineerd in de PATTERN"
+RELATION relatie3Ptn[Concept0Ptn*Concept0Ptn]
+MEANING "this is the meaning of the RELATION relatie3Ptn, gedefineerd in de PATTERN"
+
+RELATION relatie4Ptn[Concept1Ptn*Concept2Ptn][TOT]
+MEANING "this is the meaning of the RELATION relatie4Ptn, gedefineerd in de PATTERN"
+RELATION relatie5Ptn[Concept3Ptn*Concept2Ptn]
+MEANING "this is the meaning of the RELATION relatie5Ptn, gedefineerd in de PATTERN"
+RELATION relatie6Ptn[Concept1Ptn*Concept3Ptn]
+MEANING "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN"
+
+-- Rules in PATTERN
+ENFORCE relatie1Ptn :< relatie2Ptn /\ relatie3Ptn
+RULE Rule1Ptn : relatie1Ptn |- relatie2Ptn
+
+RULE Rule2Ptn: relatie6Ptn |- relatie4Ptn;relatie5Ptn~
+MEANING "this is the meaning of the RULE Rule2Ptn, gedefineerd in de PATTERN"
+MESSAGE "this is the message of the RULE Rule2Ptn, gedefineerd in de PATTERN"
+VIOLATION (TXT "Concept1Ptn ", SRC I, TXT "  is in relatie6Ptn with Concept3Ptn ", TGT I, TXT " which is not part of the Concept2Ptn ", SRC I[Concept1Ptn];relatie4Ptn)
+
+-- populations in PATTERN
+POPULATION relatie4Ptn CONTAINS
+[ ("Peter", "Management")
+; ("Susan", "Business IT")
+; ("John", "Business IT")
+]
+
+POPULATION relatie5Ptn[Concept3Ptn*Concept2Ptn] CONTAINS
+[ ("Finance", "Management")
+; ("Business Rules", "Business IT")
+; ("Business Analytics", "Business IT")
+; ("IT-Governance", "Business IT")
+; ("IT-Governance", "Management")
+]
+
+-- purposes in PATTERN
+PURPOSE PATTERN PatternName
+{+ this is the purpose of the PATTERN PatternName, gedefineerd in de PATTERN +}
+PURPOSE CONCEPT Concept1Ptn
+{+ this is the purpose of the CONCEPT ConceptPtn, gedefineerd in de PATTERN +}
+-- PURPOSE CONCEPT Classified1Ptn
+-- {+ this is the purpose of the classified CONCEPT Classified1Ptn, gedefineerd in de PATTERN +}
+PURPOSE RELATION relatie1Ptn
+{+ this is the purpose of the RELATION relatie1Ptn, gedefineerd in de PATTERN +}
+PURPOSE RULE Rule1Ptn
+{+ this is the purpose of the RULE Rule1Ptn, gedefineerd in de PATTERN +}
+
+ENDPATTERN
+--------------------------- Pattern ends here
+
+IDENT FileObjectName: FileObject (filePath)
+RELATION filePath[FileObject*FilePath] [UNI,TOT]
+RELATION originalFileName[FileObject*FileName] [UNI,TOT]
+
+REPRESENT FilePath,FileName TYPE ALPHANUMERIC
+
+VIEW FileObject: FileObject DEFAULT 
+  { apiPath  : TXT "api/v1/file"
+  , filePath : filePath
+  , fileName : originalFileName
+  } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
+
+
+
+
+ENDCONTEXT

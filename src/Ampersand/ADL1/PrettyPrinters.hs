@@ -152,7 +152,7 @@ instance Pretty P_Relation where
   pretty (P_Relation nm sign prps dflts pragma mean _) =
     text "RELATION"
       <+> (text . T.unpack) nm <~> sign
-      <+> props
+      <+> props       -- todo: make this <~> props
       <+> if null dflts
         then empty
         else
