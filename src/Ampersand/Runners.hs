@@ -20,21 +20,21 @@ module Ampersand.Runners
 where
 
 import Ampersand.Basics
---import           RIO.Time (addUTCTime, getCurrentTime)
---import           Stack.Build.Target(NeedTargets(..))
+-- import           RIO.Time (addUTCTime, getCurrentTime)
+-- import           Stack.Build.Target(NeedTargets(..))
 import Ampersand.Types.Config
 import RIO.Process (mkDefaultProcessContext)
---import           Stack.Constants
---import           Stack.DefaultColorWhen (defaultColorWhen)
---import qualified Stack.Docker as Docker
---import qualified Stack.Nix as Nix
---import           Stack.Setup
---import           Stack.Storage.User (upgradeChecksSince, logUpgradeCheck)
---import           Stack.Types.Config
---import           Stack.Types.Docker (dockerEnable)
---import           Stack.Types.Nix (nixEnable)
---import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
-import System.Console.ANSI (hSupportsANSIWithoutEmulation)
+-- import           Stack.Constants
+-- import           Stack.DefaultColorWhen (defaultColorWhen)
+-- import qualified Stack.Docker as Docker
+-- import qualified Stack.Nix as Nix
+-- import           Stack.Setup
+-- import           Stack.Storage.User (upgradeChecksSince, logUpgradeCheck)
+-- import           Stack.Types.Config
+-- import           Stack.Types.Docker (dockerEnable)
+-- import           Stack.Types.Nix (nixEnable)
+-- import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
+import System.Console.ANSI (hSupportsANSI)
 import System.Console.Terminal.Size (size, width)
 
 -- -- | Ensure that no project settings are used when running 'withConfig'.
@@ -128,15 +128,12 @@ withConfig inner =
 -- action.
 withRunnerGlobal :: GlobalOpts -> RIO Runner a -> IO a
 withRunnerGlobal go inner = do
-  useColor <-
-    fromMaybe True
-      <$> hSupportsANSIWithoutEmulation stderr
+  useColor <- hSupportsANSI stderr
   let defaultTerminalWidth = 100
   termWidth <-
     clipWidth
       <$> maybe
-        ( fromMaybe defaultTerminalWidth
-            <$> (fmap width <$> size)
+        ( maybe defaultTerminalWidth width <$> size
         )
         pure
         (globalTermWidth go)

@@ -19,7 +19,7 @@ import qualified RIO.Set as Set
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
-class Typeable a => Instances a where
+class (Typeable a) => Instances a where
   instances :: FSpec -> Set.Set a
   instanceList :: FSpec -> [a]
   instanceList = Set.toList . instances
@@ -66,7 +66,7 @@ instance Instances Interface where
 instance Instances SubInterface where
   instances = subInterfaceInstances
 
---instance Instances Meaning where
+-- instance Instances Meaning where
 --  instances = meaningInstances
 instance Instances Markup where
   instances fSpec =
@@ -111,7 +111,7 @@ instance Instances (PairView Expression) where
   instances = pairViewInstances
 
 instance Instances (PairViewSegment Expression) where
-  instances = Set.fromList . concatMap NE.toList . fmap ppv_segs . instanceList
+  instances = Set.fromList . concatMap (NE.toList . ppv_segs) . instanceList
 
 -- Set.toList . purposeInstances
 

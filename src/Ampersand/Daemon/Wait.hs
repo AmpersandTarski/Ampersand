@@ -37,7 +37,7 @@ withWaiterNotify env f =
   runRIO env $ do liftIO (withWaiterNotify' f)
 
 withWaiterNotify' :: (Waiter -> IO a) -> IO a
-withWaiterNotify' f = withManagerConf defaultConfig {confDebounce = NoDebounce} $ \manager -> do
+withWaiterNotify' f = withManagerConf defaultConfig $ \manager -> do
   mvar <- liftIO newEmptyMVar
   var <- liftIO $ newVar Map.empty
   f $ WaiterNotify manager mvar var
@@ -74,23 +74,26 @@ waitFiles waiter = do
     logDebug $ "%WAITING: " <> display (T.pack $ unwords files)
     -- As listContentsInside returns directories, we are waiting on them explicitly and so
     -- will pick up new files, as creating a new file changes the containing directory's modtime.
-    files' <- liftIO $
-      fmap concat $
-        forM files $ \file ->
-          ifM (doesDirectoryExist file) (listContentsInside (return . not . L.isPrefixOf "." . takeFileName) file) (return [file])
+    files' <- liftIO
+      $ fmap concat
+      $ forM files
+      $ \file ->
+        ifM (doesDirectoryExist file) (listContentsInside (return . not . L.isPrefixOf "." . takeFileName) file) (return [file])
     case waiter of
       WaiterPoll _ -> pure ()
       WaiterNotify manager kick mp -> do
         dirs <- liftIO $ fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files'
         env <- ask
-        liftIO $
-          modifyVar_ mp $ \mp' -> do
+        liftIO
+          $ modifyVar_ mp
+          $ \mp' -> do
             let keep, del :: Map FilePath StopListening
                 (keep, del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp'
             liftIO $ sequence_ $ Map.elems del
             new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
-              can <- liftIO $
-                watchDir manager (fromString dir) (const True) $ \event -> do
+              can <- liftIO
+                $ watchDir manager (fromString dir) (const True)
+                $ \event -> do
                   runRIO env $ logDebug $ "%NOTIFY: " <> displayShow event
                   void $ tryPutMVar kick ()
               return (dir, can)
@@ -127,8 +130,9 @@ waitFiles waiter = do
             -- but try not to
             logDebug $ "%WAITING: Waiting max of 1s due to file removal, " <> display (T.pack $ unwords disappeared)
             -- at most 20 iterations, but stop as soon as the file returns
-            void $
-              flip firstJustM (replicate 20 ()) $ \_ -> do
+            void
+              $ flip firstJustM (replicate 20 ())
+              $ \_ -> do
                 liftIO $ sleep 0.05
                 new' <- liftIO $ mapM getModTime files
                 return $ if null [x | (x, Just _, Nothing) <- L.zip3 files old new'] then Just () else Nothing
