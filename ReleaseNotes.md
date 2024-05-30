@@ -1,6 +1,9 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased changes
+## v4.8.0 (30 may 2024)
+
+- [Issue #1476](https://github.com/AmpersandTarski/Ampersand/issues/1476). Changes to FormalAmpersand. Lots of relations extra can now be populated by means of the meatgrinder.
+- Upgrade to GHC 9 
 
 ## v4.7.7 (27 november 2023)
 

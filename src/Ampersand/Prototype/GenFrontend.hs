@@ -85,7 +85,9 @@ buildConcepts fSpec =
             typescriptType = typescriptTypeForConcept fSpec cpt
           }
     )
-    $ Set.elems . allConcepts $ fSpec
+    $ Set.elems
+    . allConcepts
+    $ fSpec
 
 buildViews :: FSpec -> [FEView]
 buildViews fSpec =
@@ -122,7 +124,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       return
         FEInterface
           { ifcName = escapeIdentifier $ name ifc,
-            ifcNameKebab = toKebab . safechars $name ifc,
+            ifcNameKebab = toKebab . safechars $ name ifc,
             ifcNamePascal = toPascal . safechars $ name ifc,
             ifcLabel = name ifc,
             ifcExp = objExp obj,
@@ -196,7 +198,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
             return
               FEObjE
-                { objName = name object,
+                { objName = objnmOD object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
@@ -212,9 +214,9 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                   atomicOrBox = aOrB
                 }
           BxTxt object' ->
-            pure $
-              FEObjT
-                { objName = name object',
+            pure
+              $ FEObjT
+                { objName = objnmBT object',
                   objTxt = objtxt object'
                 }
 

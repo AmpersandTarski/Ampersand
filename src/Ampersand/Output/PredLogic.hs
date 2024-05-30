@@ -52,7 +52,7 @@ showPredLogic lang expr = text $ predLshow lang varMap (predNormalize predL)
     -- For printing a variable we use varMap
     -- A variable is represented by the first character of its concept name, followed by a number of primes to distinguish from similar variables.
     varMap :: Var -> Text
-    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars -1)) '\''
+    varMap (Var n c) = vChar c <> (T.pack . replicate (length vars - 1)) '\''
       where
         vars = Set.filter (\(Var i c') -> i <= n && vChar c == vChar c') varSet
         vChar = T.toLower . T.take 1 . name
@@ -67,7 +67,7 @@ predLshow lang vMap = charshow 0
     l :: LocalizedStr -> Text
     l = localize lang
     listVars :: Text -> NE.NonEmpty Var -> Text
-    listVars sep vars = T.intercalate sep . NE.toList . fmap vMap $ vars
+    listVars sep = T.intercalate sep . NE.toList . fmap vMap
 
     wrap :: Integer -> Integer -> Text -> Text
     wrap i j txt = if i <= j then txt else T.pack "(" <> txt <> T.pack ")"
@@ -111,10 +111,10 @@ predLshow lang vMap = charshow 0
         R pexpr rel pexpr'
           | isIdent (EDcD rel) -> wrap i 5 (charshow 2 pexpr) <> T.pack " = " <> wrap i 2 (charshow 5 pexpr')
           | otherwise ->
-            wrap i 5 $
-              if T.null (decprL <> decprM <> decprR)
-                then d <> T.pack " " <> name rel <> T.pack " " <> c
-                else decprL <> d <> decprM <> c <> decprR
+              wrap i 5
+                $ if T.null (decprL <> decprM <> decprR)
+                  then d <> T.pack " " <> name rel <> T.pack " " <> c
+                  else decprL <> d <> decprM <> c <> decprR
           where
             d = wrap i 5 (charshow 5 pexpr)
             c = wrap i 5 (charshow 5 pexpr')
@@ -131,7 +131,7 @@ predLshow lang vMap = charshow 0
         Not rs -> wrap i 8 (l (toNL " niet ", toEN " not ") <> charshow 1 rs)
 
 predNormalize :: PredLogic -> PredLogic
-predNormalize predlogic = predlogic --TODO: Fix normalization of PredLogic
+predNormalize predlogic = predlogic -- TODO: Fix normalization of PredLogic
 
 -- The function 'toPredLogic' translates an expression to predicate logic for two purposes:
 -- The first purpose is that it is a step towards generating natural language.
@@ -156,7 +156,7 @@ toPredLogic expr =
         s = mkVar Set.empty (source expr) :: Var
         ss = addVar Set.empty s :: VarSet
         t = mkVar ss (target expr) :: Var
-        Just vars = NE.nonEmpty [s, t]
+        vars = s NE.:| [t]
         vM = addVar ss t :: VarSet
   where
     oneVar :: Var
@@ -242,7 +242,9 @@ toPredLogic expr =
     fencePoles varSet fences (a, b) = (polVs, predLs, varSet'')
       where
         poles = (map source . NE.tail) fences :: [A_Concept] -- the "in between concepts"
-        Just polVs = NE.nonEmpty vars
+        polVs = case vars of
+          [] -> fatal "Can this happen??"
+          (h : tl) -> h NE.:| tl
         (varSet', vars) -- (VarSet,[Var])
           =
           foldr g (varSet, []) poles
