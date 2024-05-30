@@ -536,6 +536,7 @@ library
       Ampersand.Basics.BuildInfo_Generated
       Ampersand.Prototype.StaticFiles_Generated
   other-modules:
+      Ampersand.ADL1.PrinterMo
       Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput

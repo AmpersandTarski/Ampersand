@@ -19,7 +19,7 @@ import Text.PrettyPrint.Leijen as Leijen
 class PrettyMo a where
   prettyMo :: a -> Doc
 
-prettyMoText :: PrettyMo a => a -> Text
+prettyMoText :: (PrettyMo a) => a -> Text
 prettyMoText x = T.pack $ displayS (renderPretty 0.4 100 (prettyMo x)) ""
 
 -- (<~>) :: (PrettyMo a, PrettyMo b) => a -> b -> Doc
@@ -36,22 +36,22 @@ prettyMoText x = T.pack $ displayS (renderPretty 0.4 100 (prettyMo x)) ""
 (<+\!>) :: Doc -> Doc -> Doc
 (<+\!>) a b = a <$$> pretty b
 
-(<~!>) :: Pretty b => Doc -> b -> Doc
+(<~!>) :: (Pretty b) => Doc -> b -> Doc
 (<~!>) a b = a <+> pretty b
 
-(<~\!>) :: Pretty b => Doc -> b -> Doc
+(<~\!>) :: (Pretty b) => Doc -> b -> Doc
 (<~\!>) a b = a <+> pretty b
 
 (<+\>) :: Doc -> Doc -> Doc
 (<+\>) a b = a <$$> b
 
-(<~>) :: PrettyMo b => Doc -> b -> Doc
+(<~>) :: (PrettyMo b) => Doc -> b -> Doc
 (<~>) a b = a <+> prettyMo b
 
-(<~\>) :: PrettyMo b => Doc -> b -> Doc
+(<~\>) :: (PrettyMo b) => Doc -> b -> Doc
 (<~\>) a b = a <+\> prettyMo b
 
-perline :: PrettyMo a => [a] -> Doc
+perline :: (PrettyMo a) => [a] -> Doc
 perline = vsep . map prettyMo
 
 quote :: Text -> Doc
@@ -70,7 +70,7 @@ quotePurpose p = text "{+ " <> escapeExpl p <> text " +}"
       | T.null needle = fatal "Empty needle."
       | otherwise -- replace is now safe to use, because we have a non-empty needle
         =
-        Partial.replace needle replacement haystack
+          Partial.replace needle replacement haystack
 
 quoteMeaning :: T.Text -> Doc
 quoteMeaning m = text "\"" <> escapeExpl m <> text "\""
@@ -84,7 +84,7 @@ quoteMeaning m = text "\"" <> escapeExpl m <> text "\""
     replace' needle replacement haystack
       | T.null needle = error "Empty needle."
       | otherwise =
-        Partial.replace needle replacement haystack
+          Partial.replace needle replacement haystack
 
 isId :: Text -> Bool
 isId xs =
@@ -108,42 +108,42 @@ maybeQuote a = if isId a then (text . T.unpack) a else quote a
 quoteConcept :: Text -> Doc
 quoteConcept a = if isUpperId a then (text . T.unpack) a else quote a
 
-prettyhsep :: PrettyMo a => [a] -> Doc
+prettyhsep :: (PrettyMo a) => [a] -> Doc
 prettyhsep = hsep . map prettyMo
 
 commas :: [Doc] -> Doc
 commas = encloseSep empty empty comma
 
-listOf :: PrettyMo a => [a] -> Doc
+listOf :: (PrettyMo a) => [a] -> Doc
 listOf = commas . map prettyMo
 
-listOf1 :: PrettyMo a => NE.NonEmpty a -> Doc
+listOf1 :: (PrettyMo a) => NE.NonEmpty a -> Doc
 listOf1 = listOf . NE.toList
 
-separate :: PrettyMo a => Text -> [a] -> Doc
+separate :: (PrettyMo a) => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map prettyMo xs
 
 instance PrettyMo P_Context where
   prettyMo (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
       <+> quoteConcept nm
-      <~!> lang
-      <~!> markup
-      <+\> perline metas
-      <+\> perline ps
-      <+\> perline pats
-      -- <+\> perline rs
-      <+\> perlineRelations ds
-      <+\> perline cs
-      -- <+\> perline ks
-      <+\> perline rrules
-      <+\> perline reprs
-      <+\> perline vs
-      <+\> perline gs
-      <+\> perline ifcs
-      <+\> perline pops
-      <+\> perline enfs
-      <+\> text "ENDCONTEXT"
+        <~!> lang
+        <~!> markup
+        <+\> perline metas
+        <+\> perline ps
+        <+\> perline pats
+        -- <+\> perline rs
+        <+\> perlineRelations ds
+        <+\> perline cs
+        -- <+\> perline ks
+        <+\> perline rrules
+        <+\> perline reprs
+        <+\> perline vs
+        <+\> perline gs
+        <+\> perline ifcs
+        <+\> perline pops
+        <+\> perline enfs
+        <+\> text "ENDCONTEXT"
 
 perlineRelations :: [P_Relation] -> Doc
 perlineRelations ds =
@@ -169,18 +169,18 @@ instance PrettyMo P_Pattern where
   prettyMo (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
       <+> quoteConcept nm
-      -- <+\> perline rls
-      <+\> perline gns
-      <+\> perline dcs
-      <+\> perline rruls
-      <+\> perline reprs
-      <+\> perline cds
-      -- <+\> perline ids
-      <+\> perline vds
-      <+\> perline xps
-      <+\> perline pop
-      <+\> perline enfs
-      <+\> text "ENDPATTERN"
+        -- <+\> perline rls
+        <+\> perline gns
+        <+\> perline dcs
+        <+\> perline rruls
+        <+\> perline reprs
+        <+\> perline cds
+        -- <+\> perline ids
+        <+\> perline vds
+        <+\> perline xps
+        <+\> perline pop
+        <+\> perline enfs
+        <+\> text "ENDPATTERN"
 
 instance PrettyMo P_Relation where
   prettyMo (P_Relation nm sign prps dflts pragma mean _) =
@@ -202,7 +202,7 @@ instance PrettyMo P_Relation where
 instance PrettyMo Pragma where
   prettyMo (Pragma _ l m r) = text "PRAGMA" <+> hsep (map quote [l, m, r])
 
-instance PrettyMo a => PrettyMo (Term a) where
+instance (PrettyMo a) => PrettyMo (Term a) where
   prettyMo p = case p of
     Prim a -> prettyMo a
     -- level 0 (rule)
@@ -280,8 +280,10 @@ instance PrettyMo SrcOrTgt where
 
 instance PrettyMo (P_Enforce TermPrim) where
   prettyMo (P_Enforce _ rel op expr) =
-    text "ENFORCE" <+> prettyMo rel <+> prettyMo op
-      <~> expr
+    text "ENFORCE"
+      <+> prettyMo rel
+      <+> prettyMo op
+        <~> expr
 
 instance PrettyMo EnforceOperator where
   prettyMo op = case op of
@@ -292,7 +294,8 @@ instance PrettyMo EnforceOperator where
 instance PrettyMo PConceptDef where
   prettyMo (PConceptDef _ cpt def _mean _) -- from, the last argument, is not used in the parser
     =
-    text "CONCEPT" <+> quoteConcept cpt
+    text "CONCEPT"
+      <+> quoteConcept cpt
       <+> prettyMo def
       <+> prettyhsep _mean
 
@@ -322,7 +325,8 @@ instance PrettyMo TType where
 
 instance PrettyMo P_Interface where
   prettyMo (P_Ifc isAPI nm roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm
+    text (if isAPI then "API " else "INTERFACE ")
+      <+> maybeQuote nm
       <+> iroles
       <+> ( case obj of
               P_BxExpr {} ->
@@ -392,15 +396,20 @@ instance PrettyMo P_Cruds where
 instance PrettyMo P_ViewDef where
   prettyMo (P_Vd _ lbl cpt True Nothing ats) =
     -- legacy syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
-      <~> cpt <+> parens (listOf ats)
+    text "VIEW"
+      <+> maybeQuote lbl
+      <+> text ":"
+        <~> cpt
+      <+> parens (listOf ats)
   prettyMo (P_Vd _ lbl cpt isDefault html ats) =
     -- new syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
-      <~> cpt
+    text "VIEW"
+      <+> maybeQuote lbl
+      <+> text ":"
+        <~> cpt
       <+> (if isDefault then text "DEFAULT" else empty)
       <+> braces (listOf ats)
-      <~!> html
+        <~!> html
       <+> text "ENDVIEW"
 
 instance PrettyMo ViewHtmlTemplate where
@@ -419,9 +428,10 @@ instance PrettyMo (P_ViewSegmtPayLoad TermPrim) where
   prettyMo (P_ViewText txt) = text "TXT" <+> quote txt
 
 instance PrettyMo PPurpose where
-  prettyMo (PRef2 _ obj markup refIds) =
-    text "PURPOSE" <~> obj <~!> lang <+> refs refIds
-      <+\> quotePurpose (mString markup)
+  prettyMo (PPurpose _ obj markup refIds) =
+    text "PURPOSE" <~> obj <~!> lang
+      <+> refs refIds
+        <+\> quotePurpose (mString markup)
     where
       lang = mFormat markup
       refs rs =
@@ -457,7 +467,8 @@ instance PrettyMo PClassify where
   prettyMo p =
     case p of
       PClassify _ spc gen ->
-        text "CLASSIFY" <+> prettyMo spc
+        text "CLASSIFY"
+          <+> prettyMo spc
           <+> ( case (NE.length gen, NE.filter (spc /=) gen) of
                   (2, [x]) -> text "ISA" <~> x
                   _ -> text "IS" <+> separate "/\\" (NE.toList gen)
@@ -487,9 +498,11 @@ instance PrettyMo PRelationDefault where
 
 instance PrettyMo PAtomPair where
   prettyMo (PPair _ l r) =
-    text "(" <+> prettyMo l
-      <~!> text "," <+> prettyMo r
-      <~!> text ")"
+    text "("
+      <+> prettyMo l
+        <~!> text ","
+      <+> prettyMo r
+        <~!> text ")"
 
 instance PrettyMo PAtomValue where
   prettyMo pav =
