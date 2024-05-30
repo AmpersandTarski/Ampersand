@@ -57,7 +57,7 @@ addTab ::
   FilePos
 addTab pos@(FilePos _ _ col) = addPos tabWidth pos
   where
-    tabWidth = 8 - ((col -1) `mod` 8)
+    tabWidth = 8 - ((col - 1) `mod` 8)
 
 -- | Adds one column to the file position
 addPos :: Int -> FilePos -> FilePos
@@ -75,6 +75,7 @@ instance Hashable FilePos where
 
 data Origin
   = OriginUnknown
+  | OriginAtlas
   | Origin Text
   | PropertyRule Text Origin -- Constructor is used to hold the origin of a propertyrule.
   | FileLoc FilePos SymbolName
@@ -91,12 +92,12 @@ isFuzzyOrigin Origin {} = True
 isFuzzyOrigin MeatGrinder = True
 isFuzzyOrigin _ = False
 
-sortWithOrigins :: Traced a => [a] -> [a]
+sortWithOrigins :: (Traced a) => [a] -> [a]
 sortWithOrigins xs = sortedNonFuzzy <> fuzzy
   where
     (fuzzy, nonfuzzy) = L.partition (isFuzzyOrigin . origin) xs
     sortedNonFuzzy = L.sortBy nonFuzzyOrdering nonfuzzy
-    nonFuzzyOrdering :: Traced a => a -> a -> Ordering
+    nonFuzzyOrdering :: (Traced a) => a -> a -> Ordering
     nonFuzzyOrdering x y = case maybeOrdering (origin x) (origin y) of
       Just ordering -> ordering
       Nothing -> fatal "nonFuzzyOrdering must only be used on list containing non-fuzzy origins"
@@ -119,8 +120,8 @@ maybeOrdering x y = case x of
     case y of
       FileLoc {} -> Just LT
       XLSXLoc fpy wby (rowy, coly) ->
-        Just $
-          compare
+        Just
+          $ compare
             (fpx, wbx, (rowx, colx))
             (fpy, wby, (rowy, coly))
       PropertyRule {} -> Just GT
@@ -155,17 +156,19 @@ instance Show Origin where
   -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row, col)) =
-    filePath <> ":"
+    filePath
+      <> ":"
       <> "\n   Sheet: "
       <> T.unpack sheet
       <> ", Cell: "
-      <> T.unpack (int2col col)
+      <> (T.unpack . columnIndexToText $ ColumnIndex col)
       <> show row
       <> ". "
   show (PropertyRule dcl o) = "PropertyRule for " <> T.unpack dcl <> " which is defined at " <> show o
   show (Origin str) = T.unpack str
   show OriginUnknown = "Unknown origin"
   show MeatGrinder = "MeatGrinder"
+  show OriginAtlas = "Atlas"
 
 class Traced a where
   origin :: a -> Origin

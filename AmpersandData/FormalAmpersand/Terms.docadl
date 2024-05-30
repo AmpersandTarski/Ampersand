@@ -2,7 +2,6 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- The comments for this script can be found in Terms.docadl
 INCLUDE "Terms.adl"
 
-CONCEPT Signature "A signature is a pair of concepts."
 PURPOSE CONCEPT Signature
 {+Every relation gets a signature when declared, for the purpose of classifying atoms in that relation.+}
 

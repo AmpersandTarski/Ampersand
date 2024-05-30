@@ -25,7 +25,7 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , t
 
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-    REPRESENT ContextName TYPE ALPHANUMERIC
+    CLASSIFY ContextName ISA Name
     RELATION name[Context*ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
       ROLE ExecEngine MAINTAINS "del unused ContextName"
@@ -35,9 +35,8 @@ PATTERN Context
 
     IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
 
-    RELATION name[Concept*ConceptName] [UNI,TOT] 
+    RELATION name[Concept*ConceptName] [TOT,SUR] --Not UNI because of aliases
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-    REPRESENT ConceptName TYPE ALPHANUMERIC
     RELATION context[Isa*Context] [UNI,TOT]
     RELATION context[IsE*Context] [UNI,TOT]
     MEANING "The user-defined generalization rules in a context."
@@ -54,7 +53,7 @@ PATTERN Context
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
     RELATION udefrules[Rule*Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
                                                 --   which are not property- and not identity rules. See ViewPoint.hs
-    RELATION proprules[Rule*Context] [UNI]      -- ^ all property rules the user has declared within this context including the patterns it contains.
+    -- RELATION proprules[Rule*Context] [] -- This relation removed to prevent execengine work in the atlas. This relation can be calculated via the `Rule`.
     RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
     -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a property rule, or identity rule
   

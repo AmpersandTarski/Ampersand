@@ -54,3 +54,5 @@ miscellaneous/AmpersandBackup.jgfns
 
 # Local history extention of vs-code
 .history
+ATLAS_file.json
+out.adl

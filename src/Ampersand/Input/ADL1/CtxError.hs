@@ -1,6 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
   ( CtxError (PE),
@@ -19,7 +22,7 @@ module Ampersand.Input.ADL1.CtxError
     mkMultipleInterfaceError,
     mkInterfaceRefCycleError,
     mkIncompatibleInterfaceError,
-    mkMultipleDefaultError,
+    checkMultipleDefaultViews,
     mkDanglingRefError,
     mkIncompatibleViewError,
     mkOtherAtomInSessionError,
@@ -368,7 +371,7 @@ uniqueLables orig = uniqueBy vsmlabel messageFor . filter hasLabel
 
 -- | Helper function to check for uniqueness.
 uniqueBy ::
-  Ord b =>
+  (Traced a, Ord b) =>
   -- | user supplied function to project something out of each element
   (a -> b) ->
   -- | user supplied function to generate the error for a nonempty list
@@ -376,11 +379,24 @@ uniqueBy ::
   -- | List of things that need to have some unique property
   [a] ->
   Guarded ()
-uniqueBy fun messageFor a = case (filter moreThanOne . NE.groupAllWith fun) a of
+uniqueBy fun messageFor a = case (filter differentOrigins . filter moreThanOne . NE.groupAllWith fun) a of
   [] -> pure ()
   x : xs -> Errors . fmap messageFor $ x NE.:| xs
   where
     moreThanOne = not . null . NE.tail
+
+differentOrigins :: (Traced a) => NonEmpty a -> Bool
+-- Sometimes Origins are different, but they point to the exact same thing. That previously caused errors like:
+--
+-- @
+--   Every rule must have a unique name. "Compute isaRfxIns", however, is used at:/workspaces/atlasImport/AmpersandData/FormalAmpersand/Concepts.adl:72:5
+--       Concepts.adl:72:5.==============================
+-- @
+--
+-- It was obvious that both origins reference the same rule, so there is no need to throw an error.
+differentOrigins xs = case NE.nub . fmap (T.takeWhileEnd (/= '/') . tshow . origin) $ xs of
+  _ NE.:| [] -> False
+  _ -> True
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <> showA (explObj p)
@@ -484,6 +500,19 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
           <> showWithAliases expTgt
           <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
+
+-- Check whether each concept has at most one default view
+checkMultipleDefaultViews :: A_Context -> Guarded ()
+checkMultipleDefaultViews ctx =
+  case filter differentOrigins conceptsWithMultipleViews of
+    [] -> return ()
+    x : xs -> Errors $ fmap mkMultipleDefaultError (x NE.:| xs)
+  where
+    conceptsWithMultipleViews =
+      filter (\x -> NE.length x > 1)
+        . eqClass ((==) `on` vdcpt)
+        . filter vdIsDefault
+        $ ctxvs ctx
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =

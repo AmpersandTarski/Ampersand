@@ -9,6 +9,7 @@ module Ampersand.Input.Parsing
     parseFormalAmpersand,
     parsePrototypeContext,
     parseRule,
+    parseTerm,
     parseCtx,
     ParseCandidate (..), -- exported for use with --daemon
   )
@@ -42,6 +43,7 @@ import Ampersand.Input.ADL1.Parser
     Include (..),
     pContext,
     pRule,
+    pTerm,
   )
 import Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
 import Ampersand.Input.PreProcessor
@@ -51,7 +53,7 @@ import Ampersand.Input.PreProcessor
   )
 import Ampersand.Input.Xslx.XLSX (parseXlsxFile)
 import Ampersand.Misc.HasClasses
-  ( HasFSpecGenOpts,
+  ( HasTrimXLSXOpts,
     Roots (..),
   )
 import Ampersand.Prototype.StaticFiles_Generated
@@ -83,7 +85,7 @@ import Text.Parsec.Prim (runP)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env) =>
   Roots ->
   -- | A tuple containing a list of parsed files and the The resulting context
   RIO env ([ParseCandidate], Guarded P_Context)
@@ -105,7 +107,7 @@ parseFilesTransitive xs = do
           pcDefineds = Set.empty
         }
 
-parseFormalAmpersand :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parseFormalAmpersand :: (HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
 parseFormalAmpersand =
   parseThing
     ParseCandidate
@@ -116,7 +118,7 @@ parseFormalAmpersand =
         pcDefineds = Set.empty
       }
 
-parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parsePrototypeContext :: (HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
 parsePrototypeContext =
   parseThing
     ParseCandidate
@@ -128,13 +130,13 @@ parsePrototypeContext =
       }
 
 parseThing ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env) =>
   ParseCandidate ->
   RIO env (Guarded P_Context)
 parseThing pc = snd <$> parseThings [pc]
 
 parseThings ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env) =>
   [ParseCandidate] ->
   RIO env ([ParseCandidate], Guarded P_Context)
 parseThings pcs = do
@@ -154,7 +156,7 @@ parseThings pcs = do
 
 -- | Parses several ADL files
 parseADLs ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env) =>
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
@@ -170,7 +172,7 @@ parseADLs parsedFilePaths fpIncludes =
         else whenCheckedM (parseSingleADL x) parseTheRest
       where
         parseTheRest ::
-          (HasFSpecGenOpts env, HasLogFunc env) =>
+          (HasTrimXLSXOpts env, HasLogFunc env) =>
           (P_Context, [ParseCandidate]) ->
           RIO env (Guarded [(ParseCandidate, P_Context)])
         parseTheRest (ctx, includes) =
@@ -193,7 +195,7 @@ instance Eq ParseCandidate where
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env) =>
   ParseCandidate ->
   RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc =
@@ -215,7 +217,7 @@ parseSingleADL pc =
             ]
   where
     filePath = pcCanonical pc
-    parseSingleADL' :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+    parseSingleADL' :: (HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
     parseSingleADL'
       | -- This feature enables the parsing of Excel files, that are prepared for Ampersand.
         extension == ".xlsx" = do
@@ -345,6 +347,9 @@ parseRule str =
   case runParser pRule "inside Haskell code" str of
     Checked result _ -> result
     Errors msg -> fatal ("Parse errors in " <> str <> ":\n   " <> tshow msg)
+
+parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
+parseTerm = runParser pTerm
 
 -- | Parses an Ampersand context
 parseCtx ::

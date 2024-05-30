@@ -11,6 +11,7 @@ module Ampersand.Misc.Commands
 where
 
 import Ampersand.Basics
+import Ampersand.Commands.AtlasImport
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
@@ -26,6 +27,7 @@ import Ampersand.FSpec (FSpec)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
+import Ampersand.Options.AtlasImportOptsParser
 import Ampersand.Options.DaemonParser
 import Ampersand.Options.DevoutputOptsParser
 import Ampersand.Options.DocOptsParser
@@ -55,8 +57,8 @@ import System.Environment (withArgs)
 
 -- Vertically combine only the error component of the first argument with the
 -- error component of the second.
---vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
---vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
+-- vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+-- vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
 
 commandLineHandler ::
   FilePath ->
@@ -132,6 +134,11 @@ commandLineHandler currentDir _progName args =
         (mkAction population)
         populationOptsParser
       addCommand''
+        AtlasImport
+        "Import a file that contains the population of an atlas (json)."
+        atlasImportCmd
+        atlasimportOptsParser
+      addCommand''
         Proofs
         "Generate a report containing proofs."
         (mkAction proof)
@@ -169,14 +176,14 @@ commandLineHandler currentDir _progName args =
       where
         -- addCommand hiding global options
         addCommand'' ::
-          HasOptions a =>
+          (HasOptions a) =>
           Command ->
           String ->
           (a -> RIO Runner ()) ->
           Parser a ->
           AddCommand
-        addCommand'' cmd title constr parser =
-          addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts parser
+        addCommand'' cmd title constr =
+          addCommand (map toLower . show $ cmd) title globalFooter constr' (\_ gom -> gom) globalOpts
           where
             constr' opts = do
               runner <- ask
@@ -197,7 +204,7 @@ type AddCommand =
 
 -- | Generate and execute a complicated options parser.
 complicatedOptions ::
-  Monoid a =>
+  (Monoid a) =>
   -- | header
   Text ->
   -- | program description (displayed between usage and options listing in the help output)
@@ -233,13 +240,13 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         $ infoParser parser
     myPreferences :: ParserPrefs
     myPreferences =
-      prefs $
-        showHelpOnEmpty
-          <> noBacktrack
-          <> disambiguate
+      prefs
+        $ showHelpOnEmpty
+        <> noBacktrack
+        <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
-      dullyellow
+      annotate (colorDull Yellow)
         <$> paragraph (show opt) -- optHelp opt -- "Een of andere optie."
     parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
     desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
@@ -332,7 +339,7 @@ addCommand' cmd title footerStr constr commonParser inner =
 
 -- | Generate a complicated options parser.
 complicatedParser ::
-  Monoid a =>
+  (Monoid a) =>
   -- | metavar for the sub-command
   String ->
   -- | common settings
@@ -353,8 +360,8 @@ hsubparser' :: String -> Mod CommandFields a -> Parser a
 hsubparser' commandMetavar m = mkParser d g rdr
   where
     Mod _ d g = metavar commandMetavar `mappend` m
-    (groupName, cmds, subs) = mkCommand m
-    rdr = CmdReader groupName cmds (fmap add_helper . subs)
+    (groupName, cmds) = mkCommand m
+    rdr = CmdReader groupName ((fmap . fmap) add_helper cmds)
     add_helper pinfo =
       pinfo
         { infoParser = infoParser pinfo <**> helpOption
@@ -363,9 +370,9 @@ hsubparser' commandMetavar m = mkParser d g rdr
 -- | Non-hidden help option.
 helpOption :: Parser (a -> a)
 helpOption =
-  abortOption (ShowHelpText $ Just "This is some text, but when does it show??") $
-    long "help"
-      <> help "Show this help text"
+  abortOption (ShowHelpText $ Just "This is some text, but when does it show??")
+    $ long "help"
+    <> help "Show this help text"
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts =
@@ -375,12 +382,16 @@ documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
   (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
   where
-    forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
-    forceAllowInvariants env = local (set allowInvariantViolationsL True) env
+    forceAllowInvariants :: (HasFSpecGenOpts env) => RIO env a -> RIO env a
+    forceAllowInvariants = local (set allowInvariantViolationsL True)
 
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
   extendWith testOpts test
+
+atlasImportCmd :: AtlasImportOpts -> RIO Runner ()
+atlasImportCmd opts = do
+  extendWith opts atlasImport
 
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing
@@ -389,7 +400,6 @@ checkCmd = mkAction doNothing
       logInfo $ "This script of " <> display (name fSpec) <> " contains no type errors."
 
 mkAction ::
-  forall a.
   (HasFSpecGenOpts a) =>
   (FSpec -> RIO (ExtendedRunner a) ()) ->
   a ->
@@ -398,7 +408,7 @@ mkAction theAction opts =
   extendWith opts $ doOrDie theAction
 
 doOrDie ::
-  (HasLogFunc env, HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) =>
   (FSpec -> RIO env b) ->
   RIO env b
 doOrDie theAction = do
@@ -408,7 +418,8 @@ doOrDie theAction = do
       mapM_ (logWarn . displayShow) ws
       theAction a
     Errors err ->
-      exitWith . NoValidFSpec
+      exitWith
+        . NoValidFSpec
         . T.lines
         . T.intercalate (T.replicate 30 "=" <> "\n")
         . NE.toList
@@ -416,7 +427,8 @@ doOrDie theAction = do
         $ err
 
 data Command
-  = Check
+  = AtlasImport
+  | Check
   | Daemon
   | Dataanalysis
   | Devoutput
@@ -430,6 +442,7 @@ data Command
   | Validate
 
 instance Show Command where
+  show AtlasImport = "atlas-import"
   show Check = "check"
   show Daemon = "daemon"
   show Dataanalysis = "data-analysis"

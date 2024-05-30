@@ -21,7 +21,7 @@ BOX [ SqlAttribute : I
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
+INTERFACE Overview (name[Concept*Name], name[Relation*Name]) : "_SESSION"
 BOX <TABS>
     [ relations : V[SESSION*Relation] CRUD
       BOX<TABLE sortable>
@@ -69,7 +69,7 @@ VIEW Concept : Concept(name)
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept] CRUD
+INTERFACE Concept(name[Concept*Name],isa) : I[Concept] CRUD
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -81,7 +81,7 @@ BOX [ "relation(s)"  : in
      , rAtom          : rAtom
      ]
 
-INTERFACE RelTable(name[Relation*Identifier],source,target) : I[Relation] CRUD
+INTERFACE RelTable(name[Relation*Name],source,target) : I[Relation] CRUD
 BOX [ name    : name
      , source  : source
      , target  : target

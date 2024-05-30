@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Ampersand.Misc.HasClasses where
@@ -24,6 +25,26 @@ instance (HasOptions a, HasOptions b) => HasOptions (a, b) where
 
 --instance (HasOptions a, Foldable f, Functor f) => HasOptions (f a) where
 --  optsList xs = concat . toList . fmap optsList $ xs
+class HasTrimXLSXOpts a where
+  trimXLSXCellsL :: Lens' a Bool
+
+instance HasTrimXLSXOpts AtlasImportOpts where
+  trimXLSXCellsL :: Lens' AtlasImportOpts Bool
+  trimXLSXCellsL = lens x1trimXLSXCells (\x y -> x {x1trimXLSXCells = y})
+
+instance HasFSpecGenOpts a => HasTrimXLSXOpts a where
+  trimXLSXCellsL :: Lens' a Bool
+  trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x {xtrimXLSXCells = y})
+
+class HasImportFile a where
+  importFileL :: Lens' a FilePath
+
+instance HasImportFile AtlasImportOpts where
+  importFileL :: Lens' AtlasImportOpts FilePath
+  importFileL = lens inputFile (\x y -> x {inputFile = y})
+
+instance HasOutputFile AtlasImportOpts where
+  outputfileL = lens xoutputFile (\x y -> x {xoutputFile = y})
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -35,8 +56,6 @@ class HasFSpecGenOpts a where
   namespaceL = fSpecGenOptsL . lens xnamespace (\x y -> x {xnamespace = y})
   defaultCrudL :: Lens' a (Bool, Bool, Bool, Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x {xdefaultCrud = y})
-  trimXLSXCellsL :: Lens' a Bool
-  trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x {xtrimXLSXCells = y})
   recipeL :: Lens' a Recipe
   recipeL = fSpecGenOptsL . lens xrecipe (\x y -> x {xrecipe = y})
   allowInvariantViolationsL :: Lens' a Bool
@@ -489,6 +508,18 @@ newtype TestOpts = TestOpts
 instance HasOptions TestOpts where
   optsList opts =
     [ ("TESTDIRECTORY", tshow $ rootTestDir opts)
+    ]
+
+data AtlasImportOpts = AtlasImportOpts
+  { x1trimXLSXCells :: !Bool,
+    inputFile :: !FilePath, --relative path to file containing the population of the Atlas
+    xoutputFile :: !FilePath
+  }
+  deriving (Show)
+
+instance HasOptions AtlasImportOpts where
+  optsList opts =
+    [ ("ATLASPOPULATIONFILE", tshow $ inputFile opts)
     ]
 
 data Chapter

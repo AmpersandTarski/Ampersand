@@ -117,7 +117,7 @@ data P_Context = PCtx
     -- | The Enforce statements defined in this context, outside the scope of patterns
     ctx_enfs :: ![P_Enforce TermPrim]
   }
-  deriving (Show) --for QuickCheck
+  deriving (Show, Generic) -- for QuickCheck
 
 instance Eq P_Context where
   c1 == c2 = name c1 == name c2
@@ -134,7 +134,7 @@ data MetaData = MetaData
   deriving (Show)
 
 instance Traced MetaData where
-  origin = pos
+  origin (MetaData p _ _) = p
 
 data EnforceOperator
   = IsSuperSet Origin
@@ -156,7 +156,8 @@ instance Foldable P_Enforce where foldMap = foldMapDefault
 
 instance Traversable P_Enforce where
   traverse f (P_Enforce orig rel op expr) =
-    (\r e -> P_Enforce orig r op e) <$> f rel
+    (\r e -> P_Enforce orig r op e)
+      <$> f rel
       <*> traverse f expr
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
@@ -171,7 +172,7 @@ data P_RoleRule = Maintain
   deriving (Show) -- deriving (Show) is just for debugging
 
 instance Traced P_RoleRule where
-  origin = pos
+  origin Maintain {pos = orig} = orig
 
 data Role
   = Role Text
@@ -227,11 +228,12 @@ instance Ord P_Pattern where
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "P_Pattern should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "P_Pattern should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
@@ -243,7 +245,7 @@ instance Named P_Pattern where
   name = pt_nm
 
 instance Traced P_Pattern where
-  origin = pos
+  origin P_Pat {pos = p} = p
 
 data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
@@ -263,11 +265,12 @@ instance Ord PConceptDef where
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "ConceptDef should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "ConceptDef should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
@@ -281,7 +284,7 @@ instance Unique PConceptDef where
       x = origin cd
 
 instance Traced PConceptDef where
-  origin = pos
+  origin PConceptDef {pos = p} = p
 
 instance Named PConceptDef where
   name = cdcpt
@@ -310,7 +313,7 @@ data Representation = Repr
   deriving (Show)
 
 instance Traced Representation where
-  origin = pos
+  origin Repr {pos = orig} = orig
 
 data TType
   = Alphanumeric
@@ -326,7 +329,7 @@ data TType
   | Integer
   | Float
   | Object
-  | TypeOfOne --special type for the special concept ONE.
+  | TypeOfOne -- special type for the special concept ONE.
   deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
 
 instance Unique TType where
@@ -370,7 +373,7 @@ data P_Relation = P_Relation
     -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
     pos :: !Origin
   }
-  deriving (Show) --For QuickCheck error messages only!
+  deriving (Show) -- For QuickCheck error messages only!
 
 -- | Pragma, used in relations. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
 --  then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
@@ -396,7 +399,7 @@ instance Named P_Relation where
   name = dec_nm
 
 instance Traced P_Relation where
-  origin = pos
+  origin P_Relation {pos = orig} = orig
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
@@ -436,7 +439,7 @@ instance Eq PAtomPair where
   a == b = compare a b == EQ
 
 instance Traced PAtomPair where
-  origin = pos
+  origin PPair {pos = orig} = orig
 
 instance Flippable PAtomPair where
   flp pr =
@@ -544,7 +547,7 @@ data TermPrim
     --   At parse time, there may be zero, one or two elements in the list of concepts.
     Pfull Origin P_Concept P_Concept
   | PNamedR P_NamedRel
-  deriving (Show) --For QuickCheck error messages only!
+  deriving (Show) -- For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel {pos :: Origin, p_nrnm :: Text, p_mbSign :: Maybe P_Sign}
   deriving (Show)
@@ -627,7 +630,8 @@ instance Traversable P_SubIfc where
   traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
-  origin = pos
+  origin P_Box {pos = orig} = orig
+  origin P_InterfaceRef {pos = orig} = orig
 
 instance Functor P_BoxItem where fmap = fmapDefault
 
@@ -655,7 +659,7 @@ instance Traced P_NamedRel where
 instance Named P_NamedRel where
   name (PNamedRel _ nm _) = nm
 
-instance Traced a => Traced (Term a) where
+instance (Traced a) => Traced (Term a) where
   origin e = case e of
     Prim a -> origin a
     PEqu orig _ _ -> orig
@@ -683,11 +687,11 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
-instance Hashable a => Hashable (PairView a)
+instance (Hashable a) => Hashable (PairView a)
 
-instance Traced a => Traced (PairView a) where
+instance (Traced a) => Traced (PairView a) where
   origin = origin . NE.head . ppv_segs
 
 data PairViewSegment a
@@ -708,18 +712,20 @@ instance Eq (PairViewSegment a) where
 instance Ord (PairViewSegment a) where
   compare a b =
     fromMaybe
-      ( fatal . T.intercalate "\n" $
-          [ "P_Rule a should have a non-fuzzy Origin.",
-            tshow (origin a),
-            tshow (origin b)
-          ]
+      ( fatal
+          . T.intercalate "\n"
+          $ [ "P_Rule a should have a non-fuzzy Origin.",
+              tshow (origin a),
+              tshow (origin b)
+            ]
       )
       (maybeOrdering (origin a) (origin b))
 
-instance Hashable a => Hashable (PairViewSegment a)
+instance (Hashable a) => Hashable (PairViewSegment a)
 
 instance Traced (PairViewSegment a) where
-  origin = pos
+  origin PairViewText {pos = orig} = orig
+  origin PairViewExp {pos = orig} = orig
 
 -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
 newtype PairViewTerm a = PairViewTerm (PairView (Term a))
@@ -775,20 +781,21 @@ instance Ord (P_Rule a) where
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "P_Rule a should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "P_Rule a should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
 
-instance Eq (P_Rule a) where --Required for merge of P_Contexts
+instance Eq (P_Rule a) where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced (P_Rule a) where
-  origin = pos
+  origin P_Rule {pos = orig} = orig
 
 instance Functor P_Rule where fmap = fmapDefault
 
@@ -827,15 +834,16 @@ data P_Population
         p_cpt :: P_Concept, -- the concept the population belongs to
         p_popas :: [PAtomValue] -- atoms in the initial population of that concept
       }
-  deriving (Show) --For QuickCheck error messages only!
-  --NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging.
+  deriving (Show) -- For QuickCheck error messages only!
+  -- NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging.
 
 instance Named P_Population where
   name P_RelPopu {p_nmdr = rel} = name rel
   name P_CptPopu {p_cpt = cpt} = name cpt
 
 instance Traced P_Population where
-  origin = pos
+  origin P_RelPopu {pos = orig} = orig
+  origin P_CptPopu {pos = orig} = orig
 
 data P_Interface = P_Ifc
   { -- | The interface is of type API
@@ -849,17 +857,18 @@ data P_Interface = P_Ifc
     pos :: Origin,
     ifc_Prp :: Text
   }
-  deriving (Show) --For QuickCheck error messages only!
+  deriving (Show) -- For QuickCheck error messages only!
 
-instance Ord P_Interface where --Required for merge of P_Contexts
+instance Ord P_Interface where -- Required for merge of P_Contexts
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "P_Interface should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "P_Interface should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
@@ -871,7 +880,7 @@ instance Named P_Interface where
   name = ifc_Name
 
 instance Traced P_Interface where
-  origin = pos
+  origin P_Ifc {pos = orig} = orig
 
 newtype P_IClass = P_IClass {iclass_name :: Text} deriving (Eq, Ord, Show)
 
@@ -885,7 +894,7 @@ data P_SubIfc a
       }
   | P_InterfaceRef
       { pos :: !Origin,
-        si_isLink :: !Bool, --True iff LINKTO is used. (will display as hyperlink)
+        si_isLink :: !Bool, -- True iff LINKTO is used. (will display as hyperlink)
         si_str :: !Text -- Name of the interface that is reffered to
       }
   deriving (Show)
@@ -900,8 +909,17 @@ data BoxHeader = BoxHeader
   }
   deriving (Show, Data)
 
+instance Unique BoxHeader where
+  showUnique x = btType x <> (showUnique . L.sort . btKeys $ x)
+
+instance Ord BoxHeader where
+  compare a b = compare (btType a, L.sort (btKeys a)) (btType b, L.sort (btKeys b))
+
+instance Eq BoxHeader where
+  a == b = compare a b == EQ
+
 instance Traced BoxHeader where
-  origin = pos
+  origin BoxHeader {pos = orig} = orig
 
 data TemplateKeyValue = TemplateKeyValue
   { pos :: !Origin,
@@ -912,11 +930,20 @@ data TemplateKeyValue = TemplateKeyValue
   }
   deriving (Show, Data)
 
+instance Ord TemplateKeyValue where
+  compare a b = compare (tkkey a, tkval a) (tkkey b, tkval b)
+
+instance Eq TemplateKeyValue where
+  a == b = compare a b == EQ
+
+instance Unique TemplateKeyValue where
+  showUnique x = tshow (tkkey x) <> tshow (tkval x)
+
 instance Named TemplateKeyValue where
   name = tkkey
 
 instance Traced TemplateKeyValue where
-  origin = pos
+  origin TemplateKeyValue {pos = orig} = orig
 
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 
@@ -946,11 +973,12 @@ data P_BoxItem a
 instance Ord (P_BoxItem a) where
   compare a b =
     fromMaybe
-      ( fatal . T.intercalate "\n" $
-          [ "P_BoxItem a should have a non-fuzzy Origin.",
-            tshow (origin a),
-            tshow (origin b)
-          ]
+      ( fatal
+          . T.intercalate "\n"
+          $ [ "P_BoxItem a should have a non-fuzzy Origin.",
+              tshow (origin a),
+              tshow (origin b)
+            ]
       )
       (maybeOrdering (origin a) (origin b))
 
@@ -961,7 +989,8 @@ instance Named (P_BoxItem a) where
   name = obj_nm
 
 instance Traced (P_BoxItem a) where
-  origin = pos
+  origin P_BxExpr {pos = orig} = orig
+  origin P_BxTxt {pos = orig} = orig
 
 data P_Cruds = P_Cruds Origin Text deriving (Show)
 
@@ -986,11 +1015,12 @@ instance Named (P_IdentDf a) where
 instance Ord (P_IdentDf a) where
   compare a b =
     fromMaybe
-      ( fatal . T.intercalate "\n" $
-          [ "P_IdentDf a should have a non-fuzzy Origin.",
-            tshow (origin a),
-            tshow (origin b)
-          ]
+      ( fatal
+          . T.intercalate "\n"
+          $ [ "P_IdentDf a should have a non-fuzzy Origin.",
+              tshow (origin a),
+              tshow (origin b)
+            ]
       )
       (maybeOrdering (origin a) (origin b))
 
@@ -998,7 +1028,7 @@ instance Eq (P_IdentDf a) where
   a == b = compare a b == EQ
 
 instance Traced (P_IdentDf a) where
-  origin = pos
+  origin P_Id {pos = orig} = orig
 
 instance Functor P_IdentDf where fmap = fmapDefault
 
@@ -1042,20 +1072,21 @@ instance Ord (P_ViewD a) where
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "P_ViewD a should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "P_ViewD a should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
 
-instance Eq (P_ViewD a) where --Required for merge of P_Contexts
+instance Eq (P_ViewD a) where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced (P_ViewD a) where
-  origin = pos
+  origin P_Vd {pos = orig} = orig
 
 instance Named (P_ViewD a) where
   name = vd_lbl
@@ -1075,7 +1106,7 @@ data P_ViewSegment a = P_ViewSegment
   deriving (Show)
 
 instance Traced (P_ViewSegment a) where
-  origin = pos
+  origin P_ViewSegment {pos = orig} = orig
 
 instance Functor P_ViewSegment where fmap = fmapDefault
 
@@ -1123,7 +1154,7 @@ instance Named PRef2Obj where
     PRef2Interface str -> str
     PRef2Context str -> str
 
-data PPurpose = PRef2
+data PPurpose = PPurpose
   { pos :: Origin, -- the position in the Ampersand script of this purpose definition
     pexObj :: PRef2Obj, -- the reference to the object whose purpose is explained
     pexMarkup :: P_Markup, -- the piece of text, including markup and language info
@@ -1131,7 +1162,7 @@ data PPurpose = PRef2
   }
   deriving (Show)
 
-instance Ord PPurpose where --Required for merge of P_Contexts
+instance Ord PPurpose where -- Required for merge of P_Contexts
   compare a b = case compare (name (pexObj a)) (name (pexObj b)) of
     EQ -> case (origin a, origin b) of
       (OriginUnknown, OriginUnknown) -> compare (pexRefIDs a) (pexRefIDs b)
@@ -1139,20 +1170,21 @@ instance Ord PPurpose where --Required for merge of P_Contexts
       (_, OriginUnknown) -> GT
       (_, _) ->
         fromMaybe
-          ( fatal . T.intercalate "\n" $
-              [ "PPurpose a should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
-              ]
+          ( fatal
+              . T.intercalate "\n"
+              $ [ "PPurpose a should have a non-fuzzy Origin.",
+                  tshow (origin a),
+                  tshow (origin b)
+                ]
           )
           (maybeOrdering (origin a) (origin b))
     x -> x
 
-instance Eq PPurpose where --Required for merge of P_Contexts
+instance Eq PPurpose where -- Required for merge of P_Contexts
   a == b = compare a b == EQ
 
 instance Traced PPurpose where
-  origin = pos
+  origin PPurpose {pos = orig} = orig
 
 data P_Concept
   = -- | The name of this Concept
@@ -1202,7 +1234,7 @@ instance Eq PClassify where
   p == q = specific p == specific q && generics p == generics q
 
 instance Traced PClassify where
-  origin = pos
+  origin PClassify {pos = orig} = orig
 
 type PProps = Set PProp
 
@@ -1290,7 +1322,7 @@ mergeContexts ctx1 ctx2 =
     fromContextsKeepDoubles :: (P_Context -> [a]) -> [a]
     fromContextsKeepDoubles fun = concatMap fun contexts
     contexts = [ctx1, ctx2]
-    fromContextsRemoveDoubles :: Ord b => (P_Context -> [b]) -> [b]
+    fromContextsRemoveDoubles :: (Ord b) => (P_Context -> [b]) -> [b]
     fromContextsRemoveDoubles f =
       Set.toList . Set.unions . map (Set.fromList . f) $ contexts
     mergePops :: [P_Population] -> [P_Population]
@@ -1300,16 +1332,20 @@ mergeContexts ctx1 ctx2 =
         groupCondition a b =
           case (a, b) of
             (P_RelPopu {}, P_RelPopu {}) ->
-              p_src a == p_src b
-                && p_tgt a == p_tgt b
+              p_src a
+                == p_src b
+                && p_tgt a
+                == p_tgt b
                 && sameNamedRels (p_nmdr a) (p_nmdr b)
             (P_CptPopu {}, P_CptPopu {}) -> p_cpt a == p_cpt b
             _ -> False
           where
             sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool
             sameNamedRels x y =
-              p_nrnm x == p_nrnm y
-                && p_mbSign x == p_mbSign y
+              p_nrnm x
+                == p_nrnm y
+                && p_mbSign x
+                == p_mbSign y
         mergePopsSameType :: NE.NonEmpty P_Population -> P_Population
         mergePopsSameType (h :| tl) = case h of
           P_RelPopu {} -> h {p_popps = Set.toList . Set.unions . map (Set.fromList . p_popps) $ (h : tl)}

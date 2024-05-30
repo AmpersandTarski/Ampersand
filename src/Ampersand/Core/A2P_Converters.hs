@@ -11,7 +11,6 @@ module Ampersand.Core.A2P_Converters
     aIdentityDef2pIdentityDef,
     aObjectDef2pObjectDef,
     aRelation2pRelation,
-    aProps2Pprops,
     aPopulation2pPopulation,
     aRule2pRule,
     aSign2pSign,
@@ -124,9 +123,11 @@ aRelDefaults2pRelDefault x = case x of
 
 aProps2Pprops :: AProps -> Set PProp
 aProps2Pprops aps
-  | P_Sym `elem` xs
-      && P_Asy `elem` xs =
-    Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
+  | P_Sym
+      `elem` xs
+      && P_Asy
+      `elem` xs =
+      Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
   | otherwise = xs
   where
     xs = Set.map aProp2pProp aps
@@ -226,7 +227,7 @@ aPurpose2pPurpose p =
   if explUserdefd p
     then
       Just
-        PRef2
+        PPurpose
           { pos = explPos p,
             pexObj = aExplObj2PRef2Obj (explObj p),
             pexMarkup = aMarkup2pMarkup (explMarkup p),
@@ -264,7 +265,7 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BxExpr
-        { obj_nm = name oDef,
+        { obj_nm = objnmOD oDef,
           pos = origin oDef,
           obj_ctx = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
@@ -275,7 +276,7 @@ aObjectDef2pObjectDef x =
         }
     BxTxt oDef ->
       P_BxTxt
-        { obj_nm = name oDef,
+        { obj_nm = objnmBT oDef,
           pos = origin oDef,
           obj_txt = objtxt oDef
         }
@@ -406,12 +407,12 @@ aAtomValue2pAtomValue val =
     HugeBinary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
     Date -> case val of
       AAVDate {} ->
-        --TODO: Needs rethinking. A string or a double?
+        -- TODO: Needs rethinking. A string or a double?
         ScriptString o (showValADL val)
       _ -> fatal "Unexpected combination of value types"
     DateTime -> case val of
       AAVDateTime {} ->
-        --TODO: Needs rethinking. A string or a double?
+        -- TODO: Needs rethinking. A string or a double?
         ScriptString o (showValADL val)
       _ -> fatal "Unexpected combination of value types"
     Integer -> case val of

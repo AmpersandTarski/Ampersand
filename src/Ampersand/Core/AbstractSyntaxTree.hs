@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -114,7 +115,7 @@ import Ampersand.Core.ParseTree
 import Data.Default (Default (..))
 import Data.Hashable (Hashable (..), hashWithSalt)
 import Data.Typeable (typeOf)
-import RIO.Char (toUpper)
+import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -234,8 +235,8 @@ data AEnforce = AEnforce
 data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
-    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-    acdcpt :: !Text,
+    -- | The concept for which this is the definition.
+    acdcpt :: !A_Concept,
     -- | The textual definition of this concept.
     acddef2 :: !Meaning,
     -- | User-specified meanings, possibly more than one, for multiple languages.
@@ -246,20 +247,21 @@ data AConceptDef = AConceptDef
   deriving (Show, Typeable)
 
 instance Named AConceptDef where
-  name = acdcpt
+  name = name . acdcpt
 
 instance Traced AConceptDef where
-  origin = pos
+  origin AConceptDef {pos = orig} = orig
 
 instance Ord AConceptDef where
   compare a b = case compare (name a) (name b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "ConceptDef should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "ConceptDef should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
@@ -277,11 +279,12 @@ data A_RoleRule = A_RoleRule
 instance Ord A_RoleRule where
   compare a b =
     fromMaybe
-      ( fatal . T.intercalate "\n" $
-          [ "PPurpose a should have a non-fuzzy Origin.",
-            tshow (origin a),
-            tshow (origin b)
-          ]
+      ( fatal
+          . T.intercalate "\n"
+          $ [ "PPurpose a should have a non-fuzzy Origin.",
+              tshow (origin a),
+              tshow (origin b)
+            ]
       )
       (maybeOrdering (origin a) (origin b))
 
@@ -621,7 +624,8 @@ instance Show AClassify where
 
 instance Hashable AClassify where
   hashWithSalt s g =
-    s `hashWithSalt` genspc g
+    s
+      `hashWithSalt` genspc g
       `hashWithSalt` ( case g of
                          Isa {} -> [genspc g]
                          IsE {} -> NE.toList . NE.sort $ genrhs g
@@ -669,25 +673,33 @@ getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == 
 
 class Object a where
   concept :: a -> A_Concept -- the type of the object
-  fields :: a -> [ObjectDef] -- the objects defined within the object
+  fields :: a -> [ObjectDef] -- the objects directly defined within the object
   contextOf :: a -> Expression -- the context term
+  fieldsRecursive :: a -> [ObjectDef] -- the objects defined within the object and its subinterfaces
 
 instance Object ObjectDef where
-  concept obj = target (objExpression obj)
+  concept = target . objExpression
   fields obj = case objmsub obj of
     Nothing -> []
     Just InterfaceRef {} -> []
     Just b@Box {} -> map objE . filter isObjExp $ siObjs b
-    where
-      isObjExp :: BoxItem -> Bool
-      isObjExp BxExpr {} = True
-      isObjExp BxTxt {} = False
   contextOf = objExpression
+  fieldsRecursive obj = fields obj <> subFields obj
+    where
+      subFields :: ObjectDef -> [ObjectDef]
+      subFields x = case objmsub x of
+        Nothing -> []
+        Just si@Box {} -> concatMap (fieldsRecursive . objE) (filter isObjExp . siObjs $ si)
+        Just InterfaceRef {} -> []
 
 data BoxItem
   = BxExpr {objE :: ObjectDef}
   | BxTxt {objT :: BoxTxt}
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
+
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr {} = True
+isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
   showUnique = tshow
@@ -700,31 +712,34 @@ instance Traced BoxItem where
 
 data BoxTxt = BoxTxt
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    objnm :: Text,
+    objnmBT :: Text,
     objpos :: Origin,
     objtxt :: Text
   }
   deriving (Show)
 
 instance Ord BoxTxt where
-  compare a b = case compare (name a, objtxt a) (name b, objtxt b) of
+  compare a b = case compare (label a, objtxt a) (label b, objtxt b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "BoxTxt should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "BoxTxt should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
+    where
+      label BoxTxt {objnmBT = x} = x
 
 instance Eq BoxTxt where
   a == b = compare a b == EQ
 
 data ObjectDef = ObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    objnm :: Text,
+    objnmOD :: Text,
     -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
     objPos :: Origin,
     -- | this term describes the instances of this object, related to their context.
@@ -738,9 +753,6 @@ data ObjectDef = ObjectDef
   }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
-instance Named ObjectDef where
-  name = objnm
-
 instance Traced ObjectDef where
   origin = objPos
 
@@ -748,23 +760,24 @@ instance Unique ObjectDef where
   showUnique = tshow
 
 instance Ord ObjectDef where
-  compare a b = case compare (name a) (name b) of
+  compare a b = case compare (label a) (label b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "ObjectDef should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "ObjectDef should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
+    where
+      label :: ObjectDef -> Text
+      label ObjectDef {objnmOD = x} = x
 
 instance Eq ObjectDef where
   a == b = compare a b == EQ
-
-instance Named BoxTxt where
-  name = objnm
 
 instance Traced BoxTxt where
   origin = objpos
@@ -776,7 +789,16 @@ data Cruds = Cruds
     crudU :: Bool,
     crudD :: Bool
   }
-  deriving (Show, Data)
+  deriving (Data)
+
+instance Show Cruds where
+  show x =
+    uncurry (\upper -> if upper then toUpper else toLower)
+      <$> [ (crudC x, 'C'),
+            (crudR x, 'R'),
+            (crudU x, 'U'),
+            (crudD x, 'D')
+          ]
 
 data SubInterface
   = Box
@@ -788,9 +810,27 @@ data SubInterface
   | InterfaceRef
       { pos :: !Origin,
         siIsLink :: !Bool,
-        siIfcId :: !Text --id of the interface that is referenced to
+        siIfcId :: !Text -- id of the interface that is referenced to
       }
   deriving (Show)
+
+instance Traced SubInterface where
+  origin Box {pos = orig} = orig
+  origin InterfaceRef {pos = orig} = orig
+
+instance Ord SubInterface where
+  compare a b = case (a, b) of
+    (Box {}, Box {}) -> compare (siConcept a, siHeader a, siObjs a) (siConcept b, siHeader b, siObjs b)
+    (Box {}, InterfaceRef {}) -> GT
+    (InterfaceRef {}, InterfaceRef {}) -> compare (siIsLink a, siIfcId a) (siIsLink b, siIfcId b)
+    (InterfaceRef {}, Box {}) -> LT
+
+instance Eq SubInterface where
+  a == b = compare a b == EQ
+
+instance Unique SubInterface where
+  showUnique si@Box {} = (showUnique . siHeader) si <> (showUnique . siObjs) si
+  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si <> siIfcId si
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
@@ -808,18 +848,19 @@ data Purpose = Expl
   }
   deriving (Show, Typeable)
 
---instance Eq Purpose where
+-- instance Eq Purpose where
 --  a == b = compare a b == EQ
 
 instance Ord Purpose where
   compare a b = case compare (explObj a) (explObj b) of
     EQ ->
       fromMaybe
-        ( fatal . T.intercalate "\n" $
-            [ "Purpose should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
+        ( fatal
+            . T.intercalate "\n"
+            $ [ "Purpose should have a non-fuzzy Origin.",
+                tshow (origin a),
+                tshow (origin b)
+              ]
         )
         (maybeOrdering (origin a) (origin b))
     x -> x
@@ -920,13 +961,13 @@ showValSQL val =
           Nothing -> mempty
           Just (h, tl)
             | h `elem` ['\'', '\\'] ->
-              T.cons h (T.cons h (f tl))
+                T.cons h (T.cons h (f tl))
             | otherwise -> T.cons h (f tl)
     AAVInteger {} -> tshow (aavint val)
     AAVBoolean {} -> tshow (aavbool val)
     AAVDate {} -> singleQuote . T.pack $ showGregorian (aadateDay val)
-    AAVDateTime {} -> singleQuote . T.pack $ formatTime defaultTimeLocale "%F %T" (aadatetime val) --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
-    --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+    AAVDateTime {} -> singleQuote . T.pack $ formatTime defaultTimeLocale "%F %T" (aadatetime val) -- NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+    -- formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
     AAVFloat {} -> tshow (aavflt val)
     AtomValueOfONE {} -> "1"
 
@@ -1181,7 +1222,7 @@ instance HasSignature Expression where
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c
 
-showSign :: HasSignature a => a -> Text
+showSign :: (HasSignature a) => a -> Text
 showSign x = let Sign s t = sign x in "[" <> name s <> "*" <> name t <> "]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
@@ -1199,7 +1240,7 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (ECps (e, EDcI {})) = getRelation e
     getRelation (ECps (EDcI {}, e)) = getRelation e
     getRelation (ECps (e1, e2)) =
-      case (getRelation e1, getRelation e2) of --note: target e1==source e2
+      case (getRelation e1, getRelation e2) of -- note: target e1==source e2
         (Just (_, Nothing, i1, _), Just (i2, Nothing, _, _))
           | i1 == target e1 && i2 == source e2 -> Just (i1, Nothing, i2, False)
           | i1 == target e1 && i2 /= source e2 -> Just (i2, Nothing, i2, False)
@@ -1249,7 +1290,7 @@ instance Eq A_Concept where
 -}
 
 instance Unique AConceptDef where
-  showUnique = tshow . name
+  showUnique = name
 
 instance Unique A_Concept where
   showUnique = tshow
@@ -1272,7 +1313,7 @@ instance Show A_Concept where
 -- | special type of Show, for types that can have aliases. Its purpose is
 --   to use when giving feedback to the ampersand modeler, in cases aliases
 --   are used.
-class Show a => ShowWithAliases a where
+class (Show a) => ShowWithAliases a where
   showWithAliases :: a -> Text
   -- Default is to just use show. This makes it easier to use showAliases
   -- at more places, even if there is not a specific implementation
@@ -1385,22 +1426,23 @@ safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
   case unsafePAtomVal2AtomValue typ (Just c) val of
     Left _ ->
-      fatal . T.intercalate "\n  " $
-        [ "This should be impossible: after checking everything an unhandled singleton value found!",
-          "Concept: " <> tshow c,
-          "TType: " <> tshow typ,
-          "Origin: " <> tshow (origin val),
-          "PAtomValue: " <> case val of
-            (PSingleton _ _ v) -> "PSingleton (" <> tshow v <> ")"
-            (ScriptString _ v) -> "ScriptString (" <> tshow v <> ")"
-            (XlsxString _ v) -> "XlsxString (" <> tshow v <> ")"
-            (ScriptInt _ v) -> "ScriptInt (" <> tshow v <> ")"
-            (ScriptFloat _ v) -> "ScriptFloat (" <> tshow v <> ")"
-            (XlsxDouble _ v) -> "XlsxDouble (" <> tshow v <> ")"
-            (ComnBool _ v) -> "ComnBool (" <> tshow v <> ")"
-            (ScriptDate _ v) -> "ScriptDate (" <> tshow v <> ")"
-            (ScriptDateTime _ v) -> "ScriptDateTime (" <> tshow v <> ")"
-        ]
+      fatal
+        . T.intercalate "\n  "
+        $ [ "This should be impossible: after checking everything an unhandled singleton value found!",
+            "Concept: " <> tshow c,
+            "TType: " <> tshow typ,
+            "Origin: " <> tshow (origin val),
+            "PAtomValue: " <> case val of
+              (PSingleton _ _ v) -> "PSingleton (" <> tshow v <> ")"
+              (ScriptString _ v) -> "ScriptString (" <> tshow v <> ")"
+              (XlsxString _ v) -> "XlsxString (" <> tshow v <> ")"
+              (ScriptInt _ v) -> "ScriptInt (" <> tshow v <> ")"
+              (ScriptFloat _ v) -> "ScriptFloat (" <> tshow v <> ")"
+              (XlsxDouble _ v) -> "XlsxDouble (" <> tshow v <> ")"
+              (ComnBool _ v) -> "ComnBool (" <> tshow v <> ")"
+              (ScriptDate _ v) -> "ScriptDate (" <> tshow v <> ")"
+              (ScriptDateTime _ v) -> "ScriptDateTime (" <> tshow v <> ")"
+          ]
     Right x -> x
   where
     typ = representationOf ci c
@@ -1420,14 +1462,14 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             AAVDateTime t x ->
               -- Rounding is needed, to maximize the number of databases
               -- on wich this runs. (MySQL 5.5 only knows seconds)
-              AAVDateTime t (truncateByFormat x)
+              AAVDateTime t roundBySeconds
               where
-                truncateByFormat :: UTCTime -> UTCTime
-                truncateByFormat = f (parseTimeOrError True) . f formatTime
+                picosecondsInASecond = 1000000000000
+                roundBySeconds :: UTCTime
+                roundBySeconds = x {utctDayTime = rounded (utctDayTime x)}
                   where
-                    format = iso8601DateFormat (Just "%H:%M:%S")
-                    --    f:: TimeLocale -> Text -> typ
-                    f fun = fun defaultTimeLocale format
+                    rounded :: DiffTime -> DiffTime
+                    rounded = picosecondsToDiffTime . quot picosecondsInASecond . diffTimeToPicoseconds
             _ -> rawVal
   where
     unsafePAtomVal2AtomValue' :: Either Text AAtomValue
@@ -1594,16 +1636,16 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                   Nothing -> True
                   Just ('.', afterDot) -> T.all (== '0') afterDot
                   _ -> False
-        message :: Show x => Origin -> x -> Text
+        message :: (Show x) => Origin -> x -> Text
         message orig x =
-          T.intercalate "\n    " $
-            [ "Representation mismatch",
-              "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
-              "as representation of an atom in concept `" <> name c <> "`.",
-              "However, the representation-type of that concept is " <> implicitly,
-              "defined as " <> tshow typ <> ". The found value does not match that type."
-            ]
-              <> example
+          T.intercalate "\n    "
+            $ [ "Representation mismatch",
+                "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
+                "as representation of an atom in concept `" <> name c <> "`.",
+                "However, the representation-type of that concept is " <> implicitly,
+                "defined as " <> tshow typ <> ". The found value does not match that type."
+              ]
+            <> example
           where
             c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
             implicitly = if typ == Object then "(implicitly) " else ""
