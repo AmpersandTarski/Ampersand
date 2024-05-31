@@ -483,7 +483,7 @@ instance JSON.FromJSON PPurpose where
     where
       build :: Text -> PRef2Obj -> PPurpose
       build mrk obj =
-        PRef2
+        PPurpose
           { pos = OriginAtlas, -- Voorbeeldwaarde
             pexObj = obj, -- Je moet bepalen hoe je PRef2Obj wilt invullen
             pexMarkup = P_Markup Nothing Nothing mrk, -- Direct gebruik van `meaning` als pexMarkup

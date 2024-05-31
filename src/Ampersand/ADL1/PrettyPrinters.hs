@@ -394,7 +394,7 @@ instance Pretty (P_ViewSegmtPayLoad TermPrim) where
   pretty (P_ViewText txt) = text "TXT" <+> quote txt
 
 instance Pretty PPurpose where
-  pretty (PRef2 _ obj markup refIds) =
+  pretty (PPurpose _ obj markup refIds) =
     text "PURPOSE" <~> obj <~> lang
       <+> refs refIds
         <+\> quotePurpose (mString markup)

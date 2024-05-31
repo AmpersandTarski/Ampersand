@@ -429,7 +429,7 @@ instance PrettyMo (P_ViewSegmtPayLoad TermPrim) where
   prettyMo (P_ViewText txt) = text "TXT" <+> quote txt
 
 instance PrettyMo PPurpose where
-  prettyMo (PRef2 _ obj markup refIds) =
+  prettyMo (PPurpose _ obj markup refIds) =
     text "PURPOSE" <~> obj <~!> lang
       <+> refs refIds
         <+\> quotePurpose (mString markup)
