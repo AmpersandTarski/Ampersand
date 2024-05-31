@@ -15,23 +15,23 @@ import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial (replace)
 import Text.PrettyPrint.Leijen
 
-prettyPrint :: Pretty a => a -> Text
+prettyPrint :: (Pretty a) => a -> Text
 prettyPrint x = T.pack $ displayS (renderPretty rfrac col_width doc) ""
   where
     col_width = 120
     rfrac = 0.4
     doc = pretty x
 
-(<~>) :: Pretty b => Doc -> b -> Doc
+(<~>) :: (Pretty b) => Doc -> b -> Doc
 (<~>) a b = a <+> pretty b
 
 (<+\>) :: Doc -> Doc -> Doc
 (<+\>) a b = a <$$> b
 
-(<~\>) :: Pretty b => Doc -> b -> Doc
+(<~\>) :: (Pretty b) => Doc -> b -> Doc
 (<~\>) a b = a <+\> pretty b
 
-perline :: Pretty a => [a] -> Doc
+perline :: (Pretty a) => [a] -> Doc
 perline = vsep . map pretty
 
 quote :: Text -> Doc
@@ -50,7 +50,7 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
       | T.null needle = fatal "Empty needle."
       | otherwise -- replace is now safe to use, because we have a non-empty needle
         =
-        Partial.replace needle replacement haystack
+          Partial.replace needle replacement haystack
 
 isId :: Text -> Bool
 isId xs =
@@ -74,42 +74,42 @@ maybeQuote a = if isId a then (text . T.unpack) a else quote a
 quoteConcept :: Text -> Doc
 quoteConcept a = if isUpperId a then (text . T.unpack) a else quote a
 
-prettyhsep :: Pretty a => [a] -> Doc
+prettyhsep :: (Pretty a) => [a] -> Doc
 prettyhsep = hsep . map pretty
 
 commas :: [Doc] -> Doc
 commas = encloseSep empty empty comma
 
-listOf :: Pretty a => [a] -> Doc
+listOf :: (Pretty a) => [a] -> Doc
 listOf = commas . map pretty
 
-listOf1 :: Pretty a => NE.NonEmpty a -> Doc
+listOf1 :: (Pretty a) => NE.NonEmpty a -> Doc
 listOf1 = listOf . NE.toList
 
-separate :: Pretty a => Text -> [a] -> Doc
+separate :: (Pretty a) => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty P_Context where
   pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
       <+> quoteConcept nm
-      <~> lang
-      <~> markup
-      <+\> perline metas
-      <+\> perline ps
-      <+\> perline pats
-      <+\> perline rs
-      <+\> perlineRelations ds
-      <+\> perline cs
-      <+\> perline ks
-      <+\> perline rrules
-      <+\> perline reprs
-      <+\> perline vs
-      <+\> perline gs
-      <+\> perline ifcs
-      <+\> perline pops
-      <+\> perline enfs
-      <+\> text "ENDCONTEXT"
+        <~> lang
+        <~> markup
+        <+\> perline metas
+        <+\> perline ps
+        <+\> perline pats
+        <+\> perline rs
+        <+\> perlineRelations ds
+        <+\> perline cs
+        <+\> perline ks
+        <+\> perline rrules
+        <+\> perline reprs
+        <+\> perline vs
+        <+\> perline gs
+        <+\> perline ifcs
+        <+\> perline pops
+        <+\> perline enfs
+        <+\> text "ENDCONTEXT"
 
 perlineRelations :: [P_Relation] -> Doc
 perlineRelations ds =
@@ -135,24 +135,24 @@ instance Pretty P_Pattern where
   pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
       <+> quoteConcept nm
-      <+\> perline rls
-      <+\> perline gns
-      <+\> perline dcs
-      <+\> perline rruls
-      <+\> perline reprs
-      <+\> perline cds
-      <+\> perline ids
-      <+\> perline vds
-      <+\> perline xps
-      <+\> perline pop
-      <+\> perline enfs
-      <+\> text "ENDPATTERN"
+        <+\> perline rls
+        <+\> perline gns
+        <+\> perline dcs
+        <+\> perline rruls
+        <+\> perline reprs
+        <+\> perline cds
+        <+\> perline ids
+        <+\> perline vds
+        <+\> perline xps
+        <+\> perline pop
+        <+\> perline enfs
+        <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
   pretty (P_Relation nm sign prps dflts pragma mean _) =
     text "RELATION"
       <+> (text . T.unpack) nm <~> sign
-      <+> props       -- todo: make this <~> props
+      <+> props -- todo: make this <~> props
       <+> if null dflts
         then empty
         else
@@ -168,7 +168,7 @@ instance Pretty P_Relation where
 instance Pretty Pragma where
   pretty (Pragma _ l m r) = text "PRAGMA" <+> hsep (map quote [l, m, r])
 
-instance Pretty a => Pretty (Term a) where
+instance (Pretty a) => Pretty (Term a) where
   pretty p = case p of
     Prim a -> pretty a
     -- level 0 (rule)
@@ -233,11 +233,12 @@ instance Pretty SrcOrTgt where
 
 instance Pretty (P_Rule TermPrim) where
   pretty (P_Rule _ nm expr mean msg viol) =
-    text "RULE" <+> rName
-      <~> expr
-      <+\> perline mean
-      <+\> perline msg
-      <~\> viol
+    text "RULE"
+      <+> rName
+        <~> expr
+        <+\> perline mean
+        <+\> perline msg
+        <~\> viol
     where
       rName =
         if T.null nm
@@ -246,8 +247,10 @@ instance Pretty (P_Rule TermPrim) where
 
 instance Pretty (P_Enforce TermPrim) where
   pretty (P_Enforce _ rel op expr) =
-    text "ENFORCE" <+> pretty rel <+> pretty op
-      <~> expr
+    text "ENFORCE"
+      <+> pretty rel
+      <+> pretty op
+        <~> expr
 
 instance Pretty EnforceOperator where
   pretty op = case op of
@@ -258,7 +261,8 @@ instance Pretty EnforceOperator where
 instance Pretty PConceptDef where
   pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
     =
-    text "CONCEPT" <+> quoteConcept cpt
+    text "CONCEPT"
+      <+> quoteConcept cpt
       <+> pretty def <+\> perline mean
 
 instance Pretty PCDDef where
@@ -285,7 +289,8 @@ instance Pretty TType where
 
 instance Pretty P_Interface where
   pretty (P_Ifc isAPI nm roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm
+    text (if isAPI then "API " else "INTERFACE ")
+      <+> maybeQuote nm
       <+> iroles
       <+> ( case obj of
               P_BxExpr {} ->
@@ -298,9 +303,10 @@ instance Pretty P_Interface where
           then empty
           else text "FOR" <+> listOf roles
 
-instance Pretty a => Pretty (P_BoxItem a) where
+instance (Pretty a) => Pretty (P_BoxItem a) where
   pretty obj =
-    maybeQuote (name obj) <+> text ":"
+    maybeQuote (name obj)
+      <+> text ":"
       <+> case obj of
         (P_BxExpr _ _ ctx mCrud mView msub) ->
           nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
@@ -315,7 +321,7 @@ instance Pretty a => Pretty (P_BoxItem a) where
 instance Pretty P_Cruds where
   pretty (P_Cruds _ str) = (text . T.unpack) str
 
-instance Pretty a => Pretty (P_SubIfc a) where
+instance (Pretty a) => Pretty (P_SubIfc a) where
   pretty p = case p of
     P_Box _ c bs -> boxSpec c <+> text "[" <> listOf bs <> text "]"
     P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO " else "") ++ "INTERFACE") <+> maybeQuote str
@@ -347,7 +353,8 @@ instance Pretty (P_IdentSegmnt TermPrim) where
           <+> (view . fmap T.unpack) mView
       (P_BxTxt nm _ str) ->
         maybeQuote nm
-          <~> text "TXT" <+> quote str
+          <~> text "TXT"
+          <+> quote str
     where
       view Nothing = empty
       view (Just v) = pretty v
@@ -355,15 +362,20 @@ instance Pretty (P_IdentSegmnt TermPrim) where
 instance Pretty P_ViewDef where
   pretty (P_Vd _ lbl cpt True Nothing ats) =
     -- legacy syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
-      <~> cpt <+> parens (listOf ats)
+    text "VIEW"
+      <+> maybeQuote lbl
+      <+> text ":"
+        <~> cpt
+      <+> parens (listOf ats)
   pretty (P_Vd _ lbl cpt isDefault html ats) =
     -- new syntax
-    text "VIEW" <+> maybeQuote lbl <+> text ":"
-      <~> cpt
+    text "VIEW"
+      <+> maybeQuote lbl
+      <+> text ":"
+        <~> cpt
       <+> (if isDefault then text "DEFAULT" else empty)
       <+> braces (listOf ats)
-      <~> html
+        <~> html
       <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
@@ -383,8 +395,9 @@ instance Pretty (P_ViewSegmtPayLoad TermPrim) where
 
 instance Pretty PPurpose where
   pretty (PRef2 _ obj markup refIds) =
-    text "PURPOSE" <~> obj <~> lang <+> refs refIds
-      <+\> quotePurpose (mString markup)
+    text "PURPOSE" <~> obj <~> lang
+      <+> refs refIds
+        <+\> quotePurpose (mString markup)
     where
       lang = mFormat markup
       refs rs =
@@ -420,7 +433,8 @@ instance Pretty PClassify where
   pretty p =
     case p of
       PClassify _ spc gen ->
-        text "CLASSIFY" <+> pretty spc
+        text "CLASSIFY"
+          <+> pretty spc
           <+> ( case (NE.length gen, NE.filter (spc /=) gen) of
                   (2, [x]) -> text "ISA" <~> x
                   _ -> text "IS" <+> separate "/\\" (NE.toList gen)
@@ -449,9 +463,11 @@ instance Pretty PRelationDefault where
 
 instance Pretty PAtomPair where
   pretty (PPair _ l r) =
-    text "(" <+> pretty l
-      <~> text "," <+> pretty r
-      <~> text ")"
+    text "("
+      <+> pretty l
+        <~> text ","
+      <+> pretty r
+        <~> text ")"
 
 instance Pretty PAtomValue where
   pretty pav =
