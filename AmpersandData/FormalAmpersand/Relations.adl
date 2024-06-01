@@ -2,6 +2,10 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN FormalAmpersand.Relations
+
+CONCEPT FormalAmpersand.Relation "A relation is a set of pairs."
+CONCEPT FormalAmpersand.Signature "A signature is a pair of concepts."
+
 RELATION FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT FormalAmpersand.Relation: FormalAmpersand.Relation( 
@@ -18,7 +22,7 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 
 RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-REPRESENT FormalAmpersand.RelationName TYPE ALPHANUMERIC
+CLASSIFY FormalAmpersand.RelationName ISA Name
     ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRelationName
     RULE FormalAmpersand.DelUnusedRelationName LABEL "del unused RelationName" : I[FormalAmpersand.RelationName] |- FormalAmpersand.name~;FormalAmpersand.name
     MEANING "A RelationName without relation will be removed."
@@ -33,6 +37,7 @@ MEANING "The source of a signature."
 RELATION FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
+CONCEPT FormalAmpersand.BindedRelation ""
 RELATION FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation][UNI]
 ROLE ExecEngine MAINTAINS FormalAmpersand.bindTotal
 RULE FormalAmpersand.bindTotal : I[FormalAmpersand.BindedRelation] |- FormalAmpersand.bind;FormalAmpersand.bind~

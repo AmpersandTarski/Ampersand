@@ -6,7 +6,6 @@ PURPOSE PATTERN FormalAmpersand.Rules
 in order to formalize rules and determine their meaning.
 +}
 
-CONCEPT FormalAmpersand.Rule "A rule is a statement that must be true in each context in which it is valid."
 PURPOSE CONCEPT FormalAmpersand.Rule
 {+
 Rules are used as a concrete reason for people to act, feel or believe.

@@ -25,7 +25,7 @@ VIEW FormalAmpersand.Signature: FormalAmpersand.Signature( TXT "[" , FormalAmper
 
 PATTERN FormalAmpersand.Context
     CONCEPT FormalAmpersand.Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-    REPRESENT FormalAmpersand.ContextName TYPE ALPHANUMERIC
+    CLASSIFY FormalAmpersand.ContextName ISA FormalAmpersand.Name
     RELATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedContextName
@@ -54,7 +54,7 @@ PATTERN FormalAmpersand.Context
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
     RELATION FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
                                                 --   which are not property- and not identity rules. See ViewPoint.hs
-    RELATION FormalAmpersand.proprules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]      -- ^ all property rules the user has declared within this context including the patterns it contains.
+    -- RELATION FormalAmpersand.proprules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI] -- This relation removed to prevent execengine work in the atlas. This relation can be calculated via the `Rule`.
     RELATION FormalAmpersand.identityRules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
     -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a property rule, or identity rule
   
@@ -125,6 +125,7 @@ PATTERN FormalAmpersand.Validity
     RELATION FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "A rule/context pair in the relation `valid[Rule*Context]` means that this rule exists with the context."
     ROLE ExecEngine MAINTAINS FormalAmpersand.validRules
+
     RULE FormalAmpersand.validRules : FormalAmpersand.patRules[FormalAmpersand.Pattern*FormalAmpersand.Rule]~;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] |- FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
     VIOLATION (TXT "{EX} InsPair;FormalAmpersand.valid;FormalAmpersand.Rule;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)

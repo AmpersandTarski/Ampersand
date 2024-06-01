@@ -1,0 +1,211 @@
+CONTEXT FormalAmpersand IN ENGLISH
+-- The comments for this script can be found in Terms.docadl
+INCLUDE "Terms.adl"
+
+PURPOSE CONCEPT FormalAmpersand.Signature
+{+Every relation gets a signature when declared, for the purpose of classifying atoms in that relation.+}
+
+PURPOSE RELATION FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept]
+{+The src-concept of a signature corresponds to the source concept of a relation, which serves the purpose of classifying all atoms as instances of that concept.
+The relation FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept] is filled automatically, by means of rule "signatureSrc".
++}
+PURPOSE RELATION FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept]
+{+The tgt-concept of a signature corresponds to the target concept of a relation, which serves the purpose of classifying all atoms as instances of that concept.
+The relation FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] is filled automatically, by means of rule "signatureTgt".
++}
+PURPOSE RELATION FormalAmpersand.signature[FormalAmpersand.Relation*FormalAmpersand.Signature]
+{+Every relation must be declared and every relation determines the signature.
+That signature is stored in the relation FormalAmpersand.signature[FormalAmpersand.Relation*FormalAmpersand.Signature] by means of rule "FormalAmpersand.totSign"
++}
+PURPOSE RULE FormalAmpersand.totSign
+{+The totality of relation FormalAmpersand.signature[FormalAmpersand.Relation*FormalAmpersand.Signature] is maintained automatically by creating a new signature for every new relation.
++}
+
+PURPOSE RULE FormalAmpersand.signatureSrcIns
+{+The relation FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept] must be filled automatically as soon as a new signature is made.+}
+PURPOSE RULE FormalAmpersand.signatureTgtIns
+{+The relation FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] must be filled automatically as soon as a new signature is made.+}
+PURPOSE RULE FormalAmpersand.signatureSrcDel
+{+The relation FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept] must be cleared automatically as soon as a signature is deleted.+}
+PURPOSE RULE FormalAmpersand.signatureTgtDel
+{+The relation FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] must be cleared automatically as soon as a signature is deleted.+}
+
+CONCEPT FormalAmpersand.TypeTerm "A type-term represents a set of atoms."
+PURPOSE CONCEPT FormalAmpersand.TypeTerm
+{+
+For term t we will use type-term dom(t) to represent the set of atoms in the domain of t.
+Likewise, we will use type-term cod(t) to represent the set of atoms in the codomain of t.
+The set of atoms associated with a concept c will be represented by the type-term pop(c).
++}
+
+PURPOSE RELATION FormalAmpersand.repr[FormalAmpersand.Term*FormalAmpersand.Representation]
+{+In order to define type-terms, we must have an injective representation for terms.
+With that representation, the system can construct all kinds of type terms from which the originating term can be determined.
++}
+
+PURPOSE RELATION FormalAmpersand.dom[FormalAmpersand.Term*FormalAmpersand.TypeTerm]
+{+In order to associate a type-term dom(t) with every term t, we use the function dom.
+Its totality is maintained automatically by rule "dom is total".
++}
+
+PURPOSE RULE "dom is total"
+{+In order to ensure that dom(t) is defined for every term t,
+the system uses a representation from which the original term can be reconstructed.
+Momentarily, this hinges on the representation, which is specified by hand or by the meatgrinder.
++}
+
+PURPOSE RELATION FormalAmpersand.cod[FormalAmpersand.Term*FormalAmpersand.TypeTerm]
+{+In order to associate a type-term cod(t) with every term t, we use the function cod.
+Its totality is maintained automatically by rule "cod is total".
++}
+
+PURPOSE RULE "cod is total"
+{+In order to ensure that cod(t) is defined for every term t,
+the system uses a representation from which the original term can be reconstructed.
+Momentarily, this hinges on the representation, which is specified by hand or by the meatgrinder.
++}
+
+
+PURPOSE RELATION FormalAmpersand.pretype[FormalAmpersand.TypeTerm*FormalAmpersand.Concept]
+{+
++}
+
+PURPOSE RELATION FormalAmpersand.sub[TypeTerm*FormalAmpersand.TypeTerm]
+{+
++}
+
+PURPOSE RELATION FormalAmpersand.typehalf[FormalAmpersand.Term*FormalAmpersand.Signature]
+{+
++}
+
+-- ROLE ExecEngine MAINTAINS "dom pretype id"
+-- PURPOSE RULE "dom pretype id"
+-- {+
+-- +}
+-- : id;dom |- pretype~
+-- VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+
+-- ROLE ExecEngine MAINTAINS "cod pretype id"
+-- PURPOSE RULE "cod pretype id"
+-- {+
+-- +}
+-- : id;cod |- pretype~
+-- VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+
+-- PURPOSE RELATION popset[Concept*TypeTerm]
+-- {+
+-- +}
+-- [UNI] -- TOT is computed by the exec-engine
+-- ROLE ExecEngine MAINTAINS "popset is total"
+-- PURPOSE RULE "popset is total" : I[Concept] |- popset;popset~
+-- VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
+
+-- ROLE ExecEngine MAINTAINS "Insert into pretype"
+-- PURPOSE RULE "Insert into pretype"
+-- {+
+-- +}
+-- : subs;popset~ |- pretype
+-- VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
+
+-- ROLE ExecEngine MAINTAINS "dom pretype vee"
+-- PURPOSE RULE "dom pretype vee"
+-- {+
+-- +}
+-- : src~;vee;dom |- pretype~
+-- VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+
+-- ROLE ExecEngine MAINTAINS "cod pretype vee"
+-- PURPOSE RULE "cod pretype vee"
+-- {+
+-- +}
+-- : tgt~;vee;cod |- pretype~
+-- VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+
+-- PURPOSE RELATION sub[TypeTerm*TypeTerm]
+-- {+
+-- +}
+
+-- MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
+-- PURPOSE RELATION subs[TypeTerm*TypeTerm]
+-- {+
+-- +}
+
+-- MEANING "s subs g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
+-- ROLE ExecEngine MAINTAINS subsIns
+-- PURPOSE RULE subsIns
+-- {+
+-- +}
+-- : sub;subs\/subs;sub\/I |- subs
+-- VIOLATION (TXT "{EX}_; InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+-- ROLE ExecEngine MAINTAINS subsDel
+-- PURPOSE RULE subsDel
+-- {+
+-- +}
+-- : subs |- sub;subs\/subs;sub\/I
+-- VIOLATION (TXT "{EX}_; DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+-- ROLE ExecEngine MAINTAINS "INS isa INTO sub"
+-- PURPOSE RULE "INS isa INTO sub"
+-- {+
+-- +}
+-- : popset~;isa;popset |- sub
+-- VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+-- ROLE "Type Checker" MAINTAINS "Unambiguous pretype"
+-- PURPOSE RULE "Unambiguous pretype"
+-- {+
+-- +}
+-- : pretype~;pretype |- I[Concept] - isaStar;isaStar~
+-- MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
+-- ROLE "Type Checker" MAINTAINS "Complete pretype"
+-- PURPOSE RULE "Complete pretype"
+-- {+
+-- +}
+-- : I[TypeTerm] |- pretype;pretype~
+-- MEANING "Every type-term must have a concept as its pretype."
+
+-- ROLE ExecEngine MAINTAINS "Every V-term has a representation"
+-- PURPOSE RULE "Every V-term has a representation"
+-- {+
+-- +}
+-- : vee |- vee;repr;repr~
+-- VIOLATION (TXT "{EX}_; InsPair_;repr_;Term_;", SRC vee, TXT "_;Representation_;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
+
+-- {-
+-- PURPOSE RELATION partOf[Concept*Typology]
+-- {+
+-- +}
+-- [UNI,TOT]
+-- MEANING "Every concept is part of exactly one typology"
+
+-- PURPOSE RULE "typologies"
+-- {+
+-- +}
+-- : isa;partOf |- partOf
+-- MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
+
+-- PURPOSE RULE "Integrity of Atoms and populations"
+-- {+
+-- +}
+-- : partOf~;pop~;pop;partOf |- I
+-- MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
+-- +}
+
+
+-- PURPOSE RELATION isaStar[Signature]
+-- {+
+-- +}
+
+-- ROLE ExecEngine MAINTAINS signatureIsasIns, signatureIsasDel
+-- PURPOSE RULE signatureIsasIns
+-- {+
+-- +}
+-- : src;isaStar;src~ /\ tgt;isaStar;tgt~ |- isaStar[Signature]
+-- VIOLATION (TXT "{EX} InsPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+-- PURPOSE RULE signatureIsasDel
+-- {+
+-- +}
+-- : isaStar[Signature] |- src;isaStar;src~ /\ tgt;isaStar;tgt~
+-- VIOLATION (TXT "{EX} DelPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+
+ENDCONTEXT

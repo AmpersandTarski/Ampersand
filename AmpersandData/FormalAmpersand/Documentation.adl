@@ -3,13 +3,32 @@ PURPOSE PATTERN FormalAmpersand.Documentation
 {+
 +}
 PATTERN FormalAmpersand.Documentation
-    REPRESENT FormalAmpersand.ConceptDefinition TYPE BIGALPHANUMERIC
+    CONCEPT FormalAmpersand.Purpose ""
+    CONCEPT FormalAmpersand.Meaning ""
+    -- CLASSIFY Meaning ISA Markup See issue https://github.com/AmpersandTarski/Ampersand/issues/1484
+    -- CLASSIFY Markup ISA Meaning
+    CONCEPT FormalAmpersand.MarkupText ""
+    CONCEPT FormalAmpersand.Markup ""
+
+    RELATION FormalAmpersand.language[FormalAmpersand.Markup*FormalAmpersand.Language][UNI,TOT]
+    RELATION FormalAmpersand.text[FormalAmpersand.Markup*FormalAmpersand.MarkupText][UNI,TOT]
+    RULE FormalAmpersand.enumerationOfLanguage : I[FormalAmpersand.FormalAmpersand.Language] = "Dutch" \/ "English" 
+    POPULATION FormalAmpersand.Language CONTAINS ["Dutch", "English" ]
+    RELATION FormalAmpersand.origin[FormalAmpersand.Purpose*FormalAmpersand.Origin][]
+    RELATION FormalAmpersand.explMarkup[FormalAmpersand.Purpose*FormalAmpersand.Markup][TOT,UNI]
+    RELATION FormalAmpersand.explRefIds[FormalAmpersand.Purpose*FormalAmpersand.Text]
+    MEANING "Refers to an authoritative source to legitimize the purpose."
+
+    -- TODO: Specify the rule that each purpose must be the purpose of a concept, pattern relation etc. whatever.
+
+
 
     REPRESENT FormalAmpersand.MarkupText TYPE BIGALPHANUMERIC    
     RELATION FormalAmpersand.meaning[FormalAmpersand.Rule*FormalAmpersand.Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
     MEANING "The meanings of a relation."
     RELATION FormalAmpersand.decMean[FormalAmpersand.Relation * FormalAmpersand.Meaning]
     MEANING "The meanings of a relation."
+    RELATION FormalAmpersand.meaning[FormalAmpersand.ConceptDef*FormalAmpersand.Meaning]
     RELATION FormalAmpersand.purpose[FormalAmpersand.Pattern*FormalAmpersand.Purpose]
     MEANING "The purposes of a pattern."
     RELATION FormalAmpersand.purpose[FormalAmpersand.Relation * FormalAmpersand.Purpose]

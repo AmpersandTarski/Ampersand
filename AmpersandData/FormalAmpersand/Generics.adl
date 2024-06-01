@@ -22,11 +22,12 @@ REPRESENT FormalAmpersand.AmpersandVersion TYPE ALPHANUMERIC
 RELATION FormalAmpersand.pairView[FormalAmpersand.Rule*FormalAmpersand.PairView] -- e.g. 
 RELATION FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment] [SUR,INJ]
 RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.Int] [UNI,TOT]
-RELATION FormalAmpersand.segmentType[FormalAmpersand.PairViewSegment*FormalAmpersand.PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
+-- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
 RELATION FormalAmpersand.text[FormalAmpersand.PairViewSegment*FormalAmpersand.String] [UNI] -- IFF segmentType == 'Text'
 RELATION FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
-RELATION FormalAmpersand.expTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.Concept] [UNI] -- IFF SegmentType == 'Exp'
-RELATION FormalAmpersand.expSQL[FormalAmpersand.PairViewSegment*FormalAmpersand.MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary: RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+RELATION FormalAmpersand.pvsExp[FormalAmpersand.PairViewSegment*FormalAmpersand.Term] [UNI]
 
 
 
@@ -36,7 +37,7 @@ RELATION FormalAmpersand.rcConjunct[FormalAmpersand.Conjunct*FormalAmpersand.Ter
 ROLE ExecEngine MAINTAINS FormalAmpersand.conjunctTotal
 RULE FormalAmpersand.conjunctTotal : I[FormalAmpersand.Conjunct] |- FormalAmpersand.rcConjunct;FormalAmpersand.rcConjunct~
 -- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
-VIOLATION ( TXT "{EX} FormalAmpersand.DelAtom;FormalAmpersand.Conjunct;", SRC I )
+VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 
 RELATION FormalAmpersand.originatesFrom[FormalAmpersand.Conjunct*FormalAmpersand.Rule] -- rule where the conjunct originates from.
 ROLE ExecEngine MAINTAINS FormalAmpersand.originatesFromTotal
@@ -50,7 +51,7 @@ VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 -- TODO: IDENT Role: Role(name[Role*RoleName], allRoles[Context*Role]~)
 RELATION FormalAmpersand.allRoles[FormalAmpersand.Context*FormalAmpersand.Role] [INJ]
 RELATION FormalAmpersand.name[FormalAmpersand.Role*FormalAmpersand.RoleName] [UNI]
-REPRESENT FormalAmpersand.RoleName TYPE ALPHANUMERIC
+CLASSIFY FormalAmpersand.RoleName ISA FormalAmpersand.Name
 RELATION FormalAmpersand.maintains[FormalAmpersand.Role*FormalAmpersand.Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 RELATION FormalAmpersand.interfaces[FormalAmpersand.Role*FormalAmpersand.Interface]
 
