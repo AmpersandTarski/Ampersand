@@ -38,9 +38,10 @@ mkCrudInfo allConceptsPrim decls allIfcs =
 
     transSurjClosureMap :: Map.Map A_Concept [A_Concept]
     transSurjClosureMap =
-      transClosureMap' . Map.fromListWith L.union $
-        (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls)
-          <> (map mkMapItem . filter isTot . map EDcD $ Set.elems decls)
+      transClosureMap'
+        . Map.fromListWith L.union
+        $ (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls)
+        <> (map mkMapItem . filter isTot . map EDcD $ Set.elems decls)
       where
         -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
 
@@ -96,20 +97,20 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where
     getExprs :: ObjectDef -> [Expression]
     getExprs objExpr =
-      objExpression objExpr :
-      case objmsub objExpr of
-        Nothing -> []
-        Just si -> case si of
-          InterfaceRef {siIsLink = True} -> []
-          InterfaceRef {siIsLink = False} ->
-            case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-              [] -> fatal ("Referenced interface " <> siIfcId si <> " missing")
-              (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
-              [i] -> getAllInterfaceExprs allIfcs i
-          Box {} -> concatMap getExprs' (siObjs si)
-          where
-            getExprs' (BxExpr e) = getExprs e
-            getExprs' (BxTxt _) = []
+      objExpression objExpr
+        : case objmsub objExpr of
+          Nothing -> []
+          Just si -> case si of
+            InterfaceRef {siIsLink = True} -> []
+            InterfaceRef {siIsLink = False} ->
+              case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
+                [] -> fatal ("Referenced interface " <> siIfcId si <> " missing")
+                (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
+                [i] -> getAllInterfaceExprs allIfcs i
+            Box {} -> concatMap getExprs' (siObjs si)
+            where
+              getExprs' (BxExpr e) = getExprs e
+              getExprs' (BxTxt _) = []
 
 getCrudObjsPerConcept ::
   [(Interface, [(A_Concept, Bool, Bool, Bool, Bool)])] ->
