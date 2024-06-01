@@ -314,7 +314,96 @@ lexMarkup = lexMarkup' ""
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the UTCTime, the amount of read characters and the rest of the text
 getDateTime :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
-getDateTime cs = case readUniversalTime cs of
+getDateTime cs =
+  case getDate cs of
+    Nothing -> Nothing
+    Just (_, day, ld, rd) -> case getTime rd of
+      Nothing -> case rd of
+        'T' : _ -> Just . Left $ ProblematicISO8601DateTime
+        _ -> getDateTime' cs -- Here we try the ohter notation of time
+      Just (timeOfDay, tzoneOffset, lt, rt) ->
+        let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
+         in Just . Right $ (LexDateTime ucttime, ucttime, ld + lt, rt)
+
+getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
+getTime cs =
+  case cs of
+    'T' : h1 : h2 : ':' : m1 : m2 : rest ->
+      if all isDigit [h1, h2, m1, m2]
+        then
+          let hours = case getNumber [h1, h2] of
+                (_, Left val, _, _) -> val
+                _ -> fatal "Impossible, for h1 and h2 are digits"
+              minutes = case getNumber [m1, m2] of
+                (_, Left val, _, _) -> val
+                _ -> fatal "Impossible, for m1 and m2 are digits"
+              (seconds, ls, rs) = getSeconds rest
+           in case getTZD rs of
+                Nothing -> Nothing
+                Just (offset, lo, ro) ->
+                  if hours < 24 && minutes < 60 && seconds < 60
+                    then
+                      Just
+                        ( fromRational
+                            . toRational
+                            $ ( fromIntegral hours
+                                  * 60
+                                  + fromIntegral minutes
+                              )
+                            * 60
+                            + seconds,
+                          offset,
+                          1 + 5 + ls + lo,
+                          ro
+                        )
+                    else Nothing
+        else Nothing
+    _ -> Nothing
+
+getSeconds :: String -> (Float, Int, String)
+getSeconds cs =
+  case cs of
+    (':' : s1 : s2 : rest) ->
+      if all isDigit [s1, s2]
+        then
+          let (fraction, lf, rf) = getFraction (s1 : s2 : rest)
+           in (fraction, 1 + lf, rf)
+        else (0, 0, cs)
+    _ -> (0, 0, cs)
+
+getFraction :: String -> (Float, Int, String)
+getFraction cs =
+  case readFloat cs of
+    [(a, str)] -> (a, length cs - length str, str) -- TODO: Make more efficient.
+    _ -> (0, 0, cs)
+
+getTZD :: String -> Maybe (NominalDiffTime, Int, String)
+getTZD cs = case cs of
+  'Z' : rest -> Just (0, 1, rest)
+  '+' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (+)
+  '-' : h1 : h2 : ':' : m1 : m2 : rest -> mkOffset [h1, h2] [m1, m2] rest (-)
+  _ -> Nothing
+  where
+    mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int, String)
+    mkOffset hs ms rest op =
+      let hours = case getNumber hs of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for h1 and h2 are digits"
+          minutes = case getNumber ms of
+            (_, Left val, _, _) -> val
+            _ -> fatal "Impossible, for m1 and m2 are digits"
+          total = hours * 60 + minutes
+       in if hours <= 24 && minutes < 60
+            then
+              Just
+                ( fromRational . toRational $ 0 `op` total,
+                  6,
+                  rest
+                )
+            else Nothing
+
+getDateTime' :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
+getDateTime' cs = case readUniversalTime cs of
   Nothing -> Nothing
   Just (time, rest) -> Just . Right $ (LexDateTime time, time, length cs - length rest, rest)
   where
@@ -323,7 +412,9 @@ getDateTime cs = case readUniversalTime cs of
     best :: [(UTCTime, String)] -> Maybe (UTCTime, String)
     best candidates = case reverse . L.sortBy myOrdering $ candidates of
       [] -> Nothing
-      (h : _) -> Just h
+      ((tim, rst) : _) -> case rst of
+        ' ' : 'U' : 'T' : 'C' : x -> Just (tim, x)
+        _ -> Just (tim, rst)
     myOrdering :: (Show a) => (a, b) -> (a, b) -> Ordering
     myOrdering (x, _) (y, _) = compare (length . show $ x) (length . show $ y)
 
