@@ -49,7 +49,7 @@ plural Dutch str =
           | "ij" `T.isSuffixOf` str = str <> "en"
           | "io" `T.isSuffixOf` str = str <> "'s"
           | klinker last = str <> "s"
-          | (T.take 2 . T.drop 1 . T.reverse) str `elem` ["aa", "oo", "ee", "uu"] = (T.reverse . T.drop 2 . T.reverse) str <> mede (T.drop (T.length str -1) str) <> "en"
+          | (T.take 2 . T.drop 1 . T.reverse) str `elem` ["aa", "oo", "ee", "uu"] = (T.reverse . T.drop 2 . T.reverse) str <> mede (T.drop (T.length str - 1) str) <> "en"
           | otherwise = str <> "en"
         last = case T.uncons . T.reverse $ tl of
           Nothing -> h
