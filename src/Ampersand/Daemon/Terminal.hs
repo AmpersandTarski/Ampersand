@@ -18,9 +18,9 @@ import Graphics.Win32.GDI.Types
 import System.Win32.Types
 
 
--- wM_SETICON, wM_GETICON :: WindowMessage
+wM_GETICON :: WindowMessage
 -- wM_SETICON = 0x0080
--- wM_GETICON = 0x007F
+wM_GETICON = 0x007F
 
 -- iCON_BIG, iCON_SMALL :: WPARAM
 -- iCON_BIG = 1
