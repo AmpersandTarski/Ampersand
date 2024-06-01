@@ -77,7 +77,7 @@ generateBuildInfoModule cabalVersionStr = do
           "    , gitInfoStr",
           "    , buildTimeStr",
           "    ) where",
-          "import Ampersand.Basics.Prelude",
+          "import RIO.Text (Text)",
           "",
           "{-" <> "# NOINLINE cabalVersionStr #-}", -- disable inlining to prevent recompilation of dependent modules on each build
           "-- | The version of Ampersand as it is stated in the package.yaml file.",
