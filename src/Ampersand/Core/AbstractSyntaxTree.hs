@@ -720,6 +720,7 @@ class Object a where
   concept :: a -> A_Concept -- the type of the object
   fields :: a -> [ObjectDef] -- the objects defined within the object
   contextOf :: a -> Expression -- the context term
+  fieldsRecursive :: a -> [ObjectDef] -- the objects defined within the object and its subinterfaces
 
 instance Object ObjectDef where
   concept obj = target (objExpression obj)
@@ -727,16 +728,23 @@ instance Object ObjectDef where
     Nothing -> []
     Just InterfaceRef {} -> []
     Just b@Box {} -> map objE . filter isObjExp $ siObjs b
-    where
-      isObjExp :: BoxItem -> Bool
-      isObjExp BxExpr {} = True
-      isObjExp BxTxt {} = False
   contextOf = objExpression
+  fieldsRecursive obj = fields obj <> subFields obj
+    where
+      subFields :: ObjectDef -> [ObjectDef]
+      subFields x = case objmsub x of
+        Nothing -> []
+        Just si@Box {} -> concatMap (fieldsRecursive . objE) (filter isObjExp . siObjs $ si)
+        Just InterfaceRef {} -> []
 
 data BoxItem
   = BxExpr {objE :: !ObjectDef}
   | BxTxt {objT :: !BoxTxt}
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
+
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr {} = True
+isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
   showUnique x = toText1Unsafe ("BoxItem_" <> (tshow . abs . hash . tshow) x)
@@ -837,6 +845,24 @@ data SubInterface
         siIfcId :: !Name -- id of the interface that is referenced to
       }
   deriving (Show)
+
+instance Traced SubInterface where
+  origin Box {pos = orig} = orig
+  origin InterfaceRef {pos = orig} = orig
+
+instance Ord SubInterface where
+  compare a b = case (a, b) of
+    (Box {}, Box {}) -> compare (siConcept a, siHeader a, siObjs a) (siConcept b, siHeader b, siObjs b)
+    (Box {}, InterfaceRef {}) -> GT
+    (InterfaceRef {}, InterfaceRef {}) -> compare (siIsLink a, siIfcId a) (siIsLink b, siIfcId b)
+    (InterfaceRef {}, Box {}) -> LT
+
+instance Eq SubInterface where
+  a == b = compare a b == EQ
+
+instance Unique SubInterface where
+  showUnique si@Box {} = (showUnique . siHeader) si <> (showUnique . siObjs) si
+  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si <> fullName1 (siIfcId si)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

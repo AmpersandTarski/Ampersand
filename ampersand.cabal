@@ -25,6 +25,8 @@ extra-source-files:
     ReleaseNotes.md
     AmpersandData/FormalAmpersand/Concepts.adl
     AmpersandData/FormalAmpersand/Concepts.docadl
+    AmpersandData/FormalAmpersand/Conjuncts.adl
+    AmpersandData/FormalAmpersand/Conjuncts.docadl
     AmpersandData/FormalAmpersand/Contexts.adl
     AmpersandData/FormalAmpersand/Contexts.docadl
     AmpersandData/FormalAmpersand/Documentation.adl
@@ -32,6 +34,7 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Generics.adl
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
+    AmpersandData/FormalAmpersand/MinimalAST.xlsx
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt
@@ -39,6 +42,7 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
     AmpersandData/FormalAmpersand/Terms.adl
+    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
@@ -461,8 +465,6 @@ library
       Ampersand.FSpec.Motivations
       Ampersand.FSpec.SQL
       Ampersand.FSpec.ShowHS
-      Ampersand.FSpec.ShowMeatGrinder
-      Ampersand.FSpec.MetaModels
       Ampersand.FSpec.ToFSpec.ADL2FSpec
       Ampersand.FSpec.ToFSpec.ADL2Plug
       Ampersand.FSpec.ToFSpec.Calc

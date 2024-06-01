@@ -2,7 +2,6 @@ module Ampersand.Options.FSpecGenOptsParser (fSpecGenOptsParser, defFSpecGenOpts
 
 import Ampersand.Basics
 import Ampersand.Misc.HasClasses (FSpecGenOpts (..), Recipe (..), Roots (Roots))
--- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import Options.Applicative
 import Options.Applicative.Builder.Extra
 import qualified RIO.Text as T
