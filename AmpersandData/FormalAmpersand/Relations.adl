@@ -22,7 +22,7 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 
 RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-CLASSIFY FormalAmpersand.RelationName ISA Name
+CLASSIFY FormalAmpersand.RelationName ISA FormalAmpersand.Name
     ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRelationName
     RULE FormalAmpersand.DelUnusedRelationName LABEL "del unused RelationName" : I[FormalAmpersand.RelationName] |- FormalAmpersand.name~;FormalAmpersand.name
     MEANING "A RelationName without relation will be removed."

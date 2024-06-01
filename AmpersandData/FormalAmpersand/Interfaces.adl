@@ -19,7 +19,7 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     -}
     RELATION FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    CLASSIFY FormalAmpersand.InterfaceName ISA Name
+    CLASSIFY FormalAmpersand.InterfaceName ISA FormalAmpersand.Name
 
     RELATION FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context][UNI]
     CONCEPT FormalAmpersand.Interface "An interface is a mechanism that communicates data between different (two) contexts."

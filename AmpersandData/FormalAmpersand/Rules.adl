@@ -12,7 +12,6 @@ PATTERN Rules
     RELATION FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]  -- This contains all rules declared inside a context
 
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
-    CLASSIFY FormalAmpersand.RuleName ISA Name
     RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRuleName
