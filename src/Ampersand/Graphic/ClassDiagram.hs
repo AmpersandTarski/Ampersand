@@ -32,7 +32,6 @@ data ClassDiag = OOclassdiagram
     geners :: ![Generalization], --
     ooCpts :: ![A_Concept]
   }
-  deriving (Show)
 
 instance Named ClassDiag where
   name = cdName
@@ -47,7 +46,7 @@ data Class = OOClass
     -- | Methods of the class
     clMths :: ![Method]
   }
-  deriving (Show, Eq)
+  deriving (Eq)
 
 instance Named Class where
   name = clName

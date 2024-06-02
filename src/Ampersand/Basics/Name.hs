@@ -23,6 +23,8 @@ module Ampersand.Basics.Name
     postpend,
     checkProperId,
     suggestName,
+    toMyDotNode,
+    MyDotNode,
   )
 where
 
@@ -254,6 +256,8 @@ prependToPlainName
               Nothing -> fatal "impossible"
               Just (h, tl) -> Text1 h tl
           )
+      singleton :: a -> NonEmpty a
+      singleton = pure
 
 postpend :: Text -> NamePart -> NamePart
 postpend t (NamePart txt) = NamePart (txt T1.<>. t)
@@ -267,5 +271,21 @@ prependList ls ne = case ls of
   [] -> ne
   (x : xs) -> x :| xs <> toList ne
 
-singleton :: a -> NonEmpty a
-singleton a = a :| []
+-- | Special type for use in Dot language (Graphviz). It needs to be an instance
+--   of Show, but must be quoted, because of the '.' in the fullname.
+newtype MyDotNode = MyDotNode Name
+
+toMyDotNode :: (Named a) => a -> MyDotNode
+toMyDotNode = MyDotNode . name
+
+instance Show MyDotNode where
+  show (MyDotNode nm) = show (fullName nm)
+
+instance GVP.PrintDot MyDotNode where
+  unqtDot (MyDotNode x) = GVP.unqtDot (abs . hash . fullName $ x)
+
+instance Ord MyDotNode where
+  a `compare` b = tshow a `compare` tshow b
+
+instance Eq MyDotNode where
+  a == b = compare a b == EQ
