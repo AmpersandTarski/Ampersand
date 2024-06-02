@@ -47,6 +47,7 @@ PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
 
     CONCEPT FormalAmpersand.AtomValue "A value can exist on its own, without having one or more concepts, where it is a value of an atom in it."
     REPRESENT FormalAmpersand.AtomValue TYPE ALPHANUMERIC
+    CONCEPT FormalAmpersand.Singleton ""
     RELATION FormalAmpersand.singleton[FormalAmpersand.Singleton*FormalAmpersand.AtomValue] [UNI]
     
     CONCEPT FormalAmpersand.V "The cartesian product."

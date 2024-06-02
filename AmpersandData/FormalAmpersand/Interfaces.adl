@@ -7,7 +7,6 @@ INCLUDE "Concepts.adl"
 --INCLUDE "AtomsAsShouldBe.adl"
 
 PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structure"
-    CLASSIFY FormalAmpersand.Interface ISA FormalAmpersand.ObjectDef
     CONCEPT FormalAmpersand.ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
     {-Han,
@@ -17,14 +16,14 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     -}
     RELATION FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    
+    CLASSIFY FormalAmpersand.InterfaceName ISA FormalAmpersand.Name
     RELATION FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context][UNI]
     CONCEPT FormalAmpersand.Interface "An interface is a mechanism that communicates data between different (two) contexts."
     CONCEPT FormalAmpersand.SubInterface "What exactly is a subinterface?"
     CONCEPT FormalAmpersand.InterfaceRef "A subinterface that references an Interface."
     CONCEPT FormalAmpersand.Box "A subinterface containing a list of boxitems."
     CONCEPT FormalAmpersand.BoxItem "A boxitem is an element of a box."
-    CLASSIFY FormalAmpersand.BxExpr , BxTxt ISA BoxItem
+    CLASSIFY FormalAmpersand.BxExpr , FormalAmpersand.BxTxt ISA FormalAmpersand.BoxItem
     CONCEPT FormalAmpersand.BxExpr ""
     CONCEPT FormalAmpersand.BxTxt ""
 
