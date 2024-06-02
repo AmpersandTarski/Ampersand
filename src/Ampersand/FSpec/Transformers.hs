@@ -974,9 +974,9 @@ transformersPrototypeContext fSpec =
   map
     toTransformer
     -- the following transformer is also contained in FormalAmpersand.
-    [ ( "isAPI",
-        "Interface",
-        "Interface",
+    [ ( "PrototypeContext.isAPI",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Interface",
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
             ifcIsAPI ifc
@@ -984,93 +984,93 @@ transformersPrototypeContext fSpec =
       ),
       -- the following transformer can be calculated by the Exec Engine.
       -- it is also contained in FormalAmpersand.
-      ( "isPublic",
-        "Interface",
-        "Interface",
+      ( "PrototypeContext.isPublic",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Interface",
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
           | ifc :: Interface <- instanceList fSpec,
             null (ifcRoles ifc)
         ]
       ),
       -- the following transformer is also contained in FormalAmpersand.
-      ( "label",
-        "Interface",
-        "Label",
+      ( "PrototypeContext.label",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Label",
         [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . label $ ifc)
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
       -- the following transformer is called name[Role*RoleName] in FormalAmpersand
-      ( "label",
-        "Role",
-        "Label",
+      ( "PrototypeContext.label",
+        "PrototypeContext.Role",
+        "PrototypeContext.Label",
         [ (dirtyIdWithoutType' role, PopAlphaNumeric . label $ role)
           | role :: Role <- instanceList fSpec,
             isJust (rlLbl role)
         ]
       ),
       -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand
-      ( "ifcRoles",
-        "Interface",
-        "Role",
+      ( "PrototypeContext.ifcRoles",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Role",
         [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' role)
           | ifc :: Interface <- instanceList fSpec,
             role <- ifcRoles ifc
         ]
       ),
-      ( "ifc",
-        "PF_NavMenuItem",
-        "PF_Interface",
+      ( "PrototypeContext.ifc",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.Interface",
         [] -- TODO
       ),
-      ( "label",
-        "PF_NavMenuItem",
-        "PF_Label",
+      ( "PrototypeContext.label",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.Label",
         [] -- TODO
       ),
-      ( "isSubItemOf",
-        "PF_NavMenuItem",
-        "PF_NavMenuItem",
+      ( "PrototypeContext.isSubItemOf",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenuItem",
         [] -- TODO
       ),
-      ( "isVisible",
-        "PF_NavMenuItem",
-        "PF_NavMenuItem",
+      ( "PrototypeContext.isVisible",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenuItem",
         [] -- TODO
       ),
-      ( "isPartOf",
-        "PF_NavMenuItem",
-        "PF_NavMenu",
+      ( "PrototypeContext.isPartOf",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenu",
         [] -- TODO
       ),
-      ( "seqNr",
-        "PF_NavMenuItem",
-        "PF_SeqNr",
+      ( "PrototypeContext.seqNr",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.SeqNr",
         [] -- TODO
       ),
-      ( "url",
-        "PF_NavMenuItem",
-        "PF_URL",
+      ( "PrototypeContext.url",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.URL",
         [] -- TODO
       ),
-      ( "pf_navItemRoles",
-        "PF_NavMenuItem",
-        "Role",
+      ( "PrototypeContext.navItemRoles",
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.Role",
         [] -- TODO
       ),
-      ( "lastAccess",
-        "SESSION",
-        "DateTime",
+      ( "PrototypeContext.lastAccess",
+        "PrototypeContext.SESSION",
+        "PrototypeContext.DateTime",
         [] -- TODO
       ),
-      ( "sessionActiveRoles",
-        "SESSION",
-        "Role",
+      ( "PrototypeContext.sessionActiveRoles",
+        "PrototypeContext.SESSION",
+        "PrototypeContext.Role",
         [] -- TODO
       ),
-      ( "sessionAllowedRoles",
-        "SESSION",
-        "Role",
+      ( "PrototypeContext.sessionAllowedRoles",
+        "PrototypeContext.SESSION",
+        "PrototypeContext.Role",
         [] -- TODO
       )
     ]
