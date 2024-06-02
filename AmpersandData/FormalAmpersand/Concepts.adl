@@ -24,7 +24,7 @@ PATTERN FormalAmpersand.Concepts
     RELATION FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
 
-    CLASSIFY FormalAmpersand.ConceptName, FormalAmpersand.RelationName ISA FormalAmpersand.Identifier
+    CLASSIFY FormalAmpersand.ConceptName, FormalAmpersand.RelationName ISA FormalAmpersand.Name
     RELATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
 
 --    RULE IdentifiabilityConcepts LABEL "Identifiability of concepts" : name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
