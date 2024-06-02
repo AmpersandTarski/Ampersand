@@ -12,7 +12,7 @@ PATTERN FormalAmpersand.Documentation
 
     RELATION FormalAmpersand.language[FormalAmpersand.Markup*FormalAmpersand.Language][UNI,TOT]
     RELATION FormalAmpersand.text[FormalAmpersand.Markup*FormalAmpersand.MarkupText][UNI,TOT]
-    RULE FormalAmpersand.enumerationOfLanguage : I[FormalAmpersand.FormalAmpersand.Language] = "Dutch" \/ "English" 
+    RULE FormalAmpersand.enumerationOfLanguage : I[FormalAmpersand.Language] = "Dutch" \/ "English" 
     POPULATION FormalAmpersand.Language CONTAINS ["Dutch", "English" ]
     RELATION FormalAmpersand.origin[FormalAmpersand.Purpose*FormalAmpersand.Origin][]
     RELATION FormalAmpersand.explMarkup[FormalAmpersand.Purpose*FormalAmpersand.Markup][TOT,UNI]
