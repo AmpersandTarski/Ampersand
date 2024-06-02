@@ -10,8 +10,6 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     CLASSIFY FormalAmpersand.Interface ISA FormalAmpersand.ObjectDef
     CONCEPT FormalAmpersand.ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
-    CONCEPT FormalAmpersand.Term "Formerly known as Expression." 
-
     {-Han,
     ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
     So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
@@ -19,8 +17,7 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     -}
     RELATION FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    CLASSIFY FormalAmpersand.InterfaceName ISA FormalAmpersand.Name
-
+    
     RELATION FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context][UNI]
     CONCEPT FormalAmpersand.Interface "An interface is a mechanism that communicates data between different (two) contexts."
     CONCEPT FormalAmpersand.SubInterface "What exactly is a subinterface?"
