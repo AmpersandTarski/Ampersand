@@ -1059,17 +1059,17 @@ transformersPrototypeContext fSpec =
         [] -- TODO
       ),
       ( "PrototypeContext.lastAccess",
-        "PrototypeContext.SESSION",
+        "SESSION",
         "PrototypeContext.DateTime",
         [] -- TODO
       ),
       ( "PrototypeContext.sessionActiveRoles",
-        "PrototypeContext.SESSION",
+        "SESSION",
         "PrototypeContext.Role",
         [] -- TODO
       ),
       ( "PrototypeContext.sessionAllowedRoles",
-        "PrototypeContext.SESSION",
+        "SESSION",
         "PrototypeContext.Role",
         [] -- TODO
       )
