@@ -499,14 +499,13 @@ transformersFormalAmpersand fSpec =
           | (rol, rul) <- fRoleRuls fSpec
         ]
       ),
-      -- ( "markup",
-      --   "Meaning",
-      --   "Markup",
-      --
-      --   [ (dirtyId mean, dirtyId . ameaMrk $ mean)
-      --     | mean :: Meaning <- instanceList fSpec
-      --   ]
-      -- ),
+      ( "markup",
+        "Meaning",
+        "Markup",
+        [ (dirtyId mean, dirtyId . ameaMrk $ mean)
+          | mean :: Meaning <- instanceList fSpec
+        ]
+      ),
       -- ( "markup",
       --   "Purpose",
       --   "Markup",
