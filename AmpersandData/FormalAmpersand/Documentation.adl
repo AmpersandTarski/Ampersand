@@ -8,6 +8,7 @@ PATTERN Documentation
     CONCEPT Meaning ""
     -- CLASSIFY Meaning ISA Markup See issue https://github.com/AmpersandTarski/Ampersand/issues/1484
     -- CLASSIFY Markup ISA Meaning
+    RELATION markup[Meaning*Markup][UNI,TOT]
     CONCEPT MarkupText ""
     CONCEPT Markup ""
 
