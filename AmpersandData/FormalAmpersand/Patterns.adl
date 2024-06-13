@@ -42,132 +42,132 @@ PATTERN Patterns
 
 ENDPATTERN
 
-PATTERN Patterns
-    CONCEPT FormalAmpersand.Instance "An instance corresponds to an INSTANCE statement in a pattern."
-    CONCEPT FormalAmpersand.Entity "Something that refers to a definition."
-    CONCEPT FormalAmpersand.Definition "A definition is a locally defined entity."
-    CONCEPT FormalAmpersand.ExternalEntity "An external entity is an entity that is instantiated from a different pattern"
-    CLASSIFY FormalAmpersand.Definition ISA FormalAmpersand.Entity
-    CLASSIFY FormalAmpersand.ExternalEntity ISA FormalAmpersand.Entity
-    RELATION FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName] [UNI,TOT]
-    MEANING "Every pattern has one given name."
-    RELATION FormalAmpersand.consumer[FormalAmpersand.Instance*FormalAmpersand.Pattern] [UNI,TOT]
-    MEANING "The pattern in which an INSTANCE statement is placed."
-    RELATION FormalAmpersand.consumes[FormalAmpersand.Instance*FormalAmpersand.Pattern] [UNI,TOT]
-    MEANING "The pattern that is being instantiated."
-    RELATION FormalAmpersand.instantiates[FormalAmpersand.Pattern*FormalAmpersand.Pattern]
-    MEANING "Pattern A instantiates B means that all definitions from B are copied into A."
-    RELATION FormalAmpersand.including[FormalAmpersand.Instance*FormalAmpersand.Definition]
-    MEANING "The definitions of entities that are being instantiated."
-    RELATION FormalAmpersand.excluding[FormalAmpersand.Instance*FormalAmpersand.Definition]
-    MEANING "The definitions of entities that are hidden (but still instantiated)."
-    RELATION FormalAmpersand.existsIn[FormalAmpersand.Entity*FormalAmpersand.Pattern] [UNI,TOT]
-    MEANING "The pattern in which an entity exists."
-    RELATION FormalAmpersand.locator[FormalAmpersand.Definition*FormalAmpersand.Locator] [UNI]
-    MEANING "The locator of a definition tells where it can be found."
-    RELATION FormalAmpersand.definition[FormalAmpersand.Entity*FormalAmpersand.Definition] [UNI,TOT]
-    MEANING "The thing a name refers to is registered in the relation definition."
-    RELATION FormalAmpersand.type[FormalAmpersand.Entity*FormalAmpersand.SyntacticCategory] [UNI,TOT]
-    MEANING "The syntactic category of every entity is registered in the relation `type`."
-    RELATION FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String] [UNI]
-    MEANING "The string that identifies the entity locally or externally."
-    RELATION FormalAmpersand.declaredIn[FormalAmpersand.Definition*FormalAmpersand.Pattern] [UNI]
-    MEANING "The pattern in which the definition is made."
-    RELATION FormalAmpersand.instantiatesAs[FormalAmpersand.Instance*FormalAmpersand.String] [UNI,TOT]
-    MEANING "The string used to refer to this instance of the pattern."
-    RELATION FormalAmpersand.fromInstance[FormalAmpersand.ExternalEntity*FormalAmpersand.Instance] [UNI,TOT]
-    MEANING "The instance from which this entity is obtained."
-    RELATION FormalAmpersand.fromEntity[FormalAmpersand.ExternalEntity*FormalAmpersand.Entity] [UNI,TOT]
-    MEANING "The non-local entity from which this entity is obtained."
-    RELATION FormalAmpersand.exposes[FormalAmpersand.Instance*FormalAmpersand.ExternalEntity] [SUR]
-    IDENT FormalAmpersand.ExternalEntity : FormalAmpersand.ExternalEntity (FormalAmpersand.exposes~,FormalAmpersand.fromEntity)
-    PURPOSE IDENT FormalAmpersand.ExternalEntity
-    {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
-    +}
+-- PATTERN Patterns
+--     CONCEPT FormalAmpersand.Instance "An instance corresponds to an INSTANCE statement in a pattern."
+--     CONCEPT FormalAmpersand.Entity "Something that refers to a definition."
+--     CONCEPT FormalAmpersand.Definition "A definition is a locally defined entity."
+--     CONCEPT FormalAmpersand.ExternalEntity "An external entity is an entity that is instantiated from a different pattern"
+--     CLASSIFY FormalAmpersand.Definition ISA FormalAmpersand.Entity
+--     CLASSIFY FormalAmpersand.ExternalEntity ISA FormalAmpersand.Entity
+--     RELATION FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName] [UNI,TOT]
+--     MEANING "Every pattern has one given name."
+--     RELATION FormalAmpersand.consumer[FormalAmpersand.Instance*FormalAmpersand.Pattern] [UNI,TOT]
+--     MEANING "The pattern in which an INSTANCE statement is placed."
+--     RELATION FormalAmpersand.consumes[FormalAmpersand.Instance*FormalAmpersand.Pattern] [UNI,TOT]
+--     MEANING "The pattern that is being instantiated."
+--     RELATION FormalAmpersand.instantiates[FormalAmpersand.Pattern*FormalAmpersand.Pattern]
+--     MEANING "Pattern A instantiates B means that all definitions from B are copied into A."
+--     RELATION FormalAmpersand.including[FormalAmpersand.Instance*FormalAmpersand.Definition]
+--     MEANING "The definitions of entities that are being instantiated."
+--     RELATION FormalAmpersand.excluding[FormalAmpersand.Instance*FormalAmpersand.Definition]
+--     MEANING "The definitions of entities that are hidden (but still instantiated)."
+--     RELATION FormalAmpersand.existsIn[FormalAmpersand.Entity*FormalAmpersand.Pattern] [UNI,TOT]
+--     MEANING "The pattern in which an entity exists."
+--     RELATION FormalAmpersand.locator[FormalAmpersand.Definition*FormalAmpersand.Locator] [UNI]
+--     MEANING "The locator of a definition tells where it can be found."
+--     RELATION FormalAmpersand.definition[FormalAmpersand.Entity*FormalAmpersand.Definition] [UNI,TOT]
+--     MEANING "The thing a name refers to is registered in the relation definition."
+--     RELATION FormalAmpersand.type[FormalAmpersand.Entity*FormalAmpersand.SyntacticCategory] [UNI,TOT]
+--     MEANING "The syntactic category of every entity is registered in the relation `type`."
+--     RELATION FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String] [UNI]
+--     MEANING "The string that identifies the entity locally or externally."
+--     RELATION FormalAmpersand.declaredIn[FormalAmpersand.Definition*FormalAmpersand.Pattern] [UNI]
+--     MEANING "The pattern in which the definition is made."
+--     RELATION FormalAmpersand.instantiatesAs[FormalAmpersand.Instance*FormalAmpersand.String] [UNI,TOT]
+--     MEANING "The string used to refer to this instance of the pattern."
+--     RELATION FormalAmpersand.fromInstance[FormalAmpersand.ExternalEntity*FormalAmpersand.Instance] [UNI,TOT]
+--     MEANING "The instance from which this entity is obtained."
+--     RELATION FormalAmpersand.fromEntity[FormalAmpersand.ExternalEntity*FormalAmpersand.Entity] [UNI,TOT]
+--     MEANING "The non-local entity from which this entity is obtained."
+--     RELATION FormalAmpersand.exposes[FormalAmpersand.Instance*FormalAmpersand.ExternalEntity] [SUR]
+--     IDENT FormalAmpersand.ExternalEntity : FormalAmpersand.ExternalEntity (FormalAmpersand.exposes~,FormalAmpersand.fromEntity)
+--     PURPOSE IDENT FormalAmpersand.ExternalEntity
+--     {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
+--     +}
     
-    RULE FormalAmpersand.fromInstance = FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.fst;FormalAmpersand.instantiatesAs~
-    MEANING "The first part of the string combination determines the pattern instance of the entity."
+--     RULE FormalAmpersand.fromInstance = FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.fst;FormalAmpersand.instantiatesAs~
+--     MEANING "The first part of the string combination determines the pattern instance of the entity."
     
-    RULE FormalAmpersand.exposes = FormalAmpersand.fromInstance~ /\ FormalAmpersand.consumer;FormalAmpersand.existsIn~
-    MEANING "The entities are exposed in the consumer pattern"
+--     RULE FormalAmpersand.exposes = FormalAmpersand.fromInstance~ /\ FormalAmpersand.consumer;FormalAmpersand.existsIn~
+--     MEANING "The entities are exposed in the consumer pattern"
 
 
-    IDENT FormalAmpersand.Entity : FormalAmpersand.Entity (FormalAmpersand.name, FormalAmpersand.type)
-    PURPOSE IDENT FormalAmpersand.Entity 
-    {+A definition is uniquely determined by its name and its type, such that we can find the Definition when refering to it.
-    +}
+--     IDENT FormalAmpersand.Entity : FormalAmpersand.Entity (FormalAmpersand.name, FormalAmpersand.type)
+--     PURPOSE IDENT FormalAmpersand.Entity 
+--     {+A definition is uniquely determined by its name and its type, such that we can find the Definition when refering to it.
+--     +}
 
-    RULE I[FormalAmpersand.Definition] \/ I[FormalAmpersand.ExternalEntity] = I[FormalAmpersand.Entity]
-    MEANING "Each entity is local or external"
-    RULE I[FormalAmpersand.Definition] - I[FormalAmpersand.ExternalEntity] = I[FormalAmpersand.Definition]
-    MEANING "Each local entity is never external"
-    RULE I[FormalAmpersand.ExternalEntity] - I[FormalAmpersand.Definition] = I[FormalAmpersand.ExternalEntity]
-    MEANING "Each external entity is never local"
+--     RULE I[FormalAmpersand.Definition] \/ I[FormalAmpersand.ExternalEntity] = I[FormalAmpersand.Entity]
+--     MEANING "Each entity is local or external"
+--     RULE I[FormalAmpersand.Definition] - I[FormalAmpersand.ExternalEntity] = I[FormalAmpersand.Definition]
+--     MEANING "Each local entity is never external"
+--     RULE I[FormalAmpersand.ExternalEntity] - I[FormalAmpersand.Definition] = I[FormalAmpersand.ExternalEntity]
+--     MEANING "Each external entity is never local"
 
-    RULE FormalAmpersand.definition /\ V[FormalAmpersand.Definition*FormalAmpersand.Definition] = I /\ FormalAmpersand.existsIn;FormalAmpersand.declaredIn~
+--     RULE FormalAmpersand.definition /\ V[FormalAmpersand.Definition*FormalAmpersand.Definition] = I /\ FormalAmpersand.existsIn;FormalAmpersand.declaredIn~
 
-    RULE FormalAmpersand.definition /\ V[FormalAmpersand.ExternalEntity*FormalAmpersand.Definition]
-                =   FormalAmpersand.exposes~;FormalAmpersand.including  /\ FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.snd;FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String]~ -- second part of the string names the declaration
+--     RULE FormalAmpersand.definition /\ V[FormalAmpersand.ExternalEntity*FormalAmpersand.Definition]
+--                 =   FormalAmpersand.exposes~;FormalAmpersand.including  /\ FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String];FormalAmpersand.result~;FormalAmpersand.snd;FormalAmpersand.name[FormalAmpersand.Entity*FormalAmpersand.String]~ -- second part of the string names the declaration
     
-    RULE FormalAmpersand.excluding \/ FormalAmpersand.including = FormalAmpersand.consumes;FormalAmpersand.declaredIn~
-    MEANING "The excluded and the included definitions together are precisely the declarations of the consumed pattern"
+--     RULE FormalAmpersand.excluding \/ FormalAmpersand.including = FormalAmpersand.consumes;FormalAmpersand.declaredIn~
+--     MEANING "The excluded and the included definitions together are precisely the declarations of the consumed pattern"
     
-    RULE FormalAmpersand.excluding /\ FormalAmpersand.including = -V
-    MEANING "There is no overlap between what is included and excluded"
+--     RULE FormalAmpersand.excluding /\ FormalAmpersand.including = -V
+--     MEANING "There is no overlap between what is included and excluded"
 
-    RULE FormalAmpersand.consumer~;FormalAmpersand.consumes = FormalAmpersand.instantiates
-    MEANING "The relation `instantiates` is defined here."
+--     RULE FormalAmpersand.consumer~;FormalAmpersand.consumes = FormalAmpersand.instantiates
+--     MEANING "The relation `instantiates` is defined here."
 
-    RULE FormalAmpersand.existsIn /\ V[FormalAmpersand.Definition*FormalAmpersand.Pattern] = FormalAmpersand.declaredIn
-    MEANING "A definition exists in the pattern in which it is declared"
+--     RULE FormalAmpersand.existsIn /\ V[FormalAmpersand.Definition*FormalAmpersand.Pattern] = FormalAmpersand.declaredIn
+--     MEANING "A definition exists in the pattern in which it is declared"
     
-    RULE FormalAmpersand.consumes;FormalAmpersand.existsIn~ |- FormalAmpersand.exposes;FormalAmpersand.fromEntity
-    MEANING {+ If a pattern in which entity e exists is consumed in some instance,
-               then that instance exposes an entity based on e +}
+--     RULE FormalAmpersand.consumes;FormalAmpersand.existsIn~ |- FormalAmpersand.exposes;FormalAmpersand.fromEntity
+--     MEANING {+ If a pattern in which entity e exists is consumed in some instance,
+--                then that instance exposes an entity based on e +}
     
 
-ENDPATTERN
+-- ENDPATTERN
 
-    PURPOSE RELATION FormalAmpersand.including[FormalAmpersand.Instance*FormalAmpersand.Definition]
-    {+  To accomodate selective instances, we need a relation that identifies which
-        entities are actually being instantiated. This administers the difference between the
-        entire name space and the hidden names.
-    +}
-    PURPOSE CONCEPT FormalAmpersand.Instance
-    {+  To administer INSTANCE-statements together with their AS-annotations,
-        we need the concept of Instance.
-        Instantiating (consuming) a pattern adds the content of that pattern to the consumer pattern,
-        under a different name. This creates a new instance of the entities in the instantiated pattern.
-    +}
-    PURPOSE RELATION FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName]
-    {+  To distinguish different patterns that exist within the same environment,
-        every pattern has a name.
-    +}
-    PURPOSE RELATION FormalAmpersand.instantiates[FormalAmpersand.Pattern*FormalAmpersand.Pattern]
-    {+  A pattern can contain `INSTANCE` statements, which identify other patterns to be instantiated.
-        These statements are registered in the system for the purpose of computing the name space.
-        This determines which names are visible in which patterns.
-    +}
-    PURPOSE RELATION FormalAmpersand.locator[FormalAmpersand.Definition*FormalAmpersand.Locator]
-    {+  Ampersand users can ask where a certain Definition has been defined.
-        This relation administrates that.
-    +}
-    PURPOSE CONCEPT FormalAmpersand.Locator
-    {+
-        Place in a document of the Ampersand-user
-    +}
-    PURPOSE RELATION FormalAmpersand.definition[FormalAmpersand.Entity*FormalAmpersand.Definition]
-    {+  
-        
-    +}
-    PURPOSE RELATION FormalAmpersand.type[FormalAmpersand.Entity*FormalAmpersand.SyntacticCategory]
-    {+  As different syntactic categories may have disjoint name spaces,
-        we need to distinguish all entities to their respective syntactic categories.
-    +}
-    PURPOSE RELATION FormalAmpersand.declaredIn[FormalAmpersand.Definition*FormalAmpersand.Pattern]
-    {+  We wish to know which definitions there are in a certain pattern.
-        This enables us to instantiate exactly the entities that are defined in the instantiated pattern.
-    +}
+    -- PURPOSE RELATION FormalAmpersand.including[FormalAmpersand.Instance*FormalAmpersand.Definition]
+    -- {+  To accomodate selective instances, we need a relation that identifies which
+    --     entities are actually being instantiated. This administers the difference between the
+    --     entire name space and the hidden names.
+    -- +}
+    -- PURPOSE CONCEPT FormalAmpersand.Instance
+    -- {+  To administer INSTANCE-statements together with their AS-annotations,
+    --     we need the concept of Instance.
+    --     Instantiating (consuming) a pattern adds the content of that pattern to the consumer pattern,
+    --     under a different name. This creates a new instance of the entities in the instantiated pattern.
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName]
+    -- {+  To distinguish different patterns that exist within the same environment,
+    --     every pattern has a name.
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.instantiates[FormalAmpersand.Pattern*FormalAmpersand.Pattern]
+    -- {+  A pattern can contain `INSTANCE` statements, which identify other patterns to be instantiated.
+    --     These statements are registered in the system for the purpose of computing the name space.
+    --     This determines which names are visible in which patterns.
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.locator[FormalAmpersand.Definition*FormalAmpersand.Locator]
+    -- {+  Ampersand users can ask where a certain Definition has been defined.
+    --     This relation administrates that.
+    -- +}
+    -- PURPOSE CONCEPT FormalAmpersand.Locator
+    -- {+
+    --     Place in a document of the Ampersand-user
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.definition[FormalAmpersand.Entity*FormalAmpersand.Definition]
+    -- {+  
+    -- 
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.type[FormalAmpersand.Entity*FormalAmpersand.SyntacticCategory]
+    -- {+  As different syntactic categories may have disjoint name spaces,
+    --     we need to distinguish all entities to their respective syntactic categories.
+    -- +}
+    -- PURPOSE RELATION FormalAmpersand.declaredIn[FormalAmpersand.Definition*FormalAmpersand.Pattern]
+    -- {+  We wish to know which definitions there are in a certain pattern.
+    --     This enables us to instantiate exactly the entities that are defined in the instantiated pattern.
+    -- +}
 
 PATTERN FormalAmpersand.StringCombination
   CONCEPT FormalAmpersand.CombineStrings "A combination of two strings"

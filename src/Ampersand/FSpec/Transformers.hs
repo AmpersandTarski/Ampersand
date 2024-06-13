@@ -1491,279 +1491,279 @@ tmpNewTransformerDefsFA :: FSpec -> [Transformer]
 tmpNewTransformerDefsFA fSpec =
   map
     toTransformer
-    [ ( "context",
-        "Rule",
-        "Context",
+    [ ( "FormalAmpersand.context",
+        "FormalAmpersand.Rule",
+        "FormalAmpersand.Context",
         [ (dirtyId' rul, dirtyId' ctx)
           | ctx :: A_Context <- instanceList fSpec,
             rul :: Rule <- instanceList fSpec
         ]
       ),
-      ( "edit",
-        "FieldDef",
-        "Relation",
+      ( "FormalAmpersand.edit",
+        "FormalAmpersand.FieldDef",
+        "FormalAmpersand.Relation",
         [] -- TODO Future work
       ),
-      ( "editFlp",
-        "FieldDef",
-        "Relation",
+      ( "FormalAmpersand.editFlp",
+        "FormalAmpersand.FieldDef",
+        "FormalAmpersand.Relation",
         [] -- TODO
       ),
-      ( "fst",
-        "CombineStrings",
-        "String",
+      ( "FormalAmpersand.fst",
+        "FormalAmpersand.CombineStrings",
+        "FormalAmpersand.String",
         [] -- TODO
       ),
-      ( "ifcQuads",
-        "Interface",
-        "Quad",
+      ( "FormalAmpersand.ifcQuads",
+        "FormalAmpersand.Interface",
+        "FormalAmpersand.Quad",
         [] -- TODO future work
       ),
-      ( "interfaces",
-        "Context",
-        "Interface",
+      ( "FormalAmpersand.interfaces",
+        "FormalAmpersand.Context",
+        "FormalAmpersand.Interface",
         [ (dirtyId' ctx, dirtyId' ifc)
           | ctx :: A_Context <- instanceList fSpec,
             ifc :: Interface <- instanceList fSpec
         ]
       ),
-      ( "interfaces",
-        "Role",
-        "Interface",
+      ( "FormalAmpersand.interfaces",
+        "FormalAmpersand.Role",
+        "FormalAmpersand.Interface",
         [ (dirtyId' rol, dirtyId' ifc)
           | ifc :: Interface <- instanceList fSpec,
             rol <- ifcRoles ifc
         ]
       ),
-      ( "isaCopy",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaCopy",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaPlus",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaPlus",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaRfx",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaRfx",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaRfxCopy",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaRfxCopy",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaRfxPlus",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaRfxPlus",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaRfxStar",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaRfxStar",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "isaStar",
-        "Concept",
-        "Concept",
+      ( "FormalAmpersand.isaStar",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- TODO
       ),
-      ( "originatesFrom",
-        "Conjunct",
-        "Rule",
+      ( "FormalAmpersand.originatesFrom",
+        "FormalAmpersand.Conjunct",
+        "FormalAmpersand.Rule",
         [] -- TODO
       ),
-      ( "patRules",
-        "Pattern",
-        "Rule",
+      ( "FormalAmpersand.patRules",
+        "FormalAmpersand.Pattern",
+        "FormalAmpersand.Rule",
         [ (dirtyId' pat, dirtyId' rul)
           | pat :: Pattern <- instanceList fSpec,
             rul <- Set.toList (ptrls pat)
         ]
       ),
-      ( "result",
-        "CombineStrings",
-        "String",
+      ( "FormalAmpersand.result",
+        "FormalAmpersand.CombineStrings",
+        "FormalAmpersand.String",
         [] -- TODO
       ),
-      ( "snd",
-        "CombineStrings",
-        "String",
+      ( "FormalAmpersand.snd",
+        "FormalAmpersand.CombineStrings",
+        "FormalAmpersand.String",
         [] -- TODO
       ),
-      ( "uses",
-        "Context",
-        "Pattern",
+      ( "FormalAmpersand.uses",
+        "FormalAmpersand.Context",
+        "FormalAmpersand.Pattern",
         [ (dirtyId' ctx, dirtyId' pat)
           | ctx :: A_Context <- instanceList fSpec,
             pat :: Pattern <- instanceList fSpec
         ]
       ),
-      ( "valid",
-        "Concept",
-        "Context",
+      ( "FormalAmpersand.valid",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Context",
         [] -- TODO Future work
       ),
-      ( "valid",
-        "Relation",
-        "Context",
+      ( "FormalAmpersand.valid",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Context",
         [] -- TODO Future work
       ),
-      ( "valid",
-        "Rule",
-        "Context",
+      ( "FormalAmpersand.valid",
+        "FormalAmpersand.Rule",
+        "FormalAmpersand.Context",
         [] -- TODO Future work
       ),
-      ( "siHeader",
-        "Box",
-        "BoxHeader",
+      ( "FormalAmpersand.siHeader",
+        "FormalAmpersand.Box",
+        "FormalAmpersand.BoxHeader",
         [ (dirtyId' box, dirtyId' (siHeader box))
           | box@Box {} <- instanceList fSpec
         ]
       ),
-      ( "siConcept",
-        "Box",
-        "Concept",
+      ( "FormalAmpersand.siConcept",
+        "FormalAmpersand.Box",
+        "FormalAmpersand.Concept",
         [ (dirtyId' box, dirtyId' (siConcept box))
           | box@Box {} <- instanceList fSpec
         ]
       ),
-      ( "objcruds",
-        "ObjectDef",
-        "Cruds",
+      ( "FormalAmpersand.objcruds",
+        "FormalAmpersand.ObjectDef",
+        "FormalAmpersand.Cruds",
         [ (dirtyId' od, PopAlphaNumeric . tshow . objcrud $ od)
           | od :: ObjectDef <- instanceList fSpec
         ]
       ),
-      ( "objSub",
-        "ObjectDef",
-        "SubInterface",
+      ( "FormalAmpersand.objSub",
+        "FormalAmpersand.ObjectDef",
+        "FormalAmpersand.SubInterface",
         [ (dirtyId' od, dirtyId' si)
           | od :: ObjectDef <- instanceList fSpec,
             Just si <- [objmsub od]
         ]
       ),
-      ( "objTerm",
-        "ObjectDef",
-        "Term",
+      ( "FormalAmpersand.objTerm",
+        "FormalAmpersand.ObjectDef",
+        "FormalAmpersand.Term",
         [ (dirtyId' od, dirtyId' (objExpression od))
           | od :: ObjectDef <- instanceList fSpec
         ]
       ),
-      ( "origin",
-        "SubInterface",
-        "Origin",
+      ( "FormalAmpersand.origin",
+        "FormalAmpersand.SubInterface",
+        "FormalAmpersand.Origin",
         [ (dirtyId' si, popatom)
           | si :: SubInterface <- instanceList fSpec,
             Just popatom <- [originToPopAtom si]
         ]
       ),
-      ( "siObjs",
-        "Box",
-        "BoxItem",
+      ( "FormalAmpersand.siObjs",
+        "FormalAmpersand.Box",
+        "FormalAmpersand.BoxItem",
         [ (dirtyId' bx, dirtyId' item)
           | bx@Box {} <- instanceList fSpec,
             item <- siObjs bx
         ]
       ),
-      ( "isLink",
-        "InterfaceRef",
-        "InterfaceRef",
+      ( "FormalAmpersand.isLink",
+        "FormalAmpersand.InterfaceRef",
+        "FormalAmpersand.InterfaceRef",
         [ (dirtyId' ref, dirtyId' ref)
           | ref@InterfaceRef {} <- instanceList fSpec,
             siIsLink ref
         ]
       ),
-      ( "references",
-        "InterfaceRef",
-        "Interface",
+      ( "FormalAmpersand.references",
+        "FormalAmpersand.InterfaceRef",
+        "FormalAmpersand.Interface",
         [ (dirtyId' ref, dirtyId' ifc)
           | ref@InterfaceRef {} <- instanceList fSpec,
             ifc :: Interface <- instanceList fSpec,
             name ifc == siIfcId ref
         ]
       ),
-      ( "origin",
-        "BoxItem",
-        "Origin",
+      ( "FormalAmpersand.origin",
+        "FormalAmpersand.BoxItem",
+        "FormalAmpersand.Origin",
         [ (dirtyId' item, popatom)
           | item :: BoxItem <- instanceList fSpec,
             Just popatom <- [originToPopAtom item]
         ]
       ),
-      ( "concept",
-        "ConceptDef",
-        "Concept",
+      ( "FormalAmpersand.concept",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Concept",
         [ (dirtyId' cd, dirtyId' cpt)
           | cd :: AConceptDef <- instanceList fSpec,
             cpt :: A_Concept <- instanceList fSpec,
             name cpt == name cd
         ]
       ),
-      ( "objDef",
-        "BxExpr",
-        "ObjectDef",
+      ( "FormalAmpersand.objDef",
+        "FormalAmpersand.BxExpr",
+        "FormalAmpersand.ObjectDef",
         [ (dirtyId' item, dirtyId' obj)
           | item@BxExpr {objE = obj} <- instanceList fSpec
         ]
       ),
-      ( "text",
-        "BxTxt",
-        "Text",
+      ( "FormalAmpersand.text",
+        "FormalAmpersand.BxTxt",
+        "FormalAmpersand.Text",
         [ (dirtyId' item, PopAlphaNumeric (boxtxt x))
           | item@BxTxt {objT = x} <- instanceList fSpec
         ]
       ),
-      ( "meaning",
-        "ConceptDef",
-        "Meaning",
+      ( "FormalAmpersand.meaning",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Meaning",
         [ (dirtyId' cd, dirtyId' mean)
           | cd :: AConceptDef <- instanceList fSpec,
             mean <- acddef2 cd : acdmean cd
         ]
       ),
-      ( "language",
-        "Markup",
-        "Language",
+      ( "FormalAmpersand.language",
+        "FormalAmpersand.Markup",
+        "FormalAmpersand.Language",
         [ (dirtyId' mkp, PopAlphaNumeric . tshow . amLang $ mkp)
           | mkp :: Markup <- instanceList fSpec
         ]
       ),
-      ( "text",
-        "Markup",
-        "MarkupText",
+      ( "FormalAmpersand.text",
+        "FormalAmpersand.Markup",
+        "FormalAmpersand.MarkupText",
         [ (dirtyId' mkp, PopAlphaNumeric . stringify . amPandoc $ mkp)
           | mkp :: Markup <- instanceList fSpec
         ]
       ),
-      ( "explMarkup",
-        "Purpose",
-        "Markup",
+      ( "FormalAmpersand.explMarkup",
+        "FormalAmpersand.Purpose",
+        "FormalAmpersand.Markup",
         [ (dirtyId' prp, dirtyId' (explMarkup prp))
           | prp :: Purpose <- instanceList fSpec
         ]
       ),
-      ( "origin",
-        "Purpose",
-        "Origin",
+      ( "FormalAmpersand.origin",
+        "FormalAmpersand.Purpose",
+        "FormalAmpersand.Origin",
         [ (dirtyId' prp, popatom)
           | prp :: Purpose <- instanceList fSpec,
             Just popatom <- [originToPopAtom prp]
         ]
       ),
-      ( "explRefIds",
-        "Purpose",
-        "Text",
+      ( "FormalAmpersand.explRefIds",
+        "FormalAmpersand.Purpose",
+        "FormalAmpersand.Text",
         [ (dirtyId' prp, PopAlphaNumeric txt)
           | prp :: Purpose <- instanceList fSpec,
             txt <- explRefIds prp
         ]
       ),
-      ( "decMean",
-        "Relation",
-        "Meaning",
+      ( "FormalAmpersand.decMean",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Meaning",
         [ (dirtyId' rel, dirtyId' mean)
           | rel :: Relation <- instanceList fSpec,
             mean <- decMean rel

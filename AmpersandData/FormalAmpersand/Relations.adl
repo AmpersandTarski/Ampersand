@@ -44,7 +44,7 @@ RULE FormalAmpersand.bindTotal : I[FormalAmpersand.BindedRelation] |- FormalAmpe
 -- VIOLATION ( TXT "The (sub-)term ", SRC showADL, TXT " should have been bound to a relation. ")
 VIOLATION ( TXT "{EX} FormalAmpersand.DelAtom;FormalAmpersand.BindedRelation;", SRC I )
 
-RELATION prop[FormalAmpersand.Relation*FormalAmpersand.Property]
+RELATION FormalAmpersand.prop[FormalAmpersand.Relation*FormalAmpersand.Property]
 
 
 RELATION FormalAmpersand.decprL[FormalAmpersand.Relation*FormalAmpersand.String] [UNI]

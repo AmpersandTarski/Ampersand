@@ -21,7 +21,8 @@ REPRESENT FormalAmpersand.AmpersandVersion TYPE ALPHANUMERIC
 --[PairViews]--
 RELATION FormalAmpersand.pairView[FormalAmpersand.Rule*FormalAmpersand.PairView] -- e.g. 
 RELATION FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment] [SUR,INJ]
-RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.Int] [UNI,TOT]
+RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.SequenceNumber] [UNI,TOT]
+REPRESENT SequenceNumber TYPE INTEGER
 -- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
 RELATION FormalAmpersand.text[FormalAmpersand.PairViewSegment*FormalAmpersand.String] [UNI] -- IFF segmentType == 'Text'
 RELATION FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
