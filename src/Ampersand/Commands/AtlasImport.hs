@@ -79,8 +79,8 @@ atlasImport = do
     Left msg -> fatal . T.pack $ "Couldn't read " <> view importFileL env <> ": " <> msg
     Right x -> do
       let outputFn = view outputfileL env
-      writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
-      -- writeFileUtf8 outputFn (showP x)
+      -- writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
+      writeFileUtf8 outputFn (showP x)
       logInfo . display . T.pack $ outputFn <> " written"
 
 myDecode :: B.ByteString -> Either String P_Context
@@ -522,9 +522,10 @@ parseFirstField obj key = do
         Just (JSON.String txt) -> return txt
         _ -> mzero
     _ -> mzero
-  where
-    toList :: JSON.Array -> [JSON.Value]
-    toList = foldr (:) []
+
+-- where
+--   toList :: JSON.Array -> [JSON.Value]
+--   toList = foldr (:) []
 
 instance JSON.FromJSON P_NamedRel where
   parseJSON val = case val of

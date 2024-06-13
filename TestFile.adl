@@ -9,6 +9,10 @@ CONCEPT Concept1Ctx "this is the definition of CONCEPT Concept1Ctx in de CONTEXT
 CONCEPT Concept2Ctx "this is the definition of CONCEPT Concept2Ctx in de CONTEXT"
 CONCEPT Concept3Ctx "this is the definition of CONCEPT Concept3Ctx in de CONTEXT"
 
+CONCEPT Concept4Ctx "this is the definition of CONCEPT Concept4Ctx in de CONTEXT"
+REPRESENT Concept4Ctx TYPE ALPHANUMERIC
+
+
 -- Relations in CONTEXT
 RELATION relatie1Ctx[Concept0Ctx*Concept0Ctx]
 MEANING "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT"
@@ -23,9 +27,12 @@ RELATION relatie5Ctx[Concept3Ctx*Concept2Ctx]
 MEANING "this is the meaning of the RELATION relatie5Ctx, gedefineerd in de CONTEXT"
 RELATION relatie6Ctx[Concept1Ctx*Concept3Ctx]
 MEANING "this is the meaning of the RELATION relatie6Ctx, gedefineerd in de CONTEXT"
+RELATION relatie7Ctx[Concept4Ctx*Concept4Ctx]
+MEANING "this is the meaning of the RELATION relatie7Ctx, gedefineerd in de CONTEXT"
 
 -- Rules in CONTEXT
 ENFORCE relatie1Ctx :< relatie2Ctx /\ relatie3Ctx
+ROLE User MAINTAINS Rule1Ctx
 RULE Rule1Ctx : relatie1Ctx |- relatie2Ctx
 
 RULE Rule2Ctx: relatie6Ctx |- relatie4Ctx;relatie5Ctx~
@@ -66,15 +73,18 @@ PATTERN PatternName
 
 -- Concepts in PATTERN
 CONCEPT Concept0Ptn "this is the definition of CONCEPT Concept0Ptn in de PATTERN"
-CONCEPT Classified1Ptn "this is the definition of CONCEPT Classified1Ptn in de PATTERN"
-CONCEPT Classified2Ptn "this is the definition of CONCEPT Classified2Ptn in de PATTERN"
+-- CONCEPT Classified1Ptn "this is the definition of CONCEPT Classified1Ptn in de PATTERN"
+-- CONCEPT Classified2Ptn "this is the definition of CONCEPT Classified2Ptn in de PATTERN"
 
-CLASSIFY Classified1Ptn, Classified2Ptn ISA Concept0Ptn
+-- CLASSIFY Classified1Ptn, Classified2Ptn ISA Concept0Ptn
 
 
 CONCEPT Concept1Ptn "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
 CONCEPT Concept2Ptn "this is the definition of CONCEPT Concept2Ptn in de PATTERN"
 CONCEPT Concept3Ptn "this is the definition of CONCEPT Concept3Ptn in de PATTERN"
+
+CONCEPT Concept4Ptn "this is the definition of CONCEPT Concept4Ptn in de PATTERN"
+REPRESENT Concept4Ptn TYPE ALPHANUMERIC
 
 -- Relations in PATTERN
 RELATION relatie1Ptn[Concept0Ptn*Concept0Ptn]
@@ -91,8 +101,13 @@ MEANING "this is the meaning of the RELATION relatie5Ptn, gedefineerd in de PATT
 RELATION relatie6Ptn[Concept1Ptn*Concept3Ptn]
 MEANING "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN"
 
+RELATION relatie7Ptn[Concept4Ptn*Concept4Ptn]
+MEANING "this is the meaning of the RELATION relatie7Ptn, gedefineerd in de PATTERN"
+
 -- Rules in PATTERN
 ENFORCE relatie1Ptn :< relatie2Ptn /\ relatie3Ptn
+
+ROLE User MAINTAINS Rule1Ptn
 RULE Rule1Ptn : relatie1Ptn |- relatie2Ptn
 
 RULE Rule2Ptn: relatie6Ptn |- relatie4Ptn;relatie5Ptn~
@@ -130,6 +145,11 @@ PURPOSE RULE Rule1Ptn
 ENDPATTERN
 --------------------------- Pattern ends here
 
+
+CONCEPT Concept5Ctx "this is the definition of CONCEPT Concept5Ctx in de CONTEXT"
+RELATION relatie7Ctx[Concept5Ctx*Concept5Ctx] 
+IDENT Ident1Ctx: Concept5Ctx (relatie7Ctx)
+
 IDENT FileObjectName: FileObject (filePath)
 RELATION filePath[FileObject*FilePath] [UNI,TOT]
 RELATION originalFileName[FileObject*FileName] [UNI,TOT]
@@ -142,7 +162,19 @@ VIEW FileObject: FileObject DEFAULT
   , fileName : originalFileName
   } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
 
+-- INTERFACE InterfaceCtx : "_SESSION"                  cRud
+-- BOX <TABS>
+--      [ Titel : V[SESSION*Concept0Ctx]             cRuD
+--        BOX <TABLE>
+--                 [ "het concept zelf" : I[Concept0Ctx]         cRud
+--                 , "relatie 1" : relatie1Ctx cRUD
+--                 , "relatie 2" : relatie1Ctx CRUD
+--                 ]
+--      ] 
 
-
+-- PURPOSE VIEW FileObject
+-- {+ this is the purpose of the VIEW FileObject, gedefineerd in de CONTEXT +}
+-- PURPOSE INTERFACE InterfaceCtx
+-- {+ this is the purpose of the INTERFACE InterfaceCtx, gedefineerd in de CONTEXT +}
 
 ENDCONTEXT
