@@ -35,7 +35,7 @@ instance Instances A_Concept where
   instances = concs . originalContext
 
 instance Instances AConceptDef where
-  instances = Set.fromList . ctxcds . originalContext
+  instances = conceptDefInstances
 
 instance Instances BoxItem where
   instances =
@@ -103,9 +103,7 @@ instance Instances ViewDef where
   instances = Set.fromList . viewDefs . originalContext
 
 instance Instances Meaning where
-  instances fSpec =
-    (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
-      `Set.union` (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
+  instances = meaningInstances
 
 instance Instances (PairView Expression) where
   instances = pairViewInstances
@@ -141,6 +139,7 @@ meaningInstances :: FSpec -> Set.Set Meaning
 meaningInstances fSpec =
   (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
     `Set.union` (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
+    `Set.union` (Set.fromList . concatMap meanings . Set.toList . conceptDefInstances $ fSpec)
 
 pairViewInstances :: FSpec -> Set.Set (PairView Expression)
 pairViewInstances = Set.fromList . mapMaybe rrviol . Set.toList . ruleInstances
@@ -153,3 +152,6 @@ relationInstances = relsDefdIn . originalContext
 
 ruleInstances :: FSpec -> Set.Set Rule
 ruleInstances = allRules . originalContext
+
+conceptDefInstances :: FSpec -> Set.Set AConceptDef
+conceptDefInstances = Set.fromList . ctxcds . originalContext

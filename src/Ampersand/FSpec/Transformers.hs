@@ -499,14 +499,13 @@ transformersFormalAmpersand fSpec =
           | (rol, rul) <- fRoleRuls fSpec
         ]
       ),
-      -- ( "markup",
-      --   "Meaning",
-      --   "Markup",
-      --
-      --   [ (dirtyId mean, dirtyId . ameaMrk $ mean)
-      --     | mean :: Meaning <- instanceList fSpec
-      --   ]
-      -- ),
+      ( "markup",
+        "Meaning",
+        "Markup",
+        [ (dirtyId mean, dirtyId . ameaMrk $ mean)
+          | mean :: Meaning <- instanceList fSpec
+        ]
+      ),
       -- ( "markup",
       --   "Purpose",
       --   "Markup",
@@ -567,14 +566,6 @@ transformersFormalAmpersand fSpec =
           | ifc :: Interface <- instanceList fSpec
         ]
       ),
-      -- ( "name",
-      --   "ObjectDef",
-      --   "ObjectName",
-      --
-      --   [ (dirtyId obj, (PopAlphaNumeric . name) obj)
-      --     | obj :: ObjectDef <- instanceList fSpec
-      --   ]
-      -- ),
       ( "name",
         "Pattern",
         "PatternName",
@@ -731,40 +722,6 @@ transformersFormalAmpersand fSpec =
             purp <- purposes fSpec vw
         ]
       ),
-      -- -- ( "qConjuncts",
-      -- --   "Quad",
-      -- --   "Conjunct",
-      -- --
-      -- --   [ (dirtyId quad, dirtyId conj)
-      -- --     | quad <- vquads fSpec,
-      -- --       conj <- NE.toList (qConjuncts quad)
-      -- --   ] --TODO
-      -- -- ),
-      -- ( "qDcl",
-      --   "Quad",
-      --   "Relation",
-      --
-      --   [ (dirtyId quad, dirtyId (qDcl quad))
-      --     | quad <- vquads fSpec
-      --   ] --TODO
-      -- ),
-      -- ( "qRule",
-      --   "Quad",
-      --   "Rule",
-      --
-      --   [ (dirtyId quad, dirtyId (qRule quad))
-      --     | quad <- vquads fSpec
-      --   ] --TODO
-      -- ),
-      -- ( "rc_orgRules",
-      --   "Conjunct",
-      --   "Rule",
-      --
-      --   [ (dirtyId conj, dirtyId rul)
-      --     | conj :: Conjunct <- instanceList fSpec,
-      --       rul <- NE.toList $ rc_orgRules conj
-      --   ]
-      -- ),
       ( "second",
         "BinaryTerm",
         "Term",
@@ -789,24 +746,6 @@ transformersFormalAmpersand fSpec =
             (pvs, nr) <- zip (NE.toList . ppv_segs $ pv) [0 ..]
         ]
       ),
-      -- ( "sessAtom",
-      --   "SESSION",
-      --   "Atom",
-      --
-      --   [] -- This goes too deep. Keep it empty.
-      -- ),
-      -- ( "sessIfc",
-      --   "SESSION",
-      --   "Interface",
-      --
-      --   [] --TODO
-      -- ),
-      -- ( "sessionRole",
-      --   "SESSION",
-      --   "Role",
-      --
-      --   [] --TODO
-      -- ),
       ( "showADL",
         "Term",
         "ShowADL",
@@ -955,50 +894,6 @@ transformersFormalAmpersand fSpec =
             Just x <- [userTgt expr]
         ]
       ),
-      -- ( "vdats",
-      --   "View",
-      --   "ViewSegment",
-      --
-      --   [ (dirtyId vd, PopAlphaNumeric . tshow $ vs)
-      --     | vd :: ViewDef <- instanceList fSpec,
-      --       vs <- vdats vd
-      --   ]
-      -- ),
-      -- ( "vdcpt",
-      --   "View",
-      --   "Concept",
-      --
-      --   [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
-      --     | vd :: ViewDef <- instanceList fSpec,
-      --       vdIsDefault vd
-      --   ]
-      -- ),
-      -- ( "vdhtml",
-      --   "View",
-      --   "Concept",
-      --
-      --   [ (dirtyId vd, PopAlphaNumeric . tshow $ html)
-      --     | vd :: ViewDef <- instanceList fSpec,
-      --       Just html <- [vdhtml vd]
-      --   ]
-      -- ),
-      -- ( "vdIsDefault",
-      --   "View",
-      --   "Concept",
-      --
-      --   [ (dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
-      --     | vd :: ViewDef <- instanceList fSpec
-      --   ]
-      -- ),
-      -- ( "vdpos",
-      --   "View",
-      --   "Origin",
-      --
-      --   [ (dirtyId vd, popatom)
-      --     | vd :: ViewDef <- instanceList fSpec,
-      --       Just popatom <- [originToPopAtom vd]
-      --   ]
-      -- ),
       ( "versionInfo",
         "Context",
         "AmpersandVersion",
@@ -1006,12 +901,6 @@ transformersFormalAmpersand fSpec =
           | ctx :: A_Context <- instanceList fSpec
         ]
       ),
-      --      ( "viewBy",
-      --        "Concept",
-      --        "Concept",
-      --
-      --        [] --TODO
-      --      ),
       ( "violatable",
         "Interface",
         "Rule",
@@ -1024,11 +913,6 @@ dirtyIdWithoutType :: (Unique a) => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 -- | The following transformers provide the metamodel needed to run a prototype.
---   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
---   You might do this by dropping all prefixes "PF_" and "pf_" and doing
---   the following transformation:
---     label[Role*PF_Label]                -> name[Role*RoleName]
---   Then you will see that the transformers defined here are a subset of the FormalAmpersand transformers.
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec =
   map

@@ -692,14 +692,15 @@ instance Object ObjectDef where
         Just si@Box {} -> concatMap (fieldsRecursive . objE) (filter isObjExp . siObjs $ si)
         Just InterfaceRef {} -> []
 
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr {} = True
+isObjExp BxTxt {} = False
+
 data BoxItem
   = BxExpr {objE :: ObjectDef}
   | BxTxt {objT :: BoxTxt}
   deriving (Eq, Ord, Show)
 
-isObjExp :: BoxItem -> Bool
-isObjExp BxExpr {} = True
-isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
   showUnique = tshow
