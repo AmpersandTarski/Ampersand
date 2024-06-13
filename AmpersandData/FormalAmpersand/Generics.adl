@@ -19,7 +19,7 @@ REPRESENT FormalAmpersand.AmpersandVersion TYPE ALPHANUMERIC
 --Definitions for Rules are found in Rules.adl and documented in Rules.docadl.
 
 --[PairViews]--
-RELATION FormalAmpersand.pairView[FormalAmpersand.Rule*FormalAmpersand.PairView] -- e.g. 
+RELATION FormalAmpersand.rrviol[FormalAmpersand.Rule*FormalAmpersand.PairView] -- e.g. 
 RELATION FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment] [SUR,INJ]
 RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.SequenceNumber] [UNI,TOT]
 REPRESENT SequenceNumber TYPE INTEGER

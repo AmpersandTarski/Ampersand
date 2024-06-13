@@ -19,7 +19,7 @@ PATTERN Patterns
     RELATION FormalAmpersand.allRules[FormalAmpersand.Rule*FormalAmpersand.Context] []          -- ^ all rules in the context, i.e. all user defined rules, property rules, and identity rules.
     RELATION FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not property- and not identity rules. See ViewPoint.hs
-    RELATION FormalAmpersand.proprules[FormalAmpersand.Rule*FormalAmpersand.Pattern] []         -- ^ all property rules the user has declared within a pattern.
+    -- RELATION proprules[Rule*Pattern] []         -- This relation removed to prevent execengine work in the atlas. This relation can be calculated via the `Rule`.
     RELATION FormalAmpersand.identityRules[FormalAmpersand.Rule*FormalAmpersand.Pattern] []     -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
     RELATION FormalAmpersand.patRules[FormalAmpersand.Pattern*FormalAmpersand.Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
     MEANING "The user-defined rules in a pattern."

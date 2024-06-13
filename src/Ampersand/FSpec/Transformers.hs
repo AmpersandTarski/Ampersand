@@ -351,11 +351,6 @@ transformersFormalAmpersand fSpec =
           | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
         ]
       ),
-      ( "FormalAmpersand.expTgt",
-        "FormalAmpersand.PairViewSegment",
-        "FormalAmpersand.Concept",
-        [] -- TODO
-      ),
       -- ( "FormalAmpersand.fieldIn",
       --   "FormalAmpersand.FieldDef",
       --   "FormalAmpersand.ObjectDef",
