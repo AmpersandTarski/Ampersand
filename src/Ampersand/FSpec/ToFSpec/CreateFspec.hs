@@ -88,19 +88,26 @@ createFspec =
                 pCtx2Fspec env userScr
           grindInto FormalAmpersand userFspc
         Prototype -> do
-          let oneFspec = do
+          let guardedOne = do
                 userPCtx <- userScript
                 pcScript <- prototypeContextScript
                 checkPrototypeContextTransformers env pcScript
-                pCtx2Fspec env (userPCtx `mergeContexts` pcScript) -- this is done to typecheck the combination
-          grindInto PrototypeContext oneFspec
+                pure $ userPCtx `mergeContexts` pcScript -- this is done to typecheck the combination
+          let oneFspec = pCtx2Fspec env =<< guardedOne -- this is done to typecheck the combination
+          guardedTwo <- grindInto PrototypeContext oneFspec
+          pure $ do
+            one <- guardedOne
+            two <- guardedTwo
+            pure (one `mergeContexts` two)
         RAP -> do
+          -- combine userscript, formalAmpersand and prototypeContext
           let guardedOne = do
                 rapPCtx <- userScript
                 faScript <- formalAmpersandScript
                 pcScript <- prototypeContextScript
-                return $ rapPCtx `mergeContexts` pcScript `mergeContexts` faScript
+                pure $ rapPCtx `mergeContexts` pcScript `mergeContexts` faScript
           let oneFspec = pCtx2Fspec env =<< guardedOne -- this is done to typecheck the combination
+          -- build a prototype with the combination
           guardedTwo <- grindInto PrototypeContext oneFspec
           pure $ do
             pcScript <- prototypeContextScript
