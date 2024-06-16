@@ -360,7 +360,7 @@ pCtx2aCtx
               defaultFormat = deffrmtCtxt
             }
         where
-          gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
+          gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (toList . concs) gns)
@@ -751,7 +751,7 @@ pCtx2aCtx
                 | toLower c `elem` T.unpack (maybe "" text1ToText str) = False
                 | otherwise = def'
           warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
-          warnings pc@(P_Cruds _ crd1) aCruds = addWarnings warns aCruds
+          warnings pc@(P_Cruds _ crd1) = addWarnings warns
             where
               crd = text1ToText crd1
               warns :: [Warning]
@@ -954,9 +954,9 @@ pCtx2aCtx
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
-          <*> traverse (pure . pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
-          <*> traverse (pure . pRoleRule2aRoleRule) (pt_RRuls ppat)
-          <*> traverse pure (pt_Reprs ppat)
+          <*> pure (fmap (pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
+          <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
+          <*> pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
@@ -966,7 +966,7 @@ pCtx2aCtx
                 ptpos = origin ppat,
                 ptend = pt_end ppat,
                 ptrls = Set.fromList rules',
-                ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> pt_gns ppat,
+                ptgns = mapMaybe (pClassify2aClassify (conceptMap ci)) (pt_gns ppat),
                 ptdcs = Set.fromList relations,
                 ptrrs = roleRules,
                 ptcds = conceptdefs,

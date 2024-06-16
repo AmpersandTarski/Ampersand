@@ -4,7 +4,7 @@ INCLUDE "Relations.adl"
 INCLUDE "Patterns.adl"
 
 
-VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , tgt;name[Concept*ConceptName] , TXT "]" )
+VIEW FormalAmpersand.Signature: FormalAmpersand.Signature( TXT "[" , FormalAmpersand.src;FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] , TXT "*" , FormalAmpersand.tgt;FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] , TXT "]" )
 
 
 --PATTERN Authorizations
@@ -23,115 +23,116 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , t
 --    VIOLATION ( TXT "{EX} InsPair;owner;Context;", SRC I, TXT ";Account;", TGT I )
 --ENDPATTERN
 
-PATTERN Context
-    CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-    REPRESENT ContextName TYPE ALPHANUMERIC
-    RELATION name[Context*ContextName] [UNI] --Removed TOT, for it gives a nasty violation
+PATTERN FormalAmpersand.Context
+    CONCEPT FormalAmpersand.Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
+    CLASSIFY FormalAmpersand.ContextName ISA FormalAmpersand.Name
+    RELATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
-      ROLE ExecEngine MAINTAINS DelUnusedContextName
-      RULE DelUnusedContextName LABEL "del unused ContextName" : I[ContextName] |- name~;name
+      ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedContextName
+      RULE FormalAmpersand.DelUnusedContextName LABEL "del unused ContextName" : I[FormalAmpersand.ContextName] |- FormalAmpersand.name~;FormalAmpersand.name
       MEANING "A ContextName without Context will be removed."
-      VIOLATION ( TXT "{EX} DelAtom;ContextName;", SRC I )
+      VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ContextName;", SRC I )
 
-    IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
+    IDENT FormalAmpersand.Pattern: FormalAmpersand.Pattern(FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName],FormalAmpersand.context[FormalAmpersand.Pattern*FormalAmpersand.Context])
 
-    RELATION name[Concept*ConceptName] [UNI,TOT] 
+    RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,TOT] 
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-    REPRESENT ConceptName TYPE ALPHANUMERIC
-    RELATION context[Isa*Context] [UNI,TOT]
-    RELATION context[IsE*Context] [UNI,TOT]
+    REPRESENT FormalAmpersand.ConceptName TYPE ALPHANUMERIC
+    RELATION FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context] [UNI,TOT]
+    RELATION FormalAmpersand.context[FormalAmpersand.IsE*FormalAmpersand.Context] [UNI,TOT]
     MEANING "The user-defined generalization rules in a context."
-    RELATION concepts[Pattern*Concept]
-    RELATION uses[Context*Pattern]
+    RELATION FormalAmpersand.concepts[FormalAmpersand.Pattern*FormalAmpersand.Concept]
+    RELATION FormalAmpersand.uses[FormalAmpersand.Context*FormalAmpersand.Pattern]
     MEANING "If a context uses a pattern, everything declared in that pattern is valid within the context."
-    RELATION context[Concept*Context] [UNI] -- This contains all concepts declared inside a context.
+    RELATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] [UNI] -- This contains all concepts declared inside a context.
     MEANING "If a concept declaration is used in a context, that concept exists in that context. This is registered in the system."
-    RELATION ctxds[Relation*Context] [UNI] -- comes from ctxds, which is defined in A_Context. This contains all relations declared inside a context but outside the patterns it contains.
+    RELATION FormalAmpersand.ctxds[FormalAmpersand.Relation*FormalAmpersand.Context] [UNI] -- comes from ctxds, which is defined in A_Context. This contains all relations declared inside a context but outside the patterns it contains.
     MEANING "Any relation declared anywhere in a context outside the scope of a pattern is registered in the system."
-    RELATION relsDefdIn[Relation*Context] [UNI] -- comes from relsDefdIn, which is defined in FSpec. This contains all relations declared inside a context including the patterns it contains.
+    RELATION FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context] [UNI] -- comes from relsDefdIn, which is defined in FSpec. This contains all relations declared inside a context including the patterns it contains.
     MEANING "Any relation declared anywhere in a context is registered in the system."
-    RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    RELATION FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
-    RELATION udefrules[Rule*Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
+    RELATION FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
                                                 --   which are not property- and not identity rules. See ViewPoint.hs
-    RELATION proprules[Rule*Context] [UNI]      -- ^ all property rules the user has declared within this context including the patterns it contains.
-    RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
+    -- RELATION FormalAmpersand.proprules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI] -- This relation removed to prevent execengine work in the atlas. This relation can be calculated via the `Rule`.
+    RELATION FormalAmpersand.identityRules[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
     -- Use allRules[Rule*Context] to get all rules declared inside a context, including all rules declared inside the patterns in that context. A rule can be either user defined, a property rule, or identity rule
   
     MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
-    RELATION context[Pattern*Context] [UNI]     -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
+    RELATION FormalAmpersand.context[FormalAmpersand.Pattern*FormalAmpersand.Context] [UNI]     -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
     MEANING "If a pattern is declared inside a context, this is registered in the system."
 
-    PURPOSE RULE RuleDeclaredOutsidePattern
+    PURPOSE RULE FormalAmpersand.RuleDeclaredOutsidePattern
     {+Ampersand allows its users to declare rules in a context, outside the scope of a pattern.
     +}
-    ROLE ExecEngine MAINTAINS RuleDeclaredOutsidePattern
-    RULE RuleDeclaredOutsidePattern LABEL "rule declared outside pattern" : ctxrs[Rule*Context] |- udefrules[Rule*Context]
+    ROLE ExecEngine MAINTAINS FormalAmpersand.RuleDeclaredOutsidePattern
+    RULE FormalAmpersand.RuleDeclaredOutsidePattern LABEL "rule declared outside pattern" : FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context] |- FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
-    VIOLATION (TXT "{EX} InsPair;udefrules;Rule;", SRC I, TXT ";Context;", TGT I)
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.udefrules;FormalAmpersand.Rule;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
 
-    PURPOSE RULE RelationDeclaredOutsidePattern
+    PURPOSE RULE FormalAmpersand.RelationDeclaredOutsidePattern
     {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
     +}
-    ROLE ExecEngine MAINTAINS RelationDeclaredOutsidePattern
-    RULE RelationDeclaredOutsidePattern LABEL "relation declared outside pattern" : ctxds[Relation*Context] |- relsDefdIn[Relation*Context]
+    ROLE ExecEngine MAINTAINS FormalAmpersand.RelationDeclaredOutsidePattern
+    RULE FormalAmpersand.RelationDeclaredOutsidePattern LABEL "relation declared outside pattern" : FormalAmpersand.ctxds[FormalAmpersand.Relation*FormalAmpersand.Context] |- FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]
     MEANING "A relation declared in a context outside the scope of a pattern is registered in the system."
-    VIOLATION (TXT "{EX} InsPair;relsDefdIn;Relation;", SRC I, TXT ";Context;", TGT I)
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.relsDefdIn;FormalAmpersand.Relation;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
 
-    PURPOSE RULE PatternIsUsed
+    PURPOSE RULE FormalAmpersand.PatternIsUsed
     {+Patterns can be defined inside a context. This means that all declarations in that pattern are used in that context.
     +}
-    ROLE ExecEngine MAINTAINS PatternIsUsed
-    RULE PatternIsUsed LABEL "pat defined in means used in" : context[Pattern*Context] |- uses[Context*Pattern]~
+    ROLE ExecEngine MAINTAINS FormalAmpersand.PatternIsUsed
+    RULE FormalAmpersand.PatternIsUsed LABEL "pat defined in means used in" : FormalAmpersand.context[FormalAmpersand.Pattern*FormalAmpersand.Context] |- FormalAmpersand.uses[FormalAmpersand.Context*FormalAmpersand.Pattern]~
     MEANING "Every pattern defined in a context is used in that context."
-    VIOLATION (TXT "{EX} InsPair;uses;Context;", TGT I, TXT ";Pattern;", SRC I)
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.uses;FormalAmpersand.Context;", TGT I, TXT ";FormalAmpersand.Pattern;", SRC I)
 ENDPATTERN
 
-PURPOSE PATTERN Validity
+PURPOSE PATTERN FormalAmpersand.Validity
 {+The mechanism to define truth within context is represented by the relation `valid`.
 The idea is that a context determines concepts, relations and rules, all of which we say are `valid` in the context.
 For this purpose we define three relations, `valid[Concept*Context]`, `valid[Relation*Context]`, and `valid[Rule*Context]`.
 +}
-PATTERN Validity
-    RELATION valid[Concept*Context]
+PATTERN FormalAmpersand.Validity
+    RELATION FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context]
     MEANING "A concept/context pair in the relation `valid[Concept*Context]` means that this concept exists with the context."
-    PURPOSE RULE validRelations MARKDOWN
+    PURPOSE RULE FormalAmpersand.validRelations MARKDOWN
     {+In order to compute validity of concepts within a context,
     three categories of concepts are taken into account:
      - the concept defined in the context
      - all concept defined in patterns within the context
      - all concept defined in patterns used by the context
     +}
-    ROLE ExecEngine MAINTAINS validConcepts
-    RULE validConcepts : concepts~;(context\/uses~) \/ context |- valid[Concept*Context]
+    ROLE ExecEngine MAINTAINS FormalAmpersand.validConcepts
+    RULE FormalAmpersand.validConcepts : FormalAmpersand.concepts~;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.context |- FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context]
     MEANING "Every concept defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
-    VIOLATION (TXT "{EX} InsPair;valid;Concept;", SRC I, TXT ";Context;", TGT I)
-    RULE AllValidConcepts : valid[Concept*Context] |- concepts~;(context\/uses~) \/ context[Concept*Context]
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.valid;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
+    RULE FormalAmpersand.AllValidConcepts : FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context] |- FormalAmpersand.concepts~;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]
     MEANING "TODO: MEANING ONTBREEKT"
-    VIOLATION (TXT "Concept ", SRC name, TXT " is not valid in context ", TGT I)
+    VIOLATION (TXT "FormalAmpersand.Concept ", SRC FormalAmpersand.name, TXT " is not valid in context ", TGT I)
 
-    ROLE ExecEngine MAINTAINS ValidityConcepts
-    RULE ValidityConcepts LABEL "validity of concepts in a context" : uses;declaredIn~;I[Relation];sign;(tgt\/src) |- context[Concept*Context]~
+    ROLE ExecEngine MAINTAINS FormalAmpersand.ValidityConcepts
+    RULE FormalAmpersand.ValidityConcepts LABEL "validity of concepts in a context" : FormalAmpersand.uses;FormalAmpersand.declaredIn~;I[FormalAmpersand.Relation];FormalAmpersand.sign;(FormalAmpersand.tgt\/FormalAmpersand.src) |- FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]~
     MEANING "Every concept in the signature of relations is valid in every context that uses the pattern in which that relation is declared.."
-    VIOLATION ( TXT "{EX} InsPair;context;Concept;", TGT I, TXT ";Context;", SRC I )
+    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.context;FormalAmpersand.Concept;", TGT I, TXT ";FormalAmpersand.Context;", SRC I )
 
-    RELATION valid[Relation*Context]    -- TODO: this relation is called 'relsDefdIn' in FormalAmpersand.
+    RELATION FormalAmpersand.valid[FormalAmpersand.Relation*FormalAmpersand.Context]    -- TODO: this relation is called 'relsDefdIn' in FormalAmpersand.
     MEANING "A relation/context pair in the relation `valid[Relation*Context]` means that this relation exists with the context."
-    ROLE ExecEngine MAINTAINS validRelations
-    RULE validRelations : declaredIn;(context\/uses~) \/ ctxds |- valid[Relation*Context]
+    ROLE ExecEngine MAINTAINS FormalAmpersand.validRelations
+    RULE FormalAmpersand.validRelations : FormalAmpersand.declaredIn;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.ctxds |- FormalAmpersand.valid[FormalAmpersand.Relation*FormalAmpersand.Context]
     MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
-    VIOLATION (TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I)
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.valid;FormalAmpersand.Relation;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
 
-    RELATION valid[Rule*Context]
+    RELATION FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "A rule/context pair in the relation `valid[Rule*Context]` means that this rule exists with the context."
-    ROLE ExecEngine MAINTAINS validRules
-    RULE validRules : patRules[Pattern*Rule]~;(context\/uses~) \/ context[Rule*Context] |- valid[Rule*Context]
+    ROLE ExecEngine MAINTAINS FormalAmpersand.validRules
+
+    RULE FormalAmpersand.validRules : FormalAmpersand.patRules[FormalAmpersand.Pattern*FormalAmpersand.Rule]~;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] |- FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
-    VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
-    ROLE User MAINTAINS AllValidRules
-    RULE AllValidRules : valid[Rule*Context] |- patRules[Pattern*Rule]~;(context\/uses~) \/ context[Rule*Context]
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.valid;FormalAmpersand.Rule;", SRC I, TXT ";FormalAmpersand.Context;", TGT I)
+    ROLE FormalAmpersand.User MAINTAINS FormalAmpersand.AllValidRules
+    RULE FormalAmpersand.AllValidRules : FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context] |- FormalAmpersand.patRules[FormalAmpersand.Pattern*FormalAmpersand.Rule]~;(FormalAmpersand.context\/FormalAmpersand.uses~) \/ FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context]
     MEANING "TODO: MEANING ONTBREEKT"
-    VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
+    VIOLATION (TXT "Rule ", SRC FormalAmpersand.name, TXT " is not valid in context ", TGT I)
 ENDPATTERN
 
 ENDCONTEXT

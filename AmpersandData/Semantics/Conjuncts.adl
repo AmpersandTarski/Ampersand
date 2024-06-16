@@ -1,0 +1,33 @@
+CONTEXT FormalAmpersand IN ENGLISH LATEX
+PATTERN Conjuncts
+    RELATION allConjuncts[Context*Conjunct] [INJ]
+    MEANING "All conjuncts in a context."
+    RELATION allShifts[DnfClause*DnfClause]
+    RELATION conjNF[Term*Term] [UNI,TOT]
+    RELATION rcConjunct[Conjunct*Term] [TOT]
+    RELATION conjuncts[Rule*Term]
+    RELATION exprIsc2list[Term*Term] [TOT]
+    RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]
+    RELATION name[Rule*RuleName] [UNI,TOT]
+    RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
+    RELATION qRule[Quad*Rule] [UNI,TOT]
+    RELATION qConjuncts[Quad*Conjunct]
+    RELATION rc_orgRules[Conjunct*RuleName] [UNI,TOT]
+    RELATION rcConjunct[Conjunct*Term] [UNI,TOT]
+    RELATION rc_dnfClauses[Conjunct*DnfClause]
+    RELATION term[Rule*Term][UNI,TOT] --is defined somewhere else too.
+
+
+    RULE Conjuncts1 : qConjuncts;rcConjunct |- qRule;conjuncts
+    MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."
+
+    RULE Conjuncts2 : rcConjunct~;rc_dnfClauses = expr2dnfClause;allShifts
+    MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the term in that conjunct."
+
+    RULE defconjuncts : conjuncts = term[Rule*Term];conjNF;exprIsc2list
+    MEANING "The conjuncts in a rule are defined as the top-level subterms in the conjunctive normal form of the term related to that rule."
+
+    RULE Conjuncts4 : qConjuncts~;qRule |- rc_orgRules;name[Rule*RuleName] ~
+    MEANING "The name of every conjunct in a quad is the name of the rule from which it has been derived."
+ENDPATTERN
+ENDCONTEXT

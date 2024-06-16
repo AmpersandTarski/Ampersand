@@ -113,7 +113,7 @@ instance JSON SubInterface JSONSubInterface where
         JSONSubInterface
           { subJSONboxHeader = Nothing,
             subJSONifcObjects = Nothing,
-            subJSONrefSubInterfaceName = Just . text1ToText . escapeIdentifier . fullName1 . siIfcId $ si,
+            subJSONrefSubInterfaceName = Just . text1ToText . fullName1 . siIfcId $ si,
             subJSONrefIsLinkTo = Just . siIsLink $ si
           }
 

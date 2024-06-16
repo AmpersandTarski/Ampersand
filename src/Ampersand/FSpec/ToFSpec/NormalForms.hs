@@ -1033,7 +1033,7 @@ safezip _ _ = fatal "Zip of two lists with different lengths!"
 tceDerivRules :: ConceptMap -> [DerivRule]
 tceDerivRules cptMap =
   concatMap
-    (dRule cptMap . parseRule [])
+    (dRule cptMap . parseRule)
     --    [ "r[A*B]\\/s[A*B] = s[A*B]\\/r[A*B]"                         --  Commutativity of \/
     --    , "r[A*B]/\\s[A*B] = s[A*B]/\\r[A*B]"                         --  Commutativity of /\
     --    , "(r[A*B]\\/s[A*B])\\/q[A*B] = r[A*B]\\/(s[A*B]\\/q[A*B])"   --  Associativity of \/

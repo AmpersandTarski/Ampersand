@@ -727,7 +727,7 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance (Hashable a) => Hashable (PairView a)
 
@@ -953,6 +953,15 @@ data BoxHeader = BoxHeader
   }
   deriving (Show, Data)
 
+instance Ord BoxHeader where
+  compare a b = compare (btType a, L.sort (btKeys a)) (btType b, L.sort (btKeys b))
+
+instance Eq BoxHeader where
+  a == b = compare a b == EQ
+
+instance Unique BoxHeader where
+  showUnique x = btType x <> (showUnique . L.sort . btKeys $ x)
+
 instance Traced BoxHeader where
   origin BoxHeader {pos = orig} = orig
 
@@ -964,6 +973,15 @@ data TemplateKeyValue = TemplateKeyValue
     tkval :: !(Maybe Text)
   }
   deriving (Show, Data)
+
+instance Ord TemplateKeyValue where
+  compare a b = compare (tkkey a, tkval a) (tkkey b, tkval b)
+
+instance Eq TemplateKeyValue where
+  a == b = compare a b == EQ
+
+instance Unique TemplateKeyValue where
+  showUnique x = toText1Unsafe $ tshow (tkkey x) <> tshow (tkval x)
 
 instance Traced TemplateKeyValue where
   origin TemplateKeyValue {pos = orig} = orig

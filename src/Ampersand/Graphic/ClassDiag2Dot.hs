@@ -20,7 +20,7 @@ import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
-classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph Name
+classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph MyDotNode
 classdiagram2dot env cd =
   DotGraph
     { strictGraph = False,
@@ -54,18 +54,18 @@ classdiagram2dot env cd =
     allClasses x = classes x ++ (concatMap (toList . snd) . groups $ x)
     isOtherNode :: Name -> Bool
     isOtherNode n = n `notElem` nodes (allClasses cd)
-    group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph Name
+    group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph MyDotNode
     group2subgraph x =
       DotSG
         { isCluster = True,
-          subGraphID = Just . Str . nameLabel $ nm,
+          subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
           subGraphStmts =
             DotStmts
               { attrStmts =
                   [ GraphAttrs
-                      [ Label . StrLabel . nameLabel $ nm,
+                      [ Label . StrLabel . TL.fromStrict . fullName $ nm,
                         BgColor [WC (X11Color GhostWhite) Nothing],
-                        URL "https://en.wikipedia.org/wiki/File:Vincent_Willem_van_Gogh_127.jpg"
+                        URL "https://ampersandtarski.github.io/"
                       ]
                   ],
                 subGraphs = [],
@@ -76,17 +76,15 @@ classdiagram2dot env cd =
               }
         }
       where
-        nameLabel :: (Named a) => a -> TL.Text
-        nameLabel = TL.fromStrict . fullName
         nm = fst x
         notInClassNodes :: Name -> Bool
         notInClassNodes n = n `notElem` nodes classesInGroup
         classesInGroup = toList . snd $ x
 
-    class2node :: Class -> DotNode Name
+    class2node :: Class -> DotNode MyDotNode
     class2node cl =
       DotNode
-        { nodeID = name cl,
+        { nodeID = toMyDotNode cl,
           nodeAttributes =
             [ Shape PlainText,
               GVcomp.Color [WC (X11Color Purple) Nothing],
@@ -148,10 +146,10 @@ classdiagram2dot env cd =
                     )
                 ]
 
-    nonClass2node :: Name -> DotNode Name
+    nonClass2node :: Name -> DotNode MyDotNode
     nonClass2node x =
       DotNode
-        { nodeID = x,
+        { nodeID = toMyDotNode x,
           nodeAttributes =
             [ Shape Box3D,
               Label . StrLabel . fromString . T.unpack . fullName $ x
@@ -171,11 +169,11 @@ classdiagram2dot env cd =
     -------------------------------
     --        ASSOCIATIONS:      --
     -------------------------------
-    association2edge :: Association -> DotEdge Name
+    association2edge :: Association -> DotEdge MyDotNode
     association2edge ass =
       DotEdge
-        { fromNode = name $ assSrc ass,
-          toNode = name $ assTgt ass,
+        { fromNode = toMyDotNode $ assSrc ass,
+          toNode = toMyDotNode $ assTgt ass,
           edgeAttributes =
             [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)]), -- No arrowHead
               HeadLabel (mult2Lable (assrhm ass)),
@@ -195,11 +193,11 @@ classdiagram2dot env cd =
     -------------------------------
     --        AGGREGATIONS:      --
     -------------------------------
-    aggregation2edge :: Aggregation -> DotEdge Name
+    aggregation2edge :: Aggregation -> DotEdge MyDotNode
     aggregation2edge agg =
       DotEdge
-        { fromNode = name . aggChild $ agg,
-          toNode = name . aggParent $ agg,
+        { fromNode = toMyDotNode (aggChild agg),
+          toNode = toMyDotNode (aggParent agg),
           edgeAttributes =
             [ ArrowHead
                 ( AType
@@ -220,18 +218,18 @@ classdiagram2dot env cd =
     --        GENERALIZATIONS:   --       -- Ampersand statements such as "CLASSIFY Dolphin ISA Animal" are called generalization.
     --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
     -------------------------------
-    generalization2edges :: Generalization -> [DotEdge Name]
+    generalization2edges :: Generalization -> [DotEdge MyDotNode]
     generalization2edges ooGen = sub2edges (genAgen ooGen)
       where
         -- SJ 2017-09-22. Drawing generalization arrows from right to left seems to give better pictures.
         -- This is probably because it is more in line with the totality constraint, which governs the drawing
         -- direction of associations. For this purpose we draw a backward facing arrow from generic to specific.
 
-        sub2edges :: AClassify -> [DotEdge Name]
+        sub2edges :: AClassify -> [DotEdge MyDotNode]
         sub2edges gen =
           [ DotEdge
-              { fromNode = name gener,
-                toNode = name spec,
+              { fromNode = toMyDotNode gener,
+                toNode = toMyDotNode spec,
                 edgeAttributes =
                   [ Dir Back,
                     ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)]), -- Open normal arrowHead

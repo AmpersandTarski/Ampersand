@@ -3,46 +3,52 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- This file has been aligned with ShowMeatgrinder on 2017-07-21 by SJ.
 
 PATTERN Rules
-    REPRESENT RuleName TYPE ALPHANUMERIC
-    IDENT Rules: Rule(context[Rule*Context],name[Rule*RuleName])
+    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be true in each context in which it is valid."
+    CONCEPT FormalAmpersand.RuleName ""
+    CLASSIFY FormalAmpersand.RuleName ISA FormalAmpersand.Name
+    IDENT Rules: FormalAmpersand.Rule(FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context],FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName])
 
-    RELATION ctxrs[Rule*Context]  -- This contains all rules declared inside a context but outside the patterns it contains.
-    RELATION context[Rule*Context] [UNI]  -- This contains all rules declared inside a context
+    RELATION FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    RELATION FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]  -- This contains all rules declared inside a context
 
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
-    REPRESENT RuleName TYPE ALPHANUMERIC
-    RELATION name[Rule*RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
+    RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
-      ROLE ExecEngine MAINTAINS DelUnusedRuleName
-      RULE DelUnusedRuleName LABEL "del unused RuleName" : I[RuleName] |- name~;name
+      ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRuleName
+      RULE FormalAmpersand.DelUnusedRuleName LABEL "del unused RuleName" : I[FormalAmpersand.RuleName] |- FormalAmpersand.name~;FormalAmpersand.name
       MEANING "A RuleName without Rule will be removed."
-      VIOLATION ( TXT "{EX} DelAtom;RuleName;", SRC I )
-    REPRESENT EncodedName TYPE ALPHANUMERIC
-    RELATION urlEncodedName[Rule*EncodedName] [UNI]
-    RELATION urlEncodedName[Pattern*EncodedName] [UNI]
-    RELATION urlEncodedName[Concept*EncodedName] [UNI]
-    RELATION origin[Rule*Origin] [UNI]
+      VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.RuleName;", SRC I )
+    REPRESENT FormalAmpersand.EncodedName TYPE ALPHANUMERIC
+    RELATION FormalAmpersand.urlEncodedName[FormalAmpersand.Rule*FormalAmpersand.EncodedName] [UNI]
+    RELATION FormalAmpersand.urlEncodedName[FormalAmpersand.Pattern*FormalAmpersand.EncodedName] [UNI]
+    RELATION FormalAmpersand.urlEncodedName[FormalAmpersand.Concept*FormalAmpersand.EncodedName] [UNI]
+    RELATION FormalAmpersand.origin[FormalAmpersand.Rule*FormalAmpersand.Origin] [UNI]
     MEANING "The location where a rule is defined."  -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
-    RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
+    RELATION FormalAmpersand.message[FormalAmpersand.Rule*FormalAmpersand.Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 --    RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 --    RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
-    RELATION formalTerm[Rule*Term] [UNI]
+    RELATION FormalAmpersand.formalTerm[FormalAmpersand.Rule*FormalAmpersand.Term] [UNI]
     MEANING "The rule expressed in relation algebra."
-    RELATION meaning[Rule*Meaning] -- e.g. 'BusinessFunction' 
+    RELATION FormalAmpersand.meaning[FormalAmpersand.Rule*FormalAmpersand.Meaning] -- e.g. 'BusinessFunction' 
   --  RELATION sign[Rule*Signature] [UNI,TOT]
-    RELATION declaredthrough[PropertyRule*Property] [TOT]
+    RELATION FormalAmpersand.declaredthrough[FormalAmpersand.PropertyRule*FormalAmpersand.Property] [TOT]
     MEANING "A property is defined as part of the declaration of relation."
-    RELATION propertyRule[Relation*PropertyRule] [SUR]
+    RELATION FormalAmpersand.propertyRule[FormalAmpersand.Relation*FormalAmpersand.PropertyRule] [SUR]
     MEANING "The properties of a relation."
+
+    CONCEPT FormalAmpersand.Conjunct "A conjunct is an term that represents an invariant in an information system."
+    CONCEPT FormalAmpersand.Quad "A quad is a Haskell data structure that corresponds to one rule in an Ampersand script."
+    CONCEPT FormalAmpersand.PairView "A pairview is the definition of an error message for violations or a rule."
+    CONCEPT FormalAmpersand.PairViewSegment "A pairviewsegment is a fragment of a pairview"
 ENDPATTERN
 
 PATTERN PropertyRules
-    CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
-    CLASSIFY PropertyRule ISA Rule
-    CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-    RULE propertyEnum : I[Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "PROP"
+    CONCEPT FormalAmpersand.PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
+    CLASSIFY FormalAmpersand.PropertyRule ISA FormalAmpersand.Rule
+    CONCEPT FormalAmpersand.Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+    RULE FormalAmpersand.propertyEnum : I[Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "PROP"
     MEANING "There are nine tokens, that can be used to define properties on a relation. -> is syntactic sugar for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
-    REPRESENT Property TYPE ALPHANUMERIC
+    REPRESENT FormalAmpersand.Property TYPE ALPHANUMERIC
 ENDPATTERN
 
 ENDCONTEXT

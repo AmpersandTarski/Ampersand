@@ -1,19 +1,19 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 
-    INTERFACE Listallinterfaces LABEL "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*Interface] cRud BOX <TABLE sortable sortBy="Label" order="asc">
-        [ "Interface"       : I             cRud
-        , "Label"           : label         cRud
-        , "Is public"       : isPublic      cRud
-        , "Is API"          : isAPI         cRud
-        , "Nav items"       : ifc~          cRud
-        , "For roles"       : ifcRoles   cRud
+    INTERFACE PrototypeContext.Listallinterfaces LABEL "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PrototypeContext.Interface] cRud BOX <TABLE sortable sortBy="Label" order="asc">
+        [ "Interface"       : I                           cRud
+        , "Label"           : PrototypeContext.label      cRud
+        , "Is public"       : PrototypeContext.isPublic   cRud
+        , "Is API"          : PrototypeContext.isAPI      cRud
+        , "Nav items"       : PrototypeContext.ifc~       cRud
+        , "For roles"       : PrototypeContext.ifcRoles   cRud
         ]
 
-    INTERFACE Editinterface LABEL "Edit interface" FOR Administrator : I[Interface] BOX
-        [ "Interface"           : I
-        , "Is public"           : isPublic      cRUd
-        , "Is API"              : isAPI         cRud -- do not allow editing this property, because non-APIs require a design time generated UI
-        , "For roles"           : ifcRoles   cRUd
+    INTERFACE PrototypeContext.Editinterface LABEL "Edit interface" FOR Administrator : I[PrototypeContext.Interface] BOX
+        [ "Interface"           : I                           cRud
+        , "Is public"           : PrototypeContext.isPublic   cRUd
+        , "Is API"              : PrototypeContext.isAPI      cRud -- do not allow editing this property, because non-APIs require a design time generated UI
+        , "For roles"           : PrototypeContext.ifcRoles   cRUd
         ]
 
 ENDCONTEXT

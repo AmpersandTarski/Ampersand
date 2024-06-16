@@ -1,4 +1,4 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 
   INCLUDE "Interfaces.adl"
   INCLUDE "Interfaces.ifc"
@@ -8,13 +8,13 @@ CONTEXT PrototypeFramework IN ENGLISH
 
   INCLUDE "Roles.adl"
 
-  RELATION sessionAllowedRoles[SESSION*Role]
-  RELATION sessionActiveRoles[SESSION*Role]
+  RELATION PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role]
+  RELATION PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role]
   
-  RULE ActiveRoles LABEL "Active roles MUST be a subset of allowed roles" : -- This rule is required for the access control mechanism.
-     sessionActiveRoles |- sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
+  RULE PrototypeContext.ActiveRoles LABEL "Active roles MUST be a subset of allowed roles" : -- This rule is required for the access control mechanism.
+     PrototypeContext.sessionActiveRoles |- PrototypeContext.sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
   
-  REPRESENT DateTime TYPE DATETIME
-  RELATION lastAccess[SESSION*DateTime] [UNI]
+  REPRESENT PrototypeContext.DateTime TYPE DATETIME
+  RELATION PrototypeContext.lastAccess[SESSION*PrototypeContext.DateTime] [UNI]
   
 ENDCONTEXT

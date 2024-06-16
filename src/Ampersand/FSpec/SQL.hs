@@ -1355,9 +1355,6 @@ sqlAttConcept fSpec c
         [] -> fatal ("A_Concept \"" <> tshow c <> "\" does not occur in its plug in fSpec \"" <> fullName fSpec <> "\"")
         h : _ -> qName . tshow . attSQLColName $ h
 
-stringOfName :: Name -> Text
-stringOfName = tshow
-
 conjunctSQL :: [ScalarExpr] -> ScalarExpr
 conjunctSQL [] = fatal "nothing to `and`."
 conjunctSQL [ve] = bracketsSQL ve
@@ -1375,7 +1372,7 @@ as :: TableRef -> Name -> TableRef
 as ve a =
   -- TRAlias ve (Alias a Nothing)
   case ve of
-    TRSimple [n] -> if stringOfName n == stringOfName a then withoutAlias else withAlias
+    TRSimple [n] -> if n == a then withoutAlias else withAlias
     _ -> withAlias
   where
     withoutAlias = ve

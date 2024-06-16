@@ -41,16 +41,19 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
-        { attNm = mkName SqlAttributeName $ (toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [],
+        { attNm = sqlAttToName att,
           attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att -- optional if NULL is allowed
         }
 
 propTypeName :: Name
-propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop") NE.:| []
+propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop")
 
-toNamePart' :: Text1 -> NamePart
-toNamePart' x = case toNamePart1 x of
+toNamePart' :: Text1 -> NonEmpty NamePart
+toNamePart' x = toNamePart'' <$> splitOnDots x
+
+toNamePart'' :: Text1 -> NamePart
+toNamePart'' x = case toNamePart1 x of
   Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
   Just np -> np
 
@@ -267,12 +270,10 @@ tdAnalysis fSpec =
               else (name . target . attExpr) f,
           attOptional = attNull f -- optional if NULL is allowed
         }
-    allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
+    allAssocs = concatMap (filter isAssocBetweenClasses . relsOf) tables
       where
         isAssocBetweenClasses a = let allClassNames = map clName allClasses in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
-
         kernelConcepts = map fst (concatMap cLkpTbl tables)
-
         relsOf t =
           case t of
             TblSQL {} -> map (mkRel t) . mapMaybe relOf . attributes $ t
@@ -313,7 +314,7 @@ tdAnalysis fSpec =
             }
 
 sqlAttToName :: SqlAttribute -> Name
-sqlAttToName att = mkName SqlAttributeName ((toNamePart' . sqlColumNameToText1 $ attSQLColName att) NE.:| [])
+sqlAttToName = mkName SqlAttributeName . toNamePart' . sqlColumNameToText1 . attSQLColName
 
 mults :: Expression -> Multiplicities
 mults r =

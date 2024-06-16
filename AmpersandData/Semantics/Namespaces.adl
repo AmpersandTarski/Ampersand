@@ -1,0 +1,139 @@
+CONTEXT Namespaces IN ENGLISH MARKDOWN
+PURPOSE CONTEXT Inclusion 
+{+ When one module includes another, name conflicts may arise.
+A name conflict occurs when an identifier refers to more than one entity.
+To prevent this, we define name spaces and conventions for referring to entities in other modules.
++}
+
+PURPOSE CONCEPT Identifier 
+{+ Identifiers refer to entities that are defined in some module.
+We consider identifiers in a different location to be different identifiers, even though they may have the same name or refer to the same entity.
+The name of an identifier is constrained by the language syntax, which is not relevant for the purpose of avoiding name conflicts.
++}
+CONCEPT Identifier "An identifier is the occurrence of a string in a module that refers to an entity." ""
+CONCEPT Entity "An entity is something that is defined in a module, to which an identifier can refer."
+
+PURPOSE RELATION uses
+{+ The relation `uses` registers the identifiers that a module uses to refer to declarations.
+In this context, we use it to establish the absence of name conflicts.
++}
+RELATION uses[Module*Identifier]
+
+PURPOSE RELATION declares
+{+ The relation `declares` registers the identifiers that each module declares,
+to which the compiler matches identifiers used.
++}
+RELATION declares[Module*Identifier]
+
+PURPOSE RELATION sees
+{+ The relation `sees` specifies which identifiers a module can see.
+This includes identifiers in other modules it imports, as defined in rule "ENFORCE sees".
++}
+RELATION sees[Module*Identifier]
+
+PURPOSE RELATION refer
+{+ The relation `refer` specifies the entities that an identifier refers to.
+to which the compiler matches identifiers used.
+This relation is not univalent because we want to present name conflicts to the user.
++}
+RELATION refer[Identifier*Entity] [TOT]
+
+PURPOSE RELATION name
+{+ The relation `name` specifies the name of an identifier as the compiler has observed in the source code.
+This allows us to distinguish between different identifiers with the same name, i.e. different occurrences.
++}
+RELATION name[Identifier*Name] [UNI,TOT]
+
+PURPOSE RULE AllDeclared
+{+ A module must see every declaration that its identifiers refer to. +}
+RULE AllDeclared : (I/\uses~;uses);refer |- uses~;sees;refer
+
+PURPOSE RULE NoConflict
+{+ We want identifiers to refer to at most one entity, to prevent ambiguity.
+This rule is implemented as "RULE NoConflict" to obtain a useful violation message for the programmer.
++}
+ROLE User MAINTAINS NoConflict
+RULE NoConflict : refer;-I[Entity];refer~ |- name;-I[Name];name~
+MESSAGE "Name conflict:"
+VIOLATION (TXT "Identifier ", SRC name, TXT " refers to entities ", SRC refer, TXT " and ", TGT refer, TXT ".")
+
+PURPOSE RELATION from
+{+ Suppose Module A contains the following statement.
+```Ampersand
+INCLUDE B
+```
+The relation `from` specifies that this statement is made in Module A.
+The relation `incl` specifies that this statement includes Module B.
++}
+
+RELATION from[IncludeStatement*Module]
+RELATION incl[IncludeStatement*Module]
+
+RELATION as[IncludeStatement*Identifier]
+
+VIEW Prefixed : Prefixed(l,TXT ".",r)
+VIEW Identifier : Identifier(name)
+VIEW IncludeStatement : IncludeStatement(from, TXT ": INCLUDE ", incl, TXT " AS ",as)
+CLASSIFY Prefixed ISA Identifier
+RELATION l[Prefixed*Identifier] [UNI,TOT]
+RELATION r[Prefixed*Identifier] [UNI,TOT]
+
+ENFORCE sees := declares
+                \/ incl~;(as;l~/\from;sees;r~)
+                \/ incl~;(I-as;as~);from;sees
+
+INTERFACE Identifiers FOR User: "_SESSION";V[SESSION*Identifier] BOX
+       [ id : I
+       , name : name
+       , "Prefix name" : as~
+       , "declaration in Module" : declares~
+       , "used in Module" : uses~
+       , entity : refer
+       ]
+INTERFACE Includes FOR User: "_SESSION";V[SESSION*Identifier];(I/\as~;as) BOX
+       [ id : I
+       , name : name
+       , "Include statement" : as~
+       , l : l~
+       ]
+INTERFACE Declarations FOR User: "_SESSION";V[SESSION*Identifier];(I/\declares~;declares) BOX
+       [ id : I
+       , name : name
+       , declares : declares~
+       , seen : sees~
+       , refer : refer
+       , l : l~
+       , r : r~
+       , "in" : I[Prefixed]
+       ]
+INTERFACE References FOR User: "_SESSION"[SESSION];V[SESSION*Identifier];(I/\uses~;uses) BOX
+       [ id : I
+       , name : name
+       , "used by" : uses~
+       , seen : sees~
+       , refer : refer
+       , l : l~
+       , r : r~
+       , "in" : I[Prefixed]
+       ]
+INTERFACE Entities FOR User: "_SESSION";V[SESSION*Entity] BOX
+       [ id : I
+       , "referred by" : refer~
+       , "Defined in" : refer~;declares~
+       , "Used in" : refer~;uses~
+       , "declared by" : refer~;declares~
+       ]
+INTERFACE Modules FOR User: "_SESSION";V[SESSION*Module] BOX
+       [ id : I
+       , "Include statement" : incl~
+       , from : incl~;from
+       , uses : uses
+       , declares : declares
+       , sees : sees
+       ]
+INTERFACE Other FOR User: "_SESSION"[SESSION] BOX
+   [ IncludeStatements : V[SESSION*IncludeStatement]
+   , Names : V[SESSION*Name]
+   , Prefixes : V[SESSION*Prefixed]
+   ]
+ENDCONTEXT

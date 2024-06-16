@@ -6,72 +6,113 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "Concepts.adl"
 --INCLUDE "AtomsAsShouldBe.adl"
 
-PATTERN StaticInterfaceStructure LABEL "Static Interface Structure"
-    CLASSIFY Interface ISA ObjectDef
-    CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
-
-    CLASSIFY ObjectDef ISA Term
-    CONCEPT Term "Formerly known as Expression." 
+PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structure"
+    CONCEPT FormalAmpersand.ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
     {-Han,
     ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
     So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
     ifcOutputs has to be added yet.
     -}
-    RELATION name[Interface*InterfaceName] [UNI,TOT]
+    RELATION FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName] [UNI,TOT]
     MEANING "This relation contains the name of each interface."
-    REPRESENT InterfaceName TYPE ALPHANUMERIC
+    CLASSIFY FormalAmpersand.InterfaceName ISA FormalAmpersand.Name
+    RELATION FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context][UNI]
+    CONCEPT FormalAmpersand.Interface "An interface is a mechanism that communicates data between different (two) contexts."
+    CONCEPT FormalAmpersand.SubInterface "What exactly is a subinterface?"
+    CONCEPT FormalAmpersand.InterfaceRef "A subinterface that references an Interface."
+    CONCEPT FormalAmpersand.Box "A subinterface containing a list of boxitems."
+    CONCEPT FormalAmpersand.BoxItem "A boxitem is an element of a box."
+    CLASSIFY FormalAmpersand.BxExpr , FormalAmpersand.BxTxt ISA FormalAmpersand.BoxItem
+    CONCEPT FormalAmpersand.BxExpr ""
+    CONCEPT FormalAmpersand.BxTxt ""
 
-    RELATION context[Interface*Context][UNI]
-    CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
-
-    REPRESENT Origin TYPE ALPHANUMERIC
-    RELATION ifcPos[Interface*Origin] [UNI]
+    REPRESENT FormalAmpersand.Origin TYPE ALPHANUMERIC
+    RELATION FormalAmpersand.ifcPos[FormalAmpersand.Interface*FormalAmpersand.Origin] [UNI]
     MEANING "The position in the file (filename, line- and column number)."
-    RELATION ifcPurpose[Interface*Purpose] [UNI]
+    RELATION FormalAmpersand.ifcPurpose[FormalAmpersand.Interface*FormalAmpersand.Purpose] [UNI]
     MEANING "The purpose of each interface is being registered."
+    RELATION FormalAmpersand.ifcObj[FormalAmpersand.Interface*FormalAmpersand.ObjectDef] [UNI,TOT,INJ]
+    MEANING "This is the syntactic link between the Interface and its ObjectDef."
+    RELATION FormalAmpersand.isAPI[FormalAmpersand.Interface*FormalAmpersand.Interface] [PROP]
+    MEANING "This property states that an interface is meant as API (machine-2-machine)"
 
-    RELATION label[FieldDef*FieldName] [UNI,TOT]
+    RELATION FormalAmpersand.label[FormalAmpersand.FieldDef*FormalAmpersand.FieldName] [UNI,TOT]
     MEANING "Every field definition has a label."
-    REPRESENT FieldName TYPE ALPHANUMERIC
-    RELATION objpos[ObjectDef*Origin] [UNI]
+    REPRESENT FormalAmpersand.FieldName TYPE ALPHANUMERIC
+    RELATION FormalAmpersand.origin[FormalAmpersand.ObjectDef*FormalAmpersand.Origin] [UNI]
     MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-    RELATION objView[ObjectDef*View] [UNI]
+    RELATION FormalAmpersand.objTerm[FormalAmpersand.ObjectDef*FormalAmpersand.Term] [UNI, TOT]
+    MEANING "Every object definition has a term to determine the atoms, each of which gets its own html-div."
+    RELATION FormalAmpersand.objcruds[FormalAmpersand.ObjectDef*FormalAmpersand.Cruds][UNI,TOT] -- TODO: Refactor Cruds in Haskell to a set of enumerations
+    MEANING "The CRUD annotation that comes with a specific ObjectDef"
+    RELATION FormalAmpersand.objView[FormalAmpersand.ObjectDef*FormalAmpersand.View] [UNI]
     MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
-    RELATION usedIn[Relation*Term]
+    RELATION FormalAmpersand.objSub[FormalAmpersand.ObjectDef * FormalAmpersand.SubInterface] [UNI]
+    RELATION FormalAmpersand.usedIn[FormalAmpersand.Relation*FormalAmpersand.Term]
     MEANING "If a relation is used in an term, this is registered in usedIn."
-    RELATION formalTerm[Rule*Term] 
+    RELATION FormalAmpersand.formalTerm[FormalAmpersand.Rule*FormalAmpersand.Term] 
     MEANING "The term, of which a rule consists, is accessible via the relation formalTerm."
 
-    PURPOSE RELATION edit[FieldDef*Relation]
+    RELATION FormalAmpersand.origin[FormalAmpersand.SubInterface*FormalAmpersand.Origin][UNI]
+    CLASSIFY FormalAmpersand.Box,FormalAmpersand.InterfaceRef ISA FormalAmpersand.SubInterface
+    RELATION FormalAmpersand.siConcept[FormalAmpersand.Box*FormalAmpersand.Concept][UNI,TOT]
+    MEANING "The box concept is the type of the runtime atom of the box."
+    RELATION FormalAmpersand.siHeader[FormalAmpersand.Box*FormalAmpersand.BoxHeader][UNI,TOT]
+    MEANING "The boxheader is the definition of the way the box is drawn on the screen."
+    RELATION FormalAmpersand.siObjs[FormalAmpersand.Box*FormalAmpersand.BoxItem][INJ,SUR]
+    MEANING "The (ordered) elements/items in the box."
+    RELATION FormalAmpersand.isLink[FormalAmpersand.InterfaceRef*FormalAmpersand.InterfaceRef][PROP]
+    MEANING "Is the interface expanded or drawn as hyperlink?"
+    RELATION FormalAmpersand.references[FormalAmpersand.InterfaceRef*FormalAmpersand.Interface][UNI,TOT]
+    RELATION FormalAmpersand.objDef[FormalAmpersand.BxExpr*FormalAmpersand.ObjectDef][UNI, TOT]
+    MEANING "This relation makes the boxitem refer to the specification of its box. That box is used to paint each atom in the target of the boxexpression."
+    RELATION FormalAmpersand.origin[FormalAmpersand.BoxItem*FormalAmpersand.Origin][UNI]
+    RELATION FormalAmpersand.text[FormalAmpersand.BxTxt*FormalAmpersand.Text][UNI, TOT]
+
+
+    RELATION FormalAmpersand.isPublic[FormalAmpersand.Interface*FormalAmpersand.Interface] [PROP]
+        MEANING "This property states that an interface is accessible for all roles (i.e. public)"
+
+        -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
+        -- RULE "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
+    -- TODO: This should be implemented in the Atlas, see issue #1479
+    -- EQUIVALENCE ifcRoles[Interface*Role] == isPublic;V[Interface*Role]
+    ROLE ExecEngine MAINTAINS EquivalenceInsPairIfcRoles
+    RULE EquivalenceInsPairIfcRoles LABEL "Equivalence - InsPair ifcRoles": FormalAmpersand.isPublic;V[FormalAmpersand.Interface*FormalAmpersand.Role] |- FormalAmpersand.ifcRoles
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.ifcRoles;FormalAmpersand.Interface;", SRC I, TXT ";FormalAmpersand.Role;", TGT I)
+
+
+
+    PURPOSE RELATION FormalAmpersand.edit[FormalAmpersand.FieldDef*FormalAmpersand.Relation]
     {+ To allow editing to insert, update and delete links,
     Ampersand registers whether the term in a field def is just the relation.+}
-    RELATION edit[FieldDef*Relation]
+    RELATION FormalAmpersand.edit[FormalAmpersand.FieldDef*FormalAmpersand.Relation]
     MEANING "The term in this FieldDef is just the relation."
-    PURPOSE RELATION editFlp[FieldDef*Relation]
+    PURPOSE RELATION FormalAmpersand.editFlp[FormalAmpersand.FieldDef*FormalAmpersand.Relation]
     {+ To allow editing to insert, update and delete links,
     Ampersand registers whether the term in a field def is just the flipped relation.+}
-    RELATION editFlp[FieldDef*Relation]
+    RELATION FormalAmpersand.editFlp[FormalAmpersand.FieldDef*FormalAmpersand.Relation]
     MEANING "The term in this FieldDef is just the flipped relation."
 
 ENDPATTERN
 
-PATTERN Interfaces
-RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
+PATTERN FormalAmpersand.Interfaces
+RELATION FormalAmpersand.ifcInputs[FormalAmpersand.Interface*FormalAmpersand.Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
-RELATION ifcOutputs[Interface*Relation]
+RELATION FormalAmpersand.ifcOutputs[FormalAmpersand.Interface*FormalAmpersand.Relation]
 MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."
 
-RELATION ifcRoles[Interface*Role]
+RELATION FormalAmpersand.ifcRoles[FormalAmpersand.Interface*FormalAmpersand.Role]
 MEANING "This relation contains the roles for which an interface is available (empty means: available for all roles)."
-RELATION ifcQuads[Interface*Quad] -- RJ: What is a Quad?
+RELATION FormalAmpersand.ifcQuads[FormalAmpersand.Interface*FormalAmpersand.Quad] -- RJ: What is a Quad?
 MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
-RELATION ifcConjuncts[Interface*Conjunct]
+RELATION FormalAmpersand.ifcConjuncts[FormalAmpersand.Interface*FormalAmpersand.Conjunct]
 MEANING "All conjuncts that must be evaluated after a transation are registered."
-RELATION violatable[Interface*Rule]
+RELATION FormalAmpersand.violatable[FormalAmpersand.Interface*FormalAmpersand.Rule]
 MEANING "All rules that can be violated by an interface are included in violatable."
 
-RULE violatableByInterface : violatable = (ifcInputs\/ifcOutputs);usedIn;formalTerm~
+RULE FormalAmpersand.violatableByInterface : FormalAmpersand.violatable = (FormalAmpersand.ifcInputs\/FormalAmpersand.ifcOutputs);FormalAmpersand.usedIn;FormalAmpersand.formalTerm~
 MEANING "An interface may violate any rule that uses an input- or output relation of that interface."
 ENDPATTERN
 

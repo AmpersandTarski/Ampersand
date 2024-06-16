@@ -1,80 +1,80 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 
     --[NAV MENU ITEMS]-----------------------------------------------------------------------------
-    CONCEPT NavMenuItem ""
-        REPRESENT NavMenuItem TYPE OBJECT
+    CONCEPT PrototypeContext.NavMenuItem ""
+        REPRESENT PrototypeContext.NavMenuItem TYPE OBJECT
   
     -- RELATION label[NavMenuItem*Label] needs to be TOT because the prototype framework depends on having an interface label
     -- The identitier of the NavMenuItem itself is a generated UUID, e.g. "_NavMenuItem_1550521084_00490187"
     -- We want to show the user a navigation label instead
     -- The navigation menu items and its label (and other attributes) are added by the prototype framework during application installation
-    RELATION label[NavMenuItem*Label] [UNI,TOT] 
+    RELATION PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label] [UNI,TOT] 
         MEANING "The human readable text that represents the navbar item and is shown to the user"
-        CONCEPT Label ""
-        REPRESENT Label TYPE ALPHANUMERIC
+        CONCEPT PrototypeContext.Label ""
+        REPRESENT PrototypeContext.Label TYPE ALPHANUMERIC
 
-    RELATION isVisible[NavMenuItem*NavMenuItem] [PROP]
+    RELATION PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem] [PROP]
         MEANING "A navbar item can be visible or not"
     
-    RELATION ifc[NavMenuItem*Interface] [UNI] 
+    RELATION PrototypeContext.ifc[PrototypeContext.NavMenuItem*PrototypeContext.Interface] [UNI] 
         MEANING "A navbar item can direct to an interface"
-        CONCEPT Interface "Representation of an Ampersand interface"
+        CONCEPT PrototypeContext.Interface "Representation of an Ampersand interface"
 
-    RULE NoRefsToAPIs LABEL "Do not allow references to API interfaces" : ifc;isAPI |- -V
+    RULE PrototypeContext.NoRefsToAPIs LABEL "Do not allow references to API interfaces" : PrototypeContext.ifc;PrototypeContext.isAPI |- -V
         MESSAGE "A navbar item can not reference an API interface"
   
-    RELATION url[NavMenuItem*URL] [UNI]
+    RELATION PrototypeContext.url[PrototypeContext.NavMenuItem*PrototypeContext.URL] [UNI]
         MEANING "A navbar item can direct to an (external) url. This can also be used for extensions like the excelimporter"
-        CONCEPT URL "a uniform resource locator as defined by RFC3986"
-        REPRESENT URL TYPE BIGALPHANUMERIC
+        CONCEPT PrototypeContext.URL "a uniform resource locator as defined by RFC3986"
+        REPRESENT PrototypeContext.URL TYPE BIGALPHANUMERIC
   
-    RELATION seqNr[NavMenuItem*SeqNr] [UNI]
+    RELATION PrototypeContext.seqNr[PrototypeContext.NavMenuItem*PrototypeContext.SeqNr] [UNI]
         MEANING "A navbar item has a seq nr (default 0) which determines the position of the item"
-        CONCEPT SeqNr ""
-        REPRESENT SeqNr TYPE INTEGER
+        CONCEPT PrototypeContext.SeqNr ""
+        REPRESENT PrototypeContext.SeqNr TYPE INTEGER
     
-    RELATION isSubItemOf[NavMenuItem*NavMenuItem] [UNI,IRF,ASY]
+    RELATION PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem] [UNI,IRF,ASY]
         MEANING "A navbar item can be a sub item of another item"
 
-    RELATION navItemRoles[NavMenuItem*Role]
+    RELATION PrototypeContext.navItemRoles[PrototypeContext.NavMenuItem*PrototypeContext.Role]
         MEANING "A navbar item is accessible for a role"
 
     -- Add/remove menu items based on interface roles
-    ROLE ExecEngine MAINTAINS AddNavItemRolesInterfaces
-    RULE AddNavItemRolesInterfaces LABEL "Add navItemRoles for interfaces" : ifc;ifcRoles |- navItemRoles
-    VIOLATION (TXT "{EX}InsPair;navItemRoles;NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.AddNavItemRolesInterfaces
+    RULE PrototypeContext.AddNavItemRolesInterfaces LABEL "Add navItemRoles for interfaces" : PrototypeContext.ifc;PrototypeContext.ifcRoles |- PrototypeContext.navItemRoles
+    VIOLATION (TXT "{EX}InsPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
 
-    ROLE ExecEngine MAINTAINS RemoveNavItemRolesInterfaces
-    RULE RemoveNavItemRolesInterfaces LABEL "Remove navItemRoles for interfaces" : (I /\ ifc;ifc~);navItemRoles |- ifc;ifcRoles
-    VIOLATION (TXT "{EX}DelPair;navItemRoles;NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.RemoveNavItemRolesInterfaces
+    RULE PrototypeContext.RemoveNavItemRolesInterfaces LABEL "Remove navItemRoles for interfaces" : (I /\ PrototypeContext.ifc;PrototypeContext.ifc~);PrototypeContext.navItemRoles |- PrototypeContext.ifc;PrototypeContext.ifcRoles
+    VIOLATION (TXT "{EX}DelPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
 
     -- Add/remove parent menu items if needed
-    ROLE ExecEngine MAINTAINS AddNavItemRolesParentItems
-    RULE AddNavItemRolesParentItems LABEL "Add navItemRoles for parent items" : isSubItemOf~;navItemRoles |- navItemRoles
-    VIOLATION (TXT "{EX}InsPair;navItemRoles;NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.AddNavItemRolesParentItems
+    RULE PrototypeContext.AddNavItemRolesParentItems LABEL "Add navItemRoles for parent items" : PrototypeContext.isSubItemOf~;PrototypeContext.navItemRoles |- PrototypeContext.navItemRoles
+    VIOLATION (TXT "{EX}InsPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
 
-    ROLE ExecEngine MAINTAINS RemoveNavItemRolesParentItems
-    RULE RemoveNavItemRolesParentItems LABEL "Remove navItemRoles for parent items" : (I /\ isSubItemOf~;isSubItemOf);navItemRoles |- isSubItemOf~;navItemRoles
-    VIOLATION (TXT "{EX}DelPair;navItemRoles;NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.RemoveNavItemRolesParentItems
+    RULE PrototypeContext.RemoveNavItemRolesParentItems LABEL "Remove navItemRoles for parent items" : (I /\ PrototypeContext.isSubItemOf~;PrototypeContext.isSubItemOf);PrototypeContext.navItemRoles |- PrototypeContext.isSubItemOf~;PrototypeContext.navItemRoles
+    VIOLATION (TXT "{EX}DelPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
     
     --[NAV MENUS]----------------------------------------------------------------------------------
-    CONCEPT NavMenu ""
-        CLASSIFY NavMenu ISA NavMenuItem
-        REPRESENT NavMenu TYPE OBJECT
+    CONCEPT PrototypeContext.NavMenu ""
+        CLASSIFY PrototypeContext.NavMenu ISA PrototypeContext.NavMenuItem
+        REPRESENT PrototypeContext.NavMenu TYPE OBJECT
 
-    RELATION isPartOf[NavMenuItem*NavMenu] [UNI,TOT]
+    RELATION PrototypeContext.isPartOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenu] [UNI,TOT]
         MEANING "A navbar item is part of a certain navmenu"
 
-    ROLE ExecEngine MAINTAINS FixTOTisPartOf
-    RULE FixTOTisPartOf LABEL "Fix TOT for isPartOf[NavMenuItem*NavMenu]" : I[NavMenuItem];isSubItemOf;isPartOf |- isPartOf
-    VIOLATION (TXT "{EX}InsPair;isPartOf;NavMenuItem;", SRC I, TXT ";NavMenu;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.FixTOTisPartOf
+    RULE PrototypeContext.FixTOTisPartOf LABEL "Fix TOT for isPartOf[NavMenuItem*NavMenu]" : I[PrototypeContext.NavMenuItem];PrototypeContext.isSubItemOf;PrototypeContext.isPartOf |- PrototypeContext.isPartOf
+    VIOLATION (TXT "{EX}InsPair;PrototypeContext.isPartOf;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.NavMenu;", TGT I)
 
-    ROLE ExecEngine MAINTAINS DesignateRootPFnavMenItem
-    RULE DesignateRootPFnavMenItem LABEL "Automatically designate root of NavMenItem tree as NavMenu" : I[NavMenuItem] - isSubItemOf;isSubItemOf~ |- I[NavMenu]
-    VIOLATION (TXT "{EX} SetConcept;NavMenuItem;NavMenu;", SRC I[NavMenuItem])
+    ROLE ExecEngine MAINTAINS PrototypeContext.DesignateRootPFnavMenItem
+    RULE PrototypeContext.DesignateRootPFnavMenItem LABEL "Automatically designate root of NavMenItem tree as NavMenu" : I[PrototypeContext.NavMenuItem] - PrototypeContext.isSubItemOf;PrototypeContext.isSubItemOf~ |- I[PrototypeContext.NavMenu]
+    VIOLATION (TXT "{EX} SetConcept;PrototypeContext.NavMenuItem;PrototypeContext.NavMenu;", SRC I[PrototypeContext.NavMenuItem])
 
-    ROLE ExecEngine MAINTAINS DeassignNonRootPFnavMenItems
-    RULE DeassignNonRootPFnavMenItems LABEL "De-assign non-root NavMenItems as NavMenu" : I[NavMenu] |- I[NavMenuItem] - isSubItemOf;isSubItemOf~ 
-    VIOLATION (TXT "{EX} ClearConcept;NavMenu;", SRC I[NavMenu])
+    ROLE ExecEngine MAINTAINS PrototypeContext.DeassignNonRootPFnavMenItems
+    RULE PrototypeContext.DeassignNonRootPFnavMenItems LABEL "De-assign non-root NavMenItems as NavMenu" : I[PrototypeContext.NavMenu] |- I[PrototypeContext.NavMenuItem] - PrototypeContext.isSubItemOf;PrototypeContext.isSubItemOf~ 
+    VIOLATION (TXT "{EX} ClearConcept;PrototypeContext.NavMenu;", SRC I[PrototypeContext.NavMenu])
 
 ENDCONTEXT

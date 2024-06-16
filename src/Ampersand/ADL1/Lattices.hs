@@ -24,7 +24,6 @@ module Ampersand.ADL1.Lattices
 where
 
 import Ampersand.Basics hiding (toList)
-import Data.IntMap (Key)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified RIO.List as L
@@ -213,7 +212,7 @@ reverseMap lst =
   RevMap (Set.fromList (map fst empties)) (buildMap rest)
   where
     (empties, rest) = L.partition (null . snd) lst
-    buildMap :: (Ord a) => [(a, [Key])] -> IntMap (RevMap a)
+    buildMap :: (Ord a) => [(a, [IntMap.Key])] -> IntMap (RevMap a)
     buildMap o = case o of
       [] -> IntMap.empty
       ((_, []) : _) -> fatal "This should be impossible, for the empties are taken out before."

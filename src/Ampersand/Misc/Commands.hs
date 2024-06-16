@@ -239,7 +239,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
-      annotate (colorDull Green)
+      annotate (colorDull Yellow)
         <$> paragraph (show opt) -- optHelp opt -- "Een of andere optie."
     parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
     desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
