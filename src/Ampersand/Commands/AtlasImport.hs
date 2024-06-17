@@ -62,6 +62,7 @@ import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
 import Data.Aeson.Key (fromText)
 import qualified Data.Aeson.Types as JSON
+import qualified RIO
 import qualified RIO.ByteString.Lazy as B
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -221,22 +222,20 @@ instance JSON.FromJSON PConceptDef where
 
 instance JSON.FromJSON PCDDef where
   parseJSON val = case val of
-    JSON.Object v ->
-      -- if object
-      build <$> v JSON..: "definition"
-    JSON.String s ->
-      -- if string
-      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
-    JSON.Array _arr ->
-      -- if array
-      pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "definition not working")
-    invalid ->
-      JSON.prependFailure
-        "parsing PCDDef failed, "
-        (JSON.typeMismatch "Object" invalid)
+    JSON.Object v -> build <$> v JSON..: "definition"
+    JSON.String s -> pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing s)
+    JSON.Array arr -> case parseArrayToText arr of
+      Just txt -> pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing txt)
+      Nothing -> pure $ PCDDefNew (PMeaning $ P_Markup Nothing Nothing "Definition not provided")
+    invalid -> JSON.prependFailure "parsing PCDDef failed, " (JSON.typeMismatch "Object or String" invalid)
     where
       build :: Text -> PCDDef
-      build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def) -- Here we construct PCDDefNew
+      build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def)
+
+      parseArrayToText :: RIO.Vector JSON.Value -> Maybe Text
+      parseArrayToText arr = case listToMaybe (toList arr) of
+        Just (JSON.String txt) -> Just txt
+        _ -> Nothing
 
 instance JSON.FromJSON P_Concept where
   parseJSON :: JSON.Value -> JSON.Parser P_Concept

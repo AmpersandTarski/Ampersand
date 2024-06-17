@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Ampersand.ADL1.PrettyPrinters (Pretty (..), prettyPrint) where
@@ -110,10 +111,13 @@ instance Pretty P_Context where
         <~> lang
         <~> markup
         <+\> perline metas
+        <+\> text "-- Concepts"
         <+\> perline cs
         <+\> perline reprs
         <+\> perline gs
+        <+\> text "-- Relations"
         <+\> perlineRelations ds
+        <+\> text "-- Rules"
         <+\> perline rs
         <+\> perline enfs
         <+\> perline ks
@@ -149,10 +153,13 @@ instance Pretty P_Pattern where
   pretty (P_Pat _ nm rs gs rels rruls cpts reprs ids vds xps pop _ enfs) =
     text "PATTERN"
       <+> quoteConcept nm
+        <+\> text "-- Concepts"
         <+\> perline cpts
         <+\> perline reprs
         <+\> perline gs
+        <+\> text "-- Relations"
         <+\> perline rels
+        <+\> text "-- Rules"
         <+\> perline rs
         <+\> perline enfs
         <+\> perline ids
@@ -167,7 +174,8 @@ instance Pretty P_Relation where
     text "RELATION"
       <+> (text . T.unpack) nm
         <~> sign
-        <~> props -- altered
+        <~> props
+        <+\> perline mean -- <~> mean heir weggehaald
       <+> if null dflts
         then empty
         else
@@ -178,7 +186,7 @@ instance Pretty P_Relation where
     where
       props
         | null prps = empty
-        | otherwise = pretty $ Set.toList prps
+        | otherwise = pretty $ Set.toList prps -- todo: om props te fixen
 
 instance Pretty Pragma where
   pretty (Pragma _ l m r) = text "PRAGMA" <+> hsep (map quote [l, m, r])
@@ -278,14 +286,13 @@ instance Pretty PConceptDef where
     =
     text "CONCEPT"
       <+> quoteConcept cpt
-      <+> pretty def
-      <+> prettyhsep _mean
+        <~> pretty def -- <+> pretty _mean -- mean weggehaald omdat deze geen functie heeft in het concept (daar is def al voor)
 
 instance Pretty PCDDef where
   pretty (PCDDefNew def) =
     let prettyNoMeaning (PMeaning markup) = pretty markup -- Local function to adjust printing
      in prettyNoMeaning def -- Use the local function for pretty printing
-  pretty (PCDDefLegacy def ref) = quote def <+> maybeText ("[" <> ref <> "]")
+  pretty (PCDDefLegacy def ref) = quote def <+> maybeText ("" <> ref <> "") -- NET GEDAAN ("[" <> ref <> "]")
     where
       maybeText txt =
         if T.null txt
@@ -441,6 +448,7 @@ instance Pretty PMessage where
   pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
+  pretty :: P_Concept -> Doc
   pretty (PCpt nm) = quoteConcept nm
   pretty P_ONE = text "ONE"
 
@@ -463,7 +471,7 @@ instance Pretty Lang where
 
 instance Pretty P_Markup where
   pretty (P_Markup lang format str) =
-    pretty lang <~> format <+\> quoteMeaning str
+    pretty lang <~> format <+> quoteMeaning str
 
 instance Pretty PandocFormat where
   pretty = text . map toUpper . show
