@@ -1763,6 +1763,13 @@ tmpNewTransformerDefsFA fSpec =
           | rel :: Relation <- instanceList fSpec,
             mean <- decMean rel
         ]
+      ),
+      ( "showADL",
+        "PairView",
+        "ShowADL",
+        [ (dirtyId pv, PopAlphaNumeric (showA pv))
+          | pv :: PairView Expression <- instanceList fSpec
+        ]
       )
     ]
 

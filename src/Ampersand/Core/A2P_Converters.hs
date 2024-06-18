@@ -18,6 +18,7 @@ module Ampersand.Core.A2P_Converters
     aPattern2pPattern,
     aRoleRule2pRoleRule,
     aInterface2pInterface,
+    aPairView2pPairView,
   )
 where
 
