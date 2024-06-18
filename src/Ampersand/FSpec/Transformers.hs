@@ -524,10 +524,10 @@ transformersFormalAmpersand fSpec =
       ),
       ( "message",
         "Rule",
-        "Message",
-        [ (dirtyId rul, dirtyId msg)
+        "Markup",
+        [ (dirtyId rul, dirtyId mrkup)
           | rul :: Rule <- instanceList fSpec,
-            msg <- rrmsg rul
+            mrkup <- rrmsg rul
         ]
       ),
       ( "propertyRule",
