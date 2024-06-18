@@ -148,19 +148,19 @@ ENDPATTERN
 
 CONCEPT Concept5Ctx "this is the definition of CONCEPT Concept5Ctx in de CONTEXT"
 RELATION relatie7Ctx[Concept5Ctx*Concept5Ctx] 
-IDENT Ident1Ctx: Concept5Ctx (relatie7Ctx)
+-- IDENT Ident1Ctx: Concept5Ctx (relatie7Ctx)
 
-IDENT FileObjectName: FileObject (filePath)
-RELATION filePath[FileObject*FilePath] [UNI,TOT]
-RELATION originalFileName[FileObject*FileName] [UNI,TOT]
+-- IDENT FileObjectName: FileObject (filePath)
+-- RELATION filePath[FileObject*FilePath] [UNI,TOT]
+-- RELATION originalFileName[FileObject*FileName] [UNI,TOT]
 
 REPRESENT FilePath,FileName TYPE ALPHANUMERIC
 
-VIEW FileObject: FileObject DEFAULT 
-  { apiPath  : TXT "api/v1/file"
-  , filePath : filePath
-  , fileName : originalFileName
-  } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
+-- VIEW FileObject: FileObject DEFAULT 
+--   { apiPath  : TXT "api/v1/file"
+--   , filePath : filePath
+--   , fileName : originalFileName
+--   } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
 
 -- INTERFACE InterfaceCtx : "_SESSION"                  cRud
 -- BOX <TABS>

@@ -5,37 +5,37 @@
             "name": "PatternName",
             "concepts": [
                 {
-                    "name": "Concept3Ptn",
+                    "name": "Concept2Ptn",
                     "definition": [
-                        "Meaning_e8fcff65-0032-4ccb-b2c7-8336849dc139"
+                        "this is the definition of CONCEPT Concept2Ptn in de PATTERN"
                     ],
                     "type": "OBJECT"
                 },
                 {
                     "name": "Concept0Ptn",
                     "definition": [
-                        "Meaning_ade2ccf9-c417-466f-b0d7-6077f2f5e469"
-                    ],
-                    "type": "OBJECT"
-                },
-                {
-                    "name": "Concept2Ptn",
-                    "definition": [
-                        "Meaning_acfcae0a-3718-4821-8ce7-a92700b6d8f3"
-                    ],
-                    "type": "OBJECT"
-                },
-                {
-                    "name": "Concept4Ptn",
-                    "definition": [
-                        "Meaning_ca5ea9bf-bb71-4150-8ab6-926d9076923c"
+                        "this is the definition of CONCEPT Concept0Ptn in de PATTERN"
                     ],
                     "type": "OBJECT"
                 },
                 {
                     "name": "Concept1Ptn",
                     "definition": [
-                        "Meaning_f1c2e4e2-3c0a-4de0-bab3-c12eb1ebc86f"
+                        "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
+                    ],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Concept3Ptn",
+                    "definition": [
+                        "this is the definition of CONCEPT Concept3Ptn in de PATTERN"
+                    ],
+                    "type": "OBJECT"
+                },
+                {
+                    "name": "Concept4Ptn",
+                    "definition": [
+                        "this is the definition of CONCEPT Concept4Ptn in de PATTERN"
                     ],
                     "type": "OBJECT"
                 }
@@ -45,7 +45,9 @@
                 {
                     "name": "Rule2Ptn",
                     "formexp": "relatie6Ptn [Concept1Ptn*Concept3Ptn] |- relatie4Ptn [Concept1Ptn*Concept2Ptn];relatie5Ptn [Concept3Ptn*Concept2Ptn]~",
-                    "meaning": [],
+                    "meaning": [
+                        "this is the meaning of the RULE Rule2Ptn, gedefineerd in de PATTERN"
+                    ],
                     "message": []
                 },
                 {
@@ -57,22 +59,48 @@
             ],
             "relations": [
                 {
-                    "relation": "relatie5Ptn",
-                    "sign": {
-                        "source": "Concept3Ptn",
-                        "target": "Concept2Ptn"
-                    },
-                    "properties": [],
-                    "meaning": []
-                },
-                {
                     "relation": "relatie6Ptn",
                     "sign": {
                         "source": "Concept1Ptn",
                         "target": "Concept3Ptn"
                     },
                     "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN"
+                    ]
+                },
+                {
+                    "relation": "relatie5Ptn",
+                    "sign": {
+                        "source": "Concept3Ptn",
+                        "target": "Concept2Ptn"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie5Ptn, gedefineerd in de PATTERN"
+                    ]
+                },
+                {
+                    "relation": "relatie3Ptn",
+                    "sign": {
+                        "source": "Concept0Ptn",
+                        "target": "Concept0Ptn"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie3Ptn, gedefineerd in de PATTERN"
+                    ]
+                },
+                {
+                    "relation": "relatie7Ptn",
+                    "sign": {
+                        "source": "Concept4Ptn",
+                        "target": "Concept4Ptn"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie7Ptn, gedefineerd in de PATTERN"
+                    ]
                 },
                 {
                     "relation": "relatie4Ptn",
@@ -83,34 +111,9 @@
                     "properties": [
                         "TOT"
                     ],
-                    "meaning": []
-                },
-                {
-                    "relation": "relatie3Ptn",
-                    "sign": {
-                        "source": "Concept0Ptn",
-                        "target": "Concept0Ptn"
-                    },
-                    "properties": [],
-                    "meaning": []
-                },
-                {
-                    "relation": "relatie2Ptn",
-                    "sign": {
-                        "source": "Concept0Ptn",
-                        "target": "Concept0Ptn"
-                    },
-                    "properties": [],
-                    "meaning": []
-                },
-                {
-                    "relation": "relatie7Ptn",
-                    "sign": {
-                        "source": "Concept4Ptn",
-                        "target": "Concept4Ptn"
-                    },
-                    "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie4Ptn, gedefineerd in de PATTERN"
+                    ]
                 },
                 {
                     "relation": "relatie1Ptn",
@@ -119,7 +122,20 @@
                         "target": "Concept0Ptn"
                     },
                     "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN"
+                    ]
+                },
+                {
+                    "relation": "relatie2Ptn",
+                    "sign": {
+                        "source": "Concept0Ptn",
+                        "target": "Concept0Ptn"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie2Ptn, gedefineerd in de PATTERN"
+                    ]
                 }
             ],
             "properties": [],
@@ -171,70 +187,55 @@
     ],
     "conceptsCtx": [
         {
-            "name": "Concept3Ctx",
-            "definition": [
-                "Meaning_d176e21d-b848-48ca-a900-b174bc7ae0a6"
-            ],
-            "type": "OBJECT"
-        },
-        {
-            "name": "Concept2Ctx",
-            "definition": [
-                "Meaning_f432c5d8-4d2d-4471-ac87-e67040c71b46"
-            ],
-            "type": "OBJECT"
-        },
-        {
-            "name": "FilePath",
-            "definition": [],
-            "type": "OBJECT"
-        },
-        {
-            "name": "FileObject",
-            "definition": [],
-            "type": "OBJECT"
-        },
-        {
-            "name": "Concept5Ctx",
-            "definition": [
-                "Meaning_08a26e9e-1f24-4912-8067-a0475c36442c"
-            ],
-            "type": "OBJECT"
-        },
-        {
-            "name": "Concept0Ctx",
-            "definition": [
-                "Meaning_915dd94a-6be7-4085-aa66-d4b80a75bb69"
-            ],
-            "type": "OBJECT"
-        },
-        {
-            "name": "FileName",
-            "definition": [],
-            "type": "OBJECT"
-        },
-        {
-            "name": "ONE",
-            "definition": [],
-            "type": "OBJECT"
-        },
-        {
             "name": "Concept4Ctx",
             "definition": [
-                "Meaning_0c8ddb27-8814-4894-a248-9da91928b74c"
+                "this is the definition of CONCEPT Concept4Ctx in de CONTEXT"
             ],
             "type": "OBJECT"
         },
         {
             "name": "Concept1Ctx",
             "definition": [
-                "Meaning_3f654038-9f28-4b7d-84d1-24dcf6f22a05"
+                "this is the definition of CONCEPT Concept1Ctx in de CONTEXT"
+            ],
+            "type": "OBJECT"
+        },
+        {
+            "name": "Concept2Ctx",
+            "definition": [
+                "this is the definition of CONCEPT Concept2Ctx in de CONTEXT"
+            ],
+            "type": "OBJECT"
+        },
+        {
+            "name": "Concept3Ctx",
+            "definition": [
+                "this is the definition of CONCEPT Concept3Ctx in de CONTEXT"
+            ],
+            "type": "OBJECT"
+        },
+        {
+            "name": "Concept5Ctx",
+            "definition": [
+                "this is the definition of CONCEPT Concept5Ctx in de CONTEXT"
             ],
             "type": "OBJECT"
         }
     ],
     "representationsCtx": [],
     "relationsCtx": [
+        {
+            "relation": "originalFileName",
+            "sign": {
+                "source": "FileObject",
+                "target": "FileName"
+            },
+            "properties": [
+                "TOT",
+                "UNI"
+            ],
+            "meaning": []
+        },
         {
             "relation": "relatie4Ctx",
             "sign": {
@@ -244,16 +245,9 @@
             "properties": [
                 "TOT"
             ],
-            "meaning": []
-        },
-        {
-            "relation": "relatie1Ctx",
-            "sign": {
-                "source": "Concept0Ctx",
-                "target": "Concept0Ctx"
-            },
-            "properties": [],
-            "meaning": []
+            "meaning": [
+                "this is the meaning of the RELATION relatie4Ctx, gedefineerd in de CONTEXT"
+            ]
         },
         {
             "relation": "filePath",
@@ -268,49 +262,15 @@
             "meaning": []
         },
         {
-            "relation": "relatie6Ctx",
-            "sign": {
-                "source": "Concept1Ctx",
-                "target": "Concept3Ctx"
-            },
-            "properties": [],
-            "meaning": []
-        },
-        {
-            "relation": "relatie2Ctx",
+            "relation": "relatie1Ctx",
             "sign": {
                 "source": "Concept0Ctx",
                 "target": "Concept0Ctx"
             },
             "properties": [],
-            "meaning": []
-        },
-        {
-            "relation": "relatie7Ctx",
-            "sign": {
-                "source": "Concept4Ctx",
-                "target": "Concept4Ctx"
-            },
-            "properties": [],
-            "meaning": []
-        },
-        {
-            "relation": "relatie3Ctx",
-            "sign": {
-                "source": "Concept0Ctx",
-                "target": "Concept0Ctx"
-            },
-            "properties": [],
-            "meaning": []
-        },
-        {
-            "relation": "relatie7Ctx",
-            "sign": {
-                "source": "Concept5Ctx",
-                "target": "Concept5Ctx"
-            },
-            "properties": [],
-            "meaning": []
+            "meaning": [
+                "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT"
+            ]
         },
         {
             "relation": "relatie5Ctx",
@@ -319,18 +279,61 @@
                 "target": "Concept2Ctx"
             },
             "properties": [],
-            "meaning": []
+            "meaning": [
+                "this is the meaning of the RELATION relatie5Ctx, gedefineerd in de CONTEXT"
+            ]
         },
         {
-            "relation": "originalFileName",
+            "relation": "relatie7Ctx",
             "sign": {
-                "source": "FileObject",
-                "target": "FileName"
+                "source": "Concept4Ctx",
+                "target": "Concept4Ctx"
             },
-            "properties": [
-                "TOT",
-                "UNI"
-            ],
+            "properties": [],
+            "meaning": [
+                "this is the meaning of the RELATION relatie7Ctx, gedefineerd in de CONTEXT"
+            ]
+        },
+        {
+            "relation": "relatie3Ctx",
+            "sign": {
+                "source": "Concept0Ctx",
+                "target": "Concept0Ctx"
+            },
+            "properties": [],
+            "meaning": [
+                "this is the meaning of the RELATION relatie3Ctx, gedefineerd in de CONTEXT"
+            ]
+        },
+        {
+            "relation": "relatie2Ctx",
+            "sign": {
+                "source": "Concept0Ctx",
+                "target": "Concept0Ctx"
+            },
+            "properties": [],
+            "meaning": [
+                "this is the meaning of the RELATION relatie2Ctx, gedefineerd in de CONTEXT"
+            ]
+        },
+        {
+            "relation": "relatie6Ctx",
+            "sign": {
+                "source": "Concept1Ctx",
+                "target": "Concept3Ctx"
+            },
+            "properties": [],
+            "meaning": [
+                "this is the meaning of the RELATION relatie6Ctx, gedefineerd in de CONTEXT"
+            ]
+        },
+        {
+            "relation": "relatie7Ctx",
+            "sign": {
+                "source": "Concept5Ctx",
+                "target": "Concept5Ctx"
+            },
+            "properties": [],
             "meaning": []
         }
     ],
@@ -355,39 +358,13 @@
         {
             "name": "Rule2Ctx",
             "formexp": "relatie6Ctx [Concept1Ctx*Concept3Ctx] |- relatie4Ctx [Concept1Ctx*Concept2Ctx];relatie5Ctx [Concept3Ctx*Concept2Ctx]~",
-            "meaning": [],
+            "meaning": [
+                "this is the meaning of the RULE Rule2Ctx, gedefineerd in de CONTEXT"
+            ],
             "message": []
         }
     ],
     "enforceCtx": [
-        {
-            "name": "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair",
-            "term": "relatie1Ptn [Concept0Ptn*Concept0Ptn] |- relatie2Ptn [Concept0Ptn*Concept0Ptn]/\\relatie3Ptn [Concept0Ptn*Concept0Ptn]",
-            "maintains": [
-                {
-                    "role": {
-                        "role": null
-                    },
-                    "rule": [
-                        "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair",
-                        "Compute relatie1Ctx[Concept0Ctx*Concept0Ctx] using DelPair"
-                    ]
-                }
-            ],
-            "relation": [
-                {
-                    "relation": "relatie1Ptn",
-                    "sign": {
-                        "source": "Concept0Ptn",
-                        "target": "Concept0Ptn"
-                    },
-                    "properties": [],
-                    "meaning": []
-                }
-            ],
-            "rhs": "relatie2Ptn [Concept0Ptn*Concept0Ptn]/\\relatie3Ptn [Concept0Ptn*Concept0Ptn]",
-            "operator": "Inclusion"
-        },
         {
             "name": "Compute relatie1Ctx[Concept0Ctx*Concept0Ctx] using DelPair",
             "term": "relatie1Ctx [Concept0Ctx*Concept0Ctx] |- relatie2Ctx [Concept0Ctx*Concept0Ctx]/\\relatie3Ctx [Concept0Ctx*Concept0Ctx]",
@@ -397,8 +374,8 @@
                         "role": null
                     },
                     "rule": [
-                        "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair",
-                        "Compute relatie1Ctx[Concept0Ctx*Concept0Ctx] using DelPair"
+                        "Compute relatie1Ctx[Concept0Ctx*Concept0Ctx] using DelPair",
+                        "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair"
                     ]
                 }
             ],
@@ -410,10 +387,42 @@
                         "target": "Concept0Ctx"
                     },
                     "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT"
+                    ]
                 }
             ],
             "rhs": "relatie2Ctx [Concept0Ctx*Concept0Ctx]/\\relatie3Ctx [Concept0Ctx*Concept0Ctx]",
+            "operator": "Inclusion"
+        },
+        {
+            "name": "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair",
+            "term": "relatie1Ptn [Concept0Ptn*Concept0Ptn] |- relatie2Ptn [Concept0Ptn*Concept0Ptn]/\\relatie3Ptn [Concept0Ptn*Concept0Ptn]",
+            "maintains": [
+                {
+                    "role": {
+                        "role": null
+                    },
+                    "rule": [
+                        "Compute relatie1Ctx[Concept0Ctx*Concept0Ctx] using DelPair",
+                        "Compute relatie1Ptn[Concept0Ptn*Concept0Ptn] using DelPair"
+                    ]
+                }
+            ],
+            "relation": [
+                {
+                    "relation": "relatie1Ptn",
+                    "sign": {
+                        "source": "Concept0Ptn",
+                        "target": "Concept0Ptn"
+                    },
+                    "properties": [],
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN"
+                    ]
+                }
+            ],
+            "rhs": "relatie2Ptn [Concept0Ptn*Concept0Ptn]/\\relatie3Ptn [Concept0Ptn*Concept0Ptn]",
             "operator": "Inclusion"
         },
         {
@@ -438,7 +447,9 @@
                         "target": "Concept0Ctx"
                     },
                     "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT"
+                    ]
                 }
             ],
             "rhs": "relatie2Ctx [Concept0Ctx*Concept0Ctx]",
@@ -466,7 +477,9 @@
                         "target": "Concept0Ptn"
                     },
                     "properties": [],
-                    "meaning": []
+                    "meaning": [
+                        "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN"
+                    ]
                 }
             ],
             "rhs": "relatie2Ptn [Concept0Ptn*Concept0Ptn]",
@@ -532,7 +545,7 @@
     "idents": [
         {
             "name": "identity_Ident1Ctx",
-            "concept": "Rule_a1a62b7e-1df9-4ba5-a5ae-c1acc0eb5d2a",
+            "concept": "Rule_dd22648f-bc79-4c06-b289-374f0f1ec4a1",
             "ident": {
                 "name": "relatie7Ctx [Concept5Ctx*Concept5Ctx];relatie7Ctx [Concept5Ctx*Concept5Ctx]~ |- I[Concept5Ctx]",
                 "ctx": "relatie7Ctx [Concept5Ctx*Concept5Ctx];relatie7Ctx [Concept5Ctx*Concept5Ctx]~ |- I[Concept5Ctx]"
@@ -540,14 +553,14 @@
         },
         {
             "name": "identity_FileObjectName",
-            "concept": "Rule_f10226b8-0789-46c5-8b46-aa45d850b55b",
+            "concept": "Rule_e07f1b6a-5013-4abf-9ec4-775a527ecd61",
             "ident": {
                 "name": "filePath [FileObject*FilePath];filePath [FileObject*FilePath]~ |- I[FileObject]",
                 "ctx": "filePath [FileObject*FilePath];filePath [FileObject*FilePath]~ |- I[FileObject]"
             }
         }
     ],
-    "versionInfo": "Ampersand-v4.8.0 [feature/atlas-import:a519c6c05*], build time: 02-Jun-24 16:36:21 CEST",
+    "versionInfo": "Ampersand-v4.8.0 [feature/atlas-import:de22bec58*], build time: 13-Jun-24 15:26:17 CEST",
     "language": null,
     "scripts": [
         {
