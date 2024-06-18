@@ -30,7 +30,7 @@ RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IF
 -- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 RELATION pvsExp[PairViewSegment*Term] [UNI]
 
-
+RELATION showADL[PairView*ShowADL] [UNI,TOT] -- Temporary relation to enable first attempt to make the atlas editable. 
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [INJ]
