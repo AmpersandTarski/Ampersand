@@ -25,7 +25,7 @@ PATTERN Rules
     RELATION urlEncodedName[Concept*EncodedName] [UNI]
     RELATION origin[Rule*Origin] [UNI]
     MEANING "The location where a rule is defined."  -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
-    RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
+    RELATION message[Rule*Markup] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 --    RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 --    RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
     RELATION formalTerm[Rule*Term] [UNI]

@@ -37,7 +37,7 @@ PURPOSE RELATION urlEncodedName[Rule*EncodedName]
 {+ This is used to show a graphic +}
 PURPOSE RELATION origin[Rule*Origin]  -- Haskell: rrfps :: Rule->Origin
 {+ The location on which a rule is defined is registered for tracing purposes. +}
-PURPOSE RELATION message[Rule*Message]  -- Haskell:  rrmsg :: Rule->[Markup]
+PURPOSE RELATION message[Rule*Markup]  -- Haskell:  rrmsg :: Rule->[Markup]
 {+ User-specified violation messages are being registered to generate code for error messages.
 There may be multiple messages to support multiple languages
 +}
