@@ -23,14 +23,8 @@ import RIO.Char (toLower, toUpper)
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial (splitOn)
 import System.FilePath
-import Text.StringTemplate
-  ( StringTemplate,
-    Stringable,
-  )
-import qualified Text.StringTemplate as ST (setAttribute)
-
-setAttribute :: (Stringable a) => String -> Text -> StringTemplate a -> StringTemplate a
-setAttribute = ST.setAttribute
+import Text.StringTemplate (StringTemplate, setAttribute)
+import Text.StringTemplate.GenericStandard ()
 
 crudsToString :: Cruds -> Text
 crudsToString x = T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud"
@@ -79,28 +73,28 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . T.lines
           . renderTemplate Nothing template
           $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
-          . setAttribute "isSessionInterface" (tshow . isSessionInterface $ interf)
-          . ST.setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "isSessionInterface" (isSessionInterface interf)
+          . setAttribute "roles" (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "ifcName" (ifcName interf)
           . setAttribute "ifcNamePascal" (ifcNamePascal interf)
           . setAttribute "ifcNameKebab" (ifcNameKebab interf)
           . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-          . setAttribute "exprIsUni" (tshow . exprIsUni . feiObj $ interf)
-          . setAttribute "exprIsTot" (tshow . exprIsTot . feiObj $ interf)
-          . setAttribute "source" (tshow . idWithoutType' . source . ifcExp $ interf)
-          . setAttribute "target" (tshow . idWithoutType' . target . ifcExp $ interf)
-          . setAttribute "crudC" (tshow . objCrudC . feiObj $ interf)
-          . setAttribute "crudR" (tshow . objCrudR . feiObj $ interf)
-          . setAttribute "crudU" (tshow . objCrudU . feiObj $ interf)
-          . setAttribute "crudD" (tshow . objCrudD . feiObj $ interf)
+          . setAttribute "exprIsUni" (exprIsUni . feiObj $ interf)
+          . setAttribute "exprIsTot" (exprIsTot . feiObj $ interf)
+          . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
+          . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC . feiObj $ interf)
+          . setAttribute "crudR" (objCrudR . feiObj $ interf)
+          . setAttribute "crudU" (objCrudU . feiObj $ interf)
+          . setAttribute "crudD" (objCrudD . feiObj $ interf)
           . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
           . setAttribute "contents" lns
-          . setAttribute "verbose" (tshow $ loglevel' == LevelDebug)
+          . setAttribute "verbose" (loglevel' == LevelDebug)
           . setAttribute "loglevel" (tshow loglevel')
-          . setAttribute "templateFilePath" (T.pack templateFilePath)
-          . setAttribute "targetFilePath" (T.pack targetFilePath)
+          . setAttribute "templateFilePath" templateFilePath
+          . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
 genSingleFileFromTemplate :: (HasRunner env, HasDirPrototype env) => FSpec -> FESpec -> FilePath -> FilePath -> RIO env ()
@@ -113,32 +107,32 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
         renderTemplate Nothing template
           $ setAttribute "contextName" (fullName fSpec)
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
-          . ST.setAttribute "ifcs" (interfaces feSpec) -- all interfaces
-          . ST.setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
-          . ST.setAttribute "apis" (filter isApi $ interfaces feSpec) -- only the interfaces that have API (no UI)
-          . ST.setAttribute "concepts" (concepts feSpec)
-          . ST.setAttribute "views" (views feSpec)
-          . setAttribute "verbose" (tshow $ loglevel' == LevelDebug)
-          . setAttribute "loglevel" (tshow loglevel')
-          . setAttribute "templateFilePath" (T.pack templateFilePath)
-          . setAttribute "targetFilePath" (T.pack targetFilePath)
+          . setAttribute "ifcs" (interfaces feSpec) -- all interfaces
+          . setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
+          . setAttribute "apis" (filter isApi $ interfaces feSpec) -- only the interfaces that have API (no UI)
+          . setAttribute "concepts" (concepts feSpec)
+          . setAttribute "views" (views feSpec)
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
+          . setAttribute "templateFilePath" templateFilePath
+          . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
 objectAttributes :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
 objectAttributes obj loglevel =
-  setAttribute "exprIsUni" (tshow . exprIsUni $ obj)
-    . setAttribute "exprIsTot" (tshow . exprIsTot $ obj)
+  setAttribute "exprIsUni" (exprIsUni obj)
+    . setAttribute "exprIsTot" (exprIsTot obj)
     . setAttribute "name" (escapeIdentifier' . objName $ obj)
     . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-    . setAttribute "source" (tshow . idWithoutType' . source . objExp $ obj)
-    . setAttribute "target" (tshow . idWithoutType' . target . objExp $ obj)
-    . setAttribute "crudC" (tshow . objCrudC $ obj)
-    . setAttribute "crudR" (tshow . objCrudR $ obj)
-    . setAttribute "crudU" (tshow . objCrudU $ obj)
-    . setAttribute "crudD" (tshow . objCrudD $ obj)
+    . setAttribute "source" (text1ToText . idWithoutType' . source . objExp $ obj)
+    . setAttribute "target" (text1ToText . idWithoutType' . target . objExp $ obj)
+    . setAttribute "crudC" (objCrudC obj)
+    . setAttribute "crudR" (objCrudR obj)
+    . setAttribute "crudU" (objCrudU obj)
+    . setAttribute "crudD" (objCrudD obj)
     . setAttribute "crud" (crudsToString . objCrud $ obj)
-    . setAttribute "verbose" (tshow $ loglevel == LevelDebug)
+    . setAttribute "verbose" (loglevel == LevelDebug)
     . setAttribute "loglevel" (tshow loglevel)
 
 escapeIdentifier' :: Text -> Text
@@ -204,8 +198,8 @@ genHTMLView fSpec depth obj =
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ objectAttributes obj (logLevel runner)
-              . setAttribute "isRoot" (tshow $ depth == 0)
-              . ST.setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "<span>" <> objTxt obj <> "</span>"
   where
     getTemplateForObject ::
@@ -277,8 +271,8 @@ genTypescriptInterface fSpec depth obj =
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) boxTemplate
               $ objectAttributes obj (logLevel runner)
-              . setAttribute "isRoot" (tshow $ depth == 0)
-              . ST.setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "'" <> objTxt obj <> "'"
   where
     tgtCpt = target . objExp $ obj

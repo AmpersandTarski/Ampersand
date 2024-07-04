@@ -21,12 +21,9 @@ import qualified RIO.Text as T
 import System.FilePath
 import Text.StringTemplate
   ( StringTemplate,
-    Stringable,
+    setAttribute,
   )
-import qualified Text.StringTemplate as ST (setAttribute)
-
-setAttribute :: (Stringable a) => String -> Text -> StringTemplate a -> StringTemplate a
-setAttribute = ST.setAttribute
+import Text.StringTemplate.GenericStandard ()
 
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/spaces/ST/pages/1409038/StringTemplate+cheat+sheet
@@ -51,9 +48,9 @@ genRouteProvider fSpec ifcs = do
         renderTemplate Nothing template
           $ setAttribute "contextName" (fullName fSpec)
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
-          . ST.setAttribute "ifcs" ifcs
-          . ST.setAttribute "verbose" (loglevel' == LevelDebug)
-          . ST.setAttribute "loglevel" (show loglevel')
+          . setAttribute "ifcs" ifcs
+          . setAttribute "verbose" (loglevel' == LevelDebug)
+          . setAttribute "loglevel" (show loglevel')
   mapM_ (logDebug . display) $ "Generated template: " : (map ("   " <>) . T.lines $ contents)
   writePrototypeAppFile "routeProvider.config.js" contents
   logDebug "Finish genRouteProvider."
@@ -82,20 +79,20 @@ genViewInterface fSpec interf = do
   let contents =
         renderTemplate Nothing template
           $ setAttribute "contextName" (addSlashes . fullName $ fSpec)
-          . setAttribute "isTopLevel" (tshow . isTopLevel . source . ifcExp $ interf)
-          . setAttribute "roles" (tshow . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "isTopLevel" (isTopLevel . source . ifcExp $ interf)
+          . setAttribute "roles" (map tshow . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "interfaceName" (ifcName interf)
           . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
           . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
           . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
-          . setAttribute "crudC" (tshow . objCrudC . feiObj $ interf)
-          . setAttribute "crudR" (tshow . objCrudR . feiObj $ interf)
-          . setAttribute "crudU" (tshow . objCrudU . feiObj $ interf)
-          . setAttribute "crudD" (tshow . objCrudD . feiObj $ interf)
+          . setAttribute "crudC" (objCrudC . feiObj $ interf)
+          . setAttribute "crudR" (objCrudR . feiObj $ interf)
+          . setAttribute "crudU" (objCrudU . feiObj $ interf)
+          . setAttribute "crudD" (objCrudD . feiObj $ interf)
           . setAttribute "contents" (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-          . setAttribute "verbose" (tshow $ loglevel' == LevelDebug)
+          . setAttribute "verbose" (loglevel' == LevelDebug)
           . setAttribute "loglevel" (tshow loglevel')
   let filename :: FilePath
       filename = "ifc" <> (T.unpack . ifcName $ interf) <> ".view.html"
@@ -123,8 +120,8 @@ genViewObject fSpec depth obj =
       let loglevel' = logLevel runner
       let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
           atomicAndBoxAttrs =
-            setAttribute "exprIsUni" (tshow . exprIsUni $ obj)
-              . setAttribute "exprIsTot" (tshow . exprIsTot $ obj)
+            setAttribute "exprIsUni" (exprIsUni obj)
+              . setAttribute "exprIsTot" (exprIsTot obj)
               . setAttribute
                 "name"
                 ( case T.uncons . objName $ obj of
@@ -133,13 +130,13 @@ genViewObject fSpec depth obj =
                 )
               . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
               . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-              . setAttribute "source" (tshow . idWithoutType' . source . objExp $ obj)
-              . setAttribute "target" (tshow . idWithoutType' . target . objExp $ obj)
-              . setAttribute "crudC" (tshow . objCrudC $ obj)
-              . setAttribute "crudR" (tshow . objCrudR $ obj)
-              . setAttribute "crudU" (tshow . objCrudU $ obj)
-              . setAttribute "crudD" (tshow . objCrudD $ obj)
-              . setAttribute "verbose" (tshow $ loglevel' == LevelDebug)
+              . setAttribute "source" (text1ToText . idWithoutType' . source . objExp $ obj)
+              . setAttribute "target" (text1ToText . idWithoutType' . target . objExp $ obj)
+              . setAttribute "crudC" (objCrudC obj)
+              . setAttribute "crudR" (objCrudR obj)
+              . setAttribute "crudU" (objCrudU obj)
+              . setAttribute "crudD" (objCrudD obj)
+              . setAttribute "verbose" (loglevel' == LevelDebug)
               . setAttribute "loglevel" (tshow loglevel')
       case atomicOrBox obj of
         FEAtomic {} -> do
@@ -173,8 +170,8 @@ genViewObject fSpec depth obj =
               . T.lines
               . renderTemplate (Just . btKeys $ header) parentTemplate
               $ atomicAndBoxAttrs
-              . setAttribute "isRoot" (tshow $ depth == 0)
-              . ST.setAttribute "subObjects" subObjAttrs
+              . setAttribute "isRoot" (depth == 0)
+              . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure []
   where
     indentation :: [Text] -> [Text]
@@ -243,21 +240,21 @@ genControllerInterface fSpec interf = do
   let contents =
         renderTemplate Nothing template
           $ setAttribute "contextName" (fullName fSpec)
-          . setAttribute "isRoot" (tshow . isTopLevel . source . ifcExp $ interf)
-          . setAttribute "roles" (tshow . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+          . setAttribute "isRoot" (isTopLevel . source . ifcExp $ interf)
+          . setAttribute "roles" (feiRoles interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "interfaceName" (ifcName interf)
           . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-          . setAttribute "exprIsUni" (tshow . exprIsUni . feiObj $ interf)
-          . setAttribute "source" (tshow . idWithoutType' . source . ifcExp $ interf)
-          . setAttribute "target" (tshow . idWithoutType' . target . ifcExp $ interf)
-          . setAttribute "crudC" (tshow . objCrudC . feiObj $ interf)
-          . setAttribute "crudR" (tshow . objCrudR . feiObj $ interf)
-          . setAttribute "crudU" (tshow . objCrudU . feiObj $ interf)
-          . setAttribute "crudD" (tshow . objCrudD . feiObj $ interf)
-          . setAttribute "verbose" (tshow $ loglevel' == LevelDebug)
+          . setAttribute "exprIsUni" (exprIsUni . feiObj $ interf)
+          . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
+          . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC . feiObj $ interf)
+          . setAttribute "crudR" (objCrudR . feiObj $ interf)
+          . setAttribute "crudU" (objCrudU . feiObj $ interf)
+          . setAttribute "crudD" (objCrudD . feiObj $ interf)
+          . setAttribute "verbose" (loglevel' == LevelDebug)
           . setAttribute "loglevel" (tshow loglevel')
-          . setAttribute "usedTemplate" (T.pack controlerTemplateName)
+          . setAttribute "usedTemplate" controlerTemplateName
   let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
   writePrototypeAppFile filename contents
