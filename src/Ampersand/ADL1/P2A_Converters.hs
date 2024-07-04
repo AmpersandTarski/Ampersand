@@ -922,7 +922,7 @@ pCtx2aCtx
                                 ifcObj =
                                   o
                                     { objPlainName = Just . fullName1 . name $ pIfc,
-                                      objlbl = Nothing
+                                      objlbl = mLabel pIfc
                                     },
                                 ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
                                 ifcPos = origin pIfc,

@@ -512,12 +512,12 @@ makeFSpec env context =
               nm' 0 =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) . plainNameOf $ c)
+                  $ (toNamePart' . plural (ctxlang context) . localNameOf $ c)
                   NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                  $ (toNamePart' . plural (ctxlang context) $ localNameOf c <> tshow i)
                   NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"

@@ -210,8 +210,8 @@ class Named a where
   nameSpaceOf = NE.init . nameParts . name
   localName :: a -> NamePart
   localName = NE.last . nameParts . name
-  plainNameOf :: a -> Text
-  plainNameOf = namePartToText . localName
+  localNameOf :: a -> Text
+  localNameOf = namePartToText . localName
   updatedName :: NamePart -> a -> Name
   updatedName txt1 x = Name ws' typ
     where
@@ -226,7 +226,7 @@ class (Named a) => Labeled a where
   mLabel :: a -> Maybe Label
   label :: a -> Text
   label x = case mLabel x of
-    Nothing -> plainNameOf x
+    Nothing -> localNameOf x
     Just (Label lbl) -> lbl
 
 instance Show Label where

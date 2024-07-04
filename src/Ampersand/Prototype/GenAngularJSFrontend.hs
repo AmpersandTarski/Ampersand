@@ -83,6 +83,8 @@ genViewInterface fSpec interf = do
           . setAttribute "roles" (map tshow . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "interfaceName" (ifcName interf)
+          . setAttribute "interfaceNamePascal" (ifcNamePascal interf)
+          . setAttribute "interfaceNameKebab" (ifcNameKebab interf)
           . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
           . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
@@ -95,7 +97,7 @@ genViewInterface fSpec interf = do
           . setAttribute "verbose" (loglevel' == LevelDebug)
           . setAttribute "loglevel" (tshow loglevel')
   let filename :: FilePath
-      filename = "ifc" <> (T.unpack . ifcName $ interf) <> ".view.html"
+      filename = "ifc" <> (T.unpack . ifcNameKebab $ interf) <> ".view.html"
   writePrototypeAppFile filename contents
 
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -244,6 +246,8 @@ genControllerInterface fSpec interf = do
           . setAttribute "roles" (feiRoles interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "interfaceName" (ifcName interf)
+          . setAttribute "interfaceNamePascal" (ifcNamePascal interf)
+          . setAttribute "interfaceNameKebab" (ifcNameKebab interf)
           . setAttribute "interfaceLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
           . setAttribute "exprIsUni" (exprIsUni . feiObj $ interf)
@@ -256,5 +260,5 @@ genControllerInterface fSpec interf = do
           . setAttribute "verbose" (loglevel' == LevelDebug)
           . setAttribute "loglevel" (tshow loglevel')
           . setAttribute "usedTemplate" controlerTemplateName
-  let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
+  let filename = "ifc" <> T.unpack (ifcNameKebab interf) <> ".controller.js"
   writePrototypeAppFile filename contents

@@ -198,7 +198,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             return
               FEObjE
                 { objName = maybe "" text1ToText . objPlainName $ object,
-                  objLabel = text1ToText <$> objPlainName object,
+                  objLabel = tshow <$> objlbl object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,
