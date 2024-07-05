@@ -1,79 +1,40 @@
 CONTEXT ContextName  
 
 -- Concepts
-CONCEPT Concept4Ctx   "this is the definition of CONCEPT Concept4Ctx in de CONTEXT"
-CONCEPT Concept1Ctx   "this is the definition of CONCEPT Concept1Ctx in de CONTEXT"
-CONCEPT Concept2Ctx   "this is the definition of CONCEPT Concept2Ctx in de CONTEXT"
-CONCEPT Concept3Ctx   "this is the definition of CONCEPT Concept3Ctx in de CONTEXT"
-CONCEPT Concept5Ctx   "this is the definition of CONCEPT Concept5Ctx in de CONTEXT"
+CONCEPT "ONE"   "Definition not provided"
 
 
 -- Relations
-RELATION originalFileName [FileObject*FileName] [UNI
-                                                ,TOT]
- 
-RELATION relatie4Ctx [Concept1Ctx*Concept2Ctx] [TOT]
-MEANING   "this is the meaning of the RELATION relatie4Ctx, gedefineerd in de CONTEXT" 
-RELATION filePath [FileObject*FilePath] [UNI
-                                        ,TOT]
- 
-RELATION relatie1Ctx [Concept0Ctx*Concept0Ctx] 
-MEANING   "this is the meaning of the RELATION relatie1Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie5Ctx [Concept3Ctx*Concept2Ctx] 
-MEANING   "this is the meaning of the RELATION relatie5Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie7Ctx [Concept4Ctx*Concept4Ctx] 
-MEANING   "this is the meaning of the RELATION relatie7Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie3Ctx [Concept0Ctx*Concept0Ctx] 
-MEANING   "this is the meaning of the RELATION relatie3Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie2Ctx [Concept0Ctx*Concept0Ctx] 
-MEANING   "this is the meaning of the RELATION relatie2Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie6Ctx [Concept1Ctx*Concept3Ctx] 
-MEANING   "this is the meaning of the RELATION relatie6Ctx, gedefineerd in de CONTEXT" 
-RELATION relatie7Ctx [Concept5Ctx*Concept5Ctx] 
- 
+
 -- Rules
-RULE Rule1Ctx: relatie1Ctx [Concept0Ctx*Concept0Ctx]
 
 
 
-RULE Rule2Ctx: relatie6Ctx [Concept1Ctx*Concept3Ctx]
-MEANING   "this is the meaning of the RULE Rule2Ctx, gedefineerd in de CONTEXT"
-
-
-
-IDENT identity_Ident1Ctx : "Rule_dd22648f-bc79-4c06-b289-374f0f1ec4a1" (relatie7Ctx [Concept5Ctx*Concept5Ctx];relatie7Ctx [Concept5Ctx*Concept5Ctx]~ )
-IDENT identity_FileObjectName : "Rule_e07f1b6a-5013-4abf-9ec4-775a527ecd61" (filePath [FileObject*FilePath];filePath [FileObject*FilePath]~ )
 PATTERN PatternName
 -- Concepts
 CONCEPT Concept2Ptn   "this is the definition of CONCEPT Concept2Ptn in de PATTERN"
 CONCEPT Concept0Ptn   "this is the definition of CONCEPT Concept0Ptn in de PATTERN"
-CONCEPT Concept1Ptn   "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
 CONCEPT Concept3Ptn   "this is the definition of CONCEPT Concept3Ptn in de PATTERN"
+CONCEPT Concept1Ptn   "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
 CONCEPT Concept4Ptn   "this is the definition of CONCEPT Concept4Ptn in de PATTERN"
 
 
 -- Relations
-RELATION relatie6Ptn [Concept1Ptn*Concept3Ptn] 
-MEANING   "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN" 
-RELATION relatie5Ptn [Concept3Ptn*Concept2Ptn] 
-MEANING   "this is the meaning of the RELATION relatie5Ptn, gedefineerd in de PATTERN" 
-RELATION relatie3Ptn [Concept0Ptn*Concept0Ptn] 
-MEANING   "this is the meaning of the RELATION relatie3Ptn, gedefineerd in de PATTERN" 
-RELATION relatie7Ptn [Concept4Ptn*Concept4Ptn] 
-MEANING   "this is the meaning of the RELATION relatie7Ptn, gedefineerd in de PATTERN" 
-RELATION relatie4Ptn [Concept1Ptn*Concept2Ptn] [TOT]
-MEANING   "this is the meaning of the RELATION relatie4Ptn, gedefineerd in de PATTERN" 
-RELATION relatie1Ptn [Concept0Ptn*Concept0Ptn] 
+RELATION relatie1Ptn [Concept0Ptn*Concept0Ptn] [BIJ]
 MEANING   "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN" 
+RELATION relatie4Ptn [Concept1Ptn*Concept2Ptn] 
+MEANING   "this is the meaning of the RELATION relatie4Ptn, gedefineerd in de PATTERN" 
 RELATION relatie2Ptn [Concept0Ptn*Concept0Ptn] 
 MEANING   "this is the meaning of the RELATION relatie2Ptn, gedefineerd in de PATTERN" 
+RELATION relatie6Ptn [Concept1Ptn*Concept3Ptn] 
+MEANING   "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN" 
+RELATION relatie7Ptn [Concept4Ptn*Concept3Ptn] 
+MEANING   "this is the meaning of the RELATION relatie7Ptn, gedefineerd in de PATTERN" 
+RELATION relatie5Ptn [Concept3Ptn*Concept2Ptn] 
+MEANING   "this is the meaning of the RELATION relatie5Ptn, gedefineerd in de PATTERN" 
 -- Rules
 RULE Rule2Ptn: relatie6Ptn [Concept1Ptn*Concept3Ptn]
 MEANING   "this is the meaning of the RULE Rule2Ptn, gedefineerd in de PATTERN"
-
-
-RULE Rule1Ptn: relatie1Ptn [Concept0Ptn*Concept0Ptn]
-
 
 
 
@@ -88,16 +49,9 @@ PURPOSE CONCEPT Concept1Ptn
 PURPOSE RELATION relatie1Ptn [Concept0Ptn*Concept0Ptn]  
 {+this is the purpose of the RELATION relatie1Ptn, gedefineerd in de PATTERN+}
 ENDPATTERN
-ROLE User MAINTAINS Rule1Ctx,Rule1Ptn
 
 
 
-PURPOSE CONTEXT ContextName  
-{+this is the purpose of the CONTEXT ContextName, gedefineerd in de CONTEXT+}
-PURPOSE CONCEPT Concept0Ctx  
-{+this is the purpose of the CONCEPT Concept0Ctx, gedefineerd in de CONTEXT+}
-PURPOSE RELATION relatie1Ctx [Concept0Ctx*Concept0Ctx]  
-{+this is the purpose of the RELATION relatie1Ctx, gedefineerd in de CONTEXT+}
-PURPOSE RULE Rule1Ctx  
-{+this is the purpose of the RULE RuleCtx, gedefineerd in de CONTEXT+}
+
+
 ENDCONTEXT

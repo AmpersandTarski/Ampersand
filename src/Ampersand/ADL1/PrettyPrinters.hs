@@ -488,6 +488,8 @@ instance Pretty PProp where
     P_Rfx -> text "RFX"
     P_Irf -> text "IRF"
     P_Prop -> text "SYM, ASY"
+    P_Fun -> text "UNI, TOT"
+    P_Bij -> text "INJ, SUR"
 
 -- _ -> text . map toUpper . show $ p
 

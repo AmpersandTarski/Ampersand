@@ -308,6 +308,8 @@ instance JSON.FromJSON PProp where
       "rfx" -> pure P_Rfx
       "irf" -> pure P_Irf
       "prop" -> pure P_Prop
+      "fun" -> pure P_Fun
+      "bij" -> pure P_Bij
       _ ->
         JSON.unexpected val
     invalid ->
