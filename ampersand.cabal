@@ -540,6 +540,7 @@ library
   other-modules:
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
+      Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation

@@ -428,9 +428,20 @@ instance Pretty PandocFormat where
 
 instance Pretty PProp where
   pretty p = case p of
+    P_Uni -> text "UNI"
+    P_Inj -> text "INJ"
     P_Sur -> text "SUR"
-    P_Tot -> text "SUR"
-    _ -> text . map toUpper . show $ p
+    P_Tot -> text "TOT"
+    P_Sym -> text "SYM"
+    P_Asy -> text "ASY"
+    P_Trn -> text "TRN"
+    P_Rfx -> text "RFX"
+    P_Irf -> text "IRF"
+    P_Prop -> text "SYM, ASY"
+    P_Fun -> text "UNI, TOT"
+    P_Bij -> text "INJ, SUR"
+
+-- _ -> text . map toUpper . show $ p
 
 instance Pretty PRelationDefault where
   pretty x = case x of
