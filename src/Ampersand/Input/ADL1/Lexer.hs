@@ -66,6 +66,8 @@ keywords =
          "TRN",
          "UNI",
          "PROP",
+         "FUN",
+         "BIJ",
          "VALUE",
          "EVALPHP",
          "POPULATION",
