@@ -47,6 +47,8 @@ keywords =
       ]
     ++ [ map toUpper $ show x | x :: Lang <- [minBound ..]
        ]
+    ++ [ map toUpper $ show x | x :: PProp <- [minBound ..]
+       ]
     ++ [ "INCLUDE",
          "META",
          "PATTERN",
@@ -56,18 +58,6 @@ keywords =
          "RELATION",
          "PRAGMA",
          "MEANING",
-         "ASY",
-         "INJ",
-         "IRF",
-         "RFX",
-         "SUR",
-         "SYM",
-         "TOT",
-         "TRN",
-         "UNI",
-         "PROP",
-         "FUN",
-         "BIJ",
          "VALUE",
          "EVALPHP",
          "POPULATION",

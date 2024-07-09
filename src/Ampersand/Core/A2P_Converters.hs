@@ -128,17 +128,17 @@ aProps2Pprops aps
       `elem` xs
       && P_Asy
       `elem` xs =
-      Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
+      Set.singleton P_Prop `Set.union` aProps2Pprops (aps Set.\\ Set.fromList [Sym, Asy])
   | P_Uni
       `elem` xs
       && P_Tot
       `elem` xs =
-      Set.singleton P_Fun `Set.union` (xs Set.\\ Set.fromList [P_Uni, P_Tot])
+      Set.singleton P_Fun `Set.union` aProps2Pprops (aps Set.\\ Set.fromList [Uni, Tot])
   | P_Inj
       `elem` xs
       && P_Sur
       `elem` xs =
-      Set.singleton P_Bij `Set.union` (xs Set.\\ Set.fromList [P_Inj, P_Sur])
+      Set.singleton P_Bij `Set.union` aProps2Pprops (aps Set.\\ Set.fromList [Inj, Sur])
   | otherwise = xs
   where
     xs = Set.map aProp2pProp aps
