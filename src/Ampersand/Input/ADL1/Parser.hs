@@ -432,7 +432,7 @@ pProps :: AmpParser (Set.Set PProp)
 pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
   where
     --- PropList ::= Prop (',' Prop)*
-    --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP' |'FUN' | 'BIJ'
+    --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP' |'MAP' | 'BIJ'
     pProp :: AmpParser PProp
     pProp = choice [p <$ pKey (show p) | p <- [minBound ..]]
     normalizeProps :: [PProp] -> PProps
@@ -442,7 +442,7 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         rep :: PProps -> PProps
         rep ps
           | P_Prop `elem` ps = Set.fromList [P_Sym, P_Asy] `Set.union` (P_Prop `Set.delete` ps)
-          | P_Fun `elem` ps = Set.fromList [P_Uni, P_Tot] `Set.union` (P_Fun `Set.delete` ps)
+          | P_Map `elem` ps = Set.fromList [P_Uni, P_Tot] `Set.union` (P_Map `Set.delete` ps)
           | P_Bij `elem` ps = Set.fromList [P_Inj, P_Sur] `Set.union` (P_Bij `Set.delete` ps)
           | otherwise = ps
         -- add Uni and Inj if ps has neither Sym nor Asy
