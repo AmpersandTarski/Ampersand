@@ -12,8 +12,8 @@ PATTERN Documentation
     CONCEPT MarkupText ""
     CONCEPT Markup ""
 
-    RELATION language[Markup*Language][UNI] -- TOT hier weggehaald wegens errormessage. Tempfix
-    RELATION text[Markup*MarkupText][UNI] -- TOT hier weggehaald wegens errormessage. Tempfix
+    RELATION language[Markup*Language][MAP]
+    RELATION text[Markup*MarkupText][MAP]
     RULE enumerationOfLanguage : I[Language] = "Dutch" \/ "English" 
     POPULATION Language CONTAINS ["Dutch", "English" ]
     RELATION origin[Purpose*Origin][]
