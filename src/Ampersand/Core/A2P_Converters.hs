@@ -133,7 +133,7 @@ aProps2Pprops aps
       `elem` xs
       && P_Tot
       `elem` xs =
-      Set.singleton P_Fun `Set.union` aProps2Pprops (aps Set.\\ Set.fromList [Uni, Tot])
+      Set.singleton P_Map `Set.union` aProps2Pprops (aps Set.\\ Set.fromList [Uni, Tot])
   | P_Inj
       `elem` xs
       && P_Sur

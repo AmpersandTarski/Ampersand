@@ -1259,8 +1259,8 @@ data PProp
     P_Irf
   | -- | PROP keyword, the parser must replace this by [Sym, Asy].
     P_Prop
-  | -- | FUN keyword, the parser must replace this by [Uni, Tot].
-    P_Fun
+  | -- | MAP keyword, the parser must replace this by [Uni, Tot].
+    P_Map
   | -- | BIJ keyword, the parser must replace this by [Inj, Sur].
     P_Bij
   deriving (Eq, Ord, Typeable, Data, Enum, Bounded)
@@ -1276,7 +1276,7 @@ instance Show PProp where
   show P_Rfx = "RFX"
   show P_Irf = "IRF"
   show P_Prop = "PROP"
-  show P_Fun = "FUN"
+  show P_Map = "MAP"
   show P_Bij = "BIJ"
 
 instance Unique PProp where
@@ -1287,6 +1287,8 @@ instance Flippable PProp where
   flp P_Tot = P_Sur
   flp P_Sur = P_Tot
   flp P_Inj = P_Uni
+  flp P_Map = P_Bij
+  flp P_Bij = P_Map
   flp x = x
 
 data PRelationDefault
