@@ -72,6 +72,7 @@ instance Instances Markup where
   instances fSpec =
     (Set.fromList . map explMarkup . Set.toList . purposeInstances $ fSpec)
       `Set.union` (Set.fromList . map ameaMrk . Set.toList . meaningInstances $ fSpec)
+      `Set.union` (Set.fromList . concatMap rrmsg . Set.toList . ruleInstances $ fSpec)
 
 instance Instances ObjectDef where
   instances = objectDefInstances

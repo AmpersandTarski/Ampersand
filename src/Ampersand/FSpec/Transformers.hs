@@ -519,7 +519,7 @@ transformersFormalAmpersand fSpec =
         "Meaning",
         [ (dirtyId rul, dirtyId mean)
           | rul :: Rule <- instanceList fSpec,
-            mean :: Meaning <- rrmean rul
+            mean <- rrmean rul
         ]
       ),
       ( "message",
