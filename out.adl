@@ -20,7 +20,8 @@ CONCEPT Concept4Ptn   "this is the definition of CONCEPT Concept4Ptn in de PATTE
 
 
 -- Relations
-RELATION relatie1Ptn [Concept0Ptn*Concept0Ptn] [BIJ]
+RELATION relatie1Ptn [Concept0Ptn*Concept0Ptn] [PROP
+                                               ,BIJ]
 MEANING   "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN" 
 RELATION relatie4Ptn [Concept1Ptn*Concept2Ptn] 
 MEANING   "this is the meaning of the RELATION relatie4Ptn, gedefineerd in de PATTERN" 

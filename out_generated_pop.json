@@ -2,7 +2,7 @@
     "atoms": [
         {
             "atoms": [
-                "Ampersand-v4.8.0 [Add-prop-BIJ-FUN:513215c8f*], build time: 03-Jul-24 15:52:27 CEST"
+                "Ampersand-v4.8.0 [Add-prop-BIJ-FUN:e138dc186*], build time: 09-Jul-24 14:57:40 CEST"
             ],
             "concept": "AmpersandVersion"
         },
@@ -11,12 +11,23 @@
             "concept": "AtomValue"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#"
+            ],
             "concept": "BinaryTerm"
         },
         {
             "atoms": [
-                "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#"
+                "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#",
+                "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
             ],
             "concept": "BindedRelation"
         },
@@ -79,7 +90,9 @@
         },
         {
             "atoms": [
-                "conj__0"
+                "conj__2",
+                "conj__0",
+                "conj__1"
             ],
             "concept": "Conjunct"
         },
@@ -102,18 +115,22 @@
         {
             "atoms": [
                 "ONE",
+                "INJ_32relatie1Ptn_91Concept0Ptn_42Concept0Ptn_93",
                 "Concept2Ptn",
                 "Concept3Ptn",
                 "Concept0Ptn",
                 "Concept1Ptn",
                 "Concept4Ptn",
+                "SUR_32relatie1Ptn_91Concept0Ptn_42Concept0Ptn_93",
                 "PatternName",
                 "Rule2Ptn"
             ],
             "concept": "EncodedName"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "EDcI_32_Concept0Ptn"
+            ],
             "concept": "Epsilon"
         },
         {
@@ -146,28 +163,37 @@
         },
         {
             "atoms": [
-                "English"
+                "English",
+                "Dutch"
             ],
             "concept": "Language"
         },
         {
             "atoms": [
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-798934108058446600#",
+                "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-2970780531848134397#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#780419289325136719#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#6957948246529230050#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#3565108094868953990#",
+                "Markup_32__123_amLang_32__61__32_English_44__32_am#-7655625860836663747#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-3596564259022656172#",
+                "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-5273941072997003653#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-4416761693972881498#",
+                "Markup_32__123_amLang_32__61__32_English_44__32_am#-912123996270144743#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#6607581912605832750#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#9033086796309510097#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-3114025089730486240#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#7881207238937330204#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#977393125919530039#",
+                "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-739392114265833336#",
+                "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#1501523006376360893#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#6995093958773664282#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-1656354467933384191#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#-1999658074228190521#",
+                "Markup_32__123_amLang_32__61__32_English_44__32_am#-4233289243397860211#",
                 "Markup_32__123_amLang_32__61__32_English_44__32_am#2154374317484107883#",
-                "Markup_32__123_amLang_32__61__32_English_44__32_am#-7158099665861021703#"
+                "Markup_32__123_amLang_32__61__32_English_44__32_am#-7158099665861021703#",
+                "Markup_32__123_amLang_32__61__32_English_44__32_am#-8038511340324581076#"
             ],
             "concept": "Markup"
         },
@@ -184,10 +210,14 @@
                 "this is the meaning of the RELATION relatie6Ptn, gedefineerd in de PATTERN",
                 "this is the meaning of the RELATION relatie2Ptn, gedefineerd in de PATTERN",
                 "this is the purpose of the CONCEPT ConceptPtn, gedefineerd in de PATTERN",
+                "relatie1Ptn[Concept0Ptn*Concept0Ptn] is injectief",
+                "relatie1Ptn[Concept0Ptn*Concept0Ptn] is injective",
                 "Definition not provided",
                 "this is the purpose of the PATTERN PatternName, gedefineerd in de PATTERN",
                 "this is the meaning of the RELATION relatie1Ptn, gedefineerd in de PATTERN",
                 "this is the definition of CONCEPT Concept0Ptn in de PATTERN",
+                "relatie1Ptn[Concept0Ptn*Concept0Ptn] is surjective",
+                "relatie1Ptn[Concept0Ptn*Concept0Ptn] is surjectief",
                 "this is the meaning of the RULE Rule2Ptn, gedefineerd in de PATTERN"
             ],
             "concept": "MarkupText"
@@ -197,15 +227,19 @@
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#7336011820590190957#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-8267445001533881757#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#2972967415894657638#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#5220753390756065746#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#1963907686092605770#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#3661585823743132977#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-3703120634076082980#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-8020230793269538486#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#4514009685666603721#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#3820039773241830538#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7808776634137620312#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#7685031061723645971#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-5045929839480954488#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-39338667786759613#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#1708884214360249389#",
+                "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6513929259346221622#",
                 "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6507961272176518548#"
             ],
             "concept": "Meaning"
@@ -215,15 +249,23 @@
             "concept": "ObjectDef"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "Converse",
+                "Union",
+                "Inclusion",
+                "Composition",
+                "UnaryMinus"
+            ],
             "concept": "Operator"
         },
         {
             "atoms": [
+                "PropertyRule for INJ relatie1Ptn[Concept0Ptn*Concept0Ptn] which is defined at /workspaces/Ampersand/out.adl:23:1",
                 "/workspaces/Ampersand/out.adl:49:1",
                 "/workspaces/Ampersand/out.adl:45:1",
                 "/workspaces/Ampersand/out.adl:47:1",
-                "/workspaces/Ampersand/out.adl:36:1"
+                "/workspaces/Ampersand/out.adl:36:1",
+                "PropertyRule for SUR relatie1Ptn[Concept0Ptn*Concept0Ptn] which is defined at /workspaces/Ampersand/out.adl:23:1"
             ],
             "concept": "Origin"
         },
@@ -248,11 +290,17 @@
             "concept": "PatternName"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "INJ",
+                "SUR"
+            ],
             "concept": "Property"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#"
+            ],
             "concept": "PropertyRule"
         },
         {
@@ -299,12 +347,16 @@
         },
         {
             "atoms": [
-                "Rule2Ptn"
+                "Rule2Ptn",
+                "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#"
             ],
             "concept": "Rule"
         },
         {
             "atoms": [
+                "INJ relatie1Ptn[Concept0Ptn*Concept0Ptn]",
+                "SUR relatie1Ptn[Concept0Ptn*Concept0Ptn]",
                 "Rule2Ptn"
             ],
             "concept": "RuleName"
@@ -315,7 +367,20 @@
         },
         {
             "atoms": [
-                "relatie6Ptn [Concept1Ptn*Concept3Ptn]"
+                "I[Concept0Ptn] |- relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                "relatie6Ptn [Concept1Ptn*Concept3Ptn]",
+                " -relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                " -I[Concept0Ptn]\\/relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                " -relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]\\/ -I[Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn] |-  -I[Concept0Ptn]",
+                " -I[Concept0Ptn]",
+                " -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]",
+                "I[Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn]",
+                "relatie1Ptn [Concept0Ptn*Concept0Ptn]~"
             ],
             "concept": "ShowADL"
         },
@@ -347,7 +412,21 @@
         },
         {
             "atoms": [
-                "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#"
+                "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#",
+                "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#",
+                "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#",
+                "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                "EDcI_32_Concept0Ptn"
             ],
             "concept": "Term"
         },
@@ -356,7 +435,11 @@
             "concept": "Text"
         },
         {
-            "atoms": [],
+            "atoms": [
+                "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#"
+            ],
             "concept": "UnaryTerm"
         },
         {
@@ -379,7 +462,15 @@
             "links": [
                 {
                     "src": "ContextName",
+                    "tgt": "conj__2"
+                },
+                {
+                    "src": "ContextName",
                     "tgt": "conj__0"
+                },
+                {
+                    "src": "ContextName",
+                    "tgt": "conj__1"
                 }
             ],
             "relation": "allConjuncts[Context*Conjunct]"
@@ -393,12 +484,33 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "ContextName"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "ContextName"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "ContextName"
                 }
             ],
             "relation": "allRules[Rule*Context]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                    "tgt": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
+                },
+                {
+                    "src": "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                    "tgt": "EDcI_32_Concept0Ptn"
+                },
+                {
+                    "src": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#"
+                }
+            ],
             "relation": "arg[UnaryTerm*Term]"
         },
         {
@@ -406,6 +518,10 @@
                 {
                     "src": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#",
                     "tgt": "relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_93_"
+                },
+                {
+                    "src": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#",
+                    "tgt": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_"
                 }
             ],
             "relation": "bind[BindedRelation*Relation]"
@@ -519,6 +635,14 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "ContextName"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "ContextName"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "ContextName"
                 }
             ],
             "relation": "context[Rule*Context]"
@@ -590,7 +714,16 @@
             "relation": "declaredIn[Relation*Pattern]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "INJ"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "SUR"
+                }
+            ],
             "relation": "declaredthrough[PropertyRule*Property]"
         },
         {
@@ -635,7 +768,44 @@
             "relation": "explRefIds[Purpose*Text]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                    "tgt": "ECpl_32__40_EDcI_32_Concept0Ptn_41_"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                    "tgt": "EDcI_32_Concept0Ptn"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                    "tgt": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                    "tgt": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                    "tgt": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#"
+                },
+                {
+                    "src": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                    "tgt": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#"
+                },
+                {
+                    "src": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                    "tgt": "ECpl_32__40_EDcI_32_Concept0Ptn_41_"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                    "tgt": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#"
+                }
+            ],
             "relation": "first[BinaryTerm*Term]"
         },
         {
@@ -643,6 +813,14 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#"
                 }
             ],
             "relation": "formalTerm[Rule*Term]"
@@ -770,6 +948,10 @@
                     "tgt": "English"
                 },
                 {
+                    "src": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-2970780531848134397#",
+                    "tgt": "Dutch"
+                },
+                {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#780419289325136719#",
                     "tgt": "English"
                 },
@@ -782,8 +964,16 @@
                     "tgt": "English"
                 },
                 {
+                    "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-7655625860836663747#",
+                    "tgt": "English"
+                },
+                {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-3596564259022656172#",
                     "tgt": "English"
+                },
+                {
+                    "src": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-5273941072997003653#",
+                    "tgt": "Dutch"
                 },
                 {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4416761693972881498#",
@@ -822,6 +1012,10 @@
                     "tgt": "English"
                 },
                 {
+                    "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4233289243397860211#",
+                    "tgt": "English"
+                },
+                {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#2154374317484107883#",
                     "tgt": "English"
                 },
@@ -851,12 +1045,20 @@
                     "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#2154374317484107883#"
                 },
                 {
+                    "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#5220753390756065746#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-5273941072997003653#"
+                },
+                {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#1963907686092605770#",
                     "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-1999658074228190521#"
                 },
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#3661585823743132977#",
                     "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4416761693972881498#"
+                },
+                {
+                    "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-3703120634076082980#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-7655625860836663747#"
                 },
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-8020230793269538486#",
@@ -869,6 +1071,10 @@
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#3820039773241830538#",
                     "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#780419289325136719#"
+                },
+                {
+                    "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7808776634137620312#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4233289243397860211#"
                 },
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#7685031061723645971#",
@@ -885,6 +1091,10 @@
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#1708884214360249389#",
                     "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#6995093958773664282#"
+                },
+                {
+                    "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6513929259346221622#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-2970780531848134397#"
                 },
                 {
                     "src": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6507961272176518548#",
@@ -927,12 +1137,45 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#7685031061723645971#"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-3703120634076082980#"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#6513929259346221622#"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#5220753390756065746#"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "Meaning_32__123_ameaMrk_32__61__32_Markup_32__123_#-7808776634137620312#"
                 }
             ],
             "relation": "meaning[Rule*Meaning]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#1501523006376360893#"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-8038511340324581076#"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_English_44__32_am#-912123996270144743#"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-739392114265833336#"
+                }
+            ],
             "relation": "message[Rule*Markup]"
         },
         {
@@ -1024,6 +1267,14 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "Rule2Ptn"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "INJ relatie1Ptn[Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "SUR relatie1Ptn[Concept0Ptn*Concept0Ptn]"
                 }
             ],
             "relation": "name[Rule*RuleName]"
@@ -1049,11 +1300,61 @@
             "relation": "objcruds[ObjectDef*Cruds]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                    "tgt": "Union"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                    "tgt": "Inclusion"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                    "tgt": "Inclusion"
+                },
+                {
+                    "src": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                    "tgt": "Union"
+                }
+            ],
             "relation": "operator[BinaryTerm*Operator]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                    "tgt": "Converse"
+                },
+                {
+                    "src": "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                    "tgt": "UnaryMinus"
+                },
+                {
+                    "src": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#",
+                    "tgt": "UnaryMinus"
+                }
+            ],
             "relation": "operator[UnaryTerm*Operator]"
         },
         {
@@ -1086,6 +1387,14 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "/workspaces/Ampersand/out.adl:36:1"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "PropertyRule for INJ relatie1Ptn[Concept0Ptn*Concept0Ptn] which is defined at /workspaces/Ampersand/out.adl:23:1"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "PropertyRule for SUR relatie1Ptn[Concept0Ptn*Concept0Ptn] which is defined at /workspaces/Ampersand/out.adl:23:1"
                 }
             ],
             "relation": "origin[Rule*Origin]"
@@ -1108,11 +1417,29 @@
             "relation": "patRules[Pattern*Rule]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "INJ"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "SUR"
+                }
+            ],
             "relation": "prop[Relation*Property]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#"
+                }
+            ],
             "relation": "propertyRule[Relation*PropertyRule]"
         },
         {
@@ -1165,8 +1492,16 @@
         {
             "links": [
                 {
-                    "src": "conj__0",
+                    "src": "conj__2",
                     "tgt": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#"
+                },
+                {
+                    "src": "conj__0",
+                    "tgt": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#"
+                },
+                {
+                    "src": "conj__1",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#"
                 }
             ],
             "relation": "rc_conjunct[Conjunct*Term]"
@@ -1213,7 +1548,44 @@
             "relation": "rrviol[Rule*PairView]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                    "tgt": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                    "tgt": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                    "tgt": "ECpl_32__40_EDcI_32_Concept0Ptn_41_"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                    "tgt": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
+                },
+                {
+                    "src": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                    "tgt": "ECpl_32__40_EDcI_32_Concept0Ptn_41_"
+                },
+                {
+                    "src": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                    "tgt": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                    "tgt": "ECpl_32__40_EDcI_32_Concept0Ptn_41_"
+                }
+            ],
             "relation": "second[BinaryTerm*Term]"
         },
         {
@@ -1233,6 +1605,62 @@
                 {
                     "src": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#",
                     "tgt": "relatie6Ptn [Concept1Ptn*Concept3Ptn]"
+                },
+                {
+                    "src": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~"
+                },
+                {
+                    "src": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                    "tgt": " -I[Concept0Ptn]"
+                },
+                {
+                    "src": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#",
+                    "tgt": " -relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                    "tgt": " -I[Concept0Ptn]\\/relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                    "tgt": "I[Concept0Ptn] |- relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn]"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~;relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                    "tgt": "relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn] |-  -I[Concept0Ptn]"
+                },
+                {
+                    "src": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                    "tgt": " -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                    "tgt": " -relatie1Ptn [Concept0Ptn*Concept0Ptn]~; -I[Concept0Ptn];relatie1Ptn [Concept0Ptn*Concept0Ptn]\\/ -I[Concept0Ptn]"
+                },
+                {
+                    "src": "EDcI_32_Concept0Ptn",
+                    "tgt": "I[Concept0Ptn]"
                 }
             ],
             "relation": "showADL[Term*ShowADL]"
@@ -1283,6 +1711,62 @@
                 {
                     "src": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#",
                     "tgt": "_91_Concept1Ptn_42_Concept3Ptn_93_"
+                },
+                {
+                    "src": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECpl_32__40_EDcI_32_Concept0Ptn_41_",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
+                },
+                {
+                    "src": "EDcI_32_Concept0Ptn",
+                    "tgt": "_91_Concept0Ptn_42_Concept0Ptn_93_"
                 }
             ],
             "relation": "sign[Term*Signature]"
@@ -1393,6 +1877,10 @@
                     "tgt": "this is the purpose of the CONCEPT ConceptPtn, gedefineerd in de PATTERN"
                 },
                 {
+                    "src": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-2970780531848134397#",
+                    "tgt": "relatie1Ptn[Concept0Ptn*Concept0Ptn] is injectief"
+                },
+                {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#780419289325136719#",
                     "tgt": "this is the definition of CONCEPT Concept1Ptn in de PATTERN"
                 },
@@ -1405,8 +1893,16 @@
                     "tgt": "this is the purpose of the PATTERN PatternName, gedefineerd in de PATTERN"
                 },
                 {
+                    "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-7655625860836663747#",
+                    "tgt": "relatie1Ptn[Concept0Ptn*Concept0Ptn] is injective"
+                },
+                {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-3596564259022656172#",
                     "tgt": "this is the meaning of the RELATION relatie7Ptn, gedefineerd in de PATTERN"
+                },
+                {
+                    "src": "Markup_32__123_amLang_32__61__32_Dutch_44__32_amPa#-5273941072997003653#",
+                    "tgt": "relatie1Ptn[Concept0Ptn*Concept0Ptn] is surjectief"
                 },
                 {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4416761693972881498#",
@@ -1443,6 +1939,10 @@
                 {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-1999658074228190521#",
                     "tgt": "Definition not provided"
+                },
+                {
+                    "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#-4233289243397860211#",
+                    "tgt": "relatie1Ptn[Concept0Ptn*Concept0Ptn] is surjective"
                 },
                 {
                     "src": "Markup_32__123_amLang_32__61__32_English_44__32_am#2154374317484107883#",
@@ -1545,12 +2045,68 @@
                 {
                     "src": "Rule2Ptn",
                     "tgt": "Rule2Ptn"
+                },
+                {
+                    "src": "INJ_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#-6700845258662691484#",
+                    "tgt": "INJ_32relatie1Ptn_91Concept0Ptn_42Concept0Ptn_93"
+                },
+                {
+                    "src": "SUR_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_9#7106477234750779117#",
+                    "tgt": "SUR_32relatie1Ptn_91Concept0Ptn_42Concept0Ptn_93"
                 }
             ],
             "relation": "urlEncodedName[Rule*EncodedName]"
         },
         {
             "links": [
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EFlp_32__40_EDcD_32_relatie1Ptn_91_Concept0Ptn_42_#3236117108497009777#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECps_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#2522144605712461995#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECpl_32__40_ECps_32__40_EFlp_32__40_EDcD_32_relati#-8533412375633863721#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EUni_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#-3379493489469813059#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EInc_32__40_EDcI_32_Concept0Ptn_44_ECps_32__40_EFl#-8675144743468583167#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#-264690023890811835#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#1382827738041112091#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECps_32__40_EFlp_32__40_EDcD_32_relatie1Ptn_91_Con#3339413352868886225#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EDcD_32_relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_#2372760792991453084#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EInc_32__40_ECps_32__40_ECps_32__40_EFlp_32__40_ED#-7749095220045654959#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "ECps_32__40_ECpl_32__40_EDcI_32_Concept0Ptn_41__44#1861189628707810288#"
+                },
+                {
+                    "src": "relatie1Ptn_91_Concept0Ptn_42_Concept0Ptn_93_",
+                    "tgt": "EUni_32__40_ECpl_32__40_ECps_32__40_EFlp_32__40_ED#5668095479633865295#"
+                },
                 {
                     "src": "relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_93_",
                     "tgt": "EDcD_32_relatie6Ptn_91_Concept1Ptn_42_Concept3Ptn_#-4076201424342764243#"
@@ -1559,7 +2115,12 @@
             "relation": "usedIn[Relation*Term]"
         },
         {
-            "links": [],
+            "links": [
+                {
+                    "src": "EDcI_32_Concept0Ptn",
+                    "tgt": "Concept0Ptn"
+                }
+            ],
             "relation": "userCpt[Epsilon*Concept]"
         },
         {
@@ -1595,7 +2156,7 @@
             "links": [
                 {
                     "src": "ContextName",
-                    "tgt": "Ampersand-v4.8.0 [Add-prop-BIJ-FUN:513215c8f*], build time: 03-Jul-24 15:52:27 CEST"
+                    "tgt": "Ampersand-v4.8.0 [Add-prop-BIJ-FUN:e138dc186*], build time: 09-Jul-24 14:57:40 CEST"
                 }
             ],
             "relation": "versionInfo[Context*AmpersandVersion]"
