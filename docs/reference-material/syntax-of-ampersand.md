@@ -252,7 +252,7 @@ CLASSIFY <upper case identifier> ISA <upper case identifier>
 
 In a specialization, e.g. `CLASSIFY Sedan ISA Car`, we call the first concept (`Sedan`) the specific concept and the second (`Car`) the generic concept. The meaning of a specialization is that every atom from the specific concept is an atom from the generic concept as well. So every (atom that is a) Sedan is a Car as well.
 
-So in general: `CLASSIFY` $$A$$ `ISA` $$B$$ means: $$\forall a: a\in A\Rightarrow a\in B$$.
+So in general: `CLASSIFY` $A$ `ISA` $B$ means: $\forall a: a\in A\Rightarrow a\in B$.
 
 #### Examples
 
@@ -297,7 +297,7 @@ A _**population statement**_ specifies which pairs (of atoms) are in a relation.
 
 A relation is a set that contains pairs of atoms. Over time, pairs can be inserted into or deleted from a relation, for example by a user typing data into an Ampersand application. So the content of a relation is changing over time.
 
-When discussing relations, an arbitrary relation is referred to as $$r$$, $$s$$, or $$t$$. To say that a pair $$(a,b)$$ belongs to a relation $$r$$, we write $$a\ r\ b$$ or alternatively $$(a,b)\in r$$.
+When discussing relations, an arbitrary relation is referred to as $r$, $s$, or $t$. To say that a pair $(a,b)$ belongs to a relation $r$, we write $a\ r\ b$ or alternatively $(a,b)\in r$.
 
 #### Examples
 

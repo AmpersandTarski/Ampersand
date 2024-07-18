@@ -34,6 +34,8 @@ PATTERN Rules
     MEANING "A property is defined as part of the declaration of relation."
     RELATION propertyRule[Relation*PropertyRule] [SUR]
     MEANING "The properties of a relation."
+    RELATION  rrviol[Rule*PairView]]
+    MEANING "The pairviews in a rule, which contain the inconsistencies."
 ENDPATTERN
 
 PATTERN PropertyRules

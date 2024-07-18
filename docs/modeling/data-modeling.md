@@ -149,7 +149,7 @@ RELATION capital[State*City]
 MEANING "The capital of a state is registered in this relation."
 ```
 
-The meaning of a relation gives guidance to the reader in the way we should speak about the contents of the relation. For instance, if the pair $$(p,s)$$ is a pair from `RELATION birth[President*State]`, the reader should interpret that as "President $$p$$ was born in $$s$$."
+The meaning of a relation gives guidance to the reader in the way we should speak about the contents of the relation. For instance, if the pair $(p,s)$ is a pair from `RELATION birth[President*State]`, the reader should interpret that as "President $p$ was born in $s$."
 
 ## Add multiplicity constraints
 
@@ -161,8 +161,8 @@ RELATION birth[President*State] [UNI]
 
 Two properties are relevant for the data model: univalent \(`UNI`\) and injective \(`INJ`\):
 
-- Relation `r[A*B] [UNI]` means that there is at most one pair $$(a,b)$$ in the relation for every $$a$$ in `A`.
-- Relation `r[A*B] [INJ]` means that there is at most one pair $$(a,b)$$ in the relation for every $$b$$ in B.
+- Relation `r[A*B] [UNI]` means that there is at most one pair $(a,b)$ in the relation for every $a$ in `A`.
+- Relation `r[A*B] [INJ]` means that there is at most one pair $(a,b)$ in the relation for every $b$ in B.
 - Relation `r[A*B] [UNI,INJ]` means the relation is both univalent and injective.
 
 We have to do this for every relation:

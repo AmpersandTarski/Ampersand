@@ -182,9 +182,8 @@ RELATION departementsleiding[Departement*Functie]
    PRAGMA "" " is genomen door " " binnen de grenzen van zijn bevoegdheid"
    -- POPULATION RELATION bevoegd[Besluit*Functie] toe te voegen door Erik Gubler en Geraldson Martina
    POPULATION bevoegd[Besluit*Functie] CONTAINS
-    [ ("inkoop van Forensische zorg in een particuliere setting met als grensbedrag €50.000.000","DJI - directeur sector Forensische Zorg")
-    ; ("subsidiëring dan wel inkoop van justitiële jeugdplaatsen in een particuliere setting, met als grensbedrag € 50.000.000", "DJI - directeur sector Justitiële Jeugdinrichtingen")
-    ; ("het verrichten van handelingen en het nemen van besluiten voortvloeiend uit de verkrijging en besteding van ESF-gelden", "Directeur P.I. Vught")
+    [ ("stb-2021-252","De Minister van Justitie en Veiligheid, F.B.J. Grapperhaus")
+    ; ("DJI-4838921", "Directeur-Generaal Dienst Justitiële Inrichtingen")
     ]
 
    RELATION gronden[Bevoegdheid*Titel]

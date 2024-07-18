@@ -48,19 +48,19 @@ The operators come in families. We advise novices to study only the rule operato
 
 | Family                                       |                   binary operators | binding power |         unary operators | binding power |
 | -------------------------------------------- | ---------------------------------: | ------------- | ----------------------: | ------------- |
-| rules                                        |            $$=$$ and $$\subseteq$$ | 1 (weakest)   |                         |               |
-| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $\overline{\vspace{x}}$ | prefix        |
-| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |         $$\smallsmile$$ | postfix       |
-| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                         |               |
-| Kleene                                       |                                    |               |         $$∗$$ and $$+$$ | postfix       |
+| rules                                        |            $=$ and $\subseteq$ | 1 (weakest)   |                         |               |
+| [boolean](#boolean-operators-in-logic)       |      $\cup$, $\cap$, and $-$ | 2             | $\overline{\vspace{x}}$ | prefix        |
+| [relational](#relational-operators-in-logic) | $;$, $\times$, and $\dagger$ | 4             |         $\smallsmile$ | postfix       |
+| [residual](#residual-operators-in-logic)     |   $\backslash$, $/$, and $♢$ | 3             |                         |               |
+| Kleene                                       |                                    |               |         $∗$ and $+$ | postfix       |
 
 ## Brackets
 
-Operators with different binding power may be used in the same term without brackets, because the binding power tells how it is interpreted. For example, $$r\cap s;t$$ means $$r\cap(s;t)$$ because $$;$$ has a higher binding power than $$\cap$$.
+Operators with different binding power may be used in the same term without brackets, because the binding power tells how it is interpreted. For example, $r\cap s;t$ means $r\cap(s;t)$ because $;$ has a higher binding power than $\cap$.
 
-Operators with the same binding power must be used unambiguously. For example: $$r\cap(s-t)$$ means something different than $$(r\cap s)-t$$. In such cases Ampersand insists on the use of brackets, so readers without knowledge of the binding powers of the operators can read a term unambiguously.
+Operators with the same binding power must be used unambiguously. For example: $r\cap(s-t)$ means something different than $(r\cap s)-t$. In such cases Ampersand insists on the use of brackets, so readers without knowledge of the binding powers of the operators can read a term unambiguously.
 
-Repeated uses of an associative operator does not require brackets. So $$r\cap s \cap t$$ is allowed because $$\cap$$ is associative.
+Repeated uses of an associative operator does not require brackets. So $r\cap s \cap t$ is allowed because $\cap$ is associative.
 
 ## Notation on the keyboard
 
@@ -68,21 +68,21 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 
 | operator name                | code |          math          | remark                                     |
 | ---------------------------- | :--: | :--------------------: | ------------------------------------------ | ------------------ |
-| equivalence (equal)          | `=`  |         $$=$$          | use only in a rule                         |
-| inclusion                    |  `   |           -`           | $$\subseteq$$                              | use only in a rule |
-| intersect                    | `/\` |         $$∩$$          | associative, commutative, idempotent       |
-| union                        | `\/` |         $$∪$$          | associative, commutative, idempotent       |
-| difference (minus)           | `-`  |         $$-$$          |                                            |
-| complement                   | `-`  | $$\overline{\strut }$$ | in code: Prefix; in math: Overline         |
-| compose                      | `;`  |         $$;$$          | associative                                |
-| converse (flip)              | `~`  |    $$\smallsmile$$     | postfix                                    |
-| left residual                | `/`  |         $$/$$          |                                            |
-| right residual               | `\`  |     $$\backslash$$     |                                            |
-| diamond                      | `<>` |      $$\Diamond$$      |                                            |
-| relational product           | `!`  |      $$\dagger$$       | associative                                |
-| cartesian product            | `#`  |       $$\times$$       |                                            |
-| reflexive transitive closure | `*`  |         $$∗$$          | in code: not implemented; in math: Postfix |
-| transitive closure           | `+`  |         $$+$$          | in code: not implemented; in math: Postfix |
+| equivalence (equal)          | `=`  |         $=$          | use only in a rule                         |
+| inclusion                    |  `   |           -`           | $\subseteq$                              | use only in a rule |
+| intersect                    | `/\` |         $∩$          | associative, commutative, idempotent       |
+| union                        | `\/` |         $∪$          | associative, commutative, idempotent       |
+| difference (minus)           | `-`  |         $-$          |                                            |
+| complement                   | `-`  | $\overline{\strut }$ | in code: Prefix; in math: Overline         |
+| compose                      | `;`  |         $;$          | associative                                |
+| converse (flip)              | `~`  |    $\smallsmile$     | postfix                                    |
+| left residual                | `/`  |         $/$          |                                            |
+| right residual               | `\`  |     $\backslash$     |                                            |
+| diamond                      | `<>` |      $\Diamond$      |                                            |
+| relational product           | `!`  |      $\dagger$       | associative                                |
+| cartesian product            | `#`  |       $\times$       |                                            |
+| reflexive transitive closure | `*`  |         $∗$          | in code: not implemented; in math: Postfix |
+| transitive closure           | `+`  |         $+$          | in code: not implemented; in math: Postfix |
 
 ## Semantics
 
@@ -108,41 +108,41 @@ When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a ter
 
 When a relation is used in a term, we can just use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
-If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$a\ r\ b$$. Alternatively we may write $$(a,b)\in r$$ , since we know that $$r$$ is a set.
+If a pair $(a,b)$ is an element of a relation $r$, we write $a\ r\ b$. Alternatively we may write $(a,b)\in r$ , since we know that $r$ is a set.
 
 ##### Identity
 
-For every concept $$C$$, the term $$I_{[C]}$$ exists. It refers to the _**identity relation**_. It means that for every $$a\in C$$ and $$b\in C$$ we have:
+For every concept $C$, the term $I_{[C]}$ exists. It refers to the _**identity relation**_. It means that for every $a\in C$ and $b\in C$ we have:
 
-$$
+$
 a = b\ \Leftrightarrow\ a\ I_{[C]}\ b
-$$
+$
 
-The type of $$I_{[C]}$$ is $$[C*C]$$. In Ampersand code you write `I[C]`.
+The type of $I_{[C]}$ is $[C*C]$. In Ampersand code you write `I[C]`.
 
 ##### Complete relation
 
-For every pair of concepts $$A$$ and $$B$$ the term $$V_{[A*B]}$$ refers to the _**complete relation**_. For every $$a\in A$$ and $$b\in B$$ we have:
+For every pair of concepts $A$ and $B$ the term $V_{[A*B]}$ refers to the _**complete relation**_. For every $a\in A$ and $b\in B$ we have:
 
 $$
 a\ V_{[A*B]}\ b
 $$
 
-The type of $$V_{[A*B]}$$ is $$[A*B]$$. In Ampersand code you write `V[A*B]`.
+The type of $V_{[A*B]}$ is $[A*B]$. In Ampersand code you write `V[A*B]`.
 
 #### Boolean operators in logic
 
-The notation $$a\ r\ b$$ means that the pair (a,b) is in relation $$r$$. This page defines when pair (a,b) is in relation $$r ∩ s$$ (the intersection of $$r$$ and $$s$$), $$r ∪ s$$ (the union of $$r$$ and $$s$$), $$r-s$$ (the difference of $$r$$ and $$s$$).
+The notation $a\ r\ b$ means that the pair (a,b) is in relation $r$. This page defines when pair (a,b) is in relation $r ∩ s$ (the intersection of $r$ and $s$), $r ∪ s$ (the union of $r$ and $s$), $r-s$ (the difference of $r$ and $s$).
 
-- intersection : $$a\ (r ∩ s)\ b\ \Leftrightarrow\ a\ r\ b\ ∧\ a\ s\ b$$ . In other words: if the pair $$(a,b)$$ is both in relation $$r$$ and $$s$$, then it is in the intersection of $$r$$ and $$s$$.
-- union : $$a\ (r ∪ s)\ b\ \Leftrightarrow\ a\ r\ b\ \vee\ a\ s\ b$$ . In words: if the pair $$(a,b)$$ is in the relation $$r$$ or in $$s$$, then it is in the union of $$r$$ and $$s$$.
-- difference : $$a\ (r-s)\ b\ \Leftrightarrow\ a\ r\ b\ ∧\ \neg(a\ s\ b)$$. In other words, the term $$r-s$$ contains all pairs from $$r$$ that are not in $$s$$.
+- intersection : $a\ (r ∩ s)\ b\ \Leftrightarrow\ a\ r\ b\ ∧\ a\ s\ b$ . In other words: if the pair $(a,b)$ is both in relation $r$ and $s$, then it is in the intersection of $r$ and $s$.
+- union : $a\ (r ∪ s)\ b\ \Leftrightarrow\ a\ r\ b\ \vee\ a\ s\ b$ . In words: if the pair $(a,b)$ is in the relation $r$ or in $s$, then it is in the union of $r$ and $s$.
+- difference : $a\ (r-s)\ b\ \Leftrightarrow\ a\ r\ b\ ∧\ \neg(a\ s\ b)$. In other words, the term $r-s$ contains all pairs from $r$ that are not in $s$.
 
-The complement (or negation) of a relation $$r_{[A x B]}$$ is defined by means of the difference operator:
+The complement (or negation) of a relation $r_{[A x B]}$ is defined by means of the difference operator:
 
-- complement : If $$r$$ is defined as $$r_{A\times B}$$, then $$\overline{r}$$ is the set of all tuples in $$A\times B$$ (the Cartesian product) that are not contained in $$r$$. So $$\overline{r} = V_{[A\times B]} - r$$
+- complement : If $r$ is defined as $r_{A\times B}$, then $\overline{r}$ is the set of all tuples in $A\times B$ (the Cartesian product) that are not contained in $r$. So $\overline{r} = V_{[A\times B]} - r$
 
-Note that the complement is defined in terms of $$A$$ and $$B$$. So, two relations with an identical population yet a different type may have different complements.
+Note that the complement is defined in terms of $A$ and $B$. So, two relations with an identical population yet a different type may have different complements.
 
 ##### How to type boolean operators in your script
 
@@ -156,23 +156,23 @@ To say things such as "the name of the owner", we want to string together multip
 
 ##### Converse
 
-A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
+A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $(a, b)$ is a different from $(b,a)$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $\smallsmile\$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
 $$
 a(r\smallsmile)b\ \Leftrightarrow\ b\ r\ a
 $$
 
-If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
+If $r$ has type$[A\times B]$, then $r\smallsmile\$ has type $[B\times A]$.
 
 ##### Composition
 
-The composition operator is denoted by a semicolon $$;$$ between two terms. It is pronounced as 'composed with'. Let us take a look at $$r$$ composed with $$s$$. Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$ is defined by:
+The composition operator is denoted by a semicolon $;$ between two terms. It is pronounced as 'composed with'. Let us take a look at $r$ composed with $s$. Let $r_{[A\times B]}$ and $s_{[B\times C]}$ be two relations, with the target of r being the same as the source of s. Then the composition of $r$ and $s$ is defined by:
 
 $$
 a(r;s)c\ \Leftrightarrow\ ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c
 $$
 
-If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ has type $$[A\times C]$$.
+If $r$ has type$[A\times B]$and $s$has type$[B\times C]$, then $r;s$ has type $[A\times C]$.
 
 ##### How to type boolean operators in your script
 
@@ -182,12 +182,12 @@ If $$r$$ has type$$[A\times B]$$and $$s$$has type$$[B\times C]$$, then $$r;s$$ h
 
 [Residual operators](https://en.wikipedia.org/wiki/Residuated_Boolean_algebra) are used when "[material implication](https://en.wikipedia.org/wiki/Material_implication_%28rule_of_inference%29)" is involved.
 
-- right residual : $$a\ (r\backslash s)\ b\ \Leftrightarrow\ \forall x: x\ r\ a\rightarrow x\ s\ b$$ . In other words: $$(a,b)$$ is in the right residual of $$r$$ and $$s$$ means that for every $$x$$, pair $$(x,a)$$ is in relation $$r$$ implies that pair $$(x,b)$$ is in $$s$$.
-- left residual : $$a\ (s/r)\ b\ \Leftrightarrow\ \forall x: b\ r\ x\rightarrow a\ s\ x$$ . In words: $$(a,b)$$ is in the left residual of $$s$$ and $$r$$
+- right residual : $a\ (r\backslash s)\ b\ \Leftrightarrow\ \forall x: x\ r\ a\rightarrow x\ s\ b$ . In other words: $(a,b)$ is in the right residual of $r$ and $s$ means that for every $x$, pair $(x,a)$ is in relation $r$ implies that pair $(x,b)$ is in $s$.
+- left residual : $a\ (s/r)\ b\ \Leftrightarrow\ \forall x: b\ r\ x\rightarrow a\ s\ x$ . In words: $(a,b)$ is in the left residual of $s$ and $r$
 
-  means that for every $$x$$ pair$$(b,x)$$ is in relation $$r$$ implies that pair $$(a,x)$$ is in $$s$$.
+  means that for every $x$ pair$(b,x)$ is in relation $r$ implies that pair $(a,x)$ is in $s$.
 
-- diamond: $$a (r♢s) b\ \Leftrightarrow\ \forall x: a\ r\ x\ =\ x\ s\ b$$. In words: For every $$x$$, both $$a\ r\ x$$ and $$x\ s\ b$$ are true or both are false.
+- diamond: $a (r♢s) b\ \Leftrightarrow\ \forall x: a\ r\ x\ =\ x\ s\ b$. In words: For every $x$, both $a\ r\ x$ and $x\ s\ b$ are true or both are false.
 
 ##### How to type boolean operators in your script
 
@@ -203,21 +203,21 @@ When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a ter
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
-If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$a\ r\ b$$ to denote the fact. It means that we consider $$a\ r\ b$$ to be true \(within the current context\).
+If a pair $(a,b)$ is an element of a relation $r$, we write $a\ r\ b$ to denote the fact. It means that we consider $a\ r\ b$ to be true \(within the current context\).
 
 ##### Identity
 
-Every atom in a concept $$C$$ identifies itself. If for example concept "Person" contains atoms {"Ann", "Bob", "Cecil"}, "Ann" identifies "Ann", "Bob" identifies "Bob", and "Cecil" identifies "Cecil". This makes "Ann" and "Bob" different atoms \(unequal\).
+Every atom in a concept $C$ identifies itself. If for example concept "Person" contains atoms {"Ann", "Bob", "Cecil"}, "Ann" identifies "Ann", "Bob" identifies "Bob", and "Cecil" identifies "Cecil". This makes "Ann" and "Bob" different atoms \(unequal\).
 
 #### Boolean operators in natural language
 
 ##### Purpose of boolean operators
 
-To say things such as pair `("peter","macbook")` is either in relation `ownsa` or `wantsa`, requires us to use boolean operators $$\cup$$, $$\cap$$, and $$-$$ .
+To say things such as pair `("peter","macbook")` is either in relation `ownsa` or `wantsa`, requires us to use boolean operators $\cup$, $\cap$, and $-$ .
 
 ##### Meaning
 
-Let us explain the meaning of relational operators $$\cup$$, $$\cap$$, and $$-$$ by means of examples.
+Let us explain the meaning of relational operators $\cup$, $\cap$, and $-$ by means of examples.
 
 Assume we have a relation, `ownsa[Person*LaptopType]`, which contains the persons who own a particular type of laptop. A fact `"peter" ownsa "macbook"` means that Peter owns a MacBook.
 
@@ -226,17 +226,17 @@ Also assume another relation `wantsa[Person*LaptopType]`, which contains the per
 ##### Union
 
 The sentence: "Peter owns a MacBook or Peter wants a MacBook." is represented as\
-`"peter"` (`ownsa` $$\cup$$ `wantsa`) `"macbook"`.
+`"peter"` (`ownsa` $\cup$ `wantsa`) `"macbook"`.
 
 ##### Intersection
 
 The sentence: "Peter owns a MacBook and Peter wants a MacBook." is represented as\
-`"peter"` (`label` $$\cap$$ `colour`) `"macbook"`.
+`"peter"` (`label` $\cap$ `colour`) `"macbook"`.
 
 ##### Difference
 
 The sentence: "Peter owns a MacBook and Peter does not want a MacBook." is represented as\
-`"peter"` (`label` $$-$$ `colour`) `"macbook"`.
+`"peter"` (`label` $-$ `colour`) `"macbook"`.
 
 ##### Natural language templates
 
@@ -244,9 +244,9 @@ There is a pattern to this. A computer can generate a literal translation from t
 
 | Formally            | Natural language template |
 | ------------------- | ------------------------- |
-| $$a\ (r\cup s)\ b$$ | `a r b `or `a s b`.       |
-| $$a\ (r\cap s)\ b$$ | `a r b `and `a s b`.      |
-| $$a\ (r-s)\ b$$     | `a r b `and not`a s b`.   |
+| $a\ (r\cup s)\ b$ | `a r b `or `a s b`.       |
+| $a\ (r\cap s)\ b$ | `a r b `and `a s b`.      |
+| $a\ (r-s)\ b$     | `a r b `and not`a s b`.   |
 
 #### Relational operators in natural language
 
@@ -256,7 +256,7 @@ To say things such as "the name of the owner", we want to string together multip
 
 ##### Meaning
 
-The meaning of relational operators $$\smallsmile$$ and $$;$$ is best explained by means of examples.
+The meaning of relational operators $\smallsmile$ and $;$ is best explained by means of examples.
 
 Assume we have a relation, `label[Contract*Colour]`, which contains the colour of labels on contracts. A fact `"1834" label "blue"` means that contract 1834 has a blue label.
 
@@ -264,7 +264,7 @@ Also assume another relation `stored[Contract*Location]`, which gives the locati
 
 ##### Converse
 
-A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. In natural language, however, the meaning does not change. So if`"1834" label "blue"` means that contract 1834 has a blue label, `"blue" label~ "1834"` also means that contract 1834 has a blue label.
+A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $(a, b)$ is a different from $(b,a)$. In natural language, however, the meaning does not change. So if`"1834" label "blue"` means that contract 1834 has a blue label, `"blue" label~ "1834"` also means that contract 1834 has a blue label.
 
 - The sentence: "All contracts with a blue label are stored in cabinet 42." is represented as `"blue" (label\stored) "cabinet 42"`. Literally it says: For every contract, if it has a blue label, then it is stored in cabinet 42.
 
@@ -285,7 +285,7 @@ The natural language translation for `b r~ a`is the same as language translation
 
 #### Residual operators in natural language
 
-The meaning of residual operators $$/$$, $$\backslash$$, and $$\diamond$$ is best explained by means of examples.
+The meaning of residual operators $/$, $\backslash$, and $\diamond$ is best explained by means of examples.
 
 Assume we have a relation, `label[Contract*Colour]`, which contains the colour of labels on contracts. A fact `"1834" label "blue"` means that contract 1834 has a blue label.
 
@@ -315,41 +315,41 @@ When a [relation](./syntax-of-ampersand#the-relation-statement) is used in a ter
 
 When a relation is used in a term, we can simply use its name if that is unambiguous. For instance the name `owner` refers to `RELATION owner[Person*Building]` if that is the only relation the ampersand-compiler can link it to. In some cases, however the name alone is ambiguous. For example if there are two relations with the same name and different signatures. In such cases Ampersand will try to infer the type from the context. That however does not always succeed. In such cases, Ampersand generates an error message that asks you to remove the ambiguity by adding the correct type.
 
-If a pair $$(a,b)$$ is an element of a relation $$r$$, we write $$(a,b)\in r$$. Alternatively we may write $$a\ r\ b$$.
+If a pair $(a,b)$ is an element of a relation $r$, we write $(a,b)\in r$. Alternatively we may write $a\ r\ b$.
 
 ##### Identity
 
-For every concept $$C$$, the term $$I_{[C]}$$ represents the _**identity relation**_. It is defined by:
+For every concept $C$, the term $I_{[C]}$ represents the _**identity relation**_. It is defined by:
 
 $$
 I_{[C]}\ =\ \{(c,c) |\ c\in C\}
 $$
 
-The type of $$I_{[C]}$$ is $$[C*C]$$. In Ampersand code you write `I[C]`.
+The type of $I_{[C]}$ is $[C*C]$. In Ampersand code you write `I[C]`.
 
 ##### Complete relation
 
-For every pair of concepts $$A$$ and $$B$$ the term $$V_{[A*B]}$$ represents the _**complete relation**_. It is defined by:
+For every pair of concepts $A$ and $B$ the term $V_{[A*B]}$ represents the _**complete relation**_. It is defined by:
 
 $$
 V_{[A*B]}\ =\ \{(a,b) |\  a\in A\ \wedge\ b\in B\}
 $$
 
-The type of $$V_{[A*B]}$$ is $$[A*B]$$. In Ampersand code you write `V[A*B]`.
+The type of $V_{[A*B]}$ is $[A*B]$. In Ampersand code you write `V[A*B]`.
 
 #### Boolean operators in set theory
 
 A relation is by definition a subset of the Cartesian Product of the source and target sets. So, if two different relations r and s are defined on the same source A and target B, then the ordinary set operators can be applied to produce a new relation.
 
-- intersection : $$r ∩ s$$ is the set that contains the elements that are contained in relation $$r$$ as well as in $$s$$, or $$r ∩ s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∧ (x,y) ∈ s \}$$
-- union : $$r ∪ s$$ is the set that contains all elements that are contained either in relation $$r$$ or in $$s$$, or $$r ∪ s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∨ (x,y) ∈ s \}$$
-- difference : $$r - s$$ is the set that contains the elements of relation $$r$$ that are not contained in $$s$$, or $$r - s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∧ (x,y) ∉ s \}$$
+- intersection : $r ∩ s$ is the set that contains the elements that are contained in relation $r$ as well as in $s$, or $r ∩ s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∧ (x,y) ∈ s \}$
+- union : $r ∪ s$ is the set that contains all elements that are contained either in relation $r$ or in $s$, or $r ∪ s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∨ (x,y) ∈ s \}$
+- difference : $r - s$ is the set that contains the elements of relation $r$ that are not contained in $s$, or $r - s\ =\ \{ (x,y)\ |\ (x,y) ∈ r ∧ (x,y) ∉ s \}$
 
-The complement \(or negation\) of a relation $$r_{[A x B]}$$ is defined by means of the difference operator:
+The complement \(or negation\) of a relation $r_{[A x B]}$ is defined by means of the difference operator:
 
-- complement : If $$r$$ is defined as $$r_{A\times B}$$, then $$\overline{r}$$ is the set of all tuples in $$A\times B$$ \(the Cartesian product\) that are not contained in $$r$$. So $$\overline{r} = V_{[A\times B]} - r$$
+- complement : If $r$ is defined as $r_{A\times B}$, then $\overline{r}$ is the set of all tuples in $A\times B$ \(the Cartesian product\) that are not contained in $r$. So $\overline{r} = V_{[A\times B]} - r$
 
-Note that the complement is defined in terms of $$A$$ and $$B$$. So, two relations with the identical population yet a different type may have different complements.
+Note that the complement is defined in terms of $A$ and $B$. So, two relations with the identical population yet a different type may have different complements.
 
 ##### How to type boolean operators in your script
 
@@ -363,19 +363,19 @@ To say things such as "the name of the owner", we want to string together multip
 
 ##### Converse
 
-A relation that contains pairs of the form $$(a, b)$$ can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
+A relation that contains pairs of the form $(a, b)$ can be altered by swapping the elements of every pair in the relation. Mathematically, $(a, b)$ is a different from $(b,a)$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $\smallsmile\$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
 $$
 r\smallsmile\ =\ \{ (b, a) | (a, b)∈r \}
 $$
 
-If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
+If $r$ has type $[A\times B]$, then $r\smallsmile\$ has type $[B\times A]$.
 
 ##### Composition
 
-The composition operator is denoted by a semicolon ; between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
+The composition operator is denoted by a semicolon ; between two terms. It is pronounced as 'composed with', in this case: $r$ composed with $s$.
 
-The composition operation is defined as follows: Let $$r_{[A\times B]}$$ and $$s_{[B\times C]}$$ be two relations, with the target of r being the same as the source of s. Then the composition of $$r$$ and $$s$$, is a relation with signature $$(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c \}$$
+The composition operation is defined as follows: Let $r_{[A\times B]}$ and $s_{[B\times C]}$ be two relations, with the target of r being the same as the source of s. Then the composition of $r$ and $s$, is a relation with signature $(r;s)_{[A\times C]}\ =\ \{ (a, c) | ∃ b∈B\ .\ a\ r\ b ∧ b\ s\ c \}$
 
 ## Semantics in relational algebra
 
@@ -385,27 +385,27 @@ This chapter discusses the [boolean operators](#boolean-operators-in-algebra) an
 
 #### Boolean operators in algebra
 
-The boolean operators of Ampersand behave as one would expect in any boolean algebra. Union ($$\cup$$) and intersection ($$\cap$$) are both idempotent, commutative, and associative operators. In Ampersand we use a binary difference operator over with the usual semantics: $$(r-s)\cup(r\cap s) = r$$. The (more customary) complement operator is a partial function, because Ampersand supports heterogeneous relation algebra.
+The boolean operators of Ampersand behave as one would expect in any boolean algebra. Union ($\cup$) and intersection ($\cap$) are both idempotent, commutative, and associative operators. In Ampersand we use a binary difference operator over with the usual semantics: $(r-s)\cup(r\cap s) = r$. The (more customary) complement operator is a partial function, because Ampersand supports heterogeneous relation algebra.
 
 ##### Union
 
-The operator $$\cup$$ (union) satisfies the following axioms:
+The operator $\cup$ (union) satisfies the following axioms:
 
-1. (commutativity of $$\cup$$) $$r\cup s\ =\ s\cup r$$
-2. (associativity of $$\cup$$) $$r\cup (s\cup t)\ =\ (r\cup s)\cup t$$
-3. (idempotence of $$\cup$$) $$r\cup r\ =\ r$$
+1. (commutativity of $\cup$) $r\cup s\ =\ s\cup r$
+2. (associativity of $\cup$) $r\cup (s\cup t)\ =\ (r\cup s)\cup t$
+3. (idempotence of $\cup$) $r\cup r\ =\ r$
 
 ##### Difference
 
-The difference $$r-s$$ is the smallest relation $$t$$ that satisfies $$r\ \subseteq\ s\cup t$$. Smallest means: If there is a $$t'$$ for which $$s\cup t'=r$$, this implies that $$t\cup t'=t'$$.
+The difference $r-s$ is the smallest relation $t$ that satisfies $r\ \subseteq\ s\cup t$. Smallest means: If there is a $t'$ for which $s\cup t'=r$, this implies that $t\cup t'=t'$.
 
 ##### Intersection
 
-The intersection $$\cap$$ is defined as: $$r \cap s = r-(r-s)$$
+The intersection $\cap$ is defined as: $r \cap s = r-(r-s)$
 
 ##### Complement
 
-The complement operator is defined as $$\overline{t} = V_{[A\times B]} - t$$. The type $$[A\times B]$$ comes from the term(s) in which $$t$$ is embedded. If that type does not exist or if it is ambiguous, Ampersand will refuse to compile with an appropriate error message.
+The complement operator is defined as $\overline{t} = V_{[A\times B]} - t$. The type $[A\times B]$ comes from the term(s) in which $t$ is embedded. If that type does not exist or if it is ambiguous, Ampersand will refuse to compile with an appropriate error message.
 
 ##### How to type boolean operators in your script
 
@@ -417,15 +417,15 @@ The complement operator is defined as $$\overline{t} = V_{[A\times B]} - t$$. Th
 
 To say things such as "the name of the owner", we want to string together multiple relations \(viz. `name` and `owner`\). Relational operators allow us to make such statements.
 
-There are two relational operators: the converse \($$\smallsmile$$\) and the composition \(semicolon $$;$$ \). This page discusses the most important laws about these operators.
+There are two relational operators: the converse \($\smallsmile$\) and the composition \(semicolon $;$ \). This page discusses the most important laws about these operators.
 
 ##### Converse
 
 There are two things you should know about the converse operator. The first is that the converse of the converse gives you the relation itself, whatever that relation may be:
 
-$$
+$
 {r\smallsmile}\smallsmile\ =\ r
-$$
+$
 
 The second thing you should know is that arguments switch places if the converse is brought outside \(or inside\) brackets
 
@@ -435,7 +435,7 @@ $$
 
 ##### Composition
 
-The composition operator is denoted by a semicolon \(;\) between two terms. It is pronounced as 'composed with', in this case: $$r$$ composed with $$s$$.
+The composition operator is denoted by a semicolon \(;\) between two terms. It is pronounced as 'composed with', in this case: $r$ composed with $s$.
 
 Composition is associative, which means:
 
@@ -443,9 +443,9 @@ $$
 r;(s;t)\ =\ (r;s);t
 $$
 
-The meaning stays the same, no matter how you place the brackets. So Ampersand lets you omit brackets entirely. You may write $$r;s;t$$ instead of $$r;(s;t)$$ or $$(r;s);t$$.
+The meaning stays the same, no matter how you place the brackets. So Ampersand lets you omit brackets entirely. You may write $r;s;t$ instead of $r;(s;t)$ or $(r;s);t$.
 
-Composition has a left and a right identity. Let $$r_{[A\times B]}$$ be a relation, then
+Composition has a left and a right identity. Let $r_{[A\times B]}$ be a relation, then
 
 $$
 I_A;r\ =\ r\ \ \ \text{and}\ \ \ r;I_B\ =\ r
