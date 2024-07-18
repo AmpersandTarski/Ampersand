@@ -31,6 +31,7 @@ data PictureTyp
   | PTCDRule Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDM !Bool -- logical data model of the entire script
   | PTTechnicalDM -- technical data model of the entire script
+  | PTRelation Relation -- conceptual model of a relation in the script, with all the relations of both concepts
 
 data DotContent
   = ClassDiagram ClassDiag
@@ -53,6 +54,7 @@ instance Named PictureTyp where -- for displaying a fatal error
   name (PTCDPattern pat) = name pat
   name (PTDeclaredInPat pat) = name pat
   name (PTCDConcept c) = name c
+  name (PTRelation rel) = name rel
   name (PTCDRule r) = name r
   name (PTLogicalDM grouped) = "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
   name PTTechnicalDM = "PTTechnicalDM"
@@ -104,6 +106,17 @@ makePicture env fSpec pr =
               English -> "Concept diagram of " <> name cpt
               Dutch -> "Conceptueel diagram van " <> name cpt
         }
+    PTRelation rel ->
+      Pict
+        { pType = pr,
+          scale = scale',
+          dotContent = ConceptualDg $ conceptualStructure fSpec pr,
+          dotProgName = graphVizCmdForConceptualGraph,
+          caption =
+            case outputLang' of
+              English -> "Concept diagram of " <> name rel
+              Dutch -> "Conceptueel diagram van " <> name rel
+        }
     PTDeclaredInPat pat ->
       Pict
         { pType = pr,
@@ -147,6 +160,7 @@ makePicture env fSpec pr =
         PTDeclaredInPat {} -> "0.6"
         PTCDRule {} -> "0.7"
         PTCDConcept {} -> "0.7"
+        PTRelation {} -> "0.7"
         PTLogicalDM {} -> "1.2"
         PTTechnicalDM -> "1.2"
     graphVizCmdForConceptualGraph =
@@ -159,12 +173,13 @@ makePicture env fSpec pr =
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
 --   File names are urlEncoded to cater for the entire alphabet.
 pictureFileName :: PictureTyp -> FilePath
-pictureFileName pr = toBaseFileName $
-  case pr of
+pictureFileName pr = toBaseFileName
+  $ case pr of
     PTClassDiagram -> "Classification"
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
     PTTechnicalDM -> "TechnicalDataModel"
     PTCDConcept cpt -> "CDConcept" <> urlEncodedName (name cpt)
+    PTRelation rel -> "PTRelation" <> name rel
     PTDeclaredInPat pat -> "RelationsInPattern" <> urlEncodedName (name pat)
     PTCDPattern pat -> "CDPattern" <> urlEncodedName (name pat)
     PTCDRule r -> "CDRule" <> urlEncodedName (name r)
@@ -176,12 +191,23 @@ conceptualStructure fSpec pr =
   case pr of
     --  A conceptual diagram comprising all rules in which c is used
     PTCDConcept c ->
-      let cpts' = concs rs
-          rs = [r | r <- Set.elems $ vrules fSpec, c `elem` concs r]
-       in CStruct
-            { csCpts = L.nub $ Set.elems cpts' <> [g | (s, g) <- gs, elem g cpts' || elem s cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
-              csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
-              csIdgs = [(s, g) | (s, g) <- gs, elem g cpts' || elem s cpts'] --  all isa edges
+      -- MO! Altered
+      let c' = concs c -- de lijst van het concept waar t nu om gaat
+          allrels = vrels fSpec
+          rs = [r | r <- Set.elems allrels, c `elem` concs r]
+       in CStruct --- MO!
+            { csCpts = Set.elems c' <> [g | (s, g) <- gs, elem g c' || elem s c'] <> [s | (s, g) <- gs, elem g c' || elem s c'],
+              csRels = rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'] --  all isa edges of the 'main' concept
+            }
+    PTRelation rel ->
+      let c' = concs rel -- de lijst van het concept waar t nu om gaat
+          allrels = vrels fSpec
+       in -- rs = [r | r <- Set.elems allrels, c `elem` concs r]
+          CStruct --- MO!
+            { csCpts = [],
+              csRels = [rel], -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'] --  all isa edges of the 'main' concept
             }
     --  PTCDPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
@@ -245,7 +271,7 @@ writePicture pict = do
   liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
   writeDot imagePathRelativeToCurrentDir Canon -- To obtain the Graphviz source code of the images
   --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
-  writeDot imagePathRelativeToCurrentDir Png --handy format to include in github comments/issues
+  writeDot imagePathRelativeToCurrentDir Png -- handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file
   where
@@ -258,7 +284,7 @@ writePicture pict = do
     writeDotPostProcess ::
       (HasBlackWhite env, HasLogFunc env) =>
       FilePath ->
-      Maybe (FilePath -> RIO env ()) -> --Optional postprocessor
+      Maybe (FilePath -> RIO env ()) -> -- Optional postprocessor
       GraphvizOutput ->
       RIO env ()
     writeDotPostProcess fp postProcess gvOutput =
@@ -268,8 +294,9 @@ writePicture pict = do
         let dotSource = mkDotGraph env pict
         --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
         path <-
-          liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $
-            dropExtension fp
+          liftIO
+            . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
+            $ dropExtension fp
         absPath <- liftIO . makeAbsolute $ path
         logInfo $ display (T.pack absPath) <> " written."
         case postProcess of
@@ -384,9 +411,9 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
           }
     }
   where
-    nodes :: HasDotParts a => a -> [DotNode Text]
+    nodes :: (HasDotParts a) => a -> [DotNode Text]
     nodes = dotNodes cs
-    edges :: HasDotParts a => a -> [DotEdge Text]
+    edges :: (HasDotParts a) => a -> [DotEdge Text]
     edges = dotEdges cs
 
 class HasDotParts a where
@@ -403,7 +430,7 @@ allCpts :: ConceptualStructure -> [A_Concept]
 allCpts (CStruct cpts' rels idgs) = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
 
 edgeLenFactor :: Double -> Attribute
-edgeLenFactor x = Len (4 * x)
+edgeLenFactor x = Len (3 * x)
 
 instance HasDotParts A_Concept where
   dotNodes x cpt =
@@ -419,45 +446,58 @@ instance HasDotParts A_Concept where
 instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
-      [ DotNode
-          { nodeID = baseNodeId x (source rel) <> name rel,
-            nodeAttributes =
-              [ Color [WC (X11Color Transparent) Nothing],
-                Shape PlainText,
-                Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  name rel :
-                  case Set.toList . properties $ rel of
-                    [] -> []
-                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-              ]
-          }
-      ]
+        [ DotNode
+            { nodeID = baseNodeId x (source rel) <> name rel, -- MO!
+              nodeAttributes =
+                [ Color [WC (X11Color Transparent) Nothing],
+                  Shape PlainText,
+                  Label
+                    . StrLabel
+                    . TL.fromStrict
+                    . T.intercalate "\n"
+                    $ name rel
+                    : case Set.toList . properties $ rel of
+                      [] -> []
+                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                ]
+            }
+        ]
     | otherwise = []
-  dotEdges x rel
+  dotEdges x rel -- dit is een relatie met het concepts als de source en target hetzelfde zijn
     | isEndo rel =
-      [ DotEdge
-          { fromNode = baseNodeId x . source $ rel,
-            toNode = baseNodeId x (source rel) <> name rel,
-            edgeAttributes =
-              [ Dir NoDir,
-                edgeLenFactor 0.4,
-                Label . StrLabel . fromString $ ""
-              ]
-          }
-      ]
+        [ DotEdge
+            { fromNode = baseNodeId x . source $ rel, -- MO!
+              toNode = baseNodeId x . target $ rel, -- MO!
+              edgeAttributes =
+                [ Dir NoDir,
+                  edgeLenFactor 0.2,
+                  Label
+                    . StrLabel
+                    . TL.fromStrict
+                    . T.intercalate "\n"
+                    $ name rel
+                    : case Set.toList . properties $ rel of
+                      [] -> []
+                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                ]
+            }
+        ]
     | otherwise =
-      [ DotEdge
-          { fromNode = baseNodeId x . source $ rel,
-            toNode = baseNodeId x . target $ rel,
-            edgeAttributes =
-              [ Label . StrLabel . TL.fromStrict . T.intercalate "\n" $
-                  name rel :
-                  case Set.toList . properties $ rel of
-                    [] -> []
-                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-              ]
-          }
-      ]
+        [ DotEdge
+            { fromNode = baseNodeId x . source $ rel,
+              toNode = baseNodeId x . target $ rel,
+              edgeAttributes =
+                [ Label
+                    . StrLabel
+                    . TL.fromStrict
+                    . T.intercalate "\n"
+                    $ name rel
+                    : case Set.toList . properties $ rel of
+                      [] -> []
+                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                ]
+            }
+        ]
 
 instance HasDotParts (A_Concept, A_Concept) where
   dotNodes _ _ = []
