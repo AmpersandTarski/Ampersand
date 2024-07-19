@@ -16,7 +16,7 @@ POPULATION heeftAlsDeelnorm CONTAINS [ ("N1.2", "N1.2a") ]
 POPULATION heeftAlsDeelnorm CONTAINS [ ("N1.2", "N1.2b") ]
 
 {- Om te voorkomen dat we de volgende foutmelding krijgen:
-Violations of rule "NormControls":
+Inconsistencies in rule "NormControls":
 - [("N1.1","N1.1"),("N1.2a","N1.2a"),("N1.2b","N1.2b")]
 gaan we proberen of we I[NormControl] met de violations kunnen populeren
 -}

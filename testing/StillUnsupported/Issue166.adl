@@ -12,7 +12,7 @@ Currently, a singleton is part of the initial population. In this case, a protot
 It gives the following error message:
 
 Checking on rule violations...
-Violations of rule "toBeOrNotToBe":
+Inconsistencies in rule "toBeOrNotToBe":
 - [("Sinterklaas","Sinterklaas")]
 
 Signals for initial population:

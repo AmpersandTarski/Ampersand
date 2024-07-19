@@ -12,7 +12,7 @@ s :: A * D
 {- In version 914 of ampersand (but also long before, e.g. version 699), this script generates an error:
 
 D:\data\hjo20125\ampersand>prototype -p --haskell try30.adl
-Violations of rule "TOT A::A*B":
+Inconsistencies in rule "TOT A::A*B":
 - [("aap","aap"),("mies","mies")]
 
 

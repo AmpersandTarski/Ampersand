@@ -18,7 +18,7 @@
  errors:
 
  Checking on rule violations...
- Violations of rule "TOT unitID::Unit*UnitID":
+ Inconsistencies in rule "TOT unitID::Unit*UnitID":
  - [("11 LMB","11 LMB")]
 
  ERROR: No prototype generated because of rule violations.
