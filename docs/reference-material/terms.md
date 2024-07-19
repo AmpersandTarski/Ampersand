@@ -240,7 +240,7 @@ The sentence: "Peter owns a MacBook and Peter does not want a MacBook." is repre
 
 ##### Natural language templates
 
-There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](https://ampersandtarski.gitbook.io/documentation/~/drafts/-LKR7o8ALsxT8aQfWugs/primary/ampersands-own-language/semantics-visualized/semantics-visualized). The systematic translation is given in the following table:
+There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. The systematic translation is given in the following table:
 
 | Formally            | Natural language template |
 | ------------------- | ------------------------- |
@@ -274,7 +274,7 @@ The sentence "A _contract with a blue label is stored in cabinet 42_." can be re
 
 ##### Natural language templates
 
-There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](https://ampersandtarski.gitbook.io/documentation/~/drafts/-LKR7o8ALsxT8aQfWugs/primary/ampersands-own-language/semantics-visualized/semantics-visualized). The systematic translation is given in the following table:
+There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. The systematic translation is given in the following table:
 
 | Formally    | Natural language template                   |
 | ----------- | ------------------------------------------- |
@@ -297,7 +297,7 @@ Also assume another relation `stored[Contract*Location]`, which gives the locati
 
 ##### Natural language templates
 
-There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. For examples [click here](#semantics-visualized). The systematic translation is given in the following table:
+There is a pattern to this. A computer can generate a literal translation from the formula to natural language. However, that translation looks clumsy, verbose and elaborate. It is up to you to turn that in normal language. The systematic translation is given in the following table:
 
 | Formally     | Natural language template                                           |
 | :----------- | :------------------------------------------------------------------ |

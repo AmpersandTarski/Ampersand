@@ -14,7 +14,7 @@ description: >-
 | [Ampersand image](https://hub.docker.com/r/ampersandtarski/ampersand-prototype/) | A docker-image in which we keep the  latest version of the Ampersand compiler in executable form. It resides in [docker-hub](https://hub.docker.com/r/ampersandtarski/ampersand/). 
 | Ampersand compiler    | An executable that is used to generate software, documentation, and analyses from Ampersand-scripts. It is embedded into the Ampersand image and into RAP3. There exist multiple instances, so we cannot hyperlink to it.     
 | [Ampersand repository](https://github.com/AmpersandTarski/Ampersand/) | A repositoryin which we keep Ampersand source codeand manage the issues wrt Ampersand. 
-| [Docker Hub](https://hub.docker.com/u/ampersandtarski/) | A repository in which  we keep [Ampersand images](installation-of-rap/making-docker-images.md)
+| [Docker Hub](https://hub.docker.com/u/ampersandtarski/) | A repository in which  we keep [Ampersand images](../the-tools-we-use/making-docker-images.md)
 | [Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design) | A course at the Open Universiteit.
 | [GitHub](https://github.com/AmpersandTarski/) | An organisation in which we keep all Ampersand git-repos.
 | [RAP3](http://ampersand.tarski.nl/RAP3/)   | A [web-based application, generated with Ampersand](functionality-of-rap3/) for the public at large to use Ampersand. This instance is also used as acceptation environment for [the RAP instance for students](http://rap.cs.ou.nl/RAP3) in the course [Rule Based Design](https://www.ou.nl/-/IM0403_Rule-Based-Design).
