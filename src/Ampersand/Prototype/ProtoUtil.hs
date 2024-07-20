@@ -66,9 +66,6 @@ data FESpec = FESpec
 -- | data object that contains information about an interface, from the
 --   perspective of the generated frontend
 data FEInterface = FEInterface
-  -- BEWARE: the names `ifcName` and `ifcLabel` must not be changed, because they are used
-  -- in at lease one template, called routeProvider.config.js. If these names are not present,
-  -- the call to renderTemplate will hang
   { ifcName :: Text,
     ifcNameKebab :: Text,
     ifcNamePascal :: Text,
@@ -84,12 +81,14 @@ data FEInterface = FEInterface
 
 data FEConcept = FEConcept
   { cptId :: Text,
+    cptIdTmp :: Text, -- Temporarily, only for namespace phase 1. The `.` in names has no semantics yet, but will have that later. `.` in Typescript is a valid separtor, but for now it must not be used.
     typescriptType :: Text
   }
   deriving (Typeable, Data)
 
 data FEView = FEView
   { viewId :: !Text,
+    viewIdTmp :: Text, -- Temporarily, only for namespace phase 1. The `.` in names has no semantics yet, but will have that later. `.` in Typescript is a valid separtor, but for now it must not be used.
     viewSegments :: ![FEViewSegment],
     viewIsEmpty :: !Bool
   }
@@ -343,9 +342,6 @@ readTemplate templatePath = do
 renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
 renderTemplate userAtts (Template template absPath) setRuntimeAtts =
   case checkTemplateDeep appliedTemplate of
-    -- BEWARE: checkTemplateDeep will hang if there are sub-attributes missing. I had such a case after I renamed ifcName
-    --         and ifcLabel to feiName and feiLabel. The template `routeProvider.config.js` needs those attributes in
-    --         for each interface provided.
     ([], [], []) -> T.pack $ render appliedTemplate
     (parseErrs@(_ : _), _, _) ->
       templateError
@@ -376,7 +372,7 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
     fillInTheBlanks [] = id
     fillInTheBlanks (h : tl) = setAttribute h False . fillInTheBlanks tl
     setUserAtts :: [TemplateKeyValue] -> (StringTemplate String -> StringTemplate String)
-    setUserAtts kvPairs = foldl' fun id kvPairs
+    setUserAtts = foldl' fun id
       where
         fun :: (Stringable b) => (StringTemplate b -> StringTemplate b) -> TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
         fun soFar keyVal = soFar . doAttribute keyVal
@@ -390,6 +386,4 @@ showTemplate (Template a b) =
   T.lines
     . T.intercalate "\n"
     $ ("Template (" <> T.pack b <> ")")
-    : map
-      ("  " <>)
-      [T.pack $ toString a]
+    : ["  " <> T.pack (toString a)]

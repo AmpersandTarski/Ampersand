@@ -5,10 +5,12 @@ module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+-- only import instances
+
+import Ampersand.FSpec (Instances (instanceList))
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc.HasClasses
--- only import instances
 import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
@@ -75,30 +77,25 @@ buildFESpec fSpec = do
       }
 
 buildConcepts :: FSpec -> [FEConcept]
-buildConcepts fSpec =
-  map
-    ( \cpt ->
-        FEConcept
-          { cptId = text1ToText $ idWithoutType' cpt,
-            typescriptType = typescriptTypeForConcept fSpec cpt
-          }
-    )
-    $ toList
-    . allConcepts
-    $ fSpec
+buildConcepts fSpec = mkFEConcept <$> instanceList fSpec
+  where
+    mkFEConcept cpt =
+      FEConcept
+        { cptId = text1ToText $ idWithoutType' cpt,
+          cptIdTmp = toTypescriptName . text1ToText $ idWithoutType' cpt,
+          typescriptType = typescriptTypeForConcept fSpec cpt
+        }
 
 buildViews :: FSpec -> [FEView]
-buildViews fSpec =
-  map
-    ( \viewDef' ->
-        FEView
-          { viewId = toPascal . fullName $ viewDef',
-            viewSegments = map buildViewSegment $ segments viewDef',
-            viewIsEmpty = null . segments $ viewDef'
-          }
-    )
-    $ vviews fSpec
+buildViews fSpec = mkFEView <$> instanceList fSpec
   where
+    mkFEView viewDef' =
+      FEView
+        { viewId = toPascal . fullName $ viewDef',
+          viewIdTmp = toTypescriptName . toPascal . fullName $ viewDef',
+          viewSegments = map buildViewSegment $ segments viewDef',
+          viewIsEmpty = null . segments $ viewDef'
+        }
     segments = filter (isJust . vsmlabel) . vdats -- filter out ViewSegments that don't have a label
 
 buildViewSegment :: ViewSegment -> FEViewSegment
@@ -121,10 +118,10 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       obj <- buildObject (BxExpr $ ifcObj ifc)
       return
         FEInterface
-          { ifcName = text1ToText . escapeIdentifier . fullName1 $ ifc,
+          { ifcName = text1ToText . fullName1 $ ifc,
             ifcNameKebab = toKebab . safechars . fullName $ ifc,
             ifcNamePascal = toPascal . safechars . fullName $ ifc,
-            ifcLabel = fullName ifc,
+            ifcLabel = label ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,

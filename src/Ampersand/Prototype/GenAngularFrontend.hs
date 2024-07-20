@@ -7,6 +7,7 @@ module Ampersand.Prototype.GenAngularFrontend
     genSingleFileFromTemplate,
     toPascal,
     toKebab,
+    toTypescriptName,
   )
 where
 
@@ -309,16 +310,23 @@ genTypescriptInterface fSpec depth obj =
         maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
-    conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType' cpt)
+    conceptIdWithImportAlias cpt = "concepts." <> (toTypescriptName . text1ToText . idWithoutType' $ cpt)
 
     viewIdWithImportAlias :: ViewDef -> Text
-    viewIdWithImportAlias viewDef' = "views." <> (toPascal . fullName $ viewDef') <> "View"
+    viewIdWithImportAlias viewDef' = "views." <> (toTypescriptName . toPascal . fullName $ viewDef') <> "View"
 
 toKebab :: Text -> Text
 toKebab = T.intercalate "-" . fmap T.toLower . T.words
 
 toPascal :: Text -> Text
 toPascal = T.concat . map wordCase . T.words
+
+toTypescriptName :: Text -> Text
+toTypescriptName = T.map dotToUnderscore
+  where
+    dotToUnderscore :: Char -> Char
+    dotToUnderscore '.' = '_'
+    dotToUnderscore x = x
 
 wordCase :: Text -> Text
 wordCase txt = case T.uncons txt of
