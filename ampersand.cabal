@@ -518,7 +518,6 @@ library
       Ampersand.Output.ToPandoc.ChapterNatLangReqs
       Ampersand.Output.ToPandoc.SharedAmongChapters
       Ampersand.Prototype.GenAngularFrontend
-      Ampersand.Prototype.GenAngularJSFrontend
       Ampersand.Prototype.GenBackend
       Ampersand.Prototype.GenFrontend
       Ampersand.Prototype.PHP

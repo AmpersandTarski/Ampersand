@@ -11,7 +11,7 @@ import qualified RIO.Text as T
 
 class HasOptions a where
   showOptions :: (HasLogFunc env) => a -> RIO env ()
-  showOptions opts = mapM_ showOpt . L.sortOn fst . optsList $ opts
+  showOptions = mapM_ showOpt . L.sortOn fst . optsList
     where
       showOpt :: (HasLogFunc env) => (Text, Text) -> RIO env ()
       showOpt (key, value) =
@@ -77,14 +77,9 @@ class (HasProtoOpts a) => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
   getTemplateDir :: a -> FilePath
   getTemplateDir x =
-    getDirPrototype x </> case view frontendVersionL x of
-      AngularJS -> "templates"
-      Angular -> ".templates"
+    getDirPrototype x </> ".templates"
   getAppDir :: a -> FilePath
-  getAppDir x =
-    getDirPrototype x </> case view frontendVersionL x of
-      AngularJS -> "public" </> "app" </> "project"
-      Angular -> ""
+  getAppDir = getDirPrototype
   getGenericsDir :: a -> FilePath
   getGenericsDir x =
     getDirPrototype x </> "generics"
@@ -92,7 +87,7 @@ class (HasProtoOpts a) => HasDirPrototype a where
   getMetamodelDir x =
     getDirPrototype x </> "metamodel"
   getDirPrototype :: a -> FilePath
-  getDirPrototype x = fromMaybe defaultDirPrototype . view dirPrototypeL $ x
+  getDirPrototype = fromMaybe defaultDirPrototype . view dirPrototypeL
 
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x {xdirPrototype = y})
@@ -193,8 +188,6 @@ class HasVersion a where
 
 class HasProtoOpts env where
   protoOptsL :: Lens' env ProtoOpts
-  frontendVersionL :: Lens' env FrontendVersion
-  frontendVersionL = protoOptsL . lens xfrontendVersion (\x y -> x {xfrontendVersion = y})
 
 instance HasProtoOpts ProtoOpts where
   protoOptsL = id
@@ -320,9 +313,6 @@ data FSpecFormat
   | Ftextile
   deriving (Show, Eq, Enum, Bounded)
 
-data FrontendVersion = Angular | AngularJS
-  deriving (Show, Eq)
-
 -- | Options for @ampersand export@.
 newtype ExportOpts = ExportOpts
   { xexport2adl :: FilePath -- relative path
@@ -347,7 +337,6 @@ data ProtoOpts = ProtoOpts
     xdirPrototype :: !(Maybe FilePath),
     xgenerateFrontend :: !Bool,
     xgenerateBackend :: !Bool,
-    xfrontendVersion :: !FrontendVersion,
     xgenerateMetamodel :: !Bool
   }
   deriving (Show)
@@ -360,7 +349,6 @@ instance HasOptions ProtoOpts where
       <> [ ("--proto-dir", maybe "" tshow $ xdirPrototype opts),
            ("--[no-]frontend", tshow $ xgenerateFrontend opts),
            ("--[no-]backend", tshow $ xgenerateBackend opts),
-           ("--frontend-version", tshow $ xfrontendVersion opts),
            ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
          ]
 

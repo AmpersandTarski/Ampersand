@@ -12,12 +12,10 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.GenAngularFrontend
-import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import RIO.Char
 import qualified RIO.Text as T
-import RIO.Time
 import System.Directory
 import System.FilePath
 import Text.StringTemplate.GenericStandard ()
@@ -27,27 +25,16 @@ doGenFrontend ::
   FSpec ->
   RIO env ()
 doGenFrontend fSpec = do
-  now <- getCurrentTime
-  frontendVersion <- view frontendVersionL
-  logInfo . display $ "Generating " <> tshow frontendVersion <> " frontend... "
+  logInfo "Generating Angular frontend... "
   copyTemplates
   feSpec <- buildFESpec fSpec
   let feInterfaces = interfaces feSpec
-  case frontendVersion of
-    AngularJS -> do
-      genViewInterfaces fSpec feInterfaces
-      genControllerInterfaces fSpec feInterfaces
-      genRouteProvider fSpec feInterfaces
-      logDebug "Finished generating files for AngularJS"
-      logDebug "Write .timestamp"
-      writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    Angular -> do
-      mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
-      genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
-      genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
-      genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
-      genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
-      logDebug "Angular frontend module generated"
+  mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
+  genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
+  genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
+  genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
+  genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
+  logDebug "Angular frontend module generated"
 
 copyTemplates ::
   (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
