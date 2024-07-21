@@ -6,6 +6,11 @@ So don't hesitate to ask.
 
 Some questions in this page do not have an answer yet. Please consider that as ongoing work and bear with us...
 
+##  Documentation
+* How can I contribute to the documentation of Ampersand?
+
+  *Answer*
+
 ##  Maintenance
 * How can I inspect the database underneath an Ampersand application?
 
