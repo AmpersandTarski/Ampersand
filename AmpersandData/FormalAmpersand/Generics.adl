@@ -30,7 +30,7 @@ RELATION FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersan
 -- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 RELATION FormalAmpersand.pvsExp[FormalAmpersand.PairViewSegment*FormalAmpersand.Term] [UNI]
 
-RELATION showADL[PairView*ShowADL] [UNI,TOT] -- Temporary relation to enable first attempt to make the atlas editable. 
+RELATION FormalAmpersand.showADL[FormalAmpersand.PairView*FormalAmpersand.ShowADL] [UNI,TOT] -- Temporary relation to enable first attempt to make the atlas editable. 
 
 --[Conjuncts]--
 RELATION FormalAmpersand.allConjuncts[FormalAmpersand.Context*FormalAmpersand.Conjunct] [INJ]

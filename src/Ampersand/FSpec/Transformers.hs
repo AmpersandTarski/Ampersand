@@ -1764,10 +1764,10 @@ tmpNewTransformerDefsFA fSpec =
             mean <- decMean rel
         ]
       ),
-      ( "showADL",
-        "PairView",
-        "ShowADL",
-        [ (dirtyId pv, PopAlphaNumeric (showA pv))
+      ( "FormalAmpersand.showADL",
+        "FormalAmpersand.PairView",
+        "FormalAmpersand.ShowADL",
+        [ (dirtyId' pv, PopAlphaNumeric (showA pv))
           | pv :: PairView Expression <- instanceList fSpec
         ]
       )
