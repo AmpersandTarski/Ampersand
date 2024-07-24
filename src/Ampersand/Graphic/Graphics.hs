@@ -32,7 +32,7 @@ data PictureTyp
   | PTCDRule Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDM !Bool -- logical data model of the entire script
   | PTTechnicalDM -- technical data model of the entire script
-  | PTRelation Relation -- conceptual model of a relation in the script, with all the relations of both concepts
+  | PTCDRelation Relation -- conceptual model of a relation in the script, with all the relations of both concepts
 
 data DotContent
   = ClassDiagram ClassDiag
@@ -55,7 +55,7 @@ instance Named PictureTyp where -- for displaying a fatal error
   name (PTCDPattern pat) = name pat
   name (PTDeclaredInPat pat) = name pat
   name (PTCDConcept c) = name c
-  name (PTRelation rel) = name rel
+  name (PTCDRelation rel) = name rel
   name (PTCDRule r) = name r
   name (PTLogicalDM grouped) = "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
   name PTTechnicalDM = "PTTechnicalDM"
@@ -107,7 +107,7 @@ makePicture env fSpec pr =
               English -> "Concept diagram of " <> name cpt
               Dutch -> "Conceptueel diagram van " <> name cpt
         }
-    PTRelation rel ->
+    PTCDRelation rel ->
       Pict
         { pType = pr,
           scale = scale',
@@ -161,7 +161,7 @@ makePicture env fSpec pr =
         PTDeclaredInPat {} -> "0.6"
         PTCDRule {} -> "0.7"
         PTCDConcept {} -> "0.7"
-        PTRelation {} -> "0.7"
+        PTCDRelation {} -> "0.7"
         PTLogicalDM {} -> "1.2"
         PTTechnicalDM -> "1.2"
     graphVizCmdForConceptualGraph =
@@ -180,7 +180,7 @@ pictureFileName pr = toBaseFileName
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
     PTTechnicalDM -> "TechnicalDataModel"
     PTCDConcept cpt -> "CDConcept" <> urlEncodedName (name cpt)
-    PTRelation rel -> "PTRelation" <> name rel
+    PTCDRelation rel -> "PTCDRelation" <> urlEncodedName (name rel) -- MO!
     PTDeclaredInPat pat -> "RelationsInPattern" <> urlEncodedName (name pat)
     PTCDPattern pat -> "CDPattern" <> urlEncodedName (name pat)
     PTCDRule r -> "CDRule" <> urlEncodedName (name r)
@@ -199,17 +199,20 @@ conceptualStructure fSpec pr =
        in CStruct --- MO!
             { csCpts = Set.elems c' <> [g | (s, g) <- gs, elem g c' || elem s c'] <> [s | (s, g) <- gs, elem g c' || elem s c'],
               csRels = rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
-              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'] --  all isa edges of the 'main' concept
+              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'], --  all isa edges of the 'main' concept
+              csCptsMain = [c]
             }
-    PTRelation rel ->
+    -- the PTCDRelation creates a picture of the 2 concepts involved in the relation and their relations
+    PTCDRelation rel ->
       let c' = concs rel -- de lijst van het concept waar t nu om gaat
           allrels = vrels fSpec
-          rs = [r | r <- Set.elems allrels, c <- Set.elems c', c `elem` concs r]
+          rs = L.nub [r | r <- Set.elems allrels, c <- Set.elems c', c `elem` concs r]
        in CStruct --- MO!
             { csCpts = Set.elems c' <> [g | (s, g) <- gs, elem g c' || elem s c'] <> [s | (s, g) <- gs, elem g c' || elem s c'], -- Hier moeten de 2 concepten die in de RELATION zitten gedefineerd worden
             -- concs sign
               csRels = rs,
-              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'] --  all isa edges of the 'main' concept
+              csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'], --  all isa edges of the 'main' concept
+              csCptsMain = Set.elems c' -- the main elements from the relations
             }
     --  PTCDPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
@@ -227,7 +230,8 @@ conceptualStructure fSpec pr =
        in CStruct
             { csCpts = Set.elems cpts,
               csRels = Set.elems $ rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
-              csIdgs = idgs
+              csIdgs = idgs,
+              csCptsMain = []
             }
     -- PTDeclaredInPat makes a picture of relations and gens within pat only
     PTDeclaredInPat pat ->
@@ -240,7 +244,8 @@ conceptualStructure fSpec pr =
                   . Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ decs,
-              csIdgs = isaEdges cpts
+              csIdgs = isaEdges cpts,
+              csCptsMain = []
             }
     PTCDRule rule ->
       let cpts = concs rule
@@ -360,13 +365,12 @@ data ConceptualStructure
   = CStruct -- Concept structure
       { -- | The concepts to draw in the graph
         csCpts :: [A_Concept],
-        -- -- | Main concept(s) to draw in the graph
-        -- csCptsMain :: [A_Concept],
-
         -- | The relations, (the edges in the graph)
         csRels :: [Relation],
         -- | list of Isa relations
-        csIdgs :: [(A_Concept, A_Concept)]
+        csIdgs :: [(A_Concept, A_Concept)],
+        -- | Main concept(s) to draw in the graph
+        csCptsMain :: [A_Concept]
       }
   | RStruct -- R Structure
       { -- | The concepts to draw in the graph
@@ -382,12 +386,12 @@ data ConceptualStructure
 conceptual2Dot :: ConceptualStructure -> DotGraph Text
 conceptual2Dot cs =
   case cs of
-    CStruct _ rels idgs -> createDotGraphCStruct cs rels idgs
+    CStruct _ rels idgs maincpt -> createDotGraphCStruct cs rels idgs maincpt
     RStruct _ rels idgs rules -> createDotGraphRStruct cs rels idgs rules -- You can add handling for 'rules' if needed
     -- Helper function to generate DotGraph
 
-createDotGraphCStruct :: ConceptualStructure -> [Relation] -> [(A_Concept, A_Concept)] -> DotGraph Text
-createDotGraphCStruct cs rels idgs =
+createDotGraphCStruct :: ConceptualStructure -> [Relation] -> [(A_Concept, A_Concept)] -> [A_Concept] -> DotGraph Text
+createDotGraphCStruct cs rels idgs maincpt =
   DotGraph
     { strictGraph = False,
       directedGraph = True,
@@ -426,7 +430,8 @@ createDotGraphCStruct cs rels idgs =
             nodeStmts =
               concatMap nodes (allCpts cs)
                 <> concatMap nodes rels
-                <> concatMap nodes idgs,
+                <> concatMap nodes idgs
+                <> concatMap mainnodes maincpt, -- MO!
             edgeStmts =
               concatMap edges (allCpts cs)
                 <> concatMap edges rels
@@ -438,6 +443,8 @@ createDotGraphCStruct cs rels idgs =
     nodes = dotNodes cs
     edges :: (HasDotParts a) => a -> [DotEdge Text]
     edges = dotEdges cs
+    mainnodes :: (HasDotParts a) => a -> [DotNode Text]
+    mainnodes = dotNodesMain cs
 
 -- function to specifically add the rules to the graphs
 createDotGraphRStruct :: ConceptualStructure -> [Relation] -> [(A_Concept, A_Concept)] -> [Rule] -> DotGraph Text
@@ -497,6 +504,7 @@ createDotGraphRStruct cs rels idgs rules =
 
 class HasDotParts a where
   dotNodes :: ConceptualStructure -> a -> [DotNode Text]
+  dotNodesMain :: ConceptualStructure -> a -> [DotNode Text]
   dotEdges :: ConceptualStructure -> a -> [DotEdge Text]
 
 baseNodeId :: ConceptualStructure -> A_Concept -> Text
@@ -507,7 +515,7 @@ baseNodeId x c =
 
 allCpts :: ConceptualStructure -> [A_Concept]
 allCpts cs = Set.elems $ case cs of
-  CStruct cpts' rels idgs ->
+  CStruct cpts' rels idgs _ ->
     Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
   RStruct cpts' rels idgs _ ->
     Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs -- Handle RStruct similar to CStruct
@@ -521,6 +529,22 @@ instance HasDotParts A_Concept where
         { nodeID = baseNodeId x cpt,
           nodeAttributes =
             [ Label . StrLabel . TL.fromStrict . name $ cpt
+            ]
+        }
+    ]
+  dotNodesMain x cpt =
+    -- MO!
+    [ DotNode
+        { nodeID = baseNodeId x cpt,
+          nodeAttributes =
+            [ BgColor [WC (X11Color Blue) Nothing],
+              Style
+                [ SItem Filled [],
+                  SItem Bold [],
+                  SItem Rounded []
+                ],
+              FillColor [WC (X11Color SlateGray) Nothing],
+              Label . StrLabel . TL.fromStrict . name $ cpt
             ]
         }
     ]

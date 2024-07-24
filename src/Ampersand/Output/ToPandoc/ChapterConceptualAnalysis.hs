@@ -64,7 +64,7 @@ chpConceptualAnalysis env lev fSpec =
     pictOfRule :: Rule -> Picture
     pictOfRule = makePicture env fSpec . PTCDRule
     pictOfRelation :: Relation -> Picture
-    pictOfRelation = makePicture env fSpec . PTRelation
+    pictOfRelation = makePicture env fSpec . PTCDRelation
     pictOfConcept :: A_Concept -> Picture
     pictOfConcept = makePicture env fSpec . PTCDConcept
     caSection :: ThemeContent -> Blocks
