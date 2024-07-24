@@ -86,10 +86,11 @@ RELATION FormalAmpersand.showADL[FormalAmpersand.Term*FormalAmpersand.ShowADL] [
 REPRESENT FormalAmpersand.ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
    --   ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedShowADL
-   --   RULE FormalAmpersand.DelUnusedShowADL LABEL "del unused ShowADL" : I[FormalAmpersand.ShowADL] |- FormalAmpersand.showADL~;FormalAmpersand.showADL
-   --   MEANING "A ShowADL without Term will be removed."
+   --   RULE FormalAmpersand.DelUnusedShowADL LABEL "del unused ShowADL" : I[FormalAmpersand.ShowADL] |- FormalAmpersand.(showADL[Term*ShowADL]~;showADL[Term*ShowADL]) \/ (showADL[PairView*ShowADL]~;FormalAmpersand.showADL[PairView*ShowADL])
+   --   MEANING "A ShowADL without Term or PairView will be removed."
    --   VIOLATION ( TXT "{EX}_;DelAtom_;FormalAmpersand.ShowADL_;", SRC I )
 VIEW FormalAmpersand.Term : FormalAmpersand.Term(FormalAmpersand.showADL)
+VIEW FormalAmpersand.PairView : FormalAmpersand.PairView(FormalAmpersand.showADL)
 
 {- I can't get the following to work...  Grrr!
 PATTERN TypeGraph LABEL "Type graph"
