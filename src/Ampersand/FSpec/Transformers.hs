@@ -558,24 +558,11 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.message",
         "FormalAmpersand.Rule",
         "FormalAmpersand.Message",
-        [] -- TODO
+        [ (dirtyId' rul, dirtyId' msg)
+          | rul :: Rule <- instanceList fSpec,
+            msg <- rrmsg rul
+        ]
       ),
-      -- ( "FormalAmpersand.proprule",
-      --   "FormalAmpersand.PropertyRule",
-      --   "FormalAmpersand.Context",
-      --   [ (dirtyId' rul, dirtyId' ctx)
-      --     | ctx :: A_Context <- instanceList fSpec,
-      --       rul <- Set.elems $ proprules ctx
-      --   ]
-      -- ),
-      -- ( "FormalAmpersand.proprules",
-      --   "FormalAmpersand.PropertyRule",
-      --   "FormalAmpersand.Pattern",
-      --   [ (dirtyId' rul, dirtyId' pat)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       rul <- Set.elems $ proprules pat
-      --   ]
-      -- ),
       ( "FormalAmpersand.propertyRule",
         "FormalAmpersand.Relation",
         "FormalAmpersand.PropertyRule",
