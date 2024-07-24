@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput) where
 
@@ -203,10 +204,11 @@ conceptualStructure fSpec pr =
     PTRelation rel ->
       let c' = concs rel -- de lijst van het concept waar t nu om gaat
           allrels = vrels fSpec
-       in -- rs = [r | r <- Set.elems allrels, c `elem` concs r]
-          CStruct --- MO!
-            { csCpts = [],
-              csRels = [rel], -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+          rs = [r | r <- Set.elems allrels, c <- Set.elems c', c `elem` concs r]
+       in CStruct --- MO!
+            { csCpts = Set.elems c' <> [g | (s, g) <- gs, elem g c' || elem s c'] <> [s | (s, g) <- gs, elem g c' || elem s c'], -- Hier moeten de 2 concepten die in de RELATION zitten gedefineerd worden
+            -- concs sign
+              csRels = rs,
               csIdgs = [(s, g) | (s, g) <- gs, elem g c' || elem s c'] --  all isa edges of the 'main' concept
             }
     --  PTCDPattern makes a picture of at least the relations within pat;
@@ -240,22 +242,25 @@ conceptualStructure fSpec pr =
                   $ decs,
               csIdgs = isaEdges cpts
             }
-    PTCDRule r ->
-      let cpts = concs r
+    PTCDRule rule ->
+      let cpts = concs rule
           idgs = isaEdges cpts
-       in CStruct
-            { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c | (s, g) <- idgs, c <- [g, s]],
+          rs = allRules
+       in RStruct
+            { csCpts = Set.elems $ concs rule `Set.union` Set.fromList [c | (s, g) <- idgs, c <- [g, s]],
               csRels =
                 Set.elems
                   . Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
-                  $ bindedRelationsIn r,
-              csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
+                  $ bindedRelationsIn rule,
+              csIdgs = idgs, -- involve all isa links from concepts touched by one of the affected rules
+              csRule = [rule]
             }
     _ -> fatal ("No conceptual graph defined for pictureReq " <> name pr <> ".")
   where
     isaEdges cpts = [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
     gs = fsisa fSpec
+    allRules = fallRules fSpec
 
 writePicture ::
   (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLogFunc env) =>
@@ -348,20 +353,41 @@ instance ReferableFromPandoc Picture where
         case view fspecFormatL env of
           Fpdf -> "png" -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
           Fdocx -> "png" -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in MS-word.
-          Fhtml -> "png"
+          Fhtml -> "svg"
           _ -> "dot"
 
-data ConceptualStructure = CStruct
-  { -- | The concepts to draw in the graph
-    csCpts :: [A_Concept],
-    -- | The relations, (the edges in the graph)
-    csRels :: [Relation],
-    -- | list of Isa relations
-    csIdgs :: [(A_Concept, A_Concept)]
-  }
+data ConceptualStructure
+  = CStruct -- Concept structure
+      { -- | The concepts to draw in the graph
+        csCpts :: [A_Concept],
+        -- -- | Main concept(s) to draw in the graph
+        -- csCptsMain :: [A_Concept],
+
+        -- | The relations, (the edges in the graph)
+        csRels :: [Relation],
+        -- | list of Isa relations
+        csIdgs :: [(A_Concept, A_Concept)]
+      }
+  | RStruct -- R Structure
+      { -- | The concepts to draw in the graph
+        csCpts :: [A_Concept],
+        -- | The relations, (the edges in the graph)
+        csRels :: [Relation],
+        -- | list of Isa relations
+        csIdgs :: [(A_Concept, A_Concept)],
+        -- list of rules
+        csRule :: [Rule]
+      }
 
 conceptual2Dot :: ConceptualStructure -> DotGraph Text
-conceptual2Dot cs@(CStruct _ rels idgs) =
+conceptual2Dot cs =
+  case cs of
+    CStruct _ rels idgs -> createDotGraphCStruct cs rels idgs
+    RStruct _ rels idgs rules -> createDotGraphRStruct cs rels idgs rules -- You can add handling for 'rules' if needed
+    -- Helper function to generate DotGraph
+
+createDotGraphCStruct :: ConceptualStructure -> [Relation] -> [(A_Concept, A_Concept)] -> DotGraph Text
+createDotGraphCStruct cs rels idgs =
   DotGraph
     { strictGraph = False,
       directedGraph = True,
@@ -378,12 +404,9 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
                     Sep (DVal 0.8),
                     NodeSep 1.0,
                     Rank SameRank,
-                    RankDir FromTop,
-                    RankSep [2.5],
+                    RankDir FromLeft,
+                    RankSep [2],
                     ReMinCross True
-                    {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
-                          , Splines Curved
-                    -}
                   ],
                 NodeAttrs
                   [ Shape BoxShape,
@@ -416,6 +439,62 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
     edges :: (HasDotParts a) => a -> [DotEdge Text]
     edges = dotEdges cs
 
+-- function to specifically add the rules to the graphs
+createDotGraphRStruct :: ConceptualStructure -> [Relation] -> [(A_Concept, A_Concept)] -> [Rule] -> DotGraph Text
+createDotGraphRStruct cs rels idgs rules =
+  DotGraph
+    { strictGraph = False,
+      directedGraph = True,
+      graphID = Nothing,
+      graphStatements =
+        DotStmts
+          { attrStmts =
+              [ GraphAttrs
+                  [ BgColor [WC (X11Color White) Nothing],
+                    Landscape False,
+                    Mode IpSep,
+                    OutputOrder EdgesFirst,
+                    Overlap VoronoiOverlap,
+                    Sep (DVal 0.8),
+                    NodeSep 1.0,
+                    -- Rank SameRank,
+                    RankDir FromTop,
+                    RankSep [2],
+                    ReMinCross True
+                  ],
+                NodeAttrs
+                  [ Shape BoxShape,
+                    BgColor [WC (X11Color LightGray) Nothing],
+                    Style
+                      [ SItem Rounded [],
+                        SItem Filled [],
+                        SItem Bold []
+                      ]
+                  ],
+                EdgeAttrs
+                  [ Color [WC (X11Color Black) Nothing],
+                    edgeLenFactor 0.7
+                  ]
+              ],
+            subGraphs = [],
+            nodeStmts =
+              concatMap nodes (allCpts cs)
+                <> concatMap nodes rels
+                <> concatMap nodes idgs
+                <> concatMap nodes rules,
+            edgeStmts =
+              concatMap edges (allCpts cs)
+                <> concatMap edges rels
+                <> concatMap edges idgs
+                <> concatMap edges rules
+          }
+    }
+  where
+    nodes :: (HasDotParts a) => a -> [DotNode Text]
+    nodes = dotNodes cs
+    edges :: (HasDotParts a) => a -> [DotEdge Text]
+    edges = dotEdges cs
+
 class HasDotParts a where
   dotNodes :: ConceptualStructure -> a -> [DotNode Text]
   dotEdges :: ConceptualStructure -> a -> [DotEdge Text]
@@ -427,7 +506,11 @@ baseNodeId x c =
     _ -> fatal ("element " <> name c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> [A_Concept]
-allCpts (CStruct cpts' rels idgs) = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+allCpts cs = Set.elems $ case cs of
+  CStruct cpts' rels idgs ->
+    Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+  RStruct cpts' rels idgs _ ->
+    Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs -- Handle RStruct similar to CStruct
 
 edgeLenFactor :: Double -> Attribute
 edgeLenFactor x = Len (3 * x)
@@ -441,6 +524,7 @@ instance HasDotParts A_Concept where
             ]
         }
     ]
+  dotEdges :: ConceptualStructure -> A_Concept -> [DotEdge Text]
   dotEdges _ _ = []
 
 instance HasDotParts Relation where
@@ -449,8 +533,8 @@ instance HasDotParts Relation where
         [ DotNode
             { nodeID = baseNodeId x (source rel) <> name rel, -- MO!
               nodeAttributes =
-                [ Color [WC (X11Color Transparent) Nothing],
-                  Shape PlainText,
+                [ BgColor [WC (X11Color LightGray) Nothing],
+                  Style [],
                   Label
                     . StrLabel
                     . TL.fromStrict
@@ -463,22 +547,17 @@ instance HasDotParts Relation where
             }
         ]
     | otherwise = []
-  dotEdges x rel -- dit is een relatie met het concepts als de source en target hetzelfde zijn
-    | isEndo rel =
+  dotEdges x rel
+    | isEndo rel -- dit is een relatie met het concepts als de source en target hetzelfde zijn
+      =
         [ DotEdge
-            { fromNode = baseNodeId x . source $ rel, -- MO!
-              toNode = baseNodeId x . target $ rel, -- MO!
+            { fromNode = baseNodeId x . source $ rel,
+              toNode = baseNodeId x (source rel) <> name rel,
               edgeAttributes =
                 [ Dir NoDir,
-                  edgeLenFactor 0.2,
-                  Label
-                    . StrLabel
-                    . TL.fromStrict
-                    . T.intercalate "\n"
-                    $ name rel
-                    : case Set.toList . properties $ rel of
-                      [] -> []
-                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+                  Style [dotted],
+                  edgeLenFactor 0.4,
+                  Label . StrLabel . fromString $ ""
                 ]
             }
         ]
@@ -522,6 +601,17 @@ instance HasDotParts (A_Concept, A_Concept) where
             ]
         }
     ]
+
+instance HasDotParts Rule where
+  dotNodes x rule =
+    [ DotNode
+        { nodeID = "REGELNAAM!",
+          nodeAttributes =
+            [ Label . StrLabel . TL.fromStrict . name $ rule -- hier wil dit ding opeesn geen naam van de rule pakken fso?
+            ]
+        }
+    ]
+  dotEdges _ _ = []
 
 {-
 crowfootArrowType :: Bool -> Relation -> ArrowType
