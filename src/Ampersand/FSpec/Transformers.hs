@@ -865,6 +865,13 @@ transformersFormalAmpersand fSpec =
           | rul :: Rule <- instanceList fSpec
         ]
       ),
+      ( "urlEncodedName",
+        "Relation",
+        "EncodedName",
+        [ (dirtyId rel, PopAlphaNumeric . urlEncodedName . name $ rel)
+          | rel :: Relation <- instanceList fSpec
+        ]
+      ),
       ( "usedIn",
         "Relation",
         "Term",
