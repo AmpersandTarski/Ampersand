@@ -114,8 +114,7 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acdcpt",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.ConceptName",
-        Set.fromList [Uni],
-        [ (dirtyId' cdf, PopAlphaNumeric . acdcpt $ cdf)
+        [ (dirtyId' cdf, PopAlphaNumeric . fullName $ cdf)
           | cdf :: AConceptDef <- instanceList fSpec
         ]
       ),
@@ -123,7 +122,6 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acddef2",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.Meaning",
-        Set.fromList [Uni],
         [ (dirtyId' cdf, dirtyId' mean)
           | cdf :: AConceptDef <- instanceList fSpec,
             mean :: Meaning <- acdmean cdf
@@ -133,7 +131,6 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acdfrom",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.Pattern",
-        Set.fromList [Uni],
         [ (dirtyId' cdf, dirtyId' pat)
           | pat :: Pattern <- instanceList fSpec,
             cdf :: AConceptDef <- ptcds pat
@@ -143,7 +140,6 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acdmean",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.Meaning",
-        Set.empty,
         [ (dirtyId' cdf, dirtyId' mean)
           | cdf :: AConceptDef <- instanceList fSpec,
             mean :: Meaning <- acdmean cdf
@@ -153,7 +149,6 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acdpos",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.Origin",
-        Set.fromList [Uni],
         [ (dirtyId' cdf, PopAlphaNumeric . tshow . origin $ cdf)
           | cdf :: AConceptDef <- instanceList fSpec
         ]
@@ -161,7 +156,6 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.allConjuncts",
         "FormalAmpersand.Context",
         "FormalAmpersand.Conjunct",
-        Set.fromList [Inj],
         [ (dirtyId' ctx, dirtyId' conj)
           | ctx :: A_Context <- instanceList fSpec,
             conj :: Conjunct <- instanceList fSpec

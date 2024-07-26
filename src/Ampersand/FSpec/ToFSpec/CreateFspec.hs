@@ -204,7 +204,7 @@ transformer2pop tr =
 -- | The 'grindInto' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a (Guarded) P_Context, so it can be merged with other Ampersand results.
-grindInto :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
+grindInto :: (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
 grindInto metamodel specification = do
   env <- ask
   pContextOfMetaModel <- case metamodel of
