@@ -149,8 +149,9 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.acdpos",
         "FormalAmpersand.ConceptDef",
         "FormalAmpersand.Origin",
-        [ (dirtyId' cdf, PopAlphaNumeric . tshow . origin $ cdf)
-          | cdf :: AConceptDef <- instanceList fSpec
+        [ (dirtyId' cdf, popatom)
+          | cdf :: AConceptDef <- instanceList fSpec,
+            Just popatom <- [originToPopAtom cdf]
         ]
       ),
       ( "FormalAmpersand.allConjuncts",
@@ -1687,22 +1688,19 @@ tmpNewTransformerDefsFA fSpec =
             name cpt == name cd
         ]
       ),
-      ( "patRules",
-        "Pattern",
-        "Rule",
-        Set.fromList [],
+      ( "FormalAmpersand.patRules",
+        "FormalAmpersand.Pattern",
+        "FormalAmpersand.Rule",
         [] -- TODO
       ),
-      ( "proprules",
-        "Rule",
-        "Context",
-        Set.fromList [],
+      ( "FormalAmpersand.proprules",
+        "FormalAmpersand.Rule",
+        "FormalAmpersand.Context",
         [] -- TODO
       ),
-      ( "proprules",
-        "Rule",
-        "Pattern",
-        Set.fromList [],
+      ( "FormalAmpersand.proprules",
+        "FormalAmpersand.Rule",
+        "FormalAmpersand.Pattern",
         [] -- TODO
       ),
       ( "FormalAmpersand.language",
@@ -1734,12 +1732,6 @@ tmpNewTransformerDefsFA fSpec =
             Just popatom <- [originToPopAtom prp]
         ]
       ),
-      ( "valid",
-        "Concept",
-        "Context",
-        Set.fromList [],
-        [] -- TODO
-      ),
       ( "FormalAmpersand.decMean",
         "FormalAmpersand.Relation",
         "FormalAmpersand.Meaning",
@@ -1747,11 +1739,17 @@ tmpNewTransformerDefsFA fSpec =
           | rel :: Relation <- instanceList fSpec,
             mean <- decMean rel
         ]
-      ),
-      ( "valid",
-        "Rule",
-        "Context",
-        Set.fromList [],
-        [] -- TODO
       )
     ]
+
+originToPopAtom :: (Traced a) => a -> Maybe PopAtom
+originToPopAtom x = case origin x of
+  OriginUnknown -> Nothing
+  OriginAtlas -> Nothing
+  Origin txt -> Just (PopAlphaNumeric txt)
+  PropertyRule {} -> standard
+  FileLoc {} -> standard
+  XLSXLoc {} -> standard
+  MeatGrinder -> Nothing
+  where
+    standard = Just . PopAlphaNumeric . tshow . origin $ x
