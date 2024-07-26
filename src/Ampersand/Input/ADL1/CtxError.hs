@@ -76,7 +76,6 @@ import Ampersand.Input.ADL1.FilePos ()
 import Ampersand.Input.ADL1.LexerMessage
 import Data.Typeable
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Text.Parsec
 
