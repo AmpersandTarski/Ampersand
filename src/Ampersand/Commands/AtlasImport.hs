@@ -54,8 +54,8 @@ import Ampersand.Core.ParseTree
     TermPrim (PNamedR),
   )
 import Ampersand.Core.ShowPStruct
-import Ampersand.FSpec.FSpec
-import Ampersand.Input.ADL1.CtxError
+import Ampersand.Input.ADL1.CtxError (Guarded (..))
+import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified Data.Aeson as JSON
@@ -68,8 +68,7 @@ import qualified RIO.Text as T
 
 -- | Read a file containing the population of an Atlas.
 atlasImport ::
-  (HasOutputFile env, HasImportFile env, HasRunner env) => --  , Show env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env)
-  FSpec -> -- This will be the FSpec of Formal Ampersand, if we need it at all.
+  (HasOutputFile env, HasImportFile env, HasRunner env) =>
   RIO env ()
 atlasImport = do
   env <- ask
@@ -93,27 +92,27 @@ instance JSON.FromJSON P_Context where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name" -- name of the context
+        JSON..: "name" -- name of the context
         <*> v
-          JSON..: "patterns"
+        JSON..: "patterns"
         -- <*> v JSON..: "interfaces"
         <*> v
-          JSON..: "conceptsCtx" -- alle concepten met definitie
+        JSON..: "conceptsCtx" -- alle concepten met definitie
         <*> v
-          JSON..: "representationsCtx" -- alle JSON.en
+        JSON..: "representationsCtx" -- alle JSON.en
         <*> v
-          JSON..: "rulesCtx"
+        JSON..: "rulesCtx"
         -- <*> v JSON..: "enforceCtx"
         <*> v
-          JSON..: "rolerules"
+        JSON..: "rolerules"
         <*> v
-          JSON..: "relationsCtx"
+        JSON..: "relationsCtx"
         <*> v
-          JSON..: "purposes" -- purposes within whole CONTEXT
+        JSON..: "purposes" -- purposes within whole CONTEXT
         <*> v
-          JSON..:? "language"
+        JSON..:? "language"
         <*> v
-          JSON..: "idents"
+        JSON..: "idents"
     invalid ->
       JSON.prependFailure
         "parsing P_Context failed, "
@@ -163,17 +162,17 @@ instance JSON.FromJSON P_Pattern where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name" -- name of the patterns
+        JSON..: "name" -- name of the patterns
         <*> v
-          JSON..: "relations"
+        JSON..: "relations"
         <*> v
-          JSON..: "concepts"
+        JSON..: "concepts"
         <*> v
-          JSON..: "representations"
+        JSON..: "representations"
         <*> v
-          JSON..: "rules"
+        JSON..: "rules"
         <*> v
-          JSON..: "purposes"
+        JSON..: "purposes"
     invalid ->
       JSON.prependFailure
         "parsing P_PAttern failed, "
@@ -203,7 +202,7 @@ instance JSON.FromJSON PConceptDef where
     JSON.Object v -> do
       build
         <$> v
-          JSON..: "name"
+        JSON..: "name"
         <*> (v JSON..: "definition" >>= JSON.parseJSON)
     invalid ->
       JSON.prependFailure
@@ -254,9 +253,9 @@ instance JSON.FromJSON Representation where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name"
+        JSON..: "name"
         <*> v
-          JSON..: "type" -- Use the PCDDef JSON.parser here
+        JSON..: "type" -- Use the PCDDef JSON.parser here
     invalid ->
       JSON.prependFailure
         "parsing Representation failed, "
@@ -308,7 +307,7 @@ instance JSON.FromJSON PProp where
       "rfx" -> pure P_Rfx
       "irf" -> pure P_Irf
       "prop" -> pure P_Prop
-      "fun" -> pure P_Fun
+      "map" -> pure P_Map
       "bij" -> pure P_Bij
       _ ->
         JSON.unexpected val
@@ -322,9 +321,9 @@ instance JSON.FromJSON P_Sign where
     (JSON.Object v) ->
       P_Sign
         <$> v
-          JSON..: "source"
+        JSON..: "source"
         <*> v
-          JSON..: "target"
+        JSON..: "target"
     invalid ->
       JSON.prependFailure
         "parsing P_Sign failed, "
@@ -335,13 +334,13 @@ instance JSON.FromJSON P_Relation where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "relation"
+        JSON..: "relation"
         <*> v
-          JSON..: "sign"
+        JSON..: "sign"
         <*> v
-          JSON..: "properties"
+        JSON..: "properties"
         <*> v
-          JSON..: "meaning"
+        JSON..: "meaning"
     invalid ->
       JSON.prependFailure
         "parsing P_Relation failed, "
@@ -385,7 +384,7 @@ instance JSON.FromJSON P_Markup where
       Nothing -- Ignore mLang
       Nothing -- Ignore mFormat
       <$> v
-        JSON..: "meaning"
+      JSON..: "meaning"
   parseJSON invalid =
     JSON.prependFailure
       "parsing P_Markup failed, "
@@ -396,13 +395,13 @@ instance JSON.FromJSON (P_Rule TermPrim) where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name"
+        JSON..: "name"
         <*> v
-          JSON..: "formexp"
+        JSON..: "formexp"
         <*> v
-          JSON..: "meaning" -- This should parse an array of `PMeaning`
+        JSON..: "meaning" -- This should parse an array of `PMeaning`
         <*> v
-          JSON..: "message" -- Assuming `rr_msg` is an empty list for now
+        JSON..: "message" -- Assuming `rr_msg` is an empty list for now
     invalid ->
       JSON.prependFailure
         "parsing P_Rule failed, "
@@ -427,11 +426,11 @@ instance JSON.FromJSON (P_Enforce TermPrim) where
       -- todo: if operator = .. then ...
       build
         <$> v
-          JSON..: "relation"
+        JSON..: "relation"
         <*> v
-          JSON..: "operator"
+        JSON..: "operator"
         <*> v
-          JSON..: "rhs"
+        JSON..: "rhs"
     invalid ->
       JSON.prependFailure
         "parsing P_Enforce failed, "
@@ -476,7 +475,7 @@ instance JSON.FromJSON PPurpose where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "meaning"
+        JSON..: "meaning"
         <*> JSON.parseJSON val
     invalid ->
       JSON.prependFailure
@@ -533,9 +532,9 @@ instance JSON.FromJSON P_NamedRel where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "relation" -- moet hier niet name?
+        JSON..: "relation" -- moet hier niet name?
         <*> v
-          JSON..: "sign"
+        JSON..: "sign"
     -- <*> v JSON..: "reference"
     -- JSON.Array -- todo: hier komt een array te staan, werkt niet
     invalid ->
@@ -562,10 +561,10 @@ instance JSON.FromJSON P_IdentDef where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name"
+        JSON..: "name"
         <*> (v JSON..: "concept")
         <*> v
-          JSON..: "ident"
+        JSON..: "ident"
     invalid ->
       JSON.prependFailure
         "parsing P_Rule failed, "
@@ -590,19 +589,19 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
         then
           buildTxt
             <$> v
-              JSON..: "name"
+            JSON..: "name"
             <*> v
-              JSON..: "text"
+            JSON..: "text"
         else
           buildExpr
             <$> v
-              JSON..: "name"
+            JSON..: "name"
             <*> v
-              JSON..: "ctx"
+            JSON..: "ctx"
             <*> v
-              JSON..:? "crud"
+            JSON..:? "crud"
             <*> v
-              JSON..:? "mview"
+            JSON..:? "mview"
     -- <*> v JSON..:? "msub"
     _ -> JSON.typeMismatch "Object" val
     where
@@ -639,7 +638,7 @@ instance JSON.FromJSON P_Cruds where -- niet in gebruik
     JSON.Object v ->
       P_Cruds OriginAtlas
         <$> v
-          JSON..: "crud"
+        JSON..: "crud"
     invalid ->
       JSON.prependFailure
         "parsing P_Cruds failed, "
@@ -686,9 +685,9 @@ instance JSON.FromJSON BoxHeader where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "btType"
+        JSON..: "btType"
         <*> v
-          JSON..: "btKeys"
+        JSON..: "btKeys"
     invalid ->
       JSON.prependFailure
         "parsing BoxHeader failed, "
@@ -708,9 +707,9 @@ instance JSON.FromJSON TemplateKeyValue where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "tkkey"
+        JSON..: "tkkey"
         <*> v
-          JSON..:? "tkval"
+        JSON..:? "tkval"
     invalid ->
       JSON.prependFailure
         "parsing TemplateKeyValue failed, "
@@ -770,9 +769,9 @@ instance JSON.FromJSON PClassify where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "specific"
+        JSON..: "specific"
         <*> v
-          JSON..: "generic"
+        JSON..: "generic"
     invalid ->
       JSON.prependFailure
         "parsing PClassify failed, "
@@ -791,9 +790,9 @@ instance JSON.FromJSON MetaData where
     JSON.Object v ->
       build
         <$> v
-          JSON..: "name"
+        JSON..: "name"
         <*> v
-          JSON..: "value"
+        JSON..: "value"
     invalid ->
       JSON.prependFailure
         "parsing MetaData failed, "
