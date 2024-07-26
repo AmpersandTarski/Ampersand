@@ -47,7 +47,6 @@ module Ampersand.Input.ADL1.CtxError
     mkCrudWarning,
     mkBoxRowsnhWarning,
     mkCaseProblemWarning,
-    mkUnmatchedPropertiesWarning,
     uniqueLables,
     mkNoBoxItemsWarning,
     Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
