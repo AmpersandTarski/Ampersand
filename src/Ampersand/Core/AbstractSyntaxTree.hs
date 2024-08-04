@@ -113,6 +113,7 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
+import qualified Data.Text1 as T1
 import Data.Typeable (typeOf)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
@@ -871,8 +872,8 @@ instance Eq SubInterface where
   a == b = compare a b == EQ
 
 instance Unique SubInterface where
-  showUnique si@Box {} = (showUnique . siHeader) si <> (showUnique . siObjs) si
-  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si <> fullName1 (siIfcId si)
+  showUnique si@Box {} = "BOX_" T1..<> (showUnique . siHeader) si T1.<>. (T.concat . fmap (text1ToText . showUnique) . siObjs) si
+  showUnique si@InterfaceRef {} = "InterfaceRef_" T1..<> (showUnique . siIsLink) si <> fullName1 (siIfcId si)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

@@ -80,7 +80,6 @@ atlasImport = do
     Left msg -> fatal . T.pack $ "Couldn't read " <> view importFileL env <> ": " <> msg
     Right x -> do
       let outputFn = view outputfileL env
-      -- writeFileUtf8 outputFn (prettyMoText x) -- todo: betere naam verzinnen
       writeFileUtf8 outputFn (showP x)
       logInfo . display . T.pack $ outputFn <> " written"
 
