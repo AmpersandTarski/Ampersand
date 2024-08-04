@@ -748,7 +748,7 @@ isObjExp BxExpr {} = True
 isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
-  showUnique x = toText1Unsafe ("BoxItem_" <> (tshow . abs . hash . tshow) x)
+  showUnique = showUniqueAsHash
 
 instance Traced BoxItem where
   origin o =

@@ -13,18 +13,15 @@ PATTERN FormalAmpersand.Concepts
     MEANING "A ConceptName without Concept will be removed."
     VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptName;", SRC I )
     
-    IDENT FormalAmpersand.Concept : FormalAmpersand.Concept(FormalAmpersand.name,FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context])
-
-    RELATION FormalAmpersand.cddef2[FormalAmpersand.ConceptDef*FormalAmpersand.Meaning][UNI]
     -- RULE delUnusedMeaning : I[Meaning] |- cddef2~;cddef2
     -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
     -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
     
-    REPRESENT FormalAmpersand.ConceptDef TYPE BIGALPHANUMERIC
-    RELATION FormalAmpersand.acdcpt[FormalAmpersand.Concept*FormalAmpersand.ConceptDef][UNI]
-    RULE FormalAmpersand.delUnusedConceptDef : I[FormalAmpersand.ConceptDef] |- FormalAmpersand.acdcpt~;FormalAmpersand.acdcpt
-    MEANING "A ConceptDef without Concept will be removed."
-    VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDef;", SRC I )
+    -- REPRESENT FormalAmpersand.ConceptDef TYPE BIGALPHANUMERIC
+    -- RELATION FormalAmpersand.acdcpt[FormalAmpersand.Concept*FormalAmpersand.ConceptDef][UNI]
+    -- RULE FormalAmpersand.delUnusedConceptDef : I[FormalAmpersand.ConceptDef] |- FormalAmpersand.acdcpt~;FormalAmpersand.acdcpt
+    -- MEANING "A ConceptDef without Concept will be removed."
+    -- VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDef;", SRC I )
 
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType][UNI]

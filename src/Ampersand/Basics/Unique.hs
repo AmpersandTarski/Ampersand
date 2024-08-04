@@ -9,6 +9,7 @@ instance Unique Pattern where
 
 module Ampersand.Basics.Unique
   ( Unique (..),
+    showUniqueAsHash,
   )
 where
 
@@ -107,3 +108,8 @@ instance (Unique a) => Unique (Set.Set a) where
 
 instance Unique Bool where
   showUnique = toText1Unsafe . T.toLower . tshow
+
+-- | This function is ment to deliver unique values for lots of things in a uniform way. Disadvantage is that
+--   the results are hard to debug.
+showUniqueAsHash :: (Show a, Typeable a) => a -> Text1
+showUniqueAsHash x = toText1Unsafe (tshow (typeOf x) <> "_" <> (tshow . abs . hash . tshow $ x))

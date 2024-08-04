@@ -110,50 +110,6 @@ transformersFormalAmpersand fSpec =
     toTransformer
     [ {-
       -}
-      --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-      ( "FormalAmpersand.acdcpt",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.ConceptName",
-        [ (dirtyId' cdf, PopAlphaNumeric . fullName $ cdf)
-          | cdf :: AConceptDef <- instanceList fSpec
-        ]
-      ),
-      --    RELATION acddef2[ConceptDef*Meaning] [UNI]  -- ^ The textual definition of this concept.
-      ( "FormalAmpersand.acddef2",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.Meaning",
-        [ (dirtyId' cdf, dirtyId' mean)
-          | cdf :: AConceptDef <- instanceList fSpec,
-            mean :: Meaning <- acdmean cdf
-        ]
-      ),
-      --    RELATION acdfrom[ConceptDef*Pattern] [UNI]  -- ^ The name of the pattern or context in which this concept definition was made
-      ( "FormalAmpersand.acdfrom",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.Pattern",
-        [ (dirtyId' cdf, dirtyId' pat)
-          | pat :: Pattern <- instanceList fSpec,
-            cdf :: AConceptDef <- ptcds pat
-        ]
-      ),
-      --    RELATION acdmean[ConceptDef*Meaning] [UNI]  -- ^ User-specified meanings, possibly more than one, for multiple languages.
-      ( "FormalAmpersand.acdmean",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.Meaning",
-        [ (dirtyId' cdf, dirtyId' mean)
-          | cdf :: AConceptDef <- instanceList fSpec,
-            mean :: Meaning <- acdmean cdf
-        ]
-      ),
-      --    RELATION acdpos[ConceptDef*Origin] [UNI]      -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-      ( "FormalAmpersand.acdpos",
-        "FormalAmpersand.ConceptDef",
-        "FormalAmpersand.Origin",
-        [ (dirtyId' cdf, popatom)
-          | cdf :: AConceptDef <- instanceList fSpec,
-            Just popatom <- [originToPopAtom cdf]
-        ]
-      ),
       ( "FormalAmpersand.allConjuncts",
         "FormalAmpersand.Context",
         "FormalAmpersand.Conjunct",
@@ -345,20 +301,6 @@ transformersFormalAmpersand fSpec =
             (not . T.null . decprR) rel
         ]
       ),
-      ( "FormalAmpersand.pvsExp",
-        "FormalAmpersand.PairViewSegment",
-        "FormalAmpersand.Concept",
-        [] -- TODO
-      ),
-      -- ( "FormalAmpersand.fieldIn",
-      --   "FormalAmpersand.FieldDef",
-      --   "FormalAmpersand.ObjectDef",
-      --
-      --   [ (dirtyId' fld, dirtyId' obj)
-      --     | obj :: ObjectDef <- instanceList fSpec,
-      --       fld <- fields obj
-      --   ]
-      -- ),
       ( "FormalAmpersand.first",
         "FormalAmpersand.BinaryTerm",
         "FormalAmpersand.Term",
@@ -547,6 +489,14 @@ transformersFormalAmpersand fSpec =
       --   ]
       -- ),
       ( "FormalAmpersand.meaning",
+        "FormalAmpersand.ConceptDef",
+        "FormalAmpersand.Meaning",
+        [ (dirtyId' cd, dirtyId' mean)
+          | cd :: AConceptDef <- instanceList fSpec,
+            mean <- acddef2 cd : acdmean cd
+        ]
+      ),
+      ( "FormalAmpersand.meaning",
         "FormalAmpersand.Rule",
         "FormalAmpersand.Meaning",
         [ (dirtyId' rul, dirtyId' mean)
@@ -636,6 +586,13 @@ transformersFormalAmpersand fSpec =
       --     | vd :: ViewDef <- instanceList fSpec
       --   ]
       -- ),
+      ( "FormalAmpersand.objDef",
+        "FormalAmpersand.BxExpr",
+        "FormalAmpersand.ObjectDef",
+        [ (dirtyId' item, dirtyId' obj)
+          | item@BxExpr {objE = obj} <- instanceList fSpec
+        ]
+      ),
       ( "FormalAmpersand.objView",
         "FormalAmpersand.ObjectDef",
         "FormalAmpersand.View",
@@ -755,6 +712,13 @@ transformersFormalAmpersand fSpec =
             purp <- purposes fSpec vw
         ]
       ),
+      ( "FormalAmpersand.pvsExp",
+        "FormalAmpersand.PairViewSegment",
+        "FormalAmpersand.Term",
+        [ (dirtyId' pvs, dirtyId' (pvsExp pvs))
+          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
+        ]
+      ),
       -- ( "FormalAmpersand.relsDefdIn",
       --   "FormalAmpersand.Pattern",
       --   "FormalAmpersand.Relation",
@@ -776,7 +740,7 @@ transformersFormalAmpersand fSpec =
         "FormalAmpersand.PairViewSegment",
         [] -- TODO
       ),
-      ( "FormalAmpersand.segmentType",
+      ( "FormalAmpersand.sequenceNr",
         "FormalAmpersand.PairViewSegment",
         "FormalAmpersand.SequenceNumber",
         [ (dirtyId' pvs, PopInt nr)
@@ -784,12 +748,11 @@ transformersFormalAmpersand fSpec =
             (pvs, nr) <- zip (NE.toList . ppv_segs $ pv) [0 ..]
         ]
       ),
-      ( "FormalAmpersand.sequenceNr",
-        "FormalAmpersand.PairViewSegment",
-        "FormalAmpersand.SequenceNumber",
-        [ (dirtyId' pvs, PopInt nr)
-          | pv :: PairView Expression <- instanceList fSpec,
-            (pvs, nr) <- zip (NE.toList . ppv_segs $ pv) [0 ..]
+      ( "FormalAmpersand.showADL",
+        "FormalAmpersand.PairView",
+        "FormalAmpersand.ShowADL",
+        [ (dirtyId' pv, PopAlphaNumeric (showA pv))
+          | pv :: PairView Expression <- instanceList fSpec
         ]
       ),
       ( "FormalAmpersand.showADL",
@@ -847,6 +810,13 @@ transformersFormalAmpersand fSpec =
         "FormalAmpersand.Concept",
         [ (dirtyId' rel, dirtyId' (target rel))
           | rel :: Relation <- instanceList fSpec
+        ]
+      ),
+      ( "FormalAmpersand.text",
+        "FormalAmpersand.BxTxt",
+        "FormalAmpersand.Text",
+        [ (dirtyId' item, PopAlphaNumeric (boxtxt x))
+          | item@BxTxt {objT = x} <- instanceList fSpec
         ]
       ),
       ( "FormalAmpersand.text",
@@ -1693,16 +1663,6 @@ tmpNewTransformerDefsFA fSpec =
         "FormalAmpersand.Rule",
         [] -- TODO
       ),
-      ( "FormalAmpersand.proprules",
-        "FormalAmpersand.Rule",
-        "FormalAmpersand.Context",
-        [] -- TODO
-      ),
-      ( "FormalAmpersand.proprules",
-        "FormalAmpersand.Rule",
-        "FormalAmpersand.Pattern",
-        [] -- TODO
-      ),
       ( "FormalAmpersand.language",
         "FormalAmpersand.Markup",
         "FormalAmpersand.Language",
@@ -1715,6 +1675,14 @@ tmpNewTransformerDefsFA fSpec =
         "FormalAmpersand.MarkupText",
         [ (dirtyId' mkp, PopAlphaNumeric . stringify . amPandoc $ mkp)
           | mkp :: Markup <- instanceList fSpec
+        ]
+      ),
+      ( "FormalAmpersand.explRefIds",
+        "FormalAmpersand.Purpose",
+        "FormalAmpersand.Text",
+        [ (dirtyId' prp, PopAlphaNumeric txt)
+          | prp :: Purpose <- instanceList fSpec,
+            txt <- explRefIds prp
         ]
       ),
       ( "FormalAmpersand.explMarkup",

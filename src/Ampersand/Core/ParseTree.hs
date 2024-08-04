@@ -72,6 +72,7 @@ where
 import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
+import qualified Data.Text1 as T1
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -960,7 +961,7 @@ instance Eq BoxHeader where
   a == b = compare a b == EQ
 
 instance Unique BoxHeader where
-  showUnique x = btType x <> (showUnique . L.sort . btKeys $ x)
+  showUnique x = btType x T1.<>. (T.concat . fmap (text1ToText . showUnique) . L.sort . btKeys $ x)
 
 instance Traced BoxHeader where
   origin BoxHeader {pos = orig} = orig

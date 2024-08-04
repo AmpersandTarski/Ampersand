@@ -7,6 +7,7 @@ PATTERN FormalAmpersand.Documentation
     CONCEPT FormalAmpersand.Meaning ""
     -- CLASSIFY Meaning ISA Markup See issue https://github.com/AmpersandTarski/Ampersand/issues/1484
     -- CLASSIFY Markup ISA Meaning
+    RELATION FormalAmpersand.markup[FormalAmpersand.Meaning*FormalAmpersand.Markup][UNI,TOT]
     CONCEPT FormalAmpersand.MarkupText ""
     CONCEPT FormalAmpersand.Markup ""
 
