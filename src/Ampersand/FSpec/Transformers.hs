@@ -77,52 +77,7 @@ transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec =
   map
     toTransformer
-    [ {-
-      -}
-      -- --    RELATION acdcpt[ConceptDef*Text] [UNI]      -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-      -- ( "acdcpt",
-      --   "ConceptDef",
-      --   "ConceptName",
-      --   [ (dirtyId cdf, PopAlphaNumeric . acdcpt $ cdf)
-      --     | cdf :: AConceptDef <- instanceList fSpec
-      --   ]
-      -- ),
-      -- --    RELATION acddef2[ConceptDef*Meaning] [UNI]  -- ^ The textual definition of this concept.
-      -- ( "acddef2",
-      --   "ConceptDef",
-      --   "Meaning",
-      --   [ (dirtyId cdf, dirtyId mean)
-      --     | cdf :: AConceptDef <- instanceList fSpec,
-      --       mean :: Meaning <- acdmean cdf
-      --   ]
-      -- ),
-      -- --    RELATION acdfrom[ConceptDef*Pattern] [UNI]  -- ^ The name of the pattern or context in which this concept definition was made
-      -- ( "acdfrom",
-      --   "ConceptDef",
-      --   "Pattern",
-      --   [ (dirtyId cdf, dirtyId pat)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       cdf :: AConceptDef <- ptcds pat
-      --   ]
-      -- ),
-      -- --    RELATION acdmean[ConceptDef*Meaning] [UNI]  -- ^ User-specified meanings, possibly more than one, for multiple languages.
-      -- ( "acdmean",
-      --   "ConceptDef",
-      --   "Meaning",
-      --   [ (dirtyId cdf, dirtyId mean)
-      --     | cdf :: AConceptDef <- instanceList fSpec,
-      --       mean :: Meaning <- acdmean cdf
-      --   ]
-      -- ),
-      -- --    RELATION acdpos[ConceptDef*Origin] [UNI]      -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-      -- ( "acdpos",
-      --   "ConceptDef",
-      --   "Origin",
-      --   [ (dirtyId cdf, PopAlphaNumeric . tshow . origin $ cdf)
-      --     | cdf :: AConceptDef <- instanceList fSpec
-      --   ]
-      -- ),
-      ( "allConjuncts",
+    [ ( "allConjuncts",
         "Context",
         "Conjunct",
         [ (dirtyId ctx, dirtyId conj)
@@ -138,15 +93,6 @@ transformersFormalAmpersand fSpec =
             rol :: Role <- instanceList fSpec
         ]
       ),
-      -- ( "allRules",
-      --   "Pattern",
-      --   "Rule",
-      --   {-Inj-}
-      --   [ (dirtyId pat, dirtyId rul)
-      --     | pat :: Pattern <- instanceList fSpec,
-      --       rul :: Rule <- Set.elems $ allRules pat
-      --   ]
-      -- ),
       ( "allRules",
         "Rule",
         "Context",
@@ -163,13 +109,6 @@ transformersFormalAmpersand fSpec =
             Just x <- [arg expr]
         ]
       ),
-      -- ( "asMarkdown",
-      --   "Markup",
-      --   "Text",
-      --   [ (dirtyId mrk, (PopAlphaNumeric . P.stringify . amPandoc) mrk)
-      --     | mrk :: Markup <- instanceList fSpec
-      --   ]
-      -- ),
       ( "bind",
         "BindedRelation",
         "Relation",
@@ -178,19 +117,21 @@ transformersFormalAmpersand fSpec =
             Just x <- [bindedRel expr]
         ]
       ),
+      ( "concept",
+        "ConceptDef",
+        "Concept",
+        [ (dirtyId cd, dirtyId cpt)
+          | cd :: AConceptDef <- instanceList fSpec,
+            cpt :: A_Concept <- instanceList fSpec,
+            name cpt == name cd
+        ]
+      ),
       ( "concepts",
         "Pattern",
         "Concept",
         [ (dirtyId pat, dirtyId cpt)
           | pat :: Pattern <- instanceList fSpec,
             cpt :: A_Concept <- Set.elems $ concs pat
-        ]
-      ),
-      ( "rc_conjunct",
-        "Conjunct",
-        "Term",
-        [ (dirtyId conj, dirtyId (rc_conjunct conj))
-          | conj :: Conjunct <- instanceList fSpec
         ]
       ),
       ( "context",
@@ -233,30 +174,12 @@ transformersFormalAmpersand fSpec =
             pat :: Pattern <- instanceList fSpec
         ]
       ),
-      -- ( "context",
-      --   "Population",
-      --   "Context",
-      --
-      --   [ (dirtyId pop, dirtyId ctx)
-      --     | ctx :: A_Context <- instanceList fSpec,
-      --       pop :: Population <- instanceList fSpec
-      --   ]
-      -- ),
-      -- ( "ctxcds",
-      --   "ConceptDef",
-      --   "Context",
-      --
-      --   [ (dirtyId cdf, dirtyId ctx)
-      --     | ctx :: A_Context <- instanceList fSpec,
-      --       cdf :: AConceptDef <- instanceList fSpec
-      --   ]
-      -- ),
-      ( "relsDefdIn",
-        "Relation",
-        "Context", ---contains ALL relations defined in this context
-        [ (dirtyId rel, dirtyId ctx)
+      ( "context",
+        "Rule",
+        "Context",
+        [ (dirtyId rul, dirtyId ctx)
           | ctx :: A_Context <- instanceList fSpec,
-            rel :: Relation <- Set.elems $ relsDefdIn ctx
+            rul :: Rule <- instanceList fSpec
         ]
       ),
       ( "ctxds",
@@ -283,12 +206,21 @@ transformersFormalAmpersand fSpec =
             rel :: Relation <- Set.elems $ relsDefdIn pat
         ]
       ),
+      ( "declaredthrough",
+        "PropertyRule",
+        "Property",
+        [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
+          | ctx :: A_Context <- instanceList fSpec,
+            rul <- Set.elems $ proprules ctx,
+            Propty prop _ <- [rrkind rul]
+        ]
+      ),
       ( "decMean",
         "Relation",
         "Meaning",
         [ (dirtyId rel, dirtyId mean)
           | rel :: Relation <- instanceList fSpec,
-            mean :: Meaning <- decMean rel
+            mean <- decMean rel
         ]
       ),
       ( "decprL",
@@ -315,22 +247,31 @@ transformersFormalAmpersand fSpec =
             (not . T.null . decprR) rel
         ]
       ),
-      ( "pvsExp",
-        "PairViewSegment",
-        "Term",
-        [ (dirtyId pvs, dirtyId (pvsExp pvs))
-          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
+      ( "edit",
+        "FieldDef",
+        "Relation",
+        [] -- TODO Future work
+      ),
+      ( "editFlp",
+        "FieldDef",
+        "Relation",
+        [] -- TODO
+      ),
+      ( "explRefIds",
+        "Purpose",
+        "Text",
+        [ (dirtyId prp, PopAlphaNumeric txt)
+          | prp :: Purpose <- instanceList fSpec,
+            txt <- explRefIds prp
         ]
       ),
-      -- ( "fieldIn",
-      --   "FieldDef",
-      --   "ObjectDef",
-      --
-      --   [ (dirtyId fld, dirtyId obj)
-      --     | obj :: ObjectDef <- instanceList fSpec,
-      --       fld <- fields obj
-      --   ]
-      -- ),
+      ( "explMarkup",
+        "Purpose",
+        "Markup",
+        [ (dirtyId prp, dirtyId (explMarkup prp))
+          | prp :: Purpose <- instanceList fSpec
+        ]
+      ),
       ( "first",
         "BinaryTerm",
         "Term",
@@ -345,6 +286,11 @@ transformersFormalAmpersand fSpec =
         [ (dirtyId rul, dirtyId (formalExpression rul))
           | rul :: Rule <- instanceList fSpec
         ]
+      ),
+      ( "fst",
+        "CombineStrings",
+        "String",
+        [] -- TODO
       ),
       ( "gengen",
         "Isa",
@@ -432,6 +378,11 @@ transformersFormalAmpersand fSpec =
             purp <- purposes fSpec ifc
         ]
       ),
+      ( "ifcQuads",
+        "Interface",
+        "Quad",
+        [] -- TODO future work
+      ),
       ( "ifcRoles",
         "Interface",
         "Role",
@@ -440,20 +391,20 @@ transformersFormalAmpersand fSpec =
             rol <- ifcRoles ifc
         ]
       ),
-      ( "isAPI",
+      ( "interfaces",
+        "Context",
         "Interface",
-        "Interface",
-        [ (dirtyId ifc, dirtyId ifc)
-          | ifc :: Interface <- instanceList fSpec,
-            ifcIsAPI ifc
+        [ (dirtyId ctx, dirtyId ifc)
+          | ctx :: A_Context <- instanceList fSpec,
+            ifc :: Interface <- instanceList fSpec
         ]
       ),
-      ( "isPublic",
+      ( "interfaces",
+        "Role",
         "Interface",
-        "Interface",
-        [ (dirtyId ifc, dirtyId ifc)
+        [ (dirtyId rol, dirtyId ifc)
           | ifc :: Interface <- instanceList fSpec,
-            null (ifcRoles ifc)
+            rol <- ifcRoles ifc
         ]
       ),
       ( "isa",
@@ -467,6 +418,65 @@ transformersFormalAmpersand fSpec =
                | isa@Isa {} <- instanceList fSpec
              ]
       ),
+      ( "isaCopy",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isAPI",
+        "Interface",
+        "Interface",
+        [ (dirtyId ifc, dirtyId ifc)
+          | ifc :: Interface <- instanceList fSpec,
+            ifcIsAPI ifc
+        ]
+      ),
+      ( "isaPlus",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isaRfx",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isaRfxCopy",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isaRfxPlus",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isaRfxStar",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isaStar",
+        "Concept",
+        "Concept",
+        [] -- TODO
+      ),
+      ( "isLink",
+        "InterfaceRef",
+        "InterfaceRef",
+        [ (dirtyId ref, dirtyId ref)
+          | ref@InterfaceRef {} <- instanceList fSpec,
+            siIsLink ref
+        ]
+      ),
+      ( "isPublic",
+        "Interface",
+        "Interface",
+        [ (dirtyId ifc, dirtyId ifc)
+          | ifc :: Interface <- instanceList fSpec,
+            null (ifcRoles ifc)
+        ]
+      ),
       ( "label",
         "FieldDef",
         "FieldName",
@@ -476,22 +486,13 @@ transformersFormalAmpersand fSpec =
             fld <- fields obj
         ]
       ),
-      -- ( "language",
-      --   "Context",
-      --   "Language",
-      --
-      --   [ (dirtyId ctx, (PopAlphaNumeric . tshow . ctxlang) ctx)
-      --     | ctx :: A_Context <- instanceList fSpec
-      --   ]
-      -- ),
-      -- ( "language",
-      --   "Markup",
-      --   "Language",
-      --
-      --   [ (dirtyId mrk, (PopAlphaNumeric . tshow . amLang) mrk)
-      --     | mrk :: Markup <- instanceList fSpec
-      --   ]
-      -- ),
+      ( "language",
+        "Markup",
+        "Language",
+        [ (dirtyId mkp, PopAlphaNumeric . tshow . amLang $ mkp)
+          | mkp :: Markup <- instanceList fSpec
+        ]
+      ),
       ( "maintains",
         "Role",
         "Rule",
@@ -506,14 +507,14 @@ transformersFormalAmpersand fSpec =
           | mean :: Meaning <- instanceList fSpec
         ]
       ),
-      -- ( "markup",
-      --   "Purpose",
-      --   "Markup",
-      --
-      --   [ (dirtyId purp, dirtyId . explMarkup $ purp)
-      --     | purp :: Purpose <- instanceList fSpec
-      --   ]
-      -- ),
+      ( "meaning",
+        "ConceptDef",
+        "Meaning",
+        [ (dirtyId cd, dirtyId mean)
+          | cd :: AConceptDef <- instanceList fSpec,
+            mean <- acddef2 cd : acdmean cd
+        ]
+      ),
       ( "meaning",
         "Rule",
         "Meaning",
@@ -528,24 +529,6 @@ transformersFormalAmpersand fSpec =
         [ (dirtyId rul, dirtyId mrkup)
           | rul :: Rule <- instanceList fSpec,
             mrkup <- rrmsg rul
-        ]
-      ),
-      ( "propertyRule",
-        "Relation",
-        "PropertyRule",
-        [ (dirtyId rel, dirtyId rul)
-          | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ proprules ctx,
-            Propty _ rel <- [rrkind rul]
-        ]
-      ),
-      ( "declaredthrough",
-        "PropertyRule",
-        "Property",
-        [ (dirtyId rul, (PopAlphaNumeric . tshow) prop)
-          | ctx :: A_Context <- instanceList fSpec,
-            rul <- Set.elems $ proprules ctx,
-            Propty prop _ <- [rrkind rul]
         ]
       ),
       ( "name",
@@ -605,20 +588,41 @@ transformersFormalAmpersand fSpec =
       --     | vd :: ViewDef <- instanceList fSpec
       --   ]
       -- ),
+      ( "objcruds",
+        "ObjectDef",
+        "Cruds",
+        [ (dirtyId od, PopAlphaNumeric . tshow . objcrud $ od)
+          | od :: ObjectDef <- instanceList fSpec
+        ]
+      ),
+      ( "objDef",
+        "BxExpr",
+        "ObjectDef",
+        [ (dirtyId item, dirtyId obj)
+          | item@BxExpr {objE = obj} <- instanceList fSpec
+        ]
+      ),
+      ( "objSub",
+        "ObjectDef",
+        "SubInterface",
+        [ (dirtyId od, dirtyId si)
+          | od :: ObjectDef <- instanceList fSpec,
+            Just si <- [objmsub od]
+        ]
+      ),
+      ( "objTerm",
+        "ObjectDef",
+        "Term",
+        [ (dirtyId od, dirtyId (objExpression od))
+          | od :: ObjectDef <- instanceList fSpec
+        ]
+      ),
       ( "objView",
         "ObjectDef",
         "View",
         [ (dirtyId obj, PopAlphaNumeric vw)
           | obj :: ObjectDef <- instanceList fSpec,
             Just vw <- [objmView obj]
-        ]
-      ),
-      ( "origin",
-        "ObjectDef",
-        "Origin",
-        [ (dirtyId obj, popatom)
-          | obj :: ObjectDef <- instanceList fSpec,
-            Just popatom <- [originToPopAtom obj]
         ]
       ),
       ( "operator",
@@ -638,6 +642,30 @@ transformersFormalAmpersand fSpec =
         ]
       ),
       ( "origin",
+        "BoxItem",
+        "Origin",
+        [ (dirtyId item, popatom)
+          | item :: BoxItem <- instanceList fSpec,
+            Just popatom <- [originToPopAtom item]
+        ]
+      ),
+      ( "origin",
+        "ObjectDef",
+        "Origin",
+        [ (dirtyId obj, popatom)
+          | obj :: ObjectDef <- instanceList fSpec,
+            Just popatom <- [originToPopAtom obj]
+        ]
+      ),
+      ( "origin",
+        "Purpose",
+        "Origin",
+        [ (dirtyId prp, popatom)
+          | prp :: Purpose <- instanceList fSpec,
+            Just popatom <- [originToPopAtom prp]
+        ]
+      ),
+      ( "origin",
         "Rule",
         "Origin",
         [ (dirtyId rul, popatom)
@@ -645,11 +673,25 @@ transformersFormalAmpersand fSpec =
             Just popatom <- [originToPopAtom rul]
         ]
       ),
-      ( "rrviol",
+      ( "origin",
+        "SubInterface",
+        "Origin",
+        [ (dirtyId si, popatom)
+          | si :: SubInterface <- instanceList fSpec,
+            Just popatom <- [originToPopAtom si]
+        ]
+      ),
+      ( "originatesFrom",
+        "Conjunct",
         "Rule",
-        "PairView",
-        [ (dirtyId rul, dirtyId pv)
-          | rul@Ru {rrviol = Just pv} :: Rule <- instanceList fSpec
+        [] -- TODO
+      ),
+      ( "patRules",
+        "Pattern",
+        "Rule",
+        [ (dirtyId pat, dirtyId rul)
+          | pat :: Pattern <- instanceList fSpec,
+            rul <- Set.toList (ptrls pat)
         ]
       ),
       ( "prop",
@@ -658,6 +700,15 @@ transformersFormalAmpersand fSpec =
         [ (dirtyId rel, PopAlphaNumeric . tshow $ prop)
           | rel :: Relation <- instanceList fSpec,
             prop <- Set.elems $ decprps rel
+        ]
+      ),
+      ( "propertyRule",
+        "Relation",
+        "PropertyRule",
+        [ (dirtyId rel, dirtyId rul)
+          | ctx :: A_Context <- instanceList fSpec,
+            rul <- Set.elems $ proprules ctx,
+            Propty _ rel <- [rrkind rul]
         ]
       ),
       ( "purpose",
@@ -725,6 +776,49 @@ transformersFormalAmpersand fSpec =
             purp <- purposes fSpec vw
         ]
       ),
+      ( "pvsExp",
+        "PairViewSegment",
+        "Term",
+        [ (dirtyId pvs, dirtyId (pvsExp pvs))
+          | pvs@PairViewExp {} :: PairViewSegment Expression <- instanceList fSpec
+        ]
+      ),
+      ( "rc_conjunct",
+        "Conjunct",
+        "Term",
+        [ (dirtyId conj, dirtyId (rc_conjunct conj))
+          | conj :: Conjunct <- instanceList fSpec
+        ]
+      ),
+      ( "references",
+        "InterfaceRef",
+        "Interface",
+        [ (dirtyId ref, dirtyId ifc)
+          | ref@InterfaceRef {} <- instanceList fSpec,
+            ifc :: Interface <- instanceList fSpec,
+            name ifc == siIfcId ref
+        ]
+      ),
+      ( "relsDefdIn",
+        "Relation",
+        "Context", ---contains ALL relations defined in this context
+        [ (dirtyId rel, dirtyId ctx)
+          | ctx :: A_Context <- instanceList fSpec,
+            rel :: Relation <- Set.elems $ relsDefdIn ctx
+        ]
+      ),
+      ( "result",
+        "CombineStrings",
+        "String",
+        [] -- TODO
+      ),
+      ( "rrviol",
+        "Rule",
+        "PairView",
+        [ (dirtyId rul, dirtyId pv)
+          | rul@Ru {rrviol = Just pv} :: Rule <- instanceList fSpec
+        ]
+      ),
       ( "second",
         "BinaryTerm",
         "Term",
@@ -750,16 +844,16 @@ transformersFormalAmpersand fSpec =
         ]
       ),
       ( "showADL",
+        "PairView",
+        "ShowADL",
+        [ (dirtyId pv, PopAlphaNumeric (showA pv))
+          | pv :: PairView Expression <- instanceList fSpec
+        ]
+      ),
+      ( "showADL",
         "Term",
         "ShowADL",
         [ (dirtyId expr, PopAlphaNumeric (showA expr))
-          | expr :: Expression <- instanceList fSpec
-        ]
-      ),
-      ( "sign",
-        "Term",
-        "Signature",
-        [ (dirtyId expr, dirtyId (sign expr))
           | expr :: Expression <- instanceList fSpec
         ]
       ),
@@ -770,6 +864,13 @@ transformersFormalAmpersand fSpec =
           | rel :: Relation <- instanceList fSpec
         ]
       ),
+      ( "sign",
+        "Term",
+        "Signature",
+        [ (dirtyId expr, dirtyId (sign expr))
+          | expr :: Expression <- instanceList fSpec
+        ]
+      ),
       ( "singleton",
         "Singleton",
         "AtomValue",
@@ -777,6 +878,33 @@ transformersFormalAmpersand fSpec =
           | expr :: Expression <- instanceList fSpec,
             Just x <- [singleton expr]
         ]
+      ),
+      ( "siConcept",
+        "Box",
+        "Concept",
+        [ (dirtyId box, dirtyId (siConcept box))
+          | box@Box {} <- instanceList fSpec
+        ]
+      ),
+      ( "siHeader",
+        "Box",
+        "BoxHeader",
+        [ (dirtyId box, dirtyId (siHeader box))
+          | box@Box {} <- instanceList fSpec
+        ]
+      ),
+      ( "siObjs",
+        "Box",
+        "BoxItem",
+        [ (dirtyId bx, dirtyId item)
+          | bx@Box {} <- instanceList fSpec,
+            item <- siObjs bx
+        ]
+      ),
+      ( "snd",
+        "CombineStrings",
+        "String",
+        [] -- TODO
       ),
       ( "source",
         "Relation",
@@ -804,6 +932,20 @@ transformersFormalAmpersand fSpec =
         "Concept",
         [ (dirtyId rel, dirtyId (target rel))
           | rel :: Relation <- instanceList fSpec
+        ]
+      ),
+      ( "text",
+        "BxTxt",
+        "Text",
+        [ (dirtyId item, PopAlphaNumeric (objtxt x))
+          | item@BxTxt {objT = x} <- instanceList fSpec
+        ]
+      ),
+      ( "text",
+        "Markup",
+        "MarkupText",
+        [ (dirtyId mkp, PopAlphaNumeric . stringify . amPandoc $ mkp)
+          | mkp :: Markup <- instanceList fSpec
         ]
       ),
       ( "text",
@@ -908,9 +1050,31 @@ transformersFormalAmpersand fSpec =
         "Interface",
         "Rule",
         [] -- TODO future work
+      ),
+      ( "uses",
+        "Context",
+        "Pattern",
+        [ (dirtyId ctx, dirtyId pat)
+          | ctx :: A_Context <- instanceList fSpec,
+            pat :: Pattern <- instanceList fSpec
+        ]
+      ),
+      ( "valid",
+        "Concept",
+        "Context",
+        [] -- TODO Future work
+      ),
+      ( "valid",
+        "Relation",
+        "Context",
+        [] -- TODO Future work
+      ),
+      ( "valid",
+        "Rule",
+        "Context",
+        [] -- TODO Future work
       )
     ]
-    <> tmpNewTransformerDefsFA fSpec
 
 dirtyIdWithoutType :: (Unique a) => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
@@ -1432,297 +1596,6 @@ decprL, decprM, decprR :: Relation -> Text
 decprL = maybe "" praLeft . decpr
 decprM = maybe "" praMid . decpr
 decprR = maybe "" praRight . decpr
-
-tmpNewTransformerDefsFA :: FSpec -> [Transformer]
-tmpNewTransformerDefsFA fSpec =
-  map
-    toTransformer
-    [ ( "context",
-        "Rule",
-        "Context",
-        [ (dirtyId rul, dirtyId ctx)
-          | ctx :: A_Context <- instanceList fSpec,
-            rul :: Rule <- instanceList fSpec
-        ]
-      ),
-      ( "edit",
-        "FieldDef",
-        "Relation",
-        [] -- TODO Future work
-      ),
-      ( "editFlp",
-        "FieldDef",
-        "Relation",
-        [] -- TODO
-      ),
-      ( "fst",
-        "CombineStrings",
-        "String",
-        [] -- TODO
-      ),
-      ( "ifcQuads",
-        "Interface",
-        "Quad",
-        [] -- TODO future work
-      ),
-      ( "interfaces",
-        "Context",
-        "Interface",
-        [ (dirtyId ctx, dirtyId ifc)
-          | ctx :: A_Context <- instanceList fSpec,
-            ifc :: Interface <- instanceList fSpec
-        ]
-      ),
-      ( "interfaces",
-        "Role",
-        "Interface",
-        [ (dirtyId rol, dirtyId ifc)
-          | ifc :: Interface <- instanceList fSpec,
-            rol <- ifcRoles ifc
-        ]
-      ),
-      ( "isaCopy",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaPlus",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaRfx",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaRfxCopy",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaRfxPlus",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaRfxStar",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "isaStar",
-        "Concept",
-        "Concept",
-        [] -- TODO
-      ),
-      ( "originatesFrom",
-        "Conjunct",
-        "Rule",
-        [] -- TODO
-      ),
-      ( "patRules",
-        "Pattern",
-        "Rule",
-        [ (dirtyId pat, dirtyId rul)
-          | pat :: Pattern <- instanceList fSpec,
-            rul <- Set.toList (ptrls pat)
-        ]
-      ),
-      ( "result",
-        "CombineStrings",
-        "String",
-        [] -- TODO
-      ),
-      ( "snd",
-        "CombineStrings",
-        "String",
-        [] -- TODO
-      ),
-      ( "uses",
-        "Context",
-        "Pattern",
-        [ (dirtyId ctx, dirtyId pat)
-          | ctx :: A_Context <- instanceList fSpec,
-            pat :: Pattern <- instanceList fSpec
-        ]
-      ),
-      ( "valid",
-        "Concept",
-        "Context",
-        [] -- TODO Future work
-      ),
-      ( "valid",
-        "Relation",
-        "Context",
-        [] -- TODO Future work
-      ),
-      ( "valid",
-        "Rule",
-        "Context",
-        [] -- TODO Future work
-      ),
-      ( "siHeader",
-        "Box",
-        "BoxHeader",
-        [ (dirtyId box, dirtyId (siHeader box))
-          | box@Box {} <- instanceList fSpec
-        ]
-      ),
-      ( "siConcept",
-        "Box",
-        "Concept",
-        [ (dirtyId box, dirtyId (siConcept box))
-          | box@Box {} <- instanceList fSpec
-        ]
-      ),
-      ( "objcruds",
-        "ObjectDef",
-        "Cruds",
-        [ (dirtyId od, PopAlphaNumeric . tshow . objcrud $ od)
-          | od :: ObjectDef <- instanceList fSpec
-        ]
-      ),
-      ( "objSub",
-        "ObjectDef",
-        "SubInterface",
-        [ (dirtyId od, dirtyId si)
-          | od :: ObjectDef <- instanceList fSpec,
-            Just si <- [objmsub od]
-        ]
-      ),
-      ( "objTerm",
-        "ObjectDef",
-        "Term",
-        [ (dirtyId od, dirtyId (objExpression od))
-          | od :: ObjectDef <- instanceList fSpec
-        ]
-      ),
-      ( "origin",
-        "SubInterface",
-        "Origin",
-        [ (dirtyId si, popatom)
-          | si :: SubInterface <- instanceList fSpec,
-            Just popatom <- [originToPopAtom si]
-        ]
-      ),
-      ( "siObjs",
-        "Box",
-        "BoxItem",
-        [ (dirtyId bx, dirtyId item)
-          | bx@Box {} <- instanceList fSpec,
-            item <- siObjs bx
-        ]
-      ),
-      ( "isLink",
-        "InterfaceRef",
-        "InterfaceRef",
-        [ (dirtyId ref, dirtyId ref)
-          | ref@InterfaceRef {} <- instanceList fSpec,
-            siIsLink ref
-        ]
-      ),
-      ( "references",
-        "InterfaceRef",
-        "Interface",
-        [ (dirtyId ref, dirtyId ifc)
-          | ref@InterfaceRef {} <- instanceList fSpec,
-            ifc :: Interface <- instanceList fSpec,
-            name ifc == siIfcId ref
-        ]
-      ),
-      ( "origin",
-        "BoxItem",
-        "Origin",
-        [ (dirtyId item, popatom)
-          | item :: BoxItem <- instanceList fSpec,
-            Just popatom <- [originToPopAtom item]
-        ]
-      ),
-      ( "concept",
-        "ConceptDef",
-        "Concept",
-        [ (dirtyId cd, dirtyId cpt)
-          | cd :: AConceptDef <- instanceList fSpec,
-            cpt :: A_Concept <- instanceList fSpec,
-            name cpt == name cd
-        ]
-      ),
-      ( "objDef",
-        "BxExpr",
-        "ObjectDef",
-        [ (dirtyId item, dirtyId obj)
-          | item@BxExpr {objE = obj} <- instanceList fSpec
-        ]
-      ),
-      ( "text",
-        "BxTxt",
-        "Text",
-        [ (dirtyId item, PopAlphaNumeric (objtxt x))
-          | item@BxTxt {objT = x} <- instanceList fSpec
-        ]
-      ),
-      ( "meaning",
-        "ConceptDef",
-        "Meaning",
-        [ (dirtyId cd, dirtyId mean)
-          | cd :: AConceptDef <- instanceList fSpec,
-            mean <- acddef2 cd : acdmean cd
-        ]
-      ),
-      ( "language",
-        "Markup",
-        "Language",
-        [ (dirtyId mkp, PopAlphaNumeric . tshow . amLang $ mkp)
-          | mkp :: Markup <- instanceList fSpec
-        ]
-      ),
-      ( "text",
-        "Markup",
-        "MarkupText",
-        [ (dirtyId mkp, PopAlphaNumeric . stringify . amPandoc $ mkp)
-          | mkp :: Markup <- instanceList fSpec
-        ]
-      ),
-      ( "explMarkup",
-        "Purpose",
-        "Markup",
-        [ (dirtyId prp, dirtyId (explMarkup prp))
-          | prp :: Purpose <- instanceList fSpec
-        ]
-      ),
-      ( "origin",
-        "Purpose",
-        "Origin",
-        [ (dirtyId prp, popatom)
-          | prp :: Purpose <- instanceList fSpec,
-            Just popatom <- [originToPopAtom prp]
-        ]
-      ),
-      ( "explRefIds",
-        "Purpose",
-        "Text",
-        [ (dirtyId prp, PopAlphaNumeric txt)
-          | prp :: Purpose <- instanceList fSpec,
-            txt <- explRefIds prp
-        ]
-      ),
-      ( "decMean",
-        "Relation",
-        "Meaning",
-        [ (dirtyId rel, dirtyId mean)
-          | rel :: Relation <- instanceList fSpec,
-            mean <- decMean rel
-        ]
-      ),
-      ( "showADL",
-        "PairView",
-        "ShowADL",
-        [ (dirtyId pv, PopAlphaNumeric (showA pv))
-          | pv :: PairView Expression <- instanceList fSpec
-        ]
-      )
-    ]
 
 originToPopAtom :: (Traced a) => a -> Maybe PopAtom
 originToPopAtom x = case origin x of
