@@ -137,7 +137,7 @@ checkPrototypeContextTransformers env x =
         . T.intercalate "\n  "
         $ ["PrototypeContext script does not compile:"]
         <> T.lines (tshow err)
-    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+    Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
 compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
@@ -216,7 +216,7 @@ grindInto metamodel specification = do
                   FormalAmpersand -> transformersFormalAmpersand <$> specification
                   PrototypeContext -> transformersPrototypeContext <$> specification
               )
-        filtered <- filter (not . null . tPairs) <$> transformers
+        filtered  <- filter (not . null . tPairs) <$> transformers
         guardedFSpecOfMetaModel <- pCtx2Fspec env <$> pContextOfMetaModel
         fSpecOfMetaModel <- guardedFSpecOfMetaModel
         specName <- name <$> specification
