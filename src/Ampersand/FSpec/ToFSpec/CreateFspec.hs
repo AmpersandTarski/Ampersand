@@ -216,7 +216,7 @@ grindInto metamodel specification = do
                   FormalAmpersand -> transformersFormalAmpersand <$> specification
                   PrototypeContext -> transformersPrototypeContext <$> specification
               )
-        filtered  <- filter (not . null . tPairs) <$> transformers
+        filtered <- filter (not . null . tPairs) <$> transformers
         guardedFSpecOfMetaModel <- pCtx2Fspec env <$> pContextOfMetaModel
         fSpecOfMetaModel <- guardedFSpecOfMetaModel
         specName <- name <$> specification
