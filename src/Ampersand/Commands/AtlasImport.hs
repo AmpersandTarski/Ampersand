@@ -19,6 +19,7 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
   ( BoxHeader (..),
+    DefinitionContainer (..),
     EnforceOperator (..),
     MetaData (..),
     Origin (OriginAtlas),
@@ -89,13 +90,13 @@ myDecode = JSON.eitherDecode
 instance JSON.FromJSON P_Context where
   parseJSON :: JSON.Value -> JSON.Parser P_Context
   parseJSON val = case val of
-    JSON.Object v ->
-      build
+    JSON.Object v -> do
+      ctxName <- textToNameInJSON ContextName <$> v JSON..: "name"
+      build ctxName
         <$> v
-        JSON..: "name" -- name of the context
+        JSON..:? "label" -- the LABEL field
         <*> v
-        JSON..: "patterns"
-        -- <*> v JSON..: "interfaces"
+        JSON..: "patterns" -- <*> v JSON..: "interfaces"
         <*> v
         JSON..: "conceptsCtx" -- alle concepten met definitie
         <*> v
@@ -121,9 +122,10 @@ instance JSON.FromJSON P_Context where
       -- build :: Text -> [P_Pattern] -> [P_Relation] -> [PConceptDef] -> [P_Rule TermPrim] -> [PPurpose] -> P_Context
       -- build nm pats rels cptdef rules =
       build ::
-        Text ->
+        Name ->
+        Maybe Text ->
         [P_Pattern] ->
-        [PConceptDef] ->
+        [DefinitionContainer -> PConceptDef] ->
         [Representation] ->
         [P_Rule TermPrim] ->
         -- [P_Enforce TermPrim] ->
@@ -133,7 +135,7 @@ instance JSON.FromJSON P_Context where
         Maybe Lang ->
         [P_IdentDef] ->
         P_Context
-      build nm pats cpts reprs rules rolerules rels prps lang ident =
+      build nm lbl pats cpts reprs rules rolerules rels prps lang ident =
         -- build nm pats cpts reprs rules enforce rolerules rels prps lang ident =
         PCtx
           { ctx_vs = [],
@@ -145,6 +147,7 @@ instance JSON.FromJSON P_Context where
             ctx_pops = [], -- niet in RAP
             ctx_pats = pats,
             ctx_nm = nm,
+            ctx_lbl = textToLabelInJSON <$> lbl,
             ctx_metas = [], -- staat klaar
             ctx_markup = Nothing,
             ctx_lang = lang,
@@ -153,16 +156,17 @@ instance JSON.FromJSON P_Context where
             ctx_gs = [], -- staat klaar
             ctx_enfs = [], -- enforce, niet mogelijk met deze versie
             ctx_ds = rels, -- rels,
-            ctx_cs = cpts -- cptdef
+            ctx_cs = map (\cpt -> cpt (CONTEXT nm)) cpts -- cptdef
           }
 
 instance JSON.FromJSON P_Pattern where
   parseJSON :: JSON.Value -> JSON.Parser P_Pattern
   parseJSON val = case val of
-    JSON.Object v ->
-      build
+    JSON.Object v -> do
+      patName <- textToNameInJSON PatternName <$> v JSON..: "name"
+      build patName
         <$> v
-        JSON..: "name" -- name of the patterns
+        JSON..:? "label" -- name of the patterns
         <*> v
         JSON..: "relations"
         <*> v
@@ -178,16 +182,25 @@ instance JSON.FromJSON P_Pattern where
         "parsing P_PAttern failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> [P_Relation] -> [PConceptDef] -> [Representation] -> [P_Rule TermPrim] -> [PPurpose] -> P_Pattern
-      build nm rels cptdef reprs rules prps =
+      build ::
+        Name ->
+        Maybe Text ->
+        [P_Relation] ->
+        [DefinitionContainer -> PConceptDef] ->
+        [Representation] ->
+        [P_Rule TermPrim] ->
+        [PPurpose] ->
+        P_Pattern
+      build nm lbl rels cpts reprs rules prps =
         P_Pat
           { pos = OriginAtlas,
             pt_nm = nm,
+            pt_lbl = textToLabelInJSON <$> lbl,
             pt_rls = rules,
             pt_gns = [], -- staat klaar
             pt_dcs = rels,
             pt_RRuls = [], -- not specified in RAP
-            pt_cds = cptdef,
+            pt_cds = map (\cpt -> cpt (PATTERN nm)) cpts,
             pt_Reprs = reprs,
             pt_ids = [],
             pt_vds = [],
@@ -197,25 +210,28 @@ instance JSON.FromJSON P_Pattern where
             pt_enfs = []
           }
 
-instance JSON.FromJSON PConceptDef where
+instance JSON.FromJSON (DefinitionContainer -> PConceptDef) where
   parseJSON val = case val of
     JSON.Object v -> do
       build
         <$> v
         JSON..: "name"
+        <*> v
+        JSON..:? "label"
         <*> (v JSON..: "definition" >>= JSON.parseJSON)
     invalid ->
       JSON.prependFailure
         "parsing PConceptDef failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> PCDDef -> PConceptDef
-      build cpt def =
+      build :: Text -> Maybe Text -> PCDDef -> DefinitionContainer -> PConceptDef
+      build nm lbl def x =
         PConceptDef
-          { cdcpt = cpt,
+          { cdname = textToNameInJSON ConceptName nm,
+            cdlbl = textToLabelInJSON <$> lbl,
             cddef2 = def,
             cdmean = [], -- [PMeaning $ P_Markup Nothing Nothing ""] -- Insert a generic meaning / todo: change out with proper meanign
-            cdfrom = "", -- Ignored as instructed -- todo: make from
+            cdfrom = x,
             pos = OriginAtlas
           }
 
@@ -230,7 +246,6 @@ instance JSON.FromJSON PCDDef where
     where
       build :: Text -> PCDDef
       build def = PCDDefNew (PMeaning $ P_Markup Nothing Nothing def)
-
       parseArrayToText :: RIO.Vector JSON.Value -> Maybe Text
       parseArrayToText arr = case listToMaybe (toList arr) of
         Just (JSON.String txt) -> Just txt
@@ -239,9 +254,8 @@ instance JSON.FromJSON PCDDef where
 instance JSON.FromJSON P_Concept where
   parseJSON :: JSON.Value -> JSON.Parser P_Concept
   parseJSON (JSON.Object v) =
-    PCpt <$> v JSON..: "concept"
-  parseJSON (JSON.String txt) =
-    pure (PCpt txt)
+    (PCpt . textToNameInJSON ConceptName <$> (v JSON..: "name"))
+      <*> ((v JSON..:? "label") <&> fmap textToLabelInJSON)
   parseJSON invalid =
     JSON.prependFailure
       "parsing P_Concept failed, "
@@ -336,6 +350,8 @@ instance JSON.FromJSON P_Relation where
         <$> v
         JSON..: "relation"
         <*> v
+        JSON..:? "label"
+        <*> v
         JSON..: "sign"
         <*> v
         JSON..: "properties"
@@ -346,13 +362,14 @@ instance JSON.FromJSON P_Relation where
         "parsing P_Relation failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> P_Sign -> PProps -> [PMeaning] -> P_Relation
-      build nm sig prps mean =
+      build :: Text -> Maybe Text -> P_Sign -> PProps -> [PMeaning] -> P_Relation
+      build nm lbl sig prps mean =
         P_Relation
           { dec_sign = sig,
             dec_prps = prps,
             dec_pragma = Nothing,
-            dec_nm = nm,
+            dec_nm = textToNameInJSON RelationName nm,
+            dec_label = textToLabelInJSON <$> lbl,
             dec_defaults = [],
             dec_Mean = mean,
             pos = OriginAtlas
@@ -397,6 +414,8 @@ instance JSON.FromJSON (P_Rule TermPrim) where
         <$> v
         JSON..: "name"
         <*> v
+        JSON..:? "label"
+        <*> v
         JSON..: "formexp"
         <*> v
         JSON..: "meaning" -- This should parse an array of `PMeaning`
@@ -407,11 +426,12 @@ instance JSON.FromJSON (P_Rule TermPrim) where
         "parsing P_Rule failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> Text -> [PMeaning] -> [PMessage] -> P_Rule TermPrim
-      build nm formexp mean msg =
+      build :: Text -> Maybe Text -> Text -> [PMeaning] -> [PMessage] -> P_Rule TermPrim
+      build nm lbl formexp mean msg =
         P_Rule
           { pos = OriginAtlas,
-            rr_nm = nm,
+            rr_nm = textToNameInJSON RuleName nm,
+            rr_lbl = textToLabelInJSON <$> lbl,
             rr_exp = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
               Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
               Checked term _ -> term,
@@ -494,14 +514,14 @@ instance JSON.FromJSON PPurpose where
 instance JSON.FromJSON PRef2Obj where
   parseJSON val = case val of
     JSON.Object v ->
-      (PRef2ConceptDef <$> parseFirstField v "conceptPurp")
+      (PRef2ConceptDef <$> parseFirstField ConceptName v "conceptPurp")
         <|> (v JSON..:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
-        <|> (PRef2Rule <$> parseFirstField v "rulePurp")
-        <|> (PRef2IdentityDef <$> parseFirstField v "identPurp")
-        <|> (PRef2ViewDef <$> parseFirstField v "viewPurp")
-        <|> (PRef2Pattern <$> parseFirstField v "patternPurp")
-        <|> (PRef2Interface <$> parseFirstField v "interfacePurp")
-        <|> (PRef2Context <$> parseFirstField v "contextPurp")
+        <|> (PRef2Rule <$> parseFirstField RuleName v "rulePurp")
+        <|> (PRef2IdentityDef <$> parseFirstField IdentName v "identPurp")
+        <|> (PRef2ViewDef <$> parseFirstField ViewName v "viewPurp")
+        <|> (PRef2Pattern <$> parseFirstField PatternName v "patternPurp")
+        <|> (PRef2Interface <$> parseFirstField InterfaceName v "interfacePurp")
+        <|> (PRef2Context <$> parseFirstField ContextName v "contextPurp")
         <|> fail "PRef2Obj niet kunnen parsen, geen veld gevonden" -- todo: betere fail statement
     invalid ->
       JSON.prependFailure
@@ -512,14 +532,14 @@ instance JSON.FromJSON PRef2Obj where
       build (Just rel) = pure $ PRef2Relation rel
       build Nothing = fail "relationPurp list is empty"
 
-parseFirstField :: JSON.Object -> Text -> JSON.Parser Text
-parseFirstField obj key = do
+parseFirstField :: NameType -> JSON.Object -> Text -> JSON.Parser Name
+parseFirstField typ obj key = do
   let jsonKey = fromText key
   maybeValues <- obj JSON..:? jsonKey
   case maybeValues of
     Just (JSON.Array arr) ->
       case listToMaybe (toList arr) of
-        Just (JSON.String txt) -> return txt
+        Just (JSON.String txt) -> return $ textToNameInJSON typ txt
         _ -> mzero
     _ -> mzero
 
@@ -532,7 +552,7 @@ instance JSON.FromJSON P_NamedRel where
     JSON.Object v ->
       build
         <$> v
-        JSON..: "relation" -- moet hier niet name?
+        JSON..: "name"
         <*> v
         JSON..: "sign"
     -- <*> v JSON..: "reference"
@@ -543,10 +563,10 @@ instance JSON.FromJSON P_NamedRel where
         (JSON.typeMismatch "Object" invalid)
     where
       build :: Text -> Maybe P_Sign -> P_NamedRel
-      build txt sgn =
+      build nm sgn =
         PNamedRel
           { pos = OriginAtlas,
-            p_nrnm = txt, -- name of Relation
+            p_nrnm = textToNameInJSON RelationName nm, -- name of Relation
             p_mbSign = sgn -- Sign of relation
           }
 
@@ -560,21 +580,21 @@ instance JSON.FromJSON P_IdentDef where
   parseJSON val = case val of
     JSON.Object v ->
       build
-        <$> v
-        JSON..: "name"
+        <$> (v JSON..: "name")
+        <*> (v JSON..:? "label")
         <*> (v JSON..: "concept")
-        <*> v
-        JSON..: "ident"
+        <*> (v JSON..: "ident")
     invalid ->
       JSON.prependFailure
         "parsing P_Rule failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> P_Concept -> P_IdentSegmnt TermPrim -> P_IdentDf TermPrim
-      build lbl cpt ident =
+      build :: Text -> Maybe Text -> P_Concept -> P_IdentSegmnt TermPrim -> P_IdentDf TermPrim
+      build nm lbl cpt ident =
         P_Id
           { pos = OriginAtlas,
-            ix_lbl = lbl,
+            ix_name = textToNameInJSON IdentName nm,
+            ix_label = textToLabelInJSON <$> lbl,
             ix_cpt = cpt,
             ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
           }
@@ -614,8 +634,9 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
       -- buildExpr nm formexp crud view sub =
       buildExpr :: Text -> Text -> Maybe P_Cruds -> Maybe Text -> P_BoxItem TermPrim
       buildExpr nm formexp crud _view =
-        P_BxExpr
-          { obj_nm = T.empty, -- todo: deze wordt niet meegegeven aan RAP
+        P_BoxItemTerm
+          { obj_PlainName = Nothing,
+            obj_lbl = Nothing,
             pos = OriginAtlas,
             obj_ctx = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
               Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
@@ -627,9 +648,11 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
       buildTxt :: Text -> Text -> P_BoxItem a
       buildTxt nm txt =
         P_BxTxt
-          { obj_nm = nm,
+          { obj_PlainName = case T.uncons nm of
+              Nothing -> Nothing
+              Just (h, tl) -> Just (Text1 h tl),
             pos = OriginAtlas,
-            obj_txt = txt
+            box_txt = txt
           }
 
 instance JSON.FromJSON P_Cruds where -- niet in gebruik
@@ -637,6 +660,7 @@ instance JSON.FromJSON P_Cruds where -- niet in gebruik
   parseJSON val = case val of
     JSON.Object v ->
       P_Cruds OriginAtlas
+        . toText1Unsafe
         <$> v
         JSON..: "crud"
     invalid ->
@@ -697,7 +721,7 @@ instance JSON.FromJSON BoxHeader where
       build ttype keys =
         BoxHeader
           { pos = OriginAtlas,
-            btType = ttype,
+            btType = toText1Unsafe ttype, -- TODO:Add Guarded to JSON parser!
             btKeys = keys
           }
 
@@ -719,7 +743,7 @@ instance JSON.FromJSON TemplateKeyValue where
       build ttype kval =
         TemplateKeyValue
           { pos = OriginAtlas,
-            tkkey = ttype,
+            tkkey = toText1Unsafe ttype, -- TODO:Add Guarded to JSON parser!
             tkval = kval
           }
 
@@ -802,7 +826,7 @@ instance JSON.FromJSON MetaData where
       build nm value =
         MetaData
           { pos = OriginAtlas,
-            mtName = nm,
+            mtName = toText1Unsafe nm, -- TODO:Add Guarded to JSON parser!
             mtVal = value
           }
 
@@ -824,11 +848,33 @@ instance JSON.FromJSON P_RoleRule where
         Maintain
           { pos = OriginAtlas,
             mRoles = role NE.:| [],
-            mRules = neRules
+            mRules = textToNameInJSON RuleName <$> neRules
           }
 
 instance JSON.FromJSON Role where
   parseJSON = JSON.withObject "role" $ \v ->
-    (Role <$> v JSON..: "role")
-      <|> (Service <$> v JSON..: "service")
+    ( (Role OriginAtlas . textToNameInJSON RoleName <$> (v JSON..: "role"))
+        <*> ((v JSON..:? "label") <&> fmap textToLabelInJSON)
+        <*> pure True
+    )
+      <|> ( (Role OriginAtlas . textToNameInJSON RoleName <$> (v JSON..: "service"))
+              <*> ((v JSON..:? "label") <&> fmap textToLabelInJSON)
+              <*> pure False
+          )
       <|> fail "Unknown or incomplete Role"
+
+textToLabelInJSON :: Text -> Label
+textToLabelInJSON = Label
+
+textToNameInJSON :: NameType -> Text -> Name
+textToNameInJSON a txt =
+  case T.uncons txt of
+    Nothing -> fatal "ERROR parsing JSON: Name must nog be empty"
+    Just (h, tl) -> mkName a . toNamePart' $ Text1 h tl
+      where
+        toNamePart' :: Text1 -> NonEmpty NamePart
+        toNamePart' x = toNamePart'' <$> splitOnDots x
+        toNamePart'' :: Text1 -> NamePart
+        toNamePart'' x = case toNamePart1 x of
+          Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
+          Just np -> np

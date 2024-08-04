@@ -1399,7 +1399,7 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
       P_Rfx -> [Rfx]
       P_Irf -> [Irf]
       P_Prop -> [Sym, Asy]
-      P_Fun -> [Uni, Tot]
+      P_Map -> [Uni, Tot]
       P_Bij -> [Inj, Sur]
 
     decSign = pSign2aSign cptMap (dec_sign pd)
