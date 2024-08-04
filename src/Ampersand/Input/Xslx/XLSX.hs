@@ -271,7 +271,6 @@ instance Show SheetCellsForTable where -- for debugging only
 
 toPops ::
   (HasTrimXLSXOpts env) =>
-  -- |
   env ->
   NameSpace ->
   -- | The file name is needed for displaying errors in context

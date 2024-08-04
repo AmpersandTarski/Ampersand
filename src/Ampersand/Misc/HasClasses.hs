@@ -32,7 +32,7 @@ instance HasTrimXLSXOpts AtlasImportOpts where
   trimXLSXCellsL :: Lens' AtlasImportOpts Bool
   trimXLSXCellsL = lens x1trimXLSXCells (\x y -> x {x1trimXLSXCells = y})
 
-instance HasFSpecGenOpts a => HasTrimXLSXOpts a where
+instance (HasFSpecGenOpts a) => HasTrimXLSXOpts a where
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x {xtrimXLSXCells = y})
 
@@ -500,7 +500,7 @@ instance HasOptions TestOpts where
 
 data AtlasImportOpts = AtlasImportOpts
   { x1trimXLSXCells :: !Bool,
-    inputFile :: !FilePath, --relative path to file containing the population of the Atlas
+    inputFile :: !FilePath, -- relative path to file containing the population of the Atlas
     xoutputFile :: !FilePath
   }
   deriving (Show)
