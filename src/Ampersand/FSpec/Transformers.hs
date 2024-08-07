@@ -738,7 +738,10 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.segment",
         "FormalAmpersand.PairView",
         "FormalAmpersand.PairViewSegment",
-        [] -- TODO
+        [ (dirtyId' pv, dirtyId' pvs)
+          | pv :: PairView Expression <- instanceList fSpec,
+            pvs <- NE.toList . ppv_segs $ pv
+        ]
       ),
       ( "FormalAmpersand.sequenceNr",
         "FormalAmpersand.PairViewSegment",
