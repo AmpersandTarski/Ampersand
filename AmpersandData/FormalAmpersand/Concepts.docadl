@@ -2,26 +2,45 @@ CONTEXT FormalAmpersand IN ENGLISH
 
 -- TODO add purposes for the metamodel of concepts
 
-PATTERN Pairs
-    RELATION in[Pair*Relation] [UNI,TOT]
-    RELATION lAtom[Pair*Atom] [UNI,TOT]
-    RELATION rAtom[Pair*Atom] [UNI,TOT]
+PATTERN Concepts
+    VIEW FormalAmpersand.Concept: FormalAmpersand.Concept(FormalAmpersand.name)
+    RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [TOT,SUR] --Not UNI because of aliases
+      ROLE ExecEngine MAINTAINS "del unused ConceptName"
+      RULE "del unused ConceptName" : I[FormalAmpersand.ConceptName] |- FormalAmpersand.name~;FormalAmpersand.name
+      MEANING "A ConceptName without Concept will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptName;", SRC I )
+    
+    IDENT FormalAmpersand.Concept : FormalAmpersand.Concept(FormalAmpersand.name,FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context])
+
+    RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
+    MEANING "Every relation has a name by which it can be referenced within its Context(s)."
+    RELATION FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
+    RELATION FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
+
+    REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
+    CLASSIFY FormalAmpersand.ConceptName, FormalAmpersand.RelationName ISA FormalAmpersand.Name
+    RELATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
+ENDPATTERN
+PATTERN FormalAmpersand.Pairs
+    RELATION FormalAmpersand.in[FormalAmpersand.Pair*FormalAmpersand.Relation] [UNI,TOT]
+    RELATION FormalAmpersand.lAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
+    RELATION FormalAmpersand.rAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
 ENDPATTERN
 
 --    RULE IdentifiabilityConcepts : name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
-PATTERN Specialization
+PATTERN FormalAmpersand.Specialization
 --    VIEW Isa: Isa( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
 --    RULE eqGen : gengen;gengen~ /\ genspc;genspc~ |- I
 --    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 -- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
-    RELATION gengen[Isa*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.gengen[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
-    RELATION genspc[Isa*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.genspc[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
-    RELATION gengen[IsE*Concept] [TOT]
+    RELATION FormalAmpersand.gengen[FormalAmpersand.IsE*FormalAmpersand.Concept] [TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
-    RELATION genspc[IsE*Concept] [UNI,TOT]
+    RELATION FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
 
 --PURPOSE RULE specialization
@@ -34,4 +53,57 @@ PATTERN Specialization
 
 ENDPATTERN
 
+
+PATTERN "Compute Closures"
+    RELATION isa[Concept*Concept] [ASY]
+    MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+    RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
+    MEANING "s isaStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."
+    RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
+    MEANING "s isaPlus g  means that each element of concept  s  is an element of concept  g  as well."
+
+    RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+    RULE "Compute transitive closure of isa" : isa[Concept*Concept] = isaCopy[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} TransitiveClosure;isa[Concept*Concept];Concept;isaCopy[Concept*Concept];isaPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+ENDPATTERN
+
+PATTERN "Reflexive isa closures"
+    RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
+    MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
+    RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
+    MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
+
+    RELATION isaRfx[Concept*Concept] -- isaRfx[Concept*Concept]=isa[Concept*Concept]\/isa[Concept*Concept]~
+    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
+    RULE "Compute isaRfxIns" : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} InsPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxDel" : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} DelPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+
+    RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~"
+    RULE "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~" : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} TransitiveClosure;isaRfx[Concept*Concept];Concept;isaRfxCopy[Concept*Concept];isaRfxPlus[Concept*Concept]")
+
+    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} InsPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
+    MEANING "TODO: MEANING ONTBREEKT"
+    VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+ENDPATTERN
 ENDCONTEXT

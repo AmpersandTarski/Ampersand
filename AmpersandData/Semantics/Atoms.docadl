@@ -42,7 +42,6 @@ Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 10
 Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things.
 (Ask yourself ``Which joys are there?'' or ``Which peaces are there?'' when you doubt whether joy and peace are things to collect in a set.)
 +}
-CONCEPT Concept "A concept is a name to characterize a set of similar things."
 
 PURPOSE CONCEPT Relation
 {+
@@ -50,7 +49,7 @@ In order to define a domain language, which business stakeholders can agree on, 
 Relations are equally useful as the basic element of a formal language, which computers can understand.
 For now, relations can be treated as a set of pairs.
 +}
-CONCEPT Relation "A relation is a set of pairs."
+
 
 PURPOSE CONCEPT Pair
 {+
@@ -85,9 +84,9 @@ In the current version of Ampersand, every atom is represented by a finite list 
 In future versions, other types of representation will become possible.
 +}
 
-PURPOSE RELATION name[Relation*Identifier]
+PURPOSE RELATION name[Relation*Name]
 {+Each relation has a name, provided by the Ampersand-programmer.
-This name has no meaning in the language.
+This name is used in conjunction with its signature to identify a relation.
 Therefore, the Ampersand-programmer can invent a name that can serve as a reminder of the meaning or purpose of that relation.
 For example, a relation that links a bank's customers to account numbers might be called ``customerAccount'' for this very reason.
 Ampersand has the convention that relation names start with a lowercase letter.

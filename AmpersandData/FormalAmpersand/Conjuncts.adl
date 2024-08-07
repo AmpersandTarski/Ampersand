@@ -1,33 +1,33 @@
 CONTEXT FormalAmpersand IN ENGLISH LATEX
 PATTERN Conjuncts
-    RELATION allConjuncts[Context*Conjunct] [INJ]
+    RELATION FormalAmpersand.allConjuncts[FormalAmpersand.Context*FormalAmpersand.Conjunct] [INJ]
     MEANING "All conjuncts in a context."
-    RELATION allShifts[DnfClause*DnfClause]
-    RELATION conjNF[Term*Term] [UNI,TOT]
-    RELATION rcConjunct[Conjunct*Term] [TOT]
-    RELATION conjuncts[Rule*Term]
-    RELATION exprIsc2list[Term*Term] [TOT]
-    RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]
-    RELATION name[Rule*RuleName] [UNI,TOT]
-    RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
-    RELATION qRule[Quad*Rule] [UNI,TOT]
-    RELATION qConjuncts[Quad*Conjunct]
-    RELATION rc_orgRules[Conjunct*RuleName] [UNI,TOT]
-    RELATION rcConjunct[Conjunct*Term] [UNI,TOT]
-    RELATION rc_dnfClauses[Conjunct*DnfClause]
-    RELATION term[Rule*Term][UNI,TOT] --is defined somewhere else too.
+    RELATION FormalAmpersand.allShifts[FormalAmpersand.DnfClause*FormalAmpersand.DnfClause]
+    RELATION FormalAmpersand.conjNF[FormalAmpersand.Term*FormalAmpersand.Term] [UNI,TOT]
+    RELATION FormalAmpersand.rc_conjunct[FormalAmpersand.Conjunct*FormalAmpersand.Term] [TOT]
+    RELATION FormalAmpersand.conjuncts[FormalAmpersand.Rule*FormalAmpersand.Term]
+    RELATION FormalAmpersand.exprIsc2list[FormalAmpersand.Term*FormalAmpersand.Term] [TOT]
+    RELATION FormalAmpersand.expr2dnfClause[FormalAmpersand.Term*FormalAmpersand.DnfClause] [UNI,TOT]
+    RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] [UNI,TOT]
+    RELATION FormalAmpersand.originatesFrom[FormalAmpersand.Conjunct*FormalAmpersand.Rule] [TOT] -- rule where the conjunct originates from.
+    RELATION FormalAmpersand.qRule[FormalAmpersand.Quad*FormalAmpersand.Rule] [UNI,TOT]
+    RELATION FormalAmpersand.qConjuncts[FormalAmpersand.Quad*FormalAmpersand.Conjunct]
+    RELATION FormalAmpersand.rc_orgRules[FormalAmpersand.Conjunct*FormalAmpersand.RuleName] [UNI,TOT]
+    RELATION FormalAmpersand.rc_conjunct[FormalAmpersand.Conjunct*FormalAmpersand.Term] [UNI,TOT]
+    RELATION FormalAmpersand.rc_dnfClauses[FormalAmpersand.Conjunct*FormalAmpersand.DnfClause]
+    RELATION FormalAmpersand.term[FormalAmpersand.Rule*FormalAmpersand.Term][FormalAmpersand.UNI,TOT] --is defined somewhere else too.
 
 
-    RULE Conjuncts1 : qConjuncts;rcConjunct |- qRule;conjuncts
+    RULE FormalAmpersand.Conjuncts1 : FormalAmpersand.qConjuncts;FormalAmpersand.rc_conjunct |- FormalAmpersand.qRule;FormalAmpersand.conjuncts
     MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."
 
-    RULE Conjuncts2 : rcConjunct~;rc_dnfClauses = expr2dnfClause;allShifts
+    RULE FormalAmpersand.Conjuncts2 : FormalAmpersand.rc_conjunct~;FormalAmpersand.rc_dnfClauses = FormalAmpersand.expr2dnfClause;FormalAmpersand.allShifts
     MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the term in that conjunct."
 
-    RULE defconjuncts : conjuncts = term[Rule*Term];conjNF;exprIsc2list
+    RULE FormalAmpersand.defconjuncts : FormalAmpersand.conjuncts = FormalAmpersand.term[FormalAmpersand.Rule*FormalAmpersand.Term];FormalAmpersand.conjNF;FormalAmpersand.exprIsc2list
     MEANING "The conjuncts in a rule are defined as the top-level subterms in the conjunctive normal form of the term related to that rule."
 
-    RULE Conjuncts4 : qConjuncts~;qRule |- rc_orgRules;name[Rule*RuleName] ~
+    RULE FormalAmpersand.Conjuncts4 : FormalAmpersand.qConjuncts~;FormalAmpersand.qRule |- FormalAmpersand.rc_orgRules;FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] ~
     MEANING "The name of every conjunct in a quad is the name of the rule from which it has been derived."
 ENDPATTERN
 ENDCONTEXT

@@ -64,14 +64,6 @@ Ampersand and semantic web technologies have much in common. To explore this top
 ![An extra parser, specifically for OWL/RDFS](./assets/untitled-diagram-7%20%281%29.png)
 
 
-## Refactor the front-end
-To generate reactive web-applications instead of a classical object-oriented web-application is why we want to refactor the Ampersand front-end.
-The current front-end is based on the Angular-JS framework. To enter the world of reactive programming, we want to refactor the front-end.
-
-![Refactoring the front-end (pink items)](<./assets/untitled-diagram-6.png>)
-This issue is currently underway, sponsored in kind by Ordina. We expect the first results in the summer of 2023.
-
-
 ## Allow GraphQL on the back-end
 GraphQL and Ampersand share the theory of triples. This makes it obvious to build an API that speaks GraphQL.
 

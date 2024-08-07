@@ -9,10 +9,10 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Daemon.Types
-import Ampersand.FSpec.MetaModels
+import Ampersand.FSpec.ToFSpec.CreateFspec (pCtx2Fspec)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.Parsing
-import Ampersand.Misc.HasClasses (HasDaemonOpts (..), HasRootFile (..), Roots (..), rootFileL, showWarningsL)
+import Ampersand.Misc.HasClasses (HasDaemonOpts (..), HasRootFile (..), HasTrimXLSXOpts, Roots (..), rootFileL, showWarningsL)
 import Ampersand.Types.Config
 import qualified RIO.NonEmpty as NE
 
@@ -21,7 +21,7 @@ import qualified RIO.NonEmpty as NE
 --   fail. It will return a tuple containing the Loads and a list of
 --   the filepaths that are read.
 parseProject ::
-  (HasDaemonOpts env, HasRunner env) =>
+  (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   FilePath ->
   RIO env ([Load], [FilePath])
 parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do

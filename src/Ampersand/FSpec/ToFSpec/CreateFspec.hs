@@ -7,6 +7,7 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
     --  , StartContext(..)
     --  , MetaModel(..)
     createFspec,
+    pCtx2Fspec,
     --  , script
     --  , merge
     --  , andThen
@@ -14,13 +15,20 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
+import Ampersand.Core.A2P_Converters (aRelation2pRelation)
+import Ampersand.Core.ParseTree (mkPConcept)
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.MetaModels
-import Ampersand.FSpec.ShowMeatGrinder
+import Ampersand.FSpec.Instances
+import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
 import Ampersand.Misc.HasClasses
+import RIO.List (sortOn)
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Partial as Partial
+import qualified RIO.Text as T
 
 -- | creating an FSpec is based on command-line options.
 --   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
@@ -58,7 +66,7 @@ import Ampersand.Misc.HasClasses
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec ::
-  (HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasTrimXLSXOpts env, HasFSpecGenOpts env, HasLogFunc env) =>
   RIO env (Guarded FSpec)
 createFspec =
   do
@@ -69,26 +77,182 @@ createFspec =
       snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
     formalAmpersandScript <- parseFormalAmpersand
     prototypeContextScript <- parsePrototypeContext
-    let p_context =
-          case recipe of
-            Standard -> userScript
-            Grind -> do
-              userScr <- userScript
-              userFspc <- pCtx2Fspec env userScr
-              return (grind nameSpaceFormalAmpersand transformersFormalAmpersand userFspc)
-            Prototype -> do
-              userPCtx <- userScript
-              pcScript <- prototypeContextScript
-              let one = userPCtx `mergeContexts` pcScript
-              oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
-              let two = grind nameSpacePrototypeContext transformersPrototypeContext oneFspec
-              return (one `mergeContexts` two)
-            RAP -> do
-              rapPCtx <- userScript
-              faScript <- formalAmpersandScript
-              let one = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
-              oneFspec <- pCtx2Fspec env one -- this is done to typecheck the combination
-              let two = grind nameSpacePrototypeContext transformersPrototypeContext oneFspec
-              pcScript <- prototypeContextScript
-              return (one `mergeContexts` two `mergeContexts` pcScript)
-    return (pCtx2Fspec env =<< p_context)
+    pContext <-
+      case recipe of
+        Standard -> pure userScript
+        Grind -> do
+          let userFspc = do
+                faScript <- formalAmpersandScript
+                checkFormalAmpersandTransformers env faScript
+                userScr <- userScript
+                pCtx2Fspec env userScr
+          grindInto FormalAmpersand userFspc
+        Prototype -> do
+          let guardedOne = do
+                userPCtx <- userScript
+                pcScript <- prototypeContextScript
+                checkPrototypeContextTransformers env pcScript
+                pure $ userPCtx `mergeContexts` pcScript -- this is done to typecheck the combination
+          let oneFspec = pCtx2Fspec env =<< guardedOne -- this is done to typecheck the combination
+          guardedTwo <- grindInto PrototypeContext oneFspec
+          pure $ do
+            one <- guardedOne
+            two <- guardedTwo
+            pure (one `mergeContexts` two)
+        RAP -> do
+          -- combine userscript, formalAmpersand and prototypeContext
+          let guardedOne = do
+                rapPCtx <- userScript
+                faScript <- formalAmpersandScript
+                pcScript <- prototypeContextScript
+                pure $ rapPCtx `mergeContexts` pcScript `mergeContexts` faScript
+          let oneFspec = pCtx2Fspec env =<< guardedOne -- this is done to typecheck the combination
+          -- build a prototype with the combination
+          guardedTwo <- grindInto PrototypeContext oneFspec
+          pure $ do
+            pcScript <- prototypeContextScript
+            one <- guardedOne
+            two <- guardedTwo
+            checkPrototypeContextTransformers env pcScript
+            pure (one `mergeContexts` two `mergeContexts` pcScript)
+    pure (pCtx2Fspec env =<< pContext)
+
+-- | make sure that the relations defined in formalampersand.adl are in sync with the transformers of formal ampersand.
+checkFormalAmpersandTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkFormalAmpersandTransformers env x =
+  case pCtx2Fspec env x of
+    Errors err ->
+      fatal
+        . T.intercalate "\n  "
+        $ ["Formal Ampersand script does not compile:"]
+        <> T.lines (tshow err)
+    Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
+
+-- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
+checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkPrototypeContextTransformers env x =
+  case pCtx2Fspec env x of
+    Errors err ->
+      fatal
+        . T.intercalate "\n  "
+        $ ["PrototypeContext script does not compile:"]
+        <> T.lines (tshow err)
+    Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
+
+compareSync :: [Transformer] -> [Relation] -> Guarded ()
+compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmatchingTransformer) rs) of
+  ([], []) -> pure ()
+  (ts', rs') ->
+    fatal
+      . T.intercalate "\n  "
+      $ [ "Error: There are one or more unmatched relations and transformers that are not in sync.",
+          "Please report this to the AmpersandTarski team at",
+          "https://github.com/AmpersandTarski/Ampersand/issues/new/choose",
+          ""
+        ]
+      <> (snd <$> sortOn fst errorItems)
+    where
+      errorItems :: [(Text, Text)]
+      errorItems =
+        [ (tshow src <> tshow tgt <> tshow nm, tshow nm <> "[" <> tshow src <> "*" <> tshow tgt <> "] is in transformers.hs, but not in .adl")
+          | Transformer nm src tgt _ <- ts'
+        ]
+          <> [ (tshow (source rel) <> tshow (target rel) <> tshow rel, tshow rel <> " is in " <> tshow (origin rel) <> ", but not in transformers.hs")
+               | rel <- rs'
+             ]
+  where
+    hasmatchingRel :: Transformer -> Bool
+    hasmatchingRel t = any (isMatch t) rs
+    hasmatchingTransformer :: Relation -> Bool
+    hasmatchingTransformer rel = any (`isMatch` rel) ts
+    isMatch :: Transformer -> Relation -> Bool
+    isMatch (Transformer nm src tgt _) rel =
+      name rel
+        == nm
+        && name (source rel)
+        == src
+        && name (target rel)
+        == tgt
+
+data MetaModel = FormalAmpersand | PrototypeContext
+  deriving (Eq, Ord, Enum, Bounded, Show)
+
+instance Named MetaModel where
+  name FormalAmpersand = mkName ContextName (Partial.fromJust (toNamePart "Formal Ampersand") NE.:| [])
+  name PrototypeContext = mkName ContextName (Partial.fromJust (toNamePart "Prototype context") NE.:| [])
+
+transformer2pop :: Transformer -> P_Population
+transformer2pop tr =
+  P_RelPopu
+    { p_src = Nothing {- of moet dit zijn: Just (mkPConcept (tSrc tr)) ?? -},
+      p_tgt = Nothing {- of moet dit zijn: Just (mkPConcept (tTrg tr)) ?? -},
+      pos = MeatGrinder, -- TODO trace to origin
+      p_nmdr =
+        PNamedRel
+          { pos = MeatGrinder, -- TODO trace to origin
+            p_nrnm = tRel tr,
+            p_mbSign =
+              Just
+                ( P_Sign
+                    (mkPConcept (tSrc tr) Nothing)
+                    (mkPConcept (tTrg tr) Nothing)
+                )
+          },
+      p_popps = tPairs tr
+    }
+
+-- | The 'grindInto' function lifts a model to the population of a metamodel.
+--   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
+--   The result is delivered as a (Guarded) P_Context, so it can be merged with other Ampersand results.
+grindInto :: (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
+grindInto metamodel specification = do
+  env <- ask
+  pContextOfMetaModel <- case metamodel of
+    FormalAmpersand -> parseFormalAmpersand
+    PrototypeContext -> parsePrototypeContext
+  let pCtx = do
+        let transformers =
+              ( case metamodel of
+                  FormalAmpersand -> transformersFormalAmpersand <$> specification
+                  PrototypeContext -> transformersPrototypeContext <$> specification
+              )
+        filtered <- filter (not . null . tPairs) <$> transformers
+        guardedFSpecOfMetaModel <- pCtx2Fspec env <$> pContextOfMetaModel
+        fSpecOfMetaModel <- guardedFSpecOfMetaModel
+        specName <- name <$> specification
+        pure
+          PCtx
+            { ctx_nm = prependToPlainName "Grinded_" specName,
+              ctx_lbl = Nothing,
+              ctx_pos = [],
+              ctx_lang = Nothing,
+              ctx_markup = Nothing,
+              ctx_pats = [],
+              ctx_rs = [],
+              ctx_ds = aRelation2pRelation <$> instanceList fSpecOfMetaModel,
+              ctx_cs = [],
+              ctx_ks = [],
+              ctx_rrules = [],
+              ctx_reprs = reprList . fcontextInfo $ fSpecOfMetaModel,
+              ctx_vs = [],
+              ctx_gs = [],
+              ctx_ifcs = [],
+              ctx_ps = [],
+              ctx_pops = map transformer2pop filtered,
+              ctx_metas = [],
+              ctx_enfs = []
+            }
+  return pCtx
+
+pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
+pCtx2Fspec env c = do
+  fSpec <- makeFSpec env <$> pCtx2aCtx env c
+  checkInvariants fSpec
+  where
+    checkInvariants :: FSpec -> Guarded FSpec
+    checkInvariants fSpec =
+      if view allowInvariantViolationsL env
+        then pure fSpec
+        else case violationsOfInvariants fSpec of
+          [] -> pure fSpec
+          h : tl -> Errors (fmap (mkInvariantViolationsError (applyViolText fSpec)) (h NE.:| tl))

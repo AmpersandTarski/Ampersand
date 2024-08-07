@@ -1,45 +1,43 @@
-﻿CONTEXT FormalAmpersand IN ENGLISH LATEX
+﻿CONTEXT FormalAmpersand IN ENGLISH
 META "authors" "Stef Joosten"
 PURPOSE CONTEXT FormalAmpersand
 {+This file documents the Conjuncts pattern as of september 2014.
 It is meant to be included in FormalAmpersand.adl
 +}
 
-PURPOSE CONCEPT Conjunct
+PURPOSE CONCEPT FormalAmpersand.Conjunct LATEX
 {+In order to maintain invariants, Ampersand breaks down all rules into conjuncts.
 Each rule $r$ can be written as a conjunction of $n$ terms:
 \[r\ =\ c_0\cap c_1\cap ... c_{n-1}\]
 Conjuncts are produced by a normalizer, which produces conjunctive forms.
 +}
-CONCEPT Conjunct "A conjunct is an term that represents an invariant in an information system."
-PURPOSE CONCEPT Quad
+PURPOSE CONCEPT FormalAmpersand.Quad
 {+The Ampersand compiler stores intermediate results of analysing a rule in a Haskell data structure called ``Quad'',
 As a result, the analysis is done only once and is reused when needed.
 +}
-CONCEPT Quad "A quad is a Haskell data structure that corresponds to one rule in an Ampersand script."
-PURPOSE CONCEPT DnfClause
+PURPOSE CONCEPT FormalAmpersand.DnfClause
 {+Each conjunct is stored in disjunctive normal form, for the purpose of formula manipulation.
 +}
-CONCEPT DnfClause "A DnfClause is a Haskell data structure that stores an term in disjunctive normal form."
+CONCEPT FormalAmpersand.DnfClause "A DnfClause is a Haskell data structure that stores an term in disjunctive normal form."
 
 
 
 -- Rules
-PURPOSE RULE Conjuncts1
+PURPOSE RULE FormalAmpersand.Conjuncts1
 {+In order to split a rule in one or more conjuncts, we use 
 +}
 
-PURPOSE RULE Conjuncts2
+PURPOSE RULE FormalAmpersand.Conjuncts2
 {+In order to manipulate with terms, they are stored in disjunctive normal form.
 As multiple variations of this form can be derived, all of them are stored in the conjunct.
 +}
 
-PURPOSE RULE defconjuncts
+PURPOSE RULE FormalAmpersand.defconjuncts
 {+In order to compute the conjuncts from a rule, we need a computable relation, conjuncts.
 The conjuncts are derived from the conjunctive normal form.
 +}
 
-PURPOSE RULE Conjuncts4
+PURPOSE RULE FormalAmpersand.Conjuncts4
 {+For the purpose of keeping track of things, every conjunct gets a name.
 That is the same name as the name of the rule from which the conjunct is derived.
 +}

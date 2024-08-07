@@ -133,8 +133,6 @@ library:
     - Ampersand.FSpec.Motivations
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
-    - Ampersand.FSpec.ShowMeatGrinder
-    - Ampersand.FSpec.MetaModels
     - Ampersand.FSpec.ToFSpec.ADL2FSpec
     - Ampersand.FSpec.ToFSpec.ADL2Plug
     - Ampersand.FSpec.ToFSpec.Calc
@@ -188,7 +186,6 @@ library:
     - Ampersand.Output.ToPandoc.ChapterNatLangReqs
     - Ampersand.Output.ToPandoc.SharedAmongChapters
     - Ampersand.Prototype.GenAngularFrontend
-    - Ampersand.Prototype.GenAngularJSFrontend
     - Ampersand.Prototype.GenBackend
     - Ampersand.Prototype.GenFrontend
     - Ampersand.Prototype.PHP
@@ -251,8 +248,14 @@ tests:
       - -threaded
     dependencies: ampersand
 
+extra-deps:
+  - hexpat-0.20.13
 flags:
   buildAll:
     description: Build both ampersand and ampPreProc.
+    default: false
+    manual: true
+  hexpat: # MacOS doesn't seem to build without this flag. See https://github.com/the-real-blackh/hexpat/issues/9
+    bundle: true
     default: false
     manual: true

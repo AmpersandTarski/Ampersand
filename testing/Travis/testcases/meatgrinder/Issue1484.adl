@@ -1,0 +1,10 @@
+CONTEXT Issue1484 IN ENGLISH
+PATTERN Courses
+
+CONCEPT Student "Someone who wants to study at this institute"
+CONCEPT Module "An educational entity with a single exam"
+RELATION isEnrolledFor [Student*Module]
+MEANING "Students enroll for each module in the course separately"
+
+ENDPATTERN
+ENDCONTEXT

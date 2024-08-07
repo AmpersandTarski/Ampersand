@@ -11,6 +11,7 @@ module Ampersand.Misc.Commands
 where
 
 import Ampersand.Basics
+import Ampersand.Commands.AtlasImport
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
@@ -26,6 +27,7 @@ import Ampersand.FSpec (FSpec)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
+import Ampersand.Options.AtlasImportOptsParser
 import Ampersand.Options.DaemonParser
 import Ampersand.Options.DevoutputOptsParser
 import Ampersand.Options.DocOptsParser
@@ -131,6 +133,11 @@ commandLineHandler currentDir _progName args =
         "Generate a file that contains the population of your script."
         (mkAction population)
         populationOptsParser
+      addCommand''
+        AtlasImport
+        "Import a file that contains the population of an atlas (json)."
+        atlasImportCmd
+        atlasimportOptsParser
       addCommand''
         Proofs
         "Generate a report containing proofs."
@@ -239,7 +246,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
-      annotate (colorDull Green)
+      annotate (colorDull Yellow)
         <$> paragraph (show opt) -- optHelp opt -- "Een of andere optie."
     parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
     desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
@@ -382,6 +389,10 @@ testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
   extendWith testOpts test
 
+atlasImportCmd :: AtlasImportOpts -> RIO Runner ()
+atlasImportCmd opts = do
+  extendWith opts atlasImport
+
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing
   where
@@ -389,7 +400,6 @@ checkCmd = mkAction doNothing
       logInfo $ "This script of " <> (display . fullName) fSpec <> " contains no type errors."
 
 mkAction ::
-  forall a.
   (HasFSpecGenOpts a) =>
   (FSpec -> RIO (ExtendedRunner a) ()) ->
   a ->
@@ -398,7 +408,7 @@ mkAction theAction opts =
   extendWith opts $ doOrDie theAction
 
 doOrDie ::
-  (HasLogFunc env, HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) =>
   (FSpec -> RIO env b) ->
   RIO env b
 doOrDie theAction = do
@@ -417,7 +427,8 @@ doOrDie theAction = do
         $ err
 
 data Command
-  = Check
+  = AtlasImport
+  | Check
   | Daemon
   | Dataanalysis
   | Devoutput
@@ -431,6 +442,7 @@ data Command
   | Validate
 
 instance Show Command where
+  show AtlasImport = "atlas-import"
   show Check = "check"
   show Daemon = "daemon"
   show Dataanalysis = "data-analysis"

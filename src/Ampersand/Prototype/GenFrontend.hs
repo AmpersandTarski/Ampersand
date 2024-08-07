@@ -5,17 +5,17 @@ module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+-- only import instances
+
+import Ampersand.FSpec (Instances (instanceList))
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc.HasClasses
--- only import instances
 import Ampersand.Prototype.GenAngularFrontend
-import Ampersand.Prototype.GenAngularJSFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import RIO.Char
 import qualified RIO.Text as T
-import RIO.Time
 import System.Directory
 import System.FilePath
 import Text.StringTemplate.GenericStandard ()
@@ -25,27 +25,16 @@ doGenFrontend ::
   FSpec ->
   RIO env ()
 doGenFrontend fSpec = do
-  now <- getCurrentTime
-  frontendVersion <- view frontendVersionL
-  logInfo . display $ "Generating " <> tshow frontendVersion <> " frontend... "
+  logInfo "Generating Angular frontend... "
   copyTemplates
   feSpec <- buildFESpec fSpec
   let feInterfaces = interfaces feSpec
-  case frontendVersion of
-    AngularJS -> do
-      genViewInterfaces fSpec feInterfaces
-      genControllerInterfaces fSpec feInterfaces
-      genRouteProvider fSpec feInterfaces
-      logDebug "Finished generating files for AngularJS"
-      logDebug "Write .timestamp"
-      writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    Angular -> do
-      mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
-      genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
-      genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
-      genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
-      genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
-      logDebug "Angular frontend module generated"
+  mapM_ (genComponent fSpec) feInterfaces -- Angular Component files for each interface
+  genSingleFileFromTemplate fSpec feSpec "project.concepts.ts.txt" "project.concepts.ts" -- File with all concept types
+  genSingleFileFromTemplate fSpec feSpec "project.views.ts.txt" "project.views.ts" -- File with all view types
+  genSingleFileFromTemplate fSpec feSpec "project.module.ts.txt" "project.module.ts" -- Angular Module file
+  genSingleFileFromTemplate fSpec feSpec "backend.service.ts.txt" "backend.service.ts" -- BackendService file
+  logDebug "Angular frontend module generated"
 
 copyTemplates ::
   (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
@@ -75,30 +64,25 @@ buildFESpec fSpec = do
       }
 
 buildConcepts :: FSpec -> [FEConcept]
-buildConcepts fSpec =
-  map
-    ( \cpt ->
-        FEConcept
-          { cptId = text1ToText $ idWithoutType' cpt,
-            typescriptType = typescriptTypeForConcept fSpec cpt
-          }
-    )
-    $ toList
-    . allConcepts
-    $ fSpec
+buildConcepts fSpec = mkFEConcept <$> instanceList fSpec
+  where
+    mkFEConcept cpt =
+      FEConcept
+        { cptId = text1ToText $ idWithoutType' cpt,
+          cptIdTmp = toTypescriptName . text1ToText $ idWithoutType' cpt,
+          typescriptType = typescriptTypeForConcept fSpec cpt
+        }
 
 buildViews :: FSpec -> [FEView]
-buildViews fSpec =
-  map
-    ( \viewDef' ->
-        FEView
-          { viewId = toPascal . fullName $ viewDef',
-            viewSegments = map buildViewSegment $ segments viewDef',
-            viewIsEmpty = null . segments $ viewDef'
-          }
-    )
-    $ vviews fSpec
+buildViews fSpec = mkFEView <$> instanceList fSpec
   where
+    mkFEView viewDef' =
+      FEView
+        { viewId = toPascal . fullName $ viewDef',
+          viewIdTmp = toTypescriptName . toPascal . fullName $ viewDef',
+          viewSegments = map buildViewSegment $ segments viewDef',
+          viewIsEmpty = null . segments $ viewDef'
+        }
     segments = filter (isJust . vsmlabel) . vdats -- filter out ViewSegments that don't have a label
 
 buildViewSegment :: ViewSegment -> FEViewSegment
@@ -121,10 +105,10 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
       obj <- buildObject (BxExpr $ ifcObj ifc)
       return
         FEInterface
-          { ifcName = text1ToText . escapeIdentifier . fullName1 $ ifc,
+          { ifcName = text1ToText . fullName1 $ ifc,
             ifcNameKebab = toKebab . safechars . fullName $ ifc,
             ifcNamePascal = toPascal . safechars . fullName $ ifc,
-            ifcLabel = fullName ifc,
+            ifcLabel = label ifc,
             ifcExp = objExp obj,
             isApi = ifcIsAPI ifc,
             isSessionInterface = isSESSION . source . objExp $ obj,
@@ -198,7 +182,7 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
             return
               FEObjE
                 { objName = maybe "" text1ToText . objPlainName $ object,
-                  objLabel = text1ToText <$> objPlainName object,
+                  objLabel = tshow <$> objlbl object,
                   objExp = iExp',
                   objCrudC = crudC . objcrud $ object,
                   objCrudR = crudR . objcrud $ object,

@@ -2,11 +2,11 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currently is, and in future will have been, the contents of GENERICS.PHP+}
 
-REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
+REPRESENT FormalAmpersand.MySQLQuery TYPE BIGALPHANUMERIC
 
 
-RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
-REPRESENT AmpersandVersion TYPE ALPHANUMERIC
+RELATION FormalAmpersand.versionInfo[FormalAmpersand.Context*FormalAmpersand.AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
+REPRESENT FormalAmpersand.AmpersandVersion TYPE ALPHANUMERIC
 
 -- HJO20150206 @Rieks: Willen we hier nog iets met signalTableName, isDev, autoRefreshInterval?
 
@@ -19,42 +19,44 @@ REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 --Definitions for Rules are found in Rules.adl and documented in Rules.docadl.
 
 --[PairViews]--
-RELATION pairView[Rule*PairView] -- e.g. 
-RELATION segment[PairView*PairViewSegment] [SUR,INJ]
-RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
-RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
-RELATION text[PairViewSegment*String] [UNI] -- IFF segmentType == 'Text'
-RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
-RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
-RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+RELATION FormalAmpersand.rrviol[FormalAmpersand.Rule*FormalAmpersand.PairView] -- e.g. 
+RELATION FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment] [SUR,INJ]
+RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.SequenceNumber] [UNI,TOT]
+REPRESENT FormalAmpersand.SequenceNumber TYPE INTEGER
+-- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
+RELATION FormalAmpersand.text[FormalAmpersand.PairViewSegment*FormalAmpersand.String] [UNI] -- IFF segmentType == 'Text'
+RELATION FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
+-- Unneccessary: RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+RELATION FormalAmpersand.pvsExp[FormalAmpersand.PairViewSegment*FormalAmpersand.Term] [UNI]
 
-
+RELATION FormalAmpersand.showADL[FormalAmpersand.PairView*FormalAmpersand.ShowADL] [UNI,TOT] -- Temporary relation to enable first attempt to make the atlas editable. 
 
 --[Conjuncts]--
-RELATION allConjuncts[Context*Conjunct] [INJ]
-RELATION rcConjunct[Conjunct*Term] [TOT]
-ROLE ExecEngine MAINTAINS conjunctTotal
-RULE conjunctTotal : I[Conjunct] |- rcConjunct;rcConjunct~
+RELATION FormalAmpersand.allConjuncts[FormalAmpersand.Context*FormalAmpersand.Conjunct] [INJ]
+RELATION FormalAmpersand.rcConjunct[FormalAmpersand.Conjunct*FormalAmpersand.Term] [TOT]
+ROLE ExecEngine MAINTAINS FormalAmpersand.conjunctTotal
+RULE FormalAmpersand.conjunctTotal : I[FormalAmpersand.Conjunct] |- FormalAmpersand.rcConjunct;FormalAmpersand.rcConjunct~
 -- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
-VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
+VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 
-RELATION originatesFrom[Conjunct*Rule] -- rule where the conjunct originates from.
-ROLE ExecEngine MAINTAINS originatesFromTotal
-RULE originatesFromTotal : I[Conjunct] |- originatesFrom;originatesFrom~
+RELATION FormalAmpersand.originatesFrom[FormalAmpersand.Conjunct*FormalAmpersand.Rule] -- rule where the conjunct originates from.
+ROLE ExecEngine MAINTAINS FormalAmpersand.originatesFromTotal
+RULE FormalAmpersand.originatesFromTotal : I[FormalAmpersand.Conjunct] |- FormalAmpersand.originatesFrom;FormalAmpersand.originatesFrom~
 -- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a rule.")
-VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
+VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 
 --[Roles]--
 
 -- VIEW Role : Role(name)
 -- TODO: IDENT Role: Role(name[Role*RoleName], allRoles[Context*Role]~)
-RELATION allRoles[Context*Role] [INJ]
-RELATION name[Role*RoleName] [UNI]
-REPRESENT RoleName TYPE ALPHANUMERIC
-RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
-RELATION interfaces[Role*Interface]
+RELATION FormalAmpersand.allRoles[FormalAmpersand.Context*FormalAmpersand.Role] [INJ]
+RELATION FormalAmpersand.name[FormalAmpersand.Role*FormalAmpersand.RoleName] [UNI]
+CLASSIFY FormalAmpersand.RoleName ISA FormalAmpersand.Name
+RELATION FormalAmpersand.maintains[FormalAmpersand.Role*FormalAmpersand.Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
+RELATION FormalAmpersand.interfaces[FormalAmpersand.Role*FormalAmpersand.Interface]
 
 --[Interfaces]--
-RELATION interfaces[Context*Interface][INJ]
+RELATION FormalAmpersand.interfaces[FormalAmpersand.Context*FormalAmpersand.Interface][INJ]
 
 ENDCONTEXT

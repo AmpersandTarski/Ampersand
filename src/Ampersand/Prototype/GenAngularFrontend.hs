@@ -7,6 +7,7 @@ module Ampersand.Prototype.GenAngularFrontend
     genSingleFileFromTemplate,
     toPascal,
     toKebab,
+    toTypescriptName,
   )
 where
 
@@ -81,18 +82,18 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . setAttribute "ifcNameKebab" (ifcNameKebab interf)
           . setAttribute "ifcLabel" (ifcLabel interf) -- no escaping for labels in templates needed
           . setAttribute "expAdl" (showA . toExpr . ifcExp $ interf)
-          . setAttribute "exprIsUni" (exprIsUni (feiObj interf))
-          . setAttribute "exprIsTot" (exprIsTot (feiObj interf))
-          . setAttribute "source" (idWithoutType' . source . ifcExp $ interf)
-          . setAttribute "target" (idWithoutType' . target . ifcExp $ interf)
-          . setAttribute "crudC" (objCrudC (feiObj interf))
-          . setAttribute "crudR" (objCrudR (feiObj interf))
-          . setAttribute "crudU" (objCrudU (feiObj interf))
-          . setAttribute "crudD" (objCrudD (feiObj interf))
+          . setAttribute "exprIsUni" (exprIsUni . feiObj $ interf)
+          . setAttribute "exprIsTot" (exprIsTot . feiObj $ interf)
+          . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
+          . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
+          . setAttribute "crudC" (objCrudC . feiObj $ interf)
+          . setAttribute "crudR" (objCrudR . feiObj $ interf)
+          . setAttribute "crudU" (objCrudU . feiObj $ interf)
+          . setAttribute "crudD" (objCrudD . feiObj $ interf)
           . setAttribute "crud" (crudsToString . objCrud . feiObj $ interf)
           . setAttribute "contents" lns
           . setAttribute "verbose" (loglevel' == LevelDebug)
-          . setAttribute "loglevel" (show loglevel')
+          . setAttribute "loglevel" (tshow loglevel')
           . setAttribute "templateFilePath" templateFilePath
           . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
@@ -105,7 +106,7 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
   mapM_ (logDebug . display) (showTemplate template)
   let contents =
         renderTemplate Nothing template
-          $ setAttribute "contextName" (fsName fSpec)
+          $ setAttribute "contextName" (fullName fSpec)
           . setAttribute "ampersandVersionStr" (longVersion appVersion)
           . setAttribute "ifcs" (interfaces feSpec) -- all interfaces
           . setAttribute "uis" (filter (not . isApi) $ interfaces feSpec) -- only the interfaces that need UI
@@ -125,15 +126,15 @@ objectAttributes obj loglevel =
     . setAttribute "name" (escapeIdentifier' . objName $ obj)
     . setAttribute "label" (objName obj) -- no escaping for labels in templates needed
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
-    . setAttribute "source" (idWithoutType' . source . objExp $ obj)
-    . setAttribute "target" (idWithoutType' . target . objExp $ obj)
+    . setAttribute "source" (text1ToText . idWithoutType' . source . objExp $ obj)
+    . setAttribute "target" (text1ToText . idWithoutType' . target . objExp $ obj)
     . setAttribute "crudC" (objCrudC obj)
     . setAttribute "crudR" (objCrudR obj)
     . setAttribute "crudU" (objCrudU obj)
     . setAttribute "crudD" (objCrudD obj)
     . setAttribute "crud" (crudsToString . objCrud $ obj)
     . setAttribute "verbose" (loglevel == LevelDebug)
-    . setAttribute "loglevel" (show loglevel)
+    . setAttribute "loglevel" (tshow loglevel)
 
 escapeIdentifier' :: Text -> Text
 escapeIdentifier' txt = case T.uncons txt of
@@ -309,16 +310,23 @@ genTypescriptInterface fSpec depth obj =
         maybeViewDef = viewDef . atomicOrBox $ obj
 
     conceptIdWithImportAlias :: A_Concept -> Text
-    conceptIdWithImportAlias cpt = "concepts." <> text1ToText (idWithoutType' cpt)
+    conceptIdWithImportAlias cpt = "concepts." <> (toTypescriptName . text1ToText . idWithoutType' $ cpt)
 
     viewIdWithImportAlias :: ViewDef -> Text
-    viewIdWithImportAlias viewDef' = "views." <> (toPascal . fullName $ viewDef') <> "View"
+    viewIdWithImportAlias viewDef' = "views." <> (toTypescriptName . toPascal . fullName $ viewDef') <> "View"
 
 toKebab :: Text -> Text
 toKebab = T.intercalate "-" . fmap T.toLower . T.words
 
 toPascal :: Text -> Text
 toPascal = T.concat . map wordCase . T.words
+
+toTypescriptName :: Text -> Text
+toTypescriptName = T.map dotToUnderscore
+  where
+    dotToUnderscore :: Char -> Char
+    dotToUnderscore '.' = '_'
+    dotToUnderscore x = x
 
 wordCase :: Text -> Text
 wordCase txt = case T.uncons txt of
