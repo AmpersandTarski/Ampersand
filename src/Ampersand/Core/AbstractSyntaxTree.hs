@@ -872,8 +872,8 @@ instance Eq SubInterface where
   a == b = compare a b == EQ
 
 instance Unique SubInterface where
-  showUnique si@Box {} = "BOX_" T1..<> (showUnique . siHeader) si T1.<>. (T.concat . fmap (text1ToText . showUnique) . siObjs) si
-  showUnique si@InterfaceRef {} = "InterfaceRef_" T1..<> (showUnique . siIsLink) si <> fullName1 (siIfcId si)
+  showUnique si@Box {} = (showUnique . siHeader) si T1.<>. (tshow . abs . hash . tshow . siObjs) si
+  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si T1.<>. (fullName . siIfcId $ si)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
