@@ -253,3 +253,5 @@ flags:
     description: Build both ampersand and ampPreProc.
     default: false
     manual: true
+  hexpat: # MacOS doesn't seem to build without this flag. See https://github.com/the-real-blackh/hexpat/issues/9
+    bundle: true
