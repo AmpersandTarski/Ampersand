@@ -421,6 +421,7 @@ custom-setup
     , bytestring
     , directory
     , filepath
+    , hexpat
     , process
     , rio
     , salve

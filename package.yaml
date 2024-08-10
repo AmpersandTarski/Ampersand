@@ -211,6 +211,7 @@ custom-setup:
     - Cabal
     - directory
     - filepath
+    - hexpat
     - process
     - rio
     - time
@@ -248,14 +249,8 @@ tests:
       - -threaded
     dependencies: ampersand
 
-extra-deps:
-  - hexpat-0.20.13
 flags:
   buildAll:
     description: Build both ampersand and ampPreProc.
-    default: false
-    manual: true
-  hexpat: # MacOS doesn't seem to build without this flag. See https://github.com/the-real-blackh/hexpat/issues/9
-    bundle: true
     default: false
     manual: true
