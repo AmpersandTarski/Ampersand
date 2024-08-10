@@ -647,6 +647,10 @@ library
   else
     build-depends:
         unix
+  if os(macos)
+    ghc-options: -Wint-conversion
+  else
+    ghc-options: -Wall
 
 executable ampPreProc
   main-is: Main.hs
@@ -719,6 +723,10 @@ executable ampPreProc
   else
     build-depends:
         unix
+  if os(macos)
+    ghc-options: -Wint-conversion
+  else
+    ghc-options: -Wall
   if !(flag(buildAll))
     buildable: False
 
@@ -794,6 +802,10 @@ executable ampersand
   else
     build-depends:
         unix
+  if os(macos)
+    ghc-options: -Wint-conversion
+  else
+    ghc-options: -Wall
 
 test-suite ampersand-test
   type: exitcode-stdio-1.0
@@ -867,3 +879,7 @@ test-suite ampersand-test
   else
     build-depends:
         unix
+  if os(macos)
+    ghc-options: -Wint-conversion
+  else
+    ghc-options: -Wall
