@@ -63,8 +63,8 @@ jobs:
         with:
           mysql-version: "mariadb-10.6"
       # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
-      - run: curl -sSL https://get.haskellstack.org/ | sh
-      - run: brew install php expat
+      ## run: curl -sSL https://get.haskellstack.org/ | sh
+      - run: brew install php
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
