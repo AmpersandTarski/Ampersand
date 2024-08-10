@@ -32,7 +32,6 @@ ghc-options:
   - -Wredundant-constraints
   - -fwrite-ide-info
   - -hiedir=.hie
-  - -Wint-conversion # added in the hope to get hexpat working again on macOS
 default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings
@@ -95,6 +94,13 @@ when:
       dependencies: Win32
     else:
       dependencies: unix
+  - condition: os(macos)
+    then:
+      ghc-options:
+        - -Wint-conversion # Required as long as hexpat has an issue with this conversion on macOS. See https://github.com/AmpersandTarski/Ampersand/issues/1492
+    else:
+      ghc-options:
+        - -Wall
 
 library:
   source-dirs:

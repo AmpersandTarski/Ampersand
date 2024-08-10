@@ -39,13 +39,6 @@ packages:
       size: 1545
   original:
     hackage: megaparsec-9.6.1@sha256:8d8f8ee5aca5d5c16aa4219afd13687ceab8be640f40ba179359f2b42a628241,3323
-- completed:
-    hackage: hexpat-0.20.13@sha256:8fc1e951240cee4448cda20f6d683e7166b2a1849e1e66afd4dbb756f3487bb0,6983
-    pantry-tree:
-      sha256: f968376f33539e3286d0a039b38862f97ce05caf7d49f3cac96c8b6834c804e4
-      size: 3577
-  original:
-    hackage: hexpat-0.20.13
 snapshots:
 - completed:
     sha256: 0cd905bf3f615a7f52d52fb6aadda182f695bd1cab10ef892095d974676f0911
