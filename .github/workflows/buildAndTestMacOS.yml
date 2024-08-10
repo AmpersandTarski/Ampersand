@@ -54,7 +54,7 @@ jobs:
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
