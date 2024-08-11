@@ -32,7 +32,7 @@ ghc-options:
   - -Wredundant-constraints
   - -fwrite-ide-info
   - -hiedir=.hie
-  - -Wint-conversion # added in the hope to get hexpat working again on macOS
+#  - -Wint-conversion # added in the hope to get hexpat working again on macOS
 default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings
