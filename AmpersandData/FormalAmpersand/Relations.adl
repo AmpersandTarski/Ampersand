@@ -1,50 +1,59 @@
 CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
-PATTERN Relations
-RELATION relsDefdIn[Relation*Context]
+PATTERN FormalAmpersand.Relations
+
+CONCEPT FormalAmpersand.Relation "A relation is a set of pairs."
+CONCEPT FormalAmpersand.Signature "A signature is a pair of concepts."
+
+RELATION FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
-IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , relsDefdIn[Relation*Context])
-RULE eqRelation LABEL "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
-                 /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
-                 /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
-                 |- I[Relation]
+IDENT FormalAmpersand.Relation: FormalAmpersand.Relation( 
+    FormalAmpersand.name, 
+    FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept], 
+    FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept], 
+    FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context])
+RULE FormalAmpersand.eqRelation LABEL "eq relation": FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName];FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]~ 
+                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept];(FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
+                 /\ FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept];(FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept])~ 
+                 |- I[FormalAmpersand.Relation]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
 
-RELATION name[Relation*RelationName] [UNI,TOT,SUR]
+RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-REPRESENT RelationName TYPE ALPHANUMERIC
-    ROLE ExecEngine MAINTAINS DelUnusedRelationName
-    RULE DelUnusedRelationName LABEL "del unused RelationName" : I[RelationName] |- name~;name
+CLASSIFY FormalAmpersand.RelationName ISA FormalAmpersand.Name
+    ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRelationName
+    RULE FormalAmpersand.DelUnusedRelationName LABEL "del unused RelationName" : I[FormalAmpersand.RelationName] |- FormalAmpersand.name~;FormalAmpersand.name
     MEANING "A RelationName without relation will be removed."
-    VIOLATION ( TXT "{EX} DelAtom;RelationName;", SRC I )
+    VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.RelationName;", SRC I )
 
 
-RELATION sign[Relation*Signature] [UNI] 
+RELATION FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature] [UNI] 
 MEANING "The signature of a relation."
 
-RELATION src[Signature*Concept] [UNI,TOT]
+RELATION FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept] [UNI,TOT]
 MEANING "The source of a signature."
-RELATION tgt[Signature*Concept] [UNI,TOT]
+RELATION FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
-RELATION bind[BindedRelation*Relation][UNI]
-ROLE ExecEngine MAINTAINS bindTotal
-RULE bindTotal : I[BindedRelation] |- bind;bind~
+CONCEPT FormalAmpersand.BindedRelation ""
+RELATION FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation][UNI]
+ROLE ExecEngine MAINTAINS FormalAmpersand.bindTotal
+RULE FormalAmpersand.bindTotal : I[FormalAmpersand.BindedRelation] |- FormalAmpersand.bind;FormalAmpersand.bind~
 -- VIOLATION ( TXT "The (sub-)term ", SRC showADL, TXT " should have been bound to a relation. ")
-VIOLATION ( TXT "{EX} DelAtom;BindedRelation;", SRC I )
+VIOLATION ( TXT "{EX} FormalAmpersand.DelAtom;FormalAmpersand.BindedRelation;", SRC I )
 
-RELATION prop[Relation*Property]
+RELATION FormalAmpersand.prop[FormalAmpersand.Relation*FormalAmpersand.Property]
 
 
-RELATION decprL[Relation*String] [UNI]
+RELATION FormalAmpersand.decprL[FormalAmpersand.Relation*FormalAmpersand.String] [UNI]
 MEANING "The prefix of the pragma of a relation."
-RELATION decprM[Relation*String] [UNI]
+RELATION FormalAmpersand.decprM[FormalAmpersand.Relation*FormalAmpersand.String] [UNI]
 MEANING "The infix of the pragma of a relation."
-RELATION decprR[Relation*String] [UNI]
+RELATION FormalAmpersand.decprR[FormalAmpersand.Relation*FormalAmpersand.String] [UNI]
 MEANING "The suffix of the pragma of a relation."
-REPRESENT String TYPE BIGALPHANUMERIC
+REPRESENT FormalAmpersand.String TYPE BIGALPHANUMERIC
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE EntityIntegrityRelation LABEL "entity integrity of relation" : left;left~ /\ right;right~ /\ in;in~ |- I
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."

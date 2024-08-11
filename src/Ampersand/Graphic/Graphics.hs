@@ -310,7 +310,7 @@ writePicture pict = do
 --                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
 --     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
-mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph Name
+mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph MyDotNode
 mkDotGraph env pict =
   case dotContent pict of
     ClassDiagram x -> classdiagram2dot env x
@@ -346,7 +346,7 @@ data ConceptualStructure = CStruct
     csIdgs :: [(A_Concept, A_Concept)]
   }
 
-conceptual2Dot :: ConceptualStructure -> DotGraph Name
+conceptual2Dot :: ConceptualStructure -> DotGraph MyDotNode
 conceptual2Dot cs@(CStruct _ rels idgs) =
   DotGraph
     { strictGraph = False,
@@ -397,14 +397,14 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
           }
     }
   where
-    nodes :: (HasDotParts a) => a -> [DotNode Name]
+    nodes :: (HasDotParts a) => a -> [DotNode MyDotNode]
     nodes = dotNodes cs
-    edges :: (HasDotParts a) => a -> [DotEdge Name]
+    edges :: (HasDotParts a) => a -> [DotEdge MyDotNode]
     edges = dotEdges cs
 
 class HasDotParts a where
-  dotNodes :: ConceptualStructure -> a -> [DotNode Name]
-  dotEdges :: ConceptualStructure -> a -> [DotEdge Name]
+  dotNodes :: ConceptualStructure -> a -> [DotNode MyDotNode]
+  dotEdges :: ConceptualStructure -> a -> [DotEdge MyDotNode]
 
 baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
@@ -427,7 +427,7 @@ edgeLenFactor x = Len (4 * x)
 instance HasDotParts A_Concept where
   dotNodes x cpt =
     [ DotNode
-        { nodeID = baseNodeId x cpt,
+        { nodeID = toMyDotNode $ baseNodeId x cpt,
           nodeAttributes =
             [ Label . StrLabel . TL.fromStrict . fullName $ cpt
             ]
@@ -439,7 +439,7 @@ instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
         [ DotNode
-            { nodeID = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+            { nodeID = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
               nodeAttributes =
                 [ Color [WC (X11Color Transparent) Nothing],
                   Shape PlainText,
@@ -458,8 +458,8 @@ instance HasDotParts Relation where
   dotEdges x rel
     | isEndo rel =
         [ DotEdge
-            { fromNode = baseNodeId x . source $ rel,
-              toNode = prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+            { fromNode = toMyDotNode . baseNodeId x . source $ rel,
+              toNode = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
               edgeAttributes =
                 [ Dir NoDir,
                   edgeLenFactor 0.4,
@@ -469,8 +469,8 @@ instance HasDotParts Relation where
         ]
     | otherwise =
         [ DotEdge
-            { fromNode = baseNodeId x . source $ rel,
-              toNode = baseNodeId x . target $ rel,
+            { fromNode = toMyDotNode . baseNodeId x . source $ rel,
+              toNode = toMyDotNode . baseNodeId x . target $ rel,
               edgeAttributes =
                 [ Label
                     . StrLabel
@@ -488,8 +488,8 @@ instance HasDotParts (A_Concept, A_Concept) where
   dotNodes _ _ = []
   dotEdges x (gen, spc) =
     [ DotEdge
-        { fromNode = baseNodeId x gen,
-          toNode = baseNodeId x spc,
+        { fromNode = toMyDotNode $ baseNodeId x gen,
+          toNode = toMyDotNode $ baseNodeId x spc,
           edgeAttributes =
             [ edgeLenFactor 0.5,
               Label . StrLabel . fromString $ "",

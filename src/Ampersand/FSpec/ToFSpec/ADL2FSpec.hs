@@ -297,9 +297,7 @@ makeFSpec env context =
     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
     getDefaultViewForConcept' cpt =
-      case filter vdIsDefault
-        . concatMap viewsOfThisConcept
-        . sortSpecific2Generic (gens context)
+      case (concatMap (filter vdIsDefault . viewsOfThisConcept) . sortSpecific2Generic (gens context))
         $ cpt
         : largerConcepts (gens context) cpt of
         [] -> Nothing
@@ -514,12 +512,12 @@ makeFSpec env context =
               nm' 0 =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) . plainNameOf $ c)
+                  $ (toNamePart' . plural (ctxlang context) . localNameOf $ c)
                   NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) $ plainNameOf c <> tshow i)
+                  $ (toNamePart' . plural (ctxlang context) $ localNameOf c <> tshow i)
                   NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"

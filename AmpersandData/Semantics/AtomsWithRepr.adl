@@ -65,9 +65,9 @@ REPRESENT Representation TYPE ALPHANUMERIC
 RELATION pop[Atom*Concept]
 MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
-RELATION name[Concept*Identifier] [UNI,TOT]
+RELATION name[Concept*ConceptName] [UNI,TOT]
 MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
-REPRESENT Identifier TYPE ALPHANUMERIC
+REPRESENT Name TYPE ALPHANUMERIC
 
 RULE IdentifiabilityConcepts LABEL "Identifiability of concepts": name;name~ |- I[Concept]
 MEANING "The name of a concept identifies that concept."
@@ -91,7 +91,7 @@ VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
     RULE TransitiveClosureISAdel LABEL "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-RELATION name[Relation*Identifier] [UNI,TOT]
+RELATION name[Relation*Name] [UNI,TOT]
 RELATION source[Relation*Concept] [UNI,TOT]
 RELATION target[Relation*Concept] [UNI,TOT]
 

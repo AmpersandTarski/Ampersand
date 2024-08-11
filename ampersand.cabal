@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.1.1
+version:        5.1.2
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -42,6 +42,7 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
     AmpersandData/FormalAmpersand/Terms.adl
+    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
@@ -172,6 +173,9 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testinfo.yaml
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
+    testing/Travis/testcases/meatgrinder/Issue1484.adl
+    testing/Travis/testcases/meatgrinder/Issue1487.adl
+    testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
     testing/Travis/testcases/Misc/ArchiTest3.adl
@@ -394,6 +398,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
@@ -416,6 +421,7 @@ custom-setup
     , bytestring
     , directory
     , filepath
+    , hexpat
     , process
     , rio
     , salve
@@ -463,8 +469,6 @@ library
       Ampersand.FSpec.Motivations
       Ampersand.FSpec.SQL
       Ampersand.FSpec.ShowHS
-      Ampersand.FSpec.ShowMeatGrinder
-      Ampersand.FSpec.MetaModels
       Ampersand.FSpec.ToFSpec.ADL2FSpec
       Ampersand.FSpec.ToFSpec.ADL2Plug
       Ampersand.FSpec.ToFSpec.Calc
@@ -518,7 +522,6 @@ library
       Ampersand.Output.ToPandoc.ChapterNatLangReqs
       Ampersand.Output.ToPandoc.SharedAmongChapters
       Ampersand.Prototype.GenAngularFrontend
-      Ampersand.Prototype.GenAngularJSFrontend
       Ampersand.Prototype.GenBackend
       Ampersand.Prototype.GenFrontend
       Ampersand.Prototype.PHP
@@ -538,6 +541,7 @@ library
   other-modules:
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
+      Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
@@ -560,6 +564,7 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Misc.Defaults
+      Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser

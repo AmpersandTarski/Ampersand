@@ -151,8 +151,7 @@ instance Arbitrary Name where
         )
           <$> identifier
           `suchThat` requirements
-      requirements t =
-        T.all (/= '.') . text1ToText $ t
+      requirements = T.all (/= '.') . text1ToText
 
 instance Arbitrary NameType where
   arbitrary = elements [minBound ..]
@@ -508,7 +507,7 @@ instance Arbitrary ViewHtmlTemplate where
   arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
 instance Arbitrary (P_ViewSegment TermPrim) where
-  arbitrary = P_ViewSegment <$> (Just <$> identifier) <*> arbitrary <*> arbitrary
+  arbitrary = P_ViewSegment . Just <$> identifier <*> arbitrary <*> arbitrary
 
 instance Arbitrary (P_ViewSegmtPayLoad TermPrim) where
   arbitrary =

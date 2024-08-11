@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand population --build-recipe Grind --verbose --output-format JSON
+    exitcode: 0

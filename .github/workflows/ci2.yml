@@ -14,7 +14,7 @@ jobs:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare for docker
         run: |
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -54,44 +54,49 @@ jobs:
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
-    runs-on: macos-latest
+    runs-on: macos-12
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: "mariadb-10.6"
       # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
-      - run: curl -sSL https://get.haskellstack.org/ | sh
+      ## run: curl -sSL https://get.haskellstack.org/ | sh
       - run: brew install php
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
 
-  # build-and-test-windows:
-  #   name: Build and test on Windows 🏗 🧪
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout project contents 📡
-  #       uses: actions/checkout@v3
-  #     - uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
-  #       id: expatLibraryZip  # Remember to give an ID if you need the output filename
-  #       name: Download the expat library
-  #       with:
-  #         url: "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-win32bin-2.6.2.zip"
-  #         target: public/
-  #     - name: Set up Mariadb 🧰
-  #       uses: shogo82148/actions-setup-mysql@v1
-  #       with:
-  #         mysql-version: "mariadb-10.6"
-  #     - name: Setup PHP 🧰
-  #       uses: shivammathur/setup-php@v2
-  #       with:
-  #         php-version: "8.0"
-  #         extensions: mysqli
-  #     - name: Build and test 🏗 🧪
-  #       uses: freckle/stack-action@v5
-  #       with:
-  #         stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+  build-and-test-windows:
+    name: Build and test on Windows 🏗 🧪
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v4
+      - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
+        uses: actions/cache@v2.1.3
+        # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
+        with:
+          path: |
+            ~/.ghc
+            ~/.stack
+            ~/.stack-work
+          key: ${{ runner.os }}-stack
+      - name: Set up Mariadb 🧰
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+          mysql-version: "mariadb-10.6"
+      - name: Setup PHP 🧰
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.0"
+          extensions: mysqli
+      - name: Build and test 🏗 🧪
+        uses: freckle/stack-action@v5
+        with:
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          upgrade-stack: false
+          cache-save-always: true

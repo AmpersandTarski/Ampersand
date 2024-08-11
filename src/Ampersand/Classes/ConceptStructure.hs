@@ -131,11 +131,11 @@ instance ConceptStructure Expression where
   expressionsIn = subExpressions
 
 instance ConceptStructure A_Concept where
-  concs c = Set.singleton c
+  concs = Set.singleton
   expressionsIn _ = Set.empty
 
 instance ConceptStructure AConceptDef where
-  concs _ = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into PConceptDef and A_ConceptDef
+  concs = Set.singleton . acdcpt
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where

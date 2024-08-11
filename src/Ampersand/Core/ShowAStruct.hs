@@ -1,3 +1,7 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Ampersand.Core.ShowAStruct (AStruct (..)) where
 
 import Ampersand.Basics
@@ -22,6 +26,9 @@ instance AStruct AClassify where
 
 instance AStruct Rule where
   showA = showP . aRule2pRule
+
+instance AStruct (PairView Expression) where
+  showA = showP . aPairView2pPairView
 
 instance AStruct Relation where
   showA = showP . aRelation2pRelation
