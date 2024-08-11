@@ -10,11 +10,9 @@ This tutorial is meant for Business- or IT professionals who want to learn about
 
 ## Overview
 
-1. You will start by [looking at an information system called "Enrollment"](#example-system-enrollment) and learn the basics of its specification. By looking at a small information system you can discuss the purpose of the course with your tutor and peers.
-2. Then you will be introduced to the web-based version of Ampersand, [RAP 4](#your-tool-rap4), in which you can specify an information system and create a working web-based prototype. With this tool, you can make information systems of your own, enabling you to complete the course.
-3. Next, we will have a look at [the conceptual model](#conceptual-model-enrollment) behind the Enrollment system. You will learn to interpret a rule based on the given concepts and relations. You will see some basics of relational algebra.
-4. You will [learn how to analyse a "spreadsheet information system"](./reference-material/syntax-of-ampersand#population-in-spreadsheets) and turn it into a well defined information system. This technique allows you to help organizations with organizing and structuring data.
-5. You will learn how to add rules to your data. This will allow you to add meaning to your information system, because you can assure your user community that these rules will remain satisfied.
+1. You will start by [looking at an information system called "Enrollment"](#example-system-enrollment) and learn what a simple specification looks like. 
+2. Then you will be introduced to the web-based version of Ampersand, [RAP 4](#your-tool-rap4), in which you can specify an information system and create a working web-based prototype. With RAP 4, you can make information systems of your own, enabling you to complete the course.
+3. Next, we will have a look at [the conceptual model](#conceptual-model-enrollment) behind the Enrollment system. You will learn to interpret one rule based on the given concepts and relations. You will see some basics of relational algebra, just to grasp the flavour of formally defining rules.
 
 ## Example system: Enrollment
 
@@ -216,8 +214,8 @@ Check your answer in the web application Enrollment.
 
 So let’s finally go to the one rule that governs this information system: `isEnrolledFor |- takes ; isPartOf~`
 
-The rule consists of two parts with `|-` as separator. On each side of the separator you find a relation. On the left-hand side we have the relation `isEnrolledFor` and on the right-hand side you see a relation that is not explicitly defined in the model. This relation is constructed with two relations that are in the model: `takes` and `isPartOf~` (pronounced as “isPartOf-flip”, indicating the relation in opposite direction). This constructed relation consists of (`Student`, `Module`)-pairs with **a specific student** that is taking **a course** that contains (among others) **this specific module**.\
-Try to trace this last description in the model and note that although the result is a pair of two elements, there are actually three concepts involved.\
+The rule consists of two parts with `|-` as separator. On each side of the separator you find a relation. On the left-hand side we have the relation `isEnrolledFor` and on the right-hand side you see a relation that is not explicitly defined in the model. This relation is constructed with two relations that are in the model: `takes` and `isPartOf~` (pronounced as “isPartOf-flip”, indicating the relation in opposite direction). This constructed relation consists of (`Student`, `Module`)-pairs with **a specific student** that is taking **a course** that contains (among others) **this specific module**.
+Try to trace this last description in the model and note that although the result is a pair of two elements, there are actually three concepts involved.
 Let’s call this new relation `canEnrollFor`.
 
 Now we can pronounce the rule in more or less natural language: "isEnrolledFor implies canEnrollFor". If the first is true than the second must also be true.
@@ -245,7 +243,12 @@ Try to reason about the answers to the following questions based on the conceptu
 
 ### What's next?
 
-This concludes your first steps to get acquainted with Ampersand script en RAP4. The Open University Coursebook contains all theoretical background you need to start understanding and creating your own model. This Gitbook offers more practical and up to date information about the lang uage Ampersand script. For the syntax and meaning of Ampersand constructs, consult the reference-material. For more in depth information about modeling in Ampersand [click here](./modeling/README.md). For the rest...have a look around and feel free to ask questions.
+This concludes your first steps to get acquainted with Ampersand script and RAP4.
+The Open University Coursebook contains all theoretical background you need to start understanding and creating your own model.
+The documentation site you are reading now offers more practical and up to date information about the language Ampersand.
+For the syntax and meaning of Ampersand constructs, consult the reference-material.
+For more in depth information about modeling in Ampersand [click here](./modeling/README.md).
+For the rest... have a look around and feel free to ask questions.
 
 ## Making your first Ampersand script
 
@@ -284,6 +287,12 @@ You are now going to change some code and view the results in RAP4. Navigate bac
 
 After finishing your assignment, you have learned:
 
+- that the tool Ampersand helps you to develop information systems.
+- to recognize details in the source code of your specification and relate them to the information system "Enrollment" that you have been playing with;
+- that you can formalize a rule of the business in Ampersand.
+- that business rule constrain data in a database.
+- where to find the Repository for Ampersand Projects (RAP4)
+- to register yourself in RAP4
 - how to use RAP4 to write, save and compile code.
 - the first basic keywords of Ampersand script and their effect on the prototype.
 
@@ -291,38 +300,11 @@ After finishing your assignment, you have learned:
 
 1. How to describe functionality in a [conceptual model](#conceptual-model-enrollment)?
 2. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
-
-### Want to learn more?
-
-- how can I [make and run my first Ampersand script](#making-your-first-ampersand-script).
-- How can I describe functionality in a [conceptual model](#conceptual-model-enrollment)?
-- How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
-
-### What have you learned?
-
-- where to find the Repository for Ampersand Projects (RAP4)
-- to register yourself in RAP4
+1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](#your-tool-rap4).
+2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](#conceptual-model-enrollment)
+3. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 
 ### Disclaimer
 
 RAP4 is under development. You can expect to find teething problems (kinderziektes) in the software. Please notify us by [making an issue in our issue registration system](https://github.com/AmpersandTarski/RAP/issues). This way you can help improve Ampersand's tooling, for which the Ampersand-team is very grateful.
 
-### What have you learned?
-
-After finishing your assignment, you have learned:
-
-- to recognize details in the source code of your information system and relate them to the information system "Enrollment" that you have been playing with;
-- that a rule of the business, such as "A student can only enroll for a module that is in the course the student takes" can be formalized in Ampersand.
-- that such a business rule can be used to constrain data in a database.
-
-### Want to learn more?
-
-1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](#your-tool-rap4).
-2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](#conceptual-model-enrollment)
-3. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
-
-## What have you learned so far?
-
-- Ampersand is meant to develop information systems.
-- This tutorial will get you going with Ampersand. Consult your tutor with questions.
-- You have a tool to experiment with.

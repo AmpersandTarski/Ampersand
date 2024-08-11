@@ -1,5 +1,5 @@
 name: ampersand
-version: 5.1.1
+version: 5.1.2
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -32,6 +32,7 @@ ghc-options:
   - -Wredundant-constraints
   - -fwrite-ide-info
   - -hiedir=.hie
+#  - -Wint-conversion # added in the hope to get hexpat working again on macOS
 default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings
@@ -133,8 +134,6 @@ library:
     - Ampersand.FSpec.Motivations
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
-    - Ampersand.FSpec.ShowMeatGrinder
-    - Ampersand.FSpec.MetaModels
     - Ampersand.FSpec.ToFSpec.ADL2FSpec
     - Ampersand.FSpec.ToFSpec.ADL2Plug
     - Ampersand.FSpec.ToFSpec.Calc
@@ -188,7 +187,6 @@ library:
     - Ampersand.Output.ToPandoc.ChapterNatLangReqs
     - Ampersand.Output.ToPandoc.SharedAmongChapters
     - Ampersand.Prototype.GenAngularFrontend
-    - Ampersand.Prototype.GenAngularJSFrontend
     - Ampersand.Prototype.GenBackend
     - Ampersand.Prototype.GenFrontend
     - Ampersand.Prototype.PHP
@@ -214,6 +212,7 @@ custom-setup:
     - Cabal
     - directory
     - filepath
+    - hexpat
     - process
     - rio
     - time

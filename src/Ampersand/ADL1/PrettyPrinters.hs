@@ -138,7 +138,7 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
   pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack . plainNameOf) nm <~> sign <~> lbl
+      <+> (text . T.unpack . localNameOf) nm <~> sign <~> lbl
       <+> props
       <+> if null dflts
         then empty
@@ -199,7 +199,7 @@ instance Pretty TermPrim where
     PNamedR rel -> pretty rel
 
 instance Pretty P_NamedRel where
-  pretty (PNamedRel _ str mpSign) = (text . T.unpack . plainNameOf) str <~> mpSign
+  pretty (PNamedRel _ str mpSign) = (text . T.unpack . localNameOf) str <~> mpSign
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -306,7 +306,7 @@ prettyObject objectKind obj =
     crud (Just cruds) = pretty cruds
     view :: Maybe Name -> Doc
     view Nothing = empty
-    view (Just v) = (text . T.unpack) ("<" <> plainNameOf v <> ">")
+    view (Just v) = (text . T.unpack) ("<" <> localNameOf v <> ">")
     maybeQuoteLabel :: Maybe Text1 -> Doc
     maybeQuoteLabel lbl =
       case lbl of
@@ -428,9 +428,20 @@ instance Pretty PandocFormat where
 
 instance Pretty PProp where
   pretty p = case p of
+    P_Uni -> text "UNI"
+    P_Inj -> text "INJ"
     P_Sur -> text "SUR"
-    P_Tot -> text "SUR"
-    _ -> text . map toUpper . show $ p
+    P_Tot -> text "TOT"
+    P_Sym -> text "SYM"
+    P_Asy -> text "ASY"
+    P_Trn -> text "TRN"
+    P_Rfx -> text "RFX"
+    P_Irf -> text "IRF"
+    P_Prop -> text "SYM, ASY"
+    P_Map -> text "UNI, TOT"
+    P_Bij -> text "INJ, SUR"
+
+-- _ -> text . map toUpper . show $ p
 
 instance Pretty PRelationDefault where
   pretty x = case x of

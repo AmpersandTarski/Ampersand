@@ -72,6 +72,7 @@ where
 import Ampersand.Basics hiding (concatMap, foldr, orElse, sequence)
 import Ampersand.Input.ADL1.FilePos
 import Data.Foldable (concatMap)
+import qualified Data.Text1 as T1
 import Data.Traversable
 import Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -727,7 +728,7 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance (Hashable a) => Hashable (PairView a)
 
@@ -953,6 +954,15 @@ data BoxHeader = BoxHeader
   }
   deriving (Show, Data)
 
+instance Ord BoxHeader where
+  compare a b = compare (btType a, L.sort (btKeys a)) (btType b, L.sort (btKeys b))
+
+instance Eq BoxHeader where
+  a == b = compare a b == EQ
+
+instance Unique BoxHeader where
+  showUnique x = btType x T1.<>. (T.concat . fmap (text1ToText . showUnique) . L.sort . btKeys $ x)
+
 instance Traced BoxHeader where
   origin BoxHeader {pos = orig} = orig
 
@@ -964,6 +974,15 @@ data TemplateKeyValue = TemplateKeyValue
     tkval :: !(Maybe Text)
   }
   deriving (Show, Data)
+
+instance Ord TemplateKeyValue where
+  compare a b = compare (tkkey a, tkval a) (tkkey b, tkval b)
+
+instance Eq TemplateKeyValue where
+  a == b = compare a b == EQ
+
+instance Unique TemplateKeyValue where
+  showUnique x = toText1Unsafe $ tshow (tkkey x) <> tshow (tkval x)
 
 instance Traced TemplateKeyValue where
   origin TemplateKeyValue {pos = orig} = orig
@@ -1302,6 +1321,10 @@ data PProp
     P_Irf
   | -- | PROP keyword, the parser must replace this by [Sym, Asy].
     P_Prop
+  | -- | MAP keyword, the parser must replace this by [Uni, Tot].
+    P_Map
+  | -- | BIJ keyword, the parser must replace this by [Inj, Sur].
+    P_Bij
   deriving (Eq, Ord, Typeable, Data, Enum, Bounded)
 
 instance Show PProp where
@@ -1315,6 +1338,8 @@ instance Show PProp where
   show P_Rfx = "RFX"
   show P_Irf = "IRF"
   show P_Prop = "PROP"
+  show P_Map = "MAP"
+  show P_Bij = "BIJ"
 
 instance Unique PProp where
   showUnique = toText1Unsafe . tshow

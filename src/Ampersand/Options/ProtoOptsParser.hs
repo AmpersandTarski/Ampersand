@@ -7,7 +7,6 @@ import Ampersand.Options.FSpecGenOptsParser
 import Ampersand.Options.Utils
 import Options.Applicative
 import Options.Applicative.Builder.Extra
-import RIO.Char (toLower)
 
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser =
@@ -18,7 +17,7 @@ protoOptsParser =
             <*> optional dirPrototypeP
             <*> generateFrontendP
             <*> generateBackendP
-            <*> frontendVersionP
+            <* frontendVersionP
             <*> generateMetamodelP
         )
   where
@@ -38,22 +37,15 @@ protoOptsParser =
             <> help "Specify the directory where the prototype will be generated"
         )
 
-    frontendVersionP :: Parser FrontendVersion
+    frontendVersionP :: Parser String
     frontendVersionP =
-      toFrontendVersion
-        <$> strOption
-          ( long "frontend-version"
-              <> metavar "VERSION"
-              <> value "angularjs"
-              <> showDefault
-              <> help "Temporary switch to enable the development of the new angular frontend."
-          )
-      where
-        toFrontendVersion :: String -> FrontendVersion
-        toFrontendVersion x = case map toLower x of
-          "angular" -> Angular
-          "angularjs" -> AngularJS
-          _ -> AngularJS
+      strOption
+        ( long "frontend-version"
+            <> metavar "VERSION"
+            <> value "angular"
+            <> showDefault
+            <> help "Remains of a temporary switch to enable the development of the new angular frontend."
+        )
     generateFrontendP :: Parser Bool
     generateFrontendP =
       boolFlags

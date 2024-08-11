@@ -4,90 +4,93 @@ INCLUDE "Concepts.adl"
 INCLUDE "Relations.adl"
 
 
-PATTERN TermDefinitions LABEL "Term definitions"
-    RELATION usedIn[Relation*Term]
+PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
+    CONCEPT FormalAmpersand.Term "Formerly known as Expression." 
+    RELATION FormalAmpersand.usedIn[FormalAmpersand.Relation*FormalAmpersand.Term]
     MEANING "The rule expressed in relation algebra."
 --    TODO make transitive closure of usedIn
-    ROLE ExecEngine MAINTAINS bindUsedIn
-    RULE bindUsedIn : bind |- usedIn~
-    VIOLATION (TXT "{EX} InsPair;usedIn;Relation;", TGT I, TXT ";Term;", SRC I[Term])
+    ROLE ExecEngine MAINTAINS FormalAmpersand.bindUsedIn
+    RULE FormalAmpersand.bindUsedIn : FormalAmpersand.bind |- FormalAmpersand.usedIn~
+    VIOLATION (TXT "{EX} InsPair;FormalAmpersand.usedIn;FormalAmpersand.Relation;", TGT I, TXT ";FormalAmpersand.Term;", SRC I[FormalAmpersand.Term])
 
-    RELATION sign[Term*Signature] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
+    RELATION FormalAmpersand.sign[FormalAmpersand.Term*FormalAmpersand.Signature] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 
-    VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Term], TXT " = ", second[BinaryTerm*Term])
-    VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Term], TXT " |- ", second[BinaryTerm*Term])
+    VIEW FormalAmpersand.Equivalence        : FormalAmpersand.Equivalence(TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " = ", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
+    VIEW FormalAmpersand.Inclusion          : FormalAmpersand.Inclusion  (TXT "RULE ", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT " |- ", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term])
   --  VIEW Truth              : Truth      (TXT "RULE ", I[Term])
-    VIEW Relation           : Relation(name[Relation*RelationName], TXT "[", source[Relation*Concept];name[Concept*ConceptName], TXT "*", target[Relation*Concept];name[Concept*ConceptName], TXT "]")
-    VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Term])
-    VIEW Converse           : Converse  (arg[UnaryTerm*Term], TXT "~")
-    VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Term], TXT "*")
-    VIEW KleenePlus         : KleenePlus(arg[UnaryTerm*Term], TXT "+")
-    VIEW Intersection       : Intersection      (TXT "(", first[BinaryTerm*Term], TXT "/\\", second[BinaryTerm*Term], TXT ")")
-    VIEW Union              : Union             (TXT "(", first[BinaryTerm*Term], TXT "\\/", second[BinaryTerm*Term], TXT ")")
-    VIEW BinaryMinus        : BinaryMinus       (TXT "(", first[BinaryTerm*Term], TXT  "-" , second[BinaryTerm*Term], TXT ")")
-    VIEW Composition        : Composition       (TXT "(", first[BinaryTerm*Term], TXT  ";" , second[BinaryTerm*Term], TXT ")")
-    VIEW CartesianProduct   : CartesianProduct  (TXT "(", first[BinaryTerm*Term], TXT  "#" , second[BinaryTerm*Term], TXT ")")
-    VIEW RelationalAddition : RelationalAddition(TXT "(", first[BinaryTerm*Term], TXT  "!" , second[BinaryTerm*Term], TXT ")")
-    VIEW LeftResidual       : LeftResidual      (TXT "(", first[BinaryTerm*Term], TXT  "/" , second[BinaryTerm*Term], TXT ")")
-    VIEW RightResidual      : RightResidual     (TXT "(", first[BinaryTerm*Term], TXT "\\" , second[BinaryTerm*Term], TXT ")")
+    VIEW FormalAmpersand.Relation           : FormalAmpersand.Relation(FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName], TXT "[", FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept];FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName], TXT "*", FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept];FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName], TXT "]")
+    VIEW FormalAmpersand.UnaryMinus         : FormalAmpersand.UnaryMinus(TXT "-", FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term])
+    VIEW FormalAmpersand.Converse           : FormalAmpersand.Converse  (FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term], TXT "~")
+    VIEW FormalAmpersand.KleeneStar         : FormalAmpersand.KleeneStar(FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term], TXT "*")
+    VIEW FormalAmpersand.KleenePlus         : FormalAmpersand.KleenePlus(FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term], TXT "+")
+    VIEW FormalAmpersand.Intersection       : FormalAmpersand.Intersection      (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT "/\\", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.Union              : FormalAmpersand.Union             (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT "\\/", FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.BinaryMinus        : FormalAmpersand.BinaryMinus       (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT  "-" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.Composition        : FormalAmpersand.Composition       (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT  ";" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.CartesianProduct   : FormalAmpersand.CartesianProduct  (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT  "#" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.RelationalAddition : FormalAmpersand.RelationalAddition(TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT  "!" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.LeftResidual       : FormalAmpersand.LeftResidual      (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT  "/" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
+    VIEW FormalAmpersand.RightResidual      : FormalAmpersand.RightResidual     (TXT "(", FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT "\\" , FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term], TXT ")")
 
-    CONCEPT Operator ""
-    REPRESENT Operator TYPE ALPHANUMERIC
-    CONCEPT BinaryTerm ""
-    CLASSIFY BinaryTerm ISA Term
-    RELATION first[BinaryTerm*Term] [UNI]
-    RELATION second[BinaryTerm*Term] [UNI]
-    RELATION operator[BinaryTerm*Operator] [UNI]
+    CONCEPT FormalAmpersand.Operator ""
+    REPRESENT FormalAmpersand.Operator TYPE ALPHANUMERIC
+    CONCEPT FormalAmpersand.BinaryTerm ""
+    CLASSIFY FormalAmpersand.BinaryTerm ISA FormalAmpersand.Term
+    RELATION FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term] [UNI]
+    RELATION FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term] [UNI]
+    RELATION FormalAmpersand.operator[FormalAmpersand.BinaryTerm*FormalAmpersand.Operator] [UNI]
 
-    CONCEPT UnaryTerm ""
-    CLASSIFY UnaryTerm ISA Term
-    RELATION arg[UnaryTerm*Term] [UNI]
-    RELATION operator[UnaryTerm*Operator] [UNI]
+    CONCEPT FormalAmpersand.UnaryTerm ""
+    CLASSIFY FormalAmpersand.UnaryTerm ISA FormalAmpersand.Term
+    RELATION FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term] [UNI]
+    RELATION FormalAmpersand.operator[FormalAmpersand.UnaryTerm*FormalAmpersand.Operator] [UNI]
 
-    CONCEPT AtomValue "A value can exist on its own, without having one or more concepts, where it is a value of an atom in it."
-    REPRESENT AtomValue TYPE ALPHANUMERIC
-    RELATION singleton[Singleton*AtomValue] [UNI]
+    CONCEPT FormalAmpersand.AtomValue "A value can exist on its own, without having one or more concepts, where it is a value of an atom in it."
+    REPRESENT FormalAmpersand.AtomValue TYPE ALPHANUMERIC
+    CONCEPT FormalAmpersand.Singleton ""
+    RELATION FormalAmpersand.singleton[FormalAmpersand.Singleton*FormalAmpersand.AtomValue] [UNI]
     
-    CONCEPT V "The cartesian product."
-    CLASSIFY V ISA Term
-    RELATION userSrc[V*Concept] [UNI]
-    RELATION userTgt[V*Concept] [UNI]
+    CONCEPT FormalAmpersand.V "The cartesian product."
+    CLASSIFY FormalAmpersand.V ISA FormalAmpersand.Term
+    RELATION FormalAmpersand.userSrc[FormalAmpersand.V*FormalAmpersand.Concept] [UNI]
+    RELATION FormalAmpersand.userTgt[FormalAmpersand.V*FormalAmpersand.Concept] [UNI]
     
-    CONCEPT Epsilon "An term between two concepts that have an generalisation relation between them" 
-    CLASSIFY Epsilon ISA Term
-    RELATION userCpt[Epsilon*Concept] [UNI]
-    CONCEPT I "The identity term on a concept."
-    CLASSIFY I ISA Epsilon
+    CONCEPT FormalAmpersand.Epsilon "An term between two concepts that have an generalisation relation between them" 
+    CLASSIFY FormalAmpersand.Epsilon ISA FormalAmpersand.Term
+    RELATION FormalAmpersand.userCpt[FormalAmpersand.Epsilon*FormalAmpersand.Concept] [UNI]
+    CONCEPT FormalAmpersand.I "The identity term on a concept."
+    CLASSIFY FormalAmpersand.I ISA FormalAmpersand.Epsilon
     
-    CLASSIFY Equivalence ISA BinaryTerm
-    CLASSIFY Inclusion   ISA BinaryTerm
+    CLASSIFY FormalAmpersand.Equivalence ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.Inclusion   ISA FormalAmpersand.BinaryTerm
     
     --RELATION repr[Term*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
-    CLASSIFY Singleton          ISA Term
-    CLASSIFY BindedRelation     ISA Term
-    CLASSIFY Converse           ISA UnaryTerm
-    CLASSIFY KleeneStar         ISA UnaryTerm
-    CLASSIFY KleenePlus         ISA UnaryTerm
-    CLASSIFY UnaryMinus         ISA UnaryTerm
-    CLASSIFY Intersection       ISA BinaryTerm
-    CLASSIFY Union              ISA BinaryTerm
-    CLASSIFY BinaryMinus        ISA BinaryTerm
-    CLASSIFY Composition        ISA BinaryTerm
-    CLASSIFY CartesianProduct   ISA BinaryTerm
-    CLASSIFY RelationalAddition ISA BinaryTerm
-    CLASSIFY LeftResidual       ISA BinaryTerm
-    CLASSIFY RightResidual      ISA BinaryTerm
+    CLASSIFY FormalAmpersand.Singleton          ISA FormalAmpersand.Term
+    CLASSIFY FormalAmpersand.BindedRelation     ISA FormalAmpersand.Term
+    CLASSIFY FormalAmpersand.Converse           ISA FormalAmpersand.UnaryTerm
+    CLASSIFY FormalAmpersand.KleeneStar         ISA FormalAmpersand.UnaryTerm
+    CLASSIFY FormalAmpersand.KleenePlus         ISA FormalAmpersand.UnaryTerm
+    CLASSIFY FormalAmpersand.UnaryMinus         ISA FormalAmpersand.UnaryTerm
+    CLASSIFY FormalAmpersand.Intersection       ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.Union              ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.BinaryMinus        ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.Composition        ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.CartesianProduct   ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.RelationalAddition ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.LeftResidual       ISA FormalAmpersand.BinaryTerm
+    CLASSIFY FormalAmpersand.RightResidual      ISA FormalAmpersand.BinaryTerm
 ENDPATTERN
 
-RELATION showADL[Term*ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
-REPRESENT ShowADL TYPE BIGALPHANUMERIC
+RELATION FormalAmpersand.showADL[FormalAmpersand.Term*FormalAmpersand.ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
+REPRESENT FormalAmpersand.ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
-      ROLE ExecEngine MAINTAINS DelUnusedShowADL
-      RULE DelUnusedShowADL LABEL "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
-      MEANING "A ShowADL without Term will be removed."
-      VIOLATION ( TXT "{EX}_;DelAtom_;ShowADL_;", SRC I )
-VIEW Term : Term(showADL)
+   --   ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedShowADL
+   --   RULE FormalAmpersand.DelUnusedShowADL LABEL "del unused ShowADL" : I[FormalAmpersand.ShowADL] |- FormalAmpersand.(showADL[Term*ShowADL]~;showADL[Term*ShowADL]) \/ (showADL[PairView*ShowADL]~;FormalAmpersand.showADL[PairView*ShowADL])
+   --   MEANING "A ShowADL without Term or PairView will be removed."
+   --   VIOLATION ( TXT "{EX}_;DelAtom_;FormalAmpersand.ShowADL_;", SRC I )
+VIEW FormalAmpersand.Term : FormalAmpersand.Term(FormalAmpersand.showADL)
+VIEW FormalAmpersand.PairView : FormalAmpersand.PairView(FormalAmpersand.showADL)
 
 {- I can't get the following to work...  Grrr!
 PATTERN TypeGraph LABEL "Type graph"

@@ -51,7 +51,7 @@ The distinction between closed and open types is relevant in the following situa
 - The full relation, `V[A*B]` is defined only if both `A` and `B` are closed.
 - An interface `INTERFACE X : e` requires that the target of `e` is closed.
 
-Violations are currently signaled at runtime, but future versions of Ampersand will signal these violations at compile time.
+Inconsistencies are currently signaled at runtime, but future versions of Ampersand will signal these violations at compile time.
 
 ## Miscellaneous
 

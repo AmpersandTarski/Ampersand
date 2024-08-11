@@ -213,6 +213,9 @@ instance (HasPopulationOpts a) => HasPopulationOpts (ExtendedRunner a) where
 instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
   outputfileL = cmdOptsL . outputfileL
 
+instance (HasImportFile a) => HasImportFile (ExtendedRunner a) where
+  importFileL = cmdOptsL . importFileL
+
 instance HasRunner (ExtendedRunner a) where
   runnerL = lens eRunner (\x y -> x {eRunner = y})
 

@@ -113,8 +113,9 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
+import qualified Data.Text1 as T1
 import Data.Typeable (typeOf)
-import RIO.Char (toUpper)
+import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -252,6 +253,7 @@ data AConceptDef = AConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    acdcpt :: !A_Concept,
     acdname :: !Name,
     acdlabel :: !(Maybe Label),
     -- | The textual definition of this concept.
@@ -718,28 +720,36 @@ getInterfaceByName interfaces' nm = case [ifc | ifc <- interfaces', name ifc == 
 
 class Object a where
   concept :: a -> A_Concept -- the type of the object
-  fields :: a -> [ObjectDef] -- the objects defined within the object
+  fields :: a -> [ObjectDef] -- the objects directly defined within the object
   contextOf :: a -> Expression -- the context term
+  fieldsRecursive :: a -> [ObjectDef] -- the objects defined within the object and its subinterfaces
 
 instance Object ObjectDef where
-  concept obj = target (objExpression obj)
+  concept = target . objExpression
   fields obj = case objmsub obj of
     Nothing -> []
     Just InterfaceRef {} -> []
     Just b@Box {} -> map objE . filter isObjExp $ siObjs b
-    where
-      isObjExp :: BoxItem -> Bool
-      isObjExp BxExpr {} = True
-      isObjExp BxTxt {} = False
   contextOf = objExpression
+  fieldsRecursive obj = fields obj <> subFields obj
+    where
+      subFields :: ObjectDef -> [ObjectDef]
+      subFields x = case objmsub x of
+        Nothing -> []
+        Just si@Box {} -> concatMap (fieldsRecursive . objE) (filter isObjExp . siObjs $ si)
+        Just InterfaceRef {} -> []
 
 data BoxItem
   = BxExpr {objE :: !ObjectDef}
   | BxTxt {objT :: !BoxTxt}
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
+
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr {} = True
+isObjExp BxTxt {} = False
 
 instance Unique BoxItem where
-  showUnique x = toText1Unsafe ("BoxItem_" <> (tshow . abs . hash . tshow) x)
+  showUnique = showUniqueAsHash
 
 instance Traced BoxItem where
   origin o =
@@ -822,7 +832,16 @@ data Cruds = Cruds
     crudU :: !Bool,
     crudD :: !Bool
   }
-  deriving (Show, Data)
+  deriving (Data)
+
+instance Show Cruds where
+  show x =
+    uncurry (\upper -> if upper then toUpper else toLower)
+      <$> [ (crudC x, 'C'),
+            (crudR x, 'R'),
+            (crudU x, 'U'),
+            (crudD x, 'D')
+          ]
 
 data SubInterface
   = Box
@@ -837,6 +856,24 @@ data SubInterface
         siIfcId :: !Name -- id of the interface that is referenced to
       }
   deriving (Show)
+
+instance Traced SubInterface where
+  origin Box {pos = orig} = orig
+  origin InterfaceRef {pos = orig} = orig
+
+instance Ord SubInterface where
+  compare a b = case (a, b) of
+    (Box {}, Box {}) -> compare (siConcept a, siHeader a, siObjs a) (siConcept b, siHeader b, siObjs b)
+    (Box {}, InterfaceRef {}) -> GT
+    (InterfaceRef {}, InterfaceRef {}) -> compare (siIsLink a, siIfcId a) (siIsLink b, siIfcId b)
+    (InterfaceRef {}, Box {}) -> LT
+
+instance Eq SubInterface where
+  a == b = compare a b == EQ
+
+instance Unique SubInterface where
+  showUnique si@Box {} = (showUnique . siHeader) si T1.<>. (tshow . abs . hash . tshow . siObjs) si
+  showUnique si@InterfaceRef {} = (showUnique . siIsLink) si T1.<>. (fullName . siIfcId $ si)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

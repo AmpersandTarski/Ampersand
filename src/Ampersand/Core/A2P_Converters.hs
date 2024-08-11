@@ -18,6 +18,7 @@ module Ampersand.Core.A2P_Converters
     aPattern2pPattern,
     aRoleRule2pRoleRule,
     aInterface2pInterface,
+    aPairView2pPairView,
   )
 where
 
@@ -133,6 +134,16 @@ aProps2Pprops aps
       && P_Asy
       `elem` xs =
       Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
+  | P_Uni
+      `elem` xs
+      && P_Tot
+      `elem` xs =
+      Set.singleton P_Map `Set.union` (xs Set.\\ Set.fromList [P_Uni, P_Tot])
+  | P_Inj
+      `elem` xs
+      && P_Sur
+      `elem` xs =
+      Set.singleton P_Bij `Set.union` (xs Set.\\ Set.fromList [P_Inj, P_Sur])
   | otherwise = xs
   where
     xs = Set.map aProp2pProp aps

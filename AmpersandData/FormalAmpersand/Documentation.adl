@@ -1,30 +1,50 @@
 CONTEXT FormalAmpersand IN ENGLISH
-PURPOSE PATTERN Documentation
+PURPOSE PATTERN FormalAmpersand.Documentation
 {+
 +}
-PATTERN Documentation
-    REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
+PATTERN FormalAmpersand.Documentation
+    CONCEPT FormalAmpersand.Purpose ""
+    CONCEPT FormalAmpersand.Meaning ""
+    -- CLASSIFY Meaning ISA Markup See issue https://github.com/AmpersandTarski/Ampersand/issues/1484
+    -- CLASSIFY Markup ISA Meaning
+    RELATION FormalAmpersand.markup[FormalAmpersand.Meaning*FormalAmpersand.Markup][UNI,TOT]
+    CONCEPT FormalAmpersand.MarkupText ""
+    CONCEPT FormalAmpersand.Markup ""
 
-    REPRESENT MarkupText TYPE BIGALPHANUMERIC    
-    RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
+    RELATION FormalAmpersand.language[FormalAmpersand.Markup*FormalAmpersand.Language][UNI,TOT]
+    RELATION FormalAmpersand.text[FormalAmpersand.Markup*FormalAmpersand.MarkupText][UNI,TOT]
+    RULE FormalAmpersand.enumerationOfLanguage : I[FormalAmpersand.Language] = "Dutch" \/ "English" 
+    POPULATION FormalAmpersand.Language CONTAINS ["Dutch", "English" ]
+    RELATION FormalAmpersand.origin[FormalAmpersand.Purpose*FormalAmpersand.Origin][]
+    RELATION FormalAmpersand.explMarkup[FormalAmpersand.Purpose*FormalAmpersand.Markup][TOT,UNI]
+    RELATION FormalAmpersand.explRefIds[FormalAmpersand.Purpose*FormalAmpersand.Text]
+    MEANING "Refers to an authoritative source to legitimize the purpose."
+
+    -- TODO: Specify the rule that each purpose must be the purpose of a concept, pattern relation etc. whatever.
+
+
+
+    REPRESENT FormalAmpersand.MarkupText TYPE BIGALPHANUMERIC    
+    RELATION FormalAmpersand.meaning[FormalAmpersand.Rule*FormalAmpersand.Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
     MEANING "The meanings of a relation."
-    RELATION decMean[Relation * Meaning]
+    RELATION FormalAmpersand.decMean[FormalAmpersand.Relation * FormalAmpersand.Meaning]
     MEANING "The meanings of a relation."
-    RELATION purpose[Pattern*Purpose]
+    RELATION FormalAmpersand.meaning[FormalAmpersand.ConceptDef*FormalAmpersand.Meaning]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Pattern*FormalAmpersand.Purpose]
     MEANING "The purposes of a pattern."
-    RELATION purpose[Relation * Purpose]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Relation * FormalAmpersand.Purpose]
     MEANING "The purposes of a relation."
-    RELATION meaning[Rule * Meaning]
+    RELATION FormalAmpersand.meaning[FormalAmpersand.Rule * FormalAmpersand.Meaning]
     MEANING "The meanings of a rule."
-    RELATION purpose[Rule * Purpose]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Rule * FormalAmpersand.Purpose]
     MEANING "The purposes of a rule."
-    RELATION purpose[View * Purpose]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.View * FormalAmpersand.Purpose]
     MEANING "The purposes of a view."
-    RELATION purpose[Concept * Purpose]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Concept * FormalAmpersand.Purpose]
     MEANING "The purposes of a concept."
-    RELATION purpose[Interface * Purpose]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Interface * FormalAmpersand.Purpose]
     MEANING "The purposes of an interface."
-    RELATION purpose[Context * Purpose] [{-This is currently *NOT* INJ, see issue https://github.com/AmpersandTarski/Ampersand/issues/46 -}]
+    RELATION FormalAmpersand.purpose[FormalAmpersand.Context * FormalAmpersand.Purpose] [{-This is currently *NOT* INJ, see issue https://github.com/AmpersandTarski/Ampersand/issues/46 -}]
     MEANING "The purposes of a context."
 ENDPATTERN
 

@@ -11,7 +11,7 @@ jobs:
     name: Add release notes to artefacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Upload macOS artifact
         uses: actions/upload-release-asset@v1
@@ -145,7 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -167,7 +167,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -192,7 +192,7 @@ jobs:
   #   runs-on: windows-latest
   #   steps:
   #     - name: Checkout project contents 📡
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #     # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
   #     # uses: actions/cache@v3.3.2
   #     # # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml

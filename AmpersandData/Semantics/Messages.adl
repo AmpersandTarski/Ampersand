@@ -51,11 +51,11 @@ data Message =
           }
 
 data Frame = -- A frame has a tree structure. Value are leaves and Comp are nodes.
-  Value { name : Identifier
+  Value { name : Name
         , source, target : Maybe Concept
         , value : Set Atom
         }
- | Comp { name : Identifier
+ | Comp { name : Name
         , source, target : Maybe Concept
         , rel, relFlp : [Frame]
         }
@@ -64,12 +64,12 @@ data Frame = -- A frame has a tree structure. Value are leaves and Comp are node
 CONTEXT MESSAGING
 
 PATTERN Atoms -- This pattern is copied from FormalAmpersand
-    RELATION name[Concept*Identifier] [UNI,TOT]
-    RELATION name[Relation*Identifier] [UNI,TOT]
+    RELATION name[Concept*Name] [UNI,TOT]
+    RELATION name[Relation*Name] [UNI,TOT]
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
-    REPRESENT Identifier TYPE ALPHANUMERIC
+    REPRESENT Name TYPE ALPHANUMERIC
 
     RULE IdentifiableConcepts LABEL "Identifiability of concepts" : name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
@@ -86,7 +86,7 @@ RELATION command[Message*Command] [UNI,TOT]
 RELATION concept[Message*Concept] [UNI,TOT]
 RELATION rel[Message*Frame]
 RELATION relFlp[Message*Frame]
-RELATION name[Frame*Identifier] [UNI,TOT]
+RELATION name[Frame*Name] [UNI,TOT]
 RELATION source[Frame*Concept] [UNI]
 RELATION target[Frame*Concept] [UNI]
 RELATION value[Frame*Atom]

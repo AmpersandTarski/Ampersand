@@ -25,6 +25,34 @@ One purpose of Ampersand is to generate a web-application. Currently, the genera
 
 The architecture is explained in more detail in [this chapter](./reference-material/architecture-of-an-ampersand-application).
 
+## Low-code Ampersand
+   The current RAP tool requires users to write Ampersand code in Ampersand syntax.
+   The Atlas, which is part of RAP, then shows all concepts, relations and rules in a nice interface.
+   We want to make the atlas interactive, so that users can manage their specifications directly in the Atlas instead of writing Ampersand code.
+   We want them to deploy their specification directly from the Atlas.
+
+### Purpose
+   To make Ampersand more accessible to a wider audience, we want to create a low-code    version of Ampersand.
+
+## Schema-Changing Data Migration
+   Ampersand compiles and deploys a specification into a functional information system.
+   However, it lacks support for data migration, so it is less useful for maintaining information systems.
+   Only if an upgrade can be done by re-generating the entire system, Ampersand is useful.
+   But when existing production data needs to be preserved, re-generation is not always an option.
+   Especially for increments that alter the system's schema in production,
+   developers must manually migrate the data, which is error-prone and time-consuming.
+   This can inhibit a steady pace of releases and it inevitably involves down-time.
+   Consequently, schema-changing data migrations often face challenges, leading developers to resort to manual migration or employ workarounds.
+
+### Purpose
+   To address this issue, we want Ampersand to support schema-changing data migration.
+   We aim to generate migration scripts for automating the migration process, as described in Joosten\&Joosten, Data Migration under a Changing Schema in Ampersand, in: Proceedings of Relational and Algebraic Methods in Computer Science (RAMiCS), Prague, 2024.
+
+![](./assets/migration_system_deployed.png)
+
+   The overarching challenge is to preserve the business semantics of data amidst schema changes, under the condition of zero downtime.
+   We plan to do this as a [project](https://github.com/orgs/AmpersandTarski/projects/12?pane=info) in the A-team.
+   By solving this problem we can increase the frequency of releases in the software process.
 
 ## NoSQL storage
 The current architecture builds on an SQL database, using MariaDB (formerly known as MySQL)
@@ -32,6 +60,7 @@ Instead of storing data to an SQL database only, we want to other types of datab
 Especially NoSQL databases \(e.g. triple stores, graph databases, persistent event streaming\) seem very suited for Ampersand.
 
 This enhancement will gain traction when some party (e.g. a database vendor) sees benefits in this research and is willing to sponsor it (either in kind or in cash).
+
 ### Purpose
 The problem is that modern persistent stores come in many sorts and shapes.
 There are triple stores, graph databases, persistent event streaming, to name but a few technologies that have conquered the landscap of persistent data. We want Ampersand to link up with such technologies to serve a wider spectrum of problems.
@@ -62,14 +91,6 @@ To work closer together with the semantic web community requires that Ampersand 
 Ampersand and semantic web technologies have much in common. To explore this topic and to benefit from available ontologies expressed in RDF and OWL, we want to make an OWL/RDFS parser so we can interpret ontologies in Ampersand.
 
 ![An extra parser, specifically for OWL/RDFS](./assets/untitled-diagram-7%20%281%29.png)
-
-
-## Refactor the front-end
-To generate reactive web-applications instead of a classical object-oriented web-application is why we want to refactor the Ampersand front-end.
-The current front-end is based on the Angular-JS framework. To enter the world of reactive programming, we want to refactor the front-end.
-
-![Refactoring the front-end (pink items)](<./assets/untitled-diagram-6.png>)
-This issue is currently underway, sponsored in kind by Ordina. We expect the first results in the summer of 2023.
 
 
 ## Allow GraphQL on the back-end

@@ -20,7 +20,7 @@ extra-deps:
   #  - yaml-config-0.4.0@sha256:575103d9fa1ef074a2b419256babaae7be5f5257f37adf3ed2601052415b2d83,1814
   - text1-0.0.7.4@sha256:cc980c88b188384fadd02b56e6e8e5f9317a43e1459a16558273589a49bcf951,2741
   - megaparsec-9.6.1@sha256:8d8f8ee5aca5d5c16aa4219afd13687ceab8be640f40ba179359f2b42a628241,3323
-
+  - hexpat-0.20.13
 # Override default flag values for local packages and extra-deps
 flags:
   pandoc:

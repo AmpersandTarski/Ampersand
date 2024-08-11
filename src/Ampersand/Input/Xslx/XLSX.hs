@@ -4,11 +4,7 @@ module Ampersand.Input.Xslx.XLSX (parseXlsxFile) where
 
 import Ampersand.Basics hiding (view, (^.), (^?))
 import Ampersand.Core.ParseTree
--- Just for debugging purposes
-
--- ((^?),ix)
-
-import Ampersand.Core.ShowPStruct
+import Ampersand.Core.ShowPStruct -- Just for debugging purposes
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
@@ -26,7 +22,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 parseXlsxFile ::
-  (HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env) =>
   Maybe FileKind ->
   FilePath ->
   RIO env (Guarded P_Context)
@@ -47,7 +43,7 @@ parseXlsxFile mFk file =
       [] -> fatal "Filename must not be empty."
       h : tl -> Text1 h (T.pack tl)
     xlsx2pContext ::
-      (HasFSpecGenOpts env) =>
+      (HasTrimXLSXOpts env) =>
       env ->
       Xlsx ->
       Guarded P_Context
@@ -152,7 +148,7 @@ addRelations pCtx = enrichedContext
                 [ ( headrel
                       { dec_sign = P_Sign g (targt (NE.head sRel)),
                         dec_prps =
-                          let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
+                          let test prop = prop `elem` foldr (Set.intersection . dec_prps) Set.empty sRel
                            in Set.fromList $ filter (not . test) [P_Uni, P_Tot, P_Inj, P_Sur]
                       }, -- the generic relation that summarizes sRel
                       --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
@@ -274,7 +270,7 @@ instance Show SheetCellsForTable where -- for debugging only
       <> debugInfo x
 
 toPops ::
-  (HasFSpecGenOpts env) =>
+  (HasTrimXLSXOpts env) =>
   env ->
   NameSpace ->
   -- | The file name is needed for displaying errors in context
@@ -421,7 +417,7 @@ toPops env ns file x = map popForColumn (colNrs x)
             (Just delimiter) -> map trim $ T.split (== delimiter) xs
         handleSpaces = if view trimXLSXCellsL env then trim else id
     originOfCell ::
-      CellIndex -> -- (row number,col number)
+      CellIndex ->
       Origin
     originOfCell (r, c) =
       XLSXLoc file (theSheetName x) (unRowIndex r, unColumnIndex c)

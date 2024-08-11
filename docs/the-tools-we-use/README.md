@@ -1,12 +1,8 @@
-# Introduction
+# Introduction for Contributors
 
 ## Introduction
 
-In the early days of the development of Ampersand, it was a single person's project. Haskell was used as programming language, and the source code was kept on a single PC. Fortunately, things have evolved. Now we have a team, and we use quite a lot of open source tooling to help us along. The downside is that not everybody in the team knows all there is to know about the tooling. The purpose of this guide is to help out. It will also be a great place to start for new team members.
-
-The [up to date version of this book](http://ampersandtarski.gitbooks.io/the-tools-we-use-for-ampersand/) is published automatically every time a commit is done to the master branch.
-
-Documentation on actually using Ampersand - e.g. for making and running prototypes (including the ways to install on your computer what it takes to do so) - is in another document, called [Ampersand Documentation](https://ampersandtarski.gitbook.io/documentation/)
+In the early days of the development of Ampersand, it was a single person's project. Haskell was used as programming language, and the source code was kept on a single PC. Fortunately, things have evolved. Now we have a team, and we use quite a lot of open source tooling to help us along. The downside is that not everybody in the team knows all there is to know about the tooling. The purpose of this guide is to help out. It will also be a great place to start for new team members and other contributors to Ampersand.
 
 ## Working Principles
 
@@ -33,6 +29,5 @@ Unless otherwise specified, everything in this repository is covered by the foll
 
 ![Creative Commons Attribution-ShareAlike 4.0 International](https://licensebuttons.net/l/by-sa/4.0/88x31.png)
 
-_**Ampersand Documentation**_ by the [the Ampersand team](http://www.gitbook.com/@ampersandtarski/) is licensed under a [Creative Commons Attribution 4.0 International Licence](http://creativecommons.org/licenses/by-sa/4.0/).
+_**Ampersand Documentation**_ by the [the Ampersand team](https://github.com/orgs/AmpersandTarski/teams/core) is licensed under a [Creative Commons Attribution 4.0 International Licence](http://creativecommons.org/licenses/by-sa/4.0/).
 
-Based on a work at [https://github.com/AmpersandTarski/TheToolsWeUse](https://github.com/AmpersandTarski/TheToolsWeUse)

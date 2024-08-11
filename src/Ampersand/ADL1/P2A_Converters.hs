@@ -300,8 +300,8 @@ pCtx2aCtx
                 ctxrs = Set.fromList rules,
                 ctxds = Set.fromList relations,
                 ctxpopus = udpops, -- the content is copied from p_pops
-                ctxcdsOutPats = allConceptDefsOutPats,
-                ctxcds = allConceptDefs,
+                ctxcdsOutPats = allConceptDefsOutPats contextInfo,
+                ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
                 ctxreprs = representationOf contextInfo,
@@ -360,7 +360,7 @@ pCtx2aCtx
               defaultFormat = deffrmtCtxt
             }
         where
-          gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
+          gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (toList . concs) gns)
@@ -751,7 +751,7 @@ pCtx2aCtx
                 | toLower c `elem` T.unpack (maybe "" text1ToText str) = False
                 | otherwise = def'
           warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
-          warnings pc@(P_Cruds _ crd1) aCruds = addWarnings warns aCruds
+          warnings pc@(P_Cruds _ crd1) = addWarnings warns
             where
               crd = text1ToText crd1
               warns :: [Warning]
@@ -922,7 +922,7 @@ pCtx2aCtx
                                 ifcObj =
                                   o
                                     { objPlainName = Just . fullName1 . name $ pIfc,
-                                      objlbl = Nothing
+                                      objlbl = mLabel pIfc
                                     },
                                 ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
                                 ifcPos = origin pIfc,
@@ -954,9 +954,9 @@ pCtx2aCtx
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
-          <*> traverse (pure . pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
-          <*> traverse (pure . pRoleRule2aRoleRule) (pt_RRuls ppat)
-          <*> traverse pure (pt_Reprs ppat)
+          <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
+          <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
+          <*> pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
@@ -966,7 +966,7 @@ pCtx2aCtx
                 ptpos = origin ppat,
                 ptend = pt_end ppat,
                 ptrls = Set.fromList rules',
-                ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> pt_gns ppat,
+                ptgns = mapMaybe (pClassify2aClassify (conceptMap ci)) (pt_gns ppat),
                 ptdcs = Set.fromList relations,
                 ptrrs = roleRules,
                 ptcds = conceptdefs,
@@ -1180,10 +1180,10 @@ pCtx2aCtx
       pRefObj2aRefObj _ (PRef2Pattern s) = pure $ ExplPattern s
       pRefObj2aRefObj _ (PRef2Interface s) = pure $ ExplInterface s
       pRefObj2aRefObj _ (PRef2Context s) = pure $ ExplContext s
-      allConceptDefsOutPats :: [AConceptDef]
-      allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) p_conceptdefs
-      allConceptDefs :: [AConceptDef]
-      allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
+      allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
+      allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
+      allConceptDefs :: ContextInfo -> [AConceptDef]
+      allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
       udefRoleRules' :: [A_RoleRule]
       udefRoleRules' =
         map
@@ -1399,6 +1399,8 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
       P_Rfx -> [Rfx]
       P_Irf -> [Irf]
       P_Prop -> [Sym, Asy]
+      P_Map -> [Uni, Tot]
+      P_Bij -> [Inj, Sur]
 
     decSign = pSign2aSign cptMap (dec_sign pd)
     checkEndoProps :: Guarded ()
@@ -1419,15 +1421,17 @@ pDisAmb2Expr (_, Rel [x]) = pure x
 pDisAmb2Expr (o, dx) = cannotDisambiguate o dx
 
 pConcDef2aConcDef ::
+  ConceptMap ->
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormatPConceptDef
   PConceptDef ->
   AConceptDef
-pConcDef2aConcDef defLanguage defFormat pCd =
+pConcDef2aConcDef conceptmap defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
+      acdcpt = pCpt2aCpt conceptmap (PCpt {p_cptnm = name pCd, p_cptlabel = cdlbl pCd}),
       acdname = name pCd,
-      acdlabel = mLabel pCd,
+      acdlabel = cdlbl pCd,
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd

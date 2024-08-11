@@ -2,12 +2,12 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
-PURPOSE PATTERN DataObjects MARKDOWN
+PURPOSE PATTERN FormalAmpersand.DataObjects MARKDOWN
 {+This pattern describes the invariant semamtics of data objects (concept: Object).
 An `Object` is a runtime thing, which is defined by an `ObjectDef`.
 +}
 
-PURPOSE PATTERN Interfaces
+PURPOSE PATTERN FormalAmpersand.Interfaces
 {+One purpose of Interfaces is to convert/translate data from one context (that is governed by specific rules/relations/presentations)
 to another context (governed by another set of rules/relations/presentations).
 Data exists only within a context, which, at least conceptually, can exist not only in a computer system, but also in a human system.
@@ -18,38 +18,38 @@ It has rules of its own for governing 'translations' and to ensure that messages
 The concepts and relations defined in this pattern describe the contexts of Interfaces at a meta level.
 +}
 
-PURPOSE CONCEPT Interface
+PURPOSE CONCEPT FormalAmpersand.Interface
 {+An interface is used by persons or by computers to execute transactions on a data set.
 Interfaces are needed to communicate with persons or other computer programs.
 +}
 
-PURPOSE RELATION ifcRoles[Interface*Role]
+PURPOSE RELATION FormalAmpersand.ifcRoles[FormalAmpersand.Interface*FormalAmpersand.Role]
 {+ An interface is accessible only to the role(s) mentioned in this relation. +}
 
-PURPOSE CONCEPT ObjectDef
+PURPOSE CONCEPT FormalAmpersand.ObjectDef
 {+ In essence, an interface is a hierarchical structure containing fields.
 It describes the structure of objects upon which transactions can be executed.
 The interface may also contain information related to such objects.
 +}
 
-PURPOSE RELATION ifcObj[Interface*ObjectDef]
+PURPOSE RELATION FormalAmpersand.ifcObj[FormalAmpersand.Interface*FormalAmpersand.ObjectDef]
 {+In order to link an object definition to an interface, the two must be related.
 Each interface has precisely one object definition.
 +}
 
-PURPOSE RELATION label[Field*ObjectName]
+PURPOSE RELATION FormalAmpersand.label[FormalAmpersand.Field*FormalAmpersand.ObjectName]
 {+The label of an objectDef is typically the field name in the comprising ObjectDef.
 An outside actor, whether a user or a machine, recognizes a field by its label to ensure that it interprets the data in this field correctly.
 +}
 
-PURPOSE RELATION objTerm[ObjectDef*Term]
+PURPOSE RELATION FormalAmpersand.objTerm[FormalAmpersand.ObjectDef*FormalAmpersand.Term]
 {+Every object definition is associated with an term.
 If the object definition is a field, this term yields the pairs that are used to ``walk'' through the population of the system.
 It works the same way if the object definition is related to an interface.
 In that case, the term characterizes the atoms on which it can be used.
 +}
 
-PURPOSE RELATION getTermRelation[Term*Relation]
+PURPOSE RELATION FormalAmpersand.getTermRelation[FormalAmpersand.Term*FormalAmpersand.Relation]
 {+Some terms are equivalent to a relation.
 Such terms can be used to change the content of (i.e. to edit) a relation.
 We say that the term allows editing in that relation.
@@ -57,7 +57,7 @@ That is relevant, because such terms allow the system to open a relation for edi
 So in order to be edited, a relation must occur in this relation.
 +}
 
-PURPOSE RULE AccessibleRelations
+PURPOSE RULE FormalAmpersand.AccessibleRelations
 {+The population of every relation may need to change every now and then.
 Changing relations, however, requires an interface.
 The following rule signals the developer if no such interface exists.
@@ -73,18 +73,18 @@ PURPOSE RELATION sessionRole
 +}
 -}
 
-PURPOSE RELATION ifcInputs[Interface*Relation]
+PURPOSE RELATION FormalAmpersand.ifcInputs[FormalAmpersand.Interface*FormalAmpersand.Relation]
 {+Relations ifcInputs and ifcOutputs exist for computing automated functionality.+}
 
-PURPOSE PATTERN InterfaceSemantics
+PURPOSE PATTERN FormalAmpersand.InterfaceSemantics
 {+Calling an interface in Ampersand corresponds with performing a database transaction.
 For this purpose we define how transactions are affected by the way an interface is defined.
 In this line of thought, a transaction can be regarded as an instantiation of an interface (or the calling of an interface).
 +}
-PURPOSE CONCEPT Transaction
+PURPOSE CONCEPT FormalAmpersand.Transaction
 {+The purpose of a transaction is to bring brings an information system from one state to another, whilst keeping all invariants true.
 +}
-PURPOSE CONCEPT Object
+PURPOSE CONCEPT FormalAmpersand.Object
 {+By viewing a database as a collection of pairs, it is desirable to navigate over pairs from one atom to another.
 Starting on a particular atom (in the database), users may follow the links to browse through the data.
 However, the amount of data to navigate in is limited when using an interface.
@@ -93,49 +93,49 @@ Roughly speaking, an object consists of one atom (the root of the object) and al
 Since objects are defined recursively, interfaces can involve a substantial amount of data.
 +}
 
-PURPOSE RELATION transactionObject[Transaction*Object]
+PURPOSE RELATION FormalAmpersand.transactionObject[FormalAmpersand.Transaction*FormalAmpersand.Object]
 {+Because every transaction operates on one object, we must specify a relation that defines the object on which a transaction operates.
 +}
 
-PURPOSE RELATION inst[Transaction*Interface]
+PURPOSE RELATION FormalAmpersand.inst[FormalAmpersand.Transaction*FormalAmpersand.Interface]
 {+In order to restrict state changes caused by a transaction, each transaction is governed by restrictions imposed by an interface.
 For that purpose, a transaction is treated as an instance of an interface.
 This makes interfaces useful as a description of communication with the information system.
 +}
 
-PURPOSE RELATION def[Object*ObjectDef]
+PURPOSE RELATION FormalAmpersand.def[FormalAmpersand.Object*FormalAmpersand.ObjectDef]
 {+Being an instance of an object definition, every object must be in the def-relation to identify the object definition of which it is an instance.
 +}
 
-PURPOSE RELATION lAtom[Pair*Atom]
+PURPOSE RELATION FormalAmpersand.lAtom[FormalAmpersand.Pair*FormalAmpersand.Atom]
 {+The relation ``left'' is needed to identify one of the atoms in a pair.
 +}
 
-PURPOSE RELATION rAtom[Pair*Atom]
+PURPOSE RELATION FormalAmpersand.rAtom[FormalAmpersand.Pair*FormalAmpersand.Atom]
 {+The relation ``right'' is needed to identify the other atom in a pair.
 +}
 
-PURPOSE RELATION in[Pair*Term]
+PURPOSE RELATION FormalAmpersand.in[FormalAmpersand.Pair*FormalAmpersand.Term]
 {+The relation ``in'' is needed to establish whether a pair is in an term.
 This can be computed by taking the populations of all relations that are used in the term, and by computing the result of applying the relational operators in the term on those relations.
 +}
 
-PURPOSE RULE AtomsInObjects
+PURPOSE RULE FormalAmpersand.AtomsInObjects
 {+The data content of an object is defined by the field terms inside that object.
 +}
-PURPOSE RULE FieldsInObjects
+PURPOSE RULE FormalAmpersand.FieldsInObjects
 {+An object may have a number of fields, which are defined in the object's definition.
 +}
-PURPOSE RULE FieldsWithUniqueNames
+PURPOSE RULE FormalAmpersand.FieldsWithUniqueNames
 {+In order to identify fields within an object, each field is given a name to identify its field term.
 +}
 
-PURPOSE RULE quadsInInterface
+PURPOSE RULE FormalAmpersand.quadsInInterface
 {+In order to make quads work, an interface needs permission to use relations for inputs or outputs.
 If a quad that you expect is missing, try if you have granted the required permissions by entering the right relations in the inputs or outputs of the interface.
 +}
 
-PURPOSE RULE violatableByInterface
+PURPOSE RULE FormalAmpersand.violatableByInterface
 {+Which rules can be violated in an interface?
 To answer that question, we must first look at the relations that can be edited,
 because these actions will cause violations, if any.
@@ -143,19 +143,19 @@ The rules that are violatable, are the ones in which the editable relations are 
 However, some rules are being restored by quads, which can cause other relations to be edited.
 +}
 
-PURPOSE CONCEPT Act
+PURPOSE CONCEPT FormalAmpersand.Act
 {+The basic unit of action in a transaction is the act. It is defined for the purpose of defining precisely what a transaction can and cannot do, as it is constrained by an interface.
 +}
 
-PURPOSE RELATION delta[Act*Pair]
+PURPOSE RELATION FormalAmpersand.delta[FormalAmpersand.Act*FormalAmpersand.Pair]
 {+If an act can insert or delete a number of pairs in a relation, those pairs are identified through the relation ``delta''.
 +}
 
-PURPOSE RELATION changes[Act*Relation]
+PURPOSE RELATION FormalAmpersand.changes[FormalAmpersand.Act*FormalAmpersand.Relation]
 {+Since every act operates on precisely one relation, that relation is known through the relation ``changes''.
 +}
 
-PURPOSE RULE AtomsInObjects
+PURPOSE RULE FormalAmpersand.AtomsInObjects
 {+Being an instance of an Objectdef, every object represents one pair of atoms that is in the object term of that object.
 +}
 
