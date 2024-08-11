@@ -17,36 +17,36 @@ chpDiagnosis ::
 chpDiagnosis env fSpec
   | Diagnosis `notElem` view chaptersL env = mempty
   | otherwise =
-    ( xDefBlck env fSpec Diagnosis
-        <> para
-          ( (str . l)
-              ( NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van ",
-                EN "This chapter provides an analysis of the Ampersand script of "
-              )
-              <> (emph . singleQuoted . str . fullName) fSpec
-              <> str ". "
-              <> (str . l)
-                ( NL $
-                    "Deze analyse is bedoeld voor de auteur(s) van dit script. "
-                      <> "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren.",
-                  EN $
-                    "This analysis is intended for the author(s) of this script. "
-                      <> "It can be used to complete the script or to improve possible flaws."
+      ( xDefBlck env fSpec Diagnosis
+          <> para
+            ( (str . l)
+                ( NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van ",
+                  EN "This chapter provides an analysis of the Ampersand script of "
                 )
-          )
-        <> roleomissions -- tells which role-rule, role-interface, and role-relation assignments are missing
-        <> roleRuleTable -- gives an overview of rule-rule assignments
-        <> missingConceptDefs -- tells which concept definitions have been declared without a purpose
-        <> missingRels -- tells which relations have been declared without a purpose and/or without a meaning
-        <> unusedConceptDefs -- tells which concept definitions are not used in any relation
-        <> relsNotUsed -- tells which relations are not used in any rule
-        <> missingRules -- tells which rule definitions are missing
-        <> ruleRelationRefTable -- table that shows percentages of relations and rules that have references
-        <> processrulesInPatterns --
-        <> wipReport -- sums up the work items (i.e. the violations of process rules)
-        <> violationReport, -- sums up the violations caused by the population of this script.
-      pics
-    )
+                <> (emph . singleQuoted . str . fullName) fSpec
+                <> str ". "
+                <> (str . l)
+                  ( NL
+                      $ "Deze analyse is bedoeld voor de auteur(s) van dit script. "
+                      <> "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren.",
+                    EN
+                      $ "This analysis is intended for the author(s) of this script. "
+                      <> "It can be used to complete the script or to improve possible flaws."
+                  )
+            )
+          <> roleomissions -- tells which role-rule, role-interface, and role-relation assignments are missing
+          <> roleRuleTable -- gives an overview of rule-rule assignments
+          <> missingConceptDefs -- tells which concept definitions have been declared without a purpose
+          <> missingRels -- tells which relations have been declared without a purpose and/or without a meaning
+          <> unusedConceptDefs -- tells which concept definitions are not used in any relation
+          <> relsNotUsed -- tells which relations are not used in any rule
+          <> missingRules -- tells which rule definitions are missing
+          <> ruleRelationRefTable -- table that shows percentages of relations and rules that have references
+          <> processrulesInPatterns --
+          <> wipReport -- sums up the work items (i.e. the violations of process rules)
+          <> violationReport, -- sums up the violations caused by the population of this script.
+        pics
+      )
   where
     -- shorthand for easy localizing
     l :: LocalizedStr -> Text
@@ -56,67 +56,67 @@ chpDiagnosis env fSpec
     roleomissions
       | null (instanceList fSpec :: [Pattern]) = mempty
       | (null . fRoleRuls) fSpec && (not . null . vrules) fSpec =
-        plain
-          ( (emph . str . upCap . fullName) fSpec
-              <> (str . l)
-                ( NL " kent geen regels aan rollen toe. ",
-                  EN " does not assign rules to roles. "
-                )
-              <> (str . l)
-                ( NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd.",
-                  EN "A generic role, User, will be defined to do all the work that is necessary in the business process."
-                )
-          )
+          plain
+            ( (emph . str . upCap . fullName) fSpec
+                <> (str . l)
+                  ( NL " kent geen regels aan rollen toe. ",
+                    EN " does not assign rules to roles. "
+                  )
+                <> (str . l)
+                  ( NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd.",
+                    EN "A generic role, User, will be defined to do all the work that is necessary in the business process."
+                  )
+            )
       | otherwise = mempty
 
     roleRuleTable :: Blocks
     roleRuleTable
       | null ruls = mempty
       | null (fRoles fSpec) =
-        para
-          ( (emph . str . upCap . fullName) fSpec
-              <> (str . l)
-                ( NL " specificeert geen rollen. ",
-                  EN " does not define any roles. "
-                )
-          )
+          para
+            ( (emph . str . upCap . fullName) fSpec
+                <> (str . l)
+                  ( NL " specificeert geen rollen. ",
+                    EN " does not define any roles. "
+                  )
+            )
       | otherwise =
-        case filter (isSignal fSpec) . toList $ ruls of
-          [] ->
-            para
-              ( (emph . str . upCap . fullName) fSpec
-                  <> (str . l)
-                    ( NL " kent geen procesregels. ",
-                      EN " does not define any process rules. "
-                    )
-              )
-          sigs ->
-            para
-              ( (emph . str . upCap . fullName) fSpec
-                  <> (str . l)
-                    ( NL " kent regels aan rollen toe. ",
-                      EN " assigns rules to roles. "
-                    )
-                  <> (str . l)
-                    ( NL "De volgende tabel toont welke regels door een bepaalde rol worden bewaakt.",
-                      EN "The following table shows the rules that are being maintained by a given role."
-                    )
-              )
-              <> legacyTable -- No caption:
-                mempty
-                -- Alignment:
-                ( (AlignLeft, 0.4) :
-                  replicate (length . fRoles $ fSpec) (AlignLeft, 0.6 / (fromIntegral . length . fRoles $ fSpec))
+          case filter (isSignal fSpec) . toList $ ruls of
+            [] ->
+              para
+                ( (emph . str . upCap . fullName) fSpec
+                    <> (str . l)
+                      ( NL " kent geen procesregels. ",
+                        EN " does not define any process rules. "
+                      )
                 )
-                -- Header row:
-                ( (plain . str . l) (NL "Regel", EN "Rule") :
-                  map (plain . str . fullName . fst) (fRoles fSpec)
+            sigs ->
+              para
+                ( (emph . str . upCap . fullName) fSpec
+                    <> (str . l)
+                      ( NL " kent regels aan rollen toe. ",
+                        EN " assigns rules to roles. "
+                      )
+                    <> (str . l)
+                      ( NL "De volgende tabel toont welke regels door een bepaalde rol worden bewaakt.",
+                        EN "The following table shows the rules that are being maintained by a given role."
+                      )
                 )
-                -- Content rows:
-                [ (plain . str . label) rul :
-                    [f rol rul | (rol, _) <- fRoles fSpec]
-                  | rul <- sigs
-                ]
+                <> legacyTable -- No caption:
+                  mempty
+                  -- Alignment:
+                  ( (AlignLeft, 0.4)
+                      : replicate (length . fRoles $ fSpec) (AlignLeft, 0.6 / (fromIntegral . length . fRoles $ fSpec))
+                  )
+                  -- Header row:
+                  ( (plain . str . l) (NL "Regel", EN "Rule")
+                      : map (plain . str . fullName . fst) (fRoles fSpec)
+                  )
+                  -- Content rows:
+                  [ (plain . str . label) rul
+                      : [f rol rul | (rol, _) <- fRoles fSpec]
+                    | rul <- sigs
+                  ]
       where
         ruls = Set.filter (isSignal fSpec) . vrules $ fSpec
         f :: Role -> Rule -> Blocks
@@ -162,9 +162,9 @@ chpDiagnosis env fSpec
             )
       where
         missing =
-          L.nub $
-            [c | c <- ccs, null (purposesOf fSpec outputLang' c)]
-              <> [c | c <- ccs, null (concDefs fSpec c)]
+          L.nub
+            $ [c | c <- ccs, null (purposesOf fSpec outputLang' c)]
+            <> [c | c <- ccs, null (concDefs fSpec c)]
         ccs = toList . concs . vrels $ fSpec
 
     unusedConceptDefs :: Blocks
@@ -469,14 +469,14 @@ chpDiagnosis env fSpec
     ruleRelationRefTable :: Blocks
     ruleRelationRefTable =
       (para . str . l)
-        ( NL $
-            "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, "
-              <> "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's "
-              <> "gedeclareerd worden, worden ook meerdere keren geteld.",
-          EN $
-            "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed "
-              <> "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple "
-              <> "times."
+        ( NL
+            $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, "
+            <> "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's "
+            <> "gedeclareerd worden, worden ook meerdere keren geteld.",
+          EN
+            $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed "
+            <> "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple "
+            <> "times."
         )
         <> legacyTable -- No caption:
           mempty
@@ -725,12 +725,12 @@ chpDiagnosis env fSpec
       where
         violationMessage :: Text
         violationMessage =
-          T.unlines $
-            [ if length ps == 1
-                then "There is a violation of RULE " <> fullName r <> ":"
-                else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
-            ]
-              <> (map ("  " <>) . listPairs 10 . Set.toList $ ps)
+          T.unlines
+            $ [ if length ps == 1
+                  then "There is a violation of RULE " <> fullName r <> ":"
+                  else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
+              ]
+            <> (map ("  " <>) . listPairs 10 . Set.toList $ ps)
         listPairs :: Int -> [AAtomPair] -> [Text]
         listPairs i xs =
           case xs of
