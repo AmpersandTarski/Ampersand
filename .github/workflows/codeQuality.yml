@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4
       - name: Setup hlint
         uses: rwe/actions-hlint-setup@v1.0.3
       - name: Run hlint
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4
       - name: Build the project 🌿🌿🌿
         uses: freckle/stack-action@v5
         with:

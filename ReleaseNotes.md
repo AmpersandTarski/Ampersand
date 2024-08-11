@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.1.2 (11 august 2024)
 - [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Bugfixes for support for new Angular frontend
 - Drop support for old AngularJS frontend
 - Support for Windows has been re-enabled
