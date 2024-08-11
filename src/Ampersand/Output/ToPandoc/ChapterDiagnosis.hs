@@ -708,7 +708,7 @@ chpDiagnosis env fSpec
                     (str . l) (NL "Openstaande taken voor ", EN "Tasks yet to be performed by ")
                       <> (commaPandocOr outputLang' . map (str . fullName) . rolesOf $ r)
                   else
-                    (str . l) (NL "Overtredingen van invariant ", EN "Violations of invariant ")
+                    (str . l) (NL "Inconsistenties in invariant ", EN "Inconsistencies in invariant ")
                       <> (str . label) r
               )
               -- Alignment:

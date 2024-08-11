@@ -28,7 +28,7 @@ dumpSQLqueries env fSpec =
     $ header (longVersion appVersion)
     <> header "Database structure queries"
     <> map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True)
-    <> header "Violations of conjuncts"
+    <> header "Inconsistencies in conjuncts"
     <> concatMap showConjunct (allConjuncts fSpec)
     <> header "Queries per relation"
     <> concatMap showDecl (vrels fSpec)

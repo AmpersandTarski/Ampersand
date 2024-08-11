@@ -6,8 +6,15 @@ So don't hesitate to ask.
 
 Some questions in this page do not have an answer yet. Please consider that as ongoing work and bear with us...
 
+##  Documentation
+* How can I contribute to the documentation of Ampersand?
+
+  *Answer*
+
 ##  Maintenance
 * How can I inspect the database underneath an Ampersand application?
+
+  *Answer*: You can deploy PhpMyAdmin alongside your Ampersand application, to inspect the database underneath your Ampersand application. Do a full-text search to `PhpMyAdmin` in the [Ampersand documentation](https://ampersandtarski.github.io) to find out how to do this.
 
 ## Deployment
 * [How can I deploy an Ampersand application on my laptop?](installing-ampersand.md)
@@ -26,4 +33,10 @@ Some questions in this page do not have an answer yet. Please consider that as o
 * How can I change the documentation of Ampersand?
 
 ##  General interest
-* Why is [declarative](../conceptual/why-declarative.md) a useful property?
+* Why is "declarative" a useful property?
+
+  *Answer*: Ampersand is a [declarative](../conceptual/why-declarative.md) language, to enable mathematical reasoning with the terms in the language.
+
+* How can I monitor an Ampersand application in production?
+
+  *Answer*: RAP is an Ampersand application, which is monitored by Grafana and Prometheus on a Kubernetes cluster. You can take it as an example and copy the setup from the manifest files in the [RAP repository](https://github.com/AmpersandTarski/RAP).
