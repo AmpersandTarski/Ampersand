@@ -45,7 +45,8 @@ ENDCONTEXT
 ```
 The following diagram represents the conceptual model visually. Note that this diagram does not represent the constraint:
 
-![](../assets/CDRuleModuleEnrollment.png)
+![](../assets/brokenLink.png)
+@stefjoosten, TODO: please fix this link. It was pointing to the non-existent file `../assets/CDRuleModuleEnrollment.png`
 
 The following diagram shows the conceptual model as a data model:
 
