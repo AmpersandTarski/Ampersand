@@ -49,7 +49,7 @@ The operators come in families. We advise novices to study only the rule operato
 | Family                                       |                   binary operators | binding power |         unary operators | binding power |
 | -------------------------------------------- | ---------------------------------: | ------------- | ----------------------: | ------------- |
 | rules                                        |            $$=$$ and $$\subseteq$$ | 1 (weakest)   |                         |               |
-| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $\overline{\vspace{x}}$ | prefix        |
+| [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $\overline{x}$ | prefix        |
 | [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |         $$\smallsmile$$ | postfix       |
 | [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                         |               |
 | Kleene                                       |                                    |               |         $$∗$$ and $$+$$ | postfix       |
@@ -73,7 +73,7 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | intersect                    |  `/\` |          $$∩$$         | associative, commutative, idempotent       |
 | union                        |  `\/` |          $$∪$$         | associative, commutative, idempotent       |
 | difference (minus)           |  `-`  |          $$-$$         |                                            |
-| complement                   |  `-`  | $$\overline{\strut }$$ | in code: Prefix; in math: Overline         |
+| complement (of some relation r) | `-`|     $$\overline{r}$$   | in code: Prefix; in math: Overline         |
 | compose                      |  `;`  |          $$;$$         | associative                                |
 | converse (flip)              |  `~`  |     $$\smallsmile$$    | postfix                                    |
 | left residual                |  `/`  |          $$/$$         |                                            |
@@ -156,13 +156,13 @@ To say things such as "the name of the owner", we want to string together multip
 
 ##### Converse
 
-A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
+A relation can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
 $$
 a(r\smallsmile)b\ \Leftrightarrow\ b\ r\ a
 $$
 
-If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
+If $$r$$ has type$$[A\times B]$$, then $$r\smallsmile$$ has type $$[B\times A]$$.
 
 ##### Composition
 
@@ -363,13 +363,13 @@ To say things such as "the name of the owner", we want to string together multip
 
 ##### Converse
 
-A relation that contains pairs of the form $$(a, b)$$ can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is a different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile\$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
+A relation that contains pairs of the form $$(a, b)$$ can be altered by swapping the elements of every pair in the relation. Mathematically, $$(a, b)$$ is different from $$(b,a)$$. This operation is called the converse operator. It produces a new relation from an existing one. It is denoted by writing $$\smallsmile$$ \(pronounced 'wok' or ’flip’\) after the relation name. This is how converse is defined:
 
 $$
 r\smallsmile\ =\ \{ (b, a) | (a, b)∈r \}
 $$
 
-If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile\$$ has type $$[B\times A]$$.
+If $$r$$ has type $$[A\times B]$$, then $$r\smallsmile$$ has type $$[B\times A]$$.
 
 ##### Composition
 
