@@ -66,23 +66,23 @@ Repeated uses of an associative operator does not require brackets. So $$r\cap s
 
 When coding in Ampersand, these operators are typed with characters on the keyboard. The following table shows the operators in math and their equivalent in code:
 
-| operator name                | code |          math          | remark                                     |
-| ---------------------------- | :--: | :--------------------: | ------------------------------------------ | ------------------ |
-| equivalence (equal)          | `=`  |         $$=$$          | use only in a rule                         |
-| inclusion                    |  `   |           -`           | $$\subseteq$$                              | use only in a rule |
-| intersect                    | `/\` |         $$∩$$          | associative, commutative, idempotent       |
-| union                        | `\/` |         $$∪$$          | associative, commutative, idempotent       |
-| difference (minus)           | `-`  |         $$-$$          |                                            |
-| complement                   | `-`  | $$\overline{\strut }$$ | in code: Prefix; in math: Overline         |
-| compose                      | `;`  |         $$;$$          | associative                                |
-| converse (flip)              | `~`  |    $$\smallsmile$$     | postfix                                    |
-| left residual                | `/`  |         $$/$$          |                                            |
-| right residual               | `\`  |     $$\backslash$$     |                                            |
-| diamond                      | `<>` |      $$\Diamond$$      |                                            |
-| relational product           | `!`  |      $$\dagger$$       | associative                                |
-| cartesian product            | `#`  |       $$\times$$       |                                            |
-| reflexive transitive closure | `*`  |         $$∗$$          | in code: not implemented; in math: Postfix |
-| transitive closure           | `+`  |         $$+$$          | in code: not implemented; in math: Postfix |
+| operator name                |  code |          math          | remark                                     |
+| ---------------------------- | :---: | :--------------------: | ------------------------------------------ |
+| equivalence (equal)          |  `=`  |          $$=$$         | use only in a rule                         |
+| inclusion                    | `\|-` |      $$\subseteq$$     | use only in a rule                         |
+| intersect                    |  `/\` |          $$∩$$         | associative, commutative, idempotent       |
+| union                        |  `\/` |          $$∪$$         | associative, commutative, idempotent       |
+| difference (minus)           |  `-`  |          $$-$$         |                                            |
+| complement                   |  `-`  | $$\overline{\strut }$$ | in code: Prefix; in math: Overline         |
+| compose                      |  `;`  |          $$;$$         | associative                                |
+| converse (flip)              |  `~`  |     $$\smallsmile$$    | postfix                                    |
+| left residual                |  `/`  |          $$/$$         |                                            |
+| right residual               |  `\`  |     $$\backslash$$     |                                            |
+| diamond                      |  `<>` |      $$\Diamond$$      |                                            |
+| relational product           |  `!`  |       $$\dagger$$      | associative                                |
+| cartesian product            |  `#`  |       $$\times$$       | deprecated                                 |
+| reflexive transitive closure |  `*`  |          $$∗$$         | in code: not implemented; in math: Postfix |
+| transitive closure           |  `+`  |          $$+$$         | in code: not implemented; in math: Postfix |
 
 ## Semantics
 
