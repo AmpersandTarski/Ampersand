@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-## v5.1.2 (11 august 2024)
+
+
+## v5.1.3 (12 august 2024) 
 - [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Bugfixes for support for new Angular frontend
 - Drop support for old AngularJS frontend
 - Support for Windows has been re-enabled
 - [Issue #1307](https://github.com/AmpersandTarski/Ampersand/issues/1307) Bugfixes for namespace phase 1
+
+## v5.1.2 (Release failed due to technical issue with macOS)
 
 ## v5.1.1 (16 may 2024)
 - Some enhancements for the .devcontainer
