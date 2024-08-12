@@ -6,7 +6,6 @@ Ampersand is een project van de Open Universiteit, ondersteund door Ordina en TN
 Het onderzoek van Ampersand is gericht op het generen van informatiesystemen, rechtstreeks uit business rules, door middel van relatie-algebra. De Ampersand compiler is in staat om van een set business rules een database, back-end en front-end te genereren.
 
 - [Documentatie](https://ampersandtarski.github.io/)
-- [Documentatie (gitbook version)](https://ampersandtarski.gitbook.io/documentation/)
 - [Github project](https://github.com/AmpersandTarski)
 - [Docker hub](https://hub.docker.com/u/ampersandtarski)
 - [Wiki](https://github.com/AmpersandTarski/Ampersand/wiki)

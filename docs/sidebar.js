@@ -131,9 +131,6 @@ module.exports = {
                 'ampersand/the-tools-we-use/deploying-with-kubernetes',
                 'ampersand/the-tools-we-use/functionality-of-rap3/README',
                 'ampersand/the-tools-we-use/git',
-                'ampersand/the-tools-we-use/gitbook/README',
-                'ampersand/the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',
-                'ampersand/the-tools-we-use/gitbook/getting-started-with-gitbook',
                 'ampersand/the-tools-we-use/group-1/development-using-vs-code',
                 'ampersand/the-tools-we-use/klad',
                 'ampersand/the-tools-we-use/making-docker-images',
@@ -227,38 +224,6 @@ module.exports = {
     ),
 
     toolsWeUseMainSidebar: [
-        // {
-        //     label: 'Tools for contributors',
-        //     type: 'category',
-        //     items: [
-        //         'the-tools-we-use/README',
-        //         'the-tools-we-use/ampersand-language-support',
-        //         'the-tools-we-use/authentication-and-access-management-with-oauth',
-        //         'the-tools-we-use/automation-of-releasing-ci-cd/README',
-        //         'the-tools-we-use/automation-of-releasing-ci-cd/github-packages',
-        //         'the-tools-we-use/building/README',
-        //         'the-tools-we-use/building/automated-builds',
-        //         'the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
-        //         'the-tools-we-use/building/haskell',
-        //         'the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
-        //         'the-tools-we-use/deploying-rap3-with-azure',
-        //         'the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
-        //         'the-tools-we-use/deploying-with-kubernetes',
-        //         'the-tools-we-use/functionality-of-rap3/README',
-        //         'the-tools-we-use/git',
-        //         'the-tools-we-use/gitbook/README',
-        //         'the-tools-we-use/gitbook/dos-and-donts-in-ampersand-documentation',
-        //         'the-tools-we-use/gitbook/getting-started-with-gitbook',
-        //         'the-tools-we-use/group-1/development-using-vs-code',
-        //         'the-tools-we-use/klad',
-        //         'the-tools-we-use/prototype-framework',
-        //         'the-tools-we-use/rap3-student',
-        //         'the-tools-we-use/rap3-tutor',
-        //         'the-tools-we-use/releasing-ampersand-and-workflow-details',
-        //         'the-tools-we-use/tools-used-in-the-ampersand-project'
-        //     ]
-        // }
-
     ],
     notOnOldSite: [
         'ampersand/conceptual/automated-rules',
