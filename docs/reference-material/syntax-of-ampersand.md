@@ -984,14 +984,15 @@ Examples:
 - `BOX <FORM hideLabels hideOnNoRecords noRootTitle>`
 
 Possible attributes are:
+
 | attribute | value | description |
 | --------- | ----- | ----------- |
-| hideOnNoRecords | n.a. | when attribute is set, the complete form is hidden in the interface when there are no records |
-| hideSubOnNoRecords | n.a. | when attribute is set, specific form fields (i.e. sub interfaces) that have no records are hidden |
-| hideLabels | n.a. | when attribute is set, no field labels are shown |
-| title | string | title / description for the forms. Title is shown above the form |
-| noRootTitle | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
-| showNavMenu | n.a. | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
+| hideOnNoRecords | - | when attribute is set, the complete form is hidden in the interface when there are no records |
+| hideSubOnNoRecords | - | when attribute is set, specific form fields (i.e. sub interfaces) that have no records are hidden |
+| hideLabels | - | when attribute is set, no field labels are shown |
+| title | string | title (or description) for the forms. Title is shown above the form |
+| noRootTitle | - | hides title; usefull for root interface boxes where a title is automatically is added |
+| showNavMenu | - | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
 
 #### Example
 The row layout uses `BOX <FORM>` to instruct the front-end application to layout the user interface one field on one row, as you would expect in a form. Here is an example of an interface, which uses the form layout on the top level.
@@ -1037,14 +1038,14 @@ Examples:
 Possible attributes are:
 | attribute | value | description |
 | --------- | ----- | ----------- |
-| hideOnNoRecords | n.a. | when attribute is set, the complete table is hidden in the interface when there are no records |
-| noHeader | n.a. | when attribute is set, no table header is used (all column labels are hidden) |
+| hideOnNoRecords | - | when attribute is set, the complete table is hidden in the interface when there are no records |
+| noHeader | - | when attribute is set, no table header is used (all column labels are hidden) |
 | title | string | title / description for the table. Title is shown above table |
-| noRootTitle | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
-| sortable | n.a. | makes table headers clickable to support sorting on some property of the data. Only applies to univalent fields |
+| noRootTitle | - | hides title; usefull for root interface boxes where a title is automatically is added |
+| sortable | - | makes table headers clickable to support sorting on some property of the data. Only applies to univalent fields |
 | sortBy | sub interface label | Add default sorting for given sub interface. Use in combination with 'sortable' |
 | order | `desc`, `asc` | Specifies default sorting order. Use in combination with 'sortBy'. Use `desc` for descending, `asc` for ascending |
-| showNavMenu | n.a. | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
+| showNavMenu | - | show 'hamburger' button to navigate to other interfaces designed for target concept of expression |
 
 #### Example
 The column layout uses `BOX <TABLE>` to instruct the front-end application to use a tabular layout in user interfaces. Here is an example of an interface, which uses the table layout.
@@ -1093,9 +1094,9 @@ Possible attributes are:
 | attributes | value | description |
 | ---------- | ----- | ----------- |
 | title      | string | title / description for the table. Title is shown above tabs structure |
-| noRootTitle    | n.a. | hides title; usefull for root interface boxes where a title is automatically is added |
-| hideOnNoRecords | n.a. | when attribute is set, the complete tab set is hidden in the interface when there are no records |
-| hideSubOnNoRecords | n.a. | when attribute is set, specific tabs (i.e. sub interfaces) that have no records are hidden |
+| noRootTitle    | - | hides title; usefull for root interface boxes where a title is automatically is added |
+| hideOnNoRecords | - | when attribute is set, the complete tab set is hidden in the interface when there are no records |
+| hideSubOnNoRecords | - | when attribute is set, specific tabs (i.e. sub interfaces) that have no records are hidden |
 
 
 The column layout uses `BOX <TABS>` to instruct the front-end application to tabs in the user interface. Here is an example of an interface, which uses the column layout.
@@ -1144,11 +1145,11 @@ Examples:
 Possible attributes are:
 | attribute | value | description |
 | --------- | ----- | ----------- |
-| form      | n.a.  | uses simple form structure to display data. Similar to `FORM` template, but without any functionality nor markup. This is the default layout for `RAW` template.
-| table     | n.a.  | uses simple table structure to display data. Similar to `TABLE` template (see below), but without any functionality, header and styling
+| form      | -  | uses simple form structure to display data. Similar to `FORM` template, but without any functionality nor markup. This is the default layout for `RAW` template.
+| table     | -  | uses simple table structure to display data. Similar to `TABLE` template (see below), but without any functionality, header and styling
 
 ### PROPBUTTON
-Interface template that provides a botton that, when clicked, can set, clear and/or toggle/flip the value of a number of property-relations (i.e. a relation that is [PROP] (or: [SYM,ASY]). 
+Interface template that provides a botton that, when clicked, can set, clear and/or toggle/flip the value of a number of property-relations (i.e. a relation that is [PROP] (or: [SYM,ASY])). 
 
 The interface provides means to:
 
@@ -1159,7 +1160,8 @@ The interface provides means to:
 - provide a popover text for the button, both when it is enabled and when it is disabled. 
 
 Usage (note that all attributes are optional, and you can rearrange their order as you see fit) :
-```
+
+```.adl
 expr cRud BOX <PROPBUTTON> 
   [ "label":  expr or txt    -- text on button = result of expr or txt
   , "label1": expr or txt    -- text on button = label+label1
