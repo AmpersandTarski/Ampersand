@@ -353,6 +353,8 @@ The `<properties>`-part is meant for writing multiplicity constraints in a comma
 | INJ | injective  | For any `b` in `B` there can be not more than one `a` in `A` in the population of `r`. So, every `b` occurs not more than once in the target of `r`.                           |
 | SUR | surjective | For any `b` in `B` there must be at least one `a` in `A` in the population of `r`.                                                                                             |
 | TOT | total      | For any `a` in `A` there must be at least one `b` in `B` in the population of `r`.                                                                                             |
+| MAP | -          | Shortcut for the combination of total and univalent.                                                                                                                           |
+| BIJ | -          | Shortcut for the combination of surjective and injective.                                                                                                                      |
 
 There are additional relations that can be specified on endo relations. An endo relation is a relation where the source and target concepts are equal. `r[A*A]`.
 
@@ -363,7 +365,7 @@ There are additional relations that can be specified on endo relations. An endo 
 | TRN  | transitive    | If (`a`,`b`) and (`b`,`c`) are both in `r`, then (`a`,`c`) is in `r`.     |
 | RFX  | reflexive     | For each `a` in `A`, the pair (`a`,`a`) is in the population of `r`       |
 | IRF  | irreflexive   | For each `a` in `A`, the pair (`a`,`a`) is _not_ in the population of `r` |
-| PROP | -             | shortcut for the combination of symmetric and antisymmetric.              |
+| PROP | -             | Shortcut for the combination of symmetric and antisymmetric.              |
 
 Let's assume that we want to express that any person can live in one city only. So under this constraint "_Joe Smith lives in New York_" and "_Joe Smith lives in Denver_" cannot both be true at the same time.
 
