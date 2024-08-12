@@ -216,10 +216,7 @@ module.exports = {
                     'ampersand/modeling/data-modeling',
                     'ampersand/modeling/legal-modeling',
                     'ampersand/modeling/limitations-of-ampersand',
-                    'ampersand/modeling/metamodeling',
-                    'ampersand/modeling/properties',
                     'ampersand/ownership/README',
-
                     'ampersand/reusing-available-modules',
                     'ampersand/troubleshooting',
                     'ampersand/tutorial-rap4',
