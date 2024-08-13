@@ -59,7 +59,7 @@ Keywords in Ampersand are always written in CAPITALS.
 - Keywords for [relations](./syntax-of-ampersand#the-relation-statement)
   - [`RELATION`](./syntax-of-ampersand#the-relation-statement)
   - `PRAGMA`
-  - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`](../modeling/properties#properties)
+  - [`UNI`, `INJ`, `SUR`, `TOT`, `SYM`, `ASY`, `TRN`, `RFX`, `IRF`, `PROP`, `MAP`, `BIJ`](./syntax-of-ampersand.md#properties)
   - [`POPULATION`, `CONTAINS`](./syntax-of-ampersand#the-population-statement)
 - Keywords for [rules](./syntax-of-ampersand#the-rule-statement)
   - `RULE`

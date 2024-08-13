@@ -69,7 +69,7 @@ commandLineHandler currentDir _progName args =
   complicatedOptions
     "ampersand - The Ampersand generator"
     ""
-    "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
+    "ampersand's documentation is available at https://ampersandtarski.github.io/"
     args
     globalOpts
     (Just failureCallback)

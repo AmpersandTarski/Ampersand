@@ -7,12 +7,11 @@ description: >-
 
 # Compiler
 
-To run the Ampersand compiler from any computer that runs docker, use a Docker image from our Ampersand repository on GitHub: `docker.pkg.github.com/ampersandtarski/ampersand/ampersand`
-
-Make a shortcut tag to save typing:
+To run the Ampersand compiler from any computer that runs docker, use a Docker image from our Ampersand repository on Docker hub, and make a shortcut tag to save typing:
 
 ```bash
-docker tag docker.pkg.github.com/ampersandtarski/ampersand/ampersand ampersand
+docker pull ampersandtarski/ampersand
+docker tag ampersandtarski/ampersand ampersand
 ```
 
 Different tags are available, e.g.:
