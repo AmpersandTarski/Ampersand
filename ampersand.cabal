@@ -541,7 +541,6 @@ library
   other-modules:
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
-      Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
@@ -563,6 +562,7 @@ library
       Ampersand.FSpec.FPA
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
+      Ampersand.Input.AtlasImport
       Ampersand.Misc.Defaults
       Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
