@@ -9,10 +9,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | Generate a configuration file for a new project.
-module Ampersand.Commands.AtlasImport
+module Ampersand.Input.AtlasImport
   ( atlasImport,
     InitOpts (..),
     HasInitOpts (..),
+    parseJsonFile,
   )
 where
 
@@ -52,20 +53,20 @@ import Ampersand.Core.ParseTree
     Role (..),
     TType (..),
     TemplateKeyValue (..),
+    Term,
     TermPrim (PNamedR),
   )
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
-import Ampersand.Input.ADL1.ParsingLib (valPosOf)
-import Ampersand.Input.Parsing (parseTerm)
+import Ampersand.Input.ADL1.Parser (pTerm)
+import Ampersand.Input.ADL1.ParsingLib
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
-import Data.Aeson (FromJSON)
 import qualified Data.Aeson as JSON
 import Data.Aeson.Key (fromText)
 import qualified Data.Aeson.Types as JSON
 import qualified RIO
-import qualified RIO.ByteString.Lazy as B
+import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
@@ -75,7 +76,7 @@ atlasImport ::
   RIO env ()
 atlasImport = do
   env <- ask
-  content <- liftIO $ B.readFile (view importFileL env)
+  content <- liftIO $ BL.readFile (view importFileL env)
   -- Get JSON data and decode it
   let result = myDecode content
   case result of
@@ -85,16 +86,17 @@ atlasImport = do
       writeFileUtf8 outputFn (showP x)
       logInfo . display . T.pack $ outputFn <> " written"
 
-myDecode :: B.ByteString -> Either String P_Context
+myDecode :: BL.ByteString -> Either String P_Context
 myDecode = JSON.eitherDecode
 
 parseJsonFile :: FilePath -> RIO env (Guarded P_Context)
 parseJsonFile fp = do
-  aap <- readFileUtf8 fp
+  contents <- RIO.readFileBinary fp
+  pure . fromAtlas $ contents
 
-fromAtlas :: B.ByteString -> Guarded P_Context
+fromAtlas :: ByteString -> Guarded P_Context
 fromAtlas json =
-  case JSON.eitherDecode json of
+  case JSON.eitherDecode (BL.fromStrict json) of
     Left msg -> mkJSONParseError OriginAtlas (T.pack msg)
     Right a -> pure a
 
@@ -450,6 +452,9 @@ instance JSON.FromJSON (P_Rule TermPrim) where
             rr_msg = msg, -- msg
             rr_viol = Nothing
           }
+
+parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
+parseTerm = runParser pTerm
 
 instance JSON.FromJSON (P_Enforce TermPrim) where
   parseJSON val = case val of
