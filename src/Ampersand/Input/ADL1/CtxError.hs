@@ -42,6 +42,7 @@ module Ampersand.Input.ADL1.CtxError
     mkSubInterfaceMustBeDefinedOnObject,
     lexerWarning2Warning,
     lexerError2CtxError,
+    mkJSONParseError,
     addWarning,
     addWarnings,
     mkCrudWarning,
@@ -726,6 +727,9 @@ mkCaseProblemWarning x y =
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."
       ]
+
+mkJSONParseError :: Origin -> Text -> Guarded a
+mkJSONParseError orig msg = Errors . pure $ CTXE orig msg
 
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning

@@ -11,7 +11,6 @@ module Ampersand.Misc.Commands
 where
 
 import Ampersand.Basics
-import Ampersand.Commands.AtlasImport
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
@@ -27,7 +26,6 @@ import Ampersand.FSpec (FSpec)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
-import Ampersand.Options.AtlasImportOptsParser
 import Ampersand.Options.DaemonParser
 import Ampersand.Options.DevoutputOptsParser
 import Ampersand.Options.DocOptsParser
@@ -133,11 +131,6 @@ commandLineHandler currentDir _progName args =
         "Generate a file that contains the population of your script."
         (mkAction population)
         populationOptsParser
-      addCommand''
-        AtlasImport
-        "Import a file that contains the population of an atlas (json)."
-        atlasImportCmd
-        atlasimportOptsParser
       addCommand''
         Proofs
         "Generate a report containing proofs."
@@ -388,10 +381,6 @@ documentationCmd docOpts = do
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
   extendWith testOpts test
-
-atlasImportCmd :: AtlasImportOpts -> RIO Runner ()
-atlasImportCmd opts = do
-  extendWith opts atlasImport
 
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing

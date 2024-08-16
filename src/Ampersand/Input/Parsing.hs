@@ -25,18 +25,11 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Input.ADL1.CtxError
-  ( CtxError (PE),
-    Guarded (..),
+  ( Guarded (..),
     addWarnings,
-    lexerError2CtxError,
-    lexerWarning2Warning,
     mkErrorReadingINCLUDE,
     mkParserStateWarning,
     whenCheckedM,
-  )
-import Ampersand.Input.ADL1.Lexer
-  ( Token,
-    lexer,
   )
 import Ampersand.Input.ADL1.Parser
   ( Include (..),
@@ -46,6 +39,7 @@ import Ampersand.Input.ADL1.Parser
   )
 import Ampersand.Input.ADL1.ParsingLib
 import Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
+import Ampersand.Input.AtlasImport
 import Ampersand.Input.PreProcessor
   ( PreProcDefine,
     preProcess,
@@ -81,7 +75,7 @@ import System.FilePath
     takeExtension,
     (</>),
   )
-import Text.Parsec (getState, runP)
+import Text.Parsec (getState)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
@@ -232,6 +226,10 @@ parseSingleADL pc =
               logInfo "ArchiMetaModel.adl written"
             Errors _ -> pure ()
           return ((,[]) <$> ctxFromArchi) -- An Archimate file does not contain include files
+      | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
+        extension == ".json" = do
+          ctxFromAtlas <- catchInvalidJSON $ parseJsonFile filePath
+          return ((,[]) <$> ctxFromAtlas) -- A .json file does not contain include files
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -302,32 +300,11 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  " <> tshow exception)
-
-parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
-parse p fn ts =
-  -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
-  case runP p initialParserState fn ts of
-    -- TODO: Add language support to the parser errors
-    Left err -> Errors $ pure $ PE err
-    Right a -> pure a
-
--- | Runs the given parser
-runParser ::
-  -- | The parser to run
-  AmpParser a ->
-  -- | Name of the file (for error messages)
-  FilePath ->
-  -- | Text to parse
-  Text ->
-  -- | The result
-  Guarded a
-runParser parser filename input =
-  case lexer filename (T.unpack input) of
-    Left err -> Errors . pure $ lexerError2CtxError err
-    Right (tokens, lexerWarnings) ->
-      addWarnings
-        (map lexerWarning2Warning lexerWarnings)
-        (parse parser filename tokens)
+        catchInvalidJSON :: RIO env a -> RIO env a
+        catchInvalidJSON m = catch m f
+          where
+            f :: SomeException -> RIO env a
+            f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
