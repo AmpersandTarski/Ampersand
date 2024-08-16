@@ -232,6 +232,10 @@ parseSingleADL pc =
               logInfo "ArchiMetaModel.adl written"
             Errors _ -> pure ()
           return ((,[]) <$> ctxFromArchi) -- An Archimate file does not contain include files
+      | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
+        extension == ".json" = do
+          ctxFromAtlas <- catchInvalidJSON $ parseJsonFile filePath
+          pure undefined
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -302,6 +306,11 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  " <> tshow exception)
+        catchInvalidJSON :: RIO env a -> RIO env a
+        catchInvalidJSON m = catch m f
+          where
+            f :: SomeException -> RIO env a
+            f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =

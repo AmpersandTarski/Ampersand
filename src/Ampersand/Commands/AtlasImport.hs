@@ -55,10 +55,12 @@ import Ampersand.Core.ParseTree
     TermPrim (PNamedR),
   )
 import Ampersand.Core.ShowPStruct
-import Ampersand.Input.ADL1.CtxError (Guarded (..))
+import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
+import Ampersand.Input.ADL1.ParsingLib (valPosOf)
 import Ampersand.Input.Parsing (parseTerm)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
+import Data.Aeson (FromJSON)
 import qualified Data.Aeson as JSON
 import Data.Aeson.Key (fromText)
 import qualified Data.Aeson.Types as JSON
@@ -85,6 +87,16 @@ atlasImport = do
 
 myDecode :: B.ByteString -> Either String P_Context
 myDecode = JSON.eitherDecode
+
+parseJsonFile :: FilePath -> RIO env (Guarded P_Context)
+parseJsonFile fp = do
+  aap <- readFileUtf8 fp
+
+fromAtlas :: B.ByteString -> Guarded P_Context
+fromAtlas json =
+  case JSON.eitherDecode json of
+    Left msg -> mkJSONParseError OriginAtlas (T.pack msg)
+    Right a -> pure a
 
 instance JSON.FromJSON P_Context where
   parseJSON :: JSON.Value -> JSON.Parser P_Context
