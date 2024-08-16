@@ -564,7 +564,6 @@ library
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.AtlasImport
       Ampersand.Misc.Defaults
-      Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser
