@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-
+## v5.2.0 (16 august 2024)
+- [Issue #1496](https://github.com/AmpersandTarski/Ampersand/issues/1496) .json file can now be parsed as import from the Atlas
 
 ## v5.1.3 (12 august 2024) 
 - [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Bugfixes for support for new Angular frontend
