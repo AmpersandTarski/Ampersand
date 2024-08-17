@@ -5,6 +5,7 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 .ampersand
+Ampersand.archimate.bak
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
