@@ -552,7 +552,7 @@ instance JSON.FromJSON (Guarded PRef2Obj) where
   parseJSON val = case val of
     JSON.Object v ->
       (foo PRef2ConceptDef ConceptName v "conceptPurp")
-        <|> (v JSON..:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
+        <|> (do v JSON..:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
         <|> (foo PRef2Rule RuleName v "rulePurp")
         <|> (foo PRef2IdentityDef IdentName v "identPurp")
         <|> (foo PRef2ViewDef ViewName v "viewPurp")
@@ -569,8 +569,8 @@ instance JSON.FromJSON (Guarded PRef2Obj) where
       foo constructor typ v key = do
         nm <- parseFirstField typ v key
         pure (constructor <$> nm)
-      build :: Maybe P_NamedRel -> JSON.Parser (Guarded PRef2Obj)
-      build (Just rel) = pure . pure $ PRef2Relation rel
+      build :: Maybe (Guarded P_NamedRel) -> JSON.Parser (Guarded PRef2Obj)
+      build (Just gRel) = pure $ PRef2Relation <$> gRel
       build Nothing = fail "relationPurp list is empty"
 
 parseFirstField :: NameType -> JSON.Object -> Text -> JSON.Parser (Guarded Name)
@@ -584,11 +584,9 @@ parseFirstField typ obj key = do
         _ -> mzero
     _ -> mzero
 
--- where
---   toList :: JSON.Array -> [JSON.Value]
---   toList = foldr (:) []
-instance JSON.FromJSON Guarded (Maybe a) where
-  parseJSON
+instance (JSON.FromJSON (Guarded a)) => JSON.FromJSON (Guarded (Maybe a)) where
+  parseJSON = undefined
+
 instance JSON.FromJSON (Guarded P_NamedRel) where
   parseJSON val = case val of
     JSON.Object v ->
