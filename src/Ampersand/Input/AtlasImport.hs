@@ -834,7 +834,7 @@ instance JSON.FromJSON PAtomValue where
 --             ifc_Prp = Text
 --           }
 
-instance JSON.FromJSON PClassify where
+instance JSON.FromJSON (Guarded PClassify) where
   parseJSON val = case val of
     JSON.Object v ->
       build
@@ -847,13 +847,16 @@ instance JSON.FromJSON PClassify where
         "parsing PClassify failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: P_Concept -> P_Concept -> PClassify
-      build spec gen =
-        PClassify
-          { pos = OriginAtlas,
-            specific = spec,
-            generics = gen NE.:| []
-          }
+      build :: Guarded P_Concept -> Guarded P_Concept -> Guarded PClassify
+      build gSpec gGen = do
+        spec <- gSpec
+        gen <- gGen
+        pure
+          $ PClassify
+            { pos = OriginAtlas,
+              specific = spec,
+              generics = gen NE.:| []
+            }
 
 instance JSON.FromJSON MetaData where
   parseJSON val = case val of
@@ -879,23 +882,24 @@ instance JSON.FromJSON MetaData where
 instance JSON.FromJSON (Guarded P_RoleRule) where
   parseJSON val = case val of
     JSON.Object v -> do
-      role <- v JSON..: "role" -- this is the label of the role --todo (v JSON..: "role" >>= JSON.parseJSON) veranderen???
-      rules <- v JSON..: "rule" -- the rule
+      roles <- v JSON..: "roles" -- this is the label of the role --todo (v JSON..: "role" >>= JSON.parseJSON) veranderen???
+      rules <- v JSON..: "rules" -- the rule
       case NE.nonEmpty rules of
-        Just neRules -> return $ build role neRules
+        Just neRules -> return $ build roles neRules
         Nothing -> fail "The 'rule' array cannot be empty"
     invalid ->
       JSON.prependFailure
         "parsing P_RoleRule failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Role -> NE.NonEmpty Text -> Guarded P_RoleRule
-      build role neRules = do
+      build :: NE.NonEmpty Text -> NE.NonEmpty Text -> Guarded P_RoleRule
+      build neRoles neRules = do
+        roles <- mapM ( textToNameInJSON RoleName) neRoles
         ruls <- mapM (textToNameInJSON RuleName) neRules
         pure
           Maintain
             { pos = OriginAtlas,
-              mRoles = role NE.:| [],
+              mRoles = roles,
               mRules = ruls
             }
 
