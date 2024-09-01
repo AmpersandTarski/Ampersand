@@ -192,9 +192,9 @@ addRelations pCtx = enrichedContext
                 )
         recur _ rels popus [] = (rels, popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
-        srcPop pop@P_CptPopu {} = PCpt (name pop) Nothing
+        srcPop pop@P_CptPopu {} = PCpt (name pop)
         srcPop pop@P_RelPopu {p_src = src} = case src of Just s -> s; _ -> fatal ("srcPop (" <> showP pop <> ") is mistaken.")
-        tgtPop pop@P_CptPopu {} = PCpt (name pop) Nothing
+        tgtPop pop@P_CptPopu {} = PCpt (name pop)
         tgtPop pop@P_RelPopu {p_tgt = tgt} = case tgt of Just t -> t; _ -> fatal ("tgtPop (" <> showP pop <> ") is mistaken.")
 
     sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
@@ -212,7 +212,7 @@ addRelations pCtx = enrichedContext
     signatur rel = (name rel, dec_sign rel)
     concepts =
       L.nub
-        $ [PCpt (name pop) Nothing | pop@P_CptPopu {} <- ctx_pops pCtx]
+        $ [PCpt (name pop) | pop@P_CptPopu {} <- ctx_pops pCtx]
         <> [src' | P_RelPopu {p_src = src} <- ctx_pops pCtx, Just src' <- [src]]
         <> [tgt' | P_RelPopu {p_tgt = tgt} <- ctx_pops pCtx, Just tgt' <- [tgt]]
         <> map sourc declaredRelations
@@ -285,7 +285,7 @@ toPops env ns file x = map popForColumn (colNrs x)
         then
           P_CptPopu
             { pos = popOrigin,
-              p_cpt = mkPConcept sourceConceptName Nothing,
+              p_cpt = mkPConcept sourceConceptName,
               p_popas =
                 concat
                   [ case value (row, i) of
@@ -305,9 +305,8 @@ toPops env ns file x = map popForColumn (colNrs x)
       where
         src, trg :: Maybe P_Concept
         (src, trg) = case mTargetConceptName of
-          Just tCptName -> both (fmap mkPConcept') $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
+          Just tCptName -> both (fmap mkPConcept) $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
           Nothing -> (Nothing, Nothing)
-        mkPConcept' nm = mkPConcept nm Nothing
         popOrigin :: Origin
         popOrigin = originOfCell (relNamesRow, targetCol)
         relNamesRow, conceptNamesRow :: RowIndex

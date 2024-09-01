@@ -194,8 +194,8 @@ transformer2pop tr =
             p_mbSign =
               Just
                 ( P_Sign
-                    (mkPConcept (tSrc tr) Nothing)
-                    (mkPConcept (tTrg tr) Nothing)
+                    (mkPConcept (tSrc tr))
+                    (mkPConcept (tTrg tr))
                 )
           },
       p_popps = tPairs tr
