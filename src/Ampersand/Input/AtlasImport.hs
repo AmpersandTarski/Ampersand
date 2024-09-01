@@ -267,11 +267,8 @@ instance JSON.FromJSON (Guarded P_Concept) where
   parseJSON :: JSON.Value -> JSON.Parser (Guarded P_Concept)
   parseJSON (JSON.Object v) = do
     gNm <- textToNameInJSON ConceptName <$> (v JSON..: "name")
-    lbl <- (v JSON..:? "label") <&> fmap textToLabelInJSON
     pure
-      ( do
-          nm <- gNm
-          pure $ PCpt nm lbl
+      ( PCpt <$> gNm
       )
   parseJSON invalid =
     JSON.prependFailure
@@ -366,7 +363,7 @@ instance JSON.FromJSON (Guarded P_Sign) where
       build s t = do
         src <- textToNameInJSON ConceptName s
         tgt <- textToNameInJSON ConceptName t
-        pure $ P_Sign (PCpt src Nothing) (PCpt tgt Nothing)
+        pure $ P_Sign (PCpt src) (PCpt tgt)
 
 instance JSON.FromJSON (Guarded P_Relation) where
   parseJSON val = case val of
@@ -584,17 +581,14 @@ parseFirstField typ obj key = do
         _ -> mzero
     _ -> mzero
 
-instance (JSON.FromJSON (Guarded a)) => JSON.FromJSON (Guarded (Maybe a)) where
-  parseJSON = undefined
-
 instance JSON.FromJSON (Guarded P_NamedRel) where
   parseJSON val = case val of
-    JSON.Object v ->
+    JSON.Object v -> do
+      sign <- do v JSON..: "sign"
       build
         <$> v
         JSON..: "name"
-        <*> v
-        JSON..: "sign"
+        <*> pure (sequenceA sign)
     -- <*> v JSON..: "reference"
     -- JSON.Array -- todo: hier komt een array te staan, werkt niet
     invalid ->
@@ -894,14 +888,17 @@ instance JSON.FromJSON (Guarded P_RoleRule) where
     where
       build :: NE.NonEmpty Text -> NE.NonEmpty Text -> Guarded P_RoleRule
       build neRoles neRules = do
-        roles <- mapM ( textToNameInJSON RoleName) neRoles
+        roles <- mapM (textToNameInJSON RoleName) neRoles
         ruls <- mapM (textToNameInJSON RuleName) neRules
         pure
           Maintain
             { pos = OriginAtlas,
-              mRoles = roles,
+              mRoles = mkRole <$> roles,
               mRules = ruls
             }
+        where
+          mkRole :: Name -> Role
+          mkRole nm = Role OriginAtlas nm Nothing False
 
 instance JSON.FromJSON (Guarded Role) where
   parseJSON = JSON.withObject "role" $ \v ->
