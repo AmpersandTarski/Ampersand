@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+- [Issue #1498](https://github.com/AmpersandTarski/Ampersand/issues/1498) Bugfix for an issue with P_Concept. That should not contain a label. 
 
 ## v5.2.0 (16 august 2024)
 - [Issue #1496](https://github.com/AmpersandTarski/Ampersand/issues/1496) .json file can now be parsed as import from the Atlas

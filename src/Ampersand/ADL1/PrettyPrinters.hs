@@ -399,7 +399,7 @@ instance Pretty PMessage where
   pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-  pretty (PCpt nm lbl) = pretty nm <~> pretty lbl
+  pretty (PCpt nm) = pretty nm
   pretty P_ONE = text "ONE"
 
 instance Pretty P_Sign where

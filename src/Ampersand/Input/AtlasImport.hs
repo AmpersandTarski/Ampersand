@@ -267,8 +267,7 @@ instance JSON.FromJSON PCDDef where
 instance JSON.FromJSON P_Concept where
   parseJSON :: JSON.Value -> JSON.Parser P_Concept
   parseJSON (JSON.Object v) =
-    (PCpt . textToNameInJSON ConceptName <$> (v JSON..: "name"))
-      <*> ((v JSON..:? "label") <&> fmap textToLabelInJSON)
+    PCpt . textToNameInJSON ConceptName <$> (v JSON..: "name")
   parseJSON invalid =
     JSON.prependFailure
       "parsing P_Concept failed, "

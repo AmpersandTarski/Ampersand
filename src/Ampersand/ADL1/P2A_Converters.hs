@@ -31,11 +31,11 @@ import qualified RIO.Text as T
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
-pConcToType p = UserConcept (name p, p_cptlabel p)
+pConcToType p = UserConcept (name p)
 
 aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
-aConcToType p = UserConcept (NE.head $ aliases p)
+aConcToType p = UserConcept (fst . NE.head $ aliases p)
 
 getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
 getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
@@ -230,7 +230,7 @@ findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: [])
 type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
 
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
-onlyUserConcepts ci = fmap $ userList (conceptMap ci)
+onlyUserConcepts = fmap . userList . conceptMap
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -463,7 +463,7 @@ pCtx2aCtx
               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
       conceptmap :: ConceptMap
-      conceptmap = makeConceptMap allGens
+      conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) allGens
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap = [(ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 
@@ -534,7 +534,7 @@ pCtx2aCtx
           specCpt = pCpt2aCpt fun $ specific pg
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
-      userConcept (PCpt nm lbl') = UserConcept (nm, lbl')
+      userConcept (PCpt nm) = UserConcept nm
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
@@ -1172,7 +1172,7 @@ pCtx2aCtx
           )
             <$> pRefObj2aRefObj ci objref
       pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
-      pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s Nothing)
+      pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
       pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declDisambMap ci) tm
       pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
       pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
@@ -1429,7 +1429,7 @@ pConcDef2aConcDef ::
 pConcDef2aConcDef conceptmap defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
-      acdcpt = pCpt2aCpt conceptmap (PCpt {p_cptnm = name pCd, p_cptlabel = cdlbl pCd}),
+      acdcpt = pCpt2aCpt conceptmap (PCpt {p_cptnm = name pCd}),
       acdname = name pCd,
       acdlabel = cdlbl pCd,
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
