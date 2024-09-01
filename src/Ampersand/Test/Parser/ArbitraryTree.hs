@@ -218,7 +218,7 @@ instance Arbitrary Representation where
     Repr
       <$> arbitrary
       <*> arbitrary
-      `suchThat` all notIsOneAndnoLabel
+      `suchThat` all notIsONE
       <*> arbitrary
       `suchThat` (TypeOfOne /=)
 
@@ -336,10 +336,10 @@ instance Arbitrary TermPrim where
   arbitrary =
     oneof
       [ PI <$> arbitrary,
-        Pid <$> arbitrary <*> arbitrary `suchThat` noLabel,
-        Patm <$> arbitrary <*> arbitrary <*> arbitrary `suchThat` all noLabel,
+        Pid <$> arbitrary <*> arbitrary,
+        Patm <$> arbitrary <*> arbitrary <*> arbitrary,
         PVee <$> arbitrary,
-        Pfull <$> arbitrary <*> arbitrary `suchThat` noLabel <*> arbitrary `suchThat` noLabel,
+        Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
         PNamedR <$> arbitrary
       ]
 
@@ -433,16 +433,16 @@ instance Arbitrary P_Population where
     oneof
       [ P_RelPopu
           <$> arbitrary
-          `suchThat` all notIsOneAndnoLabel
+          `suchThat` all notIsONE
           <*> arbitrary
-          `suchThat` all notIsOneAndnoLabel
+          `suchThat` all notIsONE
           <*> arbitrary
           <*> arbitrary
           <*> arbitrary,
         P_CptPopu
           <$> arbitrary
           <*> arbitrary
-          `suchThat` notIsOneAndnoLabel
+          `suchThat` notIsONE
           <*> arbitrary
       ]
 
@@ -485,7 +485,7 @@ instance Arbitrary P_IdentDef where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      `suchThat` notIsOneAndnoLabel
+      `suchThat` notIsONE
       <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
@@ -498,7 +498,6 @@ instance Arbitrary P_ViewDef where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      `suchThat` noLabel
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
@@ -543,7 +542,7 @@ instance Arbitrary PMessage where
 instance Arbitrary P_Concept where
   arbitrary =
     frequency
-      [ (100, PCpt <$> uppercaseName <*> arbitrary),
+      [ (100, PCpt <$> uppercaseName),
         (1, pure P_ONE)
       ]
 
@@ -551,18 +550,16 @@ instance Arbitrary P_Sign where
   arbitrary =
     P_Sign
       <$> arbitrary
-      `suchThat` noLabel
       <*> arbitrary
-      `suchThat` noLabel
 
 instance Arbitrary PClassify where
   arbitrary =
     PClassify
       <$> arbitrary
       <*> arbitrary
-      `suchThat` notIsOneAndnoLabel
+      `suchThat` notIsONE
       <*> arbitrary
-      `suchThat` all notIsOneAndnoLabel
+      `suchThat` all notIsONE
 
 instance Arbitrary Lang where
   arbitrary = elements [minBound ..]
@@ -586,14 +583,9 @@ instance Arbitrary PRelationDefault where
         PDefEvalPHP <$> arbitrary <*> safeText
       ]
 
-noLabel :: P_Concept -> Bool
-noLabel cpt = case cpt of
-  PCpt _ lbl -> isNothing lbl
-  P_ONE -> True
-
-notIsOneAndnoLabel :: P_Concept -> Bool
-notIsOneAndnoLabel cpt = case cpt of
-  PCpt _ lbl -> isNothing lbl
+notIsONE :: P_Concept -> Bool
+notIsONE cpt = case cpt of
+  PCpt {} -> True
   P_ONE -> False
 
 safePlainName :: Gen Text1

@@ -170,11 +170,10 @@ mkArchiContext [archiRepo] pops = do
           mkArchiConcept :: Text1 -> P_Concept
           mkArchiConcept x =
             PCpt
-              { p_cptnm = withNameSpace archiNameSpace nm,
-                p_cptlabel = lbl
+              { p_cptnm = withNameSpace archiNameSpace nm
               }
             where
-              (nm, lbl) = suggestName ConceptName x
+              nm = fst . suggestName ConceptName $ x
       _ -> fatal "May not call vwAts on a non-view element"
     -- viewpoprels contains all triples that are picked by vwAts, for all views,
     -- to compute the triples that are not assembled in any pattern.
@@ -205,7 +204,7 @@ mkArchiContext [archiRepo] pops = do
     archiPurps =
       (map NE.head . eqClass samePurp) --  The relations that are declared in this pattern
         (map grainPurp leftovers)
-    pats = map mkPattern . filter isView . concatMap fldObjs . allFolders $ archiRepo
+    pats = map mkPattern . concatMap (filter isView . fldObjs) . allFolders $ archiRepo
       where
         isView :: ArchiObj -> Bool
         isView View {} = True
@@ -424,7 +423,7 @@ instance WithProperties ArchiObj where
       }
 
 instance (WithProperties a) => WithProperties [a] where
-  allProps xs = concatMap allProps xs
+  allProps = concatMap allProps
   identifyProps identifiers xs =
     [identifyProps ids x | (ids, x) <- zip idss xs]
     where
@@ -649,7 +648,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
             dec_prps = props,
             dec_pragma = Nothing,
             dec_nm = relName',
-            dec_label = relLabel,
+            dec_label = Nothing,
             dec_defaults = [],
             dec_Mean = [],
             pos = OriginUnknown
@@ -664,19 +663,20 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
           }
     }
   where
-    toNameAndLabel :: NameType -> Text1 -> (Name, Maybe Label)
-    toNameAndLabel typ x = (withNameSpace archiNameSpace nm, lbl)
+    -- This is unsafe, for not all Text1 is valid for a Name
+    toNameUnsafe :: NameType -> Text1 -> Name
+    toNameUnsafe typ x = withNameSpace archiNameSpace nm
       where
-        (nm, lbl) = suggestName typ x
-    (relName', relLabel) = toNameAndLabel RelationName plainNm
-    (srcName, srcLabel) = toNameAndLabel ConceptName plainSrcName
-    (tgtName, tgtLabel) = toNameAndLabel ConceptName plainTgtName
+        (nm, _) = suggestName typ x
+    relName' = toNameUnsafe RelationName plainNm
+    srcName = toNameUnsafe ConceptName plainSrcName
+    tgtName = toNameUnsafe ConceptName plainTgtName
     purpText :: Text
     purpText = showP ref_to_relation <> " serves to embody the ArchiMate metamodel"
     ref_to_relation :: P_NamedRel
     ref_to_relation = PNamedRel OriginUnknown relName' (Just ref_to_signature)
     ref_to_signature :: P_Sign
-    ref_to_signature = P_Sign (PCpt srcName srcLabel) (PCpt tgtName tgtLabel)
+    ref_to_signature = P_Sign (PCpt srcName) (PCpt tgtName)
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text1 -> Text1

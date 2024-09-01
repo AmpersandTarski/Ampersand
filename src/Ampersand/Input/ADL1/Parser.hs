@@ -1271,7 +1271,7 @@ pSign = pBrackets sign
 
 --- ConceptRef ::= ConceptName
 pConceptRef :: AmpParser P_Concept
-pConceptRef = PCpt <$> pNameWithoutLabel ConceptName <*> pure Nothing
+pConceptRef = PCpt <$> pNameWithoutLabel ConceptName
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
