@@ -1,0 +1,7 @@
+CONTEXT Issue1499
+
+CONCEPT BusinessUnit LABEL "Business Unit" ""
+
+RELATION organisation[BusinessUnit * Organisation] [UNI,TOT]
+
+ENDCONTEXT
