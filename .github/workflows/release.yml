@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: Linux-binaries
           path: release/Linux
@@ -87,7 +87,7 @@ jobs:
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - name: Download artifacts (macOS)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: macOS-binaries
           path: release/macOS
@@ -99,7 +99,7 @@ jobs:
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       # - name: Download artifacts (Windows)
-      #   uses: actions/download-artifact@v2
+      #   uses: actions/download-artifact@v4.1.7
       #   with:
       #     name: Windows-binaries
       #     path: release/Windows
