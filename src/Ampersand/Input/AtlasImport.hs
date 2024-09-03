@@ -37,7 +37,7 @@ import Ampersand.Core.ParseTree
     PPurpose (..),
     PRef2Obj (..),
     P_BoxItem (..),
-    P_Concept (PCpt),
+    P_Concept (..),
     P_Context (..),
     P_Cruds (..),
     P_Enforce (..),
@@ -119,7 +119,7 @@ instance JSON.FromJSON (Guarded P_Context) where
         Guarded Name ->
         Maybe Text ->
         [Guarded P_Pattern] ->
-        [Guarded (DefinitionContainer -> PConceptDef)] ->
+        [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
         [Guarded Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         -- [P_Enforce TermPrim] ->
@@ -129,38 +129,39 @@ instance JSON.FromJSON (Guarded P_Context) where
         Maybe Lang ->
         [Guarded P_IdentDef] ->
         Guarded P_Context
-      build gNm lbl gPats gCpts gReprs gRules gRolerules gRels gPrps lang gIdents = do
-        nm <- gNm
-        pats <- sequence gPats
-        cpts <- sequence gCpts
-        reprs <- sequence gReprs
-        rules <- sequence gRules
-        rolerules <- sequence gRolerules
-        rels <- sequence gRels
-        prps <- sequence gPrps
-        idents <- sequence gIdents
-        pure
-          PCtx
-            { ctx_vs = [],
-              ctx_rs = rules,
-              ctx_rrules = rolerules,
-              ctx_reprs = reprs,
-              ctx_ps = prps,
-              ctx_pos = [],
-              ctx_pops = [], -- niet in RAP
-              ctx_pats = pats,
-              ctx_nm = nm,
-              ctx_lbl = textToLabelInJSON <$> lbl,
-              ctx_metas = [], -- staat klaar
-              ctx_markup = Nothing,
-              ctx_lang = lang,
-              ctx_ks = idents, -- IDENT
-              ctx_ifcs = [],
-              ctx_gs = [], -- staat klaar
-              ctx_enfs = [], -- enforce, niet mogelijk met deze versie
-              ctx_ds = rels, -- rels,
-              ctx_cs = map (\cpt -> cpt (CONTEXT nm)) cpts -- cptdef
-            }
+      build gNm lbl gPats gCpts gReprs gRules gRolerules gRels gPrps lang gIdents =
+        do
+          nm <- gNm
+          pats <- sequence gPats
+          cpts <- sequence gCpts
+          reprs <- sequence gReprs
+          rules <- sequence gRules
+          rolerules <- sequence gRolerules
+          rels <- sequence gRels
+          prps <- sequence gPrps
+          idents <- sequence gIdents
+          pure
+            PCtx
+              { ctx_vs = [],
+                ctx_rs = rules,
+                ctx_rrules = rolerules,
+                ctx_reprs = reprs,
+                ctx_ps = prps,
+                ctx_pos = [],
+                ctx_pops = [], -- niet in RAP
+                ctx_pats = pats,
+                ctx_nm = nm,
+                ctx_lbl = textToLabelInJSON <$> lbl,
+                ctx_metas = [], -- staat klaar
+                ctx_markup = Nothing,
+                ctx_lang = lang,
+                ctx_ks = idents, -- IDENT
+                ctx_ifcs = [],
+                ctx_gs = [], -- staat klaar
+                ctx_enfs = [], -- enforce, niet mogelijk met deze versie
+                ctx_ds = rels, -- rels,
+                ctx_cs = mapMaybe (\cpt -> cpt (CONTEXT nm)) cpts -- cptdef
+              }
 
 instance JSON.FromJSON (Guarded P_Pattern) where
   parseJSON :: JSON.Value -> JSON.Parser (Guarded P_Pattern)
@@ -189,7 +190,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
         Guarded Name ->
         Maybe Text ->
         [Guarded P_Relation] ->
-        [Guarded (DefinitionContainer -> PConceptDef)] ->
+        [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
         [Guarded Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         [Guarded PPurpose] ->
@@ -210,7 +211,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
               pt_gns = [], -- staat klaar
               pt_dcs = rels,
               pt_RRuls = [], -- not specified in RAP
-              pt_cds = map (\cpt -> cpt (PATTERN nm)) cpts,
+              pt_cds = mapMaybe (\cpt -> cpt (PATTERN nm)) cpts,
               pt_Reprs = reprs,
               pt_ids = [],
               pt_vds = [],
@@ -220,7 +221,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
               pt_enfs = []
             }
 
-instance JSON.FromJSON (Guarded (DefinitionContainer -> PConceptDef)) where
+instance JSON.FromJSON (Guarded (DefinitionContainer -> Maybe PConceptDef)) where
   parseJSON val = case val of
     JSON.Object v -> do
       build
@@ -234,18 +235,20 @@ instance JSON.FromJSON (Guarded (DefinitionContainer -> PConceptDef)) where
         "parsing PConceptDef failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> Maybe Text -> PCDDef -> Guarded (DefinitionContainer -> PConceptDef)
-      build gNm lbl def = do
-        nm <- textToNameInJSON ConceptName gNm
+      build :: Text -> Maybe Text -> PCDDef -> Guarded (DefinitionContainer -> Maybe PConceptDef)
+      build "ONE" _ _ = pure (const Nothing)
+      build nmtxt lbl def = do
+        nm <- textToNameInJSON ConceptName nmtxt
         pure $ \x ->
-          PConceptDef
-            { cdname = nm,
-              cdlbl = textToLabelInJSON <$> lbl,
-              cddef2 = def,
-              cdmean = [], -- [PMeaning $ P_Markup Nothing Nothing ""] -- Insert a generic meaning / todo: change out with proper meanign
-              cdfrom = x,
-              pos = OriginAtlas
-            }
+          Just
+            $ PConceptDef
+              { cdname = nm,
+                cdlbl = textToLabelInJSON <$> lbl,
+                cddef2 = def,
+                cdmean = [], -- [PMeaning $ P_Markup Nothing Nothing ""] -- Insert a generic meaning / todo: change out with proper meanign
+                cdfrom = x,
+                pos = OriginAtlas
+              }
 
 instance JSON.FromJSON PCDDef where
   parseJSON val = case val of
@@ -268,8 +271,10 @@ instance JSON.FromJSON (Guarded P_Concept) where
   parseJSON (JSON.Object v) = do
     gNm <- textToNameInJSON ConceptName <$> (v JSON..: "name")
     pure
-      ( PCpt <$> gNm
+      ( build <$> gNm
       )
+    where
+      build nm = if tshow nm == "ONE" then P_ONE else PCpt nm
   parseJSON invalid =
     JSON.prependFailure
       "parsing P_Concept failed, "
@@ -927,12 +932,12 @@ textToLabelInJSON :: Text -> Label
 textToLabelInJSON = Label
 
 textToNameInJSON :: NameType -> Text -> Guarded Name
-textToNameInJSON a txt =
+textToNameInJSON typ txt =
   case T.words txt of
-    [] -> fatal "ERROR parsing JSON: Name must nog be empty"
+    [] -> fatal "ERROR parsing JSON: Name must not be empty"
     [wrd] -> case T.uncons wrd of
       Nothing -> fatal "Impossible! a word cannot be empty"
-      Just (h, tl) -> mkName a <$> toNamePart' (Text1 h tl)
+      Just (h, tl) -> mkName typ <$> toNamePart' (Text1 h tl)
         where
           toNamePart' :: Text1 -> Guarded (NonEmpty NamePart)
           toNamePart' x = mapM toNamePart'' (splitOnDots x)
