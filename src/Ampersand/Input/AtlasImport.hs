@@ -13,9 +13,7 @@
 
 -- | Generate a configuration file for a new project.
 module Ampersand.Input.AtlasImport
-  ( InitOpts (..),
-    HasInitOpts (..),
-    parseJsonFile,
+  ( parseJsonFile,
   )
 where
 
@@ -61,7 +59,6 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
 import Ampersand.Input.ADL1.Parser (pTerm)
 import Ampersand.Input.ADL1.ParsingLib
-import Ampersand.Misc.HasClasses
 import qualified Data.Aeson as JSON
 import Data.Aeson.Key (fromText)
 import qualified Data.Aeson.Types as JSON
