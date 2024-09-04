@@ -31,7 +31,7 @@ docker run -it -v "%cd%":/scripts myampersand hello.adl
 
 ## Do you want to reproduce this?
 
-The Ampersand repository contains a file, [Dockerfile](https://github.com/AmpersandTarski/Ampersand/blob/development/Dockerfile), that contains a recipe for building an Ampersand compiler and put it in your Ampersand repository. You need the following ingredients to run it:
+The Ampersand repository contains a file, [Dockerfile](https://github.com/AmpersandTarski/Ampersand/blob/main/Dockerfile), that contains a recipe for building an Ampersand compiler and put it in your Ampersand repository. You need the following ingredients to run it:
 
 1. A machine to run docker, for building your docker image with. I ran it on my MacBook.
 2. Docker, which you need [installed on your machine](https://docs.docker.com/install/).
