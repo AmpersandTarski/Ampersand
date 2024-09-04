@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: Linux-binaries
           path: release/Linux
@@ -87,7 +87,7 @@ jobs:
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - name: Download artifacts (macOS)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: macOS-binaries
           path: release/macOS
@@ -98,17 +98,17 @@ jobs:
           files: release/macOS/
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
-      # - name: Download artifacts (Windows)
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: Windows-binaries
-      #     path: release/Windows
+      - name: Download artifacts (Windows)
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: Windows-binaries
+          path: release/Windows
 
-      # - name: zip the binaries (Windows)
-      #   uses: papeloto/action-zip@v1
-      #   with:
-      #     files: release/Windows/
-      #     dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
+      - name: zip the binaries (Windows)
+        uses: papeloto/action-zip@v1
+        with:
+          files: release/Windows/
+          dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - name: Upload Linux artifact
         uses: actions/upload-release-asset@v1

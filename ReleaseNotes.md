@@ -1,6 +1,8 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+- [Security fix](https://github.com/AmpersandTarski/Ampersand/security/dependabot/1) Bump actions/download-artifact from 2 to 4.1.7 in /.github/workflows
+- Add windows executable as artifact in releases
 - [Issue #1498](https://github.com/AmpersandTarski/Ampersand/issues/1498) Bugfix for an issue with P_Concept. That should not contain a label. 
 
 ## v5.2.0 (16 august 2024)
