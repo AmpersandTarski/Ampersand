@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: Linux-binaries
           path: release/Linux
@@ -87,7 +87,7 @@ jobs:
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - name: Download artifacts (macOS)
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: macOS-binaries
           path: release/macOS
@@ -99,7 +99,7 @@ jobs:
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: Windows-binaries
           path: release/Windows
@@ -157,7 +157,7 @@ jobs:
           upgrade-stack: false
           test: false
       - name: Upload artifacts (Linux)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Linux-binaries
           path: /home/runner/.local/bin/*
@@ -182,42 +182,42 @@ jobs:
           upgrade-stack: false
           test: false
       - name: Upload artifacts (macOS)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: macOS-binaries
           path: /Users/runner/.local/bin/*
 
-  # build-without-test-windows:
-  #   name: build without test on Windows 🏗 🧪
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout project contents 📡
-  #       uses: actions/checkout@v4
-  #     # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
-  #     # uses: actions/cache@v3.3.2
-  #     # # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
-  #     # with:
-  #     #   path: |
-  #     #     ~/.ghc
-  #     #     ~/.stack
-  #     #     ~/.stack-work
-  #     #   key: ${{ runner.os }}-stack
-  #     - name: Set up Mariadb 🧰
-  #       uses: shogo82148/actions-setup-mysql@v1
-  #       with:
-  #         mysql-version: "mariadb-10.6"
-  #     - name: Setup PHP 🧰
-  #       uses: shivammathur/setup-php@v2
-  #       with:
-  #         php-version: "8.0"
-  #         extensions: mysqli
-  #     - name: build without test 🏗 🧪
-  #       uses: freckle/stack-action@v5
-  #       with:
-  #         stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
-  #         test: false
-  #     - name: Upload artifacts (Windows)
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: Windows-binaries
-  #         path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
+  build-without-test-windows:
+    name: build without test on Windows 🏗 🧪
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v4
+      # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
+      # uses: actions/cache@v3.3.2
+      # # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
+      # with:
+      #   path: |
+      #     ~/.ghc
+      #     ~/.stack
+      #     ~/.stack-work
+      #   key: ${{ runner.os }}-stack
+      - name: Set up Mariadb 🧰
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+          mysql-version: "mariadb-10.6"
+      - name: Setup PHP 🧰
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.0"
+          extensions: mysqli
+      - name: build without test 🏗 🧪
+        uses: freckle/stack-action@v5
+        with:
+          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
+          test: false
+      - name: Upload artifacts (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-binaries
+          path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
