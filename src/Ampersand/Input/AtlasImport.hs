@@ -551,7 +551,10 @@ instance JSON.FromJSON (Guarded PRef2Obj) where
   parseJSON val = case val of
     JSON.Object v ->
       (foo PRef2ConceptDef ConceptName v "conceptPurp")
-        <|> (do v JSON..:? "relationPurp" >>= maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe))
+        <|> ( do
+                relPurp <- v JSON..:? "relationPurp"
+                maybe (fail "Expected a non-empty 'relationPurp' list") (build . listToMaybe) relPurp
+            )
         <|> (foo PRef2Rule RuleName v "rulePurp")
         <|> (foo PRef2IdentityDef IdentName v "identPurp")
         <|> (foo PRef2ViewDef ViewName v "viewPurp")
@@ -589,7 +592,7 @@ instance JSON.FromJSON (Guarded P_NamedRel) where
       sign <- do v JSON..: "sign"
       build
         <$> v
-        JSON..: "name"
+        JSON..: "relation"
         <*> pure (sequenceA sign)
     -- <*> v JSON..: "reference"
     -- JSON.Array -- todo: hier komt een array te staan, werkt niet
