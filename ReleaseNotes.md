@@ -212,7 +212,7 @@ New CI workflow for releases to be pushed automatically to DockerHub with semver
 
 - Refactor Docker image for Ampersand compiler
 - Add continuous integration via Github Actions. With cache.
-- [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/development/commands.md)
+- [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/main/commands.md)
 - [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
 - [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
 - [Issue #999](https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.
