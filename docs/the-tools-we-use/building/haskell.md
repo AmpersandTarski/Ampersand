@@ -21,5 +21,5 @@ The Ampersand compiler is a Haskell program built with [stack](https://haskellst
 
 The [instructions to install Stack](http://haskellstack.org) are pretty clear for the various platforms. Make sure you read the part about the STACK\_ROOT environment variable.
 
-To compile Ampersand you need a file [package.yaml](https://github.com/AmpersandTarski/Ampersand/blob/development/package.yaml), which sits in the Ampersand repository. Fetch it and put it in you working directory. From the command-line, call command `stack install` and after a while \(go get coffee!\) your ampersand compiler exists! NB: If you want to build Rieks'  preprocessor as well, the magic spell is `stack install --flag ampersand:buildAll`
+To compile Ampersand you need a file [package.yaml](https://github.com/AmpersandTarski/Ampersand/blob/main/package.yaml), which sits in the Ampersand repository. Fetch it and put it in you working directory. From the command-line, call command `stack install` and after a while \(go get coffee!\) your ampersand compiler exists! NB: If you want to build Rieks'  preprocessor as well, the magic spell is `stack install --flag ampersand:buildAll`
 

@@ -69,12 +69,20 @@ module Ampersand.Input.ADL1.ParsingLib
     -- * Integer parsers
     pZero,
     pOne,
+
+    -- * Runners
+    runParser,
   )
 where
 
 import Ampersand.Basics hiding (many, try)
+import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.FilePos (FilePos (..), Origin (..))
-import Ampersand.Input.ADL1.Lexer (keywords)
+import Ampersand.Input.ADL1.Lexer
+  ( Token,
+    keywords,
+    lexer,
+  )
 import Ampersand.Input.ADL1.LexerToken
   ( Lexeme (..),
     Token (..),
@@ -87,7 +95,8 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import RIO.Time
 import Text.Parsec as P hiding
-  ( satisfy,
+  ( runParser,
+    satisfy,
     sepBy1,
     (<|>),
   )
@@ -498,3 +507,29 @@ posOf parser = do pos <- getPosition; a <- parser; return (posOrigin a pos)
 
 valPosOf :: (Show a) => AmpParser a -> AmpParser (a, Origin)
 valPosOf parser = do pos <- getPosition; a <- parser; return (a, posOrigin a pos)
+
+ampParse :: AmpParser a -> FilePath -> [Token] -> Guarded a
+ampParse p fn ts =
+  -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
+  case runP p initialParserState fn ts of
+    -- TODO: Add language support to the parser errors
+    Left err -> Errors $ pure $ PE err
+    Right a -> pure a
+
+-- | Runs the given parser
+runParser ::
+  -- | The parser to run
+  AmpParser a ->
+  -- | Name of the file (for error messages)
+  FilePath ->
+  -- | Text to parse
+  Text ->
+  -- | The result
+  Guarded a
+runParser parser filename input =
+  case lexer filename (T.unpack input) of
+    Left err -> Errors . pure $ lexerError2CtxError err
+    Right (tokens', lexerWarnings) ->
+      addWarnings
+        (map lexerWarning2Warning lexerWarnings)
+        (ampParse parser filename tokens')

@@ -23,7 +23,7 @@ The world is full of contradictions. Examples:
 - The police can be convinced that Peter X commited the crime, yet his attorney is convinced he is innocent. \(To make sense of the situation, a judge distinguishes the reasoning of the defense from the reasoning of the prosecution as different contexts. In fact, the judge will construct her own context to create the verdict \)
 - A computer system can tell that the person with social security number 721-07-4426 was born on April 27th, 1943, while the same computer system tells in another screen that this person was born on May 3rd, 1952. This is inconsistent, because every person has only one birth date. \(This situation should be reported as a software mistake.\)
 
-## [Syntax](https://github.com/AmpersandTarski/Ampersand/blob/development/src/Ampersand/Input/ADL1/Parser.hs) and meaning
+## [Syntax](https://github.com/AmpersandTarski/Ampersand/blob/main/src/Ampersand/Input/ADL1/Parser.hs) and meaning
 
 ```text
 CONTEXT <name> <language>? <markup>? <context element>* ENDCONTEXT

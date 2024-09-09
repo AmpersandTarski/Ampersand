@@ -1238,8 +1238,8 @@ instance Traced PPurpose where
 data P_Concept
   = -- | The name of this Concept
     PCpt
-      { p_cptnm :: !Name,
-        p_cptlabel :: !(Maybe Label)
+      { p_cptnm :: !Name
+      -- Note: HJO, 20240901: NO LABEL HERE, because this is only a reference to a (maybe implicilty defined) ConceptDef.
       }
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     P_ONE
@@ -1252,11 +1252,11 @@ instance Ord P_Concept where
   -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
   compare a b = compare (name a) (name b)
 
-mkPConcept :: Name -> Maybe Label -> P_Concept
-mkPConcept nm lbl =
+mkPConcept :: Name -> P_Concept
+mkPConcept nm =
   if nm == nameOfONE
     then P_ONE
-    else PCpt {p_cptnm = nm, p_cptlabel = lbl}
+    else PCpt {p_cptnm = nm}
 
 instance Named P_Concept where
   name PCpt {p_cptnm = nm} = nm

@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.1.3
+version:        5.2.2
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -196,6 +196,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/FraakTest1.adl
     testing/Travis/testcases/Misc/FraakTest2.adl
     testing/Travis/testcases/Misc/Hello.adl
+    testing/Travis/testcases/Misc/Issue1499.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
@@ -542,7 +543,6 @@ library
   other-modules:
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
-      Ampersand.Commands.AtlasImport
       Ampersand.Commands.Daemon
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
@@ -564,8 +564,8 @@ library
       Ampersand.FSpec.FPA
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
+      Ampersand.Input.AtlasImport
       Ampersand.Misc.Defaults
-      Ampersand.Options.AtlasImportOptsParser
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser

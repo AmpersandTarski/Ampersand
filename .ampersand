@@ -1,5 +1,4 @@
 AmpersandData/FormalAmpersand/FormalAmpersand.adl
-AmpersandData/FormalAmpersand/Namespaces.adl
 AmpersandData/PrototypeContext/PrototypeContext.adl
 testing/Travis/testcases/Misc/FraakTest1.adl
 testing/Travis/testcases/Misc/FraakTest2.adl
@@ -21,6 +20,7 @@ testing/Travis/testcases/Misc/Arbeidsduur.adl
 testing/Travis/testcases/Misc/ARM-Test1.adl
 testing/Travis/testcases/Misc/Kernmodel.adl
 testing/Travis/testcases/tutorial/MyModel.adl
+testing/Travis/testcases/Misc/Issue1499.adl
 testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/RETINABUG.adl
 testing/Travis/testcases/Bugs/Fixed/Other/Bug_GeneratedTables.adl
 testing/Travis/testcases/Bugs/Fixed/Other/Bug_DiamondOperator.adl

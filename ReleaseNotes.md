@@ -1,8 +1,19 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.2.2 (9 september 2024)
 
+-- fixed an issue with the release: Executables are added to the artefacts again.
 
+## v5.2.1 (6 september 2024)
+
+- [Security fix](https://github.com/AmpersandTarski/Ampersand/security/dependabot/1) Bump actions/download-artifact from 2 to 4.1.7 in /.github/workflows
+- Add windows executable as artifact in releases
+- [Issue #1498](https://github.com/AmpersandTarski/Ampersand/issues/1498) Bugfix for an issue with P_Concept. That should not contain a label. 
+- [Issue #1499](https://github.com/AmpersandTarski/Ampersand/issues/1499) Bugfix with the atlas importer
+
+## v5.2.0 (16 august 2024)
+
+- [Issue #1496](https://github.com/AmpersandTarski/Ampersand/issues/1496) .json file can now be parsed as import from the Atlas
 
 ## v5.1.3 (12 august 2024) 
 - [Issue #1381](https://github.com/AmpersandTarski/Ampersand/issues/1381) Bugfixes for support for new Angular frontend
@@ -208,7 +219,7 @@ New CI workflow for releases to be pushed automatically to DockerHub with semver
 
 - Refactor Docker image for Ampersand compiler
 - Add continuous integration via Github Actions. With cache.
-- [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/development/commands.md)
+- [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/main/commands.md)
 - [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
 - [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
 - [Issue #999](https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.

@@ -238,8 +238,7 @@ aConcept2pConcept cpt =
     ONE -> P_ONE
     PlainConcept {} ->
       PCpt
-        { p_cptnm = name cpt,
-          p_cptlabel = snd . NE.head . aliases $ cpt
+        { p_cptnm = name cpt
         }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose

@@ -99,6 +99,7 @@ import Ampersand.Core.ParseTree
     Origin (..),
     PAtomValue (..),
     PClassify (generics, specific),
+    PConceptDef,
     P_Concept (..),
     PairView (..),
     PairViewSegment (..),
@@ -1453,20 +1454,20 @@ data ContextInfo = CI
   }
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
-typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE Nothing
-typeOrConcept fun (UserConcept (nm, lbl)) = Left . fun $ mkPConcept nm lbl
+typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
+typeOrConcept fun (UserConcept nm) = Left . fun $ mkPConcept nm
 typeOrConcept _ (BuiltIn x) = Right (Just x)
 typeOrConcept _ RepresentSeparator = Right Nothing
 
 data Type
-  = UserConcept !(Name, Maybe Label)
+  = UserConcept !Name
   | BuiltIn !TType
   | RepresentSeparator
   deriving (Eq, Ord)
 
 instance Named Type where
   name t = case t of
-    UserConcept (nm, _) -> nm
+    UserConcept nm -> nm
     BuiltIn tt -> mkName ConceptName . fmap toNamePart' $ ("AmpersandBuiltIn" NE.:| [tshow tt])
     RepresentSeparator -> mkName ConceptName . fmap toNamePart' $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
     where
@@ -1477,7 +1478,7 @@ instance Named Type where
 
 instance Show Type where
   show a = T.unpack $ case a of
-    UserConcept (nm, _) -> fullName nm
+    UserConcept nm -> fullName nm
     BuiltIn tt -> "BuiltIn " <> tshow tt
     RepresentSeparator -> "RepresentSeparator"
 
@@ -1754,8 +1755,8 @@ data Typology = Typology
 --   whenever we need to know the A_Concept for a P_Concept.
 type ConceptMap = P_Concept -> A_Concept
 
-makeConceptMap :: [PClassify] -> ConceptMap
-makeConceptMap gs = mapFunction
+makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
+makeConceptMap cds gs = mapFunction
   where
     mapFunction :: P_Concept -> A_Concept
     mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
@@ -1772,7 +1773,12 @@ makeConceptMap gs = mapFunction
             }
       where
         toTuple :: P_Concept -> (Name, Maybe Label)
-        toTuple cpt = (name cpt, p_cptlabel cpt)
+        toTuple cpt =
+          ( name cpt,
+            case mapMaybe mLabel . filter (\cd -> name cd == name cpt) $ cds of
+              [] -> Nothing
+              h : _ -> Just h
+          )
     edges :: [(P_Concept, [P_Concept])]
     edges = L.nub . map mkEdge . eqCl specific $ gs
     mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
