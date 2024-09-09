@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## v5.2.2 (9 september 2024)
+
+-- fixed an issue with the release: Executables are added to the artefacts again.
+
 ## v5.2.1 (6 september 2024)
 
 - [Security fix](https://github.com/AmpersandTarski/Ampersand/security/dependabot/1) Bump actions/download-artifact from 2 to 4.1.7 in /.github/workflows
