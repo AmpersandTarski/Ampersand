@@ -64,7 +64,12 @@ jobs:
 
   add-release-artefacts:
     name: Add artefacts to release
-    needs: [build-without-test-ubuntu, build-without-test-macOS]
+    needs:
+      [
+        build-without-test-ubuntu,
+        build-without-test-macOS,
+        build-without-test-windows,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
@@ -130,15 +135,15 @@ jobs:
           asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
 
-      # - name: Upload Windows artifact
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     upload_url: ${{ github.event.release.upload_url }}
-      #     asset_name: ampersand-${{ steps.get-version.outputs.version }}-Windows-binaries.zip
-      #     asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
-      #     asset_content_type: application/zip
+      - name: Upload Windows artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_name: ampersand-${{ steps.get-version.outputs.version }}-Windows-binaries.zip
+          asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
+          asset_content_type: application/zip
 
   build-without-test-ubuntu:
     name: Build without test on ubuntu-latest 🏗 🧪
