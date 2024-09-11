@@ -529,8 +529,6 @@ instance ShowHS Purpose where
       <> ") "
       <> showHS env "" (explMarkup expla)
       <> " "
-      <> tshow (explUserdefd expla)
-      <> " "
       <> tshow (explRefIds expla)
       <> " "
 

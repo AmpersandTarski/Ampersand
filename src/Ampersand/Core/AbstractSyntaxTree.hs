@@ -92,9 +92,9 @@ where
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-  ( HTMLtemplateCall (..),
-    DefinitionContainer (..),
+  ( DefinitionContainer (..),
     EnforceOperator,
+    HTMLtemplateCall (..),
     MetaData (..),
     Origin (..),
     PAtomValue (..),
@@ -885,8 +885,6 @@ data Purpose = Expl
     explObj :: !ExplObj,
     -- | This field contains the text of the explanation including language and markup info.
     explMarkup :: !Markup,
-    -- | Is this purpose defined in the script?
-    explUserdefd :: !Bool,
     -- | The references of the explaination
     explRefIds :: ![Text]
   }

@@ -1166,7 +1166,6 @@ pCtx2aCtx
                 { explPos = orig,
                   explObj = obj,
                   explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
-                  explUserdefd = True,
                   explRefIds = refIds
                 }
           )
