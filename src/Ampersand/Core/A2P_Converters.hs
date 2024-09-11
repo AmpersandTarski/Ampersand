@@ -285,11 +285,11 @@ aObjectDef2pObjectDef x =
           obj_mView = objmView oDef,
           obj_msub = fmap aSubIfc2pSubIfc (objmsub oDef)
         }
-    BxTxt oDef ->
+    BxText {} ->
       P_BxTxt
-        { obj_PlainName = boxPlainName oDef,
-          pos = origin oDef,
-          box_txt = boxtxt oDef
+        { obj_PlainName = boxPlainName x,
+          pos = origin x,
+          box_txt = boxtxt x
         }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim

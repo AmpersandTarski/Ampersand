@@ -110,7 +110,7 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
             where
               referencedInterface = fullName . siIfcId $ si
               getExprs' (BxExpr e) = getExprs e
-              getExprs' (BxTxt _) = []
+              getExprs' BxText {} = []
 
 getCrudObjsPerConcept ::
   [(Interface, [(A_Concept, Bool, Bool, Bool, Bool)])] ->

@@ -144,9 +144,9 @@ instance ConceptStructure Signature where
 
 instance ConceptStructure BoxItem where
   concs (BxExpr obj) = concs obj
-  concs (BxTxt _) = Set.empty
+  concs BxText {} = Set.empty
   expressionsIn (BxExpr obj) = expressionsIn obj
-  expressionsIn (BxTxt _) = Set.empty
+  expressionsIn BxText {} = Set.empty
 
 instance ConceptStructure ObjectDef where
   concs obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
