@@ -1,8 +1,12 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+
+- [Issue #1482](https://github.com/AmpersandTarski/Ampersand/issues/1482) Fix technical debd from merging Ampersand 4 into Ampersand 5
+
 ## v5.2.2 (9 september 2024)
 
--- fixed an issue with the release: Executables are added to the artefacts again.
+- fixed an issue with the release: Executables are added to the artefacts again.
 
 ## v5.2.1 (6 september 2024)
 
