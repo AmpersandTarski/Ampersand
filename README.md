@@ -9,4 +9,4 @@ Check out the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/
 
 ## Documentation
 
-Our [documentation](https://ampersandtarski.github.io/docs/Ampersand/) features full-text search and it contains all documentation of several repositories in a single place. We are still [working](https://github.com/AmpersandTarski/Ampersand/issues/1315) on structuring it.
+Our [documentation](https://ampersandtarski.github.io/) features full-text search and it contains all documentation of several repositories in a single place. We are still [working](https://github.com/AmpersandTarski/Ampersand/issues/1315) on structuring it.
