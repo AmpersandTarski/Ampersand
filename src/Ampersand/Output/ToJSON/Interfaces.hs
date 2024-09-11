@@ -117,7 +117,7 @@ instance JSON SubInterface JSONSubInterface where
             subJSONrefIsLinkTo = Just . siIsLink $ si
           }
 
-instance JSON BoxHeader JSONBoxHeader where
+instance JSON HTMLtemplateCall JSONBoxHeader where
   fromAmpersand env fSpec header =
     JSONBoxHeader
       { bhJSONtype = text1ToText . btType $ header,

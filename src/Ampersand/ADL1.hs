@@ -111,7 +111,7 @@ import Ampersand.Core.AbstractSyntaxTree
     (.|-.),
   )
 import Ampersand.Core.ParseTree
-  ( BoxHeader (..),
+  ( HTMLtemplateCall (..),
     EnforceOperator (..),
     FilePos (..),
     MetaData (..),

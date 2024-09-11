@@ -92,7 +92,7 @@ where
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-  ( BoxHeader (..),
+  ( HTMLtemplateCall (..),
     DefinitionContainer (..),
     EnforceOperator,
     MetaData (..),
@@ -848,7 +848,7 @@ data SubInterface
   = Box
       { pos :: !Origin,
         siConcept :: !A_Concept,
-        siHeader :: !BoxHeader,
+        siHeader :: !HTMLtemplateCall,
         siObjs :: ![BoxItem]
       }
   | InterfaceRef

@@ -19,7 +19,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-  ( BoxHeader (..),
+  ( HTMLtemplateCall (..),
     DefinitionContainer (..),
     EnforceOperator (..),
     MetaData (..),
@@ -740,7 +740,7 @@ instance JSON.FromJSON P_Cruds where -- niet in gebruik
 --             si_isLink = isLink,
 --             si_str = str
 --           }
---       buildBox :: BoxHeader -> [P_BoxItem a] -> P_SubIfc a
+--       buildBox :: HTMLtemplateCall -> [P_BoxItem a] -> P_SubIfc a
 --       buildBox header items =
 --         P_Box
 --           { pos = OriginAtlas,
@@ -748,8 +748,8 @@ instance JSON.FromJSON P_Cruds where -- niet in gebruik
 --             si_box = items
 --           }
 
-instance JSON.FromJSON BoxHeader where
-  parseJSON :: JSON.Value -> JSON.Parser BoxHeader
+instance JSON.FromJSON HTMLtemplateCall where
+  parseJSON :: JSON.Value -> JSON.Parser HTMLtemplateCall
   parseJSON val = case val of
     JSON.Object v ->
       build
@@ -759,12 +759,12 @@ instance JSON.FromJSON BoxHeader where
         JSON..: "btKeys"
     invalid ->
       JSON.prependFailure
-        "parsing BoxHeader failed, "
+        "parsing HTMLtemplateCall failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> [TemplateKeyValue] -> BoxHeader
+      build :: Text -> [TemplateKeyValue] -> HTMLtemplateCall
       build ttype keys =
-        BoxHeader
+        HTMLtemplateCall
           { pos = OriginAtlas,
             btType = toText1Unsafe ttype, -- TODO:Add Guarded to JSON parser!
             btKeys = keys

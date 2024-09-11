@@ -1577,7 +1577,7 @@ tmpNewTransformerDefsFA fSpec =
       ),
       ( "FormalAmpersand.siHeader",
         "FormalAmpersand.Box",
-        "FormalAmpersand.BoxHeader",
+        "FormalAmpersand.HTMLtemplateCall",
         [ (dirtyId' box, dirtyId' (siHeader box))
           | box@Box {} <- instanceList fSpec
         ]

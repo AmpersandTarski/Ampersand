@@ -22,7 +22,7 @@ module Ampersand.Core.ParseTree
     PairViewSegment (..),
     PairViewTerm (..),
     PairViewSegmentTerm (..),
-    BoxHeader (..),
+    HTMLtemplateCall (..),
     TemplateKeyValue (..),
     SrcOrTgt (..),
     DefinitionContainer (..),
@@ -934,7 +934,7 @@ type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
   = P_Box
       { pos :: !Origin,
-        si_header :: !BoxHeader,
+        si_header :: !HTMLtemplateCall,
         si_box :: [P_BoxItem a]
       }
   | P_InterfaceRef
@@ -945,7 +945,7 @@ data P_SubIfc a
   deriving (Show)
 
 -- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
-data BoxHeader = BoxHeader
+data HTMLtemplateCall = HTMLtemplateCall
   { pos :: !Origin,
     -- | Type of the HTML template that is used for rendering
     btType :: !Text1,
@@ -954,17 +954,17 @@ data BoxHeader = BoxHeader
   }
   deriving (Show, Data)
 
-instance Ord BoxHeader where
+instance Ord HTMLtemplateCall where
   compare a b = compare (btType a, L.sort (btKeys a)) (btType b, L.sort (btKeys b))
 
-instance Eq BoxHeader where
+instance Eq HTMLtemplateCall where
   a == b = compare a b == EQ
 
-instance Unique BoxHeader where
+instance Unique HTMLtemplateCall where
   showUnique x = btType x T1.<>. (T.concat . fmap (text1ToText . showUnique) . L.sort . btKeys $ x)
 
-instance Traced BoxHeader where
-  origin BoxHeader {pos = orig} = orig
+instance Traced HTMLtemplateCall where
+  origin HTMLtemplateCall {pos = orig} = orig
 
 data TemplateKeyValue = TemplateKeyValue
   { pos :: !Origin,
