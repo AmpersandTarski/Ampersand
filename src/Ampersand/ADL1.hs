@@ -111,9 +111,9 @@ import Ampersand.Core.AbstractSyntaxTree
     (.|-.),
   )
 import Ampersand.Core.ParseTree
-  ( HTMLtemplateCall (..),
-    EnforceOperator (..),
+  ( EnforceOperator (..),
     FilePos (..),
+    HTMLtemplateCall (..),
     MetaData (..),
     Origin (..),
     PAtomPair (..),

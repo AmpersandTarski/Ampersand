@@ -19,9 +19,9 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-  ( HTMLtemplateCall (..),
-    DefinitionContainer (..),
+  ( DefinitionContainer (..),
     EnforceOperator (..),
+    HTMLtemplateCall (..),
     MetaData (..),
     Origin (OriginAtlas),
     PAtomValue (..),
