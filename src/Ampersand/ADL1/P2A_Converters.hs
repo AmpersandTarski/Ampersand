@@ -572,8 +572,8 @@ pCtx2aCtx
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
-      pObjDefDisamb2aObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
-      pObjDefDisamb2aObjDef ci x = fmap fst (typecheckObjDef ci x)
+      pBoxItemDisamb2BoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
+      pBoxItemDisamb2BoxItem ci x = fmap fst (typecheckObjDef ci x)
 
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
       pViewDef2aViewDef ci x = typecheckViewDef ci tpda
@@ -709,12 +709,11 @@ pCtx2aCtx
               box_txt = str
             } ->
               pure
-                ( BxTxt
-                    BoxTxt
-                      { boxPlainName = nm,
-                        boxpos = orig,
-                        boxtxt = str
-                      },
+                ( BxText
+                    { boxPlainName = nm,
+                      boxpos = orig,
+                      boxtxt = str
+                    },
                   True
                 )
 
@@ -848,8 +847,9 @@ pCtx2aCtx
                     }
                 )
               fn :: (BoxItem, Bool) -> Guarded BoxItem
-              fn (BxExpr e, p) = BxExpr <$> matchWith (e, p)
-              fn (BxTxt t, _) = pure $ BxTxt t
+              fn (boxitem, p) = case boxitem of
+                BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
+                BxText {} -> pure boxitem
               mustBeObject :: A_Concept -> Guarded ()
               mustBeObject cpt = case representationOf ci cpt of
                 Object -> pure ()
@@ -901,7 +901,7 @@ pCtx2aCtx
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
       pIfc2aIfc declMap (pIfc, objDisamb) =
-        build $ pObjDefDisamb2aObjDef declMap objDisamb
+        build $ pBoxItemDisamb2BoxItem declMap objDisamb
         where
           build :: Guarded BoxItem -> Guarded Interface
           build gb =
@@ -933,7 +933,7 @@ pCtx2aCtx
                             . pure
                             . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
                             $ tt
-                    BxTxt _ -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
+                    BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
           ttype :: A_Concept -> TType
           ttype = representationOf declMap
 
@@ -1130,13 +1130,13 @@ pCtx2aCtx
           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
             do
-              ob <- pObjDefDisamb2aObjDef ci ojd
-              case ob of
-                BxExpr o ->
+              boxitem <- pBoxItemDisamb2BoxItem ci ojd
+              case boxitem of
+                BxExpr {objE = o} ->
                   case toList . findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                     [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                     _ -> pure $ IdentityExp o {objExpression = addEpsilonLeft genLattice conc (objExpression o)}
-                BxTxt t -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin t) <> ")"
+                BxText {} -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin boxitem) <> ")"
       typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
       typeCheckPairView ci o x (PairView lst) =
         PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
@@ -1166,7 +1166,6 @@ pCtx2aCtx
                 { explPos = orig,
                   explObj = obj,
                   explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
-                  explUserdefd = True,
                   explRefIds = refIds
                 }
           )

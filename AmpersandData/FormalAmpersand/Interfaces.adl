@@ -58,8 +58,8 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     CLASSIFY FormalAmpersand.Box,FormalAmpersand.InterfaceRef ISA FormalAmpersand.SubInterface
     RELATION FormalAmpersand.siConcept[FormalAmpersand.Box*FormalAmpersand.Concept][UNI,TOT]
     MEANING "The box concept is the type of the runtime atom of the box."
-    RELATION FormalAmpersand.siHeader[FormalAmpersand.Box*FormalAmpersand.BoxHeader][UNI,TOT]
-    MEANING "The boxheader is the definition of the way the box is drawn on the screen."
+    RELATION FormalAmpersand.siHeader[FormalAmpersand.Box*FormalAmpersand.HTMLtemplateCall][UNI,TOT]
+    MEANING "The HTMLtemplateCall is the definition of the way the box is drawn on the screen."
     RELATION FormalAmpersand.siObjs[FormalAmpersand.Box*FormalAmpersand.BoxItem][INJ,SUR]
     MEANING "The (ordered) elements/items in the box."
     RELATION FormalAmpersand.isLink[FormalAmpersand.InterfaceRef*FormalAmpersand.InterfaceRef][PROP]

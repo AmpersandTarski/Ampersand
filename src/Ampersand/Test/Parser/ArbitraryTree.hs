@@ -159,9 +159,9 @@ instance Arbitrary NameType where
 instance Arbitrary Label where
   arbitrary = Label <$> safeText
 
-instance Arbitrary BoxHeader where
+instance Arbitrary HTMLtemplateCall where
   arbitrary =
-    BoxHeader
+    HTMLtemplateCall
       <$> arbitrary
       <*> pure (toText1Unsafe "BOX")
       <*> listOf arbitrary

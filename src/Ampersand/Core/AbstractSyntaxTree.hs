@@ -35,7 +35,6 @@ module Ampersand.Core.AbstractSyntaxTree
     SubInterface (..),
     BoxItem (..),
     ObjectDef (..),
-    BoxTxt (..),
     Object (..),
     Cruds (..),
     Default (..),
@@ -92,9 +91,9 @@ where
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
-  ( BoxHeader (..),
-    DefinitionContainer (..),
+  ( DefinitionContainer (..),
     EnforceOperator,
+    HTMLtemplateCall (..),
     MetaData (..),
     Origin (..),
     PAtomValue (..),
@@ -742,12 +741,17 @@ instance Object ObjectDef where
 
 data BoxItem
   = BxExpr {objE :: !ObjectDef}
-  | BxTxt {objT :: !BoxTxt}
-  deriving (Eq, Ord, Show)
+  | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    BxText
+      { boxPlainName :: !(Maybe Text1),
+        boxpos :: !Origin,
+        boxtxt :: !Text
+      }
+  deriving (Show)
 
 isObjExp :: BoxItem -> Bool
 isObjExp BxExpr {} = True
-isObjExp BxTxt {} = False
+isObjExp BxText {} = False
 
 instance Unique BoxItem where
   showUnique = showUniqueAsHash
@@ -756,31 +760,28 @@ instance Traced BoxItem where
   origin o =
     case o of
       BxExpr {} -> origin . objE $ o
-      BxTxt {} -> origin . objT $ o
+      BxText {} -> boxpos o
 
-data BoxTxt = BoxTxt
-  { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-    boxPlainName :: !(Maybe Text1),
-    boxpos :: !Origin,
-    boxtxt :: !Text
-  }
-  deriving (Show)
+instance Ord BoxItem where
+  compare a b =
+    case (a, b) of
+      (BxExpr {}, BxExpr {}) -> compare (objE a) (objE b)
+      (BxExpr {}, BxText {}) -> GT
+      (BxText {}, BxExpr {}) -> LT
+      (BxText {}, BxText {}) -> case compare (boxPlainName a, boxtxt a) (boxPlainName b, boxtxt b) of
+        EQ ->
+          fromMaybe
+            ( fatal
+                . T.intercalate "\n"
+                $ [ "BxText should have a non-fuzzy Origin.",
+                    tshow (origin a),
+                    tshow (origin b)
+                  ]
+            )
+            (maybeOrdering (origin a) (origin b))
+        x -> x
 
-instance Ord BoxTxt where
-  compare a b = case compare (boxPlainName a, boxtxt a) (boxPlainName b, boxtxt b) of
-    EQ ->
-      fromMaybe
-        ( fatal
-            . T.intercalate "\n"
-            $ [ "BoxTxt should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
-              ]
-        )
-        (maybeOrdering (origin a) (origin b))
-    x -> x
-
-instance Eq BoxTxt where
+instance Eq BoxItem where
   a == b = compare a b == EQ
 
 data ObjectDef = ObjectDef
@@ -823,9 +824,6 @@ instance Ord ObjectDef where
 instance Eq ObjectDef where
   a == b = compare a b == EQ
 
-instance Traced BoxTxt where
-  origin = boxpos
-
 data Cruds = Cruds
   { crudOrig :: !Origin,
     crudC :: !Bool,
@@ -848,7 +846,7 @@ data SubInterface
   = Box
       { pos :: !Origin,
         siConcept :: !A_Concept,
-        siHeader :: !BoxHeader,
+        siHeader :: !HTMLtemplateCall,
         siObjs :: ![BoxItem]
       }
   | InterfaceRef
@@ -885,8 +883,6 @@ data Purpose = Expl
     explObj :: !ExplObj,
     -- | This field contains the text of the explanation including language and markup info.
     explMarkup :: !Markup,
-    -- | Is this purpose defined in the script?
-    explUserdefd :: !Bool,
     -- | The references of the explaination
     explRefIds :: ![Text]
   }

@@ -197,11 +197,11 @@ buildInterfaces fSpec = mapM buildInterface allIfcs
                   exprIsIdent = isIdent . toExpr $ iExp',
                   atomicOrBox = aOrB
                 }
-          BxTxt object' ->
+          BxText {} ->
             return
               FEObjT
-                { objName = maybe "" text1ToText . boxPlainName $ object',
-                  objTxt = boxtxt object'
+                { objName = maybe "" text1ToText . boxPlainName $ boxItem,
+                  objTxt = boxtxt boxItem
                 }
 
 safechars :: Text -> Text

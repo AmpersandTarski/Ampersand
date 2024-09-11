@@ -601,8 +601,8 @@ tblcontents ci ps plug =
                       --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
 
 -- convenient function to give a Box header without keyvalues
-simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
+simpleBoxHeader :: Origin -> HTMLtemplateCall
+simpleBoxHeader orig = HTMLtemplateCall {pos = orig, btType = toText1Unsafe "FORM", btKeys = []}
 
 -- | the function mkUniqueNames ensures case-insensitive unique names like sql plug names
 -- mkUniqueNames :: [PlugSQL] -> [PlugSQL]
