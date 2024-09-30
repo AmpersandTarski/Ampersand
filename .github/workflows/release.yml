@@ -154,7 +154,7 @@ jobs:
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: "mariadb-10.6"
+          mysql-version: "mariadb-11.5"
       - name: build without test 🏗 🧪
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
@@ -176,7 +176,7 @@ jobs:
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: "mariadb-10.6"
+          mysql-version: "mariadb-11.5"
       # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
       ## - run: curl -sSL https://get.haskellstack.org/ | sh
       - run: brew install php
@@ -210,7 +210,7 @@ jobs:
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: "mariadb-10.6"
+          mysql-version: "mariadb-11.5"
       - name: Setup PHP 🧰
         uses: shivammathur/setup-php@v2
         with:
