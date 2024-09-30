@@ -860,7 +860,7 @@ pInterface =
     --- Roles ::= 'FOR' RoleList
     pRoles = (pKey . toText1Unsafe) "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= 'BOX' HTMLtemplateCall? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface =
   P_Box
@@ -873,12 +873,12 @@ pSubInterface =
     <* pInterfaceKey
     <*> pNameWithoutLabel InterfaceName
   where
-    pBoxHeader :: AmpParser BoxHeader
+    pBoxHeader :: AmpParser HTMLtemplateCall
     pBoxHeader =
       build <$> currPos <* (pKey . toText1Unsafe) "BOX" <*> optional pBoxSpecification
       where
-        build :: Origin -> Maybe (Text1, [TemplateKeyValue]) -> BoxHeader
-        build o x = BoxHeader o typ keys
+        build :: Origin -> Maybe (Text1, [TemplateKeyValue]) -> HTMLtemplateCall
+        build o x = HTMLtemplateCall o typ keys
           where
             (typ, keys) = fromMaybe (toText1Unsafe "FORM", []) x
         pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])

@@ -57,7 +57,6 @@ import Ampersand.Core.AbstractSyntaxTree
     A_Context (..),
     A_RoleRule (..),
     BoxItem (..),
-    BoxTxt (..),
     Conjunct (..),
     ContextInfo (..),
     Cruds (..),
@@ -111,9 +110,9 @@ import Ampersand.Core.AbstractSyntaxTree
     (.|-.),
   )
 import Ampersand.Core.ParseTree
-  ( BoxHeader (..),
-    EnforceOperator (..),
+  ( EnforceOperator (..),
     FilePos (..),
+    HTMLtemplateCall (..),
     MetaData (..),
     Origin (..),
     PAtomPair (..),

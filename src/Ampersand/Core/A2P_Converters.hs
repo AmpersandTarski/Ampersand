@@ -48,7 +48,7 @@ aCtx2pCtx ctx =
       ctx_vs = map aViewDef2pViewDef . ctxvs $ ctx,
       ctx_gs = map aClassify2pClassify . ctxgs $ ctx,
       ctx_ifcs = map aInterface2pInterface . ctxifcs $ ctx,
-      ctx_ps = mapMaybe aPurpose2pPurpose . ctxps $ ctx,
+      ctx_ps = map aPurpose2pPurpose . ctxps $ ctx,
       ctx_pops = map aPopulation2pPopulation . ctxpopus $ ctx,
       ctx_metas = ctxmetas ctx,
       ctx_enfs = map aEnforce2pEnforce . ctxEnforces $ ctx
@@ -88,7 +88,7 @@ aPattern2pPattern pat =
       pt_Reprs = ptrps pat,
       pt_ids = map aIdentityDef2pIdentityDef . ptids $ pat,
       pt_vds = map aViewDef2pViewDef . ptvds $ pat,
-      pt_xps = mapMaybe aPurpose2pPurpose . ptxps $ pat,
+      pt_xps = map aPurpose2pPurpose . ptxps $ pat,
       pt_pop = map aPopulation2pPopulation . ptups $ pat,
       pt_end = ptend pat,
       pt_enfs = map aEnforce2pEnforce . ptenfs $ pat
@@ -241,18 +241,14 @@ aConcept2pConcept cpt =
         { p_cptnm = name cpt
         }
 
-aPurpose2pPurpose :: Purpose -> Maybe PPurpose
+aPurpose2pPurpose :: Purpose -> PPurpose
 aPurpose2pPurpose p =
-  if explUserdefd p
-    then
-      Just
-        PPurpose
-          { pos = explPos p,
-            pexObj = aExplObj2PRef2Obj (explObj p),
-            pexMarkup = aMarkup2pMarkup (explMarkup p),
-            pexRefIDs = explRefIds p
-          }
-    else Nothing
+  PPurpose
+    { pos = explPos p,
+      pexObj = aExplObj2PRef2Obj (explObj p),
+      pexMarkup = aMarkup2pMarkup (explMarkup p),
+      pexRefIDs = explRefIds p
+    }
 
 aPopulation2pPopulation :: Population -> P_Population
 aPopulation2pPopulation p =
@@ -289,11 +285,11 @@ aObjectDef2pObjectDef x =
           obj_mView = objmView oDef,
           obj_msub = fmap aSubIfc2pSubIfc (objmsub oDef)
         }
-    BxTxt oDef ->
+    BxText {} ->
       P_BxTxt
-        { obj_PlainName = boxPlainName oDef,
-          pos = origin oDef,
-          box_txt = boxtxt oDef
+        { obj_PlainName = boxPlainName x,
+          pos = origin x,
+          box_txt = boxtxt x
         }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim

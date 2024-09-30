@@ -24,7 +24,6 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     purposes2Blocks,
     meaning2Blocks,
     violation2Inlines,
-    isMissing,
     lclForLang,
     dpRule',
     ThemeContent (..),
@@ -651,9 +650,6 @@ insertAfterFirstInline inlines = fromList . insertAfterFirstInline' . toList
     insertAfterFirstInline' (Para (inl : inls) : pblocks) = Para (inl : (inlines <> inls)) : pblocks
     insertAfterFirstInline' (BlockQuote (Para (inl : inls) : pblocks) : blocks) = BlockQuote (Para (inl : (inlines <> inls)) : pblocks) : blocks
     insertAfterFirstInline' blocks = Plain inlines : blocks
-
-isMissing :: Maybe Purpose -> Bool
-isMissing = maybe True (not . explUserdefd)
 
 lclForLang :: Lang -> TimeLocale
 lclForLang lang =

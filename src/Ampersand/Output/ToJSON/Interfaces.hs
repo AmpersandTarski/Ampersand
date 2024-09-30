@@ -117,7 +117,7 @@ instance JSON SubInterface JSONSubInterface where
             subJSONrefIsLinkTo = Just . siIsLink $ si
           }
 
-instance JSON BoxHeader JSONBoxHeader where
+instance JSON HTMLtemplateCall JSONBoxHeader where
   fromAmpersand env fSpec header =
     JSONBoxHeader
       { bhJSONtype = text1ToText . btType $ header,
@@ -196,11 +196,11 @@ instance JSON BoxItem JSONObjectDef where
                 (tgt, Just (decl, isFlipped'))
               Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
           object = substituteReferenceObjectDef fSpec object'
-      BxTxt object ->
+      BxText {} ->
         JSONObjectDef
           { ifcobjJSONtype = "ObjText",
-            ifcobjJSONname = maybe "" (text1ToText . escapeIdentifier) (boxPlainName object),
-            ifcobjJSONlabel = maybe "" text1ToText (boxPlainName object),
+            ifcobjJSONname = maybe "" (text1ToText . escapeIdentifier) (boxPlainName obj),
+            ifcobjJSONlabel = maybe "" text1ToText (boxPlainName obj),
             ifcobjJSONviewName = Nothing,
             ifcobjJSONNormalizationSteps = Nothing,
             ifcobjJSONrelation = Nothing,
@@ -208,5 +208,5 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONcrud = Nothing,
             ifcobjJSONexpr = Nothing,
             ifcobjJSONsubinterfaces = Nothing,
-            ifcobjJSONtxt = Just . boxtxt $ object
+            ifcobjJSONtxt = Just . boxtxt $ obj
           }

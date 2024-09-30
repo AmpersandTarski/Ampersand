@@ -165,7 +165,7 @@ data FEAtomicOrBox
         viewDef :: Maybe ViewDef
       }
   | FEBox
-      { boxHeader :: BoxHeader,
+      { boxHeader :: HTMLtemplateCall,
         boxSubObjs :: [FEObject],
         viewDef :: Maybe ViewDef
       }

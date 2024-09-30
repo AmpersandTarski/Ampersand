@@ -529,8 +529,6 @@ instance ShowHS Purpose where
       <> ") "
       <> showHS env "" (explMarkup expla)
       <> " "
-      <> tshow (explUserdefd expla)
-      <> " "
       <> tshow (explRefIds expla)
       <> " "
 
@@ -692,16 +690,6 @@ instance ShowHS ObjectDef where
         "       }"
       ]
 
-instance ShowHS BoxTxt where
-  showHS env indent x =
-    T.intercalate
-      indent
-      [ "BoxTxt { boxPlainName    = " <> tshow (boxPlainName x),
-        "       , boxpos   = " <> showHS env "" (origin x),
-        "       , boxtxt   = " <> tshow (boxtxt x),
-        "       }"
-      ]
-
 instance ShowHS Cruds where
   showHS env indent x =
     T.intercalate
@@ -732,10 +720,17 @@ instance ShowHS Interface where
       <> "    }"
 
 instance ShowHS BoxItem where
-  showHS env indent obj =
-    case obj of
+  showHS env indent item =
+    case item of
       (BxExpr e) -> "BxExpr (" <> showHS env indent e <> ")"
-      (BxTxt t) -> "BxTxt (" <> showHS env indent t <> ")"
+      BxText {} ->
+        T.intercalate
+          indent
+          [ "BxText { boxPlainName    = " <> tshow (boxPlainName item),
+            "       , boxpos   = " <> showHS env "" (origin item),
+            "       , boxtxt   = " <> tshow (boxtxt item),
+            "       }"
+          ]
 
 instance ShowHS SubInterface where
   showHS _ _ (InterfaceRef _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n

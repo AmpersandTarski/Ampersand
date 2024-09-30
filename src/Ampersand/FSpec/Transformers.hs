@@ -818,8 +818,8 @@ transformersFormalAmpersand fSpec =
       ( "FormalAmpersand.text",
         "FormalAmpersand.BxTxt",
         "FormalAmpersand.Text",
-        [ (dirtyId' item, PopAlphaNumeric (boxtxt x))
-          | item@BxTxt {objT = x} <- instanceList fSpec
+        [ (dirtyId' item, PopAlphaNumeric (boxtxt item))
+          | item@BxText {} <- instanceList fSpec
         ]
       ),
       ( "FormalAmpersand.text",
@@ -1577,7 +1577,7 @@ tmpNewTransformerDefsFA fSpec =
       ),
       ( "FormalAmpersand.siHeader",
         "FormalAmpersand.Box",
-        "FormalAmpersand.BoxHeader",
+        "FormalAmpersand.HTMLtemplateCall",
         [ (dirtyId' box, dirtyId' (siHeader box))
           | box@Box {} <- instanceList fSpec
         ]
