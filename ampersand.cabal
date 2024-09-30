@@ -114,7 +114,6 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Ticket580.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldSucceed/testinfo.yaml
-    testing/StillUnsupported/Bug335_Kl0Kl1.adl
     testing/StillUnsupported/Issue1127.adl
     testing/StillUnsupported/Issue1127.xlsx
     testing/StillUnsupported/Issue1397-1.adl
@@ -284,6 +283,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM_Test10.adl
     testing/Travis/testcases/prototype/shouldSucceed/BroadTableTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Bug335_Kl0Kl1.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
