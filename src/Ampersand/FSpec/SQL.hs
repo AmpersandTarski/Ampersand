@@ -150,8 +150,6 @@ selectExpr ::
   -- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
   -- Special cases are treated up front, so they will overrule the more general cases.
   -- That allows more efficient code while retaining completeness.
-  -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
-  -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr =
   traceExprComment expr [tshow expr]
     $ fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) -- special cases for optimized results.
@@ -1005,10 +1003,10 @@ nonSpecialSelectExpr fSpec expr =
         BCTE
           { bcteWithRecursive = True,
             bcteViews =
-              [ ( Alias (uName "TheExpression") Nothing,
+              [ ( Alias (qName "TheExpression") Nothing,
                   selectExpr fSpec e
                 ),
-                ( Alias (uName "TransitiveClosure") Nothing,
+                ( Alias (qName "TransitiveClosure") Nothing,
                   BCQE
                     { bseSetQuantifier = Distinct,
                       bcqeOper = Union,
@@ -1018,18 +1016,18 @@ nonSpecialSelectExpr fSpec expr =
                             bseSrc =
                               Col
                                 { cTable = [],
-                                  cCol = [uName "src"],
+                                  cCol = [sourceAlias],
                                   cAlias = [],
                                   cSpecial = Nothing
                                 },
                             bseTrg =
                               Col
                                 { cTable = [],
-                                  cCol = [uName "tgt"],
+                                  cCol = [targetAlias],
                                   cAlias = [],
                                   cSpecial = Nothing
                                 },
-                            bseTbl = [TRSimple [uName "TheExpression"]],
+                            bseTbl = [TRSimple [qName "TheExpression"]],
                             bseWhr = Nothing
                           },
                       bcqe1 =
@@ -1037,28 +1035,28 @@ nonSpecialSelectExpr fSpec expr =
                           { bseSetQuantifier = SQDefault,
                             bseSrc =
                               Col
-                                { cTable = [uName "TransitiveClosure"],
-                                  cCol = [uName "src"],
+                                { cTable = [qName "TransitiveClosure"],
+                                  cCol = [sourceAlias],
                                   cAlias = [],
                                   cSpecial = Nothing
                                 },
                             bseTrg =
                               Col
-                                { cTable = [uName "TheExpression"],
-                                  cCol = [uName "tgt"],
+                                { cTable = [qName "TheExpression"],
+                                  cCol = [targetAlias],
                                   cAlias = [],
                                   cSpecial = Nothing
                                 },
                             bseTbl =
-                              [ TRSimple [uName "TransitiveClosure"],
-                                TRSimple [uName "TheExpression"]
+                              [ TRSimple [qName "TransitiveClosure"],
+                                TRSimple [qName "TheExpression"]
                               ],
                             bseWhr =
                               Just
                                 ( BinOp
-                                    (Iden [qName "TheExpression", uName "src"])
+                                    (Iden [qName "TheExpression", sourceAlias])
                                     [uName "="]
-                                    (Iden [qName "TransitiveClosure", uName "tgt"])
+                                    (Iden [qName "TransitiveClosure", targetAlias])
                                 )
                           }
                     }
@@ -1070,18 +1068,18 @@ nonSpecialSelectExpr fSpec expr =
                   bseSrc =
                     Col
                       { cTable = [],
-                        cCol = [uName "src"],
+                        cCol = [sourceAlias],
                         cAlias = [],
                         cSpecial = Nothing
                       },
                   bseTrg =
                     Col
                       { cTable = [],
-                        cCol = [uName "tgt"],
+                        cCol = [targetAlias],
                         cAlias = [],
                         cSpecial = Nothing
                       },
-                  bseTbl = [TRSimple [uName "TransitiveClosure"]],
+                  bseTbl = [TRSimple [qName "TransitiveClosure"]],
                   bseWhr = Nothing
                 }
           }
