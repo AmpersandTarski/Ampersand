@@ -103,8 +103,7 @@ class SQLAble a where
             _ -> bqeWithoutPlaceholder
           BinQueryExprSetOp {} ->
             BinQueryExprSetOp
-              { bseSetQuantifier = bseSetQuantifier bqe,
-                bcqeOper = bcqeOper bqe,
+              { bcqeOper = bcqeOper bqe,
                 bcqe0 = insertPlaceholder . bcqe0 $ bqe,
                 bcqe1 = insertPlaceholder . bcqe1 $ bqe
               }
@@ -120,8 +119,7 @@ class SQLAble a where
           bqeWithoutPlaceholder = BinQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
           bqeWithPlaceholder =
             BinSelect
-              { bseSetQuantifier = bseSetQuantifier bqe,
-                bseSrc = bseSrc bqe,
+              { bseSrc = bseSrc bqe,
                 bseTrg = bseTrg bqe,
                 bseTbl = bseTbl bqe,
                 bseWhr = Just
@@ -182,8 +180,7 @@ maybeSpecialCase fSpec expr =
                         notNull aAtt
                       ]
                in BinSelect
-                    { bseSetQuantifier = SQDefault,
-                      bseSrc = col,
+                    { bseSrc = col,
                       bseTrg = col,
                       bseTbl = [sqlConceptTable fSpec a `as` uName "notIns"],
                       bseWhr = Just whereClause
@@ -223,8 +220,7 @@ maybeSpecialCase fSpec expr =
             "  <expr2> = " <> showA expr2 <> " (sign: " <> tshow (sign expr2) <> ")"
           ]
         $ BinSelect
-          { bseSetQuantifier = SQDefault,
-            bseSrc =
+          { bseSrc =
               Col
                 { cTable = [table1],
                   cCol = [sourceAlias],
@@ -321,8 +317,7 @@ nonSpecialSelectExpr fSpec expr =
                 Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
               ts ->
                 BinSelect
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc = theSr',
+                  { bseSrc = theSr',
                     bseTrg = theTr',
                     bseTbl = theTbl,
                     bseWhr = case catMaybes [mandatoryTuple, forbiddenTuples, theWhr] of
@@ -376,8 +371,7 @@ nonSpecialSelectExpr fSpec expr =
                       BinSelect {} -> x
                       _ ->
                         BinSelect
-                          { bseSetQuantifier = bseSetQuantifier x,
-                            bseSrc =
+                          { bseSrc =
                               Col
                                 { cTable = [dummy],
                                   cCol = [sourceAlias],
@@ -419,8 +413,7 @@ nonSpecialSelectExpr fSpec expr =
                                         "  part2 : " <> (showA . foldr (./\.) hesRest $ tlesRest)
                                       ]
                                       BinSelect
-                                        { bseSetQuantifier = SQDefault,
-                                          bseSrc =
+                                        { bseSrc =
                                             Col
                                               { cTable = [],
                                                 cCol = [sourceAlias],
@@ -475,8 +468,7 @@ nonSpecialSelectExpr fSpec expr =
                                   --    <>map (showComment "esR") esR
 
                                   BinSelect
-                                    { bseSetQuantifier = SQDefault,
-                                      bseSrc =
+                                    { bseSrc =
                                         Col
                                           { cTable = [],
                                             cCol = [sqlAttConcept fSpec c],
@@ -526,8 +518,7 @@ nonSpecialSelectExpr fSpec expr =
                             BinQEComment
                               [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
                               BinSelect
-                                { bseSetQuantifier = SQDefault,
-                                  bseSrc =
+                                { bseSrc =
                                     Col
                                       { cTable = [iSect 0],
                                         cCol = [sourceAlias],
@@ -562,8 +553,7 @@ nonSpecialSelectExpr fSpec expr =
       traceComment
         ["case: EUni (l,r)"]
         BinQueryExprSetOp
-          { bseSetQuantifier = SQDefault,
-            bcqeOper = Union,
+          { bcqeOper = Union,
             bcqe0 = selectExpr fSpec l,
             bcqe1 = selectExpr fSpec r
           }
@@ -676,8 +666,7 @@ nonSpecialSelectExpr fSpec expr =
                in traceComment
                     ["case: (ECps es), with two or more elements in es."]
                     BinSelect
-                      { bseSetQuantifier = SQDefault,
-                        bseSrc =
+                      { bseSrc =
                           if source hes == ONE -- the first expression is V[ONE*someConcept]
                             then theONESingleton
                             else
@@ -711,16 +700,14 @@ nonSpecialSelectExpr fSpec expr =
             $ case se of
               BinSelect {} ->
                 BinSelect
-                  { bseSetQuantifier = bseSetQuantifier se,
-                    bseSrc = bseTrg se,
+                  { bseSrc = bseTrg se,
                     bseTrg = bseSrc se,
                     bseTbl = bseTbl se,
                     bseWhr = bseWhr se
                   }
               BinQueryExprSetOp {bcqeOper = Union} ->
                 BinQueryExprSetOp
-                  { bseSetQuantifier = bseSetQuantifier se,
-                    bcqeOper = Union,
+                  { bcqeOper = Union,
                     bcqe0 = flipped (bcqe0 se),
                     bcqe1 = flipped (bcqe1 se)
                   }
@@ -734,8 +721,7 @@ nonSpecialSelectExpr fSpec expr =
           where
             flipped' =
               BinSelect
-                { bseSetQuantifier = bseSetQuantifier se,
-                  bseSrc =
+                { bseSrc =
                     Col
                       { cTable = [fTable],
                         cCol = [targetAlias],
@@ -756,8 +742,7 @@ nonSpecialSelectExpr fSpec expr =
       traceComment
         ["case: EMp1 val c"]
         BinSelect
-          { bseSetQuantifier = SQDefault,
-            bseSrc =
+          { bseSrc =
               Col
                 { cTable = [],
                   cCol = [sqlAttConcept fSpec c],
@@ -786,8 +771,7 @@ nonSpecialSelectExpr fSpec expr =
               (ONE, ONE) -> one
               (_, ONE) ->
                 BinSelect
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc =
+                  { bseSrc =
                       Col
                         { cTable = [psrc],
                           cCol = [fsrc],
@@ -800,8 +784,7 @@ nonSpecialSelectExpr fSpec expr =
                   }
               (ONE, _) ->
                 BinSelect
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc = theONESingleton,
+                  { bseSrc = theONESingleton,
                     bseTrg =
                       Col
                         { cTable = [ptgt],
@@ -814,8 +797,7 @@ nonSpecialSelectExpr fSpec expr =
                   }
               _ ->
                 BinSelect
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc =
+                  { bseSrc =
                       Col
                         { cTable = [first'],
                           cCol = [fsrc],
@@ -845,8 +827,7 @@ nonSpecialSelectExpr fSpec expr =
       $ case c of
         ONE ->
           BinSelect
-            { bseSetQuantifier = SQDefault,
-              bseSrc = theONESingleton,
+            { bseSrc = theONESingleton,
               bseTrg = theONESingleton,
               bseTbl = [],
               bseWhr = Nothing
@@ -854,8 +835,7 @@ nonSpecialSelectExpr fSpec expr =
         PlainConcept {} ->
           let cAtt = Iden [sqlAttConcept fSpec c]
            in BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
+                { bseSrc =
                     Col
                       { cTable = [],
                         cCol = [sqlAttConcept fSpec c],
@@ -877,8 +857,7 @@ nonSpecialSelectExpr fSpec expr =
       $ case c of -- select the population of the most specific concept, which is the source.
         ONE ->
           BinSelect
-            { bseSetQuantifier = SQDefault,
-              bseSrc = theONESingleton,
+            { bseSrc = theONESingleton,
               bseTrg = theONESingleton,
               bseTbl = [],
               bseWhr = Nothing
@@ -886,8 +865,7 @@ nonSpecialSelectExpr fSpec expr =
         PlainConcept {} ->
           let cAtt = Iden [sqlAttConcept fSpec c]
            in BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
+                { bseSrc =
                     Col
                       { cTable = [],
                         cCol = [sqlAttConcept fSpec c],
@@ -916,8 +894,7 @@ nonSpecialSelectExpr fSpec expr =
           traceComment
             ["case: ECpl (EDcI c)"]
             BinSelect
-              { bseSetQuantifier = SQDefault,
-                bseSrc =
+              { bseSrc =
                   Col
                     { cTable = [qName "concept0"],
                       cCol = [concpt],
@@ -949,8 +926,7 @@ nonSpecialSelectExpr fSpec expr =
           traceComment
             ["case: ECpl e"]
             BinSelect
-              { bseSetQuantifier = SQDefault,
-                bseSrc =
+              { bseSrc =
                   Col
                     { cTable = [closedWorldName],
                       cCol = [sourceAlias],
@@ -995,8 +971,7 @@ nonSpecialSelectExpr fSpec expr =
       traceComment
         ["case: EKl0 expr -- (Kleene star)"]
         BinQueryExprSetOp
-          { bseSetQuantifier = Distinct,
-            bcqeOper = Union,
+          { bcqeOper = Union,
             bcqe0 = selectExpr fSpec e,
             bcqe1 = selectExpr fSpec (EKl1 e)
           }
@@ -1007,17 +982,15 @@ nonSpecialSelectExpr fSpec expr =
         $ BinWith
           { bcteWithRecursive = True,
             bcteViews =
-              [ ( Alias (uName "TheExpression") Nothing,
+              [ ( Alias (qName "TheExpression") Nothing,
                   selectExpr fSpec e
                 ),
-                ( Alias (uName "TransitiveClosure") Nothing,
+                ( Alias (qName "TransitiveClosure") Nothing,
                   BinQueryExprSetOp
-                    { bseSetQuantifier = Distinct,
-                      bcqeOper = Union,
+                    { bcqeOper = Union,
                       bcqe0 =
                         BinSelect
-                          { bseSetQuantifier = SQDefault,
-                            bseSrc =
+                          { bseSrc =
                               Col
                                 { cTable = [],
                                   cCol = [sourceAlias],
@@ -1036,8 +1009,7 @@ nonSpecialSelectExpr fSpec expr =
                           },
                       bcqe1 =
                         BinSelect
-                          { bseSetQuantifier = SQDefault,
-                            bseSrc =
+                          { bseSrc =
                               Col
                                 { cTable = [qName "TransitiveClosure"],
                                   cCol = [sourceAlias],
@@ -1068,8 +1040,7 @@ nonSpecialSelectExpr fSpec expr =
               ],
             bcteQueryExpression =
               BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
+                { bseSrc =
                     Col
                       { cTable = [],
                         cCol = [sourceAlias],
@@ -1131,8 +1102,7 @@ nonSpecialSelectExpr fSpec expr =
             | target r == ONE = fatal ("ONE is unexpected as target of " <> showA r)
             | otherwise =
                 BinSelect
-                  { bseSetQuantifier = SQDefault,
-                    bseSrc =
+                  { bseSrc =
                       Col
                         { cTable = [resLeft],
                           cCol = [mainSrc],
@@ -1244,8 +1214,7 @@ selectRelation fSpec dcl =
     leafCode :: (PlugSQL, RelStore) -> BinQueryExpr
     leafCode (plug, relstore) =
       BinSelect
-        { bseSetQuantifier = SQDefault,
-          bseSrc =
+        { bseSrc =
             Col
               { cTable = [],
                 cCol = [qName . tshow . attSQLColName $ s],
@@ -1321,17 +1290,15 @@ selectExists tbl whr =
 -- | a (local) data structure to hold SQL info for binary expressions
 data BinQueryExpr
   = BinSelect -- A regular select expression, with exactly two columns
-      { bseSetQuantifier :: !SetQuantifier,
-        bseSrc :: !Col,
+      { bseSrc :: !Col,
         bseTrg :: !Col,
         -- | tables
         bseTbl :: ![TableRef],
         -- | the (optional) WHERE clause
         bseWhr :: !(Maybe ScalarExpr)
       }
-  | BinQueryExprSetOp -- A set operator (union, except, intersect) on a BinSelect
-      { bseSetQuantifier :: !SetQuantifier,
-        -- | The combine operator
+  | BinQueryExprSetOp -- A set operator (union, except, intersect) on two BinQueryExpr essinos
+      { -- | The combine operator
         bcqeOper :: !SetOperatorName,
         -- | Left  expression
         bcqe0 :: !BinQueryExpr,
@@ -1368,16 +1335,14 @@ stripComment bqe =
   case bqe of
     BinSelect {} ->
       BinSelect
-        { bseSetQuantifier = bseSetQuantifier bqe,
-          bseSrc = bseSrc bqe,
+        { bseSrc = bseSrc bqe,
           bseTrg = bseTrg bqe,
           bseTbl = map stripCommentTableRef . bseTbl $ bqe,
           bseWhr = bseWhr bqe
         }
     BinQueryExprSetOp {} ->
       BinQueryExprSetOp
-        { bseSetQuantifier = bseSetQuantifier bqe,
-          bcqeOper = bcqeOper bqe,
+        { bcqeOper = bcqeOper bqe,
           bcqe0 = stripComment (bcqe0 bqe),
           bcqe1 = stripComment (bcqe1 bqe)
         }
@@ -1413,7 +1378,7 @@ toSQL bqe =
   case bqe of
     BinSelect {} ->
       Select
-        { qeSetQuantifier = bseSetQuantifier bqe,
+        { qeSetQuantifier = Distinct,
           qeSelectList =
             [ (col2ScalarExpr (bseSrc bqe), Just sourceAlias),
               (col2ScalarExpr (bseTrg bqe), Just targetAlias)
@@ -1430,7 +1395,7 @@ toSQL bqe =
       QueryExprSetOp
         { qe0 = toSQL (bcqe0 bqe),
           qeCombOp = bcqeOper bqe,
-          qeSetQuantifier = bseSetQuantifier bqe,
+          qeSetQuantifier = Distinct,
           qeCorresponding = Respectively, -- See https://dba.stackexchange.com/questions/212266/what-is-the-f301-the-corresponding-clause-in-query-expression
           qe1 = toSQL (bcqe1 bqe)
         }
@@ -1452,16 +1417,14 @@ setDistinct bqe =
   case bqe of
     BinSelect {} ->
       BinSelect
-        { bseSetQuantifier = Distinct,
-          bseSrc = bseSrc bqe,
+        { bseSrc = bseSrc bqe,
           bseTrg = bseTrg bqe,
           bseTbl = bseTbl bqe,
           bseWhr = bseWhr bqe
         }
     BinQueryExprSetOp {} ->
       BinQueryExprSetOp
-        { bseSetQuantifier = Distinct,
-          bcqeOper = bcqeOper bqe,
+        { bcqeOper = bcqeOper bqe,
           bcqe0 = bcqe0 bqe,
           bcqe1 = bcqe1 bqe
         }
@@ -1520,7 +1483,6 @@ emptySet =
     [BlockComment "this will quaranteed return 0 rows:"]
     BinSelect
       { -- select 1 as src, 1 as trg from (select 1) dummy where false
-        bseSetQuantifier = SQDefault,
         bseSrc =
           Col
             { cTable = [nothing],
@@ -1564,8 +1526,7 @@ one =
   BinQEComment
     [BlockComment "Just ONE"]
     BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
-      { bseSetQuantifier = SQDefault,
-        bseSrc = theONESingleton,
+      { bseSrc = theONESingleton,
         bseTrg = theONESingleton,
         bseTbl =
           [ TRQueryExpr
