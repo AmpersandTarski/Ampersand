@@ -982,10 +982,10 @@ nonSpecialSelectExpr fSpec expr =
         $ BinWith
           { bcteWithRecursive = True,
             bcteViews =
-              [ ( Alias (qName "TheExpression") Nothing,
+              [ ( Alias (uName "TheExpression") Nothing,
                   selectExpr fSpec e
                 ),
-                ( Alias (qName "TransitiveClosure") Nothing,
+                ( Alias (uName "TransitiveClosure") Nothing,
                   BinQueryExprSetOp
                     { bcqeOper = Union,
                       bcqe0 =
