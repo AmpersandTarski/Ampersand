@@ -81,8 +81,8 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | diamond                      |  `<>` |      $$\Diamond$$      |                                            |
 | relational product           |  `!`  |       $$\dagger$$      | associative                                |
 | cartesian product            |  `#`  |       $$\times$$       | deprecated                                 |
-| reflexive transitive closure |  `*`  |          $$∗$$         | in code: not implemented; in math: Postfix |
-| transitive closure           |  `+`  |          $$+$$         | in code: not implemented; in math: Postfix |
+| reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
+| transitive closure           |  `+`  |          $$+$$         |                                            |
 
 ## Semantics
 

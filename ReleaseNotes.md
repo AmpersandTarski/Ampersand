@@ -3,6 +3,7 @@
 ## Unreleased
 
 - [Issue #1482](https://github.com/AmpersandTarski/Ampersand/issues/1482) Fix technical debd from merging Ampersand 4 into Ampersand 5
+- [Issue #137](https://github.com/AmpersandTarski/Ampersand/issues/137) We now support transitive closures 
 
 ## v5.2.2 (9 september 2024)
 

@@ -460,8 +460,8 @@ The following operators are available to build expressions:
   - complement: `-`
 - Unary operators \(post-operator\)
   - conversion \(flip\): `~`
-  - Reflexive, transitive closure: `*` \(Kleene star\) --currently not implemented
-  - transitive closure: `+` \(Kleene plus\) --currently not implemented
+  - Reflexive, transitive closure: `*` \(Kleene star\) 
+  - transitive closure: `+` \(Kleene plus\)
 
 ###### MEANING\*
 
