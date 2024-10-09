@@ -114,6 +114,7 @@ class SQLAble a where
                 bcteViews = bcteViews bqe,
                 bcteQueryExpression = insertPlaceholder (bcteQueryExpression bqe)
               }
+          BinQueryExprParens qe -> BinQueryExprParens . insertPlaceholder $ qe
           BinQEComment _ x -> insertPlaceholder x
         where
           bqeWithoutPlaceholder = BinQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
@@ -366,6 +367,7 @@ nonSpecialSelectExpr fSpec expr =
                     BinQueryExprSetOp {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                     BinWith {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                     BinQEComment {} -> fatal "makeSelectable is not doing what it is supposed to do!"
+                    BinQueryExprParens {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                   sResult = makeIntersectSelectExpr ts
                   dummy = uName "someDummyNameBecauseMySQLNeedsOne"
                   makeSelectable :: BinQueryExpr -> BinQueryExpr
@@ -724,6 +726,7 @@ nonSpecialSelectExpr fSpec expr =
                   }
               BinQueryExprSetOp {} -> flipped'
               BinWith {} -> flipped'
+              BinQueryExprParens qe -> BinQueryExprParens (flipped qe)
               (BinQEComment c e) ->
                 case flipped e of
                   BinQEComment (_ : c') fe -> BinQEComment (c <> c') fe
@@ -1000,7 +1003,8 @@ nonSpecialSelectExpr fSpec expr =
     EKl1 e ->
       traceComment
         ["case: EKl1 expr -- (Kleene plus)"]
-        BinWith
+        . BinQueryExprParens
+        $ BinWith
           { bcteWithRecursive = True,
             bcteViews =
               [ ( Alias (uName "TheExpression") Nothing,
@@ -1383,6 +1387,7 @@ stripComment bqe =
           bcteViews = bcteViews bqe,
           bcteQueryExpression = stripComment (bcteQueryExpression bqe)
         }
+    BinQueryExprParens qe -> BinQueryExprParens (stripComment qe)
     BinQEComment _ x -> stripComment x
 
 stripCommentTableRef :: TableRef -> TableRef
@@ -1438,6 +1443,7 @@ toSQL bqe =
       where
         viewToSQL :: (Alias, BinQueryExpr) -> (Alias, QueryExpr)
         viewToSQL (a, bqe') = (a, toSQL bqe')
+    BinQueryExprParens x -> QueryExprParens (toSQL x)
     (BinQEComment c (BinQEComment c' e)) -> toSQL $ BinQEComment (c <> c') e
     (BinQEComment c e) -> QEComment c (toSQL e)
 
@@ -1460,6 +1466,7 @@ setDistinct bqe =
           bcqe1 = bcqe1 bqe
         }
     BinWith {} -> bqe {bcteQueryExpression = setDistinct (bcteQueryExpression bqe)}
+    BinQueryExprParens x -> BinQueryExprParens (setDistinct x)
     BinQEComment _ x -> setDistinct x
 
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
@@ -1630,6 +1637,7 @@ broadQuery fSpec obj =
                         _ -> subThings
                 BinQueryExprSetOp {} -> newSelect subThings
                 BinWith {} -> newSelect subThings
+                BinQueryExprParens x -> QueryExprParens (extendWithCols objs x)
                 BinQEComment _ x -> extendWithCols objs x
               where
                 newSelect (sl, f, w) =
