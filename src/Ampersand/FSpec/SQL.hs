@@ -1317,35 +1317,36 @@ selectExists tbl whr =
 -- | a (local) data structure to hold SQL info for binary expressions
 data BinQueryExpr
   = BinSelect -- A regular select expression, with exactly two columns
-      { bseSetQuantifier :: SetQuantifier,
-        bseSrc :: Col,
-        bseTrg :: Col,
+      { bseSetQuantifier :: !SetQuantifier,
+        bseSrc :: !Col,
+        bseTrg :: !Col,
         -- | tables
-        bseTbl :: [TableRef],
+        bseTbl :: ![TableRef],
         -- | the (optional) WHERE clause
-        bseWhr :: Maybe ScalarExpr
+        bseWhr :: !(Maybe ScalarExpr)
       }
   | BinQueryExprSetOp -- A set operator (union, except, intersect) on a BinSelect
-      { bseSetQuantifier :: SetQuantifier,
+      { bseSetQuantifier :: !SetQuantifier,
         -- | The combine operator
-        bcqeOper :: SetOperatorName,
+        bcqeOper :: !SetOperatorName,
         -- | Left  expression
-        bcqe0 :: BinQueryExpr,
+        bcqe0 :: !BinQueryExpr,
         -- | Right expression
-        bcqe1 :: BinQueryExpr
+        bcqe1 :: !BinQueryExpr
       }
   | BinWith -- a common table expression resulting in a table with two columns
       { bcteWithRecursive :: !Bool,
         bcteViews :: ![(Alias, BinQueryExpr)],
         bcteQueryExpression :: !BinQueryExpr
       }
-  | BinQEComment [Comment] BinQueryExpr
+  | BinQueryExprParens !BinQueryExpr
+  | BinQEComment ![Comment] !BinQueryExpr
 
 data Col = Col
-  { cTable :: [Name],
-    cCol :: [Name],
-    cAlias :: [Name],
-    cSpecial :: Maybe ScalarExpr
+  { cTable :: ![Name],
+    cCol :: ![Name],
+    cAlias :: ![Name],
+    cSpecial :: !(Maybe ScalarExpr)
   }
 
 col2ScalarExpr :: Col -> ScalarExpr
