@@ -12,12 +12,12 @@ packages:
   original:
     hackage: pandoc-crossref-0.3.17.0
 - completed:
-    hackage: simple-sql-parser-0.7.1@sha256:4281e5426b09161ff2409cc60f40b05bb68f0ebf8b539a8a15ffa2b6d4275ed0,3953
+    hackage: simple-sql-parser-0.8.0@sha256:5153612af09edda2af865e6dc1286d64ecea702541a1af824ac518268f0b5cb4,4417
     pantry-tree:
-      sha256: 44ec0e83fb8cad34bb357638fd59f79bdb79a700ce139ac59daa28efdda3f1a9
-      size: 2637
+      sha256: fba7264bf9753b0c6abf40881e43b0b56e97052487c5ccbfd663892cdcfdfc13
+      size: 2898
   original:
-    hackage: simple-sql-parser-0.7.1@sha256:4281e5426b09161ff2409cc60f40b05bb68f0ebf8b539a8a15ffa2b6d4275ed0,3953
+    hackage: simple-sql-parser-0.8.0
 - completed:
     hackage: SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
     pantry-tree:
