@@ -53,86 +53,82 @@ lengthCheck str
   where
     maxLen = 1000000
 
-class SQLAble a where
-  -- | show SQL query without comments and not prettyprinted
-  sqlQuery, sqlQueryWithPlaceholder :: FSpec -> a -> Text
-  sqlQuery fSpec = lengthCheck . doNonPretty getBinQueryExpr fSpec
-  sqlQueryWithPlaceholder fSpec = lengthCheck . doNonPretty getBinQueryExprPlaceholder fSpec
+-- | show SQL query without comments and not prettyprinted
+sqlQuery, sqlQueryWithPlaceholder :: FSpec -> Expression -> Text
+sqlQuery fSpec = lengthCheck . doNonPretty getBinQueryExpr fSpec
+sqlQueryWithPlaceholder fSpec = lengthCheck . doNonPretty getBinQueryExprPlaceholder fSpec
 
-  doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> Text
-  doNonPretty fun fSpec =
-    T.unwords
-      . T.words
-      . prettyQueryExpr theDialect
-      . toSQL
-      . stripComment
-      . fun fSpec
+doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> Text
+doNonPretty fun fSpec =
+  T.unwords
+    . T.words
+    . prettyQueryExpr theDialect
+    . toSQL
+    . stripComment
+    . fun fSpec
 
-  prettySQLQuery,
-    prettySQLQueryWithPlaceholder ::
-      Int -> -- Amount of indentation
-      FSpec -> -- The context
-      a ->
-      SqlQuery
-  prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
-  prettySQLQuery = doPretty getBinQueryExpr
-  doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
-  doPretty fun i fSpec =
-    SqlQueryPretty
-      . T.lines
-      . T.intercalate ("\n" <> T.replicate i " ")
-      . T.lines
-      . prettyQueryExpr theDialect
-      . toSQL
-      . fun fSpec
+prettySQLQuery,
+  prettySQLQueryWithPlaceholder ::
+    Int -> -- Amount of indentation
+    FSpec -> -- The context
+    Expression ->
+    SqlQuery
+prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
+prettySQLQuery = doPretty getBinQueryExpr
 
-  getBinQueryExpr :: FSpec -> a -> BinQueryExpr
-  getBinQueryExprPlaceholder :: FSpec -> a -> BinQueryExpr
-  getBinQueryExprPlaceholder fSpec = insertPlaceholder . getBinQueryExpr fSpec
-    where
-      insertPlaceholder :: BinQueryExpr -> BinQueryExpr
-      insertPlaceholder bqe =
-        case bqe of
-          BinSelect {} -> case (col2ScalarExpr (bseSrc bqe), bseWhr bqe) of
-            (Iden [_], _) ->
-              bqeWithPlaceholder
-            (Iden [_, a], _)
-              | a == sourceAlias ->
-                  bqeWithPlaceholder
-              | otherwise -> bqeWithoutPlaceholder
-            _ -> bqeWithoutPlaceholder
-          BinQueryExprSetOp {} ->
-            BinQueryExprSetOp
-              { bcqeOper = bcqeOper bqe,
-                bcqe0 = insertPlaceholder . bcqe0 $ bqe,
-                bcqe1 = insertPlaceholder . bcqe1 $ bqe
-              }
-          BinWith {} ->
-            BinWith
-              { bcteWithRecursive = bcteWithRecursive bqe,
-                bcteViews = bcteViews bqe,
-                bcteQueryExpression = insertPlaceholder (bcteQueryExpression bqe)
-              }
-          BinQEComment _ x -> insertPlaceholder x
-        where
-          bqeWithoutPlaceholder = BinQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
-          bqeWithPlaceholder =
-            BinSelect
-              { bseSrc = bseSrc bqe,
-                bseTrg = bseTrg bqe,
-                bseTbl = bseTbl bqe,
-                bseWhr = Just
-                  $ case bseWhr bqe of
-                    Nothing -> placeHolder
-                    Just whr -> conjunctSQL [placeHolder, whr]
-              }
-          placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [uName "="] (stringLit placeHolderSQL)
+doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
+doPretty fun i fSpec =
+  SqlQueryPretty
+    . T.lines
+    . T.intercalate ("\n" <> T.replicate i " ")
+    . T.lines
+    . prettyQueryExpr theDialect
+    . toSQL
+    . fun fSpec
 
-instance SQLAble Expression where
-  getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
+getBinQueryExpr :: FSpec -> Expression -> BinQueryExpr
+getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
 
-instance SQLAble Relation where
-  getBinQueryExpr = selectRelation
+getBinQueryExprPlaceholder :: FSpec -> Expression -> BinQueryExpr
+getBinQueryExprPlaceholder fSpec = insertPlaceholder . getBinQueryExpr fSpec
+  where
+    insertPlaceholder :: BinQueryExpr -> BinQueryExpr
+    insertPlaceholder bqe =
+      case bqe of
+        BinSelect {} -> case (col2ScalarExpr (bseSrc bqe), bseWhr bqe) of
+          (Iden [_], _) ->
+            bqeWithPlaceholder
+          (Iden [_, a], _)
+            | a == sourceAlias ->
+                bqeWithPlaceholder
+            | otherwise -> bqeWithoutPlaceholder
+          _ -> bqeWithoutPlaceholder
+        BinQueryExprSetOp {} ->
+          BinQueryExprSetOp
+            { bcqeOper = bcqeOper bqe,
+              bcqe0 = insertPlaceholder . bcqe0 $ bqe,
+              bcqe1 = insertPlaceholder . bcqe1 $ bqe
+            }
+        BinWith {} ->
+          BinWith
+            { bcteWithRecursive = bcteWithRecursive bqe,
+              bcteViews = bcteViews bqe,
+              bcteQueryExpression = insertPlaceholder (bcteQueryExpression bqe)
+            }
+        BinQEComment _ x -> insertPlaceholder x
+      where
+        bqeWithoutPlaceholder = BinQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
+        bqeWithPlaceholder =
+          BinSelect
+            { bseSrc = bseSrc bqe,
+              bseTrg = bseTrg bqe,
+              bseTbl = bseTbl bqe,
+              bseWhr = Just
+                $ case bseWhr bqe of
+                  Nothing -> placeHolder
+                  Just whr -> conjunctSQL [placeHolder, whr]
+            }
+        placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [uName "="] (stringLit placeHolderSQL)
 
 sourceAlias, targetAlias :: Name
 sourceAlias = uName "src"
@@ -1306,8 +1302,8 @@ data BinQueryExpr
         bcteViews :: ![(Alias, BinQueryExpr)],
         bcteQueryExpression :: !BinQueryExpr
       }
-  | BinQueryExprParens !BinQueryExpr
-  | BinQEComment ![Comment] !BinQueryExpr
+  | --  | BinQueryExprParens !BinQueryExpr
+    BinQEComment ![Comment] !BinQueryExpr
 
 data Col = Col
   { cTable :: ![Name],

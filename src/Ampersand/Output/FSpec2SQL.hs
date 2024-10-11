@@ -75,7 +75,7 @@ dumpSQLqueries env fSpec =
     showDecl :: Relation -> [Text]
     showDecl decl =
       header (showA decl)
-        <> [(queryAsSQL . prettySQLQuery 2 fSpec $ decl) <> ";", ""]
+        <> [(queryAsSQL . prettySQLQuery 2 fSpec $ EDcD decl) <> ";", ""]
 
 header :: Text -> [Text]
 header title =
