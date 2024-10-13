@@ -27,6 +27,8 @@ module Ampersand.ADL1.Expression
     exprRad2list,
     exprPrd2list,
     insParentheses,
+    equivalent,
+    (===),
   )
 where
 
@@ -255,3 +257,41 @@ insParentheses = insPar 0
     insPar _ x = x -- x@EDcD{} or EDcI{} or EEps{} or EDcV{} or EMp1{}
     foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
     foldr1 fun nonempty = foldr fun (NE.last nonempty) (NE.init nonempty)
+
+-- | Sometimes expressions can be written diffenently but denote the exact same relation. This
+--   function tries to tell wether or not two expressions are equivalent. Sometimes it is hard
+--   to tell, in which case we stay on the safe side and the outcome will be False.
+equivalent :: Expression -> Expression -> Bool
+equivalent expr1 expr2 =
+  case (expr1, expr2) of
+    (e1, EBrk e2) -> e1 === e2
+    (EBrk e1, e2) -> e1 === e2
+    (EEqu (l1, r1), EEqu (l2, r2)) -> (l1 === l2 && r1 === r2) || (l1 === r2 && r1 === r1)
+    (EInc (l1, r1), EInc (l2, r2)) -> l1 === l2 && r1 === r2
+    (EIsc (l1, r1), EIsc (l2, r2)) -> (l1 === l2 && r1 === r2) || (l1 === r2 && r1 === r1)
+    (EUni (l1, r1), EUni (l2, r2)) -> (l1 === l2 && r1 === r2) || (l1 === r2 && r1 === r1)
+    (EDif (l1, r1), EDif (l2, r2)) -> l1 === l2 && r1 === r2
+    (ELrs (l1, r1), ELrs (l2, r2)) -> l1 === l2 && r1 === r2
+    (ERrs (l1, r1), ERrs (l2, r2)) -> l1 === l2 && r1 === r2
+    (EDia (l1, r1), EDia (l2, r2)) -> (l1 === l2 && r1 === r2) || (l1 === r2 && r1 === r1)
+    (ECps (l1, r1), ECps (l2, r2)) -> l1 === l2 && r1 === r2
+    (ERad (l1, r1), ERad (l2, r2)) -> l1 === l2 && r1 === r2
+    (EPrd (l1, r1), EPrd (l2, r2)) -> l1 === l2 && r1 === r2
+    (EKl0 e1, EKl0 e2) -> e1 === e2
+    (EKl0 (EKl0 e1), e2) -> EKl0 e1 == e2
+    (e1, EKl0 (EKl0 e2)) -> e1 == EKl0 e2
+    (EKl1 e1, EKl1 e2) -> e1 === e2
+    (EFlp e1, EFlp e2) -> e1 === e2
+    (EFlp (EFlp e1), e2) -> e1 === e2
+    (e1, EFlp (EFlp e2)) -> e1 === e2
+    (ECpl e1, ECpl e2) -> e1 === e2
+    (EDcD r1, EDcD r2) -> r1 == r2
+    (EDcI c1, EDcI c2) -> c1 == c2
+    (EEps {}, EEps {}) -> expr1 == expr2
+    (EDcV {}, EDcV {}) -> expr1 == expr2
+    (EMp1 {}, EMp1 {}) -> expr1 == expr2
+    (_, _) -> False
+
+-- | infix notation for equivalence
+(===) :: Expression -> Expression -> Bool
+(===) = equivalent
