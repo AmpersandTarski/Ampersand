@@ -12,6 +12,7 @@ import Ampersand.ADL1.Expression
     deMorganEIsc,
     deMorganERad,
     deMorganEUni,
+    equivalent,
     exprCps2list,
     exprIsc2list,
     exprPrd2list,
@@ -31,6 +32,7 @@ import Ampersand.ADL1.Expression
     notCpl,
     primitives,
     subExpressions,
+    (===),
   )
 import Ampersand.ADL1.Rule
   ( antecedent,
