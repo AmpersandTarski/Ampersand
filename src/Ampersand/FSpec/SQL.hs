@@ -963,7 +963,7 @@ nonSpecialSelectExpr fSpec expr =
     EKl1 _e ->
       traceComment
         ["case: EKl1 expr -- (Kleene plus)"]
-        undefined
+        $ fatal "TODO: implement Kleene operators"
     -- BinWith
     --   { bcteWithRecursive = True,
     --     bcteViews =
