@@ -58,7 +58,7 @@ sqlQuery, sqlQueryWithPlaceholder :: FSpec -> Expression -> Text
 sqlQuery fSpec = lengthCheck . doNonPretty getBinQueryExpr fSpec
 sqlQueryWithPlaceholder fSpec = lengthCheck . doNonPretty getBinQueryExprPlaceholder fSpec
 
-doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> Text
+doNonPretty :: (FSpec -> Expression -> BinQueryExpr) -> FSpec -> Expression -> Text
 doNonPretty fun fSpec =
   T.unwords
     . T.words
@@ -76,7 +76,7 @@ prettySQLQuery,
 prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
 prettySQLQuery = doPretty getBinQueryExpr
 
-doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
+doPretty :: (FSpec -> Expression -> BinQueryExpr) -> Int -> FSpec -> Expression -> SqlQuery
 doPretty fun i fSpec =
   SqlQueryPretty
     . T.lines
@@ -108,12 +108,6 @@ getBinQueryExprPlaceholder fSpec = insertPlaceholder . getBinQueryExpr fSpec
             { bcqeOper = bcqeOper bqe,
               bcqe0 = insertPlaceholder . bcqe0 $ bqe,
               bcqe1 = insertPlaceholder . bcqe1 $ bqe
-            }
-        BinWith {} ->
-          BinWith
-            { bcteWithRecursive = bcteWithRecursive bqe,
-              bcteViews = bcteViews bqe,
-              bcteQueryExpression = insertPlaceholder (bcteQueryExpression bqe)
             }
         BinQEComment _ x -> insertPlaceholder x
       where
@@ -355,7 +349,6 @@ nonSpecialSelectExpr fSpec expr =
                   theWhr = case makeSelectable sResult of
                     e@BinSelect {} -> bseWhr e
                     BinQueryExprSetOp {} -> fatal "makeSelectable is not doing what it is supposed to do!"
-                    BinWith {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                     BinQEComment {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                   sResult = makeIntersectSelectExpr ts
                   dummy = uName "someDummyNameBecauseMySQLNeedsOne"
@@ -706,7 +699,6 @@ nonSpecialSelectExpr fSpec expr =
                     bcqe1 = flipped (bcqe1 se)
                   }
               BinQueryExprSetOp {} -> flipped'
-              BinWith {} -> flipped'
               (BinQEComment c e) ->
                 case flipped e of
                   BinQEComment (_ : c') fe -> BinQEComment (c <> c') fe
@@ -968,88 +960,89 @@ nonSpecialSelectExpr fSpec expr =
             bcqe0 = selectExpr fSpec e,
             bcqe1 = selectExpr fSpec (EKl1 e)
           }
-    EKl1 e ->
+    EKl1 _e ->
       traceComment
         ["case: EKl1 expr -- (Kleene plus)"]
-        BinWith
-          { bcteWithRecursive = True,
-            bcteViews =
-              [ ( Alias (qName "TheExpression") Nothing,
-                  selectExpr fSpec e
-                ),
-                ( Alias (qName "TransitiveClosure") Nothing,
-                  BinQueryExprSetOp
-                    { bcqeOper = Union,
-                      bcqe0 =
-                        BinSelect
-                          { bseSrc =
-                              Col
-                                { cTable = [],
-                                  cCol = [sourceAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTrg =
-                              Col
-                                { cTable = [],
-                                  cCol = [targetAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTbl = [TRSimple [qName "TheExpression"]],
-                            bseWhr = Nothing
-                          },
-                      bcqe1 =
-                        BinSelect
-                          { bseSrc =
-                              Col
-                                { cTable = [qName "TransitiveClosure"],
-                                  cCol = [sourceAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTrg =
-                              Col
-                                { cTable = [qName "TheExpression"],
-                                  cCol = [targetAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTbl =
-                              [ TRSimple [qName "TransitiveClosure"],
-                                TRSimple [qName "TheExpression"]
-                              ],
-                            bseWhr =
-                              Just
-                                ( BinOp
-                                    (Iden [qName "TheExpression", sourceAlias])
-                                    [uName "="]
-                                    (Iden [qName "TransitiveClosure", targetAlias])
-                                )
-                          }
-                    }
-                )
-              ],
-            bcteQueryExpression =
-              BinSelect
-                { bseSrc =
-                    Col
-                      { cTable = [],
-                        cCol = [sourceAlias],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTrg =
-                    Col
-                      { cTable = [],
-                        cCol = [targetAlias],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTbl = [TRSimple [qName "TransitiveClosure"]],
-                  bseWhr = Nothing
-                }
-          }
+        undefined
+    -- BinWith
+    --   { bcteWithRecursive = True,
+    --     bcteViews =
+    --       [ ( Alias (qName "TheExpression") Nothing,
+    --           selectExpr fSpec e
+    --         ),
+    --         ( Alias (qName "TransitiveClosure") Nothing,
+    --           BinQueryExprSetOp
+    --             { bcqeOper = Union,
+    --               bcqe0 =
+    --                 BinSelect
+    --                   { bseSrc =
+    --                       Col
+    --                         { cTable = [],
+    --                           cCol = [sourceAlias],
+    --                           cAlias = [],
+    --                           cSpecial = Nothing
+    --                         },
+    --                     bseTrg =
+    --                       Col
+    --                         { cTable = [],
+    --                           cCol = [targetAlias],
+    --                           cAlias = [],
+    --                           cSpecial = Nothing
+    --                         },
+    --                     bseTbl = [TRSimple [qName "TheExpression"]],
+    --                     bseWhr = Nothing
+    --                   },
+    --               bcqe1 =
+    --                 BinSelect
+    --                   { bseSrc =
+    --                       Col
+    --                         { cTable = [qName "TransitiveClosure"],
+    --                           cCol = [sourceAlias],
+    --                           cAlias = [],
+    --                           cSpecial = Nothing
+    --                         },
+    --                     bseTrg =
+    --                       Col
+    --                         { cTable = [qName "TheExpression"],
+    --                           cCol = [targetAlias],
+    --                           cAlias = [],
+    --                           cSpecial = Nothing
+    --                         },
+    --                     bseTbl =
+    --                       [ TRSimple [qName "TransitiveClosure"],
+    --                         TRSimple [qName "TheExpression"]
+    --                       ],
+    --                     bseWhr =
+    --                       Just
+    --                         ( BinOp
+    --                             (Iden [qName "TheExpression", sourceAlias])
+    --                             [uName "="]
+    --                             (Iden [qName "TransitiveClosure", targetAlias])
+    --                         )
+    --                   }
+    --             }
+    --         )
+    --       ],
+    --     bcteQueryExpression =
+    --       BinSelect
+    --         { bseSrc =
+    --             Col
+    --               { cTable = [],
+    --                 cCol = [sourceAlias],
+    --                 cAlias = [],
+    --                 cSpecial = Nothing
+    --               },
+    --           bseTrg =
+    --             Col
+    --               { cTable = [],
+    --                 cCol = [targetAlias],
+    --                 cAlias = [],
+    --                 cSpecial = Nothing
+    --               },
+    --           bseTbl = [TRSimple [qName "TransitiveClosure"]],
+    --           bseWhr = Nothing
+    --         }
+    --   }
     (EDif (EDcV _, x)) ->
       traceComment ["case: EDif (EDcV _,x)"]
         $ selectExpr fSpec (notCpl x)
@@ -1297,12 +1290,12 @@ data BinQueryExpr
         -- | Right expression
         bcqe1 :: !BinQueryExpr
       }
-  | BinWith -- a common table expression resulting in a table with two columns
-      { bcteWithRecursive :: !Bool,
-        bcteViews :: ![(Alias, BinQueryExpr)],
-        bcteQueryExpression :: !BinQueryExpr
-      }
-  | --  | BinQueryExprParens !BinQueryExpr
+  | --  | BinWith -- a common table expression resulting in a table with two columns
+    --      { bcteWithRecursive :: !Bool,
+    --        bcteViews :: ![(Alias, BinQueryExpr)],
+    --        bcteQueryExpression :: !BinQueryExpr
+    --      }
+    --  | BinQueryExprParens !BinQueryExpr
     BinQEComment ![Comment] !BinQueryExpr
 
 data Col = Col
@@ -1337,12 +1330,6 @@ stripComment bqe =
         { bcqeOper = bcqeOper bqe,
           bcqe0 = stripComment (bcqe0 bqe),
           bcqe1 = stripComment (bcqe1 bqe)
-        }
-    BinWith {} ->
-      BinWith
-        { bcteWithRecursive = bcteWithRecursive bqe,
-          bcteViews = bcteViews bqe,
-          bcteQueryExpression = stripComment (bcteQueryExpression bqe)
         }
     BinQEComment _ x -> stripComment x
 
@@ -1390,15 +1377,15 @@ toSQL bqe =
           qeCorresponding = Respectively, -- See https://dba.stackexchange.com/questions/212266/what-is-the-f301-the-corresponding-clause-in-query-expression
           qe1 = toSQL (bcqe1 bqe)
         }
-    BinWith {} ->
-      With
-        { qeWithRecursive = bcteWithRecursive bqe,
-          qeViews = map viewToSQL (bcteViews bqe),
-          qeQueryExpression = toSQL (bcteQueryExpression bqe)
-        }
-      where
-        viewToSQL :: (Alias, BinQueryExpr) -> (Alias, QueryExpr)
-        viewToSQL (a, bqe') = (a, toSQL bqe')
+    -- BinWith {} ->
+    --   With
+    --     { qeWithRecursive = bcteWithRecursive bqe,
+    --       qeViews = map viewToSQL (bcteViews bqe),
+    --       qeQueryExpression = toSQL (bcteQueryExpression bqe)
+    --     }
+    -- where
+    --   viewToSQL :: (Alias, BinQueryExpr) -> (Alias, QueryExpr)
+    --   viewToSQL (a, bqe') = (a, toSQL bqe')
     (BinQEComment c (BinQEComment c' e)) -> toSQL $ BinQEComment (c <> c') e
     (BinQEComment c e) -> QEComment c (toSQL e)
 
@@ -1418,7 +1405,6 @@ setDistinct bqe =
           bcqe0 = bcqe0 bqe,
           bcqe1 = bcqe1 bqe
         }
-    BinWith {} -> bqe {bcteQueryExpression = setDistinct (bcteQueryExpression bqe)}
     BinQEComment _ x -> setDistinct x
 
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
@@ -1586,7 +1572,6 @@ broadQuery fSpec obj =
                             else subThings
                         _ -> subThings
                 BinQueryExprSetOp {} -> newSelect subThings
-                BinWith {} -> newSelect subThings
                 BinQEComment _ x -> extendWithCols objs x
               where
                 newSelect (sl, f, w) =
