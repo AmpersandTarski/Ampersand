@@ -1000,88 +1000,112 @@ nonSpecialSelectExpr fSpec expr =
     EKl1 e ->
       traceComment
         ["case: EKl1 expr -- (Kleene plus)"]
-        BinWith
-          { bcteWithRecursive = True,
-            bcteViews =
-              [ ( Alias (uName "TheExpression") Nothing,
-                  selectExpr fSpec e
-                ),
-                ( Alias (uName "TransitiveClosure") Nothing,
-                  BinQueryExprSetOp
-                    { bseSetQuantifier = Distinct,
-                      bcqeOper = Union,
-                      bcqe0 =
-                        BinSelect
-                          { bseSetQuantifier = SQDefault,
-                            bseSrc =
-                              Col
-                                { cTable = [],
-                                  cCol = [sourceAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTrg =
-                              Col
-                                { cTable = [],
-                                  cCol = [targetAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTbl = [TRSimple [qName "TheExpression"]],
-                            bseWhr = Nothing
-                          },
-                      bcqe1 =
-                        BinSelect
-                          { bseSetQuantifier = SQDefault,
-                            bseSrc =
-                              Col
-                                { cTable = [qName "TransitiveClosure"],
-                                  cCol = [sourceAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTrg =
-                              Col
-                                { cTable = [qName "TheExpression"],
-                                  cCol = [targetAlias],
-                                  cAlias = [],
-                                  cSpecial = Nothing
-                                },
-                            bseTbl =
-                              [ TRSimple [qName "TransitiveClosure"],
-                                TRSimple [qName "TheExpression"]
-                              ],
-                            bseWhr =
-                              Just
-                                ( BinOp
-                                    (Iden [qName "TheExpression", sourceAlias])
-                                    [uName "="]
-                                    (Iden [qName "TransitiveClosure", targetAlias])
+        BinSelect
+          { bseSetQuantifier = Distinct,
+            bseSrc =
+              Col
+                { cTable = [],
+                  cCol = [sourceAlias],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTrg =
+              Col
+                { cTable = [],
+                  cCol = [targetAlias],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTbl =
+              [ TRQueryExpr
+                  ( toSQL
+                      ( BinWith
+                          { bcteWithRecursive = True,
+                            bcteViews =
+                              [ ( Alias (uName "TheExpression") Nothing,
+                                  selectExpr fSpec e
+                                ),
+                                ( Alias (uName "TransitiveClosure") Nothing,
+                                  BinQueryExprSetOp
+                                    { bseSetQuantifier = Distinct,
+                                      bcqeOper = Union,
+                                      bcqe0 =
+                                        BinSelect
+                                          { bseSetQuantifier = SQDefault,
+                                            bseSrc =
+                                              Col
+                                                { cTable = [],
+                                                  cCol = [sourceAlias],
+                                                  cAlias = [],
+                                                  cSpecial = Nothing
+                                                },
+                                            bseTrg =
+                                              Col
+                                                { cTable = [],
+                                                  cCol = [targetAlias],
+                                                  cAlias = [],
+                                                  cSpecial = Nothing
+                                                },
+                                            bseTbl = [TRSimple [qName "TheExpression"]],
+                                            bseWhr = Nothing
+                                          },
+                                      bcqe1 =
+                                        BinSelect
+                                          { bseSetQuantifier = SQDefault,
+                                            bseSrc =
+                                              Col
+                                                { cTable = [qName "TransitiveClosure"],
+                                                  cCol = [sourceAlias],
+                                                  cAlias = [],
+                                                  cSpecial = Nothing
+                                                },
+                                            bseTrg =
+                                              Col
+                                                { cTable = [qName "TheExpression"],
+                                                  cCol = [targetAlias],
+                                                  cAlias = [],
+                                                  cSpecial = Nothing
+                                                },
+                                            bseTbl =
+                                              [ TRSimple [qName "TransitiveClosure"],
+                                                TRSimple [qName "TheExpression"]
+                                              ],
+                                            bseWhr =
+                                              Just
+                                                ( BinOp
+                                                    (Iden [qName "TheExpression", sourceAlias])
+                                                    [uName "="]
+                                                    (Iden [qName "TransitiveClosure", targetAlias])
+                                                )
+                                          }
+                                    }
                                 )
+                              ],
+                            bcteQueryExpression =
+                              BinSelect
+                                { bseSetQuantifier = SQDefault,
+                                  bseSrc =
+                                    Col
+                                      { cTable = [],
+                                        cCol = [sourceAlias],
+                                        cAlias = [],
+                                        cSpecial = Nothing
+                                      },
+                                  bseTrg =
+                                    Col
+                                      { cTable = [],
+                                        cCol = [targetAlias],
+                                        cAlias = [],
+                                        cSpecial = Nothing
+                                      },
+                                  bseTbl = [TRSimple [qName "TransitiveClosure"]],
+                                  bseWhr = Nothing
+                                }
                           }
-                    }
-                )
+                      )
+                  )
               ],
-            bcteQueryExpression =
-              BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
-                    Col
-                      { cTable = [],
-                        cCol = [sourceAlias],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTrg =
-                    Col
-                      { cTable = [],
-                        cCol = [targetAlias],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTbl = [TRSimple [qName "TransitiveClosure"]],
-                  bseWhr = Nothing
-                }
+            bseWhr = Nothing
           }
     (EDif (EDcV _, x)) ->
       traceComment ["case: EDif (EDcV _,x)"]
