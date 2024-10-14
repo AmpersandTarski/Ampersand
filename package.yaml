@@ -42,7 +42,7 @@ dependencies:
   - aeson-pretty
   - ansi-terminal
   - base
-  # - bytestring
+  - bytestring
   - casing
   - conduit
   - containers
@@ -57,7 +57,7 @@ dependencies:
   - graphviz
   - hashable
   - HStringTemplate
-  # - http-conduit
+  - http-conduit
   - hxt
   - lens
   - mtl
@@ -66,26 +66,28 @@ dependencies:
   - pandoc-crossref
   - pandoc-types
   - parsec
-  # - prettyprinter
-  # - prettyprinter-ansi-terminal
+  - prettyprinter
+  - prettyprinter-ansi-terminal
   - process
   - QuickCheck
   - quickcheck-instances
   - rio
-  # - salve
+  - salve
   - simple-sql-parser
-  # - split
+  - split
+  - SpreadsheetML
   - terminal-size
-  # - texmath
+  - texmath
   - text
   - text1
   - time
   - transformers
-  # - typed-process
+  - typed-process
   - uri-encode
   - wl-pprint # to be replaced with prettyprinter stuff
   - xlsx
   - yaml
+  # - yaml-config
   - zip-archive
 when:
   - condition: os(windows)

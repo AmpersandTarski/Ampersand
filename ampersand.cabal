@@ -592,10 +592,12 @@ library
   build-depends:
       HStringTemplate
     , QuickCheck
+    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ansi-terminal
     , base
+    , bytestring
     , casing
     , conduit
     , containers
@@ -609,6 +611,7 @@ library
     , generic-deriving
     , graphviz
     , hashable
+    , http-conduit
     , hxt
     , lens
     , mtl
@@ -617,15 +620,21 @@ library
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
+    , salve
     , simple-sql-parser
+    , split
     , terminal-size
+    , texmath
     , text
     , text1
     , time
     , transformers
+    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -654,11 +663,13 @@ executable ampPreProc
   build-depends:
       HStringTemplate
     , QuickCheck
+    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
+    , bytestring
     , casing
     , conduit
     , containers
@@ -672,6 +683,7 @@ executable ampPreProc
     , generic-deriving
     , graphviz
     , hashable
+    , http-conduit
     , hxt
     , lens
     , mtl
@@ -680,15 +692,21 @@ executable ampPreProc
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
+    , salve
     , simple-sql-parser
+    , split
     , terminal-size
+    , texmath
     , text
     , text1
     , time
     , transformers
+    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -720,11 +738,13 @@ executable ampersand
       Cabal
     , HStringTemplate
     , QuickCheck
+    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
+    , bytestring
     , casing
     , conduit
     , containers
@@ -738,6 +758,7 @@ executable ampersand
     , generic-deriving
     , graphviz
     , hashable
+    , http-conduit
     , hxt
     , lens
     , mtl
@@ -746,15 +767,21 @@ executable ampersand
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
+    , salve
     , simple-sql-parser
+    , split
     , terminal-size
+    , texmath
     , text
     , text1
     , time
     , transformers
+    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -784,11 +811,13 @@ test-suite ampersand-test
   build-depends:
       HStringTemplate
     , QuickCheck
+    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
+    , bytestring
     , casing
     , conduit
     , containers
@@ -802,6 +831,7 @@ test-suite ampersand-test
     , generic-deriving
     , graphviz
     , hashable
+    , http-conduit
     , hxt
     , lens
     , mtl
@@ -810,15 +840,21 @@ test-suite ampersand-test
     , pandoc-crossref
     , pandoc-types
     , parsec
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
+    , salve
     , simple-sql-parser
+    , split
     , terminal-size
+    , texmath
     , text
     , text1
     , time
     , transformers
+    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
