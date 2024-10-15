@@ -1,29 +1,29 @@
 # The purpose of this job is to close stale issues and pull requests when
 # there has been no activity on them at all for some period of time. First,
-# a warning is given that the issue will be closed. If noone reacts, then 
-# the issue will be automatically closed. 
+# a warning is given that the issue will be closed. If noone reacts, then
+# the issue will be automatically closed.
 #
 # The motivations behind this is the idea that each open issue has a maintenance
-# cost. Even if nothing happens, every now and then open issues are browsed to 
+# cost. Even if nothing happens, every now and then open issues are browsed to
 # see if something can be done. If there are a lot of open issues, looking through
 # them obviously costs more time and brainpower. Closing them automatically after
-# some time will weed out issues that have hardely any chance (if at all) of getting done. 
+# some time will weed out issues that have hardely any chance (if at all) of getting done.
 #
 # Documentation: https://github.com/marketplace/actions/close-stale-issues
 #
-name: 'Close stale issues and PRs'
+name: "Close stale issues and PRs"
 on:
   schedule:
-    - cron: '30 1 * * *'
+    - cron: "30 1 * * *"
 
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/stale@v6
         with:
-          stale-issue-message: 'This issue is stale because it has been open 5 years with no activity. Remove stale label or comment or this will be closed in 30 days.'
-          stale-pr-message: 'This PR is stale because it has been open 45 days with no activity. Remove stale label or comment or this will be closed in 10 days.'
-          close-issue-message: 'This issue was closed because it has been stalled for 30 days with no activity.'
+          stale-issue-message: "This issue is stale because it has been open 5 years with no activity. Remove stale label or comment or this will be closed in 30 days."
+          stale-pr-message: "This PR is stale because it has been open 45 days with no activity. Remove stale label or comment or this will be closed in 10 days."
+          close-issue-message: "This issue was closed because it has been stalled for 30 days with no activity."
           days-before-stale: 1825 # (5 years)
           days-before-close: 30
