@@ -19,7 +19,7 @@ jobs:
       # The checkout step is needed since the enforcer relies on local git commands
       - uses: actions/checkout@v4
 
-      - uses: dangoslen/changelog-enforcer@v2
+      - uses: dangoslen/changelog-enforcer@v3
         with:
           changeLogPath: ReleaseNotes.md
           missingUpdateErrorMessage: "Every pull request MUST include a description of the change in the ReleaseNotes.md file"
