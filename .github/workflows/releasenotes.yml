@@ -14,7 +14,7 @@ on:
 jobs:
   # Enforces the update of a changelog file on every pull request
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # The checkout step is needed since the enforcer relies on local git commands
       - uses: actions/checkout@v4

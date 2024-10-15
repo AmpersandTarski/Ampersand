@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-test-docker:
     name: Build with Docker
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
@@ -36,8 +36,8 @@ jobs:
         run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
 
   build-and-test-ubuntu:
-    name: Build and test on ubuntu-latest 🏗 🧪
-    runs-on: ubuntu-latest
+    name: Build and test on ubuntu-22.04 🏗 🧪
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
   build-and-test-macOS:
     name: Build and test on macOS  🏗 🧪
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
