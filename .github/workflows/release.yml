@@ -9,7 +9,7 @@ on:
 jobs:
   add-release-notes:
     name: Add release notes to artefacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +25,7 @@ jobs:
 
   docker-hub:
     name: Build push image to DockerHub
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Docker meta
         id: meta
@@ -70,7 +70,7 @@ jobs:
         build-without-test-macOS,
         build-without-test-windows,
       ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Download artifacts (Linux)
         uses: actions/download-artifact@v4
@@ -146,8 +146,8 @@ jobs:
           asset_content_type: application/zip
 
   build-without-test-ubuntu:
-    name: Build without test on ubuntu-latest 🏗 🧪
-    runs-on: ubuntu-latest
+    name: Build without test on ubuntu-22.04 🏗 🧪
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
 
   build-without-test-macOS:
     name: Build without test on macOS  🏗 🧪
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
@@ -194,7 +194,7 @@ jobs:
 
   build-without-test-windows:
     name: build without test on Windows 🏗 🧪
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4

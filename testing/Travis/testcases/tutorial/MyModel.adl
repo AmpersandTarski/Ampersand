@@ -1,5 +1,5 @@
 -- This model is used at 
--- https://ampersandtarski.gitbook.io/documentation/installing-ampersand/installing-the-tools-manually#test-to-see-if-you-can-build-your-first-prototype
+-- https://ampersandtarski.github.io/ampersand/guides/installing-ampersand#test-to-see-if-you-can-build-your-first-prototype
 
 CONTEXT HelloWorld IN ENGLISH
 PURPOSE CONTEXT HelloWorld

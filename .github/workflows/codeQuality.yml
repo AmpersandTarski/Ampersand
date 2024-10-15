@@ -9,7 +9,7 @@ on:
 jobs:
   hlint:
     name: Hlint - Check for code sanity
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
@@ -19,7 +19,7 @@ jobs:
         uses: rwe/actions-hlint-run@v2.0.1
   weeder:
     name: Weeder - Check dead code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
