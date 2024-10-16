@@ -128,7 +128,6 @@ library:
     - Ampersand.FSpec.Crud
     - Ampersand.FSpec.FSpec
     - Ampersand.FSpec.FSpecAux
-    - Ampersand.FSpec.GenerateUML
     - Ampersand.FSpec.Motivations
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
