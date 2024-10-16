@@ -52,24 +52,6 @@ jobs:
           upgrade-stack: false
           cache-save-always: true
 
-  build-and-test-macOS-12:
-    name: Build and test on macos-14  🏗 🧪
-    runs-on: macos-14
-    steps:
-      - name: Checkout project contents 📡
-        uses: actions/checkout@v4
-      - name: Set up Mariadb 🧰
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: "mariadb-11.5"
-      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
-      ## run: curl -sSL https://get.haskellstack.org/ | sh
-      - run: brew install php
-      - name: Build and test  🏗 🧪
-        uses: freckle/stack-action@v5
-        with:
-          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
-
   build-and-test-macOS-13:
     name: Build and test on macos-13  🏗 🧪
     runs-on: macos-13
