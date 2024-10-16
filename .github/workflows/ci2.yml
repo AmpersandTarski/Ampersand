@@ -53,8 +53,8 @@ jobs:
           cache-save-always: true
 
   build-and-test-macOS-12:
-    name: Build and test on macos-12  🏗 🧪
-    runs-on: macos-12
+    name: Build and test on macos-14  🏗 🧪
+    runs-on: macos-14
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
