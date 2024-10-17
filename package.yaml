@@ -1,12 +1,12 @@
 name: ampersand
-version: 5.2.2
+version: 5.2.3
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
 description: You can define your business processes by means of rules, written in Relation Algebra.
 homepage: http://ampersandtarski.github.io/
 category: Database Design
-stability: alpha
+stability: beta
 tested-with: GHC == 9.6.4
 build-type: Custom
 license: GPL
