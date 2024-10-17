@@ -71,9 +71,6 @@ instance HasFSpecGenOpts DevOutputOpts where
 instance HasFSpecGenOpts ValidateOpts where
   fSpecGenOptsL = protoOptsL . fSpecGenOptsL
 
-instance HasFSpecGenOpts UmlOpts where
-  fSpecGenOptsL = lens x7fSpecGenOpts (\x y -> x {x7fSpecGenOpts = y})
-
 instance HasFSpecGenOpts ProofOpts where
   fSpecGenOptsL = lens x6fSpecGenOpts (\x y -> x {x6fSpecGenOpts = y})
 
@@ -160,9 +157,6 @@ instance HasOutputLanguage ProtoOpts where
 
 instance HasOutputLanguage DocOpts where
   languageL = lens x3OutputLanguage (\x y -> x {x3OutputLanguage = y})
-
-instance HasOutputLanguage UmlOpts where
-  languageL = lens x4OutputLanguage (\x y -> x {x4OutputLanguage = y})
 
 class HasShowWarnings a where
   showWarningsL :: Lens' a Bool -- Should warnings be given to the output?
@@ -447,21 +441,6 @@ instance HasOptions ProofOpts where
 -- | Options for @ampersand init@
 data InitOpts = InitOpts
   deriving (Show)
-
--- | Options for @ampersand uml@
-data UmlOpts = UmlOpts
-  { -- | Options required to build the fSpec
-    x7fSpecGenOpts :: !FSpecGenOpts,
-    -- | Language of the output document
-    x4OutputLanguage :: !(Maybe Lang)
-  }
-  deriving (Show)
-
-instance HasOptions UmlOpts where
-  optsList opts =
-    optsList (x7fSpecGenOpts opts)
-      <> [ ("--language", tshow $ x4OutputLanguage opts)
-         ]
 
 -- | Options for @ampersand validate@
 newtype ValidateOpts = ValidateOpts

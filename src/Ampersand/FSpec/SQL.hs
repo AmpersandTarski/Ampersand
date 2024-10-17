@@ -93,7 +93,7 @@ class SQLAble a where
       insertPlaceholder :: BinQueryExpr -> BinQueryExpr
       insertPlaceholder bqe =
         case bqe of
-          BSE {} -> case (col2ScalarExpr (bseSrc bqe), bseWhr bqe) of
+          BinSelect {} -> case (col2ScalarExpr (bseSrc bqe), bseWhr bqe) of
             (Iden [_], _) ->
               bqeWithPlaceholder
             (Iden [_, a], _)
@@ -101,18 +101,24 @@ class SQLAble a where
                   bqeWithPlaceholder
               | otherwise -> bqeWithoutPlaceholder
             _ -> bqeWithoutPlaceholder
-          BCQE {} ->
-            BCQE
+          BinQueryExprSetOp {} ->
+            BinQueryExprSetOp
               { bseSetQuantifier = bseSetQuantifier bqe,
                 bcqeOper = bcqeOper bqe,
                 bcqe0 = insertPlaceholder . bcqe0 $ bqe,
                 bcqe1 = insertPlaceholder . bcqe1 $ bqe
               }
-          BQEComment _ x -> insertPlaceholder x
+          BinWith {} ->
+            BinWith
+              { bcteWithRecursive = bcteWithRecursive bqe,
+                bcteViews = bcteViews bqe,
+                bcteQueryExpression = insertPlaceholder (bcteQueryExpression bqe)
+              }
+          BinQEComment _ x -> insertPlaceholder x
         where
-          bqeWithoutPlaceholder = BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
+          bqeWithoutPlaceholder = BinQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
           bqeWithPlaceholder =
-            BSE
+            BinSelect
               { bseSetQuantifier = bseSetQuantifier bqe,
                 bseSrc = bseSrc bqe,
                 bseTrg = bseTrg bqe,
@@ -144,8 +150,6 @@ selectExpr ::
   -- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
   -- Special cases are treated up front, so they will overrule the more general cases.
   -- That allows more efficient code while retaining completeness.
-  -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
-  -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr =
   traceExprComment expr [tshow expr]
     $ fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) -- special cases for optimized results.
@@ -176,7 +180,7 @@ maybeSpecialCase fSpec expr =
                       [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r)),
                         notNull aAtt
                       ]
-               in BSE
+               in BinSelect
                     { bseSetQuantifier = SQDefault,
                       bseSrc = col,
                       bseTrg = col,
@@ -217,7 +221,7 @@ maybeSpecialCase fSpec expr =
             "  <expr1> = " <> showA expr1 <> " (sign: " <> tshow (sign expr1) <> ")",
             "  <expr2> = " <> showA expr2 <> " (sign: " <> tshow (sign expr2) <> ")"
           ]
-        $ BSE
+        $ BinSelect
           { bseSetQuantifier = SQDefault,
             bseSrc =
               Col
@@ -315,7 +319,7 @@ nonSpecialSelectExpr fSpec expr =
                 Nothing -> emptySet -- case might occur with only negMp1Terms??
                 Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
               ts ->
-                BSE
+                BinSelect
                   { bseSetQuantifier = SQDefault,
                     bseSrc = theSr',
                     bseTrg = theTr',
@@ -358,17 +362,18 @@ nonSpecialSelectExpr fSpec expr =
                   theTr' = bseTrg (makeSelectable sResult)
                   theTbl = bseTbl (makeSelectable sResult)
                   theWhr = case makeSelectable sResult of
-                    e@BSE {} -> bseWhr e
-                    BCQE {} -> fatal "makeSelectable is not doing what it is supposed to do!"
-                    BQEComment {} -> fatal "makeSelectable is not doing what it is supposed to do!"
+                    e@BinSelect {} -> bseWhr e
+                    BinQueryExprSetOp {} -> fatal "makeSelectable is not doing what it is supposed to do!"
+                    BinWith {} -> fatal "makeSelectable is not doing what it is supposed to do!"
+                    BinQEComment {} -> fatal "makeSelectable is not doing what it is supposed to do!"
                   sResult = makeIntersectSelectExpr ts
                   dummy = uName "someDummyNameBecauseMySQLNeedsOne"
                   makeSelectable :: BinQueryExpr -> BinQueryExpr
                   makeSelectable x =
                     case x of
-                      BSE {} -> x
+                      BinSelect {} -> x
                       _ ->
-                        BSE
+                        BinSelect
                           { bseSetQuantifier = bseSetQuantifier x,
                             bseSrc =
                               Col
@@ -411,7 +416,7 @@ nonSpecialSelectExpr fSpec expr =
                                         "  part1 : " <> (showA . foldr (./\.) (fst hesI) $ map fst tlesI <> map fst esR),
                                         "  part2 : " <> (showA . foldr (./\.) hesRest $ tlesRest)
                                       ]
-                                      BSE
+                                      BinSelect
                                         { bseSetQuantifier = SQDefault,
                                           bseSrc =
                                             Col
@@ -460,14 +465,14 @@ nonSpecialSelectExpr fSpec expr =
                               --    esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                               optimizedIntersectSelectExpr :: BinQueryExpr
                               optimizedIntersectSelectExpr =
-                                BQEComment
+                                BinQEComment
                                   [ BlockComment "Optimized intersection:",
                                     BlockComment $ "   Expression: " <> (showA . foldr (./\.) hexprs $ tlexprs)
                                   ]
                                   --    <>map (showComment "esI") esI
                                   --    <>map (showComment "esR") esR
 
-                                  BSE
+                                  BinSelect
                                     { bseSetQuantifier = SQDefault,
                                       bseSrc =
                                         Col
@@ -516,9 +521,9 @@ nonSpecialSelectExpr fSpec expr =
                           [e] -> e
                           es ->
                             -- Note: We now have at least two subexpressions
-                            BQEComment
+                            BinQEComment
                               [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
-                              BSE
+                              BinSelect
                                 { bseSetQuantifier = SQDefault,
                                   bseSrc =
                                     Col
@@ -554,7 +559,7 @@ nonSpecialSelectExpr fSpec expr =
     EUni (l, r) ->
       traceComment
         ["case: EUni (l,r)"]
-        BCQE
+        BinQueryExprSetOp
           { bseSetQuantifier = SQDefault,
             bcqeOper = Union,
             bcqe0 = selectExpr fSpec l,
@@ -668,7 +673,7 @@ nonSpecialSelectExpr fSpec expr =
                               $ i
                in traceComment
                     ["case: (ECps es), with two or more elements in es."]
-                    BSE
+                    BinSelect
                       { bseSetQuantifier = SQDefault,
                         bseSrc =
                           if source hes == ONE -- the first expression is V[ONE*someConcept]
@@ -702,49 +707,52 @@ nonSpecialSelectExpr fSpec expr =
         flipped se =
           traceComment ["case: EFlp x"]
             $ case se of
-              BSE {} ->
-                BSE
+              BinSelect {} ->
+                BinSelect
                   { bseSetQuantifier = bseSetQuantifier se,
                     bseSrc = bseTrg se,
                     bseTrg = bseSrc se,
                     bseTbl = bseTbl se,
                     bseWhr = bseWhr se
                   }
-              BCQE {bcqeOper = Union} ->
-                BCQE
+              BinQueryExprSetOp {bcqeOper = Union} ->
+                BinQueryExprSetOp
                   { bseSetQuantifier = bseSetQuantifier se,
                     bcqeOper = Union,
                     bcqe0 = flipped (bcqe0 se),
                     bcqe1 = flipped (bcqe1 se)
                   }
-              BCQE {} ->
-                BSE
-                  { bseSetQuantifier = bseSetQuantifier se,
-                    bseSrc =
-                      Col
-                        { cTable = [fTable],
-                          cCol = [targetAlias],
-                          cAlias = [],
-                          cSpecial = Nothing
-                        },
-                    bseTrg =
-                      Col
-                        { cTable = [fTable],
-                          cCol = [sourceAlias],
-                          cAlias = [],
-                          cSpecial = Nothing
-                        },
-                    bseTbl = [toTableRef se `as` fTable], -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
-                    bseWhr = Nothing
-                  }
-              (BQEComment c e) ->
+              BinQueryExprSetOp {} -> flipped'
+              BinWith {} -> flipped'
+              (BinQEComment c e) ->
                 case flipped e of
-                  BQEComment (_ : c') fe -> BQEComment (c <> c') fe
+                  BinQEComment (_ : c') fe -> BinQEComment (c <> c') fe
                   _ -> fatal "A flipped expression will always start with the comment `Flipped: ..."
+          where
+            flipped' =
+              BinSelect
+                { bseSetQuantifier = bseSetQuantifier se,
+                  bseSrc =
+                    Col
+                      { cTable = [fTable],
+                        cCol = [targetAlias],
+                        cAlias = [],
+                        cSpecial = Nothing
+                      },
+                  bseTrg =
+                    Col
+                      { cTable = [fTable],
+                        cCol = [sourceAlias],
+                        cAlias = [],
+                        cSpecial = Nothing
+                      },
+                  bseTbl = [toTableRef se `as` fTable], -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+                  bseWhr = Nothing
+                }
     (EMp1 val c) ->
       traceComment
         ["case: EMp1 val c"]
-        BSE
+        BinSelect
           { bseSetQuantifier = SQDefault,
             bseSrc =
               Col
@@ -774,7 +782,7 @@ nonSpecialSelectExpr fSpec expr =
             $ case (s, t) of
               (ONE, ONE) -> one
               (_, ONE) ->
-                BSE
+                BinSelect
                   { bseSetQuantifier = SQDefault,
                     bseSrc =
                       Col
@@ -788,7 +796,7 @@ nonSpecialSelectExpr fSpec expr =
                     bseWhr = Just (notNull (Iden [psrc, fsrc]))
                   }
               (ONE, _) ->
-                BSE
+                BinSelect
                   { bseSetQuantifier = SQDefault,
                     bseSrc = theONESingleton,
                     bseTrg =
@@ -802,7 +810,7 @@ nonSpecialSelectExpr fSpec expr =
                     bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                   }
               _ ->
-                BSE
+                BinSelect
                   { bseSetQuantifier = SQDefault,
                     bseSrc =
                       Col
@@ -833,7 +841,7 @@ nonSpecialSelectExpr fSpec expr =
     (EDcI c) -> traceComment ["case: EDcI c"]
       $ case c of
         ONE ->
-          BSE
+          BinSelect
             { bseSetQuantifier = SQDefault,
               bseSrc = theONESingleton,
               bseTrg = theONESingleton,
@@ -842,7 +850,7 @@ nonSpecialSelectExpr fSpec expr =
             }
         PlainConcept {} ->
           let cAtt = Iden [sqlAttConcept fSpec c]
-           in BSE
+           in BinSelect
                 { bseSetQuantifier = SQDefault,
                   bseSrc =
                     Col
@@ -865,7 +873,7 @@ nonSpecialSelectExpr fSpec expr =
     (EEps c _) -> traceComment ["case: EEps c _"]
       $ case c of -- select the population of the most specific concept, which is the source.
         ONE ->
-          BSE
+          BinSelect
             { bseSetQuantifier = SQDefault,
               bseSrc = theONESingleton,
               bseTrg = theONESingleton,
@@ -874,7 +882,7 @@ nonSpecialSelectExpr fSpec expr =
             }
         PlainConcept {} ->
           let cAtt = Iden [sqlAttConcept fSpec c]
-           in BSE
+           in BinSelect
                 { bseSetQuantifier = SQDefault,
                   bseSrc =
                     Col
@@ -904,7 +912,7 @@ nonSpecialSelectExpr fSpec expr =
         EDcI c ->
           traceComment
             ["case: ECpl (EDcI c)"]
-            BSE
+            BinSelect
               { bseSetQuantifier = SQDefault,
                 bseSrc =
                   Col
@@ -937,7 +945,7 @@ nonSpecialSelectExpr fSpec expr =
         _ ->
           traceComment
             ["case: ECpl e"]
-            BSE
+            BinSelect
               { bseSetQuantifier = SQDefault,
                 bseSrc =
                   Col
@@ -980,8 +988,124 @@ nonSpecialSelectExpr fSpec expr =
                 <> " and "
                 <> (tshow . target $ e)
             theClosedWorldExpression = EDcV (sign e)
-    EKl0 _ -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
-    EKl1 _ -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
+    EKl0 e ->
+      traceComment
+        ["case: EKl0 expr -- (Kleene star)"]
+        BinQueryExprSetOp
+          { bseSetQuantifier = Distinct,
+            bcqeOper = Union,
+            bcqe0 = selectExpr fSpec e,
+            bcqe1 = selectExpr fSpec (EKl1 e)
+          }
+    EKl1 e ->
+      traceComment
+        ["case: EKl1 expr -- (Kleene plus)"]
+        BinSelect
+          { bseSetQuantifier = Distinct,
+            bseSrc =
+              Col
+                { cTable = [],
+                  cCol = [sourceAlias],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTrg =
+              Col
+                { cTable = [],
+                  cCol = [targetAlias],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTbl =
+              [ toTableRef
+                  ( BinWith
+                      { bcteWithRecursive = True,
+                        bcteViews =
+                          [ ( Alias (uName "TheExpression") Nothing,
+                              selectExpr fSpec e
+                            ),
+                            ( Alias (uName "TransitiveClosure") Nothing,
+                              BinQueryExprSetOp
+                                { bseSetQuantifier = Distinct,
+                                  bcqeOper = Union,
+                                  bcqe0 =
+                                    BinSelect
+                                      { bseSetQuantifier = SQDefault,
+                                        bseSrc =
+                                          Col
+                                            { cTable = [],
+                                              cCol = [sourceAlias],
+                                              cAlias = [],
+                                              cSpecial = Nothing
+                                            },
+                                        bseTrg =
+                                          Col
+                                            { cTable = [],
+                                              cCol = [targetAlias],
+                                              cAlias = [],
+                                              cSpecial = Nothing
+                                            },
+                                        bseTbl = [TRSimple [qName "TheExpression"]],
+                                        bseWhr = Nothing
+                                      },
+                                  bcqe1 =
+                                    BinSelect
+                                      { bseSetQuantifier = SQDefault,
+                                        bseSrc =
+                                          Col
+                                            { cTable = [qName "TransitiveClosure"],
+                                              cCol = [sourceAlias],
+                                              cAlias = [],
+                                              cSpecial = Nothing
+                                            },
+                                        bseTrg =
+                                          Col
+                                            { cTable = [qName "TheExpression"],
+                                              cCol = [targetAlias],
+                                              cAlias = [],
+                                              cSpecial = Nothing
+                                            },
+                                        bseTbl =
+                                          [ TRSimple [qName "TransitiveClosure"],
+                                            TRSimple [qName "TheExpression"]
+                                          ],
+                                        bseWhr =
+                                          Just
+                                            ( BinOp
+                                                (Iden [qName "TheExpression", sourceAlias])
+                                                [uName "="]
+                                                (Iden [qName "TransitiveClosure", targetAlias])
+                                            )
+                                      }
+                                }
+                            )
+                          ],
+                        bcteQueryExpression =
+                          BinSelect
+                            { bseSetQuantifier = SQDefault,
+                              bseSrc =
+                                Col
+                                  { cTable = [],
+                                    cCol = [sourceAlias],
+                                    cAlias = [],
+                                    cSpecial = Nothing
+                                  },
+                              bseTrg =
+                                Col
+                                  { cTable = [],
+                                    cCol = [targetAlias],
+                                    cAlias = [],
+                                    cSpecial = Nothing
+                                  },
+                              bseTbl = [TRSimple [qName "TransitiveClosure"]],
+                              bseWhr = Nothing
+                            }
+                      }
+                  )
+                  `as` uName "enforceAnsisql"
+              ],
+            bseWhr = Nothing
+          }
     (EDif (EDcV _, x)) ->
       traceComment ["case: EDif (EDcV _,x)"]
         $ selectExpr fSpec (notCpl x)
@@ -1025,7 +1149,7 @@ nonSpecialSelectExpr fSpec expr =
             | target l == ONE = fatal ("ONE is unexpected as target of " <> showA l)
             | target r == ONE = fatal ("ONE is unexpected as target of " <> showA r)
             | otherwise =
-                BSE
+                BinSelect
                   { bseSetQuantifier = SQDefault,
                     bseSrc =
                       Col
@@ -1109,7 +1233,7 @@ nonSpecialSelectExpr fSpec expr =
 
 traceExprComment :: Expression -> [Text] -> BinQueryExpr -> BinQueryExpr
 traceExprComment expr caseStr =
-  BQEComment
+  BinQEComment
     $ map BlockComment caseStr
     <> [ BlockComment $ "   Expression: " <> showA expr,
          BlockComment $ "   Signature : " <> tshow (sign expr)
@@ -1138,7 +1262,7 @@ selectRelation fSpec dcl =
   where
     leafCode :: (PlugSQL, RelStore) -> BinQueryExpr
     leafCode (plug, relstore) =
-      BSE
+      BinSelect
         { bseSetQuantifier = SQDefault,
           bseSrc =
             Col
@@ -1215,7 +1339,7 @@ selectExists tbl whr =
 
 -- | a (local) data structure to hold SQL info for binary expressions
 data BinQueryExpr
-  = BSE
+  = BinSelect -- A regular select expression, with exactly two columns
       { bseSetQuantifier :: SetQuantifier,
         bseSrc :: Col,
         bseTrg :: Col,
@@ -1224,7 +1348,7 @@ data BinQueryExpr
         -- | the (optional) WHERE clause
         bseWhr :: Maybe ScalarExpr
       }
-  | BCQE
+  | BinQueryExprSetOp -- A set operator (union, except, intersect) on a BinSelect
       { bseSetQuantifier :: SetQuantifier,
         -- | The combine operator
         bcqeOper :: SetOperatorName,
@@ -1233,7 +1357,12 @@ data BinQueryExpr
         -- | Right expression
         bcqe1 :: BinQueryExpr
       }
-  | BQEComment [Comment] BinQueryExpr
+  | BinWith -- a common table expression resulting in a table with two columns
+      { bcteWithRecursive :: !Bool,
+        bcteViews :: ![(Alias, BinQueryExpr)],
+        bcteQueryExpression :: !BinQueryExpr
+      }
+  | BinQEComment [Comment] BinQueryExpr
 
 data Col = Col
   { cTable :: [Name],
@@ -1255,22 +1384,28 @@ col2ScalarExpr col =
 stripComment :: BinQueryExpr -> BinQueryExpr
 stripComment bqe =
   case bqe of
-    BSE {} ->
-      BSE
+    BinSelect {} ->
+      BinSelect
         { bseSetQuantifier = bseSetQuantifier bqe,
           bseSrc = bseSrc bqe,
           bseTrg = bseTrg bqe,
           bseTbl = map stripCommentTableRef . bseTbl $ bqe,
           bseWhr = bseWhr bqe
         }
-    BCQE {} ->
-      BCQE
+    BinQueryExprSetOp {} ->
+      BinQueryExprSetOp
         { bseSetQuantifier = bseSetQuantifier bqe,
           bcqeOper = bcqeOper bqe,
           bcqe0 = stripComment (bcqe0 bqe),
           bcqe1 = stripComment (bcqe1 bqe)
         }
-    BQEComment _ x -> stripComment x
+    BinWith {} ->
+      BinWith
+        { bcteWithRecursive = bcteWithRecursive bqe,
+          bcteViews = bcteViews bqe,
+          bcteQueryExpression = stripComment (bcteQueryExpression bqe)
+        }
+    BinQEComment _ x -> stripComment x
 
 stripCommentTableRef :: TableRef -> TableRef
 stripCommentTableRef tr =
@@ -1293,7 +1428,7 @@ stripCommentQueryExpr qe =
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe =
   case bqe of
-    BSE {} ->
+    BinSelect {} ->
       Select
         { qeSetQuantifier = bseSetQuantifier bqe,
           qeSelectList =
@@ -1308,36 +1443,46 @@ toSQL bqe =
           qeOffset = Nothing,
           qeFetchFirst = Nothing
         }
-    BCQE {} ->
+    BinQueryExprSetOp {} ->
       QueryExprSetOp
         { qe0 = toSQL (bcqe0 bqe),
           qeCombOp = bcqeOper bqe,
           qeSetQuantifier = bseSetQuantifier bqe,
-          qeCorresponding = Respectively, -- ??? What does this mean?
+          qeCorresponding = Respectively, -- See https://dba.stackexchange.com/questions/212266/what-is-the-f301-the-corresponding-clause-in-query-expression
           qe1 = toSQL (bcqe1 bqe)
         }
-    (BQEComment c (BQEComment c' e)) -> toSQL $ BQEComment (c <> c') e
-    (BQEComment c e) -> QEComment c (toSQL e)
+    BinWith {} ->
+      With
+        { qeWithRecursive = bcteWithRecursive bqe,
+          qeViews = map viewToSQL (bcteViews bqe),
+          qeQueryExpression = toSQL (bcteQueryExpression bqe)
+        }
+      where
+        viewToSQL :: (Alias, BinQueryExpr) -> (Alias, QueryExpr)
+        viewToSQL (a, bqe') = (a, toSQL bqe')
+    (BinQEComment c (BinQEComment c' e)) -> toSQL $ BinQEComment (c <> c') e
+    (BinQEComment c e) -> QEComment c (toSQL e)
 
 setDistinct :: BinQueryExpr -> BinQueryExpr
 setDistinct bqe =
   case bqe of
-    BSE {} ->
-      BSE
+    BinSelect {} ->
+      BinSelect
         { bseSetQuantifier = Distinct,
           bseSrc = bseSrc bqe,
           bseTrg = bseTrg bqe,
           bseTbl = bseTbl bqe,
           bseWhr = bseWhr bqe
         }
-    BCQE {} ->
-      BCQE
+    BinQueryExprSetOp {} ->
+      BinQueryExprSetOp
         { bseSetQuantifier = Distinct,
           bcqeOper = bcqeOper bqe,
           bcqe0 = bcqe0 bqe,
           bcqe1 = bcqe1 bqe
         }
-    BQEComment _ x -> setDistinct x
+    BinWith {} -> bqe {bcteQueryExpression = setDistinct (bcteQueryExpression bqe)}
+    BinQEComment _ x -> setDistinct x
 
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
 sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
@@ -1386,9 +1531,9 @@ isNull = PostfixOp [uName "is null"]
 
 emptySet :: BinQueryExpr
 emptySet =
-  BQEComment
+  BinQEComment
     [BlockComment "this will quaranteed return 0 rows:"]
-    BSE
+    BinSelect
       { -- select 1 as src, 1 as trg from (select 1) dummy where false
         bseSetQuantifier = SQDefault,
         bseSrc =
@@ -1431,9 +1576,9 @@ emptySet =
 
 one :: BinQueryExpr
 one =
-  BQEComment
+  BinQEComment
     [BlockComment "Just ONE"]
-    BSE -- select distinct 1 as src, 1 as tgt from (select 1) as a
+    BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
       { bseSetQuantifier = SQDefault,
         bseSrc = theONESingleton,
         bseTrg = theONESingleton,
@@ -1492,7 +1637,7 @@ broadQuery fSpec obj =
             [] -> plainQE
             hobjs : _ ->
               case bqe of
-                BSE {} -> newSelect (newSelectList, newFrom, newWhere)
+                BinSelect {} -> newSelect (newSelectList, newFrom, newWhere)
                   where
                     (newSelectList, newFrom, newWhere) =
                       case qeFrom plainQE of
@@ -1505,8 +1650,9 @@ broadQuery fSpec obj =
                               )
                             else subThings
                         _ -> subThings
-                BCQE {} -> newSelect subThings
-                BQEComment _ x -> extendWithCols objs x
+                BinQueryExprSetOp {} -> newSelect subThings
+                BinWith {} -> newSelect subThings
+                BinQEComment _ x -> extendWithCols objs x
               where
                 newSelect (sl, f, w) =
                   Select

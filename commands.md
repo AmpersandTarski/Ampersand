@@ -67,8 +67,6 @@ even more complex than it already was.
           Generate an .xlsx file containing the populations of your script.
   * ***--proofs*** `proofs`
           generate derivations, for testing the generation of rules.
-  * ***--uml*** `uml`
-          Generate a data model in UML 2.0 style.
   * ***--validate*** `validate`
           Compare results of rule evaluation in Haskell and SQL, for
           testing the semantics of terms. This requires command line php with
