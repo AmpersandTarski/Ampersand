@@ -13,6 +13,8 @@ jobs:
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
+      - name: Dummy0
+        run: ghcup --version
       - name: Checkout code
         uses: actions/checkout@v4
 
