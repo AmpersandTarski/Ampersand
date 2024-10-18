@@ -1,8 +1,10 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.2.3 (17 october 2024)
 
 - [Issue #1482](https://github.com/AmpersandTarski/Ampersand/issues/1482) Fix technical debd from merging Ampersand 4 into Ampersand 5
+- [Issue #137](https://github.com/AmpersandTarski/Ampersand/issues/137) We now support transitive closures 
+- [Issue #1512](https://github.com/AmpersandTarski/Ampersand/issues/1512) Remove old and broken code for generating uml
 
 ## v5.2.2 (9 september 2024)
 

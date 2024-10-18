@@ -5,11 +5,11 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.2.2
+version:        5.2.3
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
-stability:      alpha
+stability:      beta
 homepage:       http://ampersandtarski.github.io/
 bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 author:         Stef Joosten
@@ -114,7 +114,6 @@ extra-source-files:
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Ticket580.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldSucceed/testinfo.yaml
-    testing/StillUnsupported/Bug335_Kl0Kl1.adl
     testing/StillUnsupported/Issue1127.adl
     testing/StillUnsupported/Issue1127.xlsx
     testing/StillUnsupported/Issue1397-1.adl
@@ -284,6 +283,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM_Test10.adl
     testing/Travis/testcases/prototype/shouldSucceed/BroadTableTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Bug335_Kl0Kl1.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
@@ -466,7 +466,6 @@ library
       Ampersand.FSpec.Crud
       Ampersand.FSpec.FSpec
       Ampersand.FSpec.FSpecAux
-      Ampersand.FSpec.GenerateUML
       Ampersand.FSpec.Motivations
       Ampersand.FSpec.SQL
       Ampersand.FSpec.ShowHS
@@ -551,7 +550,6 @@ library
       Ampersand.Commands.Proof
       Ampersand.Commands.Proto
       Ampersand.Commands.Test
-      Ampersand.Commands.Uml
       Ampersand.Commands.Validate
       Ampersand.Daemon.Daemon
       Ampersand.Daemon.Escape
@@ -574,7 +572,6 @@ library
       Ampersand.Options.ProofOptsParser
       Ampersand.Options.ProtoOptsParser
       Ampersand.Options.TestOptsParser
-      Ampersand.Options.UmlOptsParser
       Ampersand.Options.ValidateOptsParser
       Ampersand.Output.PredLogic
       Ampersand.Types.Config
@@ -592,12 +589,10 @@ library
   build-depends:
       HStringTemplate
     , QuickCheck
-    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ansi-terminal
     , base
-    , bytestring
     , casing
     , conduit
     , containers
@@ -611,7 +606,6 @@ library
     , generic-deriving
     , graphviz
     , hashable
-    , http-conduit
     , hxt
     , lens
     , mtl
@@ -620,21 +614,15 @@ library
     , pandoc-crossref
     , pandoc-types
     , parsec
-    , prettyprinter
-    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
-    , salve
     , simple-sql-parser
-    , split
     , terminal-size
-    , texmath
     , text
     , text1
     , time
     , transformers
-    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -663,13 +651,11 @@ executable ampPreProc
   build-depends:
       HStringTemplate
     , QuickCheck
-    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
-    , bytestring
     , casing
     , conduit
     , containers
@@ -683,7 +669,6 @@ executable ampPreProc
     , generic-deriving
     , graphviz
     , hashable
-    , http-conduit
     , hxt
     , lens
     , mtl
@@ -692,21 +677,15 @@ executable ampPreProc
     , pandoc-crossref
     , pandoc-types
     , parsec
-    , prettyprinter
-    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
-    , salve
     , simple-sql-parser
-    , split
     , terminal-size
-    , texmath
     , text
     , text1
     , time
     , transformers
-    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -738,13 +717,11 @@ executable ampersand
       Cabal
     , HStringTemplate
     , QuickCheck
-    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
-    , bytestring
     , casing
     , conduit
     , containers
@@ -758,7 +735,6 @@ executable ampersand
     , generic-deriving
     , graphviz
     , hashable
-    , http-conduit
     , hxt
     , lens
     , mtl
@@ -767,21 +743,15 @@ executable ampersand
     , pandoc-crossref
     , pandoc-types
     , parsec
-    , prettyprinter
-    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
-    , salve
     , simple-sql-parser
-    , split
     , terminal-size
-    , texmath
     , text
     , text1
     , time
     , transformers
-    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx
@@ -811,13 +781,11 @@ test-suite ampersand-test
   build-depends:
       HStringTemplate
     , QuickCheck
-    , SpreadsheetML
     , aeson
     , aeson-pretty
     , ampersand
     , ansi-terminal
     , base
-    , bytestring
     , casing
     , conduit
     , containers
@@ -831,7 +799,6 @@ test-suite ampersand-test
     , generic-deriving
     , graphviz
     , hashable
-    , http-conduit
     , hxt
     , lens
     , mtl
@@ -840,21 +807,15 @@ test-suite ampersand-test
     , pandoc-crossref
     , pandoc-types
     , parsec
-    , prettyprinter
-    , prettyprinter-ansi-terminal
     , process
     , quickcheck-instances
     , rio
-    , salve
     , simple-sql-parser
-    , split
     , terminal-size
-    , texmath
     , text
     , text1
     , time
     , transformers
-    , typed-process
     , uri-encode
     , wl-pprint
     , xlsx

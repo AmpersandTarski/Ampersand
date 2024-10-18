@@ -19,7 +19,6 @@ import Ampersand.Commands.Population
 import Ampersand.Commands.Proof
 import Ampersand.Commands.Proto
 import Ampersand.Commands.Test
-import Ampersand.Commands.Uml
 import Ampersand.Commands.Validate
 {-getProgName,-}
 import Ampersand.FSpec (FSpec)
@@ -36,7 +35,6 @@ import Ampersand.Options.PopulationOptsParser
 import Ampersand.Options.ProofOptsParser
 import Ampersand.Options.ProtoOptsParser
 import Ampersand.Options.TestOptsParser
-import Ampersand.Options.UmlOptsParser
 import Ampersand.Options.ValidateOptsParser
 import Ampersand.Types.Config
 import Control.Monad.Trans.Except
@@ -146,11 +144,6 @@ commandLineHandler currentDir _progName args =
         "Generate a single .adl file of your script (prettyprinted)"
         (mkAction exportAsAdl)
         (outputFileOptsParser "export.adl")
-      addCommand''
-        Uml
-        "Generate a data model in UML 2.0 style."
-        (mkAction uml)
-        umlOptsParser
       addCommand''
         Validate
         ( "Compare results of rule evaluation in Haskell and SQL, for "
@@ -427,7 +420,6 @@ data Command
   | Proofs
   | Proto
   | Test
-  | Uml
   | Validate
 
 instance Show Command where
@@ -442,5 +434,4 @@ instance Show Command where
   show Proofs = "proofs"
   show Proto = "proto"
   show Test = "test"
-  show Uml = "uml"
   show Validate = "validate"

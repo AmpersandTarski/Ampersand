@@ -1,12 +1,12 @@
 name: ampersand
-version: 5.2.2
+version: 5.2.3
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
 description: You can define your business processes by means of rules, written in Relation Algebra.
 homepage: http://ampersandtarski.github.io/
 category: Database Design
-stability: alpha
+stability: beta
 tested-with: GHC == 9.6.4
 build-type: Custom
 license: GPL
@@ -42,7 +42,7 @@ dependencies:
   - aeson-pretty
   - ansi-terminal
   - base
-  - bytestring
+  # - bytestring
   - casing
   - conduit
   - containers
@@ -57,7 +57,7 @@ dependencies:
   - graphviz
   - hashable
   - HStringTemplate
-  - http-conduit
+  # - http-conduit
   - hxt
   - lens
   - mtl
@@ -66,28 +66,26 @@ dependencies:
   - pandoc-crossref
   - pandoc-types
   - parsec
-  - prettyprinter
-  - prettyprinter-ansi-terminal
+  # - prettyprinter
+  # - prettyprinter-ansi-terminal
   - process
   - QuickCheck
   - quickcheck-instances
   - rio
-  - salve
+  # - salve
   - simple-sql-parser
-  - split
-  - SpreadsheetML
+  # - split
   - terminal-size
-  - texmath
+  # - texmath
   - text
   - text1
   - time
   - transformers
-  - typed-process
+  # - typed-process
   - uri-encode
   - wl-pprint # to be replaced with prettyprinter stuff
   - xlsx
   - yaml
-  # - yaml-config
   - zip-archive
 when:
   - condition: os(windows)
@@ -130,7 +128,6 @@ library:
     - Ampersand.FSpec.Crud
     - Ampersand.FSpec.FSpec
     - Ampersand.FSpec.FSpecAux
-    - Ampersand.FSpec.GenerateUML
     - Ampersand.FSpec.Motivations
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
