@@ -13,11 +13,11 @@ jobs:
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
-      - name: Install matching version of ghc
-        run: ghcup install ghc 9.6.6 --set
-
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install matching version of ghc
+        run: stack setup
 
       - name: Dummy
         run: ghc --version
