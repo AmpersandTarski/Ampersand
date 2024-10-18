@@ -168,8 +168,8 @@ jobs:
           path: /home/runner/.local/bin/*
 
   build-without-test-macOS:
-    name: Build without test on macos-12  🏗 🧪
-    runs-on: macos-12
+    name: Build without test on macos-13  🏗 🧪
+    runs-on: macos-13
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4
