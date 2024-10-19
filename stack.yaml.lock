@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: pandoc-crossref-0.3.18.0@sha256:72d227bfda17ff9dcbe477e3a265700c278753f7f47312e148cb903cd8cf8b04,9552
+    hackage: pandoc-crossref-0.3.17.0@sha256:84507632d82a1cbda65bf8874dd8a2f2e03b87f82932a45ee961b6df51f211cf,9282
     pantry-tree:
-      sha256: b4d8990d1f005ecf9fc49410a573d71f8507d5e7f127672db2777cc6e9b3b970
-      size: 10357
+      sha256: 7539426739165223f6dc52f40ab1091c18a35a77fd37cb0cee537e47f4ab6744
+      size: 9882
   original:
-    hackage: pandoc-crossref-0.3.18.0
+    hackage: pandoc-crossref-0.3.17.0
 - completed:
     hackage: simple-sql-parser-0.8.0@sha256:5153612af09edda2af865e6dc1286d64ecea702541a1af824ac518268f0b5cb4,4417
     pantry-tree:
@@ -19,19 +19,33 @@ packages:
   original:
     hackage: simple-sql-parser-0.8.0
 - completed:
+    hackage: SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
+    pantry-tree:
+      sha256: 4e795a0937d7d0b1c385c4ce9fd3fc32709f4f264f74441ae839d2780ddfa49e
+      size: 388
+  original:
+    hackage: SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
+- completed:
     hackage: text1-0.0.7.4@sha256:cc980c88b188384fadd02b56e6e8e5f9317a43e1459a16558273589a49bcf951,2741
     pantry-tree:
       sha256: e990bf16f9321fd4d5a5101599c232b95b49a5b1252aab6c97dc3778fdc5b375
       size: 571
   original:
-    hackage: text1-0.0.7.4
+    hackage: text1-0.0.7.4@sha256:cc980c88b188384fadd02b56e6e8e5f9317a43e1459a16558273589a49bcf951,2741
 - completed:
     hackage: megaparsec-9.6.1@sha256:8d8f8ee5aca5d5c16aa4219afd13687ceab8be640f40ba179359f2b42a628241,3323
     pantry-tree:
       sha256: ac654040a2402a733496678905ee17198bf628d75032dd025d595bd329739af8
       size: 1545
   original:
-    hackage: megaparsec-9.6.1
+    hackage: megaparsec-9.6.1@sha256:8d8f8ee5aca5d5c16aa4219afd13687ceab8be640f40ba179359f2b42a628241,3323
+- completed:
+    hackage: hexpat-0.20.13@sha256:8fc1e951240cee4448cda20f6d683e7166b2a1849e1e66afd4dbb756f3487bb0,6983
+    pantry-tree:
+      sha256: f968376f33539e3286d0a039b38862f97ce05caf7d49f3cac96c8b6834c804e4
+      size: 3577
+  original:
+    hackage: hexpat-0.20.13
 snapshots:
 - completed:
     sha256: 0cd905bf3f615a7f52d52fb6aadda182f695bd1cab10ef892095d974676f0911
