@@ -1,4 +1,4 @@
-FROM ubuntu:focal as base
+FROM ubuntu:focal AS base
 ## Inspiration from https://stackoverflow.com/questions/67680726/installing-haskells-cabal-or-ghcup-inside-a-dockerfile-wont-work
 ENV TZ=Europe/Berlin
 ARG USERNAME=vscode
@@ -74,7 +74,7 @@ RUN ghcup install ghc --set ${GHC} && \
     ghcup install stack --set ${STACK} && \
     ghcup install hls --set ${HLS}
 
-FROM base as tools
+FROM base AS tools
 
 # Install global packages.
 # Versions are pinned, since we don't want to accidentally break anything (by always installing latest).
@@ -96,7 +96,7 @@ RUN cabal install -v haskell-dap-0.0.16.0 && \
 RUN mkdir ${WDIR}/.cabal/binbin && \
     cp -L ${WDIR}/.cabal/bin/* ${WDIR}/.cabal/binbin
 
-FROM base as dev
+FROM base AS dev
 COPY --from=tools ${WDIR}/.cabal/binbin ${WDIR}/.cabal/bin
 ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${WDIR}/.local/bin:${PATH}"
 
