@@ -8,6 +8,14 @@ on:
       - "docs/**" # If only documentation changes, no need to build.
 jobs:
   hlint:
+    runs-on: ubuntu-22.04
+    permissions:
+      # Needed to upload results to GitHub code scanning.
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/hlint-scan@v1
+  hlintOld:
     name: Hlint - Check for code sanity
     runs-on: ubuntu-22.04
     steps:
