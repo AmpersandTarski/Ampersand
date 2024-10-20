@@ -22,6 +22,7 @@ permissions:
 
 jobs:
   hadolint:
+    # Hadolint is a tool for the static analisys of a Docker file
     name: Run hadolint scanning
     runs-on: ubuntu-22.04
     permissions:
@@ -33,10 +34,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run hadolint
-        uses: hadolint/hadolint-action@f988afea3da57ee48710a9795b6bb677cc901183
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ./Dockerfile
-          format: sarif
+          format: sarif # Static Analysis Results Interchange Format (SARIF). See https://sarifweb.azurewebsites.net/
           output-file: hadolint-results.sarif
           no-fail: true
 
