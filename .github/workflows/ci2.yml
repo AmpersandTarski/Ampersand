@@ -27,7 +27,7 @@ jobs:
       # For main branch push latest to DockerHub
       - name: Login to DockerHub
         if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -64,12 +64,12 @@ jobs:
           mysql-version: "mariadb-11.5"
       # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
       ## run: curl -sSL https://get.haskellstack.org/ | sh
-      - run: brew install php
+      # - run: brew install php
       - name: Build and test  🏗 🧪
         uses: freckle/stack-action@v5
         with:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
-          test: false  #Temporarily disable test because of bug in MariaDB with macOS. See https://jira.mariadb.org/browse/MDEV-35173
+          test: false #Temporarily disable test because of bug in MariaDB with macOS. See https://jira.mariadb.org/browse/MDEV-35173
   build-and-test-windows:
     name: Build and test on windows-2022 🏗 🧪
     runs-on: windows-2022
