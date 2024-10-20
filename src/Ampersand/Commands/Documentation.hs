@@ -25,9 +25,13 @@ doGenDocument fSpec = do
   let (thePandoc, thePictures) = fSpec2Pandoc env now fSpec
   -- First we need to output the pictures, because they should be present
   -- before the actual document is written
-  genGraphics <- view genGraphicsL
-  when (genGraphics && fspecFormat /= FPandoc)
-    $ mapM_ writePicture thePictures
-  genText <- view genTextL
-  when genText
-    $ writepandoc fSpec thePandoc
+  datamodelsOnly <- view genDatamodelOnlyL
+  if datamodelsOnly
+    then mapM_ writePicture $ filter isDatamodel thePictures
+    else do
+      genGraphics <- view genGraphicsL
+      when (genGraphics && fspecFormat /= FPandoc)
+        $ mapM_ writePicture thePictures
+      genText <- view genTextL
+      when genText
+        $ writepandoc fSpec thePandoc

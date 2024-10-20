@@ -179,6 +179,8 @@ class (HasOutputLanguage a) => HasDocumentOpts a where
   genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x {xgenGraphics = y})
   genTextL :: Lens' a Bool -- Generate text. Useful for generating text and graphics separately.
   genTextL = documentOptsL . lens xgenText (\x y -> x {xgenText = y})
+  genDatamodelOnlyL :: Lens' a Bool -- Generate only the datamodel images. This overrides genGraphicsL and genTextL
+  genDatamodelOnlyL = documentOptsL . lens xgenDatamodelImagesOnly (\x y -> x {xgenDatamodelImagesOnly = y})
 
 instance HasDocumentOpts DocOpts where
   documentOptsL = id
@@ -371,6 +373,8 @@ data DocOpts = DocOpts
     xblackWhite :: !Bool,
     -- | a list containing all chapters that are required to be in the generated documentation
     xchapters :: ![Chapter],
+    -- | Only generate datamodel images.
+    xgenDatamodelImagesOnly :: !Bool,
     -- | enable/disable generation of graphics. Used to generate text and graphics in separation.
     xgenGraphics :: !Bool,
     -- | enable/disable generation of text. Used to generate text and graphics in separation.
@@ -391,7 +395,8 @@ instance HasOptions DocOpts where
     [ ("--blackWhite", tshow $ xblackWhite opts)
     ]
       <> fmap chapters [minBound ..]
-      <> [ ("--[no-]graphics", tshow $ xgenGraphics opts),
+      <> [ ("--datamodelOnly", tshow $ xgenDatamodelImagesOnly opts),
+           ("--[no-]graphics", tshow $ xgenGraphics opts),
            ("--[no-]text", tshow $ xgenText opts),
            ("--format", tshow $ xfspecFormat opts)
          ]
