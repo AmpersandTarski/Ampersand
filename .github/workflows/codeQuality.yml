@@ -8,23 +8,16 @@ on:
       - "docs/**" # If only documentation changes, no need to build.
 jobs:
   hlint:
+    name: Hlint - Check for code sanity
     runs-on: ubuntu-22.04
     permissions:
       # Needed to upload results to GitHub code scanning.
       security-events: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: haskell-actions/hlint-scan@v1
-  # hlintOld:
-  #   name: Hlint - Check for code sanity
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout project contents 📡
-  #       uses: actions/checkout@v4
-  #     - name: Setup hlint
-  #       uses: rwe/actions-hlint-setup@v1.0.3
-  #     - name: Run hlint
-  #       uses: rwe/actions-hlint-run@v2.0.1
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v4
+      - name: Run hlint
+        uses: haskell-actions/hlint-scan@v1
   weeder:
     name: Weeder - Check dead code
     runs-on: ubuntu-22.04
