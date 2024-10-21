@@ -19,6 +19,7 @@ docOptsParser =
   DocOpts
     <$> blackWhiteP
     <*> chaptersP
+    <*> datamodelOnlyP
     <*> genGraphicsP
     <*> genTextP
     <*> fSpecFormatP
@@ -87,6 +88,8 @@ docOptsParser =
         <$> strOption
           ( long "format"
               <> metavar "FORMAT"
+              <> value "docx"
+              <> showDefault
               <> completeWith (map (T.unpack . stripF) allFormats)
               <> help "The format in which the output is written."
           )
@@ -143,7 +146,13 @@ docOptsParser =
                   <> "black and white."
               )
         )
-
+    datamodelOnlyP :: Parser Bool
+    datamodelOnlyP =
+      switch
+        ( long "datamodelOnly"
+            <> help
+              "Only generate datamodel images. This implies --no-text"
+        )
     genLegalRefsP :: Parser Bool
     genLegalRefsP =
       boolFlags

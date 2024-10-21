@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput) where
+module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput, isDatamodel) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Label)
@@ -68,6 +68,15 @@ instance Named PictureTyp where -- for displaying a fatal error
                 Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
                 Just np -> np
             )
+
+isDatamodel :: Picture -> Bool
+isDatamodel = isDatamodelType . pType
+
+isDatamodelType :: PictureTyp -> Bool
+isDatamodelType pt = case pt of
+  PTLogicalDM {} -> True
+  PTTechnicalDM {} -> True
+  _ -> False
 
 makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
