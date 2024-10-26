@@ -1,7 +1,7 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-22.16 # HJO,20220605: If changed, make sure you change this in .devcontainer stuff as well.
+resolver: lts-22.39 # HJO,20220605: If changed, make sure you change this in .devcontainer stuff as well.
 # resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: true
 allow-newer-deps:

@@ -62,10 +62,10 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 # Add ghcup and cabal to the PATH
 ENV PATH="${WDIR}/.cabal/bin:${WDIR}/.ghcup/bin:${PATH}:${WDIR}/.local/bin:${PATH}"
 
-ARG GHC=9.6.4
-ARG CABAL=3.10.2.1
-ARG HLS=2.7.0.0
-ARG STACK=2.15.5
+ARG GHC=9.6.6
+ARG CABAL=3.10.3.0
+ARG HLS=2.9.0.1
+ARG STACK=3.1.1
 
 # install GHC and cabal
 

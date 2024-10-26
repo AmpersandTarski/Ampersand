@@ -48,7 +48,7 @@ packages:
     hackage: hexpat-0.20.13
 snapshots:
 - completed:
-    sha256: 0cd905bf3f615a7f52d52fb6aadda182f695bd1cab10ef892095d974676f0911
-    size: 713334
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/16.yaml
-  original: lts-22.16
+    sha256: 6c5aeace2ca5ecde793a9e0acfaa730ec8f384aa2f6183a2a252f5f9ec55d623
+    size: 720039
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/39.yaml
+  original: lts-22.39
