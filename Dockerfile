@@ -6,7 +6,28 @@ WORKDIR /opt/ampersand
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git pkg-config libbz-dev
+    apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    autoconf \
+    automake \
+    build-essential \
+    curl \
+    gcc \
+    git \
+    gnupg2 \
+    graphviz \
+    libbz2-dev \
+    libexpat1-dev \
+    libgmp-dev \
+    libgmp10 \
+    libnuma-dev \
+    lsb-release \
+    openssh-server \
+    pkg-config \
+    software-properties-common \
+    wget \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
     
 # Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
 # Only updates to the files stack.yaml package.yaml will rebuild this layer; all other changes use the cache.
