@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+
+- [Issue #1519](https://github.com/AmpersandTarski/Ampersand/issues/1519) Enhance ENFORCE statement to also manipulate the population of a Concept, using I as left hand side.
+
 ## v5.2.4
 
 - [Issue #1516](https://github.com/AmpersandTarski/Ampersand/issues/1516) It is now possible to only generate datamodel images using --datamodelOnly 
