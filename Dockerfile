@@ -6,7 +6,7 @@ WORKDIR /opt/ampersand
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git pkg-config bzip2 libbz-dev
+    apt-get install -y git pkg-config libbz-dev
     
 # Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
 # Only updates to the files stack.yaml package.yaml will rebuild this layer; all other changes use the cache.
