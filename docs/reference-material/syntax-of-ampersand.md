@@ -545,7 +545,7 @@ ENFORCE <RelationRef> <type>?
         <Term>
 ```
 
-The `<operator>` can be one of **`:=`,** `:<` or `>:` .
+The `<operator>` can be one of **`:=`**, `:<`, or `>:` .
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
@@ -561,6 +561,8 @@ ENFORCE r := s;t
    of the term s;t . It will do so by changing the contents of r
    without affecting the contents of s;t .
    The effect can be observed in the prototype.
+   This statement ensures that the rule `r = s;t` is continuously enforced.
+   (by populating or depopulating `r`, as necessary).
 -}
 ```
 
@@ -573,6 +575,8 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
    So, whenever a person can drive, that person needs to have a car and a driver licence.
    However, if that person has both these assets, it is still possible that he/she
    cannot drive.
+   This statement ensures that the rule `canDrive |- hasCar /\ hasDriverLicense` is continuously enforced
+   (only by depopulating `canDrive` whenever necessary).
 -}
 ```
 
