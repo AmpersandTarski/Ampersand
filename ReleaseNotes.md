@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- [Issue #1519](https://github.com/AmpersandTarski/Ampersand/issues/1519) Enhance ENFORCE statement to also manipulate the population of a Concept, using I as left hand side.
+- [Issue #1520](https://github.com/AmpersandTarski/Ampersand/issues/1520) Enhance ENFORCE statement to also manipulate the population of a Concept, using I as left hand side.
 
 ## v5.2.4
 

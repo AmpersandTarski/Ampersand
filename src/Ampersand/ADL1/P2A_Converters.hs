@@ -1031,43 +1031,48 @@ pCtx2aCtx
         mPat
         P_Enforce
           { pos = pos',
-            penfRel = pRel,
+            penfPrim = prim,
             penfOp = oper,
             penfExpr = x
-          } =
-          case pRel of
-            (_, Known (EDcD rel)) ->
-              do
+          } = do
                 (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
+                (src,tgt,prim') <- case prim of
+                      (_, Known (EDcD rel)) -> pure (source rel,target rel,Right rel)
+                      (_, Known (EDcI cpt)) -> pure (cpt,cpt,Left cpt)
+                      (o, dx) -> cannotDisambiguate o dx
                 -- SJC: the following two error messages can occur in parallel
                 --      thanks to 'ApplicativeDo', however, we can write the following
                 --      sequential-looking code that suggests checking src before tgt.
                 --      ApplicativeDo should translate this with a <*> instead.
-                let srcOk = source expr `isaC` source rel
-                unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
-                let tgtOk = target expr `isaC` target rel
-                unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
+                let srcOk = source expr `isaC` src
+                unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, prim)
+                let tgtOk = target expr `isaC` tgt
+                unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, prim)
                 let expr' =
-                      addEpsilonLeft genLattice (source rel)
-                        $ addEpsilonRight genLattice (target rel) expr
+                      addEpsilonLeft genLattice src
+                        $ addEpsilonRight genLattice tgt expr
                 return
-                  AEnforce
-                    { pos = pos',
-                      enfRel = rel,
-                      enfOp = oper,
-                      enfExpr = expr',
-                      enfPatName = mPat,
-                      enfRules = enforce2Rules rel expr'
-                    }
-            (o, dx) -> cannotDisambiguate o dx
+                        AEnforce
+                          { pos = pos',
+                            enfPrim = prim',
+                            enfOp = oper,
+                            enfExpr = expr',
+                            enfPatName = mPat,
+                            enfRules = enforce2Rules prim' expr'
+                          }
           where
-            enforce2Rules :: Relation -> Expression -> [Rule]
-            enforce2Rules rel expr =
+            enforce2Rules :: Either A_Concept Relation -> Expression -> [Rule]
+            enforce2Rules cptOrRel@(Left cpt) expr = undefined
+            enforce2Rules cptOrRel@(Right rel) expr =
               case oper of
                 IsSuperSet {} -> [insPair]
                 IsSubSet {} -> [delPair]
                 IsSameSet {} -> [insPair, delPair]
               where
+                (src,tgt) = case cptOrRel of
+                  Left cpt -> (cpt,cpt)
+                  Right rel -> (source rel,target rel)
+                mrgAtoms = mkRule "MrgAtoms" 
                 insPair = mkRule "InsPair" (EInc (expr, bindedRel))
                 delPair = mkRule "DelPair" (EInc (bindedRel, expr))
                 bindedRel = EDcD rel

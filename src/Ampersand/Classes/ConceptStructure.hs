@@ -108,9 +108,14 @@ instance ConceptStructure ViewDef where
   expressionsIn vd = expressionsIn (vdats vd)
 
 instance ConceptStructure AEnforce where
-  concs enf = concs (enfRel enf) `Set.union` concs (enfExpr enf)
+  concs enf = concs (enfPrim enf) `Set.union` concs (enfExpr enf)
   expressionsIn enf = expressionsIn (enfExpr enf)
-
+instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (Either a b) where
+  concs (Left x) = concs x
+  concs (Right x) = concs x
+  expressionsIn (Left x) = expressionsIn x
+  expressionsIn (Right x) = expressionsIn x
+  
 instance ConceptStructure ViewSegment where
   concs = concs . vsmLoad
   expressionsIn = expressionsIn . vsmLoad

@@ -494,7 +494,7 @@ instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
         pure
           $ P_Enforce
             { pos = OriginAtlas,
-              penfRel = PNamedR rel,
+              penfPrim = PNamedR rel,
               penfOp = oper,
               penfExpr = case parseTerm ("Json file from Atlas, at a P_enforce `" <> "` expression .") formexp of
                 Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)

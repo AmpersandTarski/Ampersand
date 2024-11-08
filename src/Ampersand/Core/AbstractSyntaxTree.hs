@@ -237,7 +237,7 @@ instance Traced Pattern where
 
 data AEnforce = AEnforce
   { pos :: !Origin,
-    enfRel :: !Relation,
+    enfPrim :: !(Either A_Concept Relation),
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
     -- | If the enforcement rule is defined in the context of a pattern, the name of that pattern.

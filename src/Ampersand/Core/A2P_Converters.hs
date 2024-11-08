@@ -55,10 +55,12 @@ aCtx2pCtx ctx =
     }
 
 aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
-aEnforce2pEnforce (AEnforce orig rel op expr _ _) =
+aEnforce2pEnforce (AEnforce orig prim op expr _ _) =
   P_Enforce
     { pos = orig,
-      penfRel = PNamedR . aRelation2pNamedRel $ rel,
+      penfPrim = case prim of 
+        Left cpt -> Pid orig . aConcept2pConcept $ cpt
+        Right rel -> PNamedR . aRelation2pNamedRel $ rel,
       penfOp = op,
       penfExpr = aExpression2pTermPrim expr
     }

@@ -587,7 +587,7 @@ instance ErrorConcept (P_ViewD a) where
 instance ErrorConcept P_IdentDef where
   showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> fullName x
 
-instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
+instance (AStruct a) => ErrorConcept (SrcOrTgt, A_Concept, a) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
 
 showEC' :: (SrcOrTgt, A_Concept, Text) -> Text

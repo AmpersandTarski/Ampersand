@@ -150,9 +150,9 @@ data EnforceOperator
 
 data P_Enforce a = P_Enforce
   { pos :: !Origin,
-    penfRel :: !a,
+    penfPrim :: !a, -- | The primitive expression at the left hand side of the operator
     penfOp :: !EnforceOperator,
-    penfExpr :: !(Term a)
+    penfExpr :: !(Term a) -- | The expression at the right hand side of the operator.
   }
   deriving (Show)
 
