@@ -1,6 +1,9 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
@@ -1035,59 +1038,55 @@ pCtx2aCtx
             penfOp = oper,
             penfExpr = x
           } = do
-                (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
-                (src,tgt,prim') <- case prim of
-                      (_, Known (EDcD rel)) -> pure (source rel,target rel,Right rel)
-                      (_, Known (EDcI cpt)) -> pure (cpt,cpt,Left cpt)
-                      (o, dx) -> cannotDisambiguate o dx
-                -- SJC: the following two error messages can occur in parallel
-                --      thanks to 'ApplicativeDo', however, we can write the following
-                --      sequential-looking code that suggests checking src before tgt.
-                --      ApplicativeDo should translate this with a <*> instead.
-                let srcOk = source expr `isaC` src
-                unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, prim)
-                let tgtOk = target expr `isaC` tgt
-                unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, prim)
-                let expr' =
-                      addEpsilonLeft genLattice src
-                        $ addEpsilonRight genLattice tgt expr
-                return
-                        AEnforce
-                          { pos = pos',
-                            enfPrim = prim',
-                            enfOp = oper,
-                            enfExpr = expr',
-                            enfPatName = mPat,
-                            enfRules = enforce2Rules prim' expr'
-                          }
+          (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
+          (src, tgt, prim') <- case prim of
+            (_, Known (EDcD rel)) -> pure (source rel, target rel, Right rel)
+            (_, Known (EDcI cpt)) -> pure (cpt, cpt, Left cpt)
+            (o, dx) -> cannotDisambiguate o dx
+          -- SJC: the following two error messages can occur in parallel
+          --      thanks to 'ApplicativeDo', however, we can write the following
+          --      sequential-looking code that suggests checking src before tgt.
+          --      ApplicativeDo should translate this with a <*> instead.
+          let srcOk = source expr `isaC` src
+          unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, prim)
+          let tgtOk = target expr `isaC` tgt
+          unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, prim)
+          let expr' =
+                addEpsilonLeft genLattice src
+                  $ addEpsilonRight genLattice tgt expr
+          return
+            AEnforce
+              { pos = pos',
+                enfPrim = prim',
+                enfOp = oper,
+                enfExpr = expr',
+                enfPatName = mPat,
+                enfRules = enforce2Rules prim' expr'
+              }
           where
             enforce2Rules :: Either A_Concept Relation -> Expression -> [Rule]
-            enforce2Rules cptOrRel@(Left cpt) expr = undefined
-            enforce2Rules cptOrRel@(Right rel) expr =
-              case oper of
-                IsSuperSet {} -> [insPair]
-                IsSubSet {} -> [delPair]
-                IsSameSet {} -> [insPair, delPair]
+            enforce2Rules cptOrRel expr =
+              case cptOrRel of
+                Left cpt -> case oper of
+                  IsSuperSet {} -> [mrgAtoms cpt]
+                  IsSubSet {} -> [addAtom cpt]
+                  IsSameSet {} -> [mrgAtoms cpt, addAtom cpt]
+                Right rel -> case oper of
+                  IsSuperSet {} -> [insPair rel]
+                  IsSubSet {} -> [delPair rel]
+                  IsSameSet {} -> [insPair rel, delPair rel]
               where
-                (src,tgt) = case cptOrRel of
-                  Left cpt -> (cpt,cpt)
-                  Right rel -> (source rel,target rel)
-                mrgAtoms = mkRule "MrgAtoms" 
-                insPair = mkRule "InsPair" (EInc (expr, bindedRel))
-                delPair = mkRule "DelPair" (EInc (bindedRel, expr))
-                bindedRel = EDcD rel
-                mkRule command fExpr =
+                (src, tgt) = case cptOrRel of
+                  Left cpt -> (cpt, cpt)
+                  Right rel -> (source rel, target rel)
+                mrgAtoms cpt = mkCptRule "MrgAtoms" (EInc (expr, EDcI cpt)) cpt
+                addAtom cpt = mkCptRule "AddAtom" (EInc (EDcI cpt, expr)) cpt
+                insPair rel = mkRelRule "InsPair" (EInc (expr, EDcD rel)) rel
+                delPair rel = mkRelRule "DelPair" (EInc (EDcD rel, expr)) rel
+                mkCptRule command fExpr cpt =
                   Rule
-                    { rrnm =
-                        mkName
-                          RuleName
-                          ( ( case toNamePart $ "Compute" <> (tshow . abs . hash $ lbl') of
-                                Nothing -> fatal "Not a proper NamePart."
-                                Just np -> np
-                            )
-                              NE.:| []
-                          ),
-                      rrlbl = Just (Label lbl'),
+                    { rrnm = ruleName command,
+                      rrlbl = Just . Label $ lbl' command,
                       formalExpression = fExpr,
                       rrfps = pos',
                       rrmean = [],
@@ -1095,17 +1094,44 @@ pCtx2aCtx
                       rrviol =
                         Just
                           . PairView
-                          $ PairViewText pos' ("{EX} " <> command <> ";" <> fullName rel <> ";" <> fullName (source rel) <> ";")
-                          NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
-                                  PairViewText pos' $ ";" <> fullName (target rel) <> ";",
-                                  PairViewExp pos' Tgt (EDcI (target rel))
+                          $ PairViewText pos' ("{EX} " <> command <> ";" <> fullName cpt <> ";")
+                          NE.:| [ PairViewExp pos' Src (EDcI src),
+                                  PairViewText pos' (";" <> fullName tgt <> ";"),
+                                  PairViewExp pos' Tgt (EDcI tgt)
                                 ],
                       rrpat = mPat,
                       rrkind = Enforce
                     }
-                  where
-                    lbl' :: Text
-                    lbl' = "Compute " <> tshow rel <> " using " <> command
+                mkRelRule command fExpr rel =
+                  Rule
+                    { rrnm = ruleName command,
+                      rrlbl = Just . Label $ lbl' command,
+                      formalExpression = fExpr,
+                      rrfps = pos',
+                      rrmean = [],
+                      rrmsg = [],
+                      rrviol =
+                        Just
+                          . PairView
+                          $ PairViewText pos' ("{EX} " <> command <> ";" <> fullName rel <> ";" <> fullName (src) <> ";")
+                          NE.:| [ PairViewExp pos' Src (EDcI src),
+                                  PairViewText pos' $ ";" <> fullName tgt <> ";",
+                                  PairViewExp pos' Tgt (EDcI tgt)
+                                ],
+                      rrpat = mPat,
+                      rrkind = Enforce
+                    }
+                ruleName command =
+                  mkName
+                    RuleName
+                    ( ( case toNamePart $ "Compute" <> (tshow . abs . hash $ lbl' command) of
+                          Nothing -> fatal "Not a proper NamePart."
+                          Just np -> np
+                      )
+                        NE.:| []
+                    )
+                lbl' :: Text -> Text
+                lbl' command = "Compute " <> tshow cptOrRel <> " using " <> command
       pIdentity2aIdentity ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
@@ -1322,6 +1348,7 @@ typecheckTerm ci tct =
           )
             <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
       where
+        getExactType :: (A_Concept -> A_Concept -> FreeLattice A_Concept) -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> Guarded A_Concept
         getExactType flf (p1, e1) (p2, e2) =
           case userList cptMap . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
             [] -> mustBeOrdered o (p1, e1) (p2, e2)

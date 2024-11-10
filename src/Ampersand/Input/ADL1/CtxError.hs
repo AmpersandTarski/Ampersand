@@ -587,24 +587,30 @@ instance ErrorConcept (P_ViewD a) where
 instance ErrorConcept P_IdentDef where
   showEC x = showP (ix_cpt x) <> " given in IDENT rule " <> fullName x
 
-instance (AStruct a) => ErrorConcept (SrcOrTgt, A_Concept, a) where
+instance ErrorConcept (SrcOrTgt, A_Concept, Expression) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
 
 showEC' :: (SrcOrTgt, A_Concept, Text) -> Text
 showEC' (p1, c1, e1) = (text1ToText . showWithAliases) c1 <> " (" <> tshow p1 <> " of " <> e1 <> ")"
 
-instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
+instance ErrorConcept (SrcOrTgt, Expression) where
   showEC (p1, e1) =
     case p1 of
       Src -> showEC' (p1, source e1, showA e1)
       Tgt -> showEC' (p1, target e1, showA e1)
 
-instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, Origin, declOrExpr) where
+instance ErrorConcept (SrcOrTgt, Origin, Expression) where
   showEC (p1, o, e1) =
     case p1 of
       Src -> showEC' (p1, source e1, showA e1 <> ", " <> showMinorOrigin o)
       Tgt -> showEC' (p1, target e1, showA e1 <> ", " <> showMinorOrigin o)
 
+instance ErrorConcept (SrcOrTgt, (TermPrim, DisambPrim)) where
+  showEC (p1,(prim,disambprim)) = 
+    case (p1,disambprim) of
+      (Src,Known expr) -> showEC' (p1, source expr, showA expr <> ", " <> showMinorOrigin (origin prim))
+      (Tgt,Known expr) -> showEC' (p1, target expr, showA expr <> ", " <> showMinorOrigin (origin prim))
+      _ -> fatal $ "Unknown what should be done here when the primitive term cannot be disambiguated." <> tshow (prim,disambprim)
 mustBeOrdered :: (ErrorConcept t1, ErrorConcept t2) => Origin -> t1 -> t2 -> Guarded a
 mustBeOrdered o a b =
   Errors
