@@ -31,6 +31,8 @@ Joosten, S.M.M., Joosten, S.J.C. (2015). [Type Checking by Domain Analysis in Am
 
 In 2013, we published the book that is use in the course "Rule Based Design" at the Open University of the Netherlands.
 
+Frank Grave, Rogier van de Wetering, Lloyd Rutledge, [Strategy-IT alignment. Assuring alignment using a relation algebra method.](https://research.ou.nl/ws/portalfiles/portal/41923104/Strategy_IT_alignment_Assuring_Alignment_Using_a_Relation_Algebra_Method_1_.pdf), in: Shishkov, B. (ed), Business Modeling and Software Design, Proceedings 8th International Symposium, BMSD 2018, Vienna, Austria, July 2-4, 2018, Springer, Cham, pp. 352-361, ISBN 9783319942131.
+
 Lex Wedemeijer, Stef Joosten, and Jaap van der woude, [Rule Based Design](https://www.researchgate.net/profile/Stef-Joosten/publication/327022933_Rule_Based_Design/links/5b7321be45851546c903234a/Rule-Based-Design.pdf),
 Open Universiteit Nederland, January 2013, ISBN: 978 94 91825 90 3.
 
