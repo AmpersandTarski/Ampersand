@@ -7,6 +7,9 @@ cabal.sandbox.config
 .ampersand
 Ampersand.archimate.bak
 
+# key pairs for automated access to GitHub
+*GitHub*
+
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
 
