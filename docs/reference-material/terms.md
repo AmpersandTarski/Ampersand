@@ -84,7 +84,7 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
 
-::: info Note on `hashtag`
+:::info Note on `hashtag`
 
 `hashtag` used to be pronounced as `cartesian product`. However, this is an incorrect term for this operator.  The Cartesian product of two terms \( R \) and \( S \) is defined as the set of all pairs where the first element is a pair from \( R \) and the second element is a pair from \( S \). Mathematically:
 
