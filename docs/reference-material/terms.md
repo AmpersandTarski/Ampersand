@@ -80,9 +80,34 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | right residual               |  `\`  |     $$\backslash$$     |                                            |
 | diamond                      |  `<>` |      $$\Diamond$$      |                                            |
 | relational product           |  `!`  |       $$\dagger$$      | associative                                |
-| cartesian product            |  `#`  |       $$\times$$       |                                  |
+| hashtag            |  `#`  |       $$\times$$       | This is syntactical sugar for `;V;`                                 |
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
+
+::: info Note on `hashtag`
+
+`hashtag` used to be pronounced as `cartesian product`. However, this is an incorrect term for this operator.  The Cartesian product of two terms \( R \) and \( S \) is defined as the set of all pairs where the first element is a pair from \( R \) and the second element is a pair from \( S \). Mathematically:
+
+$$
+R \times S = \{ ((a, b), (c, d)) \mid (a, b) \in R \text{ and } (c, d) \in S \}.
+$$
+
+ ***Explanation***:
+1. **Relation $ R $:** A subset of the Cartesian product of two sets $$ A $$ and $$ B $$, i.e., $$ R \subseteq A \times B $$.
+2. **Relation $ S $:** A subset of the Cartesian product of two sets $$ C $$ and $$ D $$, i.e., $$ S \subseteq C \times D $$.
+
+The Cartesian product $$ R \times S $$ forms a new term in which each element is a pair of pairs: one pair from $$ R $$ and another pair from $$ S $$.
+
+***Example***:
+Let $$ R = \{(1, 2), (3, 4)\} $$ and $$ S = \{(5, 6), (7, 8)\} $$. Then:
+
+$$
+R \times S = \{((1, 2), (5, 6)), ((1, 2), (7, 8)), ((3, 4), (5, 6)), ((3, 4), (7, 8))\}.
+$$
+
+This concept extends the Cartesian product of sets to relations by treating each relation as a collection of pairs.
+
+:::
 
 ## Semantics
 
