@@ -80,7 +80,7 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | right residual               |  `\`  |     $$\backslash$$     |                                            |
 | diamond                      |  `<>` |      $$\Diamond$$      |                                            |
 | relational product           |  `!`  |       $$\dagger$$      | associative                                |
-| cartesian product            |  `#`  |       $$\times$$       | deprecated                                 |
+| cartesian product            |  `#`  |       $$\times$$       |                                  |
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
 
