@@ -93,7 +93,7 @@ R \times S = \{ ((a, b), (c, d)) \mid (a, b) \in R \text{ and } (c, d) \in S \}.
 $$
 
  ***Explanation***:
-1. **Relation $ R $:** A subset of the Cartesian product of two sets $$ A $$ and $$ B $$, i.e., $$ R \subseteq A \times B $$.
+1. **Relation $ R $:** A subset of the Cartesian product of two sets $ A $ and $ B $, i.e., $ R \subseteq A \times B $.
 2. **Relation $ S $:** A subset of the Cartesian product of two sets $$ C $$ and $$ D $$, i.e., $$ S \subseteq C \times D $$.
 
 The Cartesian product $$ R \times S $$ forms a new term in which each element is a pair of pairs: one pair from $$ R $$ and another pair from $$ S $$.
