@@ -80,13 +80,14 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | right residual               |  `\`  |     $$\backslash$$     |                                            |
 | diamond                      |  `<>` |      $$\Diamond$$      |                                            |
 | relational product           |  `!`  |       $$\dagger$$      | associative                                |
-| hashtag            |  `#`  |       $$\times$$       | This is syntactical sugar for `;V;`                                 |
+| hashtag (see note below)     |  `#`  |       $$\times$$       | This is syntactical sugar for `;V;`        |
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
 
+
 :::info Note on `hashtag`
 
-`hashtag` used to be pronounced as `cartesian product`. However, this is an incorrect term for this operator.  The Cartesian product of two terms $$R$$ and $$S$$ is defined as the set of all pairs where the first element is a pair from $$R$$ and the second element is a pair from $$S$$. Mathematically:
+`hashtag` used to be pronounced as `cartesian product`. However, this is amisleading term for this operator. The Cartesian product of two terms $$R$$ and $$S$$ is defined as the set of all pairs where the first element is a pair from $$R$$ and the second element is a pair from $$S$$. Mathematically:
 
 $$
 R \times S = \{ ((a, b), (c, d)) \mid (a, b) \in R \text{ and } (c, d) \in S \}.
