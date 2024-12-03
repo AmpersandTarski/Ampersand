@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -102,6 +102,7 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+    testing/Sentinel/Tests/NoSentinel/~$Issue191Test.xlsx
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
