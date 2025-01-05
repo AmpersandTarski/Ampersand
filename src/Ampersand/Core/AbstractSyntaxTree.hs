@@ -1529,6 +1529,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
       where
         roundedVal =
           case rawVal of
+            AAVDateTime _ (UTCTime _ 0) -> rawVal --prevent devision by zero
             AAVDateTime t x ->
               -- Rounding is needed, to maximize the number of databases
               -- on wich this runs. (MySQL 5.5 only knows seconds)
