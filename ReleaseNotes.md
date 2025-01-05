@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.2.5
+- [Issue #1528](https://github.com/AmpersandTarski/Ampersand/issues/1528) Bugfix, devision by 0. 
+
 ## v5.2.4
 
 - [Issue #1516](https://github.com/AmpersandTarski/Ampersand/issues/1516) It is now possible to only generate datamodel images using --datamodelOnly 
