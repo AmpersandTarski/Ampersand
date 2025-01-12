@@ -505,7 +505,7 @@ makeFSpec env context =
           }
         | ifcc <- step4a,
           let toNamePart' txt = case toNamePart txt of
-                Nothing -> fatal $ "Not a valid NamePart: `"<>txt<>"`"
+                Nothing -> fatal $ "Not a valid NamePart: `" <> txt <> "`"
                 Just np -> np
               c = source (objExpression (ifcObj ifcc))
               nm' :: Int -> Name
