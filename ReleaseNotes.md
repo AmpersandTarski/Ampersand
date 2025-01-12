@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1531](https://github.com/AmpersandTarski/Ampersand/issues/1531) Bugfix, plural of names
+
 ## v5.2.5
 - [Issue #1528](https://github.com/AmpersandTarski/Ampersand/issues/1528) Bugfix, devision by 0. 
 
