@@ -156,6 +156,7 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
     testing/Travis/testcases/Check/EnforceTest1.adl
+    testing/Travis/testcases/Check/Issue_1531.adl
     testing/Travis/testcases/Check/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl

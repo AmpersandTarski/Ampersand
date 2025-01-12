@@ -47,7 +47,7 @@ plural Dutch str =
           | T.take 3 (T.reverse str) == T.reverse "ium" = (T.reverse . T.drop 3 . T.reverse) str <> "ia"
           | T.take 2 (T.reverse str) `elem` map T.reverse ["el", "em", "en", "er", "um", "ie"] = str <> "s"
           | "ij" `T.isSuffixOf` str = str <> "en"
-          | "io" `T.isSuffixOf` str = str <> "'s"
+          | "io" `T.isSuffixOf` str = str <> "s"
           | klinker last = str <> "s"
           | (T.take 2 . T.drop 1 . T.reverse) str `elem` ["aa", "oo", "ee", "uu"] = (T.reverse . T.drop 2 . T.reverse) str <> mede (T.drop (T.length str - 1) str) <> "en"
           | otherwise = str <> "en"

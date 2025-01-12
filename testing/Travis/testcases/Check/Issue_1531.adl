@@ -1,0 +1,9 @@
+CONTEXT Issue IN DUTCH
+
+RELATION r[A*Prio] [UNI]
+
+INTERFACE Eenheid : I[Eenheid] BOX
+   [ Eenheid : I
+   ]
+
+ENDCONTEXT
