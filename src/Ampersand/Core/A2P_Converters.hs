@@ -29,6 +29,7 @@ import RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Ampersand.FSpec.ShowHS (ShowHS(showHS))
 
 aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx =
@@ -321,7 +322,7 @@ aExpression2pTermPrim expr =
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where
-    o = fatal "Origin is not present in Expression"
+    o = fatal $ "Origin is not present in Expression: "<>showHS expr
 
 aMeaning2pMeaning :: Meaning -> PMeaning
 aMeaning2pMeaning = PMeaning . aMarkup2pMarkup . ameaMrk
