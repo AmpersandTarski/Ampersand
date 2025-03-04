@@ -186,6 +186,7 @@ isTotSur prop expr =
     ERad _ -> todo
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
+    EBin {} -> todo
     EEps c sgn -> case prop of
       Tot -> c == source sgn
       Sur -> c == target sgn
@@ -216,6 +217,7 @@ isUniInj prop expr =
     ERad _ -> todo
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
+    EBin {} -> todo
     EEps {} -> True
     EDcV {} -> todo
     EBrk e -> isUniInj prop e

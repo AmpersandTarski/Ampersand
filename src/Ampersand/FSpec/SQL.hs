@@ -901,6 +901,28 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
+    (EBin oper c) -> traceComment ["TODO: case: EBin oper c "] $ case c of
+      ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
+      PlainConcept {} -> 
+          let cAtt = Iden [sqlAttConcept fSpec c]
+           in BinSelect
+                { bseSetQuantifier = SQDefault,
+                  bseSrc =
+                    Col
+                      { cTable = [],
+                        cCol = [sqlAttConcept fSpec c],
+                        cAlias = [],
+                        cSpecial = Nothing
+                      },
+                  bseTrg =
+                    Col
+                      { cTable = [],
+                        cCol = [sqlAttConcept fSpec c],
+                        cAlias = [],
+                        cSpecial = Nothing
+                      },
+                  bseTbl = [sqlConceptTable fSpec c],
+                  bseWhr = Just (notNull cAtt) }
     (EDcD d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->

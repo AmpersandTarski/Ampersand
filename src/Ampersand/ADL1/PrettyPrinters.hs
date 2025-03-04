@@ -189,7 +189,9 @@ instance (Pretty a) => Pretty (Term a) where
 instance Pretty TermPrim where
   pretty p = case p of
     PI _ -> text "I"
-    Pid _ concept -> text "I[" <> pretty concept <> text "]"
+    Pid _ cpt -> text "I[" <> pretty cpt <> text "]"
+    PBin _ oper -> pretty oper
+    PBind _ oper cpt -> pretty oper <> text "[" <> pretty cpt <> text "]"
     Patm _ val mCpt ->
       pretty val <> case mCpt of
         Nothing -> empty
@@ -197,6 +199,13 @@ instance Pretty TermPrim where
     PVee _ -> text "V"
     Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
     PNamedR rel -> pretty rel
+
+instance Pretty PBinOp where
+  pretty p = case p of
+    LessThan -> text "<"
+    LessThanOrEqual -> text "<="
+    GreaterThan -> text ">"
+    GreaterThanOrEqual -> text ">="
 
 instance Pretty P_NamedRel where
   pretty (PNamedRel _ str mpSign) = (text . T.unpack . localNameOf) str <~> mpSign
