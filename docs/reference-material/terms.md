@@ -90,9 +90,9 @@ While above operators work on tuples, it is also possible to have compare operat
 | compare operator             |  code |          math          | remark                                     |
 | ---------------------------- | :---: | :--------------------: | ------------------------------------------ |
 | greater than                 | `>`   |          $$>$$         |                                            |
-| greater than or equal        | `>=`  |          $$>$$         |                                            |
-| less than                    | `<`   |          $$>$$         |                                            |
-| less than or equal           | `>=   |          $$>$$         |                                            |
+| greater than or equal        | `>=`  |          $$\geq$$      |                                            |
+| less than                    | `<`   |          $$<$$         |                                            |
+| less than or equal           | `>=`  |          $$\leq $$     |                                            |
 
 :::info Note on `hashtag`
 
