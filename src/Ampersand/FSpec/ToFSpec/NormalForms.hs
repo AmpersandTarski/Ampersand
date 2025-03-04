@@ -1,4 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.FSpec.ToFSpec.NormalForms
   ( conjNF,
@@ -83,6 +86,7 @@ data RTerm
   | RKl1 {rTermUny :: RTerm}
   | RFlp {rTermUny :: RTerm}
   | RId A_Concept
+  | RBind PBinOp A_Concept
   | RVee A_Concept A_Concept
   | RAtm PAtomValue A_Concept
   | RVar Name A_Concept A_Concept -- relation name, source name, target name.
@@ -221,6 +225,7 @@ dSteps drs x = dStps x
             == x
             || fatal ("When analysing rule " <> rd <> " with unifier " <> showIT unif <> "\nsubstitute rd unif term:  " <> showIT (substitute rd unif term) <> "\ndiffers from:  " <> showIT x)
       ]
+    dStps RBind{} = [] -- @stefjoosten, can you have a look at this? Are there rewrite rules based on the operator of RBind?
     dStps RVar {} = fatal "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
     dStps RConst {} = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
     dStepUny ::
@@ -483,6 +488,7 @@ dSteps drs x = dStps x
         vars (RKl1 e) = vars e
         vars (RFlp e) = vars e
         vars (RId c) = Set.fromList [name c]
+        vars (RBind _ c) = Set.fromList [name c]
         vars (RVee s t) = Set.fromList [name s, name t]
         vars (RVar r s t) = Set.fromList [r, name s, name t]
         vars RConst {} = Set.empty
@@ -512,6 +518,7 @@ instance HasSignature RTerm where
   sign (RKl1 a) = sign a
   sign (RFlp a) = Sign (target a) (source a)
   sign (RId a) = Sign a a
+  sign (RBind _ a) = Sign a a
   sign (RVee a b) = Sign a b
   sign (RAtm _ b) = Sign b b
   sign RVar {} = fatal "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
@@ -577,6 +584,7 @@ expr2RTerm expr =
         EDcD {} -> RConst expr
         EDcI c -> RId c
         EEps {} -> RConst expr
+        EBin oper c -> RBind oper c
         EDcV sgn -> RVee (source sgn) (target sgn)
         EMp1 a c -> RAtm a c
 
@@ -618,6 +626,7 @@ rTerm2expr term =
     RFlp e -> EFlp $ rTerm2expr e
     RVar r s t -> EDcD (makeDecl r (Sign s t))
     RId c -> EDcI c
+    RBind oper c -> EBin oper c
     RVee s t -> EDcV (Sign s t)
     RAtm a c -> EMp1 a c
     RConst e -> e
@@ -643,31 +652,34 @@ class ShowIT a where -- class meant for stuff not belonging to A-struct and/or P
 instance ShowIT RTerm where
   showIT = showExpr 0
     where
-      (inter, union', diff, lresi, rresi, rDia, rMul, rAdd, rPrd, closK0, closK1, flp', compl, lpar, rpar, lbr, star, rbr) =
-        (" /\\ ", " \\/ ", " - ", " / ", " \\ ", " <> ", ";", "!", "*", "*", "+", "~", ("-" <>), "(", ")", "[", "*", "]")
       showExpr :: Int -> RTerm -> Text
       showExpr i expr =
         case expr of
-          RIsc ls -> wrap i 2 (T.intercalate inter [showExpr 3 e | e <- Set.toList ls])
-          RUni ls -> wrap i 2 (T.intercalate union' [showExpr 3 e | e <- Set.toList ls])
-          RDif l r -> wrap i 4 (showExpr 5 l <> diff <> showExpr 5 r)
-          RLrs l r -> wrap i 6 (showExpr 7 l <> lresi <> showExpr 7 r)
-          RRrs l r -> wrap i 6 (showExpr 7 l <> rresi <> showExpr 7 r)
-          RDia l r -> wrap i 6 (showExpr 7 l <> rDia <> showExpr 7 r)
-          RCps ls -> wrap i 2 (T.intercalate rMul [showExpr 3 e | e <- ls])
-          RRad ls -> wrap i 2 (T.intercalate rAdd [showExpr 3 e | e <- ls])
-          RPrd ls -> wrap i 2 (T.intercalate rPrd [showExpr 3 e | e <- ls])
-          RKl0 e -> wrap i 9 (showExpr 9 e <> closK0)
-          RKl1 e -> wrap i 9 (showExpr 9 e <> closK1)
-          RFlp e -> wrap i 9 (showExpr 9 e <> flp')
-          RCpl e -> wrap i 9 (compl (showExpr 10 e))
-          RVar r s t -> fullName r <> lbr <> fullName s <> star <> fullName t <> rbr
+          RIsc ls -> wrap i 2 (T.intercalate " /\\ " [showExpr 3 e | e <- Set.toList ls])
+          RUni ls -> wrap i 2 (T.intercalate " \\/ " [showExpr 3 e | e <- Set.toList ls])
+          RDif l r -> wrap i 4 (showExpr 5 l <> " - " <> showExpr 5 r)
+          RLrs l r -> wrap i 6 (showExpr 7 l <> " / " <> showExpr 7 r)
+          RRrs l r -> wrap i 6 (showExpr 7 l <> " \\ " <> showExpr 7 r)
+          RDia l r -> wrap i 6 (showExpr 7 l <> " <> " <> showExpr 7 r)
+          RCps ls -> wrap i 2 (T.intercalate ";" [showExpr 3 e | e <- ls])
+          RRad ls -> wrap i 2 (T.intercalate "!" [showExpr 3 e | e <- ls])
+          RPrd ls -> wrap i 2 (T.intercalate "*" [showExpr 3 e | e <- ls])
+          RKl0 e -> wrap i 9 (showExpr 9 e <> "*")
+          RKl1 e -> wrap i 9 (showExpr 9 e <> "+")
+          RFlp e -> wrap i 9 (showExpr 9 e <> "~")
+          RCpl e -> wrap i 9 ("-" <> (showExpr 10 e))
+          RVar r s t -> fullName r <> showSign2 s t
           RConst e -> wrap i i (showA e)
-          RId c -> "I" <> lbr <> fullName c <> rbr
-          RVee s t -> "V" <> lbr <> fullName s <> star <> fullName t <> rbr
-          RAtm val c -> showP val <> lbr <> fullName c <> rbr
+          RId c -> "I" <> showSign1 c
+          RBind oper c -> tshow oper <> showSign1 c
+          RVee s t -> "V" <> showSign2 s t
+          RAtm val c -> showP val <> showSign1 c
       wrap :: Int -> Int -> Text -> Text
-      wrap i j e' = if i <= j then e' else lpar <> e' <> rpar
+      wrap i j e' = if i <= j then e' else "(" <> e' <> ")"
+      showSign2 :: A_Concept -> A_Concept -> Text
+      showSign2 s t = "[" <> fullName s <> "*" <> fullName t <> "]"
+      showSign1 :: A_Concept -> Text
+      showSign1 c = "[" <> fullName c <> "]"
 
 {- momentarily redundant
    unVar :: RTerm -> Text
@@ -766,9 +778,11 @@ dRule cptMap term0 = case term0 of
             PBrk _ e -> term2rTerm e
             Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
             Prim (Pid _ c) -> RId (pCpt2aCpt cptMap c)
+            Prim (PBind _ oper c) -> RBind oper (pCpt2aCpt cptMap c)
             Prim (Pfull _ s t) -> RVee (pCpt2aCpt cptMap s) (pCpt2aCpt cptMap t)
             Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt cptMap c)
             Prim (PI _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
+            Prim (PBin _ _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
@@ -833,6 +847,10 @@ substitute ruleDoc unifier term =
       es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName r <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RId c) = case substExprs (name c) of
       [e] -> e -- This is e@(RId c')
+      [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
+      es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
+    subs (RBind _ c) = case substExprs (name c) of
+      [e] -> e -- This is e@(RBind oper c')
       [] -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " is not in term " <> showIT term)
       es -> fatal ("Rule:  " <> ruleDoc <> "\nVariable " <> fullName c <> " in term " <> showIT term <> " has been bound to multiple terms:\n   " <> T.intercalate "\n   " (map showIT es))
     subs (RVee s t) = case (substExprs (name s), substExprs (name t)) of

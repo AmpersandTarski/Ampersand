@@ -35,6 +35,8 @@ data PredLogic
     Variable Var
   | -- | The complete relation. e.g.: a Vee b (which is always true)
     Vee Var Var
+  | -- | A partially populated relation, based on a binary operator. e.g.: a > b
+    Bin PBinOp Var Var
   | -- | Function a f is represented in text as f(a)
     Function PredLogic Relation
   | -- | Dom expr (a,_) is represented as a ∈ dom(expr)
@@ -127,6 +129,7 @@ predLshow lang vMap = charshow 0
         Constant txt -> txt
         Variable v -> vMap v
         Vee v w -> wrap i 5 (vMap v) <> T.pack " V " <> wrap i 5 (vMap w)
+        Bin oper v w -> wrap i 5 (vMap v) <> T.pack " " <> tshow oper <> " " <> wrap i 5 (vMap w)
         Function pexpr rel -> fullName rel <> T.pack "(" <> charshow 1 pexpr <> T.pack ")"
         Kleene0 rs -> wrap i 6 (charshow 6 rs <> T.pack "*")
         Kleene1 rs -> wrap i 7 (charshow 7 rs <> T.pack "+")
@@ -236,6 +239,7 @@ toPredLogic expr =
     propagate varSet (EFlp e) (a, b) = propagate varSet e (b, a)
     propagate _ (EDcD dcl) (a, b) = (R (Variable a) dcl (Variable b), Set.fromList [a, b])
     propagate _ (EDcI _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
+    propagate _ (EBin oper _) (a, b) = (Bin oper a b, Set.fromList [a, b])
     propagate _ (EEps _ _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
     propagate _ (EDcV _) (a, b) = (Vee a b, Set.fromList [a, b])
     propagate _ (EMp1 pAV _) _ = (Constant (T.pack (show pAV)), Set.empty)
