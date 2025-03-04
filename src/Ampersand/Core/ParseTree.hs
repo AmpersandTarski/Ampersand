@@ -18,7 +18,7 @@ module Ampersand.Core.ParseTree
     Term (..),
     TermPrim (..),
     P_NamedRel (..),
-    PBinOp(..),
+    PBinOp (..),
     binaryFunction,
     PairView (..),
     PairViewSegment (..),
@@ -586,7 +586,7 @@ data TermPrim
     --   At parse time, there may be zero, one or two elements in the list of concepts.
     Pfull !Origin !P_Concept !P_Concept
   | -- | a binary operator on two terms
-    PBin !Origin !PBinOp 
+    PBin !Origin !PBinOp
   | -- | a binary operator on two terms, restricted to a type
     PBind !Origin !PBinOp !P_Concept
   | -- | a named relation
@@ -1275,25 +1275,31 @@ instance Show P_Concept where
   show = T.unpack . fullName
 
 data PBinOp
-  = LessThan -- | <
-  | GreaterThan -- | >
-  | -- | Equal -- NOTE: There is no need for the Equal operator. It doesn't add anything, so we leave it out.
-    LessThanOrEqual -- | <=
-  | GreaterThanOrEqual  -- | >=
-  deriving (Ord, Eq, Enum, Bounded, Data, Typeable)
+  = LessThan
+  | -- | <
+    GreaterThan
+  | -- \| Equal -- NOTE: There is no need for the Equal operator. It doesn't add anything, so we leave it out.
+
+    -- | >
+    LessThanOrEqual
+  | -- | <=
+    GreaterThanOrEqual
+  deriving (-- | >=
+            Ord, Eq, Enum, Bounded, Data, Typeable)
+
 instance Hashable PBinOp where
-    hashWithSalt s oper = s `hashWithSalt` case oper of
-        LessThan -> (0 :: Int)
-        GreaterThan -> (1 :: Int)
-        LessThanOrEqual -> (2 :: Int)
-        GreaterThanOrEqual -> (3 :: Int)
-   
-binaryFunction :: Ord a => PBinOp -> (a -> a -> Bool)
+  hashWithSalt s oper =
+    s `hashWithSalt` case oper of
+      LessThan -> (0 :: Int)
+      GreaterThan -> (1 :: Int)
+      LessThanOrEqual -> (2 :: Int)
+      GreaterThanOrEqual -> (3 :: Int)
+
+binaryFunction :: (Ord a) => PBinOp -> (a -> a -> Bool)
 binaryFunction LessThan = (<)
 binaryFunction GreaterThan = (>)
 binaryFunction LessThanOrEqual = (<=)
 binaryFunction GreaterThanOrEqual = (>=)
-
 
 instance Flippable PBinOp where
   flp LessThan = GreaterThan

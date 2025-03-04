@@ -97,6 +97,7 @@ import Ampersand.Core.ParseTree
     MetaData (..),
     Origin (..),
     PAtomValue (..),
+    PBinOp,
     PClassify (generics, specific),
     PConceptDef,
     P_Concept (..),
@@ -110,7 +111,7 @@ import Ampersand.Core.ParseTree
     Traced (..),
     ViewHtmlTemplate (..),
     maybeOrdering,
-    mkPConcept, PBinOp,
+    mkPConcept,
   )
 import Data.Default (Default (..))
 import qualified Data.Text1 as T1

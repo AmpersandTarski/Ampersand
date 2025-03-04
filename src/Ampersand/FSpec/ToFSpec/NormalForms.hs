@@ -225,7 +225,7 @@ dSteps drs x = dStps x
             == x
             || fatal ("When analysing rule " <> rd <> " with unifier " <> showIT unif <> "\nsubstitute rd unif term:  " <> showIT (substitute rd unif term) <> "\ndiffers from:  " <> showIT x)
       ]
-    dStps RBind{} = [] -- @stefjoosten, can you have a look at this? Are there rewrite rules based on the operator of RBind?
+    dStps RBind {} = [] -- @stefjoosten, can you have a look at this? Are there rewrite rules based on the operator of RBind?
     dStps RVar {} = fatal "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
     dStps RConst {} = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
     dStepUny ::

@@ -1094,7 +1094,7 @@ data ExprInfo = ExprInfo
     bindedRel' :: Maybe Relation,
     first' :: Maybe Expression,
     second' :: Maybe Expression,
-    arg' :: Maybe Expression, --argument of a unary expression
+    arg' :: Maybe Expression, -- argument of a unary expression
     param' :: Maybe PBinOp, -- a relational operator of type (source(Expression) -> target(Expression) -> Bool)
     userCpt' :: Maybe A_Concept, -- the concept of an Epsilon (and thus I too) Expression
     userSrc' :: Maybe A_Concept, -- the source concept of a V Expression

@@ -116,7 +116,7 @@ import Ampersand.Core.ParseTree
     MetaData (..),
     Origin (..),
     PAtomPair (..),
-    PBinOp(..),
+    PBinOp (..),
     PCDDef (..),
     PClassify (..),
     PConceptDef (..),
