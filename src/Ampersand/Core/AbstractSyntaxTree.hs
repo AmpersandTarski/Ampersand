@@ -110,7 +110,7 @@ import Ampersand.Core.ParseTree
     Traced (..),
     ViewHtmlTemplate (..),
     maybeOrdering,
-    mkPConcept,
+    mkPConcept, PBinOp,
   )
 import Data.Default (Default (..))
 import qualified Data.Text1 as T1
@@ -1097,6 +1097,8 @@ data Expression
     EDcI !A_Concept
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
     EEps !A_Concept !Signature
+  | -- | relation based on a simple binary operator  (e.g. x > y)
+    EBin !PBinOp !A_Concept
   | -- | Cartesian product relation
     EDcV !Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
@@ -1127,6 +1129,7 @@ instance Hashable Expression where
         EDcI c -> (17 :: Int) `hashWithSalt` c
         EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
+        EBin op c -> (20 :: Int) `hashWithSalt` op `hashWithSalt` c
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
@@ -1249,6 +1252,7 @@ instance Flippable Expression where
     EBrk f -> EBrk (flp f)
     EDcD {} -> EFlp expr
     EDcI {} -> expr
+    EBin op c -> EBin (flp op) c
     EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
@@ -1272,6 +1276,7 @@ instance HasSignature Expression where
   sign (EBrk e) = sign e
   sign (EDcD d) = sign d
   sign (EDcI c) = Sign c c
+  sign (EBin _ c) = Sign c c
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c

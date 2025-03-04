@@ -18,6 +18,8 @@ module Ampersand.Core.ParseTree
     Term (..),
     TermPrim (..),
     P_NamedRel (..),
+    PBinOp(..),
+    binaryFunction,
     PairView (..),
     PairViewSegment (..),
     PairViewTerm (..),
@@ -568,22 +570,27 @@ data TermPrim
     --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
     --   to know whether an eqClass represents a concept, we only look at its witness
     --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
-    PI Origin
+    PI !Origin
   | -- | identity element restricted to a type
-    Pid Origin P_Concept
+    Pid !Origin !P_Concept
   | -- | a singleton atom, possibly with a type. The list contains denotational equivalent values
     --   eg, when `123` is found by the parser, the list will contain both interpretations as
     --   the Text "123" or as Integer 123.
     --   Since everything between the single quotes can allways be interpretated as a Text,
     --   it is quaranteed that the list contains the interpretation as Text, and thus cannot
     --   be empty.
-    Patm Origin PAtomValue (Maybe P_Concept)
+    Patm !Origin !PAtomValue !(Maybe P_Concept)
   | -- | the complete relation, of which the type is yet to be derived by the type checker.
-    PVee Origin
+    PVee !Origin
   | -- | the complete relation, restricted to a type.
     --   At parse time, there may be zero, one or two elements in the list of concepts.
-    Pfull Origin P_Concept P_Concept
-  | PNamedR P_NamedRel
+    Pfull !Origin !P_Concept !P_Concept
+  | -- | a binary operator on two terms
+    PBin !Origin !PBinOp 
+  | -- | a binary operator on two terms, restricted to a type
+    PBind !Origin !PBinOp !P_Concept
+  | -- | a named relation
+    PNamedR !P_NamedRel
   deriving (Show) -- For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel
@@ -600,39 +607,39 @@ instance Eq P_NamedRel where
   a == b = compare a b == EQ
 
 data Term a
-  = Prim a
+  = Prim !a
   | -- | equivalence             =
-    PEqu Origin (Term a) (Term a)
+    PEqu !Origin !(Term a) !(Term a)
   | -- | inclusion               |-
-    PInc Origin (Term a) (Term a)
+    PInc !Origin !(Term a) !(Term a)
   | -- | intersection            /\
-    PIsc Origin (Term a) (Term a)
+    PIsc !Origin !(Term a) !(Term a)
   | -- | union                   \/
-    PUni Origin (Term a) (Term a)
+    PUni !Origin !(Term a) !(Term a)
   | -- | difference              -
-    PDif Origin (Term a) (Term a)
+    PDif !Origin !(Term a) !(Term a)
   | -- | left residual           /
-    PLrs Origin (Term a) (Term a)
+    PLrs !Origin !(Term a) !(Term a)
   | -- | right residual          \
-    PRrs Origin (Term a) (Term a)
+    PRrs !Origin !(Term a) !(Term a)
   | -- | diamond                 <>
-    PDia Origin (Term a) (Term a)
+    PDia !Origin !(Term a) !(Term a)
   | -- | composition             ;
-    PCps Origin (Term a) (Term a)
+    PCps !Origin !(Term a) !(Term a)
   | -- | relative addition       !
-    PRad Origin (Term a) (Term a)
+    PRad !Origin !(Term a) !(Term a)
   | -- | cartesian product       #
-    PPrd Origin (Term a) (Term a)
+    PPrd !Origin !(Term a) !(Term a)
   | -- | Rfx.Trn closure         *  (Kleene star)
-    PKl0 Origin (Term a)
+    PKl0 !Origin !(Term a)
   | -- | Transitive closure      +  (Kleene plus)
-    PKl1 Origin (Term a)
+    PKl1 !Origin !(Term a)
   | -- | conversion (flip, wok)  ~
-    PFlp Origin (Term a)
+    PFlp !Origin !(Term a)
   | -- | Complement
-    PCpl Origin (Term a)
+    PCpl !Origin !(Term a)
   | -- | bracketed term ( ... )
-    PBrk Origin (Term a)
+    PBrk !Origin !(Term a)
   deriving (Show) -- deriving Show for debugging purposes
 
 instance Functor Term where fmap = fmapDefault
@@ -693,6 +700,8 @@ instance Traced TermPrim where
     PVee orig -> orig
     Pfull orig _ _ -> orig
     PNamedR r -> origin r
+    PBin orig _ -> orig
+    PBind orig _ _ -> orig
 
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
@@ -1264,6 +1273,40 @@ instance Named P_Concept where
 
 instance Show P_Concept where
   show = T.unpack . fullName
+
+data PBinOp
+  = LessThan -- | <
+  | GreaterThan -- | >
+  | -- | Equal -- NOTE: There is no need for the Equal operator. It doesn't add anything, so we leave it out.
+    LessThanOrEqual -- | <=
+  | GreaterThanOrEqual  -- | >=
+  deriving (Ord, Eq, Enum, Bounded, Data, Typeable)
+instance Hashable PBinOp where
+    hashWithSalt s oper = s `hashWithSalt` case oper of
+        LessThan -> (0 :: Int)
+        GreaterThan -> (1 :: Int)
+        LessThanOrEqual -> (2 :: Int)
+        GreaterThanOrEqual -> (3 :: Int)
+   
+binaryFunction :: Ord a => PBinOp -> (a -> a -> Bool)
+binaryFunction LessThan = (<)
+binaryFunction GreaterThan = (>)
+binaryFunction LessThanOrEqual = (<=)
+binaryFunction GreaterThanOrEqual = (>=)
+
+
+instance Flippable PBinOp where
+  flp LessThan = GreaterThan
+  flp GreaterThan = LessThan
+  flp LessThanOrEqual = GreaterThanOrEqual
+  flp GreaterThanOrEqual = LessThanOrEqual
+
+instance Show PBinOp where
+  show x = case x of
+    LessThan -> "<"
+    GreaterThan -> ">"
+    LessThanOrEqual -> "<="
+    GreaterThanOrEqual -> ">="
 
 data P_Sign = P_Sign
   { pSrc :: P_Concept,
