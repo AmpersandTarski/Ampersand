@@ -321,7 +321,7 @@ aExpression2pTermPrim expr =
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where
-    o = fatal "Origin is not present in Expression"
+    o = fatal "Origin is not present in Expression: "<> tshow expr
 
 aMeaning2pMeaning :: Meaning -> PMeaning
 aMeaning2pMeaning = PMeaning . aMarkup2pMarkup . ameaMrk
