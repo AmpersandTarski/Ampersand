@@ -1,0 +1,65 @@
+CONTEXT ComparisonTest1 IN DUTCH
+
+CONCEPT Persoon ""
+
+CONCEPT Leeftijd ""
+REPRESENT Leeftijd TYPE INTEGER
+
+leeftijd :: Persoon * Leeftijd [UNI,TOT]
+isOuderVan :: Persoon * Persoon
+
+groterDan :: Leeftijd * Leeftijd []
+POPULATION groterDan CONTAINS [
+    (25, 3),
+    (30, 6),
+    (34, 10),
+    (28, 12),
+    (22, 8),
+    (41, 4),
+    (37, 12),
+    (29, 6)
+    ]
+ 
+RULE isOuderVan : isOuderVan |- leeftijd ; groterDan ; leeftijd~
+RULE isOuder : isOuderVan |- leeftijd ; > ; leeftijd~
+POPULATION leeftijd CONTAINS [
+    ("Amber de Vries", 28),
+    ("Bart Jansen", 34),
+    ("Charlotte de Wit", 22),
+    ("Daan Bos", 30),
+    ("Emma van Dijk", 41),
+    ("Floris Smit", 25),
+    ("Gijs Kuipers", 37),
+    ("Hanna Hendriks", 29),
+    ("Isa Meijer", 33),
+    ("Jasper Veenstra", 27),
+    ("Kim de Lange", 45),
+    ("Lars Maas", 31),
+    ("Mila Brouwer", 26),
+    ("Noah Koster", 39),
+    ("Oscar Mulder", 30),  -- Zelfde leeftijd als Daan Bos
+    ("Puck van den Berg", 36),
+    ("Quinten Roos", 32),
+    ("Romy Visser", 24),
+    ("Sam de Groot", 40),
+    ("Tess Schouten", 25),  -- Zelfde leeftijd als Floris Smit
+    ("Ugo de Vries", 12),
+    ("Vera Smit", 10),
+    ("Wesley Mulder", 8),
+    ("Xander van der Meer", 6),
+    ("Yara Bakker", 4),
+    ("Zoe Hoekstra", 3)
+]
+
+POPULATION isOuderVan CONTAINS [
+    ("Amber de Vries", "Ugo de Vries"),
+    ("Bart Jansen", "Vera Smit"),
+    ("Charlotte de Wit", "Wesley Mulder"),
+    ("Daan Bos", "Xander van der Meer"),
+    ("Emma van Dijk", "Yara Bakker"),
+    ("Floris Smit", "Zoe Hoekstra"),
+    ("Oscar Mulder", "Xander van der Meer")  -- Oscar is ook ouder van Xander
+]
+
+
+ENDCONTEXT
