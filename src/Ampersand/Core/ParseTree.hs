@@ -1276,16 +1276,11 @@ instance Show P_Concept where
 
 data PBinOp
   = LessThan
-  | -- | <
-    GreaterThan
-  | -- \| Equal -- NOTE: There is no need for the Equal operator. It doesn't add anything, so we leave it out.
-
-    -- | >
+  | GreaterThan
+  | -- | Equal -- NOTE: There is no need for the Equal operator. It doesn't add anything, so we leave it out.
     LessThanOrEqual
-  | -- | <=
-    GreaterThanOrEqual
-  deriving (-- | >=
-            Ord, Eq, Enum, Bounded, Data, Typeable)
+  | GreaterThanOrEqual
+  deriving (Ord, Eq, Enum, Bounded, Data, Typeable)
 
 instance Hashable PBinOp where
   hashWithSalt s oper =
