@@ -63,7 +63,7 @@ class ConceptStructure a where
           EFlp {} -> False
           ECpl {} -> False
           EBrk {} -> False
-          EEps {} -> False            
+          EEps {} -> False
           EMp1 {} -> False
 
 instance (ConceptStructure a, ConceptStructure b) => ConceptStructure (a, b) where
