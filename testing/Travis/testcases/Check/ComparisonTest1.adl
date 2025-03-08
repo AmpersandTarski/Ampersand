@@ -20,8 +20,19 @@ POPULATION groterDan CONTAINS [
     (29, 6)
     ]
  
-RULE isOuderVan : isOuderVan |- leeftijd ; groterDan ; leeftijd~
-RULE isOuder : isOuderVan |- leeftijd ; > ; leeftijd~
+RULE ouderIsOuder1 : isOuderVan |- leeftijd ; groterDan ; leeftijd~
+RULE ouderIsOuder2 : isOuderVan |- leeftijd ;>; leeftijd~
+
+RULE kindIsJonger1 : isOuderVan~ |- leeftijd ;-groterDan; leeftijd~
+RULE kindIsJonger2 : isOuderVan~ |- leeftijd ;<; leeftijd~
+
+
+RULE ouderIsOuder3 : isOuderVan |- leeftijd ; groterDan ; leeftijd~
+RULE ouderIsOuder4 : isOuderVan |- leeftijd ;>=; leeftijd~
+
+RULE kindIsJonger3 : isOuderVan~ |- leeftijd ;-groterDan; leeftijd~
+RULE kindIsJonger4 : isOuderVan~ |- leeftijd ;<=; leeftijd~
+
 POPULATION leeftijd CONTAINS [
     ("Amber de Vries", 28),
     ("Bart Jansen", 34),
