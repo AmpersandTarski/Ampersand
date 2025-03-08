@@ -166,11 +166,12 @@ data A_Context = ACtx
     -- | All user defined enforcement rules in this context, but outside patterns.
     ctxEnforces :: ![AEnforce]
   }
-  deriving (Typeable)
+  deriving (Typeable,Show)
 
-instance Show A_Context where
-  show = T.unpack . fullName
-
+-- instance Show A_Context where
+--   show = T.unpack . fullName
+instance Show (A_Concept -> TType) where
+  show _ = "A function that maps concepts to types"
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
 
@@ -216,7 +217,7 @@ data Pattern = A_Pat
     ptxps :: ![Purpose],
     ptenfs :: ![AEnforce]
   }
-  deriving (Typeable) -- Show for debugging purposes
+  deriving (Typeable,Show) -- Show for debugging purposes
 
 instance Eq Pattern where
   a == b = compare a b == EQ
@@ -245,7 +246,7 @@ data AEnforce = AEnforce
     enfPatName :: !(Maybe Text),
     enfRules :: ![Rule]
   }
-  deriving (Eq)
+  deriving (Eq,Show)
 
 instance Traced AEnforce where
   origin AEnforce {pos = orig} = orig
@@ -1453,7 +1454,7 @@ data ContextInfo = CI
     defaultLang :: !Lang,
     -- | the default format used to interpret markup texts in this context
     defaultFormat :: !PandocFormat
-  }
+  } deriving (Show)
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1486,7 +1487,7 @@ instance Show Type where
 
 -- for faster comparison
 newtype SignOrd = SignOrd Signature
-
+  deriving (Show)
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
 
@@ -1757,7 +1758,8 @@ data Typology = Typology
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.
 type ConceptMap = P_Concept -> A_Concept
-
+instance Show ConceptMap where
+  show _ = "A function that maps P_Concepts to A_Concepts"
 makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
 makeConceptMap cds gs = mapFunction
   where
