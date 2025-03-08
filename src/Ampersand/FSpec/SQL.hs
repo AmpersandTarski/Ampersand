@@ -901,29 +901,44 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
-    (EBin oper c) -> traceComment ["TODO: case: EBin oper c "] $ case c of
+    (EBin oper c) -> traceComment ["case: EBin oper c "] $ case c of
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
-        let cAtt = Iden [sqlAttConcept fSpec c]
-         in BinSelect
-              { bseSetQuantifier = SQDefault,
-                bseSrc =
-                  Col
-                    { cTable = [],
-                      cCol = [sqlAttConcept fSpec c],
-                      cAlias = [],
-                      cSpecial = Nothing
-                    },
-                bseTrg =
-                  Col
-                    { cTable = [],
-                      cCol = [sqlAttConcept fSpec c],
-                      cAlias = [],
-                      cSpecial = Nothing
-                    },
-                bseTbl = [sqlConceptTable fSpec c],
-                bseWhr = Just (notNull cAtt)
-              }
+        BinSelect
+          { bseSetQuantifier = SQDefault,
+            bseSrc =
+              Col
+                { cTable = [first'],
+                  cCol = [theName],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTrg =
+              Col
+                { cTable = [secnd],
+                  cCol = [theName],
+                  cAlias = [],
+                  cSpecial = Nothing
+                },
+            bseTbl =
+              [ TRSimple [theName] `as` first',
+                TRSimple [theName] `as` secnd
+              ],
+            bseWhr =
+              Just
+                $ conjunctSQL
+                  [ notNull (Iden [first', theName]),
+                    notNull (Iden [secnd, theName]),
+                    BinOp
+                      (Iden [first', theName])
+                      [uName (tshow oper)]
+                      (Iden [secnd, theName])
+                  ]
+          }
+        where
+          theName = sqlAttConcept fSpec c
+          first' = uName "fst"
+          secnd = uName "snd"
     (EDcD d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->
