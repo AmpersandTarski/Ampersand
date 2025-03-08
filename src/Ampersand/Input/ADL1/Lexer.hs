@@ -153,7 +153,11 @@ operators =
           ".",
           ":=",
           ">:",
-          ":<"
+          ":<",
+          ">",
+          "<",
+          ">=",
+          "<="
         ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
