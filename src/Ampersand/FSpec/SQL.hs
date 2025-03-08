@@ -653,7 +653,7 @@ nonSpecialSelectExpr fSpec expr =
                                       [uName "<>"]
                                       (Iden [fenceName (i + 2), sourceAlias])
                                   )
-                              EBin oper _ -> 
+                              EBin oper _ ->
                                 Just
                                   ( BinOp
                                       (Iden [fenceName i, targetAlias])
@@ -667,7 +667,7 @@ nonSpecialSelectExpr fSpec expr =
                               ECpl EDcI {} ->
                                 -- in case of r;-I;s
                                 Nothing
-                              EBin _ _ -> 
+                              EBin _ _ ->
                                 Nothing
                               _ -> fatal "there is no reason for having no fenceTable!"
                           (Nothing, Nothing) ->
