@@ -293,6 +293,7 @@ data DisambPrim
   | Ident -- identity, and we know nothing about its type
   | Vee -- vee, type unknown
   | Mp1 PAtomValue -- a singleton atomvalue, type unknown
+  | BinOper PBinOp -- a binary operator, type unknown
   | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
   deriving (Show) -- Here, deriving Show serves debugging purposes only.
 
@@ -317,6 +318,7 @@ performUpdate ((t, unkn), Cnstr srcs' tgts') =
             `orWhenEmpty` xs
         )
     Ident -> determineBySize suggest (map EDcI (Set.toList possibleConcs))
+    BinOper oper -> determineBySize suggest (map (EBin oper) (Set.toList possibleConcs))
     Mp1 x -> determineBySize suggest (map (EMp1 x) (Set.toList possibleConcs))
     Vee ->
       determineBySize

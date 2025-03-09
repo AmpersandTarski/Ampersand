@@ -61,6 +61,7 @@ subst (decl, expr) = subs
       | d == decl = expr
       | otherwise = e
     subs e@EDcI {} = e
+    subs e@EBin {} = e
     subs e@EEps {} = e
     subs e@EDcV {} = e
     subs e@EMp1 {} = e
@@ -88,6 +89,7 @@ primitives expr =
     (EBrk e) -> primitives e
     EDcD {} -> Set.singleton expr
     EDcI {} -> Set.singleton expr
+    EBin {} -> Set.singleton expr
     EEps {} -> Set.empty -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
     EDcV {} -> Set.singleton expr
     EMp1 {} -> Set.singleton expr
@@ -113,6 +115,7 @@ subExpressions expr =
     (EBrk e) -> Set.singleton expr `Set.union` subExpressions e
     EDcD {} -> Set.singleton expr
     EDcI {} -> Set.singleton expr
+    EBin {} -> Set.singleton expr
     EEps {} -> Set.singleton expr
     EDcV {} -> Set.singleton expr
     EMp1 {} -> Set.singleton expr

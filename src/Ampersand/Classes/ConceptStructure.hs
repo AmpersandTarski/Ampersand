@@ -46,7 +46,25 @@ class ConceptStructure a where
           EDcD {} -> True
           EDcI {} -> True
           EDcV {} -> True
-          _ -> False
+          EBin {} -> True
+          EEqu {} -> False
+          EInc {} -> False
+          EIsc {} -> False
+          EUni {} -> False
+          EDif {} -> False
+          ELrs {} -> False
+          ERrs {} -> False
+          EDia {} -> False
+          ECps {} -> False
+          ERad {} -> False
+          EPrd {} -> False
+          EKl0 {} -> False
+          EKl1 {} -> False
+          EFlp {} -> False
+          ECpl {} -> False
+          EBrk {} -> False
+          EEps {} -> False
+          EMp1 {} -> False
 
 instance (ConceptStructure a, ConceptStructure b) => ConceptStructure (a, b) where
   concs (a, b) = concs a `Set.union` concs b
@@ -124,6 +142,7 @@ instance ConceptStructure ViewSegmentPayLoad where
 instance ConceptStructure Expression where
   concs (EDcD d) = concs d
   concs (EDcI c) = Set.singleton c
+  concs (EBin _ c) = Set.singleton c
   concs (EEps i sgn) = Set.singleton i `Set.union` concs sgn
   concs (EDcV sgn) = concs sgn
   concs (EMp1 _ c) = Set.singleton c

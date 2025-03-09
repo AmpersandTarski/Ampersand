@@ -153,14 +153,18 @@ operators =
           ".",
           ":=",
           ">:",
-          ":<"
+          ":<",
+          ">",
+          "<",
+          ">=",
+          "<="
         ]
 
 -- | Retrieves the list of symbols accepted by the Ampersand language
 symbols ::
   -- | The list of symbol characters / [Char]
   String
-symbols = "()[],{}<>"
+symbols = "()[],{}"
 
 -- | Runs the lexer
 lexer ::
@@ -211,12 +215,6 @@ mainLexer p ('"' : ss) =
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
 
--- Special case for < since it's the beginning of operators but also a symbol when alone
-mainLexer p ('<' : d : s) =
-  let candidate = (Text1 '<' $ T.singleton d)
-   in if isOperator candidate
-        then returnToken (LexOperator candidate) p mainLexer (addPos 2 p) s
-        else returnToken (LexSymbol '<') p mainLexer (addPos 1 p) (d : s)
 mainLexer p cs@(c : s)
   | isSafeIdChar True c =
       let (name', p', s') = scanIdent (addPos 1 p) s
@@ -278,9 +276,6 @@ iskeyword str = str `elem` keywords
 
 isSymbol :: Char -> Bool
 isSymbol c = c `elem` symbols
-
-isOperator :: Text1 -> Bool
-isOperator str = str `elem` operators
 
 prefixIsOperator :: Text -> Bool
 prefixIsOperator str = any ((`T.isPrefixOf` str) . text1ToText) operators

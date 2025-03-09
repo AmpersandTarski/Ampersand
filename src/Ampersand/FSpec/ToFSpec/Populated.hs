@@ -91,7 +91,7 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
     contents expr =
       let aVals = atomValuesOf ci ps
           lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> Set.Set a
-          lkp x contMap = Map.findWithDefault Set.empty x contMap
+          lkp = Map.findWithDefault Set.empty
        in case expr of
             EEqu (l, r) -> contents ((l .|-. r) ./\. (r .|-. l))
             EInc (l, r) -> contents (notCpl l .\/. r)
@@ -147,6 +147,13 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
+            EBin oper c ->
+              Map.fromList
+                [ (s, Set.fromList cod)
+                  | s <- toList $ aVals c,
+                    let cod = filter (binaryFunction oper s) . toList $ aVals c,
+                    not (null cod)
+                ]
             EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals i]
             EDcV sgn ->
               Map.fromList

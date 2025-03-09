@@ -888,9 +888,11 @@ pCtx2aCtx
         ( x,
           case x of
             PI _ -> Ident
-            Pid _ conspt -> Known (EDcI (pCpt2aCpt fun conspt))
+            Pid _ cpt -> Known (EDcI (pCpt2aCpt fun cpt))
             Patm _ s Nothing -> Mp1 s
             Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt fun conspt))
+            PBin _ oper -> BinOper oper
+            PBind _ oper cpt -> Known (EBin oper (pCpt2aCpt fun cpt))
             PVee _ -> Vee
             Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
             PNamedR nr -> Rel $ disambNamedRel nr

@@ -1226,6 +1226,10 @@ pRelationRef =
     <$> currPos
     <* (pKey . toText1Unsafe) "V"
     <*> pMaybe pSign
+    <|> pBin
+    <$> currPos
+    <*> pPBinOp
+    <*> (pMaybe . pBrackets $ pConceptOneRef)
     <|> Patm
     <$> currPos
     <*> pSingleton
@@ -1235,6 +1239,8 @@ pRelationRef =
     pid orig (Just c) = Pid orig c
     pfull orig Nothing = PVee orig
     pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
+    pBin orig oper Nothing = PBin orig oper
+    pBin orig oper (Just c) = PBind orig oper c
 
 pSingleton :: AmpParser PAtomValue
 pSingleton =
@@ -1243,6 +1249,22 @@ pSingleton =
     <*> ( pAtomValInPopulation True
             <|> pBraces (pAtomValInPopulation False)
         )
+
+pPBinOp :: AmpParser PBinOp
+pPBinOp =
+  fun
+    <$> ( (pOperator . toText1Unsafe) ">"
+            <|> (pOperator . toText1Unsafe) "<"
+            <|> (pOperator . toText1Unsafe) ">="
+            <|> (pOperator . toText1Unsafe) "<="
+        )
+  where
+    fun op = case text1ToText op of
+      ">" -> GreaterThan
+      "<" -> LessThan
+      ">=" -> GreaterThanOrEqual
+      "<=" -> LessThanOrEqual
+      t -> fatal $ "This operator is not known: " <> t
 
 pAtomValue :: AmpParser PAtomValue
 pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation False

@@ -116,6 +116,7 @@ import Ampersand.Core.ParseTree
     MetaData (..),
     Origin (..),
     PAtomPair (..),
+    PBinOp (..),
     PCDDef (..),
     PClassify (..),
     PConceptDef (..),
@@ -160,6 +161,7 @@ import Ampersand.Core.ParseTree
     TermPrim (..),
     Traced (..),
     ViewHtmlTemplate (..),
+    binaryFunction,
     mergeContexts,
     mkPair,
   )
