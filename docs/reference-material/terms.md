@@ -85,14 +85,14 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
 
-While above operators work on tuples, it is also possible to have compare operators:
+While above operators work on tuples, since version 5.3.0 of the ampersand generator, it is also possible to have compare operators:
 
 | compare operator             |  code |          math          | remark                                     |
 | ---------------------------- | :---: | :--------------------: | ------------------------------------------ |
 | greater than                 | `>`   |          $$>$$         |                                            |
 | greater than or equal        | `>=`  |          $$\geq$$      |                                            |
 | less than                    | `<`   |          $$<$$         |                                            |
-| less than or equal           | `>=`  |          $$\leq $$     |                                            |
+| less than or equal           | `<=`  |          $$\leq$$      |                                            |
 
 :::info Note on `hashtag`
 
