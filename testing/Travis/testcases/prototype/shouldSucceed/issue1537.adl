@@ -1,0 +1,17 @@
+CONTEXT Issue1537
+
+{- This test succeeds if a prototype is generated and the user of that prototype can create a new name and value in the interface.
+   This test fails if the user cannot with specifying that the technical type of Name and Value are ALPHANUMERIC.
+   For now, this test is in "shouldSucceed", but it cannot be tested proper here.
+   We need a gatling-type of test to test this.
+-}
+
+RELATION naam[Kenmerk*Name] [UNI]
+RELATION waarde[Kenmerk*Value]
+
+INTERFACE Kenmerken : "_SESSION";V[SESSION*Kenmerk] CRuD BOX<TABLE>
+    [ name : name CRUD
+    , value : value CRUD
+    ]
+
+ENDCONTEXT
