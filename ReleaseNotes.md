@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.3.1
+- [Issue #1540](https://github.com/AmpersandTarski/Ampersand/issues/1540) Bugfix daemon
+
 ## v5.3.0
 - [Issue #1531](https://github.com/AmpersandTarski/Ampersand/issues/1531) Bugfix, plural of names
 - [Issue #1534](https://github.com/AmpersandTarski/Ampersand/issues/1534) Enable the use of >, <, <= and >= as relations. How cool is that?
