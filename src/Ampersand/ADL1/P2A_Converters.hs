@@ -160,7 +160,7 @@ checkValid_EBin_s ttypeOf ctx =
           Alphanumeric -> True
           BigAlphanumeric -> True
           HugeAlphanumeric -> True
-          Password -> True
+          Password -> False
           Binary -> False
           BigBinary -> False
           HugeBinary -> False
@@ -170,7 +170,7 @@ checkValid_EBin_s ttypeOf ctx =
           Integer -> True
           Float -> True
           Object -> False
-          TypeOfOne -> False
+          TypeOfOne -> True
 
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx =
