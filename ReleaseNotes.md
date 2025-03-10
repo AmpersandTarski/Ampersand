@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1542](https://github.com/AmpersandTarski/Ampersand/issues/1542) Respect the TYPE of the concept when >, <, <= and >= are used.
+
 ## v5.3.1
 - [Issue #1540](https://github.com/AmpersandTarski/Ampersand/issues/1540) Bugfix daemon
 
