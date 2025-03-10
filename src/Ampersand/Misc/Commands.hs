@@ -403,7 +403,7 @@ doOrDie theAction = do
       exitWith
         . NoValidFSpec
         . T.lines
-        . T.intercalate (T.replicate 30 "=" <> "\n")
+        . T.intercalate ("\n"<>T.replicate 30 "-" <> "\n")
         . NE.toList
         . fmap tshow
         $ err
