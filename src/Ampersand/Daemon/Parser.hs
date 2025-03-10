@@ -29,7 +29,7 @@ parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do
   (pc, gPctx) <- parseFilesTransitive (Roots [rootAdl])
   env <- ask
   let loadedFiles = map pcCanonical pc
-      gActx = pCtx2Fspec env <$> gPctx
+      gActx = pCtx2Fspec env =<< gPctx
   return
     ( case gActx of
         Checked _ ws
