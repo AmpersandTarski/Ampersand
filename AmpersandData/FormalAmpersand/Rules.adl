@@ -3,7 +3,7 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 -- This file has been aligned with ShowMeatgrinder on 2017-07-21 by SJ.
 
 PATTERN Rules
-    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be true in each context in which it is valid."
+    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
     CONCEPT FormalAmpersand.RuleName ""
     CLASSIFY FormalAmpersand.RuleName ISA FormalAmpersand.Name
     IDENT Rules: FormalAmpersand.Rule(FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context],FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName])
@@ -46,9 +46,41 @@ PATTERN PropertyRules
     CONCEPT FormalAmpersand.PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
     CLASSIFY FormalAmpersand.PropertyRule ISA FormalAmpersand.Rule
     CONCEPT FormalAmpersand.Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-    RULE FormalAmpersand.propertyEnum : I[Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "PROP"
-    MEANING "There are nine tokens, that can be used to define properties on a relation. -> is syntactic sugar for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
+    RULE FormalAmpersand.propertyEnum : I[Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "MAP" \/ "BIJ" \/ "PROP"
+    MEANING "There are twelve tokens, that can be used to define properties on a relation. -> is syntactic sugar for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
     REPRESENT FormalAmpersand.Property TYPE ALPHANUMERIC
+
+    RELATION FormalAmpersand.isUni[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isUni := I/\FormalAmpersand.prop;("UNI"\/"MAP");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isTot[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isTot := I/\FormalAmpersand.prop;("TOT"\/"MAP");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isInj[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isInj := I/\FormalAmpersand.prop;("INJ"\/"BIJ");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isSur[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isSur := I/\FormalAmpersand.prop;("SUR"\/"BIJ");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isRfx[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isRfx := I/\FormalAmpersand.prop;"RFX";FormalAmpersand.prop~
+    RELATION FormalAmpersand.isIrf[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isIrf := I/\FormalAmpersand.prop;"IRF";FormalAmpersand.prop~
+    RELATION FormalAmpersand.isSym[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isSym := I/\FormalAmpersand.prop;("SYM"\/"PROP");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isAsy[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isAsy := I/\FormalAmpersand.prop;("ASY"\/"PROP");FormalAmpersand.prop~
+    RELATION FormalAmpersand.isTrn[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isTrn := I/\FormalAmpersand.prop;"TRN";FormalAmpersand.prop~
+    RELATION FormalAmpersand.isMap[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isMap := (I/\FormalAmpersand.prop;"MAP";FormalAmpersand.prop~)\/(FormalAmpersand.isUni/\FormalAmpersand.isTot)
+    RELATION FormalAmpersand.isBij[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isBij := (I/\FormalAmpersand.prop;"BIJ";FormalAmpersand.prop~)\/(FormalAmpersand.isInj/\FormalAmpersand.isSur)
+    RELATION FormalAmpersand.isProp[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isProp := (I/\FormalAmpersand.prop;"PROP";FormalAmpersand.prop~)\/(FormalAmpersand.isSym/\FormalAmpersand.isAsy)
+
+    RELATION FormalAmpersand.isAttribute[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isAttribute :=
+              (FormalAmpersand.isUni/\FormalAmpersand.source;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.source~)\/
+              (FormalAmpersand.isInj/\FormalAmpersand.target;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.target~)
+
+
 ENDPATTERN
 
 ENDCONTEXT
