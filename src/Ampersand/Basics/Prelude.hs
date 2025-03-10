@@ -19,6 +19,8 @@ module Ampersand.Basics.Prelude
     undefined,
     Text1 (..),
     unsnoc,
+    curry3,
+    uncurry3,
   )
 where
 
@@ -118,3 +120,11 @@ unsnoc :: Text -> Maybe (Text, Char)
 unsnoc t = case T.uncons (T.reverse t) of
   Nothing -> Nothing
   Just (h, tl) -> Just (T.reverse tl, h)
+
+-- | Converts an uncurried function to a curried function.
+curry3 :: ((a, b, c) -> d) -> a -> b -> c -> d
+curry3 f a b c = f (a, b, c)
+
+-- | Converts a curried function to a function on a triple.
+uncurry3 :: (a -> b -> c -> d) -> ((a, b, c) -> d)
+uncurry3 f ~(a, b, c) = f a b c

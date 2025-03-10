@@ -130,6 +130,48 @@ checkMultipleDefaultViews ctx =
         . filter vdIsDefault
         $ ctxvs ctx
 
+-- check whether the operators used in EBin expressions are valid in the algebra of TTYPE of its concept
+checkValid_EBin_s :: (A_Concept -> TType) -> A_Context -> Guarded ()
+checkValid_EBin_s ttypeOf ctx =
+  case map (uncurry3 mkOperatorError)
+    . filter (not . uncurry3 isValidOperator)
+    . mapMaybe operatorAndConcept
+    . Set.toList
+    . expressionsIn
+    $ ctx of
+    [] -> return ()
+    x : xs -> Errors (x NE.:| xs)
+  where
+    operatorAndConcept :: Expression -> Maybe (PBinOp, A_Concept, TType)
+    operatorAndConcept (EBin oper cpt) = Just (oper, cpt, ttypeOf cpt)
+    operatorAndConcept _ = Nothing
+    isValidOperator :: PBinOp -> A_Concept -> TType -> Bool
+    isValidOperator oper _ typ =
+      case oper of
+        LessThan -> hasORD typ
+        GreaterThan -> hasORD typ
+        LessThanOrEqual -> hasEQ typ && hasORD typ
+        GreaterThanOrEqual -> hasEQ typ && hasORD typ
+      where
+        hasEQ, hasORD :: TType -> Bool
+        hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
+        hasEQ _ = True
+        hasORD tt = case tt of
+          Alphanumeric -> True
+          BigAlphanumeric -> True
+          HugeAlphanumeric -> True
+          Password -> True
+          Binary -> False
+          BigBinary -> False
+          HugeBinary -> False
+          Date -> True
+          DateTime -> True
+          Boolean -> False
+          Integer -> True
+          Float -> True
+          Object -> False
+          TypeOfOne -> False
+
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx =
   case [ mkDanglingRefError "Rule" nm (arPos rr)
@@ -319,6 +361,7 @@ pCtx2aCtx
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      checkValid_EBin_s (representationOf contextInfo) actx -- check whether the operators used in EBin expressions are valid in the algebra of TTYPE of its concept
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
