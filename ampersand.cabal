@@ -236,6 +236,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM_Test10.adl
+    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ComparisonTest2.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/CyclicInterfaceRef.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/DoubleLabel.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/DuplicateInterfaces.adl
