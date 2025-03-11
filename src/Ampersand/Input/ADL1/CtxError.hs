@@ -534,9 +534,9 @@ mkMultipleDefaultError vds =
       [c] -> c
       _ -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
 
-mkOperatorError :: PBinOp -> A_Concept -> TType -> CtxError
-mkOperatorError oper cpt typ =
-  CTXE (Origin "Somewhere in an expression.")
+mkOperatorError :: Origin -> PBinOp -> A_Concept -> TType -> CtxError
+mkOperatorError orig oper cpt typ =
+  CTXE orig
     $ T.intercalate
       "\n  "
       [ "Illegal use of `" <> tshow oper <> "`",
