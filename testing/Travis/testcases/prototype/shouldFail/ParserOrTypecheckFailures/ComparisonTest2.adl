@@ -1,0 +1,23 @@
+CONTEXT CompareBooleans IN DUTCH
+
+-- This test forces a compare on atoms with TTYPE BOOLEAN. That should not be allowed.
+
+CONCEPT Boolean ""
+REPRESENT Boolean TYPE BOOLEAN
+
+POPULATION Boolean CONTAINS [ TRUE, FALSE ]
+
+toTrue :: A * Boolean
+POPULATION toTrue CONTAINS[
+    ("Foo", TRUE)
+]
+toFalse :: A * Boolean
+POPULATION toFalse CONTAINS[
+    ("Foo", FALSE)
+]
+
+RULE compareBooleans : "Foo" |- toTrue;>;toFalse~
+
+
+
+ENDCONTEXT

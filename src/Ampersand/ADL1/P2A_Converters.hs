@@ -1218,6 +1218,38 @@ typecheckTerm ci tct =
           EMp1 s c ->
             (x, (True, True))
               <$ pAtomValue2aAtomValue (representationOf ci) c s
+          EBin oper cpt ->
+            if isValidOperator
+              then pure (x, (True, True))
+              else Errors . pure $ mkOperatorError (origin t) oper cpt typ
+            where
+              typ = representationOf ci cpt
+              isValidOperator :: Bool
+              isValidOperator =
+                case oper of
+                  LessThan -> hasORD typ
+                  GreaterThan -> hasORD typ
+                  LessThanOrEqual -> hasEQ typ && hasORD typ
+                  GreaterThanOrEqual -> hasEQ typ && hasORD typ
+                where
+                  hasEQ, hasORD :: TType -> Bool
+                  hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
+                  hasEQ _ = True
+                  hasORD ttyp = case ttyp of
+                    Alphanumeric -> True
+                    BigAlphanumeric -> True
+                    HugeAlphanumeric -> True
+                    Password -> False
+                    Binary -> False
+                    BigBinary -> False
+                    HugeBinary -> False
+                    Date -> True
+                    DateTime -> True
+                    Boolean -> False
+                    Integer -> True
+                    Float -> True
+                    Object -> False
+                    TypeOfOne -> True
           _ ->
             return
               ( x,

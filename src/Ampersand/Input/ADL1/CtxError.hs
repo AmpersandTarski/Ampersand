@@ -55,6 +55,7 @@ module Ampersand.Input.ADL1.CtxError
     mkRoundTripError,
     mkRoundTripTextError,
     mkParserStateWarning,
+    mkOperatorError,
   )
 where
 
@@ -532,6 +533,16 @@ mkMultipleDefaultError vds =
       [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
       [c] -> c
       _ -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
+
+mkOperatorError :: Origin -> PBinOp -> A_Concept -> TType -> CtxError
+mkOperatorError orig oper cpt typ =
+  CTXE orig
+    $ T.intercalate
+      "\n  "
+      [ "Illegal use of `" <> tshow oper <> "`",
+        "`" <> tshow oper <> "` is used in combination with the concept " <> tshow cpt <> ".",
+        "However, " <> tshow cpt <> " is of TYPE " <> tshow typ <> ", which doesn't support " <> tshow oper <> "."
+      ]
 
 mkIncompatibleViewError :: (Named b, Named c) => P_BoxItem a -> Name -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
