@@ -350,9 +350,9 @@ plugAttributes plug = case plug of
     let store = case dLkpTbl plug of
           [x] -> x
           _ ->
-            fatal $
-              "Relation lookup table of a binary table should contain exactly one element:\n"
-                <> tshow (dLkpTbl plug)
+            fatal
+              $ "Relation lookup table of a binary table should contain exactly one element:\n"
+              <> tshow (dLkpTbl plug)
      in rsSrcAtt store NE.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these

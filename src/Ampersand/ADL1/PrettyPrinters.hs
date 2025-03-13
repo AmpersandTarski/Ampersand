@@ -49,7 +49,7 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
       | T.null needle = fatal "Empty needle."
       | otherwise -- replace is now safe to use, because we have a non-empty needle
         =
-        Partial.replace needle replacement haystack
+          Partial.replace needle replacement haystack
 
 prettyhsep :: (Pretty a) => [a] -> Doc
 prettyhsep = hsep . map pretty

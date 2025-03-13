@@ -76,24 +76,24 @@ chpNatLangReqs env lev fSpec =
           && null (cptsOfTheme tc)
           && null (dclsOfTheme tc)
           && null (rulesOfTheme tc) =
-        mempty
+          mempty
       | otherwise =
-        --  *** Header of the theme: ***
-        xDefBlck env fSpec (XRefSharedLangTheme (patOfTheme tc))
-          <> ( case patOfTheme tc of --  *** Purpose of the theme: ***
-                 Nothing ->
-                   (para . str . l)
-                     ( NL "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven.",
-                       EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
-                     )
-                 Just pat ->
-                   case purposesOf fSpec outputLang' pat of
-                     [] -> printIntro (cptsOfTheme tc)
-                     purps -> purposes2Blocks env purps
-             )
-          <> (mconcat . map (printConcept env l) . cptsOfTheme) tc
-          <> (mconcat . map printRel . dclsOfTheme) tc
-          <> (mconcat . map printRule . rulesOfTheme) tc
+          --  *** Header of the theme: ***
+          xDefBlck env fSpec (XRefSharedLangTheme (patOfTheme tc))
+            <> ( case patOfTheme tc of --  *** Purpose of the theme: ***
+                   Nothing ->
+                     (para . str . l)
+                       ( NL "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven.",
+                         EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
+                       )
+                   Just pat ->
+                     case purposesOf fSpec outputLang' pat of
+                       [] -> printIntro (cptsOfTheme tc)
+                       purps -> purposes2Blocks env purps
+               )
+            <> (mconcat . map (printConcept env l) . cptsOfTheme) tc
+            <> (mconcat . map printRel . dclsOfTheme) tc
+            <> (mconcat . map printRule . rulesOfTheme) tc
       where
         -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
         printIntro :: [Numbered CptCont] -> Blocks
@@ -221,9 +221,9 @@ chpNatLangReqs env lev fSpec =
                 <> xDefInln env fSpec (XRefSharedLangRule rul),
               case (cRulMeanings . theLoad) nRul of
                 [] ->
-                  [ plain $
-                      (str . l) (NL "Deze regel ", EN "The rule ")
-                        <> (str . l) (NL " is ongedocumenteerd.", EN " is undocumented.")
+                  [ plain
+                      $ (str . l) (NL "Deze regel ", EN "The rule ")
+                      <> (str . l) (NL " is ongedocumenteerd.", EN " is undocumented.")
                   ]
                 ms -> fmap (printMarkup . ameaMrk) ms
             )
@@ -313,8 +313,8 @@ getArticlesOfLaw ref = map buildLA . T'.splitOn ", " . T.unwords . NE.init . wor
               ( case readMaybe (T.unpack digits) of
                   Nothing -> fatal $ "Impossible: This cannot be interpreted as digits: " <> digits
                   Just x -> x
-              ) :
-            scanRefTxt rest
+              )
+              : scanRefTxt rest
             where
               (digits, rest) = T.span isDigit txt
 

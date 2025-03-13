@@ -70,48 +70,48 @@ chpConceptualAnalysis env lev fSpec =
           && null (dclsOfTheme themeContent)
           && null (rulesOfTheme themeContent)
           && null (idRulesOfTheme themeContent) =
-        mempty
+          mempty
       | otherwise =
-        --  *** Header of the theme: ***
-        (xDefBlck env fSpec . XRefSharedLangTheme . patOfTheme) themeContent
-          -- The section starts with the reason(s) why this pattern exist(s)
-          <> case patOfTheme themeContent of
-            Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
-            Nothing -> mempty
-          -- followed by one subsection for every concept that is defined (by a CONCEPT statement) in this pattern, containing the purposes and definitions of that concept.
-          <> (mconcat . map (printConcept env (localize outputLang')) . cptsOfTheme) themeContent
-          -- At this point the reader gets a diagram with the classes and relations between those classes.
-          <> ( case (outputLang', patOfTheme themeContent) of
-                 (Dutch, Just pat) ->
-                   -- announce the conceptual diagram
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . label) pat <> ".")
-                     -- draw the conceptual diagram
-                     <> (xDefBlck env fSpec . pictOfPat) pat
-                 (English, Just pat) ->
-                   para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . label) pat <> ".")
-                     <> (xDefBlck env fSpec . pictOfPat) pat
-                 (_, Nothing) -> mempty
-             )
-          -- Now we discuss the attributes of each entity (with sufficiently documented attributes) in one subsection
-          <> mconcat (map fst caSubsections)
-          -- Finally we discuss the remaining attributes (of smaller entities) and remaining relations
-          -- This list contains empty spots for relations without documentation.
-          <> caRemainingRelations
-          <> (
-               -- print the rules that are defined in this pattern.
-               case map caRule . toList $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
-                 [] -> mempty
-                 blocks ->
-                   ( case outputLang' of
-                       Dutch ->
-                         header (lev + 3) "Regels"
-                           <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
-                       English ->
-                         header (lev + 3) "Rules"
-                           <> plain "This section itemizes the rules with a reference to the shared language of stakeholders for the sake of traceability."
-                   )
-                     <> definitionList blocks
-             )
+          --  *** Header of the theme: ***
+          (xDefBlck env fSpec . XRefSharedLangTheme . patOfTheme) themeContent
+            -- The section starts with the reason(s) why this pattern exist(s)
+            <> case patOfTheme themeContent of
+              Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
+              Nothing -> mempty
+            -- followed by one subsection for every concept that is defined (by a CONCEPT statement) in this pattern, containing the purposes and definitions of that concept.
+            <> (mconcat . map (printConcept env (localize outputLang')) . cptsOfTheme) themeContent
+            -- At this point the reader gets a diagram with the classes and relations between those classes.
+            <> ( case (outputLang', patOfTheme themeContent) of
+                   (Dutch, Just pat) ->
+                     -- announce the conceptual diagram
+                     para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . label) pat <> ".")
+                       -- draw the conceptual diagram
+                       <> (xDefBlck env fSpec . pictOfPat) pat
+                   (English, Just pat) ->
+                     para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . label) pat <> ".")
+                       <> (xDefBlck env fSpec . pictOfPat) pat
+                   (_, Nothing) -> mempty
+               )
+            -- Now we discuss the attributes of each entity (with sufficiently documented attributes) in one subsection
+            <> mconcat (map fst caSubsections)
+            -- Finally we discuss the remaining attributes (of smaller entities) and remaining relations
+            -- This list contains empty spots for relations without documentation.
+            <> caRemainingRelations
+            <> (
+                 -- print the rules that are defined in this pattern.
+                 case map caRule . toList $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
+                   [] -> mempty
+                   blocks ->
+                     ( case outputLang' of
+                         Dutch ->
+                           header (lev + 3) "Regels"
+                             <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
+                         English ->
+                           header (lev + 3) "Rules"
+                             <> plain "This section itemizes the rules with a reference to the shared language of stakeholders for the sake of traceability."
+                     )
+                       <> definitionList blocks
+               )
       where
         -- all classes (i.e. entities) from this pattern
         themeClasses :: [Class]

@@ -285,8 +285,8 @@ makeFSpec env context =
     getAllViewsForConcept' concpt =
       concatMap viewsOfThisConcept
         . sortSpecific2Generic (gens context)
-        $ concpt :
-        largerConcepts (gens context) concpt
+        $ concpt
+        : largerConcepts (gens context) concpt
 
     viewsOfThisConcept :: A_Concept -> [ViewDef]
     viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
@@ -297,9 +297,9 @@ makeFSpec env context =
     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
     getDefaultViewForConcept' cpt =
-      case (concatMap (filter vdIsDefault . viewsOfThisConcept) . sortSpecific2Generic (gens context)) $
-        cpt :
-        largerConcepts (gens context) cpt of
+      case (concatMap (filter vdIsDefault . viewsOfThisConcept) . sortSpecific2Generic (gens context))
+        $ cpt
+        : largerConcepts (gens context) cpt of
         [] -> Nothing
         (vd : _) -> Just vd
 
@@ -372,17 +372,17 @@ makeFSpec env context =
     --  Step 1: select and arrange all relations to obtain a set cRels of total relations
     --          to ensure insertability of entities (signal relations are excluded)
     cRels =
-      toList $
-        Set.filter isTot toconsider
-          `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
+      toList
+        $ Set.filter isTot toconsider
+        `Set.union` (Set.map flp . Set.filter (not . isTot) . Set.filter isSur $ toconsider)
       where
         toconsider = Set.map EDcD relsDefdInContext
     --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
     --          to ensure deletability of entities (signal relations are excluded)
     dRels =
-      toList $
-        Set.filter isInj toconsider
-          `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
+      toList
+        $ Set.filter isInj toconsider
+        `Set.union` (Set.map flp . Set.filter (not . isInj) . Set.filter isUni $ toconsider)
       where
         toconsider = Set.map EDcD relsDefdInContext
     --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
@@ -513,12 +513,12 @@ makeFSpec env context =
                 mkName ConceptName
                   . NE.reverse
                   $ (toNamePart' . plural (ctxlang context) . localNameOf $ c)
-                    NE.:| reverse (nameSpaceOf (name c))
+                  NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
                   $ (toNamePart' . plural (ctxlang context) $ localNameOf c <> tshow i)
-                    NE.:| reverse (nameSpaceOf (name c))
+                  NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"
                 h : _ -> h
@@ -569,13 +569,13 @@ tblcontents ci ps plug =
         [] -> fatal "no attributes in plug."
         f : fs ->
           (L.nub . L.transpose)
-            ( map Just (toList cAtoms) :
-                [ case fExp of
-                    EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
-                    _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
-                  | att <- fs,
-                    let fExp = attExpr att
-                ]
+            ( map Just (toList cAtoms)
+                : [ case fExp of
+                      EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
+                      _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
+                    | att <- fs,
+                      let fExp = attExpr att
+                  ]
             )
           where
             cAtoms = (atomValuesOf ci ps . source . attExpr) f

@@ -176,17 +176,17 @@ instance CDAnalysable FSpec where
       groups' :: [(Name, NonEmpty Class)]
       (groups', classes')
         | grouped =
-          ( [ ( name pat,
-                case classesOfPattern (Just pat) of
-                  [] -> fatal "Shouldn't be empty here"
-                  h : tl -> h :| tl
-              )
-              | pat :: Pattern <- instanceList fSpec,
-                let cls = classesOfPattern (Just pat),
-                not (null cls)
-            ],
-            classesOfPattern Nothing
-          ) -- (samePattern $ rights grps, lefts grps)
+            ( [ ( name pat,
+                  case classesOfPattern (Just pat) of
+                    [] -> fatal "Shouldn't be empty here"
+                    h : tl -> h :| tl
+                )
+                | pat :: Pattern <- instanceList fSpec,
+                  let cls = classesOfPattern (Just pat),
+                  not (null cls)
+              ],
+              classesOfPattern Nothing
+            ) -- (samePattern $ rights grps, lefts grps)
         | otherwise = ([], map (buildClass fSpec) entities)
       classesOfPattern :: Maybe Pattern -> [Class]
       classesOfPattern pat =
@@ -239,8 +239,8 @@ tdAnalysis fSpec =
                  in map (ooAtt kernelAtts) kernelAtts
                       <> map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table)
               BinSQL {} ->
-                NE.toList $
-                  fmap mkOOattr (plugAttributes table)
+                NE.toList
+                  $ fmap mkOOattr (plugAttributes table)
                 where
                   mkOOattr a =
                     OOAttr

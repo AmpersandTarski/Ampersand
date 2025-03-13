@@ -30,8 +30,8 @@ doGenDocument fSpec = do
     then mapM_ writePicture $ filter isDatamodel thePictures
     else do
       genGraphics <- view genGraphicsL
-      when (genGraphics && fspecFormat /= FPandoc) $
-        mapM_ writePicture thePictures
+      when (genGraphics && fspecFormat /= FPandoc)
+        $ mapM_ writePicture thePictures
       genText <- view genTextL
-      when genText $
-        writepandoc fSpec thePandoc
+      when genText
+        $ writepandoc fSpec thePandoc

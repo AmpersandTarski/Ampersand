@@ -45,87 +45,87 @@ keywords =
         "ENDCONTEXT",
         "IN"
       ]
-      ++ [ T.toUpper $ tshow x | x :: Lang <- [minBound ..]
-         ]
-      ++ [ "INCLUDE",
-           "META",
-           "PATTERN",
-           "ENDPATTERN",
-           "CONCEPT",
-           "LABEL",
-           -- Keywords for Relation-statements
-           "RELATION",
-           "PRAGMA",
-           "MEANING",
-           "ASY",
-           "INJ",
-           "BIJ",
-           "IRF",
-           "RFX",
-           "SUR",
-           "SYM",
-           "TOT",
-           "TRN",
-           "UNI",
-           "MAP",
-           "PROP",
-           "VALUE",
-           "EVALPHP",
-           "POPULATION",
-           "CONTAINS",
-           -- Keywords for rules
-           "RULE",
-           "MESSAGE",
-           "VIOLATION",
-           "TXT"
-         ]
-      ++ [ T.toUpper $ tshow x | x :: SrcOrTgt <- [minBound ..]
-         ]
-      ++ [ "I",
-           "V",
-           "ONE",
-           "ROLE",
-           "MAINTAINS",
-           -- Keywords for purposes
-           "PURPOSE",
-           "REF"
-         ]
-      ++ [ T.toUpper $ tshow x | x :: PandocFormat <- [minBound ..]
-         ]
-      ++
-      -- Keywords for interfaces
-      [ "INTERFACE",
-        "FOR",
-        "LINKTO",
-        "API",
-        "BOX",
-        -- Keywords for identitys
-        "IDENT",
-        -- Keywords for views
-        "VIEW",
-        "ENDVIEW",
-        "DEFAULT",
-        "TEMPLATE",
-        "HTML",
-        -- Keywords for generalisations:
-        "CLASSIFY",
-        "ISA",
-        "IS",
-        -- Keywords for TType:
-        "REPRESENT",
-        "TYPE"
-      ]
-      ++ [ T.toUpper $ tshow tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
-         ]
-      ++
-      -- Keywords for values of atoms:
-      [ "TRUE",
-        "FALSE", -- for booleans
-        -- Experimental stuff:
-        "SERVICE",
-        -- Enforce statement:
-        "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
-      ]
+    ++ [ T.toUpper $ tshow x | x :: Lang <- [minBound ..]
+       ]
+    ++ [ "INCLUDE",
+         "META",
+         "PATTERN",
+         "ENDPATTERN",
+         "CONCEPT",
+         "LABEL",
+         -- Keywords for Relation-statements
+         "RELATION",
+         "PRAGMA",
+         "MEANING",
+         "ASY",
+         "INJ",
+         "BIJ",
+         "IRF",
+         "RFX",
+         "SUR",
+         "SYM",
+         "TOT",
+         "TRN",
+         "UNI",
+         "MAP",
+         "PROP",
+         "VALUE",
+         "EVALPHP",
+         "POPULATION",
+         "CONTAINS",
+         -- Keywords for rules
+         "RULE",
+         "MESSAGE",
+         "VIOLATION",
+         "TXT"
+       ]
+    ++ [ T.toUpper $ tshow x | x :: SrcOrTgt <- [minBound ..]
+       ]
+    ++ [ "I",
+         "V",
+         "ONE",
+         "ROLE",
+         "MAINTAINS",
+         -- Keywords for purposes
+         "PURPOSE",
+         "REF"
+       ]
+    ++ [ T.toUpper $ tshow x | x :: PandocFormat <- [minBound ..]
+       ]
+    ++
+    -- Keywords for interfaces
+    [ "INTERFACE",
+      "FOR",
+      "LINKTO",
+      "API",
+      "BOX",
+      -- Keywords for identitys
+      "IDENT",
+      -- Keywords for views
+      "VIEW",
+      "ENDVIEW",
+      "DEFAULT",
+      "TEMPLATE",
+      "HTML",
+      -- Keywords for generalisations:
+      "CLASSIFY",
+      "ISA",
+      "IS",
+      -- Keywords for TType:
+      "REPRESENT",
+      "TYPE"
+    ]
+    ++ [ T.toUpper $ tshow tt | tt :: TType <- [minBound ..], tt /= TypeOfOne
+       ]
+    ++
+    -- Keywords for values of atoms:
+    [ "TRUE",
+      "FALSE", -- for booleans
+      -- Experimental stuff:
+      "SERVICE",
+      -- Enforce statement:
+      "ENFORCE" -- TODO: "BY", "INVARIANT" (See issue #1204)
+    ]
 
 -- | Retrieves a list of operators accepted by the Ampersand language
 operators ::
@@ -200,12 +200,12 @@ mainLexer _ [] = return []
 mainLexer p ('-' : '-' : s) = mainLexer p (skipLine s)
 mainLexer p (c : s)
   | isSpace c =
-    let (spc, next) = span isSpaceNoTab s
-        isSpaceNoTab x = isSpace x && (not . isTab) x
-        isTab = ('\t' ==)
-     in do
-          when (isTab c) (lexerWarning TabCharacter p)
-          mainLexer (foldl' updatePos p (c : spc)) next
+      let (spc, next) = span isSpaceNoTab s
+          isSpaceNoTab x = isSpace x && (not . isTab) x
+          isTab = ('\t' ==)
+       in do
+            when (isTab c) (lexerWarning TabCharacter p)
+            mainLexer (foldl' updatePos p (c : spc)) next
 mainLexer p ('{' : '-' : s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{' : '+' : s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"' : ss) =
@@ -219,26 +219,26 @@ mainLexer p ('"' : ss) =
 
 mainLexer p cs@(c : s)
   | isSafeIdChar True c =
-    let (name', p', s') = scanIdent (addPos 1 p) s
-        name'' = Text1 c $ T.pack name'
-        tokt
-          | iskeyword name'' = LexKeyword name''
-          | otherwise = LexSafeID name''
-     in returnToken tokt p mainLexer p' s'
+      let (name', p', s') = scanIdent (addPos 1 p) s
+          name'' = Text1 c $ T.pack name'
+          tokt
+            | iskeyword name'' = LexKeyword name''
+            | otherwise = LexSafeID name''
+       in returnToken tokt p mainLexer p' s'
   | prefixIsOperator (T.pack cs) =
-    let (name', s') = getOp cs
-     in returnToken (LexOperator name') p mainLexer (foldl' updatePos p (T.unpack . text1ToText $ name')) (T.unpack s')
+      let (name', s') = getOp cs
+       in returnToken (LexOperator name') p mainLexer (foldl' updatePos p (T.unpack . text1ToText $ name')) (T.unpack s')
   | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
   | isDigit c =
-    case getDateTime cs of
-      Just (Right (tk, _, width, s')) -> returnToken tk p mainLexer (addPos width p) s'
-      Just (Left msg) -> lexerError msg p
-      Nothing ->
-        case getDate cs of
-          Just (tk, _, width, s') -> returnToken tk p mainLexer (addPos width p) s'
-          Nothing ->
-            let (tk, _, width, s') = getNumber cs
-             in returnToken tk p mainLexer (addPos width p) s'
+      case getDateTime cs of
+        Just (Right (tk, _, width, s')) -> returnToken tk p mainLexer (addPos width p) s'
+        Just (Left msg) -> lexerError msg p
+        Nothing ->
+          case getDate cs of
+            Just (tk, _, width, s') -> returnToken tk p mainLexer (addPos width p) s'
+            Nothing ->
+              let (tk, _, width, s') = getNumber cs
+               in returnToken tk p mainLexer (addPos width p) s'
   -- Ignore unexpected characters in the beginning of the file because of the UTF-8 BOM marker.
   -- TODO: Find out the right way of handling the BOM marker.
   | beginFile p = do lexerWarning UtfChar p; mainLexer p s
@@ -347,8 +347,8 @@ getTime cs =
                                   * 60
                                   + fromIntegral minutes
                               )
-                              * 60
-                              + seconds,
+                            * 60
+                            + seconds,
                           offset,
                           1 + 5 + ls + lo,
                           ro
@@ -523,14 +523,14 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing, 0, [])
 getEscChar s@(x : xs)
   | isDigit x = case readDec s of
-    [(val, rest)]
-      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val), length s - length rest, rest)
-      | otherwise -> (Nothing, 1, rest)
-    _ -> fatal $ "Impossible! first char is a digit.. " <> T.take 40 (T.pack s)
+      [(val, rest)]
+        | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val), length s - length rest, rest)
+        | otherwise -> (Nothing, 1, rest)
+      _ -> fatal $ "Impossible! first char is a digit.. " <> T.take 40 (T.pack s)
   | x `elem` ['\"', '\''] = (Just x, 2, xs)
   | otherwise = case x `lookup` cntrChars of
-    Nothing -> (Nothing, 0, s)
-    Just c -> (Just c, 1, xs)
+      Nothing -> (Nothing, 0, s)
+      Just c -> (Just c, 1, xs)
   where
     cntrChars =
       [ ('a', '\a'),

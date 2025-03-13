@@ -434,12 +434,12 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           para
             . text
             $ l
-              ( NL $
-                  "Nu volgt een opsomming van alle regels door de term van elke regel af te drukken. "
-                    <> "Eerst worden de procesregels gegeven, vervolgens de invarianten.",
-                EN $
-                  "In this section an overview of all rules by printing the term of each rule. "
-                    <> "The process rules are given first, followed by the invariants."
+              ( NL
+                  $ "Nu volgt een opsomming van alle regels door de term van elke regel af te drukken. "
+                  <> "Eerst worden de procesregels gegeven, vervolgens de invarianten.",
+                EN
+                  $ "In this section an overview of all rules by printing the term of each rule. "
+                  <> "The process rules are given first, followed by the invariants."
               ),
           docRules
             (NL "Procesregels", EN "Process rules")
@@ -468,11 +468,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           if null rules
             then (para . text . l) noRules
             else
-              mconcat $
-                [ header (sectionLevel + 1) . text $ l title,
-                  para . text $ l intro
-                ]
-                  <> map (docRule heading) (toList rules)
+              mconcat
+                $ [ header (sectionLevel + 1) . text $ l title,
+                    para . text $ l intro
+                  ]
+                <> map (docRule heading) (toList rules)
 
         docRule :: LocalizedStr -> Rule -> Blocks
         docRule heading rule =

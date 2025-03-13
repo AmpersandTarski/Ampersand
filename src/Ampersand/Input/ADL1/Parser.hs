@@ -454,7 +454,7 @@ pRuleDef =
                   Nothing -> fatal $ "Not a valid NamePart: " <> localNm
                   Just np -> np
               )
-              NE.:| []
+            NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView
@@ -884,10 +884,10 @@ pSubInterface =
             (typ, keys) = fromMaybe (toText1Unsafe "FORM", []) x
         pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
         pBoxSpecification =
-          pChevrons $
-            (,)
-              <$> (pSingleWord <|> pAnyKeyWord)
-              <*> many pTemplateKeyValue
+          pChevrons
+            $ (,)
+            <$> (pSingleWord <|> pAnyKeyWord)
+            <*> many pTemplateKeyValue
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue =
           TemplateKeyValue

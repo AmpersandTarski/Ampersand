@@ -226,10 +226,10 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
         $ infoParser parser
     myPreferences :: ParserPrefs
     myPreferences =
-      prefs $
-        showHelpOnEmpty
-          <> noBacktrack
-          <> disambiguate
+      prefs
+        $ showHelpOnEmpty
+        <> noBacktrack
+        <> disambiguate
     myDescriptionFunction :: ArgumentReachability -> Option x -> Chunk Doc
     myDescriptionFunction _info' opt =
       annotate (colorDull Yellow)
@@ -356,9 +356,9 @@ hsubparser' commandMetavar m = mkParser d g rdr
 -- | Non-hidden help option.
 helpOption :: Parser (a -> a)
 helpOption =
-  abortOption (ShowHelpText $ Just "This is some text, but when does it show??") $
-    long "help"
-      <> help "Show this help text"
+  abortOption (ShowHelpText $ Just "This is some text, but when does it show??")
+    $ long "help"
+    <> help "Show this help text"
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts =

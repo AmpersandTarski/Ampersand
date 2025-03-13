@@ -38,30 +38,30 @@ docOptsParser =
       where
         build intro sharedlang diagnosis conceptualanalysis dataanalysis
           | length x /= length [c :: Chapter | c <- [minBound ..]] =
-            -- To fix this: make sure all chapters are handled in this function.
-            fatal "Not all chapters are implemented thru options."
+              -- To fix this: make sure all chapters are handled in this function.
+              fatal "Not all chapters are implemented thru options."
           | otherwise = case both (fmap fst) . L.partition isTrue . filter (isJust . snd) $ x of
-            ([], []) -> [minBound ..]
-            (xs, []) -> xs -- Only explicit requested chapters
-            ([], ys) -> case [minBound ..] L.\\ ys of
-              [] ->
-                exitWith $
-                  PosAndNegChaptersSpecified
-                    ["Are you kidding? do you realy want an empty document?"]
-              cs -> cs -- All chapters exept ys
-            (xs, ys) ->
-              let otherChapters = ([minBound ..] L.\\ xs) L.\\ ys
-               in if null otherChapters
-                    then xs
-                    else
-                      exitWith $
-                        PosAndNegChaptersSpecified
-                          [ "It is unclear what chapters you want in your document.",
-                            "  You want: " <> (T.intercalate ", " . map tshow $ xs),
-                            "  You don't want: " <> (T.intercalate ", " . map tshow $ ys),
-                            "  What about the other chapters: " <> (T.intercalate ", " . map tshow $ otherChapters) <> " ?",
-                            "  Please don't mix `--no-<chapter>` with `--<chapter>`."
-                          ]
+              ([], []) -> [minBound ..]
+              (xs, []) -> xs -- Only explicit requested chapters
+              ([], ys) -> case [minBound ..] L.\\ ys of
+                [] ->
+                  exitWith
+                    $ PosAndNegChaptersSpecified
+                      ["Are you kidding? do you realy want an empty document?"]
+                cs -> cs -- All chapters exept ys
+              (xs, ys) ->
+                let otherChapters = ([minBound ..] L.\\ xs) L.\\ ys
+                 in if null otherChapters
+                      then xs
+                      else
+                        exitWith
+                          $ PosAndNegChaptersSpecified
+                            [ "It is unclear what chapters you want in your document.",
+                              "  You want: " <> (T.intercalate ", " . map tshow $ xs),
+                              "  You don't want: " <> (T.intercalate ", " . map tshow $ ys),
+                              "  What about the other chapters: " <> (T.intercalate ", " . map tshow $ otherChapters) <> " ?",
+                              "  Please don't mix `--no-<chapter>` with `--<chapter>`."
+                            ]
           where
             x = [intro, sharedlang, diagnosis, conceptualanalysis, dataanalysis]
 
@@ -100,15 +100,15 @@ docOptsParser =
           --        See https://hackage.haskell.org/package/optparse-applicative
           -- an issue is created on the backlog: https://github.com/AmpersandTarski/Ampersand/issues/1060
           [] ->
-            fatal $
-              T.unlines
+            fatal
+              $ T.unlines
                 [ "No matching formats found. Possible formats are:",
                   "  " <> T.intercalate ", " (map stripF allFormats)
                 ]
           [f] -> f
           xs ->
-            fatal $
-              T.unlines
+            fatal
+              $ T.unlines
                 [ "Ambiguous format specified. Possible matches are:",
                   "  " <> T.intercalate ", " (map stripF xs)
                 ]

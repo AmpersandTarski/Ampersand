@@ -52,8 +52,8 @@ boolFlags ::
   Mod FlagFields Bool ->
   Parser Bool
 boolFlags defaultValue name' helpSuffix =
-  enableDisableFlags defaultValue True False name' $
-    concat
+  enableDisableFlags defaultValue True False name'
+    $ concat
       [ helpSuffix,
         " (default: ",
         if defaultValue then "enabled" else "disabled",
@@ -91,7 +91,7 @@ firstBoolFlagsTrue name' helpSuffix =
     (FirstTrue (Just False))
     name'
     $ helpSuffix
-      ++ " (default: enabled)"
+    ++ " (default: enabled)"
 
 -- | Flag with a Semigroup instance and a default of False
 firstBoolFlagsFalse :: String -> String -> Mod FlagFields FirstFalse -> Parser FirstFalse
@@ -102,7 +102,7 @@ firstBoolFlagsFalse name' helpSuffix =
     (FirstFalse (Just False))
     name'
     $ helpSuffix
-      ++ " (default: disabled)"
+    ++ " (default: disabled)"
 
 -- | Enable/disable flags for any type.
 enableDisableFlags ::
@@ -279,24 +279,24 @@ pathCompleterWith PathCompleterOpts {..} = mkCompleter $ \inputRaw -> do
       | otherwise -> return []
     Just searchDir -> do
       entries <- getDirectoryContents searchDir `catch` \(_ :: IOException) -> return []
-      fmap catMaybes $
-        forM entries $
-          \entry ->
-            -- Skip . and .. unless user is typing . or ..
-            if entry `elem` ["..", "."] && searchPrefix `notElem` ["..", "."]
-              then return Nothing
-              else
-                if searchPrefix `isPrefixOf` entry
-                  then do
-                    let path = searchDir </> entry
-                    case (pcoFileFilter path, pcoDirFilter path) of
-                      (True, True) -> return $ Just (inputSearchDir </> entry)
-                      (fileAllowed, dirAllowed) -> do
-                        isDir <- doesDirectoryExist path
-                        if (if isDir then dirAllowed else fileAllowed)
-                          then return $ Just (inputSearchDir </> entry)
-                          else return Nothing
-                  else return Nothing
+      fmap catMaybes
+        $ forM entries
+        $ \entry ->
+          -- Skip . and .. unless user is typing . or ..
+          if entry `elem` ["..", "."] && searchPrefix `notElem` ["..", "."]
+            then return Nothing
+            else
+              if searchPrefix `isPrefixOf` entry
+                then do
+                  let path = searchDir </> entry
+                  case (pcoFileFilter path, pcoDirFilter path) of
+                    (True, True) -> return $ Just (inputSearchDir </> entry)
+                    (fileAllowed, dirAllowed) -> do
+                      isDir <- doesDirectoryExist path
+                      if (if isDir then dirAllowed else fileAllowed)
+                        then return $ Just (inputSearchDir </> entry)
+                        else return Nothing
+                else return Nothing
 
 unescapeBashArg :: String -> String
 unescapeBashArg ('\'' : rest) = rest

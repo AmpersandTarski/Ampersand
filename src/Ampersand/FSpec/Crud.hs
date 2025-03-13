@@ -40,7 +40,7 @@ mkCrudInfo allConceptsPrim decls allIfcs =
       transClosureMap'
         . Map.fromListWith L.union
         $ (map (mkMapItem . flp) . filter isSur . map EDcD $ toList decls)
-          <> (map mkMapItem . filter isTot . map EDcD $ toList decls)
+        <> (map mkMapItem . filter isTot . map EDcD $ toList decls)
       where
         -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
 
@@ -96,21 +96,21 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where
     getExprs :: ObjectDef -> [Expression]
     getExprs objExpr =
-      objExpression objExpr :
-      case objmsub objExpr of
-        Nothing -> []
-        Just si -> case si of
-          InterfaceRef {siIsLink = True} -> []
-          InterfaceRef {siIsLink = False} ->
-            case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-              [] -> fatal ("Referenced interface " <> referencedInterface <> " missing")
-              (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> referencedInterface)
-              [i] -> getAllInterfaceExprs allIfcs i
-          Box {} -> concatMap getExprs' (siObjs si)
-          where
-            referencedInterface = fullName . siIfcId $ si
-            getExprs' (BxExpr e) = getExprs e
-            getExprs' BxText {} = []
+      objExpression objExpr
+        : case objmsub objExpr of
+          Nothing -> []
+          Just si -> case si of
+            InterfaceRef {siIsLink = True} -> []
+            InterfaceRef {siIsLink = False} ->
+              case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
+                [] -> fatal ("Referenced interface " <> referencedInterface <> " missing")
+                (_ : _ : _) -> fatal ("Multiple relations of referenced interface " <> referencedInterface)
+                [i] -> getAllInterfaceExprs allIfcs i
+            Box {} -> concatMap getExprs' (siObjs si)
+            where
+              referencedInterface = fullName . siIfcId $ si
+              getExprs' (BxExpr e) = getExprs e
+              getExprs' BxText {} = []
 
 getCrudObjsPerConcept ::
   [(Interface, [(A_Concept, Bool, Bool, Bool, Bool)])] ->

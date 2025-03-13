@@ -359,11 +359,11 @@ instance Ord Rule where
 
 instance Show Rule where
   show x =
-    T.unpack $
-      "RULE "
-        <> text1ToText (fullName1 x)
-        <> ": "
-        <> tshow (formalExpression x)
+    T.unpack
+      $ "RULE "
+      <> text1ToText (fullName1 x)
+      <> ": "
+      <> tshow (formalExpression x)
 
 instance Traced Rule where
   origin = rrfps
@@ -1011,7 +1011,7 @@ showValSQL val =
           Nothing -> mempty
           Just (h, tl)
             | h `elem` ['\'', '\\'] ->
-              T.cons h (T.cons h (f tl))
+                T.cons h (T.cons h (f tl))
             | otherwise -> T.cons h (f tl)
     AAVInteger {} -> tshow (aavint val)
     AAVBoolean {} -> tshow (aavbool val)
@@ -1721,14 +1721,14 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                   _ -> False
         message :: (Show x) => Origin -> x -> Text
         message orig x =
-          T.intercalate "\n    " $
-            [ "Representation mismatch",
-              "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
-              "as representation of an atom in concept `" <> text1ToText (fullName1 c) <> "`.",
-              "However, the representation-type of that concept is " <> implicitly,
-              "defined as " <> tshow typ <> ". The found value does not match that type."
-            ]
-              <> example
+          T.intercalate "\n    "
+            $ [ "Representation mismatch",
+                "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
+                "as representation of an atom in concept `" <> text1ToText (fullName1 c) <> "`.",
+                "However, the representation-type of that concept is " <> implicitly,
+                "defined as " <> tshow typ <> ". The found value does not match that type."
+              ]
+            <> example
           where
             c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
             implicitly = if typ == Object then "(implicitly) " else ""

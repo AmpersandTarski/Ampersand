@@ -119,8 +119,8 @@ maybeOrdering x y = case x of
     case y of
       FileLoc {} -> Just LT
       XLSXLoc fpy wby (rowy, coly) ->
-        Just $
-          compare
+        Just
+          $ compare
             (fpx, wbx, (rowx, colx))
             (fpy, wby, (rowy, coly))
       PropertyRule {} -> Just GT

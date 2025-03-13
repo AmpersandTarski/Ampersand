@@ -191,8 +191,8 @@ generateStaticFileModule = do
         reader = readFileUtf8 sfModulePath
         errorHandler err = do
           -- old generated module exists, but we can't read the file or read the contents
-          putStrLn $
-            unlines
+          putStrLn
+            $ unlines
               [ "",
                 "Info: No cache for static files: " <> show (err :: SomeException),
                 ""

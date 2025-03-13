@@ -63,15 +63,16 @@ instance HasProps Expression where
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
     EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
-      Set.fromList $
+      Set.fromList
+        $
         -- NOT totaal
         -- NOT surjective
         [Inj | isONE (source sgn)]
-          ++ [Uni | isONE (target sgn)]
-          ++ [Asy | isEndo sgn, isONE (source sgn)]
-          ++ [Sym | isEndo sgn]
-          ++ [Rfx | isEndo sgn]
-          ++ [Trn | isEndo sgn]
+        ++ [Uni | isONE (target sgn)]
+        ++ [Asy | isEndo sgn, isONE (source sgn)]
+        ++ [Sym | isEndo sgn]
+        ++ [Rfx | isEndo sgn]
+        ++ [Trn | isEndo sgn]
     EBrk f -> properties f
     ECps (l, r) -> Set.filter (\x -> x `elem` [Uni, Tot, Inj, Sur]) (properties l `Set.intersection` properties r)
     EPrd (l, r) -> Set.fromList $ [Tot | isTot l] ++ [Sur | isSur r] ++ [Rfx | isRfx l && isRfx r] ++ [Trn]

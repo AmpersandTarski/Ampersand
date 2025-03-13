@@ -71,19 +71,19 @@ getCycles edges' =
     keyFor v = fromMaybe fatalError $ L.elemIndex v allVertices
       where
         fatalError =
-          fatal $
-            T.intercalate "\n" $
-              [ "v (" <> tshow (typeOf v) <> ") = " <> tshow v,
+          fatal
+            $ T.intercalate "\n"
+            $ [ "v (" <> tshow (typeOf v) <> ") = " <> tshow v,
                 "length edges = " <> tshow (length edges),
                 "edges = "
               ]
-                <> map (("  " <>) . tshow) edges
-                <> [ "allVertices ="
-                   ]
-                <> map (("  " <>) . tshow) allVertices
-                <> [ "graphEdges ="
-                   ]
-                <> map (("  " <>) . tshow) graphEdges
+            <> map (("  " <>) . tshow) edges
+            <> [ "allVertices ="
+               ]
+            <> map (("  " <>) . tshow) allVertices
+            <> [ "graphEdges ="
+               ]
+            <> map (("  " <>) . tshow) graphEdges
 
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: (Ord a) => Map.Map a [a] -> Map.Map a [a]

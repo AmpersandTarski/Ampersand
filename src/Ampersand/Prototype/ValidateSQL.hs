@@ -50,9 +50,9 @@ validateRulesSQL fSpec = do
           logDebug "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
           return []
         ves ->
-          return $
-            "Validation error. The following terms failed validation:" :
-            map showVExp ves
+          return
+            $ "Validation error. The following terms failed validation:"
+            : map showVExp ves
 
 -- functions for extracting all terms from the context
 
@@ -64,8 +64,8 @@ getAllInterfaceExps fSpec =
     ]
   where
     getObjExps iName objDef =
-      (objExpression objDef, "interface " <> tshow iName) :
-      concatMap (getObjExps iName) (fields objDef)
+      (objExpression objDef, "interface " <> tshow iName)
+        : concatMap (getObjExps iName) (fields objDef)
 
 -- we check the complement of the rule, since that is the term evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]

@@ -237,8 +237,8 @@ instance JSON.FromJSON (Guarded (DefinitionContainer -> Maybe PConceptDef)) wher
       build nmtxt lbl def = do
         nm <- textToNameInJSON ConceptName nmtxt
         pure $ \x ->
-          Just $
-            PConceptDef
+          Just
+            $ PConceptDef
               { cdname = nm,
                 cdlbl = textToLabelInJSON <$> lbl,
                 cddef2 = def,
@@ -390,8 +390,8 @@ instance JSON.FromJSON (Guarded P_Relation) where
       build txt lbl gSig prps mean = do
         nm <- textToNameInJSON RelationName txt
         sig <- gSig
-        pure $
-          P_Relation
+        pure
+          $ P_Relation
             { dec_sign = sig,
               dec_prps = prps,
               dec_pragma = Nothing,
@@ -491,8 +491,8 @@ instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
       build :: Guarded P_NamedRel -> EnforceOperator -> Text -> Guarded (P_Enforce TermPrim)
       build gRel oper formexp = do
         rel <- gRel
-        pure $
-          P_Enforce
+        pure
+          $ P_Enforce
             { pos = OriginAtlas,
               penfRel = PNamedR rel,
               penfOp = oper,
@@ -539,8 +539,8 @@ instance JSON.FromJSON (Guarded PPurpose) where
       build :: Text -> Guarded PRef2Obj -> Guarded PPurpose
       build mrk gObj = do
         obj <- gObj
-        pure $
-          PPurpose
+        pure
+          $ PPurpose
             { pos = OriginAtlas, -- Voorbeeldwaarde
               pexObj = obj, -- Je moet bepalen hoe je PRef2Obj wilt invullen
               pexMarkup = P_Markup Nothing Nothing mrk, -- Direct gebruik van `meaning` als pexMarkup
@@ -850,8 +850,8 @@ instance JSON.FromJSON (Guarded PClassify) where
       build gSpec gGen = do
         spec <- gSpec
         gen <- gGen
-        pure $
-          PClassify
+        pure
+          $ PClassify
             { pos = OriginAtlas,
               specific = spec,
               generics = gen NE.:| []
@@ -910,20 +910,20 @@ instance JSON.FromJSON (Guarded Role) where
     ( do
         nm <- textToNameInJSON RoleName <$> (v JSON..: "role")
         lbl <- (v JSON..:? "label") <&> fmap textToLabelInJSON
-        pure $
-          Role OriginAtlas
-            <$> nm
-            <*> pure lbl
-            <*> pure True
+        pure
+          $ Role OriginAtlas
+          <$> nm
+          <*> pure lbl
+          <*> pure True
     )
       <|> ( do
               gNm <- textToNameInJSON RoleName <$> (v JSON..: "service")
               gLbl <- (v JSON..:? "label") <&> fmap textToLabelInJSON
-              pure $
-                Role OriginAtlas
-                  <$> gNm
-                  <*> pure gLbl
-                  <*> pure False
+              pure
+                $ Role OriginAtlas
+                <$> gNm
+                <*> pure gLbl
+                <*> pure False
           )
 
 -- TODO: Wat als geen role of service?

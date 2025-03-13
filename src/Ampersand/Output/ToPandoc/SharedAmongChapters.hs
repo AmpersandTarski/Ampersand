@@ -140,22 +140,22 @@ hyperTarget env fSpec a =
     --                    <>printMeaning (outputLang env fSpec) r
     --                  )
     XRefConceptualAnalysisRelation _d ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Relatie ", EN "Relation ")
           --   <> (str . show . numberOf fSpec $ d)
           )
     XRefConceptualAnalysisRule _r ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Regel ", EN "Rule ")
           --   <> (str . show . numberOf fSpec $ r)
           )
     XRefConceptualAnalysisExpression _r ->
-      Right $
-        spanWith
+      Right
+        $ spanWith
           (xSafeLabel a, [], [])
           ( (text . l) (NL "Regel ", EN "Rule ")
           --   <> (str . show . numberOf fSpec $ r)
@@ -493,8 +493,8 @@ dpRule' env fSpec = dpR
     dpR (r : rs) n seenConcs seenRelations =
       ( ( l (NL "Regel: ", EN "Rule: ") <> (text . tshow . mkId) r,
           [theBlocks]
-        ) :
-        dpNext,
+        )
+          : dpNext,
         n',
         seenCs,
         seenDs
