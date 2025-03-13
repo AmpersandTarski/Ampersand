@@ -343,7 +343,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
      ; ( "aanwijzingen te geven aan gemeenten", "Artikel 37 van de Wet op de Ruimtelijke Ordening")
      ]
 
-   onder :: Functie * Functie
+   onder[Functie*Functie]
    PRAGMA "" " valt onder de verantwoordelijkheid van "
    MEANING LATEX "De uitspraak ``Functie $a$ valt onder de verantwoordelijkheid van $b$.'' behoort tot de gemeenschappelijke taal."
 
@@ -466,7 +466,7 @@ POPULATION mandaatTyperen [Mandaat * MandaatType] CONTAINS
      ; ("Mandaat B", "specifiek mandaat")
      ]
 
-mandaatIntrekken :: MandaatIntrekking -> Mandaat 
+mandaatIntrekken[MandaatIntrekking*Mandaat] [MAP] 
 PRAGMA "" "betreft het intrekken van"
 PURPOSE RELATION mandaatIntrekken [MandaatIntrekking * Mandaat] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het intrekken van mandaten. Omdat voor het intrekken bijzondere regels gelden, onderscheiden we een Mandaatintrekking als een afzonderlijk concept. +}
 POPULATION mandaatIntrekken [MandaatIntrekking * Mandaat] CONTAINS

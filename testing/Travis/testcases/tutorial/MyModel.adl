@@ -6,7 +6,7 @@ PURPOSE CONTEXT HelloWorld
 {+This script allows you to check whether or not you can actually use Ampersand.+}
 
 REPRESENT MyName TYPE ALPHANUMERIC
-sessionMyName :: SESSION * MyName [UNI]
+sessionMyName[SESSION*MyName] [UNI]
 MEANING "My name can be known in the current session."
 
 ROLE User MAINTAINS ClickRegistration
@@ -18,7 +18,7 @@ INTERFACE Registration: "_SESSION"[SESSION] cRud BOX
    [ "My name is" : sessionMyName cRUd 
    ]
 
-sayHelloReq :: SESSION * SESSION [PROP]
+sayHelloReq[SESSION*SESSION] [PROP]
 ROLE ExecEngine MAINTAINS SayHello
 RULE SayHello LABEL "Say hello when name is specified" : "_SESSION"[SESSION] /\ sessionMyName;sessionMyName~ |- sayHelloReq
 VIOLATION (TXT "{EX} SetNavToOnCommit;/Hello_44__32_World"

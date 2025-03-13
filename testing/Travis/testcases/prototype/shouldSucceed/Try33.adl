@@ -3,7 +3,7 @@ CONTEXT Try33 IN ENGLISH
 PATTERN Try33
 CLASSIFY B ISA A
 CLASSIFY C ISA A
-mandatoryAttribute :: A -> D
-optionalAttribute  :: B -> D
+mandatoryAttribute[A*D] [MAP]
+optionalAttribute[B*D] [MAP]
 ENDPATTERN
 ENDCONTEXT

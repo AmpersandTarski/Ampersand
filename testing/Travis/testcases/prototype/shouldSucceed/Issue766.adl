@@ -2,8 +2,8 @@ CONTEXT Issue766 IN ENGLISH
 
   CLASSIFY Datatype ISA Class
   
-  subClassOf        :: Class * Class [IRF,ASY]
-  baseDatatype      :: Datatype * Datatype [UNI]
+  subClassOf[Class*Class] [IRF,ASY]
+  baseDatatype[Datatype*Datatype] [UNI]
   
   RULE Issue766: subClassOf;baseDatatype |- baseDatatype
   VIOLATION (TXT "some text ", SRC I[Datatype], TXT " other text ", SRC subClassOf)

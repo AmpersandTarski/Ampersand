@@ -2,8 +2,8 @@ CONTEXT PreprocTest1
 
 INCLUDE "./PreprocTestPopulation.adl" --# [ "!GenerateErrorIfThisVarIsSet" ]
 
-r1 :: A * B1
-r2 :: A * B2
+r1[A*B1]
+r2[A*B2]
 
 INTERFACE Test: I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 

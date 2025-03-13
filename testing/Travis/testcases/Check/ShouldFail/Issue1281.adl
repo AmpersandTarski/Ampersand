@@ -1,7 +1,7 @@
 CONTEXT Issue1281
 
-r :: A*B
-s :: C*D
+r[A*B]
+s[C*D]
 
 ENFORCE r := s
 

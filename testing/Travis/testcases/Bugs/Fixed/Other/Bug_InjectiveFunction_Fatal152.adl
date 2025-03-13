@@ -1,5 +1,5 @@
 CONTEXT BugInjectiveFunctionFatal152 IN ENGLISH
 
-r :: A * B [UNI,TOT,INJ]
+r[A*B] [UNI,TOT,INJ]
 
 ENDCONTEXT

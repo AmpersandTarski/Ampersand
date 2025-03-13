@@ -5,8 +5,8 @@ CONTEXT Try33 IN ENGLISH
 PATTERN Try33
 CLASSIFY B ISA A
 CLASSIFY C ISA A
-mandatoryAttribute :: A * D [UNI,TOT]
-optionalAttribute  :: B * D [UNI,TOT]
+mandatoryAttribute[A*D] [UNI,TOT]
+optionalAttribute[B*D] [UNI,TOT]
 CLASSIFY C ISA D
 ENDPATTERN
 ENDCONTEXT

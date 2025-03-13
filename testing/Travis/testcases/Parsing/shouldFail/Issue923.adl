@@ -1,6 +1,6 @@
 CONTEXT Issue923
 
-r :: A*A
+r[A*A]
 
 RULE R : r = -r 
 VIOLATION (TXT "Source atom: ", SRC I, TXT ", Target atom:", TGT I")

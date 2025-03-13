@@ -8,7 +8,7 @@ It contains one relation, one rule and three interfaces.
 
 PATTERN Hello
 
-  identifies :: Identifier * Thing       PRAGMA "" " and " " are paired in relation identifies".
+  identifies[Identifier*Thing]       PRAGMA "" " and " " are paired in relation identifies".
 
   RULE identification : I |- identifies;identifies~ -- totality of identifies
     MEANING IN ENGLISH "Every identifier identifies at least one Thing"

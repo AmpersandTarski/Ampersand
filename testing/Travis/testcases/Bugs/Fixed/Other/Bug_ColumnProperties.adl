@@ -1,15 +1,15 @@
 CONTEXT Bug IN ENGLISH --ticket #214
 
-rel :: A*B [INJ,SUR]
+rel[A*B] [INJ,SUR]
 
 -- yields column properties: [{-NUL+UNQ} A]     [{-NUL+UNQ} B , {+NUL-UNQ} rel]
 -- but this should be                                        .. {-NUL-UNQ} ..
 
 -- compare with UNI and TOT:
 
--- rel :: A * B [INJ]       [{-NUL+UNQ} A]    [{-NUL+UNQ} B , {+NUL-UNQ} rel]
--- rel :: A * B [INJ,SUR]   [{-NUL+UNQ} A]    [{-NUL+UNQ} B , {+NUL-UNQ} rel]  <- wrong
--- rel :: A * B [UNI]       [{-NUL+UNQ} A, {+NUL-UNQ} rel]     [{-NUL+UNQ} B]
--- rel :: A * B [UNI,TOT]   [{-NUL+UNQ} A, {-NUL-UNQ} rel]     [{-NUL+UNQ} B]
+-- rel[A*B] [INJ]       [{-NUL+UNQ} A]    [{-NUL+UNQ} B , {+NUL-UNQ} rel]
+-- rel[A*B] [INJ,SUR]   [{-NUL+UNQ} A]    [{-NUL+UNQ} B , {+NUL-UNQ} rel]  <- wrong
+-- rel[A*B] [UNI]       [{-NUL+UNQ} A, {+NUL-UNQ} rel]     [{-NUL+UNQ} B]
+-- rel[A*B] [UNI,TOT]   [{-NUL+UNQ} A, {-NUL-UNQ} rel]     [{-NUL+UNQ} B]
 
 ENDCONTEXT

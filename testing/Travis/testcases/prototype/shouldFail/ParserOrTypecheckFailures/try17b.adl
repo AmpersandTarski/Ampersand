@@ -1,9 +1,9 @@
 CONTEXT Test17b IN ENGLISH
 
 PATTERN Test17b
-r :: A*C
-s :: A*D
-q :: B*C
+r[A*C]
+s[A*D]
+q[B*C]
 CLASSIFY X ISA D
 CLASSIFY X ISA B
 RULE r = s;q

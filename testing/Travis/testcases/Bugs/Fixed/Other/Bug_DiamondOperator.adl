@@ -8,19 +8,19 @@ REPRESENT Symbol TYPE ALPHANUMERIC
 
 --[Identifiers]
 IDENT Identifiers: Identifier(idfrNS,idfrID)
-idfrNS     :: Identifier * Namespace [UNI] -- Namespace within which the Symbol can be dereferenced
-idfrID     :: Identifier * Symbol [UNI] -- Symbol (bitstring) that identifies an Entity within (the set of Entities within) the Namespace
-idfrEntity :: Identifier * Entity [UNI] -- Identifiers that allow references to the Entity to be dereferenced
+idfrNS[Identifier*Namespace] [UNI] -- Namespace within which the Symbol can be dereferenced
+idfrID[Identifier*Symbol] [UNI] -- Symbol (bitstring) that identifies an Entity within (the set of Entities within) the Namespace
+idfrEntity[Identifier*Entity] [UNI] -- Identifiers that allow references to the Entity to be dereferenced
 
 --[Statements]
 CONCEPT Statement "something stated about an Entity, which is represented by the combination of (SubjID,Predicate,LDGraph)"
 CONCEPT LDGraph "representation of everything that is stated about the Subject in a Statement"
 REPRESENT LDGraph TYPE ALPHANUMERIC
 
-stmSubject     :: Statement * Entity [UNI,TOT] -- the Entity that is the subject of the statement
-stmSubjNS      :: Statement * Namespace [UNI] -- the Namespace within which the SubjID can be dereferenced (to an Entity)
-stmSubjID      :: Statement * Symbol [UNI,TOT] -- the Symbol to be dereferenced into the Subject
-stmLDGraph     :: Statement * LDGraph [UNI] -- the stuff that is stated about the statement's subject 
+stmSubject[Statement*Entity] [UNI,TOT] -- the Entity that is the subject of the statement
+stmSubjNS[Statement*Namespace] [UNI] -- the Namespace within which the SubjID can be dereferenced (to an Entity)
+stmSubjID[Statement*Symbol] [UNI,TOT] -- the Symbol to be dereferenced into the Subject
+stmLDGraph[Statement*LDGraph] [UNI] -- the stuff that is stated about the statement's subject 
 
 RULE SubjectIdentifiers LABEL "Subject identifiers in a Statement must be dereferenceable as Entities":
   stmSubject = (stmSubjNS<>idfrNS~ /\ stmSubjID;idfrID~);idfrEntity

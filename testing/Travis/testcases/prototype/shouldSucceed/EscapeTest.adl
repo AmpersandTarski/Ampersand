@@ -24,7 +24,7 @@ special characters on all possible constructs.
 -- Relation: can only be identifier, so no special characters (TODO: why not?) --HJO: The reason is that relations are translated into column names in the database. This would become a serious cause of nasty problems, so we forbid it. 
 
 PATTERN EscapeTest
-  identifies :: Id * Thing       PRAGMA "" " and " " are paired in relation identifies".
+  identifies[Id*Thing]       PRAGMA "" " and " " are paired in relation identifies".
   RULE identification : I |- identifies;identifies~
     MEANING IN ENGLISH "Every Id identifies precisely one Thing"
 ENDPATTERN

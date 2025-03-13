@@ -2,5 +2,5 @@ CONTEXT Issue142 IN DUTCH
 INCLUDE "Issue142.xlsx"
 --   CLASSIFY Box ISA Thing
    CLASSIFY Application ISA Box
-   boxDoc :: Box * Documentation[UNI,TOT]
+   boxDoc[Box*Documentation][UNI,TOT]
 ENDCONTEXT

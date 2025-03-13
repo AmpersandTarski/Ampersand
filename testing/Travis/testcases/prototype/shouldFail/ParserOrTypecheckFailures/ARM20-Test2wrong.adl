@@ -3,8 +3,8 @@ CONTEXT ARM20Test2 IN DUTCH
 ------------------------------------------------------------
 PATTERN ARM20Test2
 
-critBF :: Criterium -> Bedrijfsfunctie PRAGMA "" " wordt gehanteerd binnen "
-expID :: Verwachting -> ExpectationID PRAGMA "" "staat in de business bekend als"
+critBF[Criterium*Bedrijfsfunctie] [MAP] PRAGMA "" " wordt gehanteerd binnen "
+expID[Verwachting*ExpectationID] [MAP] PRAGMA "" "staat in de business bekend als"
 
 VIEW Verwachtingen: Criterium(critBF, expID)
 --$FOUTMELDING voor bovenstaande regel:

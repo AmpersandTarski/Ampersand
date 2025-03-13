@@ -1,6 +1,6 @@
 CONTEXT Issue142 IN DUTCH
    CLASSIFY Application ISA Box
-   boxDoc :: Box * Documentation[UNI,TOT]
+   boxDoc[Box*Documentation][UNI,TOT]
    POPULATION boxDoc[Application*Documentation] CONTAINS
        [("App1","App1Doc")]
 ENDCONTEXT

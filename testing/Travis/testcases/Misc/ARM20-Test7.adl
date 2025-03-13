@@ -25,14 +25,14 @@ CLASSIFY Verwachting ISA Criterium -- had ook 'Businessrule' kunnen zijn
 CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
 RULE Gewetensvragen : I[Gewetensvraag] = I[Verplichting] /\ I[Verwachting]
 
-criterium :: Criterium * Text
+criterium[Criterium*Text]
 ROLE USER MAINTAINS Criteria
 RULE Criteria : I[Criterium] |- criterium;criterium~
 
-oblImpact :: Verplichting * Impact
+oblImpact[Verplichting*Impact]
 RULE Impacts : I[Verplichting] |- oblImpact;oblImpact~
 
-expBelang :: Verwachting * Belang
+expBelang[Verwachting*Belang]
 RULE Belangen : I[Verwachting] |- expBelang;expBelang~
 
 ENDPATTERN

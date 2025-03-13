@@ -6,13 +6,13 @@ CONTEXT ARM20Test5 IN DUTCH
 ------------------------------------------------------------
 PATTERN ARM20Test5
 
-critBF   :: Criterium -> Bedrijfsfunctie
+critBF[Criterium*Bedrijfsfunctie] [MAP]
 
 CLASSIFY Verplichting ISA Criterium
-oblTAV :: Verplichting * Bedrijfsfunctie [UNI] 
+oblTAV[Verplichting*Bedrijfsfunctie] [UNI] 
 
 CLASSIFY Verwachting ISA Criterium
-expTAV :: Verwachting * Bedrijfsfunctie [UNI]
+expTAV[Verwachting*Bedrijfsfunctie] [UNI]
 
 RULE NieuwConcept: I[VerplichteVerwachting] = I[Verplichting] /\ I[Verwachting]
 

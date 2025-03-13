@@ -3,8 +3,8 @@ CONTEXT Try29 IN ENGLISH
 PATTERN Try29
 CLASSIFY Medewerker ISA Persoon
 CLASSIFY Student ISA Persoon
-studentNr :: Student -> StudentNummer
-salNr     :: Medewerker -> SalarisNummer
+studentNr[Student*StudentNummer] [MAP]
+salNr[Medewerker*SalarisNummer] [MAP]
 
 RULE identificatie : I[Persoon] |- studentNr;studentNr~ \/ salNr;salNr~
 MEANING "Elke persoon moet een studentnummer dan wel een salarisnummer hebben"

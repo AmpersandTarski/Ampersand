@@ -1,8 +1,8 @@
  CONTEXT Try40 IN ENGLISH
 
- orderUnit :: Order * Unit
+ orderUnit[Order*Unit]
 
- unitID :: Unit * UnitID [TOT]
+ unitID[Unit*UnitID] [TOT]
  =[ ("11 LMB", "11 Luchtmobiele Brigade")
   ; ("11 INFbat", "11 Infanterie Bataljon")
   ; ("11 INFbat", "Garderegiment Grenadiers en Jagers")
@@ -18,7 +18,7 @@
  errors:
 
  Checking on rule violations...
- Inconsistencies in rule "TOT unitID::Unit*UnitID":
+ Inconsistencies in rule "TOT unitID[Unit*UnitID]":
  - [("11 LMB","11 LMB")]
 
  ERROR: No prototype generated because of rule violations.

@@ -1,4 +1,4 @@
 CONTEXT Bug_TotalInjective IN ENGLISH
-rel::A*B[TOT,INJ]
-populateA::A*A = [("a1", "a1")]
+rel[A*B][TOT,INJ]
+populateA[A*A] = [("a1", "a1")]
 ENDCONTEXT

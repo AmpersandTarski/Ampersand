@@ -3,13 +3,13 @@ CONTEXT ISAtest1 IN DUTCH
 PATTERN ISAtest1
 
 --[Criteria]--
-bfNaam :: Bedrijfsfunctie * Naam [UNI]
+bfNaam[Bedrijfsfunctie*Naam] [UNI]
 MEANING "Een bedrijfsfunctie heeft een naam"
-critBF :: Criterium -> Bedrijfsfunctie
+critBF[Criterium*Bedrijfsfunctie] [MAP]
 MEANING "Dit criterium wordt gehanteerd door (de eigenaar van) een zekere bedrijfsfunctie"
-critTAV :: Criterium -> Bedrijfsfunctie -- tav wie de bf-eigenaar het criterium hanteert
+critTAV[Criterium*Bedrijfsfunctie] [MAP] -- tav wie de bf-eigenaar het criterium hanteert
 MEANING "Dit criterium wordt (door diens eigenaar) gehanteerd ten aanzien van een zekere bedrijfsfunctie"
-critText :: Criterium -> Text -- text van het criterium
+critText[Criterium*Text] [MAP] -- text van het criterium
 MEANING "Een criterium wordt verwoord middels een tekst"
 
 --[Verplichtingen en verwachtingen]--

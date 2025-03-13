@@ -5,16 +5,16 @@ PATTERN ARMISATEST
 -- KEY BedrijfsfunctieNaam: Bedrijfsfunctie(bfNaam)
 IDENT BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- lokaal in de DB
 VIEW  BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- interfaces
-bfNaam :: Bedrijfsfunctie -> BFNaam
+bfNaam[Bedrijfsfunctie*BFNaam] [MAP]
 
 --[Criteria]--
 -- KEY CriteriumID: Criterium(critID)
 IDENT CriteriumIdent: Criterium(critBF, critID) -- lokaal in de DB
 VIEW  CriteriumIdent: Criterium(critBF, TXT ":", critID) -- lokaal in de DB
-critID :: Criterium -> CriteriumID
-critBF :: Criterium -> Bedrijfsfunctie
-critTAV :: Criterium -> Bedrijfsfunctie
-critText :: Criterium -> Text
+critID[Criterium*CriteriumID] [MAP]
+critBF[Criterium*Bedrijfsfunctie] [MAP]
+critTAV[Criterium*Bedrijfsfunctie] [MAP]
+critText[Criterium*Text] [MAP]
 
 --[Verplichtingen en verwachtingen]--
 
@@ -34,25 +34,25 @@ RULE Verbod LABEL "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I
 
 --[BIA-lijst]--
 
-biaVerplichtingDef :: Bedrijfsfunctie * ExterneVerplichting [INJ]
+biaVerplichtingDef[Bedrijfsfunctie*ExterneVerplichting] [INJ]
 ROLE Developer MAINTAINS BIAlijstBijhouden
 RULE BIAlijstBijhouden LABEL "BIA-lijst bijhouden": biaVerplichtingDef = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
 --[Afdekkingen]--
-afdekking :: Verplichting * Verwachtingsverzameling [UNI]
+afdekking[Verplichting*Verwachtingsverzameling] [UNI]
 
 RULE Afdekkingen LABEL "Afdekkingen zijn verwachtingsverzamelingen": afdekking |- vvVerplichting~
 
 --KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBFDef, TXT ":", vvID)
 IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, vvID) -- lokaal in de DB
 VIEW VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, TXT ":", vvID) -- Interfaces
-vvID :: Verwachtingsverzameling -> VVID
-vvVerplichting :: Verwachtingsverzameling -> Verplichting
-vvVerwachting :: Verwachtingsverzameling * Verwachting
+vvID[Verwachtingsverzameling*VVID] [MAP]
+vvVerplichting[Verwachtingsverzameling*Verplichting] [MAP]
+vvVerwachting[Verwachtingsverzameling*Verwachting]
 
 RULE Verwachtingsverzamelingen LABEL "Integriteit van verwachtingsverzamelingen": vvVerplichting~;vvVerwachting |- critBF;critBF~
 
-vvBFDef :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
+vvBFDef[Verwachtingsverzameling*Bedrijfsfunctie] [UNI] -- nodig voor KEY/VIEWs van VV's
 ROLE ExecEngine MAINTAINS insvvBFDef
 RULE insvvBFDef: vvVerplichting;critBF |- vvBFDef
 VIOLATION (TXT "{EX} InsPair vvBFDef;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
@@ -100,7 +100,7 @@ BOX[ "Algemeen" : I
 
 
 PATTERN BIAlijstInterface LABEL "{EE} BIA-lijst interface"
-nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
+nieuweVerplichting[Bedrijfsfunctie*Verplichting] -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
 ROLE ExecEngine MAINTAINS NieuweBIAverplichtingen
 RULE NieuweBIAverplichtingen LABEL "nieuwe BIA verplichtingen": nieuweVerplichting |- -V

@@ -11,18 +11,18 @@ CONCEPT Fruit "Most general concept"
 CLASSIFY Orange ISA Citrus
 CLASSIFY Lemon ISA Citrus
 
-name :: Citrus*Name = 
+name[Citrus*Name] = 
   [ ("orange1", "Inky") 
   ; ("lemon1", "Pinky")
   ; ("strangeFruit", "Clyde")
   ]
 
-ownsOranges :: Person*Orange =
+ownsOranges[Person*Orange] =
   [ ("martijn", "orange1")
   ; ("martijn", "strangeFruit")
   ]
 
-ownsLemons :: Person*Lemon =
+ownsLemons[Person*Lemon] =
   [ ("martijn", "lemon1")
   ; ("martijn", "strangeFruit")
   ]

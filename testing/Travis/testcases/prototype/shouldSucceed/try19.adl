@@ -1,9 +1,9 @@
 CONTEXT Try19 IN ENGLISH
 PATTERN Try19
 
-orderedBy :: Order * Client
-orderReceived :: Order * Client
-orderAccepted :: Order * Vendor
+orderedBy[Order*Client]
+orderReceived[Order*Client]
+orderAccepted[Order*Vendor]
 
 RULE allReceived: orderedBy |- (orderReceived; orderReceived~ /\ -(orderAccepted; V[Vendor * Order])); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
 MEANING "All accepted orders have been received"

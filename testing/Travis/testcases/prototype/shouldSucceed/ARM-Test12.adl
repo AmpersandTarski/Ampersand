@@ -1,6 +1,6 @@
 CONTEXT ARMTest12 IN DUTCH
 
-bfGebruiktARM20DefProp :: Bedrijfsfunctie * Bedrijfsfunctie [PROP]
+bfGebruiktARM20DefProp[Bedrijfsfunctie*Bedrijfsfunctie] [PROP]
 
 ENDCONTEXT
 

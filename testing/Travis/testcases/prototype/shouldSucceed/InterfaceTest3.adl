@@ -1,7 +1,7 @@
 CONTEXT InterfaceTest3 IN ENGLISH
 
-r::A*C
-s::B*D
+r[A*C]
+s[B*D]
 CLASSIFY B ISA A
 
 INTERFACE T :I[B]

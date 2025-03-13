@@ -1,9 +1,9 @@
 CONTEXT Issue174 IN ENGLISH
 
-bfRLIType :: BusinessFunction * RLIType [UNI]
-impactTypeOf :: Impact * RLIType
-likelihoodTypeOf :: Likelihood * RLIType
-riskTypeOf :: Risk * RLIType
+bfRLIType[BusinessFunction*RLIType] [UNI]
+impactTypeOf[Impact*RLIType]
+likelihoodTypeOf[Likelihood*RLIType]
+riskTypeOf[Risk*RLIType]
 
 RULE RLIType : -- invariant
 bfRLIType |- bfRLIType;(impactTypeOf~;impactTypeOf /\ likelihoodTypeOf~;likelihoodTypeOf /\ riskTypeOf~;riskTypeOf)

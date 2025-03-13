@@ -1,5 +1,5 @@
 CONTEXT Try32 IN ENGLISH
-clientName :: Client * Name [UNI,TOT]
+clientName[Client*Name] [UNI,TOT]
 ENDCONTEXT
 
 {- This script failed in revision 1069, when called with --haskell.

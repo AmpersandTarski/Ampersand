@@ -1,8 +1,8 @@
 CONTEXT Bugs IN ENGLISH
 
-r2 :: A*C [UNI,SUR]
+r2[A*C] [UNI,SUR]
     
-r1 :: A*B [UNI]
+r1[A*B] [UNI]
 
 -- The created tables are 
 --      A          B          C

@@ -1,9 +1,9 @@
 CONTEXT Try20 IN ENGLISH
 PATTERN Try20
 
-orderedBy :: Order * Client
-orderReceived :: Order * Client
-orderAccepted :: Order * Client
+orderedBy[Order*Client]
+orderReceived[Order*Client]
+orderAccepted[Order*Client]
 
 RULE allReceived: orderedBy |- (orderReceived \/ orderAccepted)
 MEANING "All accepted orders have been received"

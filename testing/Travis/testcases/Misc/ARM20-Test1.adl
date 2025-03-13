@@ -2,9 +2,9 @@ CONTEXT ARM20bug IN DUTCH
 ------------------------------------------------------------
 PATTERN ARM20bug LABEL "ARM 2.0 bug"
 
-oblBF :: Verplichting -> Bedrijfsfunctie
-expBF :: Verwachting -> Bedrijfsfunctie
-oblexp :: Verplichting * Verwachting
+oblBF[Verplichting*Bedrijfsfunctie] [MAP]
+expBF[Verwachting*Bedrijfsfunctie] [MAP]
+oblexp[Verplichting*Verwachting]
 
 RULE Verplichting LABEL "Verplichting and expectation integrity": oblexp |- oblBF;expBF~
 VIOLATION (TXT "Verplichting '", SRC I, TXT "' is van '", SRC oblBF, TXT "' terwijl verwachting '", TGT I, TXT "' van '", TGT expBF, TXT "' is.")

@@ -6,9 +6,9 @@ This pattern is meant to test the translation of identity definitions in Ampersa
 +}
 
 PATTERN Try20
-  r :: A*A
-  s :: A*A
-  t :: A*A
+  r[A*A]
+  s[A*A]
+  t[A*A]
 ENDPATTERN
 
 IDENT "TEST Try20": A(I)

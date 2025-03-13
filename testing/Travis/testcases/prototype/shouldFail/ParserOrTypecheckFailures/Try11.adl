@@ -6,9 +6,9 @@ This pattern is meant to test the translation of Rules in Ampersand.
 +}
 
 PATTERN Try11
-  r :: A*A
-  s :: A*A
-  t :: A*A
+  r[A*A]
+  s[A*A]
+  t[A*A]
 ENDPATTERN
 
 RULE Test : -(r\/s)

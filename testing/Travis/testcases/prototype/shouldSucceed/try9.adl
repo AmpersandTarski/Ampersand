@@ -1,7 +1,7 @@
 CONTEXT Test IN ENGLISH
 
 --PATTERN Test9
-r :: A*A
+r[A*A]
 RULE Test: r = r\/I
 --ENDPATTERN
 

@@ -1,8 +1,8 @@
 CONTEXT ARMTest1 IN ENGLISH
 
-critBF :: Criterium -> Bedrijfsfunctie
-critTAV :: Criterium -> Bedrijfsfunctie
-biaVerplichtingDef :: Bedrijfsfunctie * Verplichting [INJ]
+critBF[Criterium*Bedrijfsfunctie] [MAP]
+critTAV[Criterium*Bedrijfsfunctie] [MAP]
+biaVerplichtingDef[Bedrijfsfunctie*Verplichting] [INJ]
 
 CLASSIFY Verplichting ISA Criterium
 CLASSIFY ExterneVerplichting ISA Verplichting

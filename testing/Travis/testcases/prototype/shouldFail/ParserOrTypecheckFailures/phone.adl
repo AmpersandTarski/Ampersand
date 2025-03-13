@@ -1,9 +1,9 @@
 CONTEXT TypExample IN DUTCH
 
-reachableBy :: Person * PhoneNumber
-carrier :: CellPhone * Person
-number :: Phone * PhoneNumber
-carrier :: PhoneNumber * NetworkProvider
+reachableBy[Person*PhoneNumber]
+carrier[CellPhone*Person]
+number[Phone*PhoneNumber]
+carrier[PhoneNumber*NetworkProvider]
 RULE carrier~ ; number |- reachableBy
 CLASSIFY CellPhone ISA Phone
 

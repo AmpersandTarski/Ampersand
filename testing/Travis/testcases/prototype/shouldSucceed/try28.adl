@@ -1,6 +1,6 @@
 CONTEXT Try28 IN ENGLISH
-clientName :: Client -> Name 
-clientAddress :: Client -> Address 
+clientName[Client*Name] [MAP] 
+clientAddress[Client*Address] [MAP] 
 
 VIEW Client: Client(clientName, TXT ", ", clientAddress)
 

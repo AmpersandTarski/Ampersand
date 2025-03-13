@@ -2,7 +2,7 @@ CONTEXT Issue142TooGeneric IN DUTCH
 INCLUDE "Issue142TooGeneric.xlsx"
    CLASSIFY Box ISA Thing
    CLASSIFY Application ISA Box
-   boxDoc :: Box * Documentation[UNI,TOT]
+   boxDoc[Box*Documentation][UNI,TOT]
 ENDCONTEXT
 
 -- The population in the .xlsx uses a too generic concept. 

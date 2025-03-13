@@ -1,6 +1,6 @@
 CONTEXT Bugs IN ENGLISH
 
-rel :: A*B []
+rel[A*B] []
   = [ ("a1", "b1"); ("a1", "b2"); ("a2", "b1"); ("a2", "b2")]
 
 INTERFACE Accounts : V[ONE*B]

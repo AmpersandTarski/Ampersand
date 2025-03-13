@@ -5,7 +5,7 @@ VIEW SessionProperty: SESSION { value : I }  ENDVIEW
 -- For system bootstrapping purposes, we need a "God"-account that has all permissions/roles.
 POPULATION Account CONTAINS [ "god" ]
 
-sessionLoginAssist :: SESSION * SESSION [PROP]
+sessionLoginAssist[SESSION*SESSION] [PROP]
 
 INTERFACE Login : "_SESSION"[SESSION]
 BOX[ "Please help" : sessionLoginAssist <SessionProperty>

@@ -5,7 +5,7 @@ RELATION r[X*A] [UNI]
 RELATION t[X*Type]
 
 RELATION van[K*A] [UNI, TOT]
-RELATION naar[K*A] [UNI, TOT]
+RELATION naar[K*A] [MAP]
 RELATION t[K*Type] [UNI, TOT]
 
 RELATION ly[Y*A] [UNI, TOT]

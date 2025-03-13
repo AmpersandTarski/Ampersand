@@ -1,10 +1,10 @@
 CONTEXT TtypesTest IN ENGLISH
 
-huisnummer :: NAW * Huisnummer [TOT,UNI]
+huisnummer[NAW*Huisnummer] [TOT,UNI]
 REPRESENT Huisnummer TYPE INTEGER
-straat :: NAW * Straat [TOT,UNI]
-woonplaats :: NAW *Woonplaats [TOT,UNI]
-foto :: NAW * Foto [UNI]
+straat[NAW*Straat] [TOT,UNI]
+woonplaats[NAW*Woonplaats] [TOT,UNI]
+foto[NAW*Foto] [UNI]
 REPRESENT Foto TYPE BINARY
 
 POPULATION huisnummer CONTAINS [ ("adres van Han" , 12) ]

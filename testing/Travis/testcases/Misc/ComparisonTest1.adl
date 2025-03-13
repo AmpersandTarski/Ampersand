@@ -5,10 +5,10 @@ CONCEPT Persoon ""
 CONCEPT Leeftijd ""
 REPRESENT Leeftijd TYPE INTEGER
 
-leeftijd :: Persoon * Leeftijd [UNI,TOT]
-isOuderVan :: Persoon * Persoon
+leeftijd[Persoon*Leeftijd] [UNI,TOT]
+isOuderVan[Persoon*Persoon]
 
-groterDan :: Leeftijd * Leeftijd []
+groterDan[Leeftijd*Leeftijd] []
 POPULATION groterDan CONTAINS [
     (25, 3),
     (30, 6),

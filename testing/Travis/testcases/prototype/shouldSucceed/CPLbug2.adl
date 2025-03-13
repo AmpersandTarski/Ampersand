@@ -3,7 +3,7 @@ CONTEXT CPLbug2 IN DUTCH -- Ticket #417
 This test exists to demonstrate the feature of populating concepts (as opposed to relations)
 -}
 
-heeftAlsDeelnorm :: Norm * Norm [ASY,IRF]
+heeftAlsDeelnorm[Norm*Norm] [ASY,IRF]
 PRAGMA "" " heeft/omvat "", die er een (directe) deelnorm van is"
 MEANING "Een Norm kan bestaan uit andere Normen (op een 'lager', d.w.z. meer gedetailleerd niveau)."
 

@@ -1,6 +1,6 @@
 CONTEXT Try34 IN ENGLISH
 
-r :: A * B
+r[A*B]
 RULE  I[A] |- r
 
 

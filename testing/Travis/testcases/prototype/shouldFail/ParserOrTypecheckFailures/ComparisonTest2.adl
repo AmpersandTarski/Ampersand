@@ -7,11 +7,11 @@ REPRESENT Boolean TYPE BOOLEAN
 
 POPULATION Boolean CONTAINS [ TRUE, FALSE ]
 
-toTrue :: A * Boolean
+toTrue[A*Boolean]
 POPULATION toTrue CONTAINS[
     ("Foo", TRUE)
 ]
-toFalse :: A * Boolean
+toFalse[A*Boolean]
 POPULATION toFalse CONTAINS[
     ("Foo", FALSE)
 ]

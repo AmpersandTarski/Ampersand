@@ -4,11 +4,11 @@ Dit script vertaalt wel als je tenminste een van de '-I' termen vervangt door 'I
  -}
 PATTERN ArchiTest4
 
-comp :: BusinessRole * BusinessCollaboration PRAGMA "Business role " " is a component of Business collaboration ".
+comp[BusinessRole*BusinessCollaboration] PRAGMA "Business role " " is a component of Business collaboration ".
 RULE R001: I[BusinessCollaboration] |- comp[BusinessRole * BusinessCollaboration]~; -I[BusinessRole]; comp[BusinessRole * BusinessCollaboration]
  MEANING "A business collaboration is composed of two or more business roles."
 
-connect :: Node * CommunicationPath PRAGMA "Node " " is connected to Communication path ".
+connect[Node*CommunicationPath] PRAGMA "Node " " is connected to Communication path ".
 RULE R004: I[CommunicationPath] |- connect[Node * CommunicationPath]~; -I[Node]; connect[Node * CommunicationPath]
 MEANING "A communication path connects two or more nodes."
 

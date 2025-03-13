@@ -16,14 +16,14 @@ Errorlevel = 1 - prototype files will not be installed
 -}
 ------------------------------------------------------------
 PATTERN ARM20Test4
-verplichting :: BIAlijst * Verplichting [INJ]
-biaVaststellingsbesluit :: BIAlijst * JaNee [UNI]
+verplichting[BIAlijst*Verplichting] [INJ]
+biaVaststellingsbesluit[BIAlijst*JaNee] [UNI]
 
 RULE IntegriteitBIAvaststellingsbesluit LABEL "Integriteit van het BIA vaststellingsbesluit":
 biaVaststellingsbesluit;"Ja" |- (V[BIAlijst*Verplichting]-verplichting)!((I[Verplichting] /\ oblImpact;oblImpact~);V[Verplichting*JaNee])
 
 CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
-oblImpact :: Verplichting * Impact [UNI]
+oblImpact[Verplichting*Impact] [UNI]
 ENDPATTERN
 ------------------------------------------------------------
 ENDCONTEXT

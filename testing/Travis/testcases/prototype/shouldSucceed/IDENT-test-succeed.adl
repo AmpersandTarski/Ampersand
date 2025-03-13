@@ -5,8 +5,8 @@ CONTEXT Test IN DUTCH
 
 IDENT Aas: A(r,s)
 
-r :: A * Uid [UNI,TOT]
-s :: A * PW  [UNI,TOT]
+r[A*Uid] [UNI,TOT]
+s[A*PW]  [UNI,TOT]
 
 POPULATION r CONTAINS [ ("a1", "r1") ]
 POPULATION s CONTAINS [ ("a1", "s1") ]
@@ -22,8 +22,8 @@ POPULATION s CONTAINS [ ("a4", "s2") ]
 
 IDENT Bees: B(u,v)
 
-u :: B * Uid [UNI]
-v :: B * PW  [UNI]
+u[B*Uid] [UNI]
+v[B*PW]  [UNI]
 
 POPULATION B CONTAINS [ "b0" ]
 --POPULATION u CONTAINS [ ("b0", "u0") ]

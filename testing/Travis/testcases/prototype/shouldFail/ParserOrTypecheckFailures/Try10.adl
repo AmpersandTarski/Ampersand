@@ -6,9 +6,9 @@ This pattern is meant to test the translation of ObjectDefs in Ampersand.
 +}
 
 PATTERN Try10
-  r :: A*A
-  s :: C*X
-  t :: A*B
+  r[A*A]
+  s[C*X]
+  t[A*B]
   CLASSIFY A ISA D
   CLASSIFY C ISA D
 ENDPATTERN

@@ -2,7 +2,7 @@ CONTEXT FraakTest1 IN ENGLISH
 
 PATTERN HandleBookings
 
-    status :: Booking * Status [UNI] PRAGMA "A " " can have a certain status".
+    status[Booking*Status] [UNI] PRAGMA "A " " can have a certain status".
 
     ROLE FacilityDesk MAINTAINS acceptedCancelledOrRejectedBookings
 

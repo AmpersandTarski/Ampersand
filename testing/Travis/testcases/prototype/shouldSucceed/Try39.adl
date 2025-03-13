@@ -1,5 +1,5 @@
 CONTEXT Try39 IN ENGLISH
 CLASSIFY A ISA B
-r :: A * B
-s :: B -> A
+r[A*B]
+s[B*A] [MAP]
 ENDCONTEXT

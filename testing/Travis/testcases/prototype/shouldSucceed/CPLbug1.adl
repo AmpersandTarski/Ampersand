@@ -1,7 +1,7 @@
 CONTEXT CPLbug1 IN DUTCH
 
-r :: A * A [PROP]
-r :: B * A
+r[A*A] [PROP]
+r[B*A]
 
 POPULATION r[B*A] CONTAINS [ ( "aap", "noot" ) ]
 
