@@ -1,9 +1,9 @@
 CONTEXT Try24 IN ENGLISH
 
 CLASSIFY A ISA B
-r :: A * C [UNI]
+RELATION r[A*C] [UNI]
 
-s :: A * D
+RELATION s[A*D]
 = [ ( "aap" , "noot")
   ; ( "mies", "vuur")
   ]
@@ -12,7 +12,7 @@ s :: A * D
 {- In version 914 of ampersand (but also long before, e.g. version 699), this script generates an error:
 
 D:\data\hjo20125\ampersand>prototype -p --haskell try30.adl
-Inconsistencies in rule "TOT A::A*B":
+Inconsistencies in rule "TOT A[A*B]":
 - [("aap","aap"),("mies","mies")]
 
 

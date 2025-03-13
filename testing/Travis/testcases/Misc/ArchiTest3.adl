@@ -7,8 +7,8 @@ CONTEXT ArchiTest3 IN ENGLISH
 
 PATTERN ArchiTest3
 
-connect :: Node * Communicationpath PRAGMA "Node " " is connected to Communication path ".
-connect :: Device * Network PRAGMA "Device " " is connected to network ".
+RELATION connect[Node*Communicationpath] PRAGMA "Node " " is connected to Communication path ".
+RELATION connect[Device*Network] PRAGMA "Device " " is connected to network ".
 
 RULE R004: I[Communicationpath] |- connect~; -I[Node]; connect
 MEANING "A communication path connects two or more nodes."

@@ -1,7 +1,7 @@
 CONTEXT Issue1281
 
-r :: A*B
-s :: C*D
+RELATION r[A*B]
+RELATION s[C*D]
 
 ENFORCE r := s
 

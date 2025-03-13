@@ -439,16 +439,16 @@ instance Pretty PProp where
   pretty p = case p of
     P_Uni -> text "UNI"
     P_Inj -> text "INJ"
+    P_Map -> text "UNI, TOT"
     P_Sur -> text "SUR"
     P_Tot -> text "TOT"
+    P_Bij -> text "INJ, SUR"
     P_Sym -> text "SYM"
     P_Asy -> text "ASY"
+    P_Prop -> text "SYM, ASY"
     P_Trn -> text "TRN"
     P_Rfx -> text "RFX"
     P_Irf -> text "IRF"
-    P_Prop -> text "SYM, ASY"
-    P_Map -> text "UNI, TOT"
-    P_Bij -> text "INJ, SUR"
 
 -- _ -> text . map toUpper . show $ p
 

@@ -6,9 +6,9 @@ This pattern is meant to test the translation of Interfaces in Ampersand.
 +}
 
 PATTERN Try15
-  r :: A*A
-  s :: A*A
-  t :: A*A
+  RELATION r[A*A]
+  RELATION s[A*A]
+  RELATION t[A*A]
 ENDPATTERN
 
 INTERFACE TESTTry15 : I[A] cRud BOX [ id : I ]

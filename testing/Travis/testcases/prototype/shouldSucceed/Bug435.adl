@@ -1,6 +1,6 @@
 CONTEXT Bug435 IN ENGLISH
 -- Erroneously yields violations:
--- Inconsistencies in rule "UNI r::C*D":
+-- Inconsistencies in rule "UNI r[C*D]":
 -- - [("b","b")]
 
 POPULATION r[A*B] CONTAINS [("a","b")]

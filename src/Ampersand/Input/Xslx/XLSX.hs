@@ -122,7 +122,7 @@ addRelations pCtx = enrichedContext
                   dec_defaults = mempty,
                   dec_pragma = Nothing,
                   dec_Mean = mempty,
-                  pos = origin pop
+                  dec_pos = origin pop
                 }
             ],
           signatur rel `notElem` map signatur declaredRelations

@@ -7,8 +7,8 @@ That is not harmful, but rare. Therefore this script should succeed.
 
 CLASSIFY B ISA C
 
-r :: A * B
-s :: C * C
+RELATION r[A*B]
+RELATION s[C*C]
 
 RULE Ticket454: I[C] /\ r~;r |- s
 

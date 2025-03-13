@@ -330,17 +330,17 @@ instance JSON.FromJSON PProp where
   parseJSON val = case val of
     JSON.String x -> case T.toLower x of
       "uni" -> pure P_Uni
+      "tot" -> pure P_Tot
+      "map" -> pure P_Map
       "inj" -> pure P_Inj
       "sur" -> pure P_Sur
-      "tot" -> pure P_Tot
+      "bij" -> pure P_Bij
       "sym" -> pure P_Sym
       "asy" -> pure P_Asy
+      "prop" -> pure P_Prop
       "trn" -> pure P_Trn
       "rfx" -> pure P_Rfx
       "irf" -> pure P_Irf
-      "prop" -> pure P_Prop
-      "map" -> pure P_Map
-      "bij" -> pure P_Bij
       _ ->
         JSON.unexpected val
     invalid ->
@@ -399,7 +399,7 @@ instance JSON.FromJSON (Guarded P_Relation) where
               dec_label = textToLabelInJSON <$> lbl,
               dec_defaults = [],
               dec_Mean = mean,
-              pos = OriginAtlas
+              dec_pos = OriginAtlas
             }
 
 instance JSON.FromJSON PMeaning where -- todo: checken of dit werkt

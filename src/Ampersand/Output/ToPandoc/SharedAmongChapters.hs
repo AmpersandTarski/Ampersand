@@ -506,8 +506,8 @@ dpRule' env fSpec = dpR
             <> purposes2Blocks env [p | d <- toList nds, p <- purposesOf fSpec (outputLang env fSpec) d] -- Dan de uitleg van de betreffende relaties
             <> case (toList . Set.map EDcD $ nds, outputLang env fSpec) of
               ([], _) -> mempty
-              ([d], Dutch) -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie" else "relatie") <> " nodig:")
-              ([d], English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
+              ([d], Dutch) -> plain ("Om dit te formaliseren is een " <> (if isMapping d then "functie" else "relatie") <> " nodig:")
+              ([d], English) -> plain ("In order to formalize this, a " <> (if isMapping d then "function" else "relation") <> " is introduced:")
               (_, Dutch) ->
                 plain
                   ( "Om te komen tot de formalisatie van "

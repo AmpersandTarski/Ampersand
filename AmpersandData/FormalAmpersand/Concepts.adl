@@ -3,7 +3,7 @@ CONTEXT FormalAmpersand IN ENGLISH
 PATTERN FormalAmpersand.Concepts
     REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
     
-    CONCEPT FormalAmpersand.Concept "A concept is a set of similar atoms."
+    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
     CONCEPT FormalAmpersand.ConceptDef "A conceptdef defines a concept."
     RELATION FormalAmpersand.concept[FormalAmpersand.ConceptDef*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,SUR]
@@ -35,6 +35,15 @@ PATTERN FormalAmpersand.Concepts
     -- RULE delUnusedMeaning : I[Meaning] |- cddef2~;cddef2
     -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
     -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
+
+    RULE I[FormalAmpersand.Concept] |- FormalAmpersand.ttype;FormalAmpersand.ttype~
+    MEANING "Every concept has a type."
+    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.TType;", TGT (FormalAmpersand.hasAttributes;"OBJECT"\/-FormalAmpersand.hasAttributes;"ALPHANUMERIC" ))
+
+    RELATION FormalAmpersand.hasAttributes[FormalAmpersand.Concept] [PROP]
+    ENFORCE FormalAmpersand.hasAttributes := 
+              (I/\FormalAmpersand.source~;FormalAmpersand.isUni;FormalAmpersand.source) \/
+              (I/\FormalAmpersand.target~;FormalAmpersand.isInj;FormalAmpersand.target)
 
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."

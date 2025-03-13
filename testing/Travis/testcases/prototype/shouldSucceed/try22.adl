@@ -1,8 +1,8 @@
 CONTEXT Test IN ENGLISH
 
 PATTERN Test11
-r :: A*A
-r :: B*C
+RELATION r[A*A]
+RELATION r[B*C]
 RULE Test: r = r[A*A]-I
 ENDPATTERN
 

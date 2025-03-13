@@ -411,7 +411,9 @@ instance Ord Conjunct where
 type AProps = Set.Set AProp
 
 data AProp
-  = -- | univalent
+  = -- Map, Bij, and Prop are merely syntactic sugar in the Ampersand language. So, they show up in the P-structure but not in the A-structure.
+
+    -- | univalent
     Uni
   | -- | injective
     Inj

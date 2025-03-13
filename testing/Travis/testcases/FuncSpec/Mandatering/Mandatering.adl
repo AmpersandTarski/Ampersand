@@ -207,7 +207,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
      ; ( "personeel ontslaan", "Art X3")
      ]
 
-   onder :: Formatieplaats * Formatieplaats
+   RELATION onder[Formatieplaats*Formatieplaats]
    PRAGMA "" " valt onder de verantwoordelijkheid van "
    MEANING "De uitspraak ``Formatieplaats $a$ valt onder de verantwoordelijkheid van $b$.'' behoort tot de gemeenschappelijke taal."
 

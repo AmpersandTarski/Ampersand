@@ -1,13 +1,13 @@
 CONTEXT Sequences IN ENGLISH
 
-seSequence    :: SeqEntry * Sequence [UNI,TOT] -- Sequence entries are in a sequence
-seqFirstEntry :: Sequence * SeqEntry [UNI,INJ] -- First entry in a sequence
-seqLastEntry  :: Sequence * SeqEntry [UNI,INJ] -- Last entry in a sequnece
-seNextEntry   :: SeqEntry * SeqEntry           -- Next entry in the same sequence
+RELATION seSequence[SeqEntry*Sequence] [UNI,TOT] -- Sequence entries are in a sequence
+RELATION seqFirstEntry[Sequence*SeqEntry] [UNI,INJ] -- First entry in a sequence
+RELATION seqLastEntry[Sequence*SeqEntry] [UNI,INJ] -- Last entry in a sequnece
+RELATION seNextEntry[SeqEntry*SeqEntry]           -- Next entry in the same sequence
 
 CLASSIFY Factuur ISA Sequence
 CLASSIFY Factuurregel ISA SeqEntry
-regelFactuur :: Factuurregel * Factuur [UNI,TOT] -- Factuurregels horen bij één factuur
+RELATION regelFactuur[Factuurregel*Factuur] [UNI,TOT] -- Factuurregels horen bij één factuur
 
 RULE Sequences: regelFactuur |- seSequence  -- Elke factuur is een sequence van facuurregels.
 

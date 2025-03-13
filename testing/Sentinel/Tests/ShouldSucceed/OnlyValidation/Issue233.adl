@@ -1,8 +1,8 @@
 CONTEXT Diamond IN ENGLISH -- Issue233
 -- This script checks whether or not the diamond operator is functional.
 
-sum :: Sum * Integer [UNI]
-arg :: Sum * Integer
+RELATION sum[Sum*Integer] [UNI]
+RELATION arg[Sum*Integer]
 
 -- In other words:
 RULE Rule1 LABEL "Sums are identified by their args, version 1": arg <> arg~ |- I[Sum]

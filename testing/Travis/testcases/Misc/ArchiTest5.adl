@@ -3,7 +3,7 @@ CONTEXT ArchiTest5 IN ENGLISH
 PATTERN Business
 CLASSIFY BusinessCollaboration ISA BusinessRole
 
-comp :: BusinessRole * BusinessCollaboration PRAGMA "Business role " " is a component of Business collaboration ".
+RELATION comp[BusinessRole*BusinessCollaboration] PRAGMA "Business role " " is a component of Business collaboration ".
 RULE R001: comp |- (V[BusinessRole * BusinessRole]-I[BusinessRole]); comp
  MEANING "A business collaboration is composed of two or more business roles."
 

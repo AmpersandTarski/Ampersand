@@ -1,6 +1,6 @@
 CONTEXT Issue785
 
-prop :: A * A [PROP]
+RELATION prop[A*A] [PROP]
 
 RULE goodTerm: (I - prop);V;"Some text"[B]
 RULE buggyTerm: (I - prop)#"Some text"[B]

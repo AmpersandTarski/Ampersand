@@ -2,10 +2,10 @@ CONTEXT FraakTest2 IN ENGLISH
 
 {-Prototype.exe (Ampersand v2.2.1.1016, build time: 6-May-13 13:46.54) geeft de volgende fouten:
 Checking on rule violations...
-Inconsistencies in rule "TOT Beamer::Beamer*Resource":
+Inconsistencies in rule "TOT Beamer[Beamer*Resource]":
 - [("Beamer 001","Beamer 001"),("Beamer Gn 1.147","Beamer Gn 1.147")]
 
-Inconsistencies in rule "TOT Room::Room*Resource":
+Inconsistencies in rule "TOT Room[Room*Resource]":
 - [("Gn secretariaat","Gn secretariaat"),("Gn 1.147","Gn 1.147")]
 -}
 
@@ -14,7 +14,7 @@ PATTERN FraakTest2
     CLASSIFY Room ISA Resource
     CLASSIFY Beamer ISA Resource
 
-    beamerLocation :: Beamer * Room
+    RELATION beamerLocation[Beamer*Room]
 
 ENDPATTERN
 

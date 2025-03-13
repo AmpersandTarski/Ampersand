@@ -15,6 +15,7 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
+import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
@@ -339,7 +340,7 @@ pCtx2aCtx
         multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
         let reprOf cpt =
               fromMaybe
-                Object -- default representation is Object (sometimes called `ugly identifiers')
+                (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
@@ -1424,16 +1425,16 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
     pProp2aProps p = case p of
       P_Uni -> [Uni]
       P_Inj -> [Inj]
+      P_Map -> [Uni, Tot]
       P_Sur -> [Sur]
       P_Tot -> [Tot]
+      P_Bij -> [Inj, Sur]
       P_Sym -> [Sym]
       P_Asy -> [Asy]
+      P_Prop -> [Sym, Asy]
       P_Trn -> [Trn]
       P_Rfx -> [Rfx]
       P_Irf -> [Irf]
-      P_Prop -> [Sym, Asy]
-      P_Map -> [Uni, Tot]
-      P_Bij -> [Inj, Sur]
 
     decSign = pSign2aSign cptMap (dec_sign pd)
     checkEndoProps :: Guarded ()

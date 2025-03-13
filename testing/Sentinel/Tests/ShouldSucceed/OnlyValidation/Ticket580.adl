@@ -1,10 +1,9 @@
 CONTEXT Ticket444 IN DUTCH
 --------------------------------------------------------
 PATTERN Ticket444
-
-nhIsDashboard :: Normenhiërarchie * Normenhiërarchie [PROP]
-ouDashboardNH :: OrgUnit * Normenhiërarchie [UNI]
-bfDashboardNH :: Bedrijfsfunctie * Normenhiërarchie [UNI]
+RELATION nhIsDashboard[Normenhiërarchie*Normenhiërarchie] [PROP]
+RELATION ouDashboardNH[OrgUnit*Normenhiërarchie] [UNI]
+RELATION bfDashboardNH[Bedrijfsfunctie*Normenhiërarchie] [UNI]
 
 --ROLE Developer MAINTAINS Regeltje
 RULE Regeltje : I /\ (bfDashboardNH~;bfDashboardNH \/ ouDashboardNH~;ouDashboardNH) |- nhIsDashboard

@@ -3,10 +3,10 @@ CONTEXT IdentTest1 IN DUTCH
 CLASSIFY Nederlander ISA Europeaan
 
 IDENT Nederlander : Nederlander(bsn)
-bsn :: Nederlander * BSN [UNI, TOT]
+RELATION bsn[Nederlander*BSN] [UNI, TOT]
   = [ ( "Piet", "12345")
     ]  
-geboorteland :: Europeaan * Land [UNI]
+RELATION geboorteland[Europeaan*Land] [UNI]
   = [ ( "John Smith" , "Engeland" )
     ]
 RULE Buitenlander LABEL "een buitenlander heeft geen BSN" : -I[Nederlander] |- -(bsn;bsn~)
