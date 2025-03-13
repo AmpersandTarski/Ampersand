@@ -14,21 +14,25 @@ class HasProps r where
   properties :: r -> AProps
 
 class Relational r where
-  isProp :: r -> Bool -- > If True, then the argument is a property. Otherwise we don't know.
   isIdent :: r -> Bool -- > If True, then the argument is equivalent to I. Otherwise we don't know.
   isImin :: r -> Bool -- > If True, then the argument is equivalent to -I. Otherwise we don't know.
   isTrue :: r -> Bool -- > If True, then the argument is equivalent to V. Otherwise we don't know.
   isFalse :: r -> Bool -- > If True, then the argument is equivalent to -V. Otherwise we don't know.
-  isFunction :: r -> Bool -- > If True, then the argument is a total function. Otherwise we don't know.
-  isTot :: r -> Bool -- > If True, then the argument is total. Otherwise we don't know.
-  isUni :: r -> Bool -- > If True, then the argument is univalent. Otherwise we don't know.
-  isSur :: r -> Bool -- > If True, then the argument is surjective. Otherwise we don't know.
-  isInj :: r -> Bool -- > If True, then the argument is injective. Otherwise we don't know.
-  isRfx :: r -> Bool -- > If True, then the argument is reflexive. Otherwise we don't know.
-  isIrf :: r -> Bool -- > If True, then the argument is irreflexive. Otherwise we don't know.
-  isTrn :: r -> Bool -- > If True, then the argument is transitive. Otherwise we don't know.
-  isSym :: r -> Bool -- > If True, then the argument is symmetric. Otherwise we don't know.
-  isAsy :: r -> Bool -- > If True, then the argument is antisymmetric. Otherwise we don't know.
+  isTot :: r -> Bool -- > True if totality can be derived from the properties of the constituent declarations.
+  isUni :: r -> Bool -- > True if univalence can be derived from the properties of the constituent declarations.
+  isMapping :: r -> Bool
+  isMapping r = isUni r && isTot r
+  isBijective :: r -> Bool
+  isBijective r = isInj r && isSur r
+  isSur :: r -> Bool -- > True if surjectivity can be derived from the properties of the constituent declarations.
+  isInj :: r -> Bool -- > True if injectivity can be derived from the properties of the constituent declarations.
+  isRfx :: r -> Bool -- > True if reflexivity can be derived from the properties of the constituent declarations.
+  isIrf :: r -> Bool -- > True if irreflexivity can be derived from the properties of the constituent declarations.
+  isTrn :: r -> Bool -- > True if transitivity can be derived from the properties of the constituent declarations.
+  isSym :: r -> Bool -- > True if symmetry can be derived from the properties of the constituent declarations.
+  isAsy :: r -> Bool -- > True if antisymmetry can be derived from the properties of the constituent declarations.
+  isProp :: r -> Bool
+  isProp r = isSym r && isAsy r
 
 instance HasProps Relation where
   properties = decprps
@@ -54,16 +58,15 @@ instance HasProps Expression where
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
     EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
-      Set.fromList
-        $
+      Set.fromList $
         -- NOT totaal
         -- NOT surjective
         [Inj | isONE (source sgn)]
-        ++ [Uni | isONE (target sgn)]
-        ++ [Asy | isEndo sgn, isONE (source sgn)]
-        ++ [Sym | isEndo sgn]
-        ++ [Rfx | isEndo sgn]
-        ++ [Trn | isEndo sgn]
+          ++ [Uni | isONE (target sgn)]
+          ++ [Asy | isEndo sgn, isONE (source sgn)]
+          ++ [Sym | isEndo sgn]
+          ++ [Rfx | isEndo sgn]
+          ++ [Trn | isEndo sgn]
     EBrk f -> properties f
     ECps (l, r) -> Set.filter (\x -> x `elem` [Uni, Tot, Inj, Sur]) (properties l `Set.intersection` properties r)
     EPrd (l, r) -> Set.fromList $ [Tot | isTot l] ++ [Sur | isSur r] ++ [Rfx | isRfx l && isRfx r] ++ [Trn]
@@ -83,9 +86,8 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EUni (l, r) -> isTrue l || isTrue r
       EDif (l, r) -> isTrue l && isFalse r
       ECps (l, r)
-        | isUni l && isTot l -> isTrue r
-        | isInj r && isSur r -> isTrue l -- HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
-        -- SJO, 20220603: Restored this statement because this is the symmetric version of the former
+        | isTot l -> isTrue r
+        | isSur r -> isTrue l
         | otherwise -> isTrue l && isTrue r
       EPrd (l, r) -> isTrue l && isTrue r -- SJ, 20220604: if you refine this, please consider issue #1293
       EKl0 e -> isTrue e
@@ -113,7 +115,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EBrk e -> isFalse e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
-  isProp expr = isAsy expr && isSym expr
   isIdent expr = ( \x ->
                      if x && (source expr /= target expr)
                        then fatal $ "Something wrong with isIdent." <> tshow expr
@@ -151,19 +152,15 @@ instance Relational Expression where -- TODO: see if we can find more property c
     EBrk f -> isImin f
     EFlp f -> isImin f
     _ -> False -- TODO: find richer answers for ELrs, ERrs, and EDia
-  isFunction r = isUni r && isTot r
-
   isTot = isTotSur Tot
   isSur = isTotSur Sur
-
   isUni = isUniInj Uni
   isInj = isUniInj Inj
-
+  isSym r = Sym `elem` properties r
+  isAsy r = Asy `elem` properties r
   isRfx r = Rfx `elem` properties r
   isIrf r = Irf `elem` properties r
   isTrn r = Trn `elem` properties r
-  isSym r = Sym `elem` properties r
-  isAsy r = Asy `elem` properties r
 
 -- Not to be exported:
 isTotSur :: AProp -> Expression -> Bool
@@ -224,3 +221,18 @@ isUniInj prop expr =
     EMp1 {} -> True
   where
     todo = prop `elem` properties expr
+
+instance Relational Relation where
+  isUni rel = Uni `Set.member` decprps rel
+  isTot rel = Tot `Set.member` decprps rel
+  isInj rel = Inj `Set.member` decprps rel
+  isSur rel = Sur `Set.member` decprps rel
+  isAsy rel = Asy `Set.member` decprps rel
+  isSym rel = Sym `Set.member` decprps rel
+  isTrn rel = Trn `Set.member` decprps rel
+  isRfx rel = Rfx `Set.member` decprps rel
+  isIrf rel = Irf `Set.member` decprps rel
+  isIdent _ = False
+  isImin _ = False
+  isTrue _ = False
+  isFalse _ = False

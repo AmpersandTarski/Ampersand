@@ -49,7 +49,7 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
       | T.null needle = fatal "Empty needle."
       | otherwise -- replace is now safe to use, because we have a non-empty needle
         =
-          Partial.replace needle replacement haystack
+        Partial.replace needle replacement haystack
 
 prettyhsep :: (Pretty a) => [a] -> Doc
 prettyhsep = hsep . map pretty
@@ -439,16 +439,16 @@ instance Pretty PProp where
   pretty p = case p of
     P_Uni -> text "UNI"
     P_Inj -> text "INJ"
+    P_Map -> text "UNI, TOT"
     P_Sur -> text "SUR"
     P_Tot -> text "TOT"
+    P_Bij -> text "INJ, SUR"
     P_Sym -> text "SYM"
     P_Asy -> text "ASY"
+    P_Prop -> text "SYM, ASY"
     P_Trn -> text "TRN"
     P_Rfx -> text "RFX"
     P_Irf -> text "IRF"
-    P_Prop -> text "SYM, ASY"
-    P_Map -> text "UNI, TOT"
-    P_Bij -> text "INJ, SUR"
 
 -- _ -> text . map toUpper . show $ p
 

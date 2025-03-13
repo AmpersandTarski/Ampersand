@@ -15,6 +15,8 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (first, second)
 import Ampersand.Classes
+    ( ConceptStructure(bindedRelationsIn, concs) )
+import Ampersand.Classes.Relational ( Relational(isUni) )
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
@@ -1564,6 +1566,14 @@ tmpNewTransformerDefsFA fSpec =
         "FormalAmpersand.Concept",
         "FormalAmpersand.Concept",
         [] -- TODO
+      ),
+      ( "FormalAmpersand.isUni",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isUni rel
+        ]
       ),
       ( "FormalAmpersand.originatesFrom",
         "FormalAmpersand.Conjunct",

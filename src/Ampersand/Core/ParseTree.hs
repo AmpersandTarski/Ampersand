@@ -1347,43 +1347,43 @@ type PProps = Set PProp
 data PProp
   = -- | univalent
     P_Uni
+  | -- | total
+    P_Tot
+  | -- | MAP keyword, Ampersand replaces this by [Uni, Tot].
+    P_Map
   | -- | injective
     P_Inj
   | -- | surjective
     P_Sur
-  | -- | total
-    P_Tot
+  | -- | BIJ keyword, Ampersand replaces this by [Inj, Sur].
+    P_Bij
   | -- | symmetric
     P_Sym
   | -- | antisymmetric
     P_Asy
+  | -- | PROP keyword, Ampersand replaces this by [Sym, Asy].
+    P_Prop
   | -- | transitive
     P_Trn
   | -- | reflexive
     P_Rfx
   | -- | irreflexive
     P_Irf
-  | -- | PROP keyword, the parser must replace this by [Sym, Asy].
-    P_Prop
-  | -- | MAP keyword, the parser must replace this by [Uni, Tot].
-    P_Map
-  | -- | BIJ keyword, the parser must replace this by [Inj, Sur].
-    P_Bij
   deriving (Eq, Ord, Typeable, Data, Enum, Bounded)
 
 instance Show PProp where
   show P_Uni = "UNI"
   show P_Inj = "INJ"
+  show P_Map = "MAP"
   show P_Sur = "SUR"
   show P_Tot = "TOT"
+  show P_Bij = "BIJ"
   show P_Sym = "SYM"
   show P_Asy = "ASY"
+  show P_Prop = "PROP"
   show P_Trn = "TRN"
   show P_Rfx = "RFX"
   show P_Irf = "IRF"
-  show P_Prop = "PROP"
-  show P_Map = "MAP"
-  show P_Bij = "BIJ"
 
 instance Unique PProp where
   showUnique = toText1Unsafe . tshow
@@ -1391,8 +1391,10 @@ instance Unique PProp where
 instance Flippable PProp where
   flp P_Uni = P_Inj
   flp P_Tot = P_Sur
+  flp P_Map = P_Bij
   flp P_Sur = P_Tot
   flp P_Inj = P_Uni
+  flp P_Bij = P_Map
   flp x = x
 
 data PRelationDefault

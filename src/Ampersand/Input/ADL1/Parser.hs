@@ -454,7 +454,7 @@ pRuleDef =
                   Nothing -> fatal $ "Not a valid NamePart: " <> localNm
                   Just np -> np
               )
-            NE.:| []
+              NE.:| []
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView
@@ -588,15 +588,16 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         -- replace PROP by SYM, ASY
         rep :: PProps -> PProps
         rep ps
+          | P_Map `elem` ps = Set.fromList [P_Uni, P_Tot] `Set.union` (P_Map `Set.delete` ps)
+          | P_Bij `elem` ps = Set.fromList [P_Inj, P_Sur] `Set.union` (P_Bij `Set.delete` ps)
           | P_Prop `elem` ps = Set.fromList [P_Sym, P_Asy] `Set.union` (P_Prop `Set.delete` ps)
           | otherwise = ps
-        -- add Uni and Inj if ps has neither Sym nor Asy
+        -- add Uni and Inj if ps has both Sym and Asy
         conv :: PProps -> PProps
         conv ps =
-          ps
-            `Set.union` if P_Sym `elem` ps && P_Asy `elem` ps
-              then Set.fromList [P_Uni, P_Inj]
-              else Set.empty
+          if P_Sym `elem` ps && P_Asy `elem` ps
+            then ps `Set.union` Set.fromList [P_Uni, P_Inj]
+            else ps
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser PProps
@@ -605,7 +606,7 @@ pFun =
     <$ (pOperator . toText1Unsafe) "*"
     <|> Set.fromList [P_Uni, P_Tot]
     <$ (pOperator . toText1Unsafe) "->"
-    <|> Set.fromList [P_Sur, P_Inj]
+    <|> Set.fromList [P_Inj, P_Sur]
     <$ (pOperator . toText1Unsafe) "<-"
     <|> pBrackets pMults
   where
@@ -883,10 +884,10 @@ pSubInterface =
             (typ, keys) = fromMaybe (toText1Unsafe "FORM", []) x
         pBoxSpecification :: AmpParser (Text1, [TemplateKeyValue])
         pBoxSpecification =
-          pChevrons
-            $ (,)
-            <$> (pSingleWord <|> pAnyKeyWord)
-            <*> many pTemplateKeyValue
+          pChevrons $
+            (,)
+              <$> (pSingleWord <|> pAnyKeyWord)
+              <*> many pTemplateKeyValue
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue =
           TemplateKeyValue

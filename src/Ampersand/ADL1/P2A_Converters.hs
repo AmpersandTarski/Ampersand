@@ -67,9 +67,9 @@ checkPurposes ctx =
    in case danglingPurposes of
         [] -> pure ()
         x : xs ->
-          Errors
-            $ mkDanglingPurposeError x
-            NE.:| map mkDanglingPurposeError xs
+          Errors $
+            mkDanglingPurposeError x
+              NE.:| map mkDanglingPurposeError xs
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
@@ -447,8 +447,8 @@ pCtx2aCtx
                     { tyroot = r,
                       tyCpts = reverse . sortSpecific2Generic gns $ cs
                     }
-              rs -> mkMultipleRootsError rs
-                $ case filter isInvolved gns of
+              rs -> mkMultipleRootsError rs $
+                case filter isInvolved gns of
                   [] -> fatal "No involved gens"
                   x : xs -> x NE.:| xs
             where
@@ -725,7 +725,7 @@ pCtx2aCtx
             | (length . L.nub . map toUpper) userCrudString
                 == length userCrudString
                 && all isValidChar userCrudString ->
-                warnings pc $ mostLiberalCruds org (Just userCrud)
+              warnings pc $ mostLiberalCruds org (Just userCrud)
             | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrud
             where
               userCrudString = T.unpack . text1ToText $ userCrud
@@ -755,40 +755,40 @@ pCtx2aCtx
               crd = text1ToText crd1
               warns :: [Warning]
               warns =
-                map (mkCrudWarning pc)
-                  $ [ [ "'C' was specified, but the term ",
-                        "  " <> showA expr,
-                        "doesn't allow for the creation of a new atom at its target concept (" <> (fullName . target) expr <> ") "
-                      ]
-                        <> [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
-                             | isFitForCrudU expr,
-                               'U' `notElem` T.unpack crd
-                           ]
-                      | 'C' `elem` T.unpack crd && not (isFitForCrudC expr)
+                map (mkCrudWarning pc) $
+                  [ [ "'C' was specified, but the term ",
+                      "  " <> showA expr,
+                      "doesn't allow for the creation of a new atom at its target concept (" <> (fullName . target) expr <> ") "
                     ]
-                  <> [ [ "'R' was specified, but the term ",
-                         "  " <> showA expr,
-                         "doesn't allow for read of the pairs in that term."
+                      <> [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
+                           | isFitForCrudU expr,
+                             'U' `notElem` T.unpack crd
+                         ]
+                    | 'C' `elem` T.unpack crd && not (isFitForCrudC expr)
+                  ]
+                    <> [ [ "'R' was specified, but the term ",
+                           "  " <> showA expr,
+                           "doesn't allow for read of the pairs in that term."
+                         ]
+                         | 'R' `elem` T.unpack crd && not (isFitForCrudR expr)
                        ]
-                       | 'R' `elem` T.unpack crd && not (isFitForCrudR expr)
-                     ]
-                  <> [ [ "'U' was specified, but the term ",
-                         "  " <> showA expr,
-                         "doesn't allow to insert or delete pairs in it."
+                    <> [ [ "'U' was specified, but the term ",
+                           "  " <> showA expr,
+                           "doesn't allow to insert or delete pairs in it."
+                         ]
+                         | 'U' `elem` T.unpack crd && not (isFitForCrudU expr)
                        ]
-                       | 'U' `elem` T.unpack crd && not (isFitForCrudU expr)
-                     ]
-                  <> [ [ "'D' was specified, but the term ",
-                         "  " <> showA expr,
-                         "doesn't allow for the deletion of an atom from its target concept (" <> (fullName . target) expr <> ") "
+                    <> [ [ "'D' was specified, but the term ",
+                           "  " <> showA expr,
+                           "doesn't allow for the deletion of an atom from its target concept (" <> (fullName . target) expr <> ") "
+                         ]
+                         | 'D' `elem` T.unpack crd && not (isFitForCrudD expr)
                        ]
-                       | 'D' `elem` T.unpack crd && not (isFitForCrudD expr)
-                     ]
-                  <> [ [ "R(ead) is required to do U(pdate) or D(elete) ",
-                         "however, you explicitly specified 'r'."
+                    <> [ [ "R(ead) is required to do U(pdate) or D(elete) ",
+                           "however, you explicitly specified 'r'."
+                         ]
+                         | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
                        ]
-                       | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
-                     ]
       pSubi2aSubi ::
         ContextInfo ->
         Expression -> -- Expression of the surrounding
@@ -804,8 +804,8 @@ pCtx2aCtx
           P_InterfaceRef {si_str = ifcId} ->
             do
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
-                Just disambObj -> typecheckTerm ci
-                  $ case disambObj of
+                Just disambObj -> typecheckTerm ci $
+                  case disambObj of
                     P_BoxItemTerm {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
                 Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
@@ -819,12 +819,12 @@ pCtx2aCtx
                     }
                 )
           P_Box {} ->
-            addWarnings warnings
-              $ build
-              <$> traverse (fn <=< typecheckObjDef ci) l
-              <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
-              <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-              <* mustBeObject (target objExpr)
+            addWarnings warnings $
+              build
+                <$> traverse (fn <=< typecheckObjDef ci) l
+                <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
+                <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
+                <* mustBeObject (target objExpr)
             where
               toNonEmptyLabel :: P_BoxItem a -> Text1
               toNonEmptyLabel bi = case obj_PlainName bi of
@@ -910,8 +910,8 @@ pCtx2aCtx
             case gb of
               Errors x -> Errors x
               Checked obj' ws ->
-                addWarnings ws
-                  $ case obj' of
+                addWarnings ws $
+                  case obj' of
                     BxExpr o ->
                       case ttype . target . objExpression $ o of
                         Object ->
@@ -1050,8 +1050,8 @@ pCtx2aCtx
                 let tgtOk = target expr `isaC` target rel
                 unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
                 let expr' =
-                      addEpsilonLeft genLattice (source rel)
-                        $ addEpsilonRight genLattice (target rel) expr
+                      addEpsilonLeft genLattice (source rel) $
+                        addEpsilonRight genLattice (target rel) expr
                 return
                   AEnforce
                     { pos = pos',
@@ -1093,10 +1093,10 @@ pCtx2aCtx
                         Just
                           . PairView
                           $ PairViewText pos' ("{EX} " <> command <> ";" <> fullName rel <> ";" <> fullName (source rel) <> ";")
-                          NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
-                                  PairViewText pos' $ ";" <> fullName (target rel) <> ";",
-                                  PairViewExp pos' Tgt (EDcI (target rel))
-                                ],
+                            NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
+                                    PairViewText pos' $ ";" <> fullName (target rel) <> ";",
+                                    PairViewExp pos' Tgt (EDcI (target rel))
+                                  ],
                       rrpat = mPat,
                       rrkind = Enforce
                     }
@@ -1424,24 +1424,24 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
     pProp2aProps p = case p of
       P_Uni -> [Uni]
       P_Inj -> [Inj]
+      P_Map -> [Uni, Tot]
       P_Sur -> [Sur]
       P_Tot -> [Tot]
+      P_Bij -> [Inj, Sur]
       P_Sym -> [Sym]
       P_Asy -> [Asy]
+      P_Prop -> [Sym, Asy]
       P_Trn -> [Trn]
       P_Rfx -> [Rfx]
       P_Irf -> [Irf]
-      P_Prop -> [Sym, Asy]
-      P_Map -> [Uni, Tot]
-      P_Bij -> [Inj, Sur]
 
     decSign = pSign2aSign cptMap (dec_sign pd)
     checkEndoProps :: Guarded ()
     checkEndoProps
       | source decSign == target decSign =
-          pure ()
+        pure ()
       | null xs =
-          pure ()
+        pure ()
       | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.toList xs)
       where
         xs = Set.filter isEndoProp $ dec_prps pd

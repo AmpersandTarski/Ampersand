@@ -17,7 +17,7 @@ where
 
 import Ampersand.ADL1 hiding (Identity)
 import Ampersand.Basics
-import Ampersand.Classes (isFunction)
+import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
@@ -36,81 +36,81 @@ import qualified Text.Pandoc.UTF8 as UTF8
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> PT.Context Text -- [(Text , Text)]
 defaultWriterVariables env fSpec =
-  mkContext
-    $ [ ( "title",
-          ( case (outputLang', view chaptersL env) of
-              (Dutch, [Diagnosis]) -> "Diagnose van "
-              (English, [Diagnosis]) -> "Diagnosis of "
-              (Dutch, [SharedLang]) -> "Taalmodel van "
-              (English, [SharedLang]) -> "Shared language of "
-              (Dutch, _) -> "Functioneel Ontwerp van "
-              (English, _) -> "Functional Design of "
-          )
-            <> fullName fSpec
-        ),
-        ("fontsize", "12pt"), -- can be overridden by geometry package (see below)
-        ( "lang",
-          case outputLang' of
-            Dutch -> "nl-NL"
-            English -> "en-US"
-        ),
-        ("papersize", "a4"),
-        ( "babel-lang",
-          case outputLang' of
-            Dutch -> "dutch"
-            English -> "english"
-        ),
-        ("documentclass", "report")
-      ]
-    <> [("toc", "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == view chaptersL env]
-    <> [ ( "header-includes",
-           T.unlines
-             [ "% ============Ampersand specific Begin=================",
-               "% First a couple of LaTeX packages are included:",
-               "",
-               "% The glossaries package supports acronyms and multiple glossaries",
-               "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents",
-               "% \\makeglossaries", -- Disabled because of warnings in LaTeX. TODO: Have to generate glossaries using Pandoc, not only for LaTeX.
-               "",
-               "% geometry provides a flexible and easy interface to page dimentions",
-               "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm",
-               "            , heightrounded, footskip=.5cm",
-               "            , marginparwidth=2.5cm, marginparsep=0.5cm]{geometry}",
-               "",
-               "% breqn – Automatic line breaking of displayed equations",
-               "\\usepackage{breqn}",
-               "",
-               "% colonequals – Colon equals symbols",
-               "\\usepackage{colonequals}",
-               "",
-               "% caption – Customising captions in floating environments",
-               "\\usepackage{caption}",
-               "\\captionsetup{format=plain",
-               "              ,textfont=bf,labelfont=small",
-               "              ,labelsep=none",
-               "              ,labelformat=empty",
-               "              ,width=.85\\textwidth",
-               "              }",
-               "",
-               "% textcomp – LATEX support for the Text Companion fonts -- Disabled because obsolete.",
-               "% \\usepackage{textcomp}",
-               "",
-               "% hypcap – Adjusting the anchors of captions",
-               "\\usepackage[all]{hypcap}",
-               "",
-               "% <Adaptation>: The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are",
-               "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note",
-               "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath",
-               "\\DeclareRobustCommand{\\[}{\\begin{equation}}",
-               "\\DeclareRobustCommand{\\]}{\\end{equation}}",
-               "% <End-adaptation>",
-               "",
-               "",
-               "% ============Ampersand specific End==================="
-             ]
-         )
-         | view fspecFormatL env `elem` [Fpdf, Flatex]
-       ]
+  mkContext $
+    [ ( "title",
+        ( case (outputLang', view chaptersL env) of
+            (Dutch, [Diagnosis]) -> "Diagnose van "
+            (English, [Diagnosis]) -> "Diagnosis of "
+            (Dutch, [SharedLang]) -> "Taalmodel van "
+            (English, [SharedLang]) -> "Shared language of "
+            (Dutch, _) -> "Functioneel Ontwerp van "
+            (English, _) -> "Functional Design of "
+        )
+          <> fullName fSpec
+      ),
+      ("fontsize", "12pt"), -- can be overridden by geometry package (see below)
+      ( "lang",
+        case outputLang' of
+          Dutch -> "nl-NL"
+          English -> "en-US"
+      ),
+      ("papersize", "a4"),
+      ( "babel-lang",
+        case outputLang' of
+          Dutch -> "dutch"
+          English -> "english"
+      ),
+      ("documentclass", "report")
+    ]
+      <> [("toc", "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == view chaptersL env]
+      <> [ ( "header-includes",
+             T.unlines
+               [ "% ============Ampersand specific Begin=================",
+                 "% First a couple of LaTeX packages are included:",
+                 "",
+                 "% The glossaries package supports acronyms and multiple glossaries",
+                 "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents",
+                 "% \\makeglossaries", -- Disabled because of warnings in LaTeX. TODO: Have to generate glossaries using Pandoc, not only for LaTeX.
+                 "",
+                 "% geometry provides a flexible and easy interface to page dimentions",
+                 "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm",
+                 "            , heightrounded, footskip=.5cm",
+                 "            , marginparwidth=2.5cm, marginparsep=0.5cm]{geometry}",
+                 "",
+                 "% breqn – Automatic line breaking of displayed equations",
+                 "\\usepackage{breqn}",
+                 "",
+                 "% colonequals – Colon equals symbols",
+                 "\\usepackage{colonequals}",
+                 "",
+                 "% caption – Customising captions in floating environments",
+                 "\\usepackage{caption}",
+                 "\\captionsetup{format=plain",
+                 "              ,textfont=bf,labelfont=small",
+                 "              ,labelsep=none",
+                 "              ,labelformat=empty",
+                 "              ,width=.85\\textwidth",
+                 "              }",
+                 "",
+                 "% textcomp – LATEX support for the Text Companion fonts -- Disabled because obsolete.",
+                 "% \\usepackage{textcomp}",
+                 "",
+                 "% hypcap – Adjusting the anchors of captions",
+                 "\\usepackage[all]{hypcap}",
+                 "",
+                 "% <Adaptation>: The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are",
+                 "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note",
+                 "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath",
+                 "\\DeclareRobustCommand{\\[}{\\begin{equation}}",
+                 "\\DeclareRobustCommand{\\]}{\\end{equation}}",
+                 "% <End-adaptation>",
+                 "",
+                 "",
+                 "% ============Ampersand specific End==================="
+               ]
+           )
+           | view fspecFormatL env `elem` [Fpdf, Flatex]
+         ]
   where
     outputLang' :: Lang
     outputLang' = outputLang env fSpec
@@ -336,11 +336,11 @@ instance ShowMath Relation where
     math
       . noBreaking
       $ (inMathText . fullName) decl
-      <> " \\lbrack "
-      <> (inMathText . fullName . source) decl
-      <> (if isFunction (EDcD decl) then " \\mapsto " else "*")
-      <> (inMathText . fullName . target) decl
-      <> " \\rbrack "
+        <> " \\lbrack "
+        <> (inMathText . fullName . source) decl
+        <> (if isMapping (EDcD decl) then " \\mapsto " else "*")
+        <> (inMathText . fullName . target) decl
+        <> " \\rbrack "
 
 noBreaking :: (IsString a, Semigroup a) => a -> a
 noBreaking x = "{" <> x <> "}"
