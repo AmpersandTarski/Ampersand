@@ -1,9 +1,9 @@
 CONTEXT Try14 IN ENGLISH
 
 PATTERN Try14
-r[A*C]
-s[A*B]
-q[B*C]
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION q[B*C]
 RULE r = -(-s;-q)
 ENDPATTERN
 

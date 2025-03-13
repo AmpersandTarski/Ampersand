@@ -1,6 +1,6 @@
 CONTEXT Bug IN ENGLISH --ticket #214
 
-rel[A*B] [INJ,SUR]
+RELATION rel[A*B] [INJ,SUR]
 
 -- yields column properties: [{-NUL+UNQ} A]     [{-NUL+UNQ} B , {+NUL-UNQ} rel]
 -- but this should be                                        .. {-NUL-UNQ} ..

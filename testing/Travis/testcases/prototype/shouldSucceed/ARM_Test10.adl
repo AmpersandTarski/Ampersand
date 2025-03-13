@@ -3,9 +3,9 @@ CLASSIFY Verplichting ISA Criterium
 CLASSIFY Verwachting ISA Criterium
 CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
 CLASSIFY Gewetensvraag ISA Criterium
-critText[Criterium*Blob] [MAP]
-afdekking[Criterium*Verwachtingsverzameling] [UNI]
-vvVerwachting[Verwachtingsverzameling*Criterium]
+RELATION critText[Criterium*Blob] [MAP]
+RELATION afdekking[Criterium*Verwachtingsverzameling] [UNI]
+RELATION vvVerwachting[Verwachtingsverzameling*Criterium]
 INTERFACE Gewetensvraag : I[Gewetensvraag]
 BOX[ afdekking : afdekking
 BOX[ gewetensvragen: vvVerwachting;I[Gewetensvraag]

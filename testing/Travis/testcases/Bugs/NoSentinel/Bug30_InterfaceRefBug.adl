@@ -3,15 +3,15 @@ CONTEXT Bug30InterfaceRefBug IN ENGLISH
    Interface objects "inline", "ref", and "buggyRef" should be equivalent, but "buggyRef" shows no atoms.
 -}
 
-fruits[A*Fruit] = [ ("a1", "Lime");  ("a1", "Limorange");  ("a1", "Nectarine")
+RELATION fruits[A*Fruit] = [ ("a1", "Lime");  ("a1", "Limorange");  ("a1", "Nectarine")
                       ; ("a2", "Banana"); ("a2", "Blueberry")
                       ]
                       
-trees[A*Tree] =   [ ("a1", "Fern"); ("a1", "Willow")
+RELATION trees[A*Tree] =   [ ("a1", "Fern"); ("a1", "Willow")
                       ; ("a2", "Fern"); ("a2", "Spruce")
                       ]
 
-dummy[SESSION*SESSION]
+RELATION dummy[SESSION*SESSION]
 
 INTERFACE Buggy FOR Dummy : I[SESSION]
 BOX [ "inline"   : V[SESSION*A] BOX [ "Atom" : I[A] ]

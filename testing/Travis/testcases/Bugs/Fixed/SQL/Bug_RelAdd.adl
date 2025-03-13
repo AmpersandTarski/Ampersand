@@ -1,8 +1,8 @@
 CONTEXT Bug IN ENGLISH
 
-r1[A*B] [UNI]
+RELATION r1[A*B] [UNI]
 
-r2[A*C] []
+RELATION r2[A*C] []
   = [ ("a1", "c1") ]
     
 RULE relAdd : r1~ ! r2 -- creates an SQL error because of a problem in selectExpr for ERad

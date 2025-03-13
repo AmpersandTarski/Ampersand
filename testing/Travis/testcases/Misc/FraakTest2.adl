@@ -14,7 +14,7 @@ PATTERN FraakTest2
     CLASSIFY Room ISA Resource
     CLASSIFY Beamer ISA Resource
 
-    beamerLocation[Beamer*Room]
+    RELATION beamerLocation[Beamer*Room]
 
 ENDPATTERN
 

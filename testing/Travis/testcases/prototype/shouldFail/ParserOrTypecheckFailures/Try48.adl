@@ -30,13 +30,13 @@ BOX [ "Werkbonnen" : V[SESSION*Werkbon]
 -- example once the type error is enforced, but there may be some unexpected other effects,
 -- as can be seen in ampersand-models/ISAtest/Strange.adl
 
-populateTijdstip[Tijdstip*Tijdstip] =
+RELATION populateTijdstip[Tijdstip*Tijdstip] =
   [ ("roosterregel1", "roosterregel1")
   ]
 
 
 -- create a sample roosterregel
-populateRoosterregel[Roosterregel*Roosterregel] =
+RELATION populateRoosterregel[Roosterregel*Roosterregel] =
   [ ("roosterregel1", "roosterregel1")
   ]
 POPULATION bon[Tijdsleuf*Werkbon] CONTAINS

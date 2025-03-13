@@ -3,8 +3,8 @@ CONTEXT Ticket444 IN DUTCH
 PATTERN Ticket444
 
 $1[$2*$3] [PROP]
-ouDashboardNH[OrgUnit*Normenhi] [UNI]
-bfDashboardNH[Bedrijfsfunctie*Normenhi] [UNI]
+RELATION ouDashboardNH[OrgUnit*Normenhi] [UNI]
+RELATION bfDashboardNH[Bedrijfsfunctie*Normenhi] [UNI]
 
 --ROLE Developer MAINTAINS Regeltje
 RULE Regeltje : I /\ (bfDashboardNH~;bfDashboardNH \/ ouDashboardNH~;ouDashboardNH) |- nhIsDashboard

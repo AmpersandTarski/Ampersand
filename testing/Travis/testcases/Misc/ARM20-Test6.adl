@@ -14,9 +14,9 @@ Observaties:
 ------------------------------------------------------------
 PATTERN ARM20Test6 LABEL "ARM20-Test6"
 
-bfEigenaar[Bedrijfsfunctie*BFeigenaar]
+RELATION bfEigenaar[Bedrijfsfunctie*BFeigenaar]
 
-biaBF[BIAlijst*Bedrijfsfunctie] [INJ]
+RELATION biaBF[BIAlijst*Bedrijfsfunctie] [INJ]
 
 ENDPATTERN
 ------------------------------------------------------------

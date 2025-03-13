@@ -2,7 +2,7 @@
 {- This script should produce a compiler error saying that
 the source of: critText [Criterium*Blob] does not match the type of the BOX, Gewetensvraag.
 -}
-critText[Criterium*Blob] [MAP]
+RELATION critText[Criterium*Blob] [MAP]
 INTERFACE Gewetensvraag : I[Gewetensvraag]
 BOX[ gewetensvragen: I[Gewetensvraag]
 BOX[ gewetensvraag: I

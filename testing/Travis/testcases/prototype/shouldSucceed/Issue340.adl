@@ -2,26 +2,26 @@ CONTEXT Issue340 IN ENGLISH
 
 {- Checks all 16 combinations of UNI,TOT,INJ,SUR -}
 
-r[A*B]
+RELATION r[A*B]
 
-rUni[A*B] [UNI]
-rUniTot[A*B] [UNI,TOT]
-rUniInj[A*B] [UNI,INJ]
-rUniSur[A*B] [UNI,SUR]
+RELATION rUni[A*B] [UNI]
+RELATION rUniTot[A*B] [UNI,TOT]
+RELATION rUniInj[A*B] [UNI,INJ]
+RELATION rUniSur[A*B] [UNI,SUR]
 
-rUniTotInj[A*B] [UNI,TOT,INJ]
-rUniTotSur[A*B] [UNI,TOT,SUR]
-rUniInjSur[A*B] [UNI,INJ,SUR]
-rUniTotInjSur[A*B] [UNI,TOT,INJ,SUR]
+RELATION rUniTotInj[A*B] [UNI,TOT,INJ]
+RELATION rUniTotSur[A*B] [UNI,TOT,SUR]
+RELATION rUniInjSur[A*B] [UNI,INJ,SUR]
+RELATION rUniTotInjSur[A*B] [UNI,TOT,INJ,SUR]
 
-rTot[A*B] [TOT]
-rTotInj[A*B] [TOT,INJ]
-rTotSur[A*B] [TOT,SUR]
-rTotInjSur[A*B] [TOT,INJ,SUR]
+RELATION rTot[A*B] [TOT]
+RELATION rTotInj[A*B] [TOT,INJ]
+RELATION rTotSur[A*B] [TOT,SUR]
+RELATION rTotInjSur[A*B] [TOT,INJ,SUR]
 
-rInj[A*B] [INJ]
-rInjSur[A*B] [INJ,SUR]
+RELATION rInj[A*B] [INJ]
+RELATION rInjSur[A*B] [INJ,SUR]
 
-rSur[A*B] [SUR]
+RELATION rSur[A*B] [SUR]
 
 ENDCONTEXT

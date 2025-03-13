@@ -1,11 +1,11 @@
 CONTEXT Ticket35GitHub IN ENGLISH
 
-normtextNH[NormText*NormHierarchy]
-normID[Norm*NormID]
+RELATION normtextNH[NormText*NormHierarchy]
+RELATION normID[Norm*NormID]
 
 IDENT Norms: Norm(normtextNH,normID)
 
 CLASSIFY Norm ISA NormText
-isSubsidiaryToNorm[NormText*Norm]
+RELATION isSubsidiaryToNorm[NormText*Norm]
 
 ENDCONTEXT

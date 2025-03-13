@@ -23,7 +23,7 @@ PURPOSE IDENT     procIdent  {+Identity purpose: procIdent+}
 PURPOSE VIEW      procView   {+View purpose: procView+}
 
 CONCEPT Concpt1 "{definition of Concpt1}"
-rel[Concpt1*Concpt1]
+RELATION rel[Concpt1*Concpt1]
 RULE rule: rel
 IDENT ident : Concpt1(I[Concpt1])
 VIEW view: Concpt1(I[Concpt1])
@@ -31,7 +31,7 @@ INTERFACE Iface : I[ONE] BOX [ "I" LABEL "" : I[ONE] ]
 
 PATTERN Patt
   CONCEPT PattConcpt "{definition of PattConcpt}"
-  pattRel[Concpt1*PattConcpt]
+  RELATION pattRel[Concpt1*PattConcpt]
   RULE pattRule: rel
   IDENT pattIdent : PattConcpt(I[PattConcpt])
   VIEW pattView: PattConcpt(I[PattConcpt])
@@ -41,7 +41,7 @@ ENDPATTERN
 
 PATTERN Proc
   CONCEPT ProcConcpt "{definition of ProcConcpt}"
-  procRel[Concpt1*ProcConcpt]
+  RELATION procRel[Concpt1*ProcConcpt]
   RULE procRule: rel
   IDENT procIdent : ProcConcpt(I[ProcConcpt])
   VIEW procView: ProcConcpt(I[ProcConcpt])

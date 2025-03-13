@@ -11,9 +11,9 @@ CLASSIFY Node ISA TechnologyConcept
 CONCEPT Device "a physical computational resource upon which artifacts may be deployed for execution. A device is a specialisation of a node that represents a physical resource with processing capability. It is typically used to model hardware systems such as mainframes, PCs, or routers. Usually, they are part of a node together with system software. Devices may be composite, i.e., consist of sub-devices. Devices can be interconnected by networks. The name of a device should preferably be a noun referring to the type of hardware, e.g. “IBM zSeries mainframe”." "Archimate"
 CLASSIFY Device ISA TechnologyConcept
 
-contain[Node*Device] PRAGMA "Node " " contains Device ".
-assign[Artifact*Node] PRAGMA "Artifact " " is deployed on node ".
-assign[Artifact*Device] PRAGMA "Artifact " " is assigned to Device ".
+RELATION contain[Node*Device] PRAGMA "Node " " contains Device ".
+RELATION assign[Artifact*Node] PRAGMA "Artifact " " is deployed on node ".
+RELATION assign[Artifact*Device] PRAGMA "Artifact " " is assigned to Device ".
 RULE R006: assign[Artifact*Node] = assign[Artifact*Device];contain[Node*Device]~  -- This rule is not covered by the Archimate reference manual.
  MEANING "An artifact is assigned to a node means that there is a device to which that artifact is assigned, which is contained by the node."
 
@@ -24,12 +24,12 @@ Before March 8th 2013, this script gave (by mistake) the error message:
 
 line 17:12, file "ArchiTest1.adl":
     Relation  assign  was not bound to precisely one of:
-     assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
-     assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
+     RELATION assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
+     RELATION assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
 
 line 17:36, file "ArchiTest1.adl":
     Relation  assign  was not bound to precisely one of:
-     assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
-     assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
+     RELATION assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
+     RELATION assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
 
 -}

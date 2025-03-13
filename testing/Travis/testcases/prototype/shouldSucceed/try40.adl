@@ -1,8 +1,8 @@
  CONTEXT Try40 IN ENGLISH
 
- orderUnit[Order*Unit]
+ RELATION orderUnit[Order*Unit]
 
- unitID[Unit*UnitID] [TOT]
+ RELATION unitID[Unit*UnitID] [TOT]
  =[ ("11 LMB", "11 Luchtmobiele Brigade")
   ; ("11 INFbat", "11 Infanterie Bataljon")
   ; ("11 INFbat", "Garderegiment Grenadiers en Jagers")

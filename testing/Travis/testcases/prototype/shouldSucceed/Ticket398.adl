@@ -1,11 +1,11 @@
 CONTEXT Ticket398 IN ENGLISH
 
 PATTERN Ticket398
-actTask[Activity*Task] [MAP] MEANING "Activities are carried out as part of  a task"
-actEndTime[Activity*Timestamp] [UNI] MEANING "Activities may be  completed at a specific time"
-taskCompleted[Task*Task] [PROP] MEANING "Tasks may have the property  of being completed"
+RELATION actTask[Activity*Task] [MAP] MEANING "Activities are carried out as part of  a task"
+RELATION actEndTime[Activity*Timestamp] [UNI] MEANING "Activities may be  completed at a specific time"
+RELATION taskCompleted[Task*Task] [PROP] MEANING "Tasks may have the property  of being completed"
 
-taskCmpStatIsGreen[Task*Task]
+RELATION taskCmpStatIsGreen[Task*Task]
 ROLE Developer MAINTAINS CompleteTask
 RULE CompleteTask: I[Task] /\ (-actTask~!(I /\  actEndTime;actEndTime~));actTask |- taskCmpStatIsGreen  MEANING  "When all activities of the task have terminated, the task status  must be Green"
 

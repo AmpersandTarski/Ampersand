@@ -1,6 +1,6 @@
 CONTEXT RulenamesMustBeUnique IN ENGLISH
 
-r[A*B]
+RELATION r[A*B]
 
 -- Different rules should have different names
 RULE rulename : I |- r;r~

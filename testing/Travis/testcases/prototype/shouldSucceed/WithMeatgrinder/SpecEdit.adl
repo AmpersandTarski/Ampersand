@@ -82,10 +82,10 @@ POPULATION ownsOranges[Person*Orange] CONTAINS
   ]
 
 -- put strangeLemon in Lemon & Limorange (and superconcepts)  
-dummyLemon[Lemon*Lemon] =
+RELATION dummyLemon[Lemon*Lemon] =
   [ ("strangeLemon", "strangeLemon")
   ]
-dummyLimorange[Limorange*Limorange] =
+RELATION dummyLimorange[Limorange*Limorange] =
   [ ("strangeLemon", "strangeLemon")
   ]
 

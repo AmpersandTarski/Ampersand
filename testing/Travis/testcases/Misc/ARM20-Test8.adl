@@ -14,8 +14,8 @@ Je kunt eenvoudig vaststellen dat deze bug niet meer aanwezig is als:
 -}
 ------------------------------------------------------------
 PATTERN ARM20Test8
-bfEigenaar[Bedrijfsfunctie*Persoon] [UNI]
-critTAV[Criterium*Bedrijfsfunctie] [UNI]
+RELATION bfEigenaar[Bedrijfsfunctie*Persoon] [UNI]
+RELATION critTAV[Criterium*Bedrijfsfunctie] [UNI]
 RULE Criteria : I[Criterium] |- critTAV;critTAV~
 
 ENDPATTERN

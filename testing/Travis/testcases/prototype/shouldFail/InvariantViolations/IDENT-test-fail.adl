@@ -5,8 +5,8 @@ CONTEXT Test IN DUTCH
 
 IDENT "A's": A(r,s)
 
-r[A*Uid] [UNI,TOT]
-s[A*PW]  [UNI,TOT]
+RELATION r[A*Uid] [UNI,TOT]
+RELATION s[A*PW]  [UNI,TOT]
 
 POPULATION r CONTAINS [ ("a1", "r1") ]
 POPULATION s CONTAINS [ ("a1", "s1") ]
@@ -22,8 +22,8 @@ POPULATION s CONTAINS [ ("a4", "s2") ]
 
 IDENT "B's": B(u,v)
 
-u[B*Uid] [UNI]
-v[B*PW]  [UNI]
+RELATION u[B*Uid] [UNI]
+RELATION v[B*PW]  [UNI]
 
 POPULATION B CONTAINS [ "b0" ]
 --POPULATION u CONTAINS [ ("b0", "u0") ]

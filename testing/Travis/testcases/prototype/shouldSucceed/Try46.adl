@@ -7,8 +7,8 @@ SELECT statements in SQL.
 +}
 
 PATTERN SelectExprTest
-  s[B*C]
-  t[D*C]
+  RELATION s[B*C]
+  RELATION t[D*C]
 ENDPATTERN
 
 RULE equiv: s~\t~ = (t/s)~

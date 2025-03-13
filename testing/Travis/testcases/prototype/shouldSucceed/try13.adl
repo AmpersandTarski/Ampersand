@@ -1,7 +1,7 @@
 CONTEXT Test IN ENGLISH
 
 PATTERN Test13
-r[A*A]
+RELATION r[A*A]
 -- r[B*C] -- enabled in try15.adl
 RULE Test: r[A*A] = r\/I
 ENDPATTERN

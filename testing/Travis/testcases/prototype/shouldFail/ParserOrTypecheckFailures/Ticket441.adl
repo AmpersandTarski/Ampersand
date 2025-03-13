@@ -3,10 +3,10 @@
 PATTERN Organisaties
 
 IDENT Organisaties: Organisatie(orgID)
-orgID[Organisatie*OrganisatieID] [MAP]
+RELATION orgID[Organisatie*OrganisatieID] [MAP]
 
 IDENT OrganiekeEenheden: OrganiekeEenheid(orgID,oeID)
-oeID[OrganiekeEenheid*OrganiekeEenheidID] [MAP]
+RELATION oeID[OrganiekeEenheid*OrganiekeEenheidID] [MAP]
 
 ENDPATTERN
 --------------------------------------------------------

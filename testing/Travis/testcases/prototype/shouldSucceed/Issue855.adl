@@ -4,8 +4,8 @@ CLASSIFY Specific, SpeciFIK ISA Generic
 -- CLASSIFY Specific ISA Generic
 -- CLASSIFY SpeciFIK ISA Generic
 
-xGeneric[X*Generic]
-xSpecific[X*Specific]
+RELATION xGeneric[X*Generic]
+RELATION xSpecific[X*Specific]
 
 RULE SpecificsAreGenerics : xSpecific |- xGeneric
 

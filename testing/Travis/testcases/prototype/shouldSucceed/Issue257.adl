@@ -11,12 +11,12 @@ CONTEXT Bug257 IN ENGLISH
       ]
     ]
 
- sessionMsgPerson[SESSION*Person] [UNI] -- Person to send the message to
- sessionMsgText[SESSION*MsgText] [UNI] -- Text to be sent
+ RELATION sessionMsgPerson[SESSION*Person] [UNI] -- Person to send the message to
+ RELATION sessionMsgText[SESSION*MsgText] [UNI] -- Text to be sent
 
  --[Message Send Requests]--
- msgsrPerson[MsgSendRequest*Person] [UNI,TOT]
- msgsrText[MsgSendRequest*MsgText] [UNI,TOT]    REPRESENT MsgText TYPE ALPHANUMERIC
+ RELATION msgsrPerson[MsgSendRequest*Person] [UNI,TOT]
+ RELATION msgsrText[MsgSendRequest*MsgText] [UNI,TOT]    REPRESENT MsgText TYPE ALPHANUMERIC
 
  ROLE ExecEngine MAINTAINS MessageSendRequest
  RULE MessageSendRequest LABEL "Create message send request" : sessionMsgPerson~;"_SESSION";sessionMsgText |- msgsrPerson~;msgsrText

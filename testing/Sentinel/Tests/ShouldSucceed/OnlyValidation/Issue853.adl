@@ -1,8 +1,8 @@
 CONTEXT Issue853
 
-compArgs[Computation*Person]
-compProcdArgs[Computation*Person]
-compResIsValid[Computation*Computation] [PROP] 
+RELATION compArgs[Computation*Person]
+RELATION compProcdArgs[Computation*Person]
+RELATION compResIsValid[Computation*Computation] [PROP] 
 
 ROLE ExecEngine MAINTAINS Validate
 RULE Validate LABEL "Validate computation result": I /\ (compArgs<>compProcdArgs~) |- compResIsValid

@@ -1,7 +1,7 @@
 CONTEXT Bug335_Kl0Kl1 IN ENGLISH
 
 PATTERN SelectExprTest
-  r[A*A]
+  RELATION r[A*A]
 ENDPATTERN
 
 INTERFACE Overview : I[ONE]

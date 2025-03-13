@@ -3,24 +3,24 @@ CONTEXT PossibleSqlbug2 IN DUTCH
 -- regelovertredeingen worden uitgerekend
 -- zelfde populatie wordt in Haskell en in SQL uitgerekend en verschillen gedetecteerd 
 
-bfcIsNotApplicable[BFControl*BFControl] [PROP] =[ ("BFC1","BFC1") ]
+RELATION bfcIsNotApplicable[BFControl*BFControl] [PROP] =[ ("BFC1","BFC1") ]
 
-bfcIsSpecified[BFControl*BFControl] [PROP] =[ ("BFC2","BFC2"); ("BFC3","BFC3"); ("BFC4","BFC4") ]
-bfcIsImplemented[BFControl*BFControl] [PROP] =[                  ("BFC3","BFC3"); ("BFC4","BFC4") ]
-bfcIsEffective[BFControl*BFControl] [PROP] =[                                   ("BFC4","BFC4") ]
+RELATION bfcIsSpecified[BFControl*BFControl] [PROP] =[ ("BFC2","BFC2"); ("BFC3","BFC3"); ("BFC4","BFC4") ]
+RELATION bfcIsImplemented[BFControl*BFControl] [PROP] =[                  ("BFC3","BFC3"); ("BFC4","BFC4") ]
+RELATION bfcIsEffective[BFControl*BFControl] [PROP] =[                                   ("BFC4","BFC4") ]
 
-bfcAstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Applicable"); ("BFC3","Applicable"); ("BFC4","Applicable"); ("BFC5","Applicable") ]
+RELATION bfcAstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Applicable"); ("BFC3","Applicable"); ("BFC4","Applicable"); ("BFC5","Applicable") ]
 RULE Arule: bfcAstatus = bfcIsNotApplicable;V;"NotApplicable"[TEXT]
                           \/ (I /\ -bfcIsNotApplicable);V;"Applicable"[TEXT]
 
-bfcBstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Specified"); ("BFC3","Specified"); ("BFC4","Specified"); ("BFC5","Unspecified") ]
+RELATION bfcBstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Specified"); ("BFC3","Specified"); ("BFC4","Specified"); ("BFC5","Unspecified") ]
 RULE Brule: bfcBstatus = bfcIsNotApplicable;V;"NotApplicable"[TEXT]
                           \/ (I /\ -bfcIsNotApplicable);
                                (bfcIsSpecified;V;"Specified"[TEXT]
                                 \/ (I /\ -bfcIsSpecified);V;"Unspecified"[TEXT] 
                                )
 
-bfcCstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Specified"); ("BFC3","Implemented"); ("BFC4","Effective"); ("BFC5","Unspecified") ]
+RELATION bfcCstatus[BFControl*TEXT] [MAP] =[ ("BFC1","NotApplicable"); ("BFC2","Specified"); ("BFC3","Implemented"); ("BFC4","Effective"); ("BFC5","Unspecified") ]
 RULE Crule: bfcCstatus = bfcIsNotApplicable;V;"NotApplicable"[TEXT]
                           \/ (I /\ -bfcIsNotApplicable);
                                (bfcIsEffective;V;"Effective"[TEXT] 
@@ -38,21 +38,21 @@ CONTEXT PossibleSqlbug IN DUTCH
 -- regelovertredeingen worden uitgerekend
 -- zelfde populatie wordt in Haskell en in SQL uitgerekend en verschillen gedetecteerd 
 
-pA[X*X] [PROP] =[ ("X1","X1") ]
-pB[X*X] [PROP] =[ ("X1","X1"); ("X2","X2") ]
-pC[X*X] [PROP] =[ ("X1","X1"); ("X2","X2"); ("X3","X3") ]
-pD[X*X] [PROP] =[ ("X1","X1"); ("X2","X2"); ("X3","X3"); ("X4","X4") ]
+RELATION pA[X*X] [PROP] =[ ("X1","X1") ]
+RELATION pB[X*X] [PROP] =[ ("X1","X1"); ("X2","X2") ]
+RELATION pC[X*X] [PROP] =[ ("X1","X1"); ("X2","X2"); ("X3","X3") ]
+RELATION pD[X*X] [PROP] =[ ("X1","X1"); ("X2","X2"); ("X3","X3"); ("X4","X4") ]
 
-aStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","Not A"); ("X3","Not A"); ("X4","Not A"); ("X5","Not A") ]
+RELATION aStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","Not A"); ("X3","Not A"); ("X4","Not A"); ("X5","Not A") ]
 RULE Astatus: aStatus = pA;V;"A"[TEXT] \/ (I /\ -pA);V;"Not A"[TEXT]
 
-bStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","Not B"); ("X4","Not B"); ("X5","Not B") ]
+RELATION bStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","Not B"); ("X4","Not B"); ("X5","Not B") ]
 RULE Bstatus: bStatus =  pA;V;"A"[TEXT] \/ (I /\ -pA);(pB;V;"B"[TEXT] \/ (I /\ -pB);V;"Not B"[TEXT])
 
-cStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","C"); ("X4","Not C"); ("X5","Not C") ]
+RELATION cStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","C"); ("X4","Not C"); ("X5","Not C") ]
 RULE Cstatus: cStatus = pA;V;"A"[TEXT] \/ (I /\ -pA);(pB;V;"B"[TEXT] \/ (I /\ -pB);( pC;V;"C"[TEXT] \/ (I /\ -pC);V;"Not C"[TEXT]))
 
-dStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","C"); ("X4","D"); ("X5","Not D") ]
+RELATION dStatus[X*TEXT] [MAP] =[ ("X1","A"); ("X2","B"); ("X3","C"); ("X4","D"); ("X5","Not D") ]
 RULE Dstatus: dStatus = pA;V;"A"[TEXT] \/ (I /\ -pA);(pB;V;"B"[TEXT] \/ (I /\ -pB);( pC;V;"C"[TEXT] \/ (I /\ -pC);(pD;V;"D"[TEXT] \/ (I /\ -pD);V;"Not D"[TEXT])))
 -}
 

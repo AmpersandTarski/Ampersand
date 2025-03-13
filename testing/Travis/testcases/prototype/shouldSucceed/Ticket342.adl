@@ -8,7 +8,7 @@ PATTERN Percelen
 
   PURPOSE RELATION overlapt [Perceel*Perceel] 
   {+Percelen kunnen overlap vertonen met elkaar. Van overlap tussen twee percelen is sprake als ze zowel geometrisch als in de tijd overlappend zijn.+}
-  overlapt[Perceel*Perceel] PRAGMA "Perceel " " overlapt met perceel "
+  RELATION overlapt[Perceel*Perceel] PRAGMA "Perceel " " overlapt met perceel "
   MEANING "Een perceel kan overlap hebben met andere percelen."
 POPULATION overlapt [Perceel * Perceel] CONTAINS
   [ ("1234", "2345")

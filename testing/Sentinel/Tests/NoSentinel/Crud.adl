@@ -1,17 +1,17 @@
 CONTEXT Crud IN ENGLISH
 -- Test file for CRUD matrix documentation
 
-raa1[A*A1][TOT,INJ]
-raa2[A*A2][TOT,INJ]
-raa3[A*A3][TOT] -- A3 is a crud object, but raa3 is also part of crud object A because INJ is not required for the closure. TODO: is that what we want?
-rab[A*B][TOT,INJ]
-ra5a[A5*A][SUR,UNI]
+RELATION raa1[A*A1][TOT,INJ]
+RELATION raa2[A*A2][TOT,INJ]
+RELATION raa3[A*A3][TOT] -- A3 is a crud object, but raa3 is also part of crud object A because INJ is not required for the closure. TODO: is that what we want?
+RELATION rab[A*B][TOT,INJ]
+RELATION ra5a[A5*A][SUR,UNI]
 
-ra1a11[A1*A11][TOT,INJ]
-ra2a21[A2*A21][TOT]
-ra3a31[A3*A31][TOT,INJ]
+RELATION ra1a11[A1*A11][TOT,INJ]
+RELATION ra2a21[A2*A21][TOT]
+RELATION ra3a31[A3*A31][TOT,INJ]
 
-rb1[B*B1][TOT,INJ]
+RELATION rb1[B*B1][TOT,INJ]
 
 INTERFACE A: I[A]
 BOX [ raa1 : raa1
@@ -30,7 +30,7 @@ BOX [ ra1a11 : ra1a11
     ]
 
 -- noUpdateA_1 has a target that is part of crud object A, but does not update A
-noUpdateA_1[NoUpdate*A11][TOT,INJ]
+RELATION noUpdateA_1[NoUpdate*A11][TOT,INJ]
 INTERFACE DoesNotUpdateA_nr1: I[NoUpdate]
 BOX [ noUpdateA_1 : noUpdateA_1
     ]
@@ -40,11 +40,11 @@ BOX [ noUpdateA_1 : noUpdateA_1
 
 -- Possible bugs:
 
-rc[C*C1][TOT,INJ]
-rcref[C*C][TOT,INJ] -- TODO: this makes C a non-Crud object. Is that what we want?
+RELATION rc[C*C1][TOT,INJ]
+RELATION rcref[C*C][TOT,INJ] -- TODO: this makes C a non-Crud object. Is that what we want?
 
 --
-notInInterface[X1*X2]
+RELATION notInInterface[X1*X2]
 INTERFACE RelNotInInterface: I[ONE]
 BOX [ label : I ]
 -- Gives rise to X as an R object in interface A, even though it does not appear in any interface term

@@ -16,11 +16,11 @@ Errorlevel = 1 - prototype files will not be installed
 -}
 ------------------------------------------------------------
 PATTERN ARM20Test3
-verplichting[BIAlijst*Verplichting] [INJ]
-biaVaststellingsbesluit[BIAlijst*JaNee] [UNI]
+RELATION verplichting[BIAlijst*Verplichting] [INJ]
+RELATION biaVaststellingsbesluit[BIAlijst*JaNee] [UNI]
 
 CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
-oblImpact[Verplichting*Impact] [UNI]
+RELATION oblImpact[Verplichting*Impact] [UNI]
 ENDPATTERN
 ------------------------------------------------------------
 ENDCONTEXT

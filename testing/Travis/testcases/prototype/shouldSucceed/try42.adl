@@ -1,6 +1,6 @@
 CONTEXT Try42 IN ENGLISH
 
-s[A*B] [UNI]
+RELATION s[A*B] [UNI]
 
 INTERFACE Interf1 : I[ONE]
 BOX[ "Box1" : V[ONE*A];

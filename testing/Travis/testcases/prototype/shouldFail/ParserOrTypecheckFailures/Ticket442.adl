@@ -1,6 +1,6 @@
 ﻿CONTEXT TEST IN ENGLISH
 
-r[A*B] =[ ("a", "b") ]
+RELATION r[A*B] =[ ("a", "b") ]
 
 INTERFACE A : I[ONE]
 BOX[ "A's" : V[ONE*A]

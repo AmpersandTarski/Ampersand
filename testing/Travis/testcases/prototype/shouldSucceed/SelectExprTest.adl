@@ -7,9 +7,9 @@ SELECT statements in SQL.
 +}
 
 PATTERN SelectExprTest
-  r[A*A]
-  s[A*A]
-  t[A*B]
+  RELATION r[A*A]
+  RELATION s[A*A]
+  RELATION t[A*B]
 ENDPATTERN
 
 INTERFACE Overview : I[ONE]

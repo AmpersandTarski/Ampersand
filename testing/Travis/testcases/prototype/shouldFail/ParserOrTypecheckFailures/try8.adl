@@ -1,7 +1,7 @@
 ﻿CONTEXT Test IN ENGLISH
 
 PATTERN Test8
-r[A*C].
+RELATION r[A*C].
 RULE r |- r~;r
 ENDPATTERN
 
