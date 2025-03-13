@@ -15,9 +15,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (first, second)
 import Ampersand.Classes
-    ( ConceptStructure(bindedRelationsIn, concs) )
-import Ampersand.Classes.Relational ( Relational(isUni) )
-import Ampersand.Core.ShowAStruct
+import Ampersand.Core.ShowAStruct (AStruct (showA))
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
 import Data.Typeable (typeOf)
@@ -1574,6 +1572,105 @@ tmpNewTransformerDefsFA fSpec =
           | rel :: Relation <- instanceList fSpec,
             isUni rel
         ]
+      ),
+      ( "FormalAmpersand.isTot",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isTot rel
+        ]
+      ),
+      ( "FormalAmpersand.isMap",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isMapping rel
+        ]
+      ),
+      ( "FormalAmpersand.isInj",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isInj rel
+        ]
+      ),
+      ( "FormalAmpersand.isSur",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isSur rel
+        ]
+      ),
+      ( "FormalAmpersand.isBijective",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isBijective rel
+        ]
+      ),
+      ( "FormalAmpersand.isAsy",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isAsy rel
+        ]
+      ),
+      ( "FormalAmpersand.isSym",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isSym rel
+        ]
+      ),
+      ( "FormalAmpersand.isProp",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isProp rel
+        ]
+      ),
+      ( "FormalAmpersand.isTrn",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isTrn rel
+        ]
+      ),
+      ( "FormalAmpersand.isRfx",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isRfx rel
+        ]
+      ),
+      ( "FormalAmpersand.isIrf",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [ (dirtyId' rel, dirtyId' rel)
+          | rel :: Relation <- instanceList fSpec,
+            isIrf rel
+        ]
+      ),
+      ( "FormalAmpersand.hasAttribute",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [] -- The Atlas will maintain this population, so we don't need to do it here.
+      ),
+      ( "FormalAmpersand.isAttribute",
+        "FormalAmpersand.Relation",
+        "FormalAmpersand.Relation",
+        [] -- The Atlas will maintain this population, so we don't need to do it here.
+
       ),
       ( "FormalAmpersand.originatesFrom",
         "FormalAmpersand.Conjunct",
