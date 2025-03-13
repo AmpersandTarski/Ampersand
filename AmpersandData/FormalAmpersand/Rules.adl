@@ -68,10 +68,10 @@ PATTERN PropertyRules
     ENFORCE FormalAmpersand.isAsy := I/\FormalAmpersand.prop;("ASY"\/"PROP");FormalAmpersand.prop~
     RELATION FormalAmpersand.isTrn[FormalAmpersand.Relation] [PROP]
     ENFORCE FormalAmpersand.isTrn := I/\FormalAmpersand.prop;"TRN";FormalAmpersand.prop~
-    RELATION FormalAmpersand.isMap[FormalAmpersand.Relation] [PROP]
-    ENFORCE FormalAmpersand.isMap := (I/\FormalAmpersand.prop;"MAP";FormalAmpersand.prop~)\/(FormalAmpersand.isUni/\FormalAmpersand.isTot)
-    RELATION FormalAmpersand.isBij[FormalAmpersand.Relation] [PROP]
-    ENFORCE FormalAmpersand.isBij := (I/\FormalAmpersand.prop;"BIJ";FormalAmpersand.prop~)\/(FormalAmpersand.isInj/\FormalAmpersand.isSur)
+    RELATION FormalAmpersand.isMapping[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isMapping := (I/\FormalAmpersand.prop;"MAP";FormalAmpersand.prop~)\/(FormalAmpersand.isUni/\FormalAmpersand.isTot)
+    RELATION FormalAmpersand.isBijective[FormalAmpersand.Relation] [PROP]
+    ENFORCE FormalAmpersand.isBijective := (I/\FormalAmpersand.prop;"BIJ";FormalAmpersand.prop~)\/(FormalAmpersand.isInj/\FormalAmpersand.isSur)
     RELATION FormalAmpersand.isProp[FormalAmpersand.Relation] [PROP]
     ENFORCE FormalAmpersand.isProp := (I/\FormalAmpersand.prop;"PROP";FormalAmpersand.prop~)\/(FormalAmpersand.isSym/\FormalAmpersand.isAsy)
 
@@ -79,6 +79,11 @@ PATTERN PropertyRules
     ENFORCE FormalAmpersand.isAttribute :=
               (FormalAmpersand.isUni/\FormalAmpersand.source;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.source~)\/
               (FormalAmpersand.isInj/\FormalAmpersand.target;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.target~)
+
+    RELATION FormalAmpersand.hasAttribute[FormalAmpersand.Concept] [PROP]
+    ENFORCE FormalAmpersand.hasAttribute := 
+              (I/\FormalAmpersand.source~;FormalAmpersand.isUni;FormalAmpersand.source) \/
+              (I/\FormalAmpersand.target~;FormalAmpersand.isInj;FormalAmpersand.target)
 ENDPATTERN
 
 ENDCONTEXT

@@ -1581,7 +1581,7 @@ tmpNewTransformerDefsFA fSpec =
             isTot rel
         ]
       ),
-      ( "FormalAmpersand.isMap",
+      ( "FormalAmpersand.isMapping",
         "FormalAmpersand.Relation",
         "FormalAmpersand.Relation",
         [ (dirtyId' rel, dirtyId' rel)
@@ -1662,15 +1662,14 @@ tmpNewTransformerDefsFA fSpec =
         ]
       ),
       ( "FormalAmpersand.hasAttribute",
-        "FormalAmpersand.Relation",
-        "FormalAmpersand.Relation",
+        "FormalAmpersand.Concept",
+        "FormalAmpersand.Concept",
         [] -- The Atlas will maintain this population, so we don't need to do it here.
       ),
       ( "FormalAmpersand.isAttribute",
         "FormalAmpersand.Relation",
         "FormalAmpersand.Relation",
         [] -- The Atlas will maintain this population, so we don't need to do it here.
-
       ),
       ( "FormalAmpersand.originatesFrom",
         "FormalAmpersand.Conjunct",
