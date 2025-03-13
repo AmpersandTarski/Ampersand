@@ -55,20 +55,20 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     inspectedCandidateTables
       | null candidateTables = []
       | otherwise = case filter (not . isSingleton) . eqCl sqlname $ candidateTables of
-          [] -> case filter hasNameConflict candidateTables of
-            [] -> candidateTables
-            xs ->
-              fatal
-                . T.intercalate "\n   "
-                $ [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
-                  ]
-                <> concatMap showNameConflict (L.sortOn sqlname xs)
-                <> hint
+        [] -> case filter hasNameConflict candidateTables of
+          [] -> candidateTables
           xs ->
             fatal
               . T.intercalate "\n   "
-              $ [ "The following names are used for different tables:"
+              $ [ "The following " <> tshow (length xs) <> " generated tables have a name conflict:"
                 ]
+                <> concatMap showNameConflict (L.sortOn sqlname xs)
+                <> hint
+        xs ->
+          fatal
+            . T.intercalate "\n   "
+            $ [ "The following names are used for different tables:"
+              ]
               <> concatMap myShow xs
               <> hint
       where
@@ -170,16 +170,16 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         lookupC :: A_Concept -> SqlAttribute
         lookupC cpt = case [f | (c', f) <- conceptLookuptable, cpt == c'] of
           [] ->
-            fatal
-              $ "Concept `"
-              <> fullName cpt
-              <> "` is not in the lookuptable."
-              <> "\nallConceptsInTable: "
-              <> tshow allConceptsInTable
-              <> "\nallRelationsInTable: "
-              <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
-              <> "\nlookupTable: "
-              <> tshow (map fst conceptLookuptable)
+            fatal $
+              "Concept `"
+                <> fullName cpt
+                <> "` is not in the lookuptable."
+                <> "\nallConceptsInTable: "
+                <> tshow allConceptsInTable
+                <> "\nallRelationsInTable: "
+                <> tshow (map (\d -> fullName d <> tshow (sign d) <> " " <> tshow (properties d)) allRelationsInTable)
+                <> "\nlookupTable: "
+                <> tshow (map fst conceptLookuptable)
           x : _ -> x
         cptAttrib :: A_Concept -> SqlAttribute
         cptAttrib cpt =

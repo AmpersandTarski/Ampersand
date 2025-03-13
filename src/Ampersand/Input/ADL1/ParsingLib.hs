@@ -317,11 +317,11 @@ pName typ =
           ViewName -> pUnrestrictedID
     namespacePart :: AmpParser NamePart
     namespacePart =
-      try
-        $ buildNamePart
-        <$> currPos
-        <*> pUnrestrictedID
-        <* pDot
+      try $
+        buildNamePart
+          <$> currPos
+          <*> pUnrestrictedID
+          <* pDot
     buildNamePart :: Origin -> Text1 -> NamePart
     buildNamePart orig txt1 = case toNamePart1 txt1 of
       Nothing -> fatal $ "An unrestrictedID should be a valid namepart, but it isn't: " <> tshow txt1 <> "\n   " <> tshow orig
@@ -359,11 +359,11 @@ pCrudString =
   where
     testCrud :: Text1 -> Maybe Text1
     testCrud (Text1 h tl) =
-      if and
-        $ [ not (null s),
-            L.nub caps == caps
-          ]
-        ++ map (`elem` ['C', 'R', 'U', 'D']) caps
+      if and $
+        [ not (null s),
+          L.nub caps == caps
+        ]
+          ++ map (`elem` ['C', 'R', 'U', 'D']) caps
         then Just (Text1 h tl)
         else Nothing
       where

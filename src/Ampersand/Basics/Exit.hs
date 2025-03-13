@@ -63,11 +63,11 @@ instance Exception AmpersandExit
 
 instance Show AmpersandExit where
   show x =
-    T.unpack
-      $ "["
-      <> tshow exitcode
-      <> "] "
-      <> T.concat (fmap ("    " <>) message)
+    T.unpack $
+      "["
+        <> tshow exitcode
+        <> "] "
+        <> T.concat (fmap ("    " <>) message)
     where
       (exitcode, message) = info x
 

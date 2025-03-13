@@ -12,10 +12,10 @@ import qualified RIO.Text as T
 
 databaseStructureSql :: FSpec -> Text
 databaseStructureSql fSpec =
-  T.intercalate "\n"
-    $ header (longVersion appVersion)
-    <> header "Database structure queries"
-    <> map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True)
+  T.intercalate "\n" $
+    header (longVersion appVersion)
+      <> header "Database structure queries"
+      <> map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True)
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment =
@@ -24,16 +24,16 @@ generateDBstructQueries fSpec withComment =
 
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec =
-  T.intercalate "\n"
-    $ header (longVersion appVersion)
-    <> header "Database structure queries"
-    <> map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True)
-    <> header "Inconsistencies in conjuncts"
-    <> concatMap showConjunct (allConjuncts fSpec)
-    <> header "Queries per relation"
-    <> concatMap showDecl (vrels fSpec)
-    <> header "Queries of interfaces"
-    <> concatMap showInterface y
+  T.intercalate "\n" $
+    header (longVersion appVersion)
+      <> header "Database structure queries"
+      <> map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True)
+      <> header "Inconsistencies in conjuncts"
+      <> concatMap showConjunct (allConjuncts fSpec)
+      <> header "Queries per relation"
+      <> concatMap showDecl (vrels fSpec)
+      <> header "Queries of interfaces"
+      <> concatMap showInterface y
   where
     y :: [Interface]
     y = interfaceS fSpec <> interfaceG fSpec

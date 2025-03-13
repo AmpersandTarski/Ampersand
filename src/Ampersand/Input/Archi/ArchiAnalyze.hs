@@ -536,7 +536,7 @@ instance MetaArchi ArchiObj where
           unFix str
             | str == toText1Unsafe "Relationship" = str
             | "Relationship" `T.isSuffixOf` text1ToText str =
-                toText1Unsafe . T.reverse . T.drop 12 . T.reverse . text1ToText $ str
+              toText1Unsafe . T.reverse . T.drop 12 . T.reverse . text1ToText $ str
             | otherwise = str
       relLabel :: Text1
       relLabel = case text1ToText relTyp of
@@ -651,7 +651,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
             dec_label = Nothing,
             dec_defaults = [],
             dec_Mean = [],
-            pos = OriginUnknown
+            dec_pos = OriginUnknown
           },
       archiViewname = maybeViewName,
       grainPurp =

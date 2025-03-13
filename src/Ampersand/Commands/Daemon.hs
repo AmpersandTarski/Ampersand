@@ -47,47 +47,47 @@ mainWithTerminal :: IO TermSize -> ([String] -> RIO (ExtendedRunner DaemonOpts) 
 mainWithTerminal termSize termOutput = goForever
   where
     goForever = work `catch` errorHandler
-    work = forever
-      $ withWindowIcon
-      $ do
-        -- On certain Cygwin terminals stdout defaults to BlockBuffering
-        hSetBuffering stdout LineBuffering
-        hSetBuffering stderr NoBuffering
-        curDir <- liftIO getCurrentDirectory
-        logDebug $ "%OS: " <> display (T.pack os)
-        logDebug $ "%ARCH: " <> display (T.pack arch)
-        logDebug $ "%VERSION: " <> display (shortVersion appVersion)
-        env <- ask
-        withCurrentDirectory curDir $ do
-          termSize' <- liftIO
-            $ return
-            $ do
-              term <- termSize
-              -- if we write to the final column of the window then it wraps automatically
-              -- so logInfo width 'x' uses up two lines.
-              -- Logging *always* ends the line, so we need to substract 1 of the hight as well.
-              return
-                $ TermSize
-                  (termWidth term - 1)
-                  (termHeight term - 1)
-                  (termWrap term)
+    work = forever $
+      withWindowIcon $
+        do
+          -- On certain Cygwin terminals stdout defaults to BlockBuffering
+          hSetBuffering stdout LineBuffering
+          hSetBuffering stderr NoBuffering
+          curDir <- liftIO getCurrentDirectory
+          logDebug $ "%OS: " <> display (T.pack os)
+          logDebug $ "%ARCH: " <> display (T.pack arch)
+          logDebug $ "%VERSION: " <> display (shortVersion appVersion)
+          env <- ask
+          withCurrentDirectory curDir $ do
+            termSize' <- liftIO $
+              return $
+                do
+                  term <- termSize
+                  -- if we write to the final column of the window then it wraps automatically
+                  -- so logInfo width 'x' uses up two lines.
+                  -- Logging *always* ends the line, so we need to substract 1 of the hight as well.
+                  return $
+                    TermSize
+                      (termWidth term - 1)
+                      (termHeight term - 1)
+                      (termWrap term)
 
-          restyle <- liftIO $ do
-            useStyle <- case Auto of
-              -- TODO: fix enabling/disabling use of color in output, by introducing an option for it.
-              --    Always -> return True
-              --    Never -> return False
-              Auto -> liftIO $ hSupportsANSI stdout
-            when useStyle
-              $ liftIO
-              $ do
-                h <- lookupEnv "HSPEC_OPTIONS"
-                when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see https://github.com/ndmitchell/ghcid/issues/87
-            return $ if useStyle then id else map unescape
+            restyle <- liftIO $ do
+              useStyle <- case Auto of
+                -- TODO: fix enabling/disabling use of color in output, by introducing an option for it.
+                --    Always -> return True
+                --    Never -> return False
+                Auto -> liftIO $ hSupportsANSI stdout
+              when useStyle $
+                liftIO $
+                  do
+                    h <- lookupEnv "HSPEC_OPTIONS"
+                    when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see https://github.com/ndmitchell/ghcid/issues/87
+              return $ if useStyle then id else map unescape
 
-          withWaiterNotify env $ \waiter ->
-            runRIO env $ do
-              runAmpersand env waiter termSize' (termOutput . restyle)
+            withWaiterNotify env $ \waiter ->
+              runRIO env $ do
+                runAmpersand env waiter termSize' (termOutput . restyle)
 
     errorHandler :: AmpersandExit -> RIO (ExtendedRunner DaemonOpts) ()
     errorHandler (err :: AmpersandExit) = do
@@ -157,32 +157,32 @@ runAmpersand app waiter termSize termOutput = do
         logDebug $ "%LOADED: " <> (displayShow . loaded $ ad)
 
         let (countErrors, countWarnings) =
-              both sum
-                $ L.unzip
+              both sum $
+                L.unzip
                   [if loadSeverity == Error then (1 :: Int, 0 :: Int) else (0, 1) | Message {..} <- messages ad, loadMessage /= []]
 
-        liftIO
-          $ unless no_title
-          $ setWindowIcon
-          $ if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
+        liftIO $
+          unless no_title $
+            setWindowIcon $
+              if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
 
         let updateTitle extra =
-              unless no_title
-                $ setTitle
-                $ unescape
-                $ let f n msg = if n == 0 then "" else show n ++ " " ++ msg ++ ['s' | n > 1]
-                   in ( if countErrors == 0 && countWarnings == 0
-                          then allGoodMessage ++ ", at " ++ currTime
-                          else
-                            f countErrors "error"
-                              ++ (if countErrors > 0 && countWarnings > 0 then ", " else "")
-                              ++ f countWarnings "warning"
-                      )
-                        ++ " "
-                        ++ extra
-                        ++ [' ' | extra /= ""]
-                        ++ "- "
-                        ++ project
+              unless no_title $
+                setTitle $
+                  unescape $
+                    let f n msg = if n == 0 then "" else show n ++ " " ++ msg ++ ['s' | n > 1]
+                     in ( if countErrors == 0 && countWarnings == 0
+                            then allGoodMessage ++ ", at " ++ currTime
+                            else
+                              f countErrors "error"
+                                ++ (if countErrors > 0 && countWarnings > 0 then ", " else "")
+                                ++ f countWarnings "warning"
+                        )
+                          ++ " "
+                          ++ extra
+                          ++ [' ' | extra /= ""]
+                          ++ "- "
+                          ++ project
 
         liftIO $ updateTitle ""
 
@@ -284,8 +284,8 @@ balance a x b = T B a x b
 -- > withTempDir $ \dir -> do writeFile (dir </> "foo.txt") ""; withCurrentDirectory dir $ doesFileExist "foo.txt"
 withCurrentDirectory :: FilePath -> RIO env a -> RIO env a
 withCurrentDirectory dir act =
-  bracket' getCurrentDirectory setCurrentDirectory
-    $ const
+  bracket' getCurrentDirectory setCurrentDirectory $
+    const
       ( do
           liftIO $ setCurrentDirectory dir
           act

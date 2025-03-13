@@ -107,8 +107,8 @@ executePHP phpPath = do
       errorHandler err = do
         logError . display $ "Could not execute PHP: " <> tshow err
         fileContents <- readUTF8File phpPath
-        mapM_ (logError . display)
-          $ case fileContents of
+        mapM_ (logError . display) $
+          case fileContents of
             Left msg -> msg
             Right txt -> addLineNumbers . T.lines $ txt
         return "ERROR"
@@ -121,8 +121,8 @@ executePHP phpPath = do
     Left err ->
       exitWith
         . PHPExecutionFailed
-        $ "PHP execution failed:"
-        : fmap ("  " <>) err
+        $ "PHP execution failed:" :
+        fmap ("  " <>) err
 
 addLineNumbers :: [Text] -> [Text]
 addLineNumbers = zipWith (curry withNumber) [0 ..]
@@ -194,18 +194,18 @@ createTempDatabase fSpec = do
     executePHPStr
       . showPHP
       $ phpStr
-  logInfo
-    $ if T.null result
+  logInfo $
+    if T.null result
       then "Temp database created succesfully."
       else
-        display
-          $ T.intercalate "\n"
-          $ [ "Temp database creation failed! :",
+        display $
+          T.intercalate "\n" $
+            [ "Temp database creation failed! :",
               "The result:",
               result,
               "The statements:"
             ]
-          <> addLineNumbers phpStr
+              <> addLineNumbers phpStr
 
   return (T.null result)
   where
@@ -268,22 +268,22 @@ createTempDatabase fSpec = do
       where
         dropDB :: SqlQuery
         dropDB =
-          SqlQuerySimple
-            $ "DROP DATABASE IF EXISTS "
-            <> singleQuote (tempDbName fSpec)
+          SqlQuerySimple $
+            "DROP DATABASE IF EXISTS "
+              <> singleQuote (tempDbName fSpec)
         createDB :: SqlQuery
         createDB =
-          SqlQuerySimple
-            $ "CREATE DATABASE "
-            <> singleQuote (tempDbName fSpec)
-            <> " DEFAULT CHARACTER SET UTF8MB4 COLLATE UTF8MB4_NOPAD_BIN"
+          SqlQuerySimple $
+            "CREATE DATABASE "
+              <> singleQuote (tempDbName fSpec)
+              <> " DEFAULT CHARACTER SET UTF8MB4 COLLATE UTF8MB4_NOPAD_BIN"
         populatePlugPHP plug =
           case tableContents fSpec plug of
             [] -> []
             tblRecords ->
               ( "mysqli_query($DB_link, " <> queryAsPHP query <> ");"
-              )
-                : ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+              ) :
+              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
               where
                 query = insertQuery True (sqlname plug) attrNames tblRecords
                 attrNames = attSQLColName <$> plugAttributes plug

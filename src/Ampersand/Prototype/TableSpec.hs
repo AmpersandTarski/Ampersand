@@ -78,16 +78,16 @@ plug2TableSpec plug =
 createTableSql :: Bool -> TableSpec -> SqlQuery
 createTableSql withComment tSpec
   | withComment =
-      SqlQueryPretty
-        $ ( commentBlockSQL . tsCmnt $ tSpec
-          )
+    SqlQueryPretty $
+      ( commentBlockSQL . tsCmnt $ tSpec
+      )
         <> [header]
         <> wrap cols
         <> wrap (maybeToList mKey)
         <> wrap endings
   | otherwise =
-      SqlQueryPlain
-        $ header
+    SqlQueryPlain $
+      header
         <> " "
         <> T.intercalate " " cols
         <> " "
@@ -128,15 +128,15 @@ createTableSql withComment tSpec
 
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec =
-  SqlQuerySimple
-    $ "SHOW COLUMNS FROM "
-    <> (doubleQuote . tsName $ tSpec)
+  SqlQuerySimple $
+    "SHOW COLUMNS FROM "
+      <> (doubleQuote . tsName $ tSpec)
 
 dropTableIfExistsSql :: TableSpec -> SqlQuery
 dropTableIfExistsSql tSpec =
-  SqlQuerySimple
-    $ "DROP TABLE IF EXISTS "
-    <> (doubleQuote . tsName $ tSpec)
+  SqlQuerySimple $
+    "DROP TABLE IF EXISTS "
+      <> (doubleQuote . tsName $ tSpec)
 
 fld2AttributeSpec :: SqlAttribute -> AttributeSpec
 fld2AttributeSpec att =
@@ -156,16 +156,16 @@ insertQuery ::
   SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments =
-      SqlQueryPretty
-        $ [ "INSERT INTO " <> doubleQuote (tshow tableName),
-            "   (" <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames) <> ")",
-            "VALUES "
-          ]
+    SqlQueryPretty $
+      [ "INSERT INTO " <> doubleQuote (tshow tableName),
+        "   (" <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames) <> ")",
+        "VALUES "
+      ]
         <> (T.lines . ("   " <>) . T.intercalate "\n , " $ ["(" <> valuechain md <> ")" | md <- tblRecords])
         <> [""]
   | otherwise =
-      SqlQueryPlain
-        $ "INSERT INTO "
+    SqlQueryPlain $
+      "INSERT INTO "
         <> doubleQuote (tshow tableName)
         <> " ("
         <> T.intercalate ", " (NE.toList $ fmap (doubleQuote . text1ToText . sqlColumNameToText1) attNames)
@@ -187,22 +187,22 @@ instance SomeValue Text where
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec =
-  createTableSql withComment tSpec
-    : [ SqlQuerySimple
-          ( "CREATE INDEX "
-              <> doubleQuote (tsName tSpec <> "_" <> tshow i)
-              <> " ON "
-              <> doubleQuote (tsName tSpec)
-              <> " ("
-              <> doubleQuote (fsname fld)
-              <> ")"
-          )
-        | (i, fld) <-
-            zip [0 .. (maxIndexes - 1)]
-              . filter (suitableAsKey . fstype)
-              . filter (not . fsIsPrimKey)
-              $ tsflds tSpec
-      ]
+  createTableSql withComment tSpec :
+    [ SqlQuerySimple
+        ( "CREATE INDEX "
+            <> doubleQuote (tsName tSpec <> "_" <> tshow i)
+            <> " ON "
+            <> doubleQuote (tsName tSpec)
+            <> " ("
+            <> doubleQuote (fsname fld)
+            <> ")"
+        )
+      | (i, fld) <-
+          zip [0 .. (maxIndexes - 1)]
+            . filter (suitableAsKey . fstype)
+            . filter (not . fsIsPrimKey)
+            $ tsflds tSpec
+    ]
   where
     maxIndexes :: Int
     maxIndexes = 62 -- Limit the amount of indexes in edgecases causing mysql error 1069. (Issue #758)

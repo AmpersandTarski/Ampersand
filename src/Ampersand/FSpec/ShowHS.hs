@@ -862,9 +862,9 @@ instance ShowHSName Origin where
             <> case declOrig of
               FileLoc l sym -> "declared at FileLoc (" <> tshow l <> " " <> sym <> ")"
               _ ->
-                fatal
-                  $ "This should be the origin of a Relation, but it doesn't seem like it is.\n"
-                  <> tshow declOrig
+                fatal $
+                  "This should be the origin of a Relation, but it doesn't seem like it is.\n"
+                    <> tshow declOrig
         OriginUnknown -> "OriginUnknown"
         XLSXLoc fPath sheet (a, b) -> "XLSXLoc " <> T.pack fPath <> " " <> sheet <> " " <> tshow (a, b)
         MeatGrinder -> "MeatGrinder"

@@ -127,7 +127,7 @@ checkFormalAmpersandTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["Formal Ampersand script does not compile:"]
-        <> T.lines (tshow err)
+          <> T.lines (tshow err)
     Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
@@ -138,7 +138,7 @@ checkPrototypeContextTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["PrototypeContext script does not compile:"]
-        <> T.lines (tshow err)
+          <> T.lines (tshow err)
     Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
@@ -152,7 +152,7 @@ compareSync ts rs = case (filter (not . hasmatchingRel) ts, filter (not . hasmat
           "https://github.com/AmpersandTarski/Ampersand/issues/new/choose",
           ""
         ]
-      <> (snd <$> sortOn fst errorItems)
+        <> (snd <$> sortOn fst errorItems)
     where
       errorItems :: [(Text, Text)]
       errorItems =

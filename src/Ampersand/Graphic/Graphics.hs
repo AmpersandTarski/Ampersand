@@ -180,8 +180,8 @@ makePicture env fSpec pr =
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
 --   File names are urlEncoded to cater for the entire alphabet.
 pictureFileName :: PictureTyp -> FilePath
-pictureFileName pr = toBaseFileName
-  $ case pr of
+pictureFileName pr = toBaseFileName $
+  case pr of
     PTClassDiagram -> "Classification"
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
     PTTechnicalDM -> "TechnicalDataModel"
@@ -447,51 +447,51 @@ instance HasDotParts A_Concept where
 instance HasDotParts Relation where
   dotNodes x rel
     | isEndo rel =
-        [ DotNode
-            { nodeID = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
-              nodeAttributes =
-                [ Color [WC (X11Color Transparent) Nothing],
-                  Shape PlainText,
-                  Label
-                    . StrLabel
-                    . TL.fromStrict
-                    . T.intercalate "\n"
-                    $ fullName rel
-                    : case Set.toList . properties $ rel of
-                      [] -> []
-                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-                ]
-            }
-        ]
+      [ DotNode
+          { nodeID = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+            nodeAttributes =
+              [ Color [WC (X11Color Transparent) Nothing],
+                Shape PlainText,
+                Label
+                  . StrLabel
+                  . TL.fromStrict
+                  . T.intercalate "\n"
+                  $ fullName rel :
+                  case Set.toList . properties $ rel of
+                    [] -> []
+                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+              ]
+          }
+      ]
     | otherwise = []
   dotEdges x rel
     | isEndo rel =
-        [ DotEdge
-            { fromNode = toMyDotNode . baseNodeId x . source $ rel,
-              toNode = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
-              edgeAttributes =
-                [ Dir NoDir,
-                  edgeLenFactor 0.4,
-                  Label . StrLabel . fromString $ ""
-                ]
-            }
-        ]
+      [ DotEdge
+          { fromNode = toMyDotNode . baseNodeId x . source $ rel,
+            toNode = toMyDotNode . prependToPlainName (fullName . baseNodeId x . source $ rel) $ name rel,
+            edgeAttributes =
+              [ Dir NoDir,
+                edgeLenFactor 0.4,
+                Label . StrLabel . fromString $ ""
+              ]
+          }
+      ]
     | otherwise =
-        [ DotEdge
-            { fromNode = toMyDotNode . baseNodeId x . source $ rel,
-              toNode = toMyDotNode . baseNodeId x . target $ rel,
-              edgeAttributes =
-                [ Label
-                    . StrLabel
-                    . TL.fromStrict
-                    . T.intercalate "\n"
-                    $ fullName rel
-                    : case Set.toList . properties $ rel of
-                      [] -> []
-                      ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
-                ]
-            }
-        ]
+      [ DotEdge
+          { fromNode = toMyDotNode . baseNodeId x . source $ rel,
+            toNode = toMyDotNode . baseNodeId x . target $ rel,
+            edgeAttributes =
+              [ Label
+                  . StrLabel
+                  . TL.fromStrict
+                  . T.intercalate "\n"
+                  $ fullName rel :
+                  case Set.toList . properties $ rel of
+                    [] -> []
+                    ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
+              ]
+          }
+      ]
 
 instance HasDotParts (A_Concept, A_Concept) where
   dotNodes _ _ = []

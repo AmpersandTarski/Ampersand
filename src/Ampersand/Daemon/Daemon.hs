@@ -71,8 +71,8 @@ initialState = do
           ( L.nub . concatMap fst $ xs,
             L.nub . concatMap snd $ xs
           )
-      return
-        $ Right
+      return $
+        Right
           DaemonState
             { loads = ls,
               loadResults = L.nub $ dotAmpersand : loadedFiles

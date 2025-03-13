@@ -80,8 +80,8 @@ PATTERN PropertyRules
               (FormalAmpersand.isUni/\FormalAmpersand.source;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.source~)\/
               (FormalAmpersand.isInj/\FormalAmpersand.target;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.target~)
 
-    RELATION FormalAmpersand.hasAttribute[FormalAmpersand.Concept] [PROP]
-    ENFORCE FormalAmpersand.hasAttribute := 
+    RELATION FormalAmpersand.hasAttributes[FormalAmpersand.Concept] [PROP]
+    ENFORCE FormalAmpersand.hasAttributes := 
               (I/\FormalAmpersand.source~;FormalAmpersand.isUni;FormalAmpersand.source) \/
               (I/\FormalAmpersand.target~;FormalAmpersand.isInj;FormalAmpersand.target)
 ENDPATTERN

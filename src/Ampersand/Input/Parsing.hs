@@ -202,8 +202,8 @@ parseSingleADL pc =
     if isJust (pcFileKind pc) || exists
       then parseSingleADL'
       else
-        return
-          $ mkErrorReadingINCLUDE
+        return $
+          mkErrorReadingINCLUDE
             (pcOrigin pc)
             [ "While looking for " <> T.pack filePath,
               "   File does not exist."
@@ -214,53 +214,53 @@ parseSingleADL pc =
     parseSingleADL'
       | -- This feature enables the parsing of Excel files, that are prepared for Ampersand.
         extension == ".xlsx" = do
-          popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-          return ((,[]) <$> popFromExcel) -- An Excel file does not contain include files
+        popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
+        return ((,[]) <$> popFromExcel) -- An Excel file does not contain include files
       | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
         extension == ".archimate" = do
-          ctxFromArchi <- archi2PContext filePath -- e.g. "CA repository.xml"
-          logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
-          case ctxFromArchi of
-            Checked ctx _ -> do
-              writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
-              logInfo "ArchiMetaModel.adl written"
-            Errors _ -> pure ()
-          return ((,[]) <$> ctxFromArchi) -- An Archimate file does not contain include files
+        ctxFromArchi <- archi2PContext filePath -- e.g. "CA repository.xml"
+        logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
+        case ctxFromArchi of
+          Checked ctx _ -> do
+            writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
+            logInfo "ArchiMetaModel.adl written"
+          Errors _ -> pure ()
+        return ((,[]) <$> ctxFromArchi) -- An Archimate file does not contain include files
       | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
         extension == ".json" = do
-          ctxFromAtlas <- catchInvalidJSON $ parseJsonFile filePath
-          return ((,[]) <$> ctxFromAtlas) -- A .json file does not contain include files
+        ctxFromAtlas <- catchInvalidJSON $ parseJsonFile filePath
+        return ((,[]) <$> ctxFromAtlas) -- A .json file does not contain include files
       | otherwise = do
-          mFileContents <-
-            case pcFileKind pc of
-              Just fileKind ->
-                case getStaticFileContent fileKind filePath of
-                  Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
-                  Nothing -> fatal ("Statically included " <> tshow fileKind <> " files. \n  Cannot find `" <> T.pack filePath <> "`.")
-              Nothing ->
-                Right <$> readFileUtf8 filePath
-          case mFileContents of
-            Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) (map T.pack err)
-            Right fileContents ->
-              let -- TODO: This should be cleaned up. Probably better to do all the file reading
-                  --       first, then parsing and typechecking of each module, building a tree P_Contexts
-                  meat :: Guarded (P_Context, [Include])
-                  meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath . T.pack
-                  proces :: Guarded (P_Context, [Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
-                  proces (Errors err) = pure (Errors err)
-                  proces (Checked (ctxts, includes) ws) =
-                    addWarnings ws . foo <$> mapM include2ParseCandidate includes
-                    where
-                      foo :: [Guarded ParseCandidate] -> Guarded (P_Context, [ParseCandidate])
-                      foo xs = (ctxts,) <$> sequence xs
-               in proces meat
+        mFileContents <-
+          case pcFileKind pc of
+            Just fileKind ->
+              case getStaticFileContent fileKind filePath of
+                Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
+                Nothing -> fatal ("Statically included " <> tshow fileKind <> " files. \n  Cannot find `" <> T.pack filePath <> "`.")
+            Nothing ->
+              Right <$> readFileUtf8 filePath
+        case mFileContents of
+          Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) (map T.pack err)
+          Right fileContents ->
+            let -- TODO: This should be cleaned up. Probably better to do all the file reading
+                --       first, then parsing and typechecking of each module, building a tree P_Contexts
+                meat :: Guarded (P_Context, [Include])
+                meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath . T.pack
+                proces :: Guarded (P_Context, [Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
+                proces (Errors err) = pure (Errors err)
+                proces (Checked (ctxts, includes) ws) =
+                  addWarnings ws . foo <$> mapM include2ParseCandidate includes
+                  where
+                    foo :: [Guarded ParseCandidate] -> Guarded (P_Context, [ParseCandidate])
+                    foo xs = (ctxts,) <$> sequence xs
+             in proces meat
       where
         include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
         include2ParseCandidate (Include org str defs) = do
           let canonical = myNormalise (takeDirectory filePath </> str)
               defineds = processFlags (pcDefineds pc) (map T.unpack defs)
-          return
-            $ Checked
+          return $
+            Checked
               ParseCandidate
                 { pcBasePath = Just filePath,
                   pcOrigin = Just org,
@@ -285,8 +285,8 @@ parseSingleADL pc =
             f ds (x : xs)
               | is "." x = f ds xs -- reduce /a/b/./c to /a/b/c/
               | is ".." x = case reverse ds of
-                  [] -> fatal ("Illegal filePath: " <> tshow fp)
-                  _ : reverseInit -> f (reverse reverseInit) xs -- reduce a/b/c/../d/ to a/b/d/
+                [] -> fatal ("Illegal filePath: " <> tshow fp)
+                _ : reverseInit -> f (reverse reverseInit) xs -- reduce a/b/c/../d/ to a/b/d/
               | otherwise = f (ds <> [x]) xs
         is :: FilePath -> FilePath -> Bool
         is str fp = case L.stripPrefix str fp of

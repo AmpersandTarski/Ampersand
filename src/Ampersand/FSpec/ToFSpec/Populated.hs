@@ -22,8 +22,8 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 genericAndSpecifics :: AClassify -> [(A_Concept, A_Concept)]
-genericAndSpecifics gen = filter (uncurry (/=))
-  $ case gen of -- make sure that no tuples where source and target are equal are returned.
+genericAndSpecifics gen = filter (uncurry (/=)) $
+  case gen of -- make sure that no tuples where source and target are equal are returned.
     Isa {} -> [(genspc gen, gengen gen)]
     IsE {} -> [(genspc gen, g) | g <- NE.toList $ genrhs gen]
 
@@ -63,10 +63,10 @@ atomValuesOf ci pt c =
     ONE -> Set.singleton AtomValueOfONE
     PlainConcept {} ->
       let smallerconcs = c : smallerConcepts (ctxiGens ci) c
-       in Set.fromList
-            $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-            ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-            ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+       in Set.fromList $
+            [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+              ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+              ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl =

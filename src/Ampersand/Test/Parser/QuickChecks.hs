@@ -77,7 +77,7 @@ prop_parserRoundtrip pCtx =
       exitWith
         . SomeTestsFailed
         $ T.lines (tshow err)
-        <> T.lines (prettyCtx pCtx)
+          <> T.lines (prettyCtx pCtx)
 
 roundtrip :: P_Context -> Guarded P_Context
 roundtrip pCtx =

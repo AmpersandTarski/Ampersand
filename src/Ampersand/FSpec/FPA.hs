@@ -64,7 +64,7 @@ fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 fpaPlugInfo :: PlugInfo -> Maybe FP
 fpaPlugInfo p@(InternalPlug TblSQL {attributes = atts})
   | Just cmplxty <- ilgvComplexity $ length atts =
-      Just $ FP ILGV (showUnique p) cmplxty
+    Just $ FP ILGV (showUnique p) cmplxty
   where
     ilgvComplexity :: Int -> Maybe Complexity
     ilgvComplexity n

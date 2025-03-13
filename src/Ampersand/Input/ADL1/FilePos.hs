@@ -80,7 +80,7 @@ data Origin
   | FileLoc !FilePos !SymbolName
   | XLSXLoc !FilePath !Text !(Int, Int)
   | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
-  deriving (Eq, Typeable, Generic, Data)
+  deriving (Eq, Ord, Typeable, Generic, Data)
 
 -- Eq and Ord have been removed by desing on Origin. See issue #1035
 
@@ -119,8 +119,8 @@ maybeOrdering x y = case x of
     case y of
       FileLoc {} -> Just LT
       XLSXLoc fpy wby (rowy, coly) ->
-        Just
-          $ compare
+        Just $
+          compare
             (fpx, wbx, (rowx, colx))
             (fpy, wby, (rowy, coly))
       PropertyRule {} -> Just GT

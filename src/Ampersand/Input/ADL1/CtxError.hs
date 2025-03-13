@@ -97,23 +97,23 @@ instance Show CtxError where
     T.unpack
       . T.intercalate "\n  "
       $ [tshow (origin err) <> " error:"]
-      <> ( case err of
-             CTXE _ s -> T.lines s
-             PE e ->
-               -- The first line of a parse error allways contains
-               -- the filename and position of the error. However,
-               -- these are in a wrong format. So we strip the first
-               -- line of the error:
-               case T.lines (tshow e) of
-                 [] -> fatal "Whoh! the impossible just happened! (triggered by a parse error somewhere in your script)"
-                 _ : xs -> xs
-             LE (LexerError _ info) -> T.lines (tshow info)
-             RoundTripError script err' ->
-               ["Roundtrip test failed. Script that was tried:"]
-                 ++ map ("  " <>) (T.lines script)
-                 ++ ["Yields the following error:"]
-                 ++ map ("  " <>) (T.lines $ tshow err')
-         )
+        <> ( case err of
+               CTXE _ s -> T.lines s
+               PE e ->
+                 -- The first line of a parse error allways contains
+                 -- the filename and position of the error. However,
+                 -- these are in a wrong format. So we strip the first
+                 -- line of the error:
+                 case T.lines (tshow e) of
+                   [] -> fatal "Whoh! the impossible just happened! (triggered by a parse error somewhere in your script)"
+                   _ : xs -> xs
+               LE (LexerError _ info) -> T.lines (tshow info)
+               RoundTripError script err' ->
+                 ["Roundtrip test failed. Script that was tried:"]
+                   ++ map ("  " <>) (T.lines script)
+                   ++ ["Yields the following error:"]
+                   ++ map ("  " <>) (T.lines $ tshow err')
+           )
 
 data Warning = Warning Origin Text
 
@@ -127,7 +127,7 @@ instance Show Warning where
     T.unpack
       . T.intercalate "\n  "
       $ [tshow o <> " warning: "]
-      <> T.lines msg
+        <> T.lines msg
 
 instance Traced CtxError where
   origin (CTXE o _) = o
@@ -178,11 +178,11 @@ mkMultipleRepresentTypesError cpt rs =
       [] -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
       (_, x) : _ -> x
     msg =
-      T.intercalate "\n"
-        $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
-            "The following TYPEs are defined for it:"
-          ]
-        <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
+      T.intercalate "\n" $
+        [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
+          "The following TYPEs are defined for it:"
+        ]
+          <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
 
 mkMultipleTypesInTypologyError :: [(A_Concept, TType, [Origin])] -> Guarded a
 mkMultipleTypesInTypologyError tripls =
@@ -192,12 +192,12 @@ mkMultipleTypesInTypologyError tripls =
       (_, _, x : _) : _ -> x
       _ -> fatal "No origin in list."
     msg =
-      T.intercalate "\n"
-        $ [ "Concepts in the same typology must have the same TYPE.",
-            "The following concepts are in the same typology, but not all",
-            "of them have the same TYPE:"
-          ]
-        <> ["  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
+      T.intercalate "\n" $
+        [ "Concepts in the same typology must have the same TYPE.",
+          "The following concepts are in the same typology, but not all",
+          "of them have the same TYPE:"
+        ]
+          <> ["  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs =
@@ -205,13 +205,13 @@ mkMultipleRootsError roots gs =
   where
     o = origin (NE.head gs)
     msg =
-      T.intercalate "\n"
-        $ [ "A typology must have at most one root concept.",
-            "The following CLASSIFY statements define a typology with multiple root concepts: "
-          ]
-        <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
-        <> ["Parhaps you could add the following statements:"]
-        <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> tshow rootName | cpt <- roots]
+      T.intercalate "\n" $
+        [ "A typology must have at most one root concept.",
+          "The following CLASSIFY statements define a typology with multiple root concepts: "
+        ]
+          <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
+          <> ["Parhaps you could add the following statements:"]
+          <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> tshow rootName | cpt <- roots]
       where
         rootName = T.intercalate "_Or_" . map (text1ToText . showWithAliases) $ roots
 
@@ -219,11 +219,11 @@ nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =
   Errors
     . pure
-    $ CTXE orig
-    $ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
-    <> tshow wrongType
-    <> " is not the same as "
-    <> tshow rightType
+    $ CTXE orig $
+      "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
+        <> tshow wrongType
+        <> " is not the same as "
+        <> tshow rightType
 
 class GetOneGuarded a b | b -> a where
   {-# MINIMAL getOneExactly | hasNone #-} -- we don't want endless loops, do we?
@@ -247,17 +247,17 @@ instance GetOneGuarded Expression P_NamedRel where
   getOneExactly o [] =
     Errors
       . pure
-      $ CTXE (origin o)
-      $ "A relation is used that is not explicitly declared: "
-      <> showP o
+      $ CTXE (origin o) $
+        "A relation is used that is not explicitly declared: "
+          <> showP o
   getOneExactly o lst =
     Errors
       . pure
-      $ CTXE (origin o)
-      $ "A relation is used that is not explicitly declared: "
-      <> showP o
-      <> ".\n  Explicitly mention one of the following matching terms:"
-      <> T.concat ["\n  - " <> showA l | l <- lst]
+      $ CTXE (origin o) $
+        "A relation is used that is not explicitly declared: "
+          <> showP o
+          <> ".\n  Explicitly mention one of the following matching terms:"
+          <> T.concat ["\n  - " <> showA l | l <- lst]
 
 instance GetOneGuarded Expression (P_NamedRel, (A_Concept, A_Concept)) where
   getOneExactly (o, (sr, tg)) = getOneExactly (o, (Just sr, Just tg))
@@ -268,17 +268,17 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
     [] ->
       Errors
         . pure
-        $ (CTXE . origin . fst) o
-        $ "A relation is used that is not explicitly declared: "
-        <> showP_T o
+        $ (CTXE . origin . fst) o $
+          "A relation is used that is not explicitly declared: "
+            <> showP_T o
     _ ->
       Errors
         . pure
-        $ (CTXE . origin . fst) o
-        $ "A relation is used that is not explicitly declared: "
-        <> showP_T o
-        <> ".\n  Perhaps you meant one of the following matching terms:"
-        <> T.concat ["\n  - " <> showA l | l <- lst]
+        $ (CTXE . origin . fst) o $
+          "A relation is used that is not explicitly declared: "
+            <> showP_T o
+            <> ".\n  Perhaps you meant one of the following matching terms:"
+            <> T.concat ["\n  - " <> showA l | l <- lst]
     where
       showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
       showP_T (p, (src, tgt)) = fullName p <> "[" <> showC src <> "*" <> showC tgt <> "]"
@@ -315,28 +315,28 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
         Rel [] -> "A relation is used that is not defined: " <> showP o
         Rel exprs -> case o of
           (PNamedR (PNamedRel _ _ Nothing)) ->
-            T.intercalate "\n"
-              $ [ "Cannot disambiguate the relation: " <> showP o,
-                  "  Please add a signature (e.g. [A*B]) to the relation.",
-                  "  Relations you may have intended:"
-                ]
-              <> map (("  " <>) . showA') exprs
-              <> noteIssue980
+            T.intercalate "\n" $
+              [ "Cannot disambiguate the relation: " <> showP o,
+                "  Please add a signature (e.g. [A*B]) to the relation.",
+                "  Relations you may have intended:"
+              ]
+                <> map (("  " <>) . showA') exprs
+                <> noteIssue980
           _ ->
-            T.intercalate "\n"
-              $ [ "Cannot disambiguate: " <> showP o,
-                  "  Please add a signature (e.g. [A*B]) to the term.",
-                  "  You may have intended one of these:"
-                ]
-              <> map (("  " <>) . showA') exprs
-              <> noteIssue980
+            T.intercalate "\n" $
+              [ "Cannot disambiguate: " <> showP o,
+                "  Please add a signature (e.g. [A*B]) to the term.",
+                "  You may have intended one of these:"
+              ]
+                <> map (("  " <>) . showA') exprs
+                <> noteIssue980
         Known _ -> fatal "We have a known term, so it is allready disambiguated."
         _ ->
-          T.intercalate "\n"
-            $ [ "Cannot disambiguate: " <> showP o,
-                "  Please add a signature (e.g. [A*B]) to it."
-              ]
-            <> noteIssue980
+          T.intercalate "\n" $
+            [ "Cannot disambiguate: " <> showP o,
+              "  Please add a signature (e.g. [A*B]) to it."
+            ]
+              <> noteIssue980
     noteIssue980 =
       [ "Note: Some cases are not disambiguated fully by design. You can read about",
         "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
@@ -420,21 +420,21 @@ mkUndeclaredError :: Text -> P_BoxItem a -> Name -> CtxError
 mkUndeclaredError entity objDef ref =
   case objDef of
     P_BoxItemTerm {} ->
-      CTXE (origin objDef)
-        $ "Undeclared "
-        <> entity
-        <> " "
-        <> tshow ref
-        <> " referenced at field "
-        <> tshow (obj_PlainName objDef)
+      CTXE (origin objDef) $
+        "Undeclared "
+          <> entity
+          <> " "
+          <> tshow ref
+          <> " referenced at field "
+          <> tshow (obj_PlainName objDef)
     _ -> fatal "Unexpected use of mkUndeclaredError."
 
 mkEndoPropertyError :: Origin -> [PProp] -> CtxError
 mkEndoPropertyError orig ps =
   CTXE orig msg
   where
-    msg = T.intercalate "\n"
-      $ case ps of
+    msg = T.intercalate "\n" $
+      case ps of
         [] -> fatal "What property is causing this error???"
         [p] ->
           [ "Property " <> tshow p <> " can only be used for relations where",
@@ -449,13 +449,13 @@ mkEndoPropertyError orig ps =
 
 mkMultipleInterfaceError :: Text -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =
-  CTXE (origin ifc)
-    $ "Multiple interfaces named "
-    <> fullName ifc
-    <> " for role "
-    <> tshow role'
-    <> ":"
-    <> T.intercalate "\n    " (map (tshow . origin) (ifc : duplicateIfcs))
+  CTXE (origin ifc) $
+    "Multiple interfaces named "
+      <> fullName ifc
+      <> " for role "
+      <> tshow role'
+      <> ":"
+      <> T.intercalate "\n    " (map (tshow . origin) (ifc : duplicateIfcs))
 
 mkInvalidCRUDError :: Origin -> Text1 -> CtxError
 mkInvalidCRUDError o x = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `" <> text1ToText x <> "`."
@@ -478,12 +478,12 @@ mkInvariantViolationsError applyViolText (r, ps) =
   where
     violationMessage :: Text
     violationMessage =
-      T.unlines
-        $ [ if length ps == 1
-              then "There is a violation of RULE " <> fullName r <> ":"
-              else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
-          ]
-        <> (map ("  " <>) . listPairs 10 . toList $ ps)
+      T.unlines $
+        [ if length ps == 1
+            then "There is a violation of RULE " <> fullName r <> ":"
+            else "There are " <> tshow (length ps) <> " violations of RULE " <> fullName r <> ":"
+        ]
+          <> (map ("  " <>) . listPairs 10 . toList $ ps)
     listPairs :: Int -> [AAtomPair] -> [Text]
     listPairs i xs =
       case xs of
@@ -494,9 +494,9 @@ mkInvariantViolationsError applyViolText (r, ps) =
 
 mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =
-  CTXE (origin (NE.head cyclicIfcs))
-    $ "Interfaces form a reference cycle:\n"
-    <> (T.unlines . NE.toList $ fmap showIfc cyclicIfcs)
+  CTXE (origin (NE.head cyclicIfcs)) $
+    "Interfaces form a reference cycle:\n"
+      <> (T.unlines . NE.toList $ fmap showIfc cyclicIfcs)
   where
     showIfc :: Interface -> Text
     showIfc i = "- " <> fullName i <> " at position " <> tshow (origin i)
@@ -505,27 +505,27 @@ mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name ->
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
     P_BoxItemTerm {} ->
-      CTXE (origin objDef)
-        $ "Incompatible interface reference "
-        <> fullName ref
-        <> " at field "
-        <> maybe "without a label" tshow (obj_PlainName objDef)
-        <> ":\nReferenced interface "
-        <> fullName ref
-        <> " has type "
-        <> (text1ToText . showWithAliases) refSrc
-        <> ", which is not comparable to the target "
-        <> (text1ToText . showWithAliases) expTgt
-        <> " of the term at this field."
+      CTXE (origin objDef) $
+        "Incompatible interface reference "
+          <> fullName ref
+          <> " at field "
+          <> maybe "without a label" tshow (obj_PlainName objDef)
+          <> ":\nReferenced interface "
+          <> fullName ref
+          <> " has type "
+          <> (text1ToText . showWithAliases) refSrc
+          <> ", which is not comparable to the target "
+          <> (text1ToText . showWithAliases) expTgt
+          <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
-  CTXE (origin . NE.head $ vds)
-    $ "Multiple default views for concept "
-    <> (text1ToText . showWithAliases) cpt
-    <> ":"
-    <> T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
+  CTXE (origin . NE.head $ vds) $
+    "Multiple default views for concept "
+      <> (text1ToText . showWithAliases) cpt
+      <> ":"
+      <> T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
   where
     showViewDef :: ViewDef -> Text
     showViewDef vd = "VIEW " <> fullName vd <> " (at " <> tshow (origin vd) <> ")"
@@ -536,8 +536,8 @@ mkMultipleDefaultError vds =
 
 mkOperatorError :: Origin -> PBinOp -> A_Concept -> TType -> CtxError
 mkOperatorError orig oper cpt typ =
-  CTXE orig
-    $ T.intercalate
+  CTXE orig $
+    T.intercalate
       "\n  "
       [ "Illegal use of `" <> tshow oper <> "`",
         "`" <> tshow oper <> "` is used in combination with the concept " <> tshow cpt <> ".",
@@ -548,19 +548,19 @@ mkIncompatibleViewError :: (Named b, Named c) => P_BoxItem a -> Name -> b -> c -
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
     P_BoxItemTerm {} ->
-      CTXE (origin objDef)
-        $ "Incompatible view annotation <"
-        <> fullName viewId
-        <> "> at field "
-        <> maybe "without a label" tshow (obj_PlainName objDef)
-        <> ":"
-        <> "\nView "
-        <> tshow viewId
-        <> " has type "
-        <> fullName viewCptStr
-        <> ", which should be equal to or more general than the target "
-        <> fullName viewRefCptStr
-        <> " of the term at this field."
+      CTXE (origin objDef) $
+        "Incompatible view annotation <"
+          <> fullName viewId
+          <> "> at field "
+          <> maybe "without a label" tshow (obj_PlainName objDef)
+          <> ":"
+          <> "\nView "
+          <> tshow viewId
+          <> " has type "
+          <> fullName viewCptStr
+          <> ", which should be equal to or more general than the target "
+          <> fullName viewRefCptStr
+          <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleViewError."
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
@@ -636,12 +636,12 @@ mustBeOrderedLst o lst =
     $ [ "Type error in BOX",
         "  Cannot match:"
       ]
-    <> [ "  - concept " <> (text1ToText . showWithAliases) c <> " , " <> showP st <> " of: " <> showP (exprOf a)
-         | (c, st, a) <- lst
-       ]
-    <> [ "  if you think there is no type error, add an order between the mismatched concepts.",
-         "  You can do so by using a CLASSIFY statement."
-       ]
+      <> [ "  - concept " <> (text1ToText . showWithAliases) c <> " , " <> showP st <> " of: " <> showP (exprOf a)
+           | (c, st, a) <- lst
+         ]
+      <> [ "  if you think there is no type error, add an order between the mismatched concepts.",
+           "  You can do so by using a CLASSIFY statement."
+         ]
   where
     exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
@@ -681,7 +681,7 @@ mustBeBound o lst =
         "  " <> T.intercalate " and " (map (showA . snd) lst) <> ".",
         "  You could add more types inside the term, or write:"
       ]
-    <> ["  " <> writeBind e | (_, e) <- lst]
+      <> ["  " <> writeBind e | (_, e) <- lst]
 
 mustBeValidNamePart :: Origin -> Text1 -> Guarded NamePart
 mustBeValidNamePart orig t1 =
@@ -708,8 +708,8 @@ instance Traced Warning where
 
 mkBoxRowsnhWarning :: Origin -> Warning
 mkBoxRowsnhWarning orig =
-  Warning orig
-    $ T.intercalate
+  Warning orig $
+    T.intercalate
       "\n   "
       [ "The common use of BOX <ROWSNH> has become obsolete. It was used to be able",
         "to have rows without header.",
@@ -721,8 +721,8 @@ mkBoxRowsnhWarning orig =
 
 mkNoBoxItemsWarning :: Origin -> Warning
 mkNoBoxItemsWarning orig =
-  Warning orig
-    $ T.intercalate
+  Warning orig $
+    T.intercalate
       "\n    "
       [ "This list of BOX-items is empty."
       ]
@@ -732,8 +732,8 @@ mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
 
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =
-  Warning OriginUnknown
-    $ T.intercalate
+  Warning OriginUnknown $
+    T.intercalate
       "\n    "
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."

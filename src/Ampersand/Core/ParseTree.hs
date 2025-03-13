@@ -406,9 +406,15 @@ data P_Relation = P_Relation
     -- | the optional meaning of a relation, possibly more than one for different languages.
     dec_Mean :: ![PMeaning],
     -- | the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-    pos :: !Origin
+    dec_pos :: !Origin
   }
-  deriving (Show) -- For QuickCheck error messages only!
+  deriving (Show)
+
+instance Eq P_Relation where
+  a == b = compare a b == EQ
+
+instance Ord P_Relation where
+  compare a b = compare (dec_pos a, dec_nm a, dec_sign a) (dec_pos b, dec_nm b, dec_sign b)
 
 -- | Pragma, used in relations. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
 --  then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
@@ -437,7 +443,7 @@ instance Named P_Relation where
   name = dec_nm
 
 instance Traced P_Relation where
-  origin P_Relation {pos = orig} = orig
+  origin P_Relation {dec_pos = orig} = orig
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
@@ -456,9 +462,10 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
             [] -> Nothing
             h : _ -> Just h,
           dec_Mean = L.nub $ concatMap dec_Mean rels,
-          pos = case NE.filter (not . isFuzzyOrigin . origin) rels of
-            [] -> origin r0
-            h : _ -> origin h
+          dec_pos =
+            case NE.filter (not . isFuzzyOrigin . origin) rels of
+              [] -> origin r0
+              h : _ -> origin h
         }
       where
         (r0 :| _) = rels

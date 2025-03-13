@@ -1,6 +1,7 @@
 module Ampersand.Classes.Relational
   ( HasProps (..),
     Relational (..),
+    hasAttributes,
     isONE,
     isSESSION,
   )
@@ -47,6 +48,10 @@ isSESSION cpt =
   case cpt of
     PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
     ONE -> False
+
+hasAttributes ::
+  Set.Set P_Relation -> P_Concept -> Bool
+hasAttributes rels c = any isUni (Set.filter (\r -> pSrc (dec_sign r) == c) rels) || any isInj (Set.filter (\r -> pTgt (dec_sign r) == c) rels)
 
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
 -- but tries to derive the most obvious constraints as well. The more property constraints are known,
@@ -221,6 +226,21 @@ isUniInj prop expr =
     EMp1 {} -> True
   where
     todo = prop `elem` properties expr
+
+instance Relational P_Relation where
+  isUni rel = P_Uni `Set.member` dec_prps rel
+  isTot rel = P_Tot `Set.member` dec_prps rel
+  isInj rel = P_Inj `Set.member` dec_prps rel
+  isSur rel = P_Sur `Set.member` dec_prps rel
+  isAsy rel = P_Asy `Set.member` dec_prps rel
+  isSym rel = P_Sym `Set.member` dec_prps rel
+  isTrn rel = P_Trn `Set.member` dec_prps rel
+  isRfx rel = P_Rfx `Set.member` dec_prps rel
+  isIrf rel = P_Irf `Set.member` dec_prps rel
+  isIdent _ = False
+  isImin _ = False
+  isTrue _ = False
+  isFalse _ = False
 
 instance Relational Relation where
   isUni rel = Uni `Set.member` decprps rel

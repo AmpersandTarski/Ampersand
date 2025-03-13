@@ -883,42 +883,42 @@ matches term expr
   | not (isValid term) = fatal ("Invalid term " <> showIT term <> "\nbeing matched to term " <> showIT expr)
   | not (isValid expr) = fatal ("Matching term " <> showIT term <> "\nto invalid term " <> showIT expr)
   | otherwise =
-      case (term, expr) of
-        (RIsc es, RIsc es') -> matchSets RIsc es es'
-        (RUni es, RUni es') -> matchSets RUni es es'
-        (RDif l r, RDif l' r') -> matches l l' <> matches r r'
-        (RLrs l r, RLrs l' r') -> matches l l' <> matches r r'
-        (RRrs l r, RRrs l' r') -> matches l l' <> matches r r'
-        (RDia l r, RDia l' r') -> matches l l' <> matches r r'
-        (RCps ls, RCps ls') -> matchLists RCps ls ls'
-        (RRad ls, RRad ls') -> matchLists RRad ls ls'
-        (RPrd ls, RPrd ls') -> matchLists RPrd ls ls'
-        (RKl0 e, RKl0 e') -> matches e e'
-        (RKl1 e, RKl1 e') -> matches e e'
-        (RFlp e, RFlp e') -> matches e e'
-        (RCpl e, RCpl e') -> matches e e'
-        (RId c, RId _) -> [Set.fromList [(name c, expr)]]
-        (RVee s t, RVee s' t') -> [Set.fromList [(name s, RId s'), (name t, RId t')]]
-        (RVar v s t, _) -> [Set.fromList [(v, expr), (name s, RId (source expr)), (name t, RId (target expr))]]
-        (RAtm a c, RAtm a' c') -> [Set.singleton (name c, RId c') | a == a']
-        (RConst e, RConst e') -> [Set.empty | e == e']
-        (_, _) -> []
+    case (term, expr) of
+      (RIsc es, RIsc es') -> matchSets RIsc es es'
+      (RUni es, RUni es') -> matchSets RUni es es'
+      (RDif l r, RDif l' r') -> matches l l' <> matches r r'
+      (RLrs l r, RLrs l' r') -> matches l l' <> matches r r'
+      (RRrs l r, RRrs l' r') -> matches l l' <> matches r r'
+      (RDia l r, RDia l' r') -> matches l l' <> matches r r'
+      (RCps ls, RCps ls') -> matchLists RCps ls ls'
+      (RRad ls, RRad ls') -> matchLists RRad ls ls'
+      (RPrd ls, RPrd ls') -> matchLists RPrd ls ls'
+      (RKl0 e, RKl0 e') -> matches e e'
+      (RKl1 e, RKl1 e') -> matches e e'
+      (RFlp e, RFlp e') -> matches e e'
+      (RCpl e, RCpl e') -> matches e e'
+      (RId c, RId _) -> [Set.fromList [(name c, expr)]]
+      (RVee s t, RVee s' t') -> [Set.fromList [(name s, RId s'), (name t, RId t')]]
+      (RVar v s t, _) -> [Set.fromList [(v, expr), (name s, RId (source expr)), (name t, RId (target expr))]]
+      (RAtm a c, RAtm a' c') -> [Set.singleton (name c, RId c') | a == a']
+      (RConst e, RConst e') -> [Set.empty | e == e']
+      (_, _) -> []
 
 matchLists :: ([RTerm] -> RTerm) -> [RTerm] -> [RTerm] -> [Unifier]
 matchLists rCombinator es es'
   | not (isValid (combLst rCombinator es)) = fatal ("Invalid term " <> showIT (rCombinator es) <> "\nbeing matched to term " <> showIT (rCombinator es'))
   | not (isValid (combLst rCombinator es')) = fatal ("Matching term " <> showIT (rCombinator es) <> "\nto invalid term " <> showIT (rCombinator es'))
   | otherwise =
-      [ unif
-        | let n = length es, -- the length of the template, which contains variables
-          n /= 0 || fatal "n equals 0",
-          ms <- dist n es', -- determine segments from es' (which is variable free) that have the same length as the template es
-          not (or [null m | m <- ms])
-            || fatal (T.concat ["\nms:  [" <> T.intercalate ", " (map showIT m) <> "]" | m <- ms]),
-          let subTerms = map (combLst rCombinator) ms, -- make an RTerm from each sublist in ms
-          unif <- mix [matches l r | (l, r) <- safezip es subTerms],
-          noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
-      ]
+    [ unif
+      | let n = length es, -- the length of the template, which contains variables
+        n /= 0 || fatal "n equals 0",
+        ms <- dist n es', -- determine segments from es' (which is variable free) that have the same length as the template es
+        not (or [null m | m <- ms])
+          || fatal (T.concat ["\nms:  [" <> T.intercalate ", " (map showIT m) <> "]" | m <- ms]),
+        let subTerms = map (combLst rCombinator) ms, -- make an RTerm from each sublist in ms
+        unif <- mix [matches l r | (l, r) <- safezip es subTerms],
+        noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
+    ]
 
 mix :: [[Unifier]] -> [Unifier]
 mix (ls : lss) = [Set.union e str | e <- ls, str <- mix lss]
@@ -935,14 +935,14 @@ matchSets rCombinator es es'
   | or [not (isValid e) | e <- Set.toList es] = fatal ("Invalid subterm(s): " <> T.intercalate ", " [showIT e | e <- Set.toList es, not (isValid e)])
   | or [not (isValid e) | e <- Set.toList es'] = fatal ("Invalid subexpr(s): " <> T.intercalate ", " [showIT e | e <- Set.toList es', not (isValid e)])
   | otherwise =
-      [ unif
-        | let n = Set.size cdes, -- the length of the template, which contains variables
-          partition' <- parts n cdes', -- determine segments from the term with the same length. partition' :: Set (Set RTerm)
-          let subTerms = Set.map (combSet rCombinator) partition', -- make an RTerm from each subset in ms. subTerms :: Set RTerm
-          template <- L.permutations (Set.toList cdes),
-          unif <- mix [matches l r | (l, r) <- safezip template (Set.toList subTerms)],
-          noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
-      ]
+    [ unif
+      | let n = Set.size cdes, -- the length of the template, which contains variables
+        partition' <- parts n cdes', -- determine segments from the term with the same length. partition' :: Set (Set RTerm)
+        let subTerms = Set.map (combSet rCombinator) partition', -- make an RTerm from each subset in ms. subTerms :: Set RTerm
+        template <- L.permutations (Set.toList cdes),
+        unif <- mix [matches l r | (l, r) <- safezip template (Set.toList subTerms)],
+        noDoubles unif -- if one variable, v, is bound to more than one different terms, the deal is off.
+    ]
   where
     isct = es `Set.intersection` es' -- E.g.:  {'Piet'}
     cdes = es `Set.difference` isct -- the terms of es that are not in es' (a set of templates). E.g.: { r;s }
@@ -1325,15 +1325,15 @@ normStep
       nM _ (ELrs (ECps (x, y), z)) _ | not eq && y == z = (x, ["(x;y)/y |- x"], "==>")
       nM _ (ELrs (ECps (x, y), z)) _
         | not eq && flp x == z =
-            ( flp y,
-              [ case (x, y) of
-                  (EFlp _, EFlp _) -> "(SJ) (x~;y~)/x |- y"
-                  (_, EFlp _) -> "(SJ) (x;y~)/x~ |- y"
-                  (EFlp _, _) -> "(SJ) (x~;y)/x |- y~"
-                  (_, _) -> "(SJ) (x;y)/x~ |- y~"
-              ],
-              "==>"
-            )
+          ( flp y,
+            [ case (x, y) of
+                (EFlp _, EFlp _) -> "(SJ) (x~;y~)/x |- y"
+                (_, EFlp _) -> "(SJ) (x;y~)/x~ |- y"
+                (EFlp _, _) -> "(SJ) (x~;y)/x |- y~"
+                (_, _) -> "(SJ) (x;y)/x~ |- y~"
+            ],
+            "==>"
+          )
       nM _ (ELrs (ELrs (x, z), y)) _ = (ELrs (x, ECps (y, z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>") -- note: sign (x/yz) == sign ((x/z)/y)
       nM posCpl (ELrs (l, r)) _ = (t ./. f, steps <> steps', fEqu [equ', equ''])
         where
@@ -1367,78 +1367,78 @@ normStep
       nM posCpl x@(EIsc (l, r)) rs
         -- Absorb equals:    r/\r  -->  r
         | or [length cl > 1 | cl <- NE.toList absorbClasses] =
-            ( foldr1 (./\.) (fmap NE.head absorbClasses),
-              [shw e <> " /\\ " <> shw e <> " = " <> shw e | cl <- NE.toList absorbClasses, length cl > 1, let e = NE.head cl],
-              "<=>"
-            )
+          ( foldr1 (./\.) (fmap NE.head absorbClasses),
+            [shw e <> " /\\ " <> shw e <> " = " <> shw e | cl <- NE.toList absorbClasses, length cl > 1, let e = NE.head cl],
+            "<=>"
+          )
         -- Absorb True:    r/\V  --> r
         | isTrue l = (r, ["V/\\x = x"], "<=>")
         | isTrue r = (l, ["x/\\V = x"], "<=>")
         -- Inconsistency:    r/\-r   -->  False
         | not (null incons) =
-            let i = head incons in (notCpl (EDcV (sign i)), [shw (notCpl i) <> " /\\ " <> shw i <> " = V-"], "<=>")
+          let i = head incons in (notCpl (EDcV (sign i)), [shw (notCpl i) <> " /\\ " <> shw i <> " = V-"], "<=>")
         -- Inconsistency:    x/\\V-  -->  False
         | isFalse l = (notCpl (EDcV (sign x)), ["-V/\\x = -V"], "<=>")
         | isFalse r = (notCpl (EDcV (sign x)), ["x/\\-V = -V"], "<=>")
         -- Absorb if r is antisymmetric:    r/\r~ --> I
         | t /= l || f /= r =
-            (t ./\. f, steps <> steps', fEqu [equ', equ''])
+          (t ./\. f, steps <> steps', fEqu [equ', equ''])
         | not eq && or [length cl > 1 | cl <- absorbAsy] =
-            ( foldr1
-                (./\.)
-                ( let absorbAsy1 = case absorbAsy of
-                        [] -> fatal "impossible" -- because of above or-clause
-                        h : tl -> h NE.:| tl
-                      fun cl =
-                        let e = NE.head cl
-                         in if length cl > 1 then EDcI (source e) else e
-                   in fmap fun absorbAsy1
-                ),
-              [shw e <> " /\\ " <> shw (flp e) <> " |- I, because" <> shw e <> " is antisymmetric" | cl <- absorbAsy, let e = NE.head cl],
-              "==>"
-            )
+          ( foldr1
+              (./\.)
+              ( let absorbAsy1 = case absorbAsy of
+                      [] -> fatal "impossible" -- because of above or-clause
+                      h : tl -> h NE.:| tl
+                    fun cl =
+                      let e = NE.head cl
+                       in if length cl > 1 then EDcI (source e) else e
+                 in fmap fun absorbAsy1
+              ),
+            [shw e <> " /\\ " <> shw (flp e) <> " |- I, because" <> shw e <> " is antisymmetric" | cl <- absorbAsy, let e = NE.head cl],
+            "==>"
+          )
         -- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
         | or [length cl > 1 | cl <- absorbAsyRfx] =
-            ( foldr1
-                (./\.)
-                ( let absorbAsyRfx1 = case absorbAsyRfx of
-                        [] -> fatal "impossible" -- because of above or-clause
-                        h : tl -> h NE.:| tl
-                      fun cl =
-                        let e = NE.head cl
-                         in if length cl > 1 then EDcI (source e) else e
-                   in fmap fun absorbAsyRfx1
-                ),
-              [shw e <> " /\\ " <> shw (flp e) <> " = I, because" <> shw e <> " is antisymmetric and reflexive" | cl <- absorbAsyRfx, let e = NE.head cl],
-              "<=>"
-            )
+          ( foldr1
+              (./\.)
+              ( let absorbAsyRfx1 = case absorbAsyRfx of
+                      [] -> fatal "impossible" -- because of above or-clause
+                      h : tl -> h NE.:| tl
+                    fun cl =
+                      let e = NE.head cl
+                       in if length cl > 1 then EDcI (source e) else e
+                 in fmap fun absorbAsyRfx1
+              ),
+            [shw e <> " /\\ " <> shw (flp e) <> " = I, because" <> shw e <> " is antisymmetric and reflexive" | cl <- absorbAsyRfx, let e = NE.head cl],
+            "<=>"
+          )
         -- Absorb:    (x\\/y)/\\y  =  y
         | isEUni l && not (null absor0) =
-            let t' = head absor0 in (r, ["absorb " <> shw l <> " because of " <> shw t' <> ", using law  (x\\/y)/\\y = y"], "<=>")
+          let t' = head absor0 in (r, ["absorb " <> shw l <> " because of " <> shw t' <> ", using law  (x\\/y)/\\y = y"], "<=>")
         | isEUni r && not (null absor0') =
-            let t' = head absor0' in (r, ["absorb " <> shw r <> " because of " <> shw t' <> ", using law  (x\\/y)/\\x = x"], "<=>")
+          let t' = head absor0' in (r, ["absorb " <> shw r <> " because of " <> shw t' <> ", using law  (x\\/y)/\\x = x"], "<=>")
         -- Absorb:    (x\\/-y)/\\y  =  x/\\y
         | isEUni l && not (null absor1) =
-            ( case head absor1 of
-                (_, []) -> r
-                (_, t' : ts) -> foldr (.\/.) t' ts ./\. r,
-              ["absorb " <> shw t' <> ", using law (x\\/-y)/\\y  =  x/\\y" | (t', _) <- absor1],
-              "<=>"
-            )
+          ( case head absor1 of
+              (_, []) -> r
+              (_, t' : ts) -> foldr (.\/.) t' ts ./\. r,
+            ["absorb " <> shw t' <> ", using law (x\\/-y)/\\y  =  x/\\y" | (t', _) <- absor1],
+            "<=>"
+          )
         | isEUni r && not (null absor1') =
-            ( case head absor1' of
-                (_, []) -> l
-                (_, t' : ts) -> l ./\. foldr (.\/.) t' ts,
-              ["absorb " <> shw t' <> ", using law x/\\(y\\/-x)  =  x/\\y" | (t', _) <- absor1'],
-              "<=>"
-            )
+          ( case head absor1' of
+              (_, []) -> l
+              (_, t' : ts) -> l ./\. foldr (.\/.) t' ts,
+            ["absorb " <> shw t' <> ", using law x/\\(y\\/-x)  =  x/\\y" | (t', _) <- absor1'],
+            "<=>"
+          )
         -- Avoid complements: x/\\-y = x-y
         | (not . null) negList && (not . null) posList =
-            let posList' = head posList NE.:| tail posList
-             in ( foldl' (.-.) (foldr1 (./\.) posList') (map notCpl negList),
-                  ["Avoid complements, using law x/\\-y = x-y"],
-                  "<=>"
-                )
+          let posList' = head posList NE.:| tail posList
+           in ( foldl' (.-.) (foldr1 (./\.) posList') (map notCpl negList),
+                ["Avoid complements, using law x/\\-y = x-y"],
+                "<=>"
+              )
         | otherwise = (t ./\. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM posCpl l []
@@ -1514,13 +1514,13 @@ normStep
       nM posCpl x@(EUni (l, r)) rs
         -- Absorb equals:    r\/r  -->  r
         | t /= l || f /= r =
-            (t .\/. f, steps <> steps', fEqu [equ', equ''])
+          (t .\/. f, steps <> steps', fEqu [equ', equ''])
         | or [length cl > 1 | cl <- NE.toList absorbClasses] -- yields False if absorbClasses is empty
           =
-            ( foldr1 (.\/.) (fmap NE.head absorbClasses),
-              [shw e <> " \\/ " <> shw e <> " = " <> shw e | cl <- NE.toList absorbClasses, length cl > 1, let e = NE.head cl],
-              "<=>"
-            )
+          ( foldr1 (.\/.) (fmap NE.head absorbClasses),
+            [shw e <> " \\/ " <> shw e <> " = " <> shw e | cl <- NE.toList absorbClasses, length cl > 1, let e = NE.head cl],
+            "<=>"
+          )
         -- Tautologies:
         | (not . null) tauts = (EDcV (sign x), ["let e = " <> shw (head tauts) <> ". Since -e\\/e = V we get"], "<=>") -- r\/-r  -->  V
         | isTrue l = (EDcV (sign x), ["V\\/x = V"], "<=>") -- r\/V   -->  V
@@ -1533,19 +1533,19 @@ normStep
         | isEIsc r && not (null absor0') = let t' = head absor0' in (r, ["absorb " <> shw r <> " because of " <> shw t' <> ", using law  (x/\\y)\\/x = x"], "<=>")
         -- Absorb:    (x/\\-y)\\/y  =  x\\/y
         | isEIsc l && not (null absor1) =
-            ( case head absor1 of
-                (_, []) -> r
-                (_, t' : ts) -> foldr (./\.) t' ts .\/. r,
-              ["absorb " <> shw t' <> ", using law (x/\\-y)\\/y  =  x\\/y" | (t', _) <- absor1],
-              "<=>"
-            )
+          ( case head absor1 of
+              (_, []) -> r
+              (_, t' : ts) -> foldr (./\.) t' ts .\/. r,
+            ["absorb " <> shw t' <> ", using law (x/\\-y)\\/y  =  x\\/y" | (t', _) <- absor1],
+            "<=>"
+          )
         | isEIsc r && not (null absor1') =
-            ( case head absor1' of
-                (_, []) -> l
-                (_, t' : ts) -> l .\/. foldr (./\.) t' ts,
-              ["absorb " <> shw t' <> ", using law x\\/(y/\\-x)  =  x\\/y" | (t', _) <- absor1'],
-              "<=>"
-            )
+          ( case head absor1' of
+              (_, []) -> l
+              (_, t' : ts) -> l .\/. foldr (./\.) t' ts,
+            ["absorb " <> shw t' <> ", using law x\\/(y/\\-x)  =  x\\/y" | (t', _) <- absor1'],
+            "<=>"
+          )
         | otherwise = (t .\/. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM posCpl l []
@@ -1702,34 +1702,34 @@ allShifts env conjunct = map NE.head . eqClass (==) . filter pnEq . map normDNF 
         move :: [Expression] -> [Expression] -> [([Expression], [Expression])]
         move ass [] = [(ass, [])]
         move ass css =
-          (ass, css)
-            : if and [(not . isEDcI) cs | cs <- css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
-              then
-                [ ts | let headEs = map headECps css, length (eqClass (==) headEs) == 1, let h -- example: True, because map head css == [ "x" ]
-                                                                                               =
-                                                                                               head headEs, isUni h, ts <- -- example: h= "x"
-                                                                                               -- example: assume True
-                                                                                                                       move
-                                                                                                                         [ if source h == source as then flp h .:. as else fatal "type mismatch"
-                                                                                                                           | as <- ass
-                                                                                                                         ]
-                                                                                                                         (map tailECps css)
-                ]
-                  <> [ ts
-                       | let lastEs -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
-                               =
-                               map lastECps css,
-                         length (eqClass (==) lastEs) == 1,
-                         let l = head lastEs,
-                         isInj l,
-                         ts <-
-                           move
-                             [ if target as == target l then as .:. flp l else fatal "type mismatch"
-                               | as <- ass
-                             ]
-                             (map initECps css) -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
-                     ]
-              else []
+          (ass, css) :
+          if and [(not . isEDcI) cs | cs <- css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
+            then
+              [ ts | let headEs = map headECps css, length (eqClass (==) headEs) == 1, let h -- example: True, because map head css == [ "x" ]
+                                                                                             =
+                                                                                             head headEs, isUni h, ts <- -- example: h= "x"
+                                                                                             -- example: assume True
+                                                                                                                     move
+                                                                                                                       [ if source h == source as then flp h .:. as else fatal "type mismatch"
+                                                                                                                         | as <- ass
+                                                                                                                       ]
+                                                                                                                       (map tailECps css)
+              ]
+                <> [ ts
+                     | let lastEs -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
+                             =
+                             map lastECps css,
+                       length (eqClass (==) lastEs) == 1,
+                       let l = head lastEs,
+                       isInj l,
+                       ts <-
+                         move
+                           [ if target as == target l then as .:. flp l else fatal "type mismatch"
+                             | as <- ass
+                           ]
+                           (map initECps css) -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
+                   ]
+            else []
     -- Here is (informally) what the example does:
     -- move [ r;s , p;r ] [ x;y ]
     -- ( [ r;s , p;r ] , [ x;y ] ): [ ts | ts<-move [flp x.:.as | as<-[ r;s , p;r ] [ y ] ] ]
@@ -1764,36 +1764,36 @@ allShifts env conjunct = map NE.head . eqClass (==) . filter pnEq . map normDNF 
           case ass of
             [] -> [] -- was [([EDcI (target (last css))],css)]
             _ ->
-              (ass, css)
-                : if and [(not . isEDcI) as | as <- ass]
-                  then
-                    [ ts | let headEs = map headECps ass, length (eqClass (==) headEs) == 1, let h -- example: True, because map headECps ass == [ "r", "r" ]
-                                                                                                   =
-                                                                                                   head headEs, isSur h, ts <- -- example: h= "r"
-                                                                                                   -- example: assume True
-                                                                                                                           move
-                                                                                                                             (map tailECps ass)
-                                                                                                                             [ if source h == source cs then flp h .:. cs else fatal "type mismatch"
-                                                                                                                               | cs <- css
-                                                                                                                             ]
-                    ]
-                      <> [ ts
-                           | let lastEs -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
-                                   =
-                                   map lastECps ass,
-                             length (eqClass (==) lastEs) == 1,
-                             let l -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
-                                   =
-                                   head lastEs,
-                             isTot l,
-                             ts <-
-                               move
-                                 (map initECps ass)
-                                 [ if target cs == target l then cs .:. flp l else fatal "type mismatch"
-                                   | cs <- css -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
-                                 ]
-                         ]
-                  else []
+              (ass, css) :
+              if and [(not . isEDcI) as | as <- ass]
+                then
+                  [ ts | let headEs = map headECps ass, length (eqClass (==) headEs) == 1, let h -- example: True, because map headECps ass == [ "r", "r" ]
+                                                                                                 =
+                                                                                                 head headEs, isSur h, ts <- -- example: h= "r"
+                                                                                                 -- example: assume True
+                                                                                                                         move
+                                                                                                                           (map tailECps ass)
+                                                                                                                           [ if source h == source cs then flp h .:. cs else fatal "type mismatch"
+                                                                                                                             | cs <- css
+                                                                                                                           ]
+                  ]
+                    <> [ ts
+                         | let lastEs -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+                                 =
+                                 map lastECps ass,
+                           length (eqClass (==) lastEs) == 1,
+                           let l -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
+                                 =
+                                 head lastEs,
+                           isTot l,
+                           ts <-
+                             move
+                               (map initECps ass)
+                               [ if target cs == target l then cs .:. flp l else fatal "type mismatch"
+                                 | cs <- css -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
+                               ]
+                       ]
+                else []
     -- Here is (informally) what the example does:
     -- move [ r;s , r;r ] [ x;y ]
     -- ( [ r;s , r;r ] , [ x;y ] ): move [ s , r ] [ r~;x;y ]

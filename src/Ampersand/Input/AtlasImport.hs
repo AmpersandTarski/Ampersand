@@ -399,7 +399,7 @@ instance JSON.FromJSON (Guarded P_Relation) where
               dec_label = textToLabelInJSON <$> lbl,
               dec_defaults = [],
               dec_Mean = mean,
-              pos = OriginAtlas
+              dec_pos = OriginAtlas
             }
 
 instance JSON.FromJSON PMeaning where -- todo: checken of dit werkt

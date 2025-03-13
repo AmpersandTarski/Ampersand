@@ -38,10 +38,10 @@ PATTERN FormalAmpersand.Concepts
 
     RULE I[FormalAmpersand.Concept] |- FormalAmpersand.ttype;FormalAmpersand.ttype~
     MEANING "Every concept has a type."
-    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.TType;", TGT (FormalAmpersand.hasAttribute;"OBJECT"\/-FormalAmpersand.hasAttribute;"ALPHANUMERIC" ))
+    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.TType;", TGT (FormalAmpersand.hasAttributes;"OBJECT"\/-FormalAmpersand.hasAttributes;"ALPHANUMERIC" ))
 
-    RELATION FormalAmpersand.hasAttribute[FormalAmpersand.Concept] [PROP]
-    ENFORCE FormalAmpersand.hasAttribute := 
+    RELATION FormalAmpersand.hasAttributes[FormalAmpersand.Concept] [PROP]
+    ENFORCE FormalAmpersand.hasAttributes := 
               (I/\FormalAmpersand.source~;FormalAmpersand.isUni;FormalAmpersand.source) \/
               (I/\FormalAmpersand.target~;FormalAmpersand.isInj;FormalAmpersand.target)
 

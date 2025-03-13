@@ -200,22 +200,22 @@ copyDirRecursively ::
   RIO env ()
 copyDirRecursively srcBase tgtBase
   | srcBase == tgtBase =
-      mapM_
-        logError
-        [ "Are you kidding me? I got the instruction to copy ",
-          "     " <> display (T.pack srcBase),
-          "  to itself!"
-        ]
+    mapM_
+      logError
+      [ "Are you kidding me? I got the instruction to copy ",
+        "     " <> display (T.pack srcBase),
+        "  to itself!"
+      ]
   | otherwise = do
-      srcBaseA <- liftIO $ makeAbsolute srcBase
-      tgtBaseA <- liftIO $ makeAbsolute tgtBase
-      mapM_
-        logDebug
-        [ "Recursively copying ",
-          "     " <> display (T.pack srcBaseA),
-          "  to " <> display (T.pack tgtBaseA)
-        ]
-      copy ("." </> tgtBase) ""
+    srcBaseA <- liftIO $ makeAbsolute srcBase
+    tgtBaseA <- liftIO $ makeAbsolute tgtBase
+    mapM_
+      logDebug
+      [ "Recursively copying ",
+        "     " <> display (T.pack srcBaseA),
+        "  to " <> display (T.pack tgtBaseA)
+      ]
+    copy ("." </> tgtBase) ""
   where
     copy shouldSkip fileOrDirPth = do
       let srcPath = srcBase </> fileOrDirPth
@@ -352,17 +352,17 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
     ([], attrs@(_ : _), _)
       | isJust userAtts -> T.pack . render . fillInTheBlanks (L.nub attrs) $ appliedTemplate
       | otherwise ->
-          templateError
-            $ "The following attributes are expected by the template, but not supplied: "
+        templateError $
+          "The following attributes are expected by the template, but not supplied: "
             <> tshow attrs
     ([], [], ts@(_ : _)) ->
-      templateError
-        $ "Missing invoked templates: "
-        <> tshow ts -- should not happen as we don't invoke templates
+      templateError $
+        "Missing invoked templates: "
+          <> tshow ts -- should not happen as we don't invoke templates
   where
     templateError msg =
-      exitWith
-        $ ReadFileError
+      exitWith $
+        ReadFileError
           [ "*** TEMPLATE ERROR in:" <> T.pack absPath,
             msg
           ]
@@ -385,5 +385,5 @@ showTemplate :: Template -> [Text]
 showTemplate (Template a b) =
   T.lines
     . T.intercalate "\n"
-    $ ("Template (" <> T.pack b <> ")")
-    : ["  " <> T.pack (toString a)]
+    $ ("Template (" <> T.pack b <> ")") :
+    ["  " <> T.pack (toString a)]

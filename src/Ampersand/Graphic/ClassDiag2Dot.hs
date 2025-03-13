@@ -32,14 +32,13 @@ classdiagram2dot env cd =
               GraphAttrs
                 [ RankDir FromLeft,
                   bgColor White
-                ]
-                :
-                --    ++ [NodeAttrs  [ ]]
-                [ EdgeAttrs
-                    [ FontSize 11,
-                      MinLen 4
-                    ]
-                ],
+                ] :
+              --    ++ [NodeAttrs  [ ]]
+              [ EdgeAttrs
+                  [ FontSize 11,
+                    MinLen 4
+                  ]
+              ],
             subGraphs = group2subgraph <$> groups cd,
             nodeStmts =
               map class2node (allClasses cd)

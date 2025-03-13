@@ -107,8 +107,8 @@ instance Disambiguatable P_IdentDf where
   disambInfo cptMap (P_Id orig nm lbl cpt atts) _ = (P_Id orig nm lbl cpt atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
     where
       (atts', restr') =
-        NE.unzip
-          $ fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
+        NE.unzip $
+          fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
 
 instance Disambiguatable P_IdentSegmnt where
   disambInfo cptMap (P_IdentExp v) x = (P_IdentExp v', rt)

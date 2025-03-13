@@ -116,7 +116,7 @@ aRelation2pRelation dcl =
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
       dec_pragma = decpr dcl,
       dec_Mean = map aMeaning2pMeaning (decMean dcl),
-      pos = decfpos dcl
+      dec_pos = decfpos dcl
     }
 
 aRelDefaults2pRelDefaults :: ARelDefaults -> [PRelationDefault]

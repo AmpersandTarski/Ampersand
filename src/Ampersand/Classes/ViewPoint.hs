@@ -31,8 +31,8 @@ class Language a where
     -- | all property rules that are maintained within this viewpoint.
     Rules
   proprules x =
-    Set.fromList
-      $ [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
+    Set.fromList $
+      [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforcement rules that are maintained within this viewpoint.
@@ -65,9 +65,9 @@ class Language a where
 
 ruleFromIdentity :: IdentityRule -> Rule
 ruleFromIdentity identity =
-  mkKeyRule
-    $ foldr (./\.) h t
-    .|-. EDcI (idCpt identity)
+  mkKeyRule $
+    foldr (./\.) h t
+      .|-. EDcI (idCpt identity)
   where
     {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
     (h NE.:| t) =
