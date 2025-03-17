@@ -733,7 +733,7 @@ instance ShowHS BoxItem where
           ]
 
 instance ShowHS SubInterface where
-  showHS _ _ (InterfaceRef _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
+  showHS _ _ (InterfaceRef _ cpt isLink n) = "InterfaceRef " <> tshow cpt <> tshow isLink <> " " <> tshow n
   showHS env indent (Box _ x cl objs) = "Box (" <> showHS env indent x <> ") (" <> tshow cl <> ")" <> indent <> "     (" <> showHS env (indent <> "     ") objs <> ")"
 
 instance ShowHS Expression where

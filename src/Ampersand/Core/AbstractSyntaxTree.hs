@@ -856,6 +856,7 @@ data SubInterface
       }
   | InterfaceRef
       { pos :: !Origin,
+        siConcept :: !A_Concept,
         siIsLink :: !Bool,
         siIfcId :: !Name -- id of the interface that is referenced to
       }
@@ -1440,7 +1441,7 @@ data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
     -- | a list containing all user defined Representations in the context
-    representationOf :: !(A_Concept -> TType),
+    typeMap :: [(A_Concept,TType)],
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
     -- | a list of all Representations
@@ -1527,7 +1528,9 @@ safePSingleton2AAtomVal ci c val =
           ]
     Right x -> x
   where
-    typ = representationOf ci c
+    typ = case lookup c (typeMap ci) of
+             Nothing -> (if cpt == ONE || show cpt == "SESSION" || defaultTType ctx cpt then Object else Alphanumeric) -- See issue #1537
+             Just x -> x
 
 -- SJC: Note about this code:
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError

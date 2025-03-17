@@ -37,6 +37,7 @@ import qualified RIO.Text as T
 -- the same sublist.  For example,
 --
 -- Example> eqClass (==) "Mississippi" = ["M","iiii","ssss","pp"]
+-- pre: interpreted as a relation, f is assumed to be reflexive  (f x x==true), transitive (f x y && f y z==true then f x z==true), and symmetric (f x y==f y x).
 eqClass :: (a -> a -> Bool) -> [a] -> [NE.NonEmpty a]
 eqClass _ [] = []
 eqClass f (x : xs) = (x NE.:| [e | e <- xs, f x e]) : eqClass f [e | e <- xs, not (f x e)]

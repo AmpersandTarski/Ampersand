@@ -1661,11 +1661,6 @@ tmpNewTransformerDefsFA fSpec =
             isIrf rel
         ]
       ),
-      ( "FormalAmpersand.hasAttributes",
-        "FormalAmpersand.Concept",
-        "FormalAmpersand.Concept",
-        [] -- The Atlas will maintain this population, so we don't need to do it here.
-      ),
       ( "FormalAmpersand.isAttribute",
         "FormalAmpersand.Relation",
         "FormalAmpersand.Relation",
@@ -1725,10 +1720,10 @@ tmpNewTransformerDefsFA fSpec =
         ]
       ),
       ( "FormalAmpersand.siConcept",
-        "FormalAmpersand.Box",
+        "FormalAmpersand.SubInterface",
         "FormalAmpersand.Concept",
-        [ (dirtyId' box, dirtyId' (siConcept box))
-          | box@Box {} <- instanceList fSpec
+        [ (dirtyId' si, dirtyId' (siConcept si))
+          | si :: SubInterface <- instanceList fSpec
         ]
       ),
       ( "FormalAmpersand.objcruds",

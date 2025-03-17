@@ -6,7 +6,7 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "Concepts.adl"
 --INCLUDE "AtomsAsShouldBe.adl"
 
-PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structure"
+PATTERN FormalAmpersand.Interfaces
     CONCEPT FormalAmpersand.ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
     {-Han,
@@ -19,8 +19,8 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     CLASSIFY FormalAmpersand.InterfaceName ISA FormalAmpersand.Name
     RELATION FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context][UNI]
     CONCEPT FormalAmpersand.Interface "An interface is a mechanism that communicates data between different (two) contexts."
-    CONCEPT FormalAmpersand.SubInterface "What exactly is a subinterface?"
-    CONCEPT FormalAmpersand.InterfaceRef "A subinterface that references an Interface."
+    CONCEPT FormalAmpersand.SubInterface "A subinterface is either a Box or an InterfaceRef."
+    CONCEPT FormalAmpersand.InterfaceRef "A subinterface references another Interface instead of writing it out as a box."
     CONCEPT FormalAmpersand.Box "A subinterface containing a list of boxitems."
     CONCEPT FormalAmpersand.BoxItem "A boxitem is an element of a box."
     CLASSIFY FormalAmpersand.BxExpr , FormalAmpersand.BxTxt ISA FormalAmpersand.BoxItem
@@ -56,7 +56,7 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
 
     RELATION FormalAmpersand.origin[FormalAmpersand.SubInterface*FormalAmpersand.Origin][UNI]
     CLASSIFY FormalAmpersand.Box,FormalAmpersand.InterfaceRef ISA FormalAmpersand.SubInterface
-    RELATION FormalAmpersand.siConcept[FormalAmpersand.Box*FormalAmpersand.Concept][UNI,TOT]
+    RELATION FormalAmpersand.siConcept[FormalAmpersand.SubInterface*FormalAmpersand.Concept][UNI,TOT]
     MEANING "The box concept is the type of the runtime atom of the box."
     RELATION FormalAmpersand.siHeader[FormalAmpersand.Box*FormalAmpersand.HTMLtemplateCall][UNI,TOT]
     MEANING "The HTMLtemplateCall is the definition of the way the box is drawn on the screen."
@@ -95,9 +95,7 @@ PATTERN FormalAmpersand.StaticInterfaceStructure LABEL "Static Interface Structu
     RELATION FormalAmpersand.editFlp[FormalAmpersand.FieldDef*FormalAmpersand.Relation]
     MEANING "The term in this FieldDef is just the flipped relation."
 
-ENDPATTERN
 
-PATTERN FormalAmpersand.Interfaces
 RELATION FormalAmpersand.ifcInputs[FormalAmpersand.Interface*FormalAmpersand.Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION FormalAmpersand.ifcOutputs[FormalAmpersand.Interface*FormalAmpersand.Relation]

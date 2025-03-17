@@ -1016,7 +1016,7 @@ data P_BoxItem a
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
         pos :: !Origin,
         -- | this term describes the instances of this object, related to their context.
-        obj_ctx :: !(Term a),
+        obj_term :: !(Term a),
         -- | the CRUD actions as required by the user
         obj_crud :: !(Maybe P_Cruds),
         -- | The view that should be used for this object

@@ -36,14 +36,9 @@ PATTERN FormalAmpersand.Concepts
     -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
     -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
 
-    RULE I[FormalAmpersand.Concept] |- FormalAmpersand.ttype;FormalAmpersand.ttype~
-    MEANING "Every concept has a type."
-    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.TType;", TGT (FormalAmpersand.hasAttributes;"OBJECT"\/-FormalAmpersand.hasAttributes;"ALPHANUMERIC" ))
-
-    RELATION FormalAmpersand.hasAttributes[FormalAmpersand.Concept] [PROP]
-    ENFORCE FormalAmpersand.hasAttributes := 
-              (I/\FormalAmpersand.source~;FormalAmpersand.isUni;FormalAmpersand.source) \/
-              (I/\FormalAmpersand.target~;FormalAmpersand.isInj;FormalAmpersand.target)
+    -- Every concept has a type. If it is not specified, Ampersand will give it a default value, depending on whether it is used in a (sub)interface or not.
+    RULE FormalAmpersand.ttype;V[FormalAmpersand.TType]
+    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.ttype;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.Concept;", SRC (I[FormalAmpersand.Concept] /\ FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"OBJECT"[FormalAmpersand.TType] \/ (I[FormalAmpersand.Concept] - FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"ALPHANUMERIC"[FormalAmpersand.TType])
 
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."

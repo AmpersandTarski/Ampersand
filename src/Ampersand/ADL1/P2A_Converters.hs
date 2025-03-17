@@ -1,11 +1,14 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Replace case with fromMaybe" #-}
 
 module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
     pCpt2aCpt,
     ConceptMap,
+    subInterfaces
   )
 where
 
@@ -15,11 +18,11 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
-import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
+import Data.Tuple.Extra (thd3)
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
@@ -29,6 +32,7 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Ampersand.ADL1 (A_Context)
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -106,17 +110,21 @@ checkInterfaceCycles ctx =
         . getCycles
         $ refsPerInterface
     refsPerInterface :: [(Name, [Name])]
-    refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx]
-    getDeepIfcRefs :: ObjectDef -> [Name]
-    getDeepIfcRefs obj = case objmsub obj of
-      Nothing -> []
-      Just si -> case si of
-        InterfaceRef {} -> [siIfcId si | not (siIsLink si)]
-        Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+    refsPerInterface = [ (name ifc, map siIfcId sis) | (ifc,sis)<-subInterfaces ctx]
     lookupInterface :: Name -> Interface
     lookupInterface nm = case [ifc | ifc <- ctxifcs ctx, name ifc == nm] of
       [ifc] -> ifc
       _ -> fatal "Interface lookup returned zero or more than one result"
+
+subInterfaces :: A_Context -> [(Interface, [SubInterface])]
+subInterfaces ctx = [ (ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx]
+  where
+    getDeepIfcRefs :: ObjectDef -> [SubInterface]
+    getDeepIfcRefs obj = case objmsub obj of
+      Nothing -> []
+      Just si -> case si of
+        InterfaceRef {} -> [ si | not (siIsLink si)]
+        Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: A_Context -> Guarded ()
@@ -233,6 +241,30 @@ type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
 
+ttype :: ContextInfo -> [Interface] -> A_Concept -> TType
+ttype ci interfaces cpt =
+  case lookup cpt (typeMap ci) of
+    Nothing -> if cpt == ONE || show cpt == "SESSION" || defaultTType then Object else Alphanumeric -- See issue #1537
+    Just x -> x
+  where
+    -- | The default technical type is Object if the concept is used in a (sub-)interface. Otherwise it is Alphanumeric.
+    defaultTType :: Bool
+    defaultTType = cpt `Set.member` Set.fromList [ c | (ifc, subs)<-subInterfaces, c<-(target.objExpression.ifcObj) ifc : map siConcept subs ]
+    subInterfaces :: [(Interface, [SubInterface])]
+    subInterfaces = [ (ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- interfaces]
+      where
+        getDeepIfcRefs :: ObjectDef -> [SubInterface]
+        getDeepIfcRefs obj = case objmsub obj of
+          Nothing -> []
+          Just si -> case si of
+            InterfaceRef {} -> [ si | not (siIsLink si)]
+            Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+
+representationOf :: ContextInfo -> A_Concept -> TType
+representationOf ci cpt = case lookup cpt (typeMap ci) of
+  Just x -> x
+  Nothing -> fatal "Representation not found"
+
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
 --    Disambiguation means replacing every "TermPrim" (the parsed term) with the correct Expression (available through DisambPrim)
@@ -305,7 +337,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = representationOf contextInfo,
+                ctxreprs = ttype contextInfo interfaces,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -334,15 +366,14 @@ pCtx2aCtx
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
+        -- The typeMap contains the technical type of concepts as specified in REPRESENTATION statements in the Ampersand Script,
+        -- without the concepts for which no valid representation statement is found.
         typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
         multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
-        let reprOf cpt =
-              fromMaybe
-                (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
-                (lookup cpt typeMap)
-        decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        decls <- traverse (pDecl2aDecl ttype cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
@@ -350,7 +381,7 @@ pCtx2aCtx
         return
           CI
             { ctxiGens = gns,
-              representationOf = reprOf,
+              typeMap = typeMap,
               multiKernels = multitypologies,
               reprList = allReprs,
               declDisambMap = declMap,
@@ -374,9 +405,7 @@ pCtx2aCtx
             where
               f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
               f typesOfGroups typesOfOthers =
-                concat typesOfGroups <> map stripOrigin (catMaybes typesOfOthers)
-              stripOrigin :: (A_Concept, TType, [Origin]) -> (A_Concept, TType)
-              stripOrigin (cpt, t, _) = (cpt, t)
+                concat typesOfGroups <> [ (cpt,t) | (cpt,t,_)<-catMaybes typesOfOthers]
               reprTrios :: [(A_Concept, TType, Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
@@ -386,12 +415,11 @@ pCtx2aCtx
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                     where
                       withNonFuzzyOrigin :: NE.NonEmpty (A_Concept, TType, Origin) -> (A_Concept, TType, Origin)
-                      withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thdOf3) xs of
+                      withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thd3) xs of
                         [] -> NE.head xs
                         h : _ -> h
                       groupCondition :: (A_Concept, TType, Origin) -> (A_Concept, TType, Origin) -> Bool
                       groupCondition (cptA, typA, _) (cptB, typB, _) = cptA == cptB && typA == typB
-                      thdOf3 (_, _, x) = x
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = L.nub (concat groups)
               conceptsOfReprs :: [A_Concept]
@@ -546,7 +574,7 @@ pCtx2aCtx
                 Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt cptMap <$> src) (pCpt2aCpt cptMap <$> tgt)
                 _ -> namedRel2Decl cptMap declMap nmdr
 
-              aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
+              aps' <- traverse (pAtomPair2aAtomPair (ttype ci interfaces) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
               return
@@ -653,7 +681,7 @@ pCtx2aCtx
             { obj_PlainName = nm,
               obj_lbl = lbl',
               pos = orig,
-              obj_ctx = ctx,
+              obj_term = ctx,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = subs
@@ -807,7 +835,7 @@ pCtx2aCtx
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
                 Just disambObj -> typecheckTerm ci
                   $ case disambObj of
-                    P_BoxItemTerm {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                    P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
                 Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
               objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
@@ -815,6 +843,7 @@ pCtx2aCtx
                 ( objExprEps,
                   InterfaceRef
                     { pos = origin x,
+                      siConcept = target objExpr,
                       siIsLink = si_isLink x,
                       siIfcId = ifcId
                     }
@@ -914,7 +943,7 @@ pCtx2aCtx
                 addWarnings ws
                   $ case obj' of
                     BxExpr o ->
-                      case ttype . target . objExpression $ o of
+                      case representationOf declMap . target . objExpression $ o of
                         Object ->
                           pure
                             Ifc
@@ -937,8 +966,6 @@ pCtx2aCtx
                             . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
                             $ tt
                     BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
-          ttype :: A_Concept -> TType
-          ttype = representationOf declMap
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =

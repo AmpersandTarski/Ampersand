@@ -583,7 +583,7 @@ mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Conc
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x)
     . T.intercalate "\n  "
-    $ [ "The TYPE of the concept for which a " <> tshow boxTemplate <> " is defined must be OBJECT.",
+    $ [ "The TYPE of concept at " <> tshow (origin x) <> ", for which a " <> tshow boxTemplate <> " is defined, must be OBJECT.",
         "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for this " <> tshow boxTemplate <> ", however is " <> tshow tt <> "."
       ]
   where

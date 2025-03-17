@@ -29,20 +29,24 @@ Outside its scope, a rule has no meaning.
 For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
 +}
 
-PURPOSE RELATION FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context]  -- Haskell: ctxrs :: Context->[Rule]
-{+ A relation is needed to register all user defined rules in a context, that are defined outside patterns and outside processes. +}
-PURPOSE RELATION FormalAmpersand.nameFormalAmpersand.Rule*FormalAmpersand.RuleName]  -- Haskell: rrnm :: Rule->String
-{+ The name of a rule is registered in a relation, so users can change the name of a rule without changing the rule proper. +}
+PURPOSE RELATION FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context] MARKDOWN
+{+ A relation is needed to register all user defined rules in a context, that are defined outside patterns and outside processes.
+In Haskell this corresponds to `ctxrs :: Context->[Rule]`. +}
+PURPOSE RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] MARKDOWN
+{+ The name of a rule is registered in a relation, so users can change the name of a rule without changing the rule proper.
+In Haskell this corresponds to `rrnm :: Rule->String`. +}
 PURPOSE RELATION FormalAmpersand.urlEncodedName[FormalAmpersand.Rule*FormalAmpersand.EncodedName]
-{+ This is used to show a graphic +}
-PURPOSE RELATION FormalAmpersand.origin[FormalAmpersand.Rule*FormalAmpersand.Origin]  -- Haskell: rrfps :: Rule->Origin
-{+ The location on which a rule is defined is registered for tracing purposes. +}
-PURPOSE RELATION FormalAmpersand.message[FormalAmpersand.Rule*FormalAmpersand.Message]  -- Haskell:  rrmsg :: Rule->[Markup]
+{+ This is used to show a graphic. +}
+PURPOSE RELATION FormalAmpersand.origin[FormalAmpersand.Rule*FormalAmpersand.Origin] MARKDOWN
+{+ The location on which a rule is defined is registered for tracing purposes.
+In Haskell this corresponds to `rrfps :: Rule->Origin`. +}
+PURPOSE RELATION FormalAmpersand.message[FormalAmpersand.Rule*FormalAmpersand.Message] MARKDOWN
 {+ User-specified violation messages are being registered to generate code for error messages.
-There may be multiple messages to support multiple languages
+There may be multiple messages to support multiple languages.
+In Haskell this corresponds to `rrmsg :: Rule->[Markup]`.
 +}
-PURPOSE RELATION FormalAmpersand.sign[FormalAmpersand.Rule*FormalAmpersand.Signature]  -- Haskell: rrtyp ::    Signature
-{+  +}
+PURPOSE RELATION FormalAmpersand.sign[FormalAmpersand.Rule*FormalAmpersand.Signature] MARKDOWN
+{+ In Haskell this corresponds to `rrtyp :: Signature`. +}
 PURPOSE RELATION FormalAmpersand.formalTerm[FormalAmpersand.Rule*FormalAmpersand.Term]
 {+ The term to be kept true must be registered, because it formalizes the semantics of this rule.
 The consequences this rule has for the information system are derived from this term.

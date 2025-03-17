@@ -28,7 +28,8 @@
         "mhutchie.git-graph",
         "phoityne.phoityne-vscode",
         "redhat.vscode-yaml",
-        "tintinweb.graphviz-interactive-preview"
+        "tintinweb.graphviz-interactive-preview",
+        "sjurmillidahl.ormolu-vscode"
       ],
       "settings": {
         "editor.formatonsave": true,

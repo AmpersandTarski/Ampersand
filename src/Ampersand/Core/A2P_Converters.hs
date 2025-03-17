@@ -269,9 +269,9 @@ aObjectDef2pObjectDef x =
         { pos = origin oDef,
           obj_PlainName = objPlainName oDef,
           obj_lbl = objlbl oDef,
-          obj_ctx = aExpression2pTermPrim (objExpression oDef),
+          obj_term = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
-            Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
+            Just (InterfaceRef _ _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
             _ -> Just $ aCruds2pCruds (objcrud oDef),
           obj_mView = objmView oDef,
           obj_msub = fmap aSubIfc2pSubIfc (objmsub oDef)
@@ -443,7 +443,7 @@ aSubIfc2pSubIfc sub =
           si_header = heading,
           si_box = map aObjectDef2pObjectDef objs
         }
-    InterfaceRef orig isLinkto str ->
+    InterfaceRef orig _ isLinkto str ->
       P_InterfaceRef
         { pos = orig,
           si_isLink = isLinkto,
