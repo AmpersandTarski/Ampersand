@@ -3,6 +3,10 @@ CONTEXT FormalAmpersand IN ENGLISH
 -- TODO add purposes for the metamodel of concepts
 
 PATTERN Concepts
+    
+    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
+    CONCEPT FormalAmpersand.ConceptDef "A conceptdef defines a concept."
+
     VIEW FormalAmpersand.Concept: FormalAmpersand.Concept(FormalAmpersand.name)
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [TOT,SUR] --Not UNI because of aliases
       ROLE ExecEngine MAINTAINS "del unused ConceptName"
@@ -21,13 +25,7 @@ PATTERN Concepts
     CLASSIFY FormalAmpersand.ConceptName, FormalAmpersand.RelationName ISA FormalAmpersand.Name
     RELATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
 ENDPATTERN
-PATTERN FormalAmpersand.Pairs
-    RELATION FormalAmpersand.in[FormalAmpersand.Pair*FormalAmpersand.Relation] [UNI,TOT]
-    RELATION FormalAmpersand.lAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
-    RELATION FormalAmpersand.rAtom[FormalAmpersand.Pair*FormalAmpersand.Atom] [UNI,TOT]
-ENDPATTERN
 
---    RULE IdentifiabilityConcepts : name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
 PATTERN FormalAmpersand.Specialization
 --    VIEW Isa: Isa( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
@@ -51,6 +49,48 @@ PATTERN FormalAmpersand.Specialization
 --RULE specialization : instanceOf;genspc~;gengen |- instanceOf
 --MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
+ENDPATTERN
+
+
+PATTERN "Technical Types"
+    PURPOSE RELATION FormalAmpersand.represent[FormalAmpersand.Concept*FormalAmpersand.TType]
+    {+ Atoms are represented as integers, strings, dates, or whatever as specified by the technical type.
+    Formally, this satisfies a particular algebra, i.e. the algebra of natural numbers, of strings, of dates, etc.
+    Technically, the representation corresponds with the requirements of the specific technology in which the prototype is implemented (in this case as specified by ISO SQL).
+    +}
+
+    PURPOSE RULE UNIrepresent
+    {+ This rule produces an error message if a concept has more than one technical type.
+    The Ampersand parser must produce an error message in this case. +}
+
+    PURPOSE RELATION FormalAmpersand.objectByDef[FormalAmpersand.Concept*FormalAmpersand.TType]
+    {+ A concept used as a key by an ObjectDef must be of technical type Object. +}
+
+    PURPOSE RELATION FormalAmpersand.tTypeByUser[FormalAmpersand.Concept*FormalAmpersand.TType]
+    {+ This relation contains the technical types that are directly specified by a user:
+    either by a REPRESENT statement or by using it as key in an interface BOX.
+    The enforce rule ignores concepts with multiple representations to prevent superfluous error messages. +}
+
+    PURPOSE RULE UNItTypeByUser
+    {+ This rule produces an error message if a REPRESENT statement defines a technical type other than OBJECT, yet the Concept is used as key in a (sub-)interface. +}
+
+    PURPOSE RELATION FormalAmpersand.tTypology[FormalAmpersand.Concept*FormalAmpersand.TType]
+    {+ tTypology assigns one technical types to all concepts in each typology.
+    The corresponding enforce rule subtracts all concepts with multiple technical types from this relation
+    to get fewer superfluous error messages in RULE UNItTypology.
+    +}
+    
+    PURPOSE RULE UNItTypology
+    {+ This rule ensures that tTypology is univalent.
+    To save error messages that are already signaled by RULE UNIrepresent,
+    the enforce rule that populates relation tTypology subtracts all concepts with multiple technical types from this relation.
+    If ttype is a univalent relation, this rule subtracts nothing and all concepts in the typology .
+    +}
+
+    PURPOSE RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType]
+    {+ The relation ttype adds the default technical type, ALPHANUMERIC, to concepts that have not been given one by the user.
+    This relation is univalent and total, which can be proven when tTypology is univalent.
+    +}
 ENDPATTERN
 
 

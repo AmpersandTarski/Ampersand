@@ -2,9 +2,7 @@ CONTEXT FormalAmpersand IN ENGLISH
 
 PATTERN FormalAmpersand.Concepts
     REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
-    
-    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
-    CONCEPT FormalAmpersand.ConceptDef "A conceptdef defines a concept."
+
     RELATION FormalAmpersand.concept[FormalAmpersand.ConceptDef*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,SUR]
 
@@ -24,7 +22,6 @@ PATTERN FormalAmpersand.Concepts
     -- VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptDef;", SRC I )
 
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
-    RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType][UNI]
     RULE FormalAmpersand.enumerationOfTType : I[FormalAmpersand.TType] = 
       "ALPHANUMERIC" \/ "BIGALPHANUMERIC" \/ "HUGEALPHANUMERIC" \/ "PASSWORD" \/ "BINARY" \/ "BIGBINARY" \/ "HUGEBINARY" \/ "DATE" \/ "DATETIME" \/ "BOOLEAN" \/ "INTEGER" \/ "FLOAT" \/ "OBJECT"
     POPULATION FormalAmpersand.TType CONTAINS [
@@ -36,12 +33,6 @@ PATTERN FormalAmpersand.Concepts
     -- MEANING "A Meaning without ConceptDef will be removed."  TODO: Fix this, because meanings can be connected to other stuff as well.
     -- VIOLATION ( TXT "{EX} DelAtom;ConceptDefinition;", SRC I )
 
-    -- Every concept has a type. If it is not specified, Ampersand will give it a default value, depending on whether it is used in a (sub)interface or not.
-    RULE FormalAmpersand.ttype;V[FormalAmpersand.TType]
-    VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.ttype;FormalAmpersand.Concept;", SRC I, TXT ";FormalAmpersand.Concept;", SRC (I[FormalAmpersand.Concept] /\ FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"OBJECT"[FormalAmpersand.TType] \/ (I[FormalAmpersand.Concept] - FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"ALPHANUMERIC"[FormalAmpersand.TType])
-
-    RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
-    MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
 
@@ -60,6 +51,37 @@ PATTERN FormalAmpersand.Concepts
     RELATION FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
 ENDPATTERN
+
+PATTERN "Technical Types"
+    RELATION FormalAmpersand.represent[FormalAmpersand.Concept*FormalAmpersand.TType] -- RULE UNIrepresent enforces its univalence.
+    MEANING "This relation contains the technical types as specified in REPRESENT statements in the user's script."
+    RULE UNIrepresent : I[FormalAmpersand.Concept] |- -(FormalAmpersand.represent;-I[FormalAmpersand.TType];FormalAmpersand.represent~)
+    VIOLATION (TXT "Concept \"", SRC I, TXT "\" may have only one technical type. However, it has ", SRC represent[Concept*TType], TXT " as its technical types.")
+
+    RELATION FormalAmpersand.objectByDef[FormalAmpersand.Concept*FormalAmpersand.TType] -- [UNI,TOT] is ensured by the enforce rule.
+    MEANING "The concepts that are a key in an interface definition must be of TType Object."
+    ENFORCE FormalAmpersand.objectByDef := (I[FormalAmpersand.Concept] /\ FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"OBJECT"[FormalAmpersand.TType]
+
+    RELATION FormalAmpersand.tTypeByUser[FormalAmpersand.Concept*FormalAmpersand.TType] -- [UNI] is ensured by the enforce rule.
+    MEANING "The concepts that are a key in an interface definition must be of TType Object."
+    ENFORCE FormalAmpersand.tTypeByUser := (I[FormalAmpersand.Concept] /\ FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"OBJECT"[FormalAmpersand.TType] \/
+                                           (FormalAmpersand.represent - FormalAmpersand.represent;-I[FormalAmpersand.TType])
+    RULE UNItTypeByUser : I[FormalAmpersand.Concept] |- -(FormalAmpersand.tTypeByUser;-I[FormalAmpersand.TType];FormalAmpersand.tTypeByUser~)
+    VIOLATION (TXT "Concept \"", SRC I, TXT "\" is defined as a ", SRC FormalAmpersand.represent, TXT ". However, it is also used as key concept in an interface, so it should be of tType OBJECT.")
+
+    -- \/ (I[FormalAmpersand.Concept] - FormalAmpersand.siConcept~;FormalAmpersand.siConcept)#"ALPHANUMERIC"[FormalAmpersand.TType]
+
+    RELATION FormalAmpersand.tTypology[FormalAmpersand.Concept*FormalAmpersand.TType] -- RULE UNItTypology enforces its univalence.
+    ENFORCE FormalAmpersand.tTypology := (FormalAmpersand.isaPlus\/FormalAmpersand.isaPlus~)+;FormalAmpersand.tTypeByUser - (FormalAmpersand.tTypeByUser;-I[TType];FormalAmpersand.tTypeByUser~/\I);V
+
+    RULE UNItTypology : I[FormalAmpersand.Concept] |- -(FormalAmpersand.tTypology;-I[FormalAmpersand.TType];FormalAmpersand.tTypology~)
+    VIOLATION (TXT "Concept \"", SRC I, TXT "\" may have just one technical type. However, it has ", SRC FormalAmpersand.tTypeByUser, TXT " as its technical types.")
+
+    RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType] -- [UNI,TOT] can be proven, provided tTypology is univalent.
+    MEANING "Every concept gets a technical type to constrain the operations that can be done on atoms."
+    ENFORCE ttype := (I[Concept]-tTypology;V)#"ALPHANUMERIC" \/ tTypology
+ENDPATTERN
+
 
 PATTERN FormalAmpersand.ComputeClosures LABEL "Compute Closures"
     RELATION FormalAmpersand.isa[FormalAmpersand.Concept*FormalAmpersand.Concept] [ASY]

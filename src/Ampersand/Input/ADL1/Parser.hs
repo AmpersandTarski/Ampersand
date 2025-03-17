@@ -712,12 +712,12 @@ pIdentDef =
     pAtt :: AmpParser P_BoxBodyElement
     pAtt = rebuild <$> currPos <*> pTerm
       where
-        rebuild pos' ctx =
+        rebuild pos' trm =
           P_BoxItemTerm
             { pos = pos',
               obj_PlainName = Nothing,
               obj_lbl = Nothing,
-              obj_ctx = ctx,
+              obj_term = trm,
               obj_crud = Nothing,
               obj_mView = Nothing,
               obj_msub = Nothing
@@ -839,7 +839,7 @@ pInterface =
       Maybe Name ->
       P_SubInterface ->
       P_Interface
-    build p isAPI (nm, lbl) roles ctx mCrud mView sub =
+    build p isAPI (nm, lbl) roles trm mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
           ifc_Name = nm,
@@ -850,7 +850,7 @@ pInterface =
               { obj_PlainName = Nothing,
                 obj_lbl = Nothing,
                 pos = p,
-                obj_ctx = ctx,
+                obj_term = trm,
                 obj_crud = mCrud,
                 obj_mView = mView,
                 obj_msub = Just sub
@@ -917,12 +917,12 @@ pBoxBodyElement =
         <*> pMaybe (pChevrons (pNameWithoutLabel ViewName)) -- for the view
         <*> pMaybe pSubInterface -- the optional subinterface
       where
-        build orig localNm lbl term mCrud mView msub =
+        build orig localNm lbl trm mCrud mView msub =
           P_BoxItemTerm
             { obj_PlainName = Just localNm,
               obj_lbl = lbl,
               pos = orig,
-              obj_ctx = term,
+              obj_term = trm,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = msub

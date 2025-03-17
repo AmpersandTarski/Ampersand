@@ -251,14 +251,13 @@ ttype ci interfaces cpt =
     defaultTType :: Bool
     defaultTType = cpt `Set.member` Set.fromList [ c | (ifc, subs)<-subInterfaces, c<-(target.objExpression.ifcObj) ifc : map siConcept subs ]
     subInterfaces :: [(Interface, [SubInterface])]
-    subInterfaces = [ (ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- interfaces]
-      where
-        getDeepIfcRefs :: ObjectDef -> [SubInterface]
-        getDeepIfcRefs obj = case objmsub obj of
-          Nothing -> []
-          Just si -> case si of
-            InterfaceRef {} -> [ si | not (siIsLink si)]
-            Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+    subInterfaces = [ (ifc, getDeepIfcRefs ifc) | ifc <- interfaces]
+getDeepIfcRefs :: Interface -> [SubInterface]
+getDeepIfcRefs ifc = case objmsub (ifcObj ifc) of
+  Nothing -> []
+  Just si -> case si of
+    InterfaceRef {} -> [ si | not (siIsLink si)]
+    Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
 
 representationOf :: ContextInfo -> A_Concept -> TType
 representationOf ci cpt = case lookup cpt (typeMap ci) of
@@ -318,6 +317,10 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <> -- concepts that must have ttype Obect, because the are key in (sub-)interfaces.
+                            [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs ifc])
+      tTypeByUser <- guardedTTypeByUser [ (c, Object) | c<-objectByDef] -- check whether all concepts have a unique ttype.
+      tTypology <- enhanceTTypeByUser tTypeByUser --  The typology of the concepts defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -355,6 +358,20 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
+      guardedTTypeByUser :: [(A_Concept, TType)] -> Guarded (Set.Set (A_Concept, TType))
+      guardedTTypeByUser typeMapByDef = 
+        if empty cptsWithMultTtypes
+        then pure (Set.fromList (typeMap contextInfo) `Set.union` objectByDef)
+        else Errors $ T.intercalate "\n"
+              ["Concept "<>name c<>" has multiple technical types: " <> ts <> "." | (c,ts)<-cptsWithMultTtypes]
+        where
+          cptsWithMultTtypes = [ ((fst.head) cl, (T.intercalate ", " .map snd.tail) cl) | cl<-eqClass eq typeMapByDef]
+            where (c,_) `eq` (c',_) = c==c'
+
+      -- | given a typeMap tTypeMap, enhance tTypeMap with (isaPlus\/isaPlus~)+;tTypeMap
+      enhanceTTypeByUser :: Set.Set (A_Concept, TType) -> Guarded (Map.Map A_Concept TType)
+      enhanceTTypeByUser tTypeMap = Errors "Yet to be written..."
+
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
@@ -371,7 +388,7 @@ pCtx2aCtx
         typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
-        multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
+        multitypologies <- traverse mkTypology connectedConcepts
         decls <- traverse (pDecl2aDecl ttype cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
 
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
@@ -1220,13 +1237,13 @@ pCtx2aCtx
           (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
-leastConcept genLattice c str =
-  case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
+leastConcept genLattice c c' =
+  case (aConcToType c `elem` leastConcepts, aConcToType c' `elem` leastConcepts) of
     (True, _) -> c
-    (_, True) -> str
-    (_, _) -> fatal ("Either " <> fullName c <> " or " <> fullName str <> " should be a subset of the other.")
+    (_, True) -> c'
+    (_, _) -> fatal ("Either " <> fullName c <> " or " <> fullName c' <> " should be a subset of the other.")
   where
-    leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
+    leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType c'))
 
 addEpsilonLeft, addEpsilonRight :: Op1EqualitySystem Type -> A_Concept -> Expression -> Expression
 addEpsilonLeft genLattice a e =

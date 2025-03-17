@@ -1441,7 +1441,7 @@ data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
     -- | a list containing all user defined Representations in the context
-    typeMap :: [(A_Concept,TType)],
+    typeMap :: ![(A_Concept,TType)],
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
     -- | a list of all Representations
@@ -1505,6 +1505,7 @@ instance Eq SignOrd where
 --   the TType is known, enabling the correct transformation.
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
+--   So, ContextInfo must have the technical type of every concept.
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
   case unsafePAtomVal2AtomValue typ (Just c) val of
@@ -1529,7 +1530,7 @@ safePSingleton2AAtomVal ci c val =
     Right x -> x
   where
     typ = case lookup c (typeMap ci) of
-             Nothing -> (if cpt == ONE || show cpt == "SESSION" || defaultTType ctx cpt then Object else Alphanumeric) -- See issue #1537
+             Nothing -> (if c == ONE || show c == "SESSION" then Object else Alphanumeric) -- See issue #1537
              Just x -> x
 
 -- SJC: Note about this code:

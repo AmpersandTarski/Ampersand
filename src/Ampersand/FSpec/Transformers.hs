@@ -836,7 +836,7 @@ transformersFormalAmpersand fSpec =
           | sgn :: Signature <- instanceList fSpec
         ]
       ),
-      ( "FormalAmpersand.ttype",
+      ( "FormalAmpersand.represent",
         "FormalAmpersand.Concept",
         "FormalAmpersand.TType",
         [ (dirtyId' cpt, PopAlphaNumeric . tshow . cptTType fSpec $ cpt)

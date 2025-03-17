@@ -118,7 +118,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
             Nothing -> False
             Just x -> x `elem` tyCpts typol
 
-    repr = representationOf (ctxInfo context)
+    repr = ctxreprs context
     allRelationsInContext = toList (relsDefdIn context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL

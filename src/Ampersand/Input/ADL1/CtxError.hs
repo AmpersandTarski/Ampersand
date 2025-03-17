@@ -646,7 +646,7 @@ mustBeOrderedLst o lst =
     exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
       case x of
-        P_BoxItemTerm {} -> obj_ctx x
+        P_BoxItemTerm {} -> obj_term x
         P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

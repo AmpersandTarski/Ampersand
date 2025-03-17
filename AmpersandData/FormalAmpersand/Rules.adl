@@ -77,8 +77,8 @@ PATTERN PropertyRules
 
     RELATION FormalAmpersand.isAttribute[FormalAmpersand.Relation] [PROP]
     ENFORCE FormalAmpersand.isAttribute :=
-              (FormalAmpersand.isUni/\FormalAmpersand.source;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.source~)\/
-              (FormalAmpersand.isInj/\FormalAmpersand.target;FormalAmpersand.ttype;"OBJECT";FormalAmpersand.ttype~;FormalAmpersand.target~)
+              (FormalAmpersand.isUni/\FormalAmpersand.source;FormalAmpersand.represent;"OBJECT";FormalAmpersand.represent~;FormalAmpersand.source~)\/
+              (FormalAmpersand.isInj/\FormalAmpersand.target;FormalAmpersand.represent;"OBJECT";FormalAmpersand.represent~;FormalAmpersand.target~)
 
 ENDPATTERN
 

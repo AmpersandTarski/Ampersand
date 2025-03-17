@@ -1948,7 +1948,7 @@
                     "tgt": "OBJECT"
                 }
             ],
-            "relation": "FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType]"
+            "relation": "FormalAmpersand.represent[FormalAmpersand.Concept*FormalAmpersand.TType]"
         },
         {
             "links": [
