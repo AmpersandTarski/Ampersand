@@ -1440,6 +1440,8 @@ class HasSignature a where
 data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
+    -- | A partitioning of all concepts in the context, based on the generalisation relations
+    connectedConcepts :: ![[A_Concept]],
     -- | a list containing all user defined Representations in the context
     typeMap :: ![(A_Concept,TType)],
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included

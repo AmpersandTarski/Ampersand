@@ -22,6 +22,7 @@ import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
+import Data.List (nub)
 import Data.Tuple.Extra (thd3)
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
@@ -110,21 +111,14 @@ checkInterfaceCycles ctx =
         . getCycles
         $ refsPerInterface
     refsPerInterface :: [(Name, [Name])]
-    refsPerInterface = [ (name ifc, map siIfcId sis) | (ifc,sis)<-subInterfaces ctx]
+    refsPerInterface = [ (name ifc, (map siIfcId . getDeepIfcRefs . ifcObj) ifc) | ifc <- ctxifcs ctx]
     lookupInterface :: Name -> Interface
     lookupInterface nm = case [ifc | ifc <- ctxifcs ctx, name ifc == nm] of
       [ifc] -> ifc
       _ -> fatal "Interface lookup returned zero or more than one result"
 
 subInterfaces :: A_Context -> [(Interface, [SubInterface])]
-subInterfaces ctx = [ (ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx]
-  where
-    getDeepIfcRefs :: ObjectDef -> [SubInterface]
-    getDeepIfcRefs obj = case objmsub obj of
-      Nothing -> []
-      Just si -> case si of
-        InterfaceRef {} -> [ si | not (siIsLink si)]
-        Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+subInterfaces ctx = [ (ifc, getDeepIfcRefs (ifcObj ifc)) | ifc <- ctxifcs ctx]
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: A_Context -> Guarded ()
@@ -251,9 +245,9 @@ ttype ci interfaces cpt =
     defaultTType :: Bool
     defaultTType = cpt `Set.member` Set.fromList [ c | (ifc, subs)<-subInterfaces, c<-(target.objExpression.ifcObj) ifc : map siConcept subs ]
     subInterfaces :: [(Interface, [SubInterface])]
-    subInterfaces = [ (ifc, getDeepIfcRefs ifc) | ifc <- interfaces]
-getDeepIfcRefs :: Interface -> [SubInterface]
-getDeepIfcRefs ifc = case objmsub (ifcObj ifc) of
+    subInterfaces = [ (ifc, (getDeepIfcRefs.ifcObj) ifc) | ifc <- interfaces]
+getDeepIfcRefs :: ObjectDef -> [SubInterface]
+getDeepIfcRefs objDef = case objmsub objDef of
   Nothing -> []
   Just si -> case si of
     InterfaceRef {} -> [ si | not (siIsLink si)]
@@ -263,6 +257,17 @@ representationOf :: ContextInfo -> A_Concept -> TType
 representationOf ci cpt = case lookup cpt (typeMap ci) of
   Just x -> x
   Nothing -> fatal "Representation not found"
+
+transitiveClosure :: (Ord a) => Set.Set (a, a) -> Set.Set (a, a)
+transitiveClosure pairs = go pairs
+  where
+    go closure =
+      let newPairs = Set.fromList [(x, z) | (x, y1) <- Set.toList closure, (y2, z) <- Set.toList closure, y1 == y2]
+          updatedClosure = closure `Set.union` newPairs
+      in if updatedClosure == closure
+         then closure
+         else go updatedClosure
+
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -307,6 +312,12 @@ pCtx2aCtx
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
+      -- now first traverse all interfaces because key concepts are implicitly defined as REPRSENT keyConcept TYPE OBJECT.
+      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <> -- concepts that must have ttype Obect, because the are key in (sub-)interfaces.
+                            [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])
+      tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef] -- check whether all concepts have a unique ttype.
+      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser --  The typology of the concepts defined in this context, outside the scope of patterns
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -316,11 +327,6 @@ pCtx2aCtx
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <> -- concepts that must have ttype Obect, because the are key in (sub-)interfaces.
-                            [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs ifc])
-      tTypeByUser <- guardedTTypeByUser [ (c, Object) | c<-objectByDef] -- check whether all concepts have a unique ttype.
-      tTypology <- enhanceTTypeByUser tTypeByUser --  The typology of the concepts defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -358,19 +364,30 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
-      guardedTTypeByUser :: [(A_Concept, TType)] -> Guarded (Set.Set (A_Concept, TType))
-      guardedTTypeByUser typeMapByDef = 
-        if empty cptsWithMultTtypes
-        then pure (Set.fromList (typeMap contextInfo) `Set.union` objectByDef)
-        else Errors $ T.intercalate "\n"
-              ["Concept "<>name c<>" has multiple technical types: " <> ts <> "." | (c,ts)<-cptsWithMultTtypes]
+      -- | this function combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
+      guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded (Set.Set (A_Concept, TType))
+      guardedTTypeByUser typeMapDeclared typeMapByDef = 
+        if cptsWithMultTTypes==[]
+        then pure (Set.fromList typeMapDeclared `Set.union` Set.fromList typeMapByDef)
+        else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
+              Just xs -> Errors . pure $ mkObjectTTypeError xs
+              Nothing -> fatal "List cptsWithMultTTypes should be empty."
         where
-          cptsWithMultTtypes = [ ((fst.head) cl, (T.intercalate ", " .map snd.tail) cl) | cl<-eqClass eq typeMapByDef]
+          cptsWithMultTTypes = [ ((fst . NE.head) cl, (T.intercalate ", " . map (tshow.snd) . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
             where (c,_) `eq` (c',_) = c==c'
 
-      -- | given a typeMap tTypeMap, enhance tTypeMap with (isaPlus\/isaPlus~)+;tTypeMap
-      enhanceTTypeByUser :: Set.Set (A_Concept, TType) -> Guarded (Map.Map A_Concept TType)
-      enhanceTTypeByUser tTypeMap = Errors "Yet to be written..."
+      -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
+      enhanceTTypeByUser :: [[A_Concept]] -> Set (A_Concept, TType) -> Guarded (Set (A_Concept, TType))
+      enhanceTTypeByUser conceptParts tTypeByUser
+       = Set.unions <$> traverse processPartition (Set.fromList conceptParts)
+         where
+           processPartition :: [A_Concept] -> Guarded (Set.Set (A_Concept, TType))
+           processPartition part = if length ttypes == 1
+                                   then pure (Set.fromList [(c,tt) | c<-part, tt<-ttypes])
+                                   else Errors . pure $ mkMultiTTypeError part (Set.toList tTypeByUser)
+             where
+               ttypes :: [TType]
+               ttypes = L.nub [ tt | (c,tt)<-Set.toList tTypeByUser, c `elem` part]
 
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
@@ -389,7 +406,7 @@ pCtx2aCtx
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
         multitypologies <- traverse mkTypology connectedConcepts
-        decls <- traverse (pDecl2aDecl ttype cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
 
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where
@@ -398,6 +415,7 @@ pCtx2aCtx
         return
           CI
             { ctxiGens = gns,
+              connectedConcepts = connectedConcepts,
               typeMap = typeMap,
               multiKernels = multitypologies,
               reprList = allReprs,
@@ -511,7 +529,9 @@ pCtx2aCtx
       conceptmap :: ConceptMap
       conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) allGens
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
-      p_interfaceAndDisambObjs declMap = [(ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
+      p_interfaceAndDisambObjs declMap
+        = [(ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc)
+          | ifc <- p_interfaces]
 
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
@@ -591,7 +611,7 @@ pCtx2aCtx
                 Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt cptMap <$> src) (pCpt2aCpt cptMap <$> tgt)
                 _ -> namedRel2Decl cptMap declMap nmdr
 
-              aps' <- traverse (pAtomPair2aAtomPair (ttype ci interfaces) dcl) aps
+              aps' <- traverse (pAtomPair2aAtomPair (ttype ci) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
               return
@@ -611,6 +631,7 @@ pCtx2aCtx
                 )
                   <$> traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
         where
+          declMap :: Map Name (Map SignOrd Expression)
           declMap = declDisambMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =

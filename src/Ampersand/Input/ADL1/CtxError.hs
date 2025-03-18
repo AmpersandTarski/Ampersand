@@ -38,6 +38,8 @@ module Ampersand.Input.ADL1.CtxError
     mkTypeMismatchError,
     mkMultipleRootsError,
     mkCrudForRefInterfaceError,
+    mkObjectTTypeError,
+    mkMultiTTypeError,
     mkInterfaceMustBeDefinedOnObject,
     mkSubInterfaceMustBeDefinedOnObject,
     lexerWarning2Warning,
@@ -463,6 +465,9 @@ mkInvalidCRUDError o x = CTXE o $ "Invalid CRUD annotation. (doubles and other c
 mkCrudForRefInterfaceError :: Origin -> CtxError
 mkCrudForRefInterfaceError o = CTXE o "Crud specification is not allowed in combination with a reference to an interface."
 
+mkObjectTTypeError :: NE.NonEmpty Text -> CtxError
+mkObjectTTypeError xs = CTXE OriginUnknown (T.intercalate "\n" (NE.toList xs))
+
 mkIncompatibleAtomValueError :: PAtomValue -> Text -> CtxError
 mkIncompatibleAtomValueError pav msg =
   CTXE
@@ -471,6 +476,12 @@ mkIncompatibleAtomValueError pav msg =
         "" -> fatal "Error message must not be empty."
         _ -> msg
     )
+
+mkMultiTTypeError :: [A_Concept] -> [(A_Concept, TType)] -> CtxError
+mkMultiTTypeError part tTypeByUser =
+  CTXE OriginUnknown
+    $ "Multiple types are defined for the same concept. "
+    <> "You defined "<>T.intercalate ", " [ tshow c<>" as "<>tshow tt | (c,tt)<-tTypeByUser, c `elem` part]<>"."
 
 mkInvariantViolationsError :: (Rule -> AAtomPair -> Text) -> (Rule, AAtomPairs) -> CtxError
 mkInvariantViolationsError applyViolText (r, ps) =
