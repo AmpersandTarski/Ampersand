@@ -317,7 +317,10 @@ pCtx2aCtx
       let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <> -- concepts that must have ttype Obect, because the are key in (sub-)interfaces.
                             [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])
       tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef] -- check whether all concepts have a unique ttype.
-      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser --  The typology of the concepts defined in this context, outside the scope of patterns
+      -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
+      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser
+      -- |  Finally, add the default "ALPHANUMERIC" for every concept that has no TType, making ttype univalent and total.
+      -- TODO (I got to this point. Tomorrow is another day...)
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
