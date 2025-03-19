@@ -1510,15 +1510,14 @@ instance Eq SignOrd where
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
 --   So, ContextInfo must have the technical type of every concept.
-safePSingleton2AAtomVal :: TType -> A_Concept -> PAtomValue -> AAtomValue
-safePSingleton2AAtomVal typ c val =
-  case unsafePAtomVal2AtomValue typ (Just c) val of
+safePSingleton2AAtomVal :: A_Concept -> PAtomValue -> AAtomValue
+safePSingleton2AAtomVal c val =
+  case unsafePAtomVal2AtomValue (Just c) val of
     Left _ ->
       fatal
         . T.intercalate "\n  "
         $ [ "This should be impossible: after checking everything an unhandled singleton value found!",
             "Concept: " <> tshow c,
-            "TType: " <> tshow typ,
             "Origin: " <> tshow (origin val),
             "PAtomValue: " <> case val of
               (PSingleton _ _ v) -> "PSingleton (" <> tshow v <> ")"

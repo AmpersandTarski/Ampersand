@@ -169,4 +169,4 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 then Map.empty
                 else Map.singleton av (Set.singleton av)
               where
-                av = safePSingleton2AAtomVal ci c val
+                av = safePSingleton2AAtomVal c val

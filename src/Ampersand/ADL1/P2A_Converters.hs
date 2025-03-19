@@ -258,17 +258,6 @@ representationOf ci cpt = case lookup cpt (typeMap ci) of
   Just x -> x
   Nothing -> fatal "Representation not found"
 
-transitiveClosure :: (Ord a) => Set.Set (a, a) -> Set.Set (a, a)
-transitiveClosure pairs = go pairs
-  where
-    go closure =
-      let newPairs = Set.fromList [(x, z) | (x, y1) <- Set.toList closure, (y2, z) <- Set.toList closure, y1 == y2]
-          updatedClosure = closure `Set.union` newPairs
-      in if updatedClosure == closure
-         then closure
-         else go updatedClosure
-
-
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
 --    Disambiguation means replacing every "TermPrim" (the parsed term) with the correct Expression (available through DisambPrim)
@@ -1446,12 +1435,12 @@ pAtomValue2aAtomValue cpt pav =
     Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
     Right av -> pure av
 
-pReldefault2aReldefaults :: ConceptMap -> P_Relation -> PRelationDefault -> Guarded ARelDefault
-pReldefault2aReldefaults cptMap pd x = case x of
+pReldefault2aReldefaults :: TType -> ConceptMap -> P_Relation -> PRelationDefault -> Guarded ARelDefault
+pReldefault2aReldefaults ttyp cptMap pd x = case x of
   PDefAtom st vals ->
     ARelDefaultAtom st
       <$> traverse
-        ( pAtomValue2aAtomValue
+        ( pAtomValue2aAtomValue ttyp
             ( case st of
                 Src -> source decSign
                 Tgt -> target decSign
@@ -1473,14 +1462,14 @@ pDecl2aDecl cptMap maybePatLabel defLanguage defFormat pd =
   do
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
-    dflts <- mapM (pReldefault2aReldefaults cptMap pd) (dec_defaults pd)
+    dflts <- 
     return
       Relation
         { decnm = dec_nm pd,
           decsgn = decSign,
           declabel = dec_label pd,
           decprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
-          decDefaults = L.nub (dec_defaults pd),
+          decDefaults = (\ttyp->mapM (pReldefault2aReldefaults ttyp cptMap pd) (L.nub (dec_defaults pd)),
           decpr = dec_pragma pd,
           decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
           decfpos = origin pd,
