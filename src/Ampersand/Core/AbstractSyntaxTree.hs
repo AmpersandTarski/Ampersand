@@ -114,6 +114,7 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
+import Data.Maybe
 import qualified Data.Text1 as T1
 import Data.Typeable (typeOf)
 import RIO.Char (toLower, toUpper)
@@ -1505,11 +1506,8 @@ instance Eq SignOrd where
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
 --   the TType is known, enabling the correct transformation.
---   To ensure that this function is not used too early, ContextInfo is required,
---   which only exsists after disambiguation.
---   So, ContextInfo must have the technical type of every concept.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
-safePSingleton2AAtomVal ci c val =
+safePSingleton2AAtomVal :: TType -> A_Concept -> PAtomValue -> AAtomValue
+safePSingleton2AAtomVal typ c val =
   case unsafePAtomVal2AtomValue typ (Just c) val of
     Left _ ->
       fatal
@@ -1530,10 +1528,6 @@ safePSingleton2AAtomVal ci c val =
               (ScriptDateTime _ v) -> "ScriptDateTime (" <> tshow v <> ")"
           ]
     Right x -> x
-  where
-    typ = case lookup c (typeMap ci) of
-             Nothing -> (if c == ONE || show c == "SESSION" then Object else Alphanumeric) -- See issue #1537
-             Just x -> x
 
 -- SJC: Note about this code:
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError

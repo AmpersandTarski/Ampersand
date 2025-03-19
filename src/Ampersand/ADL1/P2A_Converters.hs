@@ -1460,14 +1460,16 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
   do
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
-    dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd
+    dflts <- do
+               defaults<-mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd
+               return (\ttyp->Set.fromList defaults)
     return
       Relation
         { decnm = dec_nm pd,
           decsgn = decSign,
           declabel = dec_label pd,
           decprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
-          decDefaults = Set.fromList dflts,
+          decDefaults = dflts,
           decpr = dec_pragma pd,
           decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
           decfpos = origin pd,

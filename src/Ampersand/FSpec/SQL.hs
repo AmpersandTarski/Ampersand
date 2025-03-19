@@ -1277,7 +1277,7 @@ nonSpecialSelectExpr fSpec expr =
     traceComment = traceExprComment expr
     singleton2SQL :: A_Concept -> PAtomValue -> ScalarExpr
     singleton2SQL cpt singleton =
-      atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
+      atomVal2InSQL (safePSingleton2AAtomVal (cptTType fSpec cpt) cpt singleton)
 
 traceExprComment :: Expression -> [Text] -> BinQueryExpr -> BinQueryExpr
 traceExprComment expr caseStr =

@@ -79,8 +79,8 @@ pairsOf ci ps dcl =
         let t = target (popdcl pop) in t `elem` target dcl : smallerConcepts (ctxiGens ci) (target dcl)
     ]
 
-fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
-fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+fullContents :: ContextInfo -> (A_Concept->TType) -> [Population] -> Expression -> AAtomPairs
+fullContents ci ttype ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
   where
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
@@ -169,4 +169,4 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 then Map.empty
                 else Map.singleton av (Set.singleton av)
               where
-                av = safePSingleton2AAtomVal ci c val
+                av = safePSingleton2AAtomVal (ttype c) c val
