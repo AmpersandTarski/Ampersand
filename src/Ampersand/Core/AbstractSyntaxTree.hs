@@ -473,7 +473,7 @@ data Relation = Relation
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
     decprps :: !AProps,
     -- | the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime
-    decDefaults :: !ARelDefaults,
+    decDefaults :: !(TType->ARelDefaults),
     -- | the pragma is a way to make the meaning of a relation explicit by examples.
     decpr :: !(Maybe Pragma),
     -- | the meaning of a relation, for each language supported by Ampersand.

@@ -33,8 +33,6 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Ampersand.ADL1 (A_Context)
-import qualified Ampersand as concept
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -240,8 +238,8 @@ onlyUserConcepts = fmap . userList . conceptMap
 --   It is meant to be used in the A_Context.
 --   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
 --   in cases where cpt has multiple TTypes.
-ttype :: ContextInfo -> [(A_Concept,TType)] -> A_Concept -> TType
-ttype ci tTypology cpt =
+ttype :: [(A_Concept,TType)] -> A_Concept -> TType
+ttype tTypology cpt =
   if cpt == ONE || show cpt == "SESSION"
   then Object
   else case [tt | (c,tt)<-tTypology, c==cpt] of
@@ -319,11 +317,11 @@ pCtx2aCtx
       --   without being declared explicitly in a REPRESENT statement:
       let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <>
                             [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])  :: [A_Concept]
-      -- check whether all concepts declared (implicitly or explicitly) by the user have a unique ttype.
-      tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Set (A_Concept, TType)
+      -- check whether all concepts declared (implicitly or explicitly) by the user have a unique TType.
+      tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Guarded [(A_Concept, TType)]
       -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
-      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Set (A_Concept, TType)
-      -- |  Finally, ttype contextInfo tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making ttype univalent and total.
+      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
+      -- |  Finally, ttype tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making  ttype tTypology  univalent and total.
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -352,7 +350,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = ttype contextInfo tTypology,
+                ctxreprs = ttype tTypology,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -372,8 +370,8 @@ pCtx2aCtx
     where
       -- | this function combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
       guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
-      guardedTTypeByUser typeMapDeclared typeMapByDef = 
-        if cptsWithMultTTypes==[]
+      guardedTTypeByUser typeMapDeclared typeMapByDef =
+        if null cptsWithMultTTypes
         then pure (L.nub typeMapDeclared <> typeMapByDef)
         else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
               Just xs -> Errors . pure $ mkObjectTTypeError xs
@@ -383,17 +381,17 @@ pCtx2aCtx
             where (c,_) `eq` (c',_) = c==c'
 
       -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
-      enhanceTTypeByUser :: [[A_Concept]] -> Set (A_Concept, TType) -> Guarded (Set (A_Concept, TType))
+      enhanceTTypeByUser :: [[A_Concept]] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
       enhanceTTypeByUser conceptParts tTypeByUser
-       = Set.unions <$> traverse processPartition (Set.fromList conceptParts)
+       = concat <$> traverse processPartition conceptParts
          where
-           processPartition :: [A_Concept] -> Guarded (Set.Set (A_Concept, TType))
+           processPartition :: [A_Concept] -> Guarded [(A_Concept, TType)]
            processPartition part = if length ttypes == 1
-                                   then pure (Set.fromList [(c,tt) | c<-part, tt<-ttypes])
-                                   else Errors . pure $ mkMultiTTypeError part (Set.toList tTypeByUser)
+                                   then pure [(c,tt) | c<-part, tt<-ttypes]
+                                   else Errors . pure $ mkMultiTTypeError part tTypeByUser
              where
                ttypes :: [TType]
-               ttypes = L.nub [ tt | (c,tt)<-Set.toList tTypeByUser, c `elem` part]
+               ttypes = L.nub [ tt | (c,tt)<-tTypeByUser, c `elem` part]
 
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
