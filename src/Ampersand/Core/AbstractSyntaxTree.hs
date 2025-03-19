@@ -1448,7 +1448,8 @@ data ContextInfo = CI
     multiKernels :: ![Typology],
     -- | a list of all Representations
     reprList :: ![Representation],
-    -- | a map of declarations and the corresponding types
+    -- | declDisambMap contains all relation declarations and their given types.
+    --   The reason it is such a complex type definition is unknown (19-03-2025)
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),

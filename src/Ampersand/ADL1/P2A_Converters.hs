@@ -288,9 +288,10 @@ pCtx2aCtx
     } =
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = declDisambMap contextInfo
-      -- We start with the interfaces to harvest concepts that need technical type Object:
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      let declMap = declDisambMap contextInfo -- contains information about relation declarations
+      -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
+      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)
+      --  Calculate the technical type of concepts. tTypeOf is univalent and total, so every concept gets precisely one technical type.
       tTypeOf <- calcTechTypes contextInfo interfaces
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo tTypeOf) p_patterns --  The patterns defined in this context
@@ -405,8 +406,9 @@ pCtx2aCtx
         typMap <- mkTypeMap connectConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         multitypologies <- traverse mkTypology connectConcepts
-        decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
-
+        -- | decls contains all relation declarations throughout the context, including those in patterns.
+    --  decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        let decls = p_relations <> concatMap pt_dcs p_patterns
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
@@ -418,6 +420,7 @@ pCtx2aCtx
               typeMap = typMap,
               multiKernels = multitypologies,
               reprList = allReprs,
+              declarations = decls,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               gens_efficient = genLattice,

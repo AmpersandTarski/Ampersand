@@ -344,6 +344,8 @@ suitableAsKey st =
     Object -> True
     TypeOfOne -> fatal "ONE has no key at all. does it?"
 
+-- | typologies ensures that every Concept is in a Typology.
+--   It does so by making a singleton-typology for every concept that is not in a multiKernel.
 typologies :: A_Context -> [Typology]
 typologies context =
   (multiKernels . ctxInfo $ context)
