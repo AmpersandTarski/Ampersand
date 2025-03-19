@@ -34,6 +34,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Ampersand.ADL1 (A_Context)
+import qualified Ampersand as concept
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -235,17 +236,17 @@ type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
 
-ttype :: ContextInfo -> [Interface] -> A_Concept -> TType
-ttype ci interfaces cpt =
-  case lookup cpt (typeMap ci) of
-    Nothing -> if cpt == ONE || show cpt == "SESSION" || defaultTType then Object else Alphanumeric -- See issue #1537
-    Just x -> x
-  where
-    -- | The default technical type is Object if the concept is used in a (sub-)interface. Otherwise it is Alphanumeric.
-    defaultTType :: Bool
-    defaultTType = cpt `Set.member` Set.fromList [ c | (ifc, subs)<-subInterfaces, c<-(target.objExpression.ifcObj) ifc : map siConcept subs ]
-    subInterfaces :: [(Interface, [SubInterface])]
-    subInterfaces = [ (ifc, (getDeepIfcRefs.ifcObj) ifc) | ifc <- interfaces]
+-- | ttype assigns precisely one technical type to every concept.
+--   It is meant to be used in the A_Context.
+--   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
+--   in cases where cpt has multiple TTypes.
+ttype :: ContextInfo -> [(A_Concept,TType)] -> A_Concept -> TType
+ttype ci tTypology cpt =
+  if cpt == ONE || show cpt == "SESSION"
+  then Object
+  else case [tt | (c,tt)<-tTypology, c==cpt] of
+         [tt] -> tt
+         _    -> Alphanumeric
 getDeepIfcRefs :: ObjectDef -> [SubInterface]
 getDeepIfcRefs objDef = case objmsub objDef of
   Nothing -> []
@@ -312,15 +313,17 @@ pCtx2aCtx
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
-      -- now first traverse all interfaces because key concepts are implicitly defined as REPRSENT keyConcept TYPE OBJECT.
+      -- We start with the interfaces to harvest concepts that need technical type Object:
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <> -- concepts that must have ttype Obect, because the are key in (sub-)interfaces.
-                            [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])
-      tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef] -- check whether all concepts have a unique ttype.
+      -- Concepts that are key in (sub-)interfaces get Object as their technical type
+      --   without being declared explicitly in a REPRESENT statement:
+      let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <>
+                            [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])  :: [A_Concept]
+      -- check whether all concepts declared (implicitly or explicitly) by the user have a unique ttype.
+      tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Set (A_Concept, TType)
       -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
-      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser
-      -- |  Finally, add the default "ALPHANUMERIC" for every concept that has no TType, making ttype univalent and total.
-      -- TODO (I got to this point. Tomorrow is another day...)
+      tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Set (A_Concept, TType)
+      -- |  Finally, ttype contextInfo tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making ttype univalent and total.
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -349,7 +352,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = ttype contextInfo interfaces,
+                ctxreprs = ttype contextInfo tTypology,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -368,10 +371,10 @@ pCtx2aCtx
       return actx
     where
       -- | this function combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
-      guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded (Set.Set (A_Concept, TType))
+      guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
       guardedTTypeByUser typeMapDeclared typeMapByDef = 
         if cptsWithMultTTypes==[]
-        then pure (Set.fromList typeMapDeclared `Set.union` Set.fromList typeMapByDef)
+        then pure (L.nub typeMapDeclared <> typeMapByDef)
         else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
               Just xs -> Errors . pure $ mkObjectTTypeError xs
               Nothing -> fatal "List cptsWithMultTTypes should be empty."
