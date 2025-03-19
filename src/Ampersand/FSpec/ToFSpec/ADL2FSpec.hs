@@ -549,7 +549,7 @@ makeifcConjuncts params allConjs =
   ]
 
 tblcontents :: ContextInfo -> (A_Concept->TType) -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
-tblcontents ci ttype ps plug =
+tblcontents ci ttypeOf ps plug =
   case plug of
     BinSQL {} ->
       let expr = case dLkpTbl plug of
@@ -558,7 +558,7 @@ tblcontents ci ttype ps plug =
                 then EFlp . EDcD . rsDcl $ store
                 else EDcD . rsDcl $ store
             ss -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are " <> tshow (length ss))
-       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ttype ps expr]
+       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ttypeOf ps expr]
     TblSQL {} ->
       -- TODO15122010 -> remove the assumptions (see comment data PlugSQL)
       -- attributes are assumed to be in the order kernel+other,
@@ -572,7 +572,7 @@ tblcontents ci ttype ps plug =
             ( map Just (toList cAtoms)
                 : [ case fExp of
                       EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
-                      _ -> [(lkp att a . fullContents ci ttype ps) fExp | a <- toList cAtoms]
+                      _ -> [(lkp att a . fullContents ci ttypeOf ps) fExp | a <- toList cAtoms]
                     | att <- fs,
                       let fExp = attExpr att
                   ]

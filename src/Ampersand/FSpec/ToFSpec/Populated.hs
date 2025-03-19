@@ -80,7 +80,7 @@ pairsOf ci ps dcl =
     ]
 
 fullContents :: ContextInfo -> (A_Concept->TType) -> [Population] -> Expression -> AAtomPairs
-fullContents ci ttype ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+fullContents ci ttypeOf ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
   where
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
@@ -169,4 +169,4 @@ fullContents ci ttype ps e = Set.fromList [mkAtomPair a b | let pairMap = conten
                 then Map.empty
                 else Map.singleton av (Set.singleton av)
               where
-                av = safePSingleton2AAtomVal (ttype c) c val
+                av = safePSingleton2AAtomVal (ttypeOf c) c val

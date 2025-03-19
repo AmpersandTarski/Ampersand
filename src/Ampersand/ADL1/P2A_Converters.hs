@@ -234,17 +234,19 @@ type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
 
--- | ttype assigns precisely one technical type to every concept.
+-- | ttypeOf assigns precisely one technical type to every concept.
 --   It is meant to be used in the A_Context.
 --   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
 --   in cases where cpt has multiple TTypes.
-ttype :: [(A_Concept,TType)] -> A_Concept -> TType
-ttype tTypology cpt =
+ttypeOf :: [(A_Concept,TType)] -> A_Concept -> TType
+ttypeOf tTypology cpt =
   if cpt == ONE || show cpt == "SESSION"
   then Object
   else case [tt | (c,tt)<-tTypology, c==cpt] of
          [tt] -> tt
-         _    -> Alphanumeric
+         []   -> Alphanumeric
+         _    -> fatal ("There are multiple technical types for concept "<>tshow cpt<>".")
+
 getDeepIfcRefs :: ObjectDef -> [SubInterface]
 getDeepIfcRefs objDef = case objmsub objDef of
   Nothing -> []
@@ -256,17 +258,6 @@ representationOf :: ContextInfo -> A_Concept -> TType
 representationOf ci cpt = case lookup cpt (typeMap ci) of
   Just x -> x
   Nothing -> fatal "Representation not found"
-
-transitiveClosure :: (Ord a) => Set.Set (a, a) -> Set.Set (a, a)
-transitiveClosure pairs = go pairs
-  where
-    go closure =
-      let newPairs = Set.fromList [(x, z) | (x, y1) <- Set.toList closure, (y2, z) <- Set.toList closure, y1 == y2]
-          updatedClosure = closure `Set.union` newPairs
-      in if updatedClosure == closure
-         then closure
-         else go updatedClosure
-
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -321,7 +312,7 @@ pCtx2aCtx
       tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Guarded [(A_Concept, TType)]
       -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
       tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
-      -- |  Finally, ttype tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making  ttype tTypology  univalent and total.
+      -- |  Finally, ttypeOf tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making  ttypeOf tTypology  univalent and total.
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -333,7 +324,7 @@ pCtx2aCtx
       uniqueNames "interface" p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- traverse (pDecl2aDecl (ttypeOf tTypology) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -350,7 +341,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = ttype tTypology,
+                ctxreprs = ttypeOf tTypology,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -406,10 +397,9 @@ pCtx2aCtx
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
         -- The typeMap contains the technical type of concepts as specified in REPRESENTATION statements in the Ampersand Script,
         -- without the concepts for which no valid representation statement is found.
-        typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
+        typMap <- mkTypeMap connectConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
-        --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
-        multitypologies <- traverse mkTypology connectedConcepts
+        multitypologies <- traverse mkTypology connectConcepts
         decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
 
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
@@ -419,8 +409,8 @@ pCtx2aCtx
         return
           CI
             { ctxiGens = gns,
-              connectedConcepts = connectedConcepts,
-              typeMap = typeMap,
+              connectedConcepts = connectConcepts,
+              typeMap = typMap,
               multiKernels = multitypologies,
               reprList = allReprs,
               declDisambMap = declMap,
@@ -433,8 +423,8 @@ pCtx2aCtx
         where
           gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
-          connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect [] (map (toList . concs) gns)
+          connectConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
+          connectConcepts = connect [] (map (toList . concs) gns)
 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
@@ -615,7 +605,7 @@ pCtx2aCtx
                 Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt cptMap <$> src) (pCpt2aCpt cptMap <$> tgt)
                 _ -> namedRel2Decl cptMap declMap nmdr
 
-              aps' <- traverse (pAtomPair2aAtomPair (ttype ci) dcl) aps
+              aps' <- traverse (pAtomPair2aAtomPair (ttypeOf ci) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
               return

@@ -114,7 +114,6 @@ import Ampersand.Core.ParseTree
     mkPConcept,
   )
 import Data.Default (Default (..))
-import Data.Maybe
 import qualified Data.Text1 as T1
 import Data.Typeable (typeOf)
 import RIO.Char (toLower, toUpper)
