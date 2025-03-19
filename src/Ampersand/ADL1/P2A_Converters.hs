@@ -288,7 +288,7 @@ pCtx2aCtx
     } =
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = declDisambMap contextInfo -- contains information about relation declarations
+      let declMap = declDisambMap contextInfo -- contains the relation declarations
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeOf is univalent and total, so every concept gets precisely one technical type.
@@ -407,8 +407,11 @@ pCtx2aCtx
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         multitypologies <- traverse mkTypology connectConcepts
         -- | decls contains all relation declarations throughout the context, including those in patterns.
-    --  decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
-        let decls = p_relations <> concatMap pt_dcs p_patterns
+        --   The technical types are not available at this point.
+        --   My hunch is that they are not relevant for the contextInfo.
+        --   To prove this, a stub-function is used, which yields a fatal the moment it is called.
+        decls <- let stub _ = fatal "Technical types are not available at this point." in
+                  traverse (pDecl2aDecl stub cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
@@ -420,7 +423,6 @@ pCtx2aCtx
               typeMap = typMap,
               multiKernels = multitypologies,
               reprList = allReprs,
-              declarations = decls,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               gens_efficient = genLattice,
