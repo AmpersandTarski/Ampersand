@@ -4,6 +4,7 @@
 module Ampersand.Output.ToJSON.Relations (Relationz) where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.P2A_Converters(pReldefault2aReldefaults)
 import Ampersand.FSpec.FSpecAux
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
@@ -73,10 +74,11 @@ instance JSON Relation RelationJson where
         relJSONprop = isProp bindedExp,
         relJSONaffectedConjuncts = maybe [] (map $ text1ToText . rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
         relJSONmysqlTable = fromAmpersand env fSpec dcl,
-        relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl,
-        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
+        relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ defaults,
+        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ defaults
       }
     where
+      defaults = mapM (pReldefault2aReldefaults cptMap pd) dcl
       bindedExp = EDcD dcl
       is :: SrcOrTgt -> ARelDefault -> Bool
       is st x = case x of

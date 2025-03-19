@@ -292,13 +292,13 @@ instance JSON.FromJSON (Guarded Representation) where
         (JSON.typeMismatch "Object" invalid)
     where
       build :: Guarded P_Concept -> TType -> Guarded Representation
-      build gCpt ttype = do
+      build gCpt typ = do
         cpt <- gCpt
         pure
           Repr
             { pos = OriginAtlas,
               reprcpts = cpt NE.:| [], -- NE.NonEmpty P_Concept,      -- todo: werkt dit met meerdere statements?
-              reprdom = ttype
+              reprdom = typ
             }
 
 instance JSON.FromJSON TType where

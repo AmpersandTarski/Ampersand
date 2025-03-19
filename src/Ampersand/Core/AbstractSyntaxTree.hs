@@ -101,6 +101,7 @@ import Ampersand.Core.ParseTree
     PClassify (generics, specific),
     PConceptDef,
     P_Concept (..),
+    PRelationDefault (..),
     PairView (..),
     PairViewSegment (..),
     Pragma,
@@ -472,8 +473,9 @@ data Relation = Relation
     declabel :: !(Maybe Label),
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
     decprps :: !AProps,
-    -- | the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime
-    decDefaults :: !ARelDefaults,
+    -- | decDefaults contains the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime.
+    -- | We would like to see ARelDefaults here, but the TTypes of concepts are not available when a Relation is made.
+    decDefaults :: !(TType -> ARelDefaults),
     -- | the pragma is a way to make the meaning of a relation explicit by examples.
     decpr :: !(Maybe Pragma),
     -- | the meaning of a relation, for each language supported by Ampersand.
@@ -1508,8 +1510,8 @@ instance Eq SignOrd where
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
 --   So, ContextInfo must have the technical type of every concept.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
-safePSingleton2AAtomVal ci c val =
+safePSingleton2AAtomVal :: TType -> A_Concept -> PAtomValue -> AAtomValue
+safePSingleton2AAtomVal typ c val =
   case unsafePAtomVal2AtomValue typ (Just c) val of
     Left _ ->
       fatal
@@ -1530,10 +1532,6 @@ safePSingleton2AAtomVal ci c val =
               (ScriptDateTime _ v) -> "ScriptDateTime (" <> tshow v <> ")"
           ]
     Right x -> x
-  where
-    typ = case lookup c (typeMap ci) of
-             Nothing -> (if c == ONE || show c == "SESSION" then Object else Alphanumeric) -- See issue #1537
-             Just x -> x
 
 -- SJC: Note about this code:
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
