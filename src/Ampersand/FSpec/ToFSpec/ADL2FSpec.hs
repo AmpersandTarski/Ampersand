@@ -95,7 +95,7 @@ makeFSpec env context =
           . map (handleType cpt)
           . smallerConcepts (gens context)
           $ cpt,
-      tableContents = tblcontents contextinfo (ctxreprs context) initialpopsDefinedInScript,
+      tableContents = tblcontents contextinfo initialpopsDefinedInScript,
       pairsInExpr = pairsinexpr,
       applyViolText = apply_viol_text,
       allViolations =
@@ -159,7 +159,7 @@ makeFSpec env context =
         [t] -> t
         _ -> fatal ("concept " <> fullName cpt <> " should be in exactly one typology!")
     pairsinexpr :: Expression -> AAtomPairs
-    pairsinexpr = fullContents contextinfo (ctxreprs context) initialpopsDefinedInScript
+    pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
     -- Purpose: to write a rule violation in Text as specified in the user's script,
     -- to be used in error messages too.
     apply_viol_text :: Rule -> AAtomPair -> Text
@@ -548,8 +548,8 @@ makeifcConjuncts params allConjs =
       -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
   ]
 
-tblcontents :: ContextInfo -> (A_Concept->TType) -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
-tblcontents ci ttypeOf ps plug =
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
+tblcontents ci ps plug =
   case plug of
     BinSQL {} ->
       let expr = case dLkpTbl plug of
@@ -558,7 +558,7 @@ tblcontents ci ttypeOf ps plug =
                 then EFlp . EDcD . rsDcl $ store
                 else EDcD . rsDcl $ store
             ss -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are " <> tshow (length ss))
-       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ttypeOf ps expr]
+       in [[(Just . apLeft) p, (Just . apRight) p] | p <- toList $ fullContents ci ps expr]
     TblSQL {} ->
       -- TODO15122010 -> remove the assumptions (see comment data PlugSQL)
       -- attributes are assumed to be in the order kernel+other,
@@ -572,7 +572,7 @@ tblcontents ci ttypeOf ps plug =
             ( map Just (toList cAtoms)
                 : [ case fExp of
                       EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
-                      _ -> [(lkp att a . fullContents ci ttypeOf ps) fExp | a <- toList cAtoms]
+                      _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
                     | att <- fs,
                       let fExp = attExpr att
                   ]

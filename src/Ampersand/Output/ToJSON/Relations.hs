@@ -73,8 +73,8 @@ instance JSON Relation RelationJson where
         relJSONprop = isProp bindedExp,
         relJSONaffectedConjuncts = maybe [] (map $ text1ToText . rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
         relJSONmysqlTable = fromAmpersand env fSpec dcl,
-        relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) . decDefaults dcl . cptTType fSpec . source $ dcl,
-        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) . decDefaults dcl . cptTType fSpec . target $ dcl
+        relJSONdefaultSrc = concatMap toText . filter (is Src) . decDefaults $ dcl,
+        relJSONdefaultTgt = concatMap toText . filter (is Tgt) . decDefaults $ dcl
       }
     where
       bindedExp = EDcD dcl

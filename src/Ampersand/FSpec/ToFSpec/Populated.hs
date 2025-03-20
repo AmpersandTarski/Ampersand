@@ -16,6 +16,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes hiding (gens)
+import Ampersand.Core.AbstractSyntaxTree (techTypeOf)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -79,9 +80,11 @@ pairsOf ci ps dcl =
         let t = target (popdcl pop) in t `elem` target dcl : smallerConcepts (ctxiGens ci) (target dcl)
     ]
 
-fullContents :: ContextInfo -> (A_Concept->TType) -> [Population] -> Expression -> AAtomPairs
-fullContents ci ttypeOf ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
+fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
   where
+    tTypeOf :: A_Concept -> TType
+    tTypeOf = techTypeOf ci
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
       where
@@ -169,4 +172,4 @@ fullContents ci ttypeOf ps e = Set.fromList [mkAtomPair a b | let pairMap = cont
                 then Map.empty
                 else Map.singleton av (Set.singleton av)
               where
-                av = safePSingleton2AAtomVal (ttypeOf c) c val
+                av = safePSingleton2AAtomVal (tTypeOf c) c val

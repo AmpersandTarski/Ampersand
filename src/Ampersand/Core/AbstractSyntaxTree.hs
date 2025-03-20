@@ -65,6 +65,7 @@ module Ampersand.Core.AbstractSyntaxTree
     mkAtomPair,
     PAtomValue (..),
     ContextInfo (..),
+    techTypeOf,
     showValADL,
     showValSQL,
     showSign,
@@ -473,7 +474,7 @@ data Relation = Relation
     -- | the user defined properties (Uni, Tot, Sur, Inj, Sym, Asy, Trn, Rfx, Irf)
     decprps :: !AProps,
     -- | the defaults for atoms in pairs in the population of this relation, used when populating relations at runtime
-    decDefaults :: !(TType->ARelDefaults),
+    decDefaults :: ![ARelDefault],
     -- | the pragma is a way to make the meaning of a relation explicit by examples.
     decpr :: !(Maybe Pragma),
     -- | the meaning of a relation, for each language supported by Ampersand.
@@ -1453,6 +1454,8 @@ data ContextInfo = CI
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
+    -- | types not used in any declaration
+    allConcs :: ![A_Concept],
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept
@@ -1463,6 +1466,17 @@ data ContextInfo = CI
     defaultFormat :: !PandocFormat
   }
   deriving (Show)
+
+-- | This function must be univalent and total.
+--   Since the contextInfo is enriched later with the correct (univalent and total) ttype information,
+--   there is a chance that this function suffers from bitrot elsewhere. This is why we have the fatals in place.
+techTypeOf :: ContextInfo -> A_Concept -> TType
+techTypeOf ci c =
+  case [ tt | (cpt,tt)<-typeMap ci, cpt==c] of
+    [tt] -> tt
+    []   -> fatal $ "No technical type found for concept " <> fullName c
+    _    -> fatal $ "Multiple technical types found for concept " <> fullName c
+
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1757,8 +1771,8 @@ data Typology = Typology
   }
   deriving (Show)
 
--- | Since we can have concepts with several aliasses, we need to have a
---   way to resolve these aliasses. In the A-structure, we do not want to
+-- | Since we can have concepts with several aliases, we need to have a
+--   way to resolve these aliases. In the A-structure, we do not want to
 --   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.

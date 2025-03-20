@@ -287,14 +287,16 @@ pCtx2aCtx
       ctx_enfs = p_enfs
     } =
     do
-      contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = declDisambMap contextInfo -- contains the relation declarations
+      contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
+      let declMap = declDisambMap contextInfoPre -- contains the relation declarations
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)
-      --  Calculate the technical type of concepts. tTypeOf is univalent and total, so every concept gets precisely one technical type.
-      tTypeOf <- calcTechTypes contextInfo interfaces
+      interfaces <- traverse (pIfc2aIfc contextInfoPre) (p_interfaceAndDisambObjs declMap)
+      --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
+      tTypeList <- calcTechTypes contextInfoPre interfaces
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
-      pats <- traverse (pPat2aPat contextInfo tTypeOf) p_patterns --  The patterns defined in this context
+      let contextInfo = contextInfoPre{typeMap = tTypeList} -- enrich contextInfo, so type checking can take place with the correct technical types.
+      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
+      pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
       uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
@@ -303,8 +305,8 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
-      udpops <- traverse (pPop2aPop contextInfo tTypeOf) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl tTypeOf cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
+      relations <- traverse (pDecl2aDecl contextInfo cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -321,7 +323,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = tTypeOf,
+                ctxreprs = techTypeOf contextInfo,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -339,7 +341,7 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
-      calcTechTypes :: ContextInfo -> [Interface] -> Guarded (A_Concept->TType)
+      calcTechTypes :: ContextInfo -> [Interface] -> Guarded [(A_Concept,TType)]
       calcTechTypes contextInfo interfaces =
          do
             -- Concepts that are key in (sub-)interfaces get Object as their technical type
@@ -350,45 +352,46 @@ pCtx2aCtx
             tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Guarded [(A_Concept, TType)]
             -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
             tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
-            -- |  Finally, ttypeOf tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType, making  ttypeOf tTypology  univalent and total.
-            --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
-            return (ttypeOf tTypology)
-            -- | this function combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
-      guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
-      guardedTTypeByUser typeMapDeclared typeMapByDef =
-        if null cptsWithMultTTypes
-        then pure (L.nub typeMapDeclared <> typeMapByDef)
-        else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
-              Just xs -> Errors . pure $ mkObjectTTypeError xs
-              Nothing -> fatal "List cptsWithMultTTypes should be empty."
-        where
-          cptsWithMultTTypes = [ ((fst . NE.head) cl, (T.intercalate ", " . map (tshow.snd) . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
-            where (c,_) `eq` (c',_) = c==c'
+            -- |  Finally, ttypeList tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType.
+            --    The list  ttypeList tTypology  has precisely one TType for every concept in this context.
+            return (ttypeList tTypology)
+       where
+          -- | guardedTTypeByUser combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
+          guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
+          guardedTTypeByUser typeMapDeclared typeMapByDef =
+            if null cptsWithMultTTypes
+            then pure (L.nub typeMapDeclared <> typeMapByDef)
+            else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
+                  Just xs -> Errors . pure $ mkObjectTTypeError xs
+                  Nothing -> fatal "List cptsWithMultTTypes should be empty."
+            where
+              cptsWithMultTTypes = [ ((fst . NE.head) cl, (T.intercalate ", " . map (tshow.snd) . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
+                where (c,_) `eq` (c',_) = c==c'
 
-      -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
-      enhanceTTypeByUser :: [[A_Concept]] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
-      enhanceTTypeByUser conceptParts tTypeByUser
-       = concat <$> traverse processPartition conceptParts
-         where
-           processPartition :: [A_Concept] -> Guarded [(A_Concept, TType)]
-           processPartition part = if length ttypes == 1
-                                   then pure [(c,tt) | c<-part, tt<-ttypes]
-                                   else Errors . pure $ mkMultiTTypeError part tTypeByUser
+          -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
+          enhanceTTypeByUser :: [[A_Concept]] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
+          enhanceTTypeByUser conceptParts tTypeByUser
+           = concat <$> traverse processPartition conceptParts
              where
-               ttypes :: [TType]
-               ttypes = L.nub [ tt | (c,tt)<-tTypeByUser, c `elem` part]
-      -- | ttypeOf assigns precisely one technical type to every concept.
-      --   It is meant to be used in the A_Context.
-      --   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
-      --   in cases where cpt has multiple TTypes.
-      ttypeOf :: [(A_Concept,TType)] -> A_Concept -> TType
-      ttypeOf tTypology cpt =
-        if cpt == ONE || show cpt == "SESSION"
-        then Object
-        else case [tt | (c,tt)<-tTypology, c==cpt] of
-               [tt] -> tt
-               []   -> Alphanumeric
-               _    -> fatal ("There are multiple technical types for concept "<>tshow cpt<>".")
+               processPartition :: [A_Concept] -> Guarded [(A_Concept, TType)]
+               processPartition part = if length ttypes == 1
+                                       then pure [(c,tt) | c<-part, tt<-ttypes]
+                                       else Errors . pure $ mkMultiTTypeError part tTypeByUser
+                 where
+                   ttypes :: [TType]
+                   ttypes = L.nub [ tt | (c,tt)<-tTypeByUser, c `elem` part]
+
+          -- | ttypeList assigns precisely one technical type to every concept.
+          --   It is meant to be used in the A_Context.
+          --   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
+          --   in cases where cpt has multiple TTypes.
+          ttypeList :: [(A_Concept,TType)] -> [(A_Concept,TType)]
+          ttypeList tTypology = [ (c, f c) | c<-allConcs contextInfo]
+           where
+            f c = case [tt | (cpt,tt)<-tTypology, c==cpt] of
+                         [tt] -> tt
+                         []   -> if c == ONE || show c == "SESSION" then Object else Alphanumeric
+                         _    -> fatal ("There are multiple technical types for concept "<>tshow c<>".")
 
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
@@ -410,21 +413,23 @@ pCtx2aCtx
         --   The technical types are not available at this point.
         --   My hunch is that they are not relevant for the contextInfo.
         --   To prove this, a stub-function is used, which yields a fatal the moment it is called.
-        decls <- let stub _ = fatal "Technical types are not available at this point." in
-                  traverse (pDecl2aDecl stub cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        decls <- traverse (pDecl2aDeclPremature conceptmap) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-        let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
+
+        let allConcepts = L.nub (map source decls <> map target decls) :: [A_Concept]
+        let allTypes = Set.fromList (map aConcToType allConcepts) :: Set.Set Type
         return
           CI
             { ctxiGens = gns,
               connectedConcepts = connectConcepts,
-              typeMap = typMap,
+              typeMap = typMap, -- Initially, this contains only the technical types of concepts that are declared in REPRESENT statements. Later, it will contain all technical types.
               multiKernels = multitypologies,
               reprList = allReprs,
               declDisambMap = declMap,
-              soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
+              soloConcs = Set.filter (not . isInSystem genLattice) allTypes,
+              allConcs = allConcepts,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
@@ -530,7 +535,7 @@ pCtx2aCtx
               isInvolved :: AClassify -> Bool
               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
-      conceptmap :: ConceptMap
+      conceptmap :: ConceptMap  -- reminder:  type ConceptMap = P_Concept -> A_Concept
       conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) allGens
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap
@@ -606,8 +611,8 @@ pCtx2aCtx
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
 
-      pPop2aPop :: ContextInfo -> (A_Concept->TType) -> P_Population -> Guarded Population
-      pPop2aPop ci tTypOf pop =
+      pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
+      pPop2aPop ci pop =
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
@@ -635,6 +640,8 @@ pCtx2aCtx
                 )
                   <$> traverse (pAtomValue2aAtomValue (tTypOf cpt) cpt) (p_popas pop)
         where
+          tTypOf :: A_Concept -> TType
+          tTypOf = techTypeOf ci
           declMap :: Map Name (Map SignOrd Expression)
           declMap = declDisambMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
@@ -1017,15 +1024,15 @@ pCtx2aCtx
             arPos = origin prr
           }
 
-      pPat2aPat :: ContextInfo -> (A_Concept->TType) -> P_Pattern -> Guarded Pattern
-      pPat2aPat ci tTypOf ppat =
+      pPat2aPat :: ContextInfo -> P_Pattern -> Guarded Pattern
+      pPat2aPat ci ppat =
         f
           <$> traverse (pRul2aRul ci (Just $ label ppat)) (pt_rls ppat)
           <*> traverse (pIdentity2aIdentity ci (Just $ label ppat)) (pt_ids ppat)
-          <*> traverse (pPop2aPop ci tTypOf) (pt_pop ppat)
+          <*> traverse (pPop2aPop ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+          <*> traverse (pDecl2aDecl ci cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
@@ -1280,20 +1287,20 @@ addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> Expression -> 
 addEpsilon genLattice s t e =
   addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
 
-typecheckTerm :: ContextInfo -> (A_Concept -> TType) -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
-typecheckTerm ci ttypOf tct =
+typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
+typecheckTerm ci tct =
   case tct of
     Prim (t, v) ->
       ( \x -> case x of
           EMp1 s c ->
             (x, (True, True))
-              <$ pAtomValue2aAtomValue ttypOf c s
+              <$ pAtomValue2aAtomValue (tTypOf c) c s
           EBin oper cpt ->
             if isValidOperator
               then pure (x, (True, True))
               else Errors . pure $ mkOperatorError (origin t) oper cpt typ
             where
-              typ = ttypOf cpt
+              typ = tTypOf cpt
               isValidOperator :: Bool
               isValidOperator =
                 case oper of
@@ -1346,7 +1353,10 @@ typecheckTerm ci ttypOf tct =
     PCpl _ a -> (\(x, _) -> (ECpl x, (False, False))) <$> tt a
     PBrk _ e -> first EBrk <$> tt e
   where
+    cptMap :: P_Concept -> A_Concept
     cptMap = conceptMap ci
+    tTypOf :: A_Concept -> TType
+    tTypOf = techTypeOf ci
     genLattice = gens_efficient ci
     o = origin (fmap fst tct)
     tt = typecheckTerm ci
@@ -1435,10 +1445,10 @@ typecheckTerm ci ttypOf tct =
             lst -> mustBeOrderedConcLst o (p1, e1) (p2, e2) lst
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
-pAtomPair2aAtomPair typ dcl pp =
+pAtomPair2aAtomPair tTypOf dcl pp =
   mkAtomPair
-    <$> pAtomValue2aAtomValue typ (source dcl) (ppLeft pp)
-    <*> pAtomValue2aAtomValue typ (target dcl) (ppRight pp)
+    <$> pAtomValue2aAtomValue (tTypOf (source dcl)) (source dcl) (ppLeft pp)
+    <*> pAtomValue2aAtomValue (tTypOf (target dcl)) (target dcl) (ppRight pp)
 
 pAtomValue2aAtomValue :: TType -> A_Concept -> PAtomValue -> Guarded AAtomValue
 pAtomValue2aAtomValue ttyp cpt pav =
@@ -1446,21 +1456,34 @@ pAtomValue2aAtomValue ttyp cpt pav =
     Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
     Right av -> pure av
 
+
+-- | Before type checking, we need to build a declaration table.
+--   Hypothesis: this table only needs signature information.
+pDecl2aDeclPremature ::
+  ConceptMap ->
+  P_Relation ->
+  Guarded Relation
+pDecl2aDeclPremature cptMap  =
+  pDecl2aDecl stubCI cptMap stubPat stubLang stubFormat
+  where
+    stubCI     = fatal "pDecl2aDeclPremature tries to refer to a ContextInfo."
+    stubPat    = fatal "pDecl2aDeclPremature tries to refer to a pattern."
+    stubLang   = fatal "pDecl2aDeclPremature tries to refer to a language."
+    stubFormat = fatal "pDecl2aDeclPremature tries to refer to a format."
+
 pDecl2aDecl ::
-  (A_Concept -> TType) ->
+  ContextInfo ->
   ConceptMap ->
   Maybe Text -> -- label of pattern the rule is defined in (if any), just for documentation purposes
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormat
   P_Relation ->
   Guarded Relation
-pDecl2aDecl ttypOf cptMap maybePatLabel defLanguage defFormat pd =
+pDecl2aDecl ci cptMap maybePatLabel defLanguage defFormat pd =
   do
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
-    dflts <- do
-               defaults<-mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd
-               return (\ttyp->Set.fromList defaults)
+    dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd :: Guarded [ARelDefault]
     return
       Relation
         { decnm = dec_nm pd,
@@ -1476,14 +1499,16 @@ pDecl2aDecl ttypOf cptMap maybePatLabel defLanguage defFormat pd =
           dechash = hash (dec_nm pd) `hashWithSalt` decSign
         }
   where
-    pReldefault2aReldefaults :: (A_Concept->TType) -> PRelationDefault -> Guarded ARelDefault
-    pReldefault2aReldefaults ttypeOf x = case x of
+    tTypOf :: A_Concept -> TType
+    tTypOf = techTypeOf ci
+    pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
+    pReldefault2aReldefaults x = case x of
       PDefAtom st vals ->
         ARelDefaultAtom st
           <$> traverse
               ( case st of
-                  Src -> pAtomValue2aAtomValue (ttypOf (source decSign)) (source decSign)
-                  Tgt -> pAtomValue2aAtomValue (ttypOf (target decSign)) (target decSign)
+                  Src -> pAtomValue2aAtomValue (tTypOf (source decSign)) (source decSign)
+                  Tgt -> pAtomValue2aAtomValue (tTypOf (target decSign)) (target decSign)
               )
               vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt

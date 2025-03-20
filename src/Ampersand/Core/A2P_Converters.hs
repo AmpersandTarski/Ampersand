@@ -113,14 +113,11 @@ aRelation2pRelation dcl =
       dec_sign = aSign2pSign (decsgn dcl),
       dec_label = declabel dcl,
       dec_prps = aProps2Pprops $ decprps dcl,
-      dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl Alphanumeric,  -- TODO: Alphanumeric in this place is a hack. The type of the defaults should be determined by the type of the relation.,
+      dec_defaults = map aRelDefaults2pRelDefault (decDefaults dcl),
       dec_pragma = decpr dcl,
       dec_Mean = map aMeaning2pMeaning (decMean dcl),
       dec_pos = decfpos dcl
     }
-
-aRelDefaults2pRelDefaults :: ARelDefaults -> [PRelationDefault]
-aRelDefaults2pRelDefaults = map aRelDefaults2pRelDefault . toList
 
 aRelDefaults2pRelDefault :: ARelDefault -> PRelationDefault
 aRelDefaults2pRelDefault x = case x of

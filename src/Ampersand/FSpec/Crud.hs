@@ -29,11 +29,11 @@ mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where
-    allConcs = [c | c <- toList allConceptsPrim, not $ isONE c || isSESSION c]
+    allConcepts = [c | c <- toList allConceptsPrim, not $ isONE c || isSESSION c]
     nonCrudConcpts =
       (map source . filter isUni . filter isSur . map EDcD . toList $ decls)
         <> (map target . filter isInj . filter isTot . map EDcD . toList $ decls)
-    crudCncpts = allConcs L.\\ nonCrudConcpts
+    crudCncpts = allConcepts L.\\ nonCrudConcpts
 
     transSurjClosureMap :: Map.Map A_Concept [A_Concept]
     transSurjClosureMap =
