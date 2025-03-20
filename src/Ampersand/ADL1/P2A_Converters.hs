@@ -241,11 +241,6 @@ getDeepIfcRefs objDef = case objmsub objDef of
     InterfaceRef {} -> [ si | not (siIsLink si)]
     Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
 
-representationOf :: ContextInfo -> A_Concept -> TType
-representationOf ci cpt = case lookup cpt (typeMap ci) of
-  Just x -> x
-  Nothing -> fatal "Representation not found"
-
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
 --    Disambiguation means replacing every "TermPrim" (the parsed term) with the correct Expression (available through DisambPrim)
@@ -365,7 +360,8 @@ pCtx2aCtx
                   Just xs -> Errors . pure $ mkObjectTTypeError xs
                   Nothing -> fatal "List cptsWithMultTTypes should be empty."
             where
-              cptsWithMultTTypes = [ ((fst . NE.head) cl, (T.intercalate ", " . map (tshow.snd) . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
+              cptsWithMultTTypes :: [(A_Concept, [TType])]
+              cptsWithMultTTypes = filter ((>1).length) [ ((fst . NE.head) cl, (map snd . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
                 where (c,_) `eq` (c',_) = c==c'
 
           -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
@@ -390,7 +386,7 @@ pCtx2aCtx
            where
             f c = case [tt | (cpt,tt)<-tTypology, c==cpt] of
                          [tt] -> tt
-                         []   -> if c == ONE || show c == "SESSION" then Object else Alphanumeric
+                         []   -> if c == ONE || tshow c == "SESSION" then Object else Alphanumeric
                          _    -> fatal ("There are multiple technical types for concept "<>tshow c<>".")
 
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -930,7 +926,7 @@ pCtx2aCtx
                 BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
                 BxText {} -> pure boxitem
               mustBeObject :: A_Concept -> Guarded ()
-              mustBeObject cpt = case representationOf ci cpt of
+              mustBeObject cpt = case techTypeOf ci cpt of
                 Object -> pure ()
                 tt -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
         where
@@ -981,8 +977,8 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      pIfc2aIfc declMap (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2BoxItem declMap objDisamb
+      pIfc2aIfc ci (pIfc, objDisamb) =
+        build $ pBoxItemDisamb2BoxItem ci objDisamb
         where
           build :: Guarded BoxItem -> Guarded Interface
           build gb =
@@ -992,7 +988,7 @@ pCtx2aCtx
                 addWarnings ws
                   $ case obj' of
                     BxExpr o ->
-                      case representationOf declMap . target . objExpression $ o of
+                      case techTypeOf ci . target . objExpression $ o of
                         Object ->
                           pure
                             Ifc
@@ -1464,10 +1460,9 @@ pDecl2aDeclPremature ::
   P_Relation ->
   Guarded Relation
 pDecl2aDeclPremature cptMap  =
-  pDecl2aDecl stubCI cptMap stubPat stubLang stubFormat
+  pDecl2aDecl stubCI cptMap Nothing stubLang stubFormat
   where
     stubCI     = fatal "pDecl2aDeclPremature tries to refer to a ContextInfo."
-    stubPat    = fatal "pDecl2aDeclPremature tries to refer to a pattern."
     stubLang   = fatal "pDecl2aDeclPremature tries to refer to a language."
     stubFormat = fatal "pDecl2aDeclPremature tries to refer to a format."
 

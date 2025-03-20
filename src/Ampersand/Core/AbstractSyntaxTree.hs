@@ -1474,9 +1474,8 @@ techTypeOf :: ContextInfo -> A_Concept -> TType
 techTypeOf ci c =
   case [ tt | (cpt,tt)<-typeMap ci, cpt==c] of
     [tt] -> tt
-    []   -> fatal $ "No technical type found for concept " <> fullName c
+    []   -> if c==ONE || tshow c=="SESSION" then Object else fatal $ "No technical type found for concept " <> fullName c
     _    -> fatal $ "Multiple technical types found for concept " <> fullName c
-
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
