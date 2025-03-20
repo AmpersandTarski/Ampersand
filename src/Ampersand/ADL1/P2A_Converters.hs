@@ -287,7 +287,7 @@ pCtx2aCtx
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
       interfaces <- traverse (pIfc2aIfc contextInfoPre) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
-      tTypeList <- calcTechTypes contextInfoPre interfaces
+      tTypeList <- trace "call calcTechTypes" $ calcTechTypes contextInfoPre interfaces
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       let contextInfo = contextInfoPre{typeMap = tTypeList} -- enrich contextInfo, so type checking can take place with the correct technical types.
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
@@ -349,7 +349,11 @@ pCtx2aCtx
             tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
             -- |  Finally, ttypeList tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType.
             --    The list  ttypeList tTypology  has precisely one TType for every concept in this context.
-            return (ttypeList tTypology)
+            trace ("\nobjectByDef\n"<>tshow objectByDef<>
+                   "\n\ntTypeByUser"<>tshow tTypeByUser<>
+                   "\n\ntTypology"<>tshow tTypology<>
+                   "\n\ntresult"<>tshow (ttypeList tTypology)) $
+                  return (ttypeList tTypology)
        where
           -- | guardedTTypeByUser combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
           guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
@@ -370,7 +374,7 @@ pCtx2aCtx
            = concat <$> traverse processPartition conceptParts
              where
                processPartition :: [A_Concept] -> Guarded [(A_Concept, TType)]
-               processPartition part = if length ttypes == 1
+               processPartition part = if length ttypes == 1 || null tTypeByUser
                                        then pure [(c,tt) | c<-part, tt<-ttypes]
                                        else Errors . pure $ mkMultiTTypeError part tTypeByUser
                  where
@@ -416,6 +420,11 @@ pCtx2aCtx
 
         let allConcepts = L.nub (map source decls <> map target decls) :: [A_Concept]
         let allTypes = Set.fromList (map aConcToType allConcepts) :: Set.Set Type
+        let _ = trace ("\ng_contextInfo:\ntypMap\n"<>tshow typMap<>
+                       "\n\nmultitypologies"<>tshow multitypologies<>
+                       "\n\ndecls"<>tshow decls<>
+                       "\n\nallConcepts"<>tshow allConcepts<>
+                       "\n\nallTypes"<>tshow allTypes) "trace"
         return
           CI
             { ctxiGens = gns,

@@ -51,7 +51,6 @@ import Ampersand.Core.AbstractSyntaxTree
     AProp (..),
     AProps,
     ARelDefault (..),
-    ARelDefaults,
     A_Concept (..),
     A_Concepts,
     A_Context (..),

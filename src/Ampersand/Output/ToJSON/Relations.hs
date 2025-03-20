@@ -6,7 +6,6 @@ module Ampersand.Output.ToJSON.Relations (Relationz) where
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpecAux
 import Ampersand.Output.ToJSON.JSONutils
-import qualified RIO.Set as Set
 
 newtype Relationz = Relationz [RelationJson] deriving (Generic, Show)
 
