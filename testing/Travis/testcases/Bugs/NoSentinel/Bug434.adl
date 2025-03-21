@@ -6,6 +6,7 @@ CONTEXT Bug434 IN DUTCH
 CLASSIFY Dienst ISA Periode
 CLASSIFY Tijdregistratie ISA Periode
 
+-- REPRESENT Dienst TYPE INTEGER
 RELATION dag[Dienst*Dagverantwoording] [UNI]  PRAGMA "" " is onderdeel van dagverantwoording " "" -- [UNI,TOT]
 RELATION dag[Tijdregistratie*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
 

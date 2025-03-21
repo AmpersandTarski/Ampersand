@@ -287,7 +287,7 @@ pCtx2aCtx
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
       interfaces <- traverse (pIfc2aIfc contextInfoPre) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
-      tTypeList <- trace "call calcTechTypes" $ calcTechTypes contextInfoPre interfaces
+      tTypeList <- calcTechTypes contextInfoPre interfaces
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       let contextInfo = contextInfoPre{typeMap = tTypeList} -- enrich contextInfo, so type checking can take place with the correct technical types.
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
@@ -335,8 +335,8 @@ pCtx2aCtx
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
-    where
-      calcTechTypes :: ContextInfo -> [Interface] -> Guarded [(A_Concept,TType)]
+   where
+      calcTechTypes :: ContextInfo -> [Interface] -> Guarded ([A_Concept],[(A_Concept,TType)],[(A_Concept,TType)],[(A_Concept,TType)])
       calcTechTypes contextInfo interfaces =
          do
             -- Concepts that are key in (sub-)interfaces get Object as their technical type
@@ -349,11 +349,7 @@ pCtx2aCtx
             tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
             -- |  Finally, ttypeList tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType.
             --    The list  ttypeList tTypology  has precisely one TType for every concept in this context.
-            trace ("\nobjectByDef\n"<>tshow objectByDef<>
-                   "\n\ntTypeByUser"<>tshow tTypeByUser<>
-                   "\n\ntTypology"<>tshow tTypology<>
-                   "\n\ntresult"<>tshow (ttypeList tTypology)) $
-                  return (ttypeList tTypology)
+            return tTypology
        where
           -- | guardedTTypeByUser combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
           guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
@@ -418,14 +414,14 @@ pCtx2aCtx
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
 
-        let allConcepts = L.nub (map source decls <> map target decls) :: [A_Concept]
+        let allConcepts = L.nub (map source decls <> map target decls <> (Set.toList . concs . map (pClassify2aClassify conceptmap)) allGens) :: [A_Concept]
         let allTypes = Set.fromList (map aConcToType allConcepts) :: Set.Set Type
-        let _ = trace ("\ng_contextInfo:\ntypMap\n"<>tshow typMap<>
-                       "\n\nmultitypologies"<>tshow multitypologies<>
-                       "\n\ndecls"<>tshow decls<>
-                       "\n\nallConcepts"<>tshow allConcepts<>
-                       "\n\nallTypes"<>tshow allTypes) "trace"
         return
+         (  -- trace ("\ng_contextInfo:\ntypMap\n"<>tshow typMap<>
+            --      "\n\nmultitypologies"<>tshow multitypologies<>
+            --      "\n\ndecls"<>tshow decls<>
+            --      "\n\nallConcepts"<>tshow allConcepts<>
+            --      "\n\nallTypes"<>tshow allTypes) 
           CI
             { ctxiGens = gns,
               connectedConcepts = connectConcepts,
@@ -439,7 +435,7 @@ pCtx2aCtx
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
               defaultFormat = deffrmtCtxt
-            }
+            })
         where
           gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
@@ -908,7 +904,7 @@ pCtx2aCtx
               <$> traverse (fn <=< typecheckObjDef ci) l
               <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
               <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-              <* mustBeObject (target objExpr)
+              <* mustBeObject (target objExpr) objExpr -- remove objExpr after diagnosis in issue #1537
             where
               toNonEmptyLabel :: P_BoxItem a -> Text1
               toNonEmptyLabel bi = case obj_PlainName bi of
@@ -934,8 +930,8 @@ pCtx2aCtx
               fn (boxitem, p) = case boxitem of
                 BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
                 BxText {} -> pure boxitem
-              mustBeObject :: A_Concept -> Guarded ()
-              mustBeObject cpt = case techTypeOf ci cpt of
+              -- mustBeObject :: A_Concept -> Guarded ()
+              mustBeObject cpt objExpr = case trace ("techTypeOf in mustBeObject "<>tshow cpt<>" ("<>tshow objExpr<>")\n"<>tshow ci) $ techTypeOf ci cpt of
                 Object -> pure ()
                 tt -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
         where
@@ -997,7 +993,7 @@ pCtx2aCtx
                 addWarnings ws
                   $ case obj' of
                     BxExpr o ->
-                      case techTypeOf ci . target . objExpression $ o of
+                      case (techTypeOf ci . target . objExpression) o of
                         Object ->
                           pure
                             Ifc

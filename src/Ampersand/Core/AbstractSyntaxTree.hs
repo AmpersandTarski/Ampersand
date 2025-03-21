@@ -1469,7 +1469,6 @@ data ContextInfo = CI
 --   there is a chance that this function suffers from bitrot elsewhere. This is why we have the fatals in place.
 techTypeOf :: ContextInfo -> A_Concept -> TType
 techTypeOf ci c =
-  trace (tshow ("techTypeOf ("<>tshow ci<>") "<>tshow c)) $
   case [ tt | (cpt,tt)<-typeMap ci, cpt==c] of
     [tt] -> tt
     []   -> if c==ONE || tshow c=="SESSION" then Object else fatal ("No technical type found for concept " <> fullName c <> tshow (typeMap ci))

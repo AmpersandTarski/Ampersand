@@ -23,8 +23,8 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 genericAndSpecifics :: AClassify -> [(A_Concept, A_Concept)]
-genericAndSpecifics gen = filter (uncurry (/=))
-  $ case gen of -- make sure that no tuples where source and target are equal are returned.
+genericAndSpecifics gen = filter (uncurry (/=)) -- making sure that no tuples of equals are returned.
+  $ case gen of
     Isa {} -> [(genspc gen, gengen gen)]
     IsE {} -> [(genspc gen, g) | g <- NE.toList $ genrhs gen]
 
