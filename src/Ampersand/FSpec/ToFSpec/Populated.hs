@@ -16,7 +16,6 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes hiding (gens)
-import Ampersand.Core.AbstractSyntaxTree (techTypeOf)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE

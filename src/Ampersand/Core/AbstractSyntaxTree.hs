@@ -49,6 +49,7 @@ module Ampersand.Core.AbstractSyntaxTree
     A_RoleRule (..),
     Representation (..),
     TType (..),
+    TTypeInfo(..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
     Signature (..),
@@ -64,7 +65,6 @@ module Ampersand.Core.AbstractSyntaxTree
     mkAtomPair,
     PAtomValue (..),
     ContextInfo (..),
-    techTypeOf,
     showValADL,
     showValSQL,
     showSign,
@@ -1433,19 +1433,18 @@ class HasSignature a where
 
 --  {-# MINIMAL sign #-}
 
--- Convenient data structure to hold information about concepts and their representations
---  in a context.
+-- Convenient data structure to hold information about concepts and their classifications
+-- in a context.
 data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
     -- | A partitioning of all concepts in the context, based on the generalisation relations
     connectedConcepts :: ![[A_Concept]],
-    -- | a list containing all user defined Representations in the context
-    typeMap :: ![(A_Concept,TType)],
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
-    -- | a list of all Representations
+    -- | a list containing all user defined Representations in the context
     reprList :: ![Representation],
+    
     -- | declDisambMap contains all relation declarations and their given types.
     --   The reason it is such a complex type definition is unknown (19-03-2025)
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
@@ -1463,16 +1462,15 @@ data ContextInfo = CI
     defaultFormat :: !PandocFormat
   }
   deriving (Show)
+-- Convenient data structure to hold information about concepts and their technical types
+-- in a context.
+data TTypeInfo = TTypeInfo
+  { -- | a list of all Representations
+    typeMap :: !(A_Concept -> TType)
+    
+  }
+  deriving (Show)
 
--- | This function must be univalent and total.
---   Since the contextInfo is enriched later with the correct (univalent and total) ttype information,
---   there is a chance that this function suffers from bitrot elsewhere. This is why we have the fatals in place.
-techTypeOf :: ContextInfo -> A_Concept -> TType
-techTypeOf ci c =
-  case [ tt | (cpt,tt)<-typeMap ci, cpt==c] of
-    [tt] -> tt
-    []   -> if c==ONE || tshow c=="SESSION" then Object else fatal ("No technical type found for concept " <> fullName c <> tshow (typeMap ci))
-    _    -> fatal $ "Multiple technical types found for concept " <> fullName c
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
