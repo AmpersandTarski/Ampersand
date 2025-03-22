@@ -72,6 +72,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.ADL1.Disambiguate (DisambPrim (..))
+import Ampersand.ADL1.TypeCheckTypes
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree (Type, showWithAliases)
 import Ampersand.Core.ShowAStruct
@@ -481,7 +482,9 @@ mkMultiTTypeError :: [A_Concept] -> [(A_Concept, TType)] -> CtxError
 mkMultiTTypeError part tTypeByUser =
   CTXE OriginUnknown
     $ "Multiple types are defined for the same concept. "
-    <> "You defined "<>T.intercalate ", " [ tshow c<>" as "<>tshow tt | (c,tt)<-tTypeByUser, c `elem` part]<>"."
+    <> "You defined "
+    <> T.intercalate ", " [tshow c <> " as " <> tshow tt | (c, tt) <- tTypeByUser, c `elem` part]
+    <> "."
 
 mkInvariantViolationsError :: (Rule -> AAtomPair -> Text) -> (Rule, AAtomPairs) -> CtxError
 mkInvariantViolationsError applyViolText (r, ps) =
@@ -638,7 +641,7 @@ mustBeOrdered o a b =
         "  and concept " <> showEC b
       ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, TBoxItem)] -> Guarded b
 mustBeOrderedLst o lst =
   Errors
     . pure
@@ -654,32 +657,32 @@ mustBeOrderedLst o lst =
          "  You can do so by using a CLASSIFY statement."
        ]
   where
-    exprOf :: P_BoxItem TermPrim -> Term TermPrim
+    exprOf :: TBoxItem -> Term TermPrim
     exprOf x =
       case x of
-        P_BoxItemTerm {} -> obj_term x
-        P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
+        TBxExpr {} -> tpObjE x
+        TBxText {} -> fatal "How can a type error occur with a TXT field???"
 
-mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
+mustBeOrderedConcLst :: Origin -> (SrcOrTgt, TExpression) -> (SrcOrTgt, TExpression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
   Errors
     . pure
     . CTXE (origin o)
     . T.unlines
-    $ [ "Ambiguous type when matching: " <> tshow p1 <> " of " <> showA e1,
-        " and " <> tshow p2 <> " of " <> showA e2 <> ".",
+    $ [ "Ambiguous type when matching: " <> tshow p1 <> " of " <> showP (tExpression2pTermPrim e1),
+        " and " <> tshow p2 <> " of " <> showP (tExpression2pTermPrim e2) <> ".",
         "  The type can be " <> T.intercalate " or " (map (T.intercalate "/" . map (text1ToText . showWithAliases)) cs),
         "  None of these concepts is known to be the smallest, you may want to add an order between them."
       ]
 
-mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
+mustBeBound :: Origin -> [(SrcOrTgt, TExpression)] -> Guarded a
 mustBeBound o [(p, e)] =
   Errors
     . pure
     . CTXE (origin o)
     . T.unlines
     $ [ "An ambiguity arises in type checking. Be more specific by binding the " <> tshow p <> " of the term",
-        "  " <> showA e <> ".",
+        "  " <> showP (tExpression2pTermPrim e) <> ".",
         "  You could add more types inside the term, or just write",
         "  " <> writeBind e <> "."
       ]
@@ -689,7 +692,7 @@ mustBeBound o lst =
     . CTXE (origin o)
     . T.unlines
     $ [ "An ambiguity arises in type checking. Be more specific in the terms ",
-        "  " <> T.intercalate " and " (map (showA . snd) lst) <> ".",
+        "  " <> T.intercalate " and " (map (showP . tExpression2pTermPrim . snd) lst) <> ".",
         "  You could add more types inside the term, or write:"
       ]
     <> ["  " <> writeBind e | (_, e) <- lst]
@@ -704,11 +707,11 @@ mustBeValidNamePart orig t1 =
         "  the following was found: `" <> tshow t1 <> "`."
       ]
 
-writeBind :: Expression -> Text
-writeBind (ECpl e) =
-  "(" <> showA (EDcV (sign e)) <> " - " <> showA e <> ")"
+writeBind :: TExpression -> Text
+writeBind (TECpl e) =
+  "(" <> showA (EDcV (sign e)) <> " - " <> showP (tExpression2pTermPrim e) <> ")"
 writeBind e =
-  "(" <> showA e <> ") /\\ " <> showA (EDcV (sign e))
+  "(" <> showP (tExpression2pTermPrim e) <> ") /\\ " <> showA (EDcV (sign e))
 
 lexerWarning2Warning :: LexerWarning -> Warning
 lexerWarning2Warning (LexerWarning a b) =

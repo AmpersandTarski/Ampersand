@@ -1241,7 +1241,7 @@ instance ExpressionLike Expression where
   eCps = ECps
   eRad = ERad
   ePrd = EPrd
-
+  eEps = EEps
 instance Flippable Expression where
   flp expr = case expr of
     EEqu (l, r) -> EEqu (flp l, flp r)

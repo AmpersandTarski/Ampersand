@@ -542,6 +542,7 @@ library
       Ampersand.Basics.BuildInfo_Generated
       Ampersand.Prototype.StaticFiles_Generated
   other-modules:
+      Ampersand.ADL1.TypeCheckTypes
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
       Ampersand.Commands.Daemon
