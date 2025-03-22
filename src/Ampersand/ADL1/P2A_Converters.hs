@@ -286,13 +286,11 @@ pCtx2aCtx
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo -- contains the relation declarations
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)
+      tInterfaces <- traverse (pIfc2tIfc contextInfo) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
-      tTypeList <- calcTechTypes contextInfo interfaces
-      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
-      let ttypeInfo :: TTypeInfo
-          ttypeInfo = undefined -- contextInfoPre{typeMap = tTypeList} -- enrich contextInfo, so type checking can take place with the correct technical types.
-          --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
+      ttypeInfo <- calcTechTypes contextInfo tInterfaces
+      uniqueNames "pattern" p_patterns
+      interfaces <- traverse (tIfc2aIfc ttypeInfo) tInterfaces
       pats <- traverse (pPat2aPat ttypeInfo contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
@@ -339,7 +337,7 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
-      calcTechTypes :: ContextInfo -> [Interface] -> Guarded TTypeInfo
+      calcTechTypes :: ContextInfo -> [TInterface] -> Guarded TTypeInfo
       calcTechTypes contextInfo interfaces =
         do
           -- -- Concepts that are key in (sub-)interfaces get Object as their technical type
@@ -663,16 +661,16 @@ pCtx2aCtx
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
-      pBoxItemDisamb2BoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
-      pBoxItemDisamb2BoxItem ci x = fmap fst (typecheckObjDef ci x)
+      pBoxItemDisamb2TBoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded TBoxItem
+      pBoxItemDisamb2TBoxItem ci x = fmap fst (typecheckObjDef ci x)
 
-      pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
-      pViewDef2aViewDef ci x = typecheckViewDef ci tpda
+      pViewDef2aViewDef :: TTypeInfo -> ContextInfo -> P_ViewDef -> Guarded ViewDef
+      pViewDef2aViewDef ti ci x = typecheckViewDef ti ci tpda
         where
           tpda = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) x
 
-      typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
-      typecheckViewDef
+      typecheckViewDef :: TTypeInfo -> ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
+      typecheckViewDef ti
         ci
         o@P_Vd
           { pos = orig,
@@ -707,7 +705,7 @@ pCtx2aCtx
             typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
             typeCheckViewSegment (seqNr, seg) =
               do
-                payload <- typecheckPayload (vsm_load seg)
+                payload <- typecheckPayload ti (vsm_load seg)
                 return
                   ViewSegment
                     { vsmpos = origin seg,
@@ -716,15 +714,16 @@ pCtx2aCtx
                       vsmLoad = payload
                     }
               where
-                typecheckPayload :: P_ViewSegmtPayLoad (TermPrim, DisambPrim) -> Guarded ViewSegmentPayLoad
-                typecheckPayload payload =
+                typecheckPayload :: TTypeInfo -> P_ViewSegmtPayLoad (TermPrim, DisambPrim) -> Guarded ViewSegmentPayLoad
+                typecheckPayload ti payload =
                   case payload of
                     P_ViewExp term ->
                       do
-                        (viewExpr, (srcBounded, _)) <- typecheckTerm ci term
+                        (tviewExpr, (srcBounded, _)) <- typecheckTerm ci term
+                        viewExpr <- tExpr2aExpr ti tviewExpr
                         case userList (conceptMap ci) . toList $ findExact genLattice (flType $ lMeet c (source viewExpr)) of
                           [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
-                          r@(h : _) ->
+                          r@(h : _) -> do
                             if srcBounded || c `elem` r
                               then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
                               else mustBeBound (origin seg) [(Tgt, viewExpr)]
@@ -736,7 +735,10 @@ pCtx2aCtx
       isaC :: A_Concept -> A_Concept -> Bool
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
-      typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
+      tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
+      tExpr2aExpr ti expr = undefined
+
+      typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (TBoxItem, Bool)
       typecheckObjDef ci objDef =
         case objDef of
           P_BoxItemTerm
@@ -766,7 +768,7 @@ pCtx2aCtx
                     (Just _, Just P_InterfaceRef {si_isLink = False}) ->
                       Errors . pure $ mkCrudForRefInterfaceError orig
                     _ -> pure ()
-                typeCheckViewAnnotation :: Expression -> Maybe Name -> Guarded ()
+                typeCheckViewAnnotation :: TExpression -> Maybe Name -> Guarded ()
                 typeCheckViewAnnotation _ Nothing = pure ()
                 typeCheckViewAnnotation objExpr (Just viewId) =
                   case lookupView viewId of
@@ -781,16 +783,17 @@ pCtx2aCtx
                                 . pure
                                 $ mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                     Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
+                obj :: Cruds -> (TExpression, b) -> Maybe TSubInterface -> (TBoxItem, b)
                 obj crud (e, sr) s =
-                  ( BxExpr
-                      ObjectDef
-                        { objPlainName = nm,
-                          objlbl = lbl',
-                          objPos = orig,
-                          objExpression = e,
-                          objcrud = crud,
-                          objmView = mView,
-                          objmsub = s
+                  ( TBxExpr
+                      TObjectDef
+                        { tobjPlainName = nm,
+                          tobjlbl = lbl',
+                          tobjPos = orig,
+                          tobjExpression = e,
+                          tobjcrud = crud,
+                          tobjmView = mView,
+                          tobjmsub = s
                         },
                     sr
                   )
@@ -800,15 +803,15 @@ pCtx2aCtx
               box_txt = str
             } ->
               pure
-                ( BxText
-                    { boxPlainName = nm,
-                      boxpos = orig,
-                      boxtxt = str
+                ( TBxText
+                    { tboxPlainName = nm,
+                      tboxpos = orig,
+                      tboxtxt = str
                     },
                   True
                 )
 
-      pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
+      pCruds2aCruds :: TExpression -> Maybe P_Cruds -> Guarded Cruds
       pCruds2aCruds expr mCrud =
         case mCrud of
           Nothing -> mostLiberalCruds (Origin "Default for Cruds") Nothing
@@ -882,13 +885,13 @@ pCtx2aCtx
                      ]
       pSubi2aSubi ::
         ContextInfo ->
-        Expression -> -- Expression of the surrounding
+        TExpression -> -- Expression of the surrounding
         Bool -> -- Whether the surrounding is bounded
         P_BoxItem a -> -- name of where the error occured!
         P_SubIfc (TermPrim, DisambPrim) -> -- Subinterface to check
         Guarded
-          ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
-            SubInterface -- the subinterface
+          ( TExpression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
+            TSubInterface -- the subinterface
           )
       pSubi2aSubi ci objExpr b o x =
         case x of
@@ -903,11 +906,11 @@ pCtx2aCtx
               objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
               return
                 ( objExprEps,
-                  InterfaceRef
+                  TInterfaceRef
                     { pos = origin x,
-                      siConcept = target objExpr,
-                      siIsLink = si_isLink x,
-                      siIfcId = ifcId
+                      tsiConcept = target objExpr,
+                      tsiIsLink = si_isLink x,
+                      tsiIfcId = ifcId
                     }
                 )
           P_Box {} ->
@@ -927,27 +930,27 @@ pCtx2aCtx
                 Just _ -> True
               l :: [P_BoxItem (TermPrim, DisambPrim)]
               l = si_box x
-              build :: [BoxItem] -> (Expression, SubInterface)
+              build :: [TBoxItem] -> (TExpression, TSubInterface)
               build lst =
                 ( objExpr,
-                  Box
+                  TBox
                     { pos = origin x,
-                      siConcept = target objExpr,
-                      siHeader = si_header x,
-                      siObjs = lst
+                      tsiConcept = target objExpr,
+                      tsiHeader = si_header x,
+                      tsiObjs = lst
                     }
                 )
-              fn :: (BoxItem, Bool) -> Guarded BoxItem
+              fn :: (TBoxItem, Bool) -> Guarded TBoxItem
               fn (boxitem, p) = case boxitem of
-                BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
-                BxText {} -> pure boxitem
+                TBxExpr {} -> TBxExpr <$> matchWith (tobjE boxitem, p)
+                TBxText {} -> pure boxitem
         where
-          matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
+          matchWith :: (TObjectDef, Bool) -> Guarded TObjectDef
           matchWith (ojd, exprBound) =
             if b || exprBound
-              then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
-                [] -> mustBeOrderedLst x [(source (objExpression ojd), Src, aObjectDef2pObjectDef $ BxExpr ojd)]
-                (r : _) -> pure (ojd {objExpression = addEpsilonLeft genLattice r (objExpression ojd)})
+              then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . tobjExpression $ ojd of
+                [] -> mustBeOrderedLst x [(source (tobjExpression ojd), Src, aObjectDef2pObjectDef $ TBxExpr ojd)]
+                (r : _) -> pure (ojd {tobjExpression = addEpsilonLeft genLattice r (tobjExpression ojd)})
               else mustBeBound (origin ojd) [(Src, objExpression ojd), (Tgt, objExpr)]
           warnings :: [Warning]
           warnings =
@@ -965,7 +968,7 @@ pCtx2aCtx
       --   Object -> pure ()
       --   tt -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
 
-      typeCheckInterfaceRef :: P_BoxItem a -> Name -> Expression -> Expression -> Guarded Expression
+      typeCheckInterfaceRef :: P_BoxItem a -> Name -> TExpression -> TExpression -> Guarded TExpression
       typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr =
         let expTarget = target objExpr
             ifcSource = source ifcExpr
@@ -999,11 +1002,11 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
-      pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      pIfc2aIfc ci (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2BoxItem ci objDisamb
+      pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded TInterface
+      pIfc2tIfc ci (pIfc, objDisamb) =
+        build $ pBoxItemDisamb2TBoxItem ci objDisamb
         where
-          build :: Guarded BoxItem -> Guarded Interface
+          build :: Guarded TBoxItem -> Guarded TInterface
           build gb =
             case gb of
               Errors x -> Errors x
@@ -1012,19 +1015,19 @@ pCtx2aCtx
                   $ case obj' of
                     BxExpr o ->
                       pure
-                        Ifc
-                          { ifcIsAPI = ifc_IsAPI pIfc,
-                            ifcname = name pIfc,
-                            ifclbl = mLabel pIfc,
-                            ifcRoles = ifc_Roles pIfc,
-                            ifcObj =
+                        TInterface
+                          { tifcIsAPI = ifc_IsAPI pIfc,
+                            tifcname = name pIfc,
+                            tifclbl = mLabel pIfc,
+                            tifcRoles = ifc_Roles pIfc,
+                            tifcObj =
                               o
                                 { objPlainName = Just . fullName1 . name $ pIfc,
                                   objlbl = mLabel pIfc
                                 },
-                            ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-                            ifcPos = origin pIfc,
-                            ifcPurpose = ifc_Prp pIfc
+                            tifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+                            tifcPos = origin pIfc,
+                            tifcPurpose = ifc_Prp pIfc
                           }
                     BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
@@ -1288,56 +1291,54 @@ leastConcept genLattice c c' =
   where
     leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType c'))
 
-addEpsilonLeft, addEpsilonRight :: Op1EqualitySystem Type -> A_Concept -> Expression -> Expression
+addEpsilonLeft, addEpsilonRight :: ExpressionLike a => Op1EqualitySystem Type -> A_Concept -> a -> a
 addEpsilonLeft genLattice a e =
-  if a == source e then e else EEps (leastConcept genLattice (source e) a) (Sign a (source e)) .:. e
+  if a == source e then e else eEps (leastConcept genLattice (source e) a) (Sign a (source e)) .:. e
 addEpsilonRight genLattice a e =
-  if a == target e then e else e .:. EEps (leastConcept genLattice (target e) a) (Sign (target e) a)
+  if a == target e then e else e .:. eEps (leastConcept genLattice (target e) a) (Sign (target e) a)
 
-addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> Expression -> Expression
+addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> TExpression -> TExpression
 addEpsilon genLattice s t e =
   addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
 
-typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
+typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (TExpression, (Bool, Bool))
 typecheckTerm ci tct =
   case tct of
     Prim (t, v) ->
       ( \x -> case x of
-          EMp1 s c ->
-            (x, (True, True))
-              <$ pAtomValue2aAtomValue (tTypOf c) c s
-          EBin oper cpt ->
-            if isValidOperator
-              then pure (x, (True, True))
-              else Errors . pure $ mkOperatorError (origin t) oper cpt typ
-            where
-              typ = tTypOf cpt
-              isValidOperator :: Bool
-              isValidOperator =
-                case oper of
-                  LessThan -> hasORD typ
-                  GreaterThan -> hasORD typ
-                  LessThanOrEqual -> hasEQ typ && hasORD typ
-                  GreaterThanOrEqual -> hasEQ typ && hasORD typ
-                where
-                  hasEQ, hasORD :: TType -> Bool
-                  hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
-                  hasEQ _ = True
-                  hasORD ttyp = case ttyp of
-                    Alphanumeric -> True
-                    BigAlphanumeric -> True
-                    HugeAlphanumeric -> True
-                    Password -> False
-                    Binary -> False
-                    BigBinary -> False
-                    HugeBinary -> False
-                    Date -> True
-                    DateTime -> True
-                    Boolean -> False
-                    Integer -> True
-                    Float -> True
-                    Object -> False
-                    TypeOfOne -> True
+          TEMp1 {} -> pure (x, (True, True))
+          TEBin {} -> pure (x, (True, True))
+          -- if isValidOperator
+          --   then pure (x, (True, True))
+          --   else Errors . pure $ mkOperatorError (origin t) oper cpt typ
+          -- where
+          --   typ = tTypOf cpt
+          --   isValidOperator :: Bool
+          --   isValidOperator =
+          --     case oper of
+          --       LessThan -> hasORD typ
+          --       GreaterThan -> hasORD typ
+          --       LessThanOrEqual -> hasEQ typ && hasORD typ
+          --       GreaterThanOrEqual -> hasEQ typ && hasORD typ
+          --     where
+          --       hasEQ, hasORD :: TType -> Bool
+          --       hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
+          --       hasEQ _ = True
+          --       hasORD ttyp = case ttyp of
+          --         Alphanumeric -> True
+          --         BigAlphanumeric -> True
+          --         HugeAlphanumeric -> True
+          --         Password -> False
+          --         Binary -> False
+          --         BigBinary -> False
+          --         HugeBinary -> False
+          --         Date -> True
+          --         DateTime -> True
+          --         Boolean -> False
+          --         Integer -> True
+          --         Float -> True
+          --         Object -> False
+          --         TypeOfOne -> True
           _ ->
             return
               ( x,
@@ -1366,8 +1367,8 @@ typecheckTerm ci tct =
   where
     cptMap :: P_Concept -> A_Concept
     cptMap = conceptMap ci
---    tTypOf :: A_Concept -> TType
---    tTypOf = techTypeOf ci
+    --    tTypOf :: A_Concept -> TType
+    --    tTypOf = techTypeOf ci
     genLattice = gens_efficient ci
     o = origin (fmap fst tct)
     tt = typecheckTerm ci
@@ -1388,25 +1389,25 @@ typecheckTerm ci tct =
     --   a way to do this, is by using (V[type] /\ thingToBeBound)
     -- More details about generalizable types can be found by looking at "deriv1".
     binary ::
-      (Expression -> Expression -> Expression) -> -- combinator
+      (TExpression -> TExpression -> TExpression) -> -- combinator
       ( TT
           ( SrcOrTgt,
-            ( (Expression, (Bool, Bool)),
-              (Expression, (Bool, Bool))
+            ( (TExpression, (Bool, Bool)),
+              (TExpression, (Bool, Bool))
             ) ->
-            (Expression, (Bool, Bool))
+            (TExpression, (Bool, Bool))
           ),
         TT
           ( SrcOrTgt,
-            ( (Expression, (Bool, Bool)),
-              (Expression, (Bool, Bool))
+            ( (TExpression, (Bool, Bool)),
+              (TExpression, (Bool, Bool))
             ) ->
-            (Expression, (Bool, Bool))
+            (TExpression, (Bool, Bool))
           )
       ) -> -- simple instruction on how to derive the type
-      (Expression, (Bool, Bool)) ->
-      (Expression, (Bool, Bool)) -> -- expressions to feed into the combinator after translation
-      Guarded (Expression, (Bool, Bool))
+      (TExpression, (Bool, Bool)) ->
+      (TExpression, (Bool, Bool)) -> -- expressions to feed into the combinator after translation
+      Guarded (TExpression, (Bool, Bool))
     binary cbn tp e1 e2 = wrap (fst e1, fst e2) <$> deriv tp (e1, e2)
       where
         wrap (expr1, expr2) ((src, b1), (tgt, b2)) = (cbn (addEpsilon genLattice src tgt expr1) (addEpsilon genLattice src tgt expr2), (b1, b2))
@@ -1676,3 +1677,173 @@ getAConcept Tgt = target
 getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
+
+-- a data definition for the type of an expression, but without knowledge of the TTypes
+data TExpression
+  = -- | equivalence             =
+    TEEqu !(TExpression, TExpression)
+  | -- | inclusion               |-
+    TEInc !(TExpression, TExpression)
+  | -- | intersection            /\
+    TEIsc !(TExpression, TExpression)
+  | -- | union                   \/
+    TEUni !(TExpression, TExpression)
+  | -- | difference              -
+    TEDif !(TExpression, TExpression)
+  | -- | left residual           /
+    TELrs !(TExpression, TExpression)
+  | -- | right residual          \
+    TERrs !(TExpression, TExpression)
+  | -- | diamond                 <>
+    TEDia !(TExpression, TExpression)
+  | -- | composition             ;
+    TECps !(TExpression, TExpression)
+  | -- | relative addition       !
+    TERad !(TExpression, TExpression)
+  | -- | cartesian product       *
+    TEPrd !(TExpression, TExpression)
+  | -- | Rfx.Trn closure         *  (Kleene star)
+    TEKl0 !TExpression
+  | -- | Transitive closure      +  (Kleene plus)
+    TEKl1 !TExpression
+  | -- | conversion (flip, wok)  ~
+    TEFlp !TExpression
+  | -- | Complement
+    TECpl !TExpression
+  | -- | bracketed expression ( ... )
+    TEBrk !TExpression
+  | -- | simple relation
+    TEDcD !Relation
+  | -- | Identity relation
+    TEDcI !A_Concept
+  | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
+    TEEps !A_Concept !Signature
+  | -- | relation based on a simple binary operator  (e.g. x > y)
+    TEBin !PBinOp !A_Concept
+  | -- | Cartesian product relation
+    TEDcV !Signature
+  | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+    TEMp1 !PAtomValue !A_Concept
+  deriving (Eq, Ord, Show, Typeable)
+
+data TInterface = TInterface
+  { -- | is this interface of type API?
+    tifcIsAPI :: !Bool,
+    -- | The name of the interface
+    tifcname :: !Name,
+    tifclbl :: !(Maybe Label),
+    -- | All roles for which an interface is available (empty means: available for all roles)
+    tifcRoles :: ![Role],
+    -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
+    tifcObj :: !TObjectDef,
+    -- | All conjuncts that must be evaluated after a transaction
+    tifcConjuncts :: ![Conjunct],
+    -- | The position in the file (filename, line- and column number)
+    tifcPos :: !Origin,
+    -- | The purpose of the interface
+    tifcPurpose :: !Text
+  }
+  deriving (Show)
+
+data TObjectDef = TObjectDef
+  { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    tobjPlainName :: !(Maybe Text1),
+    tobjlbl :: !(Maybe Label),
+    -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
+    tobjPos :: !Origin,
+    -- | this term describes the instances of this object, related to their context.
+    tobjExpression :: !TExpression,
+    -- | CRUD as defined by the user
+    tobjcrud :: !Cruds,
+    -- | The view that should be used for this object
+    tobjmView :: !(Maybe Name),
+    -- | the fields, which are object definitions themselves.
+    tobjmsub :: !(Maybe TSubInterface)
+  }
+  deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
+
+data TSubInterface
+  = TBox
+      { pos :: !Origin,
+        tsiConcept :: !A_Concept,
+        tsiHeader :: !HTMLtemplateCall,
+        tsiObjs :: ![TBoxItem]
+      }
+  | TInterfaceRef
+      { pos :: !Origin,
+        tsiConcept :: !A_Concept,
+        tsiIsLink :: !Bool,
+        tsiIfcId :: !Name -- id of the interface that is referenced to
+      }
+  deriving (Show)
+
+data TBoxItem
+  = TBxExpr {tobjE :: !TObjectDef}
+  | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    TBxText
+      { tboxPlainName :: !(Maybe Text1),
+        tboxpos :: !Origin,
+        tboxtxt :: !Text
+      }
+  deriving (Show)
+
+-- | Function to determine that the term
+--   could be used to create a new atom in its target concept
+isFitForCrudC :: TExpression -> Bool
+isFitForCrudC expr =
+  case expr of
+    TEFlp e -> isFitForCrudC e
+    TEBrk e -> isFitForCrudC e
+    TECps (TEEps _ _, e) -> isFitForCrudC e
+    TECps (e, TEEps _ _) -> isFitForCrudC e
+    TECps (_, _) -> True
+    TEEps _ _ -> False
+    TEMp1 {} -> False
+    _ -> True
+
+-- EDcI{} -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
+-- | Function to determine that the term
+--   could be used to read the population of its target concept
+isFitForCrudR :: TExpression -> Bool
+isFitForCrudR _ = True
+
+-- | Function to determine that the term
+--   could be used to insert or delete a pair in the population of a relation
+isFitForCrudU :: TExpression -> Bool
+isFitForCrudU expr =
+  case expr of
+    EDcD {} -> True
+    EFlp e -> isFitForCrudU e
+    EBrk e -> isFitForCrudU e
+    ECps (EEps _ _, e) -> isFitForCrudU e
+    ECps (e, EEps _ _) -> isFitForCrudU e
+    ECps (e, EDcI {}) -> isFitForCrudU e
+    ECps (_, _) -> False
+    _ -> False
+
+-- | Function to determine that the term is simple, that it
+--   could be used to update the population of a relation
+isFitForCrudD :: TExpression -> Bool
+isFitForCrudD _ = True
+
+tObjectDef2pObjectDef :: TBoxItem -> P_BoxBodyElement
+tObjectDef2pObjectDef x =
+  case x of
+    TBxExpr oDef ->
+      P_BoxItemTerm
+        { pos = origin oDef,
+          obj_PlainName = tobjPlainName oDef,
+          obj_lbl = tobjlbl oDef,
+          obj_term = aExpression2pTermPrim (tobjExpression oDef),
+          obj_crud = case tobjmsub oDef of
+            Just (TInterfaceRef _ _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
+            _ -> Just $ aCruds2pCruds (tobjcrud oDef),
+          obj_mView = tobjmView oDef,
+          obj_msub = fmap aSubIfc2pSubIfc (tobjmsub oDef)
+        }
+    TBxText {} ->
+      P_BxTxt
+        { obj_PlainName = tboxPlainName x,
+          pos = origin x,
+          box_txt = tboxtxt x
+        }

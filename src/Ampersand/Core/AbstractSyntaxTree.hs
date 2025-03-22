@@ -40,6 +40,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Purpose (..),
     ExplObj (..),
     Expression (..),
+    ExpressionLike(..),
     getExpressionRelation,
     A_Concept (..),
     A_Concepts,
@@ -49,7 +50,7 @@ module Ampersand.Core.AbstractSyntaxTree
     A_RoleRule (..),
     Representation (..),
     TType (..),
-    TTypeInfo(..),
+    TTypeInfo (..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
     Signature (..),
@@ -72,17 +73,6 @@ module Ampersand.Core.AbstractSyntaxTree
     Type (..),
     typeOrConcept,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
-    (.==.),
-    (.|-.),
-    (./\.),
-    (.\/.),
-    (.-.),
-    (./.),
-    (.\.),
-    (.<>.),
-    (.:.),
-    (.!.),
-    (.*.),
     makeConceptMap,
     ConceptMap,
   )
@@ -1151,7 +1141,6 @@ instance Unique (PairViewSegment Expression) where
     where
       readable = tshow x
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
 infixl 1 .==. -- equivalence
 
@@ -1176,65 +1165,82 @@ infixl 8 .!. -- relative addition
 infixl 8 .*. -- cartesian product
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-l .==. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EEqu (l, r)
+class (HasSignature a,Show a) => ExpressionLike a where
+  eEqu,eInc,eIsc,eUni,eDif,eLrs,eRrs,eDia,eCps,eRad,ePrd :: (a,a) -> a
+  eEps :: A_Concept -> Signature -> a
+  (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: a -> a -> a
 
-l .|-. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EInc (l, r)
+  l .==. r =
+    if source l /= source r || target l /= target r
+      then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eEqu (l, r)
 
-l ./\. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EIsc (l, r)
+  l .|-. r =
+    if source l /= source r || target l /= target r
+      then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eInc (l, r)
 
-l .\/. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EUni (l, r)
+  l ./\. r =
+    if source l /= source r || target l /= target r
+      then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eIsc (l, r)
 
-l .-. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EDif (l, r)
+  l .\/. r =
+    if source l /= source r || target l /= target r
+      then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eUni (l, r)
 
-l ./. r =
-  if target l /= target r
-    then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ELrs (l, r)
+  l .-. r =
+    if source l /= source r || target l /= target r
+      then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eDif (l, r)
 
-l .\. r =
-  if source l /= source r
-    then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ERrs (l, r)
+  l ./. r =
+    if target l /= target r
+      then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eLrs (l, r)
 
-l .<>. r =
-  if source r /= target l
-    then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EDia (l, r)
+  l .\. r =
+    if source l /= source r
+      then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eRrs (l, r)
 
-l .:. r =
-  if source r /= target l
-    then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ECps (l, r)
+  l .<>. r =
+    if source r /= target l
+      then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eDia (l, r)
 
-l .!. r =
-  if source r /= target l
-    then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ERad (l, r)
+  l .:. r =
+    if source r /= target l
+      then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eCps (l, r)
 
-l .*. r =
-  -- SJC: always fits! No fatal here..
-  EPrd (l, r)
+  l .!. r =
+    if source r /= target l
+      then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
+      else eRad (l, r)
+
+  l .*. r =
+    -- SJC: always fits! No fatal here..
+    ePrd (l, r)
 
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
    does not. In that case, -(r!s) (with target r=Student and source s=Employee) is defined, but -r;-s is not.
    So in order to let -(r!s) be equal to -r;-s we must not check for the existence of these types, for the Rotterdam paper already shows that this is fine.
 -}
+instance ExpressionLike Expression where
+  eEqu = EEqu
+  eInc = EInc
+  eIsc = EIsc
+  eUni = EUni
+  eDif = EDif
+  eLrs = ELrs
+  eRrs = ERrs
+  eDia = EDia
+  eCps = ECps
+  eRad = ERad
+  ePrd = EPrd
 
 instance Flippable Expression where
   flp expr = case expr of
@@ -1444,7 +1450,6 @@ data ContextInfo = CI
     multiKernels :: ![Typology],
     -- | a list containing all user defined Representations in the context
     reprList :: ![Representation],
-    
     -- | declDisambMap contains all relation declarations and their given types.
     --   The reason it is such a complex type definition is unknown (19-03-2025)
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
@@ -1462,15 +1467,14 @@ data ContextInfo = CI
     defaultFormat :: !PandocFormat
   }
   deriving (Show)
+
 -- Convenient data structure to hold information about concepts and their technical types
 -- in a context.
 data TTypeInfo = TTypeInfo
   { -- | a list of all Representations
     typeMap :: !(A_Concept -> TType)
-    
   }
   deriving (Show)
-
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE

@@ -154,6 +154,7 @@ data FSpec = FSpec
     fcontextInfo :: !ContextInfo,
     ftypologies :: ![Typology],
     typologyOf :: !(A_Concept -> Typology),
+    ttypeOf :: !TTypeInfo,
     largestConcept :: !(A_Concept -> A_Concept),
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
