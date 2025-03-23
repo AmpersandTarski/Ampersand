@@ -17,6 +17,7 @@ module Ampersand.Core.ParseTree
     mergeRels,
     Term (..),
     TermPrim (..),
+    toTermPrim,
     P_NamedRel (..),
     PBinOp (..),
     binaryFunction,
@@ -675,6 +676,26 @@ instance Traversable Term where
       PBrk o a -> PBrk o <$> f a
     where
       f = traverse f'
+
+toTermPrim :: Term (TermPrim, a) -> Term TermPrim
+toTermPrim term = case term of
+  Prim (a, _) -> Prim a
+  PEqu o a b -> PEqu o (toTermPrim a) (toTermPrim b)
+  PInc o a b -> PInc o (toTermPrim a) (toTermPrim b)
+  PIsc o a b -> PIsc o (toTermPrim a) (toTermPrim b)
+  PUni o a b -> PUni o (toTermPrim a) (toTermPrim b)
+  PDif o a b -> PDif o (toTermPrim a) (toTermPrim b)
+  PLrs o a b -> PLrs o (toTermPrim a) (toTermPrim b)
+  PRrs o a b -> PRrs o (toTermPrim a) (toTermPrim b)
+  PDia o a b -> PDia o (toTermPrim a) (toTermPrim b)
+  PCps o a b -> PCps o (toTermPrim a) (toTermPrim b)
+  PRad o a b -> PRad o (toTermPrim a) (toTermPrim b)
+  PPrd o a b -> PPrd o (toTermPrim a) (toTermPrim b)
+  PKl0 o a -> PKl0 o (toTermPrim a)
+  PKl1 o a -> PKl1 o (toTermPrim a)
+  PFlp o a -> PFlp o (toTermPrim a)
+  PCpl o a -> PCpl o (toTermPrim a)
+  PBrk o a -> PBrk o (toTermPrim a)
 
 instance Functor P_SubIfc where fmap = fmapDefault
 

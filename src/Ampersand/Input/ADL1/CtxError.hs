@@ -83,6 +83,7 @@ import Data.Typeable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import Text.Parsec
+import Ampersand.Core.ParseTree (toTermPrim)
 
 data CtxError
   = CTXE Origin Text -- SJC: I consider it ill practice to export CTXE, see remark at top
@@ -641,7 +642,7 @@ mustBeOrdered o a b =
         "  and concept " <> showEC b
       ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, TBoxItem)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, TBoxItem (TermPrim, DisambPrim))] -> Guarded b
 mustBeOrderedLst o lst =
   Errors
     . pure
@@ -657,10 +658,10 @@ mustBeOrderedLst o lst =
          "  You can do so by using a CLASSIFY statement."
        ]
   where
-    exprOf :: TBoxItem -> Term TermPrim
+    exprOf :: TBoxItem (TermPrim, DisambPrim) -> Term TermPrim
     exprOf x =
       case x of
-        TBxExpr {} -> tpObjE x
+        TBxExpr {} -> toTermPrim (tpObjE x)
         TBxText {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, TExpression) -> (SrcOrTgt, TExpression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

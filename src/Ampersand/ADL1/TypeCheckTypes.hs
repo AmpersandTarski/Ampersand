@@ -11,7 +11,7 @@ module Ampersand.ADL1.TypeCheckTypes
     isFitForCrudU,
     isFitForCrudD,
     tObjectDef2pObjectDef,
-    tExpression2pTermPrim
+    tExpression2pTermPrim,
   )
 where
 
@@ -69,7 +69,7 @@ data TExpression
     TEMp1 !PAtomValue !A_Concept
   deriving (Eq, Ord, Show, Typeable)
 
-data TInterface = TInterface
+data TInterface a = TInterface
   { -- | is this interface of type API?
     tifcIsAPI :: !Bool,
     -- | The name of the interface
@@ -78,7 +78,7 @@ data TInterface = TInterface
     -- | All roles for which an interface is available (empty means: available for all roles)
     tifcRoles :: ![Role],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
-    tifcObj :: !TObjectDef,
+    tifcObj :: !(TObjectDef a),
     -- | All conjuncts that must be evaluated after a transaction
     tifcConjuncts :: ![Conjunct],
     -- | The position in the file (filename, line- and column number)
@@ -88,7 +88,7 @@ data TInterface = TInterface
   }
   deriving (Show)
 
-data TObjectDef = TObjectDef
+data TObjectDef a = TObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     tobjPlainName :: !(Maybe Text1),
     tobjlbl :: !(Maybe Label),
@@ -101,18 +101,19 @@ data TObjectDef = TObjectDef
     -- | The view that should be used for this object
     tobjmView :: !(Maybe Name),
     -- | the fields, which are object definitions themselves.
-    tobjmsub :: !(Maybe TSubInterface)
+    tobjmsub :: !(Maybe (TSubInterface a))
   }
   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
-instance Traced TObjectDef where
+
+instance Traced (TObjectDef a) where
   origin = tobjPos
 
-data TSubInterface
+data TSubInterface a
   = TBox
       { pos :: !Origin,
         tsiConcept :: !A_Concept,
         tsiHeader :: !HTMLtemplateCall,
-        tsiObjs :: ![TBoxItem]
+        tsiObjs :: ![TBoxItem a]
       }
   | TInterfaceRef
       { pos :: !Origin,
@@ -122,11 +123,9 @@ data TSubInterface
       }
   deriving (Show)
 
-data TBoxItem
+data TBoxItem a
   = TBxExpr
-      { tobjE :: !TObjectDef,
-        tpObjE :: !(Term TermPrim), --hold the object expression for error messages
-        tpSubs :: !(Maybe (P_SubIfc TermPrim))
+      { tobjE :: !(TObjectDef a)
       }
   | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     TBxText
@@ -135,10 +134,12 @@ data TBoxItem
         tboxtxt :: !Text
       }
   deriving (Show)
-instance Traced TBoxItem where
+
+instance Traced (TBoxItem a) where
   origin x = case x of
-    TBxExpr o _ _ -> origin o
+    TBxExpr o -> origin o
     TBxText _ p _ -> p
+
 -- | Function to determine that the term
 --   could be used to create a new atom in its target concept
 isFitForCrudC :: TExpression -> Bool
@@ -179,10 +180,10 @@ isFitForCrudU expr =
 isFitForCrudD :: TExpression -> Bool
 isFitForCrudD _ = True
 
-tObjectDef2pObjectDef :: TBoxItem -> P_BoxBodyElement
+tObjectDef2pObjectDef :: TBoxItem TermPrim -> P_BoxBodyElement
 tObjectDef2pObjectDef x =
   case x of
-    TBxExpr oDef pterm pSubs->
+    TBxExpr oDef ->
       P_BoxItemTerm
         { pos = origin oDef,
           obj_PlainName = tobjPlainName oDef,
@@ -212,8 +213,8 @@ tExpression2pTermPrim expr =
     TELrs (l, r) -> PLrs o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
     TERrs (l, r) -> PRrs o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
     TEDia (l, r) -> PDia o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
-    TECps (TEEps{}, r) -> tExpression2pTermPrim r
-    TECps (l,TEEps{}) -> tExpression2pTermPrim l
+    TECps (TEEps {}, r) -> tExpression2pTermPrim r
+    TECps (l, TEEps {}) -> tExpression2pTermPrim l
     TECps (l, r) -> PCps o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
     TERad (l, r) -> PRad o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
     TEPrd (l, r) -> PPrd o (tExpression2pTermPrim l) (tExpression2pTermPrim r)

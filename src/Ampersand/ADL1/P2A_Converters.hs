@@ -338,7 +338,7 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
-      calcTechTypes :: ContextInfo -> [TInterface] -> Guarded TTypeInfo
+      calcTechTypes :: ContextInfo -> [TInterface a] -> Guarded TTypeInfo
       calcTechTypes contextInfo interfaces =
         do
           -- -- Concepts that are key in (sub-)interfaces get Object as their technical type
@@ -555,7 +555,7 @@ pCtx2aCtx
         [ (ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc)
           | ifc <- p_interfaces
         ]
-      tIfc2aIfc :: TTypeInfo -> TInterface -> Guarded Interface
+      tIfc2aIfc :: TTypeInfo -> TInterface (TermPrim, DisambPrim)-> Guarded Interface
       tIfc2aIfc = undefined
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
@@ -663,7 +663,7 @@ pCtx2aCtx
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
-      pBoxItemDisamb2TBoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded TBoxItem
+      pBoxItemDisamb2TBoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (TBoxItem (TermPrim, DisambPrim))
       pBoxItemDisamb2TBoxItem ci x = fmap fst (typecheckObjDef ci x)
 
       pViewDef2aViewDef :: TTypeInfo -> ContextInfo -> P_ViewDef -> Guarded ViewDef
@@ -728,7 +728,7 @@ pCtx2aCtx
                           r@(h : _) -> do
                             if srcBounded || c `elem` r
                               then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
-                              else mustBeBound (origin seg) [(Tgt, viewExpr)]
+                              else mustBeBound (origin seg) [(Tgt, tviewExpr)]
                     P_ViewText str -> pure $ ViewText str
             c = mustBeConceptBecauseMath ci (pConcToType (vd_cpt o))
 
@@ -740,7 +740,7 @@ pCtx2aCtx
       tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
       tExpr2aExpr ti expr = undefined
 
-      typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (TBoxItem, Bool)
+      typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (TBoxItem (TermPrim, DisambPrim), Bool)
       typecheckObjDef ci objDef =
         case objDef of
           P_BoxItemTerm
@@ -785,7 +785,7 @@ pCtx2aCtx
                                 . pure
                                 $ mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                     Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
-                obj :: Cruds -> (TExpression, b) -> Maybe TSubInterface -> (TBoxItem, b)
+                obj :: Cruds -> (TExpression, b) -> Maybe (TSubInterface a)-> (TBoxItem a, b)
                 obj crud (e, sr) s =
                   ( TBxExpr
                       TObjectDef
@@ -796,7 +796,7 @@ pCtx2aCtx
                           tobjcrud = crud,
                           tobjmView = mView,
                           tobjmsub = s
-                        },
+                        } tviewExpr a,
                     sr
                   )
           P_BxTxt
@@ -893,7 +893,7 @@ pCtx2aCtx
         P_SubIfc (TermPrim, DisambPrim) -> -- Subinterface to check
         Guarded
           ( TExpression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
-            TSubInterface -- the subinterface
+            TSubInterface a -- the subinterface
           )
       pSubi2tSubi ci objExpr b o x =
         case x of
@@ -932,7 +932,7 @@ pCtx2aCtx
                 Just _ -> True
               l :: [P_BoxItem (TermPrim, DisambPrim)]
               l = si_box x
-              build :: [TBoxItem] -> (TExpression, TSubInterface)
+              build :: [TBoxItem a] -> (TExpression, TSubInterface a)
               build lst =
                 ( objExpr,
                   TBox
@@ -942,12 +942,12 @@ pCtx2aCtx
                       tsiObjs = lst
                     }
                 )
-              fn :: (TBoxItem, Bool) -> Guarded TBoxItem
+              fn :: (TBoxItem a, Bool) -> Guarded (TBoxItem a)
               fn (boxitem, p) = case boxitem of
                 TBxExpr {} -> TBxExpr <$> matchWith (tobjE boxitem, p)
                 TBxText {} -> pure boxitem
         where
-          matchWith :: (TObjectDef, Bool) -> Guarded TObjectDef
+          matchWith :: (TObjectDef a, Bool) -> Guarded (TObjectDef a)
           matchWith (ojd, exprBound) =
             if b || exprBound
               then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . tobjExpression $ ojd of
@@ -1004,11 +1004,11 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
-      pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded TInterface
+      pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded (TInterface a)
       pIfc2tIfc ci (pIfc, objDisamb) =
         build $ pBoxItemDisamb2TBoxItem ci objDisamb
         where
-          build :: Guarded TBoxItem -> Guarded TInterface
+          build :: Guarded (TBoxItem a)-> Guarded (TInterface a)
           build gb =
             case gb of
               Errors x -> Errors x
