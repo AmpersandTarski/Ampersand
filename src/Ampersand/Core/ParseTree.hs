@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Ampersand.Core.ParseTree
   ( P_Context (..),
@@ -600,6 +601,18 @@ data TermPrim
   | -- | a named relation
     PNamedR !P_NamedRel
   deriving (Show) -- For QuickCheck error messages only!
+
+instance Eq (Term TermPrim) where
+  a == b = compare a b == EQ
+
+instance Ord (Term TermPrim) where
+  -- !!!!!!!!!!!!!!!!! NOTE: There should be no reason to compare TermPrim.
+  --      However, because of issue #1537 there was a need to add Term TermPrim
+  --      to the newly introduced TExpression. Since that addition must not
+  --      influence the ordering of TExpression, we decided to make all
+  --      Term Termprim equal.
+  -- !!!!!!!!!!!!!!!!!
+  compare _ _ = EQ
 
 data P_NamedRel = PNamedRel
   { pos :: !Origin,

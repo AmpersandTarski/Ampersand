@@ -15,7 +15,6 @@ where
 
 import Ampersand.ADL1.Disambiguate (DisambPrim (..), disambiguate, orWhenEmpty, pCpt2aCpt)
 -- used for type-checking
-import Ampersand.ADL1.TypeCheckTypes
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
@@ -187,21 +186,21 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign ci (P_Sign src tgt) = Sign (pCpt2aCpt ci src) (pCpt2aCpt ci tgt)
 
-findRels :: DeclMap -> Name -> Map.Map SignOrd Expression
+findRels :: DeclMap -> Name -> Map.Map SignOrd TExpression
 findRels declMap x = Map.findWithDefault Map.empty x declMap -- get all relations with the same name as x
 
-extractDecl :: P_NamedRel -> Expression -> Guarded Relation
-extractDecl _ (EDcD r) = return r
+extractDecl :: P_NamedRel -> TExpression -> Guarded Relation
+extractDecl _ (TEDcD r) = return r
 extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: " <> tshow e -- to fix: return an error via a (still to be made) function in CtxError
 
 namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
 namedRel2Decl _ declMap o@(PNamedRel _ r Nothing) = getOneExactly o (findDecls' declMap r) >>= extractDecl o
 namedRel2Decl ci declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign ci s)) >>= extractDecl o
 
-findDecls' :: DeclMap -> Name -> [Expression]
+findDecls' :: DeclMap -> Name -> [TExpression]
 findDecls' declMap x = Map.elems (findRels declMap x)
 
-findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
+findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [TExpression]
 findRelsLooselyTyped declMap x (Just src) (Just tgt) =
   findRelsTyped declMap x (Sign src tgt)
     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
@@ -228,10 +227,10 @@ findDeclLooselyTyped ::
 findDeclLooselyTyped declMap o x src tgt =
   getOneExactly (o, (src, tgt)) (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
 
-findRelsTyped :: DeclMap -> Name -> Signature -> [Expression]
+findRelsTyped :: DeclMap -> Name -> Signature -> [TExpression]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: []) (findRels declMap x))
 
-type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
+type DeclMap = Map.Map Name (Map.Map SignOrd TExpression)
 
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
@@ -294,16 +293,16 @@ pCtx2aCtx
       interfaces <- traverse (tIfc2aIfc ttypeInfo) tInterfaces
       pats <- traverse (pPat2aPat ttypeInfo contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
-      rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
+      rules <- traverse (pRul2aRul ttypeInfo contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
       uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
-      identdefs <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
+      identdefs <- traverse (pIdentity2aIdentity ttypeInfo contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs <- traverse (pViewDef2aViewDef ttypeInfo contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop ttypeInfo contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl ttypeInfo contextInfo cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
-      enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
+      enforces' <- traverse (pEnforce2aEnforce ttypeInfo contextInfo Nothing) p_enfs
       let actx =
             ACtx
               { ctxnm = n1,
@@ -422,7 +421,7 @@ pCtx2aCtx
         --   My hunch is that they are not relevant for the contextInfo.
         --   To prove this, a stub-function is used, which yields a fatal the moment it is called.
         decls <- traverse (pDecl2aDeclPremature conceptmap) (p_relations <> concatMap pt_dcs p_patterns)
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
+        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [TEDcD d]) | d <- decls])
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
 
@@ -655,7 +654,7 @@ pCtx2aCtx
                 )
                   <$> traverse (pAtomValue2aAtomValue (typeMap ti cpt) cpt) (p_popas pop)
         where
-          declMap :: Map Name (Map SignOrd Expression)
+          declMap :: Map Name (Map SignOrd TExpression)
           declMap = declDisambMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
@@ -796,7 +795,7 @@ pCtx2aCtx
                           tobjcrud = crud,
                           tobjmView = mView,
                           tobjmsub = s
-                        } tviewExpr a,
+                        } ,
                     sr
                   )
           P_BxTxt
@@ -889,11 +888,11 @@ pCtx2aCtx
         ContextInfo ->
         TExpression -> -- Expression of the surrounding
         Bool -> -- Whether the surrounding is bounded
-        P_BoxItem a -> -- name of where the error occured!
+        P_BoxItem (TermPrim, DisambPrim) -> -- name of where the error occured!
         P_SubIfc (TermPrim, DisambPrim) -> -- Subinterface to check
         Guarded
           ( TExpression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
-            TSubInterface a -- the subinterface
+            TSubInterface (TermPrim, DisambPrim) -- the subinterface
           )
       pSubi2tSubi ci objExpr b o x =
         case x of
@@ -942,16 +941,16 @@ pCtx2aCtx
                       tsiObjs = lst
                     }
                 )
-              fn :: (TBoxItem a, Bool) -> Guarded (TBoxItem a)
+              fn :: (TBoxItem (TermPrim, DisambPrim), Bool) -> Guarded (TBoxItem (TermPrim, DisambPrim))
               fn (boxitem, p) = case boxitem of
                 TBxExpr {} -> TBxExpr <$> matchWith (tobjE boxitem, p)
                 TBxText {} -> pure boxitem
         where
-          matchWith :: (TObjectDef a, Bool) -> Guarded (TObjectDef a)
+          matchWith :: (TObjectDef (TermPrim, DisambPrim), Bool) -> Guarded (TObjectDef (TermPrim, DisambPrim))
           matchWith (ojd, exprBound) =
             if b || exprBound
               then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . tobjExpression $ ojd of
-                [] -> mustBeOrderedLst x [(source (tobjExpression ojd), Src, tObjectDef2pObjectDef $ TBxExpr ojd)]
+                [] -> mustBeOrderedLst x [(source (tobjExpression ojd), Src, TBxExpr ojd)]
                 (r : _) -> pure (ojd {tobjExpression = addEpsilonLeft genLattice r (tobjExpression ojd)})
               else mustBeBound (origin ojd) [(Src, tobjExpression ojd), (Tgt, objExpr)]
           warnings :: [Warning]
@@ -991,31 +990,31 @@ pCtx2aCtx
         ( x,
           case x of
             PI _ -> Ident
-            Pid _ cpt -> Known (EDcI (pCpt2aCpt fun cpt))
+            Pid _ cpt -> Known (TEDcI (pCpt2aCpt fun cpt))
             Patm _ s Nothing -> Mp1 s
-            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt fun conspt))
+            Patm _ s (Just conspt) -> Known (TEMp1 s (pCpt2aCpt fun conspt))
             PBin _ oper -> BinOper oper
-            PBind _ oper cpt -> Known (EBin oper (pCpt2aCpt fun cpt))
+            PBind _ oper cpt -> Known (TEBin oper (pCpt2aCpt fun cpt))
             PVee _ -> Vee
-            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
+            Pfull _ a b -> Known (TEDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
             PNamedR nr -> Rel $ disambNamedRel nr
         )
         where
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
-      pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded (TInterface a)
+      pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded (TInterface (TermPrim, DisambPrim))
       pIfc2tIfc ci (pIfc, objDisamb) =
         build $ pBoxItemDisamb2TBoxItem ci objDisamb
         where
-          build :: Guarded (TBoxItem a)-> Guarded (TInterface a)
+          build :: Guarded (TBoxItem (TermPrim, DisambPrim))-> Guarded (TInterface (TermPrim, DisambPrim))
           build gb =
             case gb of
               Errors x -> Errors x
               Checked obj' ws ->
                 addWarnings ws
                   $ case obj' of
-                    BxExpr o ->
+                    TBxExpr o ->
                       pure
                         TInterface
                           { tifcIsAPI = ifc_IsAPI pIfc,
@@ -1031,7 +1030,7 @@ pCtx2aCtx
                             tifcPos = origin pIfc,
                             tifcPurpose = ifc_Prp pIfc
                           }
-                    BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
+                    TBxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
         A_RoleRule
@@ -1043,16 +1042,16 @@ pCtx2aCtx
       pPat2aPat :: TTypeInfo -> ContextInfo -> P_Pattern -> Guarded Pattern
       pPat2aPat ti ci ppat =
         f
-          <$> traverse (pRul2aRul ci (Just $ label ppat)) (pt_rls ppat)
-          <*> traverse (pIdentity2aIdentity ci (Just $ label ppat)) (pt_ids ppat)
+          <$> traverse (pRul2aRul ti ci (Just $ label ppat)) (pt_rls ppat)
+          <*> traverse (pIdentity2aIdentity ti ci (Just $ label ppat)) (pt_ids ppat)
           <*> traverse (pPop2aPop ti ci) (pt_pop ppat)
-          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
+          <*> traverse (pViewDef2aViewDef ti ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl ti ci cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
-          <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
+          <*> traverse (pEnforce2aEnforce ti ci (Just $ label ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
@@ -1073,17 +1072,20 @@ pCtx2aCtx
                 ptenfs = enforces'
               }
       pRul2aRul ::
+        TTypeInfo ->
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
-      pRul2aRul ci mPat = typeCheckRul ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pRul2aRul ti ci mPat = typeCheckRul ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckRul ::
+        TTypeInfo ->
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule (TermPrim, DisambPrim) ->
         Guarded Rule
       typeCheckRul
+        ti
         ci
         mPat
         P_Rule
@@ -1096,7 +1098,8 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            (exp', _) <- typecheckTerm ci expr
+            (texp', _) <- typecheckTerm ci expr
+            exp' <- tExpr2aExpr ti texp'
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -1111,17 +1114,20 @@ pCtx2aCtx
                   rrkind = UserDefined
                 }
       pEnforce2aEnforce ::
+        TTypeInfo ->
         ContextInfo ->
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
-      pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pEnforce2aEnforce ti ci mPat = typeCheckEnforce ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckEnforce ::
+        TTypeInfo ->
         ContextInfo ->
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce (TermPrim, DisambPrim) ->
         Guarded AEnforce
       typeCheckEnforce
+        ti
         ci
         mPat
         P_Enforce
@@ -1131,7 +1137,7 @@ pCtx2aCtx
             penfExpr = x
           } =
           case pRel of
-            (_, Known (EDcD rel)) ->
+            (_, Known (TEDcD rel)) ->
               do
                 (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
                 -- SJC: the following two error messages can occur in parallel
@@ -1142,7 +1148,7 @@ pCtx2aCtx
                 unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
                 let tgtOk = target expr `isaC` target rel
                 unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
-                let expr' =
+                expr' <- tExpr2aExpr ti .
                       addEpsilonLeft genLattice (source rel)
                         $ addEpsilonRight genLattice (target rel) expr
                 return
@@ -1197,11 +1203,12 @@ pCtx2aCtx
                     lbl' :: Text
                     lbl' = "Compute " <> tshow rel <> " using " <> command
       pIdentity2aIdentity ::
+        TTypeInfo ->
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_IdentDef ->
         Guarded IdentityRule
-      pIdentity2aIdentity ci mPat pidt =
+      pIdentity2aIdentity ti ci mPat pidt =
         case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
           P_Id
             { ix_name = nm,
@@ -1225,7 +1232,8 @@ pCtx2aCtx
           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
             do
-              boxitem <- pBoxItemDisamb2BoxItem ci ojd
+              tboxitem <- pBoxItemDisamb2TBoxItem ci ojd
+              boxitem <- tBoxItem2aBoxItem ti tboxitem
               case boxitem of
                 BxExpr {objE = o} ->
                   case toList . findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
@@ -1361,11 +1369,11 @@ typecheckTerm ci tct =
     PCps _ a b -> join $ binary' (.:.) (ISC (Tgt, fst) (Src, snd)) ((Src, fst), (Tgt, snd)) Tgt Src <$> tt a <*> tt b
     PRad _ a b -> join $ binary' (.!.) (MBE (Tgt, fst) (Src, snd)) ((Src, fst), (Tgt, snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
     PPrd _ a b -> (\(x, (s, _)) (y, (_, t)) -> (x .*. y, (s, t))) <$> tt a <*> tt b
-    PKl0 _ a -> unary EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
-    PKl1 _ a -> unary EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
-    PFlp _ a -> (\(x, (s, t)) -> (EFlp x, (t, s))) <$> tt a
-    PCpl _ a -> (\(x, _) -> (ECpl x, (False, False))) <$> tt a
-    PBrk _ e -> first EBrk <$> tt e
+    PKl0 _ a -> unary TEKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
+    PKl1 _ a -> unary TEKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
+    PFlp _ a -> (\(x, (s, t)) -> (TEFlp x, (t, s))) <$> tt a
+    PCpl _ a -> (\(x, _) -> (TECpl x, (False, False))) <$> tt a
+    PBrk _ e -> first TEBrk <$> tt e
   where
     cptMap :: P_Concept -> A_Concept
     cptMap = conceptMap ci
@@ -1551,7 +1559,7 @@ pDecl2aDecl ti ci cptMap maybePatLabel defLanguage defFormat pd =
         isEndoProp :: PProp -> Bool
         isEndoProp p = p `elem` [P_Prop, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf]
 
-pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
+pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded TExpression
 pDisAmb2Expr (_, Known x) = pure x
 pDisAmb2Expr (_, Rel [x]) = pure x
 pDisAmb2Expr (o, dx) = cannotDisambiguate o dx
@@ -1658,7 +1666,7 @@ data TT a -- (In order of increasing strictness. If you are unsure which to pick
 
 deriv' ::
   (Applicative f) =>
-  ((SrcOrTgt, t -> (Expression, (Bool, Bool))), (SrcOrTgt, t -> (Expression, (Bool, Bool)))) ->
+  ((SrcOrTgt, t -> (TExpression, (Bool, Bool))), (SrcOrTgt, t -> (TExpression, (Bool, Bool)))) ->
   t ->
   f ((Type, Bool), (Type, Bool))
 deriv' (a, b) es =
@@ -1680,3 +1688,17 @@ getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 
+tBoxItem2aBoxItem :: TTypeInfo -> TBoxItem (TermPrim,DisambPrim)-> Guarded BoxItem
+tBoxItem2aBoxItem ti tbi =
+  case tbi of
+    TBxExpr obj ->
+      do
+        (expr, (b, _)) <- typecheckTerm (tiContext ti) (objExpression o)
+        pure $ BxExpr o {objExpression = expr}
+    TBxText {} -> pure $ BxText
+      { boxPlainName = tboxPlainName tbi,
+        boxpos = tboxpos tbi,
+        boxtxt = tboxtxt tbi
+      }
+checkTTypes :: TTypeInfo -> TExpression -> Guarded ()
+checkTTypes ti expr = undefined

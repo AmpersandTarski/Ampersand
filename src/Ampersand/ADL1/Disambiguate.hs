@@ -283,18 +283,18 @@ instance Disambiguatable Term where
       (b', envB) = disambInfo cptMap b (Cnstr [] (bottomUpTargetTypes env1))
   disambInfo _ (Prim (a, b)) st = (Prim ((a, b), st), Cnstr (getDConcepts source b) (getDConcepts target b))
 
-getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [DConcept]
+getDConcepts :: (TExpression -> A_Concept) -> DisambPrim -> [DConcept]
 getDConcepts sot (Rel lst) = map (MayBe . sot) lst
 getDConcepts sot (Known e) = [MustBe (sot e)]
 getDConcepts _ _ = []
 
 data DisambPrim
-  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
-  | Ident -- identity, and we know nothing about its type
-  | Vee -- vee, type unknown
-  | Mp1 PAtomValue -- a singleton atomvalue, type unknown
-  | BinOper PBinOp -- a binary operator, type unknown
-  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
+  = Rel [TExpression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
+  | Ident (Term TermPrim) -- identity, and we know nothing about its type
+  | Vee (Term TermPrim) -- vee, type unknown
+  | Mp1 (Term TermPrim) PAtomValue -- a singleton atomvalue, type unknown
+  | BinOper (Term TermPrim) PBinOp -- a binary operator, type unknown
+  | Known TExpression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
   deriving (Show) -- Here, deriving Show serves debugging purposes only.
 
 instance Pretty DisambPrim where
@@ -317,13 +317,13 @@ performUpdate ((t, unkn), Cnstr srcs' tgts') =
         ( (findMatch' (mustBeSrc, mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc, mayBeTgt) xs)
             `orWhenEmpty` xs
         )
-    Ident -> determineBySize suggest (map EDcI (Set.toList possibleConcs))
-    BinOper oper -> determineBySize suggest (map (EBin oper) (Set.toList possibleConcs))
-    Mp1 x -> determineBySize suggest (map (EMp1 x) (Set.toList possibleConcs))
-    Vee ->
+    Ident tp -> determineBySize suggest (map (TEDcI tp) (Set.toList possibleConcs))
+    BinOper tp oper -> determineBySize suggest (map (TEBin tp oper) (Set.toList possibleConcs))
+    Mp1 tp x -> determineBySize suggest (map (TEMp1 tp x) (Set.toList possibleConcs))
+    Vee tp ->
       determineBySize
         (const (pure unkn))
-        [EDcV (Sign a b) | a <- Set.toList mustBeSrc, b <- Set.toList mustBeTgt]
+        [TEDcV tp (Sign a b) | a <- Set.toList mustBeSrc, b <- Set.toList mustBeTgt]
   where
     suggest [] = pure unkn
     suggest lst = Change (Rel lst) -- TODO: find out whether it is equivalent to put "pure" here (which could be faster).

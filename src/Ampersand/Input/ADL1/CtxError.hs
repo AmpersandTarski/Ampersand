@@ -72,7 +72,6 @@ where
 
 import Ampersand.ADL1
 import Ampersand.ADL1.Disambiguate (DisambPrim (..))
-import Ampersand.ADL1.TypeCheckTypes
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree (Type, showWithAliases)
 import Ampersand.Core.ShowAStruct
@@ -83,7 +82,6 @@ import Data.Typeable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import Text.Parsec
-import Ampersand.Core.ParseTree (toTermPrim)
 
 data CtxError
   = CTXE Origin Text -- SJC: I consider it ill practice to export CTXE, see remark at top
@@ -661,7 +659,7 @@ mustBeOrderedLst o lst =
     exprOf :: TBoxItem (TermPrim, DisambPrim) -> Term TermPrim
     exprOf x =
       case x of
-        TBxExpr {} -> toTermPrim (tpObjE x)
+        TBxExpr {} -> tExpression2pTermPrim . tobjExpression . tobjE $ x
         TBxText {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, TExpression) -> (SrcOrTgt, TExpression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

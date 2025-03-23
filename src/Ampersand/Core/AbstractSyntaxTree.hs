@@ -40,7 +40,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Purpose (..),
     ExplObj (..),
     Expression (..),
-    ExpressionLike(..),
+    ExpressionLike (..),
     getExpressionRelation,
     A_Concept (..),
     A_Concepts,
@@ -75,6 +75,7 @@ module Ampersand.Core.AbstractSyntaxTree
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     makeConceptMap,
     ConceptMap,
+    TExpression (..),
   )
 where
 
@@ -90,7 +91,11 @@ import Ampersand.Core.ParseTree
     PBinOp,
     PClassify (generics, specific),
     PConceptDef,
+    P_BoxBodyElement,
+    P_BoxItem (..),
     P_Concept (..),
+    P_NamedRel (..),
+    P_SubIfc (..),
     PairView (..),
     PairViewSegment (..),
     Pragma,
@@ -98,6 +103,8 @@ import Ampersand.Core.ParseTree
     Role (..),
     SrcOrTgt (..),
     TType (..),
+    Term (..),
+    TermPrim (..),
     Traced (..),
     ViewHtmlTemplate (..),
     maybeOrdering,
@@ -1141,7 +1148,6 @@ instance Unique (PairViewSegment Expression) where
     where
       readable = tshow x
 
-
 infixl 1 .==. -- equivalence
 
 infixl 1 .|-. -- inclusion
@@ -1165,61 +1171,50 @@ infixl 8 .!. -- relative addition
 infixl 8 .*. -- cartesian product
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-class (HasSignature a,Show a) => ExpressionLike a where
-  eEqu,eInc,eIsc,eUni,eDif,eLrs,eRrs,eDia,eCps,eRad,ePrd :: (a,a) -> a
+class (HasSignature a, Show a) => ExpressionLike a where
+  eEqu, eInc, eIsc, eUni, eDif, eLrs, eRrs, eDia, eCps, eRad, ePrd :: (a, a) -> a
   eEps :: A_Concept -> Signature -> a
   (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: a -> a -> a
-
   l .==. r =
     if source l /= source r || target l /= target r
       then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eEqu (l, r)
-
   l .|-. r =
     if source l /= source r || target l /= target r
       then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eInc (l, r)
-
   l ./\. r =
     if source l /= source r || target l /= target r
       then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eIsc (l, r)
-
   l .\/. r =
     if source l /= source r || target l /= target r
       then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eUni (l, r)
-
   l .-. r =
     if source l /= source r || target l /= target r
       then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eDif (l, r)
-
   l ./. r =
     if target l /= target r
       then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eLrs (l, r)
-
   l .\. r =
     if source l /= source r
       then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eRrs (l, r)
-
   l .<>. r =
     if source r /= target l
       then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eDia (l, r)
-
   l .:. r =
     if source r /= target l
       then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eCps (l, r)
-
   l .!. r =
     if source r /= target l
       then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
       else eRad (l, r)
-
   l .*. r =
     -- SJC: always fits! No fatal here..
     ePrd (l, r)
@@ -1242,6 +1237,7 @@ instance ExpressionLike Expression where
   eRad = ERad
   ePrd = EPrd
   eEps = EEps
+
 instance Flippable Expression where
   flp expr = case expr of
     EEqu (l, r) -> EEqu (flp l, flp r)
@@ -1452,7 +1448,7 @@ data ContextInfo = CI
     reprList :: ![Representation],
     -- | declDisambMap contains all relation declarations and their given types.
     --   The reason it is such a complex type definition is unknown (19-03-2025)
-    declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
+    declDisambMap :: !(Map.Map Name (Map.Map SignOrd TExpression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
     -- | types not used in any declaration
@@ -1810,3 +1806,270 @@ makeConceptMap cds gs = mapFunction
       where
         from = specific . NE.head $ x
         to's = L.nub . concatMap (toList . generics) $ x
+
+-- a data definition for the type of an expression, but without knowledge of the TTypes
+data TExpression
+  = -- | equivalence             =
+    TEEqu !(TExpression, TExpression)
+  | -- | inclusion               |-
+    TEInc !(TExpression, TExpression)
+  | -- | intersection            /\
+    TEIsc !(TExpression, TExpression)
+  | -- | union                   \/
+    TEUni !(TExpression, TExpression)
+  | -- | difference              -
+    TEDif !(TExpression, TExpression)
+  | -- | left residual           /
+    TELrs !(TExpression, TExpression)
+  | -- | right residual          \
+    TERrs !(TExpression, TExpression)
+  | -- | diamond                 <>
+    TEDia !(TExpression, TExpression)
+  | -- | composition             ;
+    TECps !(TExpression, TExpression)
+  | -- | relative addition       !
+    TERad !(TExpression, TExpression)
+  | -- | cartesian product       *
+    TEPrd !(TExpression, TExpression)
+  | -- | Rfx.Trn closure         *  (Kleene star)
+    TEKl0 !TExpression
+  | -- | Transitive closure      +  (Kleene plus)
+    TEKl1 !TExpression
+  | -- | conversion (flip, wok)  ~
+    TEFlp !TExpression
+  | -- | Complement
+    TECpl !TExpression
+  | -- | bracketed expression ( ... )
+    TEBrk !TExpression
+  | -- | simple relation
+    TEDcD !(Term TermPrim) !Relation
+  | -- | Identity relation
+    TEDcI !(Term TermPrim) !A_Concept
+  | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
+    TEEps !(Term TermPrim) !A_Concept !Signature
+  | -- | relation based on a simple binary operator  (e.g. x > y)
+    TEBin !(Term TermPrim) !PBinOp !A_Concept
+  | -- | Cartesian product relation
+    TEDcV !(Term TermPrim) !Signature
+  | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+    TEMp1 !(Term TermPrim) !PAtomValue !A_Concept
+  deriving (Eq, Ord, Show, Typeable)
+
+data TInterface a = TInterface
+  { -- | is this interface of type API?
+    tifcIsAPI :: !Bool,
+    -- | The name of the interface
+    tifcname :: !Name,
+    tifclbl :: !(Maybe Label),
+    -- | All roles for which an interface is available (empty means: available for all roles)
+    tifcRoles :: ![Role],
+    -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
+    tifcObj :: !(TObjectDef a),
+    -- | All conjuncts that must be evaluated after a transaction
+    tifcConjuncts :: ![Conjunct],
+    -- | The position in the file (filename, line- and column number)
+    tifcPos :: !Origin,
+    -- | The purpose of the interface
+    tifcPurpose :: !Text
+  }
+  deriving (Show)
+
+data TObjectDef a = TObjectDef
+  { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    tobjPlainName :: !(Maybe Text1),
+    tobjlbl :: !(Maybe Label),
+    -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
+    tobjPos :: !Origin,
+    -- | this term describes the instances of this object, related to their context.
+    tobjExpression :: !TExpression,
+    -- | CRUD as defined by the user
+    tobjcrud :: !Cruds,
+    -- | The view that should be used for this object
+    tobjmView :: !(Maybe Name),
+    -- | the fields, which are object definitions themselves.
+    tobjmsub :: !(Maybe (TSubInterface a))
+  }
+  deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
+
+instance Traced (TObjectDef a) where
+  origin = tobjPos
+
+data TSubInterface a
+  = TBox
+      { pos :: !Origin,
+        tsiConcept :: !A_Concept,
+        tsiHeader :: !HTMLtemplateCall,
+        tsiObjs :: ![TBoxItem a]
+      }
+  | TInterfaceRef
+      { pos :: !Origin,
+        tsiConcept :: !A_Concept,
+        tsiIsLink :: !Bool,
+        tsiIfcId :: !Name -- id of the interface that is referenced to
+      }
+  deriving (Show)
+
+data TBoxItem a
+  = TBxExpr
+      { tobjE :: !(TObjectDef a)
+      }
+  | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    TBxText
+      { tboxPlainName :: !(Maybe Text1),
+        tboxpos :: !Origin,
+        tboxtxt :: !Text
+      }
+  deriving (Show)
+
+instance Traced (TBoxItem a) where
+  origin x = case x of
+    TBxExpr o -> origin o
+    TBxText _ p _ -> p
+
+-- | Function to determine that the term
+--   could be used to create a new atom in its target concept
+isFitForCrudC :: TExpression -> Bool
+isFitForCrudC expr =
+  case expr of
+    TEFlp e -> isFitForCrudC e
+    TEBrk e -> isFitForCrudC e
+    TECps (TEEps {}, e) -> isFitForCrudC e
+    TECps (e, TEEps {}) -> isFitForCrudC e
+    TECps (_, _) -> True
+    TEEps {} -> False
+    TEMp1 {} -> False
+    _ -> True
+
+-- EDcI{} -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
+
+-- | Function to determine that the term
+--   could be used to read the population of its target concept
+isFitForCrudR :: TExpression -> Bool
+isFitForCrudR _ = True
+
+-- | Function to determine that the term
+--   could be used to insert or delete a pair in the population of a relation
+isFitForCrudU :: TExpression -> Bool
+isFitForCrudU expr =
+  case expr of
+    TEDcD {} -> True
+    TEFlp e -> isFitForCrudU e
+    TEBrk e -> isFitForCrudU e
+    TECps (TEEps{}, e) -> isFitForCrudU e
+    TECps (e, TEEps{}) -> isFitForCrudU e
+    TECps (e, TEDcI {}) -> isFitForCrudU e
+    TECps (_, _) -> False
+    _ -> False
+
+-- | Function to determine that the term is simple, that it
+--   could be used to update the population of a relation
+isFitForCrudD :: TExpression -> Bool
+isFitForCrudD _ = True
+
+-- tObjectDef2pObjectDef :: TBoxItem (TermPrim, a) -> P_BoxBodyElement
+-- tObjectDef2pObjectDef x =
+--   case x of
+--     TBxExpr oDef ->
+--       P_BoxItemTerm
+--         { pos = origin oDef,
+--           obj_PlainName = tobjPlainName oDef,
+--           obj_lbl = tobjlbl oDef,
+--           obj_term = tExpression2pTermPrim (tobjExpression oDef),
+--           obj_crud = case tobjmsub oDef of
+--             Just (TInterfaceRef _ _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
+--             _ -> Just $ aCruds2pCruds (tobjcrud oDef),
+--           obj_mView = tobjmView oDef,
+--           obj_msub = tSubIfc2pSubIfc <$> tobjmsub oDef
+--         }
+--     TBxText {} ->
+--       P_BxTxt
+--         { obj_PlainName = tboxPlainName x,
+--           pos = origin x,
+--           box_txt = tboxtxt x
+--         }
+
+-- tSubIfc2pSubIfc :: TSubInterface (TermPrim, a) -> P_SubIfc TermPrim
+-- tSubIfc2pSubIfc x = case x of
+--   TBox {pos = p} ->
+--     P_Box
+--       { pos = p,
+--         si_header = tsiHeader x,
+--         si_box = map tBoxItem2pBoxItem . tsiObjs $ x
+--       }
+--   TInterfaceRef {pos = p} ->
+--     P_InterfaceRef
+--       { pos = p,
+--         si_isLink = tsiIsLink x,
+--         si_str = tsiIfcId x
+--       }
+
+-- tBoxItem2pBoxItem :: TBoxItem (TermPrim, a) -> P_BoxItem TermPrim
+-- tBoxItem2pBoxItem bItem = case bItem of
+--   TBxExpr obj@TObjectDef{} -> P_BoxItemTerm
+--       { obj_PlainName = tobjPlainName obj,
+--         obj_lbl = tobjlbl obj,
+--         pos = tobjPos obj,
+--         obj_term = tExpression2pTermPrim . tobjExpression $ obj,
+--         obj_crud = Just . aCruds2pCruds . tobjcrud $ obj,
+--         obj_mView = tobjmView obj,
+--         obj_msub = tSubIfc2pSubIfc <$> tobjmsub obj
+--       }
+--   TBxText{} -> P_BxTxt
+--       { obj_PlainName = tboxPlainName bItem,
+--         pos = tboxpos bItem,
+--         box_txt = tboxtxt bItem
+--       }
+
+tExpression2pTermPrim :: TExpression -> Term TermPrim
+tExpression2pTermPrim expr =
+  case expr of
+    TEEqu (l, r) -> PEqu o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEInc (l, r) -> PInc o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEIsc (l, r) -> PIsc o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEUni (l, r) -> PUni o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEDif (l, r) -> PDif o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TELrs (l, r) -> PLrs o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TERrs (l, r) -> PRrs o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEDia (l, r) -> PDia o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TECps (TEEps {}, r) -> tExpression2pTermPrim r
+    TECps (l, TEEps {}) -> tExpression2pTermPrim l
+    TECps (l, r) -> PCps o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TERad (l, r) -> PRad o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEPrd (l, r) -> PPrd o (tExpression2pTermPrim l) (tExpression2pTermPrim r)
+    TEEps tp a _ -> tp
+    TEKl0 e -> PKl0 o (tExpression2pTermPrim e)
+    TEKl1 e -> PKl1 o (tExpression2pTermPrim e)
+    TEFlp e -> PFlp o (tExpression2pTermPrim e)
+    TECpl e -> PCpl o (tExpression2pTermPrim e)
+    TEBrk e -> PBrk o (tExpression2pTermPrim e)
+    TEDcD tp dcl -> tp
+    TEDcI tp cpt -> tp
+    TEBin tp oper cpt -> tp
+    TEDcV tp sgn -> tp
+    TEMp1 tp val cpt -> tp
+  where
+    o = Origin $ "Origin is not present in Expression: " <> tshow expr
+
+instance HasSignature TExpression where
+  sign (TEEqu (l, r)) = Sign (source l) (target r)
+  sign (TEInc (l, r)) = Sign (source l) (target r)
+  sign (TEIsc (l, r)) = Sign (source l) (target r)
+  sign (TEUni (l, r)) = Sign (source l) (target r)
+  sign (TEDif (l, r)) = Sign (source l) (target r)
+  sign (TELrs (l, r)) = Sign (source l) (source r)
+  sign (TERrs (l, r)) = Sign (target l) (target r)
+  sign (TEDia (l, r)) = Sign (source l) (target r)
+  sign (TECps (l, r)) = Sign (source l) (target r)
+  sign (TERad (l, r)) = Sign (source l) (target r)
+  sign (TEPrd (l, r)) = Sign (source l) (target r)
+  sign (TEKl0 e) = sign e
+  sign (TEKl1 e) = sign e
+  sign (TEFlp e) = flp (sign e)
+  sign (TECpl e) = sign e
+  sign (TEBrk e) = sign e
+  sign (TEDcD _ d) = sign d
+  sign (TEDcI _ c) = Sign c c
+  sign (TEBin _ _ c) = Sign c c
+  sign (TEEps _ _ sgn) = sgn
+  sign (TEDcV _ sgn) = sgn
+  sign (TEMp1 _ _ c) = Sign c c
