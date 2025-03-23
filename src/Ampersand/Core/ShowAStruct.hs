@@ -17,7 +17,8 @@ instance AStruct A_Context where
 
 instance AStruct Expression where
   showA = showP . aExpression2pTermPrim
-
+instance AStruct TExpression where
+  showA = showP . tExpression2pTermPrim
 instance AStruct A_Concept where
   showA = showP . aConcept2pConcept
 

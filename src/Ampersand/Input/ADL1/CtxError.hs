@@ -73,7 +73,7 @@ where
 import Ampersand.ADL1
 import Ampersand.ADL1.Disambiguate (DisambPrim (..))
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (Type, showWithAliases)
+import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.FilePos ()
@@ -244,7 +244,7 @@ class GetOneGuarded a b | b -> a where
     Guarded a
   hasNone o = getOneExactly o []
 
-instance GetOneGuarded Expression P_NamedRel where
+instance GetOneGuarded TExpression P_NamedRel where
   getOneExactly _ [d] = pure d
   getOneExactly o [] =
     Errors
@@ -261,10 +261,10 @@ instance GetOneGuarded Expression P_NamedRel where
       <> ".\n  Explicitly mention one of the following matching terms:"
       <> T.concat ["\n  - " <> showA l | l <- lst]
 
-instance GetOneGuarded Expression (P_NamedRel, (A_Concept, A_Concept)) where
+instance GetOneGuarded TExpression (P_NamedRel, (A_Concept, A_Concept)) where
   getOneExactly (o, (sr, tg)) = getOneExactly (o, (Just sr, Just tg))
 
-instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) where
+instance GetOneGuarded TExpression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) where
   getOneExactly o lst = case lst of
     [d] -> pure d
     [] ->
@@ -344,12 +344,12 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
         "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
       ]
 
-    showA' :: Expression -> Text
+    showA' :: TExpression -> Text
     showA' e =
       showA e
         <> case e of
-          EDcD rel -> " (" <> tshow (origin rel) <> ")"
-          EFlp e' -> showA' e'
+          TEDcD _ rel -> " (" <> tshow (origin rel) <> ")"
+          TEFlp e' -> showA' e'
           _ -> ""
 
 -- | Rules, identity statements, view definitions, interfaces, and box labels
