@@ -288,7 +288,7 @@ instance GetOneGuarded TExpression (P_NamedRel, (Maybe A_Concept, Maybe A_Concep
           showC Nothing = "???"
           showC (Just tp) = showA tp
 
-mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+mkTypeMismatchError :: Origin -> TRelation -> SrcOrTgt -> Type -> Guarded Type
 mkTypeMismatchError o rel sot typ =
   Errors . pure $ CTXE (origin o) message
   where

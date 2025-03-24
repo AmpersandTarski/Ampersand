@@ -115,7 +115,9 @@ makeFSpec env context =
       specializationsOf = smallerConcepts (gens context),
       generalizationsOf = largerConcepts (gens context),
       allEnforces = fSpecAllEnforces,
-      isSignal = fIsSignal
+      isSignal = fIsSignal,
+      ttypeOf = undefined 
+      
     }
   where
     mergeByName :: [Pattern] -> [Pattern]

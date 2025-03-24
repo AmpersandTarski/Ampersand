@@ -24,6 +24,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
+import Ampersand.FSpec.Transformers (Transformer (tRel))
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Data.List (nub)
@@ -184,18 +185,18 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
         toUpperName = T.toUpper . fullName
 
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
-pSign2aSign ci (P_Sign src tgt) = Sign (pCpt2aCpt ci src) (pCpt2aCpt ci tgt)
+pSign2aSign conceptmap (P_Sign src tgt) = Sign (conceptmap src) (pCpt2aCpt conceptmap tgt)
 
-findRels :: DeclMap -> Name -> Map.Map SignOrd TExpression
+findRels :: DeclMap -> Name -> Map.Map Signature TExpression
 findRels declMap x = Map.findWithDefault Map.empty x declMap -- get all relations with the same name as x
 
-extractDecl :: P_NamedRel -> TExpression -> Guarded Relation
-extractDecl _ (TEDcD _ r) = return r
-extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: " <> tshow e -- to fix: return an error via a (still to be made) function in CtxError
+extractDecl :: TExpression -> Guarded TRelation
+extractDecl (TEDcD _ r) = return r
+extractDecl e = fatal $ "Expecting a declared relation, instead I found: " <> tshow e -- to fix: return an error via a (still to be made) function in CtxError
 
-namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
-namedRel2Decl _ declMap o@(PNamedRel _ r Nothing) = getOneExactly o (findDecls' declMap r) >>= extractDecl o
-namedRel2Decl ci declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign ci s)) >>= extractDecl o
+namedPRel2TRel :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded TRelation
+namedPRel2TRel _ declMap o@(PNamedRel _ r Nothing) = getOneExactly o (findDecls' declMap r) >>= extractDecl
+namedPRel2TRel conceptmap declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign conceptmap s)) >>= extractDecl
 
 findDecls' :: DeclMap -> Name -> [TExpression]
 findDecls' declMap x = Map.elems (findRels declMap x)
@@ -223,14 +224,14 @@ findDeclLooselyTyped ::
   Name ->
   Maybe A_Concept ->
   Maybe A_Concept ->
-  Guarded Relation
+  Guarded TRelation
 findDeclLooselyTyped declMap o x src tgt =
-  getOneExactly (o, (src, tgt)) (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
+  getOneExactly (o, (src, tgt)) (findRelsLooselyTyped declMap x src tgt) >>= extractDecl
 
 findRelsTyped :: DeclMap -> Name -> Signature -> [TExpression]
-findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: []) (findRels declMap x))
+findRelsTyped declMap x tp = Map.findWithDefault [] (tp) (Map.map (: []) (findRels declMap x))
 
-type DeclMap = Map.Map Name (Map.Map SignOrd TExpression)
+type DeclMap = Map.Map Name (Map.Map Signature TExpression)
 
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
@@ -243,25 +244,42 @@ getDeepIfcRefs objDef = case objmsub objDef of
     Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
 
 -- | this function contains all relation declarations and their given types.
---   The reason it is such a complex type definition is unknown (19-03-2025)
-getDeclMap :: P_Context -> DeclMap
-getDeclMap ctx =
-  Map.map groupOnTp (Map.fromListWith (<>) [(name d, [TEDcD _ d]) | d <- rels])
+getDeclMap :: P_Context -> Guarded DeclMap
+getDeclMap ctx = do
+  tRels <- allTRels ctx
+  return $ Map.map groupOnTp (Map.fromListWith (<>) [(name d, [tExpressionOf d]) | d <- Set.toList tRels])
   where
-    rels = map (pRel2tRel (conceptmap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) (ctx_ds ctx)
-        <> concatMap pRels (ctx_pats ctx)
-        where pRels :: P_Pattern -> [TRelation]
-              pRels p = map (pRel2tRel (conceptmap ctx) (Just . name $ p) (deflangCtxt ctx) (deffrmtCtxt ctx) ) (pt_dcs p )
-    groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
+    groupOnTp lst = Map.fromListWith const [(sign d, d) | d <- lst]
+    tExpressionOf :: TRelation -> TExpression
+    tExpressionOf d = TEDcD (Prim (PNamedR (namedRel d))) d
+    namedRel :: TRelation -> P_NamedRel
+    namedRel d =
+      PNamedRel
+        { p_nrnm = name d,
+          p_mbSign = Just . aSign2pSign . sign $ d,
+          pos = origin d
+        }
+
+allTRels :: P_Context -> Guarded (Set TRelation)
+allTRels ctx = do
+  trels <- traverse (pRel2tRel (conceptmap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) (ctx_ds ctx)
+  prels <- traverse pRels (ctx_pats ctx)
+  return . Set.fromList $ trels <> concat prels
+  where
+    pRels :: P_Pattern -> Guarded [TRelation]
+    pRels p = traverse (pRel2tRel (conceptmap ctx) (Just . name $ p) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs p)
 
 conceptmap :: P_Context -> ConceptMap -- reminder:  type ConceptMap = P_Concept -> A_Concept
 conceptmap ctx = makeConceptMap (ctx_cs ctx <> concatMap pt_cds (ctx_pats ctx)) (allGens ctx)
 
 allGens :: P_Context -> [PClassify]
 allGens ctx = ctx_gs ctx <> concatMap pt_gns (ctx_pats ctx)
+
+deflangCtxt :: P_Context -> Lang
 deflangCtxt = fromMaybe English . ctx_lang
+
+deffrmtCtxt :: P_Context -> PandocFormat
 deffrmtCtxt = fromMaybe ReST . ctx_markup
-      
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -305,7 +323,7 @@ pCtx2aCtx
     } =
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = getDeclMap ctx -- contains the relation declarations
+      declMap <- getDeclMap ctx -- contains the relation declarations
       -- We start with the interfaces because we must harvest all concepts that need the technical type Object:
       tInterfaces <- traverse (pIfc2tIfc contextInfo) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
@@ -322,7 +340,7 @@ pCtx2aCtx
       uniqueNames "interface" p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop ttypeInfo contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl ttypeInfo contextInfo (cptMap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) p_relations
+      relations <- traverse (pDecl2aDecl ttypeInfo (cptMap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) p_relations
       enforces' <- traverse (pEnforce2aEnforce ttypeInfo contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -427,44 +445,32 @@ pCtx2aCtx
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
-        -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        -- The typeMap contains the technical type of concepts as specified in REPRESENTATION statements in the Ampersand Script,
-        -- without the concepts for which no valid representation statement is found.
-        typMap <- mkTypeMap connectConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
-        -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         multitypologies <- traverse mkTypology connectConcepts
-        -- \| decls contains all relation declarations throughout the context, including those in patterns.
-        --   The technical types are not available at this point.
-        --   My hunch is that they are not relevant for the contextInfo.
-        --   To prove this, a stub-function is used, which yields a fatal the moment it is called.
-        decls <- traverse (pDecl2aDeclPremature conceptmap) (p_relations <> concatMap pt_dcs p_patterns)
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [TEDcD d]) | d <- decls])
-              where
-                groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-
-        let allConcepts = L.nub (map source decls <> map target decls <> (Set.toList . concs . map (pClassify2aClassify conceptmap)) allGens) :: [A_Concept]
-        let allTypes = Set.fromList (map aConcToType allConcepts) :: Set.Set Type
+        tRels <- allTRels ctx
+        declMap <- getDeclMap ctx
+        let allConcepts =
+              Set.unions
+                [ source <$> tRels,
+                  target <$> tRels,
+                  concs gns
+                ]
         return
-          ( -- trace ("\ng_contextInfo:\ntypMap\n"<>tshow typMap<>
-            --      "\n\nmultitypologies"<>tshow multitypologies<>
-            --      "\n\ndecls"<>tshow decls<>
-            --      "\n\nallConcepts"<>tshow allConcepts<>
-            --      "\n\nallTypes"<>tshow allTypes)
-            CI
+          ( CI
               { ctxiGens = gns,
                 connectedConcepts = connectConcepts,
                 multiKernels = multitypologies,
                 reprList = allReprs,
-                soloConcs = Set.filter (not . isInSystem genLattice) allTypes,
+                declDisambMap = declMap,
+                soloConcs = Set.filter (not . isInSystem genLattice) . fmap aConcToType $ allConcepts,
                 allConcs = allConcepts,
                 gens_efficient = genLattice,
-                conceptMap = conceptmap,
-                defaultLang = deflangCtxt,
-                defaultFormat = deffrmtCtxt
+                conceptMap = conceptmap ctx,
+                defaultLang = deflangCtxt ctx,
+                defaultFormat = deffrmtCtxt ctx
               }
           )
         where
-          gns = mapMaybe (pClassify2aClassify conceptmap) allGens
+          gns = mapMaybe (pClassify2aClassify . conceptmap $ ctx) $ allGens ctx
 
           connectConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectConcepts = connect [] (map (toList . concs) gns)
@@ -482,7 +488,7 @@ pCtx2aCtx
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
                   toReprs :: Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs r = [(pCpt2aCpt (conceptmap ctx) cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
                   nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                     where
@@ -565,7 +571,7 @@ pCtx2aCtx
 
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap =
-        [ (ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc)
+        [ (ifc, disambiguate (conceptmap ctx) (termPrimDisAmb (conceptmap ctx) declMap) $ ifc_Obj ifc)
           | ifc <- p_interfaces
         ]
       tIfc2aIfc :: TTypeInfo -> TInterface (TermPrim, DisambPrim) -> Guarded Interface
@@ -578,7 +584,7 @@ pCtx2aCtx
         [ ( Set.fromList [pConcToType . specific $ x],
             Set.fromList . NE.toList . NE.map pConcToType . generics $ x
           )
-          | x <- allGens
+          | x <- allGens ctx
         ]
 
       completeRules =
@@ -638,28 +644,58 @@ pCtx2aCtx
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
+      tRel2aRel :: TTypeInfo -> TRelation -> Guarded Relation
+      tRel2aRel ti trel = do
+        dflts <- mapM (pReldefault2aReldefaults ti) . L.nub $ tdecDefaults trel :: Guarded [ARelDefault]
+        return
+          Relation
+            { decusr = tdecusr trel,
+              decsgn = tdecsgn trel,
+              decprps = tdecprps trel,
+              decpr = tdecpr trel,
+              decpat = tdecpat trel,
+              decnm = tdecnm trel,
+              declabel = tdeclabel trel,
+              dechash = tdechash trel,
+              decfpos = tdecfpos trel,
+              decMean = tdecMean trel,
+              decDefaults = dflts
+            }
+        where
+          Sign src' tgt' = tdecsgn trel
+          pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
+          pReldefault2aReldefaults ti' x = case x of
+            PDefAtom st vals ->
+              ARelDefaultAtom st
+                <$> traverse
+                  ( case st of
+                      Src -> pAtomValue2aAtomValue (typeMap ti' src') src'
+                      Tgt -> pAtomValue2aAtomValue (typeMap ti' tgt') tgt'
+                  )
+                  vals
+            PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
 
       pPop2aPop :: TTypeInfo -> ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ti ci pop =
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
-              dcl <- case p_mbSign nmdr of
-                Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt cptMap <$> src) (pCpt2aCpt cptMap <$> tgt)
-                _ -> namedRel2Decl cptMap declMap nmdr
-
-              aps' <- traverse (pAtomPair2aAtomPair (typeMap ti) dcl) aps
-              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
-              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
+              trel <- case p_mbSign nmdr of
+                Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (conceptmap ctx <$> src) (conceptmap ctx <$> tgt)
+                _ -> namedPRel2TRel (conceptmap ctx) declMap nmdr
+              rel <- tRel2aRel ti trel
+              aps' <- traverse (pAtomPair2aAtomPair (typeMap ti) trel) aps
+              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) trel Src . userConcept)) src
+              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) trel Tgt . userConcept)) tgt
               return
                 ARelPopu
-                  { popdcl = dcl,
+                  { popdcl = rel,
                     popps = Set.fromList aps',
-                    popsrc = fromMaybe (source dcl) src',
-                    poptgt = fromMaybe (target dcl) tgt'
+                    popsrc = fromMaybe (source trel) src',
+                    poptgt = fromMaybe (target trel) tgt'
                   }
           P_CptPopu {} ->
-            let cpt = pCpt2aCpt cptMap (p_cpt pop)
+            let cpt = pCpt2aCpt (cptMap ctx) (p_cpt pop)
              in ( \vals ->
                     ACptPopu
                       { popcpt = cpt,
@@ -670,7 +706,7 @@ pCtx2aCtx
         where
           declMap :: DeclMap
           declMap = declDisambMap ci
-      isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+      isMoreGeneric :: Origin -> TRelation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
         if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
           then pure givenType
@@ -750,9 +786,6 @@ pCtx2aCtx
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
       isaC :: A_Concept -> A_Concept -> Bool
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
-
-      tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
-      tExpr2aExpr ti expr = undefined
 
       typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (TBoxItem (TermPrim, DisambPrim), Bool)
       typecheckObjDef ci objDef =
@@ -974,7 +1007,6 @@ pCtx2aCtx
               <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
       checkTTypeOfSubInterfaces :: A_Context -> Guarded ()
       checkTTypeOfSubInterfaces ctx = undefined
-        where
 
       --  mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
       --     <* mustBeObject (target objExpr) objExpr -- remove objExpr after diagnosis in issue #1537
@@ -1001,17 +1033,17 @@ pCtx2aCtx
       -- this function helps in the disambiguation process:
       -- it adds a set of potential disambiguation outcomes to things that need to be disambiguated. For typed and untyped identities, singleton elements etc, this is immediate, but for relations we need to find it in the list of declarations.
       termPrimDisAmb :: ConceptMap -> DeclMap -> TermPrim -> (TermPrim, DisambPrim)
-      termPrimDisAmb fun declMap x =
-        ( x,
-          case x of
-            PI _ -> Ident
-            Pid _ cpt -> Known (TEDcI (pCpt2aCpt fun cpt))
-            Patm _ s Nothing -> Mp1 s
-            Patm _ s (Just conspt) -> Known (TEMp1 s (pCpt2aCpt fun conspt))
-            PBin _ oper -> BinOper oper
-            PBind _ oper cpt -> Known (TEBin oper (pCpt2aCpt fun cpt))
-            PVee _ -> Vee
-            Pfull _ a b -> Known (TEDcV (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
+      termPrimDisAmb fun declMap tp =
+        ( tp,
+          case tp of
+            PI _ -> Ident (Prim tp)
+            Pid _ cpt -> Known (TEDcI (Prim tp) (pCpt2aCpt fun cpt))
+            Patm _ s Nothing -> Mp1 (Prim tp) s
+            Patm _ s (Just conspt) -> Known (TEMp1 (Prim tp) s (pCpt2aCpt fun conspt))
+            PBin _ oper -> BinOper (Prim tp) oper
+            PBind _ oper cpt -> Known (TEBin (Prim tp) oper (pCpt2aCpt fun cpt))
+            PVee _ -> Vee (Prim tp)
+            Pfull _ a b -> Known (TEDcV (Prim tp) (Sign (pCpt2aCpt fun a) (pCpt2aCpt fun b)))
             PNamedR nr -> Rel $ disambNamedRel nr
         )
         where
@@ -1019,33 +1051,26 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
       pIfc2tIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded (TInterface (TermPrim, DisambPrim))
-      pIfc2tIfc ci (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2TBoxItem ci objDisamb
+      pIfc2tIfc ci (pIfc, objDisamb) = build <$> pBoxItemDisamb2TBoxItem ci objDisamb
         where
-          build :: Guarded (TBoxItem (TermPrim, DisambPrim)) -> Guarded (TInterface (TermPrim, DisambPrim))
-          build gb =
-            case gb of
-              Errors x -> Errors x
-              Checked obj' ws ->
-                addWarnings ws
-                  $ case obj' of
-                    TBxExpr o ->
-                      pure
-                        TInterface
-                          { tifcIsAPI = ifc_IsAPI pIfc,
-                            tifcname = name pIfc,
-                            tifclbl = mLabel pIfc,
-                            tifcRoles = ifc_Roles pIfc,
-                            tifcObj =
-                              o
-                                { objPlainName = Just . fullName1 . name $ pIfc,
-                                  objlbl = mLabel pIfc
-                                },
-                            tifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-                            tifcPos = origin pIfc,
-                            tifcPurpose = ifc_Prp pIfc
-                          }
-                    TBxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
+          build :: TBoxItem (TermPrim, DisambPrim) -> TInterface (TermPrim, DisambPrim)
+          build boxItem = case boxItem of
+            TBxExpr obj ->
+              TInterface
+                { tifcIsAPI = ifc_IsAPI pIfc,
+                  tifcname = name pIfc,
+                  tifclbl = mLabel pIfc,
+                  tifcRoles = ifc_Roles pIfc,
+                  tifcObj =
+                    obj
+                      { tobjPlainName = Just . fullName1 . name $ pIfc,
+                        tobjlbl = mLabel pIfc
+                      },
+                  tifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+                  tifcPos = origin pIfc,
+                  tifcPurpose = ifc_Prp pIfc
+                }
+            TBxText {} -> fatal "Interface should not have TXT only. it should have a term object."
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
         A_RoleRule
@@ -1057,16 +1082,16 @@ pCtx2aCtx
       pPat2aPat :: TTypeInfo -> ContextInfo -> P_Pattern -> Guarded Pattern
       pPat2aPat ti ci ppat =
         f
-          <$> traverse (pRul2aRul ti ci (Just $ label ppat)) (pt_rls ppat)
-          <*> traverse (pIdentity2aIdentity ti ci (Just $ label ppat)) (pt_ids ppat)
+          <$> traverse (pRul2aRul ti ci (Just $ name ppat)) (pt_rls ppat)
+          <*> traverse (pIdentity2aIdentity ti ci (Just $ name ppat)) (pt_ids ppat)
           <*> traverse (pPop2aPop ti ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ti ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl ti ci cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+          <*> traverse (pDecl2aDecl ti (cptMap ctx) (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
-          <*> traverse (pEnforce2aEnforce ti ci (Just $ label ppat)) (pt_enfs ppat)
+          <*> traverse (pEnforce2aEnforce ti ci (Just $ name ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
@@ -1089,14 +1114,14 @@ pCtx2aCtx
       pRul2aRul ::
         TTypeInfo ->
         ContextInfo ->
-        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
+        Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
       pRul2aRul ti ci mPat = typeCheckRul ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckRul ::
         TTypeInfo ->
         ContextInfo ->
-        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
+        Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Rule (TermPrim, DisambPrim) ->
         Guarded Rule
       typeCheckRul
@@ -1115,15 +1140,15 @@ pCtx2aCtx
           do
             (texp', _) <- typecheckTerm ci expr
             exp' <- tExpr2aExpr ti texp'
-            vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
+            vls <- maybeOverGuarded (typeCheckPairView ti ci orig exp') viols
             return
               Rule
                 { rrnm = nm,
                   rrlbl = lbl',
                   formalExpression = exp',
                   rrfps = orig,
-                  rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings,
-                  rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs,
+                  rrmean = map (pMean2aMean (deflangCtxt ctx) (deffrmtCtxt ctx)) meanings,
+                  rrmsg = map (pMess2aMess (deflangCtxt ctx) (deffrmtCtxt ctx)) msgs,
                   rrviol = vls,
                   rrpat = mPat,
                   rrkind = UserDefined
@@ -1131,14 +1156,14 @@ pCtx2aCtx
       pEnforce2aEnforce ::
         TTypeInfo ->
         ContextInfo ->
-        Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
+        Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
       pEnforce2aEnforce ti ci mPat = typeCheckEnforce ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
       typeCheckEnforce ::
         TTypeInfo ->
         ContextInfo ->
-        Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
+        Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Enforce (TermPrim, DisambPrim) ->
         Guarded AEnforce
       typeCheckEnforce
@@ -1152,8 +1177,9 @@ pCtx2aCtx
             penfExpr = x
           } =
           case pRel of
-            (_, Known (TEDcD _ rel)) ->
+            (_, Known (TEDcD _ trel)) ->
               do
+                rel <- tRel2aRel ti trel
                 (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
                 -- SJC: the following two error messages can occur in parallel
                 --      thanks to 'ApplicativeDo', however, we can write the following
@@ -1221,11 +1247,11 @@ pCtx2aCtx
       pIdentity2aIdentity ::
         TTypeInfo ->
         ContextInfo ->
-        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
+        Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ti ci mPat pidt =
-        case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
+        case disambiguate (cptMap ctx) (termPrimDisAmb (cptMap ctx) (declDisambMap ci)) pidt of
           P_Id
             { ix_name = nm,
               ix_label = lbl',
@@ -1243,7 +1269,7 @@ pCtx2aCtx
               )
                 <$> traverse pIdentSegment2IdentSegment isegs
         where
-          conc = pCpt2aCpt cptMap (ix_cpt pidt)
+          conc = pCpt2aCpt (cptMap ctx) (ix_cpt pidt)
           orig = origin pidt
           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
@@ -1256,21 +1282,23 @@ pCtx2aCtx
                     [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                     _ -> pure $ IdentityExp o {objExpression = addEpsilonLeft genLattice conc (objExpression o)}
                 BxText {} -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin boxitem) <> ")"
-      typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
-      typeCheckPairView ci o x (PairView lst) =
-        PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
-      typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
-      typeCheckPairViewSeg _ _ _ (PairViewText orig x) = pure (PairViewText orig x)
-      typeCheckPairViewSeg ci o t (PairViewExp orig s x) =
-        do
-          (e, (b, _)) <- typecheckTerm ci x
-          let tp = aConcToType (source e)
-          case toList . findExact genLattice . lMeet tp $ getConcept s t of
-            [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s, t)
-            lst ->
-              if b || elem (getConcept s t) lst
-                then pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
-                else mustBeBound o [(Src, e)]
+      typeCheckPairView :: TTypeInfo -> ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
+      typeCheckPairView ti ci o x (PairView lst) =
+        PairView <$> traverse (typeCheckPairViewSeg ti ci o x) lst
+      typeCheckPairViewSeg :: TTypeInfo -> ContextInfo -> Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
+      typeCheckPairViewSeg ti ci o t pv =
+        case pv of
+          (PairViewText orig x) -> pure (PairViewText orig x)
+          (PairViewExp orig s x) -> do
+            (tExpr, (b, _)) <- typecheckTerm ci x
+            e <- tExpr2aExpr ti tExpr
+            let tp = aConcToType (source e)
+            case toList . findExact genLattice . lMeet tp $ getConcept s t of
+              [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s, t)
+              lst ->
+                if b || elem (getConcept s t) lst
+                  then pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
+                  else mustBeBound o [(Src, tExpr)]
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci
@@ -1284,14 +1312,14 @@ pCtx2aCtx
               Expl
                 { explPos = orig,
                   explObj = obj,
-                  explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
+                  explMarkup = pMarkup2aMarkup (deflangCtxt ctx) (deffrmtCtxt ctx) pmarkup,
                   explRefIds = refIds
                 }
           )
             <$> pRefObj2aRefObj ci objref
       pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
       pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
-      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declDisambMap ci) tm
+      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedPRel2TRel (conceptMap ci) (declDisambMap ci) tm
       pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
       pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
       pRefObj2aRefObj _ (PRef2ViewDef s) = pure $ ExplViewDef s
@@ -1299,9 +1327,9 @@ pCtx2aCtx
       pRefObj2aRefObj _ (PRef2Interface s) = pure $ ExplInterface s
       pRefObj2aRefObj _ (PRef2Context s) = pure $ ExplContext s
       allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
-      allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
+      allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) (deflangCtxt ctx) (deffrmtCtxt ctx)) p_conceptdefs
       allConceptDefs :: ContextInfo -> [AConceptDef]
-      allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
+      allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) (deflangCtxt ctx) (deffrmtCtxt ctx)) (p_conceptdefs <> concatMap pt_cds p_patterns)
       udefRoleRules' :: [A_RoleRule]
       udefRoleRules' =
         map
@@ -1391,8 +1419,6 @@ typecheckTerm ci tct =
     PCpl _ a -> (\(x, _) -> (TECpl x, (False, False))) <$> tt a
     PBrk _ e -> first TEBrk <$> tt e
   where
-    cptMap :: P_Concept -> A_Concept
-    cptMap = conceptMap ci
     --    tTypOf :: A_Concept -> TType
     --    tTypOf = techTypeOf ci
     genLattice = gens_efficient ci
@@ -1470,11 +1496,11 @@ typecheckTerm ci tct =
             <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
       where
         getExactType flf (p1, e1) (p2, e2) =
-          case userList cptMap . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
+          case userList (conceptMap ci) . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
             [] -> mustBeOrdered o (p1, e1) (p2, e2)
             h : _ -> pure h
         getAndCheckType flf (p1, b1, e1) (p2, b2, e2) =
-          case userList cptMap . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
+          case userList (conceptMap ci) . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
             [] -> mustBeOrdered o (p1, e1) (p2, e2)
             [r@(h : _)] ->
               case (b1 || elem (getAConcept p1 e1) r, b2 || elem (getAConcept p2 e2) r) of
@@ -1482,7 +1508,7 @@ typecheckTerm ci tct =
                 (a, b) -> mustBeBound o [(p, e) | (False, p, e) <- [(a, p1, e1), (b, p2, e2)]]
             lst -> mustBeOrderedConcLst o (p1, e1) (p2, e2) lst
 
-pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
+pAtomPair2aAtomPair :: (A_Concept -> TType) -> TRelation -> PAtomPair -> Guarded AAtomPair
 pAtomPair2aAtomPair tTypOf dcl pp =
   mkAtomPair
     <$> pAtomValue2aAtomValue (tTypOf (source dcl)) (source dcl) (ppLeft pp)
@@ -1496,14 +1522,13 @@ pAtomValue2aAtomValue ttyp cpt pav =
 
 pDecl2aDecl ::
   TTypeInfo ->
-  ContextInfo ->
   ConceptMap ->
-  Maybe Text -> -- label of pattern the rule is defined in (if any), just for documentation purposes
+  Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormat
   P_Relation ->
   Guarded Relation
-pDecl2aDecl ti ci cptMap maybePatLabel defLanguage defFormat pd =
+pDecl2aDecl ti cptMap maybePat defLanguage defFormat pd =
   do
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
@@ -1519,7 +1544,7 @@ pDecl2aDecl ti ci cptMap maybePatLabel defLanguage defFormat pd =
           decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
           decfpos = origin pd,
           decusr = True,
-          decpat = maybePatLabel,
+          decpat = maybePat,
           dechash = hash (dec_nm pd) `hashWithSalt` decSign
         }
   where
@@ -1695,9 +1720,9 @@ tBoxItem2aBoxItem :: TTypeInfo -> TBoxItem (TermPrim, DisambPrim) -> Guarded Box
 tBoxItem2aBoxItem ti tbi =
   case tbi of
     TBxExpr obj ->
-      do
-        (expr, (b, _)) <- typecheckTerm (tiContext ti) (objExpression o)
-        pure $ BxExpr o {objExpression = expr}
+      BxExpr <$> tObjDef2aObjDef ti obj
+    --        (expr, (b, _)) <- typecheckTerm (tiContext ti) (objExpression o)
+    --        pure $ BxExpr o {objExpression = expr}
     TBxText {} ->
       pure
         $ BxText
@@ -1706,30 +1731,59 @@ tBoxItem2aBoxItem ti tbi =
             boxtxt = tboxtxt tbi
           }
 
+tObjDef2aObjDef ::
+  TTypeInfo ->
+  TObjectDef (TermPrim, DisambPrim) ->
+  Guarded ObjectDef
+tObjDef2aObjDef ti obj = do
+  msub <- maybeOverGuarded (tSubi2aSubi ti) (tobjmsub obj)
+  expr <- tExpr2aExpr ti (tobjExpression obj)
+  return
+    ObjectDef
+      { objmsub = msub,
+        objmView = tobjmView obj,
+        objlbl = tobjlbl obj,
+        objcrud = tobjcrud obj,
+        objPos = tobjPos obj,
+        objPlainName = tobjPlainName obj,
+        objExpression = expr
+      }
+
+tSubi2aSubi ::
+  TTypeInfo ->
+  TSubInterface (TermPrim, DisambPrim) ->
+  Guarded SubInterface
+tSubi2aSubi ti subi = undefined
+
 checkTTypes :: TTypeInfo -> TExpression -> Guarded ()
 checkTTypes ti expr = undefined
 
+tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
+tExpr2aExpr ti expr = undefined
+
 pRel2tRel ::
   ConceptMap ->
-  Maybe Name -> -- name of pattern the relation is defined in (if any), just for documentation purposes
+  Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
   Lang -> -- The default language
   PandocFormat -> -- The default pandocFormat
   P_Relation ->
-  TRelation
-pRel2tRel cptMap maybePatName defLanguage defFormat pd =
-  TRelation
-    { tdecnm = dec_nm pd,
-      tdecsgn = decSign,
-      tdeclabel = dec_label pd,
-      tdecprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
-      tdecDefaults = dec_defaults pd,
-      tdecpr = dec_pragma pd,
-      tdecMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
-      tdecfpos = origin pd,
-      tdecusr = True,
-      tdecpat = maybePatName,
-      tdechash = hash (dec_nm pd) `hashWithSalt` decSign
-    }
+  Guarded TRelation
+pRel2tRel cptMap maybePatName defLanguage defFormat pd = do
+  checkEndoProps
+  return
+    TRelation
+      { tdecnm = dec_nm pd,
+        tdecsgn = decSign,
+        tdeclabel = dec_label pd,
+        tdecprps = Set.fromList . concatMap pProp2aProps . Set.toList $ dec_prps pd,
+        tdecDefaults = dec_defaults pd,
+        tdecpr = dec_pragma pd,
+        tdecMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd),
+        tdecfpos = origin pd,
+        tdecusr = True,
+        tdecpat = maybePatName,
+        tdechash = hash (dec_nm pd) `hashWithSalt` decSign
+      }
   where
     pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
     pReldefault2aReldefaults ti' x = case x of
