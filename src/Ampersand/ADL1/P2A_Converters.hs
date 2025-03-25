@@ -537,6 +537,14 @@ pCtx2aCtx
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
 
+      -- | pRepr2aRepr may be needed to get TTypes properly checked. For now disabled to prevent warnings.
+      -- pRepr2aRepr :: ContextInfo -> Representation -> Guarded Representation
+      -- pRepr2aRepr _ repr@Repr{} = pure repr
+      -- pRepr2aRepr ci repr@ImplicitRepr{pos=_pos, reprTerm=_reprTerm} =
+      --     do 
+      --       (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
+      --       return (Repr (origin repr) (aConcept2pConcept (target expr) :| []) Object)
+
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
         case pop of
@@ -647,21 +655,21 @@ pCtx2aCtx
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
       typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
-      typecheckObjDef declMap objDef =
+      typecheckObjDef contextInfo objDef =
         case objDef of
           P_BoxItemTerm
             { obj_PlainName = nm,
               obj_lbl = lbl',
               pos = orig,
-              obj_ctx = ctx,
+              obj_term = term,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = subs
             } -> do
-              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm declMap ctx
+              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm contextInfo term
               checkCrud
               crud <- pCruds2aCruds objExpr mCrud
-              maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+              maybeObj <- maybeOverGuarded (pSubi2aSubi contextInfo objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
               case maybeObj of
                 Just (newExpr, subStructures) -> return (obj crud (newExpr, srcBounded) (Just subStructures))
                 Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
@@ -807,7 +815,7 @@ pCtx2aCtx
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
                 Just disambObj -> typecheckTerm ci
                   $ case disambObj of
-                    P_BoxItemTerm {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                    P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
                 Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
               objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
@@ -825,7 +833,6 @@ pCtx2aCtx
               <$> traverse (fn <=< typecheckObjDef ci) l
               <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
               <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-              <* mustBeObject (target objExpr)
             where
               toNonEmptyLabel :: P_BoxItem a -> Text1
               toNonEmptyLabel bi = case obj_PlainName bi of
@@ -851,10 +858,6 @@ pCtx2aCtx
               fn (boxitem, p) = case boxitem of
                 BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
                 BxText {} -> pure boxitem
-              mustBeObject :: A_Concept -> Guarded ()
-              mustBeObject cpt = case representationOf ci cpt of
-                Object -> pure ()
-                tt -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
         where
           matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
           matchWith (ojd, exprBound) =
@@ -903,8 +906,8 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      pIfc2aIfc declMap (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2BoxItem declMap objDisamb
+      pIfc2aIfc contextInfo (pIfc, objDisamb) =
+        build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
         where
           build :: Guarded BoxItem -> Guarded Interface
           build gb =
@@ -938,7 +941,7 @@ pCtx2aCtx
                             $ tt
                     BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
           ttype :: A_Concept -> TType
-          ttype = representationOf declMap
+          ttype = representationOf contextInfo
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =

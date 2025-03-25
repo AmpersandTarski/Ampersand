@@ -275,6 +275,7 @@ instance Pretty P_Population where
 
 instance Pretty Representation where
   pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
+  pretty (ImplicitRepr{}) = text "" 
 
 instance Pretty TType where
   pretty = text . show
@@ -293,7 +294,7 @@ instance Pretty P_Interface where
         if null roles
           then empty
           else text "FOR" <+> listOf roles
-      interfaceExpression = text ":" <~> pretty (obj_ctx obj)
+      interfaceExpression = text ":" <~> pretty (obj_term obj)
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
 

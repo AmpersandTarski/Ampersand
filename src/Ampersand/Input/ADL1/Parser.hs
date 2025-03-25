@@ -22,7 +22,8 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
-import Text.Casing
+import Text.Casing ( camel, pascal )
+import Data.Maybe ( catMaybes )
 
 --- Populations ::= Population+
 
@@ -62,7 +63,8 @@ pContext =
             ctx_gs = concat [ys | CCfy ys <- ces], -- The Classify definitions defined in this context, outside the scope of patterns
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
-            ctx_reprs = [r | CRep r <- ces],
+            ctx_reprs = [r | CRep r <- ces] <>
+                        [ImplicitRepr (origin box) (obj_term box) | Cifc s <- ces, obj<-[ifc_Obj s], si<-recur obj, box<-si_box si],
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
@@ -72,6 +74,9 @@ pContext =
           },
         [s | CIncl s <- ces] -- the INCLUDE filenames
       )
+     where
+       recur :: P_BoxItem a -> [P_SubIfc a]
+       recur obj = Data.Maybe.catMaybes [obj_msub obj]<>[ subIfc | Just si<-[obj_msub obj], box<-si_box si, subIfc<-recur box]
 
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement
@@ -717,7 +722,7 @@ pIdentDef =
             { pos = pos',
               obj_PlainName = Nothing,
               obj_lbl = Nothing,
-              obj_ctx = ctx,
+              obj_term = ctx,
               obj_crud = Nothing,
               obj_mView = Nothing,
               obj_msub = Nothing
@@ -850,7 +855,7 @@ pInterface =
               { obj_PlainName = Nothing,
                 obj_lbl = Nothing,
                 pos = p,
-                obj_ctx = ctx,
+                obj_term = ctx,
                 obj_crud = mCrud,
                 obj_mView = mView,
                 obj_msub = Just sub
@@ -922,7 +927,7 @@ pBoxBodyElement =
             { obj_PlainName = Just localNm,
               obj_lbl = lbl,
               pos = orig,
-              obj_ctx = term,
+              obj_term = term,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = msub

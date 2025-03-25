@@ -1439,11 +1439,11 @@ class HasSignature a where
 data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
-    -- | a list containing all user defined Representations in the context
+    -- | a list containing the user defined Representations in the context, without the implicit definitions.
     representationOf :: !(A_Concept -> TType),
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
-    -- | a list of all Representations
+    -- | a list of all Representations in the context, including the implicit Object definitions.
     reprList :: ![Representation],
     -- | a map of declarations and the corresponding types
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),

@@ -170,6 +170,15 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
+-- mkInvalidTTypeError :: Origin -> Representation -> Guarded a
+-- mkInvalidTTypeError o repr@ImplicitRepr{} =
+--   Errors . pure $ CTXE o msg
+--   where
+--     msg =
+--       T.intercalate "\n"
+--         $ [ "The target of "<>tshow (reprTerm repr)<>" has technical type Object"
+--           , " because it is used in a subinterface at " <> showFullOrig o]
+
 mkMultipleRepresentTypesError :: A_Concept -> [(TType, Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs =
   Errors . pure $ CTXE o msg
@@ -646,7 +655,7 @@ mustBeOrderedLst o lst =
     exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
       case x of
-        P_BoxItemTerm {} -> obj_ctx x
+        P_BoxItemTerm {} -> obj_term x
         P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

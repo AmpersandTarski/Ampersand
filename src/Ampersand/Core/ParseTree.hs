@@ -342,11 +342,17 @@ data Representation = Repr
     reprcpts :: !(NE.NonEmpty P_Concept),
     -- | the type of the concept the atom is in
     reprdom :: !TType
+  } |
+  ImplicitRepr
+  { pos :: !Origin,
+    -- | the type of the concept the atom is in
+    reprTerm :: Term TermPrim
   }
   deriving (Show)
 
 instance Traced Representation where
   origin Repr {pos = orig} = orig
+  origin ImplicitRepr {pos = orig} = orig
 
 data TType
   = Alphanumeric
@@ -1016,7 +1022,7 @@ data P_BoxItem a
         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
         pos :: !Origin,
         -- | this term describes the instances of this object, related to their context.
-        obj_ctx :: !(Term a),
+        obj_term :: !(Term a),
         -- | the CRUD actions as required by the user
         obj_crud :: !(Maybe P_Cruds),
         -- | The view that should be used for this object
