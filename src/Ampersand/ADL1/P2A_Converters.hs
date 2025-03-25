@@ -286,6 +286,7 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      representations <- traverse (pRepr2aRepr contextInfo) p_representations --  The representations defined in this context
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -537,13 +538,6 @@ pCtx2aCtx
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
 
-      -- | pRepr2aRepr may be needed to get TTypes properly checked. For now disabled to prevent warnings.
-      -- pRepr2aRepr :: ContextInfo -> Representation -> Guarded Representation
-      -- pRepr2aRepr _ repr@Repr{} = pure repr
-      -- pRepr2aRepr ci repr@ImplicitRepr{pos=_pos, reprTerm=_reprTerm} =
-      --     do 
-      --       (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
-      --       return (Repr (origin repr) (aConcept2pConcept (target expr) :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
