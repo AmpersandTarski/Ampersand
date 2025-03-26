@@ -1220,7 +1220,7 @@ class (HasSignature a, Show a) => ExpressionLike a where
     -- SJC: always fits! No fatal here..
     ePrd (l, r)
   eEps :: Term TermPrim -> A_Concept -> Signature -> a
-  
+
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
    does not. In that case, -(r!s) (with target r=Student and source s=Employee) is defined, but -r;-s is not.
@@ -1238,7 +1238,7 @@ instance ExpressionLike Expression where
   eCps = ECps
   eRad = ERad
   ePrd = EPrd
-  eEps _ = EEps 
+  eEps _ = EEps
 
 instance Flippable Expression where
   flp expr = case expr of
@@ -1467,12 +1467,10 @@ data ContextInfo = CI
 
 -- Convenient data structure to hold information about concepts and their technical types
 -- in a context.
-data TTypeInfo = TTypeInfo
-  { -- | a list of all Representations
-    typeMap :: !(A_Concept -> TType)
-  }
+newtype TTypeInfo
+  = TTypeInfo {typeMap :: A_Concept -> TType}
   deriving (Show)
-aap = "TODO: Use newtype instead of data for TTypeInfo"
+
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
 typeOrConcept fun (UserConcept nm) = Left . fun $ mkPConcept nm
