@@ -310,18 +310,16 @@ showMathOper oper = case oper of
   LessThanOrEqual -> inMathLessThanOrEqual
   GreaterThanOrEqual -> inMathGreaterThanOrEqual
 
-atomVal2Math :: PAtomValue -> Text
+atomVal2Math :: AAtomValue -> Text
 atomVal2Math pav =
   case pav of
-    PSingleton _ s _ -> " \\texttt{" <> tshow s <> "}"
-    ScriptString _ s -> " \\texttt{" <> tshow s <> "}"
-    XlsxString _ s -> " \\texttt{" <> tshow s <> "}"
-    ScriptInt _ i -> tshow i
-    ScriptFloat _ d -> tshow d
-    XlsxDouble o d -> fatal ("We got a value " <> tshow d <> " from " <> tshow o <> ", which has to be shown in a term, however the technicaltype is not known.")
-    ComnBool _ b -> tshow b
-    ScriptDate _ x -> tshow x
-    ScriptDateTime _ x -> tshow x
+    AAVString _ s _ -> " \\texttt{" <> tshow s <> "}"
+    AAVInteger _ i -> tshow i
+    AAVFloat _ d -> tshow d
+    AAVBoolean _ b -> tshow b
+    AAVDate _ x -> tshow x
+    AAVDateTime _ x -> tshow x
+    AtomValueOfONE -> "1"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)

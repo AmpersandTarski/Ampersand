@@ -1099,7 +1099,7 @@ data ExprInfo = ExprInfo
     userCpt' :: Maybe A_Concept, -- the concept of an Epsilon (and thus I too) Expression
     userSrc' :: Maybe A_Concept, -- the source concept of a V Expression
     userTgt' :: Maybe A_Concept, -- the target concept of a V Expression
-    singleton' :: Maybe PAtomValue -- the value of a singleton Expression
+    singleton' :: Maybe AAtomValue -- the value of a singleton Expression
   }
 
 binOp :: Expression -> Maybe BinOp
@@ -1129,7 +1129,7 @@ userSrc = userSrc' . exprInfo
 userTgt :: Expression -> Maybe A_Concept
 userTgt = userTgt' . exprInfo
 
-singleton :: Expression -> Maybe PAtomValue
+singleton :: Expression -> Maybe AAtomValue
 singleton = singleton' . exprInfo
 
 exprInfo :: Expression -> ExprInfo

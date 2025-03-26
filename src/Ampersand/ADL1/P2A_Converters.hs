@@ -15,7 +15,6 @@ where
 
 import Ampersand.ADL1.Disambiguate (DisambPrim (..), disambiguate, orWhenEmpty, pCpt2aCpt)
 -- used for type-checking
-import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
@@ -24,10 +23,8 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import Ampersand.FSpec.Transformers (Transformer (tRel))
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
-import Data.List (nub)
 import Data.Tuple.Extra (thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
@@ -35,6 +32,7 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import RIO.Time
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -338,7 +336,7 @@ pCtx2aCtx
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs <- traverse (pViewDef2aViewDef ttypeInfo contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
-      purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
+      purposes <- traverse (pPurp2aPurp ttypeInfo contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop ttypeInfo contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl ttypeInfo (cptMap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) p_relations
       enforces' <- traverse (pEnforce2aEnforce ttypeInfo contextInfo Nothing) p_enfs
@@ -448,12 +446,11 @@ pCtx2aCtx
         multitypologies <- traverse mkTypology connectConcepts
         tRels <- allTRels ctx
         declMap <- getDeclMap ctx
-        let allConcepts =
-              Set.unions
-                [ source <$> tRels,
-                  target <$> tRels,
-                  concs gns
-                ]
+        let allConcepts = Set.unions [sources, targets, concs gns]
+              where
+                sources = Set.fromList . map source . Set.toList $ tRels
+                targets = Set.fromList . map target . Set.toList $ tRels
+
         return
           ( CI
               { ctxiGens = gns,
@@ -461,7 +458,12 @@ pCtx2aCtx
                 multiKernels = multitypologies,
                 reprList = allReprs,
                 declDisambMap = declMap,
-                soloConcs = Set.filter (not . isInSystem genLattice) . fmap aConcToType $ allConcepts,
+                soloConcs =
+                  Set.filter (not . isInSystem genLattice)
+                    . Set.fromList
+                    . fmap aConcToType
+                    . Set.toList
+                    $ allConcepts,
                 allConcs = allConcepts,
                 gens_efficient = genLattice,
                 conceptMap = conceptmap ctx,
@@ -644,37 +646,6 @@ pCtx2aCtx
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
-      tRel2aRel :: TTypeInfo -> TRelation -> Guarded Relation
-      tRel2aRel ti trel = do
-        dflts <- mapM (pReldefault2aReldefaults ti) . L.nub $ tdecDefaults trel :: Guarded [ARelDefault]
-        return
-          Relation
-            { decusr = tdecusr trel,
-              decsgn = tdecsgn trel,
-              decprps = tdecprps trel,
-              decpr = tdecpr trel,
-              decpat = tdecpat trel,
-              decnm = tdecnm trel,
-              declabel = tdeclabel trel,
-              dechash = tdechash trel,
-              decfpos = tdecfpos trel,
-              decMean = tdecMean trel,
-              decDefaults = dflts
-            }
-        where
-          Sign src' tgt' = tdecsgn trel
-          pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
-          pReldefault2aReldefaults ti' x = case x of
-            PDefAtom st vals ->
-              ARelDefaultAtom st
-                <$> traverse
-                  ( case st of
-                      Src -> pAtomValue2aAtomValue (typeMap ti' src') src'
-                      Tgt -> pAtomValue2aAtomValue (typeMap ti' tgt') tgt'
-                  )
-                  vals
-            PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
-
       pPop2aPop :: TTypeInfo -> ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ti ci pop =
         case pop of
@@ -1086,7 +1057,7 @@ pCtx2aCtx
           <*> traverse (pIdentity2aIdentity ti ci (Just $ name ppat)) (pt_ids ppat)
           <*> traverse (pPop2aPop ti ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ti ci) (pt_vds ppat)
-          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
+          <*> traverse (pPurp2aPurp ti ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl ti (cptMap ctx) (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
@@ -1299,8 +1270,9 @@ pCtx2aCtx
                 if b || elem (getConcept s t) lst
                   then pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
                   else mustBeBound o [(Src, tExpr)]
-      pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
+      pPurp2aPurp :: TTypeInfo -> ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
+        ti
         ci
         PPurpose
           { pos = orig, -- :: Origin
@@ -1316,16 +1288,21 @@ pCtx2aCtx
                   explRefIds = refIds
                 }
           )
-            <$> pRefObj2aRefObj ci objref
-      pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
-      pRefObj2aRefObj ci (PRef2ConceptDef s) = pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
-      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedPRel2TRel (conceptMap ci) (declDisambMap ci) tm
-      pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
-      pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
-      pRefObj2aRefObj _ (PRef2ViewDef s) = pure $ ExplViewDef s
-      pRefObj2aRefObj _ (PRef2Pattern s) = pure $ ExplPattern s
-      pRefObj2aRefObj _ (PRef2Interface s) = pure $ ExplInterface s
-      pRefObj2aRefObj _ (PRef2Context s) = pure $ ExplContext s
+            <$> pRefObj2aRefObj ti ci objref
+      pRefObj2aRefObj :: TTypeInfo -> ContextInfo -> PRef2Obj -> Guarded ExplObj
+      pRefObj2aRefObj ti ci refference =
+        case refference of
+          PRef2ConceptDef s -> pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
+          PRef2Relation tm -> do
+            tRelation <- namedPRel2TRel (conceptMap ci) (declDisambMap ci) tm
+            rel <- tRel2aRel ti tRelation
+            return $ ExplRelation rel
+          PRef2Rule s -> pure $ ExplRule s
+          PRef2IdentityDef s -> pure $ ExplIdentityDef s
+          PRef2ViewDef s -> pure $ ExplViewDef s
+          PRef2Pattern s -> pure $ ExplPattern s
+          PRef2Interface s -> pure $ ExplInterface s
+          PRef2Context s -> pure $ ExplContext s
       allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
       allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) (deflangCtxt ctx) (deffrmtCtxt ctx)) p_conceptdefs
       allConceptDefs :: ContextInfo -> [AConceptDef]
@@ -1335,6 +1312,37 @@ pCtx2aCtx
         map
           pRoleRule2aRoleRule
           (p_roleRules <> concatMap pt_RRuls p_patterns)
+
+tRel2aRel :: TTypeInfo -> TRelation -> Guarded Relation
+tRel2aRel ti trel = do
+  dflts <- mapM (pReldefault2aReldefaults ti) . L.nub $ tdecDefaults trel :: Guarded [ARelDefault]
+  return
+    Relation
+      { decusr = tdecusr trel,
+        decsgn = tdecsgn trel,
+        decprps = tdecprps trel,
+        decpr = tdecpr trel,
+        decpat = tdecpat trel,
+        decnm = tdecnm trel,
+        declabel = tdeclabel trel,
+        dechash = tdechash trel,
+        decfpos = tdecfpos trel,
+        decMean = tdecMean trel,
+        decDefaults = dflts
+      }
+  where
+    Sign src' tgt' = tdecsgn trel
+    pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
+    pReldefault2aReldefaults ti' x = case x of
+      PDefAtom st vals ->
+        ARelDefaultAtom st
+          <$> traverse
+            ( case st of
+                Src -> pAtomValue2aAtomValue (typeMap ti' src') src'
+                Tgt -> pAtomValue2aAtomValue (typeMap ti' tgt') tgt'
+            )
+            vals
+      PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
 leastConcept genLattice c c' =
@@ -1347,9 +1355,23 @@ leastConcept genLattice c c' =
 
 addEpsilonLeft, addEpsilonRight :: (ExpressionLike a) => Op1EqualitySystem Type -> A_Concept -> a -> a
 addEpsilonLeft genLattice a e =
-  if a == source e then e else eEps (leastConcept genLattice (source e) a) (Sign a (source e)) .:. e
+  if a == source e
+    then e
+    else
+      eEps
+        (fatal "This Term TermPrim should never be exposed.")
+        (leastConcept genLattice (source e) a)
+        (Sign a (source e))
+        .:. e
 addEpsilonRight genLattice a e =
-  if a == target e then e else e .:. eEps (leastConcept genLattice (target e) a) (Sign (target e) a)
+  if a == target e
+    then e
+    else
+      e
+        .:. eEps
+          (fatal "This Term TermPrim should never be exposed.")
+          (leastConcept genLattice (target e) a)
+          (Sign (target e) a)
 
 addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> TExpression -> TExpression
 addEpsilon genLattice s t e =
@@ -1362,37 +1384,6 @@ typecheckTerm ci tct =
       ( \x -> case x of
           TEMp1 {} -> pure (x, (True, True))
           TEBin {} -> pure (x, (True, True))
-          -- if isValidOperator
-          --   then pure (x, (True, True))
-          --   else Errors . pure $ mkOperatorError (origin t) oper cpt typ
-          -- where
-          --   typ = tTypOf cpt
-          --   isValidOperator :: Bool
-          --   isValidOperator =
-          --     case oper of
-          --       LessThan -> hasORD typ
-          --       GreaterThan -> hasORD typ
-          --       LessThanOrEqual -> hasEQ typ && hasORD typ
-          --       GreaterThanOrEqual -> hasEQ typ && hasORD typ
-          --     where
-          --       hasEQ, hasORD :: TType -> Bool
-          --       hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
-          --       hasEQ _ = True
-          --       hasORD ttyp = case ttyp of
-          --         Alphanumeric -> True
-          --         BigAlphanumeric -> True
-          --         HugeAlphanumeric -> True
-          --         Password -> False
-          --         Binary -> False
-          --         BigBinary -> False
-          --         HugeBinary -> False
-          --         Date -> True
-          --         DateTime -> True
-          --         Boolean -> False
-          --         Integer -> True
-          --         Float -> True
-          --         Object -> False
-          --         TypeOfOne -> True
           _ ->
             return
               ( x,
@@ -1515,10 +1506,205 @@ pAtomPair2aAtomPair tTypOf dcl pp =
     <*> pAtomValue2aAtomValue (tTypOf (target dcl)) (target dcl) (ppRight pp)
 
 pAtomValue2aAtomValue :: TType -> A_Concept -> PAtomValue -> Guarded AAtomValue
-pAtomValue2aAtomValue ttyp cpt pav =
-  case unsafePAtomVal2AtomValue ttyp (Just cpt) pav of
-    Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
-    Right av -> pure av
+pAtomValue2aAtomValue typ cpt pav =
+  case pav of
+    PSingleton o str mval ->
+      case typ of
+        Alphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        BigAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        HugeAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        Password -> pure (AAVString (abs . hash $ str) typ str)
+        Object -> pure (AAVString (abs . hash $ str) typ str)
+        _ -> case mval of
+          Nothing -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+          Just x -> pAtomValue2aAtomValue typ cpt x
+    ScriptString o str ->
+      case typ of
+        Alphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        BigAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        HugeAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        Password -> pure (AAVString (abs . hash $ str) typ str)
+        Binary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        BigBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        HugeBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        Date -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        DateTime -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        Boolean -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        Integer -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        Float -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        TypeOfOne -> Errors . pure $ mkIncompatibleAtomValueError pav "ONE has a population of it's own, that cannot be modified"
+        Object -> pure (AAVString (abs . hash $ str) typ str)
+    XlsxString o str ->
+      case typ of
+        Alphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        BigAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        HugeAlphanumeric -> pure (AAVString (abs . hash $ str) typ str)
+        Password -> pure (AAVString (abs . hash $ str) typ str)
+        Binary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        BigBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        HugeBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        Date -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        DateTime -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        Boolean ->
+          let table =
+                [ ("TRUE", True),
+                  ("FALSE", False),
+                  ("YES", True),
+                  ("NO", False),
+                  ("WAAR", True),
+                  ("ONWAAR", False),
+                  ("JA", True),
+                  ("NEE", False),
+                  ("WEL", True),
+                  ("NIET", False)
+                ]
+           in case lookup (T.toUpper str) table of
+                Just b -> pure (AAVBoolean typ b)
+                Nothing -> Errors . pure $ mkIncompatibleAtomValueError pav $ "permitted Booleans: " <> (tshow . fmap (camelCase . fst) $ table)
+          where
+            camelCase :: Text -> Text
+            camelCase txt = case T.uncons txt of
+              Nothing -> mempty
+              Just (h, tl) -> T.cons (toUpper h) (T.toLower tl)
+        Integer -> case readMaybe . T.unpack $ str of
+          Just i -> pure (AAVInteger typ i)
+          Nothing -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        Float -> case readMaybe . T.unpack $ str of
+          Just r -> pure (AAVFloat typ r)
+          Nothing -> Errors . pure $ mkIncompatibleAtomValueError pav (message o str)
+        TypeOfOne -> Errors . pure $ mkIncompatibleAtomValueError pav "ONE has a population of it's own, that cannot be modified"
+        Object -> pure (AAVString (abs . hash $ str) typ str)
+    ScriptInt o i ->
+      case typ of
+        Alphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        BigAlphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        HugeAlphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        Password -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        Binary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary ca)not be populated in an ADL script"
+        BigBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        HugeBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        Date -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        DateTime -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        Boolean -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+        Integer -> pure (AAVInteger typ i)
+        Float -> pure (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
+        TypeOfOne -> Errors . pure $ mkIncompatibleAtomValueError pav "ONE has a population of it's own, that cannot be modified"
+        Object -> Errors . pure $ mkIncompatibleAtomValueError pav (message o i)
+    ScriptFloat o x ->
+      case typ of
+        Alphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        BigAlphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        HugeAlphanumeric -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        Password -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        Binary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        BigBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        HugeBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        Date -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        DateTime -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        Boolean -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        Integer -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+        Float -> pure (AAVFloat typ x)
+        TypeOfOne -> Errors . pure $ mkIncompatibleAtomValueError pav "ONE has a population of it's own, that cannot be modified"
+        Object -> Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+    XlsxDouble o d ->
+      case typ of
+        Alphanumeric -> pure $ relaxXLSXInput d
+        BigAlphanumeric -> pure $ relaxXLSXInput d
+        HugeAlphanumeric -> pure $ relaxXLSXInput d
+        Password -> pure $ relaxXLSXInput d
+        Binary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        BigBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        HugeBinary -> Errors . pure $ mkIncompatibleAtomValueError pav "Binary cannot be populated in an ADL script"
+        Date ->
+          pure
+            AAVDate
+              { aavtyp = typ,
+                aadateDay = addDays (floor d) dayZeroExcel
+              }
+        DateTime ->
+          pure
+            $ AAVDateTime
+              { aavtyp = typ,
+                aadatetime =
+                  roundBySeconds
+                    $ UTCTime
+                      (addDays daysSinceZero dayZeroExcel)
+                      (picosecondsToDiffTime . floor $ fractionOfDay * picosecondsPerDay)
+              }
+          where
+            picosecondsPerDay = 24 * 60 * 60 * 1000000000000
+            (daysSinceZero, fractionOfDay) = properFraction d
+        Boolean -> Errors . pure $ mkIncompatibleAtomValueError pav (message o d)
+        Integer ->
+          if frac == 0
+            then pure (AAVInteger typ int)
+            else Errors . pure $ mkIncompatibleAtomValueError pav (message o d)
+          where
+            (int, frac) = properFraction d
+        Float -> pure (AAVFloat typ d)
+        TypeOfOne -> Errors . pure $ mkIncompatibleAtomValueError pav "ONE has a population of it's own, that cannot be modified"
+        Object -> pure $ relaxXLSXInput d
+    ComnBool o b ->
+      if typ == Boolean
+        then pure (AAVBoolean typ b)
+        else Errors . pure $ mkIncompatibleAtomValueError pav (message o b)
+    ScriptDate o x ->
+      if typ == Date
+        then pure (AAVDate typ x)
+        else Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+    ScriptDateTime o x ->
+      if typ == DateTime
+        then pure $ AAVDateTime typ (roundBySeconds x)
+        else Errors . pure $ mkIncompatibleAtomValueError pav (message o x)
+  where
+    roundBySeconds :: UTCTime -> UTCTime
+    roundBySeconds x = x {utctDayTime = rounded (utctDayTime x)}
+      where
+        -- Rounding is needed, to maximize the number of databases
+        -- on wich this runs. (MySQL 5.5 only knows seconds)
+        picosecondsInASecond = 1000000000000
+        rounded :: DiffTime -> DiffTime
+        rounded = picosecondsToDiffTime . quot picosecondsInASecond . diffTimeToPicoseconds
+
+    relaxXLSXInput :: Double -> AAtomValue
+    relaxXLSXInput v = AAVString (hash v) typ . neat . tshow $ v
+      where
+        neat :: Text -> Text
+        neat s
+          | onlyZeroes dotAndAfter = beforeDot
+          | otherwise = s
+          where
+            (beforeDot, dotAndAfter) = T.span (/= '.') s
+            onlyZeroes s' = case T.uncons s' of
+              Nothing -> True
+              Just ('.', afterDot) -> T.all (== '0') afterDot
+              _ -> False
+    message :: (Show x) => Origin -> x -> Text
+    message orig x =
+      T.intercalate "\n    "
+        $ [ "Representation mismatch",
+            "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
+            "as representation of an atom in concept `" <> text1ToText (fullName1 cpt) <> "`.",
+            "However, the representation-type of that concept is " <> implicitly,
+            "defined as " <> tshow typ <> ". The found value does not match that type."
+          ]
+        <> example
+      where
+        implicitly = if typ == Object then "(implicitly) " else ""
+        example :: [Text]
+        example = case typ of
+          Alphanumeric -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+          BigAlphanumeric -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
+          Boolean -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
+          Date -> ["DATE types are defined by ISO8601, e.g. 2013-07-04 (without surrounding quotes)."]
+          DateTime -> ["DATETIME types follow ISO 8601 format, e.g. 2013-07-04T11:11:11+00:00 or 2015-06-03T13:21:58Z (without surrounding quotes)."]
+          Float -> ["FLOAT type are floating point numbers. There should be a dot character (.) in it."]
+          HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
+          Integer -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
+          Password -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+          Object -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
+          _ -> fatal $ "There is no example denotational syntax for a value of type `" <> tshow typ <> "`."
+    dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
 
 pDecl2aDecl ::
   TTypeInfo ->
@@ -1755,11 +1941,106 @@ tSubi2aSubi ::
   Guarded SubInterface
 tSubi2aSubi ti subi = undefined
 
-checkTTypes :: TTypeInfo -> TExpression -> Guarded ()
-checkTTypes ti expr = undefined
-
 tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
-tExpr2aExpr ti expr = undefined
+tExpr2aExpr ti expr = case expr of
+  (TEEqu (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EEqu (l', r')
+  (TEInc (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EInc (l', r')
+  (TEIsc (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EIsc (l', r')
+  (TEUni (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EUni (l', r')
+  (TEDif (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EDif (l', r')
+  (TELrs (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ ELrs (l', r')
+  (TERrs (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ ERrs (l', r')
+  (TEDia (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EDia (l', r')
+  (TECps (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ ECps (l', r')
+  (TERad (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ ERad (l', r')
+  (TEPrd (l, r)) -> do
+    l' <- tExpr2aExpr ti l
+    r' <- tExpr2aExpr ti r
+    return $ EPrd (l', r')
+  (TEKl0 e) -> do
+    e' <- tExpr2aExpr ti e
+    return $ EKl0 e'
+  (TEKl1 e) -> do
+    e' <- tExpr2aExpr ti e
+    return $ EKl1 e'
+  (TEFlp e) -> do
+    e' <- tExpr2aExpr ti e
+    return $ EFlp e'
+  (TECpl e) -> do
+    e' <- tExpr2aExpr ti e
+    return $ ECpl e'
+  (TEBrk e) -> do
+    e' <- tExpr2aExpr ti e
+    return $ EBrk e'
+  (TEDcD _ trel) -> EDcD <$> tRel2aRel ti trel
+  (TEDcI _ cpt) -> pure $ EDcI cpt
+  (TEBin tp oper cpt) ->
+    if isValidOperator
+      then pure $ EBin oper cpt
+      else Errors . pure $ mkOperatorError (origin tp) oper cpt typ
+    where
+      typ = typeMap ti cpt
+      isValidOperator :: Bool
+      isValidOperator =
+        case oper of
+          LessThan -> hasORD typ
+          GreaterThan -> hasORD typ
+          LessThanOrEqual -> hasEQ typ && hasORD typ
+          GreaterThanOrEqual -> hasEQ typ && hasORD typ
+  (TEEps _ cpt sgn) -> pure $ EEps cpt sgn
+  (TEDcV _ sgn) -> pure $ EDcV sgn
+  (TEMp1 _ val cpt) -> do
+    aval <- pAtomValue2aAtomValue (typeMap ti cpt) cpt val
+    pure $ EMp1 aval cpt
+  where
+    hasEQ, hasORD :: TType -> Bool
+    hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
+    hasEQ _ = True
+    hasORD ttyp = case ttyp of
+      Alphanumeric -> True
+      BigAlphanumeric -> True
+      HugeAlphanumeric -> True
+      Password -> False
+      Binary -> False
+      BigBinary -> False
+      HugeBinary -> False
+      Date -> True
+      DateTime -> True
+      Boolean -> False
+      Integer -> True
+      Float -> True
+      Object -> False
+      TypeOfOne -> True
 
 pRel2tRel ::
   ConceptMap ->

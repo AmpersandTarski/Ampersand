@@ -308,7 +308,7 @@ aExpression2pTermPrim expr =
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
     EBin oper cpt -> Prim . PBind o oper . aConcept2pConcept $ cpt
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
-    EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
+    EMp1 val cpt -> Prim . Patm o (aAtomValue2pAtomValue val) . Just . aConcept2pConcept $ cpt
   where
     o = Origin $ "Origin is not present in Expression: " <> tshow expr
 
