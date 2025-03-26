@@ -149,7 +149,6 @@ data A_Context = ACtx
     -- | The identity definitions defined in this context, outside the scope of patterns
     ctxks :: ![IdentityRule],
     ctxrrules :: ![A_RoleRule],
-    ctxreprs :: !(A_Concept -> TType),
     -- | The view definitions defined in this context, outside the scope of patterns
     ctxvs :: ![ViewDef],
     -- | The specialization statements defined in this context, outside the scope of patterns
