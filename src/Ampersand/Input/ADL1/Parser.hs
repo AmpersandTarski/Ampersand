@@ -220,7 +220,7 @@ data ContextElement
   | CCfy [PClassify]
   | CRel (P_Relation, [P_Population])
   | CCon (DefinitionContainer -> PConceptDef)
-  | CRep Representation
+  | CRep P_Representation
   | Cm P_RoleRule
   | CIndx P_IdentDef
   | CView P_ViewDef
@@ -333,7 +333,7 @@ data PatElem
   | Pd (P_Relation, [P_Population])
   | Pm P_RoleRule
   | Pc (DefinitionContainer -> PConceptDef)
-  | Prep Representation
+  | Prep P_Representation
   | Pk P_IdentDef
   | Pv P_ViewDef
   | Pe PPurpose
@@ -656,8 +656,8 @@ pConceptDef =
         <|> PCDDefNew
         <$> pMeaning
 
---- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
-pRepresentation :: AmpParser Representation
+--- P_Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
+pRepresentation :: AmpParser P_Representation
 pRepresentation =
   Repr
     <$> currPos

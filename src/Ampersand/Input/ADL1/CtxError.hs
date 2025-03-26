@@ -170,7 +170,7 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
--- mkInvalidTTypeError :: Origin -> Representation -> Guarded a
+-- mkInvalidTTypeError :: Origin -> P_Representation -> Guarded a
 -- mkInvalidTTypeError o repr@ImplicitRepr{} =
 --   Errors . pure $ CTXE o msg
 --   where

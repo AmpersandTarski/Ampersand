@@ -9,7 +9,7 @@ INTERFACE Test: I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 
   , "NoVars": V[SESSION*NoVar] cRud 
   , "Ifc" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>
-    [ "A = ": I cRud
+    [ "A = ": I[A] cRud
 --#IF EditableInterfaceA
   --#IFNOT DoNotShowR1
     , "r1": r1 cRUd

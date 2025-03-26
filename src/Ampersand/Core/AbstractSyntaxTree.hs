@@ -45,10 +45,11 @@ module Ampersand.Core.AbstractSyntaxTree
     A_Concept (..),
     A_Concepts,
     AConceptDef (..),
+    A_Representation (..),
     ShowWithAliases (..),
     Meaning (..),
     A_RoleRule (..),
-    Representation (..),
+    P_Representation (..),
     TType (..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
@@ -104,7 +105,7 @@ import Ampersand.Core.ParseTree
     PairView (..),
     PairViewSegment (..),
     Pragma,
-    Representation (..),
+    P_Representation (..),
     Role (..),
     SrcOrTgt (..),
     TType (..),
@@ -149,6 +150,7 @@ data A_Context = ACtx
     -- | The identity definitions defined in this context, outside the scope of patterns
     ctxks :: ![IdentityRule],
     ctxrrules :: ![A_RoleRule],
+    ctxreprs :: !(A_Concept -> TType),
     -- | The view definitions defined in this context, outside the scope of patterns
     ctxvs :: ![ViewDef],
     -- | The specialization statements defined in this context, outside the scope of patterns
@@ -206,7 +208,7 @@ data Pattern = A_Pat
     -- | The concept definitions that are declared in this pattern
     ptcds :: ![AConceptDef],
     -- | The concept definitions that are declared in this pattern
-    ptrps :: ![Representation],
+    ptrps :: ![P_Representation],
     -- | The user defined populations in this pattern
     ptups :: ![Population],
     -- | The identity definitions defined in this pattern
@@ -289,6 +291,14 @@ instance Ord AConceptDef where
 
 instance Eq AConceptDef where
   a == b = compare a b == EQ
+
+data A_Representation = Arepr
+  { -- | the concepts
+    aReprFrom :: !(NE.NonEmpty A_Concept),
+    -- | the type of the concept the atom is in
+    aReprTo :: !TType
+  }
+  deriving (Show)
 
 data A_RoleRule = A_RoleRule
   { arPos :: !Origin,
@@ -1443,7 +1453,7 @@ data ContextInfo = CI
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
     -- | a list of all Representations in the context, including the implicit Object definitions.
-    reprList :: ![Representation],
+    reprList :: ![P_Representation],
     -- | a map of declarations and the corresponding types
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration

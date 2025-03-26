@@ -49,7 +49,7 @@ import Ampersand.Core.ParseTree
     P_RoleRule (..),
     P_Rule (..),
     P_Sign (P_Sign),
-    Representation (..),
+    P_Representation (..),
     Role (..),
     TType (..),
     TemplateKeyValue (..),
@@ -117,7 +117,7 @@ instance JSON.FromJSON (Guarded P_Context) where
         Maybe Text ->
         [Guarded P_Pattern] ->
         [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
-        [Guarded Representation] ->
+        [Guarded P_Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         -- [P_Enforce TermPrim] ->
         [Guarded P_RoleRule] ->
@@ -188,7 +188,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
         Maybe Text ->
         [Guarded P_Relation] ->
         [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
-        [Guarded Representation] ->
+        [Guarded P_Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         [Guarded PPurpose] ->
         Guarded P_Pattern
@@ -277,8 +277,8 @@ instance JSON.FromJSON (Guarded P_Concept) where
       "parsing P_Concept failed, "
       (JSON.typeMismatch "JSON. or String" invalid)
 
-instance JSON.FromJSON (Guarded Representation) where
-  parseJSON :: JSON.Value -> JSON.Parser (Guarded Representation)
+instance JSON.FromJSON (Guarded P_Representation) where
+  parseJSON :: JSON.Value -> JSON.Parser (Guarded P_Representation)
   parseJSON val = case val of
     JSON.Object v ->
       build
@@ -288,10 +288,10 @@ instance JSON.FromJSON (Guarded Representation) where
         JSON..: "type" -- Use the PCDDef JSON.parser here
     invalid ->
       JSON.prependFailure
-        "parsing Representation failed, "
+        "parsing P_Representation failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Guarded P_Concept -> TType -> Guarded Representation
+      build :: Guarded P_Concept -> TType -> Guarded P_Representation
       build gCpt ttype = do
         cpt <- gCpt
         pure

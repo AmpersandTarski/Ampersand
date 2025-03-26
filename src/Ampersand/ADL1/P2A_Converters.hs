@@ -286,7 +286,7 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      traverse_ (pReprCheck contextInfo) p_representations :: Guarded () --  Type-check all representations
+      aReprs <- traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -306,6 +306,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
+                ctxreprs = defaultTType aReprs :: A_Concept -> TType,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -323,13 +324,20 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
+      defaultTType :: [A_Representation] -> A_Concept -> TType
+      defaultTType aReprs c =
+        if c==ONE || show c=="_SESSION" then Object else
+        case L.nub [ aReprTo aRepr | aRepr<-aReprs, c `elem` NE.toList (aReprFrom aRepr) ] of
+          [] -> Alphanumeric
+          [t] -> t
+          _ -> fatal "Multiple representations for a single concept"
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
       cptMap = conceptmap
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
-      allReprs :: [Representation]
+      allReprs :: [P_Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
@@ -366,7 +374,7 @@ pCtx2aCtx
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (toList . concs) gns)
 
-          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
+          mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
             f
               <$> traverse typeOfGroup groups
@@ -380,8 +388,9 @@ pCtx2aCtx
               reprTrios :: [(A_Concept, TType, Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
-                  toReprs :: Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs :: P_Representation -> [(A_Concept, TType, Origin)]
+                  toReprs r@Repr{} = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs ImplicitRepr{} = []
                   nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                     where
@@ -479,10 +488,11 @@ pCtx2aCtx
           | x <- allGens
         ]
 
-      completeRules =
+      completeTypePairs :: [(Set Type, Set Type)]
+      completeTypePairs =
         genRules
           <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
-               | x <- p_representations <> concatMap pt_Reprs p_patterns,
+               | x@Repr{} <- p_representations <> concatMap pt_Reprs p_patterns,
                  cpt <- NE.toList $ reprcpts x
              ]
           <> [ ( Set.singleton RepresentSeparator,
@@ -508,7 +518,7 @@ pCtx2aCtx
       genLatticeIncomplete :: Op1EqualitySystem Type -- used to derive the concept groups
       genLatticeIncomplete = optimize1 (foldr addEquality emptySystem genRules)
       genLattice :: Op1EqualitySystem Type
-      genLattice = optimize1 (foldr addEquality emptySystem completeRules)
+      genLattice = optimize1 (foldr addEquality emptySystem completeTypePairs)
 
       pClassify2aClassify :: ConceptMap -> PClassify -> Maybe AClassify
       pClassify2aClassify fun pg =
@@ -537,12 +547,12 @@ pCtx2aCtx
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
 
-      pReprCheck :: ContextInfo -> Representation -> Guarded ()
-      pReprCheck _ Repr{} = Checked () []
-      pReprCheck ci repr@ImplicitRepr{pos=_pos, reprTerm=_reprTerm} =
-          do
-            _ <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
-            return ()
+      pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
+      pRepr2aRepr ci repr@Repr{} = pure Arepr{aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
+      pRepr2aRepr ci repr@ImplicitRepr{pos=_pos, reprTerm=_reprTerm} =
+          do 
+            (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
+            return (Arepr (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
