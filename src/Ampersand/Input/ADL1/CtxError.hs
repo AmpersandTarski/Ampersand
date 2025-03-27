@@ -29,7 +29,7 @@ module Ampersand.Input.ADL1.CtxError
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
     mkInvalidCRUDError,
-    mkMultipleRepresentTypesError,
+    checkMultipleTTypesOfConcept,
     nonMatchingRepresentTypes,
     mkEndoPropertyError,
     mkMultipleTypesInTypologyError,
@@ -39,7 +39,6 @@ module Ampersand.Input.ADL1.CtxError
     mkMultipleRootsError,
     mkCrudForRefInterfaceError,
     mkObjectTTypeError,
-    mkMultiTTypeError,
     mkInterfaceMustBeDefinedOnObject,
     mkSubInterfaceMustBeDefinedOnObject,
     lexerWarning2Warning,
@@ -172,34 +171,53 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
-mkMultipleRepresentTypesError :: A_Concept -> [(TType, Origin)] -> Guarded a
-mkMultipleRepresentTypesError cpt rs =
-  Errors . pure $ CTXE o msg
+checkMultipleTTypesOfConcept ::
+  -- | The concept that has potentially multiple types
+  A_Concept ->
+  -- | The types of the concept,
+  --   the origin of the type, and whether
+  --   it was explicitly defined.
+  NonEmpty (TType, Origin, Bool) ->
+  Guarded (A_Concept, TType)
+checkMultipleTTypesOfConcept cpt ts =
+  case NE.groupWith1 fst3 ts of
+    h :| [] -> pure (cpt, fst3 . NE.head $ h)
+    xs -> Errors $ mkMultipleTypesError  <$> xs
   where
-    o = case rs of
-      [] -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
-      (_, x) : _ -> x
-    msg =
-      T.intercalate "\n"
-        $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
-            "The following TYPEs are defined for it:"
-          ]
-        <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
+    mkMultipleTypesError :: NonEmpty (TType, Origin, Bool) -> CtxError
+    mkMultipleTypesError rs = CTXE o msg
+      where
+        o = snd3 . NE.head . NE.sort$ rs
+        msg =
+          T.intercalate "\n"
+            $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
+                "The following TYPEs are defined for it:"
+              ]
+            <> [ if isExplicit
+                   then "  - REPRESENT " <> (text1ToText . showWithAliases) cpt <> " TYPE " <> tshow t <> " at " <> showFullOrig orig
+                   else "  - Implicitly an Object because of the usage in an INTERFACE at " <> showFullOrig orig
+                 | (t, orig, isExplicit) <- NE.toList . NE.sort $ rs
+               ]
 
-mkMultipleTypesInTypologyError :: [(A_Concept, TType, [Origin])] -> Guarded a
-mkMultipleTypesInTypologyError tripls =
+mkMultipleTypesInTypologyError :: NonEmpty (A_Concept, TType, NonEmpty Origin, Bool) -> Guarded a
+mkMultipleTypesInTypologyError xs =
   Errors . pure $ CTXE o msg
   where
-    o = case tripls of
-      (_, _, x : _) : _ -> x
-      _ -> fatal "No origin in list."
+    o = NE.head origs
+      where
+        (_, _, origs, _) = NE.head xs
     msg =
       T.intercalate "\n"
         $ [ "Concepts in the same typology must have the same TYPE.",
             "The following concepts are in the same typology, but not all",
             "of them have the same TYPE:"
           ]
-        <> ["  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
+        <> [ if isExplicit
+               then "  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig
+               else "  - Implicitly an Object because of the usage in an INTERFACE at " <> showFullOrig orig
+             | (c, t, origs, isExplicit) <- NE.toList xs,
+               orig <- NE.toList origs
+           ]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs =
@@ -477,13 +495,13 @@ mkIncompatibleAtomValueError pav msg =
         _ -> msg
     )
 
-mkMultiTTypeError :: [A_Concept] -> [(A_Concept, TType)] -> CtxError
-mkMultiTTypeError part tTypeByUser =
-  CTXE OriginUnknown
-    $ "Multiple types are defined for the same concept. "
-    <> "You defined "
-    <> T.intercalate ", " [tshow c <> " as " <> tshow tt | (c, tt) <- tTypeByUser, c `elem` part]
-    <> "."
+-- mkMultiTTypeError :: [A_Concept] -> [(A_Concept, TType)] -> CtxError
+-- mkMultiTTypeError part tTypeByUser =
+--   CTXE OriginUnknown
+--     $ "Multiple types are defined for the same concept. "
+--     <> "You defined "
+--     <> T.intercalate ", " [tshow c <> " as " <> tshow tt | (c, tt) <- tTypeByUser, c `elem` part]
+--     <> "."
 
 mkInvariantViolationsError :: (Rule -> AAtomPair -> Text) -> (Rule, AAtomPairs) -> CtxError
 mkInvariantViolationsError applyViolText (r, ps) =

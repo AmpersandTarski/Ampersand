@@ -19,6 +19,13 @@ module Ampersand.Basics.Prelude
     undefined,
     Text1 (..),
     unsnoc,
+    fst3,
+    snd3,
+    trd3,
+    fst4,
+    snd4,
+    trd4,
+    fth4,
   )
 where
 
@@ -118,3 +125,26 @@ unsnoc :: Text -> Maybe (Text, Char)
 unsnoc t = case T.uncons (T.reverse t) of
   Nothing -> Nothing
   Just (h, tl) -> Just (T.reverse tl, h)
+
+-- functions for triples and quadruples:
+
+fst3 :: (a, b, c) -> a
+fst3 (x, _y, _z) = x
+
+snd3 :: (a, b, c) -> b
+snd3 (_x, y, _z) = y
+
+trd3 :: (a, b, c) -> c
+trd3 (_x, _y, z) = z
+
+fst4 :: (a, b, c, d) -> a
+fst4 (x, _y, _z, _w) = x
+
+snd4 :: (a, b, c, d) -> b
+snd4 (_x, y, _z, _w) = y
+
+trd4 :: (a, b, c, d) -> c
+trd4 (_x, _y, z, _w) = z
+
+fth4 :: (a, b, c, d) -> d
+fth4 (_x, _y, _z, w) = w

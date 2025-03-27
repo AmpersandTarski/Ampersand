@@ -370,43 +370,45 @@ pCtx2aCtx
       calcTechTypes :: ContextInfo -> [TInterface a] -> Guarded TTypeInfo
       calcTechTypes ci interfaces = do
         -- The TType of concepts is calculated based on the following rules:
-        -- 1. Concepts that are declared in a REPRESENT statement must have the technical type as declared in the REPRESENT statement.
-        -- 2. Concepts that are key in (sub-)interfaces must have Object as their technical type.
+        -- 1. Concepts that are explicitly declared in a REPRESENT statement must have the technical type as declared in the REPRESENT statement.
+        -- 2. Concepts that are implicitly declared as key in (sub-)interfaces must have Object as their technical type.
         -- 3. All concepts in the same typology must have the same technical type.
         -- 4. Concepts for which the technical type cannot be derived by above rules must have the technical type Alphanumeric.
-        let group1 :: [(A_Concept, TType, Origin)]
+        let group1, group2 :: [(A_Concept, TType, Origin, Bool)]
             group1 =
-              [ (conceptMap ci cpt, reprdom repr, origin repr)
-                | repr <- reprList ci
-                , cpt <- NE.toList . reprcpts $ repr
+              [ (conceptMap ci cpt, reprdom repr, origin repr, True)
+                | repr <- reprList ci,
+                  cpt <- NE.toList . reprcpts $ repr
               ]
-            aap = fmap (NE.groupWith (\(_,tt,_)-> tt)) . NE.groupWith (\(cpt,_,_) -> cpt) $ group1
-        case map NE.groupWith (\(_,tt,_)-> tt) . NE.groupWith (\(cpt,_,_) -> cpt) $ group1 of
-          [] -> fatal "Empty list of typologies is unexpected here."
-          [x] -> pure $ Map.fromList [(cpt, tt) | (cpt, tt, _) <- x]
-          xs -> Errors . pure $ mkMultipleRepresentTypesError xs      
-        let group2 :: [(A_Concept, TType, Origin)]
             group2 =
               L.nub
                 $ [ ( target . tobjExpression . tifcObj $ ifc,
                       Object,
-                      origin ifc
+                      origin ifc,
+                      False
                     )
                     | ifc <- interfaces
                   ]
-                <> [ (tsiConcept si, Object, origin si)
+                <> [ (tsiConcept si, Object, origin si, False)
                      | si <- concatMap (getDeepIfcRefs . tifcObj) interfaces
                    ]
-
-        mkMultipleRepresentTypesError
-
-        mkMultipleTTypeError . filter (\x -> length x > 1) . map L.nub . L.groupBy ((==) `on` fst) $ group1 <> group2
-        case L.groupBy ((==) `on` fst) (group1 <> group2) of
-          [] -> fatal "Empty list of typologies is unexpected here."
-          [x] -> pure $ Map.fromList x
-          xs -> Errors . pure $ mkMultipleTTypeError xs
+            extractConcept :: NonEmpty (A_Concept, TType, Origin, Bool) -> (A_Concept, NonEmpty (TType, Origin, Bool))
+            extractConcept xs = (fst4 . NE.head $ xs, fmap removefst4 xs)
+              where
+                removefst4 :: (a, b, c, d) -> (b, c, d)
+                removefst4 (_a, b, c, d) = (b, c, d)
+        -- for all concepts of group1 and group2, check whether they have a unique technical type:
+        (traverse (uncurry checkMultipleTTypesOfConcept . extractConcept) . NE.groupWith fst4) $ group1 <> group2
 
         return undefined
+       
+      -- mkMultipleTTypeError . filter (\x -> length x > 1) . map L.nub . L.groupBy ((==) `on` fst) $ group1 <> group2
+      -- case L.groupBy ((==) `on` fst) (group1 <> group2) of
+      --   [] -> fatal "Empty list of typologies is unexpected here."
+      --   [x] -> pure $ Map.fromList x
+      --   xs -> Errors . pure $ mkMultipleTTypeError xs
+
+      -- return undefined
 
       -- -- Concepts that are key in (sub-)interfaces get Object as their technical type
       -- --   without being declared explicitly in a REPRESENT statement:
@@ -539,7 +541,7 @@ pCtx2aCtx
                   rs -> case L.nub (map getTType rs) of
                     [] -> fatal "Impossible empty list."
                     [t] -> pure (Just (cpt, t, map getOrigin rs))
-                    _ -> mkMultipleRepresentTypesError cpt lst
+                    _ -> checkMultipleTTypesOfConcept cpt lst
                       where
                         lst = [(t, o) | (_, t, o) <- rs]
                 where
