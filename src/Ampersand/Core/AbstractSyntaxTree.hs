@@ -68,13 +68,13 @@ module Ampersand.Core.AbstractSyntaxTree
     ShowWithAliases (..),
     Signature (..),
     SubInterface (..),
-    TBoxItem(..),
+    TBoxItem (..),
     TExpression (..),
     tExpression2pTermPrim,
     TInterface (..),
     TObjectDef (..),
     Traced (..),
-    TRelation(..),
+    TRelation (..),
     TSubInterface (..),
     TType (..),
     TTypeInfo,
@@ -93,39 +93,40 @@ import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
     EnforceOperator,
     HTMLtemplateCall (..),
-    maybeOrdering,
     MetaData (..),
-    mkPConcept, PRelationDefault,
     Origin (..),
-    P_Concept (..),
-    P_Context(..),
-    P_Pattern(..),
-    PairView (..),
-    PairViewSegment (..),
     PAtomValue (..),
     PBinOp,
     PClassify (generics, specific),
     PConceptDef,
+    PRelationDefault,
+    P_Concept (..),
+    P_Context (..),
+    P_Pattern (..),
+    PairView (..),
+    PairViewSegment (..),
     Pragma,
     Representation (..),
     Role (..),
     SrcOrTgt (..),
+    TType (..),
     Term (..),
     TermPrim (..),
     Traced (..),
-    TType (..),
     ViewHtmlTemplate (..),
+    maybeOrdering,
+    mkPConcept,
   )
 import Data.Default (Default (..))
 import qualified Data.Text1 as T1
 import Data.Typeable (typeOf)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import RIO.Time
-import qualified RIO.Map as Map
 
 data A_Context = ACtx
   { -- | The name of this context
@@ -240,6 +241,7 @@ instance Labeled Pattern where
 
 instance Traced Pattern where
   origin = ptpos
+
 data AEnforce = AEnforce
   { pos :: !Origin,
     enfRel :: !Relation,
@@ -1441,6 +1443,7 @@ class HasSignature a where
 --  {-# MINIMAL sign #-}
 
 type DeclMap = Map.Map Name (Map.Map Signature TExpression)
+
 -- Convenient data structure to hold information about concepts and their classifications
 -- in a context.
 data ContextInfo = CI
@@ -1469,7 +1472,6 @@ data ContextInfo = CI
 -- Convenient data structure to hold information about concepts and their technical types
 -- in a context.
 type TTypeInfo = A_Concept -> TType
-
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1509,8 +1511,6 @@ instance Ord SignOrd where
 
 instance Eq SignOrd where
   a == b = compare a b == EQ
-
-
 
 -- | The typology of a context is the partioning of the concepts in that context into
 --   sets such that (isa\/isa~)*;typology |- typology
@@ -1631,6 +1631,7 @@ instance ExpressionLike TExpression where
   eRad = TERad
   ePrd = TEPrd
   eEps = TEEps
+
 data TRelation = TRelation
   { -- | the name of the relation
     tdecnm :: !Name,
@@ -1654,16 +1655,19 @@ data TRelation = TRelation
     tdecpat :: !(Maybe Name),
     tdechash :: !Int
   }
+
 instance Eq TRelation where
   a == b = compare a b == EQ
 
 instance Ord TRelation where
   compare a b = compare (name a, sign a) (name b, sign b)
+
 instance Show TRelation where
   show = T.unpack . text1ToText . showWithSign
 
 instance Named TRelation where
   name = tdecnm
+
 instance HasSignature TRelation where
   sign = tdecsgn
 
@@ -1688,8 +1692,10 @@ data TInterface a = TInterface
     tifcPurpose :: !Text
   }
   deriving (Show)
+
 instance Traced (TInterface a) where
   origin = tifcPos
+
 data TObjectDef a = TObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     tobjPlainName :: !(Maybe Text1),
@@ -1724,9 +1730,10 @@ data TSubInterface a
         tsiIfcId :: !Name -- id of the interface that is referenced to
       }
   deriving (Show)
+
 instance Traced (TSubInterface a) where
-  origin TBox{pos = orig} = orig
-  origin TInterfaceRef{pos = orig} = orig
+  origin TBox {pos = orig} = orig
+  origin TInterfaceRef {pos = orig} = orig
 
 data TBoxItem a
   = TBxExpr
@@ -1774,8 +1781,8 @@ isFitForCrudU expr =
     TEDcD {} -> True
     TEFlp e -> isFitForCrudU e
     TEBrk e -> isFitForCrudU e
-    TECps (TEEps{}, e) -> isFitForCrudU e
-    TECps (e, TEEps{}) -> isFitForCrudU e
+    TECps (TEEps {}, e) -> isFitForCrudU e
+    TECps (e, TEEps {}) -> isFitForCrudU e
     TECps (e, TEDcI {}) -> isFitForCrudU e
     TECps (_, _) -> False
     _ -> False

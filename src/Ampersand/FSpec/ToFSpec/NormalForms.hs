@@ -13,7 +13,7 @@ module Ampersand.FSpec.ToFSpec.NormalForms
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt, pAtomValue2aAtomValue)
+import Ampersand.ADL1.P2A_Converters (ConceptMap, pAtomValue2aAtomValue, pCpt2aCpt)
 import Ampersand.Basics
 import Ampersand.Classes.Relational
 import Ampersand.Core.A2P_Converters (aAtomValue2pAtomValue)
@@ -632,7 +632,7 @@ rTerm2expr ttypeOf term =
     RVee s t -> EDcV (Sign s t)
     RAtm a c -> EMp1 a' c
       where
-        a' =  
+        a' =
           case pAtomValue2aAtomValue (ttypeOf c) c a of
             Checked val _ -> val
             Errors e -> fatal $ tshow e

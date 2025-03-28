@@ -182,12 +182,12 @@ checkMultipleTTypesOfConcept ::
 checkMultipleTTypesOfConcept cpt ts =
   case NE.groupWith1 fst3 ts of
     h :| [] -> pure (cpt, fst3 . NE.head $ h)
-    xs -> Errors $ mkMultipleTypesError  <$> xs
+    xs -> Errors $ mkMultipleTypesError <$> xs
   where
     mkMultipleTypesError :: NonEmpty (TType, Origin, Bool) -> CtxError
     mkMultipleTypesError rs = CTXE o msg
       where
-        o = snd3 . NE.head . NE.sort$ rs
+        o = snd3 . NE.head . NE.sort $ rs
         msg =
           T.intercalate "\n"
             $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",

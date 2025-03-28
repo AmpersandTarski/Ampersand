@@ -13,6 +13,8 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.A2P_Converters (aCtx2pCtx)
+import Ampersand.Core.AbstractSyntaxTree (getConceptMap)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.NormalForms
@@ -20,8 +22,6 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Text.Pandoc.Builder hiding (toList)
-import Ampersand.Core.AbstractSyntaxTree (getConceptMap)
-import Ampersand.Core.A2P_Converters (aCtx2pCtx)
 
 testConfluence :: TTypeInfo -> A_Context -> Blocks
 testConfluence ti context =

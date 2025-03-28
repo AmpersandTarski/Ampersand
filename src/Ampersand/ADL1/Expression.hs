@@ -31,7 +31,6 @@ import Ampersand.Core.AbstractSyntaxTree
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
-
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to a
 --   term of the form Erel rel.
@@ -177,7 +176,6 @@ isFlipped :: Expression -> Bool
 isFlipped EFlp {} = True
 isFlipped (EBrk e) = isFlipped e
 isFlipped _ = False
-
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> NE.NonEmpty Expression
 exprIsc2list (EIsc (l, r)) = exprIsc2list l <> exprIsc2list r

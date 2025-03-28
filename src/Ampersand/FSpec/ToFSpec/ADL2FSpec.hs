@@ -120,7 +120,6 @@ makeFSpec env context =
       generalizationsOf = largerConcepts (gens context),
       allEnforces = fSpecAllEnforces,
       isSignal = fIsSignal
-      
     }
   where
     ttypeOf' = ctxreprs context

@@ -544,7 +544,7 @@ chpDiagnosis env fSpec
                      ]
               )
               -- Rows:
-              [ [ (plain . str . label) rol]
+              [ [(plain . str . label) rol]
                   <> [plain . str $ patLabel rul | multProcs]
                   <> [ (plain . str . label) rul,
                        plain . str $ patLabel rul
@@ -553,10 +553,10 @@ chpDiagnosis env fSpec
               ]
       where
         patLabel rul = case rrpat rul of
-                       Nothing -> "--"
-                       Just nm -> case lookupPattern fSpec nm of
-                         Nothing -> fatal $ "No pattern found with name = "<>fullName nm<>"."
-                         Just pat -> label pat
+          Nothing -> "--"
+          Just nm -> case lookupPattern fSpec nm of
+            Nothing -> fatal $ "No pattern found with name = " <> fullName nm <> "."
+            Just pat -> label pat
         multProcs = length (instanceList fSpec :: [Pattern]) > 1
     wipReport :: Blocks
     wipReport =
