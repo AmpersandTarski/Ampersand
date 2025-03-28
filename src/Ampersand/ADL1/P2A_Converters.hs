@@ -1285,7 +1285,7 @@ pCtx2aCtx
           (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
-leastConcept genLattice c c' =
+leastConcept genLattice c c' = trace ("genLattice = "<>tshow genLattice) . trace ("c = "<>tshow c<>", c' = "<>tshow c) $
   case (aConcToType c `elem` leastConcepts, aConcToType c' `elem` leastConcepts) of
     (True, _) -> c
     (_, True) -> c'
