@@ -362,7 +362,7 @@ pCtx2aCtx
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-      uniqueNames "pattern" pats
+  --    uniqueNames "pattern" pats
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
