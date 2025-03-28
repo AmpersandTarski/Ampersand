@@ -77,7 +77,7 @@ module Ampersand.Core.AbstractSyntaxTree
     TRelation(..),
     TSubInterface (..),
     TType (..),
-    TTypeInfo (..),
+    TTypeInfo,
     Type (..),
     typeOrConcept,
     Typology (..),
@@ -1468,9 +1468,8 @@ data ContextInfo = CI
 
 -- Convenient data structure to hold information about concepts and their technical types
 -- in a context.
-newtype TTypeInfo
-  = TTypeInfo {typeMap :: A_Concept -> TType}
-  deriving (Show)
+type TTypeInfo = A_Concept -> TType
+
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1689,7 +1688,8 @@ data TInterface a = TInterface
     tifcPurpose :: !Text
   }
   deriving (Show)
-
+instance Traced (TInterface a) where
+  origin = tifcPos
 data TObjectDef a = TObjectDef
   { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
     tobjPlainName :: !(Maybe Text1),
@@ -1724,6 +1724,9 @@ data TSubInterface a
         tsiIfcId :: !Name -- id of the interface that is referenced to
       }
   deriving (Show)
+instance Traced (TSubInterface a) where
+  origin TBox{pos = orig} = orig
+  origin TInterfaceRef{pos = orig} = orig
 
 data TBoxItem a
   = TBxExpr

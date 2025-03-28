@@ -10,7 +10,7 @@ module Ampersand.ADL1.P2A_Converters
     pCpt2aCpt,
     ConceptMap,
     getConceptMap,
-    pAtomValue2aAtomValue
+    pAtomValue2aAtomValue,
   )
 where
 
@@ -228,12 +228,18 @@ findRelsTyped declMap x tp = Map.findWithDefault [] tp (Map.map (: []) (findRels
 
 type DeclMap = Map.Map Name (Map.Map Signature TExpression)
 
-getDeepIfcRefs :: TObjectDef a -> [TSubInterface a]
-getDeepIfcRefs objDef = case tobjmsub objDef of
+getDeepIfcRefs :: ObjectDef  -> [SubInterface ]
+getDeepIfcRefs objDef = case objmsub objDef of
+  Nothing -> []
+  Just si -> case si of
+    InterfaceRef {} -> [si | not (siIsLink si)]
+    Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+getDeepTIfcRefs :: TObjectDef a -> [TSubInterface a]
+getDeepTIfcRefs objDef = case tobjmsub objDef of
   Nothing -> []
   Just si -> case si of
     TInterfaceRef {} -> [si | not (tsiIsLink si)]
-    TBox {} -> concatMap getDeepIfcRefs [x | TBxExpr x <- tsiObjs si]
+    TBox {} -> concatMap getDeepTIfcRefs [x | TBxExpr x <- tsiObjs si]
 
 -- | this function contains all relation declarations and their given types.
 getDeclMap :: P_Context -> Guarded DeclMap
@@ -341,7 +347,7 @@ pCtx2aCtx
                 ctxcds = allConceptDefs,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = typeMap ttypeInfo,
+                ctxreprs = ttypeInfo,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe pClassify2aClassify p_gens,
                 ctxgenconcs = (fmap . userList) (getConceptMap ctx) (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -384,7 +390,7 @@ pCtx2aCtx
                     | ifc <- interfaces
                   ]
                 <> [ (tsiConcept si, Object, origin si, False)
-                     | si <- concatMap (getDeepIfcRefs . tifcObj) interfaces
+                     | si <- concatMap (getDeepTIfcRefs . tifcObj) interfaces
                    ]
             extractConcept :: NonEmpty (A_Concept, TType, Origin, Bool) -> (A_Concept, NonEmpty (TType, Origin, Bool))
             extractConcept xs = (fst4 . NE.head $ xs, fmap removefst4 xs)
@@ -407,15 +413,14 @@ pCtx2aCtx
         group3Types <- traverse checkTTypesOfTypology . multiKernels $ ci
         let knownTypes = L.nub $ group1and2Types <> concat group3Types
         pure
-          TTypeInfo
-            { typeMap = \c ->
-                if c == ONE || tshow c == "SESSION"
-                  then Object
-                  else case [tt | (cpt, tt) <- knownTypes, cpt == c] of
-                    [tt] -> tt
-                    [] -> Alphanumeric
-                    _ -> fatal ("There are multiple technical types for concept " <> tshow c <> ".")
-            }
+          $ \c ->
+            if c == ONE || tshow c == "SESSION"
+              then Object
+              else case [tt | (cpt, tt) <- knownTypes, cpt == c] of
+                [tt] -> tt
+                [] -> Alphanumeric
+                _ -> fatal ("There are multiple technical types for concept " <> tshow c <> ".")
+
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
@@ -628,7 +633,7 @@ pCtx2aCtx
                 Nothing -> findDeclLooselyTyped (declDisambMap ci) nmdr (name nmdr) (cptMap <$> src) (cptMap <$> tgt)
                 _ -> namedPRel2TRel cptMap (declDisambMap ci) nmdr
               rel <- tRel2aRel ti trel
-              aps' <- traverse (pAtomPair2aAtomPair (typeMap ti) trel) aps
+              aps' <- traverse (pAtomPair2aAtomPair ti trel) aps
               src' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Tgt . userConcept)) tgt
               return
@@ -646,7 +651,7 @@ pCtx2aCtx
                         popas = vals
                       }
                 )
-                  <$> traverse (pAtomValue2aAtomValue (typeMap ti cpt) cpt) (p_popas pop)
+                  <$> traverse (pAtomValue2aAtomValue (ti cpt) cpt) (p_popas pop)
       isMoreGeneric :: Origin -> TRelation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
         if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
@@ -1308,8 +1313,8 @@ tRel2aRel ti trel = do
         ARelDefaultAtom st
           <$> traverse
             ( case st of
-                Src -> pAtomValue2aAtomValue (typeMap ti' src') src'
-                Tgt -> pAtomValue2aAtomValue (typeMap ti' tgt') tgt'
+                Src -> pAtomValue2aAtomValue ( ti' src') src'
+                Tgt -> pAtomValue2aAtomValue ( ti' tgt') tgt'
             )
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
@@ -1710,8 +1715,8 @@ pDecl2aDecl ti cptMap maybePat defLanguage defFormat pd =
         ARelDefaultAtom st
           <$> traverse
             ( case st of
-                Src -> pAtomValue2aAtomValue (typeMap ti' (source decSign)) (source decSign)
-                Tgt -> pAtomValue2aAtomValue (typeMap ti' (target decSign)) (target decSign)
+                Src -> pAtomValue2aAtomValue (ti' (source decSign)) (source decSign)
+                Tgt -> pAtomValue2aAtomValue (ti' (target decSign)) (target decSign)
             )
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
@@ -1979,7 +1984,7 @@ tExpr2aExpr ti expr = case expr of
       then pure $ EBin oper cpt
       else Errors . pure $ mkOperatorError (origin tp) oper cpt typ
     where
-      typ = typeMap ti cpt
+      typ = ti cpt
       isValidOperator :: Bool
       isValidOperator =
         case oper of
@@ -1990,7 +1995,7 @@ tExpr2aExpr ti expr = case expr of
   (TEEps _ cpt sgn) -> pure $ EEps cpt sgn
   (TEDcV _ sgn) -> pure $ EDcV sgn
   (TEMp1 _ val cpt) -> do
-    aval <- pAtomValue2aAtomValue (typeMap ti cpt) cpt val
+    aval <- pAtomValue2aAtomValue (ti cpt) cpt val
     pure $ EMp1 aval cpt
   where
     hasEQ, hasORD :: TType -> Bool
@@ -2037,13 +2042,13 @@ pRel2tRel cptMap maybePatName defLanguage defFormat pd = do
       }
   where
     pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
-    pReldefault2aReldefaults ti' x = case x of
+    pReldefault2aReldefaults ti x = case x of
       PDefAtom st vals ->
         ARelDefaultAtom st
           <$> traverse
             ( case st of
-                Src -> pAtomValue2aAtomValue (typeMap ti' (source decSign)) (source decSign)
-                Tgt -> pAtomValue2aAtomValue (typeMap ti' (target decSign)) (target decSign)
+                Src -> pAtomValue2aAtomValue (ti (source decSign)) (source decSign)
+                Tgt -> pAtomValue2aAtomValue (ti (target decSign)) (target decSign)
             )
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt

@@ -79,7 +79,7 @@ import Ampersand.Core.AbstractSyntaxTree
     Signature (..),
     SubInterface (..),
     TType (..),
-    TTypeInfo (..),
+    TTypeInfo,
     Typology (..),
     ViewDef (..),
     ViewSegment (..),

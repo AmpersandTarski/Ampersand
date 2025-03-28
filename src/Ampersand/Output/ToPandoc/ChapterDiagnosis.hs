@@ -544,14 +544,19 @@ chpDiagnosis env fSpec
                      ]
               )
               -- Rows:
-              [ [(plain . str . label) rol]
-                  <> [(plain . str . fromMaybe "--" . rrpat) rul | multProcs]
+              [ [ (plain . str . label) rol]
+                  <> [plain . str $ patLabel rul | multProcs]
                   <> [ (plain . str . label) rul,
-                       (plain . str . fromMaybe "--" . rrpat) rul
+                       plain . str $ patLabel rul
                      ]
                 | (rol, rul) <- fRoleRuls fSpec
               ]
       where
+        patLabel rul = case rrpat rul of
+                       Nothing -> "--"
+                       Just nm -> case lookupPattern fSpec nm of
+                         Nothing -> fatal $ "No pattern found with name = "<>fullName nm<>"."
+                         Just pat -> label pat
         multProcs = length (instanceList fSpec :: [Pattern]) > 1
     wipReport :: Blocks
     wipReport =
