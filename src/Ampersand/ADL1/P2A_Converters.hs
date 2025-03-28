@@ -319,7 +319,6 @@ pCtx2aCtx
       tInterfaces <- traverse (pIfc2tIfc contextInfo) (p_interfaceAndDisambObjs declMap)
       --  Calculate the technical type of concepts. tTypeList has precisely one technical type for every concept in this context.
       ttypeInfo <- calcTechTypes contextInfo tInterfaces
-      uniqueNames "pattern" p_patterns
       interfaces <- traverse (tIfc2aIfc ttypeInfo) tInterfaces
       pats <- traverse (pPat2aPat ttypeInfo contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -363,6 +362,7 @@ pCtx2aCtx
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      uniqueNames "pattern" pats
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
