@@ -1299,7 +1299,7 @@ addEpsilonLeft genLattice a e =
     then e
     else
       eEps
-        (fatal "This Term TermPrim should never be exposed.")
+        (Prim . PI . Origin $ "addEpsilonLeft")
         (leastConcept genLattice (source e) a)
         (Sign a (source e))
         .:. e
@@ -1309,7 +1309,7 @@ addEpsilonRight genLattice a e =
     else
       e
         .:. eEps
-          (fatal "This Term TermPrim should never be exposed.")
+          (Prim . PI . Origin $ "addEpsilonRight")
           (leastConcept genLattice (target e) a)
           (Sign (target e) a)
 
