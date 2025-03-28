@@ -156,7 +156,6 @@ data FSpec = FSpec
     fcontextInfo :: !ContextInfo,
     ftypologies :: ![Typology],
     typologyOf :: !(A_Concept -> Typology),
-    ttypeOf :: !TTypeInfo,
     largestConcept :: !(A_Concept -> A_Concept),
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
@@ -599,7 +598,6 @@ emptyFSpec nm =
       -- All expressions in the fSpec
       fcontextInfo = fatal "Don't ask for the original context in the empty FSpec.",
       ftypologies = [],
-      ttypeOf = fatal "Don't ask for TType in the empty FSpec.",
       typologyOf = fatal "Don't ask for typologies in the empty FSpec.",
       largestConcept = fatal "Don't ask for the largest concept in the empty FSpec.",
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",

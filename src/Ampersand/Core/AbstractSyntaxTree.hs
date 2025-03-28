@@ -679,7 +679,7 @@ instance Hashable AClassify where
                          IsE {} -> NE.toList . NE.sort $ genrhs g
                      )
 
-data Interface = Ifc
+data Interface = Interface
   { -- | is this interface of type API?
     ifcIsAPI :: !Bool,
     -- | The name of the interface

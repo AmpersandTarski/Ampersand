@@ -46,11 +46,11 @@ Ideas for future work:
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
 dfProofs :: TTypeInfo -> ConceptMap -> Expression -> [(Expression, Proof Expression)]
-dfProofs ti cptMap = prfs True
+dfProofs ttypeOf cptMap = prfs True
   where
     prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
     prfs dnf expr =
-      L.nub [(rTerm2expr ti t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
+      L.nub [(rTerm2expr ttypeOf t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
       where
         -- FIXME: Function f inside dfproofs does not terminate!! Must be fixed before fDeriveProofs can be made strict.
         f :: RTerm -> [(RTerm, [(RTerm, [Text], Text)])]
@@ -66,7 +66,7 @@ dfProofs ti cptMap = prfs True
         showStep dstep = " weight: " <> (tshow . w . lhs) dstep <> ",   " <> showIT tmpl <> " = " <> showIT stp <> "  with unifier: " <> showIT unif
           where
             (tmpl, unif, stp) = rul dstep
-        makeExpr (term, explStr, logicSym) = (rTerm2expr ti term, explStr, logicSym)
+        makeExpr (term, explStr, logicSym) = (rTerm2expr ttypeOf term, explStr, logicSym)
 
 -- Deriving normal forms and representing the neccessary derivation rules are defined by means of RTerms.
 -- The data structure RTerm is a representation of relation algebra terms,
@@ -596,36 +596,36 @@ rTerm2expr :: TTypeInfo -> RTerm -> Expression
 -- implementation note: because RTerms contain variables, it is cumbersome to reconstruct the type. So we don't.
 -- Once the variables have been replaced (by means of substitutions) by real terms, we get a type correct term again.
 -- As a consequence, we cannot use ./\., .\/., etc. in this code.
-rTerm2expr ti term =
+rTerm2expr ttypeOf term =
   case term of
-    RIsc rs -> case Set.toList (Set.map (rTerm2expr ti) rs) of
+    RIsc rs -> case Set.toList (Set.map (rTerm2expr ttypeOf) rs) of
       [e] -> e
       [] -> fatal "empty set in RIsc is illegal."
       e : es -> let oper l r = EIsc (l, r) in foldr oper e es
-    RUni rs -> case Set.toList (Set.map (rTerm2expr ti) rs) of
+    RUni rs -> case Set.toList (Set.map (rTerm2expr ttypeOf) rs) of
       [e] -> e
       [] -> fatal "empty set in RUni is illegal."
       e : es -> let oper l r = EUni (l, r) in foldr oper e es
-    RDif l r -> EDif (rTerm2expr ti l, rTerm2expr ti r)
-    RCpl e -> ECpl (rTerm2expr ti e)
-    RDia l r -> EDia (rTerm2expr ti l, rTerm2expr ti r)
-    RLrs l r -> ELrs (rTerm2expr ti l, rTerm2expr ti r)
-    RRrs l r -> ERrs (rTerm2expr ti l, rTerm2expr ti r)
-    RRad rs -> case map (rTerm2expr ti) rs of
+    RDif l r -> EDif (rTerm2expr ttypeOf l, rTerm2expr ttypeOf r)
+    RCpl e -> ECpl (rTerm2expr ttypeOf e)
+    RDia l r -> EDia (rTerm2expr ttypeOf l, rTerm2expr ttypeOf r)
+    RLrs l r -> ELrs (rTerm2expr ttypeOf l, rTerm2expr ttypeOf r)
+    RRrs l r -> ERrs (rTerm2expr ttypeOf l, rTerm2expr ttypeOf r)
+    RRad rs -> case map (rTerm2expr ttypeOf) rs of
       [e] -> e
       [] -> fatal "empty set in RRad is illegal."
       e : es -> let oper l r = ERad (l, r) in foldr oper e es
-    RCps rs -> case map (rTerm2expr ti) rs of
+    RCps rs -> case map (rTerm2expr ttypeOf) rs of
       [e] -> e
       [] -> fatal "empty set in RCps is illegal."
       e : es -> let oper l r = ECps (l, r) in foldr oper e es
-    RPrd rs -> case map (rTerm2expr ti) rs of
+    RPrd rs -> case map (rTerm2expr ttypeOf) rs of
       [e] -> e
       [] -> fatal "empty set in RPrd is illegal."
       e : es -> let oper l r = EPrd (l, r) in foldr oper e es
-    RKl0 e -> EKl0 $ (rTerm2expr ti) e
-    RKl1 e -> EKl1 $ (rTerm2expr ti) e
-    RFlp e -> EFlp $ (rTerm2expr ti) e
+    RKl0 e -> EKl0 $ (rTerm2expr ttypeOf) e
+    RKl1 e -> EKl1 $ (rTerm2expr ttypeOf) e
+    RFlp e -> EFlp $ (rTerm2expr ttypeOf) e
     RVar r s t -> EDcD (makeDecl r (Sign s t))
     RId c -> EDcI c
     RBind oper c -> EBin oper c
@@ -633,7 +633,7 @@ rTerm2expr ti term =
     RAtm a c -> EMp1 a' c
       where
         a' =  
-          case pAtomValue2aAtomValue (typeMap ti c) c a of
+          case pAtomValue2aAtomValue (ttypeOf c) c a of
             Checked val _ -> val
             Errors e -> fatal $ tshow e
     RConst e -> e

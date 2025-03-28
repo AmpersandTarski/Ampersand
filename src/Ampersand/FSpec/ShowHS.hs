@@ -709,7 +709,7 @@ instance ShowHS Interface where
   showHS env indent ifc =
     T.intercalate
       indent
-      [ "Ifc { ifcname   = " <> fullName ifc,
+      [ "Interface { ifcname   = " <> fullName ifc,
         "    , ifcRoles  = " <> tshow (ifcRoles ifc),
         "    , ifcObj" <> indent <> "       = " <> showHS env (indent <> "         ") (ifcObj ifc),
         wrap "    , ifcConjuncts = " (indent <> "                  ") (const showHSName) (ifcConjuncts ifc),

@@ -45,7 +45,7 @@ makeFSpec env context =
                                                                                 || ctxrel
                                                                                 `notElem` map (objExpression . ifcObj) fSpecAllInterfaces, view genInterfacesL env -- generated interfaces
         ],
-      fDeriveProofs = deriveProofs env context,
+      fDeriveProofs = deriveProofs ttypeOf' env context,
       fRoleRuls =
         L.nub
           [ (role', rule) -- fRoleRuls says which roles maintain which rules.
@@ -74,7 +74,7 @@ makeFSpec env context =
       allUsedDecls = bindedRelationsIn context,
       vrels = relsDefdInContext,
       allConcepts = fSpecAllConcepts,
-      cptTType = ctxreprs context,
+      cptTType = ttypeOf',
       fsisa = L.nub . concatMap genericAndSpecifics . gens $ context,
       vpatterns = vpatterns',
       lookupPattern = \nm -> case filter (\pat -> name pat == nm) vpatterns' of
@@ -119,11 +119,11 @@ makeFSpec env context =
       specializationsOf = smallerConcepts (gens context),
       generalizationsOf = largerConcepts (gens context),
       allEnforces = fSpecAllEnforces,
-      isSignal = fIsSignal,
-      ttypeOf = undefined 
+      isSignal = fIsSignal
       
     }
   where
+    ttypeOf' = ctxreprs context
     vpatterns' = mergeByName . patterns $ context
     mergeByName :: [Pattern] -> [Pattern]
     mergeByName [] = []
@@ -463,7 +463,7 @@ makeFSpec env context =
                       ( source . NE.head . NE.head $ cl,
                         h NE.:| tl
                       )
-       in [ Ifc
+       in [ Interface
               { ifcIsAPI = False,
                 ifcname = name c,
                 ifclbl = Nothing,
@@ -490,7 +490,7 @@ makeFSpec env context =
     -- end stap4a
     step4b -- generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       =
-      [ Ifc
+      [ Interface
           { ifcIsAPI = False,
             ifcname = nm,
             ifclbl = Nothing,

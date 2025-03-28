@@ -228,12 +228,13 @@ findRelsTyped declMap x tp = Map.findWithDefault [] tp (Map.map (: []) (findRels
 
 type DeclMap = Map.Map Name (Map.Map Signature TExpression)
 
-getDeepIfcRefs :: ObjectDef  -> [SubInterface ]
+getDeepIfcRefs :: ObjectDef -> [SubInterface]
 getDeepIfcRefs objDef = case objmsub objDef of
   Nothing -> []
   Just si -> case si of
     InterfaceRef {} -> [si | not (siIsLink si)]
     Box {} -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
+
 getDeepTIfcRefs :: TObjectDef a -> [TSubInterface a]
 getDeepTIfcRefs objDef = case tobjmsub objDef of
   Nothing -> []
@@ -357,7 +358,6 @@ pCtx2aCtx
                 ctxInfo = contextInfo,
                 ctxEnforces = enforces'
               }
-      checkTTypeOfSubInterfaces
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
@@ -554,8 +554,6 @@ pCtx2aCtx
         [ (ifc, disambiguate cptMap (termPrimDisAmb cptMap declMap) $ ifc_Obj ifc)
           | ifc <- p_interfaces
         ]
-      tIfc2aIfc :: TTypeInfo -> TInterface (TermPrim, DisambPrim) -> Guarded Interface
-      tIfc2aIfc = undefined
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
       -- the genLattice is the resulting optimized structure
@@ -625,15 +623,15 @@ pCtx2aCtx
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
       pPop2aPop :: TTypeInfo -> ContextInfo -> P_Population -> Guarded Population
-      pPop2aPop ti ci pop =
+      pPop2aPop ttypeOf ci pop =
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
               trel <- case p_mbSign nmdr of
                 Nothing -> findDeclLooselyTyped (declDisambMap ci) nmdr (name nmdr) (cptMap <$> src) (cptMap <$> tgt)
                 _ -> namedPRel2TRel cptMap (declDisambMap ci) nmdr
-              rel <- tRel2aRel ti trel
-              aps' <- traverse (pAtomPair2aAtomPair ti trel) aps
+              rel <- tRel2aRel ttypeOf trel
+              aps' <- traverse (pAtomPair2aAtomPair ttypeOf trel) aps
               src' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Tgt . userConcept)) tgt
               return
@@ -651,7 +649,7 @@ pCtx2aCtx
                         popas = vals
                       }
                 )
-                  <$> traverse (pAtomValue2aAtomValue (ti cpt) cpt) (p_popas pop)
+                  <$> traverse (pAtomValue2aAtomValue (ttypeOf cpt) cpt) (p_popas pop)
       isMoreGeneric :: Origin -> TRelation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
         if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
@@ -662,13 +660,13 @@ pCtx2aCtx
       pBoxItemDisamb2TBoxItem ci x = fmap fst (typecheckObjDef ci x)
 
       pViewDef2aViewDef :: TTypeInfo -> ContextInfo -> P_ViewDef -> Guarded ViewDef
-      pViewDef2aViewDef ti ci x = typecheckViewDef ti ci tpda
+      pViewDef2aViewDef ttypeOf ci x = typecheckViewDef ttypeOf ci tpda
         where
           tpda = disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) x
 
       typecheckViewDef :: TTypeInfo -> ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
       typecheckViewDef
-        ti
+        ttypeOf
         ci
         o@P_Vd
           { pos = orig,
@@ -718,7 +716,7 @@ pCtx2aCtx
                     P_ViewExp term ->
                       do
                         (tviewExpr, (srcBounded, _)) <- typecheckTerm cptMap ci term
-                        viewExpr <- tExpr2aExpr ti tviewExpr
+                        viewExpr <- tExpr2aExpr ttypeOf tviewExpr
                         case userList cptMap . toList $ findExact genLattice (flType $ lMeet c (source viewExpr)) of
                           [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
                           r@(h : _) -> do
@@ -951,8 +949,6 @@ pCtx2aCtx
           warnings =
             [mkBoxRowsnhWarning (origin x) | toText1Unsafe "ROWSNH" == (btType . si_header $ x)] -- See issue #925
               <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
-      checkTTypeOfSubInterfaces :: Guarded ()
-      checkTTypeOfSubInterfaces = undefined
 
       --  mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
       --     <* mustBeObject (target objExpr) objExpr -- remove objExpr after diagnosis in issue #1537
@@ -1026,18 +1022,18 @@ pCtx2aCtx
           }
 
       pPat2aPat :: TTypeInfo -> ContextInfo -> P_Pattern -> Guarded Pattern
-      pPat2aPat ti ci ppat =
+      pPat2aPat ttypeOf ci ppat =
         f
-          <$> traverse (pRul2aRul ti ci (Just $ name ppat)) (pt_rls ppat)
-          <*> traverse (pIdentity2aIdentity ti ci (Just $ name ppat)) (pt_ids ppat)
-          <*> traverse (pPop2aPop ti ci) (pt_pop ppat)
-          <*> traverse (pViewDef2aViewDef ti ci) (pt_vds ppat)
-          <*> traverse (pPurp2aPurp ti ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl ti cptMap (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
+          <$> traverse (pRul2aRul ttypeOf ci (Just $ name ppat)) (pt_rls ppat)
+          <*> traverse (pIdentity2aIdentity ttypeOf ci (Just $ name ppat)) (pt_ids ppat)
+          <*> traverse (pPop2aPop ttypeOf ci) (pt_pop ppat)
+          <*> traverse (pViewDef2aViewDef ttypeOf ci) (pt_vds ppat)
+          <*> traverse (pPurp2aPurp ttypeOf ci) (pt_xps ppat)
+          <*> traverse (pDecl2aDecl ttypeOf cptMap (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef cptMap (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
-          <*> traverse (pEnforce2aEnforce ti ci (Just $ name ppat)) (pt_enfs ppat)
+          <*> traverse (pEnforce2aEnforce ttypeOf ci (Just $ name ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
             A_Pat
@@ -1063,7 +1059,7 @@ pCtx2aCtx
         Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
-      pRul2aRul ti ci mPat = typeCheckRul ti ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
+      pRul2aRul ttypeOf ci mPat = typeCheckRul ttypeOf ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
       typeCheckRul ::
         TTypeInfo ->
         ContextInfo ->
@@ -1071,7 +1067,7 @@ pCtx2aCtx
         P_Rule (TermPrim, DisambPrim) ->
         Guarded Rule
       typeCheckRul
-        ti
+        ttypeOf
         ci
         mPat
         P_Rule
@@ -1085,8 +1081,8 @@ pCtx2aCtx
           } =
           do
             (texp', _) <- typecheckTerm cptMap ci expr
-            exp' <- tExpr2aExpr ti texp'
-            vls <- maybeOverGuarded (typeCheckPairView ti ci orig exp') viols
+            exp' <- tExpr2aExpr ttypeOf texp'
+            vls <- maybeOverGuarded (typeCheckPairView ttypeOf ci orig exp') viols
             return
               Rule
                 { rrnm = nm,
@@ -1105,7 +1101,7 @@ pCtx2aCtx
         Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
-      pEnforce2aEnforce ti ci mPat = typeCheckEnforce ti ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
+      pEnforce2aEnforce ttypeOf ci mPat = typeCheckEnforce ttypeOf ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
       typeCheckEnforce ::
         TTypeInfo ->
         ContextInfo ->
@@ -1113,7 +1109,7 @@ pCtx2aCtx
         P_Enforce (TermPrim, DisambPrim) ->
         Guarded AEnforce
       typeCheckEnforce
-        ti
+        ttypeOf
         ci
         mPat
         P_Enforce
@@ -1125,7 +1121,7 @@ pCtx2aCtx
           case pRel of
             (_, Known (TEDcD _ trel)) ->
               do
-                rel <- tRel2aRel ti trel
+                rel <- tRel2aRel ttypeOf trel
                 (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm cptMap ci x
                 -- SJC: the following two error messages can occur in parallel
                 --      thanks to 'ApplicativeDo', however, we can write the following
@@ -1136,7 +1132,7 @@ pCtx2aCtx
                 let tgtOk = target expr `isaC` target rel
                 unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
                 expr' <-
-                  tExpr2aExpr ti
+                  tExpr2aExpr ttypeOf
                     . addEpsilonLeft genLattice (source rel)
                     $ addEpsilonRight genLattice (target rel) expr
                 return
@@ -1196,7 +1192,7 @@ pCtx2aCtx
         Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_IdentDef ->
         Guarded IdentityRule
-      pIdentity2aIdentity ti ci mPat pidt =
+      pIdentity2aIdentity ttypeOf ci mPat pidt =
         case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
           P_Id
             { ix_name = nm,
@@ -1221,7 +1217,7 @@ pCtx2aCtx
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
             do
               tboxitem <- pBoxItemDisamb2TBoxItem ci ojd
-              boxitem <- tBoxItem2aBoxItem ti tboxitem
+              boxitem <- tBoxItem2aBoxItem ttypeOf tboxitem
               case boxitem of
                 BxExpr {objE = o} ->
                   case toList . findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
@@ -1229,15 +1225,15 @@ pCtx2aCtx
                     _ -> pure $ IdentityExp o {objExpression = addEpsilonLeft genLattice conc (objExpression o)}
                 BxText {} -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin boxitem) <> ")"
       typeCheckPairView :: TTypeInfo -> ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
-      typeCheckPairView ti ci o x (PairView lst) =
-        PairView <$> traverse (typeCheckPairViewSeg ti ci o x) lst
+      typeCheckPairView ttypeOf ci o x (PairView lst) =
+        PairView <$> traverse (typeCheckPairViewSeg ttypeOf ci o x) lst
       typeCheckPairViewSeg :: TTypeInfo -> ContextInfo -> Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
-      typeCheckPairViewSeg ti ci o t pv =
+      typeCheckPairViewSeg ttypeOf ci o t pv =
         case pv of
           (PairViewText orig x) -> pure (PairViewText orig x)
           (PairViewExp orig s x) -> do
             (tExpr, (b, _)) <- typecheckTerm cptMap ci x
-            e <- tExpr2aExpr ti tExpr
+            e <- tExpr2aExpr ttypeOf tExpr
             let tp = aConcToType (source e)
             case toList . findExact genLattice . lMeet tp $ getConcept s t of
               [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s, t)
@@ -1247,7 +1243,7 @@ pCtx2aCtx
                   else mustBeBound o [(Src, tExpr)]
       pPurp2aPurp :: TTypeInfo -> ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
-        ti
+        ttypeOf
         ci
         PPurpose
           { pos = orig, -- :: Origin
@@ -1263,14 +1259,14 @@ pCtx2aCtx
                   explRefIds = refIds
                 }
           )
-            <$> pRefObj2aRefObj ti ci objref
+            <$> pRefObj2aRefObj ttypeOf ci objref
       pRefObj2aRefObj :: TTypeInfo -> ContextInfo -> PRef2Obj -> Guarded ExplObj
-      pRefObj2aRefObj ti ci refference =
+      pRefObj2aRefObj ttypeOf ci refference =
         case refference of
           PRef2ConceptDef s -> pure $ ExplConcept (pCpt2aCpt cptMap $ mkPConcept s)
           PRef2Relation tm -> do
             tRelation <- namedPRel2TRel cptMap (declDisambMap ci) tm
-            rel <- tRel2aRel ti tRelation
+            rel <- tRel2aRel ttypeOf tRelation
             return $ ExplRelation rel
           PRef2Rule s -> pure $ ExplRule s
           PRef2IdentityDef s -> pure $ ExplIdentityDef s
@@ -1287,37 +1283,6 @@ pCtx2aCtx
         map
           pRoleRule2aRoleRule
           (p_roleRules <> concatMap pt_RRuls p_patterns)
-
-tRel2aRel :: TTypeInfo -> TRelation -> Guarded Relation
-tRel2aRel ti trel = do
-  dflts <- mapM (pReldefault2aReldefaults ti) . L.nub $ tdecDefaults trel :: Guarded [ARelDefault]
-  return
-    Relation
-      { decusr = tdecusr trel,
-        decsgn = tdecsgn trel,
-        decprps = tdecprps trel,
-        decpr = tdecpr trel,
-        decpat = tdecpat trel,
-        decnm = tdecnm trel,
-        declabel = tdeclabel trel,
-        dechash = tdechash trel,
-        decfpos = tdecfpos trel,
-        decMean = tdecMean trel,
-        decDefaults = dflts
-      }
-  where
-    Sign src' tgt' = tdecsgn trel
-    pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
-    pReldefault2aReldefaults ti' x = case x of
-      PDefAtom st vals ->
-        ARelDefaultAtom st
-          <$> traverse
-            ( case st of
-                Src -> pAtomValue2aAtomValue ( ti' src') src'
-                Tgt -> pAtomValue2aAtomValue ( ti' tgt') tgt'
-            )
-            vals
-      PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
 leastConcept genLattice c c' =
@@ -1689,11 +1654,11 @@ pDecl2aDecl ::
   PandocFormat -> -- The default pandocFormat
   P_Relation ->
   Guarded Relation
-pDecl2aDecl ti cptMap maybePat defLanguage defFormat pd =
+pDecl2aDecl ttypeOf cptMap maybePat defLanguage defFormat pd =
   do
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
-    dflts <- mapM (pReldefault2aReldefaults ti) . L.nub $ dec_defaults pd :: Guarded [ARelDefault]
+    dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd :: Guarded [ARelDefault]
     return
       Relation
         { decnm = dec_nm pd,
@@ -1709,17 +1674,19 @@ pDecl2aDecl ti cptMap maybePat defLanguage defFormat pd =
           dechash = hash (dec_nm pd) `hashWithSalt` decSign
         }
   where
-    pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
-    pReldefault2aReldefaults ti' x = case x of
+    pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
+    pReldefault2aReldefaults x = case x of
       PDefAtom st vals ->
         ARelDefaultAtom st
           <$> traverse
             ( case st of
-                Src -> pAtomValue2aAtomValue (ti' (source decSign)) (source decSign)
-                Tgt -> pAtomValue2aAtomValue (ti' (target decSign)) (target decSign)
+                Src -> pAtomValue2aAtomValue (ttypeOf src) src
+                Tgt -> pAtomValue2aAtomValue (ttypeOf tgt) tgt
             )
             vals
       PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
+      where
+        Sign src tgt = decSign
     pProp2aProps :: PProp -> [AProp]
     pProp2aProps p = case p of
       P_Uni -> [Uni]
@@ -1877,12 +1844,59 @@ getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 
+tIfc2aIfc :: TTypeInfo -> TInterface (TermPrim, DisambPrim) -> Guarded Interface
+tIfc2aIfc ttypeOf ifc = do
+  obj <- tObjDef2aObjDef ttypeOf . tifcObj $ ifc
+  return
+    Interface
+      { ifcIsAPI = tifcIsAPI ifc,
+        ifcname = tifcname ifc,
+        ifclbl = tifclbl ifc,
+        ifcRoles = tifcRoles ifc,
+        ifcObj = obj,
+        ifcConjuncts = tifcConjuncts ifc,
+        ifcPos = tifcPos ifc,
+        ifcPurpose = tifcPurpose ifc
+      }
+
+tRel2aRel :: TTypeInfo -> TRelation -> Guarded Relation
+tRel2aRel ttypeOf trel = do
+  dflts <- mapM pReldefault2aReldefaults . L.nub $ tdecDefaults trel :: Guarded [ARelDefault]
+  return
+    Relation
+      { decusr = tdecusr trel,
+        decsgn = tdecsgn trel,
+        decprps = tdecprps trel,
+        decpr = tdecpr trel,
+        decpat = tdecpat trel,
+        decnm = tdecnm trel,
+        declabel = tdeclabel trel,
+        dechash = tdechash trel,
+        decfpos = tdecfpos trel,
+        decMean = tdecMean trel,
+        decDefaults = dflts
+      }
+  where
+    pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
+    pReldefault2aReldefaults x = case x of
+      PDefAtom st vals ->
+        ARelDefaultAtom st
+          <$> traverse
+            ( case st of
+                Src -> pAtomValue2aAtomValue (ttypeOf src) src
+                Tgt -> pAtomValue2aAtomValue (ttypeOf tgt) tgt
+            )
+            vals
+      PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
+      where
+        Sign src tgt = tdecsgn trel
+
 tBoxItem2aBoxItem :: TTypeInfo -> TBoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
-tBoxItem2aBoxItem ti tbi =
+tBoxItem2aBoxItem ttypeOf tbi =
   case tbi of
     TBxExpr obj ->
-      BxExpr <$> tObjDef2aObjDef ti obj
-    --        (expr, (b, _)) <- typecheckTerm (tiContext ti) (objExpression o)
+      BxExpr <$> tObjDef2aObjDef ttypeOf obj
+    --        (expr, (b, _)) <- typecheckTerm (tiContext ttypeOf) (objExpression o)
     --        pure $ BxExpr o {objExpression = expr}
     TBxText {} ->
       pure
@@ -1896,9 +1910,9 @@ tObjDef2aObjDef ::
   TTypeInfo ->
   TObjectDef (TermPrim, DisambPrim) ->
   Guarded ObjectDef
-tObjDef2aObjDef ti obj = do
-  msub <- maybeOverGuarded (tSubi2aSubi ti) (tobjmsub obj)
-  expr <- tExpr2aExpr ti (tobjExpression obj)
+tObjDef2aObjDef ttypeOf obj = do
+  msub <- maybeOverGuarded (tSubi2aSubi ttypeOf) (tobjmsub obj)
+  expr <- tExpr2aExpr ttypeOf (tobjExpression obj)
   return
     ObjectDef
       { objmsub = msub,
@@ -1914,77 +1928,95 @@ tSubi2aSubi ::
   TTypeInfo ->
   TSubInterface (TermPrim, DisambPrim) ->
   Guarded SubInterface
-tSubi2aSubi _ti _subi = undefined
+tSubi2aSubi ttypeOf subIfc =
+  case subIfc of
+    TBox {} -> do
+      obj <- traverse (tBoxItem2aBoxItem ttypeOf) $ tsiObjs subIfc
+      pure
+        Box
+          { pos = origin subIfc,
+            siConcept = tsiConcept subIfc,
+            siHeader = tsiHeader subIfc,
+            siObjs = obj
+          }
+    TInterfaceRef {} ->
+      pure
+        InterfaceRef
+          { pos = origin subIfc,
+            siConcept = tsiConcept subIfc,
+            siIsLink = tsiIsLink subIfc,
+            siIfcId = tsiIfcId subIfc
+          }
 
 tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
-tExpr2aExpr ti expr = case expr of
+tExpr2aExpr ttypeOf expr = case expr of
   (TEEqu (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EEqu (l', r')
   (TEInc (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EInc (l', r')
   (TEIsc (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EIsc (l', r')
   (TEUni (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EUni (l', r')
   (TEDif (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EDif (l', r')
   (TELrs (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ ELrs (l', r')
   (TERrs (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ ERrs (l', r')
   (TEDia (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EDia (l', r')
   (TECps (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ ECps (l', r')
   (TERad (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ ERad (l', r')
   (TEPrd (l, r)) -> do
-    l' <- tExpr2aExpr ti l
-    r' <- tExpr2aExpr ti r
+    l' <- tExpr2aExpr ttypeOf l
+    r' <- tExpr2aExpr ttypeOf r
     return $ EPrd (l', r')
   (TEKl0 e) -> do
-    e' <- tExpr2aExpr ti e
+    e' <- tExpr2aExpr ttypeOf e
     return $ EKl0 e'
   (TEKl1 e) -> do
-    e' <- tExpr2aExpr ti e
+    e' <- tExpr2aExpr ttypeOf e
     return $ EKl1 e'
   (TEFlp e) -> do
-    e' <- tExpr2aExpr ti e
+    e' <- tExpr2aExpr ttypeOf e
     return $ EFlp e'
   (TECpl e) -> do
-    e' <- tExpr2aExpr ti e
+    e' <- tExpr2aExpr ttypeOf e
     return $ ECpl e'
   (TEBrk e) -> do
-    e' <- tExpr2aExpr ti e
+    e' <- tExpr2aExpr ttypeOf e
     return $ EBrk e'
-  (TEDcD _ trel) -> EDcD <$> tRel2aRel ti trel
+  (TEDcD _ trel) -> EDcD <$> tRel2aRel ttypeOf trel
   (TEDcI _ cpt) -> pure $ EDcI cpt
   (TEBin tp oper cpt) ->
     if isValidOperator
       then pure $ EBin oper cpt
       else Errors . pure $ mkOperatorError (origin tp) oper cpt typ
     where
-      typ = ti cpt
+      typ = ttypeOf cpt
       isValidOperator :: Bool
       isValidOperator =
         case oper of
@@ -1995,7 +2027,7 @@ tExpr2aExpr ti expr = case expr of
   (TEEps _ cpt sgn) -> pure $ EEps cpt sgn
   (TEDcV _ sgn) -> pure $ EDcV sgn
   (TEMp1 _ val cpt) -> do
-    aval <- pAtomValue2aAtomValue (ti cpt) cpt val
+    aval <- pAtomValue2aAtomValue (ttypeOf cpt) cpt val
     pure $ EMp1 aval cpt
   where
     hasEQ, hasORD :: TType -> Bool
@@ -2041,17 +2073,6 @@ pRel2tRel cptMap maybePatName defLanguage defFormat pd = do
         tdechash = hash (dec_nm pd) `hashWithSalt` decSign
       }
   where
-    pReldefault2aReldefaults :: TTypeInfo -> PRelationDefault -> Guarded ARelDefault
-    pReldefault2aReldefaults ti x = case x of
-      PDefAtom st vals ->
-        ARelDefaultAtom st
-          <$> traverse
-            ( case st of
-                Src -> pAtomValue2aAtomValue (ti (source decSign)) (source decSign)
-                Tgt -> pAtomValue2aAtomValue (ti (target decSign)) (target decSign)
-            )
-            vals
-      PDefEvalPHP st txt -> pure $ ARelDefaultEvalPHP st txt
     pProp2aProps :: PProp -> [AProp]
     pProp2aProps p = case p of
       P_Uni -> [Uni]
