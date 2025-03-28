@@ -98,7 +98,7 @@ data FSpec = FSpec
     vrels :: !Relations,
     -- | All concepts in the fSpec
     allConcepts :: !A_Concepts,
-    cptTType :: !(A_Concept -> TType),
+    cptTType :: !TTypeInfo,
     -- | All keys that apply in the entire FSpec
     vIndices :: ![IdentityRule],
     -- | All views that apply in the entire FSpec
@@ -123,6 +123,8 @@ data FSpec = FSpec
     fsisa :: ![(A_Concept, A_Concept)],
     -- | All patterns taken from the Ampersand script
     vpatterns :: ![Pattern],
+    -- | A function to get a pattern by its name.
+    lookupPattern :: !(Name -> Maybe Pattern),
     -- | All concept definitions defined throughout a context, including those inside patterns and processes
     conceptDefs :: ![AConceptDef],
     -- | All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
@@ -603,5 +605,6 @@ emptyFSpec nm =
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",
       generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec.",
       allEnforces = [],
+      lookupPattern = const Nothing,
       isSignal = fatal "Don't ask for isSignal in an empty FSpec."
     }

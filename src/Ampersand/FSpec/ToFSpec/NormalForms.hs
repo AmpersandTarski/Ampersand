@@ -13,12 +13,14 @@ module Ampersand.FSpec.ToFSpec.NormalForms
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt)
+import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt, pAtomValue2aAtomValue)
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+import Ampersand.Core.A2P_Converters (aAtomValue2pAtomValue)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
+import Ampersand.Input.ADL1.CtxError
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -43,12 +45,12 @@ Ideas for future work:
 -- The following was built for the purpose of testing confluence.
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
-dfProofs :: ConceptMap -> Expression -> [(Expression, Proof Expression)]
-dfProofs cptMap = prfs True
+dfProofs :: TTypeInfo -> ConceptMap -> Expression -> [(Expression, Proof Expression)]
+dfProofs ti cptMap = prfs True
   where
     prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
     prfs dnf expr =
-      L.nub [(rTerm2expr t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
+      L.nub [(rTerm2expr ti t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
       where
         -- FIXME: Function f inside dfproofs does not terminate!! Must be fixed before fDeriveProofs can be made strict.
         f :: RTerm -> [(RTerm, [(RTerm, [Text], Text)])]
@@ -64,7 +66,7 @@ dfProofs cptMap = prfs True
         showStep dstep = " weight: " <> (tshow . w . lhs) dstep <> ",   " <> showIT tmpl <> " = " <> showIT stp <> "  with unifier: " <> showIT unif
           where
             (tmpl, unif, stp) = rul dstep
-        makeExpr (term, explStr, logicSym) = (rTerm2expr term, explStr, logicSym)
+        makeExpr (term, explStr, logicSym) = (rTerm2expr ti term, explStr, logicSym)
 
 -- Deriving normal forms and representing the neccessary derivation rules are defined by means of RTerms.
 -- The data structure RTerm is a representation of relation algebra terms,
@@ -586,49 +588,54 @@ expr2RTerm expr =
         EEps {} -> RConst expr
         EBin oper c -> RBind oper c
         EDcV sgn -> RVee (source sgn) (target sgn)
-        EMp1 a c -> RAtm a c
+        EMp1 a c -> RAtm (aAtomValue2pAtomValue a) c
 
 --   --      _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
 
-rTerm2expr :: RTerm -> Expression
+rTerm2expr :: TTypeInfo -> RTerm -> Expression
 -- implementation note: because RTerms contain variables, it is cumbersome to reconstruct the type. So we don't.
 -- Once the variables have been replaced (by means of substitutions) by real terms, we get a type correct term again.
 -- As a consequence, we cannot use ./\., .\/., etc. in this code.
-rTerm2expr term =
+rTerm2expr ti term =
   case term of
-    RIsc rs -> case Set.toList (Set.map rTerm2expr rs) of
+    RIsc rs -> case Set.toList (Set.map (rTerm2expr ti) rs) of
       [e] -> e
       [] -> fatal "empty set in RIsc is illegal."
       e : es -> let oper l r = EIsc (l, r) in foldr oper e es
-    RUni rs -> case Set.toList (Set.map rTerm2expr rs) of
+    RUni rs -> case Set.toList (Set.map (rTerm2expr ti) rs) of
       [e] -> e
       [] -> fatal "empty set in RUni is illegal."
       e : es -> let oper l r = EUni (l, r) in foldr oper e es
-    RDif l r -> EDif (rTerm2expr l, rTerm2expr r)
-    RCpl e -> ECpl (rTerm2expr e)
-    RDia l r -> EDia (rTerm2expr l, rTerm2expr r)
-    RLrs l r -> ELrs (rTerm2expr l, rTerm2expr r)
-    RRrs l r -> ERrs (rTerm2expr l, rTerm2expr r)
-    RRad rs -> case map rTerm2expr rs of
+    RDif l r -> EDif (rTerm2expr ti l, rTerm2expr ti r)
+    RCpl e -> ECpl (rTerm2expr ti e)
+    RDia l r -> EDia (rTerm2expr ti l, rTerm2expr ti r)
+    RLrs l r -> ELrs (rTerm2expr ti l, rTerm2expr ti r)
+    RRrs l r -> ERrs (rTerm2expr ti l, rTerm2expr ti r)
+    RRad rs -> case map (rTerm2expr ti) rs of
       [e] -> e
       [] -> fatal "empty set in RRad is illegal."
       e : es -> let oper l r = ERad (l, r) in foldr oper e es
-    RCps rs -> case map rTerm2expr rs of
+    RCps rs -> case map (rTerm2expr ti) rs of
       [e] -> e
       [] -> fatal "empty set in RCps is illegal."
       e : es -> let oper l r = ECps (l, r) in foldr oper e es
-    RPrd rs -> case map rTerm2expr rs of
+    RPrd rs -> case map (rTerm2expr ti) rs of
       [e] -> e
       [] -> fatal "empty set in RPrd is illegal."
       e : es -> let oper l r = EPrd (l, r) in foldr oper e es
-    RKl0 e -> EKl0 $ rTerm2expr e
-    RKl1 e -> EKl1 $ rTerm2expr e
-    RFlp e -> EFlp $ rTerm2expr e
+    RKl0 e -> EKl0 $ (rTerm2expr ti) e
+    RKl1 e -> EKl1 $ (rTerm2expr ti) e
+    RFlp e -> EFlp $ (rTerm2expr ti) e
     RVar r s t -> EDcD (makeDecl r (Sign s t))
     RId c -> EDcI c
     RBind oper c -> EBin oper c
     RVee s t -> EDcV (Sign s t)
-    RAtm a c -> EMp1 a c
+    RAtm a c -> EMp1 a' c
+      where
+        a' =  
+          case pAtomValue2aAtomValue (typeMap ti c) c a of
+            Checked val _ -> val
+            Errors e -> fatal $ tshow e
     RConst e -> e
   where
     makeDecl nm sgn =

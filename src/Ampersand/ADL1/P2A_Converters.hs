@@ -9,6 +9,8 @@ module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
     pCpt2aCpt,
     ConceptMap,
+    getConceptMap,
+    pAtomValue2aAtomValue
   )
 where
 
@@ -24,7 +26,6 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
-import Data.Tuple.Extra (thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -41,19 +42,19 @@ aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
 aConcToType p = UserConcept (fst . NE.head $ aliases p)
 
-getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
-getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
+getAsConcept :: ConceptMap -> Origin -> Type -> Guarded A_Concept
+getAsConcept cptMap o v = case typeOrConcept cptMap v of
   Right x -> unexpectedType o x
   Left x -> return x
 
 userList :: ConceptMap -> [Type] -> [A_Concept]
 userList fun = lefts . fmap (typeOrConcept fun)
 
-mustBeConceptBecauseMath :: ContextInfo -> Type -> A_Concept
-mustBeConceptBecauseMath ci tp =
+mustBeConceptBecauseMath :: ConceptMap -> Type -> A_Concept
+mustBeConceptBecauseMath cptMap tp =
   let fatalV :: a
       fatalV = fatal "A concept turned out to be a built-in type."
-   in case getAsConcept ci fatalV tp of
+   in case getAsConcept cptMap fatalV tp of
         Checked v _ -> v
         _ -> fatalV
 
@@ -227,9 +228,6 @@ findRelsTyped declMap x tp = Map.findWithDefault [] tp (Map.map (: []) (findRels
 
 type DeclMap = Map.Map Name (Map.Map Signature TExpression)
 
-onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
-onlyUserConcepts = fmap . userList . conceptMap
-
 getDeepIfcRefs :: TObjectDef a -> [TSubInterface a]
 getDeepIfcRefs objDef = case tobjmsub objDef of
   Nothing -> []
@@ -256,15 +254,12 @@ getDeclMap ctx = do
 
 allTRels :: P_Context -> Guarded (Set TRelation)
 allTRels ctx = do
-  trels <- traverse (pRel2tRel (conceptMap ci) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) (ctx_ds ctx)
+  trels <- traverse (pRel2tRel (getConceptMap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) (ctx_ds ctx)
   prels <- traverse pRels (ctx_pats ctx)
   return . Set.fromList $ trels <> concat prels
   where
     pRels :: P_Pattern -> Guarded [TRelation]
-    pRels p = traverse (pRel2tRel (conceptMap ci) (Just . name $ p) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs p)
-
-allGens :: P_Context -> [PClassify]
-allGens ctx = ctx_gs ctx <> concatMap pt_gns (ctx_pats ctx)
+    pRels p = traverse (pRel2tRel (getConceptMap ctx) (Just . name $ p) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs p)
 
 deflangCtxt :: P_Context -> Lang
 deflangCtxt = fromMaybe English . ctx_lang
@@ -295,8 +290,6 @@ pCtx2aCtx
     { ctx_nm = n1,
       ctx_lbl = lbl,
       ctx_pos = n2,
-      ctx_lang = ctxmLang,
-      ctx_markup = pandocf,
       ctx_pats = p_patterns,
       ctx_rs = p_rules,
       ctx_ds = p_relations,
@@ -331,7 +324,7 @@ pCtx2aCtx
       uniqueNames "interface" p_interfaces
       purposes <- traverse (pPurp2aPurp ttypeInfo contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop ttypeInfo contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl ttypeInfo (cptMap ctx) Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) p_relations
+      relations <- traverse (pDecl2aDecl ttypeInfo cptMap Nothing (deflangCtxt ctx) (deffrmtCtxt ctx)) p_relations
       enforces' <- traverse (pEnforce2aEnforce ttypeInfo contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -344,21 +337,21 @@ pCtx2aCtx
                 ctxrs = Set.fromList rules,
                 ctxds = Set.fromList relations,
                 ctxpopus = udpops, -- the content is copied from p_pops
-                ctxcdsOutPats = allConceptDefsOutPats contextInfo,
-                ctxcds = allConceptDefs contextInfo,
+                ctxcdsOutPats = allConceptDefsOutPats,
+                ctxcds = allConceptDefs,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
                 ctxreprs = typeMap ttypeInfo,
                 ctxvs = viewdefs,
-                ctxgs = mapMaybe (pClassify2aClassify . (conceptMap contextInfo) $ ctx) p_gens,
-                ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
+                ctxgs = mapMaybe pClassify2aClassify p_gens,
+                ctxgenconcs = (fmap . userList) (getConceptMap ctx) (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
                 ctxifcs = interfaces,
                 ctxps = purposes,
                 ctxmetas = p_metas,
                 ctxInfo = contextInfo,
                 ctxEnforces = enforces'
               }
-      checkTTypeOfSubInterfaces actx
+      checkTTypeOfSubInterfaces
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
@@ -367,6 +360,7 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
+      cptMap = getConceptMap ctx
       calcTechTypes :: ContextInfo -> [TInterface a] -> Guarded TTypeInfo
       calcTechTypes ci interfaces = do
         -- The TType of concepts is calculated based on the following rules:
@@ -376,7 +370,7 @@ pCtx2aCtx
         -- 4. Concepts for which the technical type cannot be derived by above rules must have the technical type Alphanumeric.
         let group1, group2 :: [(A_Concept, TType, Origin, Bool)]
             group1 =
-              [ (conceptMap ci cpt, reprdom repr, origin repr, True)
+              [ (cptMap cpt, reprdom repr, origin repr, True)
                 | repr <- reprList ci,
                   cpt <- NE.toList . reprcpts $ repr
               ]
@@ -398,78 +392,31 @@ pCtx2aCtx
                 removefst4 :: (a, b, c, d) -> (b, c, d)
                 removefst4 (_a, b, c, d) = (b, c, d)
         -- for all concepts of group1 and group2, check whether they have a unique technical type:
-        (traverse (uncurry checkMultipleTTypesOfConcept . extractConcept) . NE.groupWith fst4) $ group1 <> group2
-
-        return undefined
-       
-      -- mkMultipleTTypeError . filter (\x -> length x > 1) . map L.nub . L.groupBy ((==) `on` fst) $ group1 <> group2
-      -- case L.groupBy ((==) `on` fst) (group1 <> group2) of
-      --   [] -> fatal "Empty list of typologies is unexpected here."
-      --   [x] -> pure $ Map.fromList x
-      --   xs -> Errors . pure $ mkMultipleTTypeError xs
-
-      -- return undefined
-
-      -- -- Concepts that are key in (sub-)interfaces get Object as their technical type
-      -- --   without being declared explicitly in a REPRESENT statement:
-      -- let objectByDef = nub ([ (target.objExpression.ifcObj) ifc| ifc <- interfaces] <>
-      --                       [ siConcept si | ifc <- interfaces, si <- getDeepIfcRefs (ifcObj ifc)])  :: [A_Concept]
-      -- -- check whether all concepts declared (implicitly or explicitly) by the user have a unique TType.
-      -- tTypeByUser <- guardedTTypeByUser (typeMap contextInfo) [ (c, Object) | c<-objectByDef]  :: Guarded [(A_Concept, TType)]
-      -- -- |  Now enhance the TTypes throughout typologies. Guarantee 1 TType per typology.
-      -- tTypology <- enhanceTTypeByUser (connectedConcepts contextInfo) tTypeByUser  :: Guarded [(A_Concept, TType)]
-      -- -- |  Finally, ttypeList tTypology  adds the default "ALPHANUMERIC" for every concept that has no TType.
-      -- --    The list  ttypeList tTypology  has precisely one TType for every concept in this context.
-
-      -- -- | This function must be univalent and total.
-      -- --   Since the contextInfo is enriched later with the correct (univalent and total) ttype information,
-      -- --   there is a chance that this function suffers from bitrot elsewhere. This is why we have the fatals in place.
-      -- techTypeOf :: TTypeInfo -> A_Concept -> TType
-      -- techTypeOf ci c =
-      --   case [ tt | (cpt,tt)<-typeMap ci, cpt==c] of
-      --     [tt] -> tt
-      --     []   -> if c==ONE || tshow c=="SESSION" then Object else fatal ("No technical type found for concept " <> fullName c <> tshow (typeMap ci))
-      --     _    -> fatal $ "Multiple technical types found for concept " <> fullName c
-      -- -- | guardedTTypeByUser combines typemap info from REPRESENT statements and BOX terms, i.e. all user defined typemap info.
-      -- guardedTTypeByUser :: [(A_Concept, TType)] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
-      -- guardedTTypeByUser typeMapDeclared typeMapByDef =
-      --   if null cptsWithMultTTypes
-      --   then pure (L.nub typeMapDeclared <> typeMapByDef)
-      --   else case NE.nonEmpty ["Concept "<>tshow c<>" has multiple technical types: " <> tshow ts <> "." | (c,ts)<-cptsWithMultTTypes] of
-      --         Just xs -> Errors . pure $ mkObjectTTypeError xs
-      --         Nothing -> fatal "List cptsWithMultTTypes should be empty."
-      --   where
-      --     cptsWithMultTTypes :: [(A_Concept, [TType])]
-      --     cptsWithMultTTypes = filter ((>1).length) [ ((fst . NE.head) cl, (map snd . NE.toList) cl) | cl<-eqClass eq typeMapByDef]
-      --       where (c,_) `eq` (c',_) = c==c'
-
-      -- -- | given a typeMap tTypeByUser, enhance this with (isa\/isa~)+;tTypeByUser
-      -- enhanceTTypeByUser :: [[A_Concept]] -> [(A_Concept, TType)] -> Guarded [(A_Concept, TType)]
-      -- enhanceTTypeByUser conceptParts tTypeByUser
-      --  = concat <$> traverse processPartition conceptParts
-      --    where
-      --      processPartition :: [A_Concept] -> Guarded [(A_Concept, TType)]
-      --      processPartition part = if length ttypes == 1 || null tTypeByUser
-      --                              then pure [(c,tt) | c<-part, tt<-ttypes]
-      --                              else Errors . pure $ mkMultiTTypeError part tTypeByUser
-      --        where
-      --          ttypes :: [TType]
-      --          ttypes = L.nub [ tt | (c,tt)<-tTypeByUser, c `elem` part]
-
-      -- -- | ttypeList assigns precisely one technical type to every concept.
-      -- --   It is meant to be used in the A_Context.
-      -- --   It expects a univalent tTypology, or else it will erroneously return Alphanumeric
-      -- --   in cases where cpt has multiple TTypes.
-      -- ttypeList :: [(A_Concept,TType)] -> [(A_Concept,TType)]
-      -- ttypeList tTypology = [ (c, f c) | c<-allConcs contextInfo]
-      --  where
-      --   f c = case [tt | (cpt,tt)<-tTypology, c==cpt] of
-      --                [tt] -> tt
-      --                []   -> if c == ONE || tshow c == "SESSION" then Object else Alphanumeric
-      --                _    -> fatal ("There are multiple technical types for concept "<>tshow c<>".")
-
+        group1and2Types <- (traverse (uncurry checkMultipleTTypesOfConcept . extractConcept) . NE.groupWith fst4) $ group1 <> group2
+        let conceptsInTypology :: Typology -> [A_Concept]
+            conceptsInTypology typology = tyroot typology : tyCpts typology
+            checkTTypesOfTypology :: Typology -> Guarded [(A_Concept, TType)]
+            checkTTypesOfTypology typology =
+              case NE.groupWith snd4 . L.filter belongsToTypology $ group1 <> group2 of
+                [] -> pure [] -- none of the concepts in the typology have a technical type
+                [x] -> pure . map (,snd4 . NE.head $ x) $ conceptsInTypology typology -- all allready typed concepts in the typology have the same technical type
+                h : tl -> mkMultipleTypesInTypologyError . join $ h NE.:| tl
+              where
+                belongsToTypology :: (A_Concept, TType, Origin, Bool) -> Bool
+                belongsToTypology quadruple = fst4 quadruple `elem` conceptsInTypology typology
+        group3Types <- traverse checkTTypesOfTypology . multiKernels $ ci
+        let knownTypes = L.nub $ group1and2Types <> concat group3Types
+        pure
+          TTypeInfo
+            { typeMap = \c ->
+                if c == ONE || tshow c == "SESSION"
+                  then Object
+                  else case [tt | (cpt, tt) <- knownTypes, cpt == c] of
+                    [tt] -> tt
+                    [] -> Alphanumeric
+                    _ -> fatal ("There are multiple technical types for concept " <> tshow c <> ".")
+            }
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
-      cptMap = conceptmap
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         multitypologies <- traverse mkTypology connectConcepts
@@ -494,72 +441,70 @@ pCtx2aCtx
                     $ allConcepts,
                 allConcs = allConcepts,
                 gens_efficient = genLattice,
-                conceptMap = conceptmap,
                 defaultLang = deflangCtxt ctx,
                 defaultFormat = deffrmtCtxt ctx
               }
           )
         where
-          gns = mapMaybe (pClassify2aClassify conceptmap) $ allGens ctx
-          conceptmap = makeConceptMap (ctx_cs ctx <> concatMap pt_cds (ctx_pats ctx)) (allGens ctx)
+          gns = mapMaybe pClassify2aClassify $ allGens ctx
           connectConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectConcepts = connect [] (map (toList . concs) gns)
 
-          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
-          mkTypeMap groups reprs =
-            f
-              <$> traverse typeOfGroup groups
-              <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
-            where
-              f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
-              f typesOfGroups typesOfOthers =
-                concat typesOfGroups <> [(cpt, t) | (cpt, t, _) <- catMaybes typesOfOthers]
-              reprTrios :: [(A_Concept, TType, Origin)]
-              reprTrios = nubTrios $ concatMap toReprs reprs
-                where
-                  toReprs :: Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r = [(pCpt2aCpt (conceptMap ci) cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
-                  nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
-                  nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
-                    where
-                      withNonFuzzyOrigin :: NE.NonEmpty (A_Concept, TType, Origin) -> (A_Concept, TType, Origin)
-                      withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thd3) xs of
-                        [] -> NE.head xs
-                        h : _ -> h
-                      groupCondition :: (A_Concept, TType, Origin) -> (A_Concept, TType, Origin) -> Bool
-                      groupCondition (cptA, typA, _) (cptB, typB, _) = cptA == cptB && typA == typB
-              conceptsOfGroups :: [A_Concept]
-              conceptsOfGroups = L.nub (concat groups)
-              conceptsOfReprs :: [A_Concept]
-              conceptsOfReprs = L.nub $ map fstOf3 reprTrios
-                where
-                  fstOf3 (cpt, _, _) = cpt
-              typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept, TType, [Origin]))
-              typeOfSingle cpt =
-                case filter ofCpt reprTrios of
-                  [] -> pure Nothing
-                  rs -> case L.nub (map getTType rs) of
-                    [] -> fatal "Impossible empty list."
-                    [t] -> pure (Just (cpt, t, map getOrigin rs))
-                    _ -> checkMultipleTTypesOfConcept cpt lst
-                      where
-                        lst = [(t, o) | (_, t, o) <- rs]
-                where
-                  ofCpt :: (A_Concept, TType, Origin) -> Bool
-                  ofCpt (cpt', _, _) = cpt == cpt'
-                  getOrigin :: (A_Concept, TType, Origin) -> Origin
-                  getOrigin (_, _, o) = o
-              getTType :: (a, TType, b) -> TType
-              getTType (_, t, _) = t
-              typeOfGroup :: [A_Concept] -> Guarded [(A_Concept, TType)]
-              typeOfGroup grp =
-                do
-                  singleTypes <- traverse typeOfSingle grp
-                  let typeList = catMaybes singleTypes
-                  case L.nub (map getTType typeList) of
-                    [] -> pure []
-                    [t] -> pure [(cpt, t) | cpt <- grp]
-                    _ -> mkMultipleTypesInTypologyError typeList
+          -- mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
+          -- mkTypeMap groups reprs =
+          --   f
+          --     <$> traverse typeOfGroup groups
+          --     <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
+          --   where
+          --     f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
+          --     f typesOfGroups typesOfOthers =
+          --       concat typesOfGroups <> [(cpt, t) | (cpt, t, _) <- catMaybes typesOfOthers]
+          --     reprTrios :: [(A_Concept, TType, Origin)]
+          --     reprTrios = nubTrios $ concatMap toReprs reprs
+          --       where
+          --         toReprs :: Representation -> [(A_Concept, TType, Origin)]
+          --         toReprs r = [(pCpt2aCpt cptMap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+          --         nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
+          --         nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
+          --           where
+          --             withNonFuzzyOrigin :: NE.NonEmpty (A_Concept, TType, Origin) -> (A_Concept, TType, Origin)
+          --             withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thd3) xs of
+          --               [] -> NE.head xs
+          --               h : _ -> h
+          --             groupCondition :: (A_Concept, TType, Origin) -> (A_Concept, TType, Origin) -> Bool
+          --             groupCondition (cptA, typA, _) (cptB, typB, _) = cptA == cptB && typA == typB
+          --     conceptsOfGroups :: [A_Concept]
+          --     conceptsOfGroups = L.nub (concat groups)
+          --     conceptsOfReprs :: [A_Concept]
+          --     conceptsOfReprs = L.nub $ map fstOf3 reprTrios
+          --       where
+          --         fstOf3 (cpt, _, _) = cpt
+          --     typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept, TType, [Origin]))
+          --     typeOfSingle cpt =
+          --       case filter ofCpt reprTrios of
+          --         [] -> pure Nothing
+          --         rs -> case L.nub (map getTType rs) of
+          --           [] -> fatal "Impossible empty list."
+          --           [t] -> pure (Just (cpt, t, map getOrigin rs))
+          --           _ -> checkMultipleTTypesOfConcept cpt lst
+          --             where
+          --               lst = [(t, o) | (_, t, o) <- rs]
+          --       where
+          --         ofCpt :: (A_Concept, TType, Origin) -> Bool
+          --         ofCpt (cpt', _, _) = cpt == cpt'
+          --         getOrigin :: (A_Concept, TType, Origin) -> Origin
+          --         getOrigin (_, _, o) = o
+          --     getTType :: (a, TType, b) -> TType
+          --     getTType (_, t, _) = t
+          --     typeOfGroup :: [A_Concept] -> Guarded [(A_Concept, TType)]
+          --     typeOfGroup grp =
+          --       do
+          --         singleTypes <- traverse typeOfSingle grp
+          --         let typeList = catMaybes singleTypes
+          --         case L.nub (map getTType typeList) of
+          --           [] -> pure []
+          --           [t] -> pure [(cpt, t) | cpt <- grp]
+          --           _ -> mkMultipleTypesInTypologyError typeList
           connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
           connect typols gss =
             case gss of
@@ -601,7 +546,7 @@ pCtx2aCtx
 
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap =
-        [ (ifc, disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) declMap) $ ifc_Obj ifc)
+        [ (ifc, disambiguate cptMap (termPrimDisAmb cptMap declMap) $ ifc_Obj ifc)
           | ifc <- p_interfaces
         ]
       tIfc2aIfc :: TTypeInfo -> TInterface (TermPrim, DisambPrim) -> Guarded Interface
@@ -648,10 +593,10 @@ pCtx2aCtx
       genLattice :: Op1EqualitySystem Type
       genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-      pClassify2aClassify :: ConceptMap -> PClassify -> Maybe AClassify
-      pClassify2aClassify fun pg =
+      pClassify2aClassify :: PClassify -> Maybe AClassify
+      pClassify2aClassify pg =
         case NE.tail (generics pg) of
-          [] -> case filter (/= specCpt) [pCpt2aCpt fun . NE.head $ generics pg] of
+          [] -> case filter (/= specCpt) [pCpt2aCpt cptMap . NE.head $ generics pg] of
             [] -> Nothing
             h : _ ->
               Just
@@ -660,7 +605,7 @@ pCtx2aCtx
                     gengen = h,
                     genspc = specCpt
                   }
-          _ -> case NE.filter (/= specCpt) . fmap (pCpt2aCpt fun) $ generics pg of
+          _ -> case NE.filter (/= specCpt) . fmap (pCpt2aCpt cptMap) $ generics pg of
             [] -> Nothing
             h : tl ->
               Just
@@ -670,7 +615,7 @@ pCtx2aCtx
                     genspc = specCpt
                   }
         where
-          specCpt = pCpt2aCpt fun $ specific pg
+          specCpt = pCpt2aCpt cptMap $ specific pg
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
@@ -680,12 +625,12 @@ pCtx2aCtx
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
               trel <- case p_mbSign nmdr of
-                Nothing -> findDeclLooselyTyped (declDisambMap ci) nmdr (name nmdr) (conceptMap ci <$> src) (conceptMap ci <$> tgt)
-                _ -> namedPRel2TRel (conceptMap ci) (declDisambMap ci) nmdr
+                Nothing -> findDeclLooselyTyped (declDisambMap ci) nmdr (name nmdr) (cptMap <$> src) (cptMap <$> tgt)
+                _ -> namedPRel2TRel cptMap (declDisambMap ci) nmdr
               rel <- tRel2aRel ti trel
               aps' <- traverse (pAtomPair2aAtomPair (typeMap ti) trel) aps
-              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) trel Src . userConcept)) src
-              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) trel Tgt . userConcept)) tgt
+              src' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Src . userConcept)) src
+              tgt' <- maybeOverGuarded (getAsConcept cptMap (origin pop) <=< (isMoreGeneric (origin pop) trel Tgt . userConcept)) tgt
               return
                 ARelPopu
                   { popdcl = rel,
@@ -694,7 +639,7 @@ pCtx2aCtx
                     poptgt = fromMaybe (target trel) tgt'
                   }
           P_CptPopu {} ->
-            let cpt = pCpt2aCpt (cptMap ctx) (p_cpt pop)
+            let cpt = pCpt2aCpt cptMap (p_cpt pop)
              in ( \vals ->
                     ACptPopu
                       { popcpt = cpt,
@@ -714,7 +659,7 @@ pCtx2aCtx
       pViewDef2aViewDef :: TTypeInfo -> ContextInfo -> P_ViewDef -> Guarded ViewDef
       pViewDef2aViewDef ti ci x = typecheckViewDef ti ci tpda
         where
-          tpda = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) x
+          tpda = disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) x
 
       typecheckViewDef :: TTypeInfo -> ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
       typecheckViewDef
@@ -737,7 +682,7 @@ pCtx2aCtx
                     { vdpos = orig,
                       vdname = nm,
                       vdlabel = lbl',
-                      vdcpt = pCpt2aCpt (conceptMap ci) cpt,
+                      vdcpt = pCpt2aCpt cptMap cpt,
                       vdIsDefault = isDefault,
                       vdhtml = mHtml,
                       vdats = segments
@@ -767,16 +712,16 @@ pCtx2aCtx
                   case payload of
                     P_ViewExp term ->
                       do
-                        (tviewExpr, (srcBounded, _)) <- typecheckTerm ci term
+                        (tviewExpr, (srcBounded, _)) <- typecheckTerm cptMap ci term
                         viewExpr <- tExpr2aExpr ti tviewExpr
-                        case userList (conceptMap ci) . toList $ findExact genLattice (flType $ lMeet c (source viewExpr)) of
+                        case userList cptMap . toList $ findExact genLattice (flType $ lMeet c (source viewExpr)) of
                           [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
                           r@(h : _) -> do
                             if srcBounded || c `elem` r
                               then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
                               else mustBeBound (origin seg) [(Tgt, tviewExpr)]
                     P_ViewText str -> pure $ ViewText str
-            c = mustBeConceptBecauseMath ci (pConcToType (vd_cpt o))
+            c = mustBeConceptBecauseMath cptMap (pConcToType (vd_cpt o))
 
       isa :: Type -> Type -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
@@ -795,7 +740,7 @@ pCtx2aCtx
               obj_mView = mView,
               obj_msub = subs
             } -> do
-              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm ci objTerm
+              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm cptMap ci objTerm
               checkCrud
               crud <- pCruds2aCruds objExpr mCrud
               maybeObj <- maybeOverGuarded (pSubi2tSubi ci objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
@@ -943,7 +888,7 @@ pCtx2aCtx
           P_InterfaceRef {si_str = ifcId} ->
             do
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
-                Just disambObj -> typecheckTerm ci
+                Just disambObj -> typecheckTerm cptMap ci
                   $ case disambObj of
                     P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
@@ -993,7 +938,7 @@ pCtx2aCtx
           matchWith :: (TObjectDef (TermPrim, DisambPrim), Bool) -> Guarded (TObjectDef (TermPrim, DisambPrim))
           matchWith (ojd, exprBound) =
             if b || exprBound
-              then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . tobjExpression $ ojd of
+              then case userList cptMap . toList . findExact genLattice . flType . lMeet (target objExpr) . source . tobjExpression $ ojd of
                 [] -> mustBeOrderedLst x [(source (tobjExpression ojd), Src, TBxExpr ojd)]
                 (r : _) -> pure (ojd {tobjExpression = addEpsilonLeft genLattice r (tobjExpression ojd)})
               else mustBeBound (origin ojd) [(Src, tobjExpression ojd), (Tgt, objExpr)]
@@ -1001,8 +946,8 @@ pCtx2aCtx
           warnings =
             [mkBoxRowsnhWarning (origin x) | toText1Unsafe "ROWSNH" == (btType . si_header $ x)] -- See issue #925
               <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
-      checkTTypeOfSubInterfaces :: A_Context -> Guarded ()
-      checkTTypeOfSubInterfaces ctx = undefined
+      checkTTypeOfSubInterfaces :: Guarded ()
+      checkTTypeOfSubInterfaces = undefined
 
       --  mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
       --     <* mustBeObject (target objExpr) objExpr -- remove objExpr after diagnosis in issue #1537
@@ -1083,8 +1028,8 @@ pCtx2aCtx
           <*> traverse (pPop2aPop ti ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ti ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ti ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl ti (cptMap ctx) (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
-          <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
+          <*> traverse (pDecl2aDecl ti cptMap (Just $ name ppat) (deflangCtxt ctx) (deffrmtCtxt ctx)) (pt_dcs ppat)
+          <*> pure (fmap (pConcDef2aConcDef cptMap (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ti ci (Just $ name ppat)) (pt_enfs ppat)
@@ -1096,7 +1041,7 @@ pCtx2aCtx
                 ptpos = origin ppat,
                 ptend = pt_end ppat,
                 ptrls = Set.fromList rules',
-                ptgns = mapMaybe (pClassify2aClassify (conceptMap ci)) (pt_gns ppat),
+                ptgns = mapMaybe pClassify2aClassify (pt_gns ppat),
                 ptdcs = Set.fromList relations,
                 ptrrs = roleRules,
                 ptcds = conceptdefs,
@@ -1113,7 +1058,7 @@ pCtx2aCtx
         Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
-      pRul2aRul ti ci mPat = typeCheckRul ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pRul2aRul ti ci mPat = typeCheckRul ti ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
       typeCheckRul ::
         TTypeInfo ->
         ContextInfo ->
@@ -1134,7 +1079,7 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            (texp', _) <- typecheckTerm ci expr
+            (texp', _) <- typecheckTerm cptMap ci expr
             exp' <- tExpr2aExpr ti texp'
             vls <- maybeOverGuarded (typeCheckPairView ti ci orig exp') viols
             return
@@ -1155,7 +1100,7 @@ pCtx2aCtx
         Maybe Name -> -- name that identifies the pattern it is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
-      pEnforce2aEnforce ti ci mPat = typeCheckEnforce ti ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pEnforce2aEnforce ti ci mPat = typeCheckEnforce ti ci mPat . disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci))
       typeCheckEnforce ::
         TTypeInfo ->
         ContextInfo ->
@@ -1176,7 +1121,7 @@ pCtx2aCtx
             (_, Known (TEDcD _ trel)) ->
               do
                 rel <- tRel2aRel ti trel
-                (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
+                (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm cptMap ci x
                 -- SJC: the following two error messages can occur in parallel
                 --      thanks to 'ApplicativeDo', however, we can write the following
                 --      sequential-looking code that suggests checking src before tgt.
@@ -1247,7 +1192,7 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ti ci mPat pidt =
-        case disambiguate (cptMap ctx) (termPrimDisAmb (cptMap ctx) (declDisambMap ci)) pidt of
+        case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
           P_Id
             { ix_name = nm,
               ix_label = lbl',
@@ -1265,7 +1210,7 @@ pCtx2aCtx
               )
                 <$> traverse pIdentSegment2IdentSegment isegs
         where
-          conc = pCpt2aCpt (cptMap ctx) (ix_cpt pidt)
+          conc = pCpt2aCpt cptMap (ix_cpt pidt)
           orig = origin pidt
           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
@@ -1286,7 +1231,7 @@ pCtx2aCtx
         case pv of
           (PairViewText orig x) -> pure (PairViewText orig x)
           (PairViewExp orig s x) -> do
-            (tExpr, (b, _)) <- typecheckTerm ci x
+            (tExpr, (b, _)) <- typecheckTerm cptMap ci x
             e <- tExpr2aExpr ti tExpr
             let tp = aConcToType (source e)
             case toList . findExact genLattice . lMeet tp $ getConcept s t of
@@ -1317,9 +1262,9 @@ pCtx2aCtx
       pRefObj2aRefObj :: TTypeInfo -> ContextInfo -> PRef2Obj -> Guarded ExplObj
       pRefObj2aRefObj ti ci refference =
         case refference of
-          PRef2ConceptDef s -> pure $ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
+          PRef2ConceptDef s -> pure $ ExplConcept (pCpt2aCpt cptMap $ mkPConcept s)
           PRef2Relation tm -> do
-            tRelation <- namedPRel2TRel (conceptMap ci) (declDisambMap ci) tm
+            tRelation <- namedPRel2TRel cptMap (declDisambMap ci) tm
             rel <- tRel2aRel ti tRelation
             return $ ExplRelation rel
           PRef2Rule s -> pure $ ExplRule s
@@ -1328,10 +1273,10 @@ pCtx2aCtx
           PRef2Pattern s -> pure $ ExplPattern s
           PRef2Interface s -> pure $ ExplInterface s
           PRef2Context s -> pure $ ExplContext s
-      allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
-      allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) (deflangCtxt ctx) (deffrmtCtxt ctx)) p_conceptdefs
-      allConceptDefs :: ContextInfo -> [AConceptDef]
-      allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) (deflangCtxt ctx) (deffrmtCtxt ctx)) (p_conceptdefs <> concatMap pt_cds p_patterns)
+      allConceptDefsOutPats :: [AConceptDef]
+      allConceptDefsOutPats = map (pConcDef2aConcDef cptMap (deflangCtxt ctx) (deffrmtCtxt ctx)) p_conceptdefs
+      allConceptDefs :: [AConceptDef]
+      allConceptDefs = map (pConcDef2aConcDef cptMap (deflangCtxt ctx) (deffrmtCtxt ctx)) (p_conceptdefs <> concatMap pt_cds p_patterns)
       udefRoleRules' :: [A_RoleRule]
       udefRoleRules' =
         map
@@ -1402,8 +1347,8 @@ addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> TExpression ->
 addEpsilon genLattice s t e =
   addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
 
-typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (TExpression, (Bool, Bool))
-typecheckTerm ci tct =
+typecheckTerm :: ConceptMap -> ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (TExpression, (Bool, Bool))
+typecheckTerm cptMap ci tct =
   case tct of
     Prim (t, v) ->
       ( \x -> case x of
@@ -1439,7 +1384,7 @@ typecheckTerm ci tct =
     --    tTypOf = techTypeOf ci
     genLattice = gens_efficient ci
     o = origin (fmap fst tct)
-    tt = typecheckTerm ci
+    tt = typecheckTerm cptMap ci
     -- SJC: Here is what binary, binary' and unary do:
     -- (1) Create a term, the combinator for this is given by its first argument
     -- (2) Fill in the corresponding type-checked terms to that term
@@ -1512,11 +1457,11 @@ typecheckTerm ci tct =
             <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
       where
         getExactType flf (p1, e1) (p2, e2) =
-          case userList (conceptMap ci) . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
+          case userList cptMap . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
             [] -> mustBeOrdered o (p1, e1) (p2, e2)
             h : _ -> pure h
         getAndCheckType flf (p1, b1, e1) (p2, b2, e2) =
-          case userList (conceptMap ci) . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
+          case userList cptMap . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
             [] -> mustBeOrdered o (p1, e1) (p2, e2)
             [r@(h : _)] ->
               case (b1 || elem (getAConcept p1 e1) r, b2 || elem (getAConcept p2 e2) r) of
@@ -1809,10 +1754,10 @@ pConcDef2aConcDef ::
   PandocFormat -> -- The default pandocFormatPConceptDef
   PConceptDef ->
   AConceptDef
-pConcDef2aConcDef conceptmap defLanguage defFormat pCd =
+pConcDef2aConcDef cptMap defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
-      acdcpt = pCpt2aCpt conceptmap (PCpt {p_cptnm = name pCd}),
+      acdcpt = pCpt2aCpt cptMap (PCpt {p_cptnm = name pCd}),
       acdname = name pCd,
       acdlabel = cdlbl pCd,
       acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
@@ -1964,7 +1909,7 @@ tSubi2aSubi ::
   TTypeInfo ->
   TSubInterface (TermPrim, DisambPrim) ->
   Guarded SubInterface
-tSubi2aSubi ti subi = undefined
+tSubi2aSubi _ti _subi = undefined
 
 tExpr2aExpr :: TTypeInfo -> TExpression -> Guarded Expression
 tExpr2aExpr ti expr = case expr of

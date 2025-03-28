@@ -20,13 +20,15 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Text.Pandoc.Builder hiding (toList)
+import Ampersand.Core.AbstractSyntaxTree (getConceptMap)
+import Ampersand.Core.A2P_Converters (aCtx2pCtx)
 
-testConfluence :: A_Context -> Blocks
-testConfluence context =
+testConfluence :: TTypeInfo -> A_Context -> Blocks
+testConfluence ti context =
   let tcss =
         [ (expr, tcs)
           | expr <- toList $ expressionsIn context,
-            let tcs = dfProofs (conceptMap . ctxInfo $ context) expr,
+            let tcs = dfProofs ti (getConceptMap . aCtx2pCtx $ context) expr,
             length tcs > 1
         ]
       sumt = sum (map (length . snd) tcss)
@@ -40,9 +42,9 @@ testConfluence context =
             | (expr, tcs) <- tcss
           ]
 
-deriveProofs :: env -> A_Context -> Blocks
-deriveProofs env context =
-  testConfluence context
+deriveProofs :: TTypeInfo -> env -> A_Context -> Blocks
+deriveProofs ti env context =
+  testConfluence ti context
     <> para (linebreak <> "--------------" <> linebreak)
     <> para ("Rules and their conjuncts for " <> (str . fullName) context)
     <> bulletList

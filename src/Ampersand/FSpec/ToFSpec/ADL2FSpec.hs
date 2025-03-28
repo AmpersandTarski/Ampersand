@@ -76,7 +76,11 @@ makeFSpec env context =
       allConcepts = fSpecAllConcepts,
       cptTType = ctxreprs context,
       fsisa = L.nub . concatMap genericAndSpecifics . gens $ context,
-      vpatterns = mergeByName . patterns $ context,
+      vpatterns = vpatterns',
+      lookupPattern = \nm -> case filter (\pat -> name pat == nm) vpatterns' of
+        [] -> Nothing
+        [pat] -> Just pat
+        _ -> fatal ("Multiple patterns with name " <> fullName nm),
       vgens = gens context,
       vIndices = identities context,
       vviews = viewDefs context,
@@ -120,6 +124,7 @@ makeFSpec env context =
       
     }
   where
+    vpatterns' = mergeByName . patterns $ context
     mergeByName :: [Pattern] -> [Pattern]
     mergeByName [] = []
     mergeByName (h : tl) = h' : otherNamedPats

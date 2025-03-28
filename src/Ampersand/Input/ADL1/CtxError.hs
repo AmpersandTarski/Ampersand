@@ -199,13 +199,11 @@ checkMultipleTTypesOfConcept cpt ts =
                  | (t, orig, isExplicit) <- NE.toList . NE.sort $ rs
                ]
 
-mkMultipleTypesInTypologyError :: NonEmpty (A_Concept, TType, NonEmpty Origin, Bool) -> Guarded a
+mkMultipleTypesInTypologyError :: NonEmpty (A_Concept, TType, Origin, Bool) -> Guarded a
 mkMultipleTypesInTypologyError xs =
   Errors . pure $ CTXE o msg
   where
-    o = NE.head origs
-      where
-        (_, _, origs, _) = NE.head xs
+    o = trd4 . NE.head . NE.sort $ xs
     msg =
       T.intercalate "\n"
         $ [ "Concepts in the same typology must have the same TYPE.",
@@ -213,10 +211,9 @@ mkMultipleTypesInTypologyError xs =
             "of them have the same TYPE:"
           ]
         <> [ if isExplicit
-               then "  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig
+               then "  - REPRESENT " <> (text1ToText . showWithAliases) cpt <> " TYPE " <> tshow t <> " at " <> showFullOrig orig
                else "  - Implicitly an Object because of the usage in an INTERFACE at " <> showFullOrig orig
-             | (c, t, origs, isExplicit) <- NE.toList xs,
-               orig <- NE.toList origs
+             | (cpt, t, orig, isExplicit) <- NE.toList . NE.sort $ xs
            ]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
