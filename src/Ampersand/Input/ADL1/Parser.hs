@@ -23,7 +23,6 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
 import Text.Casing ( camel, pascal )
-import Data.Maybe ( catMaybes )
 
 --- Populations ::= Population+
 
@@ -64,7 +63,7 @@ pContext =
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
             ctx_reprs = [r | CRep r <- ces] <>
-                        [ImplicitRepr (origin box) (obj_term box) | Cifc s <- ces, obj<-[ifc_Obj s], si<-recur obj, box<-si_box si],
+                        [ImplicitRepr trm | Cifc s <- ces, obj<-[ifc_Obj s], trm<-harvestTerms obj],
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
@@ -75,8 +74,11 @@ pContext =
         [s | CIncl s <- ces] -- the INCLUDE filenames
       )
      where
-       recur :: P_BoxItem a -> [P_SubIfc a]
-       recur obj = Data.Maybe.catMaybes [obj_msub obj]<>[ subIfc | Just si<-[obj_msub obj], box<-si_box si, subIfc<-recur box]
+       harvestTerms :: P_BoxItem a -> [Term a]
+       harvestTerms obj = [ obj_term o | o<-recur obj, Just _<-[obj_msub o] ]
+       -- Maybe recur looks overly complicated at first sight. However, we just want the box items that have a subobject with actual attributes.
+       recur :: P_BoxItem a -> [P_BoxItem a]
+       recur obj = obj: [subObj | Just x@P_Box{}<-[obj_msub obj], si@P_BoxItemTerm{}<-si_box x, subObj<-recur si, Just x'@P_Box{}<-[obj_msub subObj], P_BoxItemTerm{}<-si_box x']
 
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement

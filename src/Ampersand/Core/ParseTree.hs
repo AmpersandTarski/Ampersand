@@ -344,15 +344,14 @@ data P_Representation = Repr
     reprdom :: !TType
   } |
   ImplicitRepr
-  { pos :: !Origin,
-    -- | the type of the concept the atom is in
+  { -- | the type of the concept the atom is in
     reprTerm :: Term TermPrim
   }
   deriving (Show)
 
 instance Traced P_Representation where
   origin Repr {pos = orig} = orig
-  origin ImplicitRepr {pos = orig} = orig
+  origin r@ImplicitRepr{} = origin (reprTerm r)
 
 data TType
   = Alphanumeric

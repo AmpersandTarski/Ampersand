@@ -8,6 +8,9 @@ BOX [ "Ref" : V[SESSION*A] INTERFACE Ref -- is incorrectly recognized as an cycl
     
 INTERFACE Ref : I[A]
 BOX [ "Atom" : I[A] 
+    , "Ref2" : I[A] BOX
+        [ "Ref" : V[A*A] 
+        ]
     ]
 
 ENDCONTEXT

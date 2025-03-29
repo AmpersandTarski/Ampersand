@@ -286,7 +286,7 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      aReprs <- traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
+      aReprs <- trace (tshow p_representations) $ traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -549,7 +549,7 @@ pCtx2aCtx
 
       pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
       pRepr2aRepr ci repr@Repr{} = pure Arepr{aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
-      pRepr2aRepr ci repr@ImplicitRepr{pos=_pos, reprTerm=_reprTerm} =
+      pRepr2aRepr ci repr@ImplicitRepr{} =
           do 
             (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
             return (Arepr (target expr :| []) Object)
