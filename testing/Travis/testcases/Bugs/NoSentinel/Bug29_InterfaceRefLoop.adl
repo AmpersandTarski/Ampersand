@@ -3,13 +3,15 @@ CONTEXT Bug29InterfaceRefLoop IN ENGLISH
 -}
 
 INTERFACE Buggy FOR Dummy : I[SESSION]
-BOX [ "Ref" : V[SESSION*A] INTERFACE Ref -- is incorrectly recognized as an cyclic ref by the server
+BOX [ "Ref" : V[SESSION*B] INTERFACE Ref -- is incorrectly recognized as an cyclic ref by the server
     ]
-    
-INTERFACE Ref : I[A]
+
+REPRESENT A TYPE OBJECT
+INTERFACE Ref : V[B*A]
 BOX [ "Atom" : I[A] 
     , "Ref2" : I[A] BOX
-        [ "Ref" : V[A*A] 
+        [ "Raf" : V[A*A]
+        , "Rbf" : V[A*B]
         ]
     ]
 

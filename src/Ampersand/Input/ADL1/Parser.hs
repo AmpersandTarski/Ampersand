@@ -78,7 +78,12 @@ pContext =
        harvestTerms obj = [ obj_term o | o<-recur obj, Just _<-[obj_msub o] ]
        -- Maybe recur looks overly complicated at first sight. However, we just want the box items that have a subobject with actual attributes.
        recur :: P_BoxItem a -> [P_BoxItem a]
-       recur obj = obj: [subObj | Just x@P_Box{}<-[obj_msub obj], si@P_BoxItemTerm{}<-si_box x, subObj<-recur si, Just x'@P_Box{}<-[obj_msub subObj], P_BoxItemTerm{}<-si_box x']
+       recur obj = obj: [subObj | Just x@P_Box{}<-[obj_msub obj], si@P_BoxItemTerm{}<-si_box x, subObj<-recur si, hasTerms subObj]
+       hasTerms :: P_BoxItem a -> Bool
+       hasTerms obj = case obj_msub obj of
+         Nothing -> False
+         Just x@P_Box{} -> (not.null.si_box) x
+         Just P_InterfaceRef{} -> False
 
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement

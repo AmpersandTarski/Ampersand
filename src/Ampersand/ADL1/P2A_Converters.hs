@@ -276,6 +276,10 @@ pCtx2aCtx
     do
       contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
+      -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
+      aReprs <- trace ("\np_representations = "<>tshow p_representations<>"\np_concepts = "<>tshow [cpt|typology<-multiKernels contextInfo, cpt<-tyCpts typology]) $ traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
+      -- allReprs contains all concepts and every concept has precisely one TType
+      allReprs <- makeComplete contextInfo aReprs
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -286,10 +290,9 @@ pCtx2aCtx
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      aReprs <- trace (tshow p_representations) $ traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- trace ("\naReprs = "<>tshow aReprs<>"\nallReprs = "<>tshow allReprs) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -324,10 +327,26 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
+      makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
+      makeComplete contextInfo aReprs =
+        do allReps <- checkDuplicates
+           return $ [ Arepr o (c :| []) t | (c,[(t,o)])<-allReps]
+        where
+          -- | kernelComplete exposes duplicate TTypes, so we can make error messages
+          kernelComplete :: [(A_Concept, [(TType, Origin)])]
+          kernelComplete =
+            [ (cpt, L.nub [ (aReprTo aRepr, origin aRepr) | aRepr<-L.nub aReprs, cpt `elem` NE.toList (aReprFrom aRepr) ])
+            | typology<-multiKernels contextInfo, cpt<-tyCpts typology
+            ]
+          checkDuplicates :: Guarded [(A_Concept, [(TType, Origin)])]
+          checkDuplicates =
+            case [ (c, tts) | (c, tts@(_:_:_))<-kernelComplete] of
+              [] -> pure kernelComplete
+              errs -> traverse (uncurry mkMultipleRepresentTypesError) errs
       defaultTType :: [A_Representation] -> A_Concept -> TType
       defaultTType aReprs c =
         if c==ONE || show c=="_SESSION" then Object else
-        case L.nub [ aReprTo aRepr | aRepr<-aReprs, c `elem` NE.toList (aReprFrom aRepr) ] of
+        case L.nub [ aReprTo aRepr | aRepr<-L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr) ] of
           [] -> Alphanumeric
           [t] -> t
           _ -> fatal "Multiple representations for a single concept"
@@ -548,11 +567,11 @@ pCtx2aCtx
       userConcept (PCpt nm) = UserConcept nm
 
       pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
-      pRepr2aRepr ci repr@Repr{} = pure Arepr{aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
+      pRepr2aRepr ci repr@Repr{} = pure Arepr{pos = origin repr, aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
       pRepr2aRepr ci repr@ImplicitRepr{} =
-          do 
+          do
             (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
-            return (Arepr (target expr :| []) Object)
+            return (Arepr (origin repr) (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =

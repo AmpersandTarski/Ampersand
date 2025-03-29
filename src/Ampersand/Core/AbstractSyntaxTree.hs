@@ -293,12 +293,17 @@ instance Eq AConceptDef where
   a == b = compare a b == EQ
 
 data A_Representation = Arepr
-  { -- | the concepts
+  { -- | origin is used in error messages
+    pos :: Origin,
+    -- | the concepts
     aReprFrom :: !(NE.NonEmpty A_Concept),
     -- | the type of the concept the atom is in
     aReprTo :: !TType
   }
-  deriving (Show)
+  deriving (Eq, Show)
+
+instance Traced A_Representation where
+  origin Arepr {pos = orig} = orig
 
 data A_RoleRule = A_RoleRule
   { arPos :: !Origin,
