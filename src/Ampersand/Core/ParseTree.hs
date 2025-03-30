@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ampersand.Core.ParseTree
@@ -593,6 +594,40 @@ data TermPrim
     PNamedR !P_NamedRel
   deriving (Show) -- For QuickCheck error messages only!
 
+instance Eq TermPrim where
+  a == b = compare a b == EQ
+
+instance Ord TermPrim where
+  compare a b =
+    case constructorOrder a `compare` constructorOrder b of
+      EQ -> case (a, b) of
+        (PI _, PI _) -> EQ
+        (Pid _ cptA, Pid _ cptB) -> cptA `compare` cptB
+        (Patm _ valA cptA, Patm _ valB cptB) -> (valA, cptA) `compare` (valB, cptB)
+        (PVee _, PVee _) -> EQ
+        (Pfull _ cAl cAr, Pfull _ cBl cBr) -> (cAl, cAr) `compare` (cBl, cBr)
+        (PBin _ operA, PBin _ operB) -> operA `compare` operB
+        (PBind _ operA cptA, PBind _ operB cptB) -> (operA, cptA) `compare` (operB, cptB)
+        (PNamedR relA, PNamedR relB) -> relA `compare` relB
+        _ ->
+          fatal
+            $ if constructorOrder a == constructorOrder b
+              then "A constructor is missing in above compare: " <> tshow a
+              else "Only comparing terms with matching constructors are expected here."
+      order -> order
+    where
+      constructorOrder :: TermPrim -> Int
+      constructorOrder term =
+        case term of
+          PI {} -> 0
+          Pid {} -> 1
+          Patm {} -> 2
+          PVee {} -> 3
+          Pfull {} -> 4
+          PBin {} -> 5
+          PBind {} -> 6
+          PNamedR {} -> 7
+
 data P_NamedRel = PNamedRel
   { pos :: !Origin,
     p_nrnm :: !Name,
@@ -641,6 +676,61 @@ data Term a
   | -- | bracketed term ( ... )
     PBrk !Origin !(Term a)
   deriving (Show) -- deriving Show for debugging purposes
+
+instance Eq (Term TermPrim) where
+  a == b = compare a b == EQ
+
+instance Ord (Term TermPrim) where
+  -- NOTE: There should be no reason to compare TermPrim.
+  --      However, because of issue #1537 there was a need to add Term TermPrim
+  --      to the newly introduced TExpression.
+  compare a b =
+    case constructorOrder a `compare` constructorOrder b of
+      EQ -> case (a, b) of
+        (Prim tpa, Prim tpb) -> compare tpa tpb
+        (PEqu _ la ra, PEqu _ lb rb) -> compare (la, lb) (ra, rb)
+        (PInc _ la ra, PInc _ lb rb) -> compare (la, lb) (ra, rb)
+        (PIsc _ la ra, PIsc _ lb rb) -> compare (la, lb) (ra, rb)
+        (PUni _ la ra, PUni _ lb rb) -> compare (la, lb) (ra, rb)
+        (PDif _ la ra, PDif _ lb rb) -> compare (la, lb) (ra, rb)
+        (PLrs _ la ra, PLrs _ lb rb) -> compare (la, lb) (ra, rb)
+        (PRrs _ la ra, PRrs _ lb rb) -> compare (la, lb) (ra, rb)
+        (PDia _ la ra, PDia _ lb rb) -> compare (la, lb) (ra, rb)
+        (PCps _ la ra, PCps _ lb rb) -> compare (la, lb) (ra, rb)
+        (PRad _ la ra, PRad _ lb rb) -> compare (la, lb) (ra, rb)
+        (PPrd _ la ra, PPrd _ lb rb) -> compare (la, lb) (ra, rb)
+        (PKl0 _ ea, PKl0 _ eb) -> compare ea eb
+        (PKl1 _ ea, PKl1 _ eb) -> compare ea eb
+        (PFlp _ ea, PFlp _ eb) -> compare ea eb
+        (PCpl _ ea, PCpl _ eb) -> compare ea eb
+        (PBrk _ ea, PBrk _ eb) -> compare ea eb
+        _ ->
+          fatal
+            $ if constructorOrder a == constructorOrder b
+              then "A constructor is missing in above compare: " <> tshow a
+              else "Only comparing terms with matching constructors are expected here."
+      order -> order
+    where
+      constructorOrder :: Term a -> Int
+      constructorOrder term =
+        case term of
+          Prim {} -> 0
+          PEqu {} -> 1
+          PInc {} -> 2
+          PIsc {} -> 3
+          PUni {} -> 4
+          PDif {} -> 5
+          PLrs {} -> 6
+          PRrs {} -> 7
+          PDia {} -> 8
+          PCps {} -> 9
+          PRad {} -> 10
+          PPrd {} -> 11
+          PKl0 {} -> 12
+          PKl1 {} -> 13
+          PFlp {} -> 14
+          PCpl {} -> 15
+          PBrk {} -> 16
 
 instance Functor Term where fmap = fmapDefault
 
