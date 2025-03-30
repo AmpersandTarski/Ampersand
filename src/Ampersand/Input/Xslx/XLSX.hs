@@ -10,7 +10,6 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import Codec.Xlsx
 import Control.Lens hiding (both)
-import Data.Tuple.Extra (both, swap)
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Char
