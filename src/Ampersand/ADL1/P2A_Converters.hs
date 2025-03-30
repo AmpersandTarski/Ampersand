@@ -14,7 +14,7 @@ import Ampersand.ADL1.Disambiguate (DisambPrim (..), disambiguate, orWhenEmpty, 
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
-import Data.Tuple.Extra(fst3,snd3,thd3)
+import Data.Tuple.Extra( {-fst3,-} snd3,thd3)
 import Ampersand.Classes
 import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
@@ -275,12 +275,13 @@ pCtx2aCtx
       ctx_enfs = p_enfs
     } =
     do
-      contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = declDisambMap contextInfo
+      contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
+      let declMap = declDisambMap contextInfoPre
       -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
-      aReprs <- trace ("\np_representations = "<>tshow p_representations<>"\np_concepts = "<>tshow [cpt|typology<-multiKernels contextInfo, cpt<-tyCpts typology]) $ traverse (pRepr2aRepr contextInfo) p_representations :: Guarded [A_Representation] --  The representations defined in this context
+      aReprs <- traverse (pRepr2aRepr contextInfoPre) p_representations :: Guarded [A_Representation] --  The representations defined in this context
       -- allReprs contains all concepts and every concept has precisely one TType
-      allReprs <- makeComplete contextInfo aReprs
+      allReps <- makeComplete contextInfoPre aReprs
+      let contextInfo = contextInfoPre{representationOf = defaultTType allReps}
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
