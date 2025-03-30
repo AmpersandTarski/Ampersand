@@ -29,6 +29,7 @@ module Ampersand.FSpec.FSpec
     isPrimaryKey,
     isForeignKey,
     Typology (..),
+    ConceptStructure(..),
     Interface (..),
     Object (..),
     BoxItem (..),
@@ -96,8 +97,6 @@ data FSpec = FSpec
     --   The generated relations are all generalizations and
     --   one relation for each signal.
     vrels :: !Relations,
-    -- | All concepts in the fSpec
-    allConcepts :: !A_Concepts,
     cptTType :: !(A_Concept -> TType),
     -- | All keys that apply in the entire FSpec
     vIndices :: ![IdentityRule],
@@ -184,7 +183,7 @@ instance Hashable FSpec where
       `composeHash` name
       `composeHash` (L.sort . Set.toList . fallRules)
       `composeHash` (L.sort . Set.toList . vrels)
-      `composeHash` (L.sort . fmap conceptAndTType . Set.toList . allConcepts)
+      `composeHash` (L.sort . fmap conceptAndTType . Set.toList . concs)
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
     where
       composeHash :: (Hashable a) => Int -> (FSpec -> a) -> Int
@@ -243,7 +242,7 @@ concDefs fSpec c =
         isDefinitionOf cdef = name cdef `elem` fmap fst (aliases c)
 
 instance ConceptStructure FSpec where
-  concs = allConcepts
+  concs = allConcepts . fcontextInfo
   expressionsIn = allExprs
 
 instance Named FSpec where
@@ -539,8 +538,6 @@ emptyFSpec nm =
       -- All user defined and generated relations plus all defined and computed totals.
       --   The generated relations are all generalizations and
       --   one relation for each signal.
-      allConcepts = Set.empty,
-      -- All concepts in the fSpec
       cptTType = fatal "Don't ask for the concept-TType relation in the empty FSpec.",
       vIndices = [],
       -- All keys that apply in the entire FSpec

@@ -73,7 +73,6 @@ makeFSpec env context =
       vquads = allQuads,
       allUsedDecls = bindedRelationsIn context,
       vrels = relsDefdInContext,
-      allConcepts = fSpecAllConcepts,
       cptTType = representationOf contextinfo,
       fsisa = L.nub . concatMap genericAndSpecifics . gens $ context,
       vpatterns = mergeByName . patterns $ context,
@@ -86,7 +85,7 @@ makeFSpec env context =
       conceptDefs = ctxcds context,
       fSexpls = Set.fromList $ ctxps context <> concatMap ptxps (patterns context),
       metas = ctxmetas context,
-      crudInfo = mkCrudInfo fSpecAllConcepts relsDefdInContext fSpecAllInterfaces,
+      crudInfo = mkCrudInfo (concs context) relsDefdInContext fSpecAllInterfaces,
       atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript, -- TODO: Write in a nicer way, like `atomsBySmallestConcept`
       atomsBySmallestConcept = \cpt ->
         Set.map apLeft
@@ -194,7 +193,6 @@ makeFSpec env context =
     conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
-    fSpecAllConcepts = concs context
     fSpecAllInterfaces :: [Interface]
     fSpecAllInterfaces = map enrichIfc (ctxifcs context)
       where

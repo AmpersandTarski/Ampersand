@@ -294,7 +294,7 @@ pCtx2aCtx
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- trace ("\naReprs = "<>tshow aReprs<>"\nallReprs = "<>tshow allReprs) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- trace ("\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -330,17 +330,19 @@ pCtx2aCtx
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete contextInfo aReprs = checkDuplicates
+      makeComplete contextInfo aReprs = trace ("\nkernelComplete"<>tshow kernelComplete) checkDuplicates
         where
           -- | kernelComplete exposes duplicate TTypes, so we can make error messages
           kernelComplete :: [([A_Concept], [(TType, [Origin])])]
           kernelComplete =
-            [ (tyCpts typology, [ (t, [origin aRepr | aRepr<-NE.toList cl])
-                                | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` tyCpts typology ]
-                                , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
-                                ])
-            | typology<-multiKernels contextInfo
+            [ (typolConcs, [ (t, [origin aRepr | aRepr<-NE.toList cl])
+                           | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` typolConcs ]
+                           , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
+                           ])
+            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo), c `notElem` concat typolSets]
             ]
+           where
+             typolSets = map tyCpts (multiKernels contextInfo)
           checkDuplicates :: Guarded [A_Representation]
           checkDuplicates =
             case [ (cs, tts) | (cs, tts@(_:_:_))<-kernelComplete] of
@@ -385,12 +387,16 @@ pCtx2aCtx
               reprList = allReprs,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
+              allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
               defaultFormat = deffrmtCtxt
             }
         where
+          allConcDefs :: Set.Set AConceptDef
+          allConcDefs = Set.fromList (map (pConcDef2aConcDef conceptmap deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
+
           gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.

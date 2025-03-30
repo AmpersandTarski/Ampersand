@@ -47,14 +47,14 @@ instance ToJSON JPair where
 instance JSON FSpec Populations where
   fromAmpersand env _ fSpec =
     Populations
-      { epJSONatoms = map (fromAmpersand env fSpec) (toList $ allConcepts fSpec),
-        epJSONlinks = map (fromAmpersand env fSpec) (toList $ vrels fSpec)
+      { epJSONatoms = map (fromAmpersand env fSpec) ((toList . concs) fSpec),
+        epJSONlinks = map (fromAmpersand env fSpec) ((toList . vrels) fSpec)
       }
 
 -- instance JSON (MultiFSpecs,Bool) Populations where
 --  fromAmpersand env _ (multi,doMeta) = Populations
---    { epJSONatoms = map (fromAmpersand env multi) (zip (toList $ allConcepts theFSpec) (L.repeat doMeta))
---    , epJSONlinks = map (fromAmpersand env multi) (zip (toList $ vrels       theFSpec) (L.repeat doMeta))
+--    { epJSONatoms = map (fromAmpersand env multi) (zip (toList . concs) theFSpec) (L.repeat doMeta))
+--    , epJSONlinks = map (fromAmpersand env multi) (zip (toList . vrels) theFSpec) (L.repeat doMeta))
 --    }
 --   where
 --    theFSpec

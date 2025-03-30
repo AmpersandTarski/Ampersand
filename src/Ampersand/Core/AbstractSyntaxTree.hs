@@ -1465,6 +1465,8 @@ data ContextInfo = CI
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
+    -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
+    allConcepts :: !(Set.Set A_Concept),
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept
