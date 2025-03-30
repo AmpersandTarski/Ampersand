@@ -8,7 +8,7 @@ r2 :: A * B2
 INTERFACE Test: I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 
   , "NoVars": V[SESSION*NoVar] cRud 
-  , "Ifc" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>
+  , "Interface" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>
     [ "A = ": I cRud
 --#IF EditableInterfaceA
   --#IFNOT DoNotShowR1

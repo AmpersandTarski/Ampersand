@@ -709,7 +709,7 @@ instance ShowHS Interface where
   showHS env indent ifc =
     T.intercalate
       indent
-      [ "Ifc { ifcname   = " <> fullName ifc,
+      [ "Interface { ifcname   = " <> fullName ifc,
         "    , ifcRoles  = " <> tshow (ifcRoles ifc),
         "    , ifcObj" <> indent <> "       = " <> showHS env (indent <> "         ") (ifcObj ifc),
         wrap "    , ifcConjuncts = " (indent <> "                  ") (const showHSName) (ifcConjuncts ifc),
@@ -733,7 +733,7 @@ instance ShowHS BoxItem where
           ]
 
 instance ShowHS SubInterface where
-  showHS _ _ (InterfaceRef _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
+  showHS _ _ (InterfaceRef _ _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
   showHS env indent (Box _ x cl objs) = "Box (" <> showHS env indent x <> ") (" <> tshow cl <> ")" <> indent <> "     (" <> showHS env (indent <> "     ") objs <> ")"
 
 instance ShowHS Expression where

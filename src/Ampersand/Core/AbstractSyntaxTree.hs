@@ -7,84 +7,85 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Ampersand.Core.AbstractSyntaxTree
-  ( A_Context (..),
-    Typology (..),
-    MetaData (..),
-    Origin (..),
-    Pattern (..),
-    PairView (..),
-    PairViewSegment (..),
-    Rule (..),
-    Rules,
-    RuleKind (..),
-    AEnforce (..),
-    Relation (..),
-    Relations,
-    ARelDefault (..),
-    ARelDefaults,
-    AProp (..),
-    AProps,
-    IdentityRule (..),
-    IdentitySegment (..),
-    ViewDef (..),
-    ViewSegment (..),
-    ViewSegmentPayLoad (..),
-    AClassify (..),
-    Interface (..),
-    getInterfaceByName,
-    SubInterface (..),
-    BoxItem (..),
-    ObjectDef (..),
-    Object (..),
-    Cruds (..),
-    Default (..),
-    Purpose (..),
-    ExplObj (..),
-    Expression (..),
-    getExpressionRelation,
-    A_Concept (..),
+  ( A_Concept (..),
     A_Concepts,
-    AConceptDef (..),
-    ShowWithAliases (..),
-    Meaning (..),
+    A_Context (..),
     A_RoleRule (..),
-    Representation (..),
-    TType (..),
-    unsafePAtomVal2AtomValue,
-    safePSingleton2AAtomVal,
-    Signature (..),
-    Population (..),
-    HasSignature (..),
-    Traced (..),
-    Conjunct (..),
-    DnfClause (..),
     AAtomPair (..),
     AAtomPairs,
     AAtomValue (..),
     AAtomValues,
-    mkAtomPair,
-    PAtomValue (..),
+    AClassify (..),
+    AConceptDef (..),
+    AEnforce (..),
+    allGens,
+    AProp (..),
+    AProps,
+    ARelDefault (..),
+    ARelDefaults,
+    BoxItem (..),
+    ConceptMap,
+    Conjunct (..),
     ContextInfo (..),
+    Cruds (..),
+    DeclMap,
+    Default (..),
+    DnfClause (..),
+    ExplObj (..),
+    Expression (..),
+    ExpressionLike (..),
+    getConceptMap,
+    getExpressionRelation,
+    getInterfaceByName,
+    HasSignature (..),
+    IdentityRule (..),
+    IdentitySegment (..),
+    Interface (..),
+    isFitForCrudC,
+    isFitForCrudD,
+    isFitForCrudR,
+    isFitForCrudU,
+    Meaning (..),
+    MetaData (..),
+    mkAtomPair,
+    Object (..),
+    ObjectDef (..),
+    Origin (..),
+    PairView (..),
+    PairViewSegment (..),
+    PAtomValue (..),
+    Pattern (..),
+    Population (..),
+    Purpose (..),
+    Relation (..),
+    Relations,
+    Representation (..),
+    Rule (..),
+    RuleKind (..),
+    Rules,
+    showSign,
     showValADL,
     showValSQL,
-    showSign,
-    SignOrd (..),
+    ShowWithAliases (..),
+    Signature (..),
+    SubInterface (..),
+    TBoxItem (..),
+    TExpression (..),
+    tExpression2pTermPrim,
+    TInterface (..),
+    TObjectDef (..),
+    Traced (..),
+    TRelation (..),
+    TSubInterface (..),
+    TType (..),
+    TTypeInfo,
     Type (..),
     typeOrConcept,
-    -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
-    (.==.),
-    (.|-.),
-    (./\.),
-    (.\/.),
-    (.-.),
-    (./.),
-    (.\.),
-    (.<>.),
-    (.:.),
-    (.!.),
-    (.*.),
-    makeConceptMap,
-    ConceptMap,
+    Typology (..),
+    ViewDef (..),
+    ViewSegment (..),
+    ViewSegmentPayLoad (..),
+
   )
 where
 
@@ -100,7 +101,10 @@ import Ampersand.Core.ParseTree
     PBinOp,
     PClassify (generics, specific),
     PConceptDef,
+    PRelationDefault,
     P_Concept (..),
+    P_Context (..),
+    P_Pattern (..),
     PairView (..),
     PairViewSegment (..),
     Pragma,
@@ -113,7 +117,7 @@ import Ampersand.Core.ParseTree
     Traced (..),
     ViewHtmlTemplate (..),
     maybeOrdering,
-    mkPConcept, PRelationDefault,
+    mkPConcept,
   )
 import Data.Default (Default (..))
 import qualified Data.Text1 as T1
@@ -679,7 +683,7 @@ instance Hashable AClassify where
                          IsE {} -> NE.toList . NE.sort $ genrhs g
                      )
 
-data Interface = Ifc
+data Interface = Interface
   { -- | is this interface of type API?
     ifcIsAPI :: !Bool,
     -- | The name of the interface
@@ -856,6 +860,7 @@ data SubInterface
       }
   | InterfaceRef
       { pos :: !Origin,
+        siConcept :: !A_Concept,
         siIsLink :: !Bool,
         siIfcId :: !Name -- id of the interface that is referenced to
       }
@@ -1107,7 +1112,7 @@ data Expression
   | -- | Cartesian product relation
     EDcV !Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
-    EMp1 !PAtomValue !A_Concept
+    EMp1 !AAtomValue !A_Concept
   deriving (Eq, Ord, Show, Typeable, Generic, Data)
 
 instance Hashable Expression where
@@ -1151,8 +1156,6 @@ instance Unique (PairViewSegment Expression) where
   showUnique x = toText1Unsafe $ "PairViewSegment_Expression_" <> (tshow . abs . hash $ readable)
     where
       readable = tshow x
-
-
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
 class (HasSignature a, Show a) => ExpressionLike a where
@@ -1437,34 +1440,35 @@ class HasSignature a where
   sign :: a -> Signature
   isEndo :: a -> Bool
   isEndo s = source s == target s
+  {-# MINIMAL sign #-}
 
---  {-# MINIMAL sign #-}
+type DeclMap = Map.Map Name (Map.Map Signature TExpression)
 
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
-    -- | a list containing all user defined Representations in the context
-    representationOf :: !(A_Concept -> TType),
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
     -- | a list of all Representations
     reprList :: ![Representation],
     -- | a map of declarations and the corresponding types
-    declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
+    declDisambMap :: !DeclMap,
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
-    -- | a map that must be used to convert P_Concept to A_Concept
-    conceptMap :: !ConceptMap,
     -- | the default language used to interpret markup texts in this context
     defaultLang :: !Lang,
     -- | the default format used to interpret markup texts in this context
     defaultFormat :: !PandocFormat
   }
   deriving (Show)
+
+-- Convenient data structure to hold information about concepts and their technical types
+-- in a context.
+type TTypeInfo = A_Concept -> TType
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1505,254 +1509,6 @@ instance Ord SignOrd where
 instance Eq SignOrd where
   a == b = compare a b == EQ
 
--- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
---   after the expression has been built inside an A_Context. Only at that time
---   the TType is known, enabling the correct transformation.
---   To ensure that this function is not used too early, ContextInfo is required,
---   which only exsists after disambiguation.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
-safePSingleton2AAtomVal ci c val =
-  case unsafePAtomVal2AtomValue typ (Just c) val of
-    Left _ ->
-      fatal
-        . T.intercalate "\n  "
-        $ [ "This should be impossible: after checking everything an unhandled singleton value found!",
-            "Concept: " <> tshow c,
-            "TType: " <> tshow typ,
-            "Origin: " <> tshow (origin val),
-            "PAtomValue: " <> case val of
-              (PSingleton _ _ v) -> "PSingleton (" <> tshow v <> ")"
-              (ScriptString _ v) -> "ScriptString (" <> tshow v <> ")"
-              (XlsxString _ v) -> "XlsxString (" <> tshow v <> ")"
-              (ScriptInt _ v) -> "ScriptInt (" <> tshow v <> ")"
-              (ScriptFloat _ v) -> "ScriptFloat (" <> tshow v <> ")"
-              (XlsxDouble _ v) -> "XlsxDouble (" <> tshow v <> ")"
-              (ComnBool _ v) -> "ComnBool (" <> tshow v <> ")"
-              (ScriptDate _ v) -> "ScriptDate (" <> tshow v <> ")"
-              (ScriptDateTime _ v) -> "ScriptDateTime (" <> tshow v <> ")"
-          ]
-    Right x -> x
-  where
-    typ = representationOf ci c
-
--- SJC: Note about this code:
--- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
--- Ideally, this module would import Ampersand.Input.ADL1.CtxError
--- that way, unsafePAtomVal2AtomValue could create a 'Origin -> Guarded AAtomValue' instead.
-unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either Text AAtomValue
-unsafePAtomVal2AtomValue typ mCpt pav =
-  case unsafePAtomVal2AtomValue' of
-    Left err -> Left err
-    Right rawVal -> Right roundedVal
-      where
-        roundedVal =
-          case rawVal of
-            AAVDateTime _ (UTCTime _ 0) -> rawVal -- prevent devision by zero
-            AAVDateTime t x ->
-              -- Rounding is needed, to maximize the number of databases
-              -- on wich this runs. (MySQL 5.5 only knows seconds)
-              AAVDateTime t roundBySeconds
-              where
-                picosecondsInASecond = 1000000000000
-                roundBySeconds :: UTCTime
-                roundBySeconds = x {utctDayTime = rounded (utctDayTime x)}
-                  where
-                    rounded :: DiffTime -> DiffTime
-                    rounded = picosecondsToDiffTime . quot picosecondsInASecond . diffTimeToPicoseconds
-            _ -> rawVal
-  where
-    unsafePAtomVal2AtomValue' :: Either Text AAtomValue
-    unsafePAtomVal2AtomValue' =
-      case pav of
-        PSingleton o str mval ->
-          case typ of
-            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            Password -> Right (AAVString (abs . hash $ str) typ str)
-            Object -> Right (AAVString (abs . hash $ str) typ str)
-            _ -> case mval of
-              Nothing -> Left (message o str)
-              Just x -> unsafePAtomVal2AtomValue typ mCpt x
-        ScriptString o str ->
-          case typ of
-            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            Password -> Right (AAVString (abs . hash $ str) typ str)
-            Binary -> Left "Binary cannot be populated in an ADL script"
-            BigBinary -> Left "Binary cannot be populated in an ADL script"
-            HugeBinary -> Left "Binary cannot be populated in an ADL script"
-            Date -> Left (message o str)
-            DateTime -> Left (message o str)
-            Boolean -> Left (message o str)
-            Integer -> Left (message o str)
-            Float -> Left (message o str)
-            TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (abs . hash $ str) typ str)
-        XlsxString o str ->
-          case typ of
-            Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
-            Password -> Right (AAVString (abs . hash $ str) typ str)
-            Binary -> Left "Binary cannot be populated in an ADL script"
-            BigBinary -> Left "Binary cannot be populated in an ADL script"
-            HugeBinary -> Left "Binary cannot be populated in an ADL script"
-            Date -> Left (message o str)
-            DateTime -> Left (message o str)
-            Boolean ->
-              let table =
-                    [ ("TRUE", True),
-                      ("FALSE", False),
-                      ("YES", True),
-                      ("NO", False),
-                      ("WAAR", True),
-                      ("ONWAAR", False),
-                      ("JA", True),
-                      ("NEE", False),
-                      ("WEL", True),
-                      ("NIET", False)
-                    ]
-               in case lookup (T.toUpper str) table of
-                    Just b -> Right (AAVBoolean typ b)
-                    Nothing -> Left $ "permitted Booleans: " <> (tshow . fmap (camelCase . fst) $ table)
-              where
-                camelCase :: Text -> Text
-                camelCase txt = case T.uncons txt of
-                  Nothing -> mempty
-                  Just (h, tl) -> T.cons (toUpper h) (T.toLower tl)
-            Integer -> case readMaybe . T.unpack $ str of
-              Just i -> Right (AAVInteger typ i)
-              Nothing -> Left (message o str)
-            Float -> case readMaybe . T.unpack $ str of
-              Just r -> Right (AAVFloat typ r)
-              Nothing -> Left (message o str)
-            TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (abs . hash $ str) typ str)
-        ScriptInt o i ->
-          case typ of
-            Alphanumeric -> Left (message o i)
-            BigAlphanumeric -> Left (message o i)
-            HugeAlphanumeric -> Left (message o i)
-            Password -> Left (message o i)
-            Binary -> Left "Binary ca)not be populated in an ADL script"
-            BigBinary -> Left "Binary cannot be populated in an ADL script"
-            HugeBinary -> Left "Binary cannot be populated in an ADL script"
-            Date -> Left (message o i)
-            DateTime -> Left (message o i)
-            Boolean -> Left (message o i)
-            Integer -> Right (AAVInteger typ i)
-            Float -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
-            TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Left (message o i)
-        ScriptFloat o x ->
-          case typ of
-            Alphanumeric -> Left (message o x)
-            BigAlphanumeric -> Left (message o x)
-            HugeAlphanumeric -> Left (message o x)
-            Password -> Left (message o x)
-            Binary -> Left "Binary cannot be populated in an ADL script"
-            BigBinary -> Left "Binary cannot be populated in an ADL script"
-            HugeBinary -> Left "Binary cannot be populated in an ADL script"
-            Date -> Left (message o x)
-            DateTime -> Left (message o x)
-            Boolean -> Left (message o x)
-            Integer -> Left (message o x)
-            Float -> Right (AAVFloat typ x)
-            TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Left (message o x)
-        XlsxDouble o d ->
-          case typ of
-            Alphanumeric -> relaxXLSXInput d
-            BigAlphanumeric -> relaxXLSXInput d
-            HugeAlphanumeric -> relaxXLSXInput d
-            Password -> relaxXLSXInput d
-            Binary -> Left "Binary cannot be populated in an ADL script"
-            BigBinary -> Left "Binary cannot be populated in an ADL script"
-            HugeBinary -> Left "Binary cannot be populated in an ADL script"
-            Date ->
-              Right
-                AAVDate
-                  { aavtyp = typ,
-                    aadateDay = addDays (floor d) dayZeroExcel
-                  }
-            DateTime ->
-              Right
-                AAVDateTime
-                  { aavtyp = typ,
-                    aadatetime =
-                      UTCTime
-                        (addDays daysSinceZero dayZeroExcel)
-                        (picosecondsToDiffTime . floor $ fractionOfDay * picosecondsPerDay)
-                  }
-              where
-                picosecondsPerDay = 24 * 60 * 60 * 1000000000000
-                (daysSinceZero, fractionOfDay) = properFraction d
-            Boolean -> Left (message o d)
-            Integer ->
-              if frac == 0
-                then Right (AAVInteger typ int)
-                else Left (message o d)
-              where
-                (int, frac) = properFraction d
-            Float -> Right (AAVFloat typ d)
-            TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> relaxXLSXInput d
-        ComnBool o b ->
-          if typ == Boolean
-            then Right (AAVBoolean typ b)
-            else Left (message o b)
-        ScriptDate o x ->
-          if typ == Date
-            then Right (AAVDate typ x)
-            else Left (message o x)
-        ScriptDateTime o x ->
-          if typ == DateTime
-            then Right (AAVDateTime typ x)
-            else Left (message o x)
-      where
-        relaxXLSXInput :: Double -> Either Text AAtomValue
-        relaxXLSXInput v = Right . AAVString (hash v) typ . neat . tshow $ v
-          where
-            neat :: Text -> Text
-            neat s
-              | onlyZeroes dotAndAfter = beforeDot
-              | otherwise = s
-              where
-                (beforeDot, dotAndAfter) = T.span (/= '.') s
-                onlyZeroes s' = case T.uncons s' of
-                  Nothing -> True
-                  Just ('.', afterDot) -> T.all (== '0') afterDot
-                  _ -> False
-        message :: (Show x) => Origin -> x -> Text
-        message orig x =
-          T.intercalate "\n    "
-            $ [ "Representation mismatch",
-                "Found: `" <> tshow x <> "` (" <> tshow orig <> "),",
-                "as representation of an atom in concept `" <> text1ToText (fullName1 c) <> "`.",
-                "However, the representation-type of that concept is " <> implicitly,
-                "defined as " <> tshow typ <> ". The found value does not match that type."
-              ]
-            <> example
-          where
-            c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
-            implicitly = if typ == Object then "(implicitly) " else ""
-            example :: [Text]
-            example = case typ of
-              Alphanumeric -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
-              BigAlphanumeric -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
-              Boolean -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
-              Date -> ["DATE types are defined by ISO8601, e.g. 2013-07-04 (without surrounding quotes)."]
-              DateTime -> ["DATETIME types follow ISO 8601 format, e.g. 2013-07-04T11:11:11+00:00 or 2015-06-03T13:21:58Z (without surrounding quotes)."]
-              Float -> ["FLOAT type are floating point numbers. There should be a dot character (.) in it."]
-              HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
-              Integer -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
-              Password -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
-              Object -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
-              _ -> fatal $ "There is no example denotational syntax for a value of type `" <> tshow typ <> "`."
-        dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
-
 -- | The typology of a context is the partioning of the concepts in that context into
 --   sets such that (isa\/isa~)*;typology |- typology
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements,
@@ -1773,37 +1529,43 @@ type ConceptMap = P_Concept -> A_Concept
 instance Show ConceptMap where
   show _ = "A function that maps P_Concepts to A_Concepts"
 
-makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
-makeConceptMap cds gs = mapFunction
+allGens :: P_Context -> [PClassify]
+allGens ctx = ctx_gs ctx <> concatMap pt_gns (ctx_pats ctx)
+
+getConceptMap :: P_Context -> ConceptMap
+getConceptMap ctx = makeConceptMap (ctx_cs ctx <> concatMap pt_cds (ctx_pats ctx)) (allGens ctx)
   where
-    mapFunction :: P_Concept -> A_Concept
-    mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
-      xs -> mkConcept pCpt xs
+    makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
+    makeConceptMap cds gs = mapFunction
       where
-        inCycle xs = pCpt `elem` xs
-    mkConcept :: P_Concept -> [P_Concept] -> A_Concept
-    mkConcept pCpt aliasses =
-      case pCpt of
-        P_ONE -> ONE
-        PCpt {} ->
-          PlainConcept
-            { aliases = fmap toTuple . NE.nub . NE.sort $ (pCpt NE.:| aliasses)
-            }
-      where
-        toTuple :: P_Concept -> (Name, Maybe Label)
-        toTuple cpt =
-          ( name cpt,
-            case mapMaybe mLabel . filter (\cd -> name cd == name cpt) $ cds of
-              [] -> Nothing
-              h : _ -> Just h
-          )
-    edges :: [(P_Concept, [P_Concept])]
-    edges = L.nub . map mkEdge . eqCl specific $ gs
-    mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
-    mkEdge x = (from, to's)
-      where
-        from = specific . NE.head $ x
-        to's = L.nub . concatMap (toList . generics) $ x
+        mapFunction :: P_Concept -> A_Concept
+        mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
+          xs -> mkConcept pCpt xs
+          where
+            inCycle xs = pCpt `elem` xs
+        mkConcept :: P_Concept -> [P_Concept] -> A_Concept
+        mkConcept pCpt aliasses =
+          case pCpt of
+            P_ONE -> ONE
+            PCpt {} ->
+              PlainConcept
+                { aliases = fmap toTuple . NE.nub . NE.sort $ (pCpt NE.:| aliasses)
+                }
+          where
+            toTuple :: P_Concept -> (Name, Maybe Label)
+            toTuple cpt =
+              ( name cpt,
+                case mapMaybe mLabel . filter (\cd -> name cd == name cpt) $ cds of
+                  [] -> Nothing
+                  h : _ -> Just h
+              )
+        edges :: [(P_Concept, [P_Concept])]
+        edges = L.nub . map mkEdge . eqCl specific $ gs
+        mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
+        mkEdge x = (from, to's)
+          where
+            from = specific . NE.head $ x
+            to's = L.nub . concatMap (toList . generics) $ x
 
 -- a data definition for the type of an expression, but without knowledge of the TTypes
 data TExpression

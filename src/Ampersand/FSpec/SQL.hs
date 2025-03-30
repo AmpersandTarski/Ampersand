@@ -298,9 +298,9 @@ nonSpecialSelectExpr fSpec expr =
             else f (Just val) nonMp1Terms
         [] -> f Nothing nonMp1Terms
       where
-        posVals :: [PAtomValue]
+        posVals :: [AAtomValue]
         posVals = nub (map atmValue posMp1Terms)
-        negVals :: [PAtomValue]
+        negVals :: [AAtomValue]
         negVals = nub (map (atmValue . notCpl) negMp1Terms)
         atmValue (EMp1 a _) = a
         atmValue _ = fatal "atm error"
@@ -309,7 +309,7 @@ nonSpecialSelectExpr fSpec expr =
         posMp1Terms, negMp1Terms :: [Expression]
         (posMp1Terms, negMp1Terms) = partition isPos mp1Terms
         f ::
-          Maybe PAtomValue -> -- Optional the singleton value that might be found as the only possible value
+          Maybe AAtomValue -> -- Optional the singleton value that might be found as the only possible value
           [Expression] -> -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.
           BinQueryExpr
         f specificValue subTerms =
@@ -335,11 +335,11 @@ nonSpecialSelectExpr fSpec expr =
                       Nothing -> Nothing
                       Just val -> Just $ equalToValueClause val
                     where
-                      equalToValueClause :: PAtomValue -> ScalarExpr
+                      equalToValueClause :: AAtomValue -> ScalarExpr
                       equalToValueClause singleton =
                         conjunctSQL
-                          [ BinOp (col2ScalarExpr theSr') [uName "="] (singleton2SQL (source expr) singleton),
-                            BinOp (col2ScalarExpr theTr') [uName "="] (singleton2SQL (source expr) singleton)
+                          [ BinOp (col2ScalarExpr theSr') [uName "="] (atomVal2SQL singleton),
+                            BinOp (col2ScalarExpr theTr') [uName "="] (atomVal2SQL singleton)
                           ]
 
                   forbiddenTuples :: Maybe ScalarExpr
@@ -351,11 +351,11 @@ nonSpecialSelectExpr fSpec expr =
                           . conjunctSQL
                           $ map notEqualToValueClause negVals
                     where
-                      notEqualToValueClause :: PAtomValue -> ScalarExpr
+                      notEqualToValueClause :: AAtomValue -> ScalarExpr
                       notEqualToValueClause singleton =
                         conjunctSQL
-                          [ BinOp (col2ScalarExpr theSr') [uName "<>"] (singleton2SQL (source expr) singleton),
-                            BinOp (col2ScalarExpr theTr') [uName "<>"] (singleton2SQL (source expr) singleton)
+                          [ BinOp (col2ScalarExpr theSr') [uName "<>"] (atomVal2SQL singleton),
+                            BinOp (col2ScalarExpr theTr') [uName "<>"] (atomVal2SQL singleton)
                           ]
 
                   theSr' = bseSrc (makeSelectable sResult)
@@ -779,7 +779,7 @@ nonSpecialSelectExpr fSpec expr =
                   cSpecial = Nothing
                 },
             bseTbl = [sqlConceptTable fSpec c],
-            bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [uName "="] (singleton2SQL c val)
+            bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [uName "="] (atomVal2SQL val)
           }
     (EDcV (Sign s t)) ->
       let (psrc, fsrc) = fun s
@@ -1275,9 +1275,6 @@ nonSpecialSelectExpr fSpec expr =
             $ selectExpr fSpec (l .:. v .:. r)
   where
     traceComment = traceExprComment expr
-    singleton2SQL :: A_Concept -> PAtomValue -> ScalarExpr
-    singleton2SQL cpt singleton =
-      atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
 
 traceExprComment :: Expression -> [Text] -> BinQueryExpr -> BinQueryExpr
 traceExprComment expr caseStr =
@@ -1287,8 +1284,8 @@ traceExprComment expr caseStr =
          BlockComment $ "   Signature : " <> tshow (sign expr)
        ]
 
-atomVal2InSQL :: AAtomValue -> ScalarExpr
-atomVal2InSQL val =
+atomVal2SQL :: AAtomValue -> ScalarExpr
+atomVal2SQL val =
   case val of
     AAVString {} -> stringLit $ aavtxt val
     AAVInteger _ int -> NumLit (tshow int)

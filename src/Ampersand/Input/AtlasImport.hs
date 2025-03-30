@@ -683,7 +683,7 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
           { obj_PlainName = Nothing,
             obj_lbl = Nothing,
             pos = OriginAtlas,
-            obj_ctx = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
+            obj_term = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
               Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
               Checked term _ -> term,
             obj_crud = crud,

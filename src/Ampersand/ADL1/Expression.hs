@@ -181,46 +181,6 @@ isFlipped EFlp {} = True
 isFlipped (EBrk e) = isFlipped e
 isFlipped _ = False
 
--- | Function to determine that the term
---   could be used to create a new atom in its target concept
-isFitForCrudC :: Expression -> Bool
-isFitForCrudC expr =
-  case expr of
-    EFlp e -> isFitForCrudC e
-    EBrk e -> isFitForCrudC e
-    ECps (EEps _ _, e) -> isFitForCrudC e
-    ECps (e, EEps _ _) -> isFitForCrudC e
-    ECps (_, _) -> True
-    EEps _ _ -> False
-    EMp1 {} -> False
-    _ -> True
-
--- EDcI{} -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
-
--- | Function to determine that the term
---   could be used to read the population of its target concept
-isFitForCrudR :: Expression -> Bool
-isFitForCrudR _ = True
-
--- | Function to determine that the term
---   could be used to insert or delete a pair in the population of a relation
-isFitForCrudU :: Expression -> Bool
-isFitForCrudU expr =
-  case expr of
-    EDcD {} -> True
-    EFlp e -> isFitForCrudU e
-    EBrk e -> isFitForCrudU e
-    ECps (EEps _ _, e) -> isFitForCrudU e
-    ECps (e, EEps _ _) -> isFitForCrudU e
-    ECps (e, EDcI {}) -> isFitForCrudU e
-    ECps (_, _) -> False
-    _ -> False
-
--- | Function to determine that the term is simple, that it
---   could be used to update the population of a relation
-isFitForCrudD :: Expression -> Bool
-isFitForCrudD _ = True
-
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> NE.NonEmpty Expression
 exprIsc2list (EIsc (l, r)) = exprIsc2list l <> exprIsc2list r
 exprIsc2list r = r NE.:| []

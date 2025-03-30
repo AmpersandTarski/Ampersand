@@ -5,7 +5,6 @@ module Ampersand.FSpec.ToFSpec.Populated
     largerConcepts,
     sortSpecific2Generic,
     genericAndSpecifics,
-    safePSingleton2AAtomVal,
   )
 where
 
@@ -167,6 +166,4 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
                 && tshow val
                 == tshow ("_SESSION" :: Text)
                 then Map.empty
-                else Map.singleton av (Set.singleton av)
-              where
-                av = safePSingleton2AAtomVal ci c val
+                else Map.singleton val (Set.singleton val)

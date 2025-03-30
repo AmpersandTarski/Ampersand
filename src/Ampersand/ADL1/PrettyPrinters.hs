@@ -293,7 +293,7 @@ instance Pretty P_Interface where
         if null roles
           then empty
           else text "FOR" <+> listOf roles
-      interfaceExpression = text ":" <~> pretty (obj_ctx obj)
+      interfaceExpression = text ":" <~> pretty (obj_term obj)
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
 

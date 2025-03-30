@@ -456,7 +456,7 @@ makeFSpec env context =
                       ( source . NE.head . NE.head $ cl,
                         h NE.:| tl
                       )
-       in [ Ifc
+       in [ Interface
               { ifcIsAPI = False,
                 ifcname = name c,
                 ifclbl = Nothing,
@@ -483,7 +483,7 @@ makeFSpec env context =
     -- end stap4a
     step4b -- generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       =
-      [ Ifc
+      [ Interface
           { ifcIsAPI = False,
             ifcname = nm,
             ifclbl = Nothing,
