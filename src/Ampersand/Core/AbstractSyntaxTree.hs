@@ -294,7 +294,7 @@ instance Eq AConceptDef where
 
 data A_Representation = Arepr
   { -- | origin is used in error messages
-    pos :: Origin,
+    origins :: [Origin],
     -- | the concepts
     aReprFrom :: !(NE.NonEmpty A_Concept),
     -- | the type of the concept the atom is in
@@ -303,7 +303,9 @@ data A_Representation = Arepr
   deriving (Eq, Show)
 
 instance Traced A_Representation where
-  origin Arepr {pos = orig} = orig
+  origin aRepr = case origins aRepr of
+    [] -> fatal "A_Representation should have an Origin."
+    (x : _) -> x
 
 data A_RoleRule = A_RoleRule
   { arPos :: !Origin,

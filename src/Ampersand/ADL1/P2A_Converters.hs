@@ -14,6 +14,7 @@ import Ampersand.ADL1.Disambiguate (DisambPrim (..), disambiguate, orWhenEmpty, 
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
+import Data.Tuple.Extra(fst3,snd3,thd3)
 import Ampersand.Classes
 import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
@@ -328,21 +329,22 @@ pCtx2aCtx
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete contextInfo aReprs =
-        do allReps <- checkDuplicates
-           return $ [ Arepr o (c :| []) t | (c,[(t,o)])<-allReps]
+      makeComplete contextInfo aReprs = checkDuplicates
         where
           -- | kernelComplete exposes duplicate TTypes, so we can make error messages
-          kernelComplete :: [(A_Concept, [(TType, Origin)])]
+          kernelComplete :: [([A_Concept], [(TType, [Origin])])]
           kernelComplete =
-            [ (cpt, L.nub [ (aReprTo aRepr, origin aRepr) | aRepr<-L.nub aReprs, cpt `elem` NE.toList (aReprFrom aRepr) ])
-            | typology<-multiKernels contextInfo, cpt<-tyCpts typology
+            [ (tyCpts typology, [ (t, [origin aRepr | aRepr<-NE.toList cl])
+                                | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` tyCpts typology ]
+                                , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
+                                ])
+            | typology<-multiKernels contextInfo
             ]
-          checkDuplicates :: Guarded [(A_Concept, [(TType, Origin)])]
+          checkDuplicates :: Guarded [A_Representation]
           checkDuplicates =
-            case [ (c, tts) | (c, tts@(_:_:_))<-kernelComplete] of
-              [] -> pure kernelComplete
-              errs -> traverse (uncurry mkMultipleRepresentTypesError) errs
+            case [ (cs, tts) | (cs, tts@(_:_:_))<-kernelComplete] of
+              [] -> pure [ Arepr os (c :| []) t | (cs, [(t,os)])<-kernelComplete, c<-cs]
+              errs -> traverse mkMultipleRepresentTypesError errs
       defaultTType :: [A_Representation] -> A_Concept -> TType
       defaultTType aReprs c =
         if c==ONE || show c=="_SESSION" then Object else
@@ -433,9 +435,9 @@ pCtx2aCtx
                   rs -> case L.nub (map getTType rs) of
                     [] -> fatal "Impossible empty list."
                     [t] -> pure (Just (cpt, t, map getOrigin rs))
-                    _ -> mkMultipleRepresentTypesError cpt lst
+                    _ -> mkMultipleRepresentTypesError ([cpt], lst)
                       where
-                        lst = [(t, o) | (_, t, o) <- rs]
+                        lst = [(snd3 (NE.head cl), fmap thd3 (NE.toList cl)) | cl<-eqCl snd3 rs]
                 where
                   ofCpt :: (A_Concept, TType, Origin) -> Bool
                   ofCpt (cpt', _, _) = cpt == cpt'
@@ -567,11 +569,11 @@ pCtx2aCtx
       userConcept (PCpt nm) = UserConcept nm
 
       pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
-      pRepr2aRepr ci repr@Repr{} = pure Arepr{pos = origin repr, aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
+      pRepr2aRepr ci repr@Repr{} = pure Arepr{origins = [origin repr], aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
       pRepr2aRepr ci repr@ImplicitRepr{} =
           do
             (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
-            return (Arepr (origin repr) (target expr :| []) Object)
+            return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =

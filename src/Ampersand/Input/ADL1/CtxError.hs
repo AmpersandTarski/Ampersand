@@ -179,19 +179,19 @@ mkErrorReadingINCLUDE mo msg =
 --         $ [ "The target of "<>tshow (reprTerm repr)<>" has technical type Object"
 --           , " because it is used in a subinterface at " <> showFullOrig o]
 
-mkMultipleRepresentTypesError :: A_Concept -> [(TType, Origin)] -> Guarded a
-mkMultipleRepresentTypesError cpt rs =
+mkMultipleRepresentTypesError :: ([A_Concept],[(TType, [Origin])]) -> Guarded a
+mkMultipleRepresentTypesError (cpts, tts@((_,o:_):_)) =
   Errors . pure $ CTXE o msg
   where
-    o = case rs of
-      [] -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
-      (_, x) : _ -> x
-    msg =
-      T.intercalate "\n"
-        $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
-            "The following TYPEs are defined for it:"
-          ]
-        <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
+    msg = T.intercalate "\n" $
+          [ case cpts of
+             [cpt] -> "The Concept " <> (text1ToText.showWithAliases) cpt <> " is representable with multiple types."
+             _     -> "The Concepts " <> (T.intercalate "," . map (text1ToText.showWithAliases)) cpts <> " are representable with multiple types."
+          , "The following TYPEs are defined for it:"
+          ] <> fmap showOrigs tts
+    showOrigs :: (TType, [Origin]) -> Text
+    showOrigs (t,origs) = "  - " <> tshow t <> " at " <> T.intercalate "," (fmap showMinorOrigin origs)
+mkMultipleRepresentTypesError (cpt,_)  = fatal ("mkMultipleRepresentTypesError trips over concept "<>tshow cpt)
 
 mkMultipleTypesInTypologyError :: [(A_Concept, TType, [Origin])] -> Guarded a
 mkMultipleTypesInTypologyError tripls =

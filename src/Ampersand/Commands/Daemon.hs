@@ -16,7 +16,6 @@ import Ampersand.Daemon.Util
 import Ampersand.Daemon.Wait
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
-import Data.Tuple.Extra (both)
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import System.Console.ANSI (hSupportsANSI, setTitle)
