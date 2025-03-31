@@ -1,7 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## v5.3.3
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Make the default of the technical type either OBJECT or ALPHANUMERIC, depending on whether the concept has attributes (defaults to OBJECT) or not (defaults to ALPHANUMERIC).
+- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Make the ALPHANUMERIC, except if the concept is used as an object (right before every BOX) or declared with a REPRESENT statement.
 
 ## v5.3.2
 - [Issue #1542](https://github.com/AmpersandTarski/Ampersand/issues/1542) Respect the TYPE of the concept when >, <, <= and >= are used.

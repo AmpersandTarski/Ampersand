@@ -294,7 +294,9 @@ pCtx2aCtx
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- -- the following trace statement is kept in comment for possible further work on contextInfo (March 31st, 2025).
+                   -- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $
+                   traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -330,7 +332,7 @@ pCtx2aCtx
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete contextInfo aReprs = trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) checkDuplicates
+      makeComplete contextInfo aReprs = {- trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) -} checkDuplicates
         where
           -- | ttypeAnalysis exposes duplicate TTypes, so we can make error messages
           ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
@@ -394,11 +396,7 @@ pCtx2aCtx
               reprList = allReprs,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-              allConcepts = trace ("\ndecls: "<>tshow decls<>
-                                   "\nconcs decls: "      <>(tshow . Set.toList . concs) decls<>
-                                   "\nconcs gns: "        <>(tshow . Set.toList . concs) gns<>
-                                   "\nconcs allConcDefs: "<>(tshow . Set.toList . concs) allConcDefs) $
-                            concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
+              allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
