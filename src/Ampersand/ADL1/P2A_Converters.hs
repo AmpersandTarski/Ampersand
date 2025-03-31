@@ -294,7 +294,7 @@ pCtx2aCtx
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- trace ("\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- trace ("\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -335,22 +335,26 @@ pCtx2aCtx
           -- | kernelComplete exposes duplicate TTypes, so we can make error messages
           kernelComplete :: [([A_Concept], [(TType, [Origin])])]
           kernelComplete =
-            [ (typolConcs, [ (t, [origin aRepr | aRepr<-NE.toList cl])
-                           | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` typolConcs ]
-                           , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
-                           ])
-            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo), c `notElem` concat typolSets]
+            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric,[])]; _ -> ttOrigPairs)
+            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo), c `notElem` concat typolSets ]
+            , let ttOrigPairs = ttPairs typolConcs
             ]
            where
              typolSets = map tyCpts (multiKernels contextInfo)
+             ttPairs :: [A_Concept] -> [(TType, [Origin])]
+             ttPairs typology =
+               [ (t, [origin aRepr | aRepr<-NE.toList cl])
+               | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` typology ]
+               , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
+               ]
           checkDuplicates :: Guarded [A_Representation]
           checkDuplicates =
             case [ (cs, tts) | (cs, tts@(_:_:_))<-kernelComplete] of
-              [] -> pure [ Arepr os (c :| []) t | (cs, [(t,os)])<-kernelComplete, c<-cs]
+              [] -> pure [ Arepr os (c :| cs) t | (c:cs, [(t,os)])<-kernelComplete]
               errs -> traverse mkMultipleRepresentTypesError errs
       defaultTType :: [A_Representation] -> A_Concept -> TType
       defaultTType aReprs c =
-        if c==ONE || show c=="_SESSION" then Object else
+        if c==ONE || show c=="SESSION" then Object else
         case L.nub [ aReprTo aRepr | aRepr<-L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr) ] of
           [] -> Alphanumeric
           [t] -> t
