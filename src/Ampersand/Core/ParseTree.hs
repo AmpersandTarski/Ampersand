@@ -345,7 +345,7 @@ data P_Representation = Repr
   } |
   ImplicitRepr
   { -- | the type of the concept the atom is in
-    reprTerm :: Term TermPrim
+    reprTerm :: !(Term TermPrim)
   }
   deriving (Show)
 
