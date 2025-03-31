@@ -14,7 +14,6 @@ import Ampersand.ADL1.Disambiguate (DisambPrim (..), disambiguate, orWhenEmpty, 
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
-import Data.Tuple.Extra( {-fst3,-} snd3,thd3)
 import Ampersand.Classes
 import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
@@ -24,6 +23,7 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
+import Data.Tuple.Extra ({-fst3,-} snd3, thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -281,7 +281,7 @@ pCtx2aCtx
       aReprs <- traverse (pRepr2aRepr contextInfoPre) p_representations :: Guarded [A_Representation] --  The representations defined in this context
       -- allReprs contains all concepts and every concept has precisely one TType
       allReps <- makeComplete contextInfoPre aReprs
-      let contextInfo = contextInfoPre{representationOf = defaultTType allReps}
+      let contextInfo = contextInfoPre {representationOf = defaultTType allReps}
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -295,8 +295,8 @@ pCtx2aCtx
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- -- the following trace statement is kept in comment for possible further work on contextInfo (March 31st, 2025).
-                   -- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $
-                   traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      -- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $
+        traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -333,36 +333,37 @@ pCtx2aCtx
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
       makeComplete contextInfo aReprs = {- trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) -} checkDuplicates
         where
-          -- | ttypeAnalysis exposes duplicate TTypes, so we can make error messages
+          -- \| ttypeAnalysis exposes duplicate TTypes, so we can make error messages
           ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
           ttypeAnalysis =
-            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric,[])]; _ -> ttOrigPairs)
-            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo `Set.union` ttypedConcepts), c `notElem` concat typolSets ]
-            , let ttOrigPairs = ttPairs typolConcs
+            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric, [])]; _ -> ttOrigPairs)
+              | typolConcs <- typolSets <> [[c] | c <- Set.toList (allConcepts contextInfo `Set.union` ttypedConcepts), c `notElem` concat typolSets],
+                let ttOrigPairs = ttPairs typolConcs
             ]
-           where
-             -- | To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it, 
-             ttypedConcepts :: Set.Set A_Concept
-             ttypedConcepts = (Set.fromList . concat) [ (NE.toList . aReprFrom) aRepr | aRepr<-aReprs ]
-             typolSets = map tyCpts (multiKernels contextInfo)
-             ttPairs :: [A_Concept] -> [(TType, [Origin])]
-             ttPairs typology =
-               [ (t, [origin aRepr | aRepr<-NE.toList cl])
-               | cl<-eqCl aReprTo [ aRepr | aRepr<-aReprs, not.null $ NE.toList (aReprFrom aRepr) `L.intersect` typology ]
-               , t <- L.nub [ aReprTo aRepr | aRepr<-NE.toList cl]
-               ]
+            where
+              -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it,
+              ttypedConcepts :: Set.Set A_Concept
+              ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
+              typolSets = map tyCpts (multiKernels contextInfo)
+              ttPairs :: [A_Concept] -> [(TType, [Origin])]
+              ttPairs typology =
+                [ (t, [origin aRepr | aRepr <- NE.toList cl])
+                  | cl <- eqCl aReprTo [aRepr | aRepr <- aReprs, not . null $ NE.toList (aReprFrom aRepr) `L.intersect` typology],
+                    t <- L.nub [aReprTo aRepr | aRepr <- NE.toList cl]
+                ]
           checkDuplicates :: Guarded [A_Representation]
           checkDuplicates =
-            case [ (cs, tts) | (cs, tts@(_:_:_))<-ttypeAnalysis] of
-              [] -> pure [ Arepr os (c :| cs) t | (c:cs, [(t,os)])<-ttypeAnalysis]
+            case [(cs, tts) | (cs, tts@(_ : _ : _)) <- ttypeAnalysis] of
+              [] -> pure [Arepr os (c :| cs) t | (c : cs, [(t, os)]) <- ttypeAnalysis]
               errs -> traverse mkMultipleRepresentTypesError errs
       defaultTType :: [A_Representation] -> A_Concept -> TType
       defaultTType aReprs c =
-        if c==ONE || show c=="SESSION" then Object else
-        case L.nub [ aReprTo aRepr | aRepr<-L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr) ] of
-          [] -> Alphanumeric
-          [t] -> t
-          _ -> fatal "Multiple representations for a single concept"
+        if c == ONE || show c == "SESSION"
+          then Object
+          else case L.nub [aReprTo aRepr | aRepr <- L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr)] of
+            [] -> Alphanumeric
+            [t] -> t
+            _ -> fatal "Multiple representations for a single concept"
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
@@ -425,8 +426,8 @@ pCtx2aCtx
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
                   toReprs :: P_Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r@Repr{} = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
-                  toReprs ImplicitRepr{} = []
+                  toReprs r@Repr {} = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs ImplicitRepr {} = []
                   nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                     where
@@ -452,7 +453,7 @@ pCtx2aCtx
                     [t] -> pure (Just (cpt, t, map getOrigin rs))
                     _ -> mkMultipleRepresentTypesError ([cpt], lst)
                       where
-                        lst = [(snd3 (NE.head cl), fmap thd3 (NE.toList cl)) | cl<-eqCl snd3 rs]
+                        lst = [(snd3 (NE.head cl), fmap thd3 (NE.toList cl)) | cl <- eqCl snd3 rs]
                 where
                   ofCpt :: (A_Concept, TType, Origin) -> Bool
                   ofCpt (cpt', _, _) = cpt == cpt'
@@ -528,7 +529,7 @@ pCtx2aCtx
       completeTypePairs =
         genRules
           <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
-               | x@Repr{} <- p_representations <> concatMap pt_Reprs p_patterns,
+               | x@Repr {} <- p_representations <> concatMap pt_Reprs p_patterns,
                  cpt <- NE.toList $ reprcpts x
              ]
           <> [ ( Set.singleton RepresentSeparator,
@@ -584,11 +585,11 @@ pCtx2aCtx
       userConcept (PCpt nm) = UserConcept nm
 
       pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
-      pRepr2aRepr ci repr@Repr{} = pure Arepr{origins = [origin repr], aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
-      pRepr2aRepr ci repr@ImplicitRepr{} =
-          do
-            (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
-            return (Arepr [origin repr] (target expr :| []) Object)
+      pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
+      pRepr2aRepr ci repr@ImplicitRepr {} =
+        do
+          (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
+          return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =

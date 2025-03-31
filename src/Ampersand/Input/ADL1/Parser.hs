@@ -22,7 +22,7 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
-import Text.Casing ( camel, pascal )
+import Text.Casing (camel, pascal)
 
 --- Populations ::= Population+
 
@@ -62,8 +62,9 @@ pContext =
             ctx_gs = concat [ys | CCfy ys <- ces], -- The Classify definitions defined in this context, outside the scope of patterns
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
-            ctx_reprs = [r | CRep r <- ces] <>
-                        [ImplicitRepr trm | Cifc s <- ces, obj<-[ifc_Obj s], trm<-harvestTerms obj],
+            ctx_reprs =
+              [r | CRep r <- ces]
+                <> [ImplicitRepr trm | Cifc s <- ces, obj <- [ifc_Obj s], trm <- harvestTerms obj],
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
@@ -73,17 +74,17 @@ pContext =
           },
         [s | CIncl s <- ces] -- the INCLUDE filenames
       )
-     where
-       harvestTerms :: P_BoxItem a -> [Term a]
-       harvestTerms obj = [ obj_term o | o<-recur obj, Just _<-[obj_msub o] ]
-       -- Maybe recur looks overly complicated at first sight. However, we just want the box items that have a subobject with actual attributes.
-       recur :: P_BoxItem a -> [P_BoxItem a]
-       recur obj = obj: [subObj | Just x@P_Box{}<-[obj_msub obj], si@P_BoxItemTerm{}<-si_box x, subObj<-recur si, hasTerms subObj]
-       hasTerms :: P_BoxItem a -> Bool
-       hasTerms obj = case obj_msub obj of
-         Nothing -> False
-         Just x@P_Box{} -> (not.null.si_box) x
-         Just P_InterfaceRef{} -> False
+      where
+        harvestTerms :: P_BoxItem a -> [Term a]
+        harvestTerms obj = [obj_term o | o <- recur obj, Just _ <- [obj_msub o]]
+        -- Maybe recur looks overly complicated at first sight. However, we just want the box items that have a subobject with actual attributes.
+        recur :: P_BoxItem a -> [P_BoxItem a]
+        recur obj = obj : [subObj | Just x@P_Box {} <- [obj_msub obj], si@P_BoxItemTerm {} <- si_box x, subObj <- recur si, hasTerms subObj]
+        hasTerms :: P_BoxItem a -> Bool
+        hasTerms obj = case obj_msub obj of
+          Nothing -> False
+          Just x@P_Box {} -> (not . null . si_box) x
+          Just P_InterfaceRef {} -> False
 
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement

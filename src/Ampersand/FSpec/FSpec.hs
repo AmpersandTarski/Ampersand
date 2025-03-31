@@ -29,7 +29,7 @@ module Ampersand.FSpec.FSpec
     isPrimaryKey,
     isForeignKey,
     Typology (..),
-    ConceptStructure(..),
+    ConceptStructure (..),
     Interface (..),
     Object (..),
     BoxItem (..),

@@ -336,22 +336,23 @@ data PCDDef
       }
   deriving (Show, Typeable)
 
-data P_Representation = Repr
-  { pos :: !Origin,
-    -- | the concepts
-    reprcpts :: !(NE.NonEmpty P_Concept),
-    -- | the type of the concept the atom is in
-    reprdom :: !TType
-  } |
-  ImplicitRepr
-  { -- | the type of the concept the atom is in
-    reprTerm :: !(Term TermPrim)
-  }
+data P_Representation
+  = Repr
+      { pos :: !Origin,
+        -- | the concepts
+        reprcpts :: !(NE.NonEmpty P_Concept),
+        -- | the type of the concept the atom is in
+        reprdom :: !TType
+      }
+  | ImplicitRepr
+      { -- | the type of the concept the atom is in
+        reprTerm :: !(Term TermPrim)
+      }
   deriving (Show)
 
 instance Traced P_Representation where
   origin Repr {pos = orig} = orig
-  origin r@ImplicitRepr{} = origin (reprTerm r)
+  origin r@ImplicitRepr {} = origin (reprTerm r)
 
 data TType
   = Alphanumeric
