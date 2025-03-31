@@ -1,6 +1,7 @@
 CONTEXT InterfaceRefCheck IN ENGLISH
 {- Test interface ref typechecking for generalizations, failing cases are in ShouldFail/InterfaceRefCheck.adl -}
 
+CONCEPT Peach "A fruit"
 CLASSIFY Lime ISA Citrus
 CLASSIFY Orange ISA Citrus
 CLASSIFY Limorange IS Lime /\ Orange

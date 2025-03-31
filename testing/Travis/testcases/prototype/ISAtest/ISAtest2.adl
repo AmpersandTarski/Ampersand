@@ -117,7 +117,7 @@ ENDPATTERN
 
 INTERFACE Verplichting -- I[Verplichting]
   FOR Developer : I[Verplichting]
-BOX[ "ID" : I
+BOX[ "ID" : I[Verplichting]
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
       , "Tav (BF)"    : critTAV
@@ -143,7 +143,7 @@ BOX[ "ID" : I
 
 INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
   FOR Developer  : I[Verwachtingsverzameling]
-BOX[ Verwachtingsverzameling : I
+BOX[ Verwachtingsverzameling : I[Verwachtingsverzameling]
    BOX[ "ID" : I
       , Verplichting : vvVerplichting
       BOX[ "ID"          : I[Verplichting]
@@ -166,7 +166,7 @@ BOX[ Verwachtingsverzameling : I
 
 INTERFACE Gewetensvraag -- I[Gewetensvraag]
   FOR Developer : I[Gewetensvraag]
-BOX[ Gewetensvraag: I
+BOX[ Gewetensvraag: I[Gewetensvraag]
    BOX[ "ID"        : I
        
       , "Criterium" : critText
@@ -191,7 +191,7 @@ BOX[ Gewetensvraag: I
 
 INTERFACE Verwachting -- I[Verwachting]
   FOR Developer : I[Verwachting]
-BOX[ "ID" : I
+BOX[ "ID" : I[Verwachting]
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
       , "Aan (BF)"    : critTAV

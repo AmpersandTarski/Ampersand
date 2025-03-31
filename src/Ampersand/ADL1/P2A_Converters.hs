@@ -336,10 +336,13 @@ pCtx2aCtx
           ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
           ttypeAnalysis =
             [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric,[])]; _ -> ttOrigPairs)
-            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo {- `Set.union` Set.fromList [sessionConcept, ONE] -}), c `notElem` concat typolSets ]
+            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo `Set.union` ttypedConcepts), c `notElem` concat typolSets ]
             , let ttOrigPairs = ttPairs typolConcs
             ]
            where
+             -- | To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it, 
+             ttypedConcepts :: Set.Set A_Concept
+             ttypedConcepts = (Set.fromList . concat) [ (NE.toList . aReprFrom) aRepr | aRepr<-aReprs ]
              typolSets = map tyCpts (multiKernels contextInfo)
              ttPairs :: [A_Concept] -> [(TType, [Origin])]
              ttPairs typology =
