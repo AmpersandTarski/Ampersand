@@ -1,6 +1,6 @@
 CONTEXT Bug IN ENGLISH -- exposes bug #302
 
-dummy :: A * A = [("A1", "A2")]
+RELATION dummy[A*A] = [("A1", "A2")]
 
 RULE bug : V[A]-(V;"A1")
 

@@ -6,9 +6,9 @@ This pattern is meant to test the translation of Views in Ampersand.
 +}
 
 PATTERN Try13
-  r :: A*A
-  s :: A*A
-  t :: A*A
+  RELATION r[A*A]
+  RELATION s[A*A]
+  RELATION t[A*A]
 ENDPATTERN
 
 VIEW Try13: A(TXT "aap",I[A])

@@ -3,9 +3,9 @@ CONTEXT Issue757
 CLASSIFY RegForm1 ISA Form
 CLASSIFY RegForm2 ISA Form
 
-regFormProcessReq :: RegForm1 * RegForm1 [PROP]
-registrationform  :: Person * Form [UNI]      -- Form by which the Person is registered
-sessionRegForm2   :: SESSION * RegForm2 [UNI] -- Only one registration form allowed in any session.
+RELATION regFormProcessReq[RegForm1*RegForm1] [PROP]
+RELATION registrationform[Person*Form] [UNI]      -- Form by which the Person is registered
+RELATION sessionRegForm2[SESSION*RegForm2] [UNI] -- Only one registration form allowed in any session.
 
 RULE Rule2 : registrationform;regFormProcessReq |- -V
 VIOLATION (TXT "{EX} DelPair;sessionRegForm2;SESSION;", TGT sessionRegForm2~, TXT ";RegForm2;", TGT I)

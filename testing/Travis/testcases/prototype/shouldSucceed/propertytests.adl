@@ -4,15 +4,15 @@ CONTEXT Propertytests IN ENGLISH
 
 POPULATION A CONTAINS [ "a1", "a2", "a3" ]
 
-rfxtest :: A*A [RFX] =[ ("a1", "a1"); ("a2", "a2"); ("a3", "a3") ]
-irftest :: A*A [IRF] =[ ("a1", "a2"); ("a1", "a3") ]
-symtest :: A*A [SYM] =[ ("a2", "a2"); ("a1", "a3"); ("a3", "a1") ]
-asytest :: A*A [ASY] =[ ("a1", "a3"); ("a3", "a2"); ("a2", "a1") ]
-trntest :: A*A [TRN] =[ ("a1", "a2"); ("a2", "a3"); ("a1", "a3") ]
+RELATION rfxtest[A*A] [RFX] =[ ("a1", "a1"); ("a2", "a2"); ("a3", "a3") ]
+RELATION irftest[A*A] [IRF] =[ ("a1", "a2"); ("a1", "a3") ]
+RELATION symtest[A*A] [SYM] =[ ("a2", "a2"); ("a1", "a3"); ("a3", "a1") ]
+RELATION asytest[A*A] [ASY] =[ ("a1", "a3"); ("a3", "a2"); ("a2", "a1") ]
+RELATION trntest[A*A] [TRN] =[ ("a1", "a2"); ("a2", "a3"); ("a1", "a3") ]
 
-unitest :: A*A [UNI] =[ ("a1", "a3"); ("a2", "a2")]
-tottest :: A*A [TOT] =[ ("a1", "a3"); ("a2", "a2"); ("a2", "a1"); ("a3", "a1") ]
-injtest :: A*A [INJ] =[ ("a1", "a3"); ("a3", "a2")]
-surtest :: A*A [SUR] =[ ("a1", "a3"); ("a3", "a3"); ("a2", "a1"); ("a2", "a2") ]
+RELATION unitest[A*A] [UNI] =[ ("a1", "a3"); ("a2", "a2")]
+RELATION tottest[A*A] [TOT] =[ ("a1", "a3"); ("a2", "a2"); ("a2", "a1"); ("a3", "a1") ]
+RELATION injtest[A*A] [INJ] =[ ("a1", "a3"); ("a3", "a2")]
+RELATION surtest[A*A] [SUR] =[ ("a1", "a3"); ("a3", "a3"); ("a2", "a1"); ("a2", "a2") ]
 
 ENDCONTEXT

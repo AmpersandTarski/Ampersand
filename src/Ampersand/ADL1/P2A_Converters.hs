@@ -15,6 +15,7 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
+import Ampersand.Classes.Relational (hasAttributes)
 import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
@@ -22,6 +23,7 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
+import Data.Tuple.Extra ({-fst3,-} snd3, thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -273,8 +275,13 @@ pCtx2aCtx
       ctx_enfs = p_enfs
     } =
     do
-      contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      let declMap = declDisambMap contextInfo
+      contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
+      let declMap = declDisambMap contextInfoPre
+      -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
+      aReprs <- traverse (pRepr2aRepr contextInfoPre) p_representations :: Guarded [A_Representation] --  The representations defined in this context
+      -- allReprs contains all concepts and every concept has precisely one TType
+      allReps <- makeComplete contextInfoPre aReprs
+      let contextInfo = contextInfoPre {representationOf = defaultTType allReps}
       --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
@@ -287,7 +294,9 @@ pCtx2aCtx
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- -- the following trace statement is kept in comment for possible further work on contextInfo (March 31st, 2025).
+      -- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $
+        traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -304,7 +313,6 @@ pCtx2aCtx
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
                 ctxrrules = udefRoleRules',
-                ctxreprs = representationOf contextInfo,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -322,13 +330,47 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
+      makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
+      makeComplete contextInfo aReprs = {- trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) -} checkDuplicates
+        where
+          -- \| ttypeAnalysis exposes duplicate TTypes, so we can make error messages
+          ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
+          ttypeAnalysis =
+            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric, [])]; _ -> ttOrigPairs)
+              | typolConcs <- typolSets <> [[c] | c <- Set.toList (allConcepts contextInfo `Set.union` ttypedConcepts), c `notElem` concat typolSets],
+                let ttOrigPairs = ttPairs typolConcs
+            ]
+            where
+              -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it,
+              ttypedConcepts :: Set.Set A_Concept
+              ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
+              typolSets = map tyCpts (multiKernels contextInfo)
+              ttPairs :: [A_Concept] -> [(TType, [Origin])]
+              ttPairs typology =
+                [ (t, [origin aRepr | aRepr <- NE.toList cl])
+                  | cl <- eqCl aReprTo [aRepr | aRepr <- aReprs, not . null $ NE.toList (aReprFrom aRepr) `L.intersect` typology],
+                    t <- L.nub [aReprTo aRepr | aRepr <- NE.toList cl]
+                ]
+          checkDuplicates :: Guarded [A_Representation]
+          checkDuplicates =
+            case [(cs, tts) | (cs, tts@(_ : _ : _)) <- ttypeAnalysis] of
+              [] -> pure [Arepr os (c :| cs) t | (c : cs, [(t, os)]) <- ttypeAnalysis]
+              errs -> traverse mkMultipleRepresentTypesError errs
+      defaultTType :: [A_Representation] -> A_Concept -> TType
+      defaultTType aReprs c =
+        if c == ONE || show c == "SESSION"
+          then Object
+          else case L.nub [aReprTo aRepr | aRepr <- L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr)] of
+            [] -> Alphanumeric
+            [t] -> t
+            _ -> fatal "Multiple representations for a single concept"
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
       cptMap = conceptmap
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
-      allReprs :: [Representation]
+      allReprs :: [P_Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
@@ -339,7 +381,7 @@ pCtx2aCtx
         multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
         let reprOf cpt =
               fromMaybe
-                Object -- default representation is Object (sometimes called `ugly identifiers')
+                (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
@@ -354,18 +396,22 @@ pCtx2aCtx
               reprList = allReprs,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
+              allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
               defaultFormat = deffrmtCtxt
             }
         where
+          allConcDefs :: Set.Set AConceptDef
+          allConcDefs = Set.fromList (map (pConcDef2aConcDef conceptmap deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
+
           gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (toList . concs) gns)
 
-          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept, TType)]
+          mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
             f
               <$> traverse typeOfGroup groups
@@ -379,8 +425,9 @@ pCtx2aCtx
               reprTrios :: [(A_Concept, TType, Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where
-                  toReprs :: Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs :: P_Representation -> [(A_Concept, TType, Origin)]
+                  toReprs r@Repr {} = [(pCpt2aCpt conceptmap cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
+                  toReprs ImplicitRepr {} = []
                   nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
                   nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                     where
@@ -404,9 +451,9 @@ pCtx2aCtx
                   rs -> case L.nub (map getTType rs) of
                     [] -> fatal "Impossible empty list."
                     [t] -> pure (Just (cpt, t, map getOrigin rs))
-                    _ -> mkMultipleRepresentTypesError cpt lst
+                    _ -> mkMultipleRepresentTypesError ([cpt], lst)
                       where
-                        lst = [(t, o) | (_, t, o) <- rs]
+                        lst = [(snd3 (NE.head cl), fmap thd3 (NE.toList cl)) | cl <- eqCl snd3 rs]
                 where
                   ofCpt :: (A_Concept, TType, Origin) -> Bool
                   ofCpt (cpt', _, _) = cpt == cpt'
@@ -478,10 +525,11 @@ pCtx2aCtx
           | x <- allGens
         ]
 
-      completeRules =
+      completeTypePairs :: [(Set Type, Set Type)]
+      completeTypePairs =
         genRules
           <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
-               | x <- p_representations <> concatMap pt_Reprs p_patterns,
+               | x@Repr {} <- p_representations <> concatMap pt_Reprs p_patterns,
                  cpt <- NE.toList $ reprcpts x
              ]
           <> [ ( Set.singleton RepresentSeparator,
@@ -507,7 +555,7 @@ pCtx2aCtx
       genLatticeIncomplete :: Op1EqualitySystem Type -- used to derive the concept groups
       genLatticeIncomplete = optimize1 (foldr addEquality emptySystem genRules)
       genLattice :: Op1EqualitySystem Type
-      genLattice = optimize1 (foldr addEquality emptySystem completeRules)
+      genLattice = optimize1 (foldr addEquality emptySystem completeTypePairs)
 
       pClassify2aClassify :: ConceptMap -> PClassify -> Maybe AClassify
       pClassify2aClassify fun pg =
@@ -535,6 +583,13 @@ pCtx2aCtx
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
+
+      pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
+      pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
+      pRepr2aRepr ci repr@ImplicitRepr {} =
+        do
+          (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
+          return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
@@ -646,21 +701,21 @@ pCtx2aCtx
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
       typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
-      typecheckObjDef declMap objDef =
+      typecheckObjDef contextInfo objDef =
         case objDef of
           P_BoxItemTerm
             { obj_PlainName = nm,
               obj_lbl = lbl',
               pos = orig,
-              obj_ctx = ctx,
+              obj_term = term,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = subs
             } -> do
-              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm declMap ctx
+              (objExpr, (srcBounded, tgtBounded)) <- typecheckTerm contextInfo term
               checkCrud
               crud <- pCruds2aCruds objExpr mCrud
-              maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+              maybeObj <- maybeOverGuarded (pSubi2aSubi contextInfo objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
               case maybeObj of
                 Just (newExpr, subStructures) -> return (obj crud (newExpr, srcBounded) (Just subStructures))
                 Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
@@ -806,7 +861,7 @@ pCtx2aCtx
               (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
                 Just disambObj -> typecheckTerm ci
                   $ case disambObj of
-                    P_BoxItemTerm {} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                    P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                     P_BxTxt {} -> fatal "TXT is not expected here."
                 Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
               objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
@@ -824,7 +879,6 @@ pCtx2aCtx
               <$> traverse (fn <=< typecheckObjDef ci) l
               <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
               <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-              <* mustBeObject (target objExpr)
             where
               toNonEmptyLabel :: P_BoxItem a -> Text1
               toNonEmptyLabel bi = case obj_PlainName bi of
@@ -850,10 +904,6 @@ pCtx2aCtx
               fn (boxitem, p) = case boxitem of
                 BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
                 BxText {} -> pure boxitem
-              mustBeObject :: A_Concept -> Guarded ()
-              mustBeObject cpt = case representationOf ci cpt of
-                Object -> pure ()
-                tt -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
         where
           matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
           matchWith (ojd, exprBound) =
@@ -902,8 +952,8 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      pIfc2aIfc declMap (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2BoxItem declMap objDisamb
+      pIfc2aIfc contextInfo (pIfc, objDisamb) =
+        build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
         where
           build :: Guarded BoxItem -> Guarded Interface
           build gb =
@@ -937,7 +987,7 @@ pCtx2aCtx
                             $ tt
                     BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
           ttype :: A_Concept -> TType
-          ttype = representationOf declMap
+          ttype = representationOf contextInfo
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
@@ -1424,16 +1474,16 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
     pProp2aProps p = case p of
       P_Uni -> [Uni]
       P_Inj -> [Inj]
+      P_Map -> [Uni, Tot]
       P_Sur -> [Sur]
       P_Tot -> [Tot]
+      P_Bij -> [Inj, Sur]
       P_Sym -> [Sym]
       P_Asy -> [Asy]
+      P_Prop -> [Sym, Asy]
       P_Trn -> [Trn]
       P_Rfx -> [Rfx]
       P_Irf -> [Irf]
-      P_Prop -> [Sym, Asy]
-      P_Map -> [Uni, Tot]
-      P_Bij -> [Inj, Sur]
 
     decSign = pSign2aSign cptMap (dec_sign pd)
     checkEndoProps :: Guarded ()

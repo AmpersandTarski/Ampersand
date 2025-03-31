@@ -2,14 +2,14 @@ CONTEXT PreprocTest1
 
 INCLUDE "./PreprocTestPopulation.adl" --# [ "!GenerateErrorIfThisVarIsSet" ]
 
-r1 :: A * B1
-r2 :: A * B2
+RELATION r1[A*B1]
+RELATION r2[A*B2]
 
 INTERFACE Test: I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 
   , "NoVars": V[SESSION*NoVar] cRud 
   , "Ifc" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>
-    [ "A = ": I cRud
+    [ "A = ": I[A] cRud
 --#IF EditableInterfaceA
   --#IFNOT DoNotShowR1
     , "r1": r1 cRUd

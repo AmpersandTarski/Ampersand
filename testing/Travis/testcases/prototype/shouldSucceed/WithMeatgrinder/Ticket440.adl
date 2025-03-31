@@ -1,8 +1,8 @@
 CONTEXT Ticket440 IN DUTCH
 
 PATTERN VoldoenAanNormen LABEL "Voldoen aan normen"
-heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan een norm."
-isDeelnormVan :: Norm * Norm [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
+RELATION heeftVoldaanAan[Afdeling*Norm]   MEANING "Een afdeling heeft voldaan aan een norm."
+RELATION isDeelnormVan[Norm*Norm] [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
 
 ROLE Afdelingsmanager MAINTAINS Normen1
 RULE Normen1 LABEL "Voldoen aan normen [1]": (heeftVoldaanAan!-isDeelnormVan)  |- heeftVoldaanAan

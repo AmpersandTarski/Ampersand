@@ -5,16 +5,16 @@ PATTERN ARMISATEST
 -- KEY BedrijfsfunctieNaam: Bedrijfsfunctie(bfNaam)
 IDENT BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- lokaal in de DB
 VIEW  BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- interfaces
-bfNaam :: Bedrijfsfunctie -> BFNaam
+RELATION bfNaam[Bedrijfsfunctie*BFNaam] [MAP]
 
 --[Criteria]--
 -- KEY CriteriumID: Criterium(critID)
 IDENT CriteriumIdent: Criterium(critBF, critID) -- lokaal in de DB
 VIEW  CriteriumIdent: Criterium(critBF, TXT ":", critID) -- lokaal in de DB
-critID :: Criterium -> CriteriumID
-critBF :: Criterium -> Bedrijfsfunctie
-critTAV :: Criterium -> Bedrijfsfunctie
-critText :: Criterium -> Text
+RELATION critID[Criterium*CriteriumID] [MAP]
+RELATION critBF[Criterium*Bedrijfsfunctie] [MAP]
+RELATION critTAV[Criterium*Bedrijfsfunctie] [MAP]
+RELATION critText[Criterium*Text] [MAP]
 
 --[Verplichtingen en verwachtingen]--
 
@@ -34,25 +34,25 @@ RULE Verbod LABEL "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I
 
 --[BIA-lijst]--
 
-biaVerplichtingDef :: Bedrijfsfunctie * ExterneVerplichting [INJ]
+RELATION biaVerplichtingDef[Bedrijfsfunctie*ExterneVerplichting] [INJ]
 ROLE Developer MAINTAINS BIAlijstBijhouden
 RULE BIAlijstBijhouden LABEL "BIA-lijst bijhouden": biaVerplichtingDef = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
 
 --[Afdekkingen]--
-afdekking :: Verplichting * Verwachtingsverzameling [UNI]
+RELATION afdekking[Verplichting*Verwachtingsverzameling] [UNI]
 
 RULE Afdekkingen LABEL "Afdekkingen zijn verwachtingsverzamelingen": afdekking |- vvVerplichting~
 
 --KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBFDef, TXT ":", vvID)
 IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, vvID) -- lokaal in de DB
 VIEW VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBFDef, TXT ":", vvID) -- Interfaces
-vvID :: Verwachtingsverzameling -> VVID
-vvVerplichting :: Verwachtingsverzameling -> Verplichting
-vvVerwachting :: Verwachtingsverzameling * Verwachting
+RELATION vvID[Verwachtingsverzameling*VVID] [MAP]
+RELATION vvVerplichting[Verwachtingsverzameling*Verplichting] [MAP]
+RELATION vvVerwachting[Verwachtingsverzameling*Verwachting]
 
 RULE Verwachtingsverzamelingen LABEL "Integriteit van verwachtingsverzamelingen": vvVerplichting~;vvVerwachting |- critBF;critBF~
 
-vvBFDef :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
+RELATION vvBFDef[Verwachtingsverzameling*Bedrijfsfunctie] [UNI] -- nodig voor KEY/VIEWs van VV's
 ROLE ExecEngine MAINTAINS insvvBFDef
 RULE insvvBFDef: vvVerplichting;critBF |- vvBFDef
 VIOLATION (TXT "{EX} InsPair vvBFDef;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
@@ -100,7 +100,7 @@ BOX[ "Algemeen" : I
 
 
 PATTERN BIAlijstInterface LABEL "{EE} BIA-lijst interface"
-nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
+RELATION nieuweVerplichting[Bedrijfsfunctie*Verplichting] -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
 ROLE ExecEngine MAINTAINS NieuweBIAverplichtingen
 RULE NieuweBIAverplichtingen LABEL "nieuwe BIA verplichtingen": nieuweVerplichting |- -V
@@ -117,7 +117,7 @@ ENDPATTERN
 
 INTERFACE Verplichting -- I[Verplichting]
   FOR Developer : I[Verplichting]
-BOX[ "ID" : I
+BOX[ "ID" : I[Verplichting]
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
       , "Tav (BF)"    : critTAV
@@ -143,7 +143,7 @@ BOX[ "ID" : I
 
 INTERFACE Verwachtingsverzameling -- I[Verwachtingsverzameling]
   FOR Developer  : I[Verwachtingsverzameling]
-BOX[ Verwachtingsverzameling : I
+BOX[ Verwachtingsverzameling : I[Verwachtingsverzameling]
    BOX[ "ID" : I
       , Verplichting : vvVerplichting
       BOX[ "ID"          : I[Verplichting]
@@ -166,7 +166,7 @@ BOX[ Verwachtingsverzameling : I
 
 INTERFACE Gewetensvraag -- I[Gewetensvraag]
   FOR Developer : I[Gewetensvraag]
-BOX[ Gewetensvraag: I
+BOX[ Gewetensvraag: I[Gewetensvraag]
    BOX[ "ID"        : I
        
       , "Criterium" : critText
@@ -191,7 +191,7 @@ BOX[ Gewetensvraag: I
 
 INTERFACE Verwachting -- I[Verwachting]
   FOR Developer : I[Verwachting]
-BOX[ "ID" : I
+BOX[ "ID" : I[Verwachting]
    BOX[ "ID"          : I
       , "Van (BF)"    : critBF
       , "Aan (BF)"    : critTAV

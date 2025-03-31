@@ -1,7 +1,7 @@
 CONTEXT Issue711 IN ENGLISH
 
-geitCounter   :: Geit   * GeitCounter   [UNI]   REPRESENT GeitCounter   TYPE INTEGER
-schaapCounter :: Schaap * SchaapCounter [UNI]   REPRESENT SchaapCounter TYPE INTEGER
+RELATION geitCounter[Geit*GeitCounter]   [UNI]   REPRESENT GeitCounter   TYPE INTEGER
+RELATION schaapCounter[Schaap*SchaapCounter] [UNI]   REPRESENT SchaapCounter TYPE INTEGER
 
 ROLE ExecEngine MAINTAINS InitializeGeitCounters
 RULE InitializeGeitCounters : I[Geit] |- geitCounter;V

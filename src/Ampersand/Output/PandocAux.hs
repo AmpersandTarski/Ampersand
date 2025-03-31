@@ -17,7 +17,7 @@ where
 
 import Ampersand.ADL1 hiding (Identity)
 import Ampersand.Basics
-import Ampersand.Classes (isFunction)
+import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
@@ -338,7 +338,7 @@ instance ShowMath Relation where
       $ (inMathText . fullName) decl
       <> " \\lbrack "
       <> (inMathText . fullName . source) decl
-      <> (if isFunction (EDcD decl) then " \\mapsto " else "*")
+      <> (if isMapping (EDcD decl) then " \\mapsto " else "*")
       <> (inMathText . fullName . target) decl
       <> " \\rbrack "
 

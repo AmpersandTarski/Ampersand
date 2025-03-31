@@ -11,29 +11,29 @@ prototype DeliverySimple.adl --css=DeliverySimple.css ..
 
 -- Client
 
-clientName :: Client -> Name
+RELATION clientName[Client*Name] [MAP]
  =  [ ("Client_1"      , "Martijn")
     ; ("Client_2"      , "Stef")
     ]
 
-clientAddress :: Client -> Address 
+RELATION clientAddress[Client*Address] [MAP] 
   = [ ("Client_1"      , "Kerkstraat")
     ; ("Client_2"      , "Dorpsstraat")
     ]
     
-clientCity :: Client -> City 
+RELATION clientCity[Client*City] [MAP] 
   = [ ("Client_1"      , "Utrecht")
     ; ("Client_2"      , "Enschede")
     ]
 
 -- Vendor
 
-vendorName :: Vendor -> Name 
+RELATION vendorName[Vendor*Name] [MAP] 
   = [ ("Vendor_1", "Rubber inc.")
     ; ("Vendor_2", "Mario's pizzas")
     ]
     
-sells :: Vendor * Product 
+RELATION sells[Vendor*Product] 
   = [ ("Vendor_1", "Product_1")
     ; ("Vendor_1", "Product_2")
     ; ("Vendor_1", "Product_3")
@@ -44,7 +44,7 @@ sells :: Vendor * Product
 
 -- Product
 
-productName :: Product -> Name
+RELATION productName[Product*Name] [MAP]
   = [ ("Product_1", "Inner tube")
     ; ("Product_2", "Bouncing ball")
     ; ("Product_3", "Rubber chicken")
@@ -52,7 +52,7 @@ productName :: Product -> Name
     ; ("Product_5", "Broodje Mario")
     ]
 
-productPrice :: Product -> Price
+RELATION productPrice[Product*Price] [MAP]
   = [ ("Product_1", "10,00 euro")
     ; ("Product_2", "0,75 euro")
     ; ("Product_3", "6,95 euro")
@@ -62,21 +62,21 @@ productPrice :: Product -> Price
 
 -- Order
 
-orderedBy :: Order -> Client
+RELATION orderedBy[Order*Client] [MAP]
 --  = [ ("Order_1", "Client_2") ]
-orderedAt :: Order -> Vendor   
+RELATION orderedAt[Order*Vendor] [MAP]   
 --  = [ ("Order_1", "Vendor_1") ]
-orderOf :: Order -> Product
+RELATION orderOf[Order*Product] [MAP]
 --  = [ ("Order_1", "Product_1") ]
 
 -- Rules
 
 PATTERN Bestellen
 
-orderAccepted :: Order * Vendor [UNI] -- an order may not be accepted by multiple vendors
+RELATION orderAccepted[Order*Vendor] [UNI] -- an order may not be accepted by multiple vendors
 --  = [ ("Order_1", "Vendor_1") ]
 
-orderReceived :: Order * Client [UNI] -- an order may not be received by multiple clients
+RELATION orderReceived[Order*Client] [UNI] -- an order may not be received by multiple clients
 --  = [ ("Order_1", "Client_1") ]
 
 

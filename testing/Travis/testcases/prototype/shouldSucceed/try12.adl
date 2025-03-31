@@ -1,7 +1,7 @@
 CONTEXT Test IN ENGLISH
 
 PATTERN Test9
-r :: A*B
+RELATION r[A*B]
 RULE Test: r = r;V
 ENDPATTERN
 

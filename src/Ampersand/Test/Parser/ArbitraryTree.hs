@@ -213,7 +213,8 @@ instance Arbitrary MetaData where
 instance Arbitrary P_RoleRule where
   arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
-instance Arbitrary Representation where
+-- | Only generate explicit representations. Implicit representations come from boxes in interfaces, so they must not be generated.
+instance Arbitrary P_Representation where
   arbitrary =
     Repr
       <$> arbitrary

@@ -11,6 +11,7 @@ module Ampersand.Basics.Name
     Labeled (..),
     mkName,
     nameOfONE,
+    nameOfSESSION,
     nameOfExecEngineRole,
     withNameSpace,
     prependToPlainName,
@@ -151,6 +152,13 @@ nameOfONE :: Name
 nameOfONE =
   Name
     { nameParts = NamePart (Text1 'O' "NE") :| [],
+      nameType = ConceptName
+    }
+
+nameOfSESSION :: Name
+nameOfSESSION =
+  Name
+    { nameParts = NamePart (Text1 'S' "ESSION") :| [],
       nameType = ConceptName
     }
 

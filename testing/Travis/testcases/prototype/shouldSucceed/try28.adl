@@ -1,6 +1,6 @@
 CONTEXT Try28 IN ENGLISH
-clientName :: Client -> Name 
-clientAddress :: Client -> Address 
+RELATION clientName[Client*Name] [MAP] 
+RELATION clientAddress[Client*Address] [MAP] 
 
 VIEW Client: Client(clientName, TXT ", ", clientAddress)
 
@@ -8,7 +8,7 @@ VIEW Client: Client(clientName, TXT ", ", clientAddress)
 The produced message:
 ampersand: !fatal error 1601 (module ADL1.P2A_Converters, Ampersand v2.2.1.986:987M)
   Term clientName (line 5:34, file "try28.adl") was not found in 2 bindings.
-  clientName[Client*Name]
-  clientAddress[Client*Address]
+  RELATION clientName[Client*Name]
+  RELATION clientAddress[Client*Address]
 -} 
 ENDCONTEXT

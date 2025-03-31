@@ -1,6 +1,6 @@
 CONTEXT Issue406a IN ENGLISH
    INTERFACE Foo : I[A]
-   s :: A*B
+   RELATION s[A*B]
 ENDCONTEXT
 
 -- Every INTERFACE expression needs a BOX part. See https://github.com/AmpersandTarski/Ampersand/issues/406

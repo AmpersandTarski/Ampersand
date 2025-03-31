@@ -1,5 +1,6 @@
 CONTEXT Issue1018
 
+CONCEPT X "X"
 INTERFACE Test: V[Session*X] BOX [ "line": TXT "something" ]
 
 ENDCONTEXT

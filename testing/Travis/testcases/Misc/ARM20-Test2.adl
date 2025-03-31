@@ -3,9 +3,9 @@ CONTEXT ARM20Test2 IN DUTCH
 ------------------------------------------------------------
 PATTERN ARM20Test2
 
-critBF :: Criterium -> Bedrijfsfunctie PRAGMA "" " wordt gehanteerd binnen "
+RELATION critBF[Criterium*Bedrijfsfunctie] [MAP] PRAGMA "" " wordt gehanteerd binnen "
 CLASSIFY Verwachting ISA Criterium
-expID :: Verwachting -> ExpectationID PRAGMA "" "staat in de business bekend als"
+RELATION expID[Verwachting*ExpectationID] [MAP] PRAGMA "" "staat in de business bekend als"
 
 VIEW Verwachtingen: Verwachting(critBF, expID)
 --$FOUTMELDING voor bovenstaande regel:

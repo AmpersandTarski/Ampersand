@@ -10,7 +10,6 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import Codec.Xlsx
 import Control.Lens hiding (both)
-import Data.Tuple.Extra (both, swap)
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Char
@@ -122,7 +121,7 @@ addRelations pCtx = enrichedContext
                   dec_defaults = mempty,
                   dec_pragma = Nothing,
                   dec_Mean = mempty,
-                  pos = origin pop
+                  dec_pos = origin pop
                 }
             ],
           signatur rel `notElem` map signatur declaredRelations

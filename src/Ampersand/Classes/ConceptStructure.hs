@@ -88,7 +88,7 @@ instance (Eq a, ConceptStructure a) => ConceptStructure (Set.Set a) where
 
 instance ConceptStructure A_Context where
   concs ctx =
-    Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
+    Set.unions -- ONE and [SESSION] are always in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
       [ Set.singleton ONE,
         --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
         (concs . ctxcdsOutPats) ctx,

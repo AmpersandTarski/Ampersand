@@ -6,8 +6,8 @@ CONTEXT EnforceTest1 IN DUTCH
 --CLASSIFY Voornaam ISA FirstName
 REPRESENT FirstName TYPE ALPHANUMERIC
 
-npRoepnaam :: NatuurlijkPersoon * Voornaam [UNI]
-personFirstName :: Person * FirstName
+RELATION npRoepnaam[NatuurlijkPersoon*Voornaam] [UNI]
+RELATION personFirstName[Person*FirstName]
 
 ENFORCE personFirstName := I[NPReg];npRoepnaam
 

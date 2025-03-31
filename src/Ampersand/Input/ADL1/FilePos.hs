@@ -80,7 +80,7 @@ data Origin
   | FileLoc !FilePos !SymbolName
   | XLSXLoc !FilePath !Text !(Int, Int)
   | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
-  deriving (Eq, Typeable, Generic, Data)
+  deriving (Eq, Ord, Typeable, Generic, Data)
 
 -- Eq and Ord have been removed by desing on Origin. See issue #1035
 

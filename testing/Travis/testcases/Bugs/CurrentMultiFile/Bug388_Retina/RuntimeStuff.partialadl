@@ -2,12 +2,12 @@ CONTEXT RuntimeStuff IN DUTCH
 ------------------------------------------------------------
 PATTERN RuntimeStuff
 
-runtimeVerzamelendeService :: Persoonsgegeven * Service [UNI,TOT]
+RELATION runtimeVerzamelendeService[Persoonsgegeven*Service] [UNI,TOT]
 PRAGMA "" " is verzameld door een instantie van "
 PURPOSE RELATION runtimeVerzamelendeService  REF "Artikel 7 Wbp"
 {+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moet voor elk persoonsgegeven de service geidentificeerd kunnen worden waarvan een instantie het persoonsgegeven heeft verzameld.+}
 
-runtimeVerwerkendeService :: Persoonsgegeven * Service
+RELATION runtimeVerwerkendeService[Persoonsgegeven*Service]
 PRAGMA "" " is verwerkt door een instantie van "
 PURPOSE RELATION runtimeVerwerkendeService REF "Artikel 2 lid 1; artikel 1 sub e, g Wbp"
 {+De Wbp is van toepassing op de geheel of gedeeltelijk geautomatiseerde VERWERKING (uit artikel 2 eerste lid Wbp). In deze wet en de daarop berustende bepalingen wordt verstaan onder 
@@ -30,7 +30,7 @@ ROLE User MAINTAINS Verwerkingsdoelen
 PURPOSE RULE Verwerkingsdoelen REF "Artikel 9 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.+}
 
-runtimeDoel :: SvcInstantie * RuntimeDoel
+RELATION runtimeDoel[SvcInstantie*RuntimeDoel]
 
 RULE ServiceInstantieDoel LABEL "Service instantie doel": 
 I[SvcInstantie] |- runtimeDoel;runtimeDoel~
@@ -43,9 +43,9 @@ runtimeDoel;typeOf[RuntimeDoel*Doel] |- typeOf[SvcInstantie*Service];svcVerwerki
 MEANING "Elk runtime doel van een service instantie moet van een soort zijn waartoe de service dient"
 VIOLATION (TXT "Runtime service '", SRC I, TXT "' heeft geen doel dat een verwerkingsdoel is van '", SRC typeOf[SvcInstantie*Service], TXT "'")
 
-verstuurdNaar :: Bericht * SvcInstantie [UNI,TOT]
-verstuurdDoor :: Bericht * SvcInstantie [UNI,TOT]
-gegevenInBericht :: Persoonsgegeven * Bericht
+RELATION verstuurdNaar[Bericht*SvcInstantie] [UNI,TOT]
+RELATION verstuurdDoor[Bericht*SvcInstantie] [UNI,TOT]
+RELATION gegevenInBericht[Persoonsgegeven*Bericht]
 
 RULE RuntimeVerwerkingenHebbenEenDoel LABEL "Runtime verwerkingen hebben een doel":
 I[SvcInstantie] |- runtimeDoel;typeOf[RuntimeDoel*Doel];typeOf[RuntimeDoel*Doel]~;runtimeDoel~

@@ -116,7 +116,7 @@ aRelation2pRelation dcl =
       dec_defaults = aRelDefaults2pRelDefaults $ decDefaults dcl,
       dec_pragma = decpr dcl,
       dec_Mean = map aMeaning2pMeaning (decMean dcl),
-      pos = decfpos dcl
+      dec_pos = decfpos dcl
     }
 
 aRelDefaults2pRelDefaults :: ARelDefaults -> [PRelationDefault]
@@ -129,20 +129,11 @@ aRelDefaults2pRelDefault x = case x of
 
 aProps2Pprops :: AProps -> Set PProp
 aProps2Pprops aps
-  | P_Sym
-      `elem` xs
-      && P_Asy
-      `elem` xs =
+  | P_Sym `elem` xs && P_Asy `elem` xs =
       Set.singleton P_Prop `Set.union` (xs Set.\\ Set.fromList [P_Sym, P_Asy])
-  | P_Uni
-      `elem` xs
-      && P_Tot
-      `elem` xs =
+  | P_Uni `elem` xs && P_Tot `elem` xs =
       Set.singleton P_Map `Set.union` (xs Set.\\ Set.fromList [P_Uni, P_Tot])
-  | P_Inj
-      `elem` xs
-      && P_Sur
-      `elem` xs =
+  | P_Inj `elem` xs && P_Sur `elem` xs =
       Set.singleton P_Bij `Set.union` (xs Set.\\ Set.fromList [P_Inj, P_Sur])
   | otherwise = xs
   where
@@ -278,7 +269,7 @@ aObjectDef2pObjectDef x =
         { pos = origin oDef,
           obj_PlainName = objPlainName oDef,
           obj_lbl = objlbl oDef,
-          obj_ctx = aExpression2pTermPrim (objExpression oDef),
+          obj_term = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
             Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
             _ -> Just $ aCruds2pCruds (objcrud oDef),

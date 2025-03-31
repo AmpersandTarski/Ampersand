@@ -273,8 +273,9 @@ instance Pretty P_Population where
     where
       contents = list . map pretty
 
-instance Pretty Representation where
+instance Pretty P_Representation where
   pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
+  pretty (ImplicitRepr {}) = text ""
 
 instance Pretty TType where
   pretty = text . show
@@ -293,7 +294,7 @@ instance Pretty P_Interface where
         if null roles
           then empty
           else text "FOR" <+> listOf roles
-      interfaceExpression = text ":" <~> pretty (obj_ctx obj)
+      interfaceExpression = text ":" <~> pretty (obj_term obj)
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
 
@@ -439,16 +440,16 @@ instance Pretty PProp where
   pretty p = case p of
     P_Uni -> text "UNI"
     P_Inj -> text "INJ"
+    P_Map -> text "UNI, TOT"
     P_Sur -> text "SUR"
     P_Tot -> text "TOT"
+    P_Bij -> text "INJ, SUR"
     P_Sym -> text "SYM"
     P_Asy -> text "ASY"
+    P_Prop -> text "SYM, ASY"
     P_Trn -> text "TRN"
     P_Rfx -> text "RFX"
     P_Irf -> text "IRF"
-    P_Prop -> text "SYM, ASY"
-    P_Map -> text "UNI, TOT"
-    P_Bij -> text "INJ, SUR"
 
 -- _ -> text . map toUpper . show $ p
 

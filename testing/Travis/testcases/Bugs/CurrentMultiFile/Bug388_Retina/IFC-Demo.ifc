@@ -10,14 +10,14 @@ BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    ]
 --[Verwerkingen]--------------------------------------------
 INTERFACE VerwerkingA FOR User : I[Verwerking]
-BOX[ "Verwerking" : I
+BOX[ "Verwerking" : I[Verwerking]
    , "Naam" : verwerkingNaam
    , "Omschrijving" : verwerkingOmschrijving
    , "Specificatie samenvatting" : verwerkingSpecificatieSamenvatting
    , "Verantwoordelijke" : verwerkingsVerantwoordelijke
    , "Bewerker" : verwerkingBewerker
    , "Verwerkingsdoel" : verwerkingsDoel
-   , "Bestaat uit" : I
+   , "Bestaat uit" : I[Verwerking]
    BOX[ "Andere verwerkingen" : isDeelverwerkingVan~
       , "Services" : isDeelsvcVanVerwerking~
       ]

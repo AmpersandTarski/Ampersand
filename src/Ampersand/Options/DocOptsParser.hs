@@ -6,7 +6,6 @@ import Ampersand.Basics
 import Ampersand.Misc.HasClasses
 import Ampersand.Options.FSpecGenOptsParser
 import Ampersand.Options.Utils
-import Data.Tuple.Extra
 import Options.Applicative
 import Options.Applicative.Builder.Extra
 import qualified RIO.List as L

@@ -46,10 +46,10 @@ import Ampersand.Core.ParseTree
     P_NamedRel (..),
     P_Pattern (..),
     P_Relation (..),
+    P_Representation (..),
     P_RoleRule (..),
     P_Rule (..),
     P_Sign (P_Sign),
-    Representation (..),
     Role (..),
     TType (..),
     TemplateKeyValue (..),
@@ -117,7 +117,7 @@ instance JSON.FromJSON (Guarded P_Context) where
         Maybe Text ->
         [Guarded P_Pattern] ->
         [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
-        [Guarded Representation] ->
+        [Guarded P_Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         -- [P_Enforce TermPrim] ->
         [Guarded P_RoleRule] ->
@@ -188,7 +188,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
         Maybe Text ->
         [Guarded P_Relation] ->
         [Guarded (DefinitionContainer -> Maybe PConceptDef)] ->
-        [Guarded Representation] ->
+        [Guarded P_Representation] ->
         [Guarded (P_Rule TermPrim)] ->
         [Guarded PPurpose] ->
         Guarded P_Pattern
@@ -277,8 +277,8 @@ instance JSON.FromJSON (Guarded P_Concept) where
       "parsing P_Concept failed, "
       (JSON.typeMismatch "JSON. or String" invalid)
 
-instance JSON.FromJSON (Guarded Representation) where
-  parseJSON :: JSON.Value -> JSON.Parser (Guarded Representation)
+instance JSON.FromJSON (Guarded P_Representation) where
+  parseJSON :: JSON.Value -> JSON.Parser (Guarded P_Representation)
   parseJSON val = case val of
     JSON.Object v ->
       build
@@ -288,10 +288,10 @@ instance JSON.FromJSON (Guarded Representation) where
         JSON..: "type" -- Use the PCDDef JSON.parser here
     invalid ->
       JSON.prependFailure
-        "parsing Representation failed, "
+        "parsing P_Representation failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Guarded P_Concept -> TType -> Guarded Representation
+      build :: Guarded P_Concept -> TType -> Guarded P_Representation
       build gCpt ttype = do
         cpt <- gCpt
         pure
@@ -330,17 +330,17 @@ instance JSON.FromJSON PProp where
   parseJSON val = case val of
     JSON.String x -> case T.toLower x of
       "uni" -> pure P_Uni
+      "tot" -> pure P_Tot
+      "map" -> pure P_Map
       "inj" -> pure P_Inj
       "sur" -> pure P_Sur
-      "tot" -> pure P_Tot
+      "bij" -> pure P_Bij
       "sym" -> pure P_Sym
       "asy" -> pure P_Asy
+      "prop" -> pure P_Prop
       "trn" -> pure P_Trn
       "rfx" -> pure P_Rfx
       "irf" -> pure P_Irf
-      "prop" -> pure P_Prop
-      "map" -> pure P_Map
-      "bij" -> pure P_Bij
       _ ->
         JSON.unexpected val
     invalid ->
@@ -399,7 +399,7 @@ instance JSON.FromJSON (Guarded P_Relation) where
               dec_label = textToLabelInJSON <$> lbl,
               dec_defaults = [],
               dec_Mean = mean,
-              pos = OriginAtlas
+              dec_pos = OriginAtlas
             }
 
 instance JSON.FromJSON PMeaning where -- todo: checken of dit werkt
@@ -683,7 +683,7 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
           { obj_PlainName = Nothing,
             obj_lbl = Nothing,
             pos = OriginAtlas,
-            obj_ctx = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
+            obj_term = case parseTerm ("Json file from Atlas, at a rule named `" <> T.unpack nm <> "`.") formexp of
               Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
               Checked term _ -> term,
             obj_crud = crud,

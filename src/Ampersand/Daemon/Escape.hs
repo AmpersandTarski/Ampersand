@@ -19,7 +19,6 @@ where
 
 import Ampersand.Basics
 import Data.List.Extra (unfoldr)
-import Data.Tuple.Extra (both, swap)
 import RIO.Char
 
 -- A string with escape characters in it

@@ -1,7 +1,7 @@
 CONTEXT Issue1026 IN ENGLISH
 
-r :: A*B
-s :: A*B
+RELATION r[A*B]
+RELATION s[A*B]
 
 PATTERN SameName
 RULE ifRthenS : r |- s 

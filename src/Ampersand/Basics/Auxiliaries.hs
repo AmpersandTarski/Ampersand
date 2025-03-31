@@ -16,12 +16,15 @@ module Ampersand.Basics.Auxiliaries
     liftFst,
     liftSnd,
     Flippable (..),
+    both,
+    swap, -- re-export from Data.Tuple.Extra
   )
 where
 
 import Ampersand.Basics.Prelude hiding (to)
 import Ampersand.Basics.Version
 import Data.Graph (SCC (CyclicSCC), stronglyConnComp)
+import Data.Tuple.Extra
 import Data.Typeable
 import RIO.List (intersect, nub, union)
 import qualified RIO.List as L

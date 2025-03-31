@@ -1,7 +1,7 @@
 CONTEXT Ticket445 IN DUTCH
 --------------------------------------------------------
 
-sessionAccount :: SESSION * Account [UNI]
+RELATION sessionAccount[SESSION*Account] [UNI]
 
 INTERFACE MijnAccount : V[ONE*SESSION];"_SESSION";sessionAccount 
 BOX[ "Account"  : I

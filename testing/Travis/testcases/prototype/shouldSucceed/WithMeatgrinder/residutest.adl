@@ -7,9 +7,9 @@ SELECT statements in SQL.
 +}
 
 PATTERN SelectExprTest
-  r :: A*B
-  s :: B*C [UNI,TOT]
-  t :: D*C
+  RELATION r[A*B]
+  RELATION s[B*C] [UNI,TOT]
+  RELATION t[D*C]
 ENDPATTERN
 
 -- I'd like to test this:

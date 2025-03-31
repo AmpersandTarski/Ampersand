@@ -1,9 +1,9 @@
 CONTEXT Bugs IN ENGLISH
 
-r2 :: A*C [UNI,SUR]
+RELATION r2[A*C] [UNI,SUR]
   = [ ("a1", "c1") ]
     
-r1 :: A*B [UNI]
+RELATION r1[A*B] [UNI]
 
 RULE totalityBug : I |- (r2; r2~) \/ r1; r1~
 -- yields a violation of "tot r1", but totality of r is not an implication of this rule

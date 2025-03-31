@@ -170,19 +170,30 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
-mkMultipleRepresentTypesError :: A_Concept -> [(TType, Origin)] -> Guarded a
-mkMultipleRepresentTypesError cpt rs =
+-- mkInvalidTTypeError :: Origin -> P_Representation -> Guarded a
+-- mkInvalidTTypeError o repr@ImplicitRepr{} =
+--   Errors . pure $ CTXE o msg
+--   where
+--     msg =
+--       T.intercalate "\n"
+--         $ [ "The target of "<>tshow (reprTerm repr)<>" has technical type Object"
+--           , " because it is used in a subinterface at " <> showFullOrig o]
+
+mkMultipleRepresentTypesError :: ([A_Concept], [(TType, [Origin])]) -> Guarded a
+mkMultipleRepresentTypesError (cpts, tts@((_, o : _) : _)) =
   Errors . pure $ CTXE o msg
   where
-    o = case rs of
-      [] -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
-      (_, x) : _ -> x
     msg =
       T.intercalate "\n"
-        $ [ "The Concept " <> (text1ToText . showWithAliases) cpt <> " was shown to be representable with multiple types.",
+        $ [ case cpts of
+              [cpt] -> "The Concept " <> (text1ToText . showWithAliases) cpt <> " is representable with multiple types."
+              _ -> "The Concepts " <> (T.intercalate "," . map (text1ToText . showWithAliases)) cpts <> " are representable with multiple types.",
             "The following TYPEs are defined for it:"
           ]
-        <> ["  - " <> tshow t <> " at " <> showFullOrig orig | (t, orig) <- rs]
+        <> fmap showOrigs tts
+    showOrigs :: (TType, [Origin]) -> Text
+    showOrigs (t, origs) = "  - " <> tshow t <> " at " <> T.intercalate "," (fmap showMinorOrigin origs)
+mkMultipleRepresentTypesError (cpt, _) = fatal ("mkMultipleRepresentTypesError trips over concept " <> tshow cpt)
 
 mkMultipleTypesInTypologyError :: [(A_Concept, TType, [Origin])] -> Guarded a
 mkMultipleTypesInTypologyError tripls =
@@ -646,7 +657,7 @@ mustBeOrderedLst o lst =
     exprOf :: P_BoxItem TermPrim -> Term TermPrim
     exprOf x =
       case x of
-        P_BoxItemTerm {} -> obj_ctx x
+        P_BoxItemTerm {} -> obj_term x
         P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])

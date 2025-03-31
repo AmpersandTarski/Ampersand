@@ -22,7 +22,7 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
-import Text.Casing
+import Text.Casing (camel, pascal)
 
 --- Populations ::= Population+
 
@@ -62,7 +62,9 @@ pContext =
             ctx_gs = concat [ys | CCfy ys <- ces], -- The Classify definitions defined in this context, outside the scope of patterns
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
-            ctx_reprs = [r | CRep r <- ces],
+            ctx_reprs =
+              [r | CRep r <- ces]
+                <> [ImplicitRepr trm | Cifc s <- ces, obj <- [ifc_Obj s], trm <- harvestTerms obj],
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
@@ -72,6 +74,17 @@ pContext =
           },
         [s | CIncl s <- ces] -- the INCLUDE filenames
       )
+      where
+        harvestTerms :: P_BoxItem a -> [Term a]
+        harvestTerms obj = [obj_term o | o <- recur obj, Just _ <- [obj_msub o]]
+        -- Maybe recur looks overly complicated at first sight. However, we just want the box items that have a subobject with actual attributes.
+        recur :: P_BoxItem a -> [P_BoxItem a]
+        recur obj = obj : [subObj | Just x@P_Box {} <- [obj_msub obj], si@P_BoxItemTerm {} <- si_box x, subObj <- recur si, hasTerms subObj]
+        hasTerms :: P_BoxItem a -> Bool
+        hasTerms obj = case obj_msub obj of
+          Nothing -> False
+          Just x@P_Box {} -> (not . null . si_box) x
+          Just P_InterfaceRef {} -> False
 
     --- ContextElement ::= MetaData | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement | Enforce
     pContextElement :: AmpParser ContextElement
@@ -215,7 +228,7 @@ data ContextElement
   | CCfy [PClassify]
   | CRel (P_Relation, [P_Population])
   | CCon (DefinitionContainer -> PConceptDef)
-  | CRep Representation
+  | CRep P_Representation
   | Cm P_RoleRule
   | CIndx P_IdentDef
   | CView P_ViewDef
@@ -328,7 +341,7 @@ data PatElem
   | Pd (P_Relation, [P_Population])
   | Pm P_RoleRule
   | Pc (DefinitionContainer -> PConceptDef)
-  | Prep Representation
+  | Prep P_Representation
   | Pk P_IdentDef
   | Pv P_ViewDef
   | Pe PPurpose
@@ -588,15 +601,16 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         -- replace PROP by SYM, ASY
         rep :: PProps -> PProps
         rep ps
+          | P_Map `elem` ps = Set.fromList [P_Uni, P_Tot] `Set.union` (P_Map `Set.delete` ps)
+          | P_Bij `elem` ps = Set.fromList [P_Inj, P_Sur] `Set.union` (P_Bij `Set.delete` ps)
           | P_Prop `elem` ps = Set.fromList [P_Sym, P_Asy] `Set.union` (P_Prop `Set.delete` ps)
           | otherwise = ps
-        -- add Uni and Inj if ps has neither Sym nor Asy
+        -- add Uni and Inj if ps has both Sym and Asy
         conv :: PProps -> PProps
         conv ps =
-          ps
-            `Set.union` if P_Sym `elem` ps && P_Asy `elem` ps
-              then Set.fromList [P_Uni, P_Inj]
-              else Set.empty
+          if P_Sym `elem` ps && P_Asy `elem` ps
+            then ps `Set.union` Set.fromList [P_Uni, P_Inj]
+            else ps
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser PProps
@@ -605,7 +619,7 @@ pFun =
     <$ (pOperator . toText1Unsafe) "*"
     <|> Set.fromList [P_Uni, P_Tot]
     <$ (pOperator . toText1Unsafe) "->"
-    <|> Set.fromList [P_Sur, P_Inj]
+    <|> Set.fromList [P_Inj, P_Sur]
     <$ (pOperator . toText1Unsafe) "<-"
     <|> pBrackets pMults
   where
@@ -650,8 +664,8 @@ pConceptDef =
         <|> PCDDefNew
         <$> pMeaning
 
---- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
-pRepresentation :: AmpParser Representation
+--- P_Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
+pRepresentation :: AmpParser P_Representation
 pRepresentation =
   Repr
     <$> currPos
@@ -716,7 +730,7 @@ pIdentDef =
             { pos = pos',
               obj_PlainName = Nothing,
               obj_lbl = Nothing,
-              obj_ctx = ctx,
+              obj_term = ctx,
               obj_crud = Nothing,
               obj_mView = Nothing,
               obj_msub = Nothing
@@ -849,7 +863,7 @@ pInterface =
               { obj_PlainName = Nothing,
                 obj_lbl = Nothing,
                 pos = p,
-                obj_ctx = ctx,
+                obj_term = ctx,
                 obj_crud = mCrud,
                 obj_mView = mView,
                 obj_msub = Just sub
@@ -921,7 +935,7 @@ pBoxBodyElement =
             { obj_PlainName = Just localNm,
               obj_lbl = lbl,
               pos = orig,
-              obj_ctx = term,
+              obj_term = term,
               obj_crud = mCrud,
               obj_mView = mView,
               obj_msub = msub

@@ -3,20 +3,20 @@ CONTEXT Conjuncts IN ENGLISH
 
 PATTERN P
 
-ri1 :: A * X -- = [ ("Ai1", "X1") ]
-ri2 :: A * X -- = [ ("Ai2", "X1") ]
-ri3 :: A * X -- = [ ("Ai3", "X1") ]
-ri4 :: A * X --= [ ("Ai4", "X1") ]
+RELATION ri1[A*X] -- = [ ("Ai1", "X1") ]
+RELATION ri2[A*X] -- = [ ("Ai2", "X1") ]
+RELATION ri3[A*X] -- = [ ("Ai3", "X1") ]
+RELATION ri4[A*X] --= [ ("Ai4", "X1") ]
 
-rs1 :: A * X = [ ("As1", "X1") ]
-rs2 :: A * X = [ ("As2", "X1") ]
-rs3 :: A * X = [ ("As3", "X1") ]
-rs4 :: A * X = [ ]
+RELATION rs1[A*X] = [ ("As1", "X1") ]
+RELATION rs2[A*X] = [ ("As2", "X1") ]
+RELATION rs3[A*X] = [ ("As3", "X1") ]
+RELATION rs4[A*X] = [ ]
 
-show :: A * S = [ ("Ai1", "Concept Ai1"); ("Ai2", "Concept Ai2"); ("Ai3", "Concept Ai3"); ("Ai4", "Concept Ai4") 
+RELATION show[A*S] = [ ("Ai1", "Concept Ai1"); ("Ai2", "Concept Ai2"); ("Ai3", "Concept Ai3"); ("Ai4", "Concept Ai4") 
                 ; ("As1", "Concept As1"); ("As2", "Concept As2"); ("As3", "Concept As3"); ("As4", "Concept As4") ]
                 
-show :: X * S = [ ("X1", "Concept X1") ]
+RELATION show[X*S] = [ ("X1", "Concept X1") ]
 
 RULE signal1: -rs1 /\ -rs2
 RULE signal2: -rs2 /\ -rs3

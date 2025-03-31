@@ -651,7 +651,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
             dec_label = Nothing,
             dec_defaults = [],
             dec_Mean = [],
-            pos = OriginUnknown
+            dec_pos = OriginUnknown
           },
       archiViewname = maybeViewName,
       grainPurp =

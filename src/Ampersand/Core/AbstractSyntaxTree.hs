@@ -43,12 +43,14 @@ module Ampersand.Core.AbstractSyntaxTree
     Expression (..),
     getExpressionRelation,
     A_Concept (..),
+    sessionConcept,
     A_Concepts,
     AConceptDef (..),
+    A_Representation (..),
     ShowWithAliases (..),
     Meaning (..),
     A_RoleRule (..),
-    Representation (..),
+    P_Representation (..),
     TType (..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
@@ -101,10 +103,10 @@ import Ampersand.Core.ParseTree
     PClassify (generics, specific),
     PConceptDef,
     P_Concept (..),
+    P_Representation (..),
     PairView (..),
     PairViewSegment (..),
     Pragma,
-    Representation (..),
     Role (..),
     SrcOrTgt (..),
     TType (..),
@@ -149,7 +151,6 @@ data A_Context = ACtx
     -- | The identity definitions defined in this context, outside the scope of patterns
     ctxks :: ![IdentityRule],
     ctxrrules :: ![A_RoleRule],
-    ctxreprs :: !(A_Concept -> TType),
     -- | The view definitions defined in this context, outside the scope of patterns
     ctxvs :: ![ViewDef],
     -- | The specialization statements defined in this context, outside the scope of patterns
@@ -207,7 +208,7 @@ data Pattern = A_Pat
     -- | The concept definitions that are declared in this pattern
     ptcds :: ![AConceptDef],
     -- | The concept definitions that are declared in this pattern
-    ptrps :: ![Representation],
+    ptrps :: ![P_Representation],
     -- | The user defined populations in this pattern
     ptups :: ![Population],
     -- | The identity definitions defined in this pattern
@@ -290,6 +291,21 @@ instance Ord AConceptDef where
 
 instance Eq AConceptDef where
   a == b = compare a b == EQ
+
+data A_Representation = Arepr
+  { -- | origin is used in error messages
+    origins :: [Origin],
+    -- | the concepts
+    aReprFrom :: !(NE.NonEmpty A_Concept),
+    -- | the type of the concept the atom is in
+    aReprTo :: !TType
+  }
+  deriving (Eq, Show)
+
+instance Traced A_Representation where
+  origin aRepr = case origins aRepr of
+    [] -> fatal "A_Representation should have an Origin."
+    (x : _) -> x
 
 data A_RoleRule = A_RoleRule
   { arPos :: !Origin,
@@ -411,7 +427,9 @@ instance Ord Conjunct where
 type AProps = Set.Set AProp
 
 data AProp
-  = -- | univalent
+  = -- Map, Bij, and Prop are merely syntactic sugar in the Ampersand language. So, they show up in the P-structure but not in the A-structure.
+
+    -- | univalent
     Uni
   | -- | injective
     Inj
@@ -1327,9 +1345,6 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing
 
--- The following definition of concept is used in the type checker only.
--- It is called Concept, meaning "type checking concept"
-
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
@@ -1339,9 +1354,14 @@ data A_Concept
     ONE
   deriving (Typeable, Data, Ord, Eq)
 
+-- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
+--   is that we want it to be treated as any other plain concept, for instance when generating code.
+sessionConcept :: A_Concept
+sessionConcept = PlainConcept {aliases = (nameOfSESSION, Nothing) NE.:| []}
+
 type A_Concepts = Set.Set A_Concept
 
-{- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
+{- -- this is faster, so if you think Eq on concepts is taking a long time, try this...
 instance Ord A_Concept where
   compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2
   compare ONE ONE = EQ
@@ -1350,7 +1370,6 @@ instance Ord A_Concept where
 
 instance Eq A_Concept where
   a == b = compare a b == EQ
-
 -}
 
 instance Unique AConceptDef where
@@ -1437,16 +1456,18 @@ class HasSignature a where
 data ContextInfo = CI
   { -- | The generalisation relations in the context
     ctxiGens :: ![AClassify],
-    -- | a list containing all user defined Representations in the context
+    -- | a list containing the user defined Representations in the context, without the implicit definitions.
     representationOf :: !(A_Concept -> TType),
     -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
     multiKernels :: ![Typology],
-    -- | a list of all Representations
-    reprList :: ![Representation],
+    -- | a list of all Representations in the context, including the implicit Object definitions.
+    reprList :: ![P_Representation],
     -- | a map of declarations and the corresponding types
     declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
+    -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
+    allConcepts :: !(Set.Set A_Concept),
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept

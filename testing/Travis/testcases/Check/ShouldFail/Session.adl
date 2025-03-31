@@ -1,6 +1,6 @@
 CONTEXT Session IN ENGLISH
 
-sessionPassword :: SESSION * Password [UNI]
+RELATION sessionPassword[SESSION*Password] [UNI]
 
 POPULATION sessionPassword[SESSION*Password] CONTAINS
   [ ("SESSION_1392133017_227331", "zz")

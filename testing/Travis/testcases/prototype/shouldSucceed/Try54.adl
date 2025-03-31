@@ -7,6 +7,6 @@ ENDPATTERN
 
 POPULATION Position CONTAINS [ "valid", "invalid" ]
 
-INTERFACE Twovalued : "_SESSION"
+INTERFACE Twovalued : "_SESSION"[SESSION]
 BOX [ probeer : V[SESSION*Position] ]
 ENDCONTEXT

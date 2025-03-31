@@ -239,7 +239,6 @@ instance ShowHS FSpec where
         wrap ", fallRules       = " indentA (const showHSName) (toList $ fallRules fSpec),
         wrap ", allUsedDecls    = " indentA (const showHSName) (toList $ allUsedDecls fSpec),
         wrap ", vrels           = " indentA (const showHSName) (toList $ vrels fSpec),
-        wrap ", allConcepts     = " indentA (const showHSName) (toList $ allConcepts fSpec),
         wrap ", vIndices        = " indentA (const showHSName) (vIndices fSpec),
         wrap ", vviews          = " indentA (const showHSName) (vviews fSpec),
         wrap ", vgens           = " indentA (showHS env) (vgens fSpec),
@@ -391,11 +390,11 @@ instance ShowHS FSpec where
       --        "\n -- *** ConceptDefs (total: "<>(tshow.length.conceptDefs) fSpec<>" conceptDefs) ***: "<>
       --        concat [indent<>" "<>showHSName cd<>indent<>"  = "<>showHS env (indent<>"    ") cd | c<-concs fSpec, cd<-concDefs fSpec c]<>"\n"
       --       )<>
-      ( if null (allConcepts fSpec)
+      ( if (Set.null . concs) fSpec
           then ""
           else
             "\n -- *** Concepts (total: "
-              <> (tshow . length . allConcepts) fSpec
+              <> (tshow . length . Set.toList . concs) fSpec
               <> " concepts) ***: "
               <> T.concat
                 [ indent
@@ -407,7 +406,7 @@ instance ShowHS FSpec where
                     <> indent
                     <> "    "
                     <> showAtomsOfConcept x
-                  | x <- L.sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)
+                  | x <- L.sortBy (comparing showHSName) ((Set.toList . concs) fSpec)
                 ]
               <> "\n"
       )
