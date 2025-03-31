@@ -1,7 +1,7 @@
 CONTEXT Bug257 IN ENGLISH
 
  INTERFACE SendMessage : "_SESSION"[SESSION]
- BOX[ "Send Message" : I BOX <TABLE>
+ BOX[ "Send Message" : I[SESSION] BOX <TABLE>
       [ "To (person)": sessionMsgPerson
       , "Message text" : sessionMsgText
       ]

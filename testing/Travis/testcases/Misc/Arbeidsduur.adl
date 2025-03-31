@@ -408,7 +408,7 @@ BOX[ "Arbeidsrelaties" : V[ONE*Arbeidsrelatie]
       , "reden" : reden
       , "genomen op" : beslisdatum
       ]
-   , "Diversen" : I
+   , "Diversen" : I[ONE]
    BOX[ "Werknemers" : V[ONE*Persoon]; (I /\ werknemer~;werknemer)
       , "Werkgevers" : V[ONE*Persoon]; (I /\ werkgever~;werkgever)
       , "Vandaag" : V[ONE*Vandaag];vandaag
@@ -434,7 +434,7 @@ BOX[ "Werkgever" : werkgever
 
 INTERFACE ArbeidsrelatieWerkgever 
 FOR Werkgever : I[Arbeidsrelatie]
-BOX[ "Arbeidsrelatie" : I
+BOX[ "Arbeidsrelatie" : I[Arbeidsrelatie]
    BOX[ "Werkgever" : werkgever
       , "Werknemer" : werknemer
       , "Arbeidsduur" : arbeidsduur
@@ -444,7 +444,7 @@ BOX[ "Arbeidsrelatie" : I
 
 INTERFACE ArbeidsrelatieWerknemer LABEL "ArbeidsrelatieWerknemer"
     FOR Werknemer : I[Arbeidsrelatie]
-BOX[ "Arbeidsrelatie" : I
+BOX[ "Arbeidsrelatie" : I[Arbeidsrelatie]
    BOX[ "Werkgever" : werkgever
       , "Werknemer" : werknemer
       , "Arbeidsduur" : arbeidsduur
@@ -467,7 +467,7 @@ BOX[ "Arbeidsrelatie" : I
 
 INTERFACE GewijzigdeBeslissingNemen LABEL "GewijzigdeBeslissingNemen"
     FOR Werkgever : I[Verzoek]
-BOX[ "Verzoek" : I
+BOX[ "Verzoek" : I[Verzoek]
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever
        , "arbeidsrelatie" : arbeidsrelatie
@@ -488,7 +488,7 @@ BOX[ "Verzoek" : I
     ]
 
 INTERFACE VoorstelOngewijzigdAccorderen FOR Werkgever : I[Verzoek]
-BOX[ "Verzoek" : I
+BOX[ "Verzoek" : I[Verzoek]
     BOX[ "indiener" : arbeidsrelatie;werknemer
        , "werkgever" : arbeidsrelatie;werkgever
        , "arbeidsrelatie" : arbeidsrelatie

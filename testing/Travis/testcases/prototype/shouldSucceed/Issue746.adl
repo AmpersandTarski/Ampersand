@@ -8,10 +8,10 @@ MEANING "Het is ondenkbaar dat de idee 'Sinterklaas' niet bestaat."
 
 POPULATION Idee CONTAINS ["Sinterklaas"]
 
-INTERFACE Personen : "_SESSION"
+INTERFACE Personen : "_SESSION"[SESSION]
 BOX [ "Sinterklaas mag hier niet" : V[SESSION*Persoon]  ]
 
-INTERFACE Ideeen : "_SESSION"
+INTERFACE Ideeen : "_SESSION"[SESSION]
 BOX [ "Sinterklaas moet hier altijd" : V[SESSION*Idee] ]
 
 ENDCONTEXT
