@@ -294,7 +294,7 @@ pCtx2aCtx
       interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <- trace ("\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+      relations <- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $ traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -330,13 +330,13 @@ pCtx2aCtx
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete contextInfo aReprs = trace ("\nkernelComplete"<>tshow kernelComplete) checkDuplicates
+      makeComplete contextInfo aReprs = trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) checkDuplicates
         where
-          -- | kernelComplete exposes duplicate TTypes, so we can make error messages
-          kernelComplete :: [([A_Concept], [(TType, [Origin])])]
-          kernelComplete =
+          -- | ttypeAnalysis exposes duplicate TTypes, so we can make error messages
+          ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
+          ttypeAnalysis =
             [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric,[])]; _ -> ttOrigPairs)
-            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo), c `notElem` concat typolSets ]
+            | typolConcs <- typolSets<>[ [c] | c<-Set.toList (allConcepts contextInfo {- `Set.union` Set.fromList [sessionConcept, ONE] -}), c `notElem` concat typolSets ]
             , let ttOrigPairs = ttPairs typolConcs
             ]
            where
@@ -349,8 +349,8 @@ pCtx2aCtx
                ]
           checkDuplicates :: Guarded [A_Representation]
           checkDuplicates =
-            case [ (cs, tts) | (cs, tts@(_:_:_))<-kernelComplete] of
-              [] -> pure [ Arepr os (c :| cs) t | (c:cs, [(t,os)])<-kernelComplete]
+            case [ (cs, tts) | (cs, tts@(_:_:_))<-ttypeAnalysis] of
+              [] -> pure [ Arepr os (c :| cs) t | (c:cs, [(t,os)])<-ttypeAnalysis]
               errs -> traverse mkMultipleRepresentTypesError errs
       defaultTType :: [A_Representation] -> A_Concept -> TType
       defaultTType aReprs c =
@@ -391,7 +391,11 @@ pCtx2aCtx
               reprList = allReprs,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-              allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
+              allConcepts = trace ("\ndecls: "<>tshow decls<>
+                                   "\nconcs decls: "      <>(tshow . Set.toList . concs) decls<>
+                                   "\nconcs gns: "        <>(tshow . Set.toList . concs) gns<>
+                                   "\nconcs allConcDefs: "<>(tshow . Set.toList . concs) allConcDefs) $
+                            concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,

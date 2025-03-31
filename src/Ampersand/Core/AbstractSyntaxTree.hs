@@ -43,6 +43,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Expression (..),
     getExpressionRelation,
     A_Concept (..),
+    sessionConcept,
     A_Concepts,
     AConceptDef (..),
     A_Representation (..),
@@ -1345,9 +1346,6 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing
 
--- The following definition of concept is used in the type checker only.
--- It is called Concept, meaning "type checking concept"
-
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
@@ -1357,9 +1355,14 @@ data A_Concept
     ONE
   deriving (Typeable, Data, Ord, Eq)
 
+-- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
+--   is that we want it to be treated as any other plain concept, for instance when generating code.
+sessionConcept :: A_Concept
+sessionConcept = PlainConcept {aliases = (nameOfSESSION, Nothing) NE.:| []}
+
 type A_Concepts = Set.Set A_Concept
 
-{- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
+{- -- this is faster, so if you think Eq on concepts is taking a long time, try this...
 instance Ord A_Concept where
   compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2
   compare ONE ONE = EQ
@@ -1368,7 +1371,6 @@ instance Ord A_Concept where
 
 instance Eq A_Concept where
   a == b = compare a b == EQ
-
 -}
 
 instance Unique AConceptDef where
