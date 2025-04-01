@@ -1,21 +1,13 @@
 CONTEXT Bug29InterfaceRefLoop IN ENGLISH
 {- Context that yields an incorrect infinite loop error for interface refs in the new front-end.
-   This script should fail because it uses Concepts A and B, which are not declared.
-   They should occur in a relation declaration, a classify statement, or a concept definition.
-   See issue 
 -}
 
 INTERFACE Buggy FOR Dummy : I[SESSION]
-BOX [ "Ref" : V[SESSION*B] INTERFACE Ref -- is incorrectly recognized as an cyclic ref by the server
+BOX [ "Ref" : V[SESSION*A] INTERFACE Ref -- is incorrectly recognized as an cyclic ref by the server
     ]
-
-REPRESENT A TYPE OBJECT
-INTERFACE Ref : V[B*A]
+    
+INTERFACE Ref : I[A]
 BOX [ "Atom" : I[A] 
-    , "Ref2" : I[A] BOX
-        [ "Raf" : V[A*A]
-        , "Rbf" : V[A*B]
-        ]
     ]
 
 ENDCONTEXT

@@ -102,6 +102,7 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+    testing/Sentinel/Tests/NoSentinel/~$Issue191Test.xlsx
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
@@ -153,6 +154,7 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/Bug29_InterfaceRefLoop.adl
     testing/Travis/testcases/Bugs/NoSentinel/Bug30_InterfaceRefBug.adl
     testing/Travis/testcases/Bugs/NoSentinel/Bug434.adl
+    testing/Travis/testcases/Bugs/NoSentinel/Issue1537.adl
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
     testing/Travis/testcases/Check/EnforceTest1.adl

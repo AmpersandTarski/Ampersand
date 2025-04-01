@@ -1,0 +1,18 @@
+CONTEXT Issue1537 IN ENGLISH
+{- This context is a test case for issue #1537, which should allocate the technical type
+Object to SESSION and A. It should allocate Alphanumeric to B. -}
+
+INTERFACE Buggy FOR Dummy : I[SESSION]
+BOX [ "Ref" : V[SESSION*B] INTERFACE Ref -- is incorrectly recognized as an cyclic ref by the server
+    ]
+
+REPRESENT A TYPE OBJECT
+INTERFACE Ref : V[B*A]
+BOX [ "Atom" : I[A] 
+    , "Ref2" : I[A] BOX
+        [ "Raf" : V[A*A]
+        , "Rbf" : V[A*B]
+        ]
+    ]
+
+ENDCONTEXT
