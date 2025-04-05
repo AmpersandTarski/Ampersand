@@ -265,9 +265,8 @@ instance GetOneGuarded Expression P_NamedRel where
     Errors
       . pure
       $ CTXE (origin o)
-      $ "A relation is used that is not explicitly declared: "
-      <> showP o
-      <> ".\n  Explicitly mention one of the following matching terms:"
+      $ "The use of \""<>tshow (p_nrnm o)<>"\" is ambiguous."
+      <> "\n  Make the type explicit by specifying one of the following:"
       <> T.concat ["\n  - " <> showA l | l <- lst]
 
 instance GetOneGuarded Expression (P_NamedRel, (A_Concept, A_Concept)) where
@@ -286,9 +285,8 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
       Errors
         . pure
         $ (CTXE . origin . fst) o
-        $ "A relation is used that is not explicitly declared: "
-        <> showP_T o
-        <> ".\n  Perhaps you meant one of the following matching terms:"
+      $ "The use of \""<>tshow (p_nrnm (fst o))<>"\" is ambiguous."
+      <> "\n  Make the type explicit by specifying one of the following:"
         <> T.concat ["\n  - " <> showA l | l <- lst]
     where
       showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
