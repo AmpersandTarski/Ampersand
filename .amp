@@ -1,0 +1,14 @@
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/ViewAnnotationCheck.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue751.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Ticket580.adl
+testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue853.adl
+testing/Sentinel/Tests/NoSentinel/Conjuncts.adl
+testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
+testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+testing/Sentinel/Tests/NoSentinel/Crud.adl
+testing/Travis/testcases/Preprocessor/Preprocessor.adl
+testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
+testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl

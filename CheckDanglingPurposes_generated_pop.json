@@ -1,0 +1,2649 @@
+{
+    "atoms": [
+        {
+            "atoms": [
+                "Ampersand-v5.3.2 [Issue1537Stef:635f0b058*], build time: 13-Mar-25 20:10:28 CET"
+            ],
+            "concept": "FormalAmpersand.AmpersandVersion"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.AtomValue"
+        },
+        {
+            "atoms": [
+                "Expression_8869511905501889621",
+                "Expression_8447696782446839601",
+                "Expression_8139811918353114350",
+                "Expression_8574315197920603436",
+                "Expression_1107026565982892061",
+                "Expression_8742174152893463259"
+            ],
+            "concept": "FormalAmpersand.BinaryTerm"
+        },
+        {
+            "atoms": [
+                "Expression_544098459870939217"
+            ],
+            "concept": "FormalAmpersand.BindedRelation"
+        },
+        {
+            "atoms": [
+                "FORM6763704835188143768"
+            ],
+            "concept": "FormalAmpersand.Box"
+        },
+        {
+            "atoms": [
+                "BoxItem_2218163383671052856"
+            ],
+            "concept": "FormalAmpersand.BoxItem"
+        },
+        {
+            "atoms": [
+                "BoxItem_2218163383671052856"
+            ],
+            "concept": "FormalAmpersand.BxExpr"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.BxTxt"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.CombineStrings"
+        },
+        {
+            "atoms": [
+                "Concpt3",
+                "Concpt2",
+                "Concpt1",
+                "ProcConcpt",
+                "PattConcpt",
+                "ONE"
+            ],
+            "concept": "FormalAmpersand.Concept"
+        },
+        {
+            "atoms": [
+                "Concpt3",
+                "Concpt2",
+                "Concpt1",
+                "ProcConcpt",
+                "PattConcpt"
+            ],
+            "concept": "FormalAmpersand.ConceptDef"
+        },
+        {
+            "atoms": [
+                "Concpt3",
+                "Concpt2",
+                "Concpt1",
+                "ProcConcpt",
+                "PattConcpt",
+                "ONE"
+            ],
+            "concept": "FormalAmpersand.ConceptName"
+        },
+        {
+            "atoms": [
+                "conj_3",
+                "conj_2",
+                "conj_1",
+                "conj_0"
+            ],
+            "concept": "FormalAmpersand.Conjunct"
+        },
+        {
+            "atoms": [
+                "Purposes"
+            ],
+            "concept": "FormalAmpersand.Context"
+        },
+        {
+            "atoms": [
+                "Purposes"
+            ],
+            "concept": "FormalAmpersand.ContextName"
+        },
+        {
+            "atoms": [
+                "CRuD"
+            ],
+            "concept": "FormalAmpersand.Cruds"
+        },
+        {
+            "atoms": [
+                "procRule",
+                "Concpt3",
+                "Concpt2",
+                "Concpt1",
+                "identity_6065721359865792962",
+                "rule",
+                "Proc",
+                "Patt",
+                "ProcConcpt",
+                "identity_6869799728728281951",
+                "identity_4695057292029648780",
+                "PattConcpt",
+                "pattRule",
+                "ONE"
+            ],
+            "concept": "FormalAmpersand.EncodedName"
+        },
+        {
+            "atoms": [
+                "Expression_8398492258935408423",
+                "Expression_8334647786748138392",
+                "Expression_5211696633748996690",
+                "Expression_3342842838614397050"
+            ],
+            "concept": "FormalAmpersand.Epsilon"
+        },
+        {
+            "atoms": [
+                "ObjectDef_1281813583206271354"
+            ],
+            "concept": "FormalAmpersand.FieldDef"
+        },
+        {
+            "atoms": [
+                "I"
+            ],
+            "concept": "FormalAmpersand.FieldName"
+        },
+        {
+            "atoms": [
+                "FORM"
+            ],
+            "concept": "FormalAmpersand.HTMLtemplateCall"
+        },
+        {
+            "atoms": [
+                "Iface"
+            ],
+            "concept": "FormalAmpersand.Interface"
+        },
+        {
+            "atoms": [
+                "Iface"
+            ],
+            "concept": "FormalAmpersand.InterfaceName"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.InterfaceRef"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.IsE"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Isa"
+        },
+        {
+            "atoms": [
+                "English",
+                "Dutch"
+            ],
+            "concept": "FormalAmpersand.Language"
+        },
+        {
+            "atoms": [
+                "Markup_7837277471749947795",
+                "Markup_7733327016649145802",
+                "Markup_1475747812888836694",
+                "Markup_6295156921188341006",
+                "Markup_5967292628433469559",
+                "Markup_5783658431490441918",
+                "Markup_7649107405134501357",
+                "Markup_1785538408622434083",
+                "Markup_2031905732935691678",
+                "Markup_1792993357486065482",
+                "Markup_4843318015763847648",
+                "Markup_1284035948729419792",
+                "Markup_1610312706547961602",
+                "Markup_4244555534366486244",
+                "Markup_8954728915411727853",
+                "Markup_1410000764758760575",
+                "Markup_2736346533854763967",
+                "Markup_3146460808577833649",
+                "Markup_7036655221174916141",
+                "Markup_4458307832028922244",
+                "Markup_4798470076922624679",
+                "Markup_88922816909161804",
+                "Markup_6620306810202540764",
+                "Markup_7958120279513658579",
+                "Markup_7857561223954802633",
+                "Markup_5577198547956827262",
+                "Markup_4776274718413565371",
+                "Markup_6403882538304599101",
+                "Markup_2285617214001604873",
+                "Markup_2813543259625487005",
+                "Markup_8304937368682418804",
+                "Markup_243637708752444608"
+            ],
+            "concept": "FormalAmpersand.Markup"
+        },
+        {
+            "atoms": [
+                "Interface purpose: IFace",
+                "View purpose: procView",
+                "Identiteitsregel, volgend uit identiteit ident",
+                "Concept purpose: Concpt1",
+                "Concept purpose: Concpt2",
+                "Concept purpose: Concpt3",
+                "Relation purpose: pattRel",
+                "Identity purpose: procIdent",
+                "Concept purpose: ProcConcpt",
+                "Relation purpose: procRel",
+                "Rule purpose: procRule",
+                "{definition of Concpt1}",
+                "{definition of Concpt2}",
+                "{definition of Concpt3}",
+                "Identiteitsregel, volgend uit identiteit pattIdent",
+                "Rule purpose: pattRule",
+                "Identiteitsregel, volgend uit identiteit procIdent",
+                "Concept purpose: PattConcpt",
+                "{definition of PattConcpt}",
+                "View purpose: view",
+                "Pattern purpose: Patt",
+                "Rule purpose procRule",
+                "Identity rule, following from identity pattIdent",
+                "{definition of ProcConcpt}",
+                "Process purpose: Proc",
+                "Relation purpose: rel",
+                "Identity rule, following from identity procIdent",
+                "View purpose: pattView",
+                "Context purpose: Purposes",
+                "Identity purpose: ident",
+                "Identity rule, following from identity ident",
+                "Identity purpose: pattIdent"
+            ],
+            "concept": "FormalAmpersand.MarkupText"
+        },
+        {
+            "atoms": [
+                "Meaning_845919476784105204",
+                "Meaning_5624377044888486192",
+                "Meaning_2912589849807750008",
+                "Meaning_7589588669811168774",
+                "Meaning_1393168347345031959",
+                "Meaning_2873902747562633693",
+                "Meaning_6504814097845938579",
+                "Meaning_6011840780428431117",
+                "Meaning_5266717615630132080",
+                "Meaning_3268125801000683065",
+                "Meaning_7650925836661475402"
+            ],
+            "concept": "FormalAmpersand.Meaning"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Message"
+        },
+        {
+            "atoms": [
+                "ObjectDef_2065966132557378454",
+                "ObjectDef_1281813583206271354"
+            ],
+            "concept": "FormalAmpersand.ObjectDef"
+        },
+        {
+            "atoms": [
+                "Inclusion",
+                "Composition"
+            ],
+            "concept": "FormalAmpersand.Operator"
+        },
+        {
+            "atoms": [
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:5:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:4:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:7:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:6:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:3:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:9:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:8:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:32",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:26",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:19:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:18:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:13:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:12:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:11:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:16:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:15:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:14:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:28:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:27:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:22:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:23:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:20:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:21:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:1",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:35:3",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:36:3",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:39:3",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:45:3",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:46:3",
+                "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:49:3"
+            ],
+            "concept": "FormalAmpersand.Origin"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.PairView"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.PairViewSegment"
+        },
+        {
+            "atoms": [
+                "Proc",
+                "Patt"
+            ],
+            "concept": "FormalAmpersand.Pattern"
+        },
+        {
+            "atoms": [
+                "Proc",
+                "Patt"
+            ],
+            "concept": "FormalAmpersand.PatternName"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Property"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.PropertyRule"
+        },
+        {
+            "atoms": [
+                "Purpose_3749085340460897027",
+                "Purpose_2285576758562865658",
+                "Purpose_1253564968889669103",
+                "Purpose_8911317229543107299",
+                "Purpose_2645403495513788607",
+                "Purpose_1950367683656706361",
+                "Purpose_1907193924290717291",
+                "Purpose_3838854506850709762",
+                "Purpose_6027534094090803606",
+                "Purpose_8649731401490894643",
+                "Purpose_3357301228535138116",
+                "Purpose_6842415435891403480",
+                "Purpose_2881857224508315816",
+                "Purpose_8330304629181403524",
+                "Purpose_8873479996951793319",
+                "Purpose_7745079752180779329",
+                "Purpose_5646835198031702410",
+                "Purpose_442622193505322954",
+                "Purpose_3822553474068546209",
+                "Purpose_6925444387024453135",
+                "Purpose_1226652495844643851"
+            ],
+            "concept": "FormalAmpersand.Purpose"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Quad"
+        },
+        {
+            "atoms": [
+                "Relation_6171559268309957786",
+                "Relation_6310427485651048600",
+                "Relation_6438795312716192456"
+            ],
+            "concept": "FormalAmpersand.Relation"
+        },
+        {
+            "atoms": [
+                "procRel",
+                "pattRel",
+                "rel"
+            ],
+            "concept": "FormalAmpersand.RelationName"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Role"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.RoleName"
+        },
+        {
+            "atoms": [
+                "procRule",
+                "identity_6065721359865792962",
+                "rule",
+                "identity_6869799728728281951",
+                "identity_4695057292029648780",
+                "pattRule"
+            ],
+            "concept": "FormalAmpersand.Rule"
+        },
+        {
+            "atoms": [
+                "procRule",
+                "identity_6065721359865792962",
+                "rule",
+                "identity_6869799728728281951",
+                "identity_4695057292029648780",
+                "pattRule"
+            ],
+            "concept": "FormalAmpersand.RuleName"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.SequenceNumber"
+        },
+        {
+            "atoms": [
+                "V [ProcConcpt*ProcConcpt]",
+                "I[ProcConcpt]",
+                "I[PattConcpt];I[PattConcpt]",
+                "I[PattConcpt];I[PattConcpt] |- I[PattConcpt]",
+                "I[Concpt1];I[Concpt1] |- I[Concpt1]",
+                "rel [Concpt1*Concpt1]",
+                "I[ONE]",
+                "V [Concpt1*Concpt1]",
+                "I[ProcConcpt];I[ProcConcpt] |- I[ProcConcpt]",
+                "V [PattConcpt*PattConcpt]",
+                "I[ProcConcpt];I[ProcConcpt]",
+                "I[PattConcpt]",
+                "I[Concpt1];I[Concpt1]",
+                "I[Concpt1]"
+            ],
+            "concept": "FormalAmpersand.ShowADL"
+        },
+        {
+            "atoms": [
+                "Signature2068275948952877688",
+                "Signature4103211376711059482",
+                "Signature4226675129693503568",
+                "Signature8407407593524446650",
+                "Signature5247549073041387664",
+                "Signature2882928273082830547"
+            ],
+            "concept": "FormalAmpersand.Signature"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Singleton"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.SourceOrTarget"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.String"
+        },
+        {
+            "atoms": [
+                "FORM6763704835188143768"
+            ],
+            "concept": "FormalAmpersand.SubInterface"
+        },
+        {
+            "atoms": [
+                "OBJECT",
+                "ALPHANUMERIC"
+            ],
+            "concept": "FormalAmpersand.TType"
+        },
+        {
+            "atoms": [
+                "Expression_8188718079889289101",
+                "Expression_8398492258935408423",
+                "Expression_1443231980991187123",
+                "Expression_544098459870939217",
+                "Expression_8869511905501889621",
+                "Expression_8447696782446839601",
+                "Expression_73597405229454233",
+                "Expression_8139811918353114350",
+                "Expression_8574315197920603436",
+                "Expression_8334647786748138392",
+                "Expression_1107026565982892061",
+                "Expression_5211696633748996690",
+                "Expression_8742174152893463259",
+                "Expression_3342842838614397050"
+            ],
+            "concept": "FormalAmpersand.Term"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.Text"
+        },
+        {
+            "atoms": [],
+            "concept": "FormalAmpersand.UnaryTerm"
+        },
+        {
+            "atoms": [
+                "Expression_8188718079889289101",
+                "Expression_1443231980991187123",
+                "Expression_73597405229454233"
+            ],
+            "concept": "FormalAmpersand.V"
+        },
+        {
+            "atoms": [
+                "ViewDef_pattView_PattConcpt",
+                "ViewDef_view_Concpt1",
+                "ViewDef_procView_ProcConcpt"
+            ],
+            "concept": "FormalAmpersand.View"
+        },
+        {
+            "atoms": [
+                "1"
+            ],
+            "concept": "ONE"
+        }
+    ],
+    "links": [
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "conj_3"
+                },
+                {
+                    "src": "Purposes",
+                    "tgt": "conj_2"
+                },
+                {
+                    "src": "Purposes",
+                    "tgt": "conj_1"
+                },
+                {
+                    "src": "Purposes",
+                    "tgt": "conj_0"
+                }
+            ],
+            "relation": "FormalAmpersand.allConjuncts[FormalAmpersand.Context*FormalAmpersand.Conjunct]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.allRoles[FormalAmpersand.Context*FormalAmpersand.Role]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.allRules[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.arg[FormalAmpersand.UnaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_544098459870939217",
+                    "tgt": "Relation_6171559268309957786"
+                }
+            ],
+            "relation": "FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Concpt3"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Concpt2"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.concept[FormalAmpersand.ConceptDef*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "Concpt3"
+                },
+                {
+                    "src": "Proc",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Proc",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Concpt2"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.concepts[FormalAmpersand.Pattern*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Interface*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.context[FormalAmpersand.IsE*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Pattern*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.ctxds[FormalAmpersand.Relation*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "rule",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.ctxrs[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.decMean[FormalAmpersand.Relation*FormalAmpersand.Meaning]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "Proc"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "Patt"
+                }
+            ],
+            "relation": "FormalAmpersand.declaredIn[FormalAmpersand.Relation*FormalAmpersand.Pattern]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.declaredthrough[FormalAmpersand.PropertyRule*FormalAmpersand.Property]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.decprL[FormalAmpersand.Relation*FormalAmpersand.String]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.decprM[FormalAmpersand.Relation*FormalAmpersand.String]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.decprR[FormalAmpersand.Relation*FormalAmpersand.String]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.edit[FormalAmpersand.FieldDef*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.editFlp[FormalAmpersand.FieldDef*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purpose_3749085340460897027",
+                    "tgt": "Markup_1785538408622434083"
+                },
+                {
+                    "src": "Purpose_2285576758562865658",
+                    "tgt": "Markup_243637708752444608"
+                },
+                {
+                    "src": "Purpose_1253564968889669103",
+                    "tgt": "Markup_8304937368682418804"
+                },
+                {
+                    "src": "Purpose_8911317229543107299",
+                    "tgt": "Markup_6295156921188341006"
+                },
+                {
+                    "src": "Purpose_2645403495513788607",
+                    "tgt": "Markup_4458307832028922244"
+                },
+                {
+                    "src": "Purpose_1950367683656706361",
+                    "tgt": "Markup_7958120279513658579"
+                },
+                {
+                    "src": "Purpose_1907193924290717291",
+                    "tgt": "Markup_5783658431490441918"
+                },
+                {
+                    "src": "Purpose_3838854506850709762",
+                    "tgt": "Markup_2285617214001604873"
+                },
+                {
+                    "src": "Purpose_6027534094090803606",
+                    "tgt": "Markup_4776274718413565371"
+                },
+                {
+                    "src": "Purpose_8649731401490894643",
+                    "tgt": "Markup_2031905732935691678"
+                },
+                {
+                    "src": "Purpose_3357301228535138116",
+                    "tgt": "Markup_1410000764758760575"
+                },
+                {
+                    "src": "Purpose_6842415435891403480",
+                    "tgt": "Markup_88922816909161804"
+                },
+                {
+                    "src": "Purpose_2881857224508315816",
+                    "tgt": "Markup_7733327016649145802"
+                },
+                {
+                    "src": "Purpose_8330304629181403524",
+                    "tgt": "Markup_6403882538304599101"
+                },
+                {
+                    "src": "Purpose_8873479996951793319",
+                    "tgt": "Markup_4798470076922624679"
+                },
+                {
+                    "src": "Purpose_7745079752180779329",
+                    "tgt": "Markup_1610312706547961602"
+                },
+                {
+                    "src": "Purpose_5646835198031702410",
+                    "tgt": "Markup_5577198547956827262"
+                },
+                {
+                    "src": "Purpose_442622193505322954",
+                    "tgt": "Markup_2813543259625487005"
+                },
+                {
+                    "src": "Purpose_3822553474068546209",
+                    "tgt": "Markup_5967292628433469559"
+                },
+                {
+                    "src": "Purpose_6925444387024453135",
+                    "tgt": "Markup_2736346533854763967"
+                },
+                {
+                    "src": "Purpose_1226652495844643851",
+                    "tgt": "Markup_7036655221174916141"
+                }
+            ],
+            "relation": "FormalAmpersand.explMarkup[FormalAmpersand.Purpose*FormalAmpersand.Markup]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.explRefIds[FormalAmpersand.Purpose*FormalAmpersand.Text]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8869511905501889621",
+                    "tgt": "Expression_5211696633748996690"
+                },
+                {
+                    "src": "Expression_8447696782446839601",
+                    "tgt": "Expression_8398492258935408423"
+                },
+                {
+                    "src": "Expression_8139811918353114350",
+                    "tgt": "Expression_8869511905501889621"
+                },
+                {
+                    "src": "Expression_8574315197920603436",
+                    "tgt": "Expression_1107026565982892061"
+                },
+                {
+                    "src": "Expression_1107026565982892061",
+                    "tgt": "Expression_8334647786748138392"
+                },
+                {
+                    "src": "Expression_8742174152893463259",
+                    "tgt": "Expression_8447696782446839601"
+                }
+            ],
+            "relation": "FormalAmpersand.first[FormalAmpersand.BinaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Expression_544098459870939217"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Expression_8742174152893463259"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "Expression_544098459870939217"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Expression_8139811918353114350"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Expression_8574315197920603436"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Expression_544098459870939217"
+                }
+            ],
+            "relation": "FormalAmpersand.formalTerm[FormalAmpersand.Rule*FormalAmpersand.Term]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.fst[FormalAmpersand.CombineStrings*FormalAmpersand.String]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.gengen[FormalAmpersand.IsE*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.gengen[FormalAmpersand.Isa*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.genspc[FormalAmpersand.Isa*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.hasAttributes[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.identityRules[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Patt"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Proc"
+                }
+            ],
+            "relation": "FormalAmpersand.identityRules[FormalAmpersand.Rule*FormalAmpersand.Pattern]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.ifcConjuncts[FormalAmpersand.Interface*FormalAmpersand.Conjunct]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.ifcInputs[FormalAmpersand.Interface*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "ObjectDef_2065966132557378454"
+                }
+            ],
+            "relation": "FormalAmpersand.ifcObj[FormalAmpersand.Interface*FormalAmpersand.ObjectDef]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.ifcOutputs[FormalAmpersand.Interface*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:1"
+                }
+            ],
+            "relation": "FormalAmpersand.ifcPos[FormalAmpersand.Interface*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "Purpose_1253564968889669103"
+                }
+            ],
+            "relation": "FormalAmpersand.ifcPurpose[FormalAmpersand.Interface*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.ifcQuads[FormalAmpersand.Interface*FormalAmpersand.Quad]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.ifcRoles[FormalAmpersand.Interface*FormalAmpersand.Role]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "Iface"
+                }
+            ],
+            "relation": "FormalAmpersand.interfaces[FormalAmpersand.Context*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.interfaces[FormalAmpersand.Role*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isAPI[FormalAmpersand.Interface*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isAsy[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isAttribute[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isBijective[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isInj[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isIrf[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isLink[FormalAmpersand.InterfaceRef*FormalAmpersand.InterfaceRef]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isMapping[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isProp[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "Iface"
+                }
+            ],
+            "relation": "FormalAmpersand.isPublic[FormalAmpersand.Interface*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isRfx[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isSur[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isSym[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isTot[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isTrn[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isUni[FormalAmpersand.Relation*FormalAmpersand.Relation]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isa[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaCopy[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaPlus[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaRfx[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaRfxCopy[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaRfxPlus[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaRfxStar[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.isaStar[FormalAmpersand.Concept*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef_1281813583206271354",
+                    "tgt": "I"
+                }
+            ],
+            "relation": "FormalAmpersand.label[FormalAmpersand.FieldDef*FormalAmpersand.FieldName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Markup_7837277471749947795",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_7733327016649145802",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_1475747812888836694",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_6295156921188341006",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_5967292628433469559",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_5783658431490441918",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_7649107405134501357",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_1785538408622434083",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_2031905732935691678",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_1792993357486065482",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_4843318015763847648",
+                    "tgt": "Dutch"
+                },
+                {
+                    "src": "Markup_1284035948729419792",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_1610312706547961602",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_4244555534366486244",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_8954728915411727853",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_1410000764758760575",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_2736346533854763967",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_3146460808577833649",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_7036655221174916141",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_4458307832028922244",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_4798470076922624679",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_88922816909161804",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_6620306810202540764",
+                    "tgt": "Dutch"
+                },
+                {
+                    "src": "Markup_7958120279513658579",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_7857561223954802633",
+                    "tgt": "Dutch"
+                },
+                {
+                    "src": "Markup_5577198547956827262",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_4776274718413565371",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_6403882538304599101",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_2285617214001604873",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_2813543259625487005",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_8304937368682418804",
+                    "tgt": "English"
+                },
+                {
+                    "src": "Markup_243637708752444608",
+                    "tgt": "English"
+                }
+            ],
+            "relation": "FormalAmpersand.language[FormalAmpersand.Markup*FormalAmpersand.Language]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.maintains[FormalAmpersand.Role*FormalAmpersand.Rule]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Meaning_845919476784105204",
+                    "tgt": "Markup_4244555534366486244"
+                },
+                {
+                    "src": "Meaning_5624377044888486192",
+                    "tgt": "Markup_1284035948729419792"
+                },
+                {
+                    "src": "Meaning_2912589849807750008",
+                    "tgt": "Markup_6620306810202540764"
+                },
+                {
+                    "src": "Meaning_7589588669811168774",
+                    "tgt": "Markup_1792993357486065482"
+                },
+                {
+                    "src": "Meaning_1393168347345031959",
+                    "tgt": "Markup_7649107405134501357"
+                },
+                {
+                    "src": "Meaning_2873902747562633693",
+                    "tgt": "Markup_3146460808577833649"
+                },
+                {
+                    "src": "Meaning_6504814097845938579",
+                    "tgt": "Markup_7857561223954802633"
+                },
+                {
+                    "src": "Meaning_6011840780428431117",
+                    "tgt": "Markup_7837277471749947795"
+                },
+                {
+                    "src": "Meaning_5266717615630132080",
+                    "tgt": "Markup_4843318015763847648"
+                },
+                {
+                    "src": "Meaning_3268125801000683065",
+                    "tgt": "Markup_8954728915411727853"
+                },
+                {
+                    "src": "Meaning_7650925836661475402",
+                    "tgt": "Markup_1475747812888836694"
+                }
+            ],
+            "relation": "FormalAmpersand.markup[FormalAmpersand.Meaning*FormalAmpersand.Markup]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Meaning_7650925836661475402"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Meaning_2873902747562633693"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Meaning_845919476784105204"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "Meaning_5624377044888486192"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "Meaning_3268125801000683065"
+                }
+            ],
+            "relation": "FormalAmpersand.meaning[FormalAmpersand.ConceptDef*FormalAmpersand.Meaning]"
+        },
+        {
+            "links": [
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Meaning_7589588669811168774"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "Meaning_6504814097845938579"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Meaning_2912589849807750008"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "Meaning_1393168347345031959"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Meaning_6011840780428431117"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "Meaning_5266717615630132080"
+                }
+            ],
+            "relation": "FormalAmpersand.meaning[FormalAmpersand.Rule*FormalAmpersand.Meaning]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.message[FormalAmpersand.Rule*FormalAmpersand.Message]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Concpt3"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Concpt2"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "PattConcpt"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "ONE"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "Iface"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Interface*FormalAmpersand.InterfaceName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "Proc"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Patt"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "rel"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "procRel"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "pattRel"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Role*FormalAmpersand.RoleName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "procRule"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "identity_6065721359865792962"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "rule"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "identity_6869799728728281951"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "identity_4695057292029648780"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "pattRule"
+                }
+            ],
+            "relation": "FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "BoxItem_2218163383671052856",
+                    "tgt": "ObjectDef_1281813583206271354"
+                }
+            ],
+            "relation": "FormalAmpersand.objDef[FormalAmpersand.BxExpr*FormalAmpersand.ObjectDef]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef_2065966132557378454",
+                    "tgt": "FORM6763704835188143768"
+                }
+            ],
+            "relation": "FormalAmpersand.objSub[FormalAmpersand.ObjectDef*FormalAmpersand.SubInterface]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef_2065966132557378454",
+                    "tgt": "Expression_3342842838614397050"
+                },
+                {
+                    "src": "ObjectDef_1281813583206271354",
+                    "tgt": "Expression_3342842838614397050"
+                }
+            ],
+            "relation": "FormalAmpersand.objTerm[FormalAmpersand.ObjectDef*FormalAmpersand.Term]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.objView[FormalAmpersand.ObjectDef*FormalAmpersand.View]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef_2065966132557378454",
+                    "tgt": "CRuD"
+                },
+                {
+                    "src": "ObjectDef_1281813583206271354",
+                    "tgt": "CRuD"
+                }
+            ],
+            "relation": "FormalAmpersand.objcruds[FormalAmpersand.ObjectDef*FormalAmpersand.Cruds]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8869511905501889621",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "Expression_8447696782446839601",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "Expression_8139811918353114350",
+                    "tgt": "Inclusion"
+                },
+                {
+                    "src": "Expression_8574315197920603436",
+                    "tgt": "Inclusion"
+                },
+                {
+                    "src": "Expression_1107026565982892061",
+                    "tgt": "Composition"
+                },
+                {
+                    "src": "Expression_8742174152893463259",
+                    "tgt": "Inclusion"
+                }
+            ],
+            "relation": "FormalAmpersand.operator[FormalAmpersand.BinaryTerm*FormalAmpersand.Operator]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.operator[FormalAmpersand.UnaryTerm*FormalAmpersand.Operator]"
+        },
+        {
+            "links": [
+                {
+                    "src": "BoxItem_2218163383671052856",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:32"
+                }
+            ],
+            "relation": "FormalAmpersand.origin[FormalAmpersand.BoxItem*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ObjectDef_2065966132557378454",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:1"
+                },
+                {
+                    "src": "ObjectDef_1281813583206271354",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:32"
+                }
+            ],
+            "relation": "FormalAmpersand.origin[FormalAmpersand.ObjectDef*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purpose_3749085340460897027",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:7:1"
+                },
+                {
+                    "src": "Purpose_2285576758562865658",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:6:1"
+                },
+                {
+                    "src": "Purpose_1253564968889669103",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:8:1"
+                },
+                {
+                    "src": "Purpose_8911317229543107299",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:5:1"
+                },
+                {
+                    "src": "Purpose_2645403495513788607",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:13:1"
+                },
+                {
+                    "src": "Purpose_1950367683656706361",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:15:1"
+                },
+                {
+                    "src": "Purpose_1907193924290717291",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:12:1"
+                },
+                {
+                    "src": "Purpose_3838854506850709762",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:21:1"
+                },
+                {
+                    "src": "Purpose_6027534094090803606",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:11:1"
+                },
+                {
+                    "src": "Purpose_8649731401490894643",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:14:1"
+                },
+                {
+                    "src": "Purpose_3357301228535138116",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:18:1"
+                },
+                {
+                    "src": "Purpose_6842415435891403480",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:22:1"
+                },
+                {
+                    "src": "Purpose_2881857224508315816",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:39:3"
+                },
+                {
+                    "src": "Purpose_8330304629181403524",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:23:1"
+                },
+                {
+                    "src": "Purpose_8873479996951793319",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:20:1"
+                },
+                {
+                    "src": "Purpose_7745079752180779329",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:9:1"
+                },
+                {
+                    "src": "Purpose_5646835198031702410",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:16:1"
+                },
+                {
+                    "src": "Purpose_442622193505322954",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:4:1"
+                },
+                {
+                    "src": "Purpose_3822553474068546209",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:49:3"
+                },
+                {
+                    "src": "Purpose_6925444387024453135",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:19:1"
+                },
+                {
+                    "src": "Purpose_1226652495844643851",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:3:1"
+                }
+            ],
+            "relation": "FormalAmpersand.origin[FormalAmpersand.Purpose*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:45:3"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:36:3"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:27:1"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:28:1"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:46:3"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:35:3"
+                }
+            ],
+            "relation": "FormalAmpersand.origin[FormalAmpersand.Rule*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [
+                {
+                    "src": "FORM6763704835188143768",
+                    "tgt": "/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl:30:26"
+                }
+            ],
+            "relation": "FormalAmpersand.origin[FormalAmpersand.SubInterface*FormalAmpersand.Origin]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.originatesFrom[FormalAmpersand.Conjunct*FormalAmpersand.Rule]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "procRule"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "pattRule"
+                }
+            ],
+            "relation": "FormalAmpersand.patRules[FormalAmpersand.Pattern*FormalAmpersand.Rule]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.prop[FormalAmpersand.Relation*FormalAmpersand.Property]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.propertyRule[FormalAmpersand.Relation*FormalAmpersand.PropertyRule]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Purpose_3822553474068546209"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Purpose_2881857224508315816"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Purpose_1226652495844643851"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "Purpose_6925444387024453135"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "Purpose_1907193924290717291"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Concept*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "Purpose_7745079752180779329"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Context*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Iface",
+                    "tgt": "Purpose_1253564968889669103"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Interface*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "Purpose_3357301228535138116"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Purpose_6027534094090803606"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Pattern*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Purpose_442622193505322954"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "Purpose_8873479996951793319"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "Purpose_2645403495513788607"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Relation*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Purpose_8911317229543107299"
+                },
+                {
+                    "src": "procRule",
+                    "tgt": "Purpose_3838854506850709762"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Purpose_8649731401490894643"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.Rule*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [
+                {
+                    "src": "ViewDef_pattView_PattConcpt",
+                    "tgt": "Purpose_5646835198031702410"
+                },
+                {
+                    "src": "ViewDef_view_Concpt1",
+                    "tgt": "Purpose_3749085340460897027"
+                },
+                {
+                    "src": "ViewDef_procView_ProcConcpt",
+                    "tgt": "Purpose_8330304629181403524"
+                }
+            ],
+            "relation": "FormalAmpersand.purpose[FormalAmpersand.View*FormalAmpersand.Purpose]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.pvsExp[FormalAmpersand.PairViewSegment*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "conj_3",
+                    "tgt": "Expression_1443231980991187123"
+                },
+                {
+                    "src": "conj_2",
+                    "tgt": "Expression_73597405229454233"
+                },
+                {
+                    "src": "conj_1",
+                    "tgt": "Expression_8188718079889289101"
+                },
+                {
+                    "src": "conj_0",
+                    "tgt": "Expression_544098459870939217"
+                }
+            ],
+            "relation": "FormalAmpersand.rcConjunct[FormalAmpersand.Conjunct*FormalAmpersand.Term]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.references[FormalAmpersand.InterfaceRef*FormalAmpersand.Interface]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.result[FormalAmpersand.CombineStrings*FormalAmpersand.String]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.rrviol[FormalAmpersand.Rule*FormalAmpersand.PairView]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8869511905501889621",
+                    "tgt": "Expression_5211696633748996690"
+                },
+                {
+                    "src": "Expression_8447696782446839601",
+                    "tgt": "Expression_8398492258935408423"
+                },
+                {
+                    "src": "Expression_8139811918353114350",
+                    "tgt": "Expression_5211696633748996690"
+                },
+                {
+                    "src": "Expression_8574315197920603436",
+                    "tgt": "Expression_8334647786748138392"
+                },
+                {
+                    "src": "Expression_1107026565982892061",
+                    "tgt": "Expression_8334647786748138392"
+                },
+                {
+                    "src": "Expression_8742174152893463259",
+                    "tgt": "Expression_8398492258935408423"
+                }
+            ],
+            "relation": "FormalAmpersand.second[FormalAmpersand.BinaryTerm*FormalAmpersand.Term]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.SequenceNumber]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.showADL[FormalAmpersand.PairView*FormalAmpersand.ShowADL]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8188718079889289101",
+                    "tgt": "V [Concpt1*Concpt1]"
+                },
+                {
+                    "src": "Expression_8398492258935408423",
+                    "tgt": "I[PattConcpt]"
+                },
+                {
+                    "src": "Expression_1443231980991187123",
+                    "tgt": "V [ProcConcpt*ProcConcpt]"
+                },
+                {
+                    "src": "Expression_544098459870939217",
+                    "tgt": "rel [Concpt1*Concpt1]"
+                },
+                {
+                    "src": "Expression_8869511905501889621",
+                    "tgt": "I[Concpt1];I[Concpt1]"
+                },
+                {
+                    "src": "Expression_8447696782446839601",
+                    "tgt": "I[PattConcpt];I[PattConcpt]"
+                },
+                {
+                    "src": "Expression_73597405229454233",
+                    "tgt": "V [PattConcpt*PattConcpt]"
+                },
+                {
+                    "src": "Expression_8139811918353114350",
+                    "tgt": "I[Concpt1];I[Concpt1] |- I[Concpt1]"
+                },
+                {
+                    "src": "Expression_8574315197920603436",
+                    "tgt": "I[ProcConcpt];I[ProcConcpt] |- I[ProcConcpt]"
+                },
+                {
+                    "src": "Expression_8334647786748138392",
+                    "tgt": "I[ProcConcpt]"
+                },
+                {
+                    "src": "Expression_1107026565982892061",
+                    "tgt": "I[ProcConcpt];I[ProcConcpt]"
+                },
+                {
+                    "src": "Expression_5211696633748996690",
+                    "tgt": "I[Concpt1]"
+                },
+                {
+                    "src": "Expression_8742174152893463259",
+                    "tgt": "I[PattConcpt];I[PattConcpt] |- I[PattConcpt]"
+                },
+                {
+                    "src": "Expression_3342842838614397050",
+                    "tgt": "I[ONE]"
+                }
+            ],
+            "relation": "FormalAmpersand.showADL[FormalAmpersand.Term*FormalAmpersand.ShowADL]"
+        },
+        {
+            "links": [
+                {
+                    "src": "FORM6763704835188143768",
+                    "tgt": "ONE"
+                }
+            ],
+            "relation": "FormalAmpersand.siConcept[FormalAmpersand.Box*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "FORM6763704835188143768",
+                    "tgt": "FORM"
+                }
+            ],
+            "relation": "FormalAmpersand.siHeader[FormalAmpersand.Box*FormalAmpersand.HTMLtemplateCall]"
+        },
+        {
+            "links": [
+                {
+                    "src": "FORM6763704835188143768",
+                    "tgt": "BoxItem_2218163383671052856"
+                }
+            ],
+            "relation": "FormalAmpersand.siObjs[FormalAmpersand.Box*FormalAmpersand.BoxItem]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "Signature4103211376711059482"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "Signature2882928273082830547"
+                }
+            ],
+            "relation": "FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8188718079889289101",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Expression_8398492258935408423",
+                    "tgt": "Signature8407407593524446650"
+                },
+                {
+                    "src": "Expression_1443231980991187123",
+                    "tgt": "Signature5247549073041387664"
+                },
+                {
+                    "src": "Expression_544098459870939217",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Expression_8869511905501889621",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Expression_8447696782446839601",
+                    "tgt": "Signature8407407593524446650"
+                },
+                {
+                    "src": "Expression_73597405229454233",
+                    "tgt": "Signature8407407593524446650"
+                },
+                {
+                    "src": "Expression_8139811918353114350",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Expression_8574315197920603436",
+                    "tgt": "Signature5247549073041387664"
+                },
+                {
+                    "src": "Expression_8334647786748138392",
+                    "tgt": "Signature5247549073041387664"
+                },
+                {
+                    "src": "Expression_1107026565982892061",
+                    "tgt": "Signature5247549073041387664"
+                },
+                {
+                    "src": "Expression_5211696633748996690",
+                    "tgt": "Signature4226675129693503568"
+                },
+                {
+                    "src": "Expression_8742174152893463259",
+                    "tgt": "Signature8407407593524446650"
+                },
+                {
+                    "src": "Expression_3342842838614397050",
+                    "tgt": "Signature2068275948952877688"
+                }
+            ],
+            "relation": "FormalAmpersand.sign[FormalAmpersand.Term*FormalAmpersand.Signature]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.singleton[FormalAmpersand.Singleton*FormalAmpersand.AtomValue]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.snd[FormalAmpersand.CombineStrings*FormalAmpersand.String]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "Concpt1"
+                }
+            ],
+            "relation": "FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Signature2068275948952877688",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "Signature4103211376711059482",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Signature4226675129693503568",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Signature8407407593524446650",
+                    "tgt": "PattConcpt"
+                },
+                {
+                    "src": "Signature5247549073041387664",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Signature2882928273082830547",
+                    "tgt": "Concpt1"
+                }
+            ],
+            "relation": "FormalAmpersand.src[FormalAmpersand.Signature*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.SourceOrTarget]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Relation_6310427485651048600",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Relation_6438795312716192456",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.text[FormalAmpersand.BxTxt*FormalAmpersand.Text]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Markup_7837277471749947795",
+                    "tgt": "Identity rule, following from identity procIdent"
+                },
+                {
+                    "src": "Markup_7733327016649145802",
+                    "tgt": "Concept purpose: Concpt2"
+                },
+                {
+                    "src": "Markup_1475747812888836694",
+                    "tgt": "{definition of Concpt3}"
+                },
+                {
+                    "src": "Markup_6295156921188341006",
+                    "tgt": "Rule purpose procRule"
+                },
+                {
+                    "src": "Markup_5967292628433469559",
+                    "tgt": "Concept purpose: Concpt3"
+                },
+                {
+                    "src": "Markup_5783658431490441918",
+                    "tgt": "Concept purpose: PattConcpt"
+                },
+                {
+                    "src": "Markup_7649107405134501357",
+                    "tgt": "Identity rule, following from identity ident"
+                },
+                {
+                    "src": "Markup_1785538408622434083",
+                    "tgt": "View purpose: view"
+                },
+                {
+                    "src": "Markup_2031905732935691678",
+                    "tgt": "Rule purpose: pattRule"
+                },
+                {
+                    "src": "Markup_1792993357486065482",
+                    "tgt": "Identity rule, following from identity pattIdent"
+                },
+                {
+                    "src": "Markup_4843318015763847648",
+                    "tgt": "Identiteitsregel, volgend uit identiteit procIdent"
+                },
+                {
+                    "src": "Markup_1284035948729419792",
+                    "tgt": "{definition of ProcConcpt}"
+                },
+                {
+                    "src": "Markup_1610312706547961602",
+                    "tgt": "Context purpose: Purposes"
+                },
+                {
+                    "src": "Markup_4244555534366486244",
+                    "tgt": "{definition of Concpt1}"
+                },
+                {
+                    "src": "Markup_8954728915411727853",
+                    "tgt": "{definition of PattConcpt}"
+                },
+                {
+                    "src": "Markup_1410000764758760575",
+                    "tgt": "Process purpose: Proc"
+                },
+                {
+                    "src": "Markup_2736346533854763967",
+                    "tgt": "Concept purpose: ProcConcpt"
+                },
+                {
+                    "src": "Markup_3146460808577833649",
+                    "tgt": "{definition of Concpt2}"
+                },
+                {
+                    "src": "Markup_7036655221174916141",
+                    "tgt": "Concept purpose: Concpt1"
+                },
+                {
+                    "src": "Markup_4458307832028922244",
+                    "tgt": "Relation purpose: pattRel"
+                },
+                {
+                    "src": "Markup_4798470076922624679",
+                    "tgt": "Relation purpose: procRel"
+                },
+                {
+                    "src": "Markup_88922816909161804",
+                    "tgt": "Identity purpose: procIdent"
+                },
+                {
+                    "src": "Markup_6620306810202540764",
+                    "tgt": "Identiteitsregel, volgend uit identiteit ident"
+                },
+                {
+                    "src": "Markup_7958120279513658579",
+                    "tgt": "Identity purpose: pattIdent"
+                },
+                {
+                    "src": "Markup_7857561223954802633",
+                    "tgt": "Identiteitsregel, volgend uit identiteit pattIdent"
+                },
+                {
+                    "src": "Markup_5577198547956827262",
+                    "tgt": "View purpose: pattView"
+                },
+                {
+                    "src": "Markup_4776274718413565371",
+                    "tgt": "Pattern purpose: Patt"
+                },
+                {
+                    "src": "Markup_6403882538304599101",
+                    "tgt": "View purpose: procView"
+                },
+                {
+                    "src": "Markup_2285617214001604873",
+                    "tgt": "Rule purpose: procRule"
+                },
+                {
+                    "src": "Markup_2813543259625487005",
+                    "tgt": "Relation purpose: rel"
+                },
+                {
+                    "src": "Markup_8304937368682418804",
+                    "tgt": "Interface purpose: IFace"
+                },
+                {
+                    "src": "Markup_243637708752444608",
+                    "tgt": "Identity purpose: ident"
+                }
+            ],
+            "relation": "FormalAmpersand.text[FormalAmpersand.Markup*FormalAmpersand.MarkupText]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.text[FormalAmpersand.PairViewSegment*FormalAmpersand.String]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Signature2068275948952877688",
+                    "tgt": "ONE"
+                },
+                {
+                    "src": "Signature4103211376711059482",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Signature4226675129693503568",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Signature8407407593524446650",
+                    "tgt": "PattConcpt"
+                },
+                {
+                    "src": "Signature5247549073041387664",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Signature2882928273082830547",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "ALPHANUMERIC"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "ALPHANUMERIC"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "ALPHANUMERIC"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "ALPHANUMERIC"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "ALPHANUMERIC"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "OBJECT"
+                }
+            ],
+            "relation": "FormalAmpersand.represent[FormalAmpersand.Concept*FormalAmpersand.TType]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "Purposes"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Purposes"
+                }
+            ],
+            "relation": "FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "Proc"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "Patt"
+                }
+            ],
+            "relation": "FormalAmpersand.udefrules[FormalAmpersand.Rule*FormalAmpersand.Pattern]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Concpt3",
+                    "tgt": "Concpt3"
+                },
+                {
+                    "src": "Concpt2",
+                    "tgt": "Concpt2"
+                },
+                {
+                    "src": "Concpt1",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "ProcConcpt",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "PattConcpt",
+                    "tgt": "PattConcpt"
+                },
+                {
+                    "src": "ONE",
+                    "tgt": "ONE"
+                }
+            ],
+            "relation": "FormalAmpersand.urlEncodedName[FormalAmpersand.Concept*FormalAmpersand.EncodedName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Proc",
+                    "tgt": "Proc"
+                },
+                {
+                    "src": "Patt",
+                    "tgt": "Patt"
+                }
+            ],
+            "relation": "FormalAmpersand.urlEncodedName[FormalAmpersand.Pattern*FormalAmpersand.EncodedName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "procRule",
+                    "tgt": "procRule"
+                },
+                {
+                    "src": "identity_6065721359865792962",
+                    "tgt": "identity_6065721359865792962"
+                },
+                {
+                    "src": "rule",
+                    "tgt": "rule"
+                },
+                {
+                    "src": "identity_6869799728728281951",
+                    "tgt": "identity_6869799728728281951"
+                },
+                {
+                    "src": "identity_4695057292029648780",
+                    "tgt": "identity_4695057292029648780"
+                },
+                {
+                    "src": "pattRule",
+                    "tgt": "pattRule"
+                }
+            ],
+            "relation": "FormalAmpersand.urlEncodedName[FormalAmpersand.Rule*FormalAmpersand.EncodedName]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Relation_6171559268309957786",
+                    "tgt": "Expression_544098459870939217"
+                }
+            ],
+            "relation": "FormalAmpersand.usedIn[FormalAmpersand.Relation*FormalAmpersand.Term]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8398492258935408423",
+                    "tgt": "PattConcpt"
+                },
+                {
+                    "src": "Expression_8334647786748138392",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Expression_5211696633748996690",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Expression_3342842838614397050",
+                    "tgt": "ONE"
+                }
+            ],
+            "relation": "FormalAmpersand.userCpt[FormalAmpersand.Epsilon*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8188718079889289101",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Expression_1443231980991187123",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Expression_73597405229454233",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.userSrc[FormalAmpersand.V*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Expression_8188718079889289101",
+                    "tgt": "Concpt1"
+                },
+                {
+                    "src": "Expression_1443231980991187123",
+                    "tgt": "ProcConcpt"
+                },
+                {
+                    "src": "Expression_73597405229454233",
+                    "tgt": "PattConcpt"
+                }
+            ],
+            "relation": "FormalAmpersand.userTgt[FormalAmpersand.V*FormalAmpersand.Concept]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "Proc"
+                },
+                {
+                    "src": "Purposes",
+                    "tgt": "Patt"
+                }
+            ],
+            "relation": "FormalAmpersand.uses[FormalAmpersand.Context*FormalAmpersand.Pattern]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.valid[FormalAmpersand.Relation*FormalAmpersand.Context]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Purposes",
+                    "tgt": "Ampersand-v5.3.2 [Issue1537Stef:635f0b058*], build time: 13-Mar-25 20:10:28 CET"
+                }
+            ],
+            "relation": "FormalAmpersand.versionInfo[FormalAmpersand.Context*FormalAmpersand.AmpersandVersion]"
+        },
+        {
+            "links": [],
+            "relation": "FormalAmpersand.violatable[FormalAmpersand.Interface*FormalAmpersand.Rule]"
+        }
+    ]
+}

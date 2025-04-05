@@ -1,0 +1,20 @@
+CONTEXT Issue1537
+
+
+PATTERN CarGroups
+RELATION tier[CarGroup*Tier]
+REPRESENT Tier TYPE INTEGER
+  POPULATION tier CONTAINS 
+   [ ("economy", 0)
+   , ("compact", 1)
+   ]
+ENDPATTERN
+
+REPRESENT Age TYPE INTEGER
+RELATION age[CarGroup*Age]
+  POPULATION age CONTAINS 
+   [ ("economy", 0)
+   , ("compact", 1)
+   ]
+
+ENDCONTEXT

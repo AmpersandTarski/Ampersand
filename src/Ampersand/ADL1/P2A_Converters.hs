@@ -278,7 +278,7 @@ pCtx2aCtx
       contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfoPre
       -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
-      aReprs <- traverse (pRepr2aRepr contextInfoPre) p_representations :: Guarded [A_Representation] --  The representations defined in this context
+      aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
       -- allReprs contains all concepts and every concept has precisely one TType
       allReps <- makeComplete contextInfoPre aReprs
       let contextInfo = contextInfoPre {representationOf = defaultTType allReps}
