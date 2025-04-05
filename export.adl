@@ -1,0 +1,75 @@
+CONTEXT SelectExprTest  IN ENGLISH REST
+
+PURPOSE PATTERN SelectExprTest REST 
+{+
+This pattern is meant to test the translation of Terms in Ampersand into
+SELECT statements in SQL.
+
++}
+PATTERN SelectExprTest 
+
+
+RELATION r [A*A]   
+RELATION s [A*A]   
+RELATION t [A*B]   
+
+
+
+
+
+
+
+
+ENDPATTERN
+
+
+
+
+
+
+
+
+
+
+INTERFACE  Overview   : I[ONE] CRuD "Overview": 
+BOX   <FORM>  ["as": V [ONE*A] CRuD 
+BOX   <FORM>  ["id": I[A] CRuD 
+               
+               ,"r": r [A*A] CRUD 
+               
+               ,"s": s [A*A] CRUD 
+               
+               ,"t": t [A*B] CRUD 
+               ]]
+INTERFACE  Id   : I[A] CRuD "Id": 
+BOX   <FORM>  ["id": I[A] CRuD 
+               
+               ,"r": r [A*A] CRUD 
+               
+               ,"s": s [A*A] CRUD 
+               
+               ,"t": t [A*B] CRUD 
+               
+               ,"r/\\s": r [A*A]/\s [A*A] CRuD 
+               
+               ,"r\\/s": r [A*A]\/s [A*A] CRuD 
+               
+               ,"r;s": r [A*A];s [A*A] CRuD 
+               
+               ,"r;t": r [A*A];t [A*B] CRuD 
+               
+               ,"r!s": r [A*A]!s [A*A] CRuD 
+               
+               ,"r!t": r [A*A]!t [A*B] CRuD 
+               
+               ,"r\\s": r [A*A]\s [A*A] CRuD 
+               
+               ,"r/s": r [A*A]/s [A*A] CRuD 
+               
+               ,"r-s": r [A*A]-s [A*A] CRuD 
+               ]
+POPULATION r [A*A] CONTAINS [( "Tommie" , "Tommie" )
+                            ,( "Ieniemienie" , "Pino" )
+                            ,( "Pino" , "Ieniemienie" )]
+
+ENDCONTEXT
