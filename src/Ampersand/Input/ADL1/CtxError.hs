@@ -265,7 +265,9 @@ instance GetOneGuarded Expression P_NamedRel where
     Errors
       . pure
       $ CTXE (origin o)
-      $ "The use of \""<>tshow (p_nrnm o)<>"\" is ambiguous."
+      $ "The use of \""
+      <> tshow (p_nrnm o)
+      <> "\" is ambiguous."
       <> "\n  Make the type explicit by specifying one of the following:"
       <> T.concat ["\n  - " <> showA l | l <- lst]
 
@@ -285,8 +287,10 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
       Errors
         . pure
         $ (CTXE . origin . fst) o
-      $ "The use of \""<>tshow (p_nrnm (fst o))<>"\" is ambiguous."
-      <> "\n  Make the type explicit by specifying one of the following:"
+        $ "The use of \""
+        <> tshow (p_nrnm (fst o))
+        <> "\" is ambiguous."
+        <> "\n  Make the type explicit by specifying one of the following:"
         <> T.concat ["\n  - " <> showA l | l <- lst]
     where
       showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
@@ -638,14 +642,20 @@ mustBeOrdered o a b =
 
 mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> Expression -> ObjectDef -> Guarded b
 mustBeOrderedLst o objExpr ojd =
-  ( Errors . pure . CTXE (origin o) . T.unlines )
-      [ "Type error in BOX",
-        "  Cannot match "<> (tshow . target) objExpr <>
-        " (the target of " <> showA objExpr <> ") with " <>
-        (text1ToText . showWithAliases . source . objExpression) ojd <>
-        " (the source of: " <> (showA . objExpression) ojd <>
-        " at " <> showMinorOrigin (origin ojd) <> ")."
-      ]
+  (Errors . pure . CTXE (origin o) . T.unlines)
+    [ "Type error in BOX",
+      "  Cannot match "
+        <> (tshow . target) objExpr
+        <> " (the target of "
+        <> showA objExpr
+        <> ") with "
+        <> (text1ToText . showWithAliases . source . objExpression) ojd
+        <> " (the source of: "
+        <> (showA . objExpression) ojd
+        <> " at "
+        <> showMinorOrigin (origin ojd)
+        <> ")."
+    ]
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
