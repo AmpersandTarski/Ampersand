@@ -636,27 +636,16 @@ mustBeOrdered o a b =
         "  and concept " <> showEC b
       ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
-mustBeOrderedLst o lst =
-  Errors
-    . pure
-    . CTXE (origin o)
-    . T.unlines
-    $ [ "Type error in BOX",
-        "  Cannot match:"
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> Expression -> ObjectDef -> Guarded b
+mustBeOrderedLst o objExpr ojd =
+  ( Errors . pure . CTXE (origin o) . T.unlines )
+      [ "Type error in BOX",
+        "  Cannot match "<> (tshow . target) objExpr <>
+        " (the target of " <> showA objExpr <> ") with " <>
+        (text1ToText . showWithAliases . source . objExpression) ojd <>
+        " (the source of: " <> (showA . objExpression) ojd <>
+        " at " <> showMinorOrigin (origin ojd) <> ")."
       ]
-    <> [ "  - concept " <> (text1ToText . showWithAliases) c <> " , " <> showP st <> " of: " <> showP (exprOf a)
-         | (c, st, a) <- lst
-       ]
-    <> [ "  if you think there is no type error, add an order between the mismatched concepts.",
-         "  You can do so by using a CLASSIFY statement."
-       ]
-  where
-    exprOf :: P_BoxItem TermPrim -> Term TermPrim
-    exprOf x =
-      case x of
-        P_BoxItemTerm {} -> obj_term x
-        P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =

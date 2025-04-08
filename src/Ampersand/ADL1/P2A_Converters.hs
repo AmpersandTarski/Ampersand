@@ -909,7 +909,7 @@ pCtx2aCtx
           matchWith (ojd, exprBound) =
             if b || exprBound
               then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
-                [] -> mustBeOrderedLst x [(source (objExpression ojd), Src, aObjectDef2pObjectDef $ BxExpr ojd)]
+                [] -> mustBeOrderedLst x objExpr ojd
                 (r : _) -> pure (ojd {objExpression = addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src, objExpression ojd), (Tgt, objExpr)]
           warnings :: [Warning]
