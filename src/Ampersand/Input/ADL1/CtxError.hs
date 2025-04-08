@@ -265,7 +265,9 @@ instance GetOneGuarded Expression P_NamedRel where
     Errors
       . pure
       $ CTXE (origin o)
-      $ "The use of \""<>tshow (p_nrnm o)<>"\" is ambiguous."
+      $ "The use of \""
+      <> tshow (p_nrnm o)
+      <> "\" is ambiguous."
       <> "\n  Make the type explicit by specifying one of the following:"
       <> T.concat ["\n  - " <> showA l | l <- lst]
 
@@ -285,8 +287,10 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
       Errors
         . pure
         $ (CTXE . origin . fst) o
-      $ "The use of \""<>tshow (p_nrnm (fst o))<>"\" is ambiguous."
-      <> "\n  Make the type explicit by specifying one of the following:"
+        $ "The use of \""
+        <> tshow (p_nrnm (fst o))
+        <> "\" is ambiguous."
+        <> "\n  Make the type explicit by specifying one of the following:"
         <> T.concat ["\n  - " <> showA l | l <- lst]
     where
       showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
@@ -636,27 +640,22 @@ mustBeOrdered o a b =
         "  and concept " <> showEC b
       ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
-mustBeOrderedLst o lst =
-  Errors
-    . pure
-    . CTXE (origin o)
-    . T.unlines
-    $ [ "Type error in BOX",
-        "  Cannot match:"
-      ]
-    <> [ "  - concept " <> (text1ToText . showWithAliases) c <> " , " <> showP st <> " of: " <> showP (exprOf a)
-         | (c, st, a) <- lst
-       ]
-    <> [ "  if you think there is no type error, add an order between the mismatched concepts.",
-         "  You can do so by using a CLASSIFY statement."
-       ]
-  where
-    exprOf :: P_BoxItem TermPrim -> Term TermPrim
-    exprOf x =
-      case x of
-        P_BoxItemTerm {} -> obj_term x
-        P_BxTxt {} -> fatal "How can a type error occur with a TXT field???"
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> Expression -> ObjectDef -> Guarded b
+mustBeOrderedLst o objExpr ojd =
+  (Errors . pure . CTXE (origin o) . T.unlines)
+    [ "Type error in BOX",
+      "  Cannot match "
+        <> (tshow . target) objExpr
+        <> " (the target of "
+        <> showA objExpr
+        <> ") with "
+        <> (text1ToText . showWithAliases . source . objExpression) ojd
+        <> " (the source of: "
+        <> (showA . objExpression) ojd
+        <> " at "
+        <> showMinorOrigin (origin ojd)
+        <> ")."
+    ]
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
