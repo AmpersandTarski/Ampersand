@@ -159,7 +159,7 @@ instance CDAnalysable Pattern where
             . ptdcs
         )
           pat
-      nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
+      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) $ entities
 
 instance CDAnalysable FSpec where
   cdAnalysis grouped _ fSpec =
@@ -186,7 +186,7 @@ instance CDAnalysable FSpec where
                   not (null cls)
               ],
               classesOfPattern Nothing
-            ) -- (samePattern $ rights grps, lefts grps)
+            )
         | otherwise = ([], map (buildClass fSpec) entities)
       classesOfPattern :: Maybe Pattern -> [Class]
       classesOfPattern pat =
@@ -213,7 +213,7 @@ instance CDAnalysable FSpec where
             . vrels
         )
           fSpec
-      nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
+      nodeConcepts = L.nub $ concatMap (tyCpts . typologyOf fSpec) entities
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
