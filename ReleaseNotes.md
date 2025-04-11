@@ -1,8 +1,11 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
+- [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Less clutter in the data model.
 
 ## v5.3.5
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Improve the error message on BOX mismatch of types.
+- [Issue #1544](https://github.com/AmpersandTarski/Ampersand/issues/1544) Improve the error message on BOX mismatch of types.
 
 ## v5.3.4
 - [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Bugfix on issue 1537.
