@@ -72,37 +72,38 @@ class (ConceptStructure a) => CDAnalysable a where
   associations :: FSpec -> a -> [Association]
   associations fSpec a =
     map decl2assocOrAggr
-      . filter (not . isProp . EDcD)
       . filter dclIsShown
       . toList
       . relations
       $ a
     where
-      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) . entities fSpec $ a
       dclIsShown :: Relation -> Bool
       dclIsShown d =
         (not . isProp . EDcD) d
           && ( (d `notElem` attribDcls fSpec)
-                || ( source d
+                 || ( source d
                         `elem` nodeConcepts
                         && target d
                         `elem` nodeConcepts
                         && source d
                         /= target d
                     )
-            )
-
-buildClass :: FSpec -> A_Concept -> Class
-buildClass fSpec root =
-  case classOf fSpec root of
-    Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
-    Just exprs ->
-      OOClass
-        { clName = name root,
-          clcpt = Just root,
-          clAtts = NE.toList $ fmap ooAttr exprs,
-          clMths = []
-        }
+             )
+      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) . entities fSpec $ a
+  allClasses :: FSpec -> a -> [Class]
+  allClasses fSpec = map buildClass . entities fSpec
+    where
+      buildClass :: A_Concept -> Class
+      buildClass root =
+        case classOf fSpec root of
+          Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
+          Just exprs ->
+            OOClass
+              { clName = name root,
+                clcpt = Just root,
+                clAtts = NE.toList $ fmap ooAttr exprs,
+                clMths = []
+              }
 
 classOf :: FSpec -> A_Concept -> Maybe (NE.NonEmpty Expression)
 classOf fSpec cpt =
@@ -142,13 +143,12 @@ decl2assocOrAggr d =
       assmdcl = Just d
     }
 
-
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
         groups = [],
-        classes = map (buildClass fSpec) (entities fSpec pat),
+        classes = allClasses fSpec pat,
         assocs = associations fSpec pat,
         aggrs = mempty,
         geners = map OOGener (gens pat),
@@ -182,13 +182,13 @@ instance CDAnalysable FSpec where
               ],
               classesOfPattern Nothing
             )
-        | otherwise = ([], map (buildClass fSpec) (entities fSpec fSpec))
+        | otherwise = ([], allClasses fSpec fSpec)
       classesOfPattern :: Maybe Pattern -> [Class]
       classesOfPattern pat =
         map snd
           . filter ((==) pat . fst)
-          . map (addPatternInfo . buildClass fSpec)
-          $ entities fSpec fSpec
+          . map addPatternInfo
+          $ allClasses fSpec fSpec
         where
           addPatternInfo :: Class -> (Maybe Pattern, Class)
           addPatternInfo cl = (patternOf cl, cl)
@@ -209,14 +209,14 @@ tdAnalysis fSpec =
   OOclassdiagram
     { cdName = prependToPlainName "technical_" $ name fSpec,
       groups = [],
-      classes = allClasses,
+      classes = allClasses',
       assocs = allAssocs,
       aggrs = [],
       geners = [],
       ooCpts = roots
     }
   where
-    allClasses =
+    allClasses' =
       [ OOClass
           { clName = name . mainItem $ table,
             clcpt = primKey table,
@@ -259,7 +259,7 @@ tdAnalysis fSpec =
         }
     allAssocs = concatMap (filter isAssocBetweenClasses . relsOf) tables
       where
-        isAssocBetweenClasses a = let allClassNames = map clName allClasses in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
+        isAssocBetweenClasses a = let allClassNames = map clName allClasses' in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
         kernelConcepts = map fst (concatMap cLkpTbl tables)
         relsOf t =
           case t of
