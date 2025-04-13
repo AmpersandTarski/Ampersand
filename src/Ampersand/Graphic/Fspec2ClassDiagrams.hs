@@ -26,7 +26,6 @@ clAnalysis fSpec =
       groups = [],
       classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
-      aggrs = [],
       geners = map OOGener . vgens $ fSpec,
       ooCpts = toList . concs $ fSpec
     }
@@ -153,22 +152,20 @@ instance CDAnalysable Pattern where
         groups = [],
         classes = allClasses fSpec pat,
         assocs = associations fSpec pat,
-        aggrs = mempty,
         geners = map OOGener (gens pat),
         ooCpts = toList (concs pat)
       }
   relations = ptdcs
 
-instance CDAnalysable FSpec where
-  cdAnalysis grouped _ fSpec =
+instance CDAnalysable A_Context where
+  cdAnalysis grouped fSpec ctx =
     OOclassdiagram
-      { cdName = prependToPlainName "logical_" $ name fSpec,
+      { cdName = prependToPlainName "logical_" $ name ctx,
         groups = groups',
         classes = classes',
-        assocs = associations fSpec fSpec,
-        aggrs = mempty,
-        geners = map OOGener (gens fSpec),
-        ooCpts = toList (concs fSpec)
+        assocs = associations fSpec ctx,
+        geners = map OOGener (gens ctx),
+        ooCpts = toList (concs ctx)
       }
     where
       groups' :: [(Name, NonEmpty Class)]
@@ -185,13 +182,13 @@ instance CDAnalysable FSpec where
               ],
               classesOfPattern Nothing
             )
-        | otherwise = ([], allClasses fSpec fSpec)
+        | otherwise = ([], allClasses fSpec ctx)
       classesOfPattern :: Maybe Pattern -> [Class]
       classesOfPattern pat =
         map snd
           . filter ((==) pat . fst)
           . map addPatternInfo
-          $ allClasses fSpec fSpec
+          $ allClasses fSpec ctx
         where
           addPatternInfo :: Class -> (Maybe Pattern, Class)
           addPatternInfo cl = (patternOf cl, cl)
@@ -203,7 +200,7 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-  relations = vrels
+  relations = relsDefdIn
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
@@ -214,7 +211,6 @@ tdAnalysis fSpec =
       groups = [],
       classes = allClasses',
       assocs = allAssocs,
-      aggrs = [],
       geners = [],
       ooCpts = roots
     }

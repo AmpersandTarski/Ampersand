@@ -117,7 +117,13 @@ chpConceptualAnalysis env lev fSpec =
         themeClasses :: [Class]
         themeClasses = case patOfTheme themeContent of
           Just pat -> classes (cdAnalysis False fSpec pat)
-          Nothing -> (filter (`notElem` allClassesInPats) . classes . cdAnalysis False fSpec) fSpec
+          Nothing ->
+            filter (`notElem` allClassesInPats)
+              . classes
+              . cdAnalysis False fSpec
+              . fromMaybe (fatal "No context found in FSpec")
+              . originalContext
+              $ fSpec
           where
             -- was: [ cl | cl<-classes (cdAnalysis False fSpec fSpec), cl `notElem` allClassesInPats]
             allClassesInPats = concatMap (classes . cdAnalysis False fSpec) (patterns fSpec)

@@ -46,7 +46,6 @@ classdiagram2dot env cd =
                 <> map nonClass2node (filter isOtherNode $ nodes cd),
             edgeStmts =
               map association2edge (assocs cd)
-                ++ map aggregation2edge (aggrs cd)
                 ++ concatMap generalization2edges (geners cd)
           }
     }
@@ -190,30 +189,7 @@ classdiagram2dot env cd =
         mult2Str (Mult MinOne MaxOne) = "1"
         mult2Str (Mult MinOne MaxMany) = "1-*"
 
-    -------------------------------
-    --        AGGREGATIONS:      --
-    -------------------------------
-    aggregation2edge :: Aggregation -> DotEdge MyDotNode
-    aggregation2edge agg =
-      DotEdge
-        { fromNode = toMyDotNode (aggChild agg),
-          toNode = toMyDotNode (aggParent agg),
-          edgeAttributes =
-            [ ArrowHead
-                ( AType
-                    [ ( ArrMod
-                          ( case aggDel agg of
-                              Open -> OpenArrow
-                              Close -> FilledArrow
-                          )
-                          BothSides,
-                        Diamond
-                      )
-                    ]
-                )
-            ]
-        }
-
+    
     -------------------------------
     --        GENERALIZATIONS:   --       -- Ampersand statements such as "CLASSIFY Dolphin ISA Animal" are called generalization.
     --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
@@ -257,7 +233,6 @@ instance CdNode ClassDiag where
           ( map nodes (classes cd)
               ++ map nodes (groups cd)
               ++ map nodes (assocs cd)
-              ++ map nodes (aggrs cd)
               ++ map nodes (geners cd)
           )
       )

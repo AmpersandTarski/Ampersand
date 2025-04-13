@@ -28,10 +28,9 @@ data ClassDiag = OOclassdiagram
     -- | list of classes that do not go in a subgraph
     classes :: ![Class],
     assocs :: ![Association], --
-    aggrs :: ![Aggregation], --
     geners :: ![Generalization], --
     ooCpts :: ![A_Concept]
-  }
+  } deriving (Show)
 
 instance Named ClassDiag where
   name = cdName
@@ -46,7 +45,7 @@ data Class = OOClass
     -- | Methods of the class
     clMths :: ![Method]
   }
-  deriving (Eq)
+  deriving (Eq,Show)
 
 instance Named Class where
   name = clName

@@ -128,7 +128,11 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         logicalDataModelPicture = makePicture env fSpec (PTLogicalDM False)
 
     oocd :: ClassDiag
-    oocd = cdAnalysis False fSpec fSpec
+    oocd =
+      cdAnalysis
+        False
+        fSpec
+        (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec))
 
     conceptTables :: Blocks -- This produces two separate tables:
     -- The first table contains the concepts that have their own table in the logical data model.
