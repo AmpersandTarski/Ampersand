@@ -14,6 +14,7 @@ import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 
 -- | This function makes the classification diagram.
@@ -57,13 +58,39 @@ toNamePart'' x = case toNamePart1 x of
   Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
   Just np -> np
 
-class CDAnalysable a where
+class (ConceptStructure a) => CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
--- ^ This function, cdAnalysis, generates a conceptual data model.
--- It creates a class diagram in which generalizations and specializations remain distinct entity types.
--- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
--- Properties and identities are not shown.
--- The first parameter (Bool) indicates wether or not the entities should be grouped by patterns.
+
+  -- \^ This function, cdAnalysis, generates a conceptual data model.
+  -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
+  -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
+  -- Properties and identities are not shown.
+  -- The first parameter (Bool) indicates wether or not the entities should be grouped by patterns.
+  relations :: a -> Relations
+  entities :: FSpec -> a -> [A_Concept]
+  entities fSpec = filter (isJust . classOf fSpec) . toList . concs
+  associations :: FSpec -> a -> [Association]
+  associations fSpec a =
+    map decl2assocOrAggr
+      . filter (not . isProp . EDcD)
+      . filter dclIsShown
+      . toList
+      . relations
+      $ a
+    where
+      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) . entities fSpec $ a
+      dclIsShown :: Relation -> Bool
+      dclIsShown d =
+        (not . isProp . EDcD) d
+          && ( (d `notElem` attribDcls fSpec)
+                || ( source d
+                        `elem` nodeConcepts
+                        && target d
+                        `elem` nodeConcepts
+                        && source d
+                        /= target d
+                    )
+            )
 
 buildClass :: FSpec -> A_Concept -> Class
 buildClass fSpec root =
@@ -76,12 +103,6 @@ buildClass fSpec root =
           clAtts = NE.toList $ fmap ooAttr exprs,
           clMths = []
         }
-
-cptIsClass :: FSpec -> A_Concept -> Bool
-cptIsClass fSpec cpt = isInScope cpt && hasClass cpt
-  where
-    isInScope _ = True
-    hasClass = isJust . classOf fSpec
 
 classOf :: FSpec -> A_Concept -> Maybe (NE.NonEmpty Expression)
 classOf fSpec cpt =
@@ -108,58 +129,32 @@ ooAttr r =
 attribDcls :: FSpec -> [Relation]
 attribDcls fSpec = [d | d <- toList (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
 
--- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
---   decl2assocOrAggr :: Relation -> Either Association Aggregation
---   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
---   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
-decl2assocOrAggr :: Relation -> Either Association b
+decl2assocOrAggr :: Relation -> Association
 decl2assocOrAggr d =
-  Left
-    OOAssoc
-      { assSrc = name $ source d,
-        assSrcPort = name d,
-        asslhm = mults . flp $ EDcD d,
-        asslhr = Nothing,
-        assTgt = name $ target d,
-        assrhm = mults $ EDcD d,
-        assrhr = Just $ name d,
-        assmdcl = Just d
-      }
+  OOAssoc
+    { assSrc = name $ source d,
+      assSrcPort = name d,
+      asslhm = mults . flp $ EDcD d,
+      asslhr = Nothing,
+      assTgt = name $ target d,
+      assrhm = mults $ EDcD d,
+      assrhr = Just $ name d,
+      assmdcl = Just d
+    }
 
-dclIsShown :: FSpec -> [A_Concept] -> Relation -> Bool
-dclIsShown fSpec nodeConcepts d =
-  (not . isProp . EDcD) d
-    && ( (d `notElem` attribDcls fSpec)
-           || ( source d
-                  `elem` nodeConcepts
-                  && target d
-                  `elem` nodeConcepts
-                  && source d
-                  /= target d
-              )
-       )
 
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
         groups = [],
-        classes = map (buildClass fSpec) entities,
-        assocs = lefts assocsAndAggrs,
-        aggrs = rights assocsAndAggrs,
+        classes = map (buildClass fSpec) (entities fSpec pat),
+        assocs = associations fSpec pat,
+        aggrs = mempty,
         geners = map OOGener (gens pat),
         ooCpts = toList (concs pat)
       }
-    where
-      entities = (filter (isJust . classOf fSpec) . toList . concs) pat
-      assocsAndAggrs =
-        ( map decl2assocOrAggr
-            . filter (dclIsShown fSpec nodeConcepts)
-            . toList
-            . ptdcs
-        )
-          pat
-      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) $ entities
+  relations = ptdcs
 
 instance CDAnalysable FSpec where
   cdAnalysis grouped _ fSpec =
@@ -167,8 +162,8 @@ instance CDAnalysable FSpec where
       { cdName = prependToPlainName "logical_" $ name fSpec,
         groups = groups',
         classes = classes',
-        assocs = lefts assocsAndAggrs,
-        aggrs = rights assocsAndAggrs,
+        assocs = associations fSpec fSpec,
+        aggrs = mempty,
         geners = map OOGener (gens fSpec),
         ooCpts = toList (concs fSpec)
       }
@@ -187,13 +182,13 @@ instance CDAnalysable FSpec where
               ],
               classesOfPattern Nothing
             )
-        | otherwise = ([], map (buildClass fSpec) entities)
+        | otherwise = ([], map (buildClass fSpec) (entities fSpec fSpec))
       classesOfPattern :: Maybe Pattern -> [Class]
       classesOfPattern pat =
         map snd
           . filter ((==) pat . fst)
           . map (addPatternInfo . buildClass fSpec)
-          $ entities
+          $ entities fSpec fSpec
         where
           addPatternInfo :: Class -> (Maybe Pattern, Class)
           addPatternInfo cl = (patternOf cl, cl)
@@ -205,15 +200,7 @@ instance CDAnalysable FSpec where
                                ] of
                 [] -> Nothing
                 (h : _) -> Just h
-      entities = (filter (cptIsClass fSpec) . toList . concs) fSpec
-      assocsAndAggrs =
-        ( map decl2assocOrAggr
-            . filter (dclIsShown fSpec nodeConcepts)
-            . toList
-            . vrels
-        )
-          fSpec
-      nodeConcepts = L.nub $ concatMap (tyCpts . typologyOf fSpec) entities
+  relations = vrels
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
