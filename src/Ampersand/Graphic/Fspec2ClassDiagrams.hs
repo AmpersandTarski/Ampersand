@@ -60,18 +60,36 @@ toNamePart'' x = case toNamePart1 x of
 
 class (ConceptStructure a) => CDAnalysable a where
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
-
-  -- \^ This function, cdAnalysis, generates a conceptual data model.
+  -- ^ This function, cdAnalysis, generates a conceptual data model.
   -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
   -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
   -- Properties and identities are not shown.
   -- The first parameter (Bool) indicates wether or not the entities should be grouped by patterns.
+
   relations :: a -> Relations
-  entities :: FSpec -> a -> [A_Concept]
-  entities fSpec = filter (isJust . classOf fSpec) . toList . concs
+  -- ^ This function returns the relations of the given entity.
+  -- It is used to filter the relations that are shown in the class diagram.
+
+  entities :: FSpec -> a -> [(A_Concept, [Expression])]
+  -- ^ This function returns all the entities in the given datamodel.
+  --   Note: entities without attributes are included as well.
+  entities fSpec = map classOf . toList . concs
+    where
+      classOf :: A_Concept -> (A_Concept, [Expression])
+      classOf cpt =
+        case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
+          [] -> (cpt, mempty)
+          [es] -> (cpt, toList es)
+          _ -> fatal "Only one list of terms is expected here"
+        where
+          isOfCpt :: NE.NonEmpty Expression -> Bool
+          isOfCpt es = source (NE.head es) == cpt
+          attribs = fmap (flipWhenNeeded . EDcD) (attribDcls fSpec)
+          flipWhenNeeded x = if isInj x && (not . isUni) x then flp x else x
+
   associations :: FSpec -> a -> [Association]
   associations fSpec a =
-    map decl2assocOrAggr
+    map rel2Assoc
       . filter dclIsShown
       . toList
       . relations
@@ -89,33 +107,31 @@ class (ConceptStructure a) => CDAnalysable a where
                         /= target d
                     )
              )
-      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec) . entities fSpec $ a
+      nodeConcepts = L.nub . concatMap (tyCpts . typologyOf fSpec . fst) . entities fSpec $ a
+      rel2Assoc :: Relation -> Association
+      rel2Assoc rel =
+        OOAssoc
+          { assSrc = name $ source rel,
+            assSrcPort = name rel,
+            asslhm = mults . flp $ EDcD rel,
+            asslhr = Nothing,
+            assTgt = name $ target rel,
+            assrhm = mults $ EDcD rel,
+            assrhr = Just $ name rel,
+            assmdcl = Just rel
+          }
+
   allClasses :: FSpec -> a -> [Class]
   allClasses fSpec = map buildClass . entities fSpec
     where
-      buildClass :: A_Concept -> Class
-      buildClass root =
-        case classOf fSpec root of
-          Nothing -> fatal $ "Concept is not a class: `" <> fullName root <> "`."
-          Just exprs ->
-            OOClass
-              { clName = name root,
-                clcpt = Just root,
-                clAtts = NE.toList $ fmap ooAttr exprs,
-                clMths = []
-              }
-
-classOf :: FSpec -> A_Concept -> Maybe (NE.NonEmpty Expression)
-classOf fSpec cpt =
-  case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
-    [] -> Nothing
-    [es] -> Just es
-    _ -> fatal "Only one list of terms is expected here"
-  where
-    isOfCpt :: NE.NonEmpty Expression -> Bool
-    isOfCpt es = source (NE.head es) == cpt
-    attribs = fmap (flipWhenNeeded . EDcD) (attribDcls fSpec)
-    flipWhenNeeded x = if isInj x && (not . isUni) x then flp x else x
+      buildClass :: (A_Concept, [Expression]) -> Class
+      buildClass (root, exprs) =
+        OOClass
+          { clName = name root,
+            clcpt = Just root,
+            clAtts = fmap ooAttr exprs,
+            clMths = []
+          }
 
 ooAttr :: Expression -> CdAttribute
 ooAttr r =
@@ -128,20 +144,7 @@ ooAttr r =
     }
 
 attribDcls :: FSpec -> [Relation]
-attribDcls fSpec = [d | d <- toList (vrels fSpec), isUni (EDcD d) || isInj (EDcD d)]
-
-decl2assocOrAggr :: Relation -> Association
-decl2assocOrAggr d =
-  OOAssoc
-    { assSrc = name $ source d,
-      assSrcPort = name d,
-      asslhm = mults . flp $ EDcD d,
-      asslhr = Nothing,
-      assTgt = name $ target d,
-      assrhm = mults $ EDcD d,
-      assrhr = Just $ name d,
-      assmdcl = Just d
-    }
+attribDcls = toList . vrels 
 
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
