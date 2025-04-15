@@ -123,7 +123,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                              <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                      )
                  <> conceptTables
-                 <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
+                 <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (map fst $ classes oocd)))
       where
         logicalDataModelPicture = makePicture env fSpec (PTLogicalDM False)
 
