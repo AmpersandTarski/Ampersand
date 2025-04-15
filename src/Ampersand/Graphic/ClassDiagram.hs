@@ -16,17 +16,15 @@ where
 import Ampersand.ADL1
   ( AClassify,
     A_Concept,
-    Relation,
+    Relation, AProp(..),
   )
 import Ampersand.Basics
 import qualified RIO.Text as T
 
 data ClassDiag = OOclassdiagram
   { cdName :: !Name,
-    -- | name of a subgraph and a list of classes in that subgraph
-    groups :: ![(Name, NonEmpty Class)],
-    -- | list of classes that do not go in a subgraph
-    classes :: ![Class],
+    -- | list of classes with the optional name of a subgraph in which they belong
+    classes :: ![(Class,Maybe Name)],
     assocs :: ![Association], --
     geners :: ![Generalization], --
     ooCpts :: ![A_Concept]
@@ -56,7 +54,8 @@ data CdAttribute = OOAttr
     -- | type of the attribute (Concept name or built-in type)
     attTyp :: !Name,
     -- | says whether the attribute is optional
-    attOptional :: !Bool
+    attOptional :: !Bool,
+    attProps :: ![AProp]
   }
   deriving (Show, Eq)
 
@@ -125,12 +124,12 @@ data Method
   deriving (Eq)
 
 instance Show Method where
-  show (OOMethodC nm cs) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> "):handle"
-  show (OOMethodR nm as) = T.unpack $ fullName nm <> "(handle):[" <> T.intercalate "," [fullName n | OOAttr n _ _ <- as] <> "]"
-  show (OOMethodS nm ks) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- ks] <> "):handle"
+  show (OOMethodC nm cs) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _<- cs] <> "):handle"
+  show (OOMethodR nm as) = T.unpack $ fullName nm <> "(handle):[" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- as] <> "]"
+  show (OOMethodS nm ks) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- ks] <> "):handle"
   show (OOMethodD nm) = T.unpack $ fullName nm <> "(handle)"
-  show (OOMethodU nm cs) = T.unpack $ fullName nm <> "(handle," <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> ")"
-  show (OOMethod nm cs r) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ <- cs] <> "): " <> fullName r
+  show (OOMethodU nm cs) = T.unpack $ fullName nm <> "(handle," <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- cs] <> ")"
+  show (OOMethod nm cs r) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- cs] <> "): " <> fullName r
 
 --
 --   testCD

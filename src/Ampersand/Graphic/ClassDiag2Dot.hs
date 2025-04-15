@@ -50,7 +50,7 @@ classdiagram2dot env cd =
           }
     }
   where
-    allClasses x = classes x ++ (concatMap (toList . snd) . groups $ x)
+    allClasses x = map fst (classes x)
     isOtherNode :: Name -> Bool
     isOtherNode n = n `notElem` nodes (allClasses cd)
     group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph MyDotNode
@@ -127,7 +127,16 @@ classdiagram2dot env cd =
                       Html.Port . PN . fromString . T.unpack . fullName $ a
                     ]
                     ( Html.Text
-                        [ Html.Str (fromString (if attOptional a then "o " else "+ ")),
+                        [ Html.Str
+                            ( fromString
+                                ( case (Tot `elem` attProps a, Uni `elem` attProps a) of
+                                    (True, True) -> "+"
+                                    (True, False) -> "m+"
+                                    (False, True) -> "o"
+                                    (False, False) -> "m"
+                                )
+                                <> " "
+                            ),
                           Html.Str . fromString . T.unpack . fullName $ a,
                           Html.Str (fromString " : "),
                           Html.Str . fromString . T.unpack . fullName . attTyp $ a
@@ -189,7 +198,6 @@ classdiagram2dot env cd =
         mult2Str (Mult MinOne MaxOne) = "1"
         mult2Str (Mult MinOne MaxMany) = "1-*"
 
-    
     -------------------------------
     --        GENERALIZATIONS:   --       -- Ampersand statements such as "CLASSIFY Dolphin ISA Animal" are called generalization.
     --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
@@ -223,6 +231,19 @@ classdiagram2dot env cd =
           Isa {} -> [(genspc gen, gengen gen)]
           IsE {} -> [(genspc gen, x) | x <- NE.toList $ genrhs gen]
 
+groups :: ClassDiag -> [(Name, NonEmpty Class)]
+groups cd = map justName groups'
+  where
+    groups' = filter (isJust . fst) . groupsAndRest . classes $ cd
+    justName (nm, cs) = case nm of
+      Just n -> (n, cs)
+      Nothing -> fatal "impossible"
+    groupsAndRest :: [(Class, Maybe Name)] -> [(Maybe Name, NonEmpty Class)]
+    groupsAndRest = map foo . eqCl snd
+      where
+        foo :: NonEmpty (Class, Maybe Name) -> (Maybe Name, NonEmpty Class)
+        foo x = (snd . NE.head $ x, fst <$> x)
+
 class CdNode a where
   nodes :: a -> [Name]
 
@@ -242,6 +263,9 @@ instance CdNode (Name, NonEmpty Class) where
 
 instance CdNode Class where
   nodes cl = [name . clName $ cl]
+
+instance CdNode (Class, Maybe Name) where
+  nodes = nodes . fst
 
 instance (CdNode a) => CdNode [a] where
   nodes = concatMap nodes
