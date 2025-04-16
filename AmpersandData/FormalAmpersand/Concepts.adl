@@ -3,7 +3,6 @@ CONTEXT FormalAmpersand IN ENGLISH
 PATTERN FormalAmpersand.Concepts
     REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
     
-    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
     CONCEPT FormalAmpersand.ConceptDef "A conceptdef defines a concept."
     RELATION FormalAmpersand.concept[FormalAmpersand.ConceptDef*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,SUR]
