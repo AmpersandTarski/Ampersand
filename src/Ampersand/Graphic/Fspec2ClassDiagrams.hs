@@ -82,7 +82,10 @@ class (ConceptStructure a) => CDAnalysable a where
   classesAndAssociations :: FSpec -> a -> ([(Class, Maybe Name)], [Association])
   -- ^ This function returns all the entities in the given datamodel.
   --   Note: entities without attributes are included as well.
-  classesAndAssociations fSpec a = (map (buildClass . addAttributes) entityConcepts, map rel2Association nonMultiRelations)
+  classesAndAssociations fSpec a = trace ("nonMultiRelations: " <> tshow nonMultiRelations)
+    ( map (buildClass . addAttributes) entityConcepts,
+      map rel2Association nonMultiRelations
+    )
     where
       addAttributes :: (A_Concept, Maybe Name) -> (A_Concept, Maybe Name, [Expression])
       addAttributes (cpt, group) = (cpt, group, attribs)
@@ -114,7 +117,15 @@ class (ConceptStructure a) => CDAnalysable a where
         where
           flipWhenNeeded x = if source x `elem` map fst conceptsWithAttributes then x else flp x
       entityConcepts :: [(A_Concept, Maybe Name)]
-      entityConcepts = conceptsWithAttributes <> filter (not . isObject . fst) sugarCubes
+      entityConcepts = conceptsWithAttributes <> filter (shouldBeHidden . fst) sugarCubes
+        where
+          shouldBeHidden :: A_Concept -> Bool
+          shouldBeHidden cpt =
+            (not . isObject) cpt
+              && cpt
+              `notElem` map source nonMultiRelations
+              && cpt
+              `notElem` map target nonMultiRelations
 
       isObject :: A_Concept -> Bool
       isObject cpt = Object == cptTType fSpec cpt
@@ -213,8 +224,10 @@ instance CDAnalysable A_Context where
           showIt (cd, n) = tshow (origin cd) <> ": " <> tshow n
       cDefs :: [(AConceptDef, Name)]
       cDefs =
-        {- [(cd, name ctx) | cd <- ctxcds ctx]
-         <> -} [(cd, name pat) | pat <- ctxpats ctx, cd <- ptcds pat]
+        [ (cd, name pat)
+          | pat <- ctxpats ctx,
+            cd <- ptcds pat
+        ]
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
