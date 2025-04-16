@@ -1,5 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Ampersand.Graphic.Fspec2ClassDiagrams
   ( clAnalysis,
@@ -17,6 +17,7 @@ import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -30,14 +31,16 @@ clAnalysis fSpec =
       ooCpts = toList . concs $ fSpec
     }
   where
-    clas :: A_Concept -> (Class , Maybe Name)
+    clas :: A_Concept -> (Class, Maybe Name)
     clas c =
-      (OOClass
-        { clName = name c,
-          clcpt = Just c,
-          clAtts = (map makeAttr . attributesOfConcept fSpec) c,
-          clMths = []
-        }, Nothing)
+      ( OOClass
+          { clName = name c,
+            clcpt = Just c,
+            clAtts = (map makeAttr . attributesOfConcept fSpec) c,
+            clMths = []
+          },
+        Nothing
+      )
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
@@ -60,6 +63,7 @@ toNamePart'' x = case toNamePart1 x of
 
 class (ConceptStructure a) => CDAnalysable a where
   {-# MINIMAL cdAnalysis, relations, classCandidates #-}
+
   cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
   -- ^ This function, cdAnalysis, generates a conceptual data model.
   -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -150,7 +154,6 @@ ooAttr r =
       attProps = [Uni | isUni r] <> [Tot | isTot r]
     }
 
-
 instance CDAnalysable Pattern where
   cdAnalysis _ fSpec pat =
     OOclassdiagram
@@ -160,19 +163,20 @@ instance CDAnalysable Pattern where
         geners = map OOGener (gens pat),
         ooCpts = toList (concs pat)
       }
-      where 
-        (classes', associations') = classesAndAssociations fSpec pat
+    where
+      (classes', associations') = classesAndAssociations fSpec pat
   relations = ptdcs
   classCandidates :: Pattern -> [(A_Concept, Maybe Name)]
   classCandidates pat = map foo . toList . concs $ pat
-    where 
+    where
       foo :: A_Concept -> (A_Concept, Maybe Name)
       foo cpt =
         ( cpt,
-           if cpt `elem` map acdcpt (ptcds pat) 
+          if cpt `elem` map acdcpt (ptcds pat)
             then Just (name pat)
             else Nothing
         )
+
 instance CDAnalysable A_Context where
   cdAnalysis grouped fSpec ctx =
     OOclassdiagram
@@ -182,25 +186,36 @@ instance CDAnalysable A_Context where
         geners = map OOGener (gens ctx),
         ooCpts = toList (concs ctx)
       }
-      where 
-        handleGrouping (cl, mName) =
-          ( cl,
-            if grouped
-              then mName
-              else Nothing
-          )
-        (classes', associations') = classesAndAssociations fSpec ctx
+    where
+      handleGrouping (cl, mName) = (cl, if grouped then mName else Nothing)
+      (classes', associations') = classesAndAssociations fSpec ctx
   relations = relsDefdIn
   classCandidates :: A_Context -> [(A_Concept, Maybe Name)]
   classCandidates ctx = map foo . toList . concs $ ctx
-    where 
+    where
       foo :: A_Concept -> (A_Concept, Maybe Name)
       foo cpt =
         ( cpt,
-           if cpt `elem` map acdcpt (ctxcds ctx) 
-            then Just (name ctx)
-            else Nothing
+          case L.sort
+            [ (cd, n) | (cd, n) <- cDefs, name cd == name cpt
+            ] of
+            [] -> Nothing
+            [(_, n)] -> Just n
+            ns ->
+              fatal
+                ( "A problem for drawing the logical datamodel:\nConcept "
+                    <> tshow (name cpt)
+                    <> " is defined in multiple patterns: "
+                    <> (T.concat . L.intersperse "\n  " . map showIt $ ns)
+                )
         )
+        where
+          showIt (cd, n) = tshow (origin cd) <> ": " <> tshow n
+      cDefs :: [(AConceptDef, Name)]
+      cDefs =
+        {- [(cd, name ctx) | cd <- ctxcds ctx]
+         <> -} [(cd, name pat) | pat <- ctxpats ctx, cd <- ptcds pat]
+
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
 tdAnalysis :: FSpec -> ClassDiag
@@ -214,27 +229,29 @@ tdAnalysis fSpec =
     }
   where
     allClasses' =
-      [ (OOClass
-          { clName = name . mainItem $ table,
-            clcpt = primKey table,
-            clAtts = case table of
-              TblSQL {} ->
-                let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
-                 in map (ooAtt kernelAtts) kernelAtts
-                      <> map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table)
-              BinSQL {} ->
-                NE.toList
-                  $ fmap mkOOattr (plugAttributes table)
-                where
-                  mkOOattr a =
-                    OOAttr
-                      { attNm = sqlAttToName a,
-                        attTyp = (name . target . attExpr) a,
-                        attOptional = False, -- A BinSQL contains pairs, so NULL cannot occur.
-                        attProps = [Uni, Tot]
-                      },
-            clMths = []
-          }, name <$> primKey table)
+      [ ( OOClass
+            { clName = name . mainItem $ table,
+              clcpt = primKey table,
+              clAtts = case table of
+                TblSQL {} ->
+                  let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
+                   in map (ooAtt kernelAtts) kernelAtts
+                        <> map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table)
+                BinSQL {} ->
+                  NE.toList
+                    $ fmap mkOOattr (plugAttributes table)
+                  where
+                    mkOOattr a =
+                      OOAttr
+                        { attNm = sqlAttToName a,
+                          attTyp = (name . target . attExpr) a,
+                          attOptional = False, -- A BinSQL contains pairs, so NULL cannot occur.
+                          attProps = [Uni, Tot]
+                        },
+              clMths = []
+            },
+          name <$> primKey table
+        )
         | table <- tables,
           length (plugAttributes table) > 1
       ]
