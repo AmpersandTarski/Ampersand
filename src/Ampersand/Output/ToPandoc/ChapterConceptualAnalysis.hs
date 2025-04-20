@@ -144,7 +144,7 @@ chpConceptualAnalysis env lev fSpec =
           where
             entities :: [(Class, A_Concept)]
             entities =
-              [ (cl, cpt)
+              [ (cl, fst cpt)
                 | cl <- themeClasses,
                   Just cpt <- [clcpt cl]
               ]

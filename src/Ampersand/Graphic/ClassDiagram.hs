@@ -16,6 +16,7 @@ where
 import Ampersand.ADL1
   ( AClassify,
     A_Concept,
+    TType(..),
     Relation, AProp(..),
   )
 import Ampersand.Basics
@@ -37,16 +38,14 @@ data Class = OOClass
   { -- | name of the class
     clName :: !Name,
     -- | Main concept of the class. (link tables do not have a main concept)
-    clcpt :: !(Maybe A_Concept),
+    clcpt :: !(Maybe (A_Concept,TType)),
     -- | Attributes of the class
-    clAtts :: ![CdAttribute],
-    -- | Methods of the class
-    clMths :: ![Method]
+    clAtts :: ![CdAttribute]
   }
   deriving (Eq,Show)
 
 instance Named Class where
-  name = clName
+  name = name . clName
 
 data CdAttribute = OOAttr
   { -- | name of the attribute

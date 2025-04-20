@@ -40,21 +40,16 @@ classdiagram2dot env cd =
                       MinLen 4
                     ]
                 ],
-            subGraphs = group2subgraph <$> groups cd,
-            nodeStmts =
-              map class2node (allClasses cd)
-                <> map nonClass2node (filter isOtherNode $ nodes cd),
+            subGraphs = group2subgraph <$> classesOfSubgraphs cd,
+            nodeStmts = map class2node . classesNotInSubgraphs $ cd,
             edgeStmts =
               map association2edge (assocs cd)
                 ++ concatMap generalization2edges (geners cd)
           }
     }
   where
-    allClasses x = map fst (classes x)
-    isOtherNode :: Name -> Bool
-    isOtherNode n = n `notElem` nodes (allClasses cd)
     group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph MyDotNode
-    group2subgraph x =
+    group2subgraph (nm, clss) =
       DotSG
         { isCluster = True,
           subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
@@ -68,17 +63,10 @@ classdiagram2dot env cd =
                       ]
                   ],
                 subGraphs = [],
-                nodeStmts =
-                  map class2node classesInGroup
-                    ++ map nonClass2node (filter notInClassNodes $ nodes x),
+                nodeStmts = class2node <$> toList clss,
                 edgeStmts = []
               }
         }
-      where
-        nm = fst x
-        notInClassNodes :: Name -> Bool
-        notInClassNodes n = n `notElem` nodes classesInGroup
-        classesInGroup = toList . snd $ x
 
     class2node :: Class -> DotNode MyDotNode
     class2node cl =
@@ -101,25 +89,30 @@ classdiagram2dot env cd =
                   Html.CellBorder 1,
                   Html.CellSpacing 0
                 ],
-              Html.tableRows =
-                [ Html.Cells -- Header row, containing the name of the class
-                    [ Html.LabelCell
-                        [ Html.BGColor (X11Color Gray10),
-                          Html.Color (X11Color Black)
-                        ]
-                        ( Html.Text
-                            [ Html.Font
-                                [ Html.Color (X11Color White)
-                                ]
-                                [Html.Str . fromString . T.unpack . fullName $ cl]
-                            ]
-                        )
-                    ]
-                ]
-                  ++ map attrib2row (clAtts cl)
-                  ++ map method2row (clMths cl)
+              Html.tableRows = header : map attrib2row (clAtts cl)
             }
           where
+            header =
+              Html.Cells -- Header row, containing the name of the class
+                [ Html.LabelCell
+                    [ Html.BGColor (X11Color Gray10),
+                      Html.Color (X11Color LightBlue)
+                    ]
+                    ( Html.Text
+                        [ Html.Font
+                            [ Html.Color
+                                ( X11Color
+                                    ( case snd <$> clcpt cl of
+                                        Just Object -> LightBlue
+                                        Just _scalar -> LimeGreen
+                                        Nothing -> White
+                                    )
+                                )
+                            ]
+                            [Html.Str . fromString . T.unpack . fullName $ cl]
+                        ]
+                    )
+                ]
             attrib2row a =
               Html.Cells
                 [ Html.LabelCell
@@ -143,40 +136,7 @@ classdiagram2dot env cd =
                         ]
                     )
                 ]
-            method2row m =
-              Html.Cells
-                [ Html.LabelCell
-                    [Html.Align Html.HLeft]
-                    ( Html.Text
-                        [ Html.Str (fromString "+ "),
-                          Html.Str (fromString (show m))
-                        ]
-                    )
-                ]
 
-    nonClass2node :: Name -> DotNode MyDotNode
-    nonClass2node x =
-      DotNode
-        { nodeID = toMyDotNode x,
-          nodeAttributes =
-            [ Shape Box3D,
-              Label . StrLabel . fromString . T.unpack . fullName $ x
-            ]
-        }
-
-    ---- In order to make classes, all relations that are univalent and injective are flipped
-    ---- attRels contains all relations that occur as attributes in classes.
-    --       attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[flp r |r<-rels, not (isUni r), isInj r] ++
-    --                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
-    ---- assRels contains all relations that do not occur as attributes in classes
-    --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
-    --       attrs rs   = [ OOAttr ((name.head.bindedRelationsIn) r) (name (target r)) (not(isTot r))
-    --                    | r<-rs, not (isPropty r)]
-    --       isPropty r = null([Sym,Asy]Set.\\properties r)
-
-    -------------------------------
-    --        ASSOCIATIONS:      --
-    -------------------------------
     association2edge :: Association -> DotEdge MyDotNode
     association2edge ass =
       DotEdge
@@ -231,18 +191,25 @@ classdiagram2dot env cd =
           Isa {} -> [(genspc gen, gengen gen)]
           IsE {} -> [(genspc gen, x) | x <- NE.toList $ genrhs gen]
 
-groups :: ClassDiag -> [(Name, NonEmpty Class)]
-groups cd = map justName groups'
+classesOfSubgraphs :: ClassDiag -> [(Name, NonEmpty Class)]
+classesOfSubgraphs =
+  map justName
+    . filter (isJust . fst)
+    . groupsAndRest
+    . classes
   where
-    groups' = filter (isJust . fst) . groupsAndRest . classes $ cd
-    justName (nm, cs) = case nm of
-      Just n -> (n, cs)
-      Nothing -> fatal "impossible"
+    justName (Just n, cs) = (n, cs)
+    justName (Nothing, _) = fatal "impossible"
     groupsAndRest :: [(Class, Maybe Name)] -> [(Maybe Name, NonEmpty Class)]
     groupsAndRest = map foo . eqCl snd
       where
         foo :: NonEmpty (Class, Maybe Name) -> (Maybe Name, NonEmpty Class)
         foo x = (snd . NE.head $ x, fst <$> x)
+classesNotInSubgraphs :: ClassDiag -> [Class]
+classesNotInSubgraphs =
+  map fst
+    . filter (isNothing . snd)
+    . classes
 
 class CdNode a where
   nodes :: a -> [Name]
@@ -251,8 +218,8 @@ instance CdNode ClassDiag where
   nodes cd =
     L.nub
       ( concat
-          ( map nodes (classes cd)
-              ++ map nodes (groups cd)
+          ( mempty -- map nodes (classes cd)
+              ++ map nodes (classesOfSubgraphs cd)
               ++ map nodes (assocs cd)
               ++ map nodes (geners cd)
           )
