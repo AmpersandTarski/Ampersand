@@ -4,7 +4,6 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 
 PATTERN Rules
     CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
-    CONCEPT FormalAmpersand.RuleName ""
     CLASSIFY FormalAmpersand.RuleName ISA FormalAmpersand.Name
     IDENT Rules: FormalAmpersand.Rule(FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context],FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName])
 
@@ -41,13 +40,11 @@ PATTERN Rules
 REPRESENT FormalAmpersand.Quad TYPE ALPHANUMERIC
     CONCEPT FormalAmpersand.PairView "A pairview is the definition of an error message for violations or a rule."
     CONCEPT FormalAmpersand.PairViewSegment "A pairviewsegment is a fragment of a pairview"
-ENDPATTERN
 
-PATTERN PropertyRules
     CONCEPT FormalAmpersand.PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
     CLASSIFY FormalAmpersand.PropertyRule ISA FormalAmpersand.Rule
     CONCEPT FormalAmpersand.Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-    RULE FormalAmpersand.propertyEnum : I[Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "MAP" \/ "BIJ" \/ "PROP"
+    RULE FormalAmpersand.propertyEnum : I[FormalAmpersand.Property] |- "UNI" \/ "TOT" \/ "INJ" \/ "SUR" \/ "RFX" \/ "IRF" \/ "SYM" \/ "ASY" \/ "TRN" \/ "MAP" \/ "BIJ" \/ "PROP"
     MEANING "There are twelve tokens, that can be used to define properties on a relation. -> is syntactic sugar for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
     REPRESENT FormalAmpersand.Property TYPE ALPHANUMERIC
 

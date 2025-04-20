@@ -63,6 +63,8 @@ PATTERN FormalAmpersand.Concepts
     MEANING "A generalization rule refers to one or more generic concepts."
     RELATION FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
+
+    CONCEPT FormalAmpersand.Concept ""
 ENDPATTERN
 
 PATTERN FormalAmpersand.ComputeClosures LABEL "Compute Closures"
