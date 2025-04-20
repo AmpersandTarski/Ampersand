@@ -137,7 +137,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
 
     thePictures = map (makePicture env fSpec) largePictures ++ concat picturesByChapter
       where
-        largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False, PTTechnicalDM]
+        largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False] --, PTTechnicalDM] --TODO: add technical datamodel. has been temporarily removed from the output.
 
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]

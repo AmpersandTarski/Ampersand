@@ -40,33 +40,45 @@ classdiagram2dot env cd =
                       MinLen 4
                     ]
                 ],
-            subGraphs = group2subgraph <$> classesOfSubgraphs cd,
-            nodeStmts = map class2node . classesNotInSubgraphs $ cd,
+            subGraphs =
+              mapMaybe group2subgraph
+                . filter (isJust . fst)
+                . classesBySubgraph
+                $ cd,
+            nodeStmts =
+              map class2node
+                . concatMap (toList . snd)
+                . filter (isNothing . fst)
+                . classesBySubgraph
+                $ cd,
             edgeStmts =
               map association2edge (assocs cd)
                 ++ concatMap generalization2edges (geners cd)
           }
     }
   where
-    group2subgraph :: (Name, NonEmpty Class) -> DotSubGraph MyDotNode
-    group2subgraph (nm, clss) =
-      DotSG
-        { isCluster = True,
-          subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
-          subGraphStmts =
-            DotStmts
-              { attrStmts =
-                  [ GraphAttrs
-                      [ Label . StrLabel . TL.fromStrict . fullName $ nm,
-                        BgColor [WC (X11Color GhostWhite) Nothing],
-                        URL "https://ampersandtarski.github.io/"
-                      ]
-                  ],
-                subGraphs = [],
-                nodeStmts = class2node <$> toList clss,
-                edgeStmts = []
-              }
-        }
+    group2subgraph :: (Maybe Name, NonEmpty Class) -> Maybe (DotSubGraph MyDotNode)
+    group2subgraph (x, clss) = case x of
+      Nothing -> Nothing
+      Just nm ->
+        Just
+          DotSG
+            { isCluster = True,
+              subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
+              subGraphStmts =
+                DotStmts
+                  { attrStmts =
+                      [ GraphAttrs
+                          [ Label . StrLabel . TL.fromStrict . fullName $ nm,
+                            BgColor [WC (X11Color GhostWhite) Nothing],
+                            URL "https://ampersandtarski.github.io/"
+                          ]
+                      ],
+                    subGraphs = [],
+                    nodeStmts = class2node <$> toList clss,
+                    edgeStmts = []
+                  }
+            }
 
     class2node :: Class -> DotNode MyDotNode
     class2node cl =
@@ -193,25 +205,16 @@ classdiagram2dot env cd =
           Isa {} -> [(genspc gen, gengen gen)]
           IsE {} -> [(genspc gen, x) | x <- NE.toList $ genrhs gen]
 
-classesOfSubgraphs :: ClassDiag -> [(Name, NonEmpty Class)]
-classesOfSubgraphs =
-  map justName
-    . filter (isJust . fst)
-    . groupsAndRest
-    . classes
+classesBySubgraph :: ClassDiag -> [(Maybe Name, NonEmpty Class)]
+classesBySubgraph = map foo . eqCl snd . classes
   where
-    justName (Just n, cs) = (n, cs)
-    justName (Nothing, _) = fatal "impossible"
-    groupsAndRest :: [(Class, Maybe Name)] -> [(Maybe Name, NonEmpty Class)]
-    groupsAndRest = map foo . eqCl snd
-      where
-        foo :: NonEmpty (Class, Maybe Name) -> (Maybe Name, NonEmpty Class)
-        foo x = (snd . NE.head $ x, fst <$> x)
+    foo x = (snd . NE.head $ x, fst <$> x)
 
-classesNotInSubgraphs :: ClassDiag -> [Class]
-classesNotInSubgraphs =
+classesOfSubgraphs :: ClassDiag -> [Class]
+classesOfSubgraphs =
   map fst
-    . filter (isNothing . snd)
+    . filter (isJust . snd)
+    -- . groupsAndRest
     . classes
 
 class CdNode a where

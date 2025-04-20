@@ -38,6 +38,7 @@ PATTERN Rules
 
     CONCEPT FormalAmpersand.Conjunct "A conjunct is an term that represents an invariant in an information system."
     CONCEPT FormalAmpersand.Quad "A quad is a Haskell data structure that corresponds to one rule in an Ampersand script."
+REPRESENT FormalAmpersand.Quad TYPE ALPHANUMERIC
     CONCEPT FormalAmpersand.PairView "A pairview is the definition of an error message for violations or a rule."
     CONCEPT FormalAmpersand.PairViewSegment "A pairviewsegment is a fragment of a pairview"
 ENDPATTERN
