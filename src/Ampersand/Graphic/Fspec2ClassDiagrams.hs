@@ -60,7 +60,7 @@ toNamePart'' x = case toNamePart1 x of
   Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
   Just np -> np
 
-class (ConceptStructure a) => CDAnalysable a where
+class (ConceptStructure a, Language a) => CDAnalysable a where
   {-# MINIMAL cdAnalysis, relations, classCandidates #-}
 
   -- | This function, cdAnalysis, generates a conceptual data model.
@@ -93,9 +93,9 @@ class (ConceptStructure a) => CDAnalysable a where
   --        and the source and target are drawn as standalone class.
   --   - Concepts that are not in the source or target of any relation and are not an object drawn as a standalone class.
   classesAndAssociations fSpec a =
-    ( map (buildClass . addAttributes) . filter (mustBeDrawnAsClass .fst) . classCandidates $ a,
-      map rel2Association nonMultiRelations
-    )
+      ( map (buildClass . addAttributes) . filter (mustBeDrawnAsClass . fst) . classCandidates $ a,
+        map rel2Association nonMultiRelations
+      )
     where
       uniOrInjs, nonUniOrInjs :: [Relation]
       (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations a)
@@ -109,14 +109,18 @@ class (ConceptStructure a) => CDAnalysable a where
       standAloneRelations = filter isStandalone nonUniOrInjs
         where
           isStandalone :: Relation -> Bool
-          isStandalone d = (not . isObject) (source d) && 
-                           (not . isObject) (target d)
+          isStandalone d =
+            (not . isObject) (source d)
+              && (not . isObject) (target d)
       mustBeDrawnAsClass :: A_Concept -> Bool
-      mustBeDrawnAsClass cpt =
-        isObject cpt
-          || (cpt `elem` map source uniAttributes)
-          || (cpt `elem` concs standAloneRelations)
-          || cpt `notElem` concs (relations a)
+      mustBeDrawnAsClass cpt
+        | cpt == ONE = False
+        | otherwise =
+            isObject cpt
+              || (cpt `elem` map source uniAttributes)
+              || (cpt `elem` concs standAloneRelations)
+              || (cpt `notElem` (concs . relations $ a))
+              || (cpt `elem` concs (gens a))
       addAttributes :: (A_Concept, Maybe Name) -> (A_Concept, Maybe Name, [Expression])
       addAttributes (cpt, group) = (cpt, group, attribs)
         where
