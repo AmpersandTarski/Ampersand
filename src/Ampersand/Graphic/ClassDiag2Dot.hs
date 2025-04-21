@@ -107,20 +107,12 @@ classdiagram2dot env cd =
             header =
               Html.Cells -- Header row, containing the name of the class
                 [ Html.LabelCell
-                    [ Html.BGColor (X11Color Blue),
+                    [ Html.BGColor (X11Color RoyalBlue),
                       Html.Color (X11Color Black)
                     ]
                     ( Html.Text
                         [ Html.Font
-                            [ Html.Color
-                                ( X11Color
-                                    ( case snd <$> clcpt cl of
-                                        Just Object -> Red
-                                        Just _scalar -> Yellow
-                                        Nothing -> White -- For link tables in TDM.
-                                    )
-                                )
-                            ]
+                            [ Html.Color ( X11Color White)]
                             [Html.Str . fromString . T.unpack . fullName $ cl]
                         ]
                     )
@@ -158,14 +150,12 @@ classdiagram2dot env cd =
             [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)]), -- No arrowHead
               HeadLabel (mult2Lable (assrhm ass)),
               TailLabel (mult2Lable (asslhm ass)),
-              Label . StrLabel . fromString . addDirection . T.unpack . maybe mempty fullName . assrhr $ ass,
+              Label . StrLabel . fromString . T.unpack . maybe mempty fullName . assrhr $ ass,
               LabelFloat True
             ]
               ++ [TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)]
         }
       where
-        addDirection "" = ""
-        addDirection str = "▶" <> str <> "▶"
         mult2Lable = StrLabel . fromString . mult2Str
         mult2Str (Mult MinZero MaxOne) = "0-1"
         mult2Str (Mult MinZero MaxMany) = "*"
