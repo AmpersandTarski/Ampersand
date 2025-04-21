@@ -18,7 +18,7 @@ import Ampersand.Graphic.ClassDiagram
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-
+import Data.Tuple.Extra (fst3, snd3, thd3)
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
@@ -82,21 +82,21 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   -- ^ This function returns all the classes in the given datamodel that should be drawn.
   --   Note: classes without attributes are included as well.
   -- The idea is as follows:
-  --   - Concepts with a TType equal to Object must be drawn as separate class.
+  --   - Concepts with an univalent attribute or with a generalisation relation must be drawn as separate class.
   --   - Relations that are UNI and/or INJ are drawn as attributes of the class they belong to.
-  --      That may lead to the situation that a scalar is drawn as a class, because it has attributes.
-  --   - Relations that are UNI nor INJ are drawn based on TType of source and target, as follows:
-  --     - If both the source and the target are Object, the relation is drawn as an association.
-  --     - If only the source is Object, the relation is drawn as a multi-attribute of the source.
-  --     - If only the target is Object, the relation is drawn as a multi-attribute of the target.
-  --     - If neither the source nor the target is Object, the relation is drawn as an association,
+  --   - Relations that are UNI nor INJ are drawn based on the fact if source and or target have attributes or generalisation, as follows:
+  --     - If both the source and the target are, the relation is drawn as an association.
+  --     - If only the source is, the relation is drawn as a multi-attribute of the source.
+  --     - If only the target is, the relation is drawn as a multi-attribute of the target.
+  --     - If neither the source nor the target is, the relation is drawn as an association,
   --        and the source and target are drawn as standalone class.
-  --   - Concepts that are not in the source or target of any relation and are not an object drawn as a standalone class.
+  --   - Concepts that are not in the source or target of any relation are drawn as a standalone class.
   classesAndAssociations fSpec a =
-      ( map (buildClass . addAttributes) . filter (mustBeDrawnAsClass . fst) . classCandidates $ a,
-        map rel2Association nonMultiRelations
-      )
+    ( map (buildClass . addAttributes) mustBeDrawnAsClass,
+      map rel2Association relations2draw
+    )
     where
+      mustBeDrawnAsClass = L.nub $ conceptsWithUniOrGens <> standalonConcepts
       uniOrInjs, nonUniOrInjs :: [Relation]
       (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations a)
         where
@@ -105,44 +105,47 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
       uniAttributes = map (flipWhenNeeded . EDcD) uniOrInjs
         where
           flipWhenNeeded x = if isInj x && (not . isUni) x then flp x else x
-      standAloneRelations :: [Relation]
-      standAloneRelations = filter isStandalone nonUniOrInjs
+
+      conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
+      (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
+        L.partition (isConceptWithUniOrGen . fst) (toList $ classCandidates a)
         where
-          isStandalone :: Relation -> Bool
-          isStandalone d =
-            (not . isObject) (source d)
-              && (not . isObject) (target d)
-      mustBeDrawnAsClass :: A_Concept -> Bool
-      mustBeDrawnAsClass cpt
-        | cpt == ONE = False
-        | otherwise =
-            isObject cpt
-              || (cpt `elem` map source uniAttributes)
-              || (cpt `elem` concs standAloneRelations)
-              || (cpt `notElem` (concs . relations $ a))
-              || (cpt `elem` concs (gens a))
+          isConceptWithUniOrGen :: A_Concept -> Bool
+          isConceptWithUniOrGen cpt =
+            isConceptWithGen cpt || isConceptWithUni cpt
+          isConceptWithUni :: A_Concept -> Bool
+          isConceptWithUni cpt = cpt `elem` map source uniAttributes
+          isConceptWithGen :: A_Concept -> Bool
+          isConceptWithGen cpt = cpt `elem` concs (gens a)
+
+      multiAttributes :: [Expression]
+      relations2draw :: [Relation]
+      standalonConcepts :: [(A_Concept, Maybe Name)]
+      (multiAttributes, relations2draw, standalonConcepts) =
+        ( concatMap fst3 results,
+          concatMap snd3 results,
+          concatMap thd3 results
+        )
+        where
+          results = map handleRelation nonUniOrInjs
+          handleRelation :: Relation -> ([Expression], [Relation], [(A_Concept, Maybe Name)])
+          handleRelation d =
+            case (source d `elem` map fst conceptsWithUniOrGens , target d `elem` map fst conceptsWithUniOrGens) of
+              (True, True) ->
+                ([], [d], [])
+              (True, False) ->
+                ([EDcD d], [], [])
+              (False, True) ->
+                ([flp (EDcD d)], [], [])
+              (False, False) ->
+                ([], [d], filter srcOrtgt conceptsWithoutUniOrGens)
+                where
+                  srcOrtgt :: (A_Concept, Maybe Name) -> Bool
+                  srcOrtgt (cpt, _) = cpt == source d || cpt == target d
       addAttributes :: (A_Concept, Maybe Name) -> (A_Concept, Maybe Name, [Expression])
       addAttributes (cpt, group) = (cpt, group, attribs)
         where
           attribs = filter ((cpt ==) . source) (uniAttributes <> multiAttributes)
-      conceptsWithAttributes = filter (isConceptWithUni . fst) (toList $ classCandidates a)
-        where
-          isConceptWithUni :: A_Concept -> Bool
-          isConceptWithUni cpt = cpt `elem` map source uniAttributes
-      -- \| A relation can be made an attribute in a class, when at least one of source or target is of type Object
-      maybeMultiAttribute :: Relation -> Bool
-      maybeMultiAttribute d = any isObject [source d, target d]
-
-      multiRelations, nonMultiRelations :: [Relation]
-      (multiRelations, nonMultiRelations) = L.partition maybeMultiAttribute nonUniOrInjs
-      multiAttributes :: [Expression]
-      multiAttributes = map (flipWhenNeeded . EDcD) multiRelations
-        where
-          flipWhenNeeded x = if source x `elem` map fst conceptsWithAttributes then x else flp x
-
-      isObject :: A_Concept -> Bool
-      isObject cpt = Object == cptTType fSpec cpt
-
       rel2Association :: Relation -> Association
       rel2Association rel =
         OOAssoc
@@ -291,7 +294,7 @@ tdAnalysis fSpec =
       OOAttr
         { attNm = sqlAttToName att,
           attTyp =
-            if isProp (attExpr att) && (att `notElem` kernelAtts)
+            if isProp (attExpr att) && att `notElem` kernelAtts
               then propTypeName
               else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
