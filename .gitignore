@@ -12,7 +12,7 @@ Ampersand.archimate.bak
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
-
+/output
 # Temporarily disable ampersand.cabal (See issue #931)
 # NO LONGER include ampersand.cabal in .gitignore. See https://github.com/commercialhaskell/stack/issues/5210
 

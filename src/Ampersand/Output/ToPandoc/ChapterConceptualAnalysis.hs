@@ -116,11 +116,15 @@ chpConceptualAnalysis env lev fSpec =
         -- all classes (i.e. entities) from this pattern
         themeClasses :: [Class]
         themeClasses = case patOfTheme themeContent of
-          Just pat -> classes (cdAnalysis False fSpec pat)
-          Nothing -> (filter (`notElem` allClassesInPats) . classes . cdAnalysis False fSpec) fSpec
-          where
-            -- was: [ cl | cl<-classes (cdAnalysis False fSpec fSpec), cl `notElem` allClassesInPats]
-            allClassesInPats = concatMap (classes . cdAnalysis False fSpec) (patterns fSpec)
+          Just pat -> fst <$> classes (cdAnalysis False fSpec pat)
+          Nothing ->
+            map fst
+              . filter (isNothing . snd)
+              . classes
+              . cdAnalysis False fSpec
+              . fromMaybe (fatal "No context found in FSpec")
+              . originalContext
+              $ fSpec
 
         -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
         caSubsections :: [(Blocks, [Relation])]
@@ -140,7 +144,7 @@ chpConceptualAnalysis env lev fSpec =
           where
             entities :: [(Class, A_Concept)]
             entities =
-              [ (cl, cpt)
+              [ (cl, fst cpt)
                 | cl <- themeClasses,
                   Just cpt <- [clcpt cl]
               ]

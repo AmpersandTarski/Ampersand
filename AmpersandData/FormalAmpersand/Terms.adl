@@ -80,6 +80,24 @@ PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
     CLASSIFY FormalAmpersand.RelationalAddition ISA FormalAmpersand.BinaryTerm
     CLASSIFY FormalAmpersand.LeftResidual       ISA FormalAmpersand.BinaryTerm
     CLASSIFY FormalAmpersand.RightResidual      ISA FormalAmpersand.BinaryTerm
+
+    CONCEPT FormalAmpersand.BinaryMinus ""
+    CONCEPT FormalAmpersand.CartesianProduct ""
+    CONCEPT FormalAmpersand.Composition ""
+    CONCEPT FormalAmpersand.Converse ""
+    CONCEPT FormalAmpersand.Equivalence ""
+    CONCEPT FormalAmpersand.Inclusion ""
+    CONCEPT FormalAmpersand.Intersection ""
+    CONCEPT FormalAmpersand.KleenePlus ""
+    CONCEPT FormalAmpersand.KleeneStar ""
+    CONCEPT FormalAmpersand.LeftResidual ""
+    CONCEPT FormalAmpersand.RelationalAddition ""
+    CONCEPT FormalAmpersand.RightResidual ""
+    CONCEPT FormalAmpersand.UnaryMinus ""
+    CONCEPT FormalAmpersand.Union ""
+
+ --   CONCEPT FormalAmpersand.BindedRelation ""
+
 ENDPATTERN
 
 RELATION FormalAmpersand.showADL[FormalAmpersand.Term*FormalAmpersand.ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs

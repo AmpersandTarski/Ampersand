@@ -96,7 +96,13 @@ makePicture env fSpec pr =
       Pict
         { pType = pr,
           scale = scale',
-          dotContent = ClassDiagram (cdAnalysis grouped fSpec fSpec),
+          dotContent =
+            ClassDiagram
+              ( cdAnalysis
+                  grouped
+                  fSpec
+                  (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec))
+              ),
           dotProgName = Dot,
           caption =
             case outputLang' of

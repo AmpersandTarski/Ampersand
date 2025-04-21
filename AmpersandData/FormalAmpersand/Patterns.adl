@@ -5,7 +5,6 @@ INCLUDE "Rules.adl"
 
 PATTERN Patterns
     CONCEPT FormalAmpersand.Pattern "A pattern is a container for relation declarations and rule definitions"
-    CONCEPT FormalAmpersand.Pattern "A pattern is a file that is meant to contain Ampersand source code."
     VIEW FormalAmpersand.Pattern: FormalAmpersand.Pattern(FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName])
 
     CLASSIFY FormalAmpersand.PatternName ISA FormalAmpersand.Name

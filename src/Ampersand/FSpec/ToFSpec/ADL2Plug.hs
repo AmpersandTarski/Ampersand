@@ -240,7 +240,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     makeLinkTable dcl =
       BinSQL
         { sqlname = determineLinkTableName dcl,
-          cLkpTbl = [], -- TODO: in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
+          cLkpTbl = [], -- TODO: #1558 in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
           -- given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
           -- if dcl is TOT, then the concept (source dcl) is stored in this plug
           -- if dcl is SUR, then the concept (target dcl) is stored in this plug
