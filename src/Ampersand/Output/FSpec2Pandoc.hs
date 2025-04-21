@@ -138,7 +138,6 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
     thePictures = map (makePicture env fSpec) largePictures ++ concat picturesByChapter
       where
         largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False, PTTechnicalDM]
-
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
     (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env

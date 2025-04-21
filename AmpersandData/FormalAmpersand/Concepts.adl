@@ -3,7 +3,6 @@ CONTEXT FormalAmpersand IN ENGLISH
 PATTERN FormalAmpersand.Concepts
     REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
     
-    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
     CONCEPT FormalAmpersand.ConceptDef "A conceptdef defines a concept."
     RELATION FormalAmpersand.concept[FormalAmpersand.ConceptDef*FormalAmpersand.Concept] [UNI,TOT]
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,SUR]
@@ -64,6 +63,8 @@ PATTERN FormalAmpersand.Concepts
     MEANING "A generalization rule refers to one or more generic concepts."
     RELATION FormalAmpersand.genspc[FormalAmpersand.IsE*FormalAmpersand.Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
+
+    CONCEPT FormalAmpersand.Concept ""
 ENDPATTERN
 
 PATTERN FormalAmpersand.ComputeClosures LABEL "Compute Closures"

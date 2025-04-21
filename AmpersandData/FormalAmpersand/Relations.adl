@@ -37,7 +37,6 @@ MEANING "The source of a signature."
 RELATION FormalAmpersand.tgt[FormalAmpersand.Signature*FormalAmpersand.Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
-CONCEPT FormalAmpersand.BindedRelation ""
 RELATION FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation][UNI]
 ROLE ExecEngine MAINTAINS FormalAmpersand.bindTotal
 RULE FormalAmpersand.bindTotal : I[FormalAmpersand.BindedRelation] |- FormalAmpersand.bind;FormalAmpersand.bind~
