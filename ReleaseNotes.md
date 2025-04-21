@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.3.6
 - [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
 - [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Less clutter in the data model.
 
