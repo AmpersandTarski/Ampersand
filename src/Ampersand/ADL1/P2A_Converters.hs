@@ -276,13 +276,8 @@ pCtx2aCtx
     } =
     do
       contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
+      contextInfo <- technicalTypes contextInfoPre
       let declMap = declDisambMap contextInfoPre
-      -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
-      aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
-      -- allReprs contains all concepts and every concept has precisely one TType
-      allReps <- makeComplete contextInfoPre aReprs
-      let contextInfo = contextInfoPre {representationOf = defaultTType allReps}
-      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
@@ -330,55 +325,61 @@ pCtx2aCtx
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       return actx
     where
-      makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete contextInfo aReprs = {- trace ("\nttypeAnalysis"<>tshow ttypeAnalysis) -} checkDuplicates
-        where
-          -- \| ttypeAnalysis exposes duplicate TTypes, so we can make error messages
-          ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
-          ttypeAnalysis =
-            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric, [])]; _ -> ttOrigPairs)
-              | typolConcs <- typolSets <> [[c] | c <- Set.toList (allConcepts contextInfo `Set.union` ttypedConcepts), c `notElem` concat typolSets],
-                let ttOrigPairs = ttPairs typolConcs
-            ]
-            where
-              -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it,
-              ttypedConcepts :: Set.Set A_Concept
-              ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
-              typolSets = map tyCpts (multiKernels contextInfo)
-              ttPairs :: [A_Concept] -> [(TType, [Origin])]
-              ttPairs typology =
-                [ (t, [origin aRepr | aRepr <- NE.toList cl])
-                  | cl <- eqCl aReprTo [aRepr | aRepr <- aReprs, not . null $ NE.toList (aReprFrom aRepr) `L.intersect` typology],
-                    t <- L.nub [aReprTo aRepr | aRepr <- NE.toList cl]
-                ]
-          checkDuplicates :: Guarded [A_Representation]
-          checkDuplicates =
-            case [(cs, tts) | (cs, tts@(_ : _ : _)) <- ttypeAnalysis] of
-              [] -> pure [Arepr os (c :| cs) t | (c : cs, [(t, os)]) <- ttypeAnalysis]
-              errs -> traverse mkMultipleRepresentTypesError errs
-      defaultTType :: [A_Representation] -> A_Concept -> TType
-      defaultTType aReprs c =
-        if c == ONE || show c == "SESSION"
-          then Object
-          else case L.nub [aReprTo aRepr | aRepr <- L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr)] of
-            [] -> Alphanumeric
-            [t] -> t
-            _ -> fatal "Multiple representations for a single concept"
+      technicalTypes :: ContextInfo -> Guarded ContextInfo
+      technicalTypes contextInfoPre = do
+        aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
+        -- pRepr2aRepr has added the concepts of BOX-es with the technical type Object.
+        -- So, aReprs contains all concepts that have TTypes, either from REPRESENT statements or from BOX-es (which are Objects)
+        allReps <- checkDuplicates aReprs
+        -- So, defaultTType adds the other concepts with default type Alphanumeric, so function representationOf is total.
+        return (contextInfoPre {representationOf = defaultTType allReps})
+         where
+           checkDuplicates :: [A_Representation] -> Guarded [A_Representation]
+           checkDuplicates aReprs =
+             case [(cs, tts) | (cs, tts@(_ : _ : _)) <- ttypeAnalysis] of
+               [] -> pure [Arepr os (c :| cs) t | (c : cs, [(t, os)]) <- ttypeAnalysis]
+               errs -> traverse mkMultipleRepresentTypesError errs
+             where
+                -- | ttypeAnalysis exposes duplicate TTypes, so we can make error messages
+                ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
+                ttypeAnalysis =
+                  [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric, [])]; _ -> ttOrigPairs)
+                    | typolConcs <- typolSets <> [[c] | c <- Set.toList (allConcepts contextInfoPre `Set.union` ttypedConcepts), c `notElem` concat typolSets],
+                      let ttOrigPairs = ttPairs typolConcs
+                  ]
+                  where
+                    -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts.
+                    ttypedConcepts :: Set.Set A_Concept
+                    ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
+                    typolSets = map tyCpts (multiKernels contextInfoPre)
+                    ttPairs :: [A_Concept] -> [(TType, [Origin])]
+                    ttPairs typology =
+                      [ (t, [origin aRepr | aRepr <- NE.toList cl])
+                        | cl <- eqCl aReprTo [aRepr | aRepr <- aReprs, not . null $ NE.toList (aReprFrom aRepr) `L.intersect` typology],
+                          t <- L.nub [aReprTo aRepr | aRepr <- NE.toList cl]
+                      ]
+           defaultTType :: [A_Representation] -> A_Concept -> TType
+           defaultTType aReprs c =
+             if c == ONE || show c == "SESSION"
+               then Object
+               else case L.nub [aReprTo aRepr | aRepr <- L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr)] of
+                 [] -> Alphanumeric
+                 [t] -> t
+                 _ -> fatal "Multiple representations for a single concept"
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
       cptMap = conceptmap
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
-      allReprs :: [P_Representation]
-      allReprs = p_representations <> concatMap pt_Reprs p_patterns
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
+        typeMap <- mkTypeMap connectedConcepts (p_representations <> concatMap pt_Reprs p_patterns) -- This yields type errors unless every partition (i.e. every element of connectedConcepts)
+        -- refers to precisely one technical type.
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
-        multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
+        multitypologies <- traverse mkTypology connectedConcepts -- SJ: `traverse` is used instead of `map``because the result is guarded.
         let reprOf cpt =
               fromMaybe
                 (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
@@ -391,9 +392,9 @@ pCtx2aCtx
         return
           CI
             { ctxiGens = gns,
-              representationOf = reprOf,
+              representationOf = fatal "RepresentationOf is not used in contextInfoPre",
               multiKernels = multitypologies,
-              reprList = allReprs,
+              reprList = p_representations <> concatMap pt_Reprs p_patterns,
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
