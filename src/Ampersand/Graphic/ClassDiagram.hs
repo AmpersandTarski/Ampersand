@@ -15,9 +15,10 @@ where
 
 import Ampersand.ADL1
   ( AClassify,
+    AProp (..),
     A_Concept,
-    TType(..),
-    Relation, AProp(..),
+    Relation,
+    TType (..),
   )
 import Ampersand.Basics
 import qualified RIO.Text as T
@@ -25,11 +26,12 @@ import qualified RIO.Text as T
 data ClassDiag = OOclassdiagram
   { cdName :: !Name,
     -- | list of classes with the optional name of a subgraph in which they belong
-    classes :: ![(Class,Maybe Name)],
+    classes :: ![(Class, Maybe Name)],
     assocs :: ![Association], --
     geners :: ![Generalization], --
     ooCpts :: ![A_Concept]
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance Named ClassDiag where
   name = cdName
@@ -38,11 +40,11 @@ data Class = OOClass
   { -- | name of the class
     clName :: !Name,
     -- | Main concept of the class. (link tables do not have a main concept)
-    clcpt :: !(Maybe (A_Concept,TType)),
+    clcpt :: !(Maybe (A_Concept, TType)),
     -- | Attributes of the class
     clAtts :: ![CdAttribute]
   }
-  deriving (Eq,Show)
+  deriving (Eq, Show)
 
 instance Named Class where
   name = name . clName
@@ -123,7 +125,7 @@ data Method
   deriving (Eq)
 
 instance Show Method where
-  show (OOMethodC nm cs) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _<- cs] <> "):handle"
+  show (OOMethodC nm cs) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- cs] <> "):handle"
   show (OOMethodR nm as) = T.unpack $ fullName nm <> "(handle):[" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- as] <> "]"
   show (OOMethodS nm ks) = T.unpack $ fullName nm <> "(" <> T.intercalate "," [fullName n | OOAttr n _ _ _ <- ks] <> "):handle"
   show (OOMethodD nm) = T.unpack $ fullName nm <> "(handle)"

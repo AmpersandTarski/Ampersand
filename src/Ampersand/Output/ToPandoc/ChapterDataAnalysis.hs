@@ -216,7 +216,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         ((text . l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph . strong . text . fullName) cl)
         <> case clcpt cl of
           Nothing -> mempty
-          Just (cpt,_) -> purposes2Blocks env (purposesOf fSpec outputLang' cpt)
+          Just (cpt, _) -> purposes2Blocks env (purposesOf fSpec outputLang' cpt)
         <> (para . text . l)
           ( NL ("Deze gegevensverzameling heeft " <> tshow n <> " elementen en bevat de volgende attributen: "),
             EN ("This entity type has " <> tshow n <> " elements and contains the following attributes: ")
@@ -243,7 +243,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                      (plain . text . tshow . Set.size . Set.map apRight) pairs
                      -- , (plain . text . tshow) nTgtConcept
                    ]
-                   | Just (cpt,_) <- [clcpt cl],
+                   | Just (cpt, _) <- [clcpt cl],
                      cpt' <- generalizationsOf fSpec cpt,
                      cpt /= cpt',
                      attr <- attributesOfConcept fSpec cpt',

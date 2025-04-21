@@ -15,10 +15,11 @@ import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
+import Data.Tuple.Extra (fst3, snd3, thd3)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import Data.Tuple.Extra (fst3, snd3, thd3)
+
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
@@ -130,7 +131,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
           results = map handleRelation nonUniOrInjs
           handleRelation :: Relation -> ([Expression], [Relation], [(A_Concept, Maybe Name)])
           handleRelation d =
-            case (source d `elem` map fst conceptsWithUniOrGens , target d `elem` map fst conceptsWithUniOrGens) of
+            case (source d `elem` map fst conceptsWithUniOrGens, target d `elem` map fst conceptsWithUniOrGens) of
               (True, True) ->
                 ([], [d], [])
               (True, False) ->
