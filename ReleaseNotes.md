@@ -1,4 +1,7 @@
 ﻿# Release notes of Ampersand
+## not yet released
+- The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
+- a little maintenance work (minor)
 
 ## v5.3.6
 - [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
