@@ -88,7 +88,9 @@ commandLineHandler currentDir _progName args =
     addCommands = do
       addCommand''
         Check
-        "Use ampersand to check your model for syntactical and type errors."
+        ( "Use ampersand to check your model for syntactical errors, type errors, and population errors."
+        <> "This generates nothing, except when you run it with an .archimate file (from Archi)."
+        )
         checkCmd
         (fSpecGenOptsParser False)
       addCommand''
@@ -147,8 +149,8 @@ commandLineHandler currentDir _progName args =
       addCommand''
         Validate
         ( "Compare results of rule evaluation in Haskell and SQL, for "
-            <> "testing term semantics. This requires command line php with "
-            <> "MySQL support."
+            <> "testing term semantics. This is for debugging the Ampersand compiler only."
+            <> " It requires command line php with MySQL support."
         )
         (mkAction validate)
         validateOptsParser
@@ -379,7 +381,7 @@ checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd = mkAction doNothing
   where
     doNothing fSpec = do
-      logInfo $ "This script of " <> (display . fullName) fSpec <> " contains no type errors."
+      logInfo $ "This script of " <> (display . fullName) fSpec <> " contains no type errors and no population errors."
 
 mkAction ::
   (HasFSpecGenOpts a) =>
