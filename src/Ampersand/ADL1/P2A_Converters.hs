@@ -276,6 +276,7 @@ pCtx2aCtx
     } =
     do
       contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
+      -- declMap contains the declared relations by name. So, we get every name once in the domain of the map, which helps to disambiguate.
       let declMap = declDisambMap contextInfoPre
       -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
       aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
@@ -296,7 +297,7 @@ pCtx2aCtx
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- -- the following trace statement is kept in comment for possible further work on contextInfo (March 31st, 2025).
       -- trace ("\ncontextInfo = "<>tshow contextInfo<>"\n\nallConcepts contextInfo = "<>tshow (allConcepts contextInfo)<>"\np_representations = "<>tshow p_representations<>"\naReprs = "<>tshow aReprs<>"\nmultiKernels = "<>tshow (multiKernels contextInfo)<>"\nallReps = "<>tshow allReps) $
-        traverse (pDecl2aDecl (representationOf contextInfo) cptMap Nothing deflangCtxt deffrmtCtxt) p_relations
+        traverse (pDecl2aDecl (representationOf contextInfo) conceptmap Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
       let actx =
             ACtx
@@ -367,7 +368,6 @@ pCtx2aCtx
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
-      cptMap = conceptmap
       allGens :: [PClassify]
       allGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [P_Representation]
@@ -375,7 +375,7 @@ pCtx2aCtx
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
+        typeMap <- mkTypeMap connectedConcepts allReprs -- This is error free if every partition refers to precisely one technical type.
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
         multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
@@ -383,8 +383,8 @@ pCtx2aCtx
               fromMaybe
                 (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
                 (lookup cpt typeMap)
-        decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
+        decls <- traverse (pDecl2aDecl reprOf conceptmap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])  :: Map Name (Map SignOrd Expression)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
@@ -588,7 +588,7 @@ pCtx2aCtx
       pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (pCpt2aCpt (conceptMap ci)) (reprcpts repr), aReprTo = reprdom repr}
       pRepr2aRepr ci repr@ImplicitRepr {} =
         do
-          (expr, _) <- typecheckTerm ci (disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) (reprTerm repr))
+          (expr, _) <- (typecheckTerm ci . disamb ci . reprTerm) repr
           return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
@@ -597,8 +597,8 @@ pCtx2aCtx
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
               dcl <- case p_mbSign nmdr of
-                Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt cptMap <$> src) (pCpt2aCpt cptMap <$> tgt)
-                _ -> namedRel2Decl cptMap declMap nmdr
+                Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt conceptmap <$> src) (pCpt2aCpt conceptmap <$> tgt)
+                _ -> namedRel2Decl conceptmap declMap nmdr
 
               aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
@@ -611,7 +611,7 @@ pCtx2aCtx
                     poptgt = fromMaybe (target dcl) tgt'
                   }
           P_CptPopu {} ->
-            let cpt = pCpt2aCpt cptMap (p_cpt pop)
+            let cpt = pCpt2aCpt conceptmap (p_cpt pop)
              in ( \vals ->
                     ACptPopu
                       { popcpt = cpt,
@@ -633,7 +633,9 @@ pCtx2aCtx
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
       pViewDef2aViewDef ci x = typecheckViewDef ci tpda
         where
-          tpda = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci)) x
+          tpda = disamb ci x
+
+      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
 
       typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
       typecheckViewDef
@@ -1005,7 +1007,7 @@ pCtx2aCtx
           <*> traverse (pPop2aPop ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+          <*> traverse (pDecl2aDecl (representationOf ci) conceptmap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
           <*> pure (pt_Reprs ppat)
@@ -1034,7 +1036,7 @@ pCtx2aCtx
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
-      pRul2aRul ci mPat = typeCheckRul ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pRul2aRul ci mPat = typeCheckRul ci mPat . disamb ci
       typeCheckRul ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
@@ -1072,7 +1074,7 @@ pCtx2aCtx
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
-      pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disamb ci
       typeCheckEnforce ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
@@ -1159,7 +1161,7 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
+        case disamb ci pidt of
           P_Id
             { ix_name = nm,
               ix_label = lbl',
@@ -1177,7 +1179,7 @@ pCtx2aCtx
               )
                 <$> traverse pIdentSegment2IdentSegment isegs
         where
-          conc = pCpt2aCpt cptMap (ix_cpt pidt)
+          conc = pCpt2aCpt conceptmap (ix_cpt pidt)
           orig = origin pidt
           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
@@ -1591,7 +1593,7 @@ data TT a -- (In order of increasing strictness. If you are unsure which to pick
   = UNI a a -- find the union of these types, return it.
   | ISC a a -- find the intersection of these types, return it.
   | MBE a a -- must be equal: must be (made) of equal type. If these types are comparable, it returns the greatest.
-  | MBG a a -- The first of these types must be the greatest, if so, return it (error otherwise)
+  | MBG a a -- The first of these types must be greater or equal than the second. if so, return it (error otherwise)
   -- SJC: difference between UNI and MBE
   -- in general, UNI is less strict than MBE:
   --   suppose A ≤ C, B ≤ C, and C is the least such concept (e.g. if A≤D and B≤D then C≤D)
