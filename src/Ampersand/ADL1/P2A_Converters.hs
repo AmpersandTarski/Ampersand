@@ -15,8 +15,6 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
-import Ampersand.Classes.Relational (hasAttributes)
-import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
@@ -341,7 +339,6 @@ pCtx2aCtx
                 let ttOrigPairs = ttPairs typolConcs
             ]
             where
-              -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it,
               ttypedConcepts :: Set.Set A_Concept
               ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
               typolSets = map tyCpts (multiKernels contextInfo)
@@ -379,10 +376,7 @@ pCtx2aCtx
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
         multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
-        let reprOf cpt =
-              fromMaybe
-                (if hasAttributes (Set.fromList p_relations) (aConcept2pConcept cpt) || cpt == ONE || show cpt == "SESSION" then Object else Alphanumeric) -- See issue #1537
-                (lookup cpt typeMap)
+        let reprOf cpt = fromMaybe Alphanumeric (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])
               where

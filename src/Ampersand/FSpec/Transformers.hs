@@ -1661,11 +1661,6 @@ tmpNewTransformerDefsFA fSpec =
             isIrf rel
         ]
       ),
-      ( "FormalAmpersand.hasAttributes",
-        "FormalAmpersand.Concept",
-        "FormalAmpersand.Concept",
-        [] -- The Atlas will maintain this population, so we don't need to do it here.
-      ),
       ( "FormalAmpersand.isAttribute",
         "FormalAmpersand.Relation",
         "FormalAmpersand.Relation",

@@ -1,7 +1,6 @@
 module Ampersand.Classes.Relational
   ( HasProps (..),
     Relational (..),
-    hasAttributes,
     isONE,
     isSESSION,
   )
@@ -48,10 +47,6 @@ isSESSION cpt =
   case cpt of
     PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
     ONE -> False
-
-hasAttributes ::
-  Set.Set P_Relation -> P_Concept -> Bool
-hasAttributes rels c = any isUni (Set.filter (\r -> pSrc (dec_sign r) == c) rels) || any isInj (Set.filter (\r -> pTgt (dec_sign r) == c) rels)
 
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
 -- but tries to derive the most obvious constraints as well. The more property constraints are known,
