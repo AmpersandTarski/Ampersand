@@ -1354,6 +1354,22 @@ data A_Concept
     ONE
   deriving (Typeable, Data, Ord, Eq)
 
+
+-- Compute the least upper bound (lub) of a list of pairs
+lub :: [(a, a)] -> a -> a -> Maybe a
+lub [] = Nothing
+lub xs = Just $ foldl1 combineLub xs
+  where
+    combineLub (a1, b1) (a2, b2) = (max a1 a2, max b1 b2)
+
+-- Compute the greatest lower bound (glb) of a list of pairs
+glb :: (Ord a, Ord b) => [(a, b)] -> Maybe (a, b)
+glb [] = Nothing
+glb xs = Just $ foldl1 combineGlb xs
+  where
+    combineGlb (a1, b1) (a2, b2) = (min a1 a2, min b1 b2)
+
+
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
 sessionConcept :: A_Concept
