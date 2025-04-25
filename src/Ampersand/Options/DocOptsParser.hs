@@ -98,6 +98,7 @@ docOptsParser =
         toFormat s = case filter matches allFormats of
           -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
           --        See https://hackage.haskell.org/package/optparse-applicative
+          -- an issue is created on the backlog: https://github.com/AmpersandTarski/Ampersand/issues/1060
           [] ->
             fatal
               $ T.unlines

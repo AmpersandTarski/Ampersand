@@ -38,6 +38,7 @@ Every term is built out of relations, which are combined by operators. An term h
 <RelationRef> <type>?
 I <type>?
 V <type>?
+<Comparison>
 <atom>
 ( <Term> )
 ```
@@ -84,6 +85,14 @@ When coding in Ampersand, these operators are typed with characters on the keybo
 | reflexive transitive closure |  `*`  |          $$∗$$         |                                            |
 | transitive closure           |  `+`  |          $$+$$         |                                            |
 
+While above operators work on tuples, since version 5.3.0 of the ampersand generator, it is also possible to have compare operators:
+
+| compare operator             |  code |          math          | remark                                     |
+| ---------------------------- | :---: | :--------------------: | ------------------------------------------ |
+| greater than                 | `>`   |          $$>$$         |                                            |
+| greater than or equal        | `>=`  |          $$\geq$$      |                                            |
+| less than                    | `<`   |          $$<$$         |                                            |
+| less than or equal           | `<=`  |          $$\leq$$      |                                            |
 
 :::info Note on `hashtag`
 

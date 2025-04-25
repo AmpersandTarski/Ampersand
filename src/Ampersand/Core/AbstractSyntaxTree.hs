@@ -97,6 +97,7 @@ import Ampersand.Core.ParseTree
     MetaData (..),
     Origin (..),
     PAtomValue (..),
+    PBinOp,
     PClassify (generics, specific),
     PConceptDef,
     P_Concept (..),
@@ -165,10 +166,12 @@ data A_Context = ACtx
     -- | All user defined enforcement rules in this context, but outside patterns.
     ctxEnforces :: ![AEnforce]
   }
-  deriving (Typeable)
+  deriving (Typeable, Show)
 
-instance Show A_Context where
-  show = T.unpack . fullName
+-- instance Show A_Context where
+--   show = T.unpack . fullName
+instance Show (A_Concept -> TType) where
+  show _ = "A function that maps concepts to types"
 
 instance Eq A_Context where
   c1 == c2 = name c1 == name c2
@@ -215,7 +218,7 @@ data Pattern = A_Pat
     ptxps :: ![Purpose],
     ptenfs :: ![AEnforce]
   }
-  deriving (Typeable) -- Show for debugging purposes
+  deriving (Typeable, Show) -- Show for debugging purposes
 
 instance Eq Pattern where
   a == b = compare a b == EQ
@@ -244,7 +247,7 @@ data AEnforce = AEnforce
     enfPatName :: !(Maybe Text),
     enfRules :: ![Rule]
   }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 instance Traced AEnforce where
   origin AEnforce {pos = orig} = orig
@@ -1097,6 +1100,8 @@ data Expression
     EDcI !A_Concept
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
     EEps !A_Concept !Signature
+  | -- | relation based on a simple binary operator  (e.g. x > y)
+    EBin !PBinOp !A_Concept
   | -- | Cartesian product relation
     EDcV !Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
@@ -1127,6 +1132,7 @@ instance Hashable Expression where
         EDcI c -> (17 :: Int) `hashWithSalt` c
         EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
+        EBin op c -> (20 :: Int) `hashWithSalt` op `hashWithSalt` c
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
@@ -1249,6 +1255,7 @@ instance Flippable Expression where
     EBrk f -> EBrk (flp f)
     EDcD {} -> EFlp expr
     EDcI {} -> expr
+    EBin op c -> EBin (flp op) c
     EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
@@ -1272,6 +1279,7 @@ instance HasSignature Expression where
   sign (EBrk e) = sign e
   sign (EDcD d) = sign d
   sign (EDcI c) = Sign c c
+  sign (EBin _ c) = Sign c c
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = Sign c c
@@ -1448,6 +1456,7 @@ data ContextInfo = CI
     -- | the default format used to interpret markup texts in this context
     defaultFormat :: !PandocFormat
   }
+  deriving (Show)
 
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
@@ -1480,6 +1489,7 @@ instance Show Type where
 
 -- for faster comparison
 newtype SignOrd = SignOrd Signature
+  deriving (Show)
 
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
@@ -1529,6 +1539,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
       where
         roundedVal =
           case rawVal of
+            AAVDateTime _ (UTCTime _ 0) -> rawVal -- prevent devision by zero
             AAVDateTime t x ->
               -- Rounding is needed, to maximize the number of databases
               -- on wich this runs. (MySQL 5.5 only knows seconds)
@@ -1750,6 +1761,9 @@ data Typology = Typology
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.
 type ConceptMap = P_Concept -> A_Concept
+
+instance Show ConceptMap where
+  show _ = "A function that maps P_Concepts to A_Concepts"
 
 makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
 makeConceptMap cds gs = mapFunction

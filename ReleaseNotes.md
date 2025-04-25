@@ -1,5 +1,15 @@
 ﻿# Release notes of Ampersand
 
+## v5.3.1
+- [Issue #1540](https://github.com/AmpersandTarski/Ampersand/issues/1540) Bugfix daemon
+
+## v5.3.0
+- [Issue #1531](https://github.com/AmpersandTarski/Ampersand/issues/1531) Bugfix, plural of names
+- [Issue #1534](https://github.com/AmpersandTarski/Ampersand/issues/1534) Enable the use of >, <, <= and >= as relations. How cool is that?
+
+## v5.2.5
+- [Issue #1528](https://github.com/AmpersandTarski/Ampersand/issues/1528) Bugfix, devision by 0. 
+
 ## v5.2.4
 
 - [Issue #1516](https://github.com/AmpersandTarski/Ampersand/issues/1516) It is now possible to only generate datamodel images using --datamodelOnly 

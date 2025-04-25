@@ -490,7 +490,10 @@ pBrackets :: AmpParser a -> AmpParser a
 pBrackets parser = pSpec '[' *> parser <* pSpec ']'
 
 pChevrons :: AmpParser a -> AmpParser a
-pChevrons parser = pSpec '<' *> parser <* pSpec '>'
+pChevrons parser =
+  pOperator (toText1Unsafe "<")
+    *> parser
+    <* pOperator (toText1Unsafe ">")
 
 -----------------------------------------------------------
 -- Token positioning

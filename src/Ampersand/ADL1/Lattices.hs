@@ -205,6 +205,7 @@ data Op1EqualitySystem a
             )
           ]
       )
+  deriving (Show)
 
 -- TODO: this function can be optimised a lot
 reverseMap :: (Ord a) => [(a, [Int])] -> RevMap a

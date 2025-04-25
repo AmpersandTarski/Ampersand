@@ -317,10 +317,11 @@ aExpression2pTermPrim expr =
     EBrk e -> PBrk o (aExpression2pTermPrim e)
     EDcD dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
+    EBin oper cpt -> Prim . PBind o oper . aConcept2pConcept $ cpt
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where
-    o = fatal "Origin is not present in Expression"
+    o = Origin $ "Origin is not present in Expression: " <> tshow expr
 
 aMeaning2pMeaning :: Meaning -> PMeaning
 aMeaning2pMeaning = PMeaning . aMarkup2pMarkup . ameaMrk
