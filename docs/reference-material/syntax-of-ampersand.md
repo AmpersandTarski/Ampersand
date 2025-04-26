@@ -734,6 +734,8 @@ Please copy this in a spreadsheet of your own. The element in the first column w
 
 In practical applications, you might want to reuse data from existing spreadsheets. People tend to have lots of "informal administration" in spreadsheets, which gives you access to authentic population. Surely you need that data organized in rows, but fortunately that is reasonably common. In such cases, you just add two lines above each table to inform Ampersand about the relations that are populated. In other cases, you have some work organizing the spreadsheet for importing it.
 
+NOTE: Save your spreadsheet as a regular `.xlsx` Excel worksheet. Remember that the extension `.xlsx` is no guarantee because Excel uses the same extension, `.xlsx`, for the Strict Open XML format. The Ampersand compiler does not read Strict Open XML files properly.
+
 ###### Uploading your spreadsheet
 
 You will find the Excel import function in the menu bar on the top right of your screen:
