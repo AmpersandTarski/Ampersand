@@ -91,6 +91,16 @@ isDanglingPurpose ctx purp =
         -- TODO: fix this when we pick up working on multiple contexts.
         -- Check that interface references are not cyclic
 
+warnUnusedConcepts :: A_Context -> Guarded ()
+warnUnusedConcepts ctx = addWarnings warnings $ pure ()
+  where
+    warnings :: [Warning]
+    warnings =
+      [ mkUnusedCptDefWarning cDef
+        | cDef <- L.nub $ ctxcds ctx <> concatMap ptcds (ctxpats ctx),
+          acdcpt cDef `notElem` (concs . relsDefdIn $ ctx)
+      ]
+
 checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx =
   case interfaceCycles of
@@ -328,6 +338,7 @@ pCtx2aCtx
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
+      warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
