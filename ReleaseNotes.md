@@ -1,7 +1,8 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.3.7
 - [Issue #1560](https://github.com/AmpersandTarski/Ampersand/issues/1560) Warn for possible use of Strict Open XML format
+- [Issue #1557](https://github.com/AmpersandTarski/Ampersand/issues/1557) Warn for concepts that are defined but not used
 
 ## v5.3.6
 - [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
