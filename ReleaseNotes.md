@@ -1,17 +1,20 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1560](https://github.com/AmpersandTarski/Ampersand/issues/1560) Warn for possible use of Strict Open XML format
+
 ## v5.3.6
 - [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
 - [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Less clutter in the data model.
 
 ## v5.3.5
-- [Issue #1544](https://github.com/AmpersandTarski/Ampersand/issues/1544) Improve the error message on BOX mismatch of types.
+- Improve the error message on BOX mismatch of types.
 
 ## v5.3.4
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Bugfix on issue 1537.
+- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1537) Bugfix on issue 1537.
 
 ## v5.3.3
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Make the default technical type ALPHANUMERIC, except if the concept is used as an object (right before every BOX) or declared with a REPRESENT statement.
+- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1537) Make the default technical type ALPHANUMERIC, except if the concept is used as an object (right before every BOX) or declared with a REPRESENT statement.
 
 ## v5.3.2
 - [Issue #1542](https://github.com/AmpersandTarski/Ampersand/issues/1542) Respect the TYPE of the concept when >, <, <= and >= are used.
