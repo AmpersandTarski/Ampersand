@@ -49,8 +49,21 @@ parseXlsxFile mFk file =
     xlsx2pContext env xlsx = do
       let orig = Origin $ "file `" <> tshow file1 <> "`"
       namepart <- toNamePartGuarded orig file1
-      return $ pop namepart
+      let pCtx = pop namepart
+      ( case ctx_pops pCtx of
+          [] -> addWarning warnNoPopulation
+          _ -> id
+        )
+        $ pure pCtx
       where
+        warnNoPopulation :: Warning
+        warnNoPopulation =
+          fatal
+            . T.intercalate "\n  "
+            $ [ "File " <> tshow file1 <> " seems to be empty.",
+                "Please make sure it is formatted as a regular Excel .xlsx file and that it is not empty."
+              ]
+
         pop namepart =
           mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
             . concatMap (toPops env nameSpaceOfXLXSfiles file)
