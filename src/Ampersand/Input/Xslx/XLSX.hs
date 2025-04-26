@@ -51,18 +51,17 @@ parseXlsxFile mFk file =
       namepart <- toNamePartGuarded orig file1
       let pCtx = pop namepart
       ( case ctx_pops pCtx of
-          [] -> addWarning warnNoPopulation
+          [] -> addWarning $ mkParserStateWarning orig emptyMsg
           _ -> id
         )
         $ pure pCtx
       where
-        warnNoPopulation :: Warning
-        warnNoPopulation =
-          fatal
-            . T.intercalate "\n  "
-            $ [ "File " <> tshow file1 <> " seems to be empty.",
-                "Please make sure it is formatted as a regular Excel .xlsx file and that it is not empty."
-              ]
+        emptyMsg =
+          T.intercalate
+            "\n  "
+            [ "File " <> tshow file1 <> " seems to be empty.",
+              "Please make sure it is formatted as a regular Excel .xlsx file and that it is not empty."
+            ]
 
         pop namepart =
           mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
