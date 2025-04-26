@@ -705,8 +705,6 @@ data Interface = Ifc
     ifcRoles :: ![Role],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
     ifcObj :: !ObjectDef,
-    -- | All conjuncts that must be evaluated after a transaction
-    ifcConjuncts :: ![Conjunct],
     -- | The position in the file (filename, line- and column number)
     ifcPos :: !Origin,
     -- | The purpose of the interface

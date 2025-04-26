@@ -711,7 +711,6 @@ instance ShowHS Interface where
       [ "Ifc { ifcname   = " <> fullName ifc,
         "    , ifcRoles  = " <> tshow (ifcRoles ifc),
         "    , ifcObj" <> indent <> "       = " <> showHS env (indent <> "         ") (ifcObj ifc),
-        wrap "    , ifcConjuncts = " (indent <> "                  ") (const showHSName) (ifcConjuncts ifc),
         "    , ifcPos    = " <> showHS env "" (ifcPos ifc),
         "    , ifcPurpose    = " <> tshow (ifcPurpose ifc)
       ]
