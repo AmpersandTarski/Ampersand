@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+
+## Unreleased
+- [Issue #1545](https://github.com/AmpersandTarski/Ampersand/issues/1545) Warn for possible use of Strict Open XML format
+
 ## v5.3.7
 - [Issue #1560](https://github.com/AmpersandTarski/Ampersand/issues/1560) Warn for possible use of Strict Open XML format
 - [Issue #1557](https://github.com/AmpersandTarski/Ampersand/issues/1557) Warn for concepts that are defined but not used
