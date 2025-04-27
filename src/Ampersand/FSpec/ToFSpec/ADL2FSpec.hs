@@ -527,7 +527,6 @@ makeFSpec env context =
 -- END: making interfaces
 ----------------------
 
-
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug =
   case plug of
