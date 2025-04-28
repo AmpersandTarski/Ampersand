@@ -361,14 +361,6 @@ transformersFormalAmpersand fSpec =
             rul <- Set.elems $ identityRules pat
         ]
       ),
-      ( "FormalAmpersand.ifcConjuncts",
-        "FormalAmpersand.Interface",
-        "FormalAmpersand.Conjunct",
-        [ (dirtyId' ifc, dirtyId' conj)
-          | ifc :: Interface <- instanceList fSpec,
-            conj <- ifcConjuncts ifc
-        ]
-      ),
       ( "FormalAmpersand.ifcInputs",
         "FormalAmpersand.Interface",
         "FormalAmpersand.Relation",

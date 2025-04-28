@@ -107,8 +107,8 @@ RELATION FormalAmpersand.ifcRoles[FormalAmpersand.Interface*FormalAmpersand.Role
 MEANING "This relation contains the roles for which an interface is available (empty means: available for all roles)."
 RELATION FormalAmpersand.ifcQuads[FormalAmpersand.Interface*FormalAmpersand.Quad] -- RJ: What is a Quad?
 MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
-RELATION FormalAmpersand.ifcConjuncts[FormalAmpersand.Interface*FormalAmpersand.Conjunct]
-MEANING "All conjuncts that must be evaluated after a transation are registered."
+-- RELATION FormalAmpersand.ifcConjuncts[FormalAmpersand.Interface*FormalAmpersand.Conjunct]
+-- MEANING "All conjuncts that must be evaluated after a transaction are calculated."
 RELATION FormalAmpersand.violatable[FormalAmpersand.Interface*FormalAmpersand.Rule]
 MEANING "All rules that can be violated by an interface are included in violatable."
 
