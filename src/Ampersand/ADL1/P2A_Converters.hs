@@ -15,8 +15,8 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set)
 import Ampersand.Classes
-import Ampersand.Classes.Relational (hasAttributes)
-import Ampersand.Core.A2P_Converters
+-- import Ampersand.Classes.Relational (hasAttributes) -- found redundant
+-- import Ampersand.Core.A2P_Converters                -- found redundant
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
@@ -397,6 +397,7 @@ pCtx2aCtx
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
+              gens_graph = makeGraph allGens,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
@@ -408,6 +409,11 @@ pCtx2aCtx
 
           gns = mapMaybe (pClassify2aClassify conceptmap) allGens
 
+          -- | We make concept graphs with Algebra.Graph.AdjacencyMap.
+          -- See https://github.com/snowleopard/alga-paper for documentation and https://www.youtube.com/watch?v=EdQGLewU-8k for motivation.
+          -- AdjacencyMap is an instance of the Graph type class. It is especially designed (and also efficient) for graphs with closures, such as our concept graph.
+          -- postcondition: makeGraph is the transitive closure of gns.
+          
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (toList . concs) gns)
 
@@ -519,7 +525,7 @@ pCtx2aCtx
       -- the genLattice is the resulting optimized structure
       genRules :: [(Set.Set Type, Set.Set Type)] -- SJ: Why not [(NE.NonEmpty Type, NE.NonEmpty Type)] ?
       genRules =
-        [ ( Set.fromList [pConcToType . specific $ x],
+        [ ( Set.fromList [pConcToType (specific x)],
             Set.fromList . NE.toList . NE.map pConcToType . generics $ x
           )
           | x <- allGens
@@ -635,6 +641,7 @@ pCtx2aCtx
         where
           tpda = disamb ci x
 
+      disamb :: ContextInfo -> d TermPrim -> d (TermPrim, DisambPrim)
       disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
 
       typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef

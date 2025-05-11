@@ -91,6 +91,7 @@ module Ampersand.Core.AbstractSyntaxTree
 where
 
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
+import Algebra.Graph.AdjacencyMap
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
@@ -639,6 +640,12 @@ data ViewSegmentPayLoad
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
+-- In the new thinking, we have:
+--   CLASSIFY Workingstudent ISA Employee/\Student   translates to Isa (C "Workingstudent") (C "Employee") and Isa (C "Workingstudent") (C "Student"), which means that a Workingstudent can be in two different tables: that of students and that of employees.
+--   CLASSIFY Employee\/Student ISA Person  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person"), which means that Employees and Persons can (but don't have to) be in one table: that of persons.
+--   CLASSIFY Employee\/Student ISA Person/\Consumer  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person") and Isa (C "Employee") (C "Consumer") and Isa (C "Student") (C "Consumer"), which means that a Workingstudent can be in two different tables: that of students and that of employees.
+--   CLASSIFY Employee/\Student ISA Person\/Consumer  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person") and Isa (C "Employee") (C "Consumer") and Isa (C "Student") (C "Consumer"), which means that a Workingstudent can be in two different tables: that of students and that of employees.
+
 data AClassify
   = Isa
       { genpos :: !Origin,
@@ -1355,21 +1362,6 @@ data A_Concept
   deriving (Typeable, Data, Ord, Eq)
 
 
--- Compute the least upper bound (lub) of a list of pairs
-lub :: [(a, a)] -> a -> a -> Maybe a
-lub [] = Nothing
-lub xs = Just $ foldl1 combineLub xs
-  where
-    combineLub (a1, b1) (a2, b2) = (max a1 a2, max b1 b2)
-
--- Compute the greatest lower bound (glb) of a list of pairs
-glb :: (Ord a, Ord b) => [(a, b)] -> Maybe (a, b)
-glb [] = Nothing
-glb xs = Just $ foldl1 combineGlb xs
-  where
-    combineGlb (a1, b1) (a2, b2) = (min a1 a2, min b1 b2)
-
-
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
 sessionConcept :: A_Concept
@@ -1484,6 +1476,8 @@ data ContextInfo = CI
     soloConcs :: !(Set.Set Type),
     -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
     allConcepts :: !(Set.Set A_Concept),
+    -- | gens_graph is the concept graph built from CLASSIFY statements
+    gens_graph :: !(AdjacencyMap P_Concept),
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept
@@ -1806,7 +1800,7 @@ makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
 makeConceptMap cds gs = mapFunction
   where
     mapFunction :: P_Concept -> A_Concept
-    mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
+    mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edgesList of
       xs -> mkConcept pCpt xs
       where
         inCycle xs = pCpt `elem` xs
@@ -1826,8 +1820,8 @@ makeConceptMap cds gs = mapFunction
               [] -> Nothing
               h : _ -> Just h
           )
-    edges :: [(P_Concept, [P_Concept])]
-    edges = L.nub . map mkEdge . eqCl specific $ gs
+    edgesList :: [(P_Concept, [P_Concept])]
+    edgesList = L.nub . map mkEdge . eqCl specific $ gs
     mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
     mkEdge x = (from, to's)
       where

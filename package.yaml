@@ -41,6 +41,7 @@ dependencies:
   - aeson
   - aeson-pretty
   - ansi-terminal
+  - algebraic-graphs
   - base
   # - bytestring
   - casing

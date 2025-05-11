@@ -543,6 +543,7 @@ library
       Ampersand.Basics.BuildInfo_Generated
       Ampersand.Prototype.StaticFiles_Generated
   other-modules:
+      Ampersand.ADL1.DisambNew
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
       Ampersand.Commands.Daemon
@@ -595,6 +596,7 @@ library
     , QuickCheck
     , aeson
     , aeson-pretty
+    , algebraic-graphs
     , ansi-terminal
     , base
     , casing
@@ -657,6 +659,7 @@ executable ampPreProc
     , QuickCheck
     , aeson
     , aeson-pretty
+    , algebraic-graphs
     , ampersand
     , ansi-terminal
     , base
@@ -723,6 +726,7 @@ executable ampersand
     , QuickCheck
     , aeson
     , aeson-pretty
+    , algebraic-graphs
     , ampersand
     , ansi-terminal
     , base
@@ -787,6 +791,7 @@ test-suite ampersand-test
     , QuickCheck
     , aeson
     , aeson-pretty
+    , algebraic-graphs
     , ampersand
     , ansi-terminal
     , base
