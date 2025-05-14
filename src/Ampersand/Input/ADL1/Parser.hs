@@ -387,7 +387,8 @@ pClassify =
     <*> ( is
             <$ (pKey . toText1Unsafe) "IS"
             <*> pCterm
-            <|> isa
+          <|>
+          isa
             <$ (pKey . toText1Unsafe) "ISA"
             <*> pConceptRef
         )

@@ -91,7 +91,7 @@ module Ampersand.Core.AbstractSyntaxTree
 where
 
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
-import Algebra.Graph.AdjacencyMap
+-- import Algebra.Graph.AdjacencyMap
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
@@ -1476,8 +1476,8 @@ data ContextInfo = CI
     soloConcs :: !(Set.Set Type),
     -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
     allConcepts :: !(Set.Set A_Concept),
-    -- | gens_graph is the concept graph built from CLASSIFY statements
-    gens_graph :: !(AdjacencyMap P_Concept),
+    -- | gens contains all CLASSIFY statements in this context
+    allGens :: ![AClassify],
     -- | generalisation relations again, as a type system (including phantom types)
     gens_efficient :: !(Op1EqualitySystem Type),
     -- | a map that must be used to convert P_Concept to A_Concept
@@ -1791,6 +1791,10 @@ data Typology = Typology
 --   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.
+--   Formally: A_Concepts have a classification relation, which is reflexive, transitive, and antisymmetric.
+--   I like to think of it as a directed acyclic graph.
+--   P_Concepts are mapped to A_Concepts, and all cycles in the classification of P_Concepts are condensed into one
+--   A_Concept. This is done by the function `makeConceptMap`.
 type ConceptMap = P_Concept -> A_Concept
 
 instance Show ConceptMap where

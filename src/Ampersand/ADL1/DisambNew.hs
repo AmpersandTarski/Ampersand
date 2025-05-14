@@ -17,7 +17,9 @@ import Algebra.Graph.AdjacencyMap as Graph
 import qualified RIO.NonEmpty as NE
 -- import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
+import Ampersand.ADL1.P2A_Converters (pCpt2aCpt, findRels)
 -- import Text.PrettyPrint.Leijen (Pretty (..), text)
 
 
@@ -30,14 +32,33 @@ import qualified RIO.Set as Set
 --   | Known Dxpression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
 --   deriving (Show) -- Here, deriving Show serves debugging purposes only.
 
-makeGraph :: [PClassify] -> AdjacencyMap P_Concept
-makeGraph conceptPairs = Graph.overlays [vertex (specific gn) `Graph.connect` vertex c | gn <- conceptPairs, c <- NE.toList (generics gn)]
+-- data AClassify
+--   = Isa
+--       { genpos :: !Origin,
+--         -- | specific concept
+--         genspc :: !A_Concept,
+--         -- | generic concept
+--         gengen :: !A_Concept
+--       }
+--   | IsE
+--       { genpos :: !Origin,
+--         -- | specific concept
+--         genspc :: !A_Concept,
+--         -- | concepts of which the conjunction is equivalent to the specific concept
+--         genrhs :: !(NE.NonEmpty A_Concept)
+--       }
+
+makeGraph :: [AClassify] -> AdjacencyMap A_Concept
+makeGraph conceptPairs = Graph.overlays [vertex spc `Graph.connect` vertex gen | (spc,gen) <- pairs]
+  where
+    pairs = [ (genspc isa, gengen isa) | isa@(Isa{})<-conceptPairs]<>[ (genspc ise, c) | ise@(IsE{})<-conceptPairs, c<-toList (genrhs ise)]
+
 synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
 synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
 
 
 -- Compute the least upper bound (lub) of a list of pairs
-lub :: (Ord a, Show a) =>AdjacencyMap a -> a -> a -> Maybe a
+lub :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
 lub conceptGraph a b
     | hasEdge a b rel = Just b
     | hasEdge b a rel = Just a
@@ -50,7 +71,7 @@ lub conceptGraph a b
       rel = reflexiveClosure (transitiveClosure conceptGraph)
 
 -- Compute the greatest lower bound (glb) of a list of pairs
-glb :: (Ord a, Show a) =>AdjacencyMap a -> a -> a -> Maybe a
+glb :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
 glb conceptGraph a b
     | hasEdge a b rel = Just a
     | hasEdge b a rel = Just b
@@ -131,42 +152,42 @@ data Dxpression
   | -- | Complement
     DCpl !Dxpression
   | -- | simple relation
-    DDcD !Relation
+    DDcD Name
   | -- | Identity relation
     DDcI !A_Concept
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
     DBin !PBinOp !A_Concept
   | -- | Signed expression, to disambiguate
-    DSgn !Dxpression !Signature
+    DSgn !Dxpression !(Set.Set Signature)
   | -- | Signed expression, to disambiguate
     DSet !(Set.Set Dxpression)
   | -- | Full relation
     DDcV !Signature
   | -- | constant PAtomValue, because when building the Dxpression, the TType of the concept isn't known yet.
-    DMp1 PAtomValue !A_Concept
+    DMp1 PAtomValue
   deriving (Eq, Ord, Show, Typeable) -- , Generic, Data
 
 term2Dxpr :: ContextInfo -> Term TermPrim -> Dxpression
 term2Dxpr contextInfo trm = case trm of
-    Prim (PI _) -> DSet (Set.fromList [ DDcI c | c<-conceptlist ])
-    Prim (Pid _ c) -> DDcI c
-    Prim (Patm _ av (Just c)) -> DSet (Set.fromList [ DMp1 av c | c<-conceptlist ])
-    Prim (Patm _ av  Nothing) -> DMp1 av c
-    Prim (PVee _) -> DSet (Set.fromList [ DDcV (Sign src tgt) | src<-conceptlist, tgt<-conceptlist ])
-    Prim (Pfull _ src tgt) -> DDcV (Sign src tgt)
-    Prim (PBin _ oper) -> DSet (Set.fromList [ DBin oper c | c<-conceptlist ])
-    Prim (PBind _ oper c) -> DBin oper c
-    Prim (PNamedR relname) -> DSet (Set.fromList [ DDcD (Sign src tgt) | Just sgn<-lookup relname declMap ])
-    PEqu _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DEqu (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[source sgn_a `lub` source sgn_b], Just tgt<-[target sgn_a `lub` target sgn_b] ]
-    PInc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DInc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[source sgn_a `lub` source sgn_b], Just tgt<-[target sgn_a `lub` target sgn_b] ]
-    PIsc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DIsc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[source sgn_a `lub` source sgn_b], Just tgt<-[target sgn_a `lub` target sgn_b] ]
-    PUni _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DUni (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[source sgn_a `lub` source sgn_b], Just tgt<-[target sgn_a `lub` target sgn_b] ]
-    PDif _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DDif (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[source sgn_a `lub` source sgn_b], Just tgt<-[target sgn_a `lub` target sgn_b] ]
+    Prim (PI _) -> (DSet . Set.fromList . map DDcI) conceptList
+    Prim (Pid _ c) -> (DDcI . toA_Concept) c
+    Prim (Patm _ av (Just c)) -> let c'=toA_Concept c in DSgn (DMp1 av) (Sign c' c')
+    Prim (Patm _ av  Nothing) -> DMp1 av
+    Prim (PVee _) -> DSet (Set.fromList [ DDcV (Sign src tgt) | src<-conceptList, tgt<-conceptList ])
+    Prim (Pfull _ src tgt) -> DDcV (Sign (toA_Concept src) (toA_Concept tgt))
+    Prim (PBin _ oper) -> DSet (Set.fromList [ DBin oper c | c<-conceptList ])
+    Prim (PBind _ oper c) -> DBin oper (toA_Concept c)
+    Prim (PNamedR rel) -> (DSet . Set.fromList) [ DSgn (DDcD (name rel)) (sign expr) | expr<-Map.elems (findRels (declDisambMap contextInfo) (name rel)) ]
+    PEqu _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DEqu (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PInc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DInc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PIsc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DIsc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PUni _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DUni (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PDif _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DDif (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
     PLrs _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DLrs (sa, sb)) (Sign (source sgn_a) (source sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb ]
     PRrs _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DRrs (sa, sb)) (Sign (target sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb ]
     PDia _ a b -> let sa = s a; sb = s b in DDia (sa, sb)
-    PCps _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DCps (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[target sgn_a `lub` source sgn_b] ]
-    PRad _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DRad (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[target sgn_a `lub` source sgn_b] ]
+    PCps _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DCps (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
+    PRad _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DRad (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
     PPrd _ a b -> let sa = s a; sb = s b in DPrd (sa, sb)
     PKl0 _ e   -> DKl0 (s e)
     PKl1 _ e   -> DKl1 (s e)
@@ -176,107 +197,110 @@ term2Dxpr contextInfo trm = case trm of
  where
     s :: Term TermPrim -> Dxpression
     s = term2Dxpr contextInfo
-    conceptGraph = gens_graph contextInfo
-    conceptlist :: [P_Concept]
-    conceptlist = vertexList conceptGraph
+    conceptGraph = makeGraph (allGens contextInfo)
+    toA_Concept :: P_Concept -> A_Concept
+    toA_Concept = pCpt2aCpt (conceptMap contextInfo)
+    conceptList :: [A_Concept]
+    conceptList = [toA_Concept c | c<-vertexList conceptGraph ]
 
 signatures :: Dxpression -> [Signature]
 signatures (DSet s)      = concatMap signatures (Set.toList s)
 signatures (DSgn _ sign) = [sign]
 signatures (DDcV sign)   = [sign]
-signatures (DMp1 _ c)    = [Sign c c]
 signatures (DBin _ c)    = [Sign c c]
 signatures (DDcI c)      = [Sign c c]
 signatures _             = []
 
-typecheck :: Term TermPrim -> Guarded Expression
-typecheck trm
- = do
-    case term2Dxpr trm of
+typecheck ::ContextInfo -> Dxpression -> Guarded Expression
+typecheck ci dExpr
+ =  case dExpr of
       DEqu (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
-        if signature a == signature b
+        a <- tCheck sa
+        b <- tCheck sb
+        if null (signatures sa `Set.intersection` signatures sb0) 
           then pure (EEqu a b)
           else Error
       DInc (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         if signature a <= signature b
           then pure (EInc a b)
           else Error
       DIsc (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         case signature a `glb` signature b of
           Just _sgn -> pure (EIsc a b)
           Nothing   -> Error
       DUni (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         case signature a `lub` signature b of
           Just _sgn -> pure (EUni a b)
           Nothing   -> Error
       DDif (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         case signature a `lub` signature b of
           Just _sgn -> pure (EDif a b)
           Nothing   -> Error
       DLrs (sa, sb) -> do  -- Sign (source sgn_a) (source sgn_b), join $ binary' (./.) (MBE (Tgt, snd) (Tgt, fst)) ((Src, fst), (Src, snd))
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         if target a <= target b
           then pure (ELrs a b)
           else Error
       DRrs (sa, sb) -> do  -- Sign (target sgn_a) (target sgn_b), join $ binary' (.\.) (MBE (Src, fst) (Src, snd)) ((Tgt, fst), (Tgt, snd))
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         if source a <= source b
           then pure (ERrs a b)
           else Error
       DDia (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         case signature a `lub` signature b of
           Just _sgn -> pure (EDia a b)
           Nothing   -> Error
       DCps (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         case signature a `glb` signature b of
           Just _sgn -> pure (ECps a b)
           Nothing   -> Error
       DRad (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
+        a <- tCheck sa
+        b <- tCheck sb
         pure (ERad a b)
+      DPrd (sa, sb) -> do
+        a <- tCheck sa
+        b <- tCheck sb
+        pure (EPrd a b)
+      DKl0 e -> do
+        a <- tCheck e
+        pure (EKl0 a)
+      DKl1 e -> do
+        a <- tCheck e
+        pure (EKl1 a)
+      DFlp e -> do
+        a <- tCheck e
+        pure (EFlp a)
+      DCpl e -> do
+        a <- tCheck e
+        pure (ECpl a)      
       DDcD rel -> pure (EDcD rel)
+      DDcI c -> pure (EDcI c)
+      DBin oper c -> pure (EBin oper c)
+      DSgn dExpr sgn -> do
+        a <- tCheck sa
+        b <- tCheck sb
+        pure (ESgn a b)
       x@(DSet dExprs) -> case Set.toList dExprs of
         [] -> return (Error "Empty set")
         [x] -> return x
         _ -> Error (concatMap signatures dExprs)
-      DDcI c -> pure (EDcI c)
-      DMp1 av c -> pure (EMp1 av c)
       DDcV (Sign src tgt) -> pure (EDcV src tgt)
-      DBin oper c -> pure (EBin oper c)
-      DDia (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
-        pure (EDia a b)
-      DPrd (sa, sb) -> do
-        a <- typecheck sa
-        b <- typecheck sb
-        pure (EPrd a b)
-      DKl0 e -> do
-        a <- typecheck e
-        pure (EKl0 a)
-      DKl1 e -> do
-        a <- typecheck e
-        pure (EKl1 a)
-      DFlp e -> do
-        a <- typecheck e
-        pure (EFlp a)
-      DCpl e -> do
-        a <- typecheck e
-        pure (ECpl a)
+      DMp1 av -> Error ("cannot tCheck constant " ++ show av)
+    where
+      tCheck :: Dxpression -> Guarded Expression
+      tCheck = typecheck ci

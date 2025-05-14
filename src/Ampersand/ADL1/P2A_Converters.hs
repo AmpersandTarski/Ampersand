@@ -6,6 +6,7 @@ module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
     pCpt2aCpt,
     ConceptMap,
+    findRels
   )
 where
 
@@ -368,8 +369,8 @@ pCtx2aCtx
       concGroups = getGroups genLatticeIncomplete :: [[Type]]
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
-      allGens :: [PClassify]
-      allGens = p_gens <> concatMap pt_gns p_patterns
+      alleGens :: [PClassify]
+      alleGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [P_Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
       g_contextInfo :: Guarded ContextInfo
@@ -397,7 +398,7 @@ pCtx2aCtx
               declDisambMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
-              gens_graph = makeGraph allGens,
+              allGens = gns,
               gens_efficient = genLattice,
               conceptMap = conceptmap,
               defaultLang = deflangCtxt,
@@ -407,7 +408,8 @@ pCtx2aCtx
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef conceptmap deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
 
-          gns = mapMaybe (pClassify2aClassify conceptmap) allGens
+          gns :: [AClassify]
+          gns = mapMaybe (pClassify2aClassify conceptmap) alleGens
 
           -- | We make concept graphs with Algebra.Graph.AdjacencyMap.
           -- See https://github.com/snowleopard/alga-paper for documentation and https://www.youtube.com/watch?v=EdQGLewU-8k for motivation.
@@ -516,7 +518,7 @@ pCtx2aCtx
               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
       conceptmap :: ConceptMap
-      conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) allGens
+      conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) alleGens
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap = [(ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 
@@ -528,7 +530,7 @@ pCtx2aCtx
         [ ( Set.fromList [pConcToType (specific x)],
             Set.fromList . NE.toList . NE.map pConcToType . generics $ x
           )
-          | x <- allGens
+          | x <- alleGens
         ]
 
       completeTypePairs :: [(Set Type, Set Type)]
@@ -586,6 +588,7 @@ pCtx2aCtx
                   }
         where
           specCpt = pCpt2aCpt fun $ specific pg
+
       userConcept :: P_Concept -> Type
       userConcept P_ONE = BuiltIn TypeOfOne
       userConcept (PCpt nm) = UserConcept nm
