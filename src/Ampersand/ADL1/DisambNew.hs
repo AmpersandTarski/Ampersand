@@ -83,6 +83,14 @@ glb conceptGraph a b
       maximum a b = if hasEdge a b rel then b else a
       rel = reflexiveClosure (transitiveClosure conceptGraph)
 
+leq :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe Bool
+leq conceptGraph a b
+    | hasEdge a b rel = Just True
+    | hasEdge b a rel = Just False
+    | otherwise       = Nothing
+    where
+      rel = reflexiveClosure (transitiveClosure conceptGraph)
+
 {- Here is some test output for the lub and glb functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
 
@@ -154,43 +162,44 @@ data Dxpression
   | -- | simple relation
     DDcD Name
   | -- | Identity relation
-    DDcI !A_Concept
+    DDcI
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
-    DBin !PBinOp !A_Concept
+    DBin !PBinOp
   | -- | Signed expression, to disambiguate
-    DSgn !Dxpression !(Set.Set Signature)
-  | -- | Signed expression, to disambiguate
-    DSet !(Set.Set Dxpression)
+    DSgn (Term TermPrim) !(Set.Set Signature)
   | -- | Full relation
-    DDcV !Signature
+    DDcV
   | -- | constant PAtomValue, because when building the Dxpression, the TType of the concept isn't known yet.
     DMp1 PAtomValue
-  deriving (Eq, Ord, Show, Typeable) -- , Generic, Data
+  deriving (Eq, Ord, Show, Typeable, Traversable) -- , Generic, Data
 
 term2Dxpr :: ContextInfo -> Term TermPrim -> Dxpression
 term2Dxpr contextInfo trm = case trm of
-    Prim (PI _) -> (DSet . Set.fromList . map DDcI) conceptList
-    Prim (Pid _ c) -> (DDcI . toA_Concept) c
-    Prim (Patm _ av (Just c)) -> let c'=toA_Concept c in DSgn (DMp1 av) (Sign c' c')
-    Prim (Patm _ av  Nothing) -> DMp1 av
-    Prim (PVee _) -> DSet (Set.fromList [ DDcV (Sign src tgt) | src<-conceptList, tgt<-conceptList ])
-    Prim (Pfull _ src tgt) -> DDcV (Sign (toA_Concept src) (toA_Concept tgt))
-    Prim (PBin _ oper) -> DSet (Set.fromList [ DBin oper c | c<-conceptList ])
-    Prim (PBind _ oper c) -> DBin oper (toA_Concept c)
-    Prim (PNamedR rel) -> (DSet . Set.fromList) [ DSgn (DDcD (name rel)) (sign expr) | expr<-Map.elems (findRels (declDisambMap contextInfo) (name rel)) ]
-    PEqu _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DEqu (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PInc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DInc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PIsc _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DIsc (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PUni _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DUni (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PDif _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DDif (sa, sb)) (Sign src tgt) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PLrs _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DLrs (sa, sb)) (Sign (source sgn_a) (source sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb ]
-    PRrs _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DRrs (sa, sb)) (Sign (target sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb ]
-    PDia _ a b -> let sa = s a; sb = s b in DDia (sa, sb)
-    PCps _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DCps (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
-    PRad _ a b -> let sa = s a; sb = s b in (DSet . Set.fromList) [ DSgn (DRad (sa, sb)) (Sign (source sgn_a) (target sgn_b)) | sgn_a<-signatures sa, sgn_b<-signatures sb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
-    PPrd _ a b -> let sa = s a; sb = s b in DPrd (sa, sb)
-    PKl0 _ e   -> DKl0 (s e)
-    PKl1 _ e   -> DKl1 (s e)
+    Prim (PI _)               ->                         (DSgn DDcI . Set.fromList) [Sign c c| c<-conceptList]
+    Prim (Pid _ c)            -> let c'=toA_Concept c in (DSgn DDcI . Set.fromList) [Sign c' c']
+    Prim (Patm _ av (Just c)) -> let c'=toA_Concept c in (DSgn (DMp1 av) . Set.fromList) [Sign c' c']
+    Prim (Patm _ av  Nothing) ->                         (DSgn (DMp1 av) . Set.fromList) [Sign c c| c<-conceptList]
+    Prim (PVee _)             ->                         (DSgn DDcV . Set.fromList) [Sign src tgt | src<-conceptList, tgt<-conceptList ]
+    Prim (Pfull _ src tgt)    ->                         (DSgn DDcV . Set.fromList) [Sign (toA_Concept src) (toA_Concept tgt)]
+    Prim (PBin _ oper)        ->                         (DSgn (DBin oper) . Set.fromList) [Sign c c| c<-conceptList]
+    Prim (PBind _ oper c)     -> let c'=toA_Concept c in (DSgn (DBin oper) . Set.fromList) [Sign c' c'| c<-conceptList]
+    Prim (PNamedR rel)        ->                         (DSgn (DDcD (name rel)) . DSet . Set.fromList . map (sign.elems) . findRels (declDisambMap contextInfo) . name) rel
+    PEqu _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DEqu (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PInc _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DInc (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PIsc _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DIsc (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+    PUni _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DUni (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just src<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[glb conceptGraph (target sgn_a) (target sgn_b)] ]
+    PDif _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DDif (sa, sb)) . Set.fromList) [ Sign (source sgn_a) (target sgn_a) | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just src<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[glb conceptGraph (target sgn_a) (target sgn_b)] ]
+    PLrs _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DLrs (sa, sb)) . Set.fromList) [ Sign (source sgn_a) (source sgn_b) | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, leq conceptGraph (target sgn_b) (target sgn_a) ]
+    PRrs _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DRrs (sa, sb)) . Set.fromList) [ Sign (target sgn_a) (target sgn_b) | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, leq conceptGraph (source sgn_a) (source sgn_b) ]
+    PDia _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DDia (sa, sb)) . Set.fromList) [ Sign (source sgn_a) (target sgn_b) | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, source sgn_a == source sgn_b ]
+    PCps _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DCps (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just _between<-[glb conceptGraph (target sgn_a) (source sgn_b)] ]
+    PRad _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DRad (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
+    PPrd _ a b -> let DSgn sa sgna = s a; DSgn sb sgnb = s b in (DSgn (DPrd (sa, sb)) . Set.fromList) [ Sign src tgt | sgn_a<-Set.toList sgna, sgn_b<-Set.toList sgnb ]
+    PKl0 _ e   -> let DSgn se sgne = s e in DSgn (DKl0 se) sgne
+    PKl1 _ e   -> let DSgn se sgne = s e in DSgn (DKl1 se) sgne
+    PFlp _ e   -> let DSgn se sgne = s e in DFlp (DKl1 se) sgne
+    PCpl _ e   -> let DSgn se sgne = s e in DCpl (DKl1 se) sgne
+
     PFlp _ e   -> DFlp (s e)
     PCpl _ e   -> DCpl (s e)
     PBrk _ e   -> s e
@@ -203,13 +212,9 @@ term2Dxpr contextInfo trm = case trm of
     conceptList :: [A_Concept]
     conceptList = [toA_Concept c | c<-vertexList conceptGraph ]
 
-signatures :: Dxpression -> [Signature]
-signatures (DSet s)      = concatMap signatures (Set.toList s)
-signatures (DSgn _ sign) = [sign]
-signatures (DDcV sign)   = [sign]
-signatures (DBin _ c)    = [Sign c c]
-signatures (DDcI c)      = [Sign c c]
-signatures _             = []
+signatures :: Dxpression -> Set.Set Signature
+signatures (DSgn _ sgns) = sgns
+signatures _             = Set.empty
 
 typecheck ::ContextInfo -> Dxpression -> Guarded Expression
 typecheck ci dExpr
@@ -217,7 +222,7 @@ typecheck ci dExpr
       DEqu (sa, sb) -> do
         a <- tCheck sa
         b <- tCheck sb
-        if null (signatures sa `Set.intersection` signatures sb0) 
+        if null (signatures sa `Set.intersection` signatures sb0)
           then pure (EEqu a b)
           else Error
       DInc (sa, sb) -> do
@@ -287,7 +292,7 @@ typecheck ci dExpr
         pure (EFlp a)
       DCpl e -> do
         a <- tCheck e
-        pure (ECpl a)      
+        pure (ECpl a)
       DDcD rel -> pure (EDcD rel)
       DDcI c -> pure (EDcI c)
       DBin oper c -> pure (EBin oper c)
