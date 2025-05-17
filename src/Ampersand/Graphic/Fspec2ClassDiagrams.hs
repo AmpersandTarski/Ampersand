@@ -15,6 +15,7 @@ import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
+import Ampersand.Misc.HasClasses
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -69,7 +70,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
   -- Properties and identities are not shown.
   -- The first parameter (Bool) indicates wether or not the entities should be grouped by patterns.
-  cdAnalysis :: Bool -> FSpec -> a -> ClassDiag
+  cdAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> a -> ClassDiag
 
   -- | This function returns the relations of the given a.
   -- It is used to filter the relations that are shown in the class diagram.
@@ -79,7 +80,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   --   for the group in which they may be grouped.
   classCandidates :: a -> [(A_Concept, Maybe Name)]
 
-  classesAndAssociations :: FSpec -> a -> ([(Class, Maybe Name)], [Association])
+  classesAndAssociations :: (HasDocumentOpts env) => env -> FSpec -> a -> ([(Class, Maybe Name)], [Association])
   -- ^ This function returns all the classes in the given datamodel that should be drawn.
   --   Note: classes without attributes are included as well.
   -- The idea is as follows:
@@ -93,9 +94,13 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   --     - If neither the source nor the target is, the relation is drawn as an association,
   --        and the source and target are drawn as standalone class.
   --   - Concepts that are not in the source or target of any relation are drawn as a standalone class.
-  classesAndAssociations fSpec a =
+  classesAndAssociations env fSpec a =
     ( map (buildClass . addAttributes) mustBeDrawnAsClass,
-      map rel2Association (relations2draw <> additionalRelations)
+      map
+        rel2Association
+        ( relations2draw
+            <> (if view uniEdgesL env then additionalRelations else mempty)
+        )
     )
     where
       mustBeDrawnAsClass = L.nub $ conceptsWithUniOrGens <> standalonConcepts
@@ -189,7 +194,7 @@ ooAttr r =
     }
 
 instance CDAnalysable Pattern where
-  cdAnalysis _ fSpec pat =
+  cdAnalysis _  env fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
         classes = classes',
@@ -198,7 +203,7 @@ instance CDAnalysable Pattern where
         ooCpts = toList (concs pat)
       }
     where
-      (classes', associations') = classesAndAssociations fSpec pat
+      (classes', associations') = classesAndAssociations env fSpec pat
   relations = ptdcs
   classCandidates :: Pattern -> [(A_Concept, Maybe Name)]
   classCandidates pat = map foo . toList . concs $ pat
@@ -212,7 +217,7 @@ instance CDAnalysable Pattern where
         )
 
 instance CDAnalysable A_Context where
-  cdAnalysis grouped fSpec ctx =
+  cdAnalysis grouped env fSpec ctx =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name ctx,
         classes = map handleGrouping classes',
@@ -222,7 +227,7 @@ instance CDAnalysable A_Context where
       }
     where
       handleGrouping (cl, mName) = (cl, if grouped then mName else Nothing)
-      (classes', associations') = classesAndAssociations fSpec ctx
+      (classes', associations') = classesAndAssociations env fSpec ctx
   relations = relsDefdIn
   classCandidates :: A_Context -> [(A_Concept, Maybe Name)]
   classCandidates ctx = map foo . toList . concs $ ctx

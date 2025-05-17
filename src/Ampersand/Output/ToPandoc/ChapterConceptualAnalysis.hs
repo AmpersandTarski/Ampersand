@@ -116,12 +116,12 @@ chpConceptualAnalysis env lev fSpec =
         -- all classes (i.e. entities) from this pattern
         themeClasses :: [Class]
         themeClasses = case patOfTheme themeContent of
-          Just pat -> fst <$> classes (cdAnalysis False fSpec pat)
+          Just pat -> fst <$> classes (cdAnalysis False env fSpec pat)
           Nothing ->
             map fst
               . filter (isNothing . snd)
               . classes
-              . cdAnalysis False fSpec
+              . cdAnalysis False env fSpec
               . fromMaybe (fatal "No context found in FSpec")
               . originalContext
               $ fSpec
