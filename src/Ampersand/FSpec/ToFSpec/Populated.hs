@@ -67,6 +67,8 @@ atomValuesOf ci pt c =
             $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+    UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
+    ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
 
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl =

@@ -47,7 +47,7 @@ isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
     PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
-    ONE -> False
+    _ -> False
 
 hasAttributes ::
   Set.Set P_Relation -> P_Concept -> Bool

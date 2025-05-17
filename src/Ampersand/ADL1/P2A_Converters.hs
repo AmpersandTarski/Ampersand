@@ -518,7 +518,7 @@ pCtx2aCtx
               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
       conceptmap :: ConceptMap
-      conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) alleGens
+      conceptmap = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
       p_interfaceAndDisambObjs declMap = [(ifc, disambiguate conceptmap (termPrimDisAmb conceptmap declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 

@@ -236,10 +236,10 @@ instance Unique APair where
 concDefs :: FSpec -> A_Concept -> [AConceptDef]
 concDefs fSpec c =
   case c of
-    ONE -> []
     PlainConcept {} -> filter isDefinitionOf . conceptDefs $ fSpec
       where
         isDefinitionOf cdef = name cdef `elem` fmap fst (aliases c)
+    _ -> []
 
 instance ConceptStructure FSpec where
   concs = allConcepts . fcontextInfo

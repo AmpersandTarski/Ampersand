@@ -879,6 +879,7 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
+        _ -> fatal ("EDcI: unexpected concept type" <> tshow c)
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps c _) -> traceComment ["case: EEps c _"]
       $ case c of -- select the population of the most specific concept, which is the source.
@@ -911,6 +912,7 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
+        _ -> fatal ("EEps: unexpected concept type" <> tshow c)
     (EBin oper c) -> traceComment ["case: EBin oper c "] $ case c of
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
@@ -949,6 +951,7 @@ nonSpecialSelectExpr fSpec expr =
           theName = sqlAttConcept fSpec c
           first' = uName "fst"
           secnd = uName "snd"
+      _ -> fatal ("EBin: unexpected concept type" <> tshow c)
     (EDcD d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->

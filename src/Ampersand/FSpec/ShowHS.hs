@@ -823,7 +823,7 @@ instance ShowHSName A_Concept where
 instance ShowHS A_Concept where
   showHS _ _ c = case c of
     PlainConcept {} -> "PlainConcept " <> fullName c
-    ONE -> "ONE"
+    _ -> "ONE"
 
 instance ShowHSName AProp where
   showHSName Uni = "Uni"

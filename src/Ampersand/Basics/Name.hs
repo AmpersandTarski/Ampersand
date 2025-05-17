@@ -91,7 +91,7 @@ toNamePart1 x = case checkProperId x of
 
 -- | suggestName checks if the given text is a proper name. If not, it proposes a proper name based
 --   on the given text. In that case, the given text is converted into a Label. If the given text
---   was good enough for a proper name, no Label is retured.
+--   was good enough for a proper name, no Label is returned.
 suggestName :: NameType -> Text1 -> (Name, Maybe Label)
 suggestName typ txt =
   ( mkName typ . fmap fst $ parts,

@@ -772,18 +772,22 @@ data Guarded a
 instance (Eq a) => Eq (Guarded a) where
   Checked a1 _ == Checked a2 _ = a1 == a2
   _ == _ = False
-
+-- | We want to apply a function to the value inside Guarded a, unless there are errors. (imported from Data.Functor)
 instance Functor Guarded where
   fmap _ (Errors a) = Errors a
   fmap f (Checked a ws) = Checked (f a) ws
 
+-- | introduce the ability to apply functions within the monadic context.
 instance Applicative Guarded where
+  -- pure a lifts a regular value a into the Guarded context without warnings.
   pure x = Checked x []
+  -- <*> (apply) combines two Guarded values, provided they are error-free.
   (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws <> ws')
   (<*>) (Errors a) (Checked _ _) = Errors a
   (<*>) (Checked _ _) (Errors b) = Errors b
   (<*>) (Errors a) (Errors b) = Errors (a <> b)
 
+-- | the Monad instance allows us to use do syntax. It defines how to sequence computations that produce Guarded values.
 instance Monad Guarded where
   (>>=) (Checked a ws) f = addWarnings ws (f a)
   (>>=) (Errors x) _ = Errors x

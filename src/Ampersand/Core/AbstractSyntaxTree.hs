@@ -645,7 +645,6 @@ data ViewSegmentPayLoad
 --   CLASSIFY Employee\/Student ISA Person  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person"), which means that Employees and Persons can (but don't have to) be in one table: that of persons.
 --   CLASSIFY Employee\/Student ISA Person/\Consumer  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person") and Isa (C "Employee") (C "Consumer") and Isa (C "Student") (C "Consumer"), which means that a Workingstudent can be in two different tables: that of students and that of employees.
 --   CLASSIFY Employee/\Student ISA Person\/Consumer  translates to Isa (C "Employee") (C "Person") and Isa (C "Student") (C "Person") and Isa (C "Employee") (C "Consumer") and Isa (C "Student") (C "Consumer"), which means that a Workingstudent can be in two different tables: that of students and that of employees.
-
 data AClassify
   = Isa
       { genpos :: !Origin,
@@ -1357,10 +1356,13 @@ data A_Concept
       { -- | List of names that the concept is refered to, in random order
         aliases :: !(NE.NonEmpty (Name, Maybe Label))
       }
+  | -- | The union type of concepts:
+    UNION !(Set.Set A_Concept)
+  | -- | The intersection type of concepts:
+    ISECT !(Set.Set A_Concept)
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
   deriving (Typeable, Data, Ord, Eq)
-
 
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
@@ -1368,17 +1370,6 @@ sessionConcept :: A_Concept
 sessionConcept = PlainConcept {aliases = (nameOfSESSION, Nothing) NE.:| []}
 
 type A_Concepts = Set.Set A_Concept
-
-{- -- this is faster, so if you think Eq on concepts is taking a long time, try this...
-instance Ord A_Concept where
-  compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2
-  compare ONE ONE = EQ
-  compare ONE (PlainConcept{}) = LT
-  compare (PlainConcept{}) ONE = GT
-
-instance Eq A_Concept where
-  a == b = compare a b == EQ
--}
 
 instance Unique AConceptDef where
   showUnique = toText1Unsafe . fullName
@@ -1391,17 +1382,21 @@ instance Hashable A_Concept where
     s
       `hashWithSalt` ( case cpt of
                          PlainConcept {} -> (0 :: Int) `hashWithSalt` (fst . NE.head . NE.sort $ aliases cpt)
-                         ONE -> 1 :: Int
+                         UNION cpts -> (1 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
+                         ISECT cpts -> (2 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
+                         ONE -> (3 :: Int) `hashWithSalt` ("ONE" :: String)
                      )
 
 instance Named A_Concept where
   name PlainConcept {aliases = names} = fst . NE.head $ names
+  name (UNION cpts) = (mkName ConceptName . (NE.:| []) . fromMaybe "" . toNamePart . T.intercalate "\\/" . map tshow . Set.toList) cpts
+  name (ISECT cpts) = (mkName ConceptName . (NE.:| []) . fromMaybe "" . toNamePart . T.intercalate "/\\" . map tshow . Set.toList) cpts
   name ONE = nameOfONE
 
 instance Labeled A_Concept where
   mLabel cpt = case cpt of
     PlainConcept {} -> snd . NE.head . aliases $ cpt
-    ONE -> Nothing
+    _ -> Nothing
 
 instance Show A_Concept where
   show = T.unpack . fullName
@@ -1413,11 +1408,11 @@ class (Show a) => ShowWithAliases a where
   showWithAliases :: a -> Text1
 
 instance ShowWithAliases A_Concept where
-  showWithAliases ONE = fullName1 ONE
   showWithAliases cpt@PlainConcept {} =
     case NE.tail (fst <$> aliases cpt) of
       [] -> fullName1 cpt
       xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fullName <$> xs) <> ")")
+  showWithAliases _ = fullName1 ONE
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c, val) = toText1Unsafe $ "ConceptAtomValue_" <> (tshow . abs . hash $ readable)
