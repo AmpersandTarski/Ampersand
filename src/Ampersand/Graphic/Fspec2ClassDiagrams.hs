@@ -84,7 +84,8 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   --   Note: classes without attributes are included as well.
   -- The idea is as follows:
   --   - Concepts with an univalent attribute or with a generalisation relation must be drawn as separate class.
-  --   - Relations that are UNI and/or INJ are drawn as attributes of the class they belong to.
+  --   - Relations that are UNI and/or INJ are drawn as attributes of the class they belong to. Additionally,
+  --       If the relation is UNI and/or INJ, an edge is drawn between source and target.
   --   - Relations that are UNI nor INJ are drawn based on the fact if source and or target have attributes or generalisation, as follows:
   --     - If both the source and the target are, the relation is drawn as an association.
   --     - If only the source is, the relation is drawn as a multi-attribute of the source.
@@ -94,7 +95,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   --   - Concepts that are not in the source or target of any relation are drawn as a standalone class.
   classesAndAssociations fSpec a =
     ( map (buildClass . addAttributes) mustBeDrawnAsClass,
-      map rel2Association relations2draw
+      map rel2Association (relations2draw <> additionalRelations)
     )
     where
       mustBeDrawnAsClass = L.nub $ conceptsWithUniOrGens <> standalonConcepts
@@ -106,7 +107,13 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
       uniAttributes = map (flipWhenNeeded . EDcD) uniOrInjs
         where
           flipWhenNeeded x = if isInj x && (not . isUni) x then flp x else x
-
+      additionalRelations :: [Relation]
+      additionalRelations =
+        [ rel
+          | rel <- uniOrInjs,
+            source rel `elem` map fst mustBeDrawnAsClass,
+            target rel `elem` map fst mustBeDrawnAsClass
+        ]
       conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
       (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
         L.partition (isConceptWithUniOrGen . fst) (toList $ classCandidates a)
