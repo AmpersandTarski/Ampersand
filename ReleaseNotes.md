@@ -2,7 +2,7 @@
 
 
 ## Unreleased
-- [Issue #1545](https://github.com/AmpersandTarski/Ampersand/issues/1545) Warn for possible use of Strict Open XML format
+- [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Restore edges between entities in LDM (redo of #1555).
 
 ## v5.3.7
 - [Issue #1560](https://github.com/AmpersandTarski/Ampersand/issues/1560) Warn for possible use of Strict Open XML format
