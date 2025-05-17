@@ -131,7 +131,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
     oocd =
       cdAnalysis
         False
-        env 
+        env
         fSpec
         (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec))
 

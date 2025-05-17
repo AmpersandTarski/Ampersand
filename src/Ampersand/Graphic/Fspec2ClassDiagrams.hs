@@ -194,7 +194,7 @@ ooAttr r =
     }
 
 instance CDAnalysable Pattern where
-  cdAnalysis _  env fSpec pat =
+  cdAnalysis _ env fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
         classes = classes',
