@@ -6,7 +6,7 @@
 {-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
-  ( CtxError (PE),
+  ( CtxError (..),
     Warning,
     cannotDisambiguate,
     mustBeOrdered,

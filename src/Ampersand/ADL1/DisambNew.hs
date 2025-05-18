@@ -20,6 +20,7 @@ import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import Ampersand.ADL1.P2A_Converters (findRels, findRelsTyped, pSign2aSign)
+import qualified Data.List.NonEmpty as NE
 -- import Text.PrettyPrint.Leijen (Pretty (..), text)
 
 
@@ -80,7 +81,7 @@ glb conceptGraph a b
         [] -> Nothing
         x:xs -> Just (L.foldr maximum x xs) -- find the minimum of the upper bounds
     where
-      maximum a b = if hasEdge a b rel then b else a
+      maximum a' b' = if hasEdge a' b' rel then b' else a'
       rel = reflexiveClosure (transitiveClosure conceptGraph)
 
 leq :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe Bool
@@ -132,27 +133,54 @@ data Dxpression
   = DSgn (Term TermPrim) ![Signature]
   deriving (Show, Typeable) -- , Generic, Data
 
-signatures :: ContextInfo -> TermPrim -> [Signature]
+signatures :: ContextInfo -> TermPrim -> Guarded [Signature]
 signatures contextInfo trm = case trm of
-      PI _              ->                        [Sign c c| c<-conceptList]
-      Pid _ c           -> let c'=pCpt2aCpt c in [Sign c' c']
-      Patm _ _ (Just c) -> let c'=pCpt2aCpt c in [Sign c' c']
-      Patm _ _  Nothing ->                        [Sign c c| c<-conceptList]
-      PVee _            ->                        [Sign src tgt | src<-conceptList, tgt<-conceptList ]
-      Pfull _ src tgt   ->                        [Sign (pCpt2aCpt src) (pCpt2aCpt tgt)]
-      PBin _ _          ->                        [Sign c c| c<-conceptList]
-      PBind _ _ c       -> let c'=pCpt2aCpt c in [Sign c' c']
-      PNamedR rel       -> case p_mbSign rel of
-                              Just sgn -> (map sign . findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign conceptmap) sgn
-                              Nothing  -> (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
+      PI _              ->                       pure [Sign c c| c<-conceptList]
+      Pid _ c           -> let c'=pCpt2aCpt c in pure [Sign c' c']
+      Patm _ _ (Just c) -> let c'=pCpt2aCpt c in pure [Sign c' c']
+      Patm _ _  Nothing ->                       pure [Sign c c| c<-conceptList]
+      PVee _            ->                       pure [Sign src tgt | src<-conceptList, tgt<-conceptList ]
+      Pfull _ src tgt   ->                       pure [Sign (pCpt2aCpt src) (pCpt2aCpt tgt)]
+      PBin _ _          ->                       pure [Sign c c| c<-conceptList]
+      PBind _ _ c       -> let c'=pCpt2aCpt c in pure [Sign c' c']
+      PNamedR rel       -> let sgns :: Maybe P_Sign -> [Signature]
+                               sgns (Just sgn) = (map sign . findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
+                               sgns Nothing    = (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
+                           in  case sgns (p_mbSign rel) of
+                                            [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
+                                            ss -> pure ss
   where
     conceptList :: [A_Concept]
     conceptList = (vertexList . makeGraph . allGens) contextInfo
     pCpt2aCpt = conceptMap contextInfo
 
-term2Dxpr :: ContextInfo -> Term TermPrim -> Guarded Expression
-term2Dxpr contextInfo trm = case trm of
-    Prim prim   -> termPrim2Dxpr contextInfo prim
+term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
+term2Expr contextInfo trm = case trm of
+    Prim prim ->
+      do sgns <- signatures contextInfo prim
+         case sgns of
+           [sgn] -> return (cast prim sgn)
+           _ -> (Errors . NE.fromList) [CTXE (origin prim) ("Multiple signatures fit "<>tshow prim<>": "<>tshow sgns<>".")]
+      where
+         cast :: TermPrim -> Signature -> Expression
+         cast (PI{}) sgn               = EDcI (source sgn)
+         cast (Pid _ c) sgn            = EDcI (source sgn)
+         cast (Patm _ av (Just c)) sgn = EMp1 av (source sgn)
+         cast (Patm _ av  Nothing) sgn = EMp1 av (source sgn)
+         cast (PVee{}) sgn             = EDcV sgn
+         cast (Pfull{}) sgn            = EDcV sgn
+         cast (PBin _ oper) sgn        = EBin oper (source sgn)
+         cast (PBind _ oper c) sgn     = EBin oper (source sgn)
+         cast (PNamedR rel) sgn        = case findRelsTyped (declDisambMap contextInfo) (name rel) sgn of
+                                          [dclExpr@EDcD{}]-> dclExpr
+                                          [x] -> fatal ("I expected a declaration of relation "<>tshow rel<>", but got "<>tshow x<>" instead.")
+                                          xs  -> fatal ("I expected only one declaration of relation "<>tshow rel<>", but got "<>tshow xs<>" instead.")
+{-
+namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
+namedRel2Decl _ declMap o@(PNamedRel _ r Nothing) = getOneExactly o (findDecls' declMap r) >>= extractDecl o
+namedRel2Decl ci declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign ci s)) >>= extractDecl o
+-}
+
     PEqu _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
     PInc _ a b -> do sgna <- s a; sgnb <- s b
@@ -186,7 +214,7 @@ term2Dxpr contextInfo trm = case trm of
     conceptGraph = makeGraph (allGens contextInfo)
 
 guarded :: Term TermPrim -> [Signature] -> Guarded Expression
-guarded (PEqu _ a b) [sgn] = pure (EEqu (aExpr, bExpr)) 
+guarded (PEqu _ a b) [sgn] = pure (EEqu (aExpr, bExpr))
 guarded (PEqu _ a b) [] = Errors
 
 {-
