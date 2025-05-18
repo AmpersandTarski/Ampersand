@@ -13,7 +13,7 @@ module Ampersand.FSpec.ToFSpec.NormalForms
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters (ConceptMap, pCpt2aCpt)
+import Ampersand.ADL1.P2A_Converters (ConceptMap)
 import Ampersand.Basics
 import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
@@ -44,7 +44,7 @@ Ideas for future work:
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
 dfProofs :: ConceptMap -> Expression -> [(Expression, Proof Expression)]
-dfProofs cptMap = prfs True
+dfProofs pCpt2aCpt = prfs True
   where
     prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
     prfs dnf expr =
@@ -59,7 +59,7 @@ dfProofs cptMap = prfs True
                    (t, deriv) <- f (rhs dstep)
                ]
           where
-            dsteps = [dstep | dstep <- dSteps (tceDerivRules cptMap) term, w (rhs dstep) < w term]
+            dsteps = [dstep | dstep <- dSteps (tceDerivRules pCpt2aCpt) term, w (rhs dstep) < w term]
         w = weightNF dnf -- the weight function for disjunctive normal form.
         showStep dstep = " weight: " <> (tshow . w . lhs) dstep <> ",   " <> showIT tmpl <> " = " <> showIT stp <> "  with unifier: " <> showIT unif
           where
@@ -710,7 +710,7 @@ data DerivStep = DStep
   }
 
 dRule :: ConceptMap -> Term TermPrim -> [DerivRule]
-dRule cptMap term0 = case term0 of
+dRule pCpt2aCpt term0 = case term0 of
   (PEqu _ l r) -> [DEquiR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
   (PInc _ l r) -> [DInclR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
   _ -> fatal ("Illegal use of dRule with term " <> showP term0)
@@ -776,11 +776,11 @@ dRule cptMap term0 = case term0 of
             PKl1 _ e -> RKl1 (term2rTerm e)
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
-            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
-            Prim (Pid _ c) -> RId (pCpt2aCpt cptMap c)
-            Prim (PBind _ oper c) -> RBind oper (pCpt2aCpt cptMap c)
-            Prim (Pfull _ s t) -> RVee (pCpt2aCpt cptMap s) (pCpt2aCpt cptMap t)
-            Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt cptMap c)
+            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt (pSrc sgn)) (pCpt2aCpt (pTgt sgn))
+            Prim (Pid _ c) -> RId (pCpt2aCpt c)
+            Prim (PBind _ oper c) -> RBind oper (pCpt2aCpt c)
+            Prim (Pfull _ s t) -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
+            Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
             Prim (PI _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PBin _ _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
@@ -1049,9 +1049,9 @@ safezip _ _ = fatal "Zip of two lists with different lengths!"
 
 -- Type conserving equivalences: The following equivalences have an identical signature on either side.
 tceDerivRules :: ConceptMap -> [DerivRule]
-tceDerivRules cptMap =
+tceDerivRules pCpt2aCpt =
   concatMap
-    (dRule cptMap . parseRule)
+    (dRule pCpt2aCpt . parseRule)
     --    [ "r[A*B]\\/s[A*B] = s[A*B]\\/r[A*B]"                         --  Commutativity of \/
     --    , "r[A*B]/\\s[A*B] = s[A*B]/\\r[A*B]"                         --  Commutativity of /\
     --    , "(r[A*B]\\/s[A*B])\\/q[A*B] = r[A*B]\\/(s[A*B]\\/q[A*B])"   --  Associativity of \/

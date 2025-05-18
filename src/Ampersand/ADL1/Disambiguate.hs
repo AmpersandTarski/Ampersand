@@ -6,8 +6,7 @@
 module Ampersand.ADL1.Disambiguate
   ( disambiguate,
     orWhenEmpty,
-    DisambPrim (..),
-    pCpt2aCpt,
+    DisambPrim (..)
   )
 where
 
@@ -104,11 +103,11 @@ propagateConstraints topDown bottomUp =
     }
 
 instance Disambiguatable P_IdentDf where
-  disambInfo cptMap (P_Id orig nm lbl cpt atts) _ = (P_Id orig nm lbl cpt atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
+  disambInfo pCpt2aCpt (P_Id orig nm lbl cpt atts) _ = (P_Id orig nm lbl cpt atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
     where
       (atts', restr') =
         NE.unzip
-          $ fmap (\a -> disambInfo cptMap a (Cnstr [MustBe (pCpt2aCpt cptMap cpt)] [])) atts
+          $ fmap (\a -> disambInfo pCpt2aCpt a (Cnstr [MustBe (pCpt2aCpt cpt)] [])) atts
 
 instance Disambiguatable P_IdentSegmnt where
   disambInfo cptMap (P_IdentExp v) x = (P_IdentExp v', rt)
@@ -152,7 +151,7 @@ instance Disambiguatable PairViewSegmentTerm where
 
 instance Disambiguatable P_ViewD where
   disambInfo
-    cptMap
+    pCpt2aCpt
     P_Vd
       { pos = orig,
         vd_nm = nm,
@@ -163,11 +162,11 @@ instance Disambiguatable P_ViewD where
         vd_ats = segments
       }
     _ =
-      ( P_Vd orig nm lbl cpt isDef template (fmap (\x -> fst (disambInfo cptMap x constraints)) segments),
+      ( P_Vd orig nm lbl cpt isDef template (fmap (\x -> fst (disambInfo pCpt2aCpt x constraints)) segments),
         constraints
       )
       where
-        constraints = Cnstr [MustBe (pCpt2aCpt cptMap cpt)] []
+        constraints = Cnstr [MustBe (pCpt2aCpt cpt)] []
 
 instance Disambiguatable P_Enforce where
   disambInfo cptMap (P_Enforce o a op b) env1 = (P_Enforce o a' op b', propagateConstraints envA envB)
@@ -352,9 +351,6 @@ performUpdate ((t, unkn), Cnstr srcs' tgts') =
 
 orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty a b = if null a then b else a
-
-pCpt2aCpt :: ConceptMap -> P_Concept -> A_Concept
-pCpt2aCpt cptMap = cptMap
 
 data Change a
   = Stable a

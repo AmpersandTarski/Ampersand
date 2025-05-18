@@ -19,7 +19,7 @@ import Algebra.Graph.AdjacencyMap as Graph
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
-import Ampersand.ADL1.P2A_Converters (pCpt2aCpt, findRels, findRelsTyped, pSign2aSign)
+import Ampersand.ADL1.P2A_Converters (findRels, findRelsTyped, pSign2aSign)
 -- import Text.PrettyPrint.Leijen (Pretty (..), text)
 
 
@@ -134,23 +134,21 @@ data Dxpression
 
 signatures :: ContextInfo -> TermPrim -> [Signature]
 signatures contextInfo trm = case trm of
-      PI _              ->                         [Sign c c| c<-conceptList]
-      Pid _ c           -> let c'=toA_Concept c in [Sign c' c']
-      Patm _ _ (Just c) -> let c'=toA_Concept c in [Sign c' c']
-      Patm _ _  Nothing ->                         [Sign c c| c<-conceptList]
-      PVee _            ->                         [Sign src tgt | src<-conceptList, tgt<-conceptList ]
-      Pfull _ src tgt   ->                         [Sign (toA_Concept src) (toA_Concept tgt)]
-      PBin _ _          ->                         [Sign c c| c<-conceptList]
-      PBind _ _ c       -> let c'=toA_Concept c in [Sign c' c']
+      PI _              ->                        [Sign c c| c<-conceptList]
+      Pid _ c           -> let c'=pCpt2aCpt c in [Sign c' c']
+      Patm _ _ (Just c) -> let c'=pCpt2aCpt c in [Sign c' c']
+      Patm _ _  Nothing ->                        [Sign c c| c<-conceptList]
+      PVee _            ->                        [Sign src tgt | src<-conceptList, tgt<-conceptList ]
+      Pfull _ src tgt   ->                        [Sign (pCpt2aCpt src) (pCpt2aCpt tgt)]
+      PBin _ _          ->                        [Sign c c| c<-conceptList]
+      PBind _ _ c       -> let c'=pCpt2aCpt c in [Sign c' c']
       PNamedR rel       -> case p_mbSign rel of
                               Just sgn -> (map sign . findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign conceptmap) sgn
                               Nothing  -> (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
   where
-    toA_Concept :: P_Concept -> A_Concept
-    toA_Concept = pCpt2aCpt conceptmap
     conceptList :: [A_Concept]
     conceptList = (vertexList . makeGraph . allGens) contextInfo
-    conceptmap = conceptMap contextInfo
+    pCpt2aCpt = conceptMap contextInfo
 
 term2Dxpr :: ContextInfo -> Term TermPrim -> Guarded Expression
 term2Dxpr contextInfo trm = case trm of
