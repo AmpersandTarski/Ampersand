@@ -5,8 +5,10 @@
 module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
     pCpt2aCpt,
+    pSign2aSign,
     ConceptMap,
-    findRels
+    findRels,
+    findRelsTyped
   )
 where
 
@@ -184,7 +186,7 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
         toUpperName = T.toUpper . fullName
 
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
-pSign2aSign ci (P_Sign src tgt) = Sign (pCpt2aCpt ci src) (pCpt2aCpt ci tgt)
+pSign2aSign cmap (P_Sign src tgt) = Sign (pCpt2aCpt cmap src) (pCpt2aCpt cmap tgt)
 
 findRels :: DeclMap -> Name -> Map.Map SignOrd Expression
 findRels declMap x = Map.findWithDefault Map.empty x declMap -- get all relations with the same name as x

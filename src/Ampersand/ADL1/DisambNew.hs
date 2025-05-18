@@ -15,13 +15,11 @@ import Ampersand.Input.ADL1.CtxError
 import Algebra.Graph.AdjacencyMap as Graph
 -- import Algebra.Graph.AdjacencyMap.Algorithm
 -- import Control.Arrow
-import qualified RIO.NonEmpty as NE
 -- import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
-import Ampersand.ADL1.P2A_Converters (pCpt2aCpt, findRels)
-import Ampersand.Basics (guard)
+import Ampersand.ADL1.P2A_Converters (pCpt2aCpt, findRels, findRelsTyped, pSign2aSign)
 -- import Text.PrettyPrint.Leijen (Pretty (..), text)
 
 
@@ -134,10 +132,8 @@ data Dxpression
   = DSgn (Term TermPrim) ![Signature]
   deriving (Show, Typeable) -- , Generic, Data
 
-termPrim2Dxpr :: ContextInfo -> TermPrim -> Guarded Expression
-termPrim2Dxpr contextInfo trm = guarded (Prim trm) signatureList
- where
-    signatureList = case trm of
+signatures :: ContextInfo -> TermPrim -> [Signature]
+signatures contextInfo trm = case trm of
       PI _              ->                         [Sign c c| c<-conceptList]
       Pid _ c           -> let c'=toA_Concept c in [Sign c' c']
       Patm _ _ (Just c) -> let c'=toA_Concept c in [Sign c' c']
@@ -146,49 +142,50 @@ termPrim2Dxpr contextInfo trm = guarded (Prim trm) signatureList
       Pfull _ src tgt   ->                         [Sign (toA_Concept src) (toA_Concept tgt)]
       PBin _ _          ->                         [Sign c c| c<-conceptList]
       PBind _ _ c       -> let c'=toA_Concept c in [Sign c' c']
-      PNamedR rel       ->                         (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
+      PNamedR rel       -> case p_mbSign rel of
+                              Just sgn -> (map sign . findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign conceptmap) sgn
+                              Nothing  -> (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
+  where
     toA_Concept :: P_Concept -> A_Concept
-    toA_Concept = (pCpt2aCpt . conceptMap) contextInfo
+    toA_Concept = pCpt2aCpt conceptmap
     conceptList :: [A_Concept]
     conceptList = (vertexList . makeGraph . allGens) contextInfo
+    conceptmap = conceptMap contextInfo
 
 term2Dxpr :: ContextInfo -> Term TermPrim -> Guarded Expression
 term2Dxpr contextInfo trm = case trm of
     Prim prim   -> termPrim2Dxpr contextInfo prim
-    PEqu _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PEqu _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PInc _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PInc _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PIsc _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PIsc _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
-    PUni _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PUni _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[glb conceptGraph (target sgn_a) (target sgn_b)] ]
-    PDif _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PDif _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (target sgn_a) | sgn_a<-sgna, sgn_b<-sgnb, Just _<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just _<-[glb conceptGraph (target sgn_a) (target sgn_b)] ]
-    PLrs _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PLrs _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (source sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (target sgn_b) (target sgn_a)] ]
-    PRrs _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PRrs _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (target sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (source sgn_a) (source sgn_b)] ]
-    PDia _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PDia _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, source sgn_a == source sgn_b ]
-    PCps _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PCps _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[glb conceptGraph (target sgn_a) (source sgn_b)] ]
-    PRad _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PRad _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ]
-    PPrd _ a b -> do DSgn _ sgna <- s a; DSgn _ sgnb <- s b
+    PPrd _ a b -> do sgna <- s a; sgnb <- s b
                      guarded trm [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb ]
-    PKl0 _ e   -> do DSgn _ sgne <- s e; guarded trm sgne
-    PKl1 _ e   -> do DSgn _ sgne <- s e; guarded trm sgne
-    PFlp _ e   -> do DSgn _ sgne <- s e; guarded trm sgne
-    PCpl _ e   -> do DSgn _ sgne <- s e; guarded trm sgne
+    PKl0 _ e   -> do sgne <- s e; guarded trm sgne
+    PKl1 _ e   -> do sgne <- s e; guarded trm sgne
+    PFlp _ e   -> do sgne <- s e; guarded trm sgne
+    PCpl _ e   -> do sgne <- s e; guarded trm sgne
     PBrk _ e   -> s e
  where
-    s :: Term TermPrim -> Guarded Dxpression
+    s :: Term TermPrim -> Guarded [Signature]
     s = term2Dxpr contextInfo
     conceptGraph = makeGraph (allGens contextInfo)
-
-signatures :: Dxpression -> Set.Set Signature
-signatures (DSgn _ sgns) = Set.fromList sgns
 
 guarded :: Term TermPrim -> [Signature] -> Guarded Expression
 guarded (PEqu _ a b) [sgn] = pure (EEqu (aExpr, bExpr)) 
@@ -242,7 +239,7 @@ data Expression
     EMp1 !PAtomValue !A_Concept
   deriving (Eq, Ord, Show, Typeable, Generic, Data)
 -}
-}
+
 typecheck ::ContextInfo -> Term TermPrim -> Guarded Dxpression
 typecheck ci pTerm
  =  case pTerm of
