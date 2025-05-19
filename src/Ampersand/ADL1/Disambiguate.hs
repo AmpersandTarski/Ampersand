@@ -288,7 +288,7 @@ getDConcepts sot (Known e) = [MustBe (sot e)]
 getDConcepts _ _ = []
 
 data DisambPrim
-  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
+  = Rel [Relation] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
   | Ident -- identity, and we know nothing about its type
   | Vee -- vee, type unknown
   | Mp1 PAtomValue -- a singleton atomvalue, type unknown

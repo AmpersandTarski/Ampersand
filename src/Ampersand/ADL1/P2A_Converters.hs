@@ -187,21 +187,24 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign pCpt2aCpt (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
-findRels :: DeclMap -> Name -> Map.Map SignOrd Expression
+findRels :: DeclMap -> Name -> Map.Map SignOrd Relation
 findRels declMap x = Map.findWithDefault Map.empty x declMap -- get all relations with the same name as x
 
-extractDecl :: P_NamedRel -> Expression -> Guarded Relation
-extractDecl _ (EDcD r) = return r
-extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: " <> tshow e -- to fix: return an error via a (still to be made) function in CtxError
-
 namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
-namedRel2Decl _ declMap o@(PNamedRel _ r Nothing) = getOneExactly o (findDecls' declMap r) >>= extractDecl o
-namedRel2Decl ci declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign ci s)) >>= extractDecl o
+namedRel2Decl ci declMap (PNamedRel o r mSgn)
+ = case decls of
+    [dcl] -> pure dcl
+    []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
+    ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
+   where
+     decls = case mSgn of
+               Nothing -> findDecls' declMap r
+               Just s  -> findRelsTyped declMap r (pSign2aSign ci s)
 
-findDecls' :: DeclMap -> Name -> [Expression]
+findDecls' :: DeclMap -> Name -> [Relation]
 findDecls' declMap x = Map.elems (findRels declMap x)
 
-findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
+findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
 findRelsLooselyTyped declMap x (Just src) (Just tgt) =
   findRelsTyped declMap x (Sign src tgt)
     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
@@ -221,17 +224,19 @@ findRelsLooselyTyped declMap x Nothing (Just tgt) =
 findDeclLooselyTyped ::
   DeclMap ->
   P_NamedRel ->
-  Name ->
   Maybe A_Concept ->
   Maybe A_Concept ->
   Guarded Relation
-findDeclLooselyTyped declMap o x src tgt =
-  getOneExactly (o, (src, tgt)) (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
+findDeclLooselyTyped declMap (PNamedRel o r _) src tgt
+ = case findRelsLooselyTyped declMap (name r) src tgt of
+    [dcl] -> pure dcl
+    []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
+    ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
 
-findRelsTyped :: DeclMap -> Name -> Signature -> [Expression]
+findRelsTyped :: DeclMap -> Name -> Signature -> [Relation]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: []) (findRels declMap x))
 
-type DeclMap = Map.Map Name (Map.Map SignOrd Expression)
+type DeclMap = Map.Map Name (Map.Map SignOrd Relation)
 
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap . userList . conceptMap
@@ -386,7 +391,7 @@ pCtx2aCtx
                 Alphanumeric -- See issue #1537
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [EDcD d]) | d <- decls])  :: Map Name (Map SignOrd Expression)
+        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
@@ -521,7 +526,7 @@ pCtx2aCtx
       pCpt2aCpt :: ConceptMap
       pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
       p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
-      p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb pCpt2aCpt declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
+      p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
@@ -607,7 +612,7 @@ pCtx2aCtx
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
               dcl <- case p_mbSign nmdr of
-                Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt <$> src) (pCpt2aCpt <$> tgt)
+                Nothing -> findDeclLooselyTyped declMap nmdr (pCpt2aCpt <$> src) (pCpt2aCpt <$> tgt)
                 _ -> namedRel2Decl pCpt2aCpt declMap nmdr
 
               aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
@@ -646,7 +651,7 @@ pCtx2aCtx
           tpda = disamb ci x
 
       disamb :: ContextInfo -> d TermPrim -> d (TermPrim, DisambPrim)
-      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
+      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (declDisambMap ci))
 
       typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
       typecheckViewDef
@@ -946,8 +951,8 @@ pCtx2aCtx
 
       -- this function helps in the disambiguation process:
       -- it adds a set of potential disambiguation outcomes to things that need to be disambiguated. For typed and untyped identities, singleton elements etc, this is immediate, but for relations we need to find it in the list of declarations.
-      termPrimDisAmb :: ConceptMap -> DeclMap -> TermPrim -> (TermPrim, DisambPrim)
-      termPrimDisAmb pCpt2aCpt declMap x =
+      termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
+      termPrimDisAmb declMap x =
         ( x,
           case x of
             PI _ -> Ident
@@ -962,7 +967,7 @@ pCtx2aCtx
         )
         where
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
-          disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign fun s
+          disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign pCpt2aCpt s
 
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
       pIfc2aIfc contextInfo (pIfc, objDisamb) =

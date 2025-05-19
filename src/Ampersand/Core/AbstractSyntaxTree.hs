@@ -1466,7 +1466,7 @@ data ContextInfo = CI
     -- | a list of all Representations in the context, including the implicit Object definitions.
     reprList :: ![P_Representation],
     -- | a map of declarations and the corresponding types
-    declDisambMap :: !(Map.Map Name (Map.Map SignOrd Expression)),
+    declDisambMap :: !(Map.Map Name (Map.Map SignOrd Relation)),
     -- | types not used in any declaration
     soloConcs :: !(Set.Set Type),
     -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
