@@ -4,9 +4,9 @@
 {-# LANGUAGE TupleSections #-}
 
 module Ampersand.ADL1.Disambiguate
-  ( disambiguate,
-    orWhenEmpty,
-    DisambPrim (..)
+  ( orWhenEmpty,
+    DisambPrim (..),
+    Disambiguatable(..)
   )
 where
 

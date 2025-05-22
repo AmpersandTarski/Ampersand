@@ -143,3 +143,6 @@ commaNL _ [] = ""
 
 class Flippable a where
   flp :: a -> a
+
+instance Flippable a => Flippable [a] where
+  flp = fmap flp

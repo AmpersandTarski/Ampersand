@@ -73,6 +73,7 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     Type (..),
     typeOrConcept,
+    lub, glb, leq,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -87,11 +88,13 @@ module Ampersand.Core.AbstractSyntaxTree
     (.*.),
     makeConceptMap,
     ConceptMap,
+    makeGraph, synonym
   )
 where
 
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
--- import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.AdjacencyMap
+
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
@@ -1371,6 +1374,86 @@ sessionConcept = PlainConcept {aliases = (nameOfSESSION, Nothing) NE.:| []}
 
 type A_Concepts = Set.Set A_Concept
 
+makeGraph :: [AClassify] -> AdjacencyMap A_Concept
+makeGraph conceptPairs = overlays [vertex spc `connect` vertex gen | (spc,gen) <- pairs]
+  where
+    pairs = [ (genspc isa, gengen isa) | isa@(Isa{})<-conceptPairs]<>[ (genspc ise, c) | ise@(IsE{})<-conceptPairs, c<-toList (genrhs ise)]
+
+synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
+synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
+
+
+-- Compute the least upper bound (lub) of a list of pairs
+lub :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+lub conceptGraph a b
+    | hasEdge a b rtc = Just b
+    | hasEdge b a rtc = Just a
+    | otherwise =
+       case Set.toList (postSet a rtc `Set.intersection` postSet b rtc) L.\\ [a,b] of
+        [] -> Nothing
+        x:xs -> Just (L.foldr minimum x xs) -- find the minimum of the upper bounds
+    where
+      minimum a' b' = if hasEdge a' b' rtc then a' else b'
+      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+
+-- Compute the greatest lower bound (glb) of a list of pairs
+glb :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+glb conceptGraph a b
+    | hasEdge a b rtc = Just a
+    | hasEdge b a rtc = Just b
+    | otherwise =
+       case Set.toList (preSet a rtc `Set.intersection` preSet b rtc) L.\\ [a,b] of
+        [] -> Nothing
+        x:xs -> Just (L.foldr maximum x xs) -- find the minimum of the upper bounds
+    where
+      maximum a' b' = if hasEdge a' b' rtc then b' else a'
+      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+
+leq :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe Bool
+leq conceptGraph a b
+    | hasEdge a b rtc = Just True
+    | hasEdge b a rtc = Just False
+    | otherwise       = Nothing
+    where
+      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+
+{- Here is some test output for the lub and glb functions, applied on the following graph:
+edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
+
+"even" `lub` "even" = Just "even"   and   "even" `glb` "even" = Just "even"
+The lub intersection set for "even" and "float" is: ["gegeven","num"]
+"even" `lub` "float" = Just "num"   and   "even" `glb` "float" = Nothing
+"even" `lub` "gegeven" = Just "gegeven"   and   "even" `glb` "gegeven" = Just "even"
+"even" `lub` "int" = Just "int"   and   "even" `glb` "int" = Just "even"
+"even" `lub` "integer" = Just "even"   and   "even" `glb` "integer" = Just "integer"
+"even" `lub` "num" = Just "num"   and   "even" `glb` "num" = Just "even"
+The lub intersection set for "even" and "oneven" is: ["gegeven","int","num"]
+"even" `lub` "oneven" = Just "int"   and   "even" `glb` "oneven" = Just "integer"
+The lub intersection set for "float" and "even" is: ["gegeven","num"]
+"float" `lub` "even" = Just "num"   and   "float" `glb` "even" = Nothing
+The lub intersection set for "float" and "int" is: ["gegeven","num"]
+"float" `lub` "int" = Just "num"   and   "float" `glb` "int" = Nothing
+The lub intersection set for "float" and "integer" is: ["gegeven","num"]
+"float" `lub` "integer" = Just "num"   and   "float" `glb` "integer" = Nothing
+"float" `lub` "num" = Just "num"   and   "float" `glb` "num" = Just "float"
+The lub intersection set for "float" and "oneven" is: ["gegeven","num"]
+"float" `lub` "oneven" = Just "num"   and   "float" `glb` "oneven" = Nothing
+"gegeven" `lub` "even" = Just "gegeven"   and   "gegeven" `glb` "even" = Just "even"
+"int" `lub` "even" = Just "int"   and   "int" `glb` "even" = Just "even"
+The lub intersection set for "int" and "float" is: ["gegeven","num"]
+"int" `lub` "float" = Just "num"   and   "int" `glb` "float" = Nothing
+"integer" `lub` "even" = Just "even"   and   "integer" `glb` "even" = Just "integer"
+The lub intersection set for "integer" and "float" is: ["gegeven","num"]
+"integer" `lub` "float" = Just "num"   and   "integer" `glb` "float" = Nothing
+"num" `lub` "oneven" = Just "num"   and   "num" `glb` "oneven" = Just "oneven"
+The lub intersection set for "oneven" and "even" is: ["gegeven","int","num"]
+"oneven" `lub` "even" = Just "int"   and   "oneven" `glb` "even" = Just "integer"
+The lub intersection set for "oneven" and "float" is: ["gegeven","num"]
+"oneven" `lub` "float" = Just "num"   and   "oneven" `glb` "float" = Nothing
+"oneven" `lub` "gegeven" = Just "gegeven"   and   "oneven" `glb` "gegeven" = Just "oneven"
+"oneven" `lub` "oneven" = Just "oneven"   and   "oneven" `glb` "oneven" = Just "oneven"
+-}
+
 instance Unique AConceptDef where
   showUnique = toText1Unsafe . fullName
 
@@ -1389,9 +1472,14 @@ instance Hashable A_Concept where
 
 instance Named A_Concept where
   name PlainConcept {aliases = names} = fst . NE.head $ names
-  name (UNION cpts) = (mkName ConceptName . (NE.:| []) . fromMaybe "" . toNamePart . T.intercalate "\\/" . map tshow . Set.toList) cpts
-  name (ISECT cpts) = (mkName ConceptName . (NE.:| []) . fromMaybe "" . toNamePart . T.intercalate "/\\" . map tshow . Set.toList) cpts
+  name (UNION cpts) = toConceptName "\\/" cpts
+  name (ISECT cpts) = toConceptName "/\\" cpts
   name ONE = nameOfONE
+
+toConceptName :: Text -> Set.Set A_Concept -> Name
+toConceptName opString cpts = case (toNamePart . T.intercalate opString . map tshow . Set.toList) cpts of
+  Nothing -> fatal $ "Not a proper concept name: " <> tshow cpts
+  Just np -> (mkName ConceptName . (NE.:| [])) np
 
 instance Labeled A_Concept where
   mLabel cpt = case cpt of

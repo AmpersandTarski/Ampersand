@@ -326,14 +326,14 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
     message =
       case x of
         Rel [] -> "A relation is used that is not defined: " <> showP o
-        Rel exprs -> case o of
+        Rel decls -> case o of
           (PNamedR (PNamedRel _ _ Nothing)) ->
             T.intercalate "\n"
               $ [ "Cannot disambiguate the relation: " <> showP o,
                   "  Please add a signature (e.g. [A*B]) to the relation.",
                   "  Relations you may have intended:"
                 ]
-              <> map (("  " <>) . showA') exprs
+              <> map (("  " <>) . showA') decls
               <> noteIssue980
           _ ->
             T.intercalate "\n"
@@ -341,7 +341,7 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                   "  Please add a signature (e.g. [A*B]) to the term.",
                   "  You may have intended one of these:"
                 ]
-              <> map (("  " <>) . showA') exprs
+              <> map (("  " <>) . showA') decls
               <> noteIssue980
         Known _ -> fatal "We have a known term, so it is allready disambiguated."
         _ ->
