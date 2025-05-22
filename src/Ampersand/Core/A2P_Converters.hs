@@ -24,6 +24,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Basics.Name
 import Ampersand.Classes
 import RIO.Char
 import qualified RIO.NonEmpty as NE
@@ -227,6 +228,10 @@ aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
   case cpt of
     ONE -> P_ONE
+    UNION cs -> PCpt {p_cptnm = Name { nameParts = NamePart (Text1 'E' "xecEngine") :| [],
+                                       nameType = ConceptName
+                                     }}
+    ISECT cs -> P_Isect (map aConcept2pConcept cs)
     PlainConcept {} ->
       PCpt
         { p_cptnm = name cpt

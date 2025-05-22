@@ -1,6 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE TupleSections #-}
+-- {-# LANGUAGE TupleSections #-}
 
 module Ampersand.ADL1.P2A_Converters
   ( pCtx2aCtx,
@@ -11,7 +11,7 @@ module Ampersand.ADL1.P2A_Converters
   )
 where
 
-import Ampersand.ADL1.Disambiguate (Disambiguatable(..), DisambPrim (..), disambiguate, orWhenEmpty)
+-- import Ampersand.ADL1.Disambiguate (Disambiguatable(..), DisambPrim (..), disambiguate, orWhenEmpty)
 -- used for type-checking
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
@@ -244,7 +244,7 @@ onlyUserConcepts = fmap . userList . conceptMap
 --    This is done by using the function "disambiguate" on the outer-most structure.
 --    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
 --    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
---    After disambiguation, the type variable is (TermPrim, DisambPrim), as in "P_ViewSegmt (TermPrim, DisambPrim)"
+--    After disambiguation, the type variable is TermPrim, as in "P_ViewSegmt TermPrim"
 -- 2. Typecheck the structures.
 --    This changes the data-structure entirely, changing the P_ into the A_
 --    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
@@ -281,7 +281,7 @@ pCtx2aCtx
     do
       contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       -- declMap contains the declared relations by name. So, we get every name once in the domain of the map, which helps to disambiguate.
-      let declMap = declDisambMap contextInfoPre
+      let declMap = declarationsMap contextInfoPre
       -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
       aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
       -- allReprs contains all concepts and every concept has precisely one TType
@@ -398,7 +398,7 @@ pCtx2aCtx
               representationOf = reprOf,
               multiKernels = multitypologies,
               reprList = allReprs,
-              declDisambMap = declMap,
+              declarationsMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
               allGens = gns,
@@ -522,7 +522,8 @@ pCtx2aCtx
 
       pCpt2aCpt :: ConceptMap
       pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
-      p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
+
+      p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem TermPrim)]
       p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 
       -- story about genRules and genLattice
@@ -632,14 +633,14 @@ pCtx2aCtx
                 )
                   <$> traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
         where
-          declMap = declDisambMap ci
+          declMap = declarationsMap ci
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
         if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
-      pBoxItemDisamb2BoxItem :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
+      pBoxItemDisamb2BoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
       pBoxItemDisamb2BoxItem ci x = fmap fst (typecheckObjDef ci x)
 
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
@@ -647,10 +648,10 @@ pCtx2aCtx
         where
           tpda = disamb ci x
 
-      disamb :: Disambiguatable d => ContextInfo -> d TermPrim -> d (TermPrim, DisambPrim)
-      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (declDisambMap ci))
+      disamb :: ContextInfo -> d TermPrim -> d TermPrim
+      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (declarationsMap ci))
 
-      typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
+      typecheckViewDef :: ContextInfo -> P_ViewD TermPrim -> Guarded ViewDef
       typecheckViewDef
         ci
         o@P_Vd
@@ -683,7 +684,7 @@ pCtx2aCtx
               Just x -> x
             hasLabel :: ViewSegment -> Bool
             hasLabel = isJust . vsmlabel
-            typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
+            typeCheckViewSegment :: (Integer, P_ViewSegment TermPrim) -> Guarded ViewSegment
             typeCheckViewSegment (seqNr, seg) =
               do
                 payload <- typecheckPayload (vsm_load seg)
@@ -695,7 +696,7 @@ pCtx2aCtx
                       vsmLoad = payload
                     }
               where
-                typecheckPayload :: P_ViewSegmtPayLoad (TermPrim, DisambPrim) -> Guarded ViewSegmentPayLoad
+                typecheckPayload :: P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
                 typecheckPayload payload =
                   case payload of
                     P_ViewExp (Prim (term,_obsoletedisambstuff)) ->
@@ -711,7 +712,7 @@ pCtx2aCtx
       isaC :: A_Concept -> A_Concept -> Bool
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
-      typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
+      typecheckObjDef :: ContextInfo -> P_BoxItem TermPrim -> Guarded (BoxItem, Bool)
       typecheckObjDef contextInfo objDef =
         case objDef of
           P_BoxItemTerm
@@ -860,7 +861,7 @@ pCtx2aCtx
         Expression -> -- Expression of the surrounding
         Bool -> -- Whether the surrounding is bounded
         P_BoxItem a -> -- name of where the error occured!
-        P_SubIfc (TermPrim, DisambPrim) -> -- Subinterface to check
+        P_SubIfc TermPrim -> -- Subinterface to check
         Guarded
           ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
             SubInterface -- the subinterface
@@ -869,7 +870,7 @@ pCtx2aCtx
         case x of
           P_InterfaceRef {si_str = ifcId} ->
             do
-              (refIfcExpr, _) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
+              (refIfcExpr, _) <- case lookupDisambIfcObj (declarationsMap ci) ifcId of
                 Just disambObj -> typecheckTerm ci
                   $ case disambObj of
                     P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
@@ -899,7 +900,7 @@ pCtx2aCtx
               hasLabel bi = case obj_PlainName bi of
                 Nothing -> False
                 Just _ -> True
-              l :: [P_BoxItem (TermPrim, DisambPrim)]
+              l :: [P_BoxItem TermPrim]
               l = si_box x
               build :: [BoxItem] -> (Expression, SubInterface)
               build lst =
@@ -936,7 +937,7 @@ pCtx2aCtx
          in if refIsCompatible
               then pure $ addEpsilonRight genLattice ifcSource objExpr
               else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-      lookupDisambIfcObj :: DeclMap -> Name -> Maybe (P_BoxItem (TermPrim, DisambPrim))
+      lookupDisambIfcObj :: DeclMap -> Name -> Maybe (P_BoxItem TermPrim)
       lookupDisambIfcObj declMap ifcId =
         case [disambObj | (vd, disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId] of
           [] -> Nothing
@@ -944,7 +945,7 @@ pCtx2aCtx
 
       -- this function helps in the disambiguation process:
       -- it adds a set of potential disambiguation outcomes to things that need to be disambiguated. For typed and untyped identities, singleton elements etc, this is immediate, but for relations we need to find it in the list of declarations.
-      termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
+      termPrimDisAmb :: DeclMap -> TermPrim -> TermPrim
       termPrimDisAmb declMap x =
         ( x,
           case x of
@@ -962,7 +963,7 @@ pCtx2aCtx
           disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
           disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign pCpt2aCpt s
 
-      pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
+      pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem TermPrim) -> Guarded Interface
       pIfc2aIfc contextInfo (pIfc, objDisamb) =
         build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
         where
@@ -1049,7 +1050,7 @@ pCtx2aCtx
       typeCheckRul ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
-        P_Rule (TermPrim, DisambPrim) ->
+        P_Rule TermPrim ->
         Guarded Rule
       typeCheckRul
         ci
@@ -1087,7 +1088,7 @@ pCtx2aCtx
       typeCheckEnforce ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
-        P_Enforce (TermPrim, DisambPrim) ->
+        P_Enforce TermPrim ->
         Guarded AEnforce
       typeCheckEnforce
         ci
@@ -1190,7 +1191,7 @@ pCtx2aCtx
         where
           conc = pCpt2aCpt (ix_cpt pidt)
           orig = origin pidt
-          pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
+          pIdentSegment2IdentSegment :: P_IdentSegmnt TermPrim -> Guarded IdentitySegment
           pIdentSegment2IdentSegment (P_IdentExp ojd) =
             do
               boxitem <- pBoxItemDisamb2BoxItem ci ojd
@@ -1200,10 +1201,10 @@ pCtx2aCtx
                     [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                     _ -> pure $ IdentityExp o {objExpression = addEpsilonLeft genLattice conc (objExpression o)}
                 BxText {} -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin boxitem) <> ")"
-      typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
+      typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term TermPrim) -> Guarded (PairView Expression)
       typeCheckPairView ci o x (PairView lst) =
         PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
-      typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
+      typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term TermPrim) -> Guarded (PairViewSegment Expression)
       typeCheckPairViewSeg _ _ _ (PairViewText orig x) = pure (PairViewText orig x)
       typeCheckPairViewSeg ci o t (PairViewExp orig s x) =
         do
@@ -1235,7 +1236,7 @@ pCtx2aCtx
             <$> pRefObj2aRefObj ci objref
       pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
       pRefObj2aRefObj ci (PRef2ConceptDef s) = (pure . ExplConcept . conceptMap ci . mkPConcept) s
-      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declDisambMap ci) tm
+      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declarationsMap ci) tm
       pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
       pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
       pRefObj2aRefObj _ (PRef2ViewDef s) = pure $ ExplViewDef s
@@ -1264,8 +1265,8 @@ signatures contextInfo trm = case trm of
   Prim (PBin _ _)          ->                       pure [Sign c c| c<-conceptList]
   Prim (PBind _ _ c)       -> let c'=pCpt2aCpt c in pure [Sign c' c']
   Prim (PNamedR rel)       -> let sgns :: Maybe P_Sign -> [Signature]
-                                  sgns (Just sgn) = (map sign . findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
-                                  sgns Nothing    = (Map.elems . fmap sign . findRels (declDisambMap contextInfo) . name) rel
+                                  sgns (Just sgn) = (map sign . findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
+                                  sgns Nothing    = (Map.elems . fmap sign . findRels (declarationsMap contextInfo) . name) rel
                               in  case sgns (p_mbSign rel) of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure ss
@@ -1341,8 +1342,8 @@ term2Expr contextInfo trm
         Prim (PBin _ oper) -> pure (EBin oper (source sgn))
         Prim (PBind _ oper _) -> pure (EBin oper (source sgn))
         Prim (PNamedR rel) -> let rels :: Maybe P_Sign -> [Relation]
-                                  rels (Just sg) = (findRelsTyped (declDisambMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
-                                  rels Nothing    = (Map.elems . findRels (declDisambMap contextInfo) . name) rel
+                                  rels (Just sg) = (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
+                                  rels Nothing    = (Map.elems . findRels (declarationsMap contextInfo) . name) rel
                               in case [ case (src==source decl, tgt==target decl) of
                                           (True , True ) -> EDcD decl
                                           (False, True ) -> EDcI src .:. EDcD decl 
@@ -1396,7 +1397,7 @@ addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> Expression -> 
 addEpsilon genLattice s t e =
   addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
 
--- typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
+-- typecheckTerm :: ContextInfo -> Term TermPrim -> Guarded (Expression, (Bool, Bool))
 -- typecheckTerm ci tct =
 --   case tct of
 --     Prim (t, v) ->
@@ -1634,7 +1635,7 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
         isEndoProp :: PProp -> Bool
         isEndoProp p = p `elem` [P_Prop, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf]
 
--- pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
+-- pDisAmb2Expr :: TermPrim -> Guarded Expression
 -- pDisAmb2Expr (_, Known x) = pure x
 -- pDisAmb2Expr (_, Rel [d]) = pure (EDcD d)
 -- pDisAmb2Expr (o, dx) = cannotDisambiguate o dx
