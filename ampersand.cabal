@@ -577,6 +577,7 @@ library
       Ampersand.Options.ProtoOptsParser
       Ampersand.Options.TestOptsParser
       Ampersand.Options.ValidateOptsParser
+      Ampersand.Output.FSpec2Turtle
       Ampersand.Output.PredLogic
       Ampersand.Types.Config
       Paths_ampersand
@@ -620,6 +621,7 @@ library
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -683,6 +685,7 @@ executable ampPreProc
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -749,6 +752,7 @@ executable ampersand
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -813,6 +817,7 @@ test-suite ampersand-test
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
