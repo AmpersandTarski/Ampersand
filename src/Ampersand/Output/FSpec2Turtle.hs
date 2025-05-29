@@ -2,6 +2,7 @@ module Ampersand.Output.FSpec2Turtle (writeTurtle) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Classes.Relational
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Data.RDF
@@ -98,6 +99,36 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
              | m <- map ameaMrk $ decMean rel,
                markup2Markdown m /= ""
            ]
+        <> triplesOfProperties
+      where
+        triplesOfProperties :: Triples
+        triplesOfProperties =
+          [ triple (uri rel) (unode "rdfs:subClassOf") blankUniTots,
+            triple blankUniTots (unode "rdf:type") (unode "owl:Restriction"),
+            triple blankUniTots (unode "owl:onProperty") (uri rel),
+            cardinalityTriple blankUniTots,
+            triple blankUniTots (unode "owl:onClass") (uri (target rel))
+          ]
+          where
+            blankUniTots = BNode $ "_:blankUniTots" <> tshow (relNumber fSpec rel)
+        cardinalityTriple :: Node -> Triple
+        cardinalityTriple blank = triple blank owlType cardinality
+          where
+            (owlType, cardinality) =
+              case (isUni rel, isTot rel) of
+                (True, True) -> (unode "owl:qualifiedCardinality", lnode (typedL "1" "xsd:nonNegativeInteger"))
+                (True, False) -> (unode "owl:maxCardinality", lnode (typedL "1" "xsd:nonNegativeInteger"))
+                (False, True) -> (unode "owl:minCardinality", lnode (typedL "1" "xsd:nonNegativeInteger"))
+                (False, False) -> (unode "owl:minCardinality", lnode (typedL "0" "xsd:nonNegativeInteger"))
+
+relNumber :: FSpec -> Relation -> Int
+relNumber fSpec rel =
+  case M.lookup rel relMap of
+    Just n -> n
+    Nothing -> fatal $ "Relation " <> tshow rel <> " not found in fSpec"
+  where
+    relMap :: Map Relation Int
+    relMap = M.fromList $ zip (instanceList fSpec) [0 ..]
 
 -- | Write the RDF graph to a file in Turtle format
 writeGraphToFile :: (MonadIO m) => FilePath -> RDF TList -> m ()
