@@ -49,9 +49,25 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     concept2triples :: A_Concept -> Triples
     concept2triples cpt =
       [ triple (uri cpt) (unode "rdf:type") (unode "owl:Class"),
-        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt),
-        triple (uri cpt) (unode "skos:prefLabel") (lnode . plainL . label $ cpt)
+        --  triple (uri cpt) (unode "skos:prefLabel") (lnode . plainL . label $ cpt),
+        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt)
       ]
+        <> [ triple
+               (uri cpt)
+               (unode "rdfs:isDefinedBy")
+               ( lnode
+                   $ plainLL
+                     (markup2Markdown m)
+                     ( case amLang m of
+                         Dutch -> "nl"
+                         English -> "en"
+                     )
+               )
+             | cDef <- instanceList fSpec,
+               acdcpt cDef == cpt,
+               m <- map ameaMrk (acddef2 cDef : acdmean cDef),
+               markup2Markdown m /= ""
+           ]
         <> [ triple (uri cpt) (unode "rdfs:subClassOf") (uri greaterCpt)
              | greaterCpt <- concatMap greaters (instanceList fSpec)
            ]
@@ -68,6 +84,20 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
         triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
         triple (uri rel) (unode "rdfs:range") (uri (target rel))
       ]
+        <> [ triple
+               (uri rel)
+               (unode "rdfs:isDefinedBy")
+               ( lnode
+                   $ plainLL
+                     (markup2Markdown m)
+                     ( case amLang m of
+                         Dutch -> "nl"
+                         English -> "en"
+                     )
+               )
+             | m <- map ameaMrk $ decMean rel,
+               markup2Markdown m /= ""
+           ]
 
 -- | Write the RDF graph to a file in Turtle format
 writeGraphToFile :: (MonadIO m) => FilePath -> RDF TList -> m ()
