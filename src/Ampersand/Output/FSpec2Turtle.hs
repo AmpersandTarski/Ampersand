@@ -9,6 +9,7 @@ import RIO.Directory
 import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as M
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 writeTurtle :: (HasFSpecGenOpts env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
@@ -48,8 +49,17 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     concept2triples :: A_Concept -> Triples
     concept2triples cpt =
       [ triple (uri cpt) (unode "rdf:type") (unode "owl:Class"),
-        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt)
+        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt),
+        triple (uri cpt) (unode "skos:prefLabel") (lnode . plainL . label $ cpt)
       ]
+        <> [ triple (uri cpt) (unode "rdfs:subClassOf") (uri greaterCpt)
+             | greaterCpt <- concatMap greaters (instanceList fSpec)
+           ]
+      where
+        greaters :: AClassify -> [A_Concept]
+        greaters gen = filter (cpt /=) $ case gen of
+          Isa {} -> [gengen gen | genspc gen == cpt]
+          IsE {} -> [x | genspc gen == cpt, x <- NE.toList $ genrhs gen]
 
     relation2triples :: Relation -> Triples
     relation2triples rel =
