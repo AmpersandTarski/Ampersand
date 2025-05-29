@@ -27,17 +27,7 @@ devoutput ::
 devoutput fSpec = do
   doGenHaskell fSpec
   doGenSQLdump fSpec
-  doGenTurtle fSpec
-
-doGenTurtle fSpec = do
-  env <- ask
-  outputFile <- outputFile' <$> ask
-  logDebug $ "Generating Turtle script for " <> (display . fullName) fSpec <> "..."
-  liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
-  writeFileUtf8 outputFile (fSpec2Turtle fSpec)
-  logInfo $ "Turtle script written into " <> display (T.pack outputFile)
-  where
-    outputFile' env = view dirOutputL env </> baseName env -<.> ".ttl"
+  writeTurtle fSpec
 
 doGenHaskell ::
   (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) =>
