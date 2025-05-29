@@ -64,7 +64,9 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     relation2triples :: Relation -> Triples
     relation2triples rel =
       [ triple (uri rel) (unode "rdf:type") (unode "owl:ObjectProperty"),
-        triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
+        triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel),
+        triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
+        triple (uri rel) (unode "rdfs:range") (uri (target rel))
       ]
 
 -- | Write the RDF graph to a file in Turtle format
