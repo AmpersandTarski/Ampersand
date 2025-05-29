@@ -12,6 +12,7 @@ import qualified RIO.List as L
 import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
+import qualified Text.Printf as T
 
 writeTurtle :: (HasFSpecGenOpts env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
 writeTurtle fSpec = do
@@ -109,8 +110,9 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
             cardinalityTriple blankUniTots,
             triple blankUniTots (unode "owl:onClass") (uri (target rel))
           ]
+            <> inverseRelTriples
           where
-            blankUniTots = BNode $ "_:blankUniTots" <> tshow (relNumber fSpec rel)
+            blankUniTots = BNode $ "_:blankUniTots" <> relNumber fSpec rel
         cardinalityTriple :: Node -> Triple
         cardinalityTriple blank = triple blank owlType cardinality
           where
@@ -120,15 +122,33 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
                 (True, False) -> (unode "owl:maxCardinality", lnode (typedL "1" "xsd:nonNegativeInteger"))
                 (False, True) -> (unode "owl:minCardinality", lnode (typedL "1" "xsd:nonNegativeInteger"))
                 (False, False) -> (unode "owl:minCardinality", lnode (typedL "0" "xsd:nonNegativeInteger"))
+        inverseRelTriples :: Triples
+        inverseRelTriples =
+          case (isInj rel, isSur rel) of
+            (True, True) -> triple blankInjSurs (unode "owl:qualifiedCardinality") (lnode (typedL "1" "xsd:nonNegativeInteger")) : rest
+            (True, False) -> triple blankInjSurs (unode "owl:maxCardinality") (lnode (typedL "1" "xsd:nonNegativeInteger")) : rest
+            (False, True) -> triple blankInjSurs (unode "owl:minCardinality") (lnode (typedL "1" "xsd:nonNegativeInteger")) : rest
+            (False, False) -> []
+          where
+            rest =
+              [ triple blankInverse (unode "rdfs:subClassOf") blankInjSurs,
+                triple blankInjSurs (unode "rdf:type") (unode "owl:Restriction"),
+                triple blankInjSurs (unode "owl:onProperty") blankInverse,
+                triple blankInjSurs (unode "owl:onClass") (uri (source rel))
+              ]
+            blankInverse = BNode $ "_:blankInverse" <> relNumber fSpec rel
+            blankInjSurs = BNode $ "_:blankInjSurs" <> relNumber fSpec rel
 
-relNumber :: FSpec -> Relation -> Int
+relNumber :: FSpec -> Relation -> Text
 relNumber fSpec rel =
   case M.lookup rel relMap of
-    Just n -> n
+    Just n -> T.pack $ T.printf ("%0" <> (show . length . show . length $ allRels) <> "d") n
     Nothing -> fatal $ "Relation " <> tshow rel <> " not found in fSpec"
   where
     relMap :: Map Relation Int
-    relMap = M.fromList $ zip (instanceList fSpec) [0 ..]
+    relMap = M.fromList $ zip allRels [0 ..]
+    allRels :: [Relation]
+    allRels = instanceList fSpec
 
 -- | Write the RDF graph to a file in Turtle format
 writeGraphToFile :: (MonadIO m) => FilePath -> RDF TList -> m ()
