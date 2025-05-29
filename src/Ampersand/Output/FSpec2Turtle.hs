@@ -19,8 +19,8 @@ writeTurtle fSpec = do
   writeGraphToFile outputFile rdfGraph
   logInfo $ "Turtle file written to " <> display (T.pack outputFile)
 
-myBaseUrl :: Maybe BaseUrl
-myBaseUrl = Just (BaseUrl "http://ampersand.example.org#")
+myBaseUrl :: BaseUrl
+myBaseUrl = BaseUrl "http://ampersand.example.org/"
 
 myPrefixMappings :: PrefixMappings
 myPrefixMappings =
@@ -30,16 +30,16 @@ myPrefixMappings =
         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
         ("skos", "http://www.w3.org/2004/02/skos/core#"),
         ("owl", "http://www.w3.org/2002/07/owl#"),
-        ("xsd", "http://www.w3.org/2001/XMLSchema#"),
-        ("base", "http://ampersand.example.org#")
+        -- ("", "http://ampersand.example.org#")
+        ("xsd", "http://www.w3.org/2001/XMLSchema#")
       ]
 
 -- | Convert an FSpec to an RDF graph
 fSpec2Graph :: FSpec -> RDF TList
-fSpec2Graph fSpec = mkRdf shortenedTriples myBaseUrl myPrefixMappings
+fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
   where
     shortenedTriples =
-      fmap (shortenTriple myBaseUrl (Just myPrefixMappings)) triples
+      fmap (shortenTriple myBaseUrl myPrefixMappings) triples
     triples =
       concat
         $ fmap concept2triples (instanceList fSpec)
@@ -47,21 +47,15 @@ fSpec2Graph fSpec = mkRdf shortenedTriples myBaseUrl myPrefixMappings
 
     concept2triples :: A_Concept -> Triples
     concept2triples cpt =
-      [ triple uri (unode "rdf:type") (unode "owl:Class"),
-        triple uri (unode "rdfs:label") (lnode . plainL . label $ cpt)
+      [ triple (uri cpt) (unode "rdf:type") (unode "owl:Class"),
+        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt)
       ]
-      where
-        uri :: Node
-        uri = unode $ maybe "" unBaseUrl myBaseUrl <> "Concept_" <> tshow (name cpt)
 
     relation2triples :: Relation -> Triples
     relation2triples rel =
-      [ triple uri (unode "rdf:type") (unode "owl:ObjectProperty"),
-        triple uri (unode "rdfs:label") (lnode . plainL . label $ rel)
+      [ triple (uri rel) (unode "rdf:type") (unode "owl:ObjectProperty"),
+        triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
       ]
-      where
-        uri :: Node
-        uri = unode $ maybe "" unBaseUrl myBaseUrl <> "Relation_" <> tshow (name rel)
 
 -- | Write the RDF graph to a file in Turtle format
 writeGraphToFile :: (MonadIO m) => FilePath -> RDF TList -> m ()
@@ -73,22 +67,28 @@ writeGraphToFile path graph = do
     hWriteRdf serializer h graph
 
 -- | Replace long URIs with base-relative or prefixed forms when possible
-shortenNode :: Maybe BaseUrl -> Maybe PrefixMappings -> Node -> Node
-shortenNode baseUri mappings node = case node of
-  UNode uri ->
-    case baseUri of
-      Just (BaseUrl base)
-        | base `T.isPrefixOf` uri ->
-            unode (T.drop (T.length base) uri)
-      _ -> case mappings of
-        Just (PrefixMappings ps) ->
-          case L.find (\(_, ns) -> ns `T.isPrefixOf` uri) (M.toList ps) of
-            Just (pfx, ns) -> unode (pfx <> ":" <> T.drop (T.length ns) uri)
-            Nothing -> node
-        Nothing -> node
-  _ -> node
+shortenNode :: BaseUrl -> PrefixMappings -> Node -> Node
+shortenNode baseUri mappings node =
+  case node of
+    UNode txt ->
+      case baseUri of
+        (BaseUrl base)
+          | containsDot txt -> node
+          | base `T.isPrefixOf` txt ->
+              unode (T.drop (T.length base) txt)
+        _ -> case L.find (\(_, ns) -> ns `T.isPrefixOf` txt) (M.toList ps) of
+          Just (pfx, ns) -> unode (pfx <> ":" <> T.drop (T.length ns) txt)
+          Nothing -> node
+    _ -> node
+  where
+    PrefixMappings ps = mappings
+    containsDot :: Text -> Bool
+    containsDot = T.any (== '.')
 
 -- | Apply shortening to all nodes in a triple
-shortenTriple :: Maybe BaseUrl -> Maybe PrefixMappings -> Triple -> Triple
+shortenTriple :: BaseUrl -> PrefixMappings -> Triple -> Triple
 shortenTriple b p (Triple s pr o) =
   Triple (shortenNode b p s) (shortenNode b p pr) (shortenNode b p o)
+
+uri :: (Unique a) => a -> Node
+uri a = unode $ unBaseUrl myBaseUrl <> text1ToText (uniqueShowWithType a)
