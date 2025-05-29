@@ -25,8 +25,8 @@ devoutput ::
   FSpec ->
   RIO env ()
 devoutput fSpec = do
-  --  doGenHaskell fSpec
-  --  doGenSQLdump fSpec
+  doGenHaskell fSpec
+  doGenSQLdump fSpec
   writeTurtle fSpec
 
 doGenHaskell ::
