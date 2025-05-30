@@ -33,7 +33,7 @@ myPrefixMappings =
         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
         ("skos", "http://www.w3.org/2004/02/skos/core#"),
         ("owl", "http://www.w3.org/2002/07/owl#"),
-        ("", "http://ampersand/"),
+        ("", "http://ampersand.example.org/"),
         ("xsd", "http://www.w3.org/2001/XMLSchema#")
       ]
 
@@ -47,6 +47,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
       concat
         $ fmap concept2triples (filter (ONE /=) $ instanceList fSpec)
         <> fmap relation2triples (instanceList fSpec)
+        <> fmap population2triples (instanceList fSpec)
 
     concept2triples :: A_Concept -> Triples
     concept2triples cpt =
@@ -140,6 +141,23 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
         blankInjSurs = mkBlank "blankInjSurs"
         mkBlank :: Text -> Node
         mkBlank prefix = BNode $ "_:" <> prefix <> relNumber fSpec rel
+    population2triples :: Population -> Triples
+    population2triples pop = case pop of
+      ARelPopu {} ->
+        concatMap ((triplesOfAtom . source . popdcl $ pop) . apLeft) (toList . popps $ pop)
+          <> concatMap ((triplesOfAtom . target . popdcl $ pop) . apRight) (toList . popps $ pop)
+          <> map linkTriple (toList . popps $ pop)
+      ACptPopu {} -> concatMap (triplesOfAtom . popcpt $ pop) (popas pop)
+      where
+        linkTriple :: AAtomPair -> Triple
+        linkTriple ap =
+          triple (uri $ apLeft ap) (uri $ popdcl pop) (uri $ apRight ap)
+        triplesOfAtom :: A_Concept -> AAtomValue -> Triples
+        triplesOfAtom cpt av =
+          [ triple (uri av) (unode "rdf:type") (unode "owl:NamedIndividual"),
+            triple (uri av) (unode "rdf:type") (uri cpt),
+            triple (uri av) (unode "rdfs:label") (lnode . plainL . showValSQL $ av)
+          ]
 
 relNumber :: FSpec -> Relation -> Text
 relNumber fSpec rel =
