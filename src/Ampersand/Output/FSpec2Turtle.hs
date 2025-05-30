@@ -87,6 +87,21 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
         triple (uri rel) (unode "rdfs:range") (uri (target rel)),
         triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
       ]
+        <> [ triple (uri rel) (unode "rdf:type") (unode "owl:AsymmetricProperty")
+             | isAsy rel
+           ]
+        <> [ triple (uri rel) (unode "rdf:type") (unode "owl:IrreflexiveProperty")
+             | isIrf rel
+           ]
+        <> [ triple (uri rel) (unode "rdf:type") (unode "owl:ReflexiveProperty")
+             | isRfx rel
+           ]
+        <> [ triple (uri rel) (unode "rdf:type") (unode "owl:SymmetricProperty")
+             | isSym rel
+           ]
+        <> [ triple (uri rel) (unode "rdf:type") (unode "owl:TransitiveProperty")
+             | isTrn rel
+           ]
         <> [ triple
                (uri rel)
                (unode "rdfs:isDefinedBy")
@@ -155,6 +170,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
         triplesOfAtom :: A_Concept -> AAtomValue -> Triples
         triplesOfAtom cpt av =
           [ triple (uri av) (unode "rdf:type") (unode "owl:NamedIndividual"),
+            triple (uri av) (unode "rdf:type") (unode "owl:Thing"),
             triple (uri av) (unode "rdf:type") (uri cpt),
             triple (uri av) (unode "rdfs:label") (lnode . plainL . showValSQL $ av)
           ]
