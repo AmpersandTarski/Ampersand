@@ -5,6 +5,7 @@ module Ampersand.Basics.PandocExtended
     Markup (..),
     markup2Markdown,
     string2Blocks,
+    markup2PlainText,
   )
 where
 
@@ -36,6 +37,16 @@ markup2Markdown = blocks2String . amPandoc
     blocks2String :: Blocks -> Text
     blocks2String ec =
       case runPure $ writeMarkdown def (Pandoc nullMeta (toList ec)) of
+        Left pandocError -> fatal $ "Pandoc error: " <> tshow pandocError
+        Right txt -> txt
+
+-- | a way to show the pandoc in a default way. We currently use Markdown for this purpose.
+markup2PlainText :: Markup -> Text
+markup2PlainText = blocks2String . amPandoc
+  where
+    blocks2String :: Blocks -> Text
+    blocks2String ec =
+      case runPure $ writeAsciiDoc def (Pandoc nullMeta (toList ec)) of
         Left pandocError -> fatal $ "Pandoc error: " <> tshow pandocError
         Right txt -> txt
 

@@ -33,7 +33,7 @@ myPrefixMappings =
         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
         ("skos", "http://www.w3.org/2004/02/skos/core#"),
         ("owl", "http://www.w3.org/2002/07/owl#"),
-        -- ("", "http://ampersand.example.org#")
+        ("", "http://ampersand/"),
         ("xsd", "http://www.w3.org/2001/XMLSchema#")
       ]
 
@@ -45,7 +45,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
       fmap (shortenTriple myBaseUrl myPrefixMappings) triples
     triples =
       concat
-        $ fmap concept2triples (instanceList fSpec)
+        $ fmap concept2triples (filter (ONE /=) $ instanceList fSpec)
         <> fmap relation2triples (instanceList fSpec)
 
     concept2triples :: A_Concept -> Triples
@@ -59,7 +59,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
                (unode "rdfs:isDefinedBy")
                ( lnode
                    $ plainLL
-                     (markup2Markdown m)
+                     (markup2PlainText m)
                      ( case amLang m of
                          Dutch -> "nl"
                          English -> "en"
@@ -68,7 +68,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
              | cDef <- instanceList fSpec,
                acdcpt cDef == cpt,
                m <- map ameaMrk (acddef2 cDef : acdmean cDef),
-               markup2Markdown m /= ""
+               markup2PlainText m /= ""
            ]
         <> [ triple (uri cpt) (unode "rdfs:subClassOf") (uri greaterCpt)
              | greaterCpt <- concatMap greaters (instanceList fSpec)
@@ -82,9 +82,9 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     relation2triples :: Relation -> Triples
     relation2triples rel =
       [ triple (uri rel) (unode "rdf:type") (unode "owl:ObjectProperty"),
-        triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel),
         triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
-        triple (uri rel) (unode "rdfs:range") (uri (target rel))
+        triple (uri rel) (unode "rdfs:range") (uri (target rel)),
+        triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
       ]
         <> [ triple
                (uri rel)
@@ -104,15 +104,13 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
       where
         triplesOfProperties :: Triples
         triplesOfProperties =
-          [ triple (uri rel) (unode "rdfs:subClassOf") blankUniTots,
+          [ triple (uri . source $ rel) (unode "rdfs:subClassOf") blankUniTots,
             triple blankUniTots (unode "rdf:type") (unode "owl:Restriction"),
             triple blankUniTots (unode "owl:onProperty") (uri rel),
             cardinalityTriple blankUniTots,
             triple blankUniTots (unode "owl:onClass") (uri (target rel))
           ]
             <> inverseRelTriples
-          where
-            blankUniTots = BNode $ "_:blankUniTots" <> relNumber fSpec rel
         cardinalityTriple :: Node -> Triple
         cardinalityTriple blank = triple blank owlType cardinality
           where
@@ -131,13 +129,17 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
             (False, False) -> []
           where
             rest =
-              [ triple blankInverse (unode "rdfs:subClassOf") blankInjSurs,
+              [ triple blankInverse (unode "owl:inverseOf") (uri rel),
+                triple (uri . target $ rel) (unode "rdfs:subClassOf") blankInjSurs,
                 triple blankInjSurs (unode "rdf:type") (unode "owl:Restriction"),
                 triple blankInjSurs (unode "owl:onProperty") blankInverse,
                 triple blankInjSurs (unode "owl:onClass") (uri (source rel))
               ]
-            blankInverse = BNode $ "_:blankInverse" <> relNumber fSpec rel
-            blankInjSurs = BNode $ "_:blankInjSurs" <> relNumber fSpec rel
+        blankUniTots = mkBlank "blankUniTots"
+        blankInverse = mkBlank "blankInverse"
+        blankInjSurs = mkBlank "blankInjSurs"
+        mkBlank :: Text -> Node
+        mkBlank prefix = BNode $ "_:" <> prefix <> relNumber fSpec rel
 
 relNumber :: FSpec -> Relation -> Text
 relNumber fSpec rel =
