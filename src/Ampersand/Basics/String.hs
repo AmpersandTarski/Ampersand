@@ -12,6 +12,8 @@ module Ampersand.Basics.String
     toBaseFileName,
     toText1Unsafe,
     text1ToText,
+    camel,
+    pascal,
   )
 where
 
@@ -20,6 +22,7 @@ import Ampersand.Basics.Version (fatal)
 import qualified Network.URI.Encode as URI
 import RIO.Char
 import qualified RIO.Text as T
+import qualified Text.Casing as Casing
 
 -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase.
 -- uncap "AbcDe" == "abcDe"
@@ -127,3 +130,9 @@ toBaseFileName txt = concatMap convertChar $ T.unpack txt
       | isSpace c = ['_']
       | c `elem` ['<', '>', ':', '\"', '/', '\\', '|', '?', '*'] = '%' : show (ord c)
       | otherwise = [c]
+
+camel :: Text -> Text
+camel = T.pack . Casing.camel . T.unpack
+
+pascal :: Text -> Text
+pascal = T.pack . Casing.pascal . T.unpack

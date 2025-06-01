@@ -22,7 +22,6 @@ import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as PARTIAL
-import Text.Casing (camel, pascal)
 
 --- Populations ::= Population+
 
@@ -196,14 +195,14 @@ mkWarnText typ txt =
         else Just . Label . text1ToText $ txt
 
 suggestNamePart :: NameType -> Text1 -> Text1
-suggestNamePart typ = toText1Unsafe . T.pack . casing . T.unpack . T.map crapToSpace . text1ToText
+suggestNamePart typ = toText1Unsafe . casing . T.map crapToSpace . text1ToText
   where
     crapToSpace :: Char -> Char
     crapToSpace c =
       if isSafeIdChar False c
         then c
         else ' '
-    casing :: String -> String
+    casing :: Text -> Text
     casing = case typ of
       ConceptName -> upper
       ContextName -> upper

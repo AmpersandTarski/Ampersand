@@ -1627,12 +1627,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                     ]
                in case lookup (T.toUpper str) table of
                     Just b -> Right (AAVBoolean typ b)
-                    Nothing -> Left $ "permitted Booleans: " <> (tshow . fmap (camelCase . fst) $ table)
-              where
-                camelCase :: Text -> Text
-                camelCase txt = case T.uncons txt of
-                  Nothing -> mempty
-                  Just (h, tl) -> T.cons (toUpper h) (T.toLower tl)
+                    Nothing -> Left $ "permitted Booleans: " <> (tshow . fmap (camel . fst) $ table)
             Integer -> case readMaybe . T.unpack $ str of
               Just i -> Right (AAVInteger typ i)
               Nothing -> Left (message o str)
