@@ -566,6 +566,7 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.AtlasImport
+      Ampersand.Input.SemWeb.Turtle
       Ampersand.Misc.Defaults
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
