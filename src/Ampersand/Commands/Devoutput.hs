@@ -13,6 +13,7 @@ import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.FSpec2SQL
+import Ampersand.Output.FSpec2Turtle
 import qualified RIO.Text as T
 import RIO.Time
 import System.Directory
@@ -26,6 +27,7 @@ devoutput ::
 devoutput fSpec = do
   doGenHaskell fSpec
   doGenSQLdump fSpec
+  writeTurtle fSpec
 
 doGenHaskell ::
   (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) =>

@@ -1,5 +1,7 @@
 ﻿# Release notes of Ampersand
 
+## unimplemented
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) First steps towards integration with semantic web.
 
 ## v5.3.8
 - [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Restore edges between entities in LDM (redo of #1555). New option: --[no-]uniEdges

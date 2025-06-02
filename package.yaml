@@ -71,6 +71,7 @@ dependencies:
   - process
   - QuickCheck
   - quickcheck-instances
+  - rdf4h
   - rio
   # - salve
   - simple-sql-parser

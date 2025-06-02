@@ -3,8 +3,9 @@
 module Ampersand.Basics.PandocExtended
   ( PandocFormat (..),
     Markup (..),
-    aMarkup2String,
+    markup2Markdown,
     string2Blocks,
+    markup2PlainText,
   )
 where
 
@@ -30,12 +31,22 @@ instance Unique Markup where
   showUnique x = toText1Unsafe ("Markup_" <> (tshow . abs . hash . tshow) x)
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose.
-aMarkup2String :: Markup -> Text
-aMarkup2String = blocks2String . amPandoc
+markup2Markdown :: Markup -> Text
+markup2Markdown = blocks2String . amPandoc
   where
     blocks2String :: Blocks -> Text
     blocks2String ec =
       case runPure $ writeMarkdown def (Pandoc nullMeta (toList ec)) of
+        Left pandocError -> fatal $ "Pandoc error: " <> tshow pandocError
+        Right txt -> txt
+
+-- | a way to show the pandoc in a default way. We currently use Markdown for this purpose.
+markup2PlainText :: Markup -> Text
+markup2PlainText = blocks2String . amPandoc
+  where
+    blocks2String :: Blocks -> Text
+    blocks2String ec =
+      case runPure $ writeAsciiDoc def (Pandoc nullMeta (toList ec)) of
         Left pandocError -> fatal $ "Pandoc error: " <> tshow pandocError
         Right txt -> txt
 
