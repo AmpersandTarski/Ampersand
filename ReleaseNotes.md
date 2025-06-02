@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## unimplemented
+## v5.4.0
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) First steps towards integration with semantic web.
 
 ## v5.3.8
