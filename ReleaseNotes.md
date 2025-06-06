@@ -1,8 +1,13 @@
 ﻿# Release notes of Ampersand
 
 ## unimplemented
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) Another step towards integration with semantic web, Parsing turtle file
+
+## v5.4.1
+- replaced rdfs:isDefinedBy by skos:Definition in turtle output
+
+## v5.4.0
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) First steps towards integration with semantic web, Serializing towards turtle file (experimental, only Concepts, Relations, properties and population. No rules yet)
-- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) First steps towards integration with semantic web, Parsing turtle file
 
 ## v5.3.8
 - [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Restore edges between entities in LDM (redo of #1555). New option: --[no-]uniEdges

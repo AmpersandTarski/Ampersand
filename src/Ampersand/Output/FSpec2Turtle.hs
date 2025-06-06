@@ -57,7 +57,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
       ]
         <> [ triple
                (uri cpt)
-               (unode "rdfs:isDefinedBy")
+               (unode "skos:definition")
                ( lnode
                    $ plainLL
                      (markup2PlainText m)
@@ -104,7 +104,7 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
            ]
         <> [ triple
                (uri rel)
-               (unode "rdfs:isDefinedBy")
+               (unode "skos:definition")
                ( lnode
                    $ plainLL
                      (markup2Markdown m)
