@@ -6,11 +6,10 @@
 {-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
-  ( CtxError (PE),
-    Warning,
-    addWarning,
+  ( addWarning,
     addWarnings,
     cannotDisambiguate,
+    CtxError (PE),
     GetOneGuarded (..),
     Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
     lexerError2CtxError,
@@ -44,6 +43,7 @@ module Ampersand.Input.ADL1.CtxError
     mkRoundTripError,
     mkRoundTripTextError,
     mkSubInterfaceMustBeDefinedOnObject,
+    mkTurtleParseError,
     mkTypeMismatchError,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
@@ -56,6 +56,7 @@ module Ampersand.Input.ADL1.CtxError
     unexpectedType,
     uniqueLables,
     uniqueNames,
+    Warning,
     whenCheckedM,
   )
 where
@@ -754,6 +755,10 @@ mkCaseProblemWarning x y =
 
 mkJSONParseError :: Origin -> Text -> Guarded a
 mkJSONParseError orig msg = Errors . pure $ CTXE orig msg
+
+mkTurtleParseError :: FilePath -> Text -> Guarded a
+mkTurtleParseError filename msg =
+  Errors . pure $ CTXE (FileLoc (FilePos filename 0 0) "") msg
 
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning
