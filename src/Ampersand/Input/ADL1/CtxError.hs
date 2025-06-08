@@ -8,7 +8,7 @@
 module Ampersand.Input.ADL1.CtxError
   ( CtxError (..),
     Warning,
-    cannotDisambiguate,
+    -- cannotDisambiguate,
     mustBeOrdered,
     mustBeOrderedLst,
     mustBeOrderedConcLst,

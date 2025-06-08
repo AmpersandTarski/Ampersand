@@ -3,7 +3,7 @@
 
 module Ampersand.Basics.Name
   ( Named (..),
-    Name,
+    Name(..),
     NamePart,
     NameSpace,
     NameType (..),
@@ -21,6 +21,7 @@ module Ampersand.Basics.Name
     namePartToText1,
     toNamePart,
     toNamePart1,
+    toNamePartText1,
     postpend,
     checkProperId,
     suggestName,
@@ -45,6 +46,9 @@ type NameSpace = [NamePart]
 -- A namepart is a single word, that starts with an alphanumeric character
 -- and may contain of alphanumeric characters and digits only.
 newtype NamePart = NamePart Text1 deriving (Data, Eq, Ord)
+
+toNamePartText1 :: Text1 -> NamePart
+toNamePartText1 = NamePart
 
 instance Show NamePart where
   show (NamePart t1) = T.unpack $ text1ToText t1

@@ -109,22 +109,22 @@ addRelations pCtx = enrichedContext
 
     popRelations =
       [ rel
-        | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- ctx_pops pCtx <> [pop | pat <- ctx_pats pCtx, pop <- pt_pop pat],
-          Just src' <- [src],
-          Just tgt' <- [tgt],
-          rel <-
-            [ P_Relation
-                { dec_nm = name pop,
-                  dec_sign = P_Sign src' tgt',
-                  dec_label = Nothing,
-                  dec_prps = mempty,
-                  dec_defaults = mempty,
-                  dec_pragma = Nothing,
-                  dec_Mean = mempty,
-                  dec_pos = origin pop
-                }
-            ],
-          signatur rel `notElem` map signatur declaredRelations
+      | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- ctx_pops pCtx <> [pop | pat <- ctx_pats pCtx, pop <- pt_pop pat],
+        Just src' <- [src],
+        Just tgt' <- [tgt],
+        rel <-
+          [ P_Relation
+              { dec_nm = name pop,
+                dec_sign = P_Sign src' tgt', -- SJ: TODO @Han, Why is this not fromMaybe (p_mbSign (p_nmdr pop)) ?
+                dec_label = Nothing,
+                dec_prps = mempty,
+                dec_defaults = mempty,
+                dec_pragma = Nothing,
+                dec_Mean = mempty,
+                dec_pos = origin pop
+              }
+          ],
+        signatur rel `notElem` map signatur declaredRelations
       ]
 
     genericRelations :: [P_Relation] -- generalization of popRelations due to CLASSIFY statements

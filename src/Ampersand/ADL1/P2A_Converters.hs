@@ -15,7 +15,7 @@ where
 -- used for type-checking
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
-import Ampersand.Basics hiding (conc, set)
+import Ampersand.Basics hiding (conc, set, guard)
 import Ampersand.Classes
 -- import Ampersand.Classes.Relational (hasAttributes) -- found redundant
 -- import Ampersand.Core.A2P_Converters                -- found redundant
@@ -33,6 +33,7 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Codec.Xlsx (Condition(Expression))
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -195,28 +196,30 @@ namedRel2Decl ci declMap (PNamedRel o r mSgn)
     ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
    where
      decls = case mSgn of
-               Nothing -> findDecls' declMap r
+               Nothing -> findDecls declMap r
                Just s  -> findRelsTyped declMap r (pSign2aSign ci s)
 
-findDecls' :: DeclMap -> Name -> [Relation]
-findDecls' declMap x = Map.elems (findRels declMap x)
+findDecls :: DeclMap -> Name -> [Relation]
+findDecls declMap x = Map.elems (findRels declMap x)
 
 findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
 findRelsLooselyTyped declMap x (Just src) (Just tgt) =
   findRelsTyped declMap x (Sign src tgt)
     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
-    `orWhenEmpty` findDecls' declMap x
+    `orWhenEmpty` findDecls declMap x
   where
+    orWhenEmpty :: [a] -> [a] -> [a]
+    orWhenEmpty xs ys = if null xs then ys else xs
     isct lsta lstb = [a | a <- lsta, a `elem` lstb]
     unin lsta lstb = L.nub (lsta <> lstb)
-findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
+findRelsLooselyTyped declMap x Nothing Nothing = findDecls declMap x
 findRelsLooselyTyped declMap x (Just src) Nothing =
-  [dcl | dcl <- findDecls' declMap x, source dcl == src]
-    `orWhenEmpty` findDecls' declMap x
+  [dcl | dcl <- findDecls declMap x, source dcl == src]
+    `orWhenEmpty` findDecls declMap x
 findRelsLooselyTyped declMap x Nothing (Just tgt) =
-  [dcl | dcl <- findDecls' declMap x, target dcl == tgt]
-    `orWhenEmpty` findDecls' declMap x
+  [dcl | dcl <- findDecls declMap x, target dcl == tgt]
+    `orWhenEmpty` findDecls declMap x
 
 findDeclLooselyTyped ::
   DeclMap ->
@@ -609,10 +612,7 @@ pCtx2aCtx
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
-              dcl <- case p_mbSign nmdr of
-                Nothing -> findDeclLooselyTyped declMap nmdr (pCpt2aCpt <$> src) (pCpt2aCpt <$> tgt)
-                _ -> namedRel2Decl pCpt2aCpt declMap nmdr
-
+              EDcD dcl <- term2Expr ci (Prim (PNamedR nmdr))
               aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
@@ -699,9 +699,9 @@ pCtx2aCtx
                 typecheckPayload :: P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
                 typecheckPayload payload =
                   case payload of
-                    P_ViewExp (Prim (term,_obsoletedisambstuff)) ->
+                    P_ViewExp term ->
                       do
-                        viewExpr <- term2Expr ci (PCps orig (Prim (Pid orig cpt)) (Prim term))
+                        viewExpr <- term2Expr ci (PCps orig (Prim (Pid orig cpt)) term)
                         pure (ViewExp viewExpr)
                     P_ViewText str -> pure $ ViewText str
                     _ -> fatal "Unsupported view segment payload in compiler"
@@ -727,11 +727,81 @@ pCtx2aCtx
               objExpr <- term2Expr contextInfo term
               checkCrud
               crud <- pCruds2aCruds objExpr mCrud
-              maybeObj <- maybeOverGuarded (pSubi2aSubi contextInfo objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+              s <- case subs of
+                    Just sub@P_Box{} -> traverse (checkPboxItem (target objExpr)) (si_box sub)
+                    Just P_InterfaceRef {si_str = str, si_isLink = isLink} ->
+                      case lookupView str of
+                        Just vd -> pure [BxExpr (ObjectDef (Just nm) lbl' orig objExpr crud mView (Just (P_InterfaceRef {pos =orig, si_str = str, si_isLink = isLink})))]
+                        Nothing -> Errors . pure $ mkUndeclaredError "view" objDef str
+                    Nothing  -> pure Nothing
               case maybeObj of
                 Just (newExpr, subStructures) -> return (obj crud (newExpr, srcBounded) (Just subStructures))
                 Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
               where
+-- data P_SubIfc a
+--   = P_Box
+--       { pos :: !Origin,
+--         si_header :: !HTMLtemplateCall,
+--         si_box :: [P_BoxItem a]
+--       }
+--   | P_InterfaceRef
+--       { pos :: !Origin,
+--         si_isLink :: !Bool, -- True iff LINKTO is used. (will display as hyperlink)
+--         si_str :: !Name -- Name of the interface that is reffered to
+--       }
+--   deriving (Show)
+-- data BoxItem
+--   = BxExpr {objE :: !ObjectDef}
+--   | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+--     BxText
+--       { boxPlainName :: !(Maybe Text1),
+--         boxpos :: !Origin,
+--         boxtxt :: !Text
+--       }
+--   deriving (Show)
+-- data P_BoxItem a
+--   = P_BoxItemTerm
+--       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+--         obj_PlainName :: !(Maybe Text1),
+--         obj_lbl :: !(Maybe Label),
+--         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
+--         pos :: !Origin,
+--         -- | this term describes the instances of this object, related to their context.
+--         obj_term :: !(Term a),
+--         -- | the CRUD actions as required by the user
+--         obj_crud :: !(Maybe P_Cruds),
+--         -- | The view that should be used for this object
+--         obj_mView :: !(Maybe Name),
+--         -- | the attributes, which are object definitions themselves.
+--         obj_msub :: !(Maybe (P_SubIfc a))
+--       }
+--   | P_BxTxt
+--       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+--         obj_PlainName :: !(Maybe Text1),
+--         pos :: !Origin,
+--         box_txt :: !Text
+--       }
+--   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
+
+                checkPboxItem :: A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
+                checkPboxItem c pbi =
+                  case pbi of
+                    P_BoxItemTerm
+                      { obj_PlainName = nm,
+                        obj_lbl = lbl',
+                        pos = orig,
+                        obj_term = term,
+                        obj_crud = mCrud,
+                        obj_mView = mView,
+                        obj_msub = subs
+                      } ->
+                      do
+                        objExpr <- term2Expr contextInfo (PCps (origin pbi) (Prim (Pid (origin pbi) c)) (obj_term pbi))
+                        checkCrud
+                        typeCheckViewAnnotation objExpr mView
+                        return $ obj mCrud (objExpr, srcBounded) subs
+                      where
+
                 lookupView :: Name -> Maybe P_ViewDef
                 lookupView viewId = case [vd | vd <- p_viewdefs, vd_nm vd == viewId] of
                   [] -> Nothing
@@ -943,26 +1013,6 @@ pCtx2aCtx
           [] -> Nothing
           disambObj : _ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
 
-      -- this function helps in the disambiguation process:
-      -- it adds a set of potential disambiguation outcomes to things that need to be disambiguated. For typed and untyped identities, singleton elements etc, this is immediate, but for relations we need to find it in the list of declarations.
-      termPrimDisAmb :: DeclMap -> TermPrim -> TermPrim
-      termPrimDisAmb declMap x =
-        ( x,
-          case x of
-            PI _ -> Ident
-            Pid _ cpt -> Known (EDcI (pCpt2aCpt cpt))
-            Patm _ s Nothing -> Mp1 s
-            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
-            PBin _ oper -> BinOper oper
-            PBind _ oper cpt -> Known (EBin oper (pCpt2aCpt cpt))
-            PVee _ -> Vee
-            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-            PNamedR nr -> Rel $ disambNamedRel nr
-        )
-        where
-          disambNamedRel (PNamedRel _ r Nothing) = Map.elems $ findRels declMap r
-          disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign pCpt2aCpt s
-
       pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem TermPrim) -> Guarded Interface
       pIfc2aIfc contextInfo (pIfc, objDisamb) =
         build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
@@ -1046,13 +1096,7 @@ pCtx2aCtx
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
         P_Rule TermPrim ->
         Guarded Rule
-      pRul2aRul ci mPat = typeCheckRul ci mPat . disamb ci
-      typeCheckRul ::
-        ContextInfo ->
-        Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
-        P_Rule TermPrim ->
-        Guarded Rule
-      typeCheckRul
+      pRul2aRul
         ci
         mPat
         P_Rule
@@ -1065,7 +1109,7 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            (exp', _) <- typecheckTerm ci expr
+            exp' <- term2Expr ci expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -1079,18 +1123,13 @@ pCtx2aCtx
                   rrpat = mPat,
                   rrkind = UserDefined
                 }
+      -- | The AEnforce calls the PHP-ExecEngine in the rrviol field of mkRule in the where-part, to enforce this rule.
       pEnforce2aEnforce ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
         P_Enforce TermPrim ->
         Guarded AEnforce
-      pEnforce2aEnforce ci mPat = typeCheckEnforce ci mPat . disamb ci
-      typeCheckEnforce ::
-        ContextInfo ->
-        Maybe Text -> -- name of pattern the enforcement rule is defined in (if any), just for documentation purposes.
-        P_Enforce TermPrim ->
-        Guarded AEnforce
-      typeCheckEnforce
+      pEnforce2aEnforce
         ci
         mPat
         P_Enforce
@@ -1098,43 +1137,33 @@ pCtx2aCtx
             penfRel = pRel,
             penfOp = oper,
             penfExpr = x
-          } =
-          case pRel of
-            (_, Known (EDcD rel)) ->
-              do
-                (expr, (_srcBounded, _tgtBounded)) <- typecheckTerm ci x
-                -- SJC: the following two error messages can occur in parallel
-                --      thanks to 'ApplicativeDo', however, we can write the following
-                --      sequential-looking code that suggests checking src before tgt.
-                --      ApplicativeDo should translate this with a <*> instead.
-                let srcOk = source expr `isaC` source rel
-                unless srcOk $ mustBeOrdered pos' (Src, expr) (Src, rel)
-                let tgtOk = target expr `isaC` target rel
-                unless tgtOk $ mustBeOrdered pos' (Tgt, expr) (Tgt, rel)
-                let expr' =
-                      addEpsilonLeft genLattice (source rel)
-                        $ addEpsilonRight genLattice (target rel) expr
-                return
-                  AEnforce
-                    { pos = pos',
-                      enfRel = rel,
-                      enfOp = oper,
-                      enfExpr = expr',
-                      enfPatName = mPat,
-                      enfRules = enforce2Rules rel expr'
-                    }
-            (o, dx) -> cannotDisambiguate o dx
+          } = case oper of
+                IsSuperSet {} ->
+                  do EInc (expr,EDcD rel) <- term2Expr ci (PInc pos' x (Prim pRel))
+                     return (toAEnforce rel expr)
+                IsSubSet {} ->
+                  do EInc (EDcD rel,expr) <- term2Expr ci (PInc pos' (Prim pRel) x)
+                     return (toAEnforce rel expr)
+                IsSameSet {} ->
+                  do EEqu (EDcD rel,expr) <- term2Expr ci (PEqu pos' (Prim pRel) x)
+                     return (toAEnforce rel expr)
           where
-            enforce2Rules :: Relation -> Expression -> [Rule]
-            enforce2Rules rel expr =
-              case oper of
-                IsSuperSet {} -> [insPair]
-                IsSubSet {} -> [delPair]
-                IsSameSet {} -> [insPair, delPair]
+            toAEnforce :: Relation -> Expression -> AEnforce
+            toAEnforce rel expr
+             = AEnforce
+                 { pos = pos',
+                   enfRel = rel,
+                   enfOp = oper,
+                   enfExpr = expr,
+                   enfPatName = mPat,
+                   enfRules = case oper of
+                               IsSuperSet {} -> [insPair]
+                               IsSubSet {} -> [delPair]
+                               IsSameSet {} -> [insPair, delPair]
+                 }
               where
-                insPair = mkRule "InsPair" (EInc (expr, bindedRel))
-                delPair = mkRule "DelPair" (EInc (bindedRel, expr))
-                bindedRel = EDcD rel
+                insPair = mkRule "InsPair" (EInc (expr, EDcD rel))
+                delPair = mkRule "DelPair" (EInc (EDcD rel, expr))
                 mkRule command fExpr =
                   Rule
                     { rrnm =
@@ -1165,6 +1194,7 @@ pCtx2aCtx
                   where
                     lbl' :: Text
                     lbl' = "Compute " <> tshow rel <> " using " <> command
+
       pIdentity2aIdentity ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
@@ -1208,10 +1238,10 @@ pCtx2aCtx
       typeCheckPairViewSeg _ _ _ (PairViewText orig x) = pure (PairViewText orig x)
       typeCheckPairViewSeg ci o t (PairViewExp orig s x) =
         do
-          (e, (b, _)) <- typecheckTerm ci x
+          e <- term2Expr ci x
           let tp = aConcToType (source e)
           case toList . findExact genLattice . lMeet tp $ getConcept s t of
-            [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s, t)
+            [] -> mustBeOrdered o (Src, origin x, e) (s, t)
             lst ->
               if b || elem (getConcept s t) lst
                 then pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
@@ -1266,7 +1296,7 @@ signatures contextInfo trm = case trm of
   Prim (PBind _ _ c)       -> let c'=pCpt2aCpt c in pure [Sign c' c']
   Prim (PNamedR rel)       -> let sgns :: Maybe P_Sign -> [Signature]
                                   sgns (Just sgn) = (map sign . findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
-                                  sgns Nothing    = (Map.elems . fmap sign . findRels (declarationsMap contextInfo) . name) rel
+                                  sgns Nothing    = (fmap sign . findDecls (declarationsMap contextInfo) . name) rel
                               in  case sgns (p_mbSign rel) of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure ss
@@ -1325,34 +1355,39 @@ signatures contextInfo trm = case trm of
     conceptGraph = makeGraph (allGens contextInfo)
     signats = signatures contextInfo
 
+dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
+dereference contextInfo sgns trmprim
+  = case trmprim of
+      PI _           -> guard [ EDcI c | Sign c c'<-sgns, c==c']
+      Pid _ c        -> guard [ EDcI (pCpt2aCpt c) | Sign s t<-sgns, s==t, pCpt2aCpt c==s]
+      Patm _ av mc   -> case mc of
+                         Just c  -> guard [ EMp1 av s | Sign s t<-sgns, s==t, pCpt2aCpt c==s]
+                         Nothing -> guard [ EMp1 av s | Sign s t<-sgns, s==t]
+      PVee _         -> guard [ EDcV sgn | sgn<-sgns]
+      Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` s], Just _tgt<-[target sgn `grLwB` t]]
+      PBin _ oper    -> guard [ EBin oper s | Sign s t<-sgns, s==t]
+      PBind _ oper c -> guard [ EBin oper s | Sign s t<-sgns, s==t, pCpt2aCpt c==s]
+      PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
+    where
+      guard :: [Expression] -> Guarded Expression
+      guard []     = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>tshow trmprim<>".")
+      guard [expr] = pure expr
+      guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>tshow trmprim<>". Please specify "<>if length exprs>4 then "the type explicitly." else "one of: "<>T.intercalate ", " (map (tshow . source) exprs)<>".")
+      rels :: P_NamedRel -> [Relation]
+      rels rel = case p_mbSign rel of
+                  Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
+                  Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
+      conceptGraph :: AdjacencyMap A_Concept
+      conceptGraph = makeGraph (allGens contextInfo)
+      grLwB = glb conceptGraph
+      -- lsUpB = glb conceptGraph
+      pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
-term2Expr contextInfo trm 
- = do sgns<-signatures contextInfo trm
-      sgn<-case sgns of
-             [] -> (Errors . return . CTXE (origin trm)) ("Cannot find a signature for "<>tshow trm<>".")
-             [sgn] -> pure sgn
-             sgs -> (Errors . return . CTXE (origin trm)) ("Ambiguous signatures for "<>tshow trm<>": "<>tshow sgs)
-      case trm of
-        Prim (PI _) -> pure (EDcI (source sgn))
-        Prim (Pid _ _) -> pure (EDcI (source sgn))
-        Prim (Patm _ av _) -> pure (EMp1 av (source sgn))
-        Prim (PVee _) -> pure (EDcV sgn)
-        Prim (Pfull{}) -> pure (EDcV sgn)
-        Prim (PBin _ oper) -> pure (EBin oper (source sgn))
-        Prim (PBind _ oper _) -> pure (EBin oper (source sgn))
-        Prim (PNamedR rel) -> let rels :: Maybe P_Sign -> [Relation]
-                                  rels (Just sg) = (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
-                                  rels Nothing    = (Map.elems . findRels (declarationsMap contextInfo) . name) rel
-                              in case [ case (src==source decl, tgt==target decl) of
-                                          (True , True ) -> EDcD decl
-                                          (False, True ) -> EDcI src .:. EDcD decl 
-                                          (True , False) -> EDcD decl .:. EDcI tgt
-                                          (False, False) -> EDcI src .:. EDcD decl .:. EDcI tgt
-                                      | decl<-rels (p_mbSign rel), Just src<-[source sgn `grLwB` source decl], Just tgt<-[target sgn `grLwB` target decl]] of
-                                  []  -> (Errors . return . CTXE (origin trm)) ("Relation "<>tshow rel<>" is not declared.")
-                                  [d] -> pure d
-                                  _   -> (Errors . return . CTXE (origin trm)) ("Ambiguous "<>tshow rel<>". Please pick one of: "<>tshow (rels (p_mbSign rel))<>".")
+term2Expr contextInfo trm
+  = do sgns <- signatures contextInfo trm
+       case trm of
+        Prim tp    -> dereference contextInfo sgns tp
         PEqu _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EEqu (expr_a, expr_b))
         PInc _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EInc (expr_a, expr_b))
         PIsc _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EIsc (expr_a, expr_b))
@@ -1369,13 +1404,8 @@ term2Expr contextInfo trm
         PFlp _ e   -> do expr_e <- t2e e;                  return (EFlp expr_e)
         PCpl _ e   -> do expr_e <- t2e e;                  return (ECpl expr_e)
         PBrk _ e   -> t2e e
-  where
+   where
     t2e = term2Expr contextInfo
-    conceptGraph :: AdjacencyMap A_Concept
-    conceptGraph = makeGraph (allGens contextInfo)
-    grLwB = glb conceptGraph
-    -- lsUpB = glb conceptGraph
-    pCpt2aCpt = conceptMap contextInfo
 
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept

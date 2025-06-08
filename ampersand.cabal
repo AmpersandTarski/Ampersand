@@ -442,7 +442,6 @@ library
   exposed-modules:
       Ampersand
       Ampersand.ADL1
-      Ampersand.ADL1.Disambiguate
       Ampersand.ADL1.Expression
       Ampersand.ADL1.Lattices
       Ampersand.ADL1.P2A_Converters
@@ -543,7 +542,6 @@ library
       Ampersand.Basics.BuildInfo_Generated
       Ampersand.Prototype.StaticFiles_Generated
   other-modules:
-      Ampersand.ADL1.DisambNew
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
       Ampersand.Commands.Daemon

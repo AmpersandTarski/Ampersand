@@ -1458,11 +1458,9 @@ mergeContexts ctx1 ctx2 =
         groupCondition a b =
           case (a, b) of
             (P_RelPopu {}, P_RelPopu {}) ->
-              p_src a
-                == p_src b
-                && p_tgt a
-                == p_tgt b
-                && sameNamedRels (p_nmdr a) (p_nmdr b)
+              p_src a == p_src b &&
+              p_tgt a == p_tgt b &&
+              sameNamedRels (p_nmdr a) (p_nmdr b)
             (P_CptPopu {}, P_CptPopu {}) -> p_cpt a == p_cpt b
             _ -> False
           where

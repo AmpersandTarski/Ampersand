@@ -24,7 +24,6 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
-import Ampersand.Basics.Name
 import Ampersand.Classes
 import RIO.Char
 import qualified RIO.NonEmpty as NE
@@ -227,15 +226,16 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
   case cpt of
-    ONE -> P_ONE
-    UNION cs -> PCpt {p_cptnm = Name { nameParts = NamePart (Text1 'E' "xecEngine") :| [],
-                                       nameType = ConceptName
-                                     }}
-    ISECT cs -> P_Isect (map aConcept2pConcept cs)
-    PlainConcept {} ->
-      PCpt
-        { p_cptnm = name cpt
-        }
+    ONE             -> P_ONE
+    UNION cs        -> toPcpt "\\/" cs
+    ISECT cs        -> toPcpt "/\\" cs
+    PlainConcept {} -> PCpt { p_cptnm = name cpt }
+  where
+    toPcpt sep cs
+     = PCpt {p_cptnm = Name { nameParts = (toNamePartText1 . toText1Unsafe . T.intercalate sep . map tshow . toList) cs :| [],
+                              nameType  = ConceptName
+                            }
+            }
 
 aPurpose2pPurpose :: Purpose -> PPurpose
 aPurpose2pPurpose p =
