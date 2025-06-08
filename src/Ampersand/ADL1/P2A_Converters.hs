@@ -202,36 +202,36 @@ namedRel2Decl ci declMap (PNamedRel o r mSgn)
 findDecls :: DeclMap -> Name -> [Relation]
 findDecls declMap x = Map.elems (findRels declMap x)
 
-findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
-findRelsLooselyTyped declMap x (Just src) (Just tgt) =
-  findRelsTyped declMap x (Sign src tgt)
-    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
-    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
-    `orWhenEmpty` findDecls declMap x
-  where
-    orWhenEmpty :: [a] -> [a] -> [a]
-    orWhenEmpty xs ys = if null xs then ys else xs
-    isct lsta lstb = [a | a <- lsta, a `elem` lstb]
-    unin lsta lstb = L.nub (lsta <> lstb)
-findRelsLooselyTyped declMap x Nothing Nothing = findDecls declMap x
-findRelsLooselyTyped declMap x (Just src) Nothing =
-  [dcl | dcl <- findDecls declMap x, source dcl == src]
-    `orWhenEmpty` findDecls declMap x
-findRelsLooselyTyped declMap x Nothing (Just tgt) =
-  [dcl | dcl <- findDecls declMap x, target dcl == tgt]
-    `orWhenEmpty` findDecls declMap x
+-- findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
+-- findRelsLooselyTyped declMap x (Just src) (Just tgt) =
+--   findRelsTyped declMap x (Sign src tgt)
+--     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
+--     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
+--     `orWhenEmpty` findDecls declMap x
+--   where
+--     orWhenEmpty :: [a] -> [a] -> [a]
+--     orWhenEmpty xs ys = if null xs then ys else xs
+--     isct lsta lstb = [a | a <- lsta, a `elem` lstb]
+--     unin lsta lstb = L.nub (lsta <> lstb)
+-- findRelsLooselyTyped declMap x Nothing Nothing = findDecls declMap x
+-- findRelsLooselyTyped declMap x (Just src) Nothing =
+--   [dcl | dcl <- findDecls declMap x, source dcl == src]
+--     `orWhenEmpty` findDecls declMap x
+-- findRelsLooselyTyped declMap x Nothing (Just tgt) =
+--   [dcl | dcl <- findDecls declMap x, target dcl == tgt]
+--     `orWhenEmpty` findDecls declMap x
 
-findDeclLooselyTyped ::
-  DeclMap ->
-  P_NamedRel ->
-  Maybe A_Concept ->
-  Maybe A_Concept ->
-  Guarded Relation
-findDeclLooselyTyped declMap (PNamedRel o r _) src tgt
- = case findRelsLooselyTyped declMap (name r) src tgt of
-    [dcl] -> pure dcl
-    []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
-    ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
+-- findDeclLooselyTyped ::
+--   DeclMap ->
+--   P_NamedRel ->
+--   Maybe A_Concept ->
+--   Maybe A_Concept ->
+--   Guarded Relation
+-- findDeclLooselyTyped declMap (PNamedRel o r _) src tgt
+--  = case findRelsLooselyTyped declMap (name r) src tgt of
+--     [dcl] -> pure dcl
+--     []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
+--     ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
 
 findRelsTyped :: DeclMap -> Name -> Signature -> [Relation]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: []) (findRels declMap x))
@@ -299,7 +299,7 @@ pCtx2aCtx
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames "interface" p_interfaces
-      interfaces <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap) --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      interfaces <- traverse (pIfc2aIfc contextInfo) p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
       udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- -- the following trace statement is kept in comment for possible further work on contextInfo (March 31st, 2025).
@@ -423,7 +423,7 @@ pCtx2aCtx
           -- postcondition: makeGraph is the transitive closure of gns.
 
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect [] (map (toList . concs) gns)
+          connectedConcepts = connect' [] (map (toList . concs) gns)
 
           mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
@@ -484,11 +484,11 @@ pCtx2aCtx
                     [] -> pure []
                     [t] -> pure [(cpt, t) | cpt <- grp]
                     _ -> mkMultipleTypesInTypologyError typeList
-          connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          connect typols gss =
+          connect' :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
+          connect' typols gss =
             case gss of
               [] -> typols
-              x : xs -> connect (t : typols) rest
+              x : xs -> connect' (t : typols) rest
                 where
                   (t, rest) = g' x xs
                   g' a as = case L.partition (disjoint a) as of
@@ -526,8 +526,8 @@ pCtx2aCtx
       pCpt2aCpt :: ConceptMap
       pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
 
-      p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem TermPrim)]
-      p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
+      -- p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem TermPrim)]
+      -- p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
 
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
@@ -632,8 +632,7 @@ pCtx2aCtx
                       }
                 )
                   <$> traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
-        where
-          declMap = declarationsMap ci
+
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
         if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
@@ -712,7 +711,7 @@ pCtx2aCtx
       isaC :: A_Concept -> A_Concept -> Bool
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
-      typecheckObjDef :: ContextInfo -> P_BoxItem TermPrim -> Guarded (BoxItem, Bool)
+      typecheckObjDef :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
       typecheckObjDef contextInfo objDef =
         case objDef of
           P_BoxItemTerm
@@ -733,55 +732,11 @@ pCtx2aCtx
                       case lookupView str of
                         Just vd -> pure [BxExpr (ObjectDef (Just nm) lbl' orig objExpr crud mView (Just (P_InterfaceRef {pos =orig, si_str = str, si_isLink = isLink})))]
                         Nothing -> Errors . pure $ mkUndeclaredError "view" objDef str
-                    Nothing  -> pure Nothing
+                    Nothing  -> pure []
               case maybeObj of
-                Just (newExpr, subStructures) -> return (obj crud (newExpr, srcBounded) (Just subStructures))
-                Nothing -> return (obj crud (objExpr, srcBounded) Nothing)
+                Just (newExpr, subStructures) -> return (obj crud newExpr (Just subStructures))
+                Nothing -> return (obj crud objExpr Nothing)
               where
--- data P_SubIfc a
---   = P_Box
---       { pos :: !Origin,
---         si_header :: !HTMLtemplateCall,
---         si_box :: [P_BoxItem a]
---       }
---   | P_InterfaceRef
---       { pos :: !Origin,
---         si_isLink :: !Bool, -- True iff LINKTO is used. (will display as hyperlink)
---         si_str :: !Name -- Name of the interface that is reffered to
---       }
---   deriving (Show)
--- data BoxItem
---   = BxExpr {objE :: !ObjectDef}
---   | -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
---     BxText
---       { boxPlainName :: !(Maybe Text1),
---         boxpos :: !Origin,
---         boxtxt :: !Text
---       }
---   deriving (Show)
--- data P_BoxItem a
---   = P_BoxItemTerm
---       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
---         obj_PlainName :: !(Maybe Text1),
---         obj_lbl :: !(Maybe Label),
---         -- | position of this definition in the text of the Ampersand source file (filename, line number and column number)
---         pos :: !Origin,
---         -- | this term describes the instances of this object, related to their context.
---         obj_term :: !(Term a),
---         -- | the CRUD actions as required by the user
---         obj_crud :: !(Maybe P_Cruds),
---         -- | The view that should be used for this object
---         obj_mView :: !(Maybe Name),
---         -- | the attributes, which are object definitions themselves.
---         obj_msub :: !(Maybe (P_SubIfc a))
---       }
---   | P_BxTxt
---       { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
---         obj_PlainName :: !(Maybe Text1),
---         pos :: !Origin,
---         box_txt :: !Text
---       }
---   deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 
                 checkPboxItem :: A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
                 checkPboxItem c pbi =
@@ -827,8 +782,8 @@ pCtx2aCtx
                                 . pure
                                 $ mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                     Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
-                obj crud (e, sr) s =
-                  ( BxExpr
+                obj crud e s =
+                  BxExpr
                       ObjectDef
                         { objPlainName = nm,
                           objlbl = lbl',
@@ -837,9 +792,7 @@ pCtx2aCtx
                           objcrud = crud,
                           objmView = mView,
                           objmsub = s
-                        },
-                    sr
-                  )
+                        }
           P_BxTxt
             { obj_PlainName = nm,
               pos = orig,
@@ -850,8 +803,7 @@ pCtx2aCtx
                     { boxPlainName = nm,
                       boxpos = orig,
                       boxtxt = str
-                    },
-                  True
+                    }
                 )
 
       pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
@@ -926,130 +878,157 @@ pCtx2aCtx
                        ]
                        | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
                      ]
-      pSubi2aSubi ::
-        ContextInfo ->
-        Expression -> -- Expression of the surrounding
-        Bool -> -- Whether the surrounding is bounded
-        P_BoxItem a -> -- name of where the error occured!
-        P_SubIfc TermPrim -> -- Subinterface to check
-        Guarded
-          ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
-            SubInterface -- the subinterface
-          )
-      pSubi2aSubi ci objExpr b o x =
-        case x of
-          P_InterfaceRef {si_str = ifcId} ->
-            do
-              (refIfcExpr, _) <- case lookupDisambIfcObj (declarationsMap ci) ifcId of
-                Just disambObj -> typecheckTerm ci
-                  $ case disambObj of
-                    P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                    P_BxTxt {} -> fatal "TXT is not expected here."
-                Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
-              objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-              return
-                ( objExprEps,
-                  InterfaceRef
-                    { pos = origin x,
-                      siIsLink = si_isLink x,
-                      siIfcId = ifcId
-                    }
-                )
-          P_Box {} ->
-            addWarnings warnings
-              $ build
-              <$> traverse (fn <=< typecheckObjDef ci) l
-              <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
-              <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-            where
-              toNonEmptyLabel :: P_BoxItem a -> Text1
-              toNonEmptyLabel bi = case obj_PlainName bi of
-                Nothing -> fatal "all items without label should been filtered out here"
-                Just labl -> labl
-              hasLabel :: P_BoxItem a -> Bool
-              hasLabel bi = case obj_PlainName bi of
-                Nothing -> False
-                Just _ -> True
-              l :: [P_BoxItem TermPrim]
-              l = si_box x
-              build :: [BoxItem] -> (Expression, SubInterface)
-              build lst =
-                ( objExpr,
-                  Box
-                    { pos = origin x,
-                      siConcept = target objExpr,
-                      siHeader = si_header x,
-                      siObjs = lst
-                    }
-                )
-              fn :: (BoxItem, Bool) -> Guarded BoxItem
-              fn (boxitem, p) = case boxitem of
-                BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
-                BxText {} -> pure boxitem
-        where
-          matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
-          matchWith (ojd, exprBound) =
-            if b || exprBound
-              then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
-                [] -> mustBeOrderedLst x objExpr ojd
-                (r : _) -> pure (ojd {objExpression = addEpsilonLeft genLattice r (objExpression ojd)})
-              else mustBeBound (origin ojd) [(Src, objExpression ojd), (Tgt, objExpr)]
-          warnings :: [Warning]
-          warnings =
-            [mkBoxRowsnhWarning (origin x) | toText1Unsafe "ROWSNH" == (btType . si_header $ x)] -- See issue #925
-              <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
+      -- pSubi2aSubi ::
+      --   ContextInfo ->
+      --   Expression -> -- Expression of the surrounding
+      --   Bool -> -- Whether the surrounding is bounded
+      --   P_BoxItem a -> -- name of where the error occured!
+      --   P_SubIfc TermPrim -> -- Subinterface to check
+      --   Guarded
+      --     ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
+      --       SubInterface -- the subinterface
+      --     )
+      -- pSubi2aSubi ci objExpr b o x =
+      --   case x of
+      --     P_InterfaceRef {si_str = ifcId} ->
+      --       do
+      --         (refIfcExpr, _) <- case lookupDisambIfcObj (declarationsMap ci) ifcId of
+      --           Just disambObj -> typecheckTerm ci
+      --             $ case disambObj of
+      --               P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+      --               P_BxTxt {} -> fatal "TXT is not expected here."
+      --           Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
+      --         objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
+      --         return
+      --           ( objExprEps,
+      --             InterfaceRef
+      --               { pos = origin x,
+      --                 siIsLink = si_isLink x,
+      --                 siIfcId = ifcId
+      --               }
+      --           )
+      --     P_Box {} ->
+      --       addWarnings warnings
+      --         $ build
+      --         <$> traverse (fn <=< typecheckObjDef ci) l
+      --         <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
+      --         <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
+      --       where
+      --         toNonEmptyLabel :: P_BoxItem a -> Text1
+      --         toNonEmptyLabel bi = case obj_PlainName bi of
+      --           Nothing -> fatal "all items without label should been filtered out here"
+      --           Just labl -> labl
+      --         hasLabel :: P_BoxItem a -> Bool
+      --         hasLabel bi = case obj_PlainName bi of
+      --           Nothing -> False
+      --           Just _ -> True
+      --         l :: [P_BoxItem TermPrim]
+      --         l = si_box x
+      --         build :: [BoxItem] -> (Expression, SubInterface)
+      --         build lst =
+      --           ( objExpr,
+      --             Box
+      --               { pos = origin x,
+      --                 siConcept = target objExpr,
+      --                 siHeader = si_header x,
+      --                 siObjs = lst
+      --               }
+      --           )
+      --         fn :: (BoxItem, Bool) -> Guarded BoxItem
+      --         fn (boxitem, p) = case boxitem of
+      --           BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
+      --           BxText {} -> pure boxitem
+      --   where
+      --     matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
+      --     matchWith (ojd, exprBound) =
+      --       if b || exprBound
+      --         then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
+      --           [] -> mustBeOrderedLst x objExpr ojd
+      --           (r : _) -> pure (ojd {objExpression = addEpsilonLeft genLattice r (objExpression ojd)})
+      --         else mustBeBound (origin ojd) [(Src, objExpression ojd), (Tgt, objExpr)]
+      --     warnings :: [Warning]
+      --     warnings =
+      --       [mkBoxRowsnhWarning (origin x) | toText1Unsafe "ROWSNH" == (btType . si_header $ x)] -- See issue #925
+      --         <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
 
-      typeCheckInterfaceRef :: P_BoxItem a -> Name -> Expression -> Expression -> Guarded Expression
-      typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr =
-        let expTarget = target objExpr
-            ifcSource = source ifcExpr
-            refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
-         in if refIsCompatible
-              then pure $ addEpsilonRight genLattice ifcSource objExpr
-              else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-      lookupDisambIfcObj :: DeclMap -> Name -> Maybe (P_BoxItem TermPrim)
-      lookupDisambIfcObj declMap ifcId =
-        case [disambObj | (vd, disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId] of
-          [] -> Nothing
-          disambObj : _ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
+      -- typeCheckInterfaceRef :: P_BoxItem a -> Name -> Expression -> Expression -> Guarded Expression
+      -- typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr =
+      --   let expTarget = target objExpr
+      --       ifcSource = source ifcExpr
+      --       refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
+      --    in if refIsCompatible
+      --         then pure $ addEpsilonRight genLattice ifcSource objExpr
+      --         else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
+      -- lookupDisambIfcObj :: DeclMap -> Name -> Maybe (P_BoxItem TermPrim)
+      -- lookupDisambIfcObj declMap ifcId =
+      --   case [disambObj | (vd, disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId] of
+      --     [] -> Nothing
+      --     disambObj : _ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
 
-      pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem TermPrim) -> Guarded Interface
-      pIfc2aIfc contextInfo (pIfc, objDisamb) =
-        build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
-        where
-          build :: Guarded BoxItem -> Guarded Interface
-          build gb =
-            case gb of
-              Errors x -> Errors x
-              Checked obj' ws ->
-                addWarnings ws
-                  $ case obj' of
-                    BxExpr o ->
-                      case ttype . target . objExpression $ o of
-                        Object ->
-                          pure
-                            Ifc
-                              { ifcIsAPI = ifc_IsAPI pIfc,
-                                ifcname = name pIfc,
-                                ifclbl = mLabel pIfc,
-                                ifcRoles = ifc_Roles pIfc,
-                                ifcObj =
-                                  o
-                                    { objPlainName = Just . fullName1 . name $ pIfc,
-                                      objlbl = mLabel pIfc
-                                    },
-                                ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-                                ifcPos = origin pIfc,
-                                ifcPurpose = ifc_Prp pIfc
-                              }
-                        tt ->
-                          Errors
-                            . pure
-                            . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
-                            $ tt
-                    BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
-          ttype :: A_Concept -> TType
-          ttype = representationOf contextInfo
+      pIfc2aIfc :: ContextInfo -> P_Interface -> Guarded Interface
+      pIfc2aIfc contextInfo pIfc =
+        do
+          BxExpr {objE = objDef} <- pBoxItemDisamb2BoxItem contextInfo (ifc_Obj pIfc)
+          let objExpr = objExpression objDef
+              ifcSource = source objExpr
+              ifcTarget = target objExpr
+              ifcSourceType = aConcToType ifcSource
+              ifcTargetType = aConcToType ifcTarget
+          unless (isaC ifcSource ifcTarget) $
+            Errors . pure $ mkInterfaceMustBeDefinedOnObject pIfc ifcSourceType ifcTargetType
+          return
+            Ifc
+              { ifcIsAPI = ifc_IsAPI pIfc,
+                ifcname = name pIfc,
+                ifclbl = mLabel pIfc,
+                ifcRoles = ifc_Roles pIfc,
+                ifcObj =
+                  objDef
+                    { objPlainName = Just . fullName1 . name $ pIfc,
+                      objlbl = mLabel pIfc
+                    },
+                ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+                ifcPos = origin pIfc,
+                ifcPurpose = ifc_Prp pIfc
+              }
+
+      -- pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem TermPrim) -> Guarded Interface
+      -- pIfc2aIfc contextInfo (pIfc, objDisamb) =
+      --   build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
+      --   where
+      --     build :: Guarded BoxItem -> Guarded Interface
+      --     build gb =
+      --       case gb of
+      --         Errors x -> Errors x
+      --         Checked obj' ws ->
+      --           addWarnings ws
+      --             $ case obj' of
+      --               BxExpr o ->
+      --                 case ttype . target . objExpression $ o of
+      --                   Object ->
+      --                     pure
+      --                       Ifc
+      --                         { ifcIsAPI = ifc_IsAPI pIfc,
+      --                           ifcname = name pIfc,
+      --                           ifclbl = mLabel pIfc,
+      --                           ifcRoles = ifc_Roles pIfc,
+      --                           ifcObj =
+      --                             o
+      --                               { objPlainName = Just . fullName1 . name $ pIfc,
+      --                                 objlbl = mLabel pIfc
+      --                               },
+      --                           ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+      --                           ifcPos = origin pIfc,
+      --                           ifcPurpose = ifc_Prp pIfc
+      --                         }
+      --                   tt ->
+      --                     Errors
+      --                       . pure
+      --                       . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
+      --                       $ tt
+      --               BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
+      --     ttype :: A_Concept -> TType
+      --     ttype = representationOf contextInfo
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
@@ -1364,7 +1343,7 @@ dereference contextInfo sgns trmprim
                          Just c  -> guard [ EMp1 av s | Sign s t<-sgns, s==t, pCpt2aCpt c==s]
                          Nothing -> guard [ EMp1 av s | Sign s t<-sgns, s==t]
       PVee _         -> guard [ EDcV sgn | sgn<-sgns]
-      Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` s], Just _tgt<-[target sgn `grLwB` t]]
+      Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` pCpt2aCpt s], Just _tgt<-[target sgn `grLwB` pCpt2aCpt t]]
       PBin _ oper    -> guard [ EBin oper s | Sign s t<-sgns, s==t]
       PBind _ oper c -> guard [ EBin oper s | Sign s t<-sgns, s==t, pCpt2aCpt c==s]
       PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
@@ -1384,29 +1363,34 @@ dereference contextInfo sgns trmprim
       pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
-term2Expr contextInfo trm
-  = do sgns <- signatures contextInfo trm
-       case trm of
-        Prim tp    -> dereference contextInfo sgns tp
-        PEqu _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EEqu (expr_a, expr_b))
-        PInc _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EInc (expr_a, expr_b))
-        PIsc _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EIsc (expr_a, expr_b))
-        PUni _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EUni (expr_a, expr_b))
-        PDif _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EDif (expr_a, expr_b))
-        PLrs _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (ELrs (expr_a, expr_b))
-        PRrs _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (ERrs (expr_a, expr_b))
-        PDia _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EDia (expr_a, expr_b))
-        PCps _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (ECps (expr_a, expr_b))
-        PRad _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (ERad (expr_a, expr_b))
-        PPrd _ a b -> do expr_a <- t2e a; expr_b <- t2e b; return (EPrd (expr_a, expr_b))
-        PKl0 _ e   -> do expr_e <- t2e e;                  return (EKl0 expr_e)
-        PKl1 _ e   -> do expr_e <- t2e e;                  return (EKl1 expr_e)
-        PFlp _ e   -> do expr_e <- t2e e;                  return (EFlp expr_e)
-        PCpl _ e   -> do expr_e <- t2e e;                  return (ECpl expr_e)
-        PBrk _ e   -> t2e e
-   where
-    t2e = term2Expr contextInfo
-
+term2Expr contextInfo trm = do
+  sgns <- signatures contextInfo trm
+  case trm of
+    Prim tp -> dereference contextInfo sgns tp
+    _ -> mapTermStructure sgns trm
+  where
+    mapTermStructure :: [Signature] -> Term TermPrim -> Guarded Expression
+    mapTermStructure sgns term =
+      -- Handle the base case separately since it needs signatures
+      case term of
+        Prim tp -> dereference contextInfo sgns tp
+        PEqu _ a b -> EEqu <$> processPair a b
+        PInc _ a b -> EInc <$> processPair a b
+        PIsc _ a b -> EIsc <$> processPair a b
+        PUni _ a b -> EUni <$> processPair a b
+        PDif _ a b -> EDif <$> processPair a b
+        PLrs _ a b -> ELrs <$> processPair a b
+        PRrs _ a b -> ERrs <$> processPair a b
+        PDia _ a b -> EDia <$> processPair a b
+        PCps _ a b -> ECps <$> processPair a b
+        PRad _ a b -> ERad <$> processPair a b
+        PPrd _ a b -> EPrd <$> processPair a b
+        PKl0 _ e -> EKl0 <$> term2Expr contextInfo e
+        PKl1 _ e -> EKl1 <$> term2Expr contextInfo e
+        PFlp _ e -> EFlp <$> term2Expr contextInfo e
+        PCpl _ e -> ECpl <$> term2Expr contextInfo e
+        PBrk _ e -> term2Expr contextInfo e
+    processPair a b = (,) <$> term2Expr contextInfo a <*> term2Expr contextInfo b
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
 leastConcept genLattice c str =
