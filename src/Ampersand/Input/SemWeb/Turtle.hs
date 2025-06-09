@@ -10,7 +10,8 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
 import Data.RDF
 import RIO.Directory (doesFileExist)
-import qualified RIO.Map as M
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 -- | Parse a Turtle (.ttl) file into an RDF TList, using the RIO monad.
@@ -53,17 +54,17 @@ parseTurtleFile filePath = do
   guardedGraph <- readTurtle filePath
   pure $ getContext filePath guardedGraph
 
-myPrefixMappings :: PrefixMappings
-myPrefixMappings =
-  PrefixMappings
-    . M.fromList
-    $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
-        ("skos", "http://www.w3.org/2004/02/skos/core#"),
-        ("owl", "http://www.w3.org/2002/07/owl#"),
-        ("", "http://ampersand.example.org/"),
-        ("xsd", "http://www.w3.org/2001/XMLSchema#")
-      ]
+-- myPrefixMappings :: PrefixMappings
+-- myPrefixMappings =
+--   PrefixMappings
+--     . M.fromList
+--     $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+--         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+--         ("skos", "http://www.w3.org/2004/02/skos/core#"),
+--         ("owl", "http://www.w3.org/2002/07/owl#"),
+--         ("", "http://ampersand.example.org/"),
+--         ("xsd", "http://www.w3.org/2001/XMLSchema#")
+--       ]
 
 getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
 getContext filePath guardedGraph = do
@@ -106,7 +107,7 @@ getContext filePath guardedGraph = do
     relationDefs graph =
       [ P_Relation
           { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-            dec_prps = mempty,
+            dec_prps = Set.fromList (getProps relNode blank),
             dec_pragma = Nothing,
             dec_pos = orig,
             dec_nm = nm,
@@ -114,47 +115,43 @@ getContext filePath guardedGraph = do
             dec_defaults = mempty,
             dec_Mean = mempty
           }
-        | relNode <-
-            map subjectOf
-              $ select graph Nothing rdfType owlObjectProperty,
-          lbl <-
-            mapMaybe (getLiteralText . objectOf)
-              $ select graph (is relNode) rdfsLabel Nothing,
-          let (nm, l) = suggestName RelationName . toText1Unsafe $ lbl,
-          srcNode <- getSrcNode relNode,
-          srcLbl <-
-            mapMaybe (getLiteralText . objectOf)
-              $ select graph (is srcNode) rdfsLabel Nothing,
+        | relNode <- map subjectOf $ select graph Nothing rdfType owlObjectProperty,
+          blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
+          tgtNode <- map objectOf $ select graph (is blank) owlOnClass Nothing,
+          srcNode <- map subjectOf $ select graph Nothing rdfsSubClassOf (is blank),
+          relLbl <- getLabels relNode,
+          let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
+          srcLbl <- getLabels srcNode,
           let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-          tgtNode <- getTgtNode relNode,
-          tgtLbl <-
-            mapMaybe (getLiteralText . objectOf)
-              $ select graph (is tgtNode) rdfsLabel Nothing,
+          tgtLbl <- getLabels tgtNode,
           let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
       ]
       where
-        getSrcNode :: Node -> [Node]
-        getSrcNode relNode =
-          (objectOf <$> select graph (is relNode) rdfsRange Nothing)
-            <> implicitByRestriction
+        getLabels :: Node -> [Text]
+        getLabels n =
+          mapMaybe (getLiteralText . objectOf)
+            $ select graph (is n) rdfsLabel Nothing
+        getProps :: Node -> Node -> [PProp]
+        getProps relNode restrictionNode =
+          concat
+            $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) owlQualifiedCardinality Nothing]
+            <> [[P_Uni] | _ <- select graph (is restrictionNode) owlMaxCardinality Nothing]
+            <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) owlMinCardinality Nothing]
+            <> [[P_Asy] | _ <- map subjectOf $ select graph Nothing owlInverseOf (is restrictionNode)]
+            <> [propsOfInverse inv | inv <- map subjectOf $ select graph Nothing owlInverseOf (is relNode)]
           where
-            implicitByRestriction =
-              [ srcNode
-                | blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
-                  blank `elem` map subjectOf (select graph Nothing rdfType owlRestriction),
-                  srcNode <- map subjectOf $ select graph Nothing rdfsSubClassOf (is blank)
-              ]
-        getTgtNode :: Node -> [Node]
-        getTgtNode relNode =
-          (objectOf <$> select graph (is relNode) rdfsDomain Nothing)
-            <> implicitByRestriction
-          where
-            implicitByRestriction =
-              [ tgtNode
-                | blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
-                  blank `elem` map subjectOf (select graph Nothing rdfType owlRestriction),
-                  tgtNode <- map objectOf $ select graph (is blank) owlOnClass Nothing
-              ]
+            propsOfInverse :: Node -> [PProp]
+            propsOfInverse invRel =
+              case map subjectOf $ select graph Nothing owlOnProperty (is invRel) of
+                [blankInvRestriction] ->
+                  [P_Inj | not . null $ uniList]
+                    <> [P_Sur | not . null $ surList]
+                  where
+                    uniList = L.intersect [unode "http://www.w3.org/2002/07/owl#qualifiedCardinality", unode "http://www.w3.org/2002/07/owl#maxCardinality"] cardinalityNodes
+                    surList = L.intersect [unode "http://www.w3.org/2002/07/owl#qualifiedCardinality", unode "http://www.w3.org/2002/07/owl#minCardinality"] cardinalityNodes
+                    cardinalityNodes =
+                      [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
+                _ -> []
     conceptDefs :: DefinitionContainer -> RDF TList -> [PConceptDef]
     conceptDefs frm graph =
       [ PConceptDef
@@ -196,14 +193,23 @@ owlClass = selector "http://www.w3.org/2002/07/owl#Class"
 owlNamedIndividual :: NodeSelector
 owlNamedIndividual = selector "http://www.w3.org/2002/07/owl#NamedIndividual"
 
+owlQualifiedCardinality :: NodeSelector
+owlQualifiedCardinality = selector "http://www.w3.org/2002/07/owl#qualifiedCardinality"
+
+owlInverseOf :: NodeSelector
+owlInverseOf = selector "http://www.w3.org/2002/07/owl#inverseOf"
+
+owlMaxCardinality :: NodeSelector
+owlMaxCardinality = selector "http://www.w3.org/2002/07/owl#maxCardinality"
+
+owlMinCardinality :: NodeSelector
+owlMinCardinality = selector "http://www.w3.org/2002/07/owl#minCardinality"
+
 owlObjectProperty :: NodeSelector
 owlObjectProperty = selector "http://www.w3.org/2002/07/owl#ObjectProperty"
 
 owlOnProperty :: NodeSelector
 owlOnProperty = selector "http://www.w3.org/2002/07/owl#onProperty"
-
-owlRestriction :: NodeSelector
-owlRestriction = selector "http://www.w3.org/2002/07/owl#Restriction"
 
 owlOnClass :: NodeSelector
 owlOnClass = selector "http://www.w3.org/2002/07/owl#onClass"
@@ -213,12 +219,6 @@ owlOntology = selector "http://www.w3.org/2002/07/owl#Ontology"
 
 rdfsLabel :: NodeSelector
 rdfsLabel = selector "http://www.w3.org/2000/01/rdf-schema#label"
-
-rdfsDomain :: NodeSelector
-rdfsDomain = selector "http://www.w3.org/2000/01/rdf-schema#domain"
-
-rdfsRange :: NodeSelector
-rdfsRange = selector "http://www.w3.org/2000/01/rdf-schema#range"
 
 rdfsSubClassOf :: NodeSelector
 rdfsSubClassOf = selector "http://www.w3.org/2000/01/rdf-schema#subClassOf"
