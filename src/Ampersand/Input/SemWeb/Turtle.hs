@@ -69,6 +69,8 @@ getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
 getContext filePath guardedGraph = do
   graph <- guardedGraph
   nm <- ontologyName graph
+  let cptDefs = conceptDefs (CONTEXT nm) graph
+  let relDefs = relationDefs graph
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -88,8 +90,8 @@ getContext filePath guardedGraph = do
         ctx_ifcs = mempty,
         ctx_gs = mempty,
         ctx_enfs = mempty,
-        ctx_ds = mempty,
-        ctx_cs = conceptDefs (CONTEXT nm) graph
+        ctx_ds = relDefs,
+        ctx_cs = cptDefs
       }
   where
     mkError :: Text -> Guarded a
@@ -100,6 +102,59 @@ getContext filePath guardedGraph = do
       [] -> mkError "No ontology triple found in Turtle file"
       [Triple (UNode s) _ _] -> pure . fst . suggestName ContextName . toText1Unsafe $ s
       _ -> mkError "Multiple ontology triples found in Turtle file"
+    relationDefs :: RDF TList -> [P_Relation]
+    relationDefs graph =
+      [ P_Relation
+          { dec_sign = P_Sign (PCpt src) (PCpt tgt),
+            dec_prps = mempty,
+            dec_pragma = Nothing,
+            dec_pos = orig,
+            dec_nm = nm,
+            dec_label = l,
+            dec_defaults = mempty,
+            dec_Mean = mempty
+          }
+        | relNode <-
+            map subjectOf
+              $ select graph Nothing rdfType owlObjectProperty,
+          lbl <-
+            mapMaybe (getLiteralText . objectOf)
+              $ select graph (is relNode) rdfsLabel Nothing,
+          let (nm, l) = suggestName RelationName . toText1Unsafe $ lbl,
+          srcNode <- getSrcNode relNode,
+          srcLbl <-
+            mapMaybe (getLiteralText . objectOf)
+              $ select graph (is srcNode) rdfsLabel Nothing,
+          let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
+          tgtNode <- getTgtNode relNode,
+          tgtLbl <-
+            mapMaybe (getLiteralText . objectOf)
+              $ select graph (is tgtNode) rdfsLabel Nothing,
+          let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
+      ]
+      where
+        getSrcNode :: Node -> [Node]
+        getSrcNode relNode =
+          (objectOf <$> select graph (is relNode) rdfsRange Nothing)
+            <> implicitByRestriction
+          where
+            implicitByRestriction =
+              [ srcNode
+                | blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
+                  blank `elem` map subjectOf (select graph Nothing rdfType owlRestriction),
+                  srcNode <- map subjectOf $ select graph Nothing rdfsSubClassOf (is blank)
+              ]
+        getTgtNode :: Node -> [Node]
+        getTgtNode relNode =
+          (objectOf <$> select graph (is relNode) rdfsDomain Nothing)
+            <> implicitByRestriction
+          where
+            implicitByRestriction =
+              [ tgtNode
+                | blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
+                  blank `elem` map subjectOf (select graph Nothing rdfType owlRestriction),
+                  tgtNode <- map objectOf $ select graph (is blank) owlOnClass Nothing
+              ]
     conceptDefs :: DefinitionContainer -> RDF TList -> [PConceptDef]
     conceptDefs frm graph =
       [ PConceptDef
@@ -113,8 +168,8 @@ getContext filePath guardedGraph = do
         | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,
           cpt
             `elem` map subjectOf (select graph (is cpt) rdfType owlNamedIndividual),
-          lbl <- mapMaybe (getLiteralText . objectOf) $ select graph (is cpt) rdfsLabel Nothing,
-          let (nm, l) = suggestName ContextName . toText1Unsafe $ lbl,
+          lbl <- map objectOf $ select graph (is cpt) rdfsLabel Nothing,
+          Just (nm, l) <- [suggestName ContextName . toText1Unsafe <$> getLiteralText lbl],
           def2 <- mapMaybe (getLiteralText . objectOf) $ select graph (is cpt) skosDefinition Nothing
       ]
 
@@ -141,11 +196,29 @@ owlClass = selector "http://www.w3.org/2002/07/owl#Class"
 owlNamedIndividual :: NodeSelector
 owlNamedIndividual = selector "http://www.w3.org/2002/07/owl#NamedIndividual"
 
+owlObjectProperty :: NodeSelector
+owlObjectProperty = selector "http://www.w3.org/2002/07/owl#ObjectProperty"
+
+owlOnProperty :: NodeSelector
+owlOnProperty = selector "http://www.w3.org/2002/07/owl#onProperty"
+
+owlRestriction :: NodeSelector
+owlRestriction = selector "http://www.w3.org/2002/07/owl#Restriction"
+
+owlOnClass :: NodeSelector
+owlOnClass = selector "http://www.w3.org/2002/07/owl#onClass"
+
 owlOntology :: NodeSelector
 owlOntology = selector "http://www.w3.org/2002/07/owl#Ontology"
 
 rdfsLabel :: NodeSelector
 rdfsLabel = selector "http://www.w3.org/2000/01/rdf-schema#label"
+
+rdfsDomain :: NodeSelector
+rdfsDomain = selector "http://www.w3.org/2000/01/rdf-schema#domain"
+
+rdfsRange :: NodeSelector
+rdfsRange = selector "http://www.w3.org/2000/01/rdf-schema#range"
 
 rdfsSubClassOf :: NodeSelector
 rdfsSubClassOf = selector "http://www.w3.org/2000/01/rdf-schema#subClassOf"
