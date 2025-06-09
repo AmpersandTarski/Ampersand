@@ -11,6 +11,7 @@ import Ampersand.Input.ADL1.CtxError
 import Data.RDF
 import RIO.Directory (doesFileExist)
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -72,6 +73,7 @@ getContext filePath guardedGraph = do
   nm <- ontologyName graph
   let cptDefs = conceptDefs (CONTEXT nm) graph
   let relDefs = relationDefs graph
+  let isas = classifyDefs graph
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -89,7 +91,7 @@ getContext filePath guardedGraph = do
         ctx_lang = Nothing,
         ctx_ks = mempty,
         ctx_ifcs = mempty,
-        ctx_gs = mempty,
+        ctx_gs = isas,
         ctx_enfs = mempty,
         ctx_ds = relDefs,
         ctx_cs = cptDefs
@@ -103,6 +105,24 @@ getContext filePath guardedGraph = do
       [] -> mkError "No ontology triple found in Turtle file"
       [Triple (UNode s) _ _] -> pure . fst . suggestName ContextName . toText1Unsafe $ s
       _ -> mkError "Multiple ontology triples found in Turtle file"
+    classifyDefs :: RDF TList -> [PClassify]
+    classifyDefs graph =
+      [ PClassify
+          { specific = PCpt sName,
+            generics = PCpt gName NE.:| [],
+            pos = orig
+          }
+        | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
+          sLbl <- getLabels sNode,
+          let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
+          gLbl <- getLabels gNode,
+          let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
+      ]
+      where
+        getLabels :: Node -> [Text]
+        getLabels n =
+          mapMaybe (getLiteralText . objectOf)
+            $ select graph (is n) rdfsLabel Nothing
     relationDefs :: RDF TList -> [P_Relation]
     relationDefs graph =
       [ P_Relation
