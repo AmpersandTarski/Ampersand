@@ -11,13 +11,10 @@ module Ampersand.ADL1.P2A_Converters
   )
 where
 
--- import Ampersand.ADL1.Disambiguate (Disambiguatable(..), DisambPrim (..), disambiguate, orWhenEmpty)
--- used for type-checking
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set, guard)
 import Ampersand.Classes
--- import Ampersand.Classes.Relational (hasAttributes) -- found redundant
 import Ampersand.Core.A2P_Converters (aConcept2pConcept)
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
@@ -194,37 +191,6 @@ namedRel2Decl ci declMap (PNamedRel o r mSgn)
 findDecls :: DeclMap -> Name -> [Relation]
 findDecls declMap x = Map.elems (findRels declMap x)
 
--- findRelsLooselyTyped :: DeclMap -> Name -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
--- findRelsLooselyTyped declMap x (Just src) (Just tgt) =
---   findRelsTyped declMap x (Sign src tgt)
---     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
---     `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
---     `orWhenEmpty` findDecls declMap x
---   where
---     orWhenEmpty :: [a] -> [a] -> [a]
---     orWhenEmpty xs ys = if null xs then ys else xs
---     isct lsta lstb = [a | a <- lsta, a `elem` lstb]
---     unin lsta lstb = L.nub (lsta <> lstb)
--- findRelsLooselyTyped declMap x Nothing Nothing = findDecls declMap x
--- findRelsLooselyTyped declMap x (Just src) Nothing =
---   [dcl | dcl <- findDecls declMap x, source dcl == src]
---     `orWhenEmpty` findDecls declMap x
--- findRelsLooselyTyped declMap x Nothing (Just tgt) =
---   [dcl | dcl <- findDecls declMap x, target dcl == tgt]
---     `orWhenEmpty` findDecls declMap x
-
--- findDeclLooselyTyped ::
---   DeclMap ->
---   P_NamedRel ->
---   Maybe A_Concept ->
---   Maybe A_Concept ->
---   Guarded Relation
--- findDeclLooselyTyped declMap (PNamedRel o r _) src tgt
---  = case findRelsLooselyTyped declMap (name r) src tgt of
---     [dcl] -> pure dcl
---     []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
---     ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
-
 findRelsTyped :: DeclMap -> Name -> Signature -> [Relation]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (: []) (findRels declMap x))
 
@@ -275,8 +241,6 @@ pCtx2aCtx
     } =
     do
       contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      -- declMap contains the declared relations by name. So, we get every name once in the domain of the map, which helps to disambiguate.
-      let declMap = declarationsMap contextInfoPre
       -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
       aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
       -- allReprs contains all concepts and every concept has precisely one TType
@@ -518,9 +482,6 @@ pCtx2aCtx
       pCpt2aCpt :: ConceptMap
       pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
 
-      -- p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem TermPrim)]
-      -- p_interfaceAndDisambObjs declMap = [(ifc, disambiguate pCpt2aCpt (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces]
-
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
       -- the genLattice is the resulting optimized structure
@@ -684,8 +645,6 @@ pCtx2aCtx
 
       isa :: Type -> Type -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
-      isaC :: A_Concept -> A_Concept -> Bool
-      isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
       pBoxItem2aBoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
       pBoxItem2aBoxItem contextInfo objDef =
@@ -756,17 +715,6 @@ pCtx2aCtx
                                 . pure
                                 $ mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                     Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
-                obj crud e s =
-                  BxExpr
-                      ObjectDef
-                        { objPlainName = nm,
-                          objlbl = lbl',
-                          objPos = orig,
-                          objExpression = e,
-                          objcrud = crud,
-                          objmView = mView,
-                          objmsub = s
-                        }
           P_BxTxt
             { obj_PlainName = nm,
               pos = orig,
@@ -1053,19 +1001,6 @@ pCtx2aCtx
                     }
                  )
 
--- newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)}
-
--- data PairViewSegment a
---   = PairViewText
---       { pos :: Origin,
---         pvsStr :: Text
---       }
---   | PairViewExp
---       { pos :: Origin,
---         pvsSoT :: SrcOrTgt,
---         pvsExp :: a
---       }
-
       typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term TermPrim) -> Guarded (PairView Expression)
       typeCheckPairView ci o x (PairView lst) =
         PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
@@ -1247,178 +1182,6 @@ term2Expr contextInfo trm = do
         PBrk _ e -> term2Expr contextInfo e
     processPair a b = (,) <$> term2Expr contextInfo a <*> term2Expr contextInfo b
 
-leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
-leastConcept genLattice c str =
-  case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
-    (True, _) -> c
-    (_, True) -> str
-    (_, _) -> fatal ("Either " <> fullName c <> " or " <> fullName str <> " should be a subset of the other.")
-  where
-    leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
-
-addEpsilonLeft, addEpsilonRight :: Op1EqualitySystem Type -> A_Concept -> Expression -> Expression
-addEpsilonLeft genLattice a e =
-  if a == source e then e else EEps (leastConcept genLattice (source e) a) (Sign a (source e)) .:. e
-addEpsilonRight genLattice a e =
-  if a == target e then e else e .:. EEps (leastConcept genLattice (target e) a) (Sign (target e) a)
-
-addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> Expression -> Expression
-addEpsilon genLattice s t e =
-  addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
-
--- typecheckTerm :: ContextInfo -> Term TermPrim -> Guarded (Expression, (Bool, Bool))
--- typecheckTerm ci tct =
---   case tct of
---     Prim (t, v) ->
---       ( \x -> case x of
---           EMp1 s c ->
---             (x, (True, True))
---               <$ pAtomValue2aAtomValue (representationOf ci) c s
---           EBin oper cpt ->
---             if isValidOperator
---               then pure (x, (True, True))
---               else Errors . pure $ mkOperatorError (origin t) oper cpt typ
---             where
---               typ = representationOf ci cpt
---               isValidOperator :: Bool
---               isValidOperator =
---                 case oper of
---                   LessThan -> hasORD typ
---                   GreaterThan -> hasORD typ
---                   LessThanOrEqual -> hasEQ typ && hasORD typ
---                   GreaterThanOrEqual -> hasEQ typ && hasORD typ
---                 where
---                   hasEQ, hasORD :: TType -> Bool
---                   hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
---                   hasEQ _ = True
---                   hasORD ttyp = case ttyp of
---                     Alphanumeric -> True
---                     BigAlphanumeric -> True
---                     HugeAlphanumeric -> True
---                     Password -> False
---                     Binary -> False
---                     BigBinary -> False
---                     HugeBinary -> False
---                     Date -> True
---                     DateTime -> True
---                     Boolean -> False
---                     Integer -> True
---                     Float -> True
---                     Object -> False
---                     TypeOfOne -> True
---           _ ->
---             return
---               ( x,
---                 case t of
---                   PVee _ -> (False, False)
---                   _ -> (True, True)
---               )
---       )
---         =<< pDisAmb2Expr (t, v)
---     PEqu _ a b -> join $ binary (.==.) (MBE (Src, fst) (Src, snd), MBE (Tgt, fst) (Tgt, snd)) <$> tt a <*> tt b
---     PInc _ a b -> join $ binary (.|-.) (MBG (Src, snd) (Src, fst), MBG (Tgt, snd) (Tgt, fst)) <$> tt a <*> tt b
---     PIsc _ a b -> join $ binary (./\.) (ISC (Src, fst) (Src, snd), ISC (Tgt, fst) (Tgt, snd)) <$> tt a <*> tt b
---     PUni _ a b -> join $ binary (.\/.) (UNI (Src, fst) (Src, snd), UNI (Tgt, fst) (Tgt, snd)) <$> tt a <*> tt b
---     PDif _ a b -> join $ binary (.-.) (MBG (Src, fst) (Src, snd), MBG (Tgt, fst) (Tgt, snd)) <$> tt a <*> tt b
---     PLrs _ a b -> join $ binary' (./.) (MBE (Tgt, snd) (Tgt, fst)) ((Src, fst), (Src, snd)) Tgt Tgt <$> tt a <*> tt b
---     PRrs _ a b -> join $ binary' (.\.) (MBE (Src, fst) (Src, snd)) ((Tgt, fst), (Tgt, snd)) Src Src <$> tt a <*> tt b
---     PDia _ a b -> join $ binary' (.<>.) (ISC (Tgt, fst) (Src, snd)) ((Src, fst), (Tgt, snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
---     PCps _ a b -> join $ binary' (.:.) (ISC (Tgt, fst) (Src, snd)) ((Src, fst), (Tgt, snd)) Tgt Src <$> tt a <*> tt b
---     PRad _ a b -> join $ binary' (.!.) (MBE (Tgt, fst) (Src, snd)) ((Src, fst), (Tgt, snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
---     PPrd _ a b -> (\(x, (s, _)) (y, (_, t)) -> (x .*. y, (s, t))) <$> tt a <*> tt b
---     PKl0 _ a -> unary EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
---     PKl1 _ a -> unary EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
---     PFlp _ a -> (\(x, (s, t)) -> (EFlp x, (t, s))) <$> tt a
---     PCpl _ a -> (\(x, _) -> (ECpl x, (False, False))) <$> tt a
---     PBrk _ e -> first EBrk <$> tt e
---   where
---     cptMap = conceptMap ci
---     genLattice = gens_efficient ci
---     o = origin (fmap fst tct)
---     tt = typecheckTerm ci
---     -- SJC: Here is what binary, binary' and unary do:
---     -- (1) Create a term, the combinator for this is given by its first argument
---     -- (2) Fill in the corresponding type-checked terms to that term
---     -- (3) For binary' only: fill in the intermediate concept too
---     -- (4) Fill in the type of the new term
---     -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
---     -- If you don't know what to use, try MBE: it is the strictest form.
---     -- In the steps (3) and (4), different type errors may arise:
---     -- If the type does not exist, this yields a type error.
---     -- Some types may be generalized, while others may not.
---     -- When a type may be generalized, that means that the value of the term does not change if the type becomes larger
---     -- When a type may not be generalized:
---     --   the type so far is actually just an estimate
---     --   it must be bound by the context to something smaller, or something as big
---     --   a way to do this, is by using (V[type] /\ thingToBeBound)
---     -- More details about generalizable types can be found by looking at "deriv1".
---     binary ::
---       (Expression -> Expression -> Expression) -> -- combinator
---       ( TT
---           ( SrcOrTgt,
---             ( (Expression, (Bool, Bool)),
---               (Expression, (Bool, Bool))
---             ) ->
---             (Expression, (Bool, Bool))
---           ),
---         TT
---           ( SrcOrTgt,
---             ( (Expression, (Bool, Bool)),
---               (Expression, (Bool, Bool))
---             ) ->
---             (Expression, (Bool, Bool))
---           )
---       ) -> -- simple instruction on how to derive the type
---       (Expression, (Bool, Bool)) ->
---       (Expression, (Bool, Bool)) -> -- expressions to feed into the combinator after translation
---       Guarded (Expression, (Bool, Bool))
---     binary cbn tp e1 e2 = wrap (fst e1, fst e2) <$> deriv tp (e1, e2)
---       where
---         wrap (expr1, expr2) ((src, b1), (tgt, b2)) = (cbn (addEpsilon genLattice src tgt expr1) (addEpsilon genLattice src tgt expr2), (b1, b2))
---     unary cbn tp e1 = wrap (fst e1) <$> deriv tp e1
---       where
---         wrap expr ((src, b1), (tgt, b2)) = (cbn (addEpsilon genLattice src tgt expr), (b1, b2))
---     binary' cbn preConcept tp side1 side2 e1 e2 =
---       do
---         a <- deriv1 (fmap (resolve (e1, e2)) preConcept)
---         b <- deriv' tp (e1, e2)
---         wrap (fst e1, fst e2) a b
---       where
---         wrap _ (_, False) ((_, b1), (_, b2)) =
---           mustBeBound o [(p, e) | (False, p, e) <- [(b1, side1, fst e1), (b2, side2, fst e2)]]
---         wrap (expr1, expr2) (cpt, True) ((_, b1), (_, b2)) =
---           pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
---           where
---             lrDecide side e = case side of Src -> addEpsilonLeft genLattice cpt e; Tgt -> addEpsilonRight genLattice cpt e
---     deriv (t1, t2) es = (,) <$> deriv1 (fmap (resolve es) t1) <*> deriv1 (fmap (resolve es) t2)
---     deriv1 :: TT (SrcOrTgt, (Expression, Bool)) -> Guarded (A_Concept, Bool)
---     deriv1 x' =
---       case x' of
---         (MBE a@(p1, (e1, b1)) b@(p2, (e2, b2))) ->
---           if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2)
---             then (,b1 || b2) <$> getExactType lJoin (p1, e1) (p2, e2)
---             else mustBeBound o [(p, e) | (p, (e, False)) <- [a, b]]
---         (MBG (p1, (e1, b1)) (p2, (e2, b2))) ->
---           (\x -> (fst x, b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)
---         (UNI (p1, (e1, b1)) (p2, (e2, b2))) ->
---           (\x -> (fst x, b1 && b2)) <$> getAndCheckType lJoin (p1, b1, e1) (p2, b2, e2)
---         (ISC (p1, (e1, b1)) (p2, (e2, b2))) ->
---           ( \(x, r) -> (x, (b1 && elem (getAConcept p1 e1) r) || (b2 && elem (getAConcept p2 e2) r) || (b1 && b2))
---           )
---             <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
---       where
---         getExactType flf (p1, e1) (p2, e2) =
---           case userList cptMap . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
---             [] -> mustBeOrdered o (p1, e1) (p2, e2)
---             h : _ -> pure h
---         getAndCheckType flf (p1, b1, e1) (p2, b2, e2) =
---           case userList cptMap . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
---             [] -> mustBeOrdered o (p1, e1) (p2, e2)
---             [r@(h : _)] ->
---               case (b1 || elem (getAConcept p1 e1) r, b2 || elem (getAConcept p2 e2) r) of
---                 (True, True) -> pure (h, r)
---                 (a, b) -> mustBeBound o [(p, e) | (False, p, e) <- [(a, p1, e1), (b, p2, e2)]]
---             lst -> mustBeOrderedConcLst o (p1, e1) (p2, e2) lst
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
 pAtomPair2aAtomPair typ dcl pp =
@@ -1504,11 +1267,6 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
         isEndoProp :: PProp -> Bool
         isEndoProp p = p `elem` [P_Prop, P_Sym, P_Asy, P_Trn, P_Rfx, P_Irf]
 
--- pDisAmb2Expr :: TermPrim -> Guarded Expression
--- pDisAmb2Expr (_, Known x) = pure x
--- pDisAmb2Expr (_, Rel [d]) = pure (EDcD d)
--- pDisAmb2Expr (o, dx) = cannotDisambiguate o dx
-
 pConcDef2aConcDef ::
   ConceptMap ->
   Lang -> -- The default language
@@ -1573,61 +1331,9 @@ pMarkup2aMarkup
         amPandoc = string2Blocks (fromMaybe defFormat mpdf) str
       }
 
--- helpers for generating a lattice, not having to write `Atom' all the time
--- the l in lJoin and lMeet denotes the lattice.
-lJoin, lMeet :: a -> a -> FreeLattice a
-lJoin a b = Join (Atom a) (Atom b)
-lMeet a b = Meet (Atom a) (Atom b)
-
-flType :: FreeLattice A_Concept -> FreeLattice Type
-flType = fmap aConcToType
-
--- intended for finding the right term on terms like (Src,fst)
-resolve :: t -> (SrcOrTgt, t -> (t1, (t2, t2))) -> (SrcOrTgt, (t1, t2))
-resolve es (p, f) =
-  case (p, f es) of
-    (Src, (e, (b, _))) -> (Src, (e, b))
-    (Tgt, (e, (_, b))) -> (Tgt, (e, b))
-
 maybeOverGuarded :: (t -> Guarded a) -> Maybe t -> Guarded (Maybe a)
 maybeOverGuarded _ Nothing = pure Nothing
 maybeOverGuarded f (Just x) = Just <$> f x
-
-data TT a -- (In order of increasing strictness. If you are unsure which to pick: just use MBE, it'll usually work fine)
-  = UNI a a -- find the union of these types, return it.
-  | ISC a a -- find the intersection of these types, return it.
-  | MBE a a -- must be equal: must be (made) of equal type. If these types are comparable, it returns the greatest.
-  | MBG a a -- The first of these types must be greater or equal than the second. if so, return it (error otherwise)
-  -- SJC: difference between UNI and MBE
-  -- in general, UNI is less strict than MBE:
-  --   suppose A ≤ C, B ≤ C, and C is the least such concept (e.g. if A≤D and B≤D then C≤D)
-  --   in this case UNI A B will yield C (if both A and B are generalizable), while MBE A B will give an error
-  --   note that in case of A ≤ C, B ≤ C, A ≤ D, B ≤ D (and there is no order between C and D), both will give an error
-  --   the error message, however, should be different:
-  --     for MBE it says that A and B must be of the same type, and suggests adding an order between A and B
-  --     for UNI it says that it cannot decide whether A \/ B is of type C or D, and suggests adding an order between C and D
-  --   In addition, MBE requires that both sides are not generalizable. UNI does not, and simply propagates this property.
-  -- MBG is like MBE, but will only try to generalize the right hand side (when allowed)
-
-deriv' ::
-  (Applicative f) =>
-  ((SrcOrTgt, t -> (Expression, (Bool, Bool))), (SrcOrTgt, t -> (Expression, (Bool, Bool)))) ->
-  t ->
-  f ((Type, Bool), (Type, Bool))
-deriv' (a, b) es =
-  let (sourceOrTarget1, (e1, t1)) = resolve es a
-      (sourceOrTarget2, (e2, t2)) = resolve es b
-   in pure ((getConcept sourceOrTarget1 e1, t1), (getConcept sourceOrTarget2 e2, t2))
-
-instance Functor TT where
-  fmap f (UNI a b) = UNI (f a) (f b)
-  fmap f (ISC a b) = ISC (f a) (f b)
-  fmap f (MBE a b) = MBE (f a) (f b)
-  fmap f (MBG a b) = MBG (f a) (f b)
-
-getAConcept :: (HasSignature a) => SrcOrTgt -> a -> A_Concept
-getAConcept Src = source
-getAConcept Tgt = target
 
 getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
