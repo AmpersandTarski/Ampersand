@@ -25,8 +25,14 @@ devoutput ::
   FSpec ->
   RIO env ()
 devoutput fSpec = do
-  doGenHaskell fSpec
-  doGenSQLdump fSpec
+  -- For the time being, do not output Haskell and SQL dump files.
+  -- This is done in a way that there is no dead code. Feel free to
+  -- move the doGen... functions down if you want to generate these files.
+  case originalContext fSpec of
+    Nothing -> do
+      doGenHaskell fSpec
+      doGenSQLdump fSpec
+    Just _ -> mempty
   writeTurtle fSpec
 
 doGenHaskell ::

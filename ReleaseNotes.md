@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## unimplemented
+## v5.4.2
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) Another step towards integration with semantic web, Parsing turtle file
 
 ## v5.4.1
