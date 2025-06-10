@@ -750,6 +750,15 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
+-- | PairView is a construct used to customize how rule violations are displayed to users.
+--   When a rule is violated in Ampersand, the system needs to show meaningful information about the violation.
+--   PairView allows developers to define exactly what information should be shown and how it should be formatted.
+--   In Ampersand ADL code, PairView is used with the VIOLATION keyword at the end of a rule definition.
+--   For example:
+--     RULE ExampleRule: expression1 |- expression2
+--     VIOLATION (TXT "Custom violation display: ", SRC expression3, TXT " conflicts with ", TGT expression4)
+
+
 newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance (Hashable a) => Hashable (PairView a)
@@ -1031,7 +1040,9 @@ data P_BoxItem a
         obj_msub :: !(Maybe (P_SubIfc a))
       }
   | P_BxTxt
-      { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+      { -- | This field contains the text after the TXT keyword in an interface, to be displayed to an end user (statically) in the user interface.
+        --   Its purpose could be for example to explain things, to provide brand information or legal information, or to give guidance and instructions.
+        --   This label has no meaning in the Compliant Service Layer (i.e. the back end).
         obj_PlainName :: !(Maybe Text1),
         pos :: !Origin,
         box_txt :: !Text
@@ -1072,7 +1083,7 @@ data P_IdentDf a -- so this is the parametric data-structure
     -- | this term describes the instances of this object, related to their context
     ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
-    ix_ats :: !(NE.NonEmpty (P_IdentSegmnt a))
+    ix_ats :: !(NE.NonEmpty (Term a))
   }
   deriving (Show)
 

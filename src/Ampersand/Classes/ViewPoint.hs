@@ -71,9 +71,7 @@ ruleFromIdentity identity =
   where
     {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
     (h NE.:| t) =
-      fmap ((\expr -> expr .:. flp expr) . objExpression . segment)
-        . identityAts
-        $ identity
+      fmap (\expr -> expr .:. flp expr) (identityAts identity)
     mkKeyRule term =
       Rule
         { rrnm =

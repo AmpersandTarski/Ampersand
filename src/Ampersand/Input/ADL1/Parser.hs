@@ -709,33 +709,16 @@ pIdentDef =
     <* (pKey . toText1Unsafe) "IDENT"
     <*> pNameWithOptionalLabelAndColon IdentName
     <*> pConceptRef
-    <*> pParens (pIdentSegment `sepBy1` pComma)
+    <*> pParens (pTerm `sepBy1` pComma)
   where
     build orig (nm, lbl) cpt lst =
       P_Id
         { ix_label = lbl,
           ix_name = nm,
           ix_cpt = cpt,
-          ix_ats = lst,
+          ix_ats = PCps orig (Prim (Pid orig cpt)) <$> lst,
           pos = orig
         }
-    --- IndSegmentList ::= Attr (',' Attr)*
-    pIdentSegment :: AmpParser P_IdentSegment
-    pIdentSegment = P_IdentExp <$> pAtt
-    --- Attr ::= Term
-    pAtt :: AmpParser P_BoxBodyElement
-    pAtt = rebuild <$> currPos <*> pTerm
-      where
-        rebuild pos' ctx =
-          P_BoxItemTerm
-            { pos = pos',
-              obj_PlainName = Nothing,
-              obj_lbl = Nothing,
-              obj_term = ctx,
-              obj_crud = Nothing,
-              obj_mView = Nothing,
-              obj_msub = Nothing
-            }
 
 --- ViewDef ::= FancyViewDef | ViewDefLegacy
 pViewDef :: AmpParser P_ViewDef

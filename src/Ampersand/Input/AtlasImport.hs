@@ -54,7 +54,7 @@ import Ampersand.Core.ParseTree
     TType (..),
     TemplateKeyValue (..),
     Term,
-    TermPrim (PNamedR),
+    TermPrim (PNamedR), ks_obj,
   )
 import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
 import Ampersand.Input.ADL1.Parser (pTerm)
@@ -641,7 +641,7 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
               ix_name = nm,
               ix_label = textToLabelInJSON <$> lbl,
               ix_cpt = cpt,
-              ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
+              ix_ats = obj_term (ks_obj ident) NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
             }
 
 instance JSON.FromJSON (P_IdentSegmnt TermPrim) where

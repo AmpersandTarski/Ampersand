@@ -165,7 +165,7 @@ aIdentityDef2pIdentityDef iDef =
       ix_name = idName iDef,
       ix_label = idlabel iDef,
       ix_cpt = aConcept2pConcept (idCpt iDef),
-      ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
+      ix_ats = fmap aExpression2pTermPrim (identityAts iDef)
     }
 
 aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
@@ -271,8 +271,8 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BoxItemTerm
-        { pos = origin oDef,
-          obj_PlainName = objPlainName oDef,
+        { obj_PlainName = objPlainName oDef,
+          pos = origin oDef,
           obj_lbl = objlbl oDef,
           obj_term = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of

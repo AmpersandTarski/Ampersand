@@ -87,8 +87,8 @@ getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
   where
     getIdExps identity =
-      [ (objExpression objDef, "identity " <> fullName identity)
-        | IdentityExp objDef <- NE.toList $ identityAts identity
+      [ ( objExpr, "identity " <> fullName identity)
+        | objExpr <- NE.toList $ identityAts identity
       ]
 
 getAllViewExps :: FSpec -> [ValidationExp]

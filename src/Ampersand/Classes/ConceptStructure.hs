@@ -118,8 +118,8 @@ instance ConceptStructure A_Context where
 instance ConceptStructure IdentityRule where
   concs identity =
     Set.singleton (idCpt identity)
-      `Set.union` (concs . fmap segment . identityAts $ identity)
-  expressionsIn = expressionsIn . fmap segment . identityAts
+      `Set.union` concs (identityAts identity)
+  expressionsIn = Set.fromList . NE.toList . identityAts
 
 instance ConceptStructure ViewDef where
   concs vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)

@@ -560,7 +560,7 @@ data IdentityRule = Id
     -- | if defined within a pattern, then the label of that pattern.
     idPat :: !(Maybe Text),
     -- | the constituent attributes (i.e. name/term pairs) of this identity.
-    identityAts :: NE.NonEmpty IdentitySegment
+    identityAts :: NE.NonEmpty Expression
   }
   deriving (Show)
 

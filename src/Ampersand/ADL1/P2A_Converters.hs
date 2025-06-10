@@ -18,7 +18,7 @@ import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set, guard)
 import Ampersand.Classes
 -- import Ampersand.Classes.Relational (hasAttributes) -- found redundant
--- import Ampersand.Core.A2P_Converters                -- found redundant
+import Ampersand.Core.A2P_Converters (aConcept2pConcept)
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
@@ -33,7 +33,6 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Codec.Xlsx (Condition(Expression))
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -51,13 +50,6 @@ getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
 userList :: ConceptMap -> [Type] -> [A_Concept]
 userList fun = lefts . fmap (typeOrConcept fun)
 
-mustBeConceptBecauseMath :: ContextInfo -> Type -> A_Concept
-mustBeConceptBecauseMath ci tp =
-  let fatalV :: a
-      fatalV = fatal "A concept turned out to be a built-in type."
-   in case getAsConcept ci fatalV tp of
-        Checked v _ -> v
-        _ -> fatalV
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
 -- sense to do type checking when there are static errors. However, in Ampersand all collect functions (e.g. in ViewPoint)
@@ -612,7 +604,10 @@ pCtx2aCtx
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
-              EDcD dcl <- term2Expr ci (Prim (PNamedR nmdr))
+              expr <- term2Expr ci (Prim (PNamedR nmdr))
+              let dcl = case expr of
+                         EDcD d -> d
+                         _ -> fatal ("Expected a relation in a population, but got "<>tshow expr<>".")
               aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
@@ -639,80 +634,61 @@ pCtx2aCtx
           then pure givenType
           else mkTypeMismatchError o dcl sourceOrTarget givenType
 
-      pBoxItemDisamb2BoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
-      pBoxItemDisamb2BoxItem ci x = fmap fst (typecheckObjDef ci x)
-
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
-      pViewDef2aViewDef ci x = typecheckViewDef ci tpda
+      pViewDef2aViewDef ci
+        P_Vd{ pos = orig,
+              vd_nm = nm,
+              vd_label = lbl',
+              vd_cpt = cpt,
+              vd_isDefault = isDefault,
+              vd_html = mHtml,
+              vd_ats = segmnts
+            } = do segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
+                   uniqueLables orig toLabel . filter hasLabel $ segments
+                   return
+                         Vd
+                           { vdpos = orig,
+                             vdname = nm,
+                             vdlabel = lbl',
+                             vdcpt = conceptMap ci cpt,
+                             vdIsDefault = isDefault,
+                             vdhtml = mHtml,
+                             vdats = segments
+                           }
         where
-          tpda = disamb ci x
-
-      disamb :: ContextInfo -> d TermPrim -> d TermPrim
-      disamb ci = disambiguate (conceptMap ci) (termPrimDisAmb (declarationsMap ci))
-
-      typecheckViewDef :: ContextInfo -> P_ViewD TermPrim -> Guarded ViewDef
-      typecheckViewDef
-        ci
-        o@P_Vd
-          { pos = orig,
-            vd_nm = nm,
-            vd_label = lbl',
-            vd_cpt = cpt,
-            vd_isDefault = isDefault,
-            vd_html = mHtml,
-            vd_ats = segmnts
-          } =
-          do
-            segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
-            uniqueLables orig toLabel . filter hasLabel $ segments
-            let avd =
-                  Vd
-                    { vdpos = orig,
-                      vdname = nm,
-                      vdlabel = lbl',
-                      vdcpt = conceptMap ci cpt,
-                      vdIsDefault = isDefault,
-                      vdhtml = mHtml,
-                      vdats = segments
-                    }
-            return avd
-          where
-            toLabel :: ViewSegment -> Text1
-            toLabel vs = case vsmlabel vs of
-              Nothing -> fatal "Segments without a label should have been filtered out here"
-              Just x -> x
-            hasLabel :: ViewSegment -> Bool
-            hasLabel = isJust . vsmlabel
-            typeCheckViewSegment :: (Integer, P_ViewSegment TermPrim) -> Guarded ViewSegment
-            typeCheckViewSegment (seqNr, seg) =
-              do
-                payload <- typecheckPayload (vsm_load seg)
-                return
-                  ViewSegment
-                    { vsmpos = origin seg,
-                      vsmlabel = vsm_labl seg,
-                      vsmSeqNr = seqNr,
-                      vsmLoad = payload
-                    }
-              where
-                typecheckPayload :: P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
-                typecheckPayload payload =
-                  case payload of
-                    P_ViewExp term ->
-                      do
-                        viewExpr <- term2Expr ci (PCps orig (Prim (Pid orig cpt)) term)
-                        pure (ViewExp viewExpr)
-                    P_ViewText str -> pure $ ViewText str
-                    _ -> fatal "Unsupported view segment payload in compiler"
-            c = mustBeConceptBecauseMath ci (pConcToType (vd_cpt o))
+          toLabel :: ViewSegment -> Text1
+          toLabel vs = case vsmlabel vs of
+            Nothing -> fatal "Segments without a label should have been filtered out here"
+            Just x -> x
+          hasLabel :: ViewSegment -> Bool
+          hasLabel = isJust . vsmlabel
+          typeCheckViewSegment :: (Integer, P_ViewSegment TermPrim) -> Guarded ViewSegment
+          typeCheckViewSegment (seqNr, seg) =
+           do payload <- typecheckPayload (vsm_load seg)
+              return
+                ViewSegment
+                  { vsmpos = origin seg,
+                    vsmlabel = vsm_labl seg,
+                    vsmSeqNr = seqNr,
+                    vsmLoad = payload
+                  }
+            where
+              typecheckPayload :: P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
+              typecheckPayload payload =
+                case payload of
+                  P_ViewExp term ->
+                    do
+                      viewExpr <- term2Expr ci (PCps orig (Prim (Pid orig cpt)) term)
+                      pure (ViewExp viewExpr)
+                  P_ViewText str -> pure $ ViewText str
 
       isa :: Type -> Type -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
       isaC :: A_Concept -> A_Concept -> Bool
       isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
 
-      typecheckObjDef :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
-      typecheckObjDef contextInfo objDef =
+      pBoxItem2aBoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
+      pBoxItem2aBoxItem contextInfo objDef =
         case objDef of
           P_BoxItemTerm
             { obj_PlainName = nm,
@@ -724,39 +700,37 @@ pCtx2aCtx
               obj_msub = subs
             } -> do
               objExpr <- term2Expr contextInfo term
+              let tgtConcept = (aConcept2pConcept . target) objExpr
               checkCrud
+              typeCheckViewAnnotation objExpr mView
               crud <- pCruds2aCruds objExpr mCrud
               s <- case subs of
-                    Just sub@P_Box{} -> traverse (checkPboxItem (target objExpr)) (si_box sub)
+                    Just sub@P_Box{} -> traverse (pBoxItem2aBoxItem contextInfo . hinge tgtConcept) (si_box sub)
                     Just P_InterfaceRef {si_str = str, si_isLink = isLink} ->
                       case lookupView str of
-                        Just vd -> pure [BxExpr (ObjectDef (Just nm) lbl' orig objExpr crud mView (Just (P_InterfaceRef {pos =orig, si_str = str, si_isLink = isLink})))]
+                        Just _  -> pure [BxExpr (ObjectDef nm lbl' orig objExpr crud mView (Just InterfaceRef{pos=orig, siIsLink = isLink, siIfcId = str}))]
                         Nothing -> Errors . pure $ mkUndeclaredError "view" objDef str
                     Nothing  -> pure []
-              case maybeObj of
-                Just (newExpr, subStructures) -> return (obj crud newExpr (Just subStructures))
-                Nothing -> return (obj crud objExpr Nothing)
+              return
+               (BxExpr ObjectDef
+                        { objPlainName  = nm,
+                          objlbl        = lbl',
+                          objPos        = orig,
+                          objExpression = objExpr,
+                          objcrud       = crud,
+                          objmView      = mView,
+                          objmsub       = case subs of
+                                           Nothing -> Nothing
+                                           Just sub -> Just Box{ pos = orig,
+                                                                 siConcept = target objExpr,
+                                                                 siHeader = si_header sub,
+                                                                 siObjs = s
+                                                               }
+                        })
               where
-
-                checkPboxItem :: A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
-                checkPboxItem c pbi =
-                  case pbi of
-                    P_BoxItemTerm
-                      { obj_PlainName = nm,
-                        obj_lbl = lbl',
-                        pos = orig,
-                        obj_term = term,
-                        obj_crud = mCrud,
-                        obj_mView = mView,
-                        obj_msub = subs
-                      } ->
-                      do
-                        objExpr <- term2Expr contextInfo (PCps (origin pbi) (Prim (Pid (origin pbi) c)) (obj_term pbi))
-                        checkCrud
-                        typeCheckViewAnnotation objExpr mView
-                        return $ obj mCrud (objExpr, srcBounded) subs
-                      where
-
+                -- | hinge inserts the target of the enveloping box expression to ensure that the sub-boxes are properly typed.
+                hinge :: P_Concept -> P_BoxItem TermPrim -> P_BoxItem TermPrim
+                hinge c pbi = pbi{ obj_term = PCps (origin pbi) (Prim (Pid (origin pbi) c)) (obj_term pbi) }
                 lookupView :: Name -> Maybe P_ViewDef
                 lookupView viewId = case [vd | vd <- p_viewdefs, vd_nm vd == viewId] of
                   [] -> Nothing
@@ -878,157 +852,39 @@ pCtx2aCtx
                        ]
                        | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
                      ]
-      -- pSubi2aSubi ::
-      --   ContextInfo ->
-      --   Expression -> -- Expression of the surrounding
-      --   Bool -> -- Whether the surrounding is bounded
-      --   P_BoxItem a -> -- name of where the error occured!
-      --   P_SubIfc TermPrim -> -- Subinterface to check
-      --   Guarded
-      --     ( Expression, -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original term (in such a case, epsilons are added to the branches instead)
-      --       SubInterface -- the subinterface
-      --     )
-      -- pSubi2aSubi ci objExpr b o x =
-      --   case x of
-      --     P_InterfaceRef {si_str = ifcId} ->
-      --       do
-      --         (refIfcExpr, _) <- case lookupDisambIfcObj (declarationsMap ci) ifcId of
-      --           Just disambObj -> typecheckTerm ci
-      --             $ case disambObj of
-      --               P_BoxItemTerm {} -> obj_term disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-      --               P_BxTxt {} -> fatal "TXT is not expected here."
-      --           Nothing -> Errors . pure $ mkUndeclaredError "interface" o ifcId
-      --         objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-      --         return
-      --           ( objExprEps,
-      --             InterfaceRef
-      --               { pos = origin x,
-      --                 siIsLink = si_isLink x,
-      --                 siIfcId = ifcId
-      --               }
-      --           )
-      --     P_Box {} ->
-      --       addWarnings warnings
-      --         $ build
-      --         <$> traverse (fn <=< typecheckObjDef ci) l
-      --         <* uniqueLables (origin x) tkkey (btKeys . si_header $ x)
-      --         <* (uniqueLables (origin x) toNonEmptyLabel . filter hasLabel $ l) -- ensure that each label in a box has a unique name.
-      --       where
-      --         toNonEmptyLabel :: P_BoxItem a -> Text1
-      --         toNonEmptyLabel bi = case obj_PlainName bi of
-      --           Nothing -> fatal "all items without label should been filtered out here"
-      --           Just labl -> labl
-      --         hasLabel :: P_BoxItem a -> Bool
-      --         hasLabel bi = case obj_PlainName bi of
-      --           Nothing -> False
-      --           Just _ -> True
-      --         l :: [P_BoxItem TermPrim]
-      --         l = si_box x
-      --         build :: [BoxItem] -> (Expression, SubInterface)
-      --         build lst =
-      --           ( objExpr,
-      --             Box
-      --               { pos = origin x,
-      --                 siConcept = target objExpr,
-      --                 siHeader = si_header x,
-      --                 siObjs = lst
-      --               }
-      --           )
-      --         fn :: (BoxItem, Bool) -> Guarded BoxItem
-      --         fn (boxitem, p) = case boxitem of
-      --           BxExpr {} -> BxExpr <$> matchWith (objE boxitem, p)
-      --           BxText {} -> pure boxitem
-      --   where
-      --     matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
-      --     matchWith (ojd, exprBound) =
-      --       if b || exprBound
-      --         then case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
-      --           [] -> mustBeOrderedLst x objExpr ojd
-      --           (r : _) -> pure (ojd {objExpression = addEpsilonLeft genLattice r (objExpression ojd)})
-      --         else mustBeBound (origin ojd) [(Src, objExpression ojd), (Tgt, objExpr)]
-      --     warnings :: [Warning]
-      --     warnings =
-      --       [mkBoxRowsnhWarning (origin x) | toText1Unsafe "ROWSNH" == (btType . si_header $ x)] -- See issue #925
-      --         <> [mkNoBoxItemsWarning (origin x) | null (si_box x)]
-
-      -- typeCheckInterfaceRef :: P_BoxItem a -> Name -> Expression -> Expression -> Guarded Expression
-      -- typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr =
-      --   let expTarget = target objExpr
-      --       ifcSource = source ifcExpr
-      --       refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
-      --    in if refIsCompatible
-      --         then pure $ addEpsilonRight genLattice ifcSource objExpr
-      --         else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-      -- lookupDisambIfcObj :: DeclMap -> Name -> Maybe (P_BoxItem TermPrim)
-      -- lookupDisambIfcObj declMap ifcId =
-      --   case [disambObj | (vd, disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId] of
-      --     [] -> Nothing
-      --     disambObj : _ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
-
+  
       pIfc2aIfc :: ContextInfo -> P_Interface -> Guarded Interface
       pIfc2aIfc contextInfo pIfc =
         do
-          BxExpr {objE = objDef} <- pBoxItemDisamb2BoxItem contextInfo (ifc_Obj pIfc)
+          pBox <- pBoxItem2aBoxItem contextInfo (ifc_Obj pIfc)
+          objDef <- case pBox of
+                      BxExpr{} -> pure (objE pBox)
+                      _ -> (Errors . return . CTXE (origin pIfc)) "TXT is not expected here."
           let objExpr = objExpression objDef
               ifcSource = source objExpr
-              ifcTarget = target objExpr
-              ifcSourceType = aConcToType ifcSource
-              ifcTargetType = aConcToType ifcTarget
-          unless (isaC ifcSource ifcTarget) $
-            Errors . pure $ mkInterfaceMustBeDefinedOnObject pIfc ifcSourceType ifcTargetType
-          return
-            Ifc
-              { ifcIsAPI = ifc_IsAPI pIfc,
-                ifcname = name pIfc,
-                ifclbl = mLabel pIfc,
-                ifcRoles = ifc_Roles pIfc,
-                ifcObj =
-                  objDef
-                    { objPlainName = Just . fullName1 . name $ pIfc,
-                      objlbl = mLabel pIfc
-                    },
-                ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-                ifcPos = origin pIfc,
-                ifcPurpose = ifc_Prp pIfc
-              }
+              ifcSourceType = representationOf contextInfo ifcSource
+          if ifcSourceType==Object
+            then return
+                   Ifc
+                     { ifcIsAPI = ifc_IsAPI pIfc,
+                       ifcname = name pIfc,
+                       ifclbl = mLabel pIfc,
+                       ifcRoles = ifc_Roles pIfc,
+                       ifcObj =
+                         objDef
+                           { objPlainName = Just . fullName1 . name $ pIfc,
+                             objlbl = mLabel pIfc
+                           },
+                       ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
+                       ifcPos = origin pIfc,
+                       ifcPurpose = ifc_Prp pIfc
+                     }
+            else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
+                   [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
+                     "The TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "`, for interface `" <> fullName pIfc <> "`, however is " <> tshow ifcSourceType <> "."
+                   ]
+          
 
-      -- pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem TermPrim) -> Guarded Interface
-      -- pIfc2aIfc contextInfo (pIfc, objDisamb) =
-      --   build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
-      --   where
-      --     build :: Guarded BoxItem -> Guarded Interface
-      --     build gb =
-      --       case gb of
-      --         Errors x -> Errors x
-      --         Checked obj' ws ->
-      --           addWarnings ws
-      --             $ case obj' of
-      --               BxExpr o ->
-      --                 case ttype . target . objExpression $ o of
-      --                   Object ->
-      --                     pure
-      --                       Ifc
-      --                         { ifcIsAPI = ifc_IsAPI pIfc,
-      --                           ifcname = name pIfc,
-      --                           ifclbl = mLabel pIfc,
-      --                           ifcRoles = ifc_Roles pIfc,
-      --                           ifcObj =
-      --                             o
-      --                               { objPlainName = Just . fullName1 . name $ pIfc,
-      --                                 objlbl = mLabel pIfc
-      --                               },
-      --                           ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
-      --                           ifcPos = origin pIfc,
-      --                           ifcPurpose = ifc_Prp pIfc
-      --                         }
-      --                   tt ->
-      --                     Errors
-      --                       . pure
-      --                       . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
-      --                       $ tt
-      --               BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
-      --     ttype :: A_Concept -> TType
-      --     ttype = representationOf contextInfo
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =
@@ -1118,14 +974,20 @@ pCtx2aCtx
             penfExpr = x
           } = case oper of
                 IsSuperSet {} ->
-                  do EInc (expr,EDcD rel) <- term2Expr ci (PInc pos' x (Prim pRel))
-                     return (toAEnforce rel expr)
+                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                     case xpr of
+                       EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
+                       _ -> fatal ("Alternative 1 in pEnforce2aEnforce.")
                 IsSubSet {} ->
-                  do EInc (EDcD rel,expr) <- term2Expr ci (PInc pos' (Prim pRel) x)
-                     return (toAEnforce rel expr)
+                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                     case xpr of
+                       EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
+                       _ -> fatal ("Alternative 2 in pEnforce2aEnforce.")
                 IsSameSet {} ->
-                  do EEqu (EDcD rel,expr) <- term2Expr ci (PEqu pos' (Prim pRel) x)
-                     return (toAEnforce rel expr)
+                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                     case xpr of
+                       EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
+                       _ -> fatal ("Alternative 3 in pEnforce2aEnforce.")
           where
             toAEnforce :: Relation -> Expression -> AEnforce
             toAEnforce rel expr
@@ -1180,51 +1042,44 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        case disamb ci pidt of
-          P_Id
-            { ix_name = nm,
-              ix_label = lbl',
-              ix_ats = isegs
-            } ->
-              ( \isegs' ->
-                  Id
-                    { idPos = orig,
-                      idName = nm,
-                      idlabel = lbl',
-                      idCpt = conc,
+        do isegs <- traverse (term2Expr ci) (ix_ats pidt)
+           return( Id
+                    { idPos = origin pidt,
+                      idName = ix_name pidt,
+                      idlabel = ix_label pidt,
+                      idCpt = pCpt2aCpt (ix_cpt pidt),
                       idPat = mPat,
-                      identityAts = isegs'
+                      identityAts = isegs
                     }
-              )
-                <$> traverse pIdentSegment2IdentSegment isegs
-        where
-          conc = pCpt2aCpt (ix_cpt pidt)
-          orig = origin pidt
-          pIdentSegment2IdentSegment :: P_IdentSegmnt TermPrim -> Guarded IdentitySegment
-          pIdentSegment2IdentSegment (P_IdentExp ojd) =
-            do
-              boxitem <- pBoxItemDisamb2BoxItem ci ojd
-              case boxitem of
-                BxExpr {objE = o} ->
-                  case toList . findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
-                    [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
-                    _ -> pure $ IdentityExp o {objExpression = addEpsilonLeft genLattice conc (objExpression o)}
-                BxText {} -> fatal $ "TXT is not expected in IDENT statements. (" <> tshow (origin boxitem) <> ")"
+                 )
+
+-- newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)}
+
+-- data PairViewSegment a
+--   = PairViewText
+--       { pos :: Origin,
+--         pvsStr :: Text
+--       }
+--   | PairViewExp
+--       { pos :: Origin,
+--         pvsSoT :: SrcOrTgt,
+--         pvsExp :: a
+--       }
+
       typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term TermPrim) -> Guarded (PairView Expression)
       typeCheckPairView ci o x (PairView lst) =
         PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
       typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term TermPrim) -> Guarded (PairViewSegment Expression)
       typeCheckPairViewSeg _ _ _ (PairViewText orig x) = pure (PairViewText orig x)
-      typeCheckPairViewSeg ci o t (PairViewExp orig s x) =
+      typeCheckPairViewSeg ci o expr (PairViewExp orig s x) =
         do
-          e <- term2Expr ci x
-          let tp = aConcToType (source e)
-          case toList . findExact genLattice . lMeet tp $ getConcept s t of
-            [] -> mustBeOrdered o (Src, origin x, e) (s, t)
-            lst ->
-              if b || elem (getConcept s t) lst
-                then pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
-                else mustBeBound o [(Src, e)]
+          let src = (aConcept2pConcept . source) expr
+              tgt = (aConcept2pConcept . target) expr
+          e <- term2Expr ci (case s of
+                              Src -> PCps o (Prim (Pid o src)) x
+                              Tgt -> PCps o (Prim (Pid o tgt)) x
+                            )
+          return(PairViewExp orig s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci
