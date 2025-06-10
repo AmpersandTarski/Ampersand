@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.4.3
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
+
 ## v5.4.2
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) Another step towards integration with semantic web, Parsing turtle file
 

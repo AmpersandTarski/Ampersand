@@ -56,7 +56,7 @@ import Ampersand.Core.ParseTree
     Term,
     TermPrim (PNamedR),
   )
-import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
+import Ampersand.Input.ADL1.CtxError (Guarded (..), mkGenericParserError)
 import Ampersand.Input.ADL1.Parser (pTerm)
 import Ampersand.Input.ADL1.ParsingLib
 import qualified Data.Aeson as JSON
@@ -75,7 +75,7 @@ parseJsonFile fp = do
 fromAtlas :: ByteString -> Guarded P_Context
 fromAtlas json =
   case JSON.eitherDecode (BL.fromStrict json) of
-    Left msg -> mkJSONParseError OriginAtlas (T.pack msg)
+    Left msg -> mkGenericParserError OriginAtlas (T.pack msg)
     Right a -> a
 
 instance JSON.FromJSON (Guarded P_Context) where
@@ -943,6 +943,6 @@ textToNameInJSON typ txt =
           toNamePart' x = mapM toNamePart'' (splitOnDots x)
           toNamePart'' :: Text1 -> Guarded NamePart
           toNamePart'' x = case toNamePart1 x of
-            Nothing -> mkJSONParseError OriginAtlas ("Not a valid NamePart: " <> tshow x)
+            Nothing -> mkGenericParserError OriginAtlas ("Not a valid NamePart: " <> tshow x)
             Just np -> Checked np []
-    _ -> mkJSONParseError OriginAtlas $ "ERROR parsing JSON: Name must not contain whitespace: `" <> txt <> "`."
+    _ -> mkGenericParserError OriginAtlas $ "ERROR parsing JSON: Name must not contain whitespace: `" <> txt <> "`."
