@@ -281,9 +281,9 @@ instance Ord AConceptDef where
       fromMaybe
         ( fatal
             . T.intercalate "\n"
-            $ [ "ConceptDef should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
+            $ [ "Two different ConceptDefs found in A-structure that are equal:",
+                tshow a,
+                tshow b
               ]
         )
         (maybeOrdering (origin a) (origin b))

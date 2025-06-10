@@ -71,7 +71,7 @@ getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
 getContext filePath guardedGraph = do
   graph <- guardedGraph
   nm <- ontologyName graph
-  let cptDefs = conceptDefs (CONTEXT nm) graph
+  cptDefs <- conceptDefs (CONTEXT nm) graph
   let relDefs = relationDefs graph
   let isas = classifyDefs graph
   pure
@@ -172,23 +172,39 @@ getContext filePath guardedGraph = do
                     cardinalityNodes =
                       [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
                 _ -> []
-    conceptDefs :: DefinitionContainer -> RDF TList -> [PConceptDef]
+    conceptDefs :: DefinitionContainer -> RDF TList -> Guarded [PConceptDef]
     conceptDefs frm graph =
-      [ PConceptDef
-          { cdname = nm,
-            cdmean = mempty,
-            cdlbl = l,
-            cdfrom = frm,
-            cddef2 = PCDDefLegacy def2 "",
-            pos = orig
-          }
-        | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,
-          cpt
-            `elem` map subjectOf (select graph (is cpt) rdfType owlNamedIndividual),
-          lbl <- map objectOf $ select graph (is cpt) rdfsLabel Nothing,
-          Just (nm, l) <- [suggestName ContextName . toText1Unsafe <$> getLiteralText lbl],
-          def2 <- mapMaybe (getLiteralText . objectOf) $ select graph (is cpt) skosDefinition Nothing
-      ]
+      sequence
+        [ mkConceptDef cpt
+          | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,
+            cpt
+              `elem` map subjectOf (select graph (is cpt) rdfType owlNamedIndividual)
+        ]
+      where
+        mkConceptDef :: Node -> Guarded PConceptDef
+        mkConceptDef cpt = do
+          (nm, l) <- case map objectOf $ select graph (is cpt) rdfsLabel Nothing of
+            [] -> mkGenericParserError orig $ "No label found for concept " <> tshow cpt
+            [lbl] -> getName lbl
+            (h : _) ->
+              addWarning
+                (mkTurtleWarning orig ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
+                (getName h)
+          pure
+            PConceptDef
+              { cdname = nm,
+                cdmean = mempty,
+                cdlbl = l,
+                cdfrom = frm,
+                cddef2 = PCDDefLegacy def2 "",
+                pos = orig
+              }
+          where
+            getName :: Node -> Guarded (Name, Maybe Label)
+            getName lblNode = case suggestName ContextName . toText1Unsafe <$> getLiteralText lblNode of
+              Nothing -> mkGenericParserError orig $ "Label found for concept " <> tshow cpt <> " does not contain text."
+              Just x -> pure x
+            def2 = T.intercalate "\n" . mapMaybe (getLiteralText . objectOf) $ select graph (is cpt) skosDefinition Nothing
 
 getLiteralText :: Node -> Maybe Text
 getLiteralText n = case n of

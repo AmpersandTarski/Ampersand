@@ -22,6 +22,7 @@ module Ampersand.Input.ADL1.CtxError
     mkDanglingRefError,
     mkEndoPropertyError,
     mkErrorReadingINCLUDE,
+    mkGenericParserError,
     mkIncompatibleAtomValueError,
     mkIncompatibleInterfaceError,
     mkIncompatibleViewError,
@@ -29,7 +30,6 @@ module Ampersand.Input.ADL1.CtxError
     mkInterfaceRefCycleError,
     mkInvalidCRUDError,
     mkInvariantViolationsError,
-    mkJSONParseError,
     mkMultipleDefaultError,
     mkMultipleInterfaceError,
     mkMultipleRepresentTypesError,
@@ -44,6 +44,7 @@ module Ampersand.Input.ADL1.CtxError
     mkRoundTripTextError,
     mkSubInterfaceMustBeDefinedOnObject,
     mkTurtleParseError,
+    mkTurtleWarning,
     mkTypeMismatchError,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
@@ -737,6 +738,10 @@ mkNoBoxItemsWarning orig =
       [ "This list of BOX-items is empty."
       ]
 
+mkTurtleWarning :: Origin -> [Text] -> Warning
+mkTurtleWarning orig msg =
+  Warning orig (T.unlines msg)
+
 mkCrudWarning :: P_Cruds -> [Text] -> Warning
 mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
 
@@ -753,8 +758,8 @@ mkCaseProblemWarning x y =
         tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."
       ]
 
-mkJSONParseError :: Origin -> Text -> Guarded a
-mkJSONParseError orig msg = Errors . pure $ CTXE orig msg
+mkGenericParserError :: Origin -> Text -> Guarded a
+mkGenericParserError orig msg = Errors . pure $ CTXE orig msg
 
 mkTurtleParseError :: FilePath -> Text -> Guarded a
 mkTurtleParseError filename msg =
