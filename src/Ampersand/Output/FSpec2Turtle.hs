@@ -44,14 +44,24 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     shortenedTriples =
       fmap (shortenTriple myBaseUrl myPrefixMappings) triples
     triples =
-      concat
-        $ fmap concept2triples (filter (ONE /=) $ instanceList fSpec)
-        <> fmap relation2triples (instanceList fSpec)
-        <> fmap population2triples (instanceList fSpec)
-
+      ontologyUris
+        <> concat
+          ( fmap concept2triples (filter (ONE /=) $ instanceList fSpec)
+              <> fmap relation2triples (instanceList fSpec)
+              <> fmap population2triples (instanceList fSpec)
+          )
+      where
+        context = case originalContext fSpec of
+          Just ctx -> ctx
+          Nothing -> fatal "no context in FSpec"
+        ontologyUris =
+          [ triple (uri context) (unode "rdf:type") (unode "owl:Ontology"),
+            triple (uri context) (unode "rdfs:label") (lnode . plainL . label $ context)
+          ]
     concept2triples :: A_Concept -> Triples
     concept2triples cpt =
       [ triple (uri cpt) (unode "rdf:type") (unode "owl:Class"),
+        triple (uri cpt) (unode "rdf:type") (unode "owl:NamedIndividual"),
         --  triple (uri cpt) (unode "skos:prefLabel") (lnode . plainL . label $ cpt),
         triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt)
       ]
