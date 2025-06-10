@@ -80,6 +80,16 @@ isDanglingPurpose ctx purp =
         -- TODO: fix this when we pick up working on multiple contexts.
         -- Check that interface references are not cyclic
 
+warnUnusedConcepts :: A_Context -> Guarded ()
+warnUnusedConcepts ctx = addWarnings warnings $ pure ()
+  where
+    warnings :: [Warning]
+    warnings =
+      [ mkUnusedCptDefWarning cDef
+        | cDef <- L.nub $ ctxcds ctx <> concatMap ptcds (ctxpats ctx),
+          acdcpt cDef `notElem` (concs . relsDefdIn $ ctx)
+      ]
+
 checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx =
   case interfaceCycles of
@@ -292,6 +302,7 @@ pCtx2aCtx
       checkInterfaceCycles actx -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
+      warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       return actx
     where
       makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
@@ -823,7 +834,6 @@ pCtx2aCtx
                            { objPlainName = Just . fullName1 . name $ pIfc,
                              objlbl = mLabel pIfc
                            },
-                       ifcConjuncts = [], -- to be enriched in Adl2fSpec with rules to be checked
                        ifcPos = origin pIfc,
                        ifcPurpose = ifc_Prp pIfc
                      }
@@ -833,6 +843,42 @@ pCtx2aCtx
                    ]
 
 
+      -- pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
+      -- pIfc2aIfc contextInfo (pIfc, objDisamb) =
+      --   build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
+      --   where
+      --     build :: Guarded BoxItem -> Guarded Interface
+      --     build gb =
+      --       case gb of
+      --         Errors x -> Errors x
+      --         Checked obj' ws ->
+      --           addWarnings ws
+      --             $ case obj' of
+      --               BxExpr o ->
+      --                 case ttype . target . objExpression $ o of
+      --                   Object ->
+      --                     pure
+      --                       Ifc
+      --                         { ifcIsAPI = ifc_IsAPI pIfc,
+      --                           ifcname = name pIfc,
+      --                           ifclbl = mLabel pIfc,
+      --                           ifcRoles = ifc_Roles pIfc,
+      --                           ifcObj =
+      --                             o
+      --                               { objPlainName = Just . fullName1 . name $ pIfc,
+      --                                 objlbl = mLabel pIfc
+      --                               },
+      --                           ifcPos = origin pIfc,
+      --                           ifcPurpose = ifc_Prp pIfc
+      --                         }
+      --                   tt ->
+      --                     Errors
+      --                       . pure
+      --                       . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
+      --                       $ tt
+      --               BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
+      --     ttype :: A_Concept -> TType
+      --     ttype = representationOf contextInfo
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
       pRoleRule2aRoleRule prr =

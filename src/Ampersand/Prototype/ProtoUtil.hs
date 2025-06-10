@@ -336,7 +336,15 @@ readTemplate templatePath = do
   let absPath = getTemplateDir env </> templatePath
   res <- readUTF8File absPath
   case res of
-    Left err -> exitWith $ ReadFileError $ "Error while reading template." : err
+    Left err ->
+      exitWith
+        . ReadFileError
+        $ [ "Error while reading frontend template.",
+            "   The generation of frontend files can only be done when the frontend",
+            "   templates are available. This is normally done by the prototype image.",
+            "   If you only want to generate the backend files, you can use the --no-frontend option."
+          ]
+        <> err
     Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
 
 renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text

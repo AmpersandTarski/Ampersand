@@ -714,8 +714,6 @@ data Interface = Ifc
     ifcRoles :: ![Role],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
     ifcObj :: !ObjectDef,
-    -- | All conjuncts that must be evaluated after a transaction
-    ifcConjuncts :: ![Conjunct],
     -- | The position in the file (filename, line- and column number)
     ifcPos :: !Origin,
     -- | The purpose of the interface
@@ -1722,12 +1720,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                     ]
                in case lookup (T.toUpper str) table of
                     Just b -> Right (AAVBoolean typ b)
-                    Nothing -> Left $ "permitted Booleans: " <> (tshow . fmap (camelCase . fst) $ table)
-              where
-                camelCase :: Text -> Text
-                camelCase txt = case T.uncons txt of
-                  Nothing -> mempty
-                  Just (h, tl) -> T.cons (toUpper h) (T.toLower tl)
+                    Nothing -> Left $ "permitted Booleans: " <> (tshow . fmap (camel . fst) $ table)
             Integer -> case readMaybe . T.unpack $ str of
               Just i -> Right (AAVInteger typ i)
               Nothing -> Left (message o str)

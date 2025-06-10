@@ -3,18 +3,34 @@
 - The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
 - a little maintenance work (minor)
 
+## v5.4.2
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) Another step towards integration with semantic web, Parsing turtle file
+
+## v5.4.1
+- replaced rdfs:isDefinedBy by skos:Definition in turtle output
+
+## v5.4.0
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) First steps towards integration with semantic web, Serializing towards turtle file (experimental, only Concepts, Relations, properties and population. No rules yet)
+
+## v5.3.8
+- [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Restore edges between entities in LDM (redo of #1555). New option: --[no-]uniEdges
+
+## v5.3.7
+- [Issue #1560](https://github.com/AmpersandTarski/Ampersand/issues/1560) Warn for possible use of Strict Open XML format
+- [Issue #1557](https://github.com/AmpersandTarski/Ampersand/issues/1557) Warn for concepts that are defined but not used
+
 ## v5.3.6
 - [Issue #1554](https://github.com/AmpersandTarski/Ampersand/issues/1554) Sugar lumps in the data model
 - [Issue #1555](https://github.com/AmpersandTarski/Ampersand/issues/1555) Less clutter in the data model.
 
 ## v5.3.5
-- [Issue #1544](https://github.com/AmpersandTarski/Ampersand/issues/1544) Improve the error message on BOX mismatch of types.
+- Improve the error message on BOX mismatch of types.
 
 ## v5.3.4
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Bugfix on issue 1537.
+- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1537) Bugfix on issue 1537.
 
 ## v5.3.3
-- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1544) Make the default technical type ALPHANUMERIC, except if the concept is used as an object (right before every BOX) or declared with a REPRESENT statement.
+- [Issue #1537](https://github.com/AmpersandTarski/Ampersand/issues/1537) Make the default technical type ALPHANUMERIC, except if the concept is used as an object (right before every BOX) or declared with a REPRESENT statement.
 
 ## v5.3.2
 - [Issue #1542](https://github.com/AmpersandTarski/Ampersand/issues/1542) Respect the TYPE of the concept when >, <, <= and >= are used.

@@ -1,5 +1,5 @@
 name: ampersand
-version: 5.3.6
+version: 5.4.2
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -72,6 +72,7 @@ dependencies:
   - process
   - QuickCheck
   - quickcheck-instances
+  - rdf4h
   - rio
   # - salve
   - simple-sql-parser

@@ -12,6 +12,13 @@ packages:
   original:
     hackage: pandoc-crossref-0.3.17.0
 - completed:
+    hackage: rdf4h-5.2.0@sha256:0e5a3741011134f53317e192873c4b71deba64afd81e55041d440e54f576dd4d,6259
+    pantry-tree:
+      sha256: 6ae4bbc5bd04cb6f48a4580fbd130eca45d166a9027835c091b795cbc56d8ab3
+      size: 4074
+  original:
+    hackage: rdf4h-5.2.0@sha256:0e5a3741011134f53317e192873c4b71deba64afd81e55041d440e54f576dd4d,6259
+- completed:
     hackage: simple-sql-parser-0.8.0@sha256:5153612af09edda2af865e6dc1286d64ecea702541a1af824ac518268f0b5cb4,4417
     pantry-tree:
       sha256: fba7264bf9753b0c6abf40881e43b0b56e97052487c5ccbfd663892cdcfdfc13

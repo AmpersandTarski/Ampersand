@@ -78,7 +78,7 @@ isDatamodelType pt = case pt of
   PTTechnicalDM {} -> True
   _ -> False
 
-makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
+makePicture :: (HasDocumentOpts env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
   case pr of
     PTClassDiagram ->
@@ -100,6 +100,7 @@ makePicture env fSpec pr =
             ClassDiagram
               ( cdAnalysis
                   grouped
+                  env
                   fSpec
                   (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec))
               ),
@@ -135,7 +136,7 @@ makePicture env fSpec pr =
       Pict
         { pType = pr,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False fSpec pat,
+          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
           dotProgName = Dot,
           caption =
             case outputLang' of
@@ -146,7 +147,7 @@ makePicture env fSpec pr =
       Pict
         { pType = pr,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False fSpec pat,
+          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
           dotProgName = Dot,
           caption =
             case outputLang' of

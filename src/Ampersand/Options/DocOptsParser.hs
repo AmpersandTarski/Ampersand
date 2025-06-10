@@ -20,6 +20,7 @@ docOptsParser =
     <*> chaptersP
     <*> datamodelOnlyP
     <*> genGraphicsP
+    <*> uniEdgesP
     <*> genTextP
     <*> fSpecFormatP
     <*> fSpecGenOptsParser False
@@ -128,7 +129,15 @@ docOptsParser =
         "graphics"
         "generation of graphics before generating the document."
         mempty
-
+    uniEdgesP :: Parser Bool
+    uniEdgesP =
+      boolFlags
+        True
+        "uniEdges"
+        ( "drawing of edges for univalent and/or injective relations in the LDM."
+            <> " not drawing them can be useful during the development of an ampersand model."
+        )
+        mempty
     genTextP :: Parser Bool
     genTextP =
       boolFlags

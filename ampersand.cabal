@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.3.6
+version:        5.4.2
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -565,6 +565,7 @@ library
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.AtlasImport
+      Ampersand.Input.SemWeb.Turtle
       Ampersand.Misc.Defaults
       Ampersand.Options.DaemonParser
       Ampersand.Options.DevoutputOptsParser
@@ -576,6 +577,7 @@ library
       Ampersand.Options.ProtoOptsParser
       Ampersand.Options.TestOptsParser
       Ampersand.Options.ValidateOptsParser
+      Ampersand.Output.FSpec2Turtle
       Ampersand.Output.PredLogic
       Ampersand.Types.Config
       Paths_ampersand
@@ -620,6 +622,7 @@ library
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -684,6 +687,7 @@ executable ampPreProc
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -751,6 +755,7 @@ executable ampersand
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size
@@ -816,6 +821,7 @@ test-suite ampersand-test
     , parsec
     , process
     , quickcheck-instances
+    , rdf4h
     , rio
     , simple-sql-parser
     , terminal-size

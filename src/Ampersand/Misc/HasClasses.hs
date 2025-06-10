@@ -177,6 +177,8 @@ class (HasOutputLanguage a) => HasDocumentOpts a where
   genLegalRefsL = documentOptsL . lens xgenLegalRefs (\x y -> x {xgenLegalRefs = y})
   genGraphicsL :: Lens' a Bool -- Generate graphics. Useful for generating text and graphics separately.
   genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x {xgenGraphics = y})
+  uniEdgesL :: Lens' a Bool -- Draw edges for univalent and/or injective relations in the LDM.
+  uniEdgesL = documentOptsL . lens xuniEdges (\x y -> x {xuniEdges = y})
   genTextL :: Lens' a Bool -- Generate text. Useful for generating text and graphics separately.
   genTextL = documentOptsL . lens xgenText (\x y -> x {xgenText = y})
   genDatamodelOnlyL :: Lens' a Bool -- Generate only the datamodel images. This overrides genGraphicsL and genTextL
@@ -377,6 +379,8 @@ data DocOpts = DocOpts
     xgenDatamodelImagesOnly :: !Bool,
     -- | enable/disable generation of graphics. Used to generate text and graphics in separation.
     xgenGraphics :: !Bool,
+    -- | draw edges for univalent and/or injective relations in the LDM.
+    xuniEdges :: !Bool,
     -- | enable/disable generation of text. Used to generate text and graphics in separation.
     xgenText :: !Bool,
     -- | the format of the documentation
@@ -397,6 +401,7 @@ instance HasOptions DocOpts where
       <> fmap chapters [minBound ..]
       <> [ ("--datamodelOnly", tshow $ xgenDatamodelImagesOnly opts),
            ("--[no-]graphics", tshow $ xgenGraphics opts),
+           ("--[no-]uniEdges", tshow $ xuniEdges opts),
            ("--[no-]text", tshow $ xgenText opts),
            ("--format", tshow $ xfspecFormat opts)
          ]

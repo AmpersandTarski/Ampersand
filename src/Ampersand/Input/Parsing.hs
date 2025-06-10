@@ -45,6 +45,7 @@ import Ampersand.Input.PreProcessor
     preProcess,
     processFlags,
   )
+import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (parseXlsxFile)
 import Ampersand.Misc.HasClasses
   ( HasTrimXLSXOpts,
@@ -230,6 +231,10 @@ parseSingleADL pc =
         extension == ".json" = do
           ctxFromAtlas <- catchInvalidJSON $ parseJsonFile filePath
           return ((,[]) <$> ctxFromAtlas) -- A .json file does not contain include files
+      | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
+        extension == ".ttl" = do
+          ctxFromTurtle <- catchInvalidTurtle $ parseTurtleFile filePath
+          return ((,[]) <$> ctxFromTurtle)
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -305,6 +310,11 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
+        catchInvalidTurtle :: RIO env a -> RIO env a
+        catchInvalidTurtle m = catch m f
+          where
+            f :: SomeException -> RIO env a
+            f exception = fatal ("The file does not seem to have a valid Turtle structure:\n  " <> tshow exception)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.

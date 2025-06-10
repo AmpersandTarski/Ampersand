@@ -78,11 +78,11 @@ instance JSON Rule JsonRule where
       }
     where
       showMeaning :: Text
-      showMeaning = maybe mempty (aMarkup2String . ameaMrk) $ meaning (defOutputLang fSpec) rule
+      showMeaning = maybe mempty (markup2Markdown . ameaMrk) $ meaning (defOutputLang fSpec) rule
       showMessage :: Text
       showMessage = case filter (\x -> amLang x == defOutputLang fSpec) (rrmsg rule) of
         [] -> mempty
-        h : _ -> aMarkup2String h
+        h : _ -> markup2Markdown h
 
 instance JSON (PairView Expression) JsonPairView where
   fromAmpersand env fSpec pv =

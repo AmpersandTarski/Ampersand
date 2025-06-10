@@ -3,59 +3,60 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Redundant bracket" #-}
+-- {-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
   ( CtxError (..),
     Warning,
-    -- cannotDisambiguate,
-    mustBeOrdered,
-    mustBeOrderedLst,
-    mustBeOrderedConcLst,
-    mustBeBound,
-    mustBeValidNamePart,
-    GetOneGuarded (..),
-    uniqueNames,
-    unexpectedType,
-    mkErrorReadingINCLUDE,
-    mkDanglingPurposeError,
-    mkUndeclaredError,
-    mkMultipleInterfaceError,
-    mkInterfaceRefCycleError,
-    mkIncompatibleInterfaceError,
-    mkMultipleDefaultError,
-    mkDanglingRefError,
-    mkIncompatibleViewError,
-    mkOtherAtomInSessionError,
-    mkOtherTupleInSessionError,
-    mkInvalidCRUDError,
-    mkMultipleRepresentTypesError,
-    nonMatchingRepresentTypes,
-    mkEndoPropertyError,
-    mkMultipleTypesInTypologyError,
-    mkInvariantViolationsError,
-    mkIncompatibleAtomValueError,
-    mkTypeMismatchError,
-    mkMultipleRootsError,
-    mkCrudForRefInterfaceError,
-    mkInterfaceMustBeDefinedOnObject,
-    mkSubInterfaceMustBeDefinedOnObject,
-    lexerWarning2Warning,
-    lexerError2CtxError,
-    mkJSONParseError,
     addWarning,
     addWarnings,
-    mkCrudWarning,
+    GetOneGuarded (..),
+    Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
+    lexerError2CtxError,
+    lexerWarning2Warning,
     mkBoxRowsnhWarning,
     mkCaseProblemWarning,
-    uniqueLables,
+    mkCrudForRefInterfaceError,
+    mkCrudWarning,
+    mkDanglingPurposeError,
+    mkDanglingRefError,
+    mkEndoPropertyError,
+    mkErrorReadingINCLUDE,
+    mkIncompatibleAtomValueError,
+    mkIncompatibleInterfaceError,
+    mkIncompatibleViewError,
+    mkInterfaceMustBeDefinedOnObject,
+    mkInterfaceRefCycleError,
+    mkInvalidCRUDError,
+    mkInvariantViolationsError,
+    mkJSONParseError,
+    mkMultipleDefaultError,
+    mkMultipleInterfaceError,
+    mkMultipleRepresentTypesError,
+    mkMultipleRootsError,
+    mkMultipleTypesInTypologyError,
     mkNoBoxItemsWarning,
-    Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
-    whenCheckedM,
+    mkOperatorError,
+    mkOtherAtomInSessionError,
+    mkOtherTupleInSessionError,
+    mkParserStateWarning,
     mkRoundTripError,
     mkRoundTripTextError,
-    mkParserStateWarning,
-    mkOperatorError,
+    mkSubInterfaceMustBeDefinedOnObject,
+    mkTurtleParseError,
+    mkTypeMismatchError,
+    mkUndeclaredError,
+    mkUnusedCptDefWarning,
+    mustBeBound,
+    mustBeOrdered,
+    mustBeOrderedConcLst,
+    mustBeOrderedLst,
+    mustBeValidNamePart,
+    nonMatchingRepresentTypes,
+    unexpectedType,
+    uniqueLables,
+    uniqueNames,
+    whenCheckedM,
   )
 where
 
@@ -319,49 +320,6 @@ mkTypeMismatchError o rel sot typ =
         <> " found at "
         <> tshow (origin rel)
         <> ")."
-
--- cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded a
--- cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
---   where
---     message =
---       case x of
---         Rel [] -> "A relation is used that is not defined: " <> showP o
---         Rel decls -> case o of
---           (PNamedR (PNamedRel _ _ Nothing)) ->
---             T.intercalate "\n"
---               $ [ "Cannot disambiguate the relation: " <> showP o,
---                   "  Please add a signature (e.g. [A*B]) to the relation.",
---                   "  Relations you may have intended:"
---                 ]
---               <> map (("  " <>) . showA') decls
---               <> noteIssue980
---           _ ->
---             T.intercalate "\n"
---               $ [ "Cannot disambiguate: " <> showP o,
---                   "  Please add a signature (e.g. [A*B]) to the term.",
---                   "  You may have intended one of these:"
---                 ]
---               <> map (("  " <>) . showA') decls
---               <> noteIssue980
---         Known _ -> fatal "We have a known term, so it is allready disambiguated."
---         _ ->
---           T.intercalate "\n"
---             $ [ "Cannot disambiguate: " <> showP o,
---                 "  Please add a signature (e.g. [A*B]) to it."
---               ]
---             <> noteIssue980
---     noteIssue980 =
---       [ "Note: Some cases are not disambiguated fully by design. You can read about",
---         "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
---       ]
-
---     showA' :: Expression -> Text
---     showA' e =
---       showA e
---         <> case e of
---           EDcD rel -> " (" <> tshow (origin rel) <> ")"
---           EFlp e' -> showA' e'
---           _ -> ""
 
 -- | Rules, identity statements, view definitions, interfaces, and box labels
 --   need unique names.
@@ -738,6 +696,10 @@ mkNoBoxItemsWarning orig =
 mkCrudWarning :: P_Cruds -> [Text] -> Warning
 mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
 
+mkUnusedCptDefWarning :: AConceptDef -> Warning
+mkUnusedCptDefWarning cptDef =
+  Warning (origin cptDef) $ "The concept '" <> fullName cptDef <> "' is not used in any relation."
+
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =
   Warning OriginUnknown
@@ -749,6 +711,10 @@ mkCaseProblemWarning x y =
 
 mkJSONParseError :: Origin -> Text -> Guarded a
 mkJSONParseError orig msg = Errors . pure $ CTXE orig msg
+
+mkTurtleParseError :: FilePath -> Text -> Guarded a
+mkTurtleParseError filename msg =
+  Errors . pure $ CTXE (FileLoc (FilePos filename 0 0) "") msg
 
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning
