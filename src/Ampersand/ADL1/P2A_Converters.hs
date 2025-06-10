@@ -144,8 +144,8 @@ checkOtherAtomsInSessionConcept ctx =
          | ARelPopu {popsrc = src, poptgt = tgt, popdcl = d, popps = ps} <- ctxpopus ctx,
            isSESSION src || isSESSION tgt,
            pr <- toList ps,
-           (isSESSION src && not (_isPermittedSessionValue (apLeft pr)))
-             || (isSESSION tgt && not (_isPermittedSessionValue (apRight pr)))
+           isSESSION src && not (_isPermittedSessionValue (apLeft pr))
+             || isSESSION tgt && not (_isPermittedSessionValue (apRight pr))
        ] of
     [] -> return ()
     x : xs -> Errors (x NE.:| xs)
@@ -570,8 +570,8 @@ pCtx2aCtx
                          EDcD d -> d
                          _ -> fatal ("Expected a relation in a population, but got "<>tshow expr<>".")
               aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
-              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
-              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
+              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< isMoreGeneric (origin pop) dcl Src . userConcept) src
+              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
               return
                 ARelPopu
                   { popdcl = dcl,
@@ -800,7 +800,7 @@ pCtx2aCtx
                        ]
                        | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
                      ]
-  
+
       pIfc2aIfc :: ContextInfo -> P_Interface -> Guarded Interface
       pIfc2aIfc contextInfo pIfc =
         do
@@ -831,7 +831,7 @@ pCtx2aCtx
                    [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
                      "The TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "`, for interface `" <> fullName pIfc <> "`, however is " <> tshow ifcSourceType <> "."
                    ]
-          
+
 
 
       pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
@@ -925,17 +925,17 @@ pCtx2aCtx
                   do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
                      case xpr of
                        EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
-                       _ -> fatal ("Alternative 1 in pEnforce2aEnforce.")
+                       _ -> fatal "Alternative 1 in pEnforce2aEnforce."
                 IsSubSet {} ->
                   do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
                      case xpr of
                        EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
-                       _ -> fatal ("Alternative 2 in pEnforce2aEnforce.")
+                       _ -> fatal "Alternative 2 in pEnforce2aEnforce."
                 IsSameSet {} ->
                   do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
                      case xpr of
                        EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
-                       _ -> fatal ("Alternative 3 in pEnforce2aEnforce.")
+                       _ -> fatal "Alternative 3 in pEnforce2aEnforce."
           where
             toAEnforce :: Relation -> Expression -> AEnforce
             toAEnforce rel expr
@@ -991,7 +991,7 @@ pCtx2aCtx
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
         do isegs <- traverse (term2Expr ci) (ix_ats pidt)
-           return( Id
+           return ( Id
                     { idPos = origin pidt,
                       idName = ix_name pidt,
                       idlabel = ix_label pidt,
@@ -1014,7 +1014,7 @@ pCtx2aCtx
                               Src -> PCps o (Prim (Pid o src)) x
                               Tgt -> PCps o (Prim (Pid o tgt)) x
                             )
-          return(PairViewExp orig s e)
+          return (PairViewExp orig s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci

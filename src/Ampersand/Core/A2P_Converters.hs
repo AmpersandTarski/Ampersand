@@ -368,12 +368,6 @@ aPairViewSegment2pPairViewSegment x =
           pvsExp = aExpression2pTermPrim (pvsExp x)
         }
 
-aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim
-aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
-  P_IdentExp
-    { ks_obj = aObjectDef2pObjectDef (BxExpr oDef)
-    }
-
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
   case obj of
