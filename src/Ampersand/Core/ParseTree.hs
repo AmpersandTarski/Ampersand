@@ -770,7 +770,7 @@ data PairViewSegment a
   deriving (Show, Typeable, Generic)
 
 instance Eq (PairViewSegment a) where
-  p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 
 instance Ord (PairViewSegment a) where
   compare a b =
