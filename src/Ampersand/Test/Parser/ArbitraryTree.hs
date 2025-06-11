@@ -485,12 +485,8 @@ instance Arbitrary P_IdentDef where
       <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary
-      `suchThat` notIsONE
-      <*> arbitrary
-
-instance Arbitrary P_IdentSegment where
-  arbitrary = P_IdentExp <$> makeObj IdentSegmentKind
+      <*> arbitrary `suchThat` notIsONE
+      <*> arbitrary `suchThat` notIsRuleTerm
 
 instance Arbitrary P_ViewDef where
   arbitrary =
@@ -588,6 +584,16 @@ notIsONE :: P_Concept -> Bool
 notIsONE cpt = case cpt of
   PCpt {} -> True
   P_ONE -> False
+
+-- notIsRuleTerm :: NonEmpty (Term TermPrim) -> Bool
+notIsRuleTerm :: NonEmpty (Term a) -> Bool
+notIsRuleTerm = all noRule . NE.toList
+  where
+    noRule :: Term a -> Bool
+    noRule trm = case trm of
+                   PEqu {} -> False
+                   PInc {} -> False
+                   _ -> True
 
 safePlainName :: Gen Text1
 safePlainName =

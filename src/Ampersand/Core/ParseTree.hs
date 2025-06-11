@@ -47,8 +47,6 @@ module Ampersand.Core.ParseTree
     P_Cruds (..),
     P_IdentDef,
     P_IdentDf (..),
-    P_IdentSegment,
-    P_IdentSegmnt (..),
     P_ViewDef,
     P_ViewSegment (..),
     ViewHtmlTemplate (..),
@@ -1114,18 +1112,6 @@ instance Foldable P_IdentDf where foldMap = foldMapDefault
 
 instance Traversable P_IdentDf where
   traverse f (P_Id orig nm lbl cpt lst) = P_Id orig nm lbl cpt <$> traverse (traverse f) lst
-
-instance Functor P_IdentSegmnt where fmap = fmapDefault
-
-instance Foldable P_IdentSegmnt where foldMap = foldMapDefault
-
-instance Traversable P_IdentSegmnt where
-  traverse f (P_IdentExp x) = P_IdentExp <$> traverse f x
-
-type P_IdentSegment = P_IdentSegmnt TermPrim
-
-newtype P_IdentSegmnt a = P_IdentExp {ks_obj :: P_BoxItem a}
-  deriving (Eq, Ord, Show)
 
 type P_ViewDef = P_ViewD TermPrim
 

@@ -41,7 +41,6 @@ import Ampersand.Core.ParseTree
     P_Enforce (..),
     P_IdentDef,
     P_IdentDf (..),
-    P_IdentSegmnt (P_IdentExp),
     P_Markup (P_Markup),
     P_NamedRel (..),
     P_Pattern (..),
@@ -54,7 +53,7 @@ import Ampersand.Core.ParseTree
     TType (..),
     TemplateKeyValue (..),
     Term,
-    TermPrim (PNamedR), ks_obj,
+    TermPrim (PNamedR)
   )
 import Ampersand.Input.ADL1.CtxError (Guarded (..), mkJSONParseError)
 import Ampersand.Input.ADL1.Parser (pTerm)
@@ -625,14 +624,19 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
         <$> (v JSON..: "name")
         <*> (v JSON..:? "label")
         <*> (v JSON..: "concept")
-        <*> (v JSON..: "ident")
+        <*> (v JSON..: "ident" >>= parseIdentTerm)
     invalid ->
       JSON.prependFailure
         "parsing P_Rule failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> Maybe Text -> Guarded P_Concept -> P_IdentSegmnt TermPrim -> (Guarded (P_IdentDf TermPrim))
-      build txt lbl gCpt ident = do
+      parseIdentTerm :: Text -> JSON.Parser (Term TermPrim)
+      parseIdentTerm formexp = case parseTerm ("Json file from Atlas, at an ident expression.") formexp of
+        Errors err -> fail $ T.unpack $ "Parse error in " <> formexp <> ":\n   " <> tshow err
+        Checked term _ -> return term
+        
+      build :: Text -> Maybe Text -> Guarded P_Concept -> Term TermPrim -> (Guarded (P_IdentDf TermPrim))
+      build txt lbl gCpt term = do
         nm <- textToNameInJSON IdentName txt
         cpt <- gCpt
         pure
@@ -641,11 +645,8 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
               ix_name = nm,
               ix_label = textToLabelInJSON <$> lbl,
               ix_cpt = cpt,
-              ix_ats = obj_term (ks_obj ident) NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
+              ix_ats = term NE.:| []
             }
-
-instance JSON.FromJSON (P_IdentSegmnt TermPrim) where
-  parseJSON val = P_IdentExp <$> JSON.parseJSON val
 
 instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
   parseJSON val = case val of

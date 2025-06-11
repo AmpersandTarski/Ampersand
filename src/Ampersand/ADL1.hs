@@ -134,8 +134,6 @@ import Ampersand.Core.ParseTree
     P_Enforce (..),
     P_IdentDef,
     P_IdentDf (..),
-    P_IdentSegment,
-    P_IdentSegmnt (..),
     P_Interface (..),
     P_Markup (..),
     P_NamedRel (..),

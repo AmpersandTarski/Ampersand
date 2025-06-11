@@ -350,9 +350,6 @@ instance Pretty (P_IdentDf TermPrim) where
   pretty (P_Id _ nm lbl cpt ats) =
     text "IDENT" <~> nm <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
-instance Pretty (P_IdentSegmnt TermPrim) where
-  pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj
-
 instance Pretty P_ViewDef where
   pretty (P_Vd _ nm lbl cpt isDefault html ats) =
     -- improved syntax. Legacy syntax must not be used here anymore.
