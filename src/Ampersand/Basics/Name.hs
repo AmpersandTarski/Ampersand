@@ -60,7 +60,7 @@ data Name = Name
   deriving (Data)
 
 instance Ord Name where
-  compare a b = compare (nameParts a) (nameParts b)
+  compare = compare `on` nameParts
 
 instance Eq Name where
   a == b = compare a b == EQ
@@ -293,7 +293,7 @@ instance GVP.PrintDot MyDotNode where
   unqtDot (MyDotNode x) = GVP.unqtDot (abs . hash . fullName $ x)
 
 instance Ord MyDotNode where
-  a `compare` b = tshow a `compare` tshow b
+  compare = compare `on` tshow
 
 instance Eq MyDotNode where
   a == b = compare a b == EQ
