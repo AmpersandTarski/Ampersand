@@ -225,7 +225,7 @@ mkMultipleRootsError roots gs =
           ]
         <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
         <> ["Parhaps you could add the following statements:"]
-        <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> tshow rootName | cpt <- roots]
+        <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> rootName | cpt <- roots]
       where
         rootName = T.intercalate "_Or_" . map (text1ToText . showWithAliases) $ roots
 
