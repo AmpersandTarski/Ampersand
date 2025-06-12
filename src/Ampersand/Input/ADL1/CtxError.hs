@@ -171,15 +171,6 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
--- mkInvalidTTypeError :: Origin -> P_Representation -> Guarded a
--- mkInvalidTTypeError o repr@ImplicitRepr{} =
---   Errors . pure $ CTXE o msg
---   where
---     msg =
---       T.intercalate "\n"
---         $ [ "The target of "<>tshow (reprTerm repr)<>" has technical type Object"
---           , " because it is used in a subinterface at " <> showFullOrig o]
-
 mkMultipleRepresentTypesError :: ([A_Concept], [(TType, [Origin])]) -> Guarded a
 mkMultipleRepresentTypesError (cpts, tts@((_, o : _) : _)) =
   Errors . pure $ CTXE o msg

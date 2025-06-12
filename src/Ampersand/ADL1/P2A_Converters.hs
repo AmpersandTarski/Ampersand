@@ -974,12 +974,12 @@ pCtx2aCtx
                        EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 1 in pEnforce2aEnforce."
                 IsSubSet {} ->
-                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                  do xpr <- term2Expr ci (PInc pos' (Prim pRel) x)
                      case xpr of
                        EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 2 in pEnforce2aEnforce."
                 IsSameSet {} ->
-                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                  do xpr <- term2Expr ci (PEqu pos' (Prim pRel) x)
                      case xpr of
                        EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 3 in pEnforce2aEnforce."
@@ -1117,44 +1117,34 @@ signatures contextInfo trm = case trm of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure ss
   PEqu o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the equation.\nlhs: "<>displ sgna a<>"\nrhs: "<>displ sgnb b<>".")
-                    ss -> return ss
+                   msgPeri o "equation" sgna sgnb a b
   PInc o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the inclusion.\nlhs: "<>displ sgna a<>"\nrhs: "<>displ sgnb b<>".")
-                    ss -> return ss
+                   msgPeri o "inclusion" sgna sgnb a b
   PIsc o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the intersection.\nlhs: "<>displ sgna a<>"\nrhs: "<>displ sgnb b<>".")
-                    ss -> return ss
+                   msgPeri o "intersection" sgna sgnb a b
   PUni o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[glb conceptGraph (target sgn_a) (target sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the union.\nlhs: "<>displ sgna a<>"\nrhs: "<>displ sgnb b<>".")
-                    ss -> return ss
+                   msgPeri o "union" sgna sgnb a b
   PDif o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[glb conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[glb conceptGraph (target sgn_a) (target sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the difference.\nlhs: "<>displ sgna a<>"\nrhs: "<>displ sgnb b<>".")
-                    ss -> return ss
+                   msgPeri o "difference" sgna sgnb a b
   PLrs o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (source sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (target sgn_b) (target sgn_a)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the left residual.\n  The target of: "<>displayLeft sgna a<>", which is "<>tshow (map target sgna)<>", should be equal (or more generic) than\n  the target of: "<>showP b<>", which is "<>tshow (map target sgnb)<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the left residual.\n  The target of: "<>displayLeft sgna a<>"should be equal (or more generic) than the target of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PRrs o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (target sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (source sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the right residual.\n  The source of: "<>displayLeft sgna a<>", which is "<>tshow (map source sgna)<>", should be equal (or more specific) than\n  the source of: "<>showP b<>", which is "<>tshow (map source sgnb)<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the right residual.\n  The source of: "<>displayLeft sgna a<>"should be equal (or more specific) than the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PDia o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, target sgn_a == source sgn_b ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the diamond.\n  The target of: "<>displayLeft sgna a<>", which is "<>tshow (map target sgna)<>", should be equal to\n  the source of: "<>showP b<>", which is "<>tshow (map source sgnb)<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the diamond.\n  The target of: "<>displayLeft sgna a<>"should be equal to the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PCps o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[glb conceptGraph (target sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the composition.\n  The target of "<>displayLeft sgna a<>" should be equal to (or share a concept) \n  the source of "<>displayRight sgnb b<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the composition.\n  The target of "<>displayLeft sgna a<>"should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PRad o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the relative addition.\n  The target of: "<>displayLeft sgna a<>", which is "<>tshow (map target sgna)<>"\n, should be equal to (or share a concept) \n  the source of: "<>showP b<>", which is "<>tshow (map source sgnb)<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the relative addition.\n  The target of: "<>displayLeft sgna a<>"should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PPrd _ a b -> do sgna <- signats a; sgnb <- signats b
                    return [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb ]
@@ -1164,11 +1154,6 @@ signatures contextInfo trm = case trm of
   PCpl _ e   -> signats e
   PBrk _ e   -> signats e
   where
-    displ sgns expr =
-      showP expr<>case sgns of
-                    [sgn] -> " :: "<>tshow (target sgn)<>", "
-                    []    -> " is untypable."
-                    _     -> ", the type of which can be any of "<>tshow (map target sgns)<>"."
     displayLeft sgns expr =
       showP expr<>case sgns of
                     [sgn] -> ", which is "<>tshow (target sgn)<>", "
@@ -1176,9 +1161,26 @@ signatures contextInfo trm = case trm of
                     _     -> ", which can be any of "<>tshow (map target sgns)<>", "
     displayRight sgns expr =
       showP expr<>case sgns of
-                    [sgn] -> ", which is "<>tshow (target sgn)
+                    [sgn] -> ", which is "<>tshow (source sgn)
                     []    -> " is undefined because "<>showP expr<>" is untypable"
-                    _     -> ", which can be any of "<>tshow (map target sgns)
+                    _     -> ", which can be any of "<>tshow (map source sgns)
+    -- | msgPeri generates a type error message for equations, inclusions, unions, and intersects.
+    msgPeri :: Origin -> Text -> [Signature] -> [Signature] -> Term TermPrim -> Term TermPrim -> Guarded [Signature]
+    msgPeri o kind sgna sgnb a b =
+      do let sgnsSrc = [ src | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)] ]
+             sgnsTgt = [ tgt | sgn_a<-sgna, sgn_b<-sgnb, Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
+         case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ] of
+          []  -> case (sgnsSrc, sgnsTgt) of
+                  ([],_:_) -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the "<>kind<>".\n   The source of "<>showP a<>"is "<>showSgns (map source sgna)<>"\n   The source of "<>showP b<>"is "<>showSgns (map source sgnb))
+                  (_:_,[]) -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the "<>kind<>".\n   The target of "<>showP a<>"is "<>showSgns (map target sgna)<>"\n   The target of "<>showP b<>"is "<>showSgns (map target sgnb))
+                  _        -> (Errors . return . CTXE o) ("Cannot match the signatures at both sides of the "<>kind<>".\n   On the left side, "<>showP a<>"is "<>showSgns sgna<>"\n   On the right side, "<>showP b<>"is "<>showSgns sgnb)
+                 where
+                   showSgns :: Show a => [a] -> Text
+                   showSgns sgns = case sgns of
+                                    [] ->     "untyped"
+                                    [sgn] ->  tshow sgn
+                                    sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
+          sgns -> return sgns
 
     conceptList :: [A_Concept]
     conceptList = (vertexList . makeGraph . allGens) contextInfo
@@ -1202,9 +1204,9 @@ dereference contextInfo sgns trmprim
       PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
     where
       guard :: [Expression] -> Guarded Expression
-      guard []     = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>tshow trmprim<>".")
+      guard []     = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
       guard [expr] = pure expr
-      guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>tshow trmprim<>". Please specify "<>if length exprs>4 then "the type explicitly." else "one of: "<>T.intercalate ", " (map (tshow . source) exprs)<>".")
+      guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". Please specify "<>if length exprs>4 then "the type explicitly." else "one of: "<>T.intercalate ", " (map (tshow . source) exprs)<>".")
       rels :: P_NamedRel -> [Relation]
       rels rel = case p_mbSign rel of
                   Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg

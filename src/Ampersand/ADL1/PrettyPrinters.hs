@@ -208,7 +208,10 @@ instance Pretty PBinOp where
     GreaterThanOrEqual -> text ">="
 
 instance Pretty P_NamedRel where
-  pretty (PNamedRel _ str mpSign) = (text . T.unpack . localNameOf) str <~> mpSign
+  pretty (PNamedRel _ str mpSign)
+   = case mpSign of -- This case statement prevents a space at the right side of the relation name.
+       Nothing  -> (text . T.unpack . localNameOf) str
+       Just sgn -> (text . T.unpack . localNameOf) str <~> sgn
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
