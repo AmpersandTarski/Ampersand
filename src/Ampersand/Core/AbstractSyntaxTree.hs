@@ -1199,60 +1199,18 @@ infixl 8 .!. -- relative addition
 
 infixl 8 .*. -- cartesian product
 
--- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-l .==. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot equate (with operator \"==\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EEqu (l, r)
-
-l .|-. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot include (with operator \"|-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EInc (l, r)
-
-l ./\. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot intersect (with operator \"/\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EIsc (l, r)
-
-l .\/. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot unite (with operator \"\\/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EUni (l, r)
-
-l .-. r =
-  if source l /= source r || target l /= target r
-    then fatal ("Cannot subtract (with operator \"-\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EDif (l, r)
-
-l ./. r =
-  if target l /= target r
-    then fatal ("Cannot residuate (with operator \"/\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ELrs (l, r)
-
-l .\. r =
-  if source l /= source r
-    then fatal ("Cannot residuate (with operator \"\\\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ERrs (l, r)
-
-l .<>. r =
-  if source r /= target l
-    then fatal ("Cannot use diamond operator \"<>\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else EDia (l, r)
-
-l .:. r =
-  if source r /= target l
-    then fatal ("Cannot compose (with operator \";\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ECps (l, r)
-
-l .!. r =
-  if source r /= target l
-    then fatal ("Cannot add (with operator \"!\") term l of type " <> tshow (sign l) <> ":\n    " <> tshow l <> "\n  with term r of type " <> tshow (sign r) <> ":\n    " <> tshow r <> ".")
-    else ERad (l, r)
-
-l .*. r =
-  -- SJC: always fits! No fatal here..
-  EPrd (l, r)
+-- Useful shorthands:
+l .==. r = EEqu (l, r)
+l .|-. r = EInc (l, r)
+l ./\. r = EIsc (l, r)
+l .\/. r = EUni (l, r)
+l .-. r  = EDif (l, r)
+l ./. r  = ELrs (l, r)
+l .\. r  = ERrs (l, r)
+l .<>. r = EDia (l, r)
+l .:. r  = ECps (l, r)
+l .!. r  = ERad (l, r)
+l .*. r  = EPrd (l, r)
 
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee

@@ -1099,16 +1099,19 @@ pCtx2aCtx
           pRoleRule2aRoleRule
           (p_roleRules <> concatMap pt_RRuls p_patterns)
 
-
 signatures :: ContextInfo -> Term TermPrim -> Guarded [Signature]
 signatures contextInfo trm = case trm of
-  Prim (PI _)              ->                       pure [Sign c c| c<-conceptList]
+  Prim (PI _)              ->                       pure [Sign anyCpt anyCpt]
+  PCpl _ (Prim (PI _))     ->                       pure [Sign anyCpt anyCpt]
   Prim (Pid _ c)           -> let c'=pCpt2aCpt c in pure [Sign c' c']
   Prim (Patm _ _ (Just c)) -> let c'=pCpt2aCpt c in pure [Sign c' c']
-  Prim (Patm _ _  Nothing) ->                       pure [Sign c c| c<-conceptList]
-  Prim (PVee _)            ->                       pure [Sign src tgt | src<-conceptList, tgt<-conceptList ]
+  Prim (Patm _ _  Nothing) ->                       pure [Sign anyCpt anyCpt]
+  PCpl _ (Prim (Patm _ _  Nothing)) ->              pure [Sign anyCpt anyCpt]
+  Prim (PVee _)            ->                       pure [Sign anyCpt anyCpt]
+  PCpl _ (Prim (PVee _))   ->                       pure [Sign anyCpt anyCpt]
   Prim (Pfull _ src tgt)   ->                       pure [Sign (pCpt2aCpt src) (pCpt2aCpt tgt)]
-  Prim (PBin _ _)          ->                       pure [Sign c c| c<-conceptList]
+  Prim (PBin _ _)          ->                       pure [Sign anyCpt anyCpt]
+  PCpl _ (Prim (PBin _ _)) ->                       pure [Sign anyCpt anyCpt]
   Prim (PBind _ _ c)       -> let c'=pCpt2aCpt c in pure [Sign c' c']
   Prim (PNamedR rel)       -> let sgns :: Maybe P_Sign -> [Signature]
                                   sgns (Just sgn) = (map sign . findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
@@ -1116,30 +1119,30 @@ signatures contextInfo trm = case trm of
                               in  case sgns (p_mbSign rel) of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure ss
-  PEqu o a b -> msgPeri o "equation" a b
-  PInc o a b -> msgPeri o "inclusion" a b
-  PIsc o a b -> msgPeri o "intersection" a b
-  PUni o a b -> msgPeri o "union" a b
-  PDif o a b -> msgPeri o "difference" a b
+  PEqu o a b -> checkPeri o "equation" a b
+  PInc o a b -> checkPeri o "inclusion" a b
+  PIsc o a b -> checkPeri o "intersection" a b
+  PUni o a b -> checkPeri o "union" a b
+  PDif o a b -> checkPeri o "difference" a b
   PLrs o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (source sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (target sgn_b) (target sgn_a)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the left residual.\n  The target of: "<>displayLeft sgna a<>"should be equal (or more generic) than the target of "<>displayRight sgnb b<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the left residual.\n  The target of: "<>displayLeft sgna a<>" should be equal (or more generic) than the target of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PRrs o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (target sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just True<-[leq conceptGraph (source sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the right residual.\n  The source of: "<>displayLeft sgna a<>"should be equal (or more specific) than the source of "<>displayRight sgnb b<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the right residual.\n  The source of: "<>displayLeft sgna a<>" should be equal (or more specific) than the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PDia o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, target sgn_a == source sgn_b ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the diamond.\n  The target of: "<>displayLeft sgna a<>"should be equal to the source of "<>displayRight sgnb b<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the diamond.\n  The target of: "<>displayLeft sgna a<>" should be equal to the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PCps o a b -> do sgna <- signats a; sgnb <- signats b
-                   case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[glb conceptGraph (target sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the composition.\n  The target of "<>displayLeft sgna a<>"should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
+                   case trace ("\nPCps ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgn_a: "<>tshow sgna<>"\n   sgn_b: "<>tshow sgnb) [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-trace ("Between:sgna\n   sgn_a: "<>tshow sgn_a<>"\n   sgn_b: "<>tshow sgn_b<>"\nlub: "<>tshow (glb conceptGraph (target sgn_a) (source sgn_b))) [glb conceptGraph (target sgn_a) (source sgn_b)] ] of
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the composition.\n  The target of "<>displayLeft sgna a<>" should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PRad o a b -> do sgna <- signats a; sgnb <- signats b
                    case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[lub conceptGraph (target sgn_a) (source sgn_b)] ] of
-                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the relative addition.\n  The target of: "<>displayLeft sgna a<>"should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
+                    []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the relative addition.\n  The target of: "<>displayLeft sgna a<>" should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PPrd _ a b -> do sgna <- signats a; sgnb <- signats b
                    return [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb ]
@@ -1159,9 +1162,9 @@ signatures contextInfo trm = case trm of
                     [sgn] -> ", which is "<>tshow (source sgn)
                     []    -> " is undefined because "<>showP expr<>" is untypable"
                     _     -> ", which can be any of "<>tshow (map source sgns)
-    -- | msgPeri generates a type error message for equations, inclusions, unions, and intersects.
-    msgPeri :: Origin -> Text -> Term TermPrim -> Term TermPrim -> Guarded [Signature]
-    msgPeri o kind a b =
+    -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
+    checkPeri :: Origin -> Text -> Term TermPrim -> Term TermPrim -> Guarded [Signature]
+    checkPeri o kind a b =
       do sgna <- signats a; sgnb <- signats b
          let sgnsSrc = [ src | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[lub conceptGraph (source sgn_a) (source sgn_b)] ]
              sgnsTgt = [ tgt | sgn_a<-sgna, sgn_b<-sgnb, Just tgt<-[lub conceptGraph (target sgn_a) (target sgn_b)] ]
@@ -1178,12 +1181,16 @@ signatures contextInfo trm = case trm of
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
           sgns -> return sgns
 
-    conceptList :: [A_Concept]
-    conceptList = (vertexList . makeGraph . allGens) contextInfo
     pCpt2aCpt = conceptMap contextInfo
     conceptGraph :: AdjacencyMap A_Concept
-    conceptGraph = overlay (makeGraph (allGens contextInfo)) (vertices (Set.toList (allConcepts contextInfo)))
+    conceptGraph = overlay (makeGraph (allGens contextInfo)) (edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)])
     signats = signatures contextInfo
+
+anyCpt :: A_Concept
+anyCpt = PlainConcept ((Name { nameParts = (toNamePartText1 . toText1Unsafe) "_ANY" :| [],
+                               nameType  = ConceptName
+                             }
+                      , Nothing) :| [])
 
 dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
 dereference contextInfo sgns trmprim
@@ -1214,34 +1221,29 @@ dereference contextInfo sgns trmprim
       pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
-term2Expr contextInfo trm = do
-  sgns <- signatures contextInfo trm
-  case trm of
-    Prim tp -> dereference contextInfo sgns tp
-    _ -> mapTermStructure sgns trm
+term2Expr contextInfo term
+  = do sgns <- signatures contextInfo term
+       case term of
+         Prim tp    -> dereference contextInfo sgns tp
+         PEqu _ a b -> EEqu <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PInc _ a b -> EInc <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PIsc _ a b -> EIsc <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PUni _ a b -> EUni <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PDif _ a b -> EDif <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PLrs _ a b -> ELrs <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PRrs _ a b -> ERrs <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PDia _ a b -> EDia <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PCps _ a b -> ECps <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PRad _ a b -> ERad <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PPrd _ a b -> EPrd <$> ((,) <$> t2e sgns a <*> t2e sgns b)
+         PKl0 _ e   -> EKl0 <$> t2e sgns e
+         PKl1 _ e   -> EKl1 <$> t2e sgns e
+         PFlp _ e   -> EFlp <$> t2e sgns e
+         PCpl _ e   -> ECpl <$> t2e sgns e
+         PBrk _ e   -> t2e sgns e
   where
-    mapTermStructure :: [Signature] -> Term TermPrim -> Guarded Expression
-    mapTermStructure sgns term =
-      -- Handle the base case separately since it needs signatures
-      case term of
-        Prim tp -> dereference contextInfo sgns tp
-        PEqu _ a b -> EEqu <$> processPair a b
-        PInc _ a b -> EInc <$> processPair a b
-        PIsc _ a b -> EIsc <$> processPair a b
-        PUni _ a b -> EUni <$> processPair a b
-        PDif _ a b -> EDif <$> processPair a b
-        PLrs _ a b -> ELrs <$> processPair a b
-        PRrs _ a b -> ERrs <$> processPair a b
-        PDia _ a b -> EDia <$> processPair a b
-        PCps _ a b -> ECps <$> processPair a b
-        PRad _ a b -> ERad <$> processPair a b
-        PPrd _ a b -> EPrd <$> processPair a b
-        PKl0 _ e -> EKl0 <$> term2Expr contextInfo e
-        PKl1 _ e -> EKl1 <$> term2Expr contextInfo e
-        PFlp _ e -> EFlp <$> term2Expr contextInfo e
-        PCpl _ e -> ECpl <$> term2Expr contextInfo e
-        PBrk _ e -> term2Expr contextInfo e
-    processPair a b = (,) <$> term2Expr contextInfo a <*> term2Expr contextInfo b
+    t2e :: p -> Term TermPrim -> Guarded Expression
+    t2e sgns = term2Expr contextInfo
 
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
