@@ -1,13 +1,13 @@
 CONTEXT EnforceTest1 IN DUTCH
 
 
--- CLASSIFY NPForm, NPReg ISA NatuurlijkPersoon
--- CLASSIFY NatuurlijkPersoon ISA Person
--- CLASSIFY Voornaam ISA FirstName
+--CLASSIFY NPForm, NPReg ISA NatuurlijkPersoon
+--CLASSIFY NatuurlijkPersoon ISA Person
+--CLASSIFY Voornaam ISA FirstName
 REPRESENT FirstName TYPE ALPHANUMERIC
 
 RELATION npRoepnaam[NatuurlijkPersoon*Voornaam] [UNI]
-RELATION personFirstName[NPForm*FirstName]
+RELATION personFirstName[Person*FirstName]
 
 ENFORCE personFirstName := I[NPReg];npRoepnaam
 
