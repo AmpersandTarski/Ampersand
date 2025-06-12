@@ -1134,10 +1134,7 @@ signatures contextInfo trm = case trm of
                     []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the diamond.\n  The target of: "<>displayLeft sgna a<>"should be equal to the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PCps o a b -> do sgna <- signats a; sgnb <- signats b
-                   case trace
-                        ("signatures PCps: " <> "\na:    "<>tshow a<>"\nsgna: "<>tshow sgna<>"\nb:    "<>tshow b<>"\nsgnb: "<>tshow sgnb)
-                        [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-trace ("PCps o a b\nsgn_a: "<>tshow sgn_a<>"\ntarget sgn_a: "<>tshow (target sgn_a)<>"\nsgn_b: "<>tshow sgn_b<>"\nsource sgn_b: "<>tshow (source sgn_b)<>"\nconceptGraph: "<>tshow conceptGraph<>"\nglb: "<>tshow (glb conceptGraph (target sgn_a) (source sgn_b))) $ [glb conceptGraph (target sgn_a) (source sgn_b)] ]
-                        of
+                   case [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgna, sgn_b<-sgnb, Just _between<-[glb conceptGraph (target sgn_a) (source sgn_b)] ] of
                     []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the composition.\n  The target of "<>displayLeft sgna a<>"should be equal to (or share a concept with) the source of "<>displayRight sgnb b<>".")
                     ss -> return ss
   PRad o a b -> do sgna <- signats a; sgnb <- signats b
