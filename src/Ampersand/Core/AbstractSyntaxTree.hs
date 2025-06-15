@@ -73,7 +73,7 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     Type (..),
     typeOrConcept,
-    lub, glb, leq,
+    join, meet, leq,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -95,7 +95,7 @@ where
 import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Algebra.Graph.AdjacencyMap
 
-import Ampersand.Basics
+import Ampersand.Basics hiding (join)
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
     EnforceOperator,
@@ -1339,9 +1339,9 @@ synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
 synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
 
 
--- Compute the least upper bound (lub) of a list of pairs
-lub :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
-lub conceptGraph a b
+-- Compute the least upper bound (join) of a list of pairs
+join :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+join conceptGraph a b
     | hasEdge a b rtc = Just b
     | hasEdge b a rtc = Just a
     | otherwise =
@@ -1352,9 +1352,9 @@ lub conceptGraph a b
       minimum a' b' = if hasEdge a' b' rtc then a' else b'
       rtc = reflexiveClosure (transitiveClosure conceptGraph)
 
--- Compute the greatest lower bound (glb) of a list of pairs
-glb :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
-glb conceptGraph a b
+-- Compute the greatest lower bound (meet) of a list of pairs
+meet :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+meet conceptGraph a b
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
@@ -1373,41 +1373,41 @@ leq conceptGraph a b
     where
       rtc = reflexiveClosure (transitiveClosure conceptGraph)
 
-{- Here is some test output for the lub and glb functions, applied on the following graph:
+{- Here is some test output for the join and meet functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
 
-"even" `lub` "even" = Just "even"   and   "even" `glb` "even" = Just "even"
-The lub intersection set for "even" and "float" is: ["gegeven","num"]
-"even" `lub` "float" = Just "num"   and   "even" `glb` "float" = Nothing
-"even" `lub` "gegeven" = Just "gegeven"   and   "even" `glb` "gegeven" = Just "even"
-"even" `lub` "int" = Just "int"   and   "even" `glb` "int" = Just "even"
-"even" `lub` "integer" = Just "even"   and   "even" `glb` "integer" = Just "integer"
-"even" `lub` "num" = Just "num"   and   "even" `glb` "num" = Just "even"
-The lub intersection set for "even" and "oneven" is: ["gegeven","int","num"]
-"even" `lub` "oneven" = Just "int"   and   "even" `glb` "oneven" = Just "integer"
-The lub intersection set for "float" and "even" is: ["gegeven","num"]
-"float" `lub` "even" = Just "num"   and   "float" `glb` "even" = Nothing
-The lub intersection set for "float" and "int" is: ["gegeven","num"]
-"float" `lub` "int" = Just "num"   and   "float" `glb` "int" = Nothing
-The lub intersection set for "float" and "integer" is: ["gegeven","num"]
-"float" `lub` "integer" = Just "num"   and   "float" `glb` "integer" = Nothing
-"float" `lub` "num" = Just "num"   and   "float" `glb` "num" = Just "float"
-The lub intersection set for "float" and "oneven" is: ["gegeven","num"]
-"float" `lub` "oneven" = Just "num"   and   "float" `glb` "oneven" = Nothing
-"gegeven" `lub` "even" = Just "gegeven"   and   "gegeven" `glb` "even" = Just "even"
-"int" `lub` "even" = Just "int"   and   "int" `glb` "even" = Just "even"
-The lub intersection set for "int" and "float" is: ["gegeven","num"]
-"int" `lub` "float" = Just "num"   and   "int" `glb` "float" = Nothing
-"integer" `lub` "even" = Just "even"   and   "integer" `glb` "even" = Just "integer"
-The lub intersection set for "integer" and "float" is: ["gegeven","num"]
-"integer" `lub` "float" = Just "num"   and   "integer" `glb` "float" = Nothing
-"num" `lub` "oneven" = Just "num"   and   "num" `glb` "oneven" = Just "oneven"
-The lub intersection set for "oneven" and "even" is: ["gegeven","int","num"]
-"oneven" `lub` "even" = Just "int"   and   "oneven" `glb` "even" = Just "integer"
-The lub intersection set for "oneven" and "float" is: ["gegeven","num"]
-"oneven" `lub` "float" = Just "num"   and   "oneven" `glb` "float" = Nothing
-"oneven" `lub` "gegeven" = Just "gegeven"   and   "oneven" `glb` "gegeven" = Just "oneven"
-"oneven" `lub` "oneven" = Just "oneven"   and   "oneven" `glb` "oneven" = Just "oneven"
+"even" `join` "even" = Just "even"   and   "even" `meet` "even" = Just "even"
+The join intersection set for "even" and "float" is: ["gegeven","num"]
+"even" `join` "float" = Just "num"   and   "even" `meet` "float" = Nothing
+"even" `join` "gegeven" = Just "gegeven"   and   "even" `meet` "gegeven" = Just "even"
+"even" `join` "int" = Just "int"   and   "even" `meet` "int" = Just "even"
+"even" `join` "integer" = Just "even"   and   "even" `meet` "integer" = Just "integer"
+"even" `join` "num" = Just "num"   and   "even" `meet` "num" = Just "even"
+The join intersection set for "even" and "oneven" is: ["gegeven","int","num"]
+"even" `join` "oneven" = Just "int"   and   "even" `meet` "oneven" = Just "integer"
+The join intersection set for "float" and "even" is: ["gegeven","num"]
+"float" `join` "even" = Just "num"   and   "float" `meet` "even" = Nothing
+The join intersection set for "float" and "int" is: ["gegeven","num"]
+"float" `join` "int" = Just "num"   and   "float" `meet` "int" = Nothing
+The join intersection set for "float" and "integer" is: ["gegeven","num"]
+"float" `join` "integer" = Just "num"   and   "float" `meet` "integer" = Nothing
+"float" `join` "num" = Just "num"   and   "float" `meet` "num" = Just "float"
+The join intersection set for "float" and "oneven" is: ["gegeven","num"]
+"float" `join` "oneven" = Just "num"   and   "float" `meet` "oneven" = Nothing
+"gegeven" `join` "even" = Just "gegeven"   and   "gegeven" `meet` "even" = Just "even"
+"int" `join` "even" = Just "int"   and   "int" `meet` "even" = Just "even"
+The join intersection set for "int" and "float" is: ["gegeven","num"]
+"int" `join` "float" = Just "num"   and   "int" `meet` "float" = Nothing
+"integer" `join` "even" = Just "even"   and   "integer" `meet` "even" = Just "integer"
+The join intersection set for "integer" and "float" is: ["gegeven","num"]
+"integer" `join` "float" = Just "num"   and   "integer" `meet` "float" = Nothing
+"num" `join` "oneven" = Just "num"   and   "num" `meet` "oneven" = Just "oneven"
+The join intersection set for "oneven" and "even" is: ["gegeven","int","num"]
+"oneven" `join` "even" = Just "int"   and   "oneven" `meet` "even" = Just "integer"
+The join intersection set for "oneven" and "float" is: ["gegeven","num"]
+"oneven" `join` "float" = Just "num"   and   "oneven" `meet` "float" = Nothing
+"oneven" `join` "gegeven" = Just "gegeven"   and   "oneven" `meet` "gegeven" = Just "oneven"
+"oneven" `join` "oneven" = Just "oneven"   and   "oneven" `meet` "oneven" = Just "oneven"
 -}
 
 instance Unique AConceptDef where
