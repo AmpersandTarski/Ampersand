@@ -1,7 +1,8 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Ampersand.Input.SemWeb.Turtle
-  ( parseTurtleFile,
+  ( readTurtle,
+    graphs2P_Context,
   )
 where
 
@@ -22,11 +23,10 @@ readTurtle filePath = do
   if exists
     then do
       raw <- readUTF8File filePath
-
       let defBaseUrl =
             ( case raw of
                 Left _ -> Nothing
-                Right content -> case filter isBaseLine . T.lines $ content of
+                Right content -> case filter (T.isPrefixOf "@base") . T.lines $ content of
                   [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
                     [x] -> Just (BaseUrl x)
                     _ -> Nothing
@@ -45,15 +45,6 @@ readTurtle filePath = do
           [ "While looking for " <> T.pack filePath,
             "   File does not exist."
           ]
-  where
-    isBaseLine :: Text -> Bool
-    isBaseLine = T.isPrefixOf "@base"
-
--- | Parse a Turtle file and convert it into a 'P_Context'.
-parseTurtleFile :: FilePath -> RIO env (Guarded P_Context)
-parseTurtleFile filePath = do
-  guardedGraph <- readTurtle filePath
-  pure $ getContext filePath guardedGraph
 
 -- myPrefixMappings :: PrefixMappings
 -- myPrefixMappings =
@@ -67,9 +58,10 @@ parseTurtleFile filePath = do
 --         ("xsd", "http://www.w3.org/2001/XMLSchema#")
 --       ]
 
-getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
-getContext filePath guardedGraph = do
-  graph <- guardedGraph
+-- | Convert a list of fully expanded Triples into a 'P_Context'.
+graphs2P_Context :: NonEmpty (RDF TList) -> Guarded P_Context
+graphs2P_Context graphs = do
+  let graph = mergeRDF graphs
   nm <- ontologyName graph
   cptDefs <- conceptDefs (CONTEXT nm) graph
   let relDefs = relationDefs graph
@@ -97,9 +89,11 @@ getContext filePath guardedGraph = do
         ctx_cs = cptDefs
       }
   where
+    mergeRDF :: NonEmpty (RDF TList) -> RDF TList
+    mergeRDF (h NE.:| tl) = foldl' addTriple h . concatMap triplesOf $ tl
     mkError :: Text -> Guarded a
-    mkError = mkTurtleParseError filePath
-    orig = Origin $ "Somewhere in " <> T.pack filePath
+    mkError = mkGenericParserError orig
+    orig = Origin "Somewhere in imported .ttl files."
     ontologyName :: RDF TList -> Guarded Name
     ontologyName graph = case select graph Nothing rdfType owlOntology of
       [] -> mkError "No ontology triple found in Turtle file"
