@@ -1206,7 +1206,11 @@ signatures contextInfo trm = case trm of
 
     pCpt2aCpt = conceptMap contextInfo
     conceptGraph :: AdjacencyMap A_Concept
-    conceptGraph = overlay (makeGraph (allGens contextInfo)) (edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)])
+    conceptGraph = overlay (initialGraph) (edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)])
+      where
+        initialGraph = makeGraph (allGens contextInfo)
+        typologies = meetSubsets initialGraph
+        
     signats = signatures contextInfo
 
 anyCpt :: A_Concept

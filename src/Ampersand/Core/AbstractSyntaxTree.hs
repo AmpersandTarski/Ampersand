@@ -73,7 +73,7 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     Type (..),
     typeOrConcept,
-    join, meet, leq,
+    join, meet, leq, meetSubsets,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -1321,7 +1321,14 @@ data A_Concept
     ISECT !(Set.Set A_Concept)
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
-  deriving (Typeable, Data, Ord, Eq)
+  deriving (Typeable, Data, Ord)
+
+instance Eq A_Concept where
+  PlainConcept a == PlainConcept b = (Set.fromList . NE.toList) a == (Set.fromList . NE.toList) b
+  UNION a == UNION b = a == b
+  ISECT a == ISECT b = a == b
+  ONE == ONE = True
+  _ == _ = False
 
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
@@ -1372,6 +1379,19 @@ leq conceptGraph a b
     | otherwise       = Nothing
     where
       rtc = reflexiveClosure (transitiveClosure conceptGraph)
+
+-- | Let conceptGraph be a directed acyclic graph, i.e. a poset.
+--   meetSubsets computes the largest subsets of the concepts in conceptGraph that have a unique lub within this poset.
+meetSubsets :: Ord a => AdjacencyMap a -> [Set.Set a]
+meetSubsets conceptGraph = lubs
+  where
+    es = edgeList conceptGraph
+    lubs = [ Set.fromList [a] `Set.union` (cone . Set.fromList) [a] | (a, _) <- es, null [ c | (c,d) <- es, d==a]]
+    cone as
+      | Set.null increment = as
+      | otherwise = cone (as `Set.union` increment)
+      where
+        increment = Set.fromList [ b | (a,b) <- es, a `elem` as]
 
 {- Here is some test output for the join and meet functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
@@ -1820,13 +1840,13 @@ data Typology = Typology
   }
   deriving (Show)
 
--- | Since we can have concepts with several aliasses, we need to have a
---   way to resolve these aliasses. In the A-structure, we do not want to
+-- | Since we can have concepts with several aliases, we need to have a
+--   way to resolve these aliases. In the A-structure, we do not want to
 --   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
 --   that represents both `foo` and `bar`. We should be able to use a map
 --   whenever we need to know the A_Concept for a P_Concept.
 --   Formally: A_Concepts have a classification relation, which is reflexive, transitive, and antisymmetric.
---   I like to think of it as a directed acyclic graph.
+--   So, it is a directed acyclic graph.
 --   P_Concepts are mapped to A_Concepts, and all cycles in the classification of P_Concepts are condensed into one
 --   A_Concept. This is done by the function `makeConceptMap`.
 type ConceptMap = P_Concept -> A_Concept
@@ -1838,18 +1858,15 @@ makeConceptMap :: [PConceptDef] -> [PClassify] -> ConceptMap
 makeConceptMap cds gs = mapFunction
   where
     mapFunction :: P_Concept -> A_Concept
-    mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edgesList of
+    mapFunction pCpt = case L.nub . concat . filter inCycle . getCycles $ edgesList of
       xs -> mkConcept pCpt xs
       where
         inCycle xs = pCpt `elem` xs
     mkConcept :: P_Concept -> [P_Concept] -> A_Concept
-    mkConcept pCpt aliasses =
+    mkConcept pCpt aliass =
       case pCpt of
-        P_ONE -> ONE
-        PCpt {} ->
-          PlainConcept
-            { aliases = fmap toTuple . NE.nub . NE.sort $ (pCpt NE.:| aliasses)
-            }
+        P_ONE  -> ONE
+        PCpt{} -> PlainConcept { aliases = fmap toTuple . NE.nub . NE.sort . (pCpt NE.:|) $ aliass }
       where
         toTuple :: P_Concept -> (Name, Maybe Label)
         toTuple cpt =
