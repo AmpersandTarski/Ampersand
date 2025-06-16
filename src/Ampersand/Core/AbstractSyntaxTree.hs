@@ -1313,7 +1313,7 @@ getExpressionRelation expr = case getRelation expr of
 data A_Concept
   = PlainConcept
       { -- | List of names that the concept is refered to, in random order
-        aliases :: !(NE.NonEmpty (Name, Maybe Label))
+        aliases :: !(Set (Name, Maybe Label))
       }
   | -- | The union type of concepts:
     UNION !(Set.Set A_Concept)
@@ -1321,19 +1321,13 @@ data A_Concept
     ISECT !(Set.Set A_Concept)
   | -- | The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     ONE
-  deriving (Typeable, Data, Ord)
+  deriving (Typeable, Data, Ord, Eq)
 
-instance Eq A_Concept where
-  PlainConcept a == PlainConcept b = (Set.fromList . NE.toList) a == (Set.fromList . NE.toList) b
-  UNION a == UNION b = a == b
-  ISECT a == ISECT b = a == b
-  ONE == ONE = True
-  _ == _ = False
 
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
 sessionConcept :: A_Concept
-sessionConcept = PlainConcept {aliases = (nameOfSESSION, Nothing) NE.:| []}
+sessionConcept = PlainConcept {aliases = Set.fromList [(nameOfSESSION, Nothing)]}
 
 type A_Concepts = Set.Set A_Concept
 
@@ -1440,14 +1434,14 @@ instance Hashable A_Concept where
   hashWithSalt s cpt =
     s
       `hashWithSalt` ( case cpt of
-                         PlainConcept {} -> (0 :: Int) `hashWithSalt` (fst . NE.head . NE.sort $ aliases cpt)
+                         PlainConcept {} -> (0 :: Int) `hashWithSalt` (fmap (text1ToText . fullName1 . fst) . Set.toList . aliases) cpt
                          UNION cpts -> (1 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
                          ISECT cpts -> (2 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
                          ONE -> (3 :: Int) `hashWithSalt` ("ONE" :: String)
                      )
 
 instance Named A_Concept where
-  name PlainConcept {aliases = names} = fst . NE.head $ names
+  name PlainConcept {aliases = names} = case Set.toList names of (nm, _) : _ -> nm; _ -> fatal "This A_Concept has no name"
   name (UNION cpts) = toConceptName "\\/" cpts
   name (ISECT cpts) = toConceptName "/\\" cpts
   name ONE = nameOfONE
@@ -1459,9 +1453,13 @@ toConceptName opString cpts = case (toNamePart . T.intercalate opString . map ts
 
 instance Labeled A_Concept where
   mLabel cpt = case cpt of
-    PlainConcept {} -> snd . NE.head . aliases $ cpt
+    PlainConcept {aliases = names} -> case Set.toList names of (_, lbl) : _ -> lbl; _ -> fatal "This A_Concept has no name"
+    UNION cs -> (Just . Label . T.intercalate "\\/" . fmap m . Set.toList) cs
+    ISECT cs -> (Just . Label . T.intercalate "/\\" . fmap m . Set.toList) cs
     _ -> Nothing
-
+   where
+    m :: A_Concept -> Text
+    m a = maybe "" tshow (mLabel a)
 instance Show A_Concept where
   show = T.unpack . fullName
 
@@ -1472,11 +1470,17 @@ class (Show a) => ShowWithAliases a where
   showWithAliases :: a -> Text1
 
 instance ShowWithAliases A_Concept where
-  showWithAliases cpt@PlainConcept {} =
-    case NE.tail (fst <$> aliases cpt) of
-      [] -> fullName1 cpt
-      xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fullName <$> xs) <> ")")
+  showWithAliases cpt@PlainConcept {aliases=names} =
+    case Set.toList names of
+      []  -> fatal "This A_Concept has no name"
+      [s] -> fullName1 cpt
+      xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fmap (fullName.fst)  xs) <> ")")
   showWithAliases _ = fullName1 ONE
+  -- showWithAliases cpt@PlainConcept {} =
+  --   case NE.tail (fst <$> aliases cpt) of
+  --     [] -> fullName1 cpt
+  --     xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fullName <$> xs) <> ")")
+  -- showWithAliases _ = fullName1 ONE
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c, val) = toText1Unsafe $ "ConceptAtomValue_" <> (tshow . abs . hash $ readable)
@@ -1866,7 +1870,7 @@ makeConceptMap cds gs = mapFunction
     mkConcept pCpt aliass =
       case pCpt of
         P_ONE  -> ONE
-        PCpt{} -> PlainConcept { aliases = fmap toTuple . NE.nub . NE.sort . (pCpt NE.:|) $ aliass }
+        PCpt{} -> PlainConcept { aliases = (Set.fromList . fmap toTuple . (pCpt:)) aliass }
       where
         toTuple :: P_Concept -> (Name, Maybe Label)
         toTuple cpt =

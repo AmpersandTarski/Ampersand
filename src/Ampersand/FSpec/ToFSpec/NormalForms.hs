@@ -50,7 +50,7 @@ dfProofs pCpt2aCpt = prfs True
     prfs dnf expr =
       L.nub [(rTerm2expr t, map makeExpr derivs) | (t, derivs) <- f (expr2RTerm expr)]
       where
-        -- FIXME: Function f inside dfproofs does not terminate!! Must be fixed before fDeriveProofs can be made strict.
+        -- TODO: Function f inside dfproofs does not terminate! Must be fixed before fDeriveProofs can be made strict.
         f :: RTerm -> [(RTerm, [(RTerm, [Text], Text)])]
         f term =
           [(term, [(term, [], "<=>")]) | null dsteps]

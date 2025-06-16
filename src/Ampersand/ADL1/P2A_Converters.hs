@@ -39,8 +39,9 @@ pConcToType p = UserConcept (name p)
 
 aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
-aConcToType p = UserConcept (fst . NE.head $ aliases p)
-
+aConcToType p = (usc . fmap fst . Set.toList . aliases) p
+ where usc (nm:_) = UserConcept nm; usc _ = fatal "Not a proper A_Concept"
+ 
 getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
 getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
   Right x -> unexpectedType o x
@@ -1214,10 +1215,11 @@ signatures contextInfo trm = case trm of
     signats = signatures contextInfo
 
 anyCpt :: A_Concept
-anyCpt = PlainConcept ((Name { nameParts = (toNamePartText1 . toText1Unsafe) "_ANY" :| [],
-                               nameType  = ConceptName
-                             }
-                      , Nothing) :| [])
+anyCpt = (PlainConcept . Set.fromList)
+            [(Name { nameParts = (toNamePartText1 . toText1Unsafe) "_ANY" :| [],
+                    nameType  = ConceptName
+                   }
+            , Nothing)]
 
 dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
 dereference contextInfo sgns trmprim

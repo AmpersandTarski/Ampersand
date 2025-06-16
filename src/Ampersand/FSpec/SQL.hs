@@ -1249,7 +1249,7 @@ nonSpecialSelectExpr fSpec expr =
                                 ]
                           )
                   }
-          mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error!!! It is part of the definition of right residu
+          mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error! It is part of the definition of right residu
           mainTgt = (sqlAttConcept fSpec . target) r
           resLeft = uName "RResLeft"
           resRight = uName "RResRight"

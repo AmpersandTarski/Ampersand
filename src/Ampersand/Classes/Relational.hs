@@ -46,7 +46,8 @@ isONE _ = False
 isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
-    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
+    -- PlainConcept {} -> toText1Unsafe "SESSION" `elem` ( <$> aliases cpt)
+    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fmap (fullName1 . fst) . Set.toList . aliases) cpt
     _ -> False
 
 hasAttributes ::

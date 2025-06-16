@@ -238,7 +238,7 @@ concDefs fSpec c =
   case c of
     PlainConcept {} -> filter isDefinitionOf . conceptDefs $ fSpec
       where
-        isDefinitionOf cdef = name cdef `elem` fmap fst (aliases c)
+        isDefinitionOf cdef = name cdef `elem` (fmap fst . Set.toList . aliases) c
     _ -> []
 
 instance ConceptStructure FSpec where
