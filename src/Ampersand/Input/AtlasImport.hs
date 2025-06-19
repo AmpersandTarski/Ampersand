@@ -608,7 +608,7 @@ instance JSON.FromJSON (Guarded P_NamedRel) where
           PNamedRel
             { pos = OriginAtlas,
               p_nrnm = nm, -- name of Relation
-              p_mbSign = sgn -- Sign of relation
+              p_mbSign = sgn -- Signature of of this relation
             }
 
 instance JSON.FromJSON Lang where

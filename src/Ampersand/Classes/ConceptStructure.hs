@@ -159,7 +159,8 @@ instance ConceptStructure AConceptDef where
 
 instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
-  expressionsIn _ = Set.empty
+  concs (ISgn c)   = Set.singleton c
+  expressionsIn _  = Set.empty
 
 instance ConceptStructure BoxItem where
   concs (BxExpr obj) = concs obj

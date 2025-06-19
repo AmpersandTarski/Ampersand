@@ -781,15 +781,15 @@ nonSpecialSelectExpr fSpec expr =
             bseTbl = [sqlConceptTable fSpec c],
             bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [uName "="] (singleton2SQL c val)
           }
-    (EDcV (Sign s t)) ->
-      let (psrc, fsrc) = fun s
-          (ptgt, ftgt) = fun t
+    (EDcV _sgn) ->
+      let (psrc, fsrc) = fun (source expr)
+          (ptgt, ftgt) = fun (target expr)
           fun :: A_Concept -> (Name, Name)
           fun cpt = ((qName . text1ToText . showUnique) plug, (qName . tshow . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
-       in traceComment ["case: (EDcV (Sign s t))"]
-            $ case (s, t) of
+       in traceComment ["case: (EDcV sgn)"]
+            $ case (source expr, target expr) of
               (ONE, ONE) -> one
               (_, ONE) ->
                 BinSelect

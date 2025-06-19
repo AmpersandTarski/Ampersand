@@ -759,7 +759,8 @@ instance ShowHS Expression where
   showHS _ _ (EMp1 a c) = "EMp1 " <> tshow a <> " " <> showHSName c
 
 instance ShowHS Signature where
-  showHS _ _ sgn = "Sign " <> showHSName (source sgn) <> " " <> showHSName (target sgn)
+  showHS _ _ (Sign src tgt) = "Sign " <> showHSName src <> " " <> showHSName tgt
+  showHS _ _ (ISgn cpt)     = "ISgn " <> showHSName cpt
 
 instance ShowHS AClassify where
   showHS _ _ gen =

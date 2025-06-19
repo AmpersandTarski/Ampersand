@@ -680,6 +680,38 @@ instance Traversable Term where
     where
       f = traverse f'
 
+-- | We need Flippable (Term TermPrim) for type checking, for swapping the type annotations in the Term TermPrim.
+instance Flippable TermPrim where 
+  flp (PI o) = PI o
+  flp (Pid o c) = Pid o c
+  flp (Patm o v mC) = Patm o v mC
+  flp (PVee o) = PVee o
+  flp (Pfull o c1 c2) = Pfull o c2 c1
+  flp (PBin o op) = PBin o op
+  flp (PBind o op c) = PBind o op c
+  flp (PNamedR r) = case p_mbSign r of
+                      Nothing -> PNamedR r
+                      Just s -> PNamedR (r {p_mbSign = Just (flp s)})
+
+instance Flippable a => Flippable (Term a) where
+  flp (Prim a) = Prim (flp a)
+  flp (PEqu o a b) = PEqu o (flp a) (flp b)
+  flp (PInc o a b) = PInc o (flp a) (flp b)
+  flp (PIsc o a b) = PIsc o (flp a) (flp b)
+  flp (PUni o a b) = PUni o (flp a) (flp b)
+  flp (PDif o a b) = PDif o (flp a) (flp b)
+  flp (PLrs o a b) = PLrs o (flp a) (flp b)
+  flp (PRrs o a b) = PRrs o (flp a) (flp b)
+  flp (PDia o a b) = PDia o (flp a) (flp b)
+  flp (PCps o a b) = PCps o (flp a) (flp b)
+  flp (PRad o a b) = PRad o (flp a) (flp b)
+  flp (PPrd o a b) = PPrd o (flp a) (flp b)
+  flp (PKl0 o a) = PKl0 o (flp a)
+  flp (PKl1 o a) = PKl1 o (flp a)
+  flp (PFlp o a) = PFlp o (flp a)
+  flp (PCpl o a) = PCpl o (flp a)
+  flp (PBrk o a) = PBrk o (flp a)
+
 instance Functor P_SubIfc where fmap = fmapDefault
 
 instance Foldable P_SubIfc where foldMap = foldMapDefault
@@ -895,7 +927,7 @@ data P_Markup = P_Markup
 
 data P_Population
   = P_RelPopu
-      { p_src :: Maybe P_Concept, -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+      { p_src :: Maybe P_Concept, -- a separate src and tgt instead of "Maybe Signature", such that it is possible to specify only one of these.
         p_tgt :: Maybe P_Concept, -- these src and tgt must be more specific than the P_NamedRel
         pos :: Origin, -- the origin
         p_nmdr :: P_NamedRel, -- the named relation that corresponds with the table which the pairs (p_popps) are stored.

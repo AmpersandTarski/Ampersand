@@ -1268,9 +1268,9 @@ instance HasSignature Expression where
   sign (EMp1 _ c) = Sign c c
 
 showSign :: (HasSignature a) => a -> Text1
-showSign x = Text1 '[' $ fullName s <> "*" <> fullName t <> "]"
-  where
-    Sign s t = sign x
+showSign x = case sign x of
+               Sign s t -> Text1 '[' $ fullName s <> "*" <> fullName t <> "]"
+               ISgn c   -> Text1 '[' $ fullName c <> "]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
@@ -1473,7 +1473,7 @@ instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept {aliases=names} =
     case Set.toList names of
       []  -> fatal "This A_Concept has no name"
-      [s] -> fullName1 cpt
+      [_] -> fullName1 cpt
       xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fmap (fullName.fst)  xs) <> ")")
   showWithAliases _ = fullName1 ONE
   -- showWithAliases cpt@PlainConcept {} =
@@ -1487,30 +1487,35 @@ instance Unique (A_Concept, PAtomValue) where
     where
       readable = tshow val <> "[" <> text1ToText (showUnique c) <> "]"
 
-data Signature = Sign !A_Concept !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
+data Signature = Sign !A_Concept  !A_Concept
+               | ISgn !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Hashable Signature
 
 instance Show Signature where
-  show (Sign s t) =
-    "[" <> show s <> "*" <> show t <> "]"
+  show (Sign s t) = "[" <> show s <> "*" <> show t <> "]"
+  show (ISgn c) = "[" <> show c <> "]"
 
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) =
     toText1Unsafe "[" <> showWithAliases s <> toText1Unsafe "*" <> showWithAliases t <> toText1Unsafe "]"
+  showWithAliases (ISgn c) =
+    toText1Unsafe "[" <> showWithAliases c <> toText1Unsafe "]"
 
 instance Unique Signature where
-  showUnique (Sign s t) = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ readable)
-    where
-      readable = "[" <> text1ToText (showUnique s) <> "*" <> text1ToText (showUnique t) <> "]"
+  showUnique (Sign s t) = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ "[" <> text1ToText (showUnique s) <> "*" <> text1ToText (showUnique t) <> "]")
+  showUnique (ISgn c)   = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ "[" <> text1ToText (showUnique c) <> "]")
 
 instance HasSignature Signature where
   source (Sign s _) = s
+  source (ISgn c)   = c
   target (Sign _ t) = t
+  target (ISgn c)   = c
   sign sgn = sgn
 
 instance Flippable Signature where
   flp (Sign s t) = Sign t s
+  flp sgn        = sgn
 
 class HasSignature a where
   source, target :: a -> A_Concept
@@ -1587,6 +1592,9 @@ newtype SignOrd = SignOrd Signature
 
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
+  compare (SignOrd (ISgn _))   (SignOrd (Sign _ _)) = GT
+  compare (SignOrd (Sign _ _)) (SignOrd (ISgn _))   = LT
+  compare (SignOrd (ISgn a))   (SignOrd (ISgn b))   = compare a b
 
 instance Eq SignOrd where
   a == b = compare a b == EQ
