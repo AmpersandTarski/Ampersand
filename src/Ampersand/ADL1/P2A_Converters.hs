@@ -1144,60 +1144,60 @@ signatures contextInfo trm = case trm of
   PIsc o a b -> checkPeri o "intersection" a b
   PUni o a b -> checkPeri o "union" a b
   PDif o a b -> checkPeri o "difference" a b
-  PDia o a b -> checkIntra o "diamond"           a b       meet "meet" geqANDleq
-  PCps o a b -> checkIntra o "composition"       a b       meet "meet" geqANDleq
-  PRad o a b -> checkIntra o "relative addition" a b       join "join" geqORleq
-  PLrs o a b -> checkIntra o "left residual"     a (flp b) join "join" isGeq
-  PRrs o a b -> checkIntra o "right residual"    (flp a) b join "join" isLeq
+  PCps o a b -> checkIntra o "PCps" "composition"       a b       meet "meet" true
+  PRad o a b -> checkIntra o "PRad" "relative addition" a b       join "join" true
+  PLrs o a b -> checkIntra o "PLrs" "left residual"     a (flp b) join "join" isGeq
+  PRrs o a b -> checkIntra o "PRrs" "right residual"    (flp a) b join "join" isLeq
+  PDia o a b -> checkIntra o "PDia" "diamond"           a b       meet "meet" true
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
                    return (STbinary sgnaTree sgnbTree [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgnsa, sgn_b<-sgnsb ])
   PKl0 _ e   -> signats e
   PKl1 _ e   -> signats e
-  PFlp _ e   -> fmap flp (signats e)
+  PFlp _ e   -> fmap flp (signats e) 
   PCpl _ e   -> signats e
   PBrk _ e   -> signats e
   where
-    geqANDleq, geqORleq, isGeq, isLeq :: A_Concept -> A_Concept -> Bool
-    geqANDleq c c' = fromMaybe False (leq conceptGraph c c') && fromMaybe False (leq conceptGraph c' c)
-    geqORleq  c c' = fromMaybe False (leq conceptGraph c c') || fromMaybe False (leq conceptGraph c' c)
-    isGeq     c c' = fromMaybe False (leq conceptGraph c' c)
-    isLeq     c c' = fromMaybe False (leq conceptGraph c c')
+    true, isGeq, isLeq :: A_Concept -> A_Concept -> Bool
+    true  _ _  = True
+    isGeq c c' = fromMaybe False (leq conceptGraph c' c)
+    isLeq c c' = fromMaybe False (leq conceptGraph c c')
     checkIntra :: Origin
                   -> {- kind       -} Text
+                  -> {- opStr      -} Text
                   -> {- a          -} Term TermPrim
                   -> {- b          -} Term TermPrim
                   -> {- meetORjoin -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
                   -> {- mjString   -} Text
                   -> {- compare    -} (A_Concept -> A_Concept -> Bool)
                   -> Guarded (OpTree Signature)
-    checkIntra o kind a b meetORjoin mjString compare =
+    checkIntra o opStr kind a b meetORjoin mjString cmpare =
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-         let trees = trace ("\nPCps ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgn_a: "<>tshow sgnsa<>"\n   sgn_b: "<>tshow sgnsb) $
-                     [ trace ("Between ("<>mjString<>"): "<>tshow between)
+         let trees = trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
                        (Sign srca tgtb, Sign srca left, Sign right tgtb)
-                     | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb, compare tgta srcb
+                     | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb, trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True, cmpare tgta srcb
                      , Just between<-[meetORjoin conceptGraph tgta srcb]
-                     , Just left<-[meet conceptGraph tgta between] , Just right<-[meet conceptGraph srcb between]
+                     , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph srcb between]
                      ] <>
-                     [ trace ("Between ("<>mjString<>"): "<>tshow between)
-                       (Sign tgta between, Sign srca left, ISgn right)
-                     | Sign srca tgta<-sgnsa, ISgn cptb<-sgnsb, compare tgta cptb
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign tgta between, Sign srca left, ISgn right))
+                       (Sign srca right, Sign srca left, ISgn right)
+                     | Sign srca tgta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare tgta cptb = cmpare "<>tshow tgta<>" "<>tshow cptb<>" = "<>tshow (cmpare tgta cptb)) True, cmpare tgta cptb
                      , Just between<-[meetORjoin conceptGraph tgta cptb]
-                     , Just left<-[meet conceptGraph tgta between] , Just right<-[meet conceptGraph cptb between]
+                     , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph cptb between]
                      ] <>
-                     [ trace ("Between ("<>mjString<>"): "<>tshow between)
-                       (Sign between srcb, ISgn left, Sign right tgtb)
-                     | ISgn cpta<-sgnsa, Sign srcb tgtb<-sgnsb, compare cpta srcb
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign between srcb, ISgn left, Sign right tgtb))
+                       (Sign left tgtb, ISgn left, Sign right tgtb)
+                     | ISgn cpta<-sgnsa, Sign srcb tgtb<-sgnsb, trace ("\n  cmpare cpta srcb = cmpare "<>tshow cpta<>" "<>tshow srcb<>" = "<>tshow (cmpare cpta srcb)) True, cmpare cpta srcb
                      , Just between<-[meetORjoin conceptGraph cpta srcb]
-                     , Just left<-[meet conceptGraph cpta between] , Just right<-[meet conceptGraph srcb between]
+                     , Just left<-[meet conceptGraph between cpta] , Just right<-[meet conceptGraph srcb between]
                      ] <>
-                     [ trace ("Between ("<>mjString<>"): "<>tshow between)
-                       (Sign between between, ISgn left, ISgn right)
-                     | ISgn cpta<-sgnsa, ISgn cptb<-sgnsb, compare cpta cptb
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign between between, ISgn left, ISgn right))
+                       (Sign left right, ISgn left, ISgn right)
+                     | ISgn cpta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare cpta cptb = cmpare "<>tshow cpta<>" "<>tshow cptb<>" = "<>tshow (cmpare cpta cptb)) True, cmpare cpta cptb
                      , Just between<-[meetORjoin conceptGraph cpta cptb]
-                     , Just left<-[meet conceptGraph cpta between] , Just right<-[meet conceptGraph cptb between]
+                     , Just left<-[meet conceptGraph between cpta] , Just right<-[meet conceptGraph cptb between]
                      ]
          case trees of
           []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis sgnsa sgnsb)
@@ -1206,16 +1206,16 @@ signatures contextInfo trm = case trm of
         where
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
-              ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>" should"<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-              ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>" should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-              ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>" should "<>(if eq then "match" else "be equal to or more generic than ")<>" the target of "<>displayRight (map target sgnsb) b<>"."
-              ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) a<>" should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-              ("diamond       "   , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>" should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than ")<>" the target of "<>displayRight (map target sgnsb) b<>"."
+              ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
               _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
           displayLeft cpts expr =
             showP expr<>case cpts of
                           [cpt] -> ", which is "<>tshow cpt<>", "
-                          []    -> " is undefined because "<>showP expr<>" is untypable, but it"
+                          []    -> " is undefined because "<>showP expr<>" is untypable, but it "
                           _     -> ", which can be any of "<>tshow cpts<>", "
           displayRight cpts expr =
             showP expr<>case cpts of
