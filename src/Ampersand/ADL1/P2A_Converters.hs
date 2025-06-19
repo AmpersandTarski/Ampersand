@@ -1181,19 +1181,19 @@ signatures contextInfo trm = case trm of
                      , Just between<-[meetORjoin conceptGraph tgta srcb]
                      , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph srcb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign tgta between, Sign srca left, ISgn right))
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca right, Sign srca left, ISgn right))
                        (Sign srca right, Sign srca left, ISgn right)
                      | Sign srca tgta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare tgta cptb = cmpare "<>tshow tgta<>" "<>tshow cptb<>" = "<>tshow (cmpare tgta cptb)) True, cmpare tgta cptb
                      , Just between<-[meetORjoin conceptGraph tgta cptb]
                      , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph cptb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign between srcb, ISgn left, Sign right tgtb))
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left tgtb, ISgn left, Sign right tgtb))
                        (Sign left tgtb, ISgn left, Sign right tgtb)
                      | ISgn cpta<-sgnsa, Sign srcb tgtb<-sgnsb, trace ("\n  cmpare cpta srcb = cmpare "<>tshow cpta<>" "<>tshow srcb<>" = "<>tshow (cmpare cpta srcb)) True, cmpare cpta srcb
                      , Just between<-[meetORjoin conceptGraph cpta srcb]
                      , Just left<-[meet conceptGraph between cpta] , Just right<-[meet conceptGraph srcb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign between between, ISgn left, ISgn right))
+                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left right, ISgn left, ISgn right))
                        (Sign left right, ISgn left, ISgn right)
                      | ISgn cpta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare cpta cptb = cmpare "<>tshow cpta<>" "<>tshow cptb<>" = "<>tshow (cmpare cpta cptb)) True, cmpare cpta cptb
                      , Just between<-[meetORjoin conceptGraph cpta cptb]
