@@ -91,10 +91,7 @@ module Ampersand.Core.AbstractSyntaxTree
     makeGraph, synonym
   )
 where
-
-import Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import Algebra.Graph.AdjacencyMap
-
 import Ampersand.Basics hiding (join)
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
@@ -1342,7 +1339,7 @@ synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
 
 -- Compute the least upper bound (join) of a list of pairs
 join :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
-join conceptGraph a b
+join conceptsGraph a b
     | hasEdge a b rtc = Just b
     | hasEdge b a rtc = Just a
     | otherwise =
@@ -1351,11 +1348,11 @@ join conceptGraph a b
         x:xs -> Just (L.foldr minimum x xs) -- find the minimum of the upper bounds
     where
       minimum a' b' = if hasEdge a' b' rtc then a' else b'
-      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+      rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
 -- Compute the greatest lower bound (meet) of a list of pairs
 meet :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
-meet conceptGraph a b
+meet conceptsGraph a b
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
@@ -1364,22 +1361,22 @@ meet conceptGraph a b
         x:xs -> Just (L.foldr maximum x xs) -- find the minimum of the upper bounds
     where
       maximum a' b' = if hasEdge a' b' rtc then b' else a'
-      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+      rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
 leq :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe Bool
-leq conceptGraph a b
+leq conceptsGraph a b
     | hasEdge a b rtc = Just True
     | hasEdge b a rtc = Just False
     | otherwise       = Nothing
     where
-      rtc = reflexiveClosure (transitiveClosure conceptGraph)
+      rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
--- | Let conceptGraph be a directed acyclic graph, i.e. a poset.
---   meetSubsets computes the largest subsets of the concepts in conceptGraph that have a unique lub within this poset.
+-- | Let conceptsGraph be a directed acyclic graph, i.e. a poset.
+--   meetSubsets computes the largest subsets of the concepts in conceptsGraph that have a unique lub within this poset.
 meetSubsets :: Ord a => AdjacencyMap a -> [Set.Set a]
-meetSubsets conceptGraph = lubs
+meetSubsets conceptsGraph = lubs
   where
-    es = edgeList conceptGraph
+    es = edgeList conceptsGraph
     lubs = [ Set.fromList [a] `Set.union` (cone . Set.fromList) [a] | (a, _) <- es, null [ c | (c,d) <- es, d==a]]
     cone as
       | Set.null increment = as
@@ -1544,10 +1541,8 @@ data ContextInfo = CI
     soloConcs :: !(Set.Set Type),
     -- | the set of all A_Concepts in the context, i.e. from declarations, specializations, and concept definitions.
     allConcepts :: !(Set.Set A_Concept),
-    -- | gens contains all CLASSIFY statements in this context
-    allGens :: ![AClassify],
     -- | generalisation relations again, as a type system (including phantom types)
-    gens_efficient :: !(Op1EqualitySystem Type),
+    conceptGraph :: !(AdjacencyMap A_Concept),
     -- | a map that must be used to convert P_Concept to A_Concept
     conceptMap :: !ConceptMap,
     -- | the default language used to interpret markup texts in this context

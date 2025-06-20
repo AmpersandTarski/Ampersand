@@ -137,7 +137,7 @@ checkPrototypeContextTransformers env x =
     Errors err ->
       fatal
         . T.intercalate "\n  "
-        $ ["PrototypeContext script does not compile:"]
+        $ ["The relations defined in prototypecontext.adl are not in sync with the transformers of prototypecontext:"]
         <> T.lines (tshow err)
     Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 

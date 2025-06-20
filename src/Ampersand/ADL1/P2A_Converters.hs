@@ -374,8 +374,7 @@ pCtx2aCtx
               declarationsMap = declMap,
               soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
               allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
-              allGens = gns,
-              gens_efficient = genLattice,
+              conceptGraph = makeGraph gns,
               conceptMap = pCpt2aCpt,
               defaultLang = deflangCtxt,
               defaultFormat = deffrmtCtxt
@@ -1112,6 +1111,29 @@ data OpTree a
 -- opSigns (STbinary _ _ ss) = ss
 -- opSigns (STnullary ss) = ss
 
+showOpTree ::  Term TermPrim -> OpTree Signature -> Text
+showOpTree trm tree = T.intercalate "\n" (shw "   " trm tree)
+  where
+    shw :: Text -> Term TermPrim -> OpTree Signature -> [Text]
+    shw indent trm@(PEqu _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PInc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PIsc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PUni _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PDif _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PCps _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PRad _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PLrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PRrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PDia _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PPrd _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
+    shw indent trm@(PKl0 _ e)   tree              = shw indent e tree
+    shw indent trm@(PKl1 _ e)   tree              = shw indent e tree
+    shw indent trm@(PFlp _ e)   tree              = shw indent e (flp tree)
+    shw indent trm@(PCpl _ e)   tree              = shw indent e tree
+    shw indent trm@(PBrk _ e)   tree              = shw indent e tree
+    shw indent trm@(Prim{})     (STnullary ss)    = [indent<>"   "<> showP trm<>" "<>T.intercalate ", " (fmap tshow ss)]
+    shw indent trm tree = fatal ("showOpTree: unexpected combination of term: " <> tshow trm <> " and tree: " <> tshow tree)
+
 instance (Flippable a) => Flippable (OpTree a) where
   flp (STbinary a b ss) = STbinary (flp b) (flp a) (flp ss)
   flp (STnullary ss) = STnullary (flp ss)
@@ -1139,11 +1161,11 @@ signatures contextInfo trm = case trm of
                               in  case sgns (p_mbSign rel) of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure (STnullary ss)
-  PEqu o a b -> checkPeri o "equation" a b
-  PInc o a b -> checkPeri o "inclusion" a b
-  PIsc o a b -> checkPeri o "intersection" a b
-  PUni o a b -> checkPeri o "union" a b
-  PDif o a b -> checkPeri o "difference" a b
+  PEqu o a b -> checkPeri  o "PEqu" "equation"          a b       meet "meet" true
+  PInc o a b -> checkPeri  o "PInc" "inclusion"         a b       meet "meet" true
+  PIsc o a b -> checkPeri  o "PIsc" "intersection"      a b       meet "meet" true
+  PUni o a b -> checkPeri  o "PUni" "union"             a b       join "join" true
+  PDif o a b -> checkPeri  o "PDif" "difference"        a b       join "join" true
   PCps o a b -> checkIntra o "PCps" "composition"       a b       meet "meet" true
   PRad o a b -> checkIntra o "PRad" "relative addition" a b       join "join" true
   PLrs o a b -> checkIntra o "PLrs" "left residual"     a (flp b) join "join" isGeq
@@ -1152,52 +1174,53 @@ signatures contextInfo trm = case trm of
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
                    return (STbinary sgnaTree sgnbTree [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgnsa, sgn_b<-sgnsb ])
+  PFlp _ e   -> fmap flp (signats e) 
   PKl0 _ e   -> signats e
   PKl1 _ e   -> signats e
-  PFlp _ e   -> fmap flp (signats e) 
   PCpl _ e   -> signats e
   PBrk _ e   -> signats e
   where
     true, isGeq, isLeq :: A_Concept -> A_Concept -> Bool
     true  _ _  = True
-    isGeq c c' = fromMaybe False (leq conceptGraph c' c)
-    isLeq c c' = fromMaybe False (leq conceptGraph c c')
-    checkIntra :: Origin
-                  -> {- kind       -} Text
-                  -> {- opStr      -} Text
-                  -> {- a          -} Term TermPrim
-                  -> {- b          -} Term TermPrim
-                  -> {- meetORjoin -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
-                  -> {- mjString   -} Text
-                  -> {- compare    -} (A_Concept -> A_Concept -> Bool)
-                  -> Guarded (OpTree Signature)
+    isGeq c c' = fromMaybe False (leq conceptsGraph c' c)
+    isLeq c c' = fromMaybe False (leq conceptsGraph c c')
+    checkIntra, checkPeri
+      :: {- o          -} Origin
+      -> {- kind       -} Text
+      -> {- opStr      -} Text
+      -> {- a          -} Term TermPrim
+      -> {- b          -} Term TermPrim
+      -> {- meetORjoin -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
+      -> {- mjString   -} Text
+      -> {- compare    -} (A_Concept -> A_Concept -> Bool)
+      -> Guarded (OpTree Signature)
     checkIntra o opStr kind a b meetORjoin mjString cmpare =
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
          let trees = trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
+                     [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
                        (Sign srca tgtb, Sign srca left, Sign right tgtb)
-                     | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb, trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True, cmpare tgta srcb
-                     , Just between<-[meetORjoin conceptGraph tgta srcb]
-                     , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph srcb between]
+                     | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb -- , trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
+                     , cmpare tgta srcb, Just between<-[meetORjoin conceptsGraph tgta srcb]
+                     , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph srcb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca right, Sign srca left, ISgn right))
+                     [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca right, Sign srca left, ISgn right))
                        (Sign srca right, Sign srca left, ISgn right)
-                     | Sign srca tgta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare tgta cptb = cmpare "<>tshow tgta<>" "<>tshow cptb<>" = "<>tshow (cmpare tgta cptb)) True, cmpare tgta cptb
-                     , Just between<-[meetORjoin conceptGraph tgta cptb]
-                     , Just left<-[meet conceptGraph between tgta] , Just right<-[meet conceptGraph cptb between]
+                     | Sign srca tgta<-sgnsa, ISgn cptb<-sgnsb -- , trace ("\n  cmpare tgta cptb = cmpare "<>tshow tgta<>" "<>tshow cptb<>" = "<>tshow (cmpare tgta cptb)) True
+                     , cmpare tgta cptb, Just between<-[meetORjoin conceptsGraph tgta cptb]
+                     , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph cptb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left tgtb, ISgn left, Sign right tgtb))
+                     [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left tgtb, ISgn left, Sign right tgtb))
                        (Sign left tgtb, ISgn left, Sign right tgtb)
-                     | ISgn cpta<-sgnsa, Sign srcb tgtb<-sgnsb, trace ("\n  cmpare cpta srcb = cmpare "<>tshow cpta<>" "<>tshow srcb<>" = "<>tshow (cmpare cpta srcb)) True, cmpare cpta srcb
-                     , Just between<-[meetORjoin conceptGraph cpta srcb]
-                     , Just left<-[meet conceptGraph between cpta] , Just right<-[meet conceptGraph srcb between]
+                     | ISgn cpta<-sgnsa, Sign srcb tgtb<-sgnsb -- , trace ("\n  cmpare cpta srcb = cmpare "<>tshow cpta<>" "<>tshow srcb<>" = "<>tshow (cmpare cpta srcb)) True
+                     , cmpare cpta srcb, Just between<-[meetORjoin conceptsGraph cpta srcb]
+                     , Just left<-[meet conceptsGraph between cpta] , Just right<-[meet conceptsGraph srcb between]
                      ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left right, ISgn left, ISgn right))
+                     [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign left right, ISgn left, ISgn right))
                        (Sign left right, ISgn left, ISgn right)
-                     | ISgn cpta<-sgnsa, ISgn cptb<-sgnsb, trace ("\n  cmpare cpta cptb = cmpare "<>tshow cpta<>" "<>tshow cptb<>" = "<>tshow (cmpare cpta cptb)) True, cmpare cpta cptb
-                     , Just between<-[meetORjoin conceptGraph cpta cptb]
-                     , Just left<-[meet conceptGraph between cpta] , Just right<-[meet conceptGraph cptb between]
+                     | ISgn cpta<-sgnsa, ISgn cptb<-sgnsb -- , trace ("\n  cmpare cpta cptb = cmpare "<>tshow cpta<>" "<>tshow cptb<>" = "<>tshow (cmpare cpta cptb)) True
+                     , cmpare cpta cptb, Just between<-[meetORjoin conceptsGraph cpta cptb]
+                     , Just left<-[meet conceptsGraph between cpta] , Just right<-[meet conceptsGraph cptb between]
                      ]
          case trees of
           []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis sgnsa sgnsb)
@@ -1224,33 +1247,41 @@ signatures contextInfo trm = case trm of
                           _     -> ", which can be any of "<>tshow cpts
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri :: Origin -> Text -> Term TermPrim -> Term TermPrim -> Guarded (OpTree Signature)
-    checkPeri o kind a b =
+    checkPeri o opStr kind a b meetORjoin mjString _ =
       do sgnaTree <- signats a; sgnbTree <- signats b
-         let sgna = opSigns sgnaTree; sgnb = opSigns sgnbTree
-             conceptsSrc = [ src | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[join conceptGraph (source sgn_a) (source sgn_b)] ]
-             conceptsTgt = [ tgt | sgn_a<-sgna, sgn_b<-sgnb, Just tgt<-[join conceptGraph (target sgn_a) (target sgn_b)] ]
-         case [ Sign src tgt | sgn_a<-sgna, sgn_b<-sgnb, Just src<-[join conceptGraph (source sgn_a) (source sgn_b)], Just tgt<-[join conceptGraph (target sgn_a) (target sgn_b)] ] of
+         let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
+             conceptsSrc = [ src | sgn_a<-sgnsa, sgn_b<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
+             conceptsTgt = [ tgt | sgn_a<-sgnsa, sgn_b<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
+         case trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
+              [ -- trace (mjString<>" on "<>showP a<>" and  "<>showP b<>" yields: "<>tshow (Sign src tgt))
+                Sign src tgt
+              | sgn_a<-sgnsa, sgn_b<-sgnsb -- , trace (mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
+              , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)], Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ] of
           []  -> case (conceptsSrc, conceptsTgt) of
-                  ([],_:_) -> (Errors . return . CTXE o) ("Cannot match the source concepts of the two sides of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map source sgna)<>"\n   The source of "<>showP b<>" is "<>showSgns (map source sgnb))
-                  (_:_,[]) -> (Errors . return . CTXE o) ("Cannot match the target concepts of the two sides of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map target sgna)<>"\n   The target of "<>showP b<>" is "<>showSgns (map target sgnb))
-                  _        -> (Errors . return . CTXE o) ("Cannot match the signatures at both sides of the "<>kind<>".\n   On the left side, "<>showP a<>" is "<>showSgns sgna<>"\n   On the right side, "<>showP b<>" is "<>showSgns sgnb)
+                  ([],[])  -> (Errors . return . CTXE o) ("Cannot match the source concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb)
+                  ([],_:_) -> (Errors . return . CTXE o) ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map source sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map source sgnsb))
+                  (_:_,[]) -> (Errors . return . CTXE o) ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map target sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map target sgnsb))
+                  _        -> (Errors . return . CTXE o) ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb)
                  where
                    showSgns :: Show a => [a] -> Text
                    showSgns sgns = case sgns of
                                     [] ->     "untyped"
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-          sgns -> return (STbinary sgnaTree sgnbTree sgns)
+          sgns -> return (STbinary sgnaTree{opSigns=sgns} sgnbTree{opSigns=sgns} sgns)
 
     pCpt2aCpt = conceptMap contextInfo
-    conceptGraph :: AdjacencyMap A_Concept
-    conceptGraph = overlay initialGraph (edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)])
-      where
-        initialGraph = makeGraph (allGens contextInfo)
-        typologies = meetSubsets initialGraph
-
+    conceptsGraph = typeGraph contextInfo
     signats = signatures contextInfo
+  
+typeGraph :: ContextInfo -> AdjacencyMap A_Concept
+typeGraph contextInfo = L.foldr overlay empty [initialGraph, anyEdges, oneGraph] -- add the edges for the ANY concept to the initial graph
+  where
+    initialGraph = conceptGraph contextInfo
+    anyEdges = edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)]
+    oneGraph = vertices [ ONE]
+--  typologies = meetSubsets initialGraph
+
 
 anyCpt :: A_Concept
 anyCpt = (PlainConcept . Set.fromList)
@@ -1258,9 +1289,6 @@ anyCpt = (PlainConcept . Set.fromList)
                     nameType  = ConceptName
                    }
             , Nothing)]
-
-isAny :: A_Concept -> Bool
-isAny c = c==anyCpt
 
 dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
 dereference contextInfo sgns trmprim
@@ -1287,21 +1315,21 @@ dereference contextInfo sgns trmprim
       rels rel = case p_mbSign rel of
                   Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
                   Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
-      conceptGraph :: AdjacencyMap A_Concept
-      conceptGraph = overlay (makeGraph (allGens contextInfo)) (vertices (Set.toList (allConcepts contextInfo)))
-      grLwB = meet conceptGraph
+      conceptsGraph = typeGraph contextInfo
+      grLwB = meet conceptsGraph
       -- lsUpB = meet conceptGraph
       pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr contextInfo term
   = do sgnTree <- signatures contextInfo term
-       t2e sgnTree term
+       trace ("Signatures yields:\n"<>showOpTree term sgnTree) $ t2e sgnTree term
   where
     t2e :: OpTree Signature -> Term TermPrim -> Guarded Expression
     t2e sgnTree trm =
       case (trm, sgnTree) of
-        (Prim tp   , STnullary sgns)            -> trace ("dereference "<>tshow tp<>" with sgns: "<>tshow sgns<>"\nsgnTree: "<>tshow sgnTree) $ dereference contextInfo sgns tp
+        (Prim tp   , STnullary sgns)            -> -- trace ("dereference "<>tshow tp<>" with sgns: "<>tshow sgns) $
+                                                   dereference contextInfo sgns tp
         (PEqu _ a b, STbinary stLeft stRight _) -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PInc _ a b, STbinary stLeft stRight _) -> EInc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PIsc _ a b, STbinary stLeft stRight _) -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
