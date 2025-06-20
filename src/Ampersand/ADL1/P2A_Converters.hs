@@ -1294,7 +1294,7 @@ dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
 dereference contextInfo sgns trmprim
   = case trmprim of
       PI _           -> guard [ EDcI cpt | ISgn cpt<-sgns]
-      Pid _ c        -> guard [ EDcI (pCpt2aCpt c) | ISgn cpt<-sgns, pCpt2aCpt c==cpt]
+      Pid _ _c       -> guard [ EDcI cpt | ISgn cpt<-sgns]
       Patm _ av mc   -> case mc of
                          Just c  -> guard [ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]
                          Nothing -> guard [ EMp1 av cpt | ISgn cpt<-sgns]
