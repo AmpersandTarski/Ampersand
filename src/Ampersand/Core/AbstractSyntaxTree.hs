@@ -176,10 +176,10 @@ instance Show (A_Concept -> TType) where
   show _ = "A function that maps concepts to types"
 
 instance Eq A_Context where
-  c1 == c2 = name c1 == name c2
+  a == b = compare a b == EQ
 
 instance Ord A_Context where
-  a `compare` b = name a `compare` name b
+  compare = compare `on` name
 
 instance Unique A_Context where
   showUnique = fullName1
@@ -229,7 +229,7 @@ instance Unique Pattern where
   showUnique = fullName1
 
 instance Ord Pattern where
-  a `compare` b = name a `compare` name b
+  compare = compare `on` name
 
 instance Named Pattern where
   name = ptnm
@@ -277,18 +277,7 @@ instance Traced AConceptDef where
   origin AConceptDef {pos = orig} = orig
 
 instance Ord AConceptDef where
-  compare a b = case compare (name a) (name b) of
-    EQ ->
-      fromMaybe
-        ( fatal
-            . T.intercalate "\n"
-            $ [ "ConceptDef should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
-              ]
-        )
-        (maybeOrdering (origin a) (origin b))
-    x -> x
+  compare = compare `on` name
 
 instance Eq AConceptDef where
   a == b = compare a b == EQ
@@ -328,7 +317,7 @@ instance Ord A_RoleRule where
       (maybeOrdering (origin a) (origin b))
 
 instance Eq A_RoleRule where
-  p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 
 instance Traced A_RoleRule where
   origin = arPos
@@ -571,7 +560,7 @@ instance Unique IdentityRule where
   showUnique = fullName1
 
 instance Ord IdentityRule where
-  compare a b = name a `compare` name b
+  compare = compare `on` name
 
 instance Eq IdentityRule where
   a == b = compare a b == EQ
@@ -722,7 +711,7 @@ instance Eq Interface where
   a == b = compare a b == EQ
 
 instance Ord Interface where
-  compare a b = compare (name a) (name b)
+  compare = compare `on` name
 
 instance Named Interface where
   name = ifcname
