@@ -1112,7 +1112,7 @@ data OpTree a
 -- opSigns (STnullary ss) = ss
 
 showOpTree ::  Term TermPrim -> OpTree Signature -> Text
-showOpTree trm tree = T.intercalate "\n" (shw "   " trm tree)
+showOpTree term opTree = T.intercalate "\n" (shw "   " term opTree)
   where
     shw :: Text -> Term TermPrim -> OpTree Signature -> [Text]
     shw indent trm@(PEqu _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
@@ -1126,20 +1126,20 @@ showOpTree trm tree = T.intercalate "\n" (shw "   " trm tree)
     shw indent trm@(PRrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
     shw indent trm@(PDia _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
     shw indent trm@(PPrd _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PKl0 _ e)   tree              = shw indent e tree
-    shw indent trm@(PKl1 _ e)   tree              = shw indent e tree
-    shw indent trm@(PFlp _ e)   tree              = shw indent e (flp tree)
-    shw indent trm@(PCpl _ e)   tree              = shw indent e tree
-    shw indent trm@(PBrk _ e)   tree              = shw indent e tree
-    shw indent trm@(Prim{})     (STnullary ss)    = [indent<>"   "<> showP trm<>" "<>T.intercalate ", " (fmap tshow ss)]
-    shw indent trm tree = fatal ("showOpTree: unexpected combination of term: " <> tshow trm <> " and tree: " <> tshow tree)
+    shw indent trm@(PKl0 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
+    shw indent trm@(PKl1 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
+    shw indent trm@(PFlp _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e (flp opTree))
+    shw indent trm@(PCpl _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
+    shw indent     (PBrk _ e)   _                 = shw indent e opTree
+    shw indent trm@(Prim{})     _                 = [indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree))]
+    shw _ trm _ = fatal ("showOpTree: unexpected combination of term: " <> tshow trm <> " and opTree: " <> tshow opTree)
 
 instance (Flippable a) => Flippable (OpTree a) where
   flp (STbinary a b ss) = STbinary (flp b) (flp a) (flp ss)
   flp (STnullary ss) = STnullary (flp ss)
 
 -- | signatures constructs a tree with all possible signatures in each node of the tree.
---   It is used by the function dereference to weed out these signatures down to one,
+--   It is used by the function termPrim2Expr to weed out these signatures down to one,
 --   to establish a unique signature for the term and all of its subterms.
 signatures :: ContextInfo -> Term TermPrim -> Guarded (OpTree Signature)
 signatures contextInfo trm = case trm of
@@ -1161,16 +1161,16 @@ signatures contextInfo trm = case trm of
                               in  case sgns (p_mbSign rel) of
                                                [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                                ss -> pure (STnullary ss)
-  PEqu o a b -> checkPeri  o "PEqu" "equation"          a b       meet "meet" true
-  PInc o a b -> checkPeri  o "PInc" "inclusion"         a b       meet "meet" true
-  PIsc o a b -> checkPeri  o "PIsc" "intersection"      a b       meet "meet" true
-  PUni o a b -> checkPeri  o "PUni" "union"             a b       join "join" true
-  PDif o a b -> checkPeri  o "PDif" "difference"        a b       join "join" true
-  PCps o a b -> checkIntra o "PCps" "composition"       a b       meet "meet" true
-  PRad o a b -> checkIntra o "PRad" "relative addition" a b       join "join" true
-  PLrs o a b -> checkIntra o "PLrs" "left residual"     a (flp b) join "join" isGeq
-  PRrs o a b -> checkIntra o "PRrs" "right residual"    (flp a) b join "join" isLeq
-  PDia o a b -> checkIntra o "PDia" "diamond"           a b       meet "meet" true
+  PEqu o a b -> checkPeri  o "equation"          a b       meet true  -- "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
+  PInc o a b -> checkPeri  o "inclusion"         a b       meet true  -- "PInc" "meet"
+  PIsc o a b -> checkPeri  o "intersection"      a b       meet true  -- "PIsc" "meet"
+  PUni o a b -> checkPeri  o "union"             a b       join true  -- "PUni" "join"
+  PDif o a b -> checkPeri  o "difference"        a b       join true  -- "PDif" "join"
+  PCps o a b -> checkIntra o "composition"       a b       meet true  -- "PCps" "meet"
+  PRad o a b -> checkIntra o "relative addition" a b       join true  -- "PRad" "join"
+  PLrs o a b -> checkIntra o "left residual"     a (flp b) join isGeq -- "PLrs" "join"
+  PRrs o a b -> checkIntra o "right residual"    (flp a) b join isLeq -- "PRrs" "join"
+  PDia o a b -> checkIntra o "diamond"           a b       meet true  -- "PDia" "meet"
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
                    return (STbinary sgnaTree sgnbTree [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgnsa, sgn_b<-sgnsb ])
@@ -1187,17 +1187,18 @@ signatures contextInfo trm = case trm of
     checkIntra, checkPeri
       :: {- o          -} Origin
       -> {- kind       -} Text
-      -> {- opStr      -} Text
       -> {- a          -} Term TermPrim
       -> {- b          -} Term TermPrim
       -> {- meetORjoin -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
-      -> {- mjString   -} Text
       -> {- compare    -} (A_Concept -> A_Concept -> Bool)
+      -- extra parameters for tracing purpose:
+      -- -> {- opStr      -} Text
+      -- -> {- mjString   -} Text
       -> Guarded (OpTree Signature)
-    checkIntra o opStr kind a b meetORjoin mjString cmpare =
+    checkIntra o kind a b meetORjoin cmpare = -- extra parameters for tracing purpose: opStr mjString 
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-         let trees = trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
+         let trees = -- trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
                      [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
                        (Sign srca tgtb, Sign srca left, Sign right tgtb)
                      | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb -- , trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
@@ -1247,12 +1248,12 @@ signatures contextInfo trm = case trm of
                           _     -> ", which can be any of "<>tshow cpts
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri o opStr kind a b meetORjoin mjString _ =
+    checkPeri o kind a b meetORjoin _ = -- extra parameters for tracing purpose: opStr mjString 
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
              conceptsSrc = [ src | sgn_a<-sgnsa, sgn_b<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
              conceptsTgt = [ tgt | sgn_a<-sgnsa, sgn_b<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
-         case trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
+         case -- trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
               [ -- trace (mjString<>" on "<>showP a<>" and  "<>showP b<>" yields: "<>tshow (Sign src tgt))
                 Sign src tgt
               | sgn_a<-sgnsa, sgn_b<-sgnsb -- , trace (mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
@@ -1290,22 +1291,22 @@ anyCpt = (PlainConcept . Set.fromList)
                    }
             , Nothing)]
 
-dereference :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
-dereference contextInfo sgns trmprim
+termPrim2Expr :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
+termPrim2Expr contextInfo sgns trmprim
   = case trmprim of
-      PI _           -> guard [ EDcI cpt | ISgn cpt<-sgns]
-      Pid _ _c       -> guard [ EDcI cpt | ISgn cpt<-sgns]
+      PI _           -> guard ([ EDcI cpt | ISgn cpt<-sgns]<>[ EDcI src | Sign src tgt<-sgns, src==tgt ])
+      Pid _ _c       -> guard ([ EDcI cpt | ISgn cpt<-sgns]<>[ EDcI src | Sign src tgt<-sgns, src==tgt ])
       Patm _ av mc   -> case mc of
-                         Just c  -> guard [ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]
-                         Nothing -> guard [ EMp1 av cpt | ISgn cpt<-sgns]
+                         Just c  -> guard ([ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EMp1 av src | Sign src tgt<-sgns, src==tgt ])
+                         Nothing -> guard ([ EMp1 av cpt | ISgn cpt<-sgns]                  <>[ EMp1 av src | Sign src tgt<-sgns, src==tgt ])
       PVee _         -> guard [ EDcV sgn | sgn<-sgns]
       Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` pCpt2aCpt s], Just _tgt<-[target sgn `grLwB` pCpt2aCpt t]]
-      PBin _ oper    -> guard [ EBin oper cpt | ISgn cpt<-sgns]
-      PBind _ oper c -> guard [ EBin oper cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]
+      PBin _ oper    -> guard ([ EBin oper cpt | ISgn cpt<-sgns]                  <>[ EBin oper src | Sign src tgt<-sgns, src==tgt ])
+      PBind _ oper c -> guard ([ EBin oper cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EBin oper src | Sign src tgt<-sgns, src==tgt ])
       PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
     where
       guard :: [Expression] -> Guarded Expression
-      guard []     = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
+      guard []     = Errors . return $ CTXE (origin trmprim) ("Can derive no signature for "<>showP trmprim<>".")
       guard [expr] | source expr == anyCpt && target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
       guard [expr] | source expr == anyCpt                          = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"[ANY*"<>tshow (target expr)<>"]")
       guard [expr] |                          target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"["<>tshow (source expr)<>"*ANY]")
@@ -1323,13 +1324,13 @@ dereference contextInfo sgns trmprim
 term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr contextInfo term
   = do sgnTree <- signatures contextInfo term
-       trace ("Signatures yields:\n"<>showOpTree term sgnTree) $ t2e sgnTree term
+       trace ("\nSignatures yields:\n"<>showOpTree term sgnTree) $ t2e sgnTree term
   where
     t2e :: OpTree Signature -> Term TermPrim -> Guarded Expression
     t2e sgnTree trm =
       case (trm, sgnTree) of
-        (Prim tp   , STnullary sgns)            -> -- trace ("dereference "<>tshow tp<>" with sgns: "<>tshow sgns) $
-                                                   dereference contextInfo sgns tp
+        (Prim tp   , STnullary sgns)            -> -- trace ("termPrim2Expr "<>tshow tp<>" with sgns: "<>tshow sgns) $
+                                                   termPrim2Expr contextInfo sgns tp
         (PEqu _ a b, STbinary stLeft stRight _) -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PInc _ a b, STbinary stLeft stRight _) -> EInc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PIsc _ a b, STbinary stLeft stRight _) -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
@@ -1346,7 +1347,7 @@ term2Expr contextInfo term
         (PFlp _ e  , _)                         -> EFlp <$> t2e (flp sgnTree) e
         (PCpl _ e  , _)                         -> ECpl <$> t2e sgnTree e
         (PBrk _ e  , _)                         -> t2e sgnTree e
-        _ -> fatal "Software error: term2Expr encountered an unexpected term or signature tree structure."
+        _ -> fatal ("Software error: term2Expr encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
 
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
