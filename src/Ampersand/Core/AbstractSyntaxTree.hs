@@ -5,6 +5,8 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use infix" #-}
 
 module Ampersand.Core.AbstractSyntaxTree
   ( A_Context (..),
@@ -1475,6 +1477,7 @@ instance Unique (A_Concept, PAtomValue) where
 
 data Signature = Sign !A_Concept  !A_Concept
                | ISgn !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
+
 
 instance Hashable Signature
 

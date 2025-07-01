@@ -13,17 +13,15 @@ RULE Rule2 LABEL "Sums are identified by their args, version 2": (-arg ! arg~) /
 
 RULE TestEquivalence : arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
 
-POPULATION arg CONTAINS [ ("1+2", "1") ] 
-POPULATION arg CONTAINS [ ("1+2", "2") ] 
-
-POPULATION arg CONTAINS [ ("1+3", "1") ] 
-POPULATION arg CONTAINS [ ("1+3", "3") ] 
-
-POPULATION arg CONTAINS [ ("2+3", "2") ] 
-POPULATION arg CONTAINS [ ("2+3", "3") ] 
-
-POPULATION arg CONTAINS [ ("1+2+3", "1") ] 
-POPULATION arg CONTAINS [ ("1+2+3", "2") ] 
-POPULATION arg CONTAINS [ ("1+2+3", "3") ] 
+POPULATION arg CONTAINS [ ("1+2", "1")
+                        , ("1+2", "2")
+                        , ("1+3", "1")
+                        , ("1+3", "3")
+                        , ("2+3", "2")
+                        , ("2+3", "3")
+                        , ("1+2+3", "1")
+                        , ("1+2+3", "2")
+                        , ("1+2+3", "3")
+                        ] 
 
 ENDCONTEXT
