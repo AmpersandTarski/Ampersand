@@ -1062,7 +1062,7 @@ pCtx2aCtx
 data SignatureSet = SSign (Set.Set (A_Concept, A_Concept))
                   | SIsgn                      -- The set of all (X,X) where X is any A_Concept
                   | LVsgn (Set.Set A_Concept)  -- The set of all (X,Y) where X is any A_Concept and Y is an element of the argument.
-                  | RVsgn (Set.Set A_Concept)  -- The set of all (X,Y) where Y is any A_Concept and X is an element of the argument.
+                  | RVsgn (Set.Set A_Concept)  -- The set of all (X,Y) where X is an element of the argument and Y is any A_Concept.
                   | BVsgn                      -- The set of all (X,Y) where X and Y are any A_Concept.
                   deriving (Eq, Ord)
 
@@ -1189,16 +1189,16 @@ signatures contextInfo trm = case trm of
                                        in  case sgns (p_mbSign rel) of
                                              [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
                                              ss -> pure (STnullary (SSign (Set.fromList [(src,tgt) | Sign src tgt <- ss])))
-  PEqu o a b -> checkPeri  o "equation"          a b       meet true  "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
-  PInc o a b -> checkPeri  o "inclusion"         a b       meet true  "PInc" "meet"
-  PIsc o a b -> checkPeri  o "intersection"      a b       meet true  "PIsc" "meet"
-  PUni o a b -> checkPeri  o "union"             a b       join true  "PUni" "join"
-  PDif o a b -> checkPeri  o "difference"        a b       join true  "PDif" "join"
-  PCps o a b -> checkIntra o "composition"       a b       meet true  "PCps" "meet"
-  PRad o a b -> checkIntra o "relative addition" a b       join true  "PRad" "join"
-  PLrs o a b -> checkIntra o "left residual"     a (flp b) join isGeq "PLrs" "join"
-  PRrs o a b -> checkIntra o "right residual"    (flp a) b join isLeq "PRrs" "join"
-  PDia o a b -> checkIntra o "diamond"           a b       meet true  "PDia" "meet"
+  PEqu o a b -> checkPeri  o "equation"          a b       (meet conceptsGraph) true  "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
+  PInc o a b -> checkPeri  o "inclusion"         a b       (meet conceptsGraph) true  "PInc" "meet"
+  PIsc o a b -> checkPeri  o "intersection"      a b       (meet conceptsGraph) true  "PIsc" "meet"
+  PUni o a b -> checkPeri  o "union"             a b       (join conceptsGraph) true  "PUni" "join"
+  PDif o a b -> checkPeri  o "difference"        a b       (join conceptsGraph) true  "PDif" "join"
+  PCps o a b -> checkIntra o "composition"       a b       (meet conceptsGraph) true  "PCps" "meet"
+  PRad o a b -> checkIntra o "relative addition" a b       (join conceptsGraph) true  "PRad" "join"
+  PLrs o a b -> checkIntra o "left residual"     a (flp b) (join conceptsGraph) isGeq "PLrs" "join"
+  PRrs o a b -> checkIntra o "right residual"    (flp a) b (join conceptsGraph) isLeq "PRrs" "join"
+  PDia o a b -> checkIntra o "diamond"           a b       (meet conceptsGraph) true  "PDia" "meet"
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
                    (return . STbinary sgnaTree sgnbTree . SSign . Set.fromList) [ (src, tgt) | src<-toSources sgnsa, tgt<-toTargets sgnsb ]
@@ -1217,7 +1217,7 @@ signatures contextInfo trm = case trm of
       -> {- kind       -} Text
       -> {- a          -} Term TermPrim
       -> {- b          -} Term TermPrim
-      -> {- meetORjoin -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
+      -> {- meetORjoin -} (A_Concept -> A_Concept -> Maybe A_Concept)
       -> {- compare    -} (A_Concept -> A_Concept -> Bool)
       -- extra parameters for tracing purpose:
       -> {- opStr      -} Text
@@ -1225,37 +1225,31 @@ signatures contextInfo trm = case trm of
       -> Guarded (OpTree SignatureSet)
     checkIntra o kind a b meetORjoin cmpare opStr mjString = -- extra parameters for tracing purpose: opStr mjString 
       do sgnaTree <- signats a; sgnbTree <- signats b
-         let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-         let trees = trace ("\n"<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca tgta, Sign srcb tgtb))
-                       (Sign srca tgtb, Sign srca tgta, Sign srcb tgtb)
-                     | Sign srca tgta<-toSignatures sgnsa, Sign srcb tgtb<-toSignatures sgnsb -- , trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
-                     , cmpare tgta srcb, Just between<-[meetORjoin conceptsGraph tgta srcb]
-                    --  , Just _left<-[meet conceptsGraph between tgta] , Just _right<-[meet conceptsGraph srcb between]
-                     ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca cptb, Sign srca tgta, ISgn cptb))
-                       (Sign srca cptb, Sign srca tgta, ISgn cptb)
-                     | Sign srca tgta<-toSignatures sgnsa, ISgn cptb<-toSignatures sgnsb -- , trace ("\n  cmpare tgta cptb = cmpare "<>tshow tgta<>" "<>tshow cptb<>" = "<>tshow (cmpare tgta cptb)) True
-                     , cmpare tgta cptb, Just between<-[meetORjoin conceptsGraph tgta cptb]
-                    --  , Just _left<-[meet conceptsGraph between tgta] , Just _right<-[meet conceptsGraph cptb between]
-                     ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign cpta tgtb, ISgn cpta, Sign srcb tgtb))
-                       (Sign cpta tgtb, ISgn cpta, Sign srcb tgtb)
-                     | ISgn cpta<-toSignatures sgnsa, Sign srcb tgtb<-toSignatures sgnsb -- , trace ("\n  cmpare cpta srcb = cmpare "<>tshow cpta<>" "<>tshow srcb<>" = "<>tshow (cmpare cpta srcb)) True
-                     , cmpare cpta srcb, Just between<-[meetORjoin conceptsGraph cpta srcb]
-                    --  , Just _left<-[meet conceptsGraph between cpta] , Just _right<-[meet conceptsGraph srcb between]
-                     ] <>
-                     [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign cpta cptb, ISgn cpta, ISgn cptb))
-                       (Sign cpta cptb, ISgn cpta, ISgn cptb)
-                     | ISgn cpta<-toSignatures sgnsa, ISgn cptb<-toSignatures sgnsb -- , trace ("\n  cmpare cpta cptb = cmpare "<>tshow cpta<>" "<>tshow cptb<>" = "<>tshow (cmpare cpta cptb)) True
-                     , cmpare cpta cptb, Just between<-[meetORjoin conceptsGraph cpta cptb]
-                    --  , Just _left<-[meet conceptsGraph between cpta] , Just _right<-[meet conceptsGraph cptb between]
-                     ]
-         case trees of
-          []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis sgnsa sgnsb)
-          [(sgn,sgnL,sgnR)] -> return (STbinary sgnaTree sgnbTree (SSign (Set.singleton (source sgn, target sgn))))
-          _  -> (Errors . return . CTXE o) ("Ambiguous signatures of the two sides of the composition: "<>diagnosis sgnsa sgnsb)
+         sgns <- joinSignatureSet (opSigns sgnaTree) (opSigns sgnbTree)
+         return (STbinary sgnaTree sgnbTree sgns)
         where
+          joinSignatureSet :: SignatureSet -> SignatureSet -> Guarded SignatureSet
+          joinSignatureSet (SSign xs) (SSign ys) = pure (SSign (Set.fromList [ (s, t') | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
+          joinSignatureSet        x    SIsgn     = pure x
+          joinSignatureSet  SIsgn        y       = pure y
+          joinSignatureSet (SSign xs) (LVsgn ys) = pure (SSign (Set.fromList [ (s, t') | (s, _) <- Set.toList xs, t' <- Set.toList ys ]))
+          joinSignatureSet (SSign xs) (RVsgn ys) = pure (RVsgn (Set.fromList [  s      | (s, t) <- Set.toList xs, s' <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
+          joinSignatureSet (SSign xs)  BVsgn     = pure (RVsgn (Set.fromList [  s      | (s, _) <- Set.toList xs]))
+          joinSignatureSet (LVsgn xs) (SSign ys) = pure (LVsgn (Set.fromList [  t'     | t <- Set.toList xs, (s',t') <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
+          joinSignatureSet (LVsgn _ ) (LVsgn ys) = pure (LVsgn ys)
+          joinSignatureSet (LVsgn xs) (RVsgn ys) = case [ () | tgtLeft <- Set.toList xs, srcRight <- Set.toList ys, Just _between <- [tgtLeft `meetORjoin` srcRight] ] of
+                                                     [] -> (Errors . return . CTXE o) ("Join: Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis (LVsgn xs) (RVsgn ys))
+                                                     _  -> pure BVsgn
+          joinSignatureSet (LVsgn _ )  BVsgn     = pure BVsgn
+          joinSignatureSet (RVsgn xs) (SSign ys) = pure (SSign (Set.fromList [ (s, t') | s <- Set.toList xs, (_,t') <- Set.toList ys ]))
+          joinSignatureSet (RVsgn xs) (LVsgn ys) = (Errors . return . CTXE o) ("Ambiguity of signatures at this "<>kind<>"."<>diagnosis (RVsgn xs) (LVsgn ys))
+          joinSignatureSet (RVsgn xs) (RVsgn _ ) = pure (RVsgn xs)
+          joinSignatureSet (RVsgn xs)  BVsgn     = pure (RVsgn xs)
+          joinSignatureSet  BVsgn     (SSign ys) = pure (LVsgn (Set.fromList [ t | (_,t) <- Set.toList ys]))
+          joinSignatureSet  BVsgn     (RVsgn _ ) = pure BVsgn
+          joinSignatureSet  BVsgn     (LVsgn ys) = pure (LVsgn ys)
+          joinSignatureSet  BVsgn      BVsgn     = pure BVsgn
+
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
               ("composition"      , eq) -> "\n  The target of "<>displayLeft (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (toSources sgnsb) b<>"."
@@ -1279,8 +1273,8 @@ signatures contextInfo trm = case trm of
     checkPeri o kind a b meetORjoin _ opStr mjString = -- extra parameters for tracing purpose: opStr mjString 
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-             conceptsSrc = [ src | s<-toSources sgnsa, t<-toSources sgnsb, Just src<-[meetORjoin conceptsGraph s t] ]
-             conceptsTgt = [ tgt | s<-toTargets sgnsa, t<-toTargets sgnsb, Just tgt<-[meetORjoin conceptsGraph s t] ]
+             conceptsSrc = [ src | s<-toSources sgnsa, t<-toSources sgnsb, Just src<-[meetORjoin s t] ]
+             conceptsTgt = [ tgt | s<-toTargets sgnsa, t<-toTargets sgnsb, Just tgt<-[meetORjoin s t] ]
              sgns = sgnsa `intersectSignatureSet` sgnsb
          if trace ("\ncheckPeri: "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgns: "<>tshow sgns) $
             isEmptySignatureSet sgns
@@ -1335,16 +1329,16 @@ term2Expr contextInfo term
       case (trm, sgnTree) of
         (Prim tp   , STnullary sgns)            -> trace ("termPrim2Expr "<>tshow tp<>" with sgns: "<>tshow sgns) $
                                                    termPrim2Expr contextInfo sgns tp
-        (PEqu o a b, STbinary stLeft stRight _) -> checkPeri  o "equation"          a b       sgnTree        meet true  EEqu "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
-        (PInc o a b, STbinary stLeft stRight _) -> checkPeri  o "inclusion"         a b       sgnTree        meet true  EInc "PInc" "meet"
-        (PIsc o a b, STbinary stLeft stRight _) -> checkPeri  o "intersection"      a b       sgnTree        meet true  EIsc "PIsc" "meet"
-        (PUni o a b, STbinary stLeft stRight _) -> checkPeri  o "union"             a b       sgnTree        join true  EUni "PUni" "join"
-        (PDif o a b, STbinary stLeft stRight _) -> checkPeri  o "difference"        a b       sgnTree        join true  EDif "PDif" "join"
-        (PCps o a b, STbinary stLeft stRight _) -> checkIntra o "composition"       a b       stLeft stRight meet true  ECps "PCps" "meet"
-        (PRad o a b, STbinary stLeft stRight _) -> checkIntra o "relative addition" a b       stLeft stRight join true  ERad "PRad" "join"
-        (PLrs o a b, STbinary stLeft stRight _) -> checkIntra o "left residual"     a (flp b) stLeft stRight join isGeq ELrs "PLrs" "join"
-        (PRrs o a b, STbinary stLeft stRight _) -> checkIntra o "right residual"    (flp a) b stLeft stRight join isLeq ERrs "PRrs" "join"
-        (PDia o a b, STbinary stLeft stRight _) -> checkIntra o "diamond"           a b       stLeft stRight meet true  EDia "PDia" "meet"
+        (PEqu o a b, _)                         -> peri       o "equation"          a b       sgnTree        (meet conceptsGraph) true  EEqu "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
+        (PInc o a b, _)                         -> peri       o "inclusion"         a b       sgnTree        (meet conceptsGraph) true  EInc "PInc" "meet"
+        (PIsc o a b, _)                         -> peri       o "intersection"      a b       sgnTree        (meet conceptsGraph) true  EIsc "PIsc" "meet"
+        (PUni o a b, _)                         -> peri       o "union"             a b       sgnTree        (join conceptsGraph) true  EUni "PUni" "join"
+        (PDif o a b, _)                         -> peri       o "difference"        a b       sgnTree        (join conceptsGraph) true  EDif "PDif" "join"
+        (PCps o a b, STbinary stLeft stRight _) -> checkIntra o "composition"       a b       stLeft stRight (meet conceptsGraph) true  ECps "PCps" "meet"
+        (PRad o a b, STbinary stLeft stRight _) -> checkIntra o "relative addition" a b       stLeft stRight (join conceptsGraph) true  ERad "PRad" "join"
+        (PLrs o a b, STbinary stLeft stRight _) -> checkIntra o "left residual"     a (flp b) stLeft stRight (join conceptsGraph) isGeq ELrs "PLrs" "join"
+        (PRrs o a b, STbinary stLeft stRight _) -> checkIntra o "right residual"    (flp a) b stLeft stRight (join conceptsGraph) isLeq ERrs "PRrs" "join"
+        (PDia o a b, STbinary stLeft stRight _) -> checkIntra o "diamond"           a b       stLeft stRight (meet conceptsGraph) true  EDia "PDia" "meet"
         (PPrd _ a b, STbinary stLeft stRight _) -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PKl0 _ e  , _)                         -> EKl0 <$> t2e sgnTree e
         (PKl1 _ e  , _)                         -> EKl1 <$> t2e sgnTree e
@@ -1352,37 +1346,74 @@ term2Expr contextInfo term
         (PCpl _ e  , _)                         -> ECpl <$> t2e sgnTree e
         (PBrk _ e  , _)                         -> t2e sgnTree e
         _ -> fatal ("Software error: term2Expr encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
-    checkPeri :: Origin
+    peri :: Origin
                -> Text
                -> Term TermPrim
                -> Term TermPrim
                -> OpTree SignatureSet
-               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
+               -> (A_Concept -> A_Concept -> Maybe A_Concept)
                -> (A_Concept -> A_Concept -> Bool)
                -> ((Expression, Expression) -> Expression)
                -> Text
                -> Text
                -> Guarded Expression
-    checkPeri o kind a b sTree meetORjoin cmpare binOp opStr mjString = -- extra parameters for tracing purpose: opStr mjString
-      do let sgnsa = opSigns (lSigns sTree); sgnsb = opSigns (rSigns sTree)
-         conceptSrc <- case L.nub [ src | lft<-toSources sgnsa, rht<-toSources sgnsb, Just src<-[meet conceptsGraph lft rht] ] of
-                       [cSrc] -> pure cSrc
-                       []  -> (Errors . return . CTXE o) ("^ Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (toSources sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (toSources sgnsb))
-                       _ -> (Errors . return . CTXE o) ("^ Ambiguous source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (toSources sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (toSources sgnsb))
-         conceptTgt <- case L.nub [ tgt | lft<-toTargets sgnsa, rht<-toTargets sgnsb, Just tgt<-[meet conceptsGraph lft rht] ] of
-                       [cTgt] -> pure cTgt
-                       []  -> (Errors . return . CTXE o) ("^ Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (toTargets sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (toTargets sgnsb))
-                       _ -> (Errors . return . CTXE o) ("^ Ambiguous source concepts on the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (toTargets sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (toTargets sgnsb))
-         let sgns = SSign (Set.fromList [(conceptSrc, conceptTgt)])
+    peri o kind a b sTree meetORjoin cmpare binOp opStr mjString = -- extra parameters for tracing purpose: opStr mjString
+      do let sgnsa = opSigns (lSigns sTree); sgnsb = opSigns (rSigns sTree); sgns = match sgnsa sgnsb
          eLeft <-t2e (lSigns sTree){opSigns = sgns} a
          eRight<-t2e (rSigns sTree){opSigns = sgns} b
-         return (binOp (eLeft, eRight))
+         trace ("\nperi: "<>opStr<>" "<>showP a<>" "<>showP b<>"\n   sgnsa = "<>tshow sgnsa<>"\n   sgnsb = "<>tshow sgnsb<>"\n   sgns  = "<>tshow sgns) $
+          return (binOp (eLeft, eRight))
        where
          showSgns :: Show a => [a] -> Text
          showSgns sgns = case sgns of
                           [] ->     "untyped"
                           [sgn] ->  tshow sgn
                           sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
+         match :: SignatureSet -> SignatureSet -> SignatureSet
+         match  x          BVsgn     = x
+         match  BVsgn      y         = y
+         match  SIsgn      SIsgn     = SIsgn
+         match  SIsgn     (SSign ys) = SSign ys
+         match (SSign xs)  SIsgn     = SSign xs
+         match (SSign xs) (SSign ys) = SSign (Set.fromList [ (src,tgt) | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just src <- [s `meetORjoin` s'], Just tgt <- [t `meetORjoin` t'] ])
+         match (SSign xs) (LVsgn ys) = SSign (Set.fromList [ (s,  tgt) | (s, t) <- Set.toList xs, y <- Set.toList ys, Just tgt <- [t `meetORjoin` y] ])
+         match  SIsgn     (LVsgn ys) = SSign (Set.fromList [ (t, t) | t <- Set.toList ys ])
+         match (LVsgn xs) (LVsgn ys) = LVsgn (Set.fromList [ tgt | t <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t']])
+         match (LVsgn xs) (RVsgn ys) = SSign (Set.fromList [ (src,tgt) | tgt <- Set.toList xs, src <- Set.toList ys ])
+         match (LVsgn xs) (SSign ys) = match (SSign ys) (LVsgn xs)
+         match (LVsgn xs)  SIsgn     = match SIsgn (LVsgn xs)
+         match x y                   = flp (match (flp x) (flp y))
+
+         {- The following is the verbose version of match, which you may find more systematic wrt SignatureSet.
+         We retain it for reference in the interest of maintainability.
+         match :: SignatureSet -> SignatureSet -> SignatureSet
+         match (SSign xs) (SSign ys) = (SSign (Set.fromList [ (src,tgt) | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just src <- [s `meetORjoin` s'], Just tgt <- [t `meetORjoin` t'] ]))
+         match (SSign xs)  SIsgn     = (SSign xs)
+         match  SIsgn     (SSign ys) = (SSign ys)
+         match (SSign xs)  BVsgn     = (SSign xs)
+         match  BVsgn     (SSign ys) = (SSign ys)
+         match (SSign xs) (LVsgn ys) = (SSign (Set.fromList [ (s,  tgt) | (s, t) <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t'] ]))
+         match (RVsgn xs) (SSign ys) = (SSign (Set.fromList [ (src, t') | s <- Set.toList xs, (s',t') <- Set.toList ys, Just src <- [s `meetORjoin` s'] ]))
+         match (LVsgn xs) (SSign ys) = (SSign (Set.fromList [ (s', tgt) | t <- Set.toList xs, (s',t') <- Set.toList ys, Just tgt <- [t `meetORjoin` t'] ]))
+         match (SSign xs) (RVsgn ys) = (SSign (Set.fromList [ (src, t ) | (s, t) <- Set.toList xs, s' <- Set.toList ys, Just src <- [s `meetORjoin` s'] ]))
+         match (LVsgn xs) (LVsgn ys) = (LVsgn (Set.fromList [ tgt | t <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t']]))
+         match (RVsgn xs) (RVsgn ys) = (LVsgn (Set.fromList [ src | s <- Set.toList xs, s' <- Set.toList ys, Just src <- [s `meetORjoin` s']]))
+         match (LVsgn xs) (RVsgn ys) = (SSign (Set.fromList [ (s', t  ) | t <- Set.toList xs, s' <- Set.toList ys ]))
+         match (RVsgn xs) (LVsgn ys) = (SSign (Set.fromList [ (s,  t' ) | s <- Set.toList xs, t' <- Set.toList ys ]))
+         match (LVsgn xs)  BVsgn     = (LVsgn xs)
+         match  BVsgn     (RVsgn ys) = (RVsgn ys)
+         match (RVsgn xs) (RVsgn _ ) = (RVsgn xs)
+         match (RVsgn xs)  BVsgn     = (RVsgn xs)
+         match  BVsgn     (LVsgn ys) = (LVsgn ys)
+         match  BVsgn      BVsgn     = BVsgn
+         match  SIsgn      SIsgn     = SIsgn
+         match  SIsgn     (LVsgn ys) = (SSign (Set.fromList [ (t', t') | t' <- Set.toList ys ]))
+         match  SIsgn     (RVsgn ys) = (SSign (Set.fromList [ (s', s') | s' <- Set.toList ys ]))
+         match (LVsgn xs)  SIsgn     = (SSign (Set.fromList [ (t, t) | t <- Set.toList xs ]))
+         match (RVsgn xs)  SIsgn     = (SSign (Set.fromList [ (s, s) | s <- Set.toList xs ]))
+         match  BVsgn      SIsgn     = SIsgn
+         match  SIsgn      BVsgn     = SIsgn
+         -}
 
     checkIntra :: Origin
                -> Text
@@ -1390,19 +1421,19 @@ term2Expr contextInfo term
                -> Term TermPrim
                -> OpTree SignatureSet
                -> OpTree SignatureSet
-               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
+               -> (A_Concept -> A_Concept -> Maybe A_Concept)
                -> (A_Concept -> A_Concept -> Bool)
                -> ((Expression, Expression) -> Expression)
                -> Text
                -> Text
                -> Guarded Expression
     checkIntra o kind a b stLeft stRight meetORjoin cmpare binOp opStr mjString = -- extra parameters for tracing purpose: opStr mjString
-      do between <- case L.nub [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow betw)
+      do between <- case L.nub [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow betw) $
                                  betw
                                | tgta<-toTargets (opSigns stLeft), srcb<-toSources (opSigns stRight)
                                , trace ("\n  ^ cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
                                , cmpare tgta srcb
-                               , Just betw<-[meetORjoin conceptsGraph tgta srcb]] of
+                               , Just betw<-[meetORjoin tgta srcb]] of
                      []  -> (Errors . return . CTXE o) (diagnosis (opSigns stLeft) (opSigns stRight))
                      [betw] -> pure betw
                      bs  -> (Errors . return . CTXE o) ("Ambiguous signatures of the two sides of the composition.\n  betweens: "<>tshow bs)
