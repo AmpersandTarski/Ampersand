@@ -190,7 +190,6 @@ type AddCommand =
 
 -- | Generate and execute a complicated options parser.
 complicatedOptions ::
-  (Monoid a) =>
   -- | header
   Text ->
   -- | program description (displayed between usage and options listing in the help output)
@@ -200,13 +199,13 @@ complicatedOptions ::
   -- | command-line arguments (unparsed)
   [Text] ->
   -- | common settings
-  Parser a ->
+  Parser GlobalOptsMonoid ->
   -- | optional handler for parser failure; 'handleParseResult' is called by
   -- default
-  Maybe (ParserFailure ParserHelp -> [Text] -> IO (a, (b, a))) ->
+  Maybe (ParserFailure ParserHelp -> [Text] -> IO (GlobalOptsMonoid, (RIO Runner (), GlobalOptsMonoid))) ->
   -- | commands (use 'addCommand')
-  ExceptT b (Writer (Mod CommandFields (b, a))) () ->
-  IO (a, b)
+  AddCommand ->
+  IO (GlobalOptsMonoid, RIO Runner ())
 complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = do
   runSimpleApp $ do
     logDebug $ displayShow helpDoc'
