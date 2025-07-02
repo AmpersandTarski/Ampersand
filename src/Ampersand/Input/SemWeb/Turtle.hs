@@ -2,8 +2,9 @@
 
 module Ampersand.Input.SemWeb.Turtle
   ( readTurtle,
-    graphs2P_Context,
+    graph2P_Context,
     writeRdfTList,
+    mergeGraphs,
   )
 where
 
@@ -73,14 +74,70 @@ myPrefixMappings =
         ("xsd", "http://www.w3.org/2001/XMLSchema#")
       ]
 
--- | Convert a list of fully expanded Triples into a 'P_Context'.
-graphs2P_Context :: NonEmpty (RDF TList) -> Guarded P_Context
-graphs2P_Context graphs = do
-  let graph = mergeRDF graphs
-  nm <- ontologyName graph
-  cptDefs <- conceptDefs (CONTEXT nm) graph
-  let relDefs = relationDefs graph
-  let isas = classifyDefs graph
+-- merge multiple graphs into one
+mergeGraphs :: NonEmpty (RDF TList) -> RDF TList
+mergeGraphs (h NE.:| tl) = foldl' (mergeTriples Nothing) h tl
+
+-- mergeTriples assumes the triples are expanded
+mergeTriples :: Maybe Int -> RDF TList -> RDF TList -> RDF TList
+mergeTriples maxBlankNode graph1 graph2 =
+  case maxBlankNode of
+    Nothing -> mergeTriples (Just $ getMaxBlankNode graph1) graph1 graph2
+    Just i -> case map objectOf $ select graph2 Nothing Nothing (Just isBNode) of
+      [] -> foldl' addTriple graph1 (uniqTriplesOf graph2)
+      (h : _) -> mergeTriples (Just (i + 1)) graph1' graph2'
+        where
+          numberToReplace = case h of
+            BNodeGen x -> x
+            _ -> fatal $ "Expected a blank node, but found: " <> tshow h
+          graph1' = foldl' addTriple graph1 (map replaceBlankNode triplesWithBlankNode)
+          graph2' = foldl' removeTriple graph2 triplesWithBlankNode
+          triplesWithBlankNode =
+            select graph2 Nothing Nothing (is h)
+              <> select graph2 (is h) Nothing Nothing
+          replaceBlankNode (Triple sub p obj) = Triple sub' p obj'
+            where
+              sub' = substitute sub
+              obj' = substitute obj
+              substitute n = case n of
+                BNodeGen x -> if x == numberToReplace then BNodeGen (i + 1) else n
+                _ -> n
+
+getMaxBlankNode :: RDF TList -> Int
+getMaxBlankNode gr = length . map objectOf $ select gr Nothing Nothing (Just isBNode)
+
+-- \| Convert a list of fully expanded Triples into a 'P_Context'.
+graph2P_Context :: RDF TList -> Guarded P_Context
+graph2P_Context graph = do
+  ontologyName <- case select graph Nothing rdfType owlOntology of
+    [] -> mkError "No ontology triple found in Turtle file"
+    (Triple (UNode s) _ _) : _ -> pure . fst . suggestName ContextName . toText1Unsafe $ s
+    (t : _) ->
+      mkError
+        $ T.unlines
+          [ "Subject note of ontology triple should be a UNode.",
+            "  Found: " <> tshow (subjectOf t)
+          ]
+  cptDefs <- conceptDefs (CONTEXT ontologyName)
+  let relDefs = relationDefs
+  let isas =
+        [ PClassify
+            { specific = PCpt sName,
+              generics = PCpt gName NE.:| [],
+              pos = orig
+            }
+          | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
+            sLbl <- getLabels sNode,
+            let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
+            gLbl <- getLabels gNode,
+            let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
+        ]
+        where
+          getLabels :: Node -> [Text]
+          getLabels n =
+            mapMaybe (getLiteralText . objectOf)
+              $ select graph (is n) rdfsLabel Nothing
+
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -91,7 +148,7 @@ graphs2P_Context graphs = do
         ctx_pos = mempty,
         ctx_pops = mempty,
         ctx_pats = mempty,
-        ctx_nm = nm,
+        ctx_nm = ontologyName,
         ctx_metas = mempty,
         ctx_markup = Just Markdown,
         ctx_lbl = Nothing,
@@ -104,41 +161,11 @@ graphs2P_Context graphs = do
         ctx_cs = cptDefs
       }
   where
-    mergeRDF :: NonEmpty (RDF TList) -> RDF TList
-    mergeRDF (h NE.:| tl) = foldl' addTriple h . concatMap triplesOf $ tl
     mkError :: Text -> Guarded a
     mkError = mkGenericParserError orig
     orig = Origin "Somewhere in imported .ttl files."
-    ontologyName :: RDF TList -> Guarded Name
-    ontologyName graph = case select graph Nothing rdfType owlOntology of
-      [] -> mkError "No ontology triple found in Turtle file"
-      (Triple (UNode s) _ _) : _ -> pure . fst . suggestName ContextName . toText1Unsafe $ s
-      (t : _) ->
-        mkError
-          $ T.unlines
-            [ "Subject note of ontology triple should be a UNode.",
-              "  Found: " <> tshow (subjectOf t)
-            ]
-    classifyDefs :: RDF TList -> [PClassify]
-    classifyDefs graph =
-      [ PClassify
-          { specific = PCpt sName,
-            generics = PCpt gName NE.:| [],
-            pos = orig
-          }
-        | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
-          sLbl <- getLabels sNode,
-          let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
-          gLbl <- getLabels gNode,
-          let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
-      ]
-      where
-        getLabels :: Node -> [Text]
-        getLabels n =
-          mapMaybe (getLiteralText . objectOf)
-            $ select graph (is n) rdfsLabel Nothing
-    relationDefs :: RDF TList -> [P_Relation]
-    relationDefs graph =
+    relationDefs :: [P_Relation]
+    relationDefs =
       [ P_Relation
           { dec_sign = P_Sign (PCpt src) (PCpt tgt),
             dec_prps = Set.fromList (getProps relNode blank),
@@ -186,8 +213,8 @@ graphs2P_Context graphs = do
                     cardinalityNodes =
                       [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
                 _ -> []
-    conceptDefs :: DefinitionContainer -> RDF TList -> Guarded [PConceptDef]
-    conceptDefs frm graph =
+    conceptDefs :: DefinitionContainer -> Guarded [PConceptDef]
+    conceptDefs frm =
       sequence
         [ mkConceptDef cpt
           | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,

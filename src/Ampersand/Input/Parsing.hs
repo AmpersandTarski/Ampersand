@@ -135,28 +135,32 @@ parseThings ::
   RIO env (Guarded P_Context)
 parseThings pcs = do
   results <- parseADLs [] (NE.toList pcs)
-  return (finalize results)
+  finalize results
   where
     -- \| After collecting the results of all parsed files, we need to
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
     --   return the resulting P_Context.
-    finalize :: Guarded [(a, SingleFileResult)] -> Guarded P_Context
-    finalize gIn = do
-      results <- gIn
-      let (contexts, graphs) = partitionEithers $ map snd results
+    finalize :: (HasLogFunc env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
+    finalize (Errors err) = pure (Errors err)
+    finalize (Checked results warns) = do
+      let (contexts, graphs) = partitionEithers (map snd results)
+
       triplesCtx <- case graphs of
         [] -> pure Nothing
-        h : tl -> Just <$> graphs2P_Context (h NE.:| tl)
-      let contexts' =
-            contexts <> case triplesCtx of
-              Nothing -> []
-              Just x -> [x]
-      let pCtx = case contexts' of
-            [] -> fatal "Impossible"
-            h : tl -> foldl' mergeContexts h tl
-
-      pure pCtx
+        h : tl -> do
+          let combined = mergeGraphs (h NE.:| tl)
+          writeRdfTList 0 combined
+          pure (Just $ graph2P_Context combined)
+      pure $ case triplesCtx of
+        Nothing -> Checked (bar contexts) warns
+        Just (Checked pCtx ws2) -> Checked (bar (contexts <> [pCtx])) (warns <> ws2)
+        Just (Errors err) -> Errors err
+      where
+        bar :: [P_Context] -> P_Context
+        bar xs = case xs of
+          [] -> fatal "Impossible"
+          h : tl -> foldl' mergeContexts h tl
 
 -- writeSingleRDF ::
 --   (HasLogFunc env) =>
@@ -341,7 +345,7 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
-        catchInvalidTurtle :: RIO env a -> RIO env a
+        catchInvalidTurtle :: RIO env (Guarded (RDF TList)) -> RIO env (Guarded (RDF TList))
         catchInvalidTurtle m = catch m f
           where
             f :: SomeException -> RIO env a
