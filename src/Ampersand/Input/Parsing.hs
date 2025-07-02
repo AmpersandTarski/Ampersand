@@ -158,6 +158,17 @@ parseThings pcs = do
 
       pure pCtx
 
+-- writeSingleRDF ::
+--   (HasLogFunc env) =>
+--   Guarded [(ParseCandidate, SingleFileResult)] ->
+--   RIO env ()
+-- writeSingleRDF results = do
+--   let graphs = rights . fmap snd <$> results
+--   case graphs of
+--     Checked xs@(_ : _) _ ->
+--       mapM_ (uncurry writeRdfTList) $ zip [0 ..] xs
+--     _ -> pure ()
+
 -- | Parses several ADL files
 parseADLs ::
   (HasTrimXLSXOpts env, HasLogFunc env) =>

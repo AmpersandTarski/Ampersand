@@ -3,6 +3,7 @@
 module Ampersand.Input.SemWeb.Turtle
   ( readTurtle,
     graphs2P_Context,
+    writeRdfTList,
   )
 where
 
@@ -12,6 +13,7 @@ import Ampersand.Input.ADL1.CtxError
 import Data.RDF
 import RIO.Directory (doesFileExist)
 import qualified RIO.List as L
+import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -46,17 +48,30 @@ readTurtle filePath = do
             "   File does not exist."
           ]
 
--- myPrefixMappings :: PrefixMappings
--- myPrefixMappings =
---   PrefixMappings
---     . M.fromList
---     $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
---         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
---         ("skos", "http://www.w3.org/2004/02/skos/core#"),
---         ("owl", "http://www.w3.org/2002/07/owl#"),
---         ("", "http://ampersand.example.org/"),
---         ("xsd", "http://www.w3.org/2001/XMLSchema#")
---       ]
+writeRdfTList :: (HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList i rdfGraph = do
+  logDebug $ "Start schrijven van " <> display (T.pack filePath)
+  liftIO
+    $ withFile filePath WriteMode writer
+  logDebug $ "Einde schrijven van " <> display (T.pack filePath)
+  where
+    filePath = "/workspaces/ampersand2/Graaf_" <> show i <> ".ttl"
+    writer h = do
+      hWriteRdf serializer h rdfGraph
+      where
+        serializer = TurtleSerializer Nothing myPrefixMappings
+
+myPrefixMappings :: PrefixMappings
+myPrefixMappings =
+  PrefixMappings
+    . M.fromList
+    $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+        ("skos", "http://www.w3.org/2004/02/skos/core#"),
+        ("owl", "http://www.w3.org/2002/07/owl#"),
+        ("", "http://ampersand.example.org/"),
+        ("xsd", "http://www.w3.org/2001/XMLSchema#")
+      ]
 
 -- | Convert a list of fully expanded Triples into a 'P_Context'.
 graphs2P_Context :: NonEmpty (RDF TList) -> Guarded P_Context
@@ -97,8 +112,13 @@ graphs2P_Context graphs = do
     ontologyName :: RDF TList -> Guarded Name
     ontologyName graph = case select graph Nothing rdfType owlOntology of
       [] -> mkError "No ontology triple found in Turtle file"
-      [Triple (UNode s) _ _] -> pure . fst . suggestName ContextName . toText1Unsafe $ s
-      _ -> mkError "Multiple ontology triples found in Turtle file"
+      (Triple (UNode s) _ _) : _ -> pure . fst . suggestName ContextName . toText1Unsafe $ s
+      (t : _) ->
+        mkError
+          $ T.unlines
+            [ "Subject note of ontology triple should be a UNode.",
+              "  Found: " <> tshow (subjectOf t)
+            ]
     classifyDefs :: RDF TList -> [PClassify]
     classifyDefs graph =
       [ PClassify
