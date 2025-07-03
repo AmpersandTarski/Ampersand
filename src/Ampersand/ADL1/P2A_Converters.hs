@@ -662,10 +662,11 @@ pCtx2aCtx
       -- | pSubIfc2aSubIfc takes the target of its object-expression (i.e. tgtConcept) and composes it with the object-expression of every sub-interface.
       -- Thus, the type checker can ensure that all box-items in the interface are properly typed.
       -- pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
+      pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
       pSubIfc2aSubIfc contextInfo tgtConcept sub =
         case sub of
-          P_Box{} -> do objs <- mapM (pBoxItem2aBoxItem contextInfo . prefixWithI) (si_box sub)
-                        return (Box{ pos = origin sub, siConcept = tgtConcept, siHeader = si_header sub, siObjs = objs})
+          P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem contextInfo (Just tgtConcept)) (si_box sub)
+                        return (Box{ pos = origin sub, siConcept = tgtConcept, siHeader = si_header sub, siObjs = subBoxes})
           P_InterfaceRef
             { pos       = orig,
               si_isLink = isLink,
@@ -678,9 +679,6 @@ pCtx2aCtx
                                          })
         where
           -- | prefixWithI inserts the target of the enveloping box expression to ensure that the sub-boxes are properly typed.
-          prefixWithI :: P_BoxItem TermPrim -> P_BoxItem TermPrim
-          prefixWithI pbi = pbi{ obj_term = PCps (origin pbi) (Prim (Pid (origin pbi) (aConcept2pConcept tgtConcept))) (obj_term pbi) }
-
           getInterface :: Guarded A_Concept
           getInterface
            = case filter ((==si_str sub).name) p_interfaces of
@@ -693,8 +691,10 @@ pCtx2aCtx
                               Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow tgtConcept <> ".")
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
-      pBoxItem2aBoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
-      pBoxItem2aBoxItem contextInfo pBoxItem =
+      -- | mCpt is the A_Concept that links the objExpression of this BoxItem to the objExpressions of its subBoxes.
+      --   It is "Maybe" because on the top level, in pIfc2aIfc, there is no concept to link to. 
+      pBoxItem2aBoxItem :: ContextInfo -> Maybe A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
+      pBoxItem2aBoxItem contextInfo mCpt pBoxItem =
         case pBoxItem of
           P_BoxItemTerm
             { obj_PlainName = nm,
@@ -706,6 +706,11 @@ pCtx2aCtx
               obj_msub = p_msub
             } -> do
               objExpr <- term2Expr contextInfo term
+              -- The following strange construction gives a type error if subinterfaces don't match with their parent's target concept.
+              -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
+              expr <- case mCpt of
+                           Just tgtConcept -> term2Expr contextInfo (PCps (origin term) (Prim (Pid (origin term) (aConcept2pConcept tgtConcept))) term)
+                           Nothing         -> pure objExpr
               a_msub <- traverse (pSubIfc2aSubIfc contextInfo (target objExpr)) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
@@ -713,7 +718,7 @@ pCtx2aCtx
               return (BxExpr ObjectDef{ objPlainName  = nm,
                                         objlbl        = lbl',
                                         objPos        = orig,
-                                        objExpression = objExpr,
+                                        objExpression = expr,
                                         objcrud       = crud,
                                         objmView      = mView,
                                         objmsub       = a_msub
@@ -833,11 +838,11 @@ pCtx2aCtx
       pIfc2aIfc :: ContextInfo -> P_Interface -> Guarded Interface
       pIfc2aIfc contextInfo pIfc =
         do
-          pBox <- pBoxItem2aBoxItem contextInfo (ifc_Obj pIfc)
-          objDef <- case pBox of
+          pBox <- pBoxItem2aBoxItem contextInfo Nothing (ifc_Obj pIfc)
+          boxItem <- case pBox of
                       BxExpr{} -> pure (objE pBox)
                       _ -> (Errors . return . CTXE (origin pIfc)) "TXT is not expected here."
-          let objExpr = objExpression objDef
+          let objExpr = objExpression boxItem
               ifcSource = source objExpr
               ifcSourceType = representationOf contextInfo ifcSource
           if ifcSourceType==Object
@@ -848,7 +853,7 @@ pCtx2aCtx
                        ifclbl = mLabel pIfc,
                        ifcRoles = ifc_Roles pIfc,
                        ifcObj =
-                         objDef
+                         boxItem
                            { objPlainName = Just . fullName1 . name $ pIfc,
                              objlbl = mLabel pIfc
                            },
@@ -857,7 +862,7 @@ pCtx2aCtx
                      }
             else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
                    [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-                     "The TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "`, for interface `" <> fullName pIfc <> "`, however is " <> tshow ifcSourceType <> "."
+                     "However, the TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
                    ]
 
 
