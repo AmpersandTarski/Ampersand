@@ -11,8 +11,10 @@ where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
+import Ampersand.Misc.HasClasses
 import Data.RDF
 import RIO.Directory (doesFileExist)
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
@@ -49,14 +51,16 @@ readTurtle filePath = do
             "   File does not exist."
           ]
 
-writeRdfTList :: (HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList :: (HasDirOutput env , HasFSpecGenOpts  env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
 writeRdfTList i rdfGraph = do
+  env <- ask
+  let filePath = filePath' env
   logDebug $ "Start schrijven van " <> display (T.pack filePath)
   liftIO
     $ withFile filePath WriteMode writer
   logDebug $ "Einde schrijven van " <> display (T.pack filePath)
   where
-    filePath = "/workspaces/ampersand2/Graaf_" <> show i <> ".ttl"
+    filePath' env = Ampersand.Basics.view dirOutputL env </> (baseName env <> show i) -<.> ".ttl"
     writer h = do
       hWriteRdf serializer h rdfGraph
       where

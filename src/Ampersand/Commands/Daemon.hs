@@ -111,7 +111,7 @@ data Continue = Continue
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
 runAmpersand ::
-  (HasTrimXLSXOpts env, HasRunner env, HasDaemonOpts env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasRunner env, HasDaemonOpts env) =>
   env ->
   Waiter ->
   IO TermSize ->

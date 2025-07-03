@@ -12,7 +12,7 @@ import Ampersand.Daemon.Types
 import Ampersand.FSpec.ToFSpec.CreateFspec (pCtx2Fspec)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.Parsing
-import Ampersand.Misc.HasClasses (HasDaemonOpts (..), HasRootFile (..), HasTrimXLSXOpts, Roots (..), rootFileL, showWarningsL)
+import Ampersand.Misc.HasClasses 
 import Ampersand.Types.Config
 import qualified RIO.NonEmpty as NE
 
@@ -21,7 +21,7 @@ import qualified RIO.NonEmpty as NE
 --   fail. It will return a tuple containing the Loads and a list of
 --   the filepaths that are read.
 parseProject ::
-  (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   FilePath ->
   RIO env ([Load], [FilePath])
 parseProject rootAdl = local (set rootFileL (Roots (rootAdl NE.:| []))) $ do
