@@ -833,7 +833,7 @@ pInterface =
       Term TermPrim ->
       Maybe P_Cruds ->
       Maybe Name ->
-      P_SubInterface ->
+      P_SubIfc TermPrim ->
       P_Interface
     build p isAPI (nm, lbl) roles ctx mCrud mView sub =
       P_Ifc
@@ -858,7 +858,7 @@ pInterface =
     pRoles = (pKey . toText1Unsafe) "FOR" *> pRole False `sepBy1` pComma
 
 --- SubInterface ::= 'BOX' HTMLtemplateCall? Box | 'LINKTO'? 'INTERFACE' ADLid
-pSubInterface :: AmpParser P_SubInterface
+pSubInterface :: AmpParser (P_SubIfc TermPrim)
 pSubInterface =
   P_Box
     <$> currPos
@@ -891,17 +891,17 @@ pSubInterface =
             <*> (pSingleWord <|> pAnyKeyWord)
             <*> optional (id <$ (pOperator . toText1Unsafe) "=" <*> pDoubleQuotedString)
     --- Box ::= '[' ObjDefList ']'
-    pBoxBody :: AmpParser [P_BoxBodyElement]
+    pBoxBody :: AmpParser [P_BoxItem TermPrim]
     pBoxBody = pBrackets $ pBoxBodyElement `sepBy` pComma
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
-pBoxBodyElement :: AmpParser P_BoxBodyElement
+pBoxBodyElement :: AmpParser (P_BoxItem TermPrim)
 pBoxBodyElement =
   try pBoxItemTerm
     <|> try pBoxItemText -- We need `try` because in the Term, the local name is mandatory, while in Text it is optional.
   where
-    pBoxItemTerm :: AmpParser P_BoxBodyElement
+    pBoxItemTerm :: AmpParser (P_BoxItem TermPrim)
     pBoxItemTerm =
       build
         <$> currPos
@@ -923,7 +923,7 @@ pBoxBodyElement =
               obj_mView = mView,
               obj_msub = msub
             }
-    pBoxItemText :: AmpParser P_BoxBodyElement
+    pBoxItemText :: AmpParser (P_BoxItem TermPrim)
     pBoxItemText =
       build
         <$> currPos

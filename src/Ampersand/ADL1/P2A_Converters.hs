@@ -659,9 +659,43 @@ pCtx2aCtx
       isa :: Type -> Type -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
 
+      -- | pSubIfc2aSubIfc takes the target of its object-expression (i.e. tgtConcept) and composes it with the object-expression of every sub-interface.
+      -- Thus, the type checker can ensure that all box-items in the interface are properly typed.
+      -- pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
+      pSubIfc2aSubIfc contextInfo tgtConcept sub =
+        case sub of
+          P_Box{} -> do objs <- mapM (pBoxItem2aBoxItem contextInfo . prefixWithI) (si_box sub)
+                        return (Box{ pos = origin sub, siConcept = tgtConcept, siHeader = si_header sub, siObjs = objs})
+          P_InterfaceRef
+            { pos       = orig,
+              si_isLink = isLink,
+              si_str    = ifcName
+            } -> do srcIfc <- getInterface -- get the source atom of the interface that is referenced, to check for compatibility.
+                    return (InterfaceRef { pos       = orig,
+                                           siIsLink  = isLink,
+                                           siIfcId   = ifcName,
+                                           siConcept = srcIfc
+                                         })
+        where
+          -- | prefixWithI inserts the target of the enveloping box expression to ensure that the sub-boxes are properly typed.
+          prefixWithI :: P_BoxItem TermPrim -> P_BoxItem TermPrim
+          prefixWithI pbi = pbi{ obj_term = PCps (origin pbi) (Prim (Pid (origin pbi) (aConcept2pConcept tgtConcept))) (obj_term pbi) }
+
+          getInterface :: Guarded A_Concept
+          getInterface
+           = case filter ((==si_str sub).name) p_interfaces of
+               [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
+               [pIfc] -> do expr <- (term2Expr contextInfo . obj_term . ifc_Obj) pIfc
+                            let srcCpt = source expr
+                            case leq (conceptGraph contextInfo) tgtConcept srcCpt of
+                              Just True  -> return srcCpt
+                              Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow tgtConcept <> " ISA " <> tshow srcCpt)
+                              Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow tgtConcept <> ".")
+               _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
+
       pBoxItem2aBoxItem :: ContextInfo -> P_BoxItem TermPrim -> Guarded BoxItem
-      pBoxItem2aBoxItem contextInfo objDef =
-        case objDef of
+      pBoxItem2aBoxItem contextInfo pBoxItem =
+        case pBoxItem of
           P_BoxItemTerm
             { obj_PlainName = nm,
               obj_lbl = lbl',
@@ -669,47 +703,29 @@ pCtx2aCtx
               obj_term = term,
               obj_crud = mCrud,
               obj_mView = mView,
-              obj_msub = subs
+              obj_msub = p_msub
             } -> do
               objExpr <- term2Expr contextInfo term
-              let tgtConcept = (aConcept2pConcept . target) objExpr
+              a_msub <- traverse (pSubIfc2aSubIfc contextInfo (target objExpr)) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
               crud <- pCruds2aCruds objExpr mCrud
-              s <- case subs of
-                    Just sub@P_Box{} -> traverse (pBoxItem2aBoxItem contextInfo . hinge tgtConcept) (si_box sub)
-                    Just P_InterfaceRef {si_str = str, si_isLink = isLink} ->
-                      case lookupView str of
-                        Just _  -> pure [BxExpr (ObjectDef nm lbl' orig objExpr crud mView (Just InterfaceRef{pos=orig, siIsLink = isLink, siIfcId = str}))]
-                        Nothing -> Errors . pure $ mkUndeclaredError "view" objDef str
-                    Nothing  -> pure []
-              return
-               (BxExpr ObjectDef
-                        { objPlainName  = nm,
-                          objlbl        = lbl',
-                          objPos        = orig,
-                          objExpression = objExpr,
-                          objcrud       = crud,
-                          objmView      = mView,
-                          objmsub       = case subs of
-                                           Nothing -> Nothing
-                                           Just sub -> Just Box{ pos = orig,
-                                                                 siConcept = target objExpr,
-                                                                 siHeader = si_header sub,
-                                                                 siObjs = s
-                                                               }
-                        })
+              return (BxExpr ObjectDef{ objPlainName  = nm,
+                                        objlbl        = lbl',
+                                        objPos        = orig,
+                                        objExpression = objExpr,
+                                        objcrud       = crud,
+                                        objmView      = mView,
+                                        objmsub       = a_msub
+                                      })
               where
-                -- | hinge inserts the target of the enveloping box expression to ensure that the sub-boxes are properly typed.
-                hinge :: P_Concept -> P_BoxItem TermPrim -> P_BoxItem TermPrim
-                hinge c pbi = pbi{ obj_term = PCps (origin pbi) (Prim (Pid (origin pbi) c)) (obj_term pbi) }
                 lookupView :: Name -> Maybe P_ViewDef
                 lookupView viewId = case [vd | vd <- p_viewdefs, vd_nm vd == viewId] of
                   [] -> Nothing
                   vd : _ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                 checkCrud :: Guarded ()
                 checkCrud =
-                  case (mCrud, subs) of
+                  case (mCrud, p_msub) of
                     (Just _, Just P_InterfaceRef {si_isLink = False}) ->
                       Errors . pure $ mkCrudForRefInterfaceError orig
                     _ -> pure ()
@@ -726,8 +742,8 @@ pCtx2aCtx
                             else
                               Errors
                                 . pure
-                                $ mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
-                    Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
+                                $ mkIncompatibleViewError pBoxItem viewId viewAnnCptStr viewDefCptStr
+                    Nothing -> Errors . pure $ mkUndeclaredError "view" pBoxItem viewId
           P_BxTxt
             { obj_PlainName = nm,
               pos = orig,
@@ -1115,21 +1131,21 @@ showOpTree ::  Term TermPrim -> OpTree Signature -> Text
 showOpTree term opTree = T.intercalate "\n" (shw "   " term opTree)
   where
     shw :: Text -> Term TermPrim -> OpTree Signature -> [Text]
-    shw indent trm@(PEqu _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PInc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PIsc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PUni _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PDif _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PCps _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PRad _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PLrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PRrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PDia _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PPrd _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): (shw (indent<>"   ") a l<>shw (indent<>"   ") b r)
-    shw indent trm@(PKl0 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
-    shw indent trm@(PKl1 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
-    shw indent trm@(PFlp _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e (flp opTree))
-    shw indent trm@(PCpl _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): (shw (indent<>"   ") e opTree)
+    shw indent trm@(PEqu _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PInc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PIsc _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PUni _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PDif _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PCps _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PRad _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PLrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PRrs _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PDia _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PPrd _ a b) (STbinary l r ss) = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow ss): shw (indent<>"   ") a l<>shw (indent<>"   ") b r
+    shw indent trm@(PKl0 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): shw (indent<>"   ") e opTree
+    shw indent trm@(PKl1 _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): shw (indent<>"   ") e opTree
+    shw indent trm@(PFlp _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): shw (indent<>"   ") e (flp opTree)
+    shw indent trm@(PCpl _ e)   _                 = indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree)): shw (indent<>"   ") e opTree
     shw indent     (PBrk _ e)   _                 = shw indent e opTree
     shw indent trm@(Prim{})     _                 = [indent<>showP trm<>" "<>T.intercalate ", " (fmap tshow (opSigns opTree))]
     shw _ trm _ = fatal ("showOpTree: unexpected combination of term: " <> tshow trm <> " and opTree: " <> tshow opTree)
@@ -1174,7 +1190,7 @@ signatures contextInfo trm = case trm of
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
                    return (STbinary sgnaTree sgnbTree [ Sign (source sgn_a) (target sgn_b) | sgn_a<-sgnsa, sgn_b<-sgnsb ])
-  PFlp _ e   -> fmap flp (signats e) 
+  PFlp _ e   -> fmap flp (signats e)
   PKl0 _ e   -> signats e
   PKl1 _ e   -> signats e
   PCpl _ e   -> signats e
@@ -1182,8 +1198,8 @@ signatures contextInfo trm = case trm of
   where
     true, isGeq, isLeq :: A_Concept -> A_Concept -> Bool
     true  _ _  = True
-    isGeq c c' = fromMaybe False (leq conceptsGraph c' c)
-    isLeq c c' = fromMaybe False (leq conceptsGraph c c')
+    isGeq c c' = Just True == leq conceptsGraph c' c
+    isLeq c c' = Just True == leq conceptsGraph c c'
     checkIntra, checkPeri
       :: {- o          -} Origin
       -> {- kind       -} Text
@@ -1274,7 +1290,7 @@ signatures contextInfo trm = case trm of
     pCpt2aCpt = conceptMap contextInfo
     conceptsGraph = typeGraph contextInfo
     signats = signatures contextInfo
-  
+
 typeGraph :: ContextInfo -> AdjacencyMap A_Concept
 typeGraph contextInfo = L.foldr overlay empty [initialGraph, anyEdges, oneGraph] -- add the edges for the ANY concept to the initial graph
   where

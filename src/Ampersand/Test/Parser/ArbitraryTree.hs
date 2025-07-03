@@ -66,7 +66,7 @@ uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . localNa
     firstUppercase :: Text1 -> Bool
     firstUppercase (Text1 c _) = isUpper c
 
-makeObj :: ObjectKind -> Gen P_BoxBodyElement
+makeObj :: ObjectKind -> Gen (P_BoxItem TermPrim)
 makeObj objectKind =
   oneof
     $ ( P_BoxItemTerm

@@ -266,7 +266,7 @@ aPopulation2pPopulation p =
           p_popas = map aAtomValue2pAtomValue (popas p)
         }
 
-aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
+aObjectDef2pObjectDef :: BoxItem -> P_BoxItem TermPrim
 aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
@@ -276,7 +276,7 @@ aObjectDef2pObjectDef x =
           obj_lbl = objlbl oDef,
           obj_term = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
-            Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
+            Just (InterfaceRef _ _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
             _ -> Just $ aCruds2pCruds (objcrud oDef),
           obj_mView = objmView oDef,
           obj_msub = fmap aSubIfc2pSubIfc (objmsub oDef)
@@ -433,7 +433,7 @@ aAtomValue2pAtomValue val =
   where
     o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 
-aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
+aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
 aSubIfc2pSubIfc sub =
   case sub of
     Box orig _ heading objs ->
@@ -442,7 +442,7 @@ aSubIfc2pSubIfc sub =
           si_header = heading,
           si_box = map aObjectDef2pObjectDef objs
         }
-    InterfaceRef orig isLinkto str ->
+    InterfaceRef orig _ isLinkto str ->
       P_InterfaceRef
         { pos = orig,
           si_isLink = isLinkto,

@@ -39,8 +39,6 @@ module Ampersand.Core.ParseTree
     mkPair,
     makePSingleton,
     ObjectKind (..),
-    P_BoxBodyElement,
-    P_SubInterface,
     P_Interface (..),
     P_BoxItem (..),
     P_SubIfc (..),
@@ -958,7 +956,7 @@ data P_Interface = P_Ifc
     -- | a list of roles that may use this interface
     ifc_Roles :: ![Role],
     -- | the context term (mostly: I[c])
-    ifc_Obj :: !P_BoxBodyElement,
+    ifc_Obj :: !(P_BoxItem TermPrim),
     pos :: !Origin,
     ifc_Prp :: !Text
   }
@@ -989,8 +987,6 @@ instance Labeled P_Interface where
 
 instance Traced P_Interface where
   origin P_Ifc {pos = orig} = orig
-
-type P_SubInterface = P_SubIfc TermPrim
 
 data P_SubIfc a
   = P_Box
@@ -1047,8 +1043,6 @@ instance Unique TemplateKeyValue where
 
 instance Traced TemplateKeyValue where
   origin TemplateKeyValue {pos = orig} = orig
-
-type P_BoxBodyElement = P_BoxItem TermPrim
 
 data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind | ViewSegmentKind
   deriving (Show)

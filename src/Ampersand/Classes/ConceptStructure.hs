@@ -180,7 +180,7 @@ instance ConceptStructure ObjectDef where
 instance ConceptStructure SubInterface where
   concs si = case si of
     Box {} -> concs (siObjs si)
-    InterfaceRef {} -> Set.empty
+    InterfaceRef {} -> Set.singleton (siConcept si)
   expressionsIn si = case si of
     Box {} -> expressionsIn (siObjs si)
     InterfaceRef {} -> Set.empty

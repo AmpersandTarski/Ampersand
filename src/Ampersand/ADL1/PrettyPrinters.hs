@@ -301,7 +301,7 @@ instance Pretty P_Interface where
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
 
-prettyObject :: ObjectKind -> P_BoxBodyElement -> Doc
+prettyObject :: ObjectKind -> P_BoxItem TermPrim -> Doc
 prettyObject objectKind obj =
   maybeQuoteLabel
     (obj_PlainName obj)

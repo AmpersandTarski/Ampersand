@@ -865,6 +865,7 @@ data SubInterface
       }
   | InterfaceRef
       { pos :: !Origin,
+        siConcept :: !A_Concept,
         siIsLink :: !Bool,
         siIfcId :: !Name -- id of the interface that is referenced to
       }
@@ -878,7 +879,7 @@ instance Ord SubInterface where
   compare a b = case (a, b) of
     (Box {}, Box {}) -> compare (siConcept a, siHeader a, siObjs a) (siConcept b, siHeader b, siObjs b)
     (Box {}, InterfaceRef {}) -> GT
-    (InterfaceRef {}, InterfaceRef {}) -> compare (siIsLink a, siIfcId a) (siIsLink b, siIfcId b)
+    (InterfaceRef {}, InterfaceRef {}) -> compare (siConcept a, siIsLink a, siIfcId a) (siConcept b, siIsLink b, siIfcId b)
     (InterfaceRef {}, Box {}) -> LT
 
 instance Eq SubInterface where
