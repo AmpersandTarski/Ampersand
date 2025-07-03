@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.4.5
+- [Issue #1568](https://github.com/AmpersandTarski/Ampersand/issues/1568) Parsing of .ttl files misses certain relations.
+
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 

@@ -8,6 +8,7 @@ import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)
 import RIO.FilePath
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 class HasOptions a where
@@ -131,18 +132,16 @@ newtype Roots = Roots
   { -- | Normally this should be a non-empty list. However, the daemon command is an exception to
     --   this. The command `ampersand daemon` expects no script name. The script name(s) will be
     --   configured by means of the `.ampersand` configuration file.
-    getRoots :: [FilePath]
+    getRoots :: NonEmpty FilePath
   }
 
 instance Show Roots where
-  show = L.intercalate ", " . getRoots
+  show = L.intercalate ", " . NE.toList . getRoots
 
 class HasRootFile a where
   rootFileL :: Lens' a Roots
   baseName :: a -> FilePath
-  baseName x = case getRoots . view rootFileL $ x of
-    [] -> fatal "Cannot determine the basename of the script that is being compiled"
-    (h : _) -> takeBaseName h
+  baseName = takeBaseName . NE.head . getRoots . view rootFileL
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
   dirSource = takeDirectory . baseName
 

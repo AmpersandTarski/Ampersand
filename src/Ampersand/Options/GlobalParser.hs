@@ -55,8 +55,7 @@ globalOptsParser _currentDir defLogLevel =
             globalMonoidTermWidth = termWidth,
             globalMonoidOutputDir = outputDir
           }
-   in build
-        <$> (First <$> logLevelOptsParser hide0 defLogLevel)
+   in (build . First <$> logLevelOptsParser hide0 defLogLevel)
         <*> firstBoolFlagsTrue
           "time-in-log"
           "inclusion of timings in logs, for the purposes of using diff with logs"

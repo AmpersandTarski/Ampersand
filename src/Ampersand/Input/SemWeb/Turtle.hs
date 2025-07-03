@@ -1,7 +1,10 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Ampersand.Input.SemWeb.Turtle
-  ( parseTurtleFile,
+  ( readTurtle,
+    graph2P_Context,
+    writeRdfTList,
+    mergeGraphs,
   )
 where
 
@@ -11,6 +14,7 @@ import Ampersand.Input.ADL1.CtxError
 import Data.RDF
 import RIO.Directory (doesFileExist)
 import qualified RIO.List as L
+import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -22,11 +26,10 @@ readTurtle filePath = do
   if exists
     then do
       raw <- readUTF8File filePath
-
       let defBaseUrl =
             ( case raw of
                 Left _ -> Nothing
-                Right content -> case filter isBaseLine . T.lines $ content of
+                Right content -> case filter (T.isPrefixOf "@base") . T.lines $ content of
                   [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
                     [x] -> Just (BaseUrl x)
                     _ -> Nothing
@@ -45,35 +48,96 @@ readTurtle filePath = do
           [ "While looking for " <> T.pack filePath,
             "   File does not exist."
           ]
+
+writeRdfTList :: (HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList i rdfGraph = do
+  logDebug $ "Start schrijven van " <> display (T.pack filePath)
+  liftIO
+    $ withFile filePath WriteMode writer
+  logDebug $ "Einde schrijven van " <> display (T.pack filePath)
   where
-    isBaseLine :: Text -> Bool
-    isBaseLine = T.isPrefixOf "@base"
+    filePath = "/workspaces/ampersand2/Graaf_" <> show i <> ".ttl"
+    writer h = do
+      hWriteRdf serializer h rdfGraph
+      where
+        serializer = TurtleSerializer Nothing myPrefixMappings
 
--- | Parse a Turtle file and convert it into a 'P_Context'.
-parseTurtleFile :: FilePath -> RIO env (Guarded P_Context)
-parseTurtleFile filePath = do
-  guardedGraph <- readTurtle filePath
-  pure $ getContext filePath guardedGraph
+myPrefixMappings :: PrefixMappings
+myPrefixMappings =
+  PrefixMappings
+    . M.fromList
+    $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+        ("skos", "http://www.w3.org/2004/02/skos/core#"),
+        ("owl", "http://www.w3.org/2002/07/owl#"),
+        ("", "http://ampersand.example.org/"),
+        ("xsd", "http://www.w3.org/2001/XMLSchema#")
+      ]
 
--- myPrefixMappings :: PrefixMappings
--- myPrefixMappings =
---   PrefixMappings
---     . M.fromList
---     $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
---         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
---         ("skos", "http://www.w3.org/2004/02/skos/core#"),
---         ("owl", "http://www.w3.org/2002/07/owl#"),
---         ("", "http://ampersand.example.org/"),
---         ("xsd", "http://www.w3.org/2001/XMLSchema#")
---       ]
+-- merge multiple graphs into one
+mergeGraphs :: NonEmpty (RDF TList) -> RDF TList
+mergeGraphs (h NE.:| tl) = foldl' (mergeTriples Nothing) h tl
 
-getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
-getContext filePath guardedGraph = do
-  graph <- guardedGraph
-  nm <- ontologyName graph
-  cptDefs <- conceptDefs (CONTEXT nm) graph
-  let relDefs = relationDefs graph
-  let isas = classifyDefs graph
+-- mergeTriples assumes the triples are expanded
+mergeTriples :: Maybe Int -> RDF TList -> RDF TList -> RDF TList
+mergeTriples maxBlankNode graph1 graph2 =
+  case maxBlankNode of
+    Nothing -> mergeTriples (Just $ getMaxBlankNode graph1) graph1 graph2
+    Just i -> case map objectOf $ select graph2 Nothing Nothing (Just isBNode) of
+      [] -> foldl' addTriple graph1 (uniqTriplesOf graph2)
+      (h : _) -> mergeTriples (Just (i + 1)) graph1' graph2'
+        where
+          numberToReplace = case h of
+            BNodeGen x -> x
+            _ -> fatal $ "Expected a blank node, but found: " <> tshow h
+          graph1' = foldl' addTriple graph1 (map replaceBlankNode triplesWithBlankNode)
+          graph2' = foldl' removeTriple graph2 triplesWithBlankNode
+          triplesWithBlankNode =
+            select graph2 Nothing Nothing (is h)
+              <> select graph2 (is h) Nothing Nothing
+          replaceBlankNode (Triple sub p obj) = Triple sub' p obj'
+            where
+              sub' = substitute sub
+              obj' = substitute obj
+              substitute n = case n of
+                BNodeGen x -> if x == numberToReplace then BNodeGen (i + 1) else n
+                _ -> n
+
+getMaxBlankNode :: RDF TList -> Int
+getMaxBlankNode gr = length . map objectOf $ select gr Nothing Nothing (Just isBNode)
+
+-- \| Convert a list of fully expanded Triples into a 'P_Context'.
+graph2P_Context :: RDF TList -> Guarded P_Context
+graph2P_Context graph = do
+  ontologyName <- case select graph Nothing rdfType owlOntology of
+    [] -> mkError "No ontology triple found in Turtle file"
+    (Triple (UNode s) _ _) : _ -> pure . fst . suggestName ContextName . toText1Unsafe $ s
+    (t : _) ->
+      mkError
+        $ T.unlines
+          [ "Subject note of ontology triple should be a UNode.",
+            "  Found: " <> tshow (subjectOf t)
+          ]
+  cptDefs <- conceptDefs (CONTEXT ontologyName)
+  let relDefs = relationDefs
+  let isas =
+        [ PClassify
+            { specific = PCpt sName,
+              generics = PCpt gName NE.:| [],
+              pos = orig
+            }
+          | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
+            sLbl <- getLabels sNode,
+            let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
+            gLbl <- getLabels gNode,
+            let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
+        ]
+        where
+          getLabels :: Node -> [Text]
+          getLabels n =
+            mapMaybe (getLiteralText . objectOf)
+              $ select graph (is n) rdfsLabel Nothing
+
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -84,7 +148,7 @@ getContext filePath guardedGraph = do
         ctx_pos = mempty,
         ctx_pops = mempty,
         ctx_pats = mempty,
-        ctx_nm = nm,
+        ctx_nm = ontologyName,
         ctx_metas = mempty,
         ctx_markup = Just Markdown,
         ctx_lbl = Nothing,
@@ -98,33 +162,10 @@ getContext filePath guardedGraph = do
       }
   where
     mkError :: Text -> Guarded a
-    mkError = mkTurtleParseError filePath
-    orig = Origin $ "Somewhere in " <> T.pack filePath
-    ontologyName :: RDF TList -> Guarded Name
-    ontologyName graph = case select graph Nothing rdfType owlOntology of
-      [] -> mkError "No ontology triple found in Turtle file"
-      [Triple (UNode s) _ _] -> pure . fst . suggestName ContextName . toText1Unsafe $ s
-      _ -> mkError "Multiple ontology triples found in Turtle file"
-    classifyDefs :: RDF TList -> [PClassify]
-    classifyDefs graph =
-      [ PClassify
-          { specific = PCpt sName,
-            generics = PCpt gName NE.:| [],
-            pos = orig
-          }
-        | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
-          sLbl <- getLabels sNode,
-          let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
-          gLbl <- getLabels gNode,
-          let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
-      ]
-      where
-        getLabels :: Node -> [Text]
-        getLabels n =
-          mapMaybe (getLiteralText . objectOf)
-            $ select graph (is n) rdfsLabel Nothing
-    relationDefs :: RDF TList -> [P_Relation]
-    relationDefs graph =
+    mkError = mkGenericParserError orig
+    orig = Origin "Somewhere in imported .ttl files."
+    relationDefs :: [P_Relation]
+    relationDefs =
       [ P_Relation
           { dec_sign = P_Sign (PCpt src) (PCpt tgt),
             dec_prps = Set.fromList (getProps relNode blank),
@@ -172,8 +213,8 @@ getContext filePath guardedGraph = do
                     cardinalityNodes =
                       [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
                 _ -> []
-    conceptDefs :: DefinitionContainer -> RDF TList -> Guarded [PConceptDef]
-    conceptDefs frm graph =
+    conceptDefs :: DefinitionContainer -> Guarded [PConceptDef]
+    conceptDefs frm =
       sequence
         [ mkConceptDef cpt
           | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,

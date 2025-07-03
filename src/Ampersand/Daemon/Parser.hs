@@ -24,11 +24,11 @@ parseProject ::
   (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   FilePath ->
   RIO env ([Load], [FilePath])
-parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do
+parseProject rootAdl = local (set rootFileL (Roots (rootAdl NE.:| []))) $ do
   showWarnings <- view showWarningsL
-  (pc, gPctx) <- parseFilesTransitive (Roots [rootAdl])
+  (pc, gPctx) <- parseFilesTransitive (Roots (rootAdl NE.:| []))
   env <- ask
-  let loadedFiles = map pcCanonical pc
+  let loadedFiles = fmap pcCanonical pc
       gActx = pCtx2Fspec env =<< gPctx
   return
     ( case gActx of
@@ -36,7 +36,7 @@ parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do
           | showWarnings -> map warning2Load ws
           | otherwise -> []
         Errors es -> NE.toList . fmap error2Load $ es,
-      loadedFiles
+      NE.toList loadedFiles
     )
 
 warning2Load :: Warning -> Load
