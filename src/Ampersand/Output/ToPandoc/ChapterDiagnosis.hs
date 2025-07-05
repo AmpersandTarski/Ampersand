@@ -4,10 +4,10 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Ampersand.Output.PandocAux
 import Ampersand.Output.ToPandoc.SharedAmongChapters
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import System.FilePath
 
 chpDiagnosis ::
   (HasDirOutput env, HasDocumentOpts env) =>

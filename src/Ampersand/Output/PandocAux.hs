@@ -22,10 +22,10 @@ import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import qualified RIO.ByteString.Lazy as BL
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.DocTemplates
 import qualified Text.DocTemplates.Internal as PT
 import Text.Pandoc

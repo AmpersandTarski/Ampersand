@@ -14,10 +14,10 @@ import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.FSpec2SQL
 import Ampersand.Output.FSpec2Turtle
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
 import RIO.Time
-import System.Directory
-import System.FilePath
 
 -- | Dumps diagnostic output for development purposes
 devoutput ::

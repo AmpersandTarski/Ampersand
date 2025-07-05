@@ -12,11 +12,11 @@ import Conduit
 import Data.Yaml
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.ByteString.Lazy.Partial as BLPartial
+import RIO.Directory
+import RIO.FilePath
 import RIO.List as L
 import RIO.Process
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import System.IO.Error (tryIOError)
 
 data DirList

@@ -16,9 +16,9 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.GenBackend (doGenBackend)
 import Ampersand.Prototype.GenFrontend
 import Ampersand.Types.Config
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 
 -- | Builds a prototype of the current project.
 proto ::

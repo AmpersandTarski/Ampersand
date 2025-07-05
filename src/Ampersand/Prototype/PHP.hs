@@ -10,9 +10,9 @@ import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import System.Process (cwd, readCreateProcess, shell)
 
 createTablePHP :: TableSpec -> [Text]

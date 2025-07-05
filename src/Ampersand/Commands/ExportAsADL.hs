@@ -11,9 +11,9 @@ import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 
 -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
 -- By default 'doGenADL' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.

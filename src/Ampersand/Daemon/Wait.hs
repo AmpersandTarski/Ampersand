@@ -15,6 +15,7 @@ import Ampersand.Basics
 import Ampersand.Daemon.Util
 import Control.Concurrent.Extra (Var, modifyVar_, newVar)
 import Control.Monad.Extra (concatMapM, firstJustM, ifM, partitionM)
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
@@ -22,7 +23,6 @@ import qualified RIO.Text as T
 import RIO.Time
 import System.Directory.Extra (canonicalizePath, doesDirectoryExist, listContents)
 import System.FSNotify
-import System.FilePath
 import System.Time.Extra (Seconds, sleep)
 
 data Waiter
