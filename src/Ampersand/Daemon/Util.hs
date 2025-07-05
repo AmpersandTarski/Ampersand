@@ -9,9 +9,9 @@ module Ampersand.Daemon.Util
 where
 
 import Ampersand.Basics
+import RIO.Directory
 import RIO.Time
 import System.Console.ANSI
-import System.Directory
 import System.IO.Error (isDoesNotExistError)
 
 -- | The message to show when no errors have been reported

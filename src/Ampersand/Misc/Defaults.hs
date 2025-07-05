@@ -2,7 +2,7 @@
 
 module Ampersand.Misc.Defaults where
 
-import System.FilePath
+import RIO.FilePath
 
 defaultDirPrototype :: FilePath
 defaultDirPrototype = ".proto"

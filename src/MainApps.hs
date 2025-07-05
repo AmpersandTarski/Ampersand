@@ -16,9 +16,9 @@ import Ampersand.Input.PreProcessor
 import Ampersand.Options.GlobalParser
 import Ampersand.Runners
 import Ampersand.Types.Config
+import RIO.Directory
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import System.Directory
 import System.Environment (getArgs, getProgName)
 
 ampersand :: IO ()

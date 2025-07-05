@@ -15,14 +15,14 @@ import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import RIO
 import RIO.Char
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import RIO.Time
-import System.Directory
 import System.Environment (getEnvironment)
 import qualified System.Exit as SE
-import System.FilePath
 import System.Process (readProcessWithExitCode)
 import Prelude (print, putStrLn)
 

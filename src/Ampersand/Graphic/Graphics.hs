@@ -14,13 +14,13 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux (outputLang)
 import Data.GraphViz as GV
 import Data.GraphViz.Attributes.Complete
+import RIO.Directory (createDirectoryIfMissing, makeAbsolute)
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
-import System.Directory (createDirectoryIfMissing, makeAbsolute)
-import System.FilePath
 
 -- import           System.Process (callCommand)
 

@@ -54,16 +54,12 @@ import Ampersand.Prototype.StaticFiles_Generated
   )
 import Data.RDF
 import RIO.Char (toLower)
-import qualified RIO.List as L
-import qualified RIO.NonEmpty as NE
-import qualified RIO.Set as Set
-import qualified RIO.Text as T
-import System.Directory
+import RIO.Directory
   ( canonicalizePath,
     doesFileExist,
     getCurrentDirectory,
   )
-import System.FilePath
+import RIO.FilePath
   ( equalFilePath,
     joinDrive,
     joinPath,
@@ -75,6 +71,10 @@ import System.FilePath
     takeExtension,
     (</>),
   )
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import Text.Parsec (getState)
 
 -- | Parse Ampersand files and all transitive includes
@@ -307,7 +307,7 @@ parseSingleADL pc =
                 }
               []
         myNormalise :: FilePath -> FilePath
-        -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar.
+        -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why RIO.FilePath doesn't support reduction of x/foo/../bar into x/bar.
         -- However, for most Ampersand use cases, we will not deal with symlinks.
         -- As long as that assumption holds, we can make the following reductions
         myNormalise fp = joinDrive drive . joinPath $ f [] dirs <> [file]

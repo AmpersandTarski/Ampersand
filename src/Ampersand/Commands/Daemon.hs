@@ -16,13 +16,13 @@ import Ampersand.Daemon.Util
 import Ampersand.Daemon.Wait
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
+import RIO.Directory (getCurrentDirectory, setCurrentDirectory)
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import System.Console.ANSI (hSupportsANSI, setTitle)
 import qualified System.Console.Terminal.Size as Term
-import System.Directory (getCurrentDirectory, setCurrentDirectory)
 import System.Environment
-import System.FilePath
 import System.Info
 
 -- | When to colour terminal output.

@@ -15,9 +15,9 @@ import Ampersand.Prototype.GenAngularFrontend
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
 import RIO.Char
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.StringTemplate.GenericStandard ()
 
 doGenFrontend ::
