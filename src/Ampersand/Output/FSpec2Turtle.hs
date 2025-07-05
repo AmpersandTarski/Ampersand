@@ -230,4 +230,4 @@ shortenTriple b p (Triple s pr o) =
   Triple (shortenNode b p s) (shortenNode b p pr) (shortenNode b p o)
 
 uri :: (Unique a) => a -> Node
-uri a = unode $ unBaseUrl myBaseUrl <> text1ToText (uniqueShowWithType a)
+uri a = unode $ unBaseUrl myBaseUrl <> "a_" <> (T.take 10 . tshow . abs . hash . tshow .text1ToText . uniqueShowWithType $ a)
