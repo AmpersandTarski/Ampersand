@@ -48,7 +48,6 @@ import Ampersand.Input.PreProcessor
 import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (parseXlsxFile)
 import Ampersand.Misc.HasClasses
-  
 import Ampersand.Prototype.StaticFiles_Generated
   ( FileKind (FormalAmpersand, PrototypeContext),
     getStaticFileContent,
@@ -80,7 +79,7 @@ import Text.Parsec (getState)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
-  (HasDirOutput env, HasFSpecGenOpts env,HasTrimXLSXOpts env, HasLogFunc env) =>
+  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) =>
   Roots ->
   -- | A tuple containing a list of parsed files and the The resulting context
   RIO env (NonEmpty ParseCandidate, Guarded P_Context)
@@ -103,7 +102,7 @@ parseFilesTransitive xs = do
           pcDefineds = Set.empty
         }
 
-parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env,HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
 parseFormalAmpersand = do
   parseThings
     $ ParseCandidate
@@ -115,7 +114,7 @@ parseFormalAmpersand = do
       }
     NE.:| []
 
-parsePrototypeContext :: (HasDirOutput env, HasFSpecGenOpts env,HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parsePrototypeContext :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
 parsePrototypeContext = do
   parseThings
     $ ParseCandidate
@@ -139,7 +138,7 @@ parseThings pcs = do
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
     --   return the resulting P_Context.
-    finalize :: (HasFSpecGenOpts  env, HasDirOutput env, HasLogFunc env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
+    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasLogFunc env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
     finalize (Errors err) = pure (Errors err)
     finalize (Checked results warns) = do
       let (contexts, graphs) = partitionEithers (map snd results)

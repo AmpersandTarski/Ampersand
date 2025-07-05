@@ -5,7 +5,7 @@ module Ampersand.Input.SemWeb.Turtle
     graph2P_Context,
     writeRdfTList,
     mergeGraphs,
-    parseTurtle
+    parseTurtle,
   )
 where
 
@@ -61,7 +61,7 @@ readTurtle filePath = do
             "   File does not exist."
           ]
 
-writeRdfTList :: (HasDirOutput env , HasFSpecGenOpts  env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
 writeRdfTList i rdfGraph = do
   env <- ask
   let filePath = filePath' env

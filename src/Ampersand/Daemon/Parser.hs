@@ -12,7 +12,7 @@ import Ampersand.Daemon.Types
 import Ampersand.FSpec.ToFSpec.CreateFspec (pCtx2Fspec)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.Parsing
-import Ampersand.Misc.HasClasses 
+import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified RIO.NonEmpty as NE
 
