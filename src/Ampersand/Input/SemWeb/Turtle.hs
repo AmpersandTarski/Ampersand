@@ -5,6 +5,7 @@ module Ampersand.Input.SemWeb.Turtle
     graph2P_Context,
     writeRdfTList,
     mergeGraphs,
+    parseTurtle,
   )
 where
 
@@ -20,6 +21,15 @@ import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+
+parseTurtle :: Text -> Guarded (RDF TList)
+parseTurtle raw = do
+  let defBaseUrl = Nothing
+      defMappings = Nothing
+      parser = TurtleParser defBaseUrl defMappings
+  case parseString parser raw of
+    Left err -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
+    Right graph -> pure graph
 
 -- | Parse a Turtle (.ttl) file into an RDF TList, using the RIO monad.
 readTurtle :: FilePath -> RIO env (Guarded (RDF TList))
@@ -41,7 +51,7 @@ readTurtle filePath = do
           parser = TurtleParser defBaseUrl defMappings
       result <- liftIO $ parseFile parser filePath
       case result of
-        Left err -> pure $ mkTurtleParseError filePath (tshow err)
+        Left err -> pure $ mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
         Right graph -> pure . pure $ graph
     else
       return
@@ -51,7 +61,7 @@ readTurtle filePath = do
             "   File does not exist."
           ]
 
-writeRdfTList :: (HasDirOutput env , HasFSpecGenOpts  env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
 writeRdfTList i rdfGraph = do
   env <- ask
   let filePath = filePath' env

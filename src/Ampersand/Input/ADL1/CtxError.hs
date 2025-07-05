@@ -43,7 +43,6 @@ module Ampersand.Input.ADL1.CtxError
     mkRoundTripError,
     mkRoundTripTextError,
     mkSubInterfaceMustBeDefinedOnObject,
-    mkTurtleParseError,
     mkTurtleWarning,
     mkTypeMismatchError,
     mkUndeclaredError,
@@ -760,10 +759,6 @@ mkCaseProblemWarning x y =
 
 mkGenericParserError :: Origin -> Text -> Guarded a
 mkGenericParserError orig msg = Errors . pure $ CTXE orig msg
-
-mkTurtleParseError :: FilePath -> Text -> Guarded a
-mkTurtleParseError filename msg =
-  Errors . pure $ CTXE (FileLoc (FilePos filename 0 0) "") msg
 
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning

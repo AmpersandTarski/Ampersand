@@ -112,7 +112,7 @@ classdiagram2dot env cd =
                     ]
                     ( Html.Text
                         [ Html.Font
-                            [Html.Color (X11Color White)]
+                            [Html.Color (X11Color Gray90)]
                             [Html.Str . fromString . T.unpack . fullName $ cl]
                         ]
                     )
