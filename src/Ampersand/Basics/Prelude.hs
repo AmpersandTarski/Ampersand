@@ -3,6 +3,7 @@
 module Ampersand.Basics.Prelude
   ( module RIO,
     readUTF8File,
+    readUTF8FileLenient,
     zipWith,
     openTempFile,
     Verbosity (..),
@@ -24,14 +25,24 @@ where
 
 -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 
+import qualified Data.Text.Encoding as T
 import Data.Text1 (Text1 (..))
 import RIO hiding (exitWith, undefined, zipWith)
 import qualified RIO as WarnAbout (undefined)
+import qualified RIO.ByteString as SB
+import RIO.Directory (doesFileExist)
 import qualified RIO.Text as T
 import System.IO (openTempFile)
 import Prelude (getChar, reads)
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
+
+readUTF8FileLenient :: FilePath -> RIO env (Either [Text] Text)
+readUTF8FileLenient fp = do
+  exists <- doesFileExist fp
+  if exists
+    then liftIO (Right . T.decodeUtf8With T.lenientDecode <$> SB.readFile fp)
+    else return $ Left ["File does not exist: " <> T.pack fp]
 
 -- Wrapper around readFileUtf8. It exits with an error:
 readUTF8File :: FilePath -> RIO env (Either [Text] Text)
