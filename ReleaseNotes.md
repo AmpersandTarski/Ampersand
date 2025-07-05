@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.4.6
+- bugfix with reading .ttl files on Windows (encoding issue)
+
 ## v5.4.5
 - [Issue #1568](https://github.com/AmpersandTarski/Ampersand/issues/1568) Parsing of .ttl files misses certain relations.
 
