@@ -258,8 +258,8 @@ parseSingleADL pc =
           return ((,[]) . fromContext <$> ctxFromAtlas) -- A .json file does not contain include files
       | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
         extension == ".ttl" = do
-          ctxFromTurtle <- catchInvalidTurtle $ readTurtle filePath
-          return ((,[]) . fromGraph <$> ctxFromTurtle)
+          mfileContents <- readFileUtf8 filePath
+          return $ (,[]) . fromGraph <$> parseTurtle mfileContents
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -343,11 +343,6 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
-        catchInvalidTurtle :: RIO env (Guarded (RDF TList)) -> RIO env (Guarded (RDF TList))
-        catchInvalidTurtle m = catch m f
-          where
-            f :: SomeException -> RIO env a
-            f exception = fatal ("The file does not seem to have a valid Turtle structure:\n  " <> tshow exception)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
