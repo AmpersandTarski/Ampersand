@@ -1077,6 +1077,10 @@ type MeetJoinEq = A_Concept -> A_Concept -> [A_Concept] -- returns empty list fo
 eqMeetJoinEq x y
   | x == y = [x]
   | otherwise = []
+meetEq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> [A_Concept]
+meetEq cGraph a b = case meet cGraph a b of Just m -> [m] ; _ -> []
+joinEq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> [A_Concept]
+joinEq cGraph a b = case join cGraph a b of Just m -> [m] ; _ -> []
 
 intersectSignatureSet, joinSignatureSet :: MeetJoinEq -> SignatureSet -> SignatureSet -> SignatureSet
 
