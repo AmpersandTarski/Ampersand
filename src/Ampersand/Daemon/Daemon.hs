@@ -50,7 +50,7 @@ initialState = do
   daemonConfig <- view daemonConfigL
   curDir <- liftIO getCurrentDirectory
   dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
-  result <- readUTF8File dotAmpersand
+  result <- readFileUtf8 dotAmpersand
   case result of
     Right content -> do
       let files =

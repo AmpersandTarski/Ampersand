@@ -334,7 +334,7 @@ readTemplate ::
 readTemplate templatePath = do
   env <- ask
   let absPath = getTemplateDir env </> templatePath
-  res <- readUTF8File absPath
+  res <- readFileUtf8 absPath
   case res of
     Left err ->
       exitWith

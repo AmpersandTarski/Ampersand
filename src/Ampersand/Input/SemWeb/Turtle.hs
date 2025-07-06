@@ -37,7 +37,7 @@ readTurtle filePath = do
   exists <- liftIO $ doesFileExist filePath
   if exists
     then do
-      raw <- readUTF8FileLenient filePath
+      raw <- readFileUtf8Lenient filePath
       let defBaseUrl =
             ( case raw of
                 Left _ -> Nothing
