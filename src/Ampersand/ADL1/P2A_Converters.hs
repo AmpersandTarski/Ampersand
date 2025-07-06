@@ -1232,8 +1232,8 @@ signatures contextInfo trm = case trm of
          return (STbinary sgnaTree sgnbTree sgns)
         where
           moj x y = toList (meetORjoin x y) -- toList is from Foldable
-          guard a b signs
-            | isEmptySignatureSet signs = (Errors . return . CTXE o) (diagnosis (opSigns a) (opSigns b))
+          guard sgnaTree sgnbTree signs
+            | isEmptySignatureSet signs = (Errors . return . CTXE o) (diagnosis (opSigns sgnaTree) (opSigns sgnbTree))
             | otherwise = pure signs
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
@@ -1254,7 +1254,7 @@ signatures contextInfo trm = case trm of
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
              conceptsSrc = [ src | s<-toSources sgnsa, t<-toSources sgnsb, Just src<-[meetORjoin s t] ]
              conceptsTgt = [ tgt | s<-toTargets sgnsa, t<-toTargets sgnsb, Just tgt<-[meetORjoin s t] ]
-             sgns = intersectSignatureSet meet sgnsa sgnsb
+             sgns = intersectSignatureSet moj sgnsa sgnsb
          if trace ("\ncheckPeri: "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgns: "<>tshow sgns) $
             isEmptySignatureSet sgns
          then case (conceptsSrc, conceptsTgt) of
