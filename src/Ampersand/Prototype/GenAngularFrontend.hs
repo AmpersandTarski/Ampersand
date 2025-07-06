@@ -220,9 +220,9 @@ genHTMLView fSpec depth obj =
       return
         $ if exists
           then cptfn
-          else "Atomic-" <> show ttp <.> "html"
+          else "Atomic-" <> show ttypeOf <.> "html"
       where
-        ttp = cptTType fSpec cpt
+        ttypeOf = cptTType fSpec cpt
         cptfn = "Concept-" <> show (name cpt) <.> "html"
 
 -- This function is a helper function to add indentation using the EOL character sequence

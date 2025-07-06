@@ -84,9 +84,15 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
 
     relation2triples :: Relation -> Triples
     relation2triples rel =
-      [ triple (uri rel) (unode "rdf:type") (unode "owl:ObjectProperty"),
+      [ triple
+          (uri rel)
+          (unode "rdf:type")
+          ( if cptTType fSpec (target rel) == Object
+              then unode "owl:ObjectProperty"
+              else unode "owl:DatatypeProperty"
+          ),
         triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
-        triple (uri rel) (unode "rdfs:range") (uri (target rel)),
+        triple (uri rel) (unode "rdfs:range") (rangeNodeBasedOnTType fSpec (target rel)),
         triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
       ]
         <> [ triple (uri rel) (unode "rdf:type") (unode "owl:AsymmetricProperty")
@@ -172,8 +178,8 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
         triplesOfAtom :: A_Concept -> AAtomValue -> Triples
         triplesOfAtom cpt av =
           [ triple (uri av) (unode "rdf:type") (unode "owl:NamedIndividual"),
-            triple (uri av) (unode "rdf:type") (unode "owl:Thing"),
-            triple (uri av) (unode "rdf:type") (uri cpt),
+            --       triple (uri av) (unode "rdf:type") (unode "owl:Thing"),
+            triple (uri av) (unode "rdf:type") (rangeNodeBasedOnTType fSpec cpt),
             triple (uri av) (unode "rdfs:label") (lnode . plainL . showValSQL $ av)
           ]
 
@@ -223,3 +229,20 @@ shortenTriple b p (Triple s pr o) =
 
 uri :: (Unique a) => a -> Node
 uri a = unode $ unBaseUrl myBaseUrl <> "a_" <> (T.take 10 . tshow . abs . hash . tshow . text1ToText . uniqueShowWithType $ a)
+
+rangeNodeBasedOnTType :: FSpec -> A_Concept -> Node
+rangeNodeBasedOnTType fSpec cpt = case cptTType fSpec cpt of
+  Alphanumeric -> LNode (PlainL "xsd:string")
+  BigAlphanumeric -> LNode (PlainL "xsd:string")
+  HugeAlphanumeric -> LNode (PlainL "xsd:string")
+  Password -> LNode (PlainL "xsd:string")
+  Binary -> LNode (PlainL "xsd:base64Binary")
+  BigBinary -> LNode (PlainL "xsd:base64Binary")
+  HugeBinary -> LNode (PlainL "xsd:base64Binary")
+  Date -> LNode (PlainL "xsd:date")
+  DateTime -> LNode (PlainL "xsd:dateTime")
+  Boolean -> LNode (PlainL "xsd:boolean")
+  Integer -> LNode (PlainL "xsd:integer")
+  Float -> LNode (PlainL "xsd:float")
+  TypeOfOne -> LNode (PlainL "'ONE'") -- special concept ONE
+  Object -> uri cpt
