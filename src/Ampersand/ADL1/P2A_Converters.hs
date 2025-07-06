@@ -1074,12 +1074,12 @@ instance Show SignatureSet where
   show BVsgn = "{[any*any]}"
 
 type MeetJoinEq = A_Concept -> A_Concept -> [A_Concept] -- returns empty list for no match, or the {meet/join/first argument} in case of {meet/join/equality}
+eqMeetJoinEq :: MeetJoinEq
 eqMeetJoinEq x y
   | x == y = [x]
   | otherwise = []
-meetEq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> [A_Concept]
+meetEq, joinEq :: AdjacencyMap A_Concept -> MeetJoinEq
 meetEq cGraph a b = case meet cGraph a b of Just m -> [m] ; _ -> []
-joinEq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> [A_Concept]
 joinEq cGraph a b = case join cGraph a b of Just m -> [m] ; _ -> []
 
 intersectSignatureSet, joinSignatureSet :: MeetJoinEq -> SignatureSet -> SignatureSet -> SignatureSet
