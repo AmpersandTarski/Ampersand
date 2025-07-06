@@ -1059,77 +1059,80 @@ pCtx2aCtx
 --   It "shrinks" during the type derivation, until it becomes a single, concrete signature.
 --   The reason for having a separate data type is not only for clarity and maintainability,
 --   but also to avoid working long lists of possible signatures in large scripts.
-data SignatureSet = SSign (Set.Set (A_Concept, A_Concept))
-                  | SIsgn                      -- The set of all (X,X) where X is any A_Concept
-                  | LVsgn (Set.Set A_Concept)  -- The set of all (X,Y) where X is any A_Concept and Y is an element of the argument.
-                  | RVsgn (Set.Set A_Concept)  -- The set of all (X,Y) where X is an element of the argument and Y is any A_Concept.
-                  | BVsgn                      -- The set of all (X,Y) where X and Y are any A_Concept.
+data SignatureSet = SSign [(A_Concept, A_Concept)] -- Simply represents the set of all signatures.
+                  | SIsgn                          -- The set of all (X,X) where X is any A_Concept.
+                  | LVsgn [A_Concept]              -- The set of all (X,Y) where X is any A_Concept and Y is an element of the argument.
+                  | RVsgn [A_Concept]              -- The set of all (X,Y) where X is an element of the argument and Y is any A_Concept.
+                  | BVsgn                          -- The set of all (X,Y) where X and Y are any A_Concept.
                   deriving (Eq, Ord)
 
 instance Show SignatureSet where
-  show (SSign xs) = "{" <> L.intercalate ", " (map (\(x,y)->"["<>show x<>"*"<>show y<>"]") (Set.toList xs)) <> "}"
+  show (SSign xs) = "{" <> L.intercalate ", " (map (\(x,y)->"["<>show x<>"*"<>show y<>"]") xs) <> "}"
   show SIsgn = "{[X*X] | X is any A_Concept}"
-  show (LVsgn xs) = "{" <> L.intercalate ", " (map (\x->"[any*"<>show x<>"]") (Set.toList xs)) <> "}"
-  show (RVsgn xs) = "{" <> L.intercalate ", " (map (\x->"["<>show x<>"*any]") (Set.toList xs)) <> "}"
+  show (LVsgn xs) = "{" <> L.intercalate ", " (map (\x->"[any*"<>show x<>"]") xs) <> "}"
+  show (RVsgn xs) = "{" <> L.intercalate ", " (map (\x->"["<>show x<>"*any]") xs) <> "}"
   show BVsgn = "{[any*any]}"
 
-intersectSignatureSet :: SignatureSet -> SignatureSet -> SignatureSet
-intersectSignatureSet (SSign xs) (SSign ys) = SSign (xs `Set.intersection` ys)
-intersectSignatureSet (SSign xs)  SIsgn     = SSign (Set.filter (uncurry (==)) xs)
-intersectSignatureSet (SSign xs) (LVsgn ys) = SSign (Set.filter (\(_, t') -> t' `elem` ys) xs)
-intersectSignatureSet (SSign xs) (RVsgn ys) = SSign (Set.filter (\(s', _) -> s' `elem` ys) xs)
-intersectSignatureSet ssgn  BVsgn           = ssgn
-intersectSignatureSet SIsgn  SIsgn          = SIsgn
-intersectSignatureSet SIsgn  (LVsgn ys)     = SSign (Set.map (\c -> (c, c)) ys)
-intersectSignatureSet SIsgn  (RVsgn ys)     = SSign (Set.map (\c -> (c, c)) ys)
-intersectSignatureSet (LVsgn xs) (LVsgn ys) = LVsgn (xs `Set.intersection` ys)
-intersectSignatureSet (LVsgn xs) (RVsgn ys) = SSign (cartesianProduct xs ys)
-intersectSignatureSet (RVsgn xs) (RVsgn ys) = RVsgn (xs `Set.intersection` ys)
-intersectSignatureSet x y = intersectSignatureSet y x
+type MeetJoinEq = A_Concept -> A_Concept -> [A_Concept] -- returns empty list for no match, or the {meet/join/first argument} in case of {meet/join/equality}
+eqMeetJoinEq x y
+  | x == y = [x]
+  | otherwise = []
+
+intersectSignatureSet, joinSignatureSet :: MeetJoinEq -> SignatureSet -> SignatureSet -> SignatureSet
+
+intersectSignatureSet eq (SSign xs) (SSign ys) = SSign (L.nub [(r1, r2) | (x1, x2) <- xs, (y1, y2) <- ys, r1 <- x1 `eq` y1, r2 <- x2 `eq` y2])
+intersectSignatureSet eq (SSign xs)  SIsgn     = SSign (L.nub [(r, r) | (x1, x2) <- xs, r <- x1 `eq` x2])
+intersectSignatureSet eq (SSign xs) (LVsgn ys) = SSign (L.nub [(x1, r) | (x1, x2) <- xs, y <- ys, r <- x2 `eq` y])
+intersectSignatureSet eq (SSign xs) (RVsgn ys) = SSign (L.nub [(r, x2) | (x1, x2) <- xs, y <- ys, r <- x1 `eq` y])
+intersectSignatureSet _  ssgn  BVsgn           = ssgn
+intersectSignatureSet _  SIsgn  SIsgn          = SIsgn
+intersectSignatureSet _  SIsgn  (LVsgn ys)     = SSign (fmap (\c -> (c, c)) ys)
+intersectSignatureSet _  SIsgn  (RVsgn ys)     = SSign (fmap (\c -> (c, c)) ys)
+intersectSignatureSet eq (LVsgn xs) (LVsgn ys) = LVsgn (L.nub [r | x <- xs, y <- ys, r <- x `eq` y])
+intersectSignatureSet _  (LVsgn xs) (RVsgn ys) = SSign [(x, y) | x <- xs, y <- ys]
+intersectSignatureSet eq (RVsgn xs) (RVsgn ys) = RVsgn (L.nub [r | x <- xs, y <- ys, r <- x `eq` y])
+intersectSignatureSet eq x y = intersectSignatureSet eq y x
+
+joinSignatureSet eq (SSign xs) (SSign ys) = SSign (L.nub [(a, c) | (a,b) <- xs, (b',c) <- ys, _ <- b `eq` b'])
+joinSignatureSet _ (SSign xs) (LVsgn ys) = SSign [(a,c) | (a,_) <- xs, c <- ys]
+joinSignatureSet eq (SSign xs) (RVsgn ys) = RVsgn (L.nub [a | (a,b) <- xs, b' <- ys, _ <- b `eq` b'])
+joinSignatureSet _ (SSign xs) BVsgn = RVsgn [a | (a,_) <- xs]
+joinSignatureSet _ x SIsgn = x
+joinSignatureSet _ (LVsgn xs) (LVsgn ys) = LVsgn [y | not (null xs), y <- ys]
+joinSignatureSet eq (LVsgn xs) (RVsgn ys) = if null ([() | x <- xs, y <- ys, _ <- x `eq` y]) then SSign [] else BVsgn
+joinSignatureSet _ (LVsgn xs) BVsgn = if null xs then SSign [] else BVsgn
+joinSignatureSet _ (RVsgn xs) (RVsgn ys) = RVsgn [y | not (null xs), y <- ys]
+joinSignatureSet _ (RVsgn xs) (LVsgn ys) = SSign [(x,y) | x <- xs, y <- ys]
+joinSignatureSet _ (RVsgn xs) BVsgn = if null xs then SSign [] else BVsgn
+joinSignatureSet _ BVsgn BVsgn = BVsgn
+joinSignatureSet eq x y = flp (joinSignatureSet eq (flp y) (flp x))
 
 shrinkSrc, shrinkTgt :: A_Concept -> OpTree SignatureSet -> OpTree SignatureSet
-shrinkSrc c tr = tr{opSigns = sgns}
-  where
-    sgns = case opSigns tr of
-      SSign xs -> SSign (Set.filter (\(s, _) -> s == c) xs)
-      LVsgn xs -> SSign (Set.map (\x->(c,x)) xs) -- the same as: SSign (Set.fromList [(c,x) | x<-Set.toList xs])
-      RVsgn xs -> RVsgn (Set.filter (==c) xs)
-      sgn      -> sgn
-shrinkTgt c tr = tr{opSigns = sgns}
-  where
-    sgns = case opSigns tr of
-      SSign xs -> SSign (Set.filter (\(_, t) -> t == c) xs)
-      LVsgn xs -> LVsgn (Set.filter (==c) xs)
-      RVsgn xs -> SSign (Set.map (\x->(x,c)) xs) -- the same as: SSign (Set.fromList [(x,c) | x<-Set.toList xs])
-      sgn      -> sgn
+shrinkSrc c tr = tr{opSigns = intersectSignatureSet eqMeetJoinEq (RVsgn [c]) (opSigns tr)}
+shrinkTgt c tr = tr{opSigns = intersectSignatureSet eqMeetJoinEq (LVsgn [c]) (opSigns tr)}
 
 isEmptySignatureSet :: SignatureSet -> Bool
-isEmptySignatureSet (SSign xs) = Set.null xs
+isEmptySignatureSet (SSign xs) = null xs
 isEmptySignatureSet SIsgn = False
-isEmptySignatureSet (LVsgn xs) = Set.null xs
-isEmptySignatureSet (RVsgn xs) = Set.null xs
+isEmptySignatureSet (LVsgn xs) = null xs
+isEmptySignatureSet (RVsgn xs) = null xs
 isEmptySignatureSet BVsgn = False
 
 instance Flippable SignatureSet where
-  flp (SSign xs) = SSign (Set.map (\(s, t) -> (t, s)) xs)
+  flp (SSign xs) = SSign (map (\(s, t) -> (t, s)) xs)
   flp SIsgn = SIsgn
   flp (LVsgn xs) = RVsgn xs
   flp (RVsgn xs) = LVsgn xs
   flp BVsgn = BVsgn
 
--- | A more succinct solution and you are using a recent version of containers, which is available since containers-0.6.0.1.
---   Wait until RIO picks this up
-cartesianProduct :: (Ord a, Ord b) => Set.Set a -> Set.Set b -> Set.Set (a, b)
-cartesianProduct as bs = Set.fromList [ (a, b) | a <- Set.toList as, b <- Set.toList bs ]
-
 toSignatures :: SignatureSet -> [Signature]
-toSignatures signSet = [ Sign src tgt | SSign xs<-[signSet], (src,tgt) <- Set.toList xs]
+toSignatures signSet = [ Sign src tgt | SSign xs<-[signSet], (src,tgt) <- xs]
 
 toTargets :: SignatureSet -> [A_Concept]
-toTargets signSet = L.nub ([ tgt | SSign xs <- [signSet], (_,tgt) <- Set.toList xs]<>[ tgt | LVsgn xs <- [signSet], tgt <- Set.toList xs])
+toTargets signSet = L.nub ([ tgt | SSign xs <- [signSet], (_,tgt) <- xs]<>[ tgt | LVsgn xs <- [signSet], tgt <- xs])
 
 toSources :: SignatureSet -> [A_Concept]
-toSources signSet = L.nub ([ src | SSign xs <- [signSet], (src,_) <- Set.toList xs]<>[ src | RVsgn xs <- [signSet], src <- Set.toList xs])
+toSources signSet = L.nub ([ src | SSign xs <- [signSet], (src,_) <- xs]<>[ src | RVsgn xs <- [signSet], src <- xs])
 
 data OpTree a
   = STbinary  { lSigns  :: OpTree a
@@ -1166,29 +1169,29 @@ instance (Flippable a) => Flippable (OpTree a) where
   flp (STbinary a b ss) = STbinary (flp b) (flp a) (flp ss)
   flp (STnullary ss) = STnullary (flp ss)
 
--- | signatures constructs a tree with all possible signatures in each node of the tree, or ANY (which is a type error).
+-- | signatures constructs a tree with all possible signatures in each node of the tree.
 --   It is used by the function termPrim2Expr to weed out these signatures down to one,
 --   to establish a unique signature for the term and all of its subterms.
 signatures :: ContextInfo -> Term TermPrim -> Guarded (OpTree SignatureSet)
 signatures contextInfo trm = case trm of
   Prim (PI _)                       -> (pure . STnullary)  SIsgn
   PCpl _ (Prim (PI _))              -> (pure . STnullary)  SIsgn
-  Prim (Pid _ c)                    -> (pure . STnullary . SSign . Set.fromList) [(pCpt2aCpt c,pCpt2aCpt c)]
-  Prim (Patm _ _ (Just c))          -> (pure . STnullary . SSign . Set.fromList) [(pCpt2aCpt c,pCpt2aCpt c)]
+  Prim (Pid _ c)                    -> (pure . STnullary . SSign) [(pCpt2aCpt c,pCpt2aCpt c)]
+  Prim (Patm _ _ (Just c))          -> (pure . STnullary . SSign) [(pCpt2aCpt c,pCpt2aCpt c)]
   Prim (Patm _ _  Nothing)          -> (pure . STnullary)  SIsgn
   PCpl _ (Prim (Patm _ _  Nothing)) -> (pure . STnullary)  SIsgn
   Prim (PVee _)                     -> (pure . STnullary)  BVsgn
   PCpl _ (Prim (PVee _))            -> (pure . STnullary)  BVsgn
-  Prim (Pfull _ src tgt)            -> (pure . STnullary . SSign . Set.fromList) [(pCpt2aCpt src, pCpt2aCpt tgt)]
-  Prim (PBin _ _)                   -> (pure . STnullary)  SIsgn --assume we only have binary relations that are endo, such as >, >=, etc..
+  Prim (Pfull _ src tgt)            -> (pure . STnullary . SSign) [(pCpt2aCpt src, pCpt2aCpt tgt)]
+  Prim (PBin _ _)                   -> (pure . STnullary)  SIsgn -- assume we only have binary relations that are endo, such as >, >=, etc..
   PCpl _ (Prim (PBin _ _))          -> (pure . STnullary)  SIsgn
-  Prim (PBind _ _ c)                -> (pure . STnullary . SSign . Set.fromList) [(pCpt2aCpt c,pCpt2aCpt c)]
+  Prim (PBind _ _ c)                -> (pure . STnullary . SSign) [(pCpt2aCpt c,pCpt2aCpt c)]
   Prim (PNamedR rel)                -> let sgns :: Maybe P_Sign -> [Signature]
                                            sgns (Just sgn) = (map sign . findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sgn
                                            sgns Nothing    = (fmap sign . findDecls (declarationsMap contextInfo) . name) rel
                                        in  case sgns (p_mbSign rel) of
                                              [] -> (Errors . return . CTXE (origin trm)) ("No signature found for relation "<> tshow rel)
-                                             ss -> pure (STnullary (SSign (Set.fromList [(src,tgt) | Sign src tgt <- ss])))
+                                             ss -> pure (STnullary (SSign [(src,tgt) | Sign src tgt <- ss]))
   PEqu o a b -> checkPeri  o "equation"          a b       (meet conceptsGraph) true  "PEqu" "meet" -- extra parameters for tracing purpose: opStr mjString
   PInc o a b -> checkPeri  o "inclusion"         a b       (meet conceptsGraph) true  "PInc" "meet"
   PIsc o a b -> checkPeri  o "intersection"      a b       (meet conceptsGraph) true  "PIsc" "meet"
@@ -1201,10 +1204,10 @@ signatures contextInfo trm = case trm of
   PDia o a b -> checkIntra o "diamond"           a b       (meet conceptsGraph) true  "PDia" "meet"
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-                   (return . STbinary sgnaTree sgnbTree . SSign . Set.fromList) [ (src, tgt) | src<-toSources sgnsa, tgt<-toTargets sgnsb ]
+                   (return . STbinary sgnaTree sgnbTree . SSign) [ (src, tgt) | src<-toSources sgnsa, tgt<-toTargets sgnsb ]
   PFlp _ e   -> fmap flp (signats e)
-  PKl0 _ e   -> signats e
-  PKl1 _ e   -> signats e
+  PKl0 o e   -> signats e
+  PKl1 o e   -> signats e
   PCpl _ e   -> signats e
   PBrk _ e   -> signats e
   where
@@ -1225,49 +1228,25 @@ signatures contextInfo trm = case trm of
       -> Guarded (OpTree SignatureSet)
     checkIntra o kind a b meetORjoin cmpare opStr mjString = -- extra parameters for tracing purpose: opStr mjString 
       do sgnaTree <- signats a; sgnbTree <- signats b
-         sgns <- joinSignatureSet (opSigns sgnaTree) (opSigns sgnbTree)
+         sgns <- guard sgnaTree sgnbTree (joinSignatureSet moj (opSigns sgnaTree) (opSigns sgnbTree))
          return (STbinary sgnaTree sgnbTree sgns)
         where
-          joinSignatureSet :: SignatureSet -> SignatureSet -> Guarded SignatureSet
-          joinSignatureSet (SSign xs) (SSign ys) = pure (SSign (Set.fromList [ (s, t') | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
-          joinSignatureSet        x    SIsgn     = pure x
-          joinSignatureSet  SIsgn        y       = pure y
-          joinSignatureSet (SSign xs) (LVsgn ys) = pure (SSign (Set.fromList [ (s, t') | (s, _) <- Set.toList xs, t' <- Set.toList ys ]))
-          joinSignatureSet (SSign xs) (RVsgn ys) = pure (RVsgn (Set.fromList [  s      | (s, t) <- Set.toList xs, s' <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
-          joinSignatureSet (SSign xs)  BVsgn     = pure (RVsgn (Set.fromList [  s      | (s, _) <- Set.toList xs]))
-          joinSignatureSet (LVsgn xs) (SSign ys) = pure (LVsgn (Set.fromList [  t'     | t <- Set.toList xs, (s',t') <- Set.toList ys, Just _between <- [t `meetORjoin` s'] ]))
-          joinSignatureSet (LVsgn _ ) (LVsgn ys) = pure (LVsgn ys)
-          joinSignatureSet (LVsgn xs) (RVsgn ys) = case [ () | tgtLeft <- Set.toList xs, srcRight <- Set.toList ys, Just _between <- [tgtLeft `meetORjoin` srcRight] ] of
-                                                     [] -> (Errors . return . CTXE o) ("Join: Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis (LVsgn xs) (RVsgn ys))
-                                                     _  -> pure BVsgn
-          joinSignatureSet (LVsgn _ )  BVsgn     = pure BVsgn
-          joinSignatureSet (RVsgn xs) (SSign ys) = pure (SSign (Set.fromList [ (s, t') | s <- Set.toList xs, (_,t') <- Set.toList ys ]))
-          joinSignatureSet (RVsgn xs) (LVsgn ys) = (Errors . return . CTXE o) ("Ambiguity of signatures at this "<>kind<>"."<>diagnosis (RVsgn xs) (LVsgn ys))
-          joinSignatureSet (RVsgn xs) (RVsgn _ ) = pure (RVsgn xs)
-          joinSignatureSet (RVsgn xs)  BVsgn     = pure (RVsgn xs)
-          joinSignatureSet  BVsgn     (SSign ys) = pure (LVsgn (Set.fromList [ t | (_,t) <- Set.toList ys]))
-          joinSignatureSet  BVsgn     (RVsgn _ ) = pure BVsgn
-          joinSignatureSet  BVsgn     (LVsgn ys) = pure (LVsgn ys)
-          joinSignatureSet  BVsgn      BVsgn     = pure BVsgn
-
+          moj x y = toList (meetORjoin x y) -- toList is from Foldable
+          guard a b signs
+            | isEmptySignatureSet signs = (Errors . return . CTXE o) (diagnosis (opSigns a) (opSigns b))
+            | otherwise = pure signs
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
-              ("composition"      , eq) -> "\n  The target of "<>displayLeft (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (toSources sgnsb) b<>"."
-              ("relative addition", eq) -> "\n  The target of "<>displayLeft (toTargets sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (toSources sgnsb) b<>"."
-              ("left residual"    , eq) -> "\n  The target of "<>displayLeft (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than ")<>" the target of "<>displayRight (toTargets sgnsb) b<>"."
-              ("right residual"   , eq) -> "\n  The source of "<>displayLeft (toSources sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (toSources sgnsb) b<>"."
-              ("diamond"          , eq) -> "\n  The target of "<>displayLeft (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (toSources sgnsb) b<>"."
+              ("composition"      , eq) -> "\n  The target of "<>display (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>display (toSources sgnsb) b<>"."
+              ("relative addition", eq) -> "\n  The target of "<>display (toTargets sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>display (toSources sgnsb) b<>"."
+              ("left residual"    , eq) -> "\n  The target of "<>display (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than ")<>" the target of "<>display (toTargets sgnsb) b<>"."
+              ("right residual"   , eq) -> "\n  The source of "<>display (toSources sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>display (toSources sgnsb) b<>"."
+              ("diamond"          , eq) -> "\n  The target of "<>display (toTargets sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>display (toSources sgnsb) b<>"."
               _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
-          displayLeft cpts expr =
+          display cpts expr =
             showP expr<>case L.nub cpts of
                           [cpt] -> ", which is "<>tshow cpt<>", "
-                          []    -> " is undefined because "<>showP expr<>" is untypable, but it "
                           _     -> ", which can be any of "<>tshow cpts<>", "
-          displayRight cpts expr =
-            showP expr<>case L.nub cpts of
-                          [cpt] -> ", which is "<>tshow cpt
-                          []    -> " is undefined because "<>showP expr<>" is untypable"
-                          _     -> ", which can be any of "<>tshow cpts
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
     checkPeri o kind a b meetORjoin _ opStr mjString = -- extra parameters for tracing purpose: opStr mjString 
@@ -1275,7 +1254,7 @@ signatures contextInfo trm = case trm of
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
              conceptsSrc = [ src | s<-toSources sgnsa, t<-toSources sgnsb, Just src<-[meetORjoin s t] ]
              conceptsTgt = [ tgt | s<-toTargets sgnsa, t<-toTargets sgnsb, Just tgt<-[meetORjoin s t] ]
-             sgns = sgnsa `intersectSignatureSet` sgnsb
+             sgns = intersectSignatureSet meet sgnsa sgnsb
          if trace ("\ncheckPeri: "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgns: "<>tshow sgns) $
             isEmptySignatureSet sgns
          then case (conceptsSrc, conceptsTgt) of
@@ -1285,6 +1264,7 @@ signatures contextInfo trm = case trm of
                   _        -> (Errors . return . CTXE o) ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb)
          else return (STbinary sgnaTree sgnbTree sgns)
       where
+        moj x y = toList (meetORjoin x y)
         showTyp :: Show a => [a] -> Text
         showTyp sgns = case sgns of
                          [] ->     "untyped"
@@ -1309,8 +1289,8 @@ termPrim2Expr contextInfo sgns trmprim
                                    [r] -> pure (EDcD r)
                                    []  -> (Errors . return . CTXE (origin trmprim)) ("Undefined relation "<>showP trmprim<>", I expected "<>tshow sgn<>" as signature.")
                                    rs  -> (Errors . return . CTXE (origin trmprim)) ("Ambiguous relation "<>showP trmprim<>". You should specify the type explicitly"<>if length rs>3 then "" else ", or pick one of: "<>T.intercalate ", " (map tshow rs)<>".")
-      (_             , []   ) -> (Errors . return . CTXE (origin trmprim)) ("Cannot derive a signature for "<>showP trmprim<>".")
-      (_             , signs) -> Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". You should specify the type explicitly"<>if length signs>4 then "" else ", for instance one of: "<>T.intercalate ", " (map tshow signs)<>".")
+      (_             , []   ) -> fatal ("Cannot derive a signature for "<>showP trmprim<>".") -- this should've surfaced earlier
+      (_             , signs) -> Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". You should specify the type explicitly, for instance one of: "<>T.intercalate ", " (map tshow (if length signs>4 then take 2 signs else signs)) <> (if length signs>4 then ", among others" else "") <> ".")
     where
       rels :: P_NamedRel -> [Relation]
       rels rel = case p_mbSign rel of
@@ -1358,62 +1338,16 @@ term2Expr contextInfo term
                -> Text
                -> Guarded Expression
     peri o kind a b sTree meetORjoin cmpare binOp opStr mjString = -- extra parameters for tracing purpose: opStr mjString
-      do let sgnsa = opSigns (lSigns sTree); sgnsb = opSigns (rSigns sTree); sgns = match sgnsa sgnsb
+      do let sgnsa = opSigns (lSigns sTree); sgnsb = opSigns (rSigns sTree); sgns = opSigns sTree
          eLeft <-t2e (lSigns sTree){opSigns = sgns} a
          eRight<-t2e (rSigns sTree){opSigns = sgns} b
-         trace ("\nperi: "<>opStr<>" "<>showP a<>" "<>showP b<>"\n   sgnsa = "<>tshow sgnsa<>"\n   sgnsb = "<>tshow sgnsb<>"\n   sgns  = "<>tshow sgns) $
-          return (binOp (eLeft, eRight))
+         return (binOp (eLeft, eRight))
        where
          showSgns :: Show a => [a] -> Text
          showSgns sgns = case sgns of
                           [] ->     "untyped"
                           [sgn] ->  tshow sgn
                           sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-         match :: SignatureSet -> SignatureSet -> SignatureSet
-         match  x          BVsgn     = x
-         match  BVsgn      y         = y
-         match  SIsgn      SIsgn     = SIsgn
-         match  SIsgn     (SSign ys) = SSign ys
-         match (SSign xs)  SIsgn     = SSign xs
-         match (SSign xs) (SSign ys) = SSign (Set.fromList [ (src,tgt) | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just src <- [s `meetORjoin` s'], Just tgt <- [t `meetORjoin` t'] ])
-         match (SSign xs) (LVsgn ys) = SSign (Set.fromList [ (s,  tgt) | (s, t) <- Set.toList xs, y <- Set.toList ys, Just tgt <- [t `meetORjoin` y] ])
-         match  SIsgn     (LVsgn ys) = SSign (Set.fromList [ (t, t) | t <- Set.toList ys ])
-         match (LVsgn xs) (LVsgn ys) = LVsgn (Set.fromList [ tgt | t <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t']])
-         match (LVsgn xs) (RVsgn ys) = SSign (Set.fromList [ (src,tgt) | tgt <- Set.toList xs, src <- Set.toList ys ])
-         match (LVsgn xs) (SSign ys) = match (SSign ys) (LVsgn xs)
-         match (LVsgn xs)  SIsgn     = match SIsgn (LVsgn xs)
-         match x y                   = flp (match (flp x) (flp y))
-
-         {- The following is the verbose version of match, which you may find more systematic wrt SignatureSet.
-         We retain it for reference in the interest of maintainability.
-         match :: SignatureSet -> SignatureSet -> SignatureSet
-         match (SSign xs) (SSign ys) = (SSign (Set.fromList [ (src,tgt) | (s, t) <- Set.toList xs, (s', t') <- Set.toList ys, Just src <- [s `meetORjoin` s'], Just tgt <- [t `meetORjoin` t'] ]))
-         match (SSign xs)  SIsgn     = (SSign xs)
-         match  SIsgn     (SSign ys) = (SSign ys)
-         match (SSign xs)  BVsgn     = (SSign xs)
-         match  BVsgn     (SSign ys) = (SSign ys)
-         match (SSign xs) (LVsgn ys) = (SSign (Set.fromList [ (s,  tgt) | (s, t) <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t'] ]))
-         match (RVsgn xs) (SSign ys) = (SSign (Set.fromList [ (src, t') | s <- Set.toList xs, (s',t') <- Set.toList ys, Just src <- [s `meetORjoin` s'] ]))
-         match (LVsgn xs) (SSign ys) = (SSign (Set.fromList [ (s', tgt) | t <- Set.toList xs, (s',t') <- Set.toList ys, Just tgt <- [t `meetORjoin` t'] ]))
-         match (SSign xs) (RVsgn ys) = (SSign (Set.fromList [ (src, t ) | (s, t) <- Set.toList xs, s' <- Set.toList ys, Just src <- [s `meetORjoin` s'] ]))
-         match (LVsgn xs) (LVsgn ys) = (LVsgn (Set.fromList [ tgt | t <- Set.toList xs, t' <- Set.toList ys, Just tgt <- [t `meetORjoin` t']]))
-         match (RVsgn xs) (RVsgn ys) = (LVsgn (Set.fromList [ src | s <- Set.toList xs, s' <- Set.toList ys, Just src <- [s `meetORjoin` s']]))
-         match (LVsgn xs) (RVsgn ys) = (SSign (Set.fromList [ (s', t  ) | t <- Set.toList xs, s' <- Set.toList ys ]))
-         match (RVsgn xs) (LVsgn ys) = (SSign (Set.fromList [ (s,  t' ) | s <- Set.toList xs, t' <- Set.toList ys ]))
-         match (LVsgn xs)  BVsgn     = (LVsgn xs)
-         match  BVsgn     (RVsgn ys) = (RVsgn ys)
-         match (RVsgn xs) (RVsgn _ ) = (RVsgn xs)
-         match (RVsgn xs)  BVsgn     = (RVsgn xs)
-         match  BVsgn     (LVsgn ys) = (LVsgn ys)
-         match  BVsgn      BVsgn     = BVsgn
-         match  SIsgn      SIsgn     = SIsgn
-         match  SIsgn     (LVsgn ys) = (SSign (Set.fromList [ (t', t') | t' <- Set.toList ys ]))
-         match  SIsgn     (RVsgn ys) = (SSign (Set.fromList [ (s', s') | s' <- Set.toList ys ]))
-         match (LVsgn xs)  SIsgn     = (SSign (Set.fromList [ (t, t) | t <- Set.toList xs ]))
-         match (RVsgn xs)  SIsgn     = (SSign (Set.fromList [ (s, s) | s <- Set.toList xs ]))
-         match  BVsgn      SIsgn     = SIsgn
-         match  SIsgn      BVsgn     = SIsgn
-         -}
 
     checkIntra :: Origin
                -> Text
@@ -1428,10 +1362,8 @@ term2Expr contextInfo term
                -> Text
                -> Guarded Expression
     checkIntra o kind a b stLeft stRight meetORjoin cmpare binOp opStr mjString = -- extra parameters for tracing purpose: opStr mjString
-      do between <- case L.nub [ trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow betw) $
-                                 betw
+      do between <- case L.nub [ betw
                                | tgta<-toTargets (opSigns stLeft), srcb<-toSources (opSigns stRight)
-                               , trace ("\n  ^ cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
                                , cmpare tgta srcb
                                , Just betw<-[meetORjoin tgta srcb]] of
                      []  -> (Errors . return . CTXE o) (diagnosis (opSigns stLeft) (opSigns stRight))
@@ -1442,6 +1374,7 @@ term2Expr contextInfo term
          trace ("\n ^ "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow (opSigns stLeft)<>"\n   sgnsb: "<>tshow (opSigns stRight)) $
           return (binOp (eLeft, eRight))
      where
+       moj x y = toList (meetORjoin x y)
        diagnosis sgnsa sgnsb
         = case (kind, sgnsa==sgnsb) of
            ("composition"      , eq) -> "\n  ^ The target of "<>displayLeft (toTargets sgnsa)<>"should "      <>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (toSources sgnsb)<>"."
