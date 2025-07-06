@@ -25,6 +25,7 @@ import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
 import Ampersand.Misc.HasClasses
+import Ampersand.Types.Config (HasRunner)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Partial as Partial
@@ -66,7 +67,7 @@ import qualified RIO.Text as T
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec ::
-  (HasDirOutput env, HasTrimXLSXOpts env, HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasFSpecGenOpts env, HasRunner env) =>
   RIO env (Guarded FSpec)
 createFspec =
   do
@@ -206,7 +207,7 @@ transformer2pop tr =
 -- | The 'grindInto' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a (Guarded) P_Context, so it can be merged with other Ampersand results.
-grindInto :: (HasDirOutput env, HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
+grindInto :: (HasDirOutput env, HasTrimXLSXOpts env, HasRunner env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
 grindInto metamodel specification = do
   env <- ask
   pContextOfMetaModel <- case metamodel of
