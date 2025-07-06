@@ -257,8 +257,10 @@ parseSingleADL pc =
           return ((,[]) . fromContext <$> ctxFromAtlas) -- A .json file does not contain include files
       | -- This feature enables the parsing of .json files, that can be generated with the Atlas.
         extension == ".ttl" = do
-          mfileContents <- readFileUtf8 filePath
-          return $ (,[]) . fromGraph <$> parseTurtle mfileContents
+          mfileContents <- readFileUtf8Lenient filePath
+          case mfileContents of
+            Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
+            Right fileContents -> return $ (,[]) . fromGraph <$> parseTurtle fileContents
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -267,9 +269,9 @@ parseSingleADL pc =
                   Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
                   Nothing -> fatal ("Statically included " <> tshow fileKind <> " files. \n  Cannot find `" <> T.pack filePath <> "`.")
               Nothing ->
-                Right <$> readFileUtf8 filePath
+                readFileUtf8Lenient filePath
           case mFileContents of
-            Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) (map T.pack err)
+            Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
             Right fileContents ->
               let -- TODO: This should be cleaned up. Probably better to do all the file reading
                   --       first, then parsing and typechecking of each module, building a tree P_Contexts

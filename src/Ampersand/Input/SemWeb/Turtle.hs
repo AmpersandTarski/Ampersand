@@ -1,8 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Ampersand.Input.SemWeb.Turtle
-  ( readTurtle,
-    graph2P_Context,
+  ( graph2P_Context,
     writeRdfTList,
     mergeGraphs,
     parseTurtle,
@@ -14,7 +13,6 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Data.RDF
-import RIO.Directory (doesFileExist)
 import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as M
@@ -24,42 +22,16 @@ import qualified RIO.Text as T
 
 parseTurtle :: Text -> Guarded (RDF TList)
 parseTurtle raw = do
-  let defBaseUrl = Nothing
+  let defBaseUrl = case filter (T.isPrefixOf "@base") . T.lines $ raw of
+        [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
+          [x] -> Just (BaseUrl x)
+          _ -> Nothing
+        _ -> Nothing
       defMappings = Nothing
       parser = TurtleParser defBaseUrl defMappings
   case parseString parser raw of
     Left err -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
     Right graph -> pure graph
-
--- | Parse a Turtle (.ttl) file into an RDF TList, using the RIO monad.
-readTurtle :: FilePath -> RIO env (Guarded (RDF TList))
-readTurtle filePath = do
-  exists <- liftIO $ doesFileExist filePath
-  if exists
-    then do
-      raw <- readUTF8FileLenient filePath
-      let defBaseUrl =
-            ( case raw of
-                Left _ -> Nothing
-                Right content -> case filter (T.isPrefixOf "@base") . T.lines $ content of
-                  [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
-                    [x] -> Just (BaseUrl x)
-                    _ -> Nothing
-                  _ -> Nothing
-            )
-          defMappings = Nothing
-          parser = TurtleParser defBaseUrl defMappings
-      result <- liftIO $ parseFile parser filePath
-      case result of
-        Left err -> pure $ mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
-        Right graph -> pure . pure $ graph
-    else
-      return
-        $ mkErrorReadingINCLUDE
-          Nothing
-          [ "While looking for " <> T.pack filePath,
-            "   File does not exist."
-          ]
 
 writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
 writeRdfTList i rdfGraph = do

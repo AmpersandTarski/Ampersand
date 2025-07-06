@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## v5.4.6 and v5.4.7
+## v5.4.6 to v5.4.8
 - bugfix with reading .ttl files on Windows (encoding issue)
 
 ## v5.4.5
