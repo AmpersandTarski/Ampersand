@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## unreleased
+- [Issue #1578](https://github.com/AmpersandTarski/Ampersand/issues/1578) Harvest PATTERNs based on skos:ConceptScheme 
+
 ## v5.4.6 to v5.4.8
 - bugfix with reading .ttl files on Windows (encoding issue)
 
