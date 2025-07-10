@@ -1,4 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.SemWeb.Turtle
   ( graph2P_Context,
@@ -21,7 +24,9 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
-parseTurtle :: Text -> Guarded (RDF TList)
+type Graph = RDF TList
+
+parseTurtle :: Text -> Guarded Graph
 parseTurtle raw = do
   let defBaseUrl = case filter (T.isPrefixOf "@base") . T.lines $ raw of
         [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
@@ -34,7 +39,7 @@ parseTurtle raw = do
     Left err -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
     Right graph -> pure graph
 
-writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> RDF TList -> RIO env ()
+writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> Graph -> RIO env ()
 writeRdfTList i rdfGraph = do
   env <- ask
   let filePath = filePath' env
@@ -62,11 +67,11 @@ myPrefixMappings =
       ]
 
 -- merge multiple graphs into one
-mergeGraphs :: NonEmpty (RDF TList) -> RDF TList
+mergeGraphs :: NonEmpty Graph -> Graph
 mergeGraphs (h NE.:| tl) = foldl' (mergeTriples Nothing) h tl
 
 -- mergeTriples assumes the triples are expanded
-mergeTriples :: Maybe Int -> RDF TList -> RDF TList -> RDF TList
+mergeTriples :: Maybe Int -> Graph -> Graph -> Graph
 mergeTriples maxBlankNode graph1 graph2 =
   case maxBlankNode of
     Nothing -> mergeTriples (Just $ getMaxBlankNode graph1) graph1 graph2
@@ -90,11 +95,11 @@ mergeTriples maxBlankNode graph1 graph2 =
                 BNodeGen x -> if x == numberToReplace then BNodeGen (i + 1) else n
                 _ -> n
 
-getMaxBlankNode :: RDF TList -> Int
+getMaxBlankNode :: Graph -> Int
 getMaxBlankNode gr = length . map objectOf $ select gr Nothing Nothing (Just isBNode)
 
 -- \| Convert a list of fully expanded Triples into a 'P_Context'.
-graph2P_Context :: RDF TList -> Guarded P_Context
+graph2P_Context :: Graph -> Guarded P_Context
 graph2P_Context graph = do
   ontologyName <- case select graph Nothing rdfType owlOntology of
     [] -> mkError "No ontology triple found in Turtle file"
@@ -106,7 +111,6 @@ graph2P_Context graph = do
             "  Found: " <> tshow (subjectOf t)
           ]
   cptDefs <- conceptDefs (CONTEXT ontologyName)
-  let relDefs = relationDefs
   let isas =
         [ PClassify
             { specific = PCpt sName,
@@ -114,16 +118,11 @@ graph2P_Context graph = do
               pos = orig
             }
           | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
-            sLbl <- getLabels sNode,
+            sLbl <- getLabels graph sNode,
             let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
-            gLbl <- getLabels gNode,
+            gLbl <- getLabels graph gNode,
             let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
         ]
-        where
-          getLabels :: Node -> [Text]
-          getLabels n =
-            mapMaybe (getLiteralText . objectOf)
-              $ select graph (is n) rdfsLabel Nothing
 
   pure
     $ PCtx
@@ -134,7 +133,7 @@ graph2P_Context graph = do
         ctx_ps = mempty,
         ctx_pos = mempty,
         ctx_pops = mempty,
-        ctx_pats = mempty,
+        ctx_pats = patternDefs,
         ctx_nm = ontologyName,
         ctx_metas = mempty,
         ctx_markup = Just Markdown,
@@ -144,13 +143,39 @@ graph2P_Context graph = do
         ctx_ifcs = mempty,
         ctx_gs = isas,
         ctx_enfs = mempty,
-        ctx_ds = relDefs,
+        ctx_ds = relationDefs,
         ctx_cs = cptDefs
       }
   where
     mkError :: Text -> Guarded a
     mkError = mkGenericParserError orig
     orig = Origin "Somewhere in imported .ttl files."
+    patternDefs :: [P_Pattern]
+    patternDefs =
+      [ P_Pat
+          { pt_xps = mempty,
+            pt_vds = mempty,
+            pt_rls = mempty,
+            pt_pop = mempty,
+            pt_nm = nm,
+            pt_lbl = l,
+            pt_ids = mempty,
+            pt_gns = mempty,
+            pt_enfs = mempty,
+            pt_end = orig,
+            pt_dcs = mempty,
+            pt_cds = mempty,
+            pt_Reprs = mempty,
+            pt_RRuls = mempty,
+            pos = orig
+          }
+        | conceptScheme <-
+            map subjectOf
+              $ select graph Nothing rdfType skosConceptScheme,
+          patNode <- conceptScheme : subclassesOf graph conceptScheme,
+          patLbl <- getLabels graph patNode,
+          let (nm, l) = suggestName PatternName . toText1Unsafe $ patLbl
+      ]
     relationDefs :: [P_Relation]
     relationDefs =
       [ P_Relation
@@ -167,18 +192,14 @@ graph2P_Context graph = do
           blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
           tgtNode <- map objectOf $ select graph (is blank) owlOnClass Nothing,
           srcNode <- map subjectOf $ select graph Nothing rdfsSubClassOf (is blank),
-          relLbl <- getLabels relNode,
+          relLbl <- getLabels graph relNode,
           let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
-          srcLbl <- getLabels srcNode,
+          srcLbl <- getLabels graph srcNode,
           let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-          tgtLbl <- getLabels tgtNode,
+          tgtLbl <- getLabels graph tgtNode,
           let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
       ]
       where
-        getLabels :: Node -> [Text]
-        getLabels n =
-          mapMaybe (getLiteralText . objectOf)
-            $ select graph (is n) rdfsLabel Nothing
         getProps :: Node -> Node -> [PProp]
         getProps relNode restrictionNode =
           concat
@@ -241,7 +262,19 @@ getLiteralText n = case n of
   LNode (TypedL txt _) -> Just txt
   _ -> Nothing
 
--- getExactlyOneMatchingTriple :: RDF TList -> Maybe Node -> Node -> Node -> Guarded Triple
+getLabels :: Graph -> Node -> [Text]
+getLabels graph n =
+  mapMaybe (getLiteralText . objectOf)
+    $ select graph (is n) rdfsLabel Nothing
+
+-- getExactlyOneMatchingTriple :: Graph -> Maybe Node -> Node -> Node -> Guarded Triple
+
+subclassesOf :: Graph -> Node -> [Node]
+subclassesOf graph cls =
+  case map subjectOf
+    $ select graph Nothing rdfsSubClassOf (is cls) of
+    [] -> []
+    subs -> subs <> concatMap (subclassesOf graph) subs
 
 selector :: Text -> NodeSelector
 selector txt = Just fun
@@ -289,6 +322,9 @@ rdfsSubClassOf = selector "http://www.w3.org/2000/01/rdf-schema#subClassOf"
 
 skosDefinition :: NodeSelector
 skosDefinition = selector "http://www.w3.org/2004/02/skos/core#definition"
+
+skosConceptScheme :: NodeSelector
+skosConceptScheme = selector "http://www.w3.org/2004/02/skos/core#ConceptScheme"
 
 rdfType :: NodeSelector
 rdfType = selector "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
