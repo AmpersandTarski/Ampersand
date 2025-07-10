@@ -5,6 +5,7 @@ module Ampersand.Input.SemWeb.Turtle
     writeRdfTList,
     mergeGraphs,
     parseTurtle,
+    myPrefixMappings,
   )
 where
 
