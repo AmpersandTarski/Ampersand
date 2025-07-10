@@ -43,10 +43,8 @@ writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int 
 writeRdfTList i rdfGraph = do
   env <- ask
   let filePath = filePath' env
-  logDebug $ "Start schrijven van " <> display (T.pack filePath)
-  liftIO
-    $ withFile filePath WriteMode writer
-  logDebug $ "Einde schrijven van " <> display (T.pack filePath)
+  liftIO $ withFile filePath WriteMode writer
+  logDebug $ "Written: " <> display (T.pack filePath)
   where
     filePath' env = Ampersand.Basics.view dirOutputL env </> (baseName env <> show i) -<.> ".ttl"
     writer h = do
