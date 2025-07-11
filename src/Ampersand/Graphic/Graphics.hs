@@ -275,6 +275,7 @@ writePicture pict = do
   --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
   writeDot imagePathRelativeToCurrentDir Png -- handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
+  writeDot imagePathRelativeToCurrentDir Pdf -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file
   where
     writeDot ::
