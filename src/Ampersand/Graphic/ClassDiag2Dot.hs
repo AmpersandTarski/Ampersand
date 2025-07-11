@@ -70,8 +70,8 @@ classdiagram2dot env cd =
                   { attrStmts =
                       [ GraphAttrs
                           [ Label . StrLabel . TL.fromStrict . fullName $ nm,
-                            BgColor [WC (X11Color GhostWhite) Nothing],
-                            URL "https://ampersandtarski.github.io/"
+                            -- URL "https://ampersandtarski.github.io/",
+                            BgColor [WC (X11Color GhostWhite) Nothing]
                           ]
                       ],
                     subGraphs = [],
