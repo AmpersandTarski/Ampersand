@@ -112,12 +112,15 @@ graph2P_Context graph = do
           [ "Subject note of ontology triple should be a UNode.",
             "  Found: " <> tshow (subjectOf t)
           ]
-  cptDefs <- conceptDefs (CONTEXT ontologyName)
+  let cptDefsNodes = filter hasNoPattern (allConceptNodes graph)
+        where
+          hasNoPattern n = null $ select graph (is n) (is SKOS.inScheme) Nothing
+  cptDefs <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
   let isas =
         [ PClassify
             { specific = PCpt sName,
               generics = PCpt gName NE.:| [],
-              pos = orig
+              pos = someTurtle
             }
           | Triple sNode _ gNode <- select graph Nothing (is RDFS.subClassOf) Nothing,
             sLbl <- labelsOf graph sNode,
@@ -125,7 +128,7 @@ graph2P_Context graph = do
             gLbl <- labelsOf graph gNode,
             let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
         ]
-
+  patDefs <- patternDefs
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -135,7 +138,7 @@ graph2P_Context graph = do
         ctx_ps = mempty,
         ctx_pos = mempty,
         ctx_pops = mempty,
-        ctx_pats = patternDefs,
+        ctx_pats = patDefs,
         ctx_nm = ontologyName,
         ctx_metas = mempty,
         ctx_markup = Just Markdown,
@@ -150,39 +153,51 @@ graph2P_Context graph = do
       }
   where
     mkError :: Text -> Guarded a
-    mkError = mkGenericParserError orig
-    orig = Origin "Somewhere in imported .ttl files."
-    patternDefs :: [P_Pattern]
-    patternDefs =
-      [ P_Pat
-          { pt_xps = mempty,
-            pt_vds = mempty,
-            pt_rls = mempty,
-            pt_pop = mempty,
-            pt_nm = nm,
-            pt_lbl = l,
-            pt_ids = mempty,
-            pt_gns = mempty,
-            pt_enfs = mempty,
-            pt_end = orig,
-            pt_dcs = mempty,
-            pt_cds = mempty,
-            pt_Reprs = mempty,
-            pt_RRuls = mempty,
-            pos = orig
-          }
-        | conceptScheme <- instancesOf graph SKOS._ConceptScheme,
-          patNode <- conceptScheme : subclassesOf graph conceptScheme,
-          patLbl <- labelsOf graph patNode,
+    mkError = mkGenericParserError someTurtle
+    patternDefs :: Guarded [P_Pattern]
+    patternDefs = mapM makePattern patNodes
+      where
+        patNodes :: [(Node, Text)]
+        patNodes =
+          [ (patNode, patLbl)
+            | conceptScheme <- instancesOf graph SKOS._ConceptScheme,
+              patNode <- conceptScheme : subclassesOf graph conceptScheme,
+              patLbl <- labelsOf graph patNode
+          ]
+        makePattern :: (Node, Text) -> Guarded P_Pattern
+        makePattern (patNode, patLbl) = do
           let (nm, l) = suggestName PatternName . toText1Unsafe $ patLbl
-      ]
+          let cptDefsNodes = filter thisPattern (allConceptNodes graph)
+                where
+                  thisPattern :: Node -> Bool
+                  thisPattern n = not . null $ select graph (is n) (is SKOS.inScheme) (is patNode)
+          cptDefs <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
+
+          pure
+            P_Pat
+              { pt_xps = mempty,
+                pt_vds = mempty,
+                pt_rls = mempty,
+                pt_pop = mempty,
+                pt_nm = nm,
+                pt_lbl = l,
+                pt_ids = mempty,
+                pt_gns = mempty,
+                pt_enfs = mempty,
+                pt_end = someTurtle,
+                pt_dcs = mempty,
+                pt_cds = cptDefs,
+                pt_Reprs = mempty,
+                pt_RRuls = mempty,
+                pos = someTurtle
+              }
     relationDefs :: [P_Relation]
     relationDefs =
       [ P_Relation
           { dec_sign = P_Sign (PCpt src) (PCpt tgt),
             dec_prps = Set.fromList (getProps relNode blank),
             dec_pragma = Nothing,
-            dec_pos = orig,
+            dec_pos = someTurtle,
             dec_nm = nm,
             dec_label = l,
             dec_defaults = mempty,
@@ -221,39 +236,38 @@ graph2P_Context graph = do
                     cardinalityNodes =
                       [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
                 _ -> []
-    conceptDefs :: DefinitionContainer -> Guarded [PConceptDef]
-    conceptDefs frm =
-      sequence
-        [ mkConceptDef cpt
-          | cpt <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._Class),
-            cpt
-              `elem` map subjectOf (select graph (is cpt) (is RDF._type) (is OWL._NamedIndividual))
-        ]
-      where
-        mkConceptDef :: Node -> Guarded PConceptDef
-        mkConceptDef cpt = do
-          (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
-            [] -> mkGenericParserError orig $ "No label found for concept " <> tshow cpt
-            [lbl] -> getName lbl
-            (h : _) ->
-              addWarning
-                (mkTurtleWarning orig ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
-                (getName h)
-          pure
-            PConceptDef
-              { cdname = nm,
-                cdmean = mempty,
-                cdlbl = l,
-                cdfrom = frm,
-                cddef2 = PCDDefLegacy def2 "",
-                pos = orig
-              }
-          where
-            getName :: Node -> Guarded (Name, Maybe Label)
-            getName lblNode = case suggestName ContextName . toText1Unsafe <$> literalTextOf lblNode of
-              Nothing -> mkGenericParserError orig $ "Label found for concept " <> tshow cpt <> " does not contain text."
-              Just x -> pure x
-            def2 = T.intercalate "\n" . mapMaybe (literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
+
+allConceptNodes :: Graph -> [Node]
+allConceptNodes graph =
+  [ cpt
+    | cpt <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._Class),
+      cpt `elem` map subjectOf (select graph (is cpt) (is RDF._type) (is OWL._NamedIndividual))
+  ]
+
+mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
+mkConceptDef graph from cpt = do
+  (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
+    [] -> mkGenericParserError someTurtle $ "No label found for concept " <> tshow cpt
+    [lbl] -> getName lbl
+    (h : _) ->
+      addWarning
+        (mkTurtleWarning someTurtle ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
+        (getName h)
+  pure
+    PConceptDef
+      { cdname = nm,
+        cdmean = mempty,
+        cdlbl = l,
+        cdfrom = from,
+        cddef2 = PCDDefLegacy def2 "",
+        pos = someTurtle
+      }
+  where
+    getName :: Node -> Guarded (Name, Maybe Label)
+    getName lblNode = case suggestName ContextName . toText1Unsafe <$> literalTextOf lblNode of
+      Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
+      Just x -> pure x
+    def2 = T.intercalate "\n" . mapMaybe (literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
 
 literalTextOf :: Node -> Maybe Text
 literalTextOf n = case n of
@@ -283,3 +297,6 @@ subclassesOf graph cls =
 
 is :: Node -> NodeSelector
 is n = Just (== n)
+
+someTurtle :: Origin
+someTurtle = Origin "Somewhere in imported .ttl files."
