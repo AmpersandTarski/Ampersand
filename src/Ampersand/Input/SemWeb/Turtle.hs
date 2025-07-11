@@ -247,7 +247,10 @@ allConceptNodes graph =
 mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
 mkConceptDef graph from cpt = do
   (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
-    [] -> mkGenericParserError someTurtle $ "No label found for concept " <> tshow cpt
+    [] ->
+      addWarning
+        (mkTurtleWarning someTurtle ["No label found for concept " <> tshow cpt <> ", using URI as label"])
+        (getName cpt)
     [lbl] -> getName lbl
     (h : _) ->
       addWarning
@@ -269,11 +272,12 @@ mkConceptDef graph from cpt = do
       Just x -> pure x
     def2 = T.intercalate "\n" . mapMaybe (literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
 
-literalTextOf :: Node -> Maybe Text
+literalTextOf :: Node -> (Maybe Text)
 literalTextOf n = case n of
   LNode (PlainL txt) -> Just txt
   LNode (PlainLL txt _) -> Just txt
   LNode (TypedL txt _) -> Just txt
+  UNode txt -> Just txt -- TODO: Warning that this is not a literal
   _ -> Nothing
 
 labelsOf :: Graph -> Node -> [Text]
