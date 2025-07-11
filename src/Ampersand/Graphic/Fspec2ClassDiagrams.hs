@@ -239,8 +239,6 @@ instance CDAnalysable A_Context where
           ] of
           [] -> (cpt, Nothing)
           (n : _) -> (cpt, Just n)
-        where
-          showIt (cd, n) = tshow (origin cd) <> ": " <> tshow n
       cDefs :: [(AConceptDef, Name)]
       cDefs =
         [ (cd, name pat)

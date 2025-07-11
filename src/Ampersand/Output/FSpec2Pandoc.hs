@@ -58,7 +58,7 @@ fSpec2Pandoc ::
   UTCTime ->
   FSpec ->
   (Pandoc, [Picture])
-fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
+fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
   where
     -- shorthand for easy localizing
     l :: LocalizedStr -> Text
@@ -137,7 +137,13 @@ fSpec2Pandoc env now fSpec = (thePandoc, thePictures)
 
     thePictures = map (makePicture env fSpec) largePictures ++ concat picturesByChapter
       where
-        largePictures = [PTClassDiagram, PTLogicalDM True, PTLogicalDM False, PTTechnicalDM]
+        largePictures =
+          PTClassDiagram
+            : map PTLogicalDMPattern (patterns fSpec)
+              <> [ PTLogicalDM False,
+                   PTLogicalDM True,
+                   PTTechnicalDM
+                 ]
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
     (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env

@@ -26,11 +26,12 @@ import qualified RIO.Text.Lazy as TL
 
 data PictureTyp
   = PTClassDiagram -- classification model of the entire script
-  | PTCDPattern Pattern -- conceptual diagram of the pattern
-  | PTDeclaredInPat Pattern -- conceptual diagram of relations and gens within one pattern
-  | PTCDConcept A_Concept -- conceptual diagram comprising all rules in which c is used
-  | PTCDRule Rule -- conceptual diagram of the rule in isolation of any context.
+  | PTCDPattern !Pattern -- conceptual diagram of the pattern
+  | PTDeclaredInPat !Pattern -- conceptual diagram of relations and gens within one pattern
+  | PTCDConcept !A_Concept -- conceptual diagram comprising all rules in which c is used
+  | PTCDRule !Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDM !Bool -- logical data model of the entire script
+  | PTLogicalDMPattern !Pattern -- logical data model of the pattern
   | PTTechnicalDM -- technical data model of the entire script
 
 data DotContent
@@ -57,6 +58,7 @@ instance Named PictureTyp where -- for displaying a fatal error
     PTCDConcept c -> name c
     PTCDRule r -> name r
     PTLogicalDM grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
+    PTLogicalDMPattern pat -> mkName' $ "PTLogicalDM_" <> tshow (name pat)
     PTTechnicalDM -> mkName' "PTTechnicalDM"
     where
       mkName' :: Text -> Name
@@ -76,6 +78,7 @@ isDatamodelType :: PictureTyp -> Bool
 isDatamodelType pt = case pt of
   PTLogicalDM {} -> True
   PTTechnicalDM {} -> True
+  PTLogicalDMPattern {} -> True
   _ -> False
 
 makePicture :: (HasDocumentOpts env) => env -> FSpec -> PictureTyp -> Picture
@@ -109,6 +112,17 @@ makePicture env fSpec pr =
             case outputLang' of
               English -> "Logical data model of " <> fullName fSpec
               Dutch -> "Logisch gegevensmodel van " <> fullName fSpec
+        }
+    PTLogicalDMPattern pat ->
+      Pict
+        { pType = pr,
+          scale = scale',
+          dotContent = ClassDiagram . cdAnalysis False env fSpec $ pat,
+          dotProgName = Dot,
+          caption =
+            case outputLang' of
+              English -> "Logical data model of " <> fullName pat
+              Dutch -> "Logisch gegevensmodel van " <> fullName pat
         }
     PTTechnicalDM ->
       Pict
@@ -176,6 +190,7 @@ makePicture env fSpec pr =
         PTCDRule {} -> "0.7"
         PTCDConcept {} -> "0.7"
         PTLogicalDM {} -> "1.2"
+        PTLogicalDMPattern {} -> "1.2"
         PTTechnicalDM -> "1.2"
     graphVizCmdForConceptualGraph =
       -- Dot gives bad results, but there seems no way to fiddle with the length of edges.
@@ -191,6 +206,7 @@ pictureFileName pr = toBaseFileName
   $ case pr of
     PTClassDiagram -> "Classification"
     PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
+    PTLogicalDMPattern pat -> "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat
     PTTechnicalDM -> "TechnicalDataModel"
     PTCDConcept cpt -> "CDConcept" <> (text1ToText . urlEncodedName . name) cpt
     PTDeclaredInPat pat -> "RelationsInPattern" <> (text1ToText . urlEncodedName . name) pat
