@@ -275,11 +275,20 @@ instance Named AConceptDef where
 instance Traced AConceptDef where
   origin AConceptDef {pos = orig} = orig
 
-instance Ord AConceptDef where
-  compare = compare `on` name
-
 instance Eq AConceptDef where
   a == b = compare a b == EQ
+
+instance Ord AConceptDef where
+  compare a b =
+    compare
+      ( name a,
+        origin a,
+        acdfrom a
+      )
+      ( name b,
+        origin b,
+        acdfrom b
+      )
 
 data A_Representation = Arepr
   { -- | origin is used in error messages
