@@ -309,8 +309,8 @@ instance Ord PConceptDef where
     -- 1. The name is the most important part of a concept definition.
     -- 2. The origin is important to distinguish between concept definitions with the same name.
     -- 3. The definitionContainer is important to distinguish between concept definitions with the same name and origin.
-    --    This is especially important for the MEATGRINDER stuff and other places where Origin isn't properly fit for traceability.
-
+    --    This is especially important for places where Origin isn't properly fit for
+    --    traceability, like the Turtle and Atlas importers, Meatgrinder stuf. There whe have no exact and unique Origins.
     compare
       ( name a,
         origin a,

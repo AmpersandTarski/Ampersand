@@ -279,6 +279,12 @@ instance Eq AConceptDef where
   a == b = compare a b == EQ
 
 instance Ord AConceptDef where
+  -- We compare on the name, origin and the string representation of the definition because:
+  -- 1. The name is the most important part of a concept definition.
+  -- 2. The origin is important to distinguish between concept definitions with the same name.
+  -- 3. The definitionContainer is important to distinguish between concept definitions with the same name and origin.
+  --    This is especially important for places where Origin isn't properly fit for
+  --    traceability, like the Turtle and Atlas importers, Meatgrinder stuf. There whe have no exact and unique Origins.
   compare a b =
     compare
       ( name a,
