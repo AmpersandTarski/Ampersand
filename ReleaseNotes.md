@@ -1,8 +1,9 @@
 ﻿# Release notes of Ampersand
 
-## unreleased
+## Unreleased
 - [Issue #1576](https://github.com/AmpersandTarski/Ampersand/issues/1576) When importing .ttl files, only warn if a label is missing. 
 - [Issue #1578](https://github.com/AmpersandTarski/Ampersand/issues/1578) Harvest PATTERNs based on skos:ConceptScheme 
+- [Issue #1579](https://github.com/AmpersandTarski/Ampersand/issues/1579) Bugfix on equality of Concept definitions
 
 ## v5.4.6 to v5.4.8
 - bugfix with reading .ttl files on Windows (encoding issue)
