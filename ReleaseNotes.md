@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1579](https://github.com/AmpersandTarski/Ampersand/issues/1579) Bugfix on equality of Concept definitions
+
 ## v5.4.6 to v5.4.8
 - bugfix with reading .ttl files on Windows (encoding issue)
 
