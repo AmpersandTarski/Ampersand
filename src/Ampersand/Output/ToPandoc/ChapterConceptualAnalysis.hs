@@ -84,11 +84,31 @@ chpConceptualAnalysis env lev fSpec =
             <> ( case (outputLang', patOfTheme themeContent) of
                    (Dutch, Just pat) ->
                      -- announce the conceptual diagram
-                     para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . label) pat <> ".")
+                     para
+                       ( ( if crossRefsAreFixed
+                             then
+                               hyperLinkTo (pictOfPat pat)
+                             else
+                               mempty
+                         )
+                           <> "Conceptueel diagram van "
+                           <> (singleQuoted . str . label) pat
+                           <> "."
+                       )
                        -- draw the conceptual diagram
                        <> (xDefBlck env fSpec . pictOfPat) pat
                    (English, Just pat) ->
-                     para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . label) pat <> ".")
+                     para
+                       ( ( if crossRefsAreFixed
+                             then
+                               hyperLinkTo (pictOfPat pat)
+                             else
+                               mempty
+                         )
+                           <> "Conceptual diagram of "
+                           <> (singleQuoted . str . label) pat
+                           <> "."
+                       )
                        <> (xDefBlck env fSpec . pictOfPat) pat
                    (_, Nothing) -> mempty
                )
@@ -355,7 +375,11 @@ chpConceptualAnalysis env lev fSpec =
                 <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisRule r) (showMath r)
                 -- followed by a conceptual model for this rule
                 <> para
-                  ( hyperLinkTo (pictOfRule r)
+                  ( ( if crossRefsAreFixed
+                        then
+                          hyperLinkTo (pictOfRule r)
+                        else mempty
+                    )
                       <> l
                         ( NL " geeft een conceptueel diagram van deze regel.",
                           EN " shows a conceptual diagram of this rule."
