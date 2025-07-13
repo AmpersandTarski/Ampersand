@@ -86,10 +86,8 @@ chpConceptualAnalysis env lev fSpec =
                      -- announce the conceptual diagram
                      para
                        ( ( if crossRefsAreFixed
-                             then
-                               hyperLinkTo (pictOfPat pat)
-                             else
-                               mempty
+                             then hyperLinkTo (pictOfPat pat)
+                             else mempty
                          )
                            <> "Conceptueel diagram van "
                            <> (singleQuoted . str . label) pat
@@ -100,10 +98,8 @@ chpConceptualAnalysis env lev fSpec =
                    (English, Just pat) ->
                      para
                        ( ( if crossRefsAreFixed
-                             then
-                               hyperLinkTo (pictOfPat pat)
-                             else
-                               mempty
+                             then hyperLinkTo (pictOfPat pat)
+                             else mempty
                          )
                            <> "Conceptual diagram of "
                            <> (singleQuoted . str . label) pat
@@ -376,8 +372,7 @@ chpConceptualAnalysis env lev fSpec =
                 -- followed by a conceptual model for this rule
                 <> para
                   ( ( if crossRefsAreFixed
-                        then
-                          hyperLinkTo (pictOfRule r)
+                        then hyperLinkTo (pictOfRule r)
                         else mempty
                     )
                       <> l

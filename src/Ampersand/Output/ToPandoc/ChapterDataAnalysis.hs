@@ -349,15 +349,13 @@ chpDataAnalysis env fSpec = (theBlocks, [])
               Dutch ->
                 "De afspraken zijn vertaald naar een technisch datamodel. "
                   <> ( if crossRefsAreFixed
-                         then
-                           "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
+                         then "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
                          else mempty
                      )
               English ->
                 "The functional requirements have been translated into a technical data model. "
                   <> ( if crossRefsAreFixed
-                         then
-                           "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
+                         then "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
                          else mempty
                      )
           )
