@@ -190,10 +190,12 @@ instance ConceptStructure Pattern where
       [ (concs . ptrls) pat,
         (concs . ptgns) pat,
         (concs . ptdcs) pat,
+        (concs . ptcds) pat,
         (concs . ptups) pat,
         (concs . ptids) pat,
         (concs . ptxps) pat,
-        (concs . ptenfs) pat
+        (concs . ptenfs) pat,
+        (concs . ptvds) pat
       ]
   expressionsIn p =
     Set.unions

@@ -388,7 +388,7 @@ chpDiagnosis env fSpec
         pats =
           [ pat | pat <- instanceList fSpec, (not . null) (relsDefdIn pat Set.\\ bindedRelationsIn pat)
           ]
-        pictsWithUnusedRels = [makePicture env fSpec (PTDeclaredInPat pat) | pat <- pats]
+        pictsWithUnusedRels = makePicture env fSpec . PTConceptualModelOfRelationsInPattern <$> pats
 
     missingRules :: Blocks
     missingRules =

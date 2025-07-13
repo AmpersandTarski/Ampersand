@@ -18,8 +18,9 @@ import Ampersand.Graphic.ClassDiagram
 import Ampersand.Misc.HasClasses
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Text as T
+import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -74,11 +75,11 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
 
   -- | This function returns the relations of the given a.
   -- It is used to filter the relations that are shown in the class diagram.
-  relations :: a -> Relations
+  relations :: FSpec -> a -> Relations
 
   -- | This function returns the concepts that could become a class, together with an identifying name
   --   for the group in which they may be grouped.
-  classCandidates :: a -> [(A_Concept, Maybe Name)]
+  classCandidates :: a -> Map A_Concept (Maybe Name)
 
   classesAndAssociations :: (HasDocumentOpts env) => env -> FSpec -> a -> ([(Class, Maybe Name)], [Association])
   -- ^ This function returns all the classes in the given datamodel that should be drawn.
@@ -105,7 +106,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
     where
       mustBeDrawnAsClass = L.nub $ conceptsWithUniOrGens <> standalonConcepts
       uniOrInjs, nonUniOrInjs :: [Relation]
-      (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations a)
+      (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations fSpec a)
         where
           criterium d = isUni d || isInj d
       uniAttributes :: [Expression]
@@ -121,7 +122,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
         ]
       conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
       (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
-        L.partition (isConceptWithUniOrGen . fst) (toList $ classCandidates a)
+        L.partition (isConceptWithUniOrGen . fst) (Map.toList $ classCandidates a)
         where
           isConceptWithUniOrGen :: A_Concept -> Bool
           isConceptWithUniOrGen cpt =
@@ -204,9 +205,23 @@ instance CDAnalysable Pattern where
       }
     where
       (classes', associations') = classesAndAssociations env fSpec pat
-  relations = ptdcs
-  classCandidates :: Pattern -> [(A_Concept, Maybe Name)]
-  classCandidates pat = map foo . toList . concs $ pat
+  relations :: FSpec -> Pattern -> Relations
+  relations fSpec pat =
+    ptdcs pat
+      <> Set.filter sourceAndTargetInPattern (vrels fSpec)
+    where
+      sourceAndTargetInPattern :: Relation -> Bool
+      sourceAndTargetInPattern rel =
+        source rel `elem` conceptsOfThisPattern && target rel `elem` conceptsOfThisPattern
+      conceptsOfThisPattern :: [A_Concept]
+      conceptsOfThisPattern =
+        [ acdcpt cDef
+          | cDef <- conceptDefs fSpec,
+            tshow (name pat) == tshow (acdfrom cDef)
+        ]
+
+  classCandidates :: Pattern -> Map A_Concept (Maybe Name)
+  classCandidates pat = Map.fromList . map foo . toList . concs $ pat
     where
       foo :: A_Concept -> (A_Concept, Maybe Name)
       foo cpt =
@@ -228,28 +243,17 @@ instance CDAnalysable A_Context where
     where
       handleGrouping (cl, mName) = (cl, if grouped then mName else Nothing)
       (classes', associations') = classesAndAssociations env fSpec ctx
-  relations = relsDefdIn
-  classCandidates :: A_Context -> [(A_Concept, Maybe Name)]
-  classCandidates ctx = map foo . toList . concs $ ctx
+  relations _ = relsDefdIn
+  classCandidates :: A_Context -> Map A_Concept (Maybe Name)
+  classCandidates ctx = Map.fromList . map patternInWhichToDrawTheConcept . toList . concs $ ctx
     where
-      foo :: A_Concept -> (A_Concept, Maybe Name)
-      foo cpt =
-        ( cpt,
-          case L.sort
-            [ (cd, n) | (cd, n) <- cDefs, name cd == name cpt
-            ] of
-            [] -> Nothing
-            [(_, n)] -> Just n
-            ns ->
-              fatal
-                ( "A problem for drawing the logical datamodel:\nConcept "
-                    <> tshow (name cpt)
-                    <> " is defined in multiple patterns: "
-                    <> (T.concat . L.intersperse "\n  " . map showIt $ ns)
-                )
-        )
-        where
-          showIt (cd, n) = tshow (origin cd) <> ": " <> tshow n
+      patternInWhichToDrawTheConcept :: A_Concept -> (A_Concept, Maybe Name)
+      patternInWhichToDrawTheConcept cpt =
+        case L.sort
+          [ n | (cd, n) <- cDefs, name cd == name cpt
+          ] of
+          [] -> (cpt, Nothing)
+          (n : _) -> (cpt, Just n)
       cDefs :: [(AConceptDef, Name)]
       cDefs =
         [ (cd, name pat)

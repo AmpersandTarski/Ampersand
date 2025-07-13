@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput, isDatamodel) where
+module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), PictureTyp (..), imagePathRelativeToDirOutput) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Label)
@@ -14,9 +14,9 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux (outputLang)
 import Data.GraphViz as GV
 import Data.GraphViz.Attributes.Complete
+import Data.GraphViz.Exception
 import RIO.Directory (createDirectoryIfMissing, makeAbsolute)
 import RIO.FilePath
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -25,39 +25,47 @@ import qualified RIO.Text.Lazy as TL
 -- import           System.Process (callCommand)
 
 data PictureTyp
-  = PTClassDiagram -- classification model of the entire script
-  | PTCDPattern Pattern -- conceptual diagram of the pattern
-  | PTDeclaredInPat Pattern -- conceptual diagram of relations and gens within one pattern
-  | PTCDConcept A_Concept -- conceptual diagram comprising all rules in which c is used
-  | PTCDRule Rule -- conceptual diagram of the rule in isolation of any context.
-  | PTLogicalDM !Bool -- logical data model of the entire script
-  | PTTechnicalDM -- technical data model of the entire script
+  = PTClassificationDiagram -- classification model of the entire script
+  | PTConceptualModelOfRulesInPattern !Pattern -- conceptual diagram of the pattern
+  | PTConceptualModelOfRelationsInPattern !Pattern -- conceptual diagram of relations and gens within one pattern
+  | PTConceptualModelOfConcept !A_Concept -- conceptual diagram comprising all rules in which c is used
+  | PTConceptualModelOfRule !Rule -- conceptual diagram of the rule in isolation of any context.
+  | PTLogicalDataModelOfContext !Bool -- logical data model of the entire script
+  | PTLogicalDataModelOfPattern !Pattern -- logical data model of the pattern
+  | PTTechnicalDataModel -- technical data model of the entire script
 
 data DotContent
   = ClassDiagram ClassDiag
   | ConceptualDg ConceptualStructure
 
-data Picture = Pict
+data Picture = Picture
   { -- | the type of the picture
-    pType :: PictureTyp,
+    pType :: !PictureTyp,
+    -- | pictureFileName is used in the filename of the picture.
+    --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
+    --   File names are urlEncoded to cater for the entire alphabet.
+    pictureFileName :: !FilePath,
+    -- | a switch to indicate whether this should be generated with the --datamodelsOnly command line option.
+    forDataModelsOnlySwitch :: !Bool,
     -- | a scale factor, intended to pass on to LaTeX, because Pandoc seems to have a problem with scaling.
-    scale :: Text,
-    dotContent :: DotContent,
+    scale :: !Text,
+    dotContent :: !DotContent,
     -- | the name of the program to use  ("dot" or "neato" or "fdp" or "Sfdp")
-    dotProgName :: GraphvizCommand,
+    dotProgName :: !GraphvizCommand,
     -- | a human readable name of this picture
-    caption :: Text
+    caption :: !Text
   }
 
 instance Named PictureTyp where -- for displaying a fatal error
   name pt = case pt of
-    PTClassDiagram -> mkName' "PTClassDiagram"
-    PTCDPattern pat -> name pat
-    PTDeclaredInPat pat -> name pat
-    PTCDConcept c -> name c
-    PTCDRule r -> name r
-    PTLogicalDM grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
-    PTTechnicalDM -> mkName' "PTTechnicalDM"
+    PTClassificationDiagram -> mkName' "PTClassificationDiagram"
+    PTConceptualModelOfRulesInPattern pat -> name pat
+    PTConceptualModelOfRelationsInPattern pat -> name pat
+    PTConceptualModelOfConcept c -> name c
+    PTConceptualModelOfRule r -> name r
+    PTLogicalDataModelOfContext grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
+    PTLogicalDataModelOfPattern pat -> mkName' $ "PTLogicalDM_" <> tshow (name pat)
+    PTTechnicalDataModel -> mkName' "PTTechnicalDataModel"
     where
       mkName' :: Text -> Name
       mkName' x =
@@ -69,21 +77,14 @@ instance Named PictureTyp where -- for displaying a fatal error
                 Just np -> np
             )
 
-isDatamodel :: Picture -> Bool
-isDatamodel = isDatamodelType . pType
-
-isDatamodelType :: PictureTyp -> Bool
-isDatamodelType pt = case pt of
-  PTLogicalDM {} -> True
-  PTTechnicalDM {} -> True
-  _ -> False
-
 makePicture :: (HasDocumentOpts env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
   case pr of
-    PTClassDiagram ->
-      Pict
+    PTClassificationDiagram ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName "Classification",
+          forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ClassDiagram $ clAnalysis fSpec,
           dotProgName = Dot,
@@ -92,9 +93,11 @@ makePicture env fSpec pr =
               English -> "Classification of " <> fullName fSpec
               Dutch -> "Classificatie van " <> fullName fSpec
         }
-    PTLogicalDM grouped ->
-      Pict
+    PTLogicalDataModelOfContext grouped ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
+          forDataModelsOnlySwitch = True,
           scale = scale',
           dotContent =
             ClassDiagram
@@ -110,9 +113,24 @@ makePicture env fSpec pr =
               English -> "Logical data model of " <> fullName fSpec
               Dutch -> "Logisch gegevensmodel van " <> fullName fSpec
         }
-    PTTechnicalDM ->
-      Pict
+    PTLogicalDataModelOfPattern pat ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat,
+          forDataModelsOnlySwitch = True,
+          scale = scale',
+          dotContent = ClassDiagram . cdAnalysis False env fSpec $ pat,
+          dotProgName = Dot,
+          caption =
+            case outputLang' of
+              English -> "Logical data model of " <> fullName pat
+              Dutch -> "Logisch gegevensmodel van " <> fullName pat
+        }
+    PTTechnicalDataModel ->
+      Picture
+        { pType = pr,
+          pictureFileName = toBaseFileName "TechnicalDataModel",
+          forDataModelsOnlySwitch = True,
           scale = scale',
           dotContent = ClassDiagram $ tdAnalysis fSpec,
           dotProgName = Dot,
@@ -121,9 +139,11 @@ makePicture env fSpec pr =
               English -> "Technical data model of " <> fullName fSpec
               Dutch -> "Technisch gegevensmodel van " <> fullName fSpec
         }
-    PTCDConcept cpt ->
-      Pict
+    PTConceptualModelOfConcept cpt ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "CDConcept" <> (text1ToText . urlEncodedName . name) cpt,
+          forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = graphVizCmdForConceptualGraph,
@@ -132,31 +152,37 @@ makePicture env fSpec pr =
               English -> "Concept diagram of " <> fullName cpt
               Dutch -> "Conceptueel diagram van " <> fullName cpt
         }
-    PTDeclaredInPat pat ->
-      Pict
+    PTConceptualModelOfRelationsInPattern pat ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "RelationsInPattern" <> (text1ToText . urlEncodedName . name) pat,
+          forDataModelsOnlySwitch = False,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
+          dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = Dot,
           caption =
             case outputLang' of
               English -> "Concept diagram of relations in " <> fullName pat
               Dutch -> "Conceptueel diagram van relaties in " <> fullName pat
         }
-    PTCDPattern pat ->
-      Pict
+    PTConceptualModelOfRulesInPattern pat ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "CDPattern" <> (text1ToText . urlEncodedName . name) pat,
+          forDataModelsOnlySwitch = False,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
+          dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = Dot,
           caption =
             case outputLang' of
               English -> "Concept diagram of the rules in " <> fullName pat
-              Dutch -> "Conceptueel diagram van " <> fullName pat
+              Dutch -> "Conceptueel diagram van regels in" <> fullName pat
         }
-    PTCDRule rul ->
-      Pict
+    PTConceptualModelOfRule rul ->
+      Picture
         { pType = pr,
+          pictureFileName = toBaseFileName $ "CDRule" <> (text1ToText . urlEncodedName . name) rul,
+          forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = graphVizCmdForConceptualGraph,
@@ -170,51 +196,45 @@ makePicture env fSpec pr =
     outputLang' = outputLang env fSpec
     scale' =
       case pr of
-        PTClassDiagram -> "1.0"
-        PTCDPattern {} -> "0.7"
-        PTDeclaredInPat {} -> "0.6"
-        PTCDRule {} -> "0.7"
-        PTCDConcept {} -> "0.7"
-        PTLogicalDM {} -> "1.2"
-        PTTechnicalDM -> "1.2"
+        PTClassificationDiagram -> "1.0"
+        PTConceptualModelOfRulesInPattern {} -> "0.7"
+        PTConceptualModelOfRelationsInPattern {} -> "0.6"
+        PTConceptualModelOfRule {} -> "0.7"
+        PTConceptualModelOfConcept {} -> "0.7"
+        PTLogicalDataModelOfContext {} -> "1.2"
+        PTLogicalDataModelOfPattern {} -> "1.2"
+        PTTechnicalDataModel -> "1.2"
     graphVizCmdForConceptualGraph =
       -- Dot gives bad results, but there seems no way to fiddle with the length of edges.
       Neato
 
 -- Sfdp is a bad choice, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
--- | pictureFileName is used in the filename of the picture.
---   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
---   File names are urlEncoded to cater for the entire alphabet.
-pictureFileName :: PictureTyp -> FilePath
-pictureFileName pr = toBaseFileName
-  $ case pr of
-    PTClassDiagram -> "Classification"
-    PTLogicalDM grouped -> "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty
-    PTTechnicalDM -> "TechnicalDataModel"
-    PTCDConcept cpt -> "CDConcept" <> (text1ToText . urlEncodedName . name) cpt
-    PTDeclaredInPat pat -> "RelationsInPattern" <> (text1ToText . urlEncodedName . name) pat
-    PTCDPattern pat -> "CDPattern" <> (text1ToText . urlEncodedName . name) pat
-    PTCDRule r -> "CDRule" <> (text1ToText . urlEncodedName . name) r
-
 -- | conceptualStructure produces a uniform structure,
 --   so the transformation to .dot-format can be done with one function.
 conceptualStructure :: FSpec -> PictureTyp -> ConceptualStructure
 conceptualStructure fSpec pr =
   case pr of
-    --  A conceptual diagram comprising all rules in which c is used
-    PTCDConcept c ->
-      let cpts' = concs rs
-          rs = [r | r <- toList $ vrules fSpec, c `elem` concs r]
+    --  A conceptual diagram comprising all rules and relations in which c is used
+    PTConceptualModelOfConcept c ->
+      let cpts' = Set.insert c $ concs rulez `Set.union` concs directRels
+          directRels =
+            [ r | r <- Set.toList $ vrels fSpec, source r == c || target r == c
+            ]
+          rulez = [r | r <- toList $ vrules fSpec, c `elem` concs r]
        in CStruct
-            { csCpts = L.nub $ toList cpts' <> [g | (s, g) <- gs, elem g cpts' || elem s cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
-              csRels = filter (not . isProp . EDcD) . toList . bindedRelationsIn $ rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
-              csIdgs = [(s, g) | (s, g) <- gs, elem g cpts' || elem s cpts'] --  all isa edges
+            { csCpts =
+                cpts'
+                  <> (Set.fromList . concat $ [[s, g] | (s, g) <- gs, g `elem` cpts' || s `elem` cpts']),
+              csRels =
+                bindedRelationsIn rulez -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+                  `Set.union` Set.fromList directRels,
+              csIdgs = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts' || s `elem` cpts'] --  all isa edges
             }
-    --  PTCDPattern makes a picture of at least the relations within pat;
+    --  PTConceptualModelOfRulesInPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
     --  and rels to prevent disconnected concepts, which can be connected given the entire context.
-    PTCDPattern pat ->
+    PTConceptualModelOfRulesInPattern pat ->
       let orphans = [c | c <- toList cpts, not (c `elem` concs idgs || c `elem` concs rels)]
           xrels =
             Set.fromList
@@ -225,38 +245,39 @@ conceptualStructure fSpec pr =
           cpts' = concs pat `Set.union` concs rels
           rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
        in CStruct
-            { csCpts = toList cpts,
-              csRels = toList $ rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+            { csCpts = cpts,
+              csRels = rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
               csIdgs = idgs
             }
-    -- PTDeclaredInPat makes a picture of relations and gens within pat only
-    PTDeclaredInPat pat ->
+    -- PTConceptualModelOfRelationsInPattern makes a picture of relations and gens within pat only
+    PTConceptualModelOfRelationsInPattern pat ->
       let cpts = concs decs `Set.union` concs (gens pat)
           decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
        in CStruct
-            { csCpts = toList cpts,
+            { csCpts = cpts,
               csRels =
-                toList
-                  . Set.filter (not . isProp . EDcD)
+                Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ decs,
               csIdgs = isaEdges cpts
             }
-    PTCDRule r ->
+    PTConceptualModelOfRule r ->
       let cpts = concs r
           idgs = isaEdges cpts
        in CStruct
-            { csCpts = toList $ concs r `Set.union` Set.fromList [c | (s, g) <- idgs, c <- [g, s]],
+            { csCpts = cpts `Set.union` concs idgs,
               csRels =
-                toList
-                  . Set.filter (not . isProp . EDcD)
+                Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ bindedRelationsIn r,
               csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
             }
-    _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTClassificationDiagram -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTLogicalDataModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
-    isaEdges cpts = [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
+    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
     gs = fsisa fSpec
 
 writePicture ::
@@ -275,6 +296,7 @@ writePicture pict = do
   --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
   writeDot imagePathRelativeToCurrentDir Png -- handy format to include in github comments/issues
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
+  writeDot imagePathRelativeToCurrentDir Pdf -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file
   where
     writeDot ::
@@ -282,30 +304,53 @@ writePicture pict = do
       FilePath ->
       GraphvizOutput ->
       RIO env ()
-    writeDot fp = writeDotPostProcess fp Nothing
-    writeDotPostProcess ::
+    writeDot fp = writeAndPostProcess fp Nothing
+    writeAndPostProcess ::
       (HasBlackWhite env, HasLogFunc env) =>
       FilePath ->
       Maybe (FilePath -> RIO env ()) -> -- Optional postprocessor
       GraphvizOutput ->
       RIO env ()
-    writeDotPostProcess fp postProcess gvOutput =
+    writeAndPostProcess fp postProcess gvOutput =
       do
         env <- ask
         logDebug $ "Generating " <> displayShow gvOutput <> " using " <> displayShow gvCommand <> "."
         let dotSource = mkDotGraph env pict
         --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
-        path <-
-          liftIO
-            . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
-            $ dropExtension fp
+        path <- runGraphvizCommand' gvCommand dotSource
+        -- path' <- liftIO . GV.addExtension
+        -- path <-
+        --   liftIO
+        --     . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
+        --     $ dropExtension fp
         absPath <- liftIO . makeAbsolute $ path
-        logInfo $ display (T.pack absPath) <> " written."
+        logDebug $ display (T.pack absPath) <> " written."
         case postProcess of
           Nothing -> return ()
           Just x -> x path
       where
         gvCommand = dotProgName pict
+        runGraphvizCommand' ::
+          (PrintDotRepr dg n, HasLogFunc env) =>
+          GraphvizCommand ->
+          dg n ->
+          RIO env FilePath
+        runGraphvizCommand' cmd dotGraph =
+          liftIO (GV.addExtension (runGraphvizCommand cmd dotGraph) gvOutput . dropExtension $ fp) `catch` handler
+          where
+            handler :: (HasLogFunc env) => GraphvizException -> RIO env FilePath
+            handler e = do
+              logWarn
+                $ "Graphviz had trouble creating: "
+                <> displayShow
+                  ( RIO.FilePath.addExtension
+                      (dropExtension fp)
+                      (defaultExtension gvOutput)
+                  )
+              logWarn "  It might still be useful, but it isn't guaranteed. "
+              -- Run in debug mode to see the error message thrown by Graphviz, but they are gibberish:
+              logDebug $ displayShow e
+              return fp
 
 -- The GraphVizOutput Pdf generates pixelized graphics on Linux
 -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
@@ -343,9 +388,8 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePathRelativeToDirOutput env p =
-    "images" </> filename <.> extension
+    "images" </> pictureFileName p <.> extension
     where
-      filename = pictureFileName . pType $ p
       extension =
         case view fspecFormatL env of
           Fpdf -> "png" -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
@@ -355,11 +399,11 @@ instance ReferableFromPandoc Picture where
 
 data ConceptualStructure = CStruct
   { -- | The concepts to draw in the graph
-    csCpts :: [A_Concept],
+    csCpts :: Set A_Concept,
     -- | The relations, (the edges in the graph)
-    csRels :: [Relation],
+    csRels :: Set Relation,
     -- | list of Isa relations
-    csIdgs :: [(A_Concept, A_Concept)]
+    csIdgs :: Set (A_Concept, A_Concept)
   }
 
 conceptual2Dot :: ConceptualStructure -> DotGraph MyDotNode
@@ -424,7 +468,7 @@ class HasDotParts a where
 
 baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
-  case lookup c (zip (allCpts x) [(1 :: Int) ..]) of
+  case lookup c (zip (Set.toList $ allCpts x) [(1 :: Int) ..]) of
     Just i ->
       mkName ConceptName
         . (:| [])
@@ -434,8 +478,8 @@ baseNodeId x c =
           )
     _ -> fatal ("element " <> fullName c <> " not found by nodeLabel.")
 
-allCpts :: ConceptualStructure -> [A_Concept]
-allCpts (CStruct cpts' rels idgs) = toList $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+allCpts :: ConceptualStructure -> Set A_Concept
+allCpts (CStruct cpts' rels idgs) = cpts' `Set.union` concs rels `Set.union` concs idgs
 
 edgeLenFactor :: Double -> Attribute
 edgeLenFactor x = Len (4 * x)
@@ -555,3 +599,37 @@ crowfootArrowType isHead r
          open :: ArrowModifier
          open  = noMod {arrowFill = OpenArrow}
  -}
+
+-- Copied from Data.GraphViz.Commands, because it is not exported:
+
+-- | A default file extension for each 'GraphvizOutput'.
+defaultExtension :: GraphvizOutput -> String
+defaultExtension Bmp = "bmp"
+defaultExtension Canon = "gv"
+defaultExtension DotOutput = "gv"
+defaultExtension XDot {} = "gv"
+defaultExtension Eps = "eps"
+defaultExtension Fig = "fig"
+defaultExtension Gd = "gd"
+defaultExtension Gd2 = "gd2"
+defaultExtension Gif = "gif"
+defaultExtension Ico = "ico"
+defaultExtension Imap = "map"
+defaultExtension Cmapx = "map"
+defaultExtension ImapNP = "map"
+defaultExtension CmapxNP = "map"
+defaultExtension Jpeg = "jpg"
+defaultExtension Pdf = "pdf"
+defaultExtension Plain = "txt"
+defaultExtension PlainExt = "txt"
+defaultExtension Png = "png"
+defaultExtension Ps = "ps"
+defaultExtension Ps2 = "ps"
+defaultExtension Svg = "svg"
+defaultExtension SvgZ = "svgz"
+defaultExtension Tiff = "tif"
+defaultExtension Vml = "vml"
+defaultExtension VmlZ = "vmlz"
+defaultExtension Vrml = "vrml"
+defaultExtension WBmp = "wbmp"
+defaultExtension WebP = "webp"
