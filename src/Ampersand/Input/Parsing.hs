@@ -52,6 +52,8 @@ import Ampersand.Prototype.StaticFiles_Generated
   ( FileKind (FormalAmpersand, PrototypeContext),
     getStaticFileContent,
   )
+import Ampersand.Runners (logLevel)
+import Ampersand.Types.Config (HasRunner (..))
 import Data.RDF
 import RIO.Char (toLower)
 import RIO.Directory
@@ -79,7 +81,7 @@ import Text.Parsec (getState)
 
 -- | Parse Ampersand files and all transitive includes
 parseFilesTransitive ::
-  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) =>
+  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
   Roots ->
   -- | A tuple containing a list of parsed files and the The resulting context
   RIO env (NonEmpty ParseCandidate, Guarded P_Context)
@@ -102,7 +104,7 @@ parseFilesTransitive xs = do
           pcDefineds = Set.empty
         }
 
-parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
 parseFormalAmpersand = do
   parseThings
     $ ParseCandidate
@@ -114,7 +116,7 @@ parseFormalAmpersand = do
       }
     NE.:| []
 
-parsePrototypeContext :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parsePrototypeContext :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
 parsePrototypeContext = do
   parseThings
     $ ParseCandidate
@@ -127,7 +129,7 @@ parsePrototypeContext = do
     NE.:| []
 
 parseThings ::
-  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasLogFunc env) =>
+  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
 parseThings pcs = do
@@ -138,16 +140,16 @@ parseThings pcs = do
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
     --   return the resulting P_Context.
-    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasLogFunc env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
+    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasRunner env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
     finalize (Errors err) = pure (Errors err)
     finalize (Checked results warns) = do
+      runner <- Ampersand.Basics.view runnerL
       let (contexts, graphs) = partitionEithers (map snd results)
-
       triplesCtx <- case graphs of
         [] -> pure Nothing
         h : tl -> do
           let combined = mergeGraphs (h NE.:| tl)
-          writeRdfTList 0 combined
+          when (logLevel runner == LevelDebug) (writeRdfTList 0 combined)
           pure (Just $ graph2P_Context combined)
       pure $ case triplesCtx of
         Nothing -> Checked (bar contexts) warns

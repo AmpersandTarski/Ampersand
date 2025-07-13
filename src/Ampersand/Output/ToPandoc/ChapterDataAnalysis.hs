@@ -63,14 +63,20 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                      ( case outputLang' of
                          Dutch ->
                            "Een aantal concepten zit in een classificatiestructuur. "
-                             <> "Deze is weergegeven in "
-                             <> hyperLinkTo classificationPicture
-                             <> "."
+                             <> if crossRefsAreFixed
+                               then
+                                 "Deze is weergegeven in "
+                                   <> hyperLinkTo classificationPicture
+                                   <> "."
+                               else mempty
                          English ->
-                           ""
-                             <> "This is shown in "
-                             <> hyperLinkTo classificationPicture
-                             <> "."
+                           "A couple of concepts are in a classification structure. "
+                             <> if crossRefsAreFixed
+                               then
+                                 "This is shown in "
+                                   <> hyperLinkTo classificationPicture
+                                   <> "."
+                               else mempty
                      )
                    <> xDefBlck env fSpec classificationPicture
            )
@@ -79,7 +85,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         <> technicalDataModelBlocks
         <> crudMatrixSection
       where
-        classificationPicture = makePicture env fSpec PTClassDiagram
+        classificationPicture = makePicture env fSpec PTClassificationDiagram
 
     logicalDataModelBlocks =
       header
@@ -92,14 +98,20 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           ( case outputLang' of
               Dutch ->
                 text "De afspraken zijn vertaald naar een gegevensmodel. "
-                  <> text "Dit gegevensmodel is in "
-                  <> hyperLinkTo logicalDataModelPicture
-                  <> text " weergegeven."
+                  <> if crossRefsAreFixed
+                    then
+                      text "Dit gegevensmodel is in "
+                        <> hyperLinkTo logicalDataModelPicture
+                        <> text " weergegeven."
+                    else mempty
               English ->
                 text "The functional requirements have been translated into a data model. "
-                  <> text "This model is shown by "
-                  <> hyperLinkTo logicalDataModelPicture
-                  <> text "."
+                  <> if crossRefsAreFixed
+                    then
+                      text "This model is shown by "
+                        <> hyperLinkTo logicalDataModelPicture
+                        <> text "."
+                    else mempty
           )
         <> xDefBlck env fSpec logicalDataModelPicture
         <> let nrOfClasses = length (classes oocd)
@@ -125,7 +137,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  <> conceptTables
                  <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (map fst $ classes oocd)))
       where
-        logicalDataModelPicture = makePicture env fSpec (PTLogicalDM False)
+        logicalDataModelPicture = makePicture env fSpec (PTLogicalDataModelOfContext False)
 
     oocd :: ClassDiag
     oocd =
@@ -336,11 +348,15 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           ( case outputLang' of
               Dutch ->
                 "De afspraken zijn vertaald naar een technisch datamodel. "
-                  <> ( "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
+                  <> ( if crossRefsAreFixed
+                         then "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
+                         else mempty
                      )
               English ->
                 "The functional requirements have been translated into a technical data model. "
-                  <> ( "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
+                  <> ( if crossRefsAreFixed
+                         then "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
+                         else mempty
                      )
           )
         <> xDefBlck env fSpec technicalDataModelPicture
@@ -430,7 +446,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                                <> "."
                        )
                 )
-    technicalDataModelPicture = makePicture env fSpec PTTechnicalDM
+    technicalDataModelPicture = makePicture env fSpec PTTechnicalDataModel
 
     daRulesSection :: Blocks
     daRulesSection =

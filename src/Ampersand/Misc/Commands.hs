@@ -389,7 +389,7 @@ mkAction theAction opts =
   extendWith opts $ doOrDie theAction
 
 doOrDie ::
-  (HasDirOutput env, HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasRunner env, HasFSpecGenOpts env) =>
   (FSpec -> RIO env b) ->
   RIO env b
 doOrDie theAction = do
