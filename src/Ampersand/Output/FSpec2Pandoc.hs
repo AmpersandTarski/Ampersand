@@ -138,11 +138,11 @@ fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
     thePictures = map (makePicture env fSpec) largePictures ++ concat picturesByChapter
       where
         largePictures =
-          PTClassDiagram
-            : map PTLogicalDMPattern (patterns fSpec)
-              <> [ PTLogicalDM False,
-                   PTLogicalDM True,
-                   PTTechnicalDM
+          PTClassificationDiagram
+            : map PTLogicalDataModelOfPattern (patterns fSpec)
+              <> [ PTLogicalDataModelOfContext False,
+                   PTLogicalDataModelOfContext True,
+                   PTTechnicalDataModel
                  ]
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]

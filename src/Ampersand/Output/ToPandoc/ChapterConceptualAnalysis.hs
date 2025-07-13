@@ -59,11 +59,11 @@ chpConceptualAnalysis env lev fSpec =
     -----------------------------------------------------
     -- the Picture that represents this pattern's conceptual graph
     pictOfPat :: Pattern -> Picture
-    pictOfPat = makePicture env fSpec . PTCDPattern
+    pictOfPat = makePicture env fSpec . PTConceptualModelOfRulesInPattern
     pictOfRule :: Rule -> Picture
-    pictOfRule = makePicture env fSpec . PTCDRule
+    pictOfRule = makePicture env fSpec . PTConceptualModelOfRule
     pictOfConcept :: A_Concept -> Picture
-    pictOfConcept = makePicture env fSpec . PTCDConcept
+    pictOfConcept = makePicture env fSpec . PTConceptualModelOfConcept
     caSection :: ThemeContent -> Blocks
     caSection themeContent
       | null (cptsOfTheme themeContent)

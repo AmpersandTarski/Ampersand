@@ -85,7 +85,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         <> technicalDataModelBlocks
         <> crudMatrixSection
       where
-        classificationPicture = makePicture env fSpec PTClassDiagram
+        classificationPicture = makePicture env fSpec PTClassificationDiagram
 
     logicalDataModelBlocks =
       header
@@ -137,7 +137,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  <> conceptTables
                  <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (map fst $ classes oocd)))
       where
-        logicalDataModelPicture = makePicture env fSpec (PTLogicalDM False)
+        logicalDataModelPicture = makePicture env fSpec (PTLogicalDataModelOfContext False)
 
     oocd :: ClassDiag
     oocd =
@@ -446,7 +446,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                                <> "."
                        )
                 )
-    technicalDataModelPicture = makePicture env fSpec PTTechnicalDM
+    technicalDataModelPicture = makePicture env fSpec PTTechnicalDataModel
 
     daRulesSection :: Blocks
     daRulesSection =

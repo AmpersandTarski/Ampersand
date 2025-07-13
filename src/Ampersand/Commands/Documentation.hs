@@ -27,7 +27,7 @@ doGenDocument fSpec = do
   -- before the actual document is written
   datamodelsOnly <- view genDatamodelOnlyL
   if datamodelsOnly
-    then mapM_ writePicture $ filter isDatamodel thePictures
+    then mapM_ writePicture $ filter forDataModelsOnlySwitch thePictures
     else do
       genGraphics <- view genGraphicsL
       when (genGraphics && fspecFormat /= FPandoc)
