@@ -151,7 +151,7 @@ makePicture env fSpec pr =
       Pict
         { pType = pr,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
+          dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = Dot,
           caption =
             case outputLang' of
@@ -162,7 +162,7 @@ makePicture env fSpec pr =
       Pict
         { pType = pr,
           scale = scale',
-          dotContent = ClassDiagram $ cdAnalysis False env fSpec pat,
+          dotContent = ConceptualDg $ conceptualStructure fSpec pr,
           dotProgName = Dot,
           caption =
             case outputLang' of
@@ -219,13 +219,19 @@ pictureFileName pr = toBaseFileName
 conceptualStructure :: FSpec -> PictureTyp -> ConceptualStructure
 conceptualStructure fSpec pr =
   case pr of
-    --  A conceptual diagram comprising all rules in which c is used
+    --  A conceptual diagram comprising all rules and relations in which c is used
     PTCDConcept c ->
-      let cpts' = concs rs
+      let cpts' = Set.insert c $ concs rs `Set.union` concs directRels
+          directRels =
+            [ r | r <- Set.toList $ vrels fSpec, source r == c || target r == c
+            ]
           rs = [r | r <- toList $ vrules fSpec, c `elem` concs r]
        in CStruct
-            { csCpts = L.nub $ toList cpts' <> [g | (s, g) <- gs, elem g cpts' || elem s cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
-              csRels = filter (not . isProp . EDcD) . toList . bindedRelationsIn $ rs, -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+            { csCpts = L.nub $ toList cpts' <> [g | (s, g) <- gs, g `elem` cpts' || s `elem` cpts'] <> [s | (s, g) <- gs, elem g cpts' || elem s cpts'],
+              csRels =
+                Set.toList
+                  $ (Set.filter (not . isProp . EDcD) . bindedRelationsIn $ rs) -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+                  `Set.union` Set.fromList directRels,
               csIdgs = [(s, g) | (s, g) <- gs, elem g cpts' || elem s cpts'] --  all isa edges
             }
     --  PTCDPattern makes a picture of at least the relations within pat;
