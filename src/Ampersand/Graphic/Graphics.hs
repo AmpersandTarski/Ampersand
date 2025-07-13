@@ -14,6 +14,7 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux (outputLang)
 import Data.GraphViz as GV
 import Data.GraphViz.Attributes.Complete
+import Data.GraphViz.Exception
 import RIO.Directory (createDirectoryIfMissing, makeAbsolute)
 import RIO.FilePath
 import qualified RIO.List as L
@@ -299,30 +300,53 @@ writePicture pict = do
       FilePath ->
       GraphvizOutput ->
       RIO env ()
-    writeDot fp = writeDotPostProcess fp Nothing
-    writeDotPostProcess ::
+    writeDot fp = writeAndPostProcess fp Nothing
+    writeAndPostProcess ::
       (HasBlackWhite env, HasLogFunc env) =>
       FilePath ->
       Maybe (FilePath -> RIO env ()) -> -- Optional postprocessor
       GraphvizOutput ->
       RIO env ()
-    writeDotPostProcess fp postProcess gvOutput =
+    writeAndPostProcess fp postProcess gvOutput =
       do
         env <- ask
         logDebug $ "Generating " <> displayShow gvOutput <> " using " <> displayShow gvCommand <> "."
         let dotSource = mkDotGraph env pict
         --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
-        path <-
-          liftIO
-            . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
-            $ dropExtension fp
+        path <- runGraphvizCommand' gvCommand dotSource
+        -- path' <- liftIO . GV.addExtension
+        -- path <-
+        --   liftIO
+        --     . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
+        --     $ dropExtension fp
         absPath <- liftIO . makeAbsolute $ path
-        logInfo $ display (T.pack absPath) <> " written."
+        logDebug $ display (T.pack absPath) <> " written."
         case postProcess of
           Nothing -> return ()
           Just x -> x path
       where
         gvCommand = dotProgName pict
+        runGraphvizCommand' ::
+          (PrintDotRepr dg n, HasLogFunc env) =>
+          GraphvizCommand ->
+          dg n ->
+          RIO env FilePath
+        runGraphvizCommand' cmd dotGraph =
+          liftIO (GV.addExtension (runGraphvizCommand cmd dotGraph) gvOutput . dropExtension $ fp) `catch` handler
+          where
+            handler :: (HasLogFunc env) => GraphvizException -> RIO env FilePath
+            handler e = do
+              logWarn
+                $ "Graphviz had trouble creating: "
+                <> displayShow
+                  ( RIO.FilePath.addExtension
+                      (dropExtension fp)
+                      (defaultExtension gvOutput)
+                  )
+              logWarn "  It might still be useful, but it isn't guaranteed. "
+              -- Run in debug mode to see the error message thrown by Graphviz, but they are gibberish:
+              logDebug $ displayShow e
+              return fp
 
 -- The GraphVizOutput Pdf generates pixelized graphics on Linux
 -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
@@ -572,3 +596,37 @@ crowfootArrowType isHead r
          open :: ArrowModifier
          open  = noMod {arrowFill = OpenArrow}
  -}
+
+-- Copied from Data.GraphViz.Commands, because it is not exported:
+
+-- | A default file extension for each 'GraphvizOutput'.
+defaultExtension :: GraphvizOutput -> String
+defaultExtension Bmp = "bmp"
+defaultExtension Canon = "gv"
+defaultExtension DotOutput = "gv"
+defaultExtension XDot {} = "gv"
+defaultExtension Eps = "eps"
+defaultExtension Fig = "fig"
+defaultExtension Gd = "gd"
+defaultExtension Gd2 = "gd2"
+defaultExtension Gif = "gif"
+defaultExtension Ico = "ico"
+defaultExtension Imap = "map"
+defaultExtension Cmapx = "map"
+defaultExtension ImapNP = "map"
+defaultExtension CmapxNP = "map"
+defaultExtension Jpeg = "jpg"
+defaultExtension Pdf = "pdf"
+defaultExtension Plain = "txt"
+defaultExtension PlainExt = "txt"
+defaultExtension Png = "png"
+defaultExtension Ps = "ps"
+defaultExtension Ps2 = "ps"
+defaultExtension Svg = "svg"
+defaultExtension SvgZ = "svgz"
+defaultExtension Tiff = "tif"
+defaultExtension Vml = "vml"
+defaultExtension VmlZ = "vmlz"
+defaultExtension Vrml = "vrml"
+defaultExtension WBmp = "wbmp"
+defaultExtension WebP = "webp"
