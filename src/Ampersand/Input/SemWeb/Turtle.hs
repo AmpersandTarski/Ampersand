@@ -192,50 +192,86 @@ graph2P_Context graph = do
                 pos = someTurtle
               }
     relationDefs :: [P_Relation]
-    relationDefs =
-      [ P_Relation
-          { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-            dec_prps = Set.fromList (getProps relNode blank),
-            dec_pragma = Nothing,
-            dec_pos = someTurtle,
-            dec_nm = nm,
-            dec_label = l,
-            dec_defaults = mempty,
-            dec_Mean = mempty
-          }
-        | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
-          blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
-          tgtNode <- map objectOf $ select graph (is blank) (is OWL.onClass) Nothing,
-          srcNode <- map subjectOf $ select graph Nothing (is RDFS.subClassOf) (is blank),
-          relLbl <- labelsOf graph relNode,
-          let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
-          srcLbl <- labelsOf graph srcNode,
-          let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-          tgtLbl <- labelsOf graph tgtNode,
-          let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
-      ]
+    relationDefs = relationsBasedOnRestrictions <> relationsWithoutRestrictions
       where
-        getProps :: Node -> Node -> [PProp]
-        getProps relNode restrictionNode =
-          concat
-            $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) (is OWL.qualifiedCardinality) Nothing]
-            <> [[P_Uni] | _ <- select graph (is restrictionNode) (is OWL.maxCardinality) Nothing]
-            <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) (is OWL.minCardinality) Nothing]
-            <> [[P_Asy] | _ <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is restrictionNode)]
-            <> [propsOfInverse inv | inv <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is relNode)]
+        relationsBasedOnRestrictions :: [P_Relation]
+        relationsBasedOnRestrictions =
+          [ P_Relation
+              { dec_sign = P_Sign (PCpt src) (PCpt tgt),
+                dec_prps = Set.fromList (getProps relNode blank),
+                dec_pragma = Nothing,
+                dec_pos = someTurtle,
+                dec_nm = nm,
+                dec_label = l,
+                dec_defaults = mempty,
+                dec_Mean = mempty
+              }
+            | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
+              blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
+              tgtNode <- map objectOf $ select graph (is blank) (is OWL.onClass) Nothing,
+              srcNode <- map subjectOf $ select graph Nothing (is RDFS.subClassOf) (is blank),
+              relLbl <- labelsOf graph relNode,
+              let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
+              srcLbl <- labelsOf graph srcNode,
+              let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
+              tgtLbl <- labelsOf graph tgtNode,
+              let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
+          ]
           where
-            propsOfInverse :: Node -> [PProp]
-            propsOfInverse invRel =
-              case map subjectOf $ select graph Nothing (is OWL.onProperty) (is invRel) of
-                [blankInvRestriction] ->
-                  [P_Inj | not . null $ uniList]
-                    <> [P_Sur | not . null $ surList]
-                  where
-                    uniList = L.intersect [OWL.qualifiedCardinality, OWL.maxCardinality] cardinalityNodes
-                    surList = L.intersect [OWL.qualifiedCardinality, OWL.minCardinality] cardinalityNodes
-                    cardinalityNodes =
-                      [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
-                _ -> []
+            getProps :: Node -> Node -> [PProp]
+            getProps relNode restrictionNode =
+              concat
+                $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) (is OWL.qualifiedCardinality) Nothing]
+                <> [[P_Uni] | _ <- select graph (is restrictionNode) (is OWL.maxCardinality) Nothing]
+                <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) (is OWL.minCardinality) Nothing]
+                <> [[P_Asy] | _ <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is restrictionNode)]
+                <> [propsOfInverse inv | inv <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is relNode)]
+              where
+                propsOfInverse :: Node -> [PProp]
+                propsOfInverse invRel =
+                  case map subjectOf $ select graph Nothing (is OWL.onProperty) (is invRel) of
+                    [blankInvRestriction] ->
+                      [P_Inj | not . null $ uniList]
+                        <> [P_Sur | not . null $ surList]
+                      where
+                        uniList = L.intersect [OWL.qualifiedCardinality, OWL.maxCardinality] cardinalityNodes
+                        surList = L.intersect [OWL.qualifiedCardinality, OWL.minCardinality] cardinalityNodes
+                        cardinalityNodes =
+                          [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
+                    _ -> []
+
+        relationsWithoutRestrictions :: [P_Relation]
+        relationsWithoutRestrictions =
+          [ P_Relation
+              { dec_sign = P_Sign (PCpt src) (PCpt tgt),
+                dec_prps = mempty,
+                dec_pragma = Nothing,
+                dec_pos = someTurtle,
+                dec_nm = nm,
+                dec_label = l,
+                dec_defaults = mempty,
+                dec_Mean = mempty
+              }
+            | relNode <-
+                map subjectOf
+                  $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
+              srcNode <-
+                map objectOf
+                  $ select graph (is relNode) (is RDFS.domain) Nothing,
+              tgtNode <-
+                map objectOf
+                  $ select graph (is relNode) (is RDFS.range) Nothing,
+              relLbl <- labelsOf graph relNode,
+              let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
+              let restrictions =
+                    map subjectOf
+                      $ select graph Nothing (is OWL.onProperty) (is relNode),
+              null restrictions,
+              srcLbl <- labelsOf graph srcNode,
+              let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
+              tgtLbl <- labelsOf graph tgtNode,
+              let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
+          ]
 
 allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
