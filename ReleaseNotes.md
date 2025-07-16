@@ -1,6 +1,9 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+- [Issue #1582](https://github.com/AmpersandTarski/Ampersand/issues/1582) Take rdfs:domain and rdfs:range into account in turtle parser.
+
+## v5.4.9
 - [Issue #1576](https://github.com/AmpersandTarski/Ampersand/issues/1576) When importing .ttl files, only warn if a label is missing. 
 - [Issue #1578](https://github.com/AmpersandTarski/Ampersand/issues/1578) Harvest PATTERNs based on skos:ConceptScheme 
 - [Issue #1579](https://github.com/AmpersandTarski/Ampersand/issues/1579) Bugfix on equality of Concept definitions
