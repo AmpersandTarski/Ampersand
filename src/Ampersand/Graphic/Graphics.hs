@@ -134,6 +134,7 @@ makePicture env fSpec pr =
       Picture
         { pType = pr,
           pictureFileName = toBaseFileName "TechnicalDataModel",
+          -- PTTechnicalDataModel is not included in datamodels-only mode by design.
           forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ClassDiagram $ tdAnalysis fSpec,

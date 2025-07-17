@@ -147,7 +147,7 @@ docOptsParser =
       boolFlags
         True
         "text"
-        "generation of the document file, which contains the text and graphics."
+        "generate the document file, which contains the text and graphics."
         mempty
     visualsOutputFormatsP :: Parser [VisualsOutputFormat]
     visualsOutputFormatsP =
@@ -217,7 +217,7 @@ docOptsParser =
               $ "Invalid focus: "
               <> T.unpack s
               <> ". Valid choices are: "
-              <> (L.intercalate ", " . map show $ focuses)
+              <> (L.intercalate "," . map show $ focuses)
 
         focuses :: [FocusOfVisual]
         focuses = [minBound ..]
