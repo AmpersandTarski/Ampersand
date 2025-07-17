@@ -21,6 +21,7 @@ import qualified Data.RDF.Vocabulary.OWL as OWL
 import qualified Data.RDF.Vocabulary.RDF as RDF
 import qualified Data.RDF.Vocabulary.RDFS as RDFS
 import qualified Data.RDF.Vocabulary.SKOS as SKOS
+import Data.Tuple.Extra (fst3)
 import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as M
@@ -204,11 +205,14 @@ graph2P_Context graph = do
                 dec_nm = nm,
                 dec_label = l,
                 dec_defaults = mempty,
-                dec_Mean = mempty
+                dec_Mean = getMeanings graph relNode
               }
             | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
               blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
-              tgtNode <- map objectOf $ select graph (is blank) (is OWL.onClass) Nothing,
+              tgtNode <-
+                map objectOf
+                  $ select graph (is blank) (is OWL.onClass) Nothing
+                  <> select graph (is blank) (is OWL.allValuesFrom) Nothing,
               srcNode <- map subjectOf $ select graph Nothing (is RDFS.subClassOf) (is blank),
               relLbl <- labelsOf graph relNode,
               let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
@@ -275,10 +279,7 @@ graph2P_Context graph = do
 
 allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
-  [ cpt
-    | cpt <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._Class),
-      cpt `elem` map subjectOf (select graph (is cpt) (is RDF._type) (is OWL._NamedIndividual))
-  ]
+  subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
 
 mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
 mkConceptDef graph from cpt = do
@@ -295,7 +296,7 @@ mkConceptDef graph from cpt = do
   pure
     PConceptDef
       { cdname = nm,
-        cdmean = mempty,
+        cdmean = getMeanings graph cpt,
         cdlbl = l,
         cdfrom = from,
         cddef2 = PCDDefLegacy def2 "",
@@ -303,22 +304,44 @@ mkConceptDef graph from cpt = do
       }
   where
     getName :: Node -> Guarded (Name, Maybe Label)
-    getName lblNode = case suggestName ContextName . toText1Unsafe <$> literalTextOf lblNode of
+    getName lblNode = case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
       Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
       Just x -> pure x
-    def2 = T.intercalate "\n" . mapMaybe (literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
+    def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
 
-literalTextOf :: Node -> (Maybe Text)
+getMeanings :: Graph -> Node -> [PMeaning]
+getMeanings graph lblNode =
+  PMeaning
+    <$> [ P_Markup
+            { mString = txt,
+              mLang = lang,
+              mFormat = format
+            }
+          | (mtxt, lang, format) <-
+              map (literalTextOf . objectOf)
+                $ select graph (is lblNode) (is RDFS.comment) Nothing,
+            txt <- maybeToList mtxt
+        ]
+
+literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
 literalTextOf n = case n of
-  LNode (PlainL txt) -> Just txt
-  LNode (PlainLL txt _) -> Just txt
-  LNode (TypedL txt _) -> Just txt
-  UNode txt -> Just txt -- TODO: Warning that this is not a literal
-  _ -> Nothing
+  LNode (PlainL txt) -> (Just txt, Nothing, Nothing)
+  LNode (PlainLL txt format) ->
+    ( Just txt,
+      Nothing,
+      case T.toLower format of
+        "rest" -> Just ReST
+        "html" -> Just HTML
+        "latex" -> Just LaTeX
+        _ -> Just Markdown
+    )
+  LNode (TypedL txt _) -> (Just txt, Nothing, Just Markdown)
+  UNode txt -> (Just txt, Nothing, Nothing) -- TODO: Warning that this is not a literal
+  _ -> (Nothing, Nothing, Nothing)
 
 labelsOf :: Graph -> Node -> [Text]
 labelsOf graph n =
-  mapMaybe (literalTextOf . objectOf)
+  mapMaybe (fst3 . literalTextOf . objectOf)
     $ select graph (is n) (is RDFS.label) Nothing
 
 -- getExactlyOneMatchingTriple :: Graph -> Maybe Node -> Node -> Node -> Guarded Triple
