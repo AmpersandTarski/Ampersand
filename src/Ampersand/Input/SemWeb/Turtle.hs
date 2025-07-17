@@ -205,11 +205,14 @@ graph2P_Context graph = do
                 dec_nm = nm,
                 dec_label = l,
                 dec_defaults = mempty,
-                dec_Mean = mempty
+                dec_Mean = getMeanings graph relNode
               }
             | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
               blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
-              tgtNode <- map objectOf $ select graph (is blank) (is OWL.onClass) Nothing,
+              tgtNode <-
+                map objectOf
+                  $ select graph (is blank) (is OWL.onClass) Nothing
+                  <> select graph (is blank) (is OWL.allValuesFrom) Nothing,
               srcNode <- map subjectOf $ select graph Nothing (is RDFS.subClassOf) (is blank),
               relLbl <- labelsOf graph relNode,
               let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
@@ -293,7 +296,7 @@ mkConceptDef graph from cpt = do
   pure
     PConceptDef
       { cdname = nm,
-        cdmean = getMeanings cpt,
+        cdmean = getMeanings graph cpt,
         cdlbl = l,
         cdfrom = from,
         cddef2 = PCDDefLegacy def2 "",
@@ -305,19 +308,20 @@ mkConceptDef graph from cpt = do
       Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
       Just x -> pure x
     def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
-    getMeanings :: Node -> [PMeaning]
-    getMeanings lblNode =
-      PMeaning
-        <$> [ P_Markup
-                { mString = txt,
-                  mLang = lang,
-                  mFormat = format
-                }
-              | (mtxt, lang, format) <-
-                  map (literalTextOf . objectOf)
-                    $ select graph (is lblNode) (is RDFS.comment) Nothing,
-                txt <- maybeToList mtxt
-            ]
+
+getMeanings :: Graph -> Node -> [PMeaning]
+getMeanings graph lblNode =
+  PMeaning
+    <$> [ P_Markup
+            { mString = txt,
+              mLang = lang,
+              mFormat = format
+            }
+          | (mtxt, lang, format) <-
+              map (literalTextOf . objectOf)
+                $ select graph (is lblNode) (is RDFS.comment) Nothing,
+            txt <- maybeToList mtxt
+        ]
 
 literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
 literalTextOf n = case n of
