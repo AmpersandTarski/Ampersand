@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+- [Issue #1583](https://github.com/AmpersandTarski/Ampersand/issues/1583) Enable user to limit generation of visuals
 - [Issue #1582](https://github.com/AmpersandTarski/Ampersand/issues/1582) Take rdfs:domain and rdfs:range into account in turtle parser. Also add meanings
 
 ## v5.4.9
