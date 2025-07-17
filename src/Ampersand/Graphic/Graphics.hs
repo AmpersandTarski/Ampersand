@@ -53,7 +53,8 @@ data Picture = Picture
     -- | the name of the program to use  ("dot" or "neato" or "fdp" or "Sfdp")
     dotProgName :: !GraphvizCommand,
     -- | a human readable name of this picture
-    caption :: !Text
+    caption :: !Text,
+    visualFocus :: !FocusOfVisual -- the focus of this picture, used to determine whether it should be generated
   }
 
 instance Named PictureTyp where -- for displaying a fatal error
@@ -91,7 +92,8 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Classification of " <> fullName fSpec
-              Dutch -> "Classificatie van " <> fullName fSpec
+              Dutch -> "Classificatie van " <> fullName fSpec,
+          visualFocus = VContext
         }
     PTLogicalDataModelOfContext grouped ->
       Picture
@@ -111,33 +113,37 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Logical data model of " <> fullName fSpec
-              Dutch -> "Logisch gegevensmodel van " <> fullName fSpec
+              Dutch -> "Logisch gegevensmodel van " <> fullName fSpec,
+          visualFocus = VContext
         }
     PTLogicalDataModelOfPattern pat ->
       Picture
         { pType = pr,
           pictureFileName = toBaseFileName $ "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat,
-          forDataModelsOnlySwitch = True,
+          forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ClassDiagram . cdAnalysis False env fSpec $ pat,
           dotProgName = Dot,
           caption =
             case outputLang' of
               English -> "Logical data model of " <> fullName pat
-              Dutch -> "Logisch gegevensmodel van " <> fullName pat
+              Dutch -> "Logisch gegevensmodel van " <> fullName pat,
+          visualFocus = VPattern
         }
     PTTechnicalDataModel ->
       Picture
         { pType = pr,
           pictureFileName = toBaseFileName "TechnicalDataModel",
-          forDataModelsOnlySwitch = True,
+          -- PTTechnicalDataModel is not included in datamodels-only mode by design.
+          forDataModelsOnlySwitch = False,
           scale = scale',
           dotContent = ClassDiagram $ tdAnalysis fSpec,
           dotProgName = Dot,
           caption =
             case outputLang' of
               English -> "Technical data model of " <> fullName fSpec
-              Dutch -> "Technisch gegevensmodel van " <> fullName fSpec
+              Dutch -> "Technisch gegevensmodel van " <> fullName fSpec,
+          visualFocus = VContext
         }
     PTConceptualModelOfConcept cpt ->
       Picture
@@ -150,7 +156,8 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Concept diagram of " <> fullName cpt
-              Dutch -> "Conceptueel diagram van " <> fullName cpt
+              Dutch -> "Conceptueel diagram van " <> fullName cpt,
+          visualFocus = VConcept
         }
     PTConceptualModelOfRelationsInPattern pat ->
       Picture
@@ -163,7 +170,8 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Concept diagram of relations in " <> fullName pat
-              Dutch -> "Conceptueel diagram van relaties in " <> fullName pat
+              Dutch -> "Conceptueel diagram van relaties in " <> fullName pat,
+          visualFocus = VRelation
         }
     PTConceptualModelOfRulesInPattern pat ->
       Picture
@@ -176,7 +184,8 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Concept diagram of the rules in " <> fullName pat
-              Dutch -> "Conceptueel diagram van regels in" <> fullName pat
+              Dutch -> "Conceptueel diagram van regels in" <> fullName pat,
+          visualFocus = VPattern
         }
     PTConceptualModelOfRule rul ->
       Picture
@@ -189,7 +198,8 @@ makePicture env fSpec pr =
           caption =
             case outputLang' of
               English -> "Concept diagram of rule " <> fullName rul
-              Dutch -> "Conceptueel diagram van regel " <> fullName rul
+              Dutch -> "Conceptueel diagram van regel " <> fullName rul,
+          visualFocus = VRule
         }
   where
     outputLang' :: Lang
@@ -280,6 +290,7 @@ conceptualStructure fSpec pr =
     isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
     gs = fsisa fSpec
 
+-- write the visual in all the formats requested
 writePicture ::
   (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLogFunc env) =>
   Picture ->
@@ -289,15 +300,11 @@ writePicture pict = do
   graphvizIsInstalled <- liftIO isGraphvizInstalled
   unless graphvizIsInstalled $ exitWith GraphVizNotInstalled
   dirOutput <- view dirOutputL
+  visualsOutputFormats <- view visualsOutputFormatsL
   let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
   logDebug $ "imagePathRelativeToCurrentDir = " <> display (T.pack imagePathRelativeToCurrentDir)
   liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
-  writeDot imagePathRelativeToCurrentDir Canon -- To obtain the Graphviz source code of the images
-  --  writeDot imagePathRelativeToCurrentDir DotOutput --Reproduces the input along with layout information.
-  writeDot imagePathRelativeToCurrentDir Png -- handy format to include in github comments/issues
-  -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
-  writeDot imagePathRelativeToCurrentDir Pdf -- format that is used when docx docs are being generated.
-  -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file
+  mapM_ (writeDot imagePathRelativeToCurrentDir) (visualsOutputFormat2graphvizOutput <$> Set.toList visualsOutputFormats)
   where
     writeDot ::
       (HasBlackWhite env, HasLogFunc env) =>
