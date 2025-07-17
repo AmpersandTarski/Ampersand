@@ -22,16 +22,20 @@ doGenDocument fSpec = do
   now <- getCurrentTime
   logInfo $ "Generating functional design document for " <> (display . fullName) fSpec <> "..."
   logDebug $ "Requested chapters: " <> displayShow (view chaptersL env)
-  let (thePandoc, thePictures) = fSpec2Pandoc env now fSpec
+  let (thePandoc, allPictures) = fSpec2Pandoc env now fSpec
   -- First we need to output the pictures, because they should be present
   -- before the actual document is written
   datamodelsOnly <- view genDatamodelOnlyL
   if datamodelsOnly
-    then mapM_ writePicture $ filter forDataModelsOnlySwitch thePictures
+    then mapM_ writePicture $ filter forDataModelsOnlySwitch allPictures
     else do
       genGraphics <- view genGraphicsL
+      focusOfVisuals <- view focusOfVisualsL
+      let isRequested p = visualFocus p `elem` focusOfVisuals
       when (genGraphics && fspecFormat /= FPandoc)
-        $ mapM_ writePicture thePictures
+        . mapM_ writePicture
+        . filter isRequested
+        $ allPictures
       genText <- view genTextL
       when genText
         $ writepandoc fSpec thePandoc
