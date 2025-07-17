@@ -1,5 +1,6 @@
 -- TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
+{-# LANGUAGE InstanceSigs #-}
 
 module Ampersand.FSpec.Motivations
   ( Motivated (purposesOf),
@@ -10,6 +11,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec (FSpec (..))
+import qualified RIO.List as L
 import qualified RIO.Set as Set
 
 -- The general idea is that an Ampersand relation such as:
@@ -71,8 +73,14 @@ class (Named a) => HasMeaning a where
   meaning l x =
     case filter (\(Meaning m) -> l == amLang m) (meanings x) of
       [] -> Nothing
-      [m] -> Just m
-      _ -> fatal ("In the " <> tshow l <> " language, too many meanings given for " <> fullName x <> ".")
+      (h : tl) -> Just . foldl' mergeMeanings h . L.nub $ tl
+    where
+      mergeMeanings :: Meaning -> Meaning -> Meaning
+      mergeMeanings (Meaning a) (Meaning b) = Meaning $ mergeMarkUps a b
+      mergeMarkUps :: Markup -> Markup -> Markup
+      mergeMarkUps (Markup lang1 blocks1) (Markup lang2 blocks2)
+        | lang1 == lang2 = Markup lang1 (blocks1 <> blocks2)
+        | otherwise = fatal "In this place, the language should be the same"
   meanings :: a -> [Meaning]
   {-# MINIMAL meanings #-}
 
