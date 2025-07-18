@@ -4,14 +4,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Ampersand.Output.PandocAux
-  ( writepandoc,
-    chptTitle,
-    count,
-    showMath,
-    texOnlyMarginNote,
+  ( chptTitle,
     commaPandocAnd,
     commaPandocOr,
+    count,
+    crossRefsAreFixed,
     outputLang,
+    showMath,
+    texOnlyMarginNote,
+    writepandoc,
   )
 where
 
@@ -22,10 +23,10 @@ import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
 import qualified RIO.ByteString.Lazy as BL
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.DocTemplates
 import qualified Text.DocTemplates.Internal as PT
 import Text.Pandoc
@@ -436,3 +437,10 @@ commaNLPandoc _ [] = mempty
 
 outputLang :: (HasOutputLanguage env) => env -> FSpec -> Lang
 outputLang env fSpec = fromMaybe (defOutputLang fSpec) $ view languageL env
+
+-- pandoc-crossref isn't used well enough or it still doesn't support cross references
+-- in the way we want to. This causes error/warning messages thrown to the user. For
+-- that reason, code that gives cross references is temporarily disabled.
+-- See issue https://github.com/AmpersandTarski/Ampersand/issues/1563
+crossRefsAreFixed :: Bool
+crossRefsAreFixed = False

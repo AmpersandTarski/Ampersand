@@ -12,7 +12,7 @@ import Ampersand.Daemon.Types
 import Ampersand.FSpec.ToFSpec.CreateFspec (pCtx2Fspec)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.Parsing
-import Ampersand.Misc.HasClasses (HasDaemonOpts (..), HasRootFile (..), HasTrimXLSXOpts, Roots (..), rootFileL, showWarningsL)
+import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
 import qualified RIO.NonEmpty as NE
 
@@ -21,14 +21,14 @@ import qualified RIO.NonEmpty as NE
 --   fail. It will return a tuple containing the Loads and a list of
 --   the filepaths that are read.
 parseProject ::
-  (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   FilePath ->
   RIO env ([Load], [FilePath])
-parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do
+parseProject rootAdl = local (set rootFileL (Roots (rootAdl NE.:| []))) $ do
   showWarnings <- view showWarningsL
-  (pc, gPctx) <- parseFilesTransitive (Roots [rootAdl])
+  (pc, gPctx) <- parseFilesTransitive (Roots (rootAdl NE.:| []))
   env <- ask
-  let loadedFiles = map pcCanonical pc
+  let loadedFiles = fmap pcCanonical pc
       gActx = pCtx2Fspec env =<< gPctx
   return
     ( case gActx of
@@ -36,7 +36,7 @@ parseProject rootAdl = local (set rootFileL (Roots [rootAdl])) $ do
           | showWarnings -> map warning2Load ws
           | otherwise -> []
         Errors es -> NE.toList . fmap error2Load $ es,
-      loadedFiles
+      NE.toList loadedFiles
     )
 
 warning2Load :: Warning -> Load

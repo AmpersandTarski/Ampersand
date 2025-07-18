@@ -31,7 +31,7 @@
         "tintinweb.graphviz-interactive-preview"
       ],
       "settings": {
-        "editor.formatonsave": true,
+        "editor.formatOnsave": true,
         "files.exclude": {
           "**/*.olean": true,
           "**/.DS_Store": true,

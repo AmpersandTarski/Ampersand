@@ -4,6 +4,7 @@ import Ampersand.Basics
 import Ampersand.Misc.HasClasses (FSpecGenOpts (..), Recipe (..), Roots (Roots))
 import Options.Applicative
 import Options.Applicative.Builder.Extra
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.
@@ -25,8 +26,8 @@ fSpecGenOptsParser isForDaemon =
     rootsP :: Parser Roots
     rootsP =
       if isForDaemon
-        then pure $ Roots [] -- The rootfile should come from the daemon config file.
-        else Roots <$> some rootFileP
+        then pure $ Roots (".ampersand" NE.:| []) -- The rootfile should come from the daemon config file.
+        else Roots . (NE.:| []) <$> rootFileP
 
     rootFileP :: Parser FilePath
     rootFileP =
@@ -150,7 +151,7 @@ fSpecGenOptsParser isForDaemon =
               )
         )
 
-defFSpecGenOpts :: [FilePath] -> FSpecGenOpts
+defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
     { xrootFile = Roots rootAdl,

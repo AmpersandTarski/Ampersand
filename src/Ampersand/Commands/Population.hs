@@ -15,9 +15,9 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
 import Ampersand.Output.ToJSON.ToJson (populationToJSON)
 import qualified RIO.ByteString.Lazy as BL
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.Pandoc.Class (getPOSIXTime, runIO)
 import Text.Pandoc.Error (handleError)
 

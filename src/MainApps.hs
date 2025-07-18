@@ -16,9 +16,9 @@ import Ampersand.Input.PreProcessor
 import Ampersand.Options.GlobalParser
 import Ampersand.Runners
 import Ampersand.Types.Config
+import RIO.Directory
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import System.Directory
 import System.Environment (getArgs, getProgName)
 
 ampersand :: IO ()
@@ -67,7 +67,7 @@ preProcessor' =
     case args of
       [] -> fatal "No arguments given"
       filename : defs -> do
-        result <- readUTF8File filename
+        result <- readFileUtf8 filename
         content <- do
           case result of
             Left err -> exitWith $ ReadFileError $ "Error while reading input file.\n" : err

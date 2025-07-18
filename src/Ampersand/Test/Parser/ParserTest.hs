@@ -26,8 +26,8 @@ parseScripts paths =
   case paths of
     [] -> return True
     h : tl -> do
-      let fSpecGenOpts = defFSpecGenOpts (h : tl)
-      parsed <- snd <$> extendWith fSpecGenOpts (parseFilesTransitive (Roots (h : tl)))
+      let fSpecGenOpts = defFSpecGenOpts (h NE.:| tl)
+      parsed <- snd <$> extendWith fSpecGenOpts (parseFilesTransitive (Roots (h NE.:| tl)))
       case parsed of
         Checked _ ws -> do
           logInfo $ "Parsed: " <> display (T.pack h)

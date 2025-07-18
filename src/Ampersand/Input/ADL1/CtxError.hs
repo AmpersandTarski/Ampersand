@@ -35,7 +35,6 @@ module Ampersand.Input.ADL1.CtxError
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
     mkParserStateWarning,
-    mkTurtleParseError,
     mkTurtleWarning,
     mkTypeMismatchError,
     mkUndeclaredError,
@@ -526,10 +525,6 @@ mkCaseProblemWarning x y =
 mkGenericParserError :: Origin -> Text -> Guarded a
 mkGenericParserError orig msg = Errors . pure $ CTXE orig msg
 
-mkTurtleParseError :: FilePath -> Text -> Guarded a
-mkTurtleParseError filename msg =
-  Errors . pure $ CTXE (FileLoc (FilePos filename 0 0) "") msg
-
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning
 
@@ -552,6 +547,7 @@ data Guarded a
 instance (Eq a) => Eq (Guarded a) where
   Checked a1 _ == Checked a2 _ = a1 == a2
   _ == _ = False
+
 -- | We want to apply a function to the value inside Guarded a, unless there are errors. (imported from Data.Functor)
 instance Functor Guarded where
   fmap _ (Errors a) = Errors a
@@ -561,6 +557,7 @@ instance Functor Guarded where
 instance Applicative Guarded where
   -- pure a lifts a regular value a into the Guarded context without warnings.
   pure x = Checked x []
+
   -- <*> (apply) combines two Guarded values, provided they are error-free.
   (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws <> ws')
   (<*>) (Errors a) (Checked _ _) = Errors a

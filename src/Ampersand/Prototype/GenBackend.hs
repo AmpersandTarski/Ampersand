@@ -9,8 +9,8 @@ import Ampersand.Output.FSpec2SQL (databaseStructureSql)
 import Ampersand.Output.ToJSON.ToJson
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath
+import RIO.Directory (createDirectoryIfMissing)
+import RIO.FilePath
 import Text.StringTemplate.GenericStandard ()
 
 -- only import instances

@@ -41,10 +41,10 @@ import Ampersand.Core.ParseTree
 import Ampersand.Misc.Defaults (defaultDirPrototype)
 import Ampersand.Misc.HasClasses
 import qualified RIO.ByteString.Lazy as BL
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.StringTemplate
   ( StringTemplate,
     Stringable,
@@ -334,7 +334,7 @@ readTemplate ::
 readTemplate templatePath = do
   env <- ask
   let absPath = getTemplateDir env </> templatePath
-  res <- readUTF8File absPath
+  res <- readFileUtf8 absPath
   case res of
     Left err ->
       exitWith

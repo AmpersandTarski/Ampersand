@@ -6,6 +6,21 @@
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 
+## Unreleased
+- [Issue #1583](https://github.com/AmpersandTarski/Ampersand/issues/1583) Enable user to limit generation of visuals
+- [Issue #1582](https://github.com/AmpersandTarski/Ampersand/issues/1582) Take rdfs:domain and rdfs:range into account in turtle parser. Also add meanings
+
+## v5.4.9
+- [Issue #1576](https://github.com/AmpersandTarski/Ampersand/issues/1576) When importing .ttl files, only warn if a label is missing. 
+- [Issue #1578](https://github.com/AmpersandTarski/Ampersand/issues/1578) Harvest PATTERNs based on skos:ConceptScheme 
+- [Issue #1579](https://github.com/AmpersandTarski/Ampersand/issues/1579) Bugfix on equality of Concept definitions
+
+## v5.4.6 to v5.4.8
+- bugfix with reading .ttl files on Windows (encoding issue)
+
+## v5.4.5
+- [Issue #1568](https://github.com/AmpersandTarski/Ampersand/issues/1568) Parsing of .ttl files misses certain relations.
+
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 

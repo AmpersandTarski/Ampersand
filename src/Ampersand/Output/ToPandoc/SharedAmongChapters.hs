@@ -49,12 +49,12 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Output.PandocAux
 import Ampersand.Output.PredLogic
 import Data.Typeable (typeOf)
+import RIO.FilePath ((</>))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import RIO.Time
-import System.FilePath ((</>))
 import Text.Pandoc hiding (Verbosity, getVerbosity, trace)
 import Text.Pandoc.Builder hiding (caption, toList)
 
