@@ -126,20 +126,34 @@ classdiagram2dot env cd =
                     ( Html.Text
                         [ Html.Str
                             ( fromString
-                                ( case (Tot `elem` attProps a, Uni `elem` attProps a) of
-                                    (True, True) -> "+"
-                                    (True, False) -> "m+"
-                                    (False, True) -> "o"
-                                    (False, False) -> "m"
+                                ( if isProp'
+                                    then "p"
+                                    else case (Tot `elem` attProps a, Uni `elem` attProps a) of
+                                      (True, True) -> "+"
+                                      (True, False) -> "m+"
+                                      (False, True) -> "o"
+                                      (False, False) -> "m"
                                 )
                                 <> " "
                             ),
                           Html.Str . fromString . T.unpack . fullName $ a,
-                          Html.Str (fromString " : "),
-                          Html.Str . fromString . T.unpack . fullName . attTyp $ a
+                          Html.Str
+                            . fromString
+                            $ ( if isProp'
+                                  then mempty
+                                  else " : "
+                              ),
+                          Html.Str
+                            . fromString
+                            $ ( if isProp'
+                                  then ""
+                                  else T.unpack . fullName . attTyp $ a
+                              )
                         ]
                     )
                 ]
+              where
+                isProp' = Asy `elem` attProps a && Sym `elem` attProps a
 
     association2edge :: Association -> DotEdge MyDotNode
     association2edge ass =

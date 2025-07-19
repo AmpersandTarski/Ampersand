@@ -84,7 +84,7 @@ data Association = OOAssoc
     assrhm :: !Multiplicities,
     -- | right hand side role, if it exists
     assrhr :: !(Maybe Name),
-    -- | the relations that caused this association , if any.
+    -- | the relation that caused this association , if any.
     assmdcl :: !(Maybe Relation)
   }
   deriving (Show)

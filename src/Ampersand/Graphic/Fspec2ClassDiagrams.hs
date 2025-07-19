@@ -49,7 +49,7 @@ clAnalysis fSpec =
         { attNm = sqlAttToName att,
           attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
-          attProps = [Uni | isUni (attExpr att)] <> [Tot | isTot (attExpr att)]
+          attProps = Set.toList . properties $ attExpr att
         }
 
 propTypeName :: Name
@@ -87,7 +87,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   -- The idea is as follows:
   --   - Concepts with an univalent attribute or with a generalisation relation must be drawn as separate class.
   --   - Relations that are UNI and/or INJ are drawn as attributes of the class they belong to. Additionally,
-  --       If the relation is UNI and/or INJ, an edge is drawn between source and target.
+  --       If the relation is UNI and/or INJ, but not Asy and Sym, an edge is drawn between source and target.
   --   - Relations that are UNI nor INJ are drawn based on the fact if source and or target have attributes or generalisation, as follows:
   --     - If both the source and the target are, the relation is drawn as an association.
   --     - If only the source is, the relation is drawn as a multi-attribute of the source.
@@ -118,7 +118,8 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
         [ rel
           | rel <- uniOrInjs,
             source rel `elem` map fst mustBeDrawnAsClass,
-            target rel `elem` map fst mustBeDrawnAsClass
+            target rel `elem` map fst mustBeDrawnAsClass,
+            not (isProp rel)
         ]
       conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
       (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
@@ -191,7 +192,7 @@ ooAttr r =
         h : _ -> name h,
       attTyp = if isProp r then propTypeName else (name . target) r,
       attOptional = (not . isTot) r,
-      attProps = [Uni | isUni r] <> [Tot | isTot r]
+      attProps = Set.toList $ properties r
     }
 
 instance CDAnalysable Pattern where
@@ -286,12 +287,12 @@ tdAnalysis fSpec =
                   NE.toList
                     $ fmap mkOOattr (plugAttributes table)
                   where
-                    mkOOattr a =
+                    mkOOattr att =
                       OOAttr
-                        { attNm = sqlAttToName a,
-                          attTyp = (name . target . attExpr) a,
+                        { attNm = sqlAttToName att,
+                          attTyp = (name . target . attExpr) att,
                           attOptional = False, -- A BinSQL contains pairs, so NULL cannot occur.
-                          attProps = [Uni, Tot]
+                          attProps = Set.toList $ properties (attExpr att)
                         }
             },
           name <$> primKey table
@@ -315,7 +316,7 @@ tdAnalysis fSpec =
               then propTypeName
               else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
-          attProps = [Uni | isUni (attExpr att)] <> [Tot | isTot (attExpr att)]
+          attProps = Set.toList $ properties (attExpr att)
         }
     allAssocs = concatMap (filter isAssocBetweenClasses . relsOf) tables
       where
