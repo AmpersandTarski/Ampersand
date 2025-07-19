@@ -279,7 +279,7 @@ graph2P_Context graph = do
 
 allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
-  subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
+  filter (not . isBNode) $ subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
 
 mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
 mkConceptDef graph from cpt = do
