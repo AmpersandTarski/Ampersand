@@ -1,6 +1,10 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v5.4.11
+- [Issue #1587](https://github.com/AmpersandTarski/Ampersand/issues/1587) Bugfix
+- [Issue #1570](https://github.com/AmpersandTarski/Ampersand/issues/1570) Cleaner way to draw properties on the data model graphic
+
+## v5.4.10
 - [Issue #1583](https://github.com/AmpersandTarski/Ampersand/issues/1583) Enable user to limit generation of visuals
 - [Issue #1582](https://github.com/AmpersandTarski/Ampersand/issues/1582) Take rdfs:domain and rdfs:range into account in turtle parser. Also add meanings
 
