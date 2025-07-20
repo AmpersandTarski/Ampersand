@@ -66,17 +66,17 @@ We are happy to receive [bug reports at AmpersandTarski](https://github.com/Ampe
 
 In case the Ampersand compiler is called by software and fails, it is useful to have an exit code to give some information about the nature of the failure. The Ampersand compiler [produces the following exit codes](https://github.com/AmpersandTarski/Ampersand/blob/main/src/Ampersand/Basics/Exit.hs):
 
-| Code | Name                 | Meaning                                                                                                                                                                                 |
-| ---- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success              | Compilation has terminated without failures                                                                                                                                             |
-| 2    | Fatal                | This is a software error in the Ampersand compiler, that should never have occured in operational use. Please [report an issue](https://github.com/AmpersandTarski/ampersand/issues).   |
-| 10   | Invalid              | The script is not valid and the compiler has produced error messages to help you diagnose your mistake(s).                                                                              |
-| 20   | Inconsistent         | The population would violate invariants. The compiler cannot generate a violation-free database.                                                                                        |
-| 30   | Invalid SQL          | An SQL query gives other results than the semantics of Ampersand prescribes. This should never occur, so please [report an issue](https://github.com/AmpersandTarski/ampersand/issues). |
-| 50   | Ampersand violations | There are sanity checks on your script that have produced violations, so the compiler will not generate an application.                                                                 |
-| 60   | Composer             | The installation of Composer failed, so the front-end application will not work. This is most likely a configuration error.                                                             |
-| 70   | Wrong arguments      | The command-line arguments by which the compiler was called contain errors. Inspect the compiler output for a diagnosis.                                                                |
-| 80   | Back-end             | The compiler failed to install the prototype framework. This is most likely a configuration error.                                                                                      |
+| Code | Name | Meaning                                                                           |
+| --| --| -----------------------------------------------------------------------|
+| 0  | Success  | Compilation has terminated without failures                                       |
+| 2  | Fatal  | This is a software error in the Ampersand compiler, that should never have occured in operational use. Please [report an issue](https://github.com/AmpersandTarski/ampersand/issues). |
+| 10 | Invalid  | The script is not valid and the compiler has produced error messages to help you diagnose your mistake(s).  |
+| 20 | Inconsistent | The population would violate invariants. The compiler cannot generate a violation-free database.  |
+| 30 | Invalid SQL  | An SQL query gives other results than the semantics of Ampersand prescribes. This should never occur, so please [report an issue](https://github.com/AmpersandTarski/ampersand/issues). |
+| 50 | Ampersand violations | There are sanity checks on your script that have produced violations, so the compiler will not generate an application. |
+| 60 | Composer | The installation of Composer failed, so the front-end application will not work. This is most likely a configuration error. |
+| 70 | Wrong arguments  | The command-line arguments by which the compiler was called contain errors. Inspect the compiler output for a diagnosis.  |
+| 80 | Back-end | The compiler failed to install the prototype framework. This is most likely a configuration error.  |
 
 
 ## Generating Documentation from Your Model
@@ -93,7 +93,7 @@ The purpose of this document is twofold:
 By aligning this document tightly with the user's formal specification, Ampersand ensures consistency, traceability, and correctness throughout the software development process.
 
 
-## Generating Documentation from Your Model
+### How to use
 
 You can generate documentation from your model using the following command:
 
@@ -142,4 +142,45 @@ The document includes **visuals** (diagrams) in multiple chapters and on various
 
 These visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model.
 
+Sometimes it is practical to generate the document and the visuals separately. Depending on your specific needs, the following options might help you in your specific case:
 
+## `ampersand documentation` Command Options
+
+Generate a functional design document from your Ampersand model specification.
+
+### Usage
+
+```bash
+ampersand documentation [OPTIONS] AMPERSAND_SCRIPT
+```
+
+### Available Options
+
+The most relevant options to control what is generated are listed here:
+
+| Option | Description | Default |
+|---|---|---|
+| `--[no-]Intro` | Include or exclude the **Intro** chapter. | *included*  |
+| `--[no-]SharedLang`  | Include or exclude the **Shared Language** chapter. | *included*  |
+| `--[no-]Diagnosis` | Include or exclude the **Diagnosis** chapter. | *included*  |
+| `--[no-]ConceptualAnalysis`  | Include or exclude the **Conceptual Analysis** chapter. | *included*  |
+| `--[no-]DataAnalysis`  | Include or exclude the **Data Analysis** chapter. | *included*  |
+| `--datamodelOnly`  | Generate only datamodel images (implies `--no-text`). | *disabled*  |
+| `--[no-]graphics` | Enable or disable generation of graphics before generating the document.  | *enabled* |
+| `--graphicFormats FORMAT1,FORMAT2,...` | Comma-separated list of graphic formats to generate (no spaces). Possible values: bmp, gv, jpg, pdf, txt, png, svg, tif. Note that there must not be any spaces in this list. | `[gv,png]`  |
+| `--focus-of-visuals FOCUS1,FOCUS2,...` | Comma-separated list of focuses for graphics (no spaces). Possible choices: context, pattern, rule, relation, concept. Note that there must not be any spaces in this list. | `[context,pattern]`  |
+| `--[no-]text`  | Enable or disable generation of the document file containing text and graphics.  | *enabled* |
+| `--format FORMAT`  | Output document format.  | `docx` |
+| `--language OUTPUTLANGUAGE`  | Set output language: `NL` (Dutch) or `EN` (English). Defaults to your context language. | *context language*  |
+| `--[no-]legal-refs` | Enable/disable generation of a table of legal references in the Natural Language chapter. | *disabled*  |
+| `--output-dir DIR`  | Specify directory where output files will be written.  | *current working directory* |
+| `--help` | Show help text. | |
+
+
+
+
+
+### Example
+
+```bash
+ampersand documentation --no-Intro --format docx MyModel.adl
