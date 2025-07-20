@@ -1339,10 +1339,9 @@ getExpressionRelation expr = case getRelation expr of
           | i /= source e2 && t == source e2 -> Just (s, d, i, isFlipped)
           | otherwise -> Nothing
         _ -> Nothing
-    getRelation (EFlp e) =
-      case getRelation e of
-        Just (s, d, t, isFlipped) -> Just (t, d, s, not isFlipped)
-        Nothing -> Nothing
+    getRelation (EFlp e) = do
+      (s, d, t, isFlipped) <- getRelation e
+      Just (t, d, s, not isFlipped)
     getRelation (EDcD d) = Just (source d, Just d, target d, False)
     getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing

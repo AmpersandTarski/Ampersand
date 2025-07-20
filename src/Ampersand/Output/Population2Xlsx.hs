@@ -25,9 +25,9 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
     plug2sheet (InternalPlug plug) = fmap (tshow . sqlname $ plug,) sheet
       where
         sheet :: Maybe Worksheet
-        sheet = case matrix of
-          Nothing -> Nothing
-          Just m -> Just def {_wsCells = fromRows . rowsToMatrix . map cellsToRow $ m}
+        sheet = do
+          m <- matrix
+          Just def {_wsCells = fromRows . rowsToMatrix . map cellsToRow $ m}
           where
             cellsToRow :: [Cell] -> [(ColumnIndex, Cell)]
             cellsToRow = zip [ColumnIndex 1 ..]
@@ -66,9 +66,9 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
             record2Cell mVal =
               Cell
                 { _cellStyle = Nothing,
-                  _cellValue = case mVal of
-                    Nothing -> Nothing
-                    Just aVal -> Just
+                  _cellValue = do
+                    aVal <- mVal
+                    Just
                       $ case aVal of
                         AAVString {} -> CellText $ aavtxt aVal
                         AAVInteger _ int -> CellDouble (fromInteger int)

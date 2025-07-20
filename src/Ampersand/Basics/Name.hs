@@ -79,15 +79,15 @@ instance GVP.PrintDot Name where
 
 -- | toNamePart will convert a Text to a NamePart, iff the Text is a proper ID. (See checkProperId)
 toNamePart :: Text -> Maybe NamePart
-toNamePart txt = case T.uncons txt of
-  Nothing -> Nothing
-  Just (h, tl) -> toNamePart1 $ Text1 h tl
-
+toNamePart txt = do
+    (h,tl) <- T.uncons txt
+    toNamePart1 (Text1 h tl)
+--
 -- | toNamePart1 will convert a Text1 to a NamePart, iff the Text1 is a proper ID. (See checkProperId)
 toNamePart1 :: Text1 -> Maybe NamePart
-toNamePart1 x = case checkProperId x of
-  Nothing -> Nothing
-  Just np -> Just (NamePart np)
+toNamePart1 x = do
+  np <- checkProperId x
+  Just (NamePart np)
 
 -- | suggestName checks if the given text is a proper name. If not, it proposes a proper name based
 --   on the given text. In that case, the given text is converted into a Label. If the given text

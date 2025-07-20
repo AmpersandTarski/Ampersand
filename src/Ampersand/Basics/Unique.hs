@@ -48,13 +48,12 @@ class (Typeable e, Eq e) => Unique e where
     Nothing -> fatal $ "idWithoutType could not be generated. " <> tshow (typeOf x) <> ": " <> (text1ToText . showUnique $ x)
     Just te -> te
   idWithoutType :: e -> Maybe Text1
-  idWithoutType x = case nameParts of
-    Nothing -> Nothing
-    Just nps ->
-      Just
-        . uniqueButNotTooLong -- because it could be stored in an SQL database
-        . toText1Unsafe
-        $ nps
+  idWithoutType x = do
+    nps <- nameParts
+    Just
+      . uniqueButNotTooLong -- because it could be stored in an SQL database
+      . toText1Unsafe
+      $ nps
     where
       theName = text1ToText . showUnique $ x
       nameParts :: Maybe Text
@@ -68,9 +67,9 @@ class (Typeable e, Eq e) => Unique e where
           check :: Text -> Maybe Text1
           check t = checkProperId =<< checkLength t
       checkLength :: Text -> Maybe Text1
-      checkLength t = case T.uncons t of
-        Nothing -> Nothing
-        Just (h, tl) -> Just $ Text1 h tl
+      checkLength t = do
+        (h, tl) <- T.uncons t
+        Just $ Text1 h tl
       addDots :: [Text1] -> Text
       addDots [] = mempty
       addDots [h] = text1ToText h
