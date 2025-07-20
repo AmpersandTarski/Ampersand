@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.5.0
+- [Issue #1589](https://github.com/AmpersandTarski/Ampersand/issues/1589) Disalow underscores in names (this could break your script)
+
 ## v5.4.11
 - [Issue #1587](https://github.com/AmpersandTarski/Ampersand/issues/1587) Bugfix
 - [Issue #1570](https://github.com/AmpersandTarski/Ampersand/issues/1570) Cleaner way to draw properties on the data model graphic
