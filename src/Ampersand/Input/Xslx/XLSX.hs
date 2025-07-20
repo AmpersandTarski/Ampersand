@@ -541,15 +541,12 @@ conceptNameWithOptionalDelimiter ::
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
 conceptNameWithOptionalDelimiter ns t'
-  | isBracketed t =
-      let mid = T.dropEnd 1 . T.drop 1 $ t
-       in case T.uncons . T.reverse $ mid of
-            Nothing -> Nothing
-            Just (d, revInit) ->
-              let nm = T.reverse revInit
-               in if isDelimiter d && isConceptName nm
-                    then Just (mkName' nm, Just d)
-                    else Nothing
+  | isBracketed t = do
+      (d, revInit) <- T.uncons . T.reverse . T.dropEnd 1 . T.drop 1 $ t
+      let nm = T.reverse revInit
+       in if isDelimiter d && isConceptName nm
+            then Just (mkName' nm, Just d)
+            else Nothing
   | isConceptName t = Just (mkName' t, Nothing)
   | otherwise = Nothing
   where

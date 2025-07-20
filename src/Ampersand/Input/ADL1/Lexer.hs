@@ -311,16 +311,15 @@ lexMarkup = lexMarkup' ""
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the UTCTime, the amount of read characters and the rest of the text
 getDateTime :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
-getDateTime cs =
-  case getDate cs of
-    Nothing -> Nothing
-    Just (_, day, ld, rd) -> case getTime rd of
-      Nothing -> case rd of
-        'T' : _ -> Just . Left $ ProblematicISO8601DateTime
-        _ -> getDateTime' cs -- Here we try the ohter notation of time
-      Just (timeOfDay, tzoneOffset, lt, rt) ->
-        let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
-         in Just . Right $ (LexDateTime ucttime, ucttime, ld + lt, rt)
+getDateTime cs = do
+  (_, day, ld, rd) <- getDate cs
+  case getTime rd of
+    Nothing -> case rd of
+      'T' : _ -> Just . Left $ ProblematicISO8601DateTime
+      _ -> getDateTime' cs -- Here we try the ohter notation of time
+    Just (timeOfDay, tzoneOffset, lt, rt) ->
+      let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
+       in Just . Right $ (LexDateTime ucttime, ucttime, ld + lt, rt)
 
 getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
@@ -335,25 +334,24 @@ getTime cs =
                 (_, Left val, _, _) -> val
                 _ -> fatal "Impossible, for m1 and m2 are digits"
               (seconds, ls, rs) = getSeconds rest
-           in case getTZD rs of
-                Nothing -> Nothing
-                Just (offset, lo, ro) ->
-                  if hours < 24 && minutes < 60 && seconds < 60
-                    then
-                      Just
-                        ( fromRational
-                            . toRational
-                            $ ( fromIntegral hours
-                                  * 60
-                                  + fromIntegral minutes
-                              )
-                            * 60
-                            + seconds,
-                          offset,
-                          1 + 5 + ls + lo,
-                          ro
-                        )
-                    else Nothing
+           in do
+                (offset, lo, ro) <- getTZD rs
+                if hours < 24 && minutes < 60 && seconds < 60
+                  then
+                    Just
+                      ( fromRational
+                          . toRational
+                          $ ( fromIntegral hours
+                                * 60
+                                + fromIntegral minutes
+                            )
+                          * 60
+                          + seconds,
+                        offset,
+                        1 + 5 + ls + lo,
+                        ro
+                      )
+                  else Nothing
         else Nothing
     _ -> Nothing
 
@@ -400,9 +398,9 @@ getTZD cs = case cs of
             else Nothing
 
 getDateTime' :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String))
-getDateTime' cs = case readUniversalTime cs of
-  Nothing -> Nothing
-  Just (time, rest) -> Just . Right $ (LexDateTime time, time, length cs - length rest, rest)
+getDateTime' cs = do
+  (time, rest) <- readUniversalTime cs
+  Just . Right $ (LexDateTime time, time, length cs - length rest, rest)
   where
     readUniversalTime :: String -> Maybe (UTCTime, String)
     readUniversalTime s = best (reads s)
@@ -420,9 +418,9 @@ getDate cs =
   case cs of
     y1 : y2 : y3 : y4 : '-' : m1 : m2 : '-' : d1 : d2 : rest ->
       if all isDigit [y1, y2, y3, y4, m1, m2, d1, d2]
-        then case fromGregorianValid (toInteger year) month day of
-          Nothing -> Nothing
-          Just d -> Just (LexDate d, d, 10, rest)
+        then do
+          d <- fromGregorianValid (toInteger year) month day
+          Just (LexDate d, d, 10, rest)
         else Nothing
       where
         year = case getNumber [y1, y2, y3, y4] of

@@ -693,9 +693,9 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
       buildTxt :: Text -> Text -> P_BoxItem a
       buildTxt nm txt =
         P_BxTxt
-          { obj_PlainName = case T.uncons nm of
-              Nothing -> Nothing
-              Just (h, tl) -> Just (Text1 h tl),
+          { obj_PlainName = do
+              (h, tl) <- T.uncons nm
+              Just (Text1 h tl),
             pos = OriginAtlas,
             box_txt = txt
           }

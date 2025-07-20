@@ -58,27 +58,26 @@ classdiagram2dot env cd =
     }
   where
     group2subgraph :: (Maybe Name, NonEmpty Class) -> Maybe (DotSubGraph MyDotNode)
-    group2subgraph (x, clss) = case x of
-      Nothing -> Nothing
-      Just nm ->
-        Just
-          DotSG
-            { isCluster = True,
-              subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
-              subGraphStmts =
-                DotStmts
-                  { attrStmts =
-                      [ GraphAttrs
-                          [ Label . StrLabel . TL.fromStrict . fullName $ nm,
-                            -- URL "https://ampersandtarski.github.io/",
-                            BgColor [WC (X11Color GhostWhite) Nothing]
-                          ]
-                      ],
-                    subGraphs = [],
-                    nodeStmts = class2node <$> toList clss,
-                    edgeStmts = []
-                  }
-            }
+    group2subgraph (x, clss) = do
+      nm <- x
+      Just
+        DotSG
+          { isCluster = True,
+            subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
+            subGraphStmts =
+              DotStmts
+                { attrStmts =
+                    [ GraphAttrs
+                        [ Label . StrLabel . TL.fromStrict . fullName $ nm,
+                          -- URL "https://ampersandtarski.github.io/",
+                          BgColor [WC (X11Color GhostWhite) Nothing]
+                        ]
+                    ],
+                  subGraphs = [],
+                  nodeStmts = class2node <$> toList clss,
+                  edgeStmts = []
+                }
+          }
 
     class2node :: Class -> DotNode MyDotNode
     class2node cl =

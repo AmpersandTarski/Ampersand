@@ -330,10 +330,7 @@ nonSpecialSelectExpr fSpec expr =
                   }
                 where
                   mandatoryTuple :: Maybe ScalarExpr
-                  mandatoryTuple =
-                    case specificValue of
-                      Nothing -> Nothing
-                      Just val -> Just $ equalToValueClause val
+                  mandatoryTuple = equalToValueClause <$> specificValue
                     where
                       equalToValueClause :: PAtomValue -> ScalarExpr
                       equalToValueClause singleton =
@@ -458,11 +455,9 @@ nonSpecialSelectExpr fSpec expr =
                               esR = mapMaybe isR exprs
                                 where
                                   isR :: Expression -> Maybe (Expression, Name)
-                                  isR e = case attInBroadQuery fSpec (source hexprs) e of
-                                    Nothing -> Nothing
-                                    Just att -> Just (e, (qName . tshow . attSQLColName) att)
-                              --    esRest :: [Expression] -- all other conjuctions
-                              --    esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
+                                  isR e = do
+                                    att <- attInBroadQuery fSpec (source hexprs) e
+                                    Just (e, qName . tshow . attSQLColName $ att)
                               optimizedIntersectSelectExpr :: BinQueryExpr
                               optimizedIntersectSelectExpr =
                                 BinQEComment
@@ -1729,10 +1724,17 @@ broadQuery fSpec obj =
                           ( qName
                               $
                               -- The name is not sufficient for two reasons:
+                              -- The name is not sufficient for two reasons:
+                              --   1) the columname must be unique. For that reason, it is prefixed:
+                              --   1) the columname must be unique. For that reason, it is prefixed:
+
+                              -- The name is not sufficient for two reasons:
                               --   1) the columname must be unique. For that reason, it is prefixed:
                               "ifc_"
                               <>
                               --   2) It must be injective. Because SQL deletes trailing spaces,
+                              --   2) It must be injective. Because SQL deletes trailing spaces,
+                              --      we have to cope with that:
                               --      we have to cope with that:
                               maybe mempty (text1ToText . escapeIdentifier) (objPlainName col)
                           )

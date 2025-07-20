@@ -127,6 +127,6 @@ decodeUtf8 = decodeUtf8With lenientDecode
 --
 -- @since 1.2.3.0
 unsnoc :: Text -> Maybe (Text, Char)
-unsnoc t = case T.uncons (T.reverse t) of
-  Nothing -> Nothing
-  Just (h, tl) -> Just (T.reverse tl, h)
+unsnoc t = do
+  (h, tl) <- T.uncons (T.reverse t)
+  Just (T.reverse tl, h)

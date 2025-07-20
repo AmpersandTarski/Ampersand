@@ -55,9 +55,9 @@ stripPrefixE (x : xs) e = case unesc e of
 
 stripInfixE :: String -> Esc -> Maybe (Esc, Esc)
 stripInfixE needle haystack | Just rest <- stripPrefixE needle haystack = Just (Esc [], rest)
-stripInfixE needle e = case unesc e of
-  Nothing -> Nothing
-  Just (x, xs) -> first (app . either id (Esc . return) $ x) <$> stripInfixE needle xs
+stripInfixE needle e = do
+  (x, xs) <- unesc e
+  first (app . either id (Esc . return) $ x) <$> stripInfixE needle xs
 
 spanE, breakE :: (Char -> Bool) -> Esc -> (Esc, Esc)
 breakE f = spanE (not . f)

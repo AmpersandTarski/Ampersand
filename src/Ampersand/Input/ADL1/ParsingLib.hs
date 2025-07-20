@@ -239,9 +239,9 @@ pDoubleQuotedString1 :: AmpParser Text1
 pDoubleQuotedString1 =
   check
     ( \case
-        LexDubbleQuotedString t -> case T.uncons t of
-          Nothing -> Nothing
-          Just _ -> Just (toText1Unsafe t)
+        LexDubbleQuotedString t -> do
+          _ <- T.uncons t
+          Just (toText1Unsafe t)
         _ -> Nothing
     )
     <?> "double quoted non-empty string"
