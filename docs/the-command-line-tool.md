@@ -136,15 +136,13 @@ The generated document typically includes the following chapters:
 
 ### Visuals
 
-:::note
+
 The document includes **visuals** (diagrams) in multiple chapters and on various topics.
-:::
 
-These visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model.
 
-Sometimes it is practical to generate the document and the visuals separately. Depending on your specific needs, the following options might help you in your specific case:
+By default, visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model. However, sometimes it is practical to generate the document and the visuals separately. Depending on your specific needs, the following options might help you in your specific case:
 
-## `ampersand documentation` Command Options
+## Command Line Options for documentation
 
 Generate a functional design document from your Ampersand model specification.
 
@@ -156,7 +154,11 @@ ampersand documentation [OPTIONS] AMPERSAND_SCRIPT
 
 ### Available Options
 
-The most relevant options to control what is generated are listed here:
+:::note 
+
+Only the most relevant options are listed here. For a full list, run `ampersand documentation --help`.
+
+:::
 
 | Option | Description | Default |
 |---|---|---|
