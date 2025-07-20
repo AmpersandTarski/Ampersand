@@ -31,7 +31,7 @@ where
 
 import Ampersand.Basics.Hashing
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe, urlEncode)
+import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
@@ -80,14 +80,16 @@ instance GVP.PrintDot Name where
 -- | toNamePart will convert a Text to a NamePart, iff the Text is a proper ID. (See checkProperId)
 toNamePart :: Text -> Maybe NamePart
 toNamePart txt = do
-    (h,tl) <- T.uncons txt
-    toNamePart1 (Text1 h tl)
+  (h, tl) <- T.uncons txt
+  toNamePart1 (Text1 h tl)
+
 --
+
 -- | toNamePart1 will convert a Text1 to a NamePart, iff the Text1 is a proper ID. (See checkProperId)
 toNamePart1 :: Text1 -> Maybe NamePart
-toNamePart1 x = do
-  np <- checkProperId x
-  Just (NamePart np)
+toNamePart1 x = case checkProperId x of
+  Right np -> Just np
+  Left _ -> Nothing
 
 -- | suggestName checks if the given text is a proper name. If not, it proposes a proper name based
 --   on the given text. In that case, the given text is converted into a Label. If the given text
@@ -102,31 +104,25 @@ suggestName typ txt =
   where
     parts = suggestedPart <$> splitOnDots txt
     suggestedPart :: Text1 -> (NamePart, Bool)
-    suggestedPart x@(Text1 h tl) = case checkProperId x of
-      Just _ -> (NamePart x, True)
-      Nothing -> (NamePart suggestion, False)
-      where
-        suggestion = toText1Unsafe $ pre <> rest
-          where
-            pre =
-              if isSafeIdChar True h
-                then T.singleton h
-                else "X" <> substitute h
-            rest = T.concat $ substitute <$> T.unpack tl
-            substitute :: Char -> Text
-            substitute c =
-              if isSafeIdChar False c
-                then T.singleton c
-                else "_"
+    suggestedPart x = case checkProperId x of
+      Right np -> (np, True)
+      Left suggestion -> (NamePart suggestion, False)
 
--- | This function checks if a text is a proper Id, if so, it returns the text
-checkProperId :: Text1 -> Maybe Text1
+-- | This function checks if a text is a proper Id, if so, it returns the text as a NamePart.
+--   If not, it returns a suggestion for a proper Id as a NamePart.
+checkProperId :: Text1 -> Either Text1 NamePart
 checkProperId t@(Text1 h tl) =
   if isProper
-    then Just t
-    else Nothing
+    then Right (NamePart t)
+    else Left suggestion
   where
     isProper = and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
+    suggestion = case T.uncons . T.filter (isSafeIdChar False) . pascal $ text1ToText t of
+      Nothing -> fatal $ "No valid characters in namepart: " <> text1ToText t
+      Just (h', tl') ->
+        if isSafeIdChar True h'
+          then Text1 h' tl'
+          else Text1 'X' $ T.cons h' tl'
 
 namePartToText :: NamePart -> Text
 namePartToText (NamePart x) = text1ToText x

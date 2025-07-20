@@ -92,7 +92,7 @@ escapeIdentifier (Text1 c0 cs) =
 --   characters of an identifier, a boolean is required that tells if this is the
 --   first character.
 isSafeIdChar :: Bool -> Char -> Bool
-isSafeIdChar isFirst c = isLower c || isUpper c || (not isFirst && (isAlphaNum c || c == '_'))
+isSafeIdChar isFirst c = isLower c || isUpper c || (not isFirst && isAlphaNum c)
 
 toText1Unsafe :: Text -> Text1
 toText1Unsafe txt = case T.uncons txt of
