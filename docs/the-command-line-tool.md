@@ -77,3 +77,69 @@ In case the Ampersand compiler is called by software and fails, it is useful to 
 | 60   | Composer             | The installation of Composer failed, so the front-end application will not work. This is most likely a configuration error.                                                             |
 | 70   | Wrong arguments      | The command-line arguments by which the compiler was called contain errors. Inspect the compiler output for a diagnosis.                                                                |
 | 80   | Back-end             | The compiler failed to install the prototype framework. This is most likely a configuration error.                                                                                      |
+
+
+## Generating Documentation from Your Model
+
+Ampersand is aimed at deriving software directly from a formal specification provided by the user. One of the outcomes of this process is a generated document that reflects the user's specification in a structured and analyzable format.
+
+This document serves as an intermediate artifact in the software generation process. It is not written manually, but generated automatically based on the specification defined in the Ampersand language. It provides a concrete representation of the business rules, data structures, and constraints as interpreted by the Ampersand engine.
+
+The purpose of this document is twofold:
+
+1. **Transparency** – It helps users verify that their specification has been interpreted correctly.
+2. **Foundation for Code Generation** – It acts as a foundation upon which further software artifacts—such as databases, user interfaces, and integrity checks—can be derived.
+
+By aligning this document tightly with the user's formal specification, Ampersand ensures consistency, traceability, and correctness throughout the software development process.
+
+
+## Generating Documentation from Your Model
+
+You can generate documentation from your model using the following command:
+
+```bash
+ampersand documentation MyModel.adl
+```
+
+This command produces several types of documentation derived from your specification. By default, it generates a <a href="https://fileinfo.com/extension/docx" target="_blank" rel="noopener noreferrer">.docx</a> file containing a number of structured chapters, each serving a different audience and purpose.
+
+### Document Structure
+
+The generated document typically includes the following chapters:
+
+1. **Introduction**  
+   Describes what the reader can expect from the rest of the document.  
+   If your specification includes a `PURPOSE CONTEXT` statement, its content will appear here, allowing the modeler to guide the reader's understanding of the model's intent.
+
+2. **Shared Language**  
+   A chapter specifically intended for business stakeholders.  
+   It focuses on the **business rules** in your model. If all rules are annotated with `PURPOSE` and `MEANING`, this chapter becomes an ideal tool for coordinating agreements and understanding with the business.
+
+3. **Diagnosis**  
+   Presents validation results regarding the **quality of the specification**.  
+   This chapter is meant to assist the modeler in identifying inconsistencies or potential issues and improving the overall quality of the specification.
+
+4. **Conceptual Analysis**  
+   This chapter supports discussions on **functional requirements**.  
+   It targets readers with experience in conceptual modeling.  
+   - All **patterns** in the model are discussed sequentially.  
+   - Concepts and relations defined within a pattern are discussed in that pattern's section.  
+   - Remaining concepts and relations are discussed at the end of the chapter.
+
+5. **Data Structure**  
+   The most **technical** chapter, intended for software engineers.  
+   It includes:
+   - The **classification structure** (from `CLASSIFY` statements)  
+   - All rules that must be implemented  
+   - A **logical data model** with discussion  
+   - A **technical data model** with discussion
+
+### Visuals
+
+:::note
+The document includes **visuals** (diagrams) in multiple chapters and on various topics.
+:::
+
+These visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model.
+
+
