@@ -14,7 +14,7 @@ module Ampersand.Basics.Unique
 where
 
 import Ampersand.Basics.Hashing
-import Ampersand.Basics.Name (try2Name)
+import Ampersand.Basics.Name (NameType (ContextName), try2Name)
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.String (text1ToText, toText1Unsafe)
 import Ampersand.Basics.Version (fatal)
@@ -55,7 +55,7 @@ class (Typeable e, Eq e) => Unique e where
       . toText1Unsafe
       $ nps
     where
-      dummy = fatal "idWithoutType: dummy value"
+      dummy = ContextName
       theName = case try2Name dummy . text1ToText . showUnique $ x of
         Left _ -> Nothing
         Right (nm, _) -> Just (tshow nm)
