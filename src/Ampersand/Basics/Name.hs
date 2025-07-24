@@ -30,7 +30,7 @@ where
 
 import Ampersand.Basics.Hashing
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode)
+import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
@@ -123,7 +123,7 @@ try2Namepart t = case T.uncons t of
   Just (h, tl) ->
     if and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
       then Right (NamePart (Text1 h tl))
-      else case T.uncons . T.filter (isSafeIdChar False) . pascal $ t of
+      else case T.uncons . T.filter (isSafeIdChar False) $ t of
         Nothing -> Left $ Left $ "No valid characters in namepart: " <> t
         Just (h', tl') ->
           if isSafeIdChar True h'
