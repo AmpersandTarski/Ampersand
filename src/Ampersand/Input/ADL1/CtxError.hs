@@ -51,7 +51,7 @@ module Ampersand.Input.ADL1.CtxError
     mustBeOrdered,
     mustBeOrderedConcLst,
     mustBeOrderedLst,
-    mustBeValidNamePart,
+    mustBeValidName,
     nonMatchingRepresentTypes,
     unexpectedType,
     uniqueLables,
@@ -693,13 +693,13 @@ mustBeBound o lst =
       ]
     <> ["  " <> writeBind e | (_, e) <- lst]
 
-mustBeValidNamePart :: Origin -> Text1 -> Guarded NamePart
-mustBeValidNamePart orig t1 =
+mustBeValidName :: Origin -> Text -> Guarded Name
+mustBeValidName orig t1 =
   Errors
     . pure
     . CTXE orig
     . T.unlines
-    $ [ "A single word is expected as name, which must start with a letter and may contain only alphanumerical letters, digits and underscore.",
+    $ [ "A single word is expected as name, which must start with a letter and may contain only alphanumerical letters and digits.",
         "  the following was found: `" <> tshow t1 <> "`."
       ]
 

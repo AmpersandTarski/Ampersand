@@ -132,17 +132,11 @@ pNameWithoutLabel typ
     depricatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
-      let suggestedNamePart = suggestNamePart typ txt
-          warn = mkWarnText typ txt
-      addParserWarning orig warn
-      return
-        ( mkName
-            typ
-            ( case toNamePart1 suggestedNamePart of
-                Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
-                Just np -> np NE.:| []
-            )
-        )
+      case try2Name typ (text1ToText txt) of
+        Left _ -> pName typ <?> "A valid (unquoted!) " <> show typ
+        Right (nm, _) -> do
+          addParserWarning orig $ mkWarnText typ txt
+          pure nm
 
 pNameWithOptionalLabel :: NameType -> AmpParser (Name, Maybe Label)
 pNameWithOptionalLabel typ = properParser <|> depricatedParser
@@ -153,26 +147,35 @@ pNameWithOptionalLabel typ = properParser <|> depricatedParser
       mLab <- pMaybe pLabel
       return (nm, mLab)
     depricatedParser :: AmpParser (Name, Maybe Label)
-    depricatedParser =
-      do
-        orig <- currPos
-        txt <- pDoubleQuotedString1
-        let suggestedNamePart = suggestNamePart typ txt
-            mLab =
-              if suggestedNamePart == txt
-                then Nothing
-                else Just . Label . text1ToText $ txt
-            warn = mkWarnText typ txt
-        addParserWarning orig warn
-        return
-          ( mkName
-              typ
-              ( case toNamePart1 suggestedNamePart of
-                  Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
-                  Just np -> np NE.:| []
-              ),
-            mLab
-          )
+    depricatedParser = do
+      orig <- currPos
+      txt <- pDoubleQuotedString1
+      case try2Name typ (text1ToText txt) of
+        Left _ -> properParser <?> "A valid (unquoted!) " <> show typ
+        Right (nm, lbl) -> do
+          addParserWarning orig $ mkWarnText typ txt
+          pure (nm, lbl)
+
+-- depricatedParser =
+--   do
+--     orig <- currPos
+--     txt <- pDoubleQuotedString1
+--     let suggestedNamePart = suggestNamePart typ txt
+--         mLab =
+--           if suggestedNamePart == txt
+--             then Nothing
+--             else Just . Label . text1ToText $ txt
+--         warn = mkWarnText typ txt
+--     addParserWarning orig warn
+--     return
+--       ( mkName
+--           typ
+--           ( case toNamePart1 suggestedNamePart of
+--               Nothing -> fatal $ "Not a valid NamePart: " <> tshow suggestedNamePart
+--               Just np -> np NE.:| []
+--           ),
+--         mLab
+--       )
 
 mkWarnText :: NameType -> Text1 -> Text
 mkWarnText typ txt =
@@ -459,14 +462,10 @@ pRuleDef =
             (origToName, Just . Label $ "The rule defined at " <> tshow orig)
             maybeNameDefLbl
         localNm = "Rule_" <> (tshow . abs . hash . tshow) orig
-        origToName =
-          mkName
-            RuleName
-            $ ( case toNamePart localNm of
-                  Nothing -> fatal $ "Not a valid NamePart: " <> localNm
-                  Just np -> np
-              )
-            NE.:| []
+        origToName = case try2Name RuleName localNm of
+          Left msg -> fatal $ "Not a valid Name: " <> msg
+          Right (nm, _) -> nm
+
     --- Violation ::= 'VIOLATION' PairView
     pViolation :: AmpParser (PairView (Term TermPrim))
     pViolation = id <$ (pKey . toText1Unsafe) "VIOLATION" <*> pPairView

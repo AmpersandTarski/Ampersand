@@ -145,9 +145,10 @@ instance Arbitrary Name where
     where
       safeNamePart :: Gen NamePart
       safeNamePart =
-        ( \x -> case toNamePart1 x of
-            Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-            Just np -> np
+        ( \x -> case try2Namepart (text1ToText x) of
+            Left (Left msg) -> fatal $ "Not a valid NamePart: " <> msg
+            Left (Right np) -> np
+            Right np -> np
         )
           <$> identifier
           `suchThat` requirements

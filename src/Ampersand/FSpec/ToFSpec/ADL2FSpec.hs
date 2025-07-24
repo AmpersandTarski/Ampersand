@@ -493,20 +493,16 @@ makeFSpec env context =
             ifcRoles = []
           }
         | ifcc <- step4a,
-          let toNamePart' txt = case toNamePart txt of
-                Nothing -> fatal $ "Not a valid NamePart: `" <> txt <> "`"
-                Just np -> np
+          let toNamePart' txt = case try2Namepart txt of
+                Left (Left msg) -> fatal $ "Not a valid NamePart: `" <> txt <> "`: " <> msg
+                Left (Right np) -> np
+                Right np -> np
               c = source (objExpression (ifcObj ifcc))
               nm' :: Int -> Name
-              nm' 0 =
-                mkName ConceptName
-                  . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) . localNameOf $ c)
-                  NE.:| reverse (nameSpaceOf (name c))
               nm' i =
                 mkName ConceptName
                   . NE.reverse
-                  $ (toNamePart' . plural (ctxlang context) $ localNameOf c <> tshow i)
+                  $ (toNamePart' . plural (ctxlang context) $ localNameOf c <> (if i == 0 then mempty else tshow i))
                   NE.:| reverse (nameSpaceOf (name c))
               nm = case [nm' i | i <- [0 ..], nm' i `notElem` map name (ctxifcs context)] of
                 [] -> fatal "impossible"

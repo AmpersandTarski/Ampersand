@@ -368,12 +368,9 @@ instance Named CptCont where
 instance Named ThemeContent where
   name tc =
     maybe
-      ( mkName PatternName
-          . (:| [])
-          $ ( case toNamePart "Outside_of_patterns" of
-                Nothing -> fatal "Not a valid NamePart."
-                Just np -> np
-            )
+      ( case try2Name PatternName "Outside_of_patterns" of
+          Left msg -> fatal $ "ThemeContent.name: " <> msg
+          Right (nm, _) -> nm
       )
       name
       (patOfTheme tc)

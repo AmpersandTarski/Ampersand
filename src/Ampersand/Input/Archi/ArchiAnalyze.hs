@@ -117,16 +117,13 @@ samePurp prp prp' = pexObj prp == pexObj prp' && mString (pexMarkup prp) == mStr
 archiNameSpace :: NameSpace
 archiNameSpace = []
 
-toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
-toNamePartGuarded orig t = case toNamePart1 t of
-  Nothing -> mustBeValidNamePart orig t
-  Just np -> pure np
-
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops = do
   let orig = Origin "Somewhere during reading an ArchiMate file."
-  nm <- mkName PatternName . (NE.:| []) <$> toNamePartGuarded orig (archRepoName archiRepo)
+  nm <- case try2Name PatternName . text1ToText . archRepoName $ archiRepo of
+    Left msg -> mustBeValidName orig msg
+    Right (nm', _) -> pure nm'
   pure
     PCtx
       { ctx_nm = withNameSpace archiNameSpace nm,

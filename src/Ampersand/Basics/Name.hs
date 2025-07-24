@@ -2,30 +2,29 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Ampersand.Basics.Name
-  ( Named (..),
-    Name,
-    NamePart,
-    NameSpace,
-    NameType (..),
-    Label (..),
+  ( Label (..),
     Labeled (..),
+    --    mkName,
+    MyDotNode,
     mkName,
+    Name,
+    Named (..),
+    nameOfExecEngineRole,
     nameOfONE,
     nameOfSESSION,
-    nameOfExecEngineRole,
-    withNameSpace,
-    prependToPlainName,
-    urlEncodedName,
-    splitOnDots,
+    NamePart,
     namePartToText,
     namePartToText1,
-    toNamePart,
-    toNamePart1,
+    NameSpace,
+    NameType (..),
     postpend,
-    checkProperId,
+    prependToPlainName,
     suggestName,
     toMyDotNode,
-    MyDotNode,
+    try2Name,
+    try2Namepart,
+    urlEncodedName,
+    withNameSpace,
   )
 where
 
@@ -77,52 +76,65 @@ instance Named Name where
 instance GVP.PrintDot Name where
   unqtDot = GVP.text . TL.fromStrict . fullName
 
--- | toNamePart will convert a Text to a NamePart, iff the Text is a proper ID. (See checkProperId)
-toNamePart :: Text -> Maybe NamePart
-toNamePart txt = do
-  (h, tl) <- T.uncons txt
-  toNamePart1 (Text1 h tl)
+-- | This function checks if a text is a proper Namepart.
+-- Validation for the rules for the words in a Name. These rules are based on the rules for
+--   mariaDB names for tables and columns. (https://mariadb.com/kb/en/columnstore-naming-conventions/)
+--   1) Table and column names are restricted to alphanumeric and underscore only, i.e "A-Z a-z 0-9 _".
+--      However, the names are also used in math expressions in the generated documentation. Underscore
+--      has a special meaning in math expressions, so we do not allow it.
+--   2) The first character of all table and column names must be an ASCII letter (a-z A-Z).
+--   3) ColumnStore reserves certain words that MariaDB does not, such as SELECT, CHAR and TABLE, so even wrapped in backticks these cannot be used.
+-- There are three possible outcomes:
+--   * Right (Name, Nothing). The text is a proper Name.
+--   * Right (Name, Just Label). The text is not a proper Name, but well enough to suggest a name. The Label contains the original text.
+--   * Left Text. The returned text contains a message suited as error message. Conversion to a Name failed.
+try2Name :: NameType -> Text -> Either Text (Name, Maybe Label)
+try2Name typ txt =
+  case partitionEithers resultsOfParts of
+    ([], []) -> Left "A name must not be empty."
+    ([], p : ps) ->
+      -- Standard case, no suggestions required.
+      Right (mkName typ (p :| ps), Nothing)
+    (otherParts, _) -> case partitionEithers otherParts of
+      ([], _) ->
+        -- Every non-proper namepart has a suggestion
+        Right (mkName typ . harvestsuggested $ resultsOfParts, Just . Label $ txt)
+      (err : _, _) -> Left err
+  where
+    harvestsuggested :: [Either (Either Text NamePart) NamePart] -> NonEmpty NamePart
+    -- \| all nameparts must be either a proper NamePart or a suggestion for a NamePart
+    harvestsuggested lst = case foo <$> lst of
+      [] -> fatal "impossible"
+      (h : tl) -> h NE.:| tl
+      where
+        foo :: Either (Either Text NamePart) NamePart -> NamePart
+        foo (Right np) = np
+        foo (Left (Right np)) = np
+        foo (Left (Left err)) = fatal $ "all nameparts must be either a proper NamePart or a suggestion for a NamePart. " <> err
+    resultsOfParts = try2Namepart <$> splitOnDots txt
 
---
+-- | This function checks if a text is a proper Namepart. There are three possible outcomes:
+--   * Right NamePart. The text is a proper NamePart.
+--   * Left (Right NamePart. The text is not a proper NamePart, but a suggestion is returned.
+--   * Left (Left Text). The text is not a proper NamePart. An text message is returned about the reason.
+try2Namepart :: Text -> Either (Either Text NamePart) NamePart
+try2Namepart t = case T.uncons t of
+  Nothing -> Left $ Left "Empty namepart"
+  Just (h, tl) ->
+    if and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
+      then Right (NamePart (Text1 h tl))
+      else case T.uncons . T.filter (isSafeIdChar False) . pascal $ t of
+        Nothing -> Left $ Left $ "No valid characters in namepart: " <> t
+        Just (h', tl') ->
+          if isSafeIdChar True h'
+            then Right . NamePart $ Text1 h' tl'
+            else Left . Left $ "First character of namepart must be alphanumeric: " <> t
 
--- | toNamePart1 will convert a Text1 to a NamePart, iff the Text1 is a proper ID. (See checkProperId)
-toNamePart1 :: Text1 -> Maybe NamePart
-toNamePart1 x = case checkProperId x of
-  Right np -> Just np
-  Left _ -> Nothing
-
--- | suggestName checks if the given text is a proper name. If not, it proposes a proper name based
---   on the given text. In that case, the given text is converted into a Label. If the given text
---   was good enough for a proper name, no Label is retured.
 suggestName :: NameType -> Text1 -> (Name, Maybe Label)
-suggestName typ txt =
-  ( mkName typ . fmap fst $ parts,
-    if and . NE.toList . fmap snd $ parts
-      then Nothing
-      else Just . Label . text1ToText $ txt
-  )
-  where
-    parts = suggestedPart <$> splitOnDots txt
-    suggestedPart :: Text1 -> (NamePart, Bool)
-    suggestedPart x = case checkProperId x of
-      Right np -> (np, True)
-      Left suggestion -> (NamePart suggestion, False)
-
--- | This function checks if a text is a proper Id, if so, it returns the text as a NamePart.
---   If not, it returns a suggestion for a proper Id as a NamePart.
-checkProperId :: Text1 -> Either Text1 NamePart
-checkProperId t@(Text1 h tl) =
-  if isProper
-    then Right (NamePart t)
-    else Left suggestion
-  where
-    isProper = and (isSafeIdChar True h : (isSafeIdChar False <$> T.unpack tl))
-    suggestion = case T.uncons . T.filter (isSafeIdChar False) . pascal $ text1ToText t of
-      Nothing -> fatal $ "No valid characters in namepart: " <> text1ToText t
-      Just (h', tl') ->
-        if isSafeIdChar True h'
-          then Text1 h' tl'
-          else Text1 'X' $ T.cons h' tl'
+suggestName typ t =
+  case try2Name typ (text1ToText t) of
+    Left msg -> fatal $ "suggestName: " <> msg
+    Right (nm, lbl) -> (nm, lbl)
 
 namePartToText :: NamePart -> Text
 namePartToText (NamePart x) = text1ToText x
@@ -180,21 +192,8 @@ withNameSpace ns nm =
       nameType = nameType nm
     }
 
--- | Validation for the rules for the words in a Name. These rules are based on the rules for
---   mariaDB names for tables and columns. (https://mariadb.com/kb/en/columnstore-naming-conventions/)
---   1) Table and column names are restricted to alphanumeric and underscore only, i.e "A-Z a-z 0-9 _".
---   2) The first character of all table and column names should be an ASCII letter (a-z A-Z).
---   3) ColumnStore reserves certain words that MariaDB does not, such as SELECT, CHAR and TABLE, so even wrapped in backticks these cannot be used.
--- isValidNameWord ::
-splitOnDots :: Text1 -> NonEmpty Text1
-splitOnDots t1 =
-  case map toText1Unsafe
-    . filter (not . T.null)
-    . T.split (== '.')
-    . text1ToText
-    $ t1 of
-    [] -> fatal "This should be impossible!"
-    te : tes -> te NE.:| tes
+splitOnDots :: Text -> [Text]
+splitOnDots = T.split (== '.')
 
 -- | anything could have some name, can't it?
 class Named a where

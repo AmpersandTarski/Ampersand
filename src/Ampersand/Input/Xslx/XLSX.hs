@@ -48,7 +48,7 @@ parseXlsxFile mFk file =
       Guarded P_Context
     xlsx2pContext env xlsx = do
       let orig = Origin $ "file `" <> tshow file1 <> "`"
-      namepart <- toNamePartGuarded orig file1
+      namepart <- toNameGuarded orig ContextName file1
       let pCtx = pop namepart
       ( case ctx_pops pCtx of
           [] -> addWarning $ mkParserStateWarning orig emptyMsg
@@ -63,16 +63,16 @@ parseXlsxFile mFk file =
               "Please make sure it is formatted as a regular Excel .xlsx file and that it is not empty."
             ]
 
-        pop namepart =
-          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
+        pop nm =
+          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles nm)
             . concatMap (toPops env nameSpaceOfXLXSfiles file)
             . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
 
-toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
-toNamePartGuarded orig t = case toNamePart1 t of
-  Nothing -> mustBeValidNamePart orig t
-  Just np -> pure np
+toNameGuarded :: Origin -> NameType -> Text1 -> Guarded Name
+toNameGuarded orig typ t = case try2Name typ (text1ToText t) of
+  Left msg -> mustBeValidName orig msg
+  Right (nm, _) -> pure nm
 
 nameSpaceOfXLXSfiles :: NameSpace
 nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn more about namespaces.
@@ -551,14 +551,13 @@ conceptNameWithOptionalDelimiter ns t'
   | otherwise = Nothing
   where
     t = trim t'
-    mkName' x =
-      withNameSpace ns
-        . mkName ConceptName
-        $ ( case toNamePart x of
-              Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-              Just np -> np
-          )
-        :| []
+    mkName' txt =
+      withNameSpace
+        ns
+        ( case try2Name ConceptName txt of
+            Left msg -> fatal $ "Not a valid NamePart: " <> msg
+            Right (nm, _) -> nm
+        )
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

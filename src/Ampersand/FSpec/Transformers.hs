@@ -76,15 +76,15 @@ toTransformer :: (Text, Text, Text, [(PopAtom, PopAtom)]) -> Transformer
 toTransformer (rel, src, tgt, tuples) =
   Transformer rel' src' tgt' tuples'
   where
-    rel' = mkName RelationName $ toNameParts rel
-    src' = mkName ConceptName $ toNameParts src
-    tgt' = mkName ConceptName $ toNameParts tgt
-    toNameParts :: Text -> NonEmpty NamePart
-    toNameParts x = case T.uncons x of
-      Nothing -> fatal $ "Not a valid NamePart: `" <> x <> "`"
-      Just (h, tl) -> case catMaybes . toList $ toNamePart1 <$> splitOnDots (Text1 h tl) of
-        [] -> fatal $ "Not a valid NamePart: `" <> x <> "`"
-        h' : tl' -> h' :| tl'
+    rel' = case try2Name RelationName $ tshow rel of
+      Left err -> fatal $ "Not a valid RelationName: `" <> err <> "`"
+      Right (nm, _) -> nm
+    src' = case try2Name RelationName $ tshow src of
+      Left err -> fatal $ "Not a valid ConceptName for soucre: `" <> err <> "`"
+      Right (nm, _) -> nm
+    tgt' = case try2Name RelationName $ tshow tgt of
+      Left err -> fatal $ "Not a valid ConceptName for soucre: `" <> err <> "`"
+      Right (nm, _) -> nm
     tuples' :: [PAtomPair]
     tuples' = map popAtomPair2PAtomPair tuples
     popAtomPair2PAtomPair (a, b) =
@@ -98,9 +98,10 @@ toTransformer (rel, src, tgt, tuples) =
 
 nameSpaceFormalAmpersand :: NameSpace
 nameSpaceFormalAmpersand =
-  [ case toNamePart "FormalAmpersand" of
-      Nothing -> fatal "Not a valid NamePart."
-      Just np -> np
+  [ case try2Namepart "FormalAmpersand" of
+      Left (Left err) -> fatal $ "Not a valid NamePart: " <> err
+      Left (Right np) -> np
+      Right np -> np
   ]
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.

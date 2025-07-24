@@ -71,12 +71,9 @@ instance Named PictureTyp where -- for displaying a fatal error
       mkName' :: Text -> Name
       mkName' x =
         withNameSpace nameSpaceFormalAmpersand
-          . mkName ContextName
-          . (:| [])
-          $ ( case toNamePart x of
-                Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-                Just np -> np
-            )
+          $ case try2Name ContextName x of
+            Left msg -> fatal $ "Not a valid Name: " <> x <> " (" <> msg <> ")"
+            Right (nm, _) -> nm
 
 makePicture :: (HasDocumentOpts env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
@@ -477,12 +474,10 @@ baseNodeId :: ConceptualStructure -> A_Concept -> Name
 baseNodeId x c =
   case lookup c (zip (Set.toList $ allCpts x) [(1 :: Int) ..]) of
     Just i ->
-      mkName ConceptName
-        . (:| [])
-        $ ( case toNamePart $ "cpt_" <> tshow i of
-              Nothing -> fatal $ "Not a valid NamePart: " <> "cpt_" <> tshow i
-              Just np -> np
-          )
+      let txt = "Cpt" <> tshow i
+       in case try2Name ConceptName txt of
+            Left msg -> fatal $ "Not a valid ConceptName: " <> txt <> " (" <> msg <> ")"
+            Right (nm, _) -> nm
     _ -> fatal ("element " <> fullName c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> Set A_Concept
