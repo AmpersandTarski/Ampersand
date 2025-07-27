@@ -124,7 +124,18 @@ hyperTarget env fSpec a =
     XRefConceptualAnalysisPattern {} -> Left . hdr $ (text . l) (NL "Thema: ", EN "Theme: ") <> (singleQuoted . str . tshow . mkId . refStuff $ a)
     XRefSharedLangTheme (Just pat) -> (Left . hdr . text . label) pat
     XRefSharedLangTheme Nothing -> (Left . hdr . text . l) (NL "Overig", EN "Remaining")
-    XRefSharedLangRelation d -> Right $ spanWith (xSafeLabel a, [], []) (str . tshow $ d)
+    XRefSharedLangRelation d ->
+      Right
+        $ spanWith
+          (xSafeLabel a, [], [])
+          ( (str . label $ d)
+              <> text " ("
+              <> (text . l) (NL "Vanuit ", EN "From ")
+              <> (str . label . source $ d)
+              <> (text . l) (NL " naar ", EN " to ")
+              <> (str . label . target $ d)
+              <> ")"
+          )
     --   Left $ divWith (xSafeLabel a,[],[])
     --                  (   (para . str $ tshow d)
     --                    <>codeBlockWith
@@ -213,23 +224,23 @@ class Identifyble a where
   mkId :: a -> Ident
 
 instance Identifyble Relation where
-  mkId rel = IdentRel (name rel) (name . source $ rel) (name . target $ rel)
+  mkId rel = IdentRel (label rel) (label . source $ rel) (label . target $ rel)
 
 instance Identifyble AConceptDef where
-  mkId = IdentByName . name
+  mkId = IdentByName . label
 
 instance Identifyble Rule where
-  mkId = IdentByName . name
+  mkId = IdentByName . label
 
 instance Identifyble Pattern where
-  mkId = IdentByName . name
+  mkId = IdentByName . label
 
 instance Identifyble RefStuff where
   mkId = identOfThing
 
 data Ident
-  = IdentByName Name
-  | IdentRel Name Name Name
+  = IdentByName Text -- The label of the object.
+  | IdentRel Text Text Text -- The labels of the relation, it's source and target
   | IdentOverig -- Used to print the
   deriving (Eq)
 
@@ -246,13 +257,13 @@ instance Hashable Ident where
 
 instance Show Ident where
   show ident = T.unpack $ case ident of
-    IdentByName nm -> fullName nm
+    IdentByName txt -> txt
     IdentRel nm src tgt ->
-      fullName nm
+      nm
         <> "["
         <> ( if src == tgt
-               then fullName src
-               else fullName src <> "*" <> fullName tgt
+               then src
+               else src <> "*" <> tgt
            )
         <> "]"
     IdentOverig -> ":overig"
