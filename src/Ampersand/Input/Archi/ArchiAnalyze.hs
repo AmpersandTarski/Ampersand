@@ -677,6 +677,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text1 -> Text1
+-- TODO: use try2Name to make sure you have a valid name.
 relCase (Text1 c cs) = escapeIdentifier $ Text1 (toLower c) cs
 
 -- | Function `tuples2PAtomPairs` is used to save ourselves some writing effort

@@ -169,7 +169,7 @@ instance ShowHS TType where
 
 instance ShowHSName Quad where
   showHSName q =
-    haskellIdentifier . fullName1 . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "_") $ (name . qRule) q
+    haskellIdentifier . fullName1 . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "Ð") $ (name . qRule) q
 
 instance ShowHS Quad where
   showHS _ indent q =
@@ -769,8 +769,8 @@ instance ShowHS AClassify where
 
 instance ShowHSName Relation where
   showHSName d
-    | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- user defined relations
-    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- relations generated per rule
+    | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "Ð" <> fullName (source d) <> "Ð") . name . target $ d -- user defined relations
+    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "Ð" <> fullName (source d) <> "Ð") . name . target $ d -- relations generated per rule
 
 instance ShowHS Relation where
   showHS env indent d =

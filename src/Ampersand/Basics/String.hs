@@ -85,7 +85,7 @@ escapeIdentifier (Text1 c0 cs) =
     encode allowNum c
       | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = Text1 c mempty
       | c == '_' = toText1Unsafe "__" -- shorthand for '_' to improve readability
-      | otherwise = Text1 '_' $ tshow (ord c) <> "_"
+      | otherwise = Text1 'Ð' $ tshow (ord c) <> "Ð"
 
 -- | Tells if a character is valid as character in an identifier. Because there are
 --   different rules for the first character of an identifier and the rest of the

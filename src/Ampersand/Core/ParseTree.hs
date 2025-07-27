@@ -325,7 +325,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
+  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "Ð" <> tshow x)
     where
       x = origin cd
 

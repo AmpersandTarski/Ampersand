@@ -34,7 +34,7 @@ class (Typeable e, Eq e) => Unique e where
 
   -- | representation of a Unique thing into a Text.
   uniqueShowWithType :: e -> Text1
-  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "_" <> (text1ToText . showUnique $ x)
+  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "Ð" <> (text1ToText . showUnique $ x)
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of
@@ -60,7 +60,7 @@ class (Typeable e, Eq e) => Unique e where
         Left _ -> Nothing
         Right (nm, _) -> Just (tshow nm)
   addType :: e -> Text1 -> Text1
-  addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
+  addType x string = toText1Unsafe $ tshow (typeOf x) <> "Ð" <> text1ToText string
 
 uniqueButNotTooLong :: Text1 -> Text1
 uniqueButNotTooLong txt =
@@ -96,4 +96,4 @@ instance Unique Bool where
 -- | This function is ment to deliver unique values for lots of things in a uniform way. Disadvantage is that
 --   the results are hard to debug.
 showUniqueAsHash :: (Show a, Typeable a) => a -> Text1
-showUniqueAsHash x = toText1Unsafe (tshow (typeOf x) <> "_" <> (tshow . abs . hash . tshow $ x))
+showUniqueAsHash x = toText1Unsafe (tshow (typeOf x) <> "Ð" <> (tshow . abs . hash . tshow $ x))

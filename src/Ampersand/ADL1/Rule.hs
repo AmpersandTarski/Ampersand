@@ -58,7 +58,7 @@ rulefromProp prp rel =
     }
   where
     relIdentifier :: Text1
-    relIdentifier = toText1Unsafe $ tshow prp <> "_" <> tshow rel
+    relIdentifier = toText1Unsafe $ tshow prp <> "Ð" <> tshow rel
     showDcl :: Text
     showDcl = tshow rel
     r :: Expression

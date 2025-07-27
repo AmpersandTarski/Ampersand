@@ -615,7 +615,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("_" <> text1ToText (fullName1 (vdcpt vd)))
+  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("Ð" <> text1ToText (fullName1 (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -937,7 +937,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p = toText1Unsafe $ "Purpose_" <> (tshow . abs . hash $ readable)
     where
-      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "_" <> tshow orig)
+      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "Ð" <> tshow orig)
       orig = origin p
 
 instance Traced Purpose where
