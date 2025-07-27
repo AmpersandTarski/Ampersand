@@ -30,7 +30,7 @@ where
 
 import Ampersand.Basics.Hashing
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, text1ToText, toText1Unsafe, urlEncode)
+import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
@@ -132,7 +132,7 @@ try2Namepart t = case T.uncons t of
 
 suggestName :: NameType -> Text1 -> (Name, Maybe Label)
 suggestName typ t =
-  case try2Name typ (text1ToText t) of
+  case try2Name typ . pascal . text1ToText $ t of
     Left msg -> fatal $ "suggestName: " <> msg
     Right (nm, lbl) -> (nm, lbl)
 
