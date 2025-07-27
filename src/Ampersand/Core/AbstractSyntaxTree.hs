@@ -272,6 +272,9 @@ data AConceptDef = AConceptDef
 instance Named AConceptDef where
   name = acdname
 
+instance Labeled AConceptDef where
+  mLabel = acdlabel
+
 instance Traced AConceptDef where
   origin AConceptDef {pos = orig} = orig
 

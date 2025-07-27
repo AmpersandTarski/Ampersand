@@ -134,7 +134,10 @@ suggestName :: NameType -> Text1 -> (Name, Maybe Label)
 suggestName typ t =
   case try2Name typ . pascal . text1ToText $ t of
     Left msg -> fatal $ "suggestName: " <> msg
-    Right (nm, lbl) -> (nm, lbl)
+    Right (nm, _) ->
+      ( nm,
+        if text1ToText t == tshow nm then Nothing else Just . Label . text1ToText $ t
+      )
 
 namePartToText :: NamePart -> Text
 namePartToText (NamePart x) = text1ToText x
