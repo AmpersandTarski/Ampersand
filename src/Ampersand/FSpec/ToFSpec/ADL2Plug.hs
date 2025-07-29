@@ -363,7 +363,7 @@ instance Named ConceptOrRelation where
   name (Right x) = name x
 
 disambiguatedName :: ConceptOrRelation -> Text1
-disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
+disambiguatedName x = toText1Unsafe $ basepart <> "Ð" <> gitLikeSha x
   where
     basepart = case unsnoc firstPart of
       Nothing -> fatal "Impossible to have an empty name."

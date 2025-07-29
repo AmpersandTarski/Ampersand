@@ -476,7 +476,7 @@ instance Pretty PAtomValue where
       XlsxString _o s -> text . show $ s
       ScriptInt _o i -> text . show $ i
       ScriptFloat _o d -> text . show $ d
-      XlsxDouble _o d -> fatal ("Prettyprinting a value " <> tshow d <> " from a .xlsx-file, which has to be shown in a term, however the technicaltype is not known")
+      XlsxDouble _o d -> text . show $ d
       ComnBool _o b -> text . map toUpper . show $ b
       ScriptDate _o x -> text . show $ x
       ScriptDateTime _o x -> text . show $ x

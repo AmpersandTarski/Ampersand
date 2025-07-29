@@ -1136,14 +1136,9 @@ pCtx2aCtx
                 mkRule command fExpr =
                   Rule
                     { rrnm =
-                        mkName
-                          RuleName
-                          ( ( case toNamePart $ "Compute" <> (tshow . abs . hash $ lbl') of
-                                Nothing -> fatal "Not a proper NamePart."
-                                Just np -> np
-                            )
-                              NE.:| []
-                          ),
+                        case try2Name RuleName $ "Compute" <> (tshow . abs . hash $ lbl') of
+                          Left err -> fatal $ "Not a proper Name: " <> err
+                          Right (nm, _) -> nm,
                       rrlbl = Just (Label lbl'),
                       formalExpression = fExpr,
                       rrfps = pos',

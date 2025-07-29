@@ -287,12 +287,12 @@ mkConceptDef graph from cpt = do
     [] ->
       addWarning
         (mkTurtleWarning someTurtle ["No label found for concept " <> tshow cpt <> ", using URI as label"])
-        (getName cpt)
-    [lbl] -> getName lbl
+        (getNameAndLabel cpt)
+    [h] -> getNameAndLabel h
     (h : _) ->
       addWarning
         (mkTurtleWarning someTurtle ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
-        (getName h)
+        (getNameAndLabel h)
   pure
     PConceptDef
       { cdname = nm,
@@ -303,8 +303,8 @@ mkConceptDef graph from cpt = do
         pos = someTurtle
       }
   where
-    getName :: Node -> Guarded (Name, Maybe Label)
-    getName lblNode = case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
+    getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
+    getNameAndLabel lblNode = case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
       Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
       Just x -> pure x
     def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing

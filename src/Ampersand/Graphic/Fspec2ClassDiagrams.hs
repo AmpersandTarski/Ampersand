@@ -53,15 +53,11 @@ clAnalysis fSpec =
         }
 
 propTypeName :: Name
-propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop")
-
-toNamePart' :: Text1 -> NonEmpty NamePart
-toNamePart' x = toNamePart'' <$> splitOnDots x
-
-toNamePart'' :: Text1 -> NamePart
-toNamePart'' x = case toNamePart1 x of
-  Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-  Just np -> np
+propTypeName =
+  withNameSpace nameSpaceFormalAmpersand
+    $ case try2Name PropertyName "Prop" of
+      Left err -> fatal $ "Not a valid PropertyName: `" <> err <> "`"
+      Right (nm, _) -> nm
 
 class (ConceptStructure a, Language a) => CDAnalysable a where
   {-# MINIMAL cdAnalysis, relations, classCandidates #-}
@@ -362,7 +358,9 @@ tdAnalysis fSpec =
             }
 
 sqlAttToName :: SqlAttribute -> Name
-sqlAttToName = mkName SqlAttributeName . toNamePart' . sqlColumNameToText1 . attSQLColName
+sqlAttToName att = case try2Name SqlAttributeName . tshow . attSQLColName $ att of
+  Left err -> fatal $ "Not a valid SqlAttributeName: `" <> err <> "`"
+  Right (nm, _) -> nm
 
 mults :: Expression -> Multiplicities
 mults r =

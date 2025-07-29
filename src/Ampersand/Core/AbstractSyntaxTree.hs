@@ -272,6 +272,9 @@ data AConceptDef = AConceptDef
 instance Named AConceptDef where
   name = acdname
 
+instance Labeled AConceptDef where
+  mLabel = acdlabel
+
 instance Traced AConceptDef where
   origin AConceptDef {pos = orig} = orig
 
@@ -612,7 +615,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("_" <> text1ToText (fullName1 (vdcpt vd)))
+  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("Ð" <> text1ToText (fullName1 (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -934,7 +937,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p = toText1Unsafe $ "Purpose_" <> (tshow . abs . hash $ readable)
     where
-      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "_" <> tshow orig)
+      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "Ð" <> tshow orig)
       orig = origin p
 
 instance Traced Purpose where
@@ -1495,13 +1498,12 @@ data Type
 instance Named Type where
   name t = case t of
     UserConcept nm -> nm
-    BuiltIn tt -> mkName ConceptName . fmap toNamePart' $ ("AmpersandBuiltIn" NE.:| [tshow tt])
-    RepresentSeparator -> mkName ConceptName . fmap toNamePart' $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
-    where
-      toNamePart' :: Text -> NamePart
-      toNamePart' x = case toNamePart x of
-        Nothing -> fatal $ "Not a proper namepart: " <> x
-        Just np -> np
+    BuiltIn tt -> case try2Name ConceptName ("AmpersandBuiltIn" <> tshow tt) of
+      Left err -> fatal $ "Not a proper name: " <> err
+      Right (nm, _) -> nm
+    RepresentSeparator -> case try2Name ConceptName ("AmpersandBuiltIn" <> "RepresentSeparator") of
+      Left err -> fatal $ "Not a proper name: " <> err
+      Right (nm, _) -> nm
 
 instance Show Type where
   show a = T.unpack $ case a of

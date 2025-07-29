@@ -28,7 +28,6 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config (HasRunner)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Partial as Partial
 import qualified RIO.Text as T
 
 -- | creating an FSpec is based on command-line options.
@@ -181,8 +180,12 @@ data MetaModel = FormalAmpersand | PrototypeContext
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 instance Named MetaModel where
-  name FormalAmpersand = mkName ContextName (Partial.fromJust (toNamePart "Formal Ampersand") NE.:| [])
-  name PrototypeContext = mkName ContextName (Partial.fromJust (toNamePart "Prototype context") NE.:| [])
+  name FormalAmpersand = case try2Name ContextName "FormalAmpersand" of
+    Left msg -> fatal $ "MetaModel FormalAmpersand: " <> msg
+    Right (nm, _) -> nm
+  name PrototypeContext = case try2Name ContextName "PrototypeContext" of
+    Left msg -> fatal $ "MetaModel PrototypeContext: " <> msg
+    Right (nm, _) -> nm
 
 transformer2pop :: Transformer -> P_Population
 transformer2pop tr =

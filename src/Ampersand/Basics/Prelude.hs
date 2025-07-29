@@ -25,7 +25,6 @@ where
 
 -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 
-import qualified Data.Text.Encoding as T
 import Data.Text1 (Text1 (..))
 import RIO hiding (exitWith, readFileUtf8, undefined, zipWith)
 import qualified RIO as Hidden
@@ -42,7 +41,7 @@ readFileUtf8Lenient :: FilePath -> RIO env (Either [Text] Text)
 readFileUtf8Lenient fp = do
   exists <- doesFileExist fp
   if exists
-    then liftIO (Right . T.decodeUtf8With T.lenientDecode <$> SB.readFile fp)
+    then liftIO (Right . decodeUtf8 <$> SB.readFile fp)
     else return $ Left ["File does not exist: " <> T.pack fp]
 
 -- Wrapper around readFileUtf8. It exits with an error:

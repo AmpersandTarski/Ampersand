@@ -530,12 +530,12 @@ primExpr2pandocMath lang e =
       case lang of
         Dutch -> text "de relatie "
         English -> text "the relation "
-        <> math ((label . source) d <> " \\rightarrow {" <> label d <> "} " <> (label . target) d)
+        <> math ((mathLabel . source) d <> " \\rightarrow {" <> mathLabel d <> "} " <> (mathLabel . target) d)
     (EFlp (EDcD d)) ->
       case lang of
         Dutch -> text "de relatie "
         English -> text "the relation "
-        <> math ((label . source) d <> " \\leftarrow  {" <> label d <> "} " <> (label . target) d)
+        <> math ((mathLabel . source) d <> " \\leftarrow  {" <> mathLabel d <> "} " <> (mathLabel . target) d)
     (EIsc (r1, _)) ->
       let srcTable = case r1 of
             EDcI c -> c
@@ -543,15 +543,24 @@ primExpr2pandocMath lang e =
        in case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "
-            <> math (label srcTable)
+            <> math (mathLabel srcTable)
     (EDcI c) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (label c)
+        <> math (mathLabel c)
     (EEps c _) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "
-        <> math (label c)
+        <> math (mathLabel c)
     _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)
+
+mathLabel :: (Labeled a) => a -> Text
+mathLabel = T.concatMap escape . label
+  where
+    escape :: Char -> Text
+    escape c
+      | c == '\\' = "\\\\"
+      | c `elem` ("#$%^&_{}~" :: String) = "\\" <> T.singleton c
+      | otherwise = T.singleton c

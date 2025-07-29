@@ -117,16 +117,13 @@ samePurp prp prp' = pexObj prp == pexObj prp' && mString (pexMarkup prp) == mStr
 archiNameSpace :: NameSpace
 archiNameSpace = []
 
-toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
-toNamePartGuarded orig t = case toNamePart1 t of
-  Nothing -> mustBeValidNamePart orig t
-  Just np -> pure np
-
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops = do
   let orig = Origin "Somewhere during reading an ArchiMate file."
-  nm <- mkName PatternName . (NE.:| []) <$> toNamePartGuarded orig (archRepoName archiRepo)
+  nm <- case try2Name PatternName . text1ToText . archRepoName $ archiRepo of
+    Left msg -> mustBeValidName orig msg
+    Right (nm', _) -> pure nm'
   pure
     PCtx
       { ctx_nm = withNameSpace archiNameSpace nm,
@@ -680,6 +677,7 @@ translateArchiElem plainNm (plainSrcName, plainTgtName) maybeViewName props tupl
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text1 -> Text1
+-- TODO: use try2Name to make sure you have a valid name.
 relCase (Text1 c cs) = escapeIdentifier $ Text1 (toLower c) cs
 
 -- | Function `tuples2PAtomPairs` is used to save ourselves some writing effort

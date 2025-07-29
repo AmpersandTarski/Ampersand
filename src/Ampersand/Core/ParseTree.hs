@@ -325,7 +325,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
+  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "Ð" <> tshow x)
     where
       x = origin cd
 
@@ -471,7 +471,7 @@ instance Traced P_Relation where
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
 mergeRels :: [P_Relation] -> [P_Relation]
-mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+mergeRels rs = map fun (eqCl signat rs)
   where
     fun :: NonEmpty P_Relation -> P_Relation
     fun rels =
