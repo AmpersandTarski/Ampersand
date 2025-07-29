@@ -30,7 +30,7 @@ classdiagram2dot env cd =
         DotStmts
           { attrStmts =
               GraphAttrs
-                [ RankDir FromRight,
+                [ RankDir FromLeft,
                   bgColor White
                 ]
                 :
