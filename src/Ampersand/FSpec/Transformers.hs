@@ -79,10 +79,10 @@ toTransformer (rel, src, tgt, tuples) =
     rel' = case try2Name RelationName $ tshow rel of
       Left err -> fatal $ "Not a valid RelationName: `" <> err <> "`"
       Right (nm, _) -> nm
-    src' = case try2Name RelationName $ tshow src of
+    src' = case try2Name ConceptName $ tshow src of
       Left err -> fatal $ "Not a valid ConceptName for soucre: `" <> err <> "`"
       Right (nm, _) -> nm
-    tgt' = case try2Name RelationName $ tshow tgt of
+    tgt' = case try2Name ConceptName $ tshow tgt of
       Left err -> fatal $ "Not a valid ConceptName for soucre: `" <> err <> "`"
       Right (nm, _) -> nm
     tuples' :: [PAtomPair]
