@@ -259,10 +259,11 @@ conceptualStructure fSpec pr =
     -- PTConceptualModelOfRelationsInPattern makes a picture of relations and gens within pat only
     PTConceptualModelOfRelationsInPattern pat ->
       let cpts = concs rels `Set.union` concs pat
+          cpts' = cpts `Set.union` concs (isaEdges cpts)
           rels =
             relsDefdIn pat
               `Set.union` bindedRelationsIn (allRules pat)
-              `Set.union` Set.fromList [r | r <- Set.toList $ vrels fSpec, source r `elem` cpts || target r `elem` cpts]
+              `Set.union` Set.fromList [r | r <- Set.toList $ vrels fSpec, source r `elem` cpts' || target r `elem` cpts']
        in CStruct
             { csCpts = cpts,
               csRels =
