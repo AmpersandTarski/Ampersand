@@ -34,6 +34,7 @@ import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
+import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -111,7 +112,20 @@ try2Name typ txt =
         foo (Right np) = np
         foo (Left (Right np)) = np
         foo (Left (Left err)) = fatal $ "all nameparts must be either a proper NamePart or a suggestion for a NamePart. " <> err
-    resultsOfParts = try2Namepart <$> splitOnDots txt
+    resultsOfParts = case reverse . splitOnDots $ txt of
+      [] -> []
+      (h : tl) ->
+        let lastPart = try2Namepart (handleFirstChar h)
+            namespaceParts = try2Namepart <$> tl
+         in reverse (lastPart : namespaceParts)
+      where
+        handleFirstChar :: Text -> Text
+        handleFirstChar t = case T.uncons t of
+          Nothing -> t
+          Just (h, tl) -> case typ of
+            ConceptName -> T.cons (toUpper h) tl
+            RelationName -> T.cons (toLower h) tl
+            _ -> t
 
 -- | This function checks if a text is a proper Namepart. There are three possible outcomes:
 --   * Right NamePart. The text is a proper NamePart.

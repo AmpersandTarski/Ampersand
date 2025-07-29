@@ -101,11 +101,8 @@ mkContextOfPops ctxName pops1 =
       ctx_enfs = []
     }
   where
-    declaredRelations :: [P_Relation] -- relations declared in the user's script
     popRelations :: [P_Relation] -- relations that are "annotated" by the user in Excel-sheets.
     -- popRelations are derived from P_Populations only.
-    declaredRelations = []
-
     popRelations =
       [ rel
         | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- pops1,
@@ -122,8 +119,7 @@ mkContextOfPops ctxName pops1 =
                   dec_Mean = mempty,
                   dec_pos = origin pop
                 }
-            ],
-          signatur rel `notElem` map signatur declaredRelations
+            ]
       ]
 
     genericRelations :: [P_Relation] -- generalization of popRelations due to CLASSIFY statements
@@ -206,16 +202,11 @@ mkContextOfPops ctxName pops1 =
           spcs <- [[snd c | c <- NE.toList cl, snd c /= g]],
           not (null spcs)
       ]
-    signatur :: P_Relation -> (Name, P_Sign)
-    signatur rel = (name rel, dec_sign rel)
     concepts =
       L.nub
         $ [PCpt (name pop) | pop@P_CptPopu {} <- pops1]
         <> [src' | P_RelPopu {p_src = src} <- pops1, Just src' <- [src]]
         <> [tgt' | P_RelPopu {p_tgt = tgt} <- pops1, Just tgt' <- [tgt]]
-        <> map sourc declaredRelations
-        <> map targt declaredRelations
-        <> concat [specific gen : NE.toList (generics gen) | gen <- []]
     pops2 = computeConceptPopulations pops1
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
