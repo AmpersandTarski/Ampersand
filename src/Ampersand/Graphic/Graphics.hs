@@ -80,7 +80,7 @@ makePicture env fSpec pr =
   case pr of
     PTClassificationDiagram ->
       Picture
-        { pType = pr,
+        { pType = PTClassificationDiagram,
           pictureFileName = toBaseFileName "Classification",
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -94,7 +94,7 @@ makePicture env fSpec pr =
         }
     PTLogicalDataModelOfContext grouped ->
       Picture
-        { pType = pr,
+        { pType = PTLogicalDataModelOfContext grouped,
           pictureFileName = toBaseFileName $ "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
           forDataModelsOnlySwitch = True,
           scale = scale',
@@ -115,7 +115,7 @@ makePicture env fSpec pr =
         }
     PTLogicalDataModelOfPattern pat ->
       Picture
-        { pType = pr,
+        { pType = PTLogicalDataModelOfPattern pat,
           pictureFileName = toBaseFileName $ "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat,
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -129,7 +129,7 @@ makePicture env fSpec pr =
         }
     PTTechnicalDataModel ->
       Picture
-        { pType = pr,
+        { pType = PTTechnicalDataModel,
           pictureFileName = toBaseFileName "TechnicalDataModel",
           -- PTTechnicalDataModel is not included in datamodels-only mode by design.
           forDataModelsOnlySwitch = False,
@@ -144,7 +144,7 @@ makePicture env fSpec pr =
         }
     PTConceptualModelOfConcept cpt ->
       Picture
-        { pType = pr,
+        { pType = PTConceptualModelOfConcept cpt,
           pictureFileName = toBaseFileName $ "CDConcept" <> (text1ToText . urlEncodedName . name) cpt,
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -158,7 +158,7 @@ makePicture env fSpec pr =
         }
     PTConceptualModelOfRelationsInPattern pat ->
       Picture
-        { pType = pr,
+        { pType = PTConceptualModelOfRelationsInPattern pat,
           pictureFileName = toBaseFileName $ "RelationsInPattern" <> (text1ToText . urlEncodedName . name) pat,
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -172,7 +172,7 @@ makePicture env fSpec pr =
         }
     PTConceptualModelOfRulesInPattern pat ->
       Picture
-        { pType = pr,
+        { pType = PTConceptualModelOfRulesInPattern pat,
           pictureFileName = toBaseFileName $ "CDPattern" <> (text1ToText . urlEncodedName . name) pat,
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -186,7 +186,7 @@ makePicture env fSpec pr =
         }
     PTConceptualModelOfRule rul ->
       Picture
-        { pType = pr,
+        { pType = PTConceptualModelOfRule rul,
           pictureFileName = toBaseFileName $ "CDRule" <> (text1ToText . urlEncodedName . name) rul,
           forDataModelsOnlySwitch = False,
           scale = scale',
@@ -258,14 +258,17 @@ conceptualStructure fSpec pr =
             }
     -- PTConceptualModelOfRelationsInPattern makes a picture of relations and gens within pat only
     PTConceptualModelOfRelationsInPattern pat ->
-      let cpts = concs decs `Set.union` concs (gens pat)
-          decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
+      let cpts = concs rels `Set.union` concs pat
+          rels =
+            relsDefdIn pat
+              `Set.union` bindedRelationsIn (allRules pat)
+              `Set.union` Set.fromList [r | r <- Set.toList $ vrels fSpec, source r `elem` cpts || target r `elem` cpts]
        in CStruct
             { csCpts = cpts,
               csRels =
                 Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
-                  $ decs,
+                  $ rels,
               csIdgs = isaEdges cpts
             }
     PTConceptualModelOfRule r ->
@@ -319,14 +322,7 @@ writePicture pict = do
       do
         env <- ask
         logDebug $ "Generating " <> displayShow gvOutput <> " using " <> displayShow gvCommand <> "."
-        let dotSource = mkDotGraph env pict
-        --  writeFileUtf8 (dropExtension fp <.> "dotSource") (tshow dotSource)
-        path <- runGraphvizCommand' gvCommand dotSource
-        -- path' <- liftIO . GV.addExtension
-        -- path <-
-        --   liftIO
-        --     . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput
-        --     $ dropExtension fp
+        path <- runGraphvizCommand' gvCommand (mkDotGraph env pict)
         absPath <- liftIO . makeAbsolute $ path
         logDebug $ display (T.pack absPath) <> " written."
         case postProcess of
@@ -428,7 +424,7 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
                     Sep (DVal 0.8),
                     NodeSep 1.0,
                     Rank SameRank,
-                    RankDir FromTop,
+                    RankDir FromBottom,
                     RankSep [2.5],
                     ReMinCross True
                     {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
@@ -491,7 +487,7 @@ instance HasDotParts A_Concept where
     [ DotNode
         { nodeID = toMyDotNode $ baseNodeId x cpt,
           nodeAttributes =
-            [ Label . StrLabel . TL.fromStrict . fullName $ cpt
+            [ Label . StrLabel . TL.fromStrict . label $ cpt
             ]
         }
     ]
@@ -509,7 +505,7 @@ instance HasDotParts Relation where
                     . StrLabel
                     . TL.fromStrict
                     . T.intercalate "\n"
-                    $ fullName rel
+                    $ label rel
                     : case Set.toList . properties $ rel of
                       [] -> []
                       ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
@@ -538,7 +534,7 @@ instance HasDotParts Relation where
                     . StrLabel
                     . TL.fromStrict
                     . T.intercalate "\n"
-                    $ fullName rel
+                    $ label rel
                     : case Set.toList . properties $ rel of
                       [] -> []
                       ps -> ["[" <> (T.intercalate ", " . map (T.toLower . tshow) $ ps) <> "]"]
