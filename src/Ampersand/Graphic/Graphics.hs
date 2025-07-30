@@ -242,36 +242,40 @@ conceptualStructure fSpec pr =
     --  extended with a limited number of more general concepts;
     --  and rels to prevent disconnected concepts, which can be connected given the entire context.
     PTConceptualModelOfRulesInPattern pat ->
-      let orphans = [c | c <- toList cpts, not (c `elem` concs idgs || c `elem` concs rels)]
-          xrels =
-            Set.fromList
-              [ r | c <- orphans, r <- toList $ vrels fSpec, (c == source r && target r `elem` cpts) || (c == target r && source r `elem` cpts), source r /= target r, decusr r
-              ]
-          idgs = isaEdges cpts --  all isa edges within the concepts
-          cpts = cpts' `Set.union` Set.fromList [g | cl <- eqCl id [g | (s, g) <- gs, s `elem` cpts'], length cl < 3, g <- NE.toList cl] -- up to two more general concepts
-          cpts' = concs pat `Set.union` concs rels
-          rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
-       in CStruct
-            { csCpts = cpts,
-              csRels = rels `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
-              csIdgs = idgs
-            }
+      CStruct
+        { csCpts = cpts,
+          csRels = rels `Set.union` rels' `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          csIdgs = idgs
+        }
+      where
+        orphans = [c | c <- toList cpts, not (c `elem` concs idgs || c `elem` concs rels)]
+        xrels =
+          Set.fromList
+            [ r | c <- orphans, r <- toList $ vrels fSpec, (c == source r && target r `elem` cpts) || (c == target r && source r `elem` cpts), source r /= target r, decusr r
+            ]
+        idgs = isaEdges cpts --  all isa edges within the concepts
+        cpts = cpts' `Set.union` Set.fromList [g | cl <- eqCl id [g | (s, g) <- gs, s `elem` cpts'], length cl < 3, g <- NE.toList cl] -- up to two more general concepts
+        cpts' = concs pat `Set.union` concs rels
+        rels' = Set.filter (not . isProp . EDcD) . Set.filter (\rel -> (source rel `elem` cpts) && (target rel `elem` cpts)) . vrels $ fSpec
+        rels = Set.filter (not . isProp . EDcD) (bindedRelationsIn pat)
+
     -- PTConceptualModelOfRelationsInPattern makes a picture of relations and gens within pat only
     PTConceptualModelOfRelationsInPattern pat ->
-      let cpts = concs rels `Set.union` concs pat
-          cpts' = cpts `Set.union` concs (isaEdges cpts)
-          rels =
-            relsDefdIn pat
-              `Set.union` bindedRelationsIn (allRules pat)
-              `Set.union` Set.fromList [r | r <- Set.toList $ vrels fSpec, source r `elem` cpts' || target r `elem` cpts']
-       in CStruct
-            { csCpts = cpts,
-              csRels =
-                Set.filter (not . isProp . EDcD)
-                  . Set.filter decusr
-                  $ rels,
-              csIdgs = isaEdges cpts
-            }
+      CStruct
+        { csCpts = cpts,
+          csRels =
+            Set.filter (not . isProp . EDcD)
+              . Set.filter decusr
+              $ rels,
+          csIdgs = isaEdges cpts
+        }
+      where
+        cpts = concs rels `Set.union` concs pat
+        cpts' = cpts `Set.union` concs (isaEdges cpts)
+        rels =
+          relsDefdIn pat
+            `Set.union` bindedRelationsIn (allRules pat)
+            `Set.union` Set.fromList [r | r <- Set.toList $ vrels fSpec, source r `elem` cpts' || target r `elem` cpts']
     PTConceptualModelOfRule r ->
       let cpts = concs r
           idgs = isaEdges cpts
