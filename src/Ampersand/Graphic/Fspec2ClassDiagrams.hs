@@ -13,6 +13,7 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
+import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Misc.HasClasses
@@ -28,6 +29,7 @@ clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
     { cdName = prependToPlainName "classification_" $ name fSpec,
+      cdLabel = Nothing,
       classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
       geners = map OOGener . vgens $ fSpec,
@@ -195,13 +197,35 @@ instance CDAnalysable Pattern where
   cdAnalysis _ env fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
-        classes = classes',
+        cdLabel = ptlbl pat,
+        classes = classes' <> superClasses,
         assocs = associations',
-        geners = map OOGener (gens pat),
+        geners = map OOGener generalisations',
         ooCpts = toList (concs pat)
       }
     where
       (classes', associations') = classesAndAssociations env fSpec pat
+
+      generalisations' :: [AClassify]
+      generalisations' = filter shouldDraw . gens $ fSpec
+
+      shouldDraw gen = not . null $ (concs . genericAndSpecifics $ gen) `Set.intersection` classConcepts
+      classConcepts = Set.fromList . map fst $ mapMaybe (clcpt . fst) classes'
+      superClasses = concatMap (map toClass . greaters) generalisations'
+        where
+          greaters :: AClassify -> [A_Concept]
+          greaters gen = case gen of
+            Isa {} -> [gengen gen]
+            IsE {} -> NE.toList $ genrhs gen
+          toClass :: A_Concept -> (Class, Maybe Name)
+          toClass cpt =
+            ( OOClass
+                { clName = name cpt,
+                  clcpt = Just (cpt, cptTType fSpec cpt),
+                  clAtts = []
+                },
+              Nothing
+            )
   relations :: FSpec -> Pattern -> Relations
   relations fSpec pat =
     ptdcs pat
@@ -232,6 +256,7 @@ instance CDAnalysable A_Context where
   cdAnalysis grouped env fSpec ctx =
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name ctx,
+        cdLabel = Nothing,
         classes = map handleGrouping classes',
         assocs = associations',
         geners = map OOGener (gens ctx),
@@ -264,6 +289,7 @@ tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram
     { cdName = prependToPlainName "technical_" $ name fSpec,
+      cdLabel = Nothing,
       classes = allClasses',
       assocs = allAssocs,
       geners = [],
