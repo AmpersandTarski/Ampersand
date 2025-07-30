@@ -198,7 +198,7 @@ instance CDAnalysable Pattern where
     OOclassdiagram
       { cdName = prependToPlainName "logical_" $ name pat,
         cdLabel = ptlbl pat,
-        classes = classes' <> superClasses,
+        classes = classes' <> superClasses <> subClasses,
         assocs = associations',
         geners = map OOGener generalisations',
         ooCpts = toList (concs pat)
@@ -212,20 +212,23 @@ instance CDAnalysable Pattern where
       shouldDraw gen = not . null $ (concs . genericAndSpecifics $ gen) `Set.intersection` classConcepts
       classConcepts = Set.fromList . map fst $ mapMaybe (clcpt . fst) classes'
       superClasses = concatMap (map toClass . greaters) generalisations'
-        where
-          greaters :: AClassify -> [A_Concept]
-          greaters gen = case gen of
-            Isa {} -> [gengen gen]
-            IsE {} -> NE.toList $ genrhs gen
-          toClass :: A_Concept -> (Class, Maybe Name)
-          toClass cpt =
-            ( OOClass
-                { clName = name cpt,
-                  clcpt = Just (cpt, cptTType fSpec cpt),
-                  clAtts = []
-                },
-              Nothing
-            )
+      subClasses = concatMap (map toClass . smallers) generalisations'
+
+      greaters :: AClassify -> [A_Concept]
+      greaters gen = case gen of
+        Isa {} -> [gengen gen]
+        IsE {} -> NE.toList $ genrhs gen
+      smallers :: AClassify -> [A_Concept]
+      smallers gen = [genspc gen]
+      toClass :: A_Concept -> (Class, Maybe Name)
+      toClass cpt =
+        ( OOClass
+            { clName = name cpt,
+              clcpt = Just (cpt, cptTType fSpec cpt),
+              clAtts = []
+            },
+          Nothing
+        )
   relations :: FSpec -> Pattern -> Relations
   relations fSpec pat =
     ptdcs pat
