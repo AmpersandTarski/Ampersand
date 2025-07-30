@@ -28,7 +28,7 @@ import qualified RIO.Set as Set
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
-    { cdName = prependToPlainName "classification_" $ name fSpec,
+    { cdName = prependToPlainName "classification diagram of " $ name fSpec,
       cdLabel = Nothing,
       classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
@@ -196,7 +196,7 @@ ooAttr r =
 instance CDAnalysable Pattern where
   cdAnalysis _ env fSpec pat =
     OOclassdiagram
-      { cdName = prependToPlainName "logical_" $ name pat,
+      { cdName = prependToPlainName "class diagram of " $ name pat,
         cdLabel = ptlbl pat,
         classes = classes' <> superClasses <> subClasses,
         assocs = associations',
@@ -258,7 +258,7 @@ instance CDAnalysable Pattern where
 instance CDAnalysable A_Context where
   cdAnalysis grouped env fSpec ctx =
     OOclassdiagram
-      { cdName = prependToPlainName "logical_" $ name ctx,
+      { cdName = prependToPlainName "class diagram of " $ name ctx,
         cdLabel = Nothing,
         classes = map handleGrouping classes',
         assocs = associations',
@@ -291,7 +291,7 @@ instance CDAnalysable A_Context where
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram
-    { cdName = prependToPlainName "technical_" $ name fSpec,
+    { cdName = prependToPlainName "technical class diagram of " $ name fSpec,
       cdLabel = Nothing,
       classes = allClasses',
       assocs = allAssocs,
