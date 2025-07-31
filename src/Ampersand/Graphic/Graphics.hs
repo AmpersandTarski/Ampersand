@@ -426,11 +426,11 @@ conceptual2Dot cs@(CStruct _ rels idgs) =
                     Mode IpSep,
                     OutputOrder EdgesFirst,
                     Overlap VoronoiOverlap,
-                    Sep (DVal 0.8),
-                    NodeSep 1.0,
+                    -- Sep (DVal 0.8),
+                    NodeSep 0.5,
                     Rank SameRank,
                     RankDir FromBottom,
-                    RankSep [2.5],
+                    RankSep [1.0],
                     ReMinCross True
                     {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
                           , Splines Curved
