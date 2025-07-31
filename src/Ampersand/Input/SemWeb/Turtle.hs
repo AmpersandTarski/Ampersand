@@ -205,7 +205,7 @@ graph2P_Context graph = do
                 dec_nm = nm,
                 dec_label = l,
                 dec_defaults = mempty,
-                dec_Mean = getMeanings graph relNode
+                dec_Mean = map PMeaning $ getMarkups relNode (map is [SKOS.definition, RDFS.comment]) graph
               }
             | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
               blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
@@ -296,64 +296,67 @@ mkConceptDef graph from cpt = do
   pure
     PConceptDef
       { cdname = nm,
-        cdmean = getMeanings graph cpt,
+        cdmean = meanings,
         cdlbl = l,
         cdfrom = from,
-        cddef2 = PCDDefLegacy def2 "",
+        cddef2 = PCDDefNew def,
         pos = someTurtle
       }
   where
+    def :: PMeaning
+    meanings :: [PMeaning]
+    (def, meanings) = case getMarkups cpt (map is [SKOS.definition, RDFS.comment]) graph of
+      [] ->
+        ( PMeaning
+            P_Markup
+              { mString = "GEEN DEFINITIE GEVONDEN",
+                mLang = Just defTurtleLang,
+                mFormat = Just defTurtleFormat
+              },
+          []
+        )
+      (h : tl) -> (PMeaning h, PMeaning <$> tl)
+
     getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
     getNameAndLabel lblNode =
-      (\m -> trace ("literalTextOf: " <> tshow lblNode <> "\n   " <> aap m) m)
-        $ case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
-          Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
-          Just x -> pure x
-    def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
-    aap :: (Show a) => Guarded a -> Text
-    aap gA = case gA of
-      Checked a _ -> "getNameAndLabel: " <> (tshow a)
-      Errors msg -> tshow msg
+      case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
+        Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
+        Just x -> pure x
 
-getMeanings :: Graph -> Node -> [PMeaning]
-getMeanings graph lblNode =
-  (\m -> trace ("getMeanings:\n  " <> (T.intercalate "\n   " . map tshow $ m)) m)
-    $ PMeaning
-    <$> [ P_Markup
-            { mString = txt,
-              mLang = lang,
-              mFormat = format
-            }
-          | (mtxt, lang, format) <-
-              map (literalTextOf . objectOf)
-                $ select graph (is lblNode) (is RDFS.comment) Nothing,
-            txt <- maybeToList mtxt
-        ]
+getMarkups :: Node -> [NodeSelector] -> Graph -> [P_Markup]
+getMarkups thing sel graph =
+  [ P_Markup
+      { mString = txt,
+        mLang = lang,
+        mFormat = format
+      }
+    | (mtxt, lang, format) <-
+        map (literalTextOf . objectOf)
+          $ concat [select graph (is thing) selectr Nothing | selectr <- sel],
+      txt <- maybeToList mtxt
+  ]
 
 literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
-literalTextOf n =
-  (\m -> trace ("literalTextOf: " <> tshow n <> "\n   " <> tshow m) m)
-    $ case n of
-      LNode (PlainL txt) -> (Just txt, Just defTurtleLang, Just defTurtleFormat)
-      LNode (PlainLL txt format) -> result txt format
-      LNode (TypedL txt format) -> result txt format
-      UNode txt -> (Just txt, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
-      BNodeGen _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
-      BNode _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+literalTextOf n = case n of
+  LNode (PlainL txt) -> (Just txt, Just defTurtleLang, Just defTurtleFormat)
+  LNode (PlainLL txt format) -> result txt format
+  LNode (TypedL txt format) -> result txt format
+  UNode txt -> (Just txt, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNodeGen _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNode _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
   where
     result txt format =
-      (\(a, b, c) -> trace ("result: " <> tshow (b, c)) (a, b, c))
-        ( Just txt,
-          case T.toLower format of
-            "nl" -> Just Dutch
-            "en" -> Just English
-            _ -> Just defTurtleLang,
-          case T.toLower format of
-            "rest" -> Just ReST
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#html" -> Just HTML
-            "latex" -> Just LaTeX
-            _ -> Just defTurtleFormat
-        )
+      ( Just txt,
+        case T.toLower format of
+          "nl" -> Just Dutch
+          "en" -> Just English
+          _ -> Just defTurtleLang,
+        case T.toLower format of
+          "rest" -> Just ReST
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#html" -> Just HTML
+          "latex" -> Just LaTeX
+          _ -> Just defTurtleFormat
+      )
 
 defTurtleLang :: Lang
 defTurtleLang = Dutch
