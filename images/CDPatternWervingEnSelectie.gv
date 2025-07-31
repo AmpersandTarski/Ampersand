@@ -1,0 +1,63 @@
+digraph {
+	graph [bgcolor=white,
+		landscape=false,
+		mode=ipsep,
+		nodesep=0.5,
+		outputorder=edgesfirst,
+		overlap=voronoi,
+		rank=same,
+		rankdir=BT,
+		ranksep=1,
+		remincross=true
+	];
+	node [bgcolor=lightgray,
+		label="\N",
+		shape=box,
+		style="rounded,filled,bold"
+	];
+	edge [color=black,
+		len=4
+	];
+	4109969044283413085	[label="Geplande inzet"];
+	4109969044283413086	[label="Kandidaat (Selectie)"];
+	4109969044283413083	[label=Persoon];
+	4109969044283413086 -> 4109969044283413083	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413087	[label=Medewerker];
+	4109969044283413080	[label="Medewerker (selectie)"];
+	4109969044283413080 -> 4109969044283413087	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413081	[label=Opdracht];
+	4109969044283413082	[label=Opdrachtgever];
+	4109969044283413076	[label=Planbundel];
+	4109969044283413077	[label=Planbundelaanvraag];
+	238150469737362636	[label=Plantaak];
+	238150469737362636 -> 4109969044283413085	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362635	[label=Plantaaktype];
+	238150469737362634	[label=Ruimtereservering];
+	238150469737362633	[label=Selectiebundel];
+	238150469737362640	[label=SelectiebundelType];
+	238150469737362639	[label=Selectielocatie];
+	238150469737362638	[label=Selectieonderdeel];
+	238150469737362637	[label=SelectieonderdeelType];
+	238150469737362628	[label=Selectieopdracht];
+	238150469737362628 -> 4109969044283413081	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362627	[label=Selectieruimte];
+	238147171202478035	[label=Selectietest];
+	238147171202478036	[label=SelectietestType];
+	238147171202478033	[label=Selectietraject];
+	238147171202478034	[label=Sollicitant];
+	238147171202478034 -> 4109969044283413083	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238147171202478039	[label=Sollicitatie];
+	238147171202478040	[label=Test];
+	238147171202478037	[label=Testresultaat];
+	238147171202478038	[label=Vacature];
+}

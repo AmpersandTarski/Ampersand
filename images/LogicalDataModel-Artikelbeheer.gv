@@ -1,0 +1,10 @@
+digraph "class diagram of Artikelbeheer" {
+	graph [bgcolor=white,
+		label="class diagram of Artikelbeheer",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

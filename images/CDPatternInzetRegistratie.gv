@@ -1,0 +1,39 @@
+digraph {
+	graph [bgcolor=white,
+		landscape=false,
+		mode=ipsep,
+		nodesep=0.5,
+		outputorder=edgesfirst,
+		overlap=voronoi,
+		rank=same,
+		rankdir=BT,
+		ranksep=1,
+		remincross=true
+	];
+	node [bgcolor=lightgray,
+		label="\N",
+		shape=box,
+		style="rounded,filled,bold"
+	];
+	edge [color=black,
+		len=4
+	];
+	4109969044283413085	[label="Accorderen van inzet"];
+	4109969044283413086	[label="Fiatteren van inzet"];
+	4109969044283413087	[label="Geaccordeerde inzet (registratie)"];
+	4109969044283413082	[label="Inzet (Registratie)"];
+	4109969044283413087 -> 4109969044283413082	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413080	[label="Gefiatteerde inzet (registratie)"];
+	4109969044283413080 -> 4109969044283413082	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413081	[label="Geplande inzet"];
+	4109969044283413083	[label=Planning];
+	4109969044283413076	[label="Verlonen van inzet"];
+	4109969044283413077	[label="Verloonde inzet (registratie)"];
+	4109969044283413077 -> 4109969044283413082	[arrowhead=onormal,
+		color=red,
+		len=2];
+}

@@ -1,0 +1,10 @@
+digraph "class diagram of Debiteurenbeheer" {
+	graph [bgcolor=white,
+		label="class diagram of Debiteurenbeheer",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

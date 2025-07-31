@@ -1,0 +1,10 @@
+digraph "class diagram of Activabeheer" {
+	graph [bgcolor=white,
+		label="class diagram of Activabeheer",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

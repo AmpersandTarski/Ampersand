@@ -1,0 +1,10 @@
+digraph "class diagram of FormerenEnBezetten" {
+	graph [bgcolor=white,
+		label="Formeren en bezetten",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

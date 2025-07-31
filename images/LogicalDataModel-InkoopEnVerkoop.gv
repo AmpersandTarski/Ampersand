@@ -1,0 +1,10 @@
+digraph "class diagram of InkoopEnVerkoop" {
+	graph [bgcolor=white,
+		label="Inkoop en Verkoop",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

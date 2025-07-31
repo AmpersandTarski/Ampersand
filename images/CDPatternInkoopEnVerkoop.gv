@@ -1,0 +1,55 @@
+digraph {
+	graph [bgcolor=white,
+		landscape=false,
+		mode=ipsep,
+		nodesep=0.5,
+		outputorder=edgesfirst,
+		overlap=voronoi,
+		rank=same,
+		rankdir=BT,
+		ranksep=1,
+		remincross=true
+	];
+	node [bgcolor=lightgray,
+		label="\N",
+		shape=box,
+		style="rounded,filled,bold"
+	];
+	edge [color=black,
+		len=4
+	];
+	4109969044283413085	[label=Bestelling];
+	4109969044283413086	[label=Betaalstatus];
+	4109969044283413087	[label=Betalingsvoorwaarden];
+	4109969044283413080	[label=Contract];
+	4109969044283413081	[label=Crediteur];
+	4109969044283413082	[label=Crediteurenbeheer];
+	4109969044283413083	[label=Crediteurengroep];
+	4109969044283413076	[label=Debiteur];
+	4109969044283413077	[label=Document];
+	238150469737362636	[label=Factuur];
+	238150469737362635	[label="Financieel Document"];
+	238150469737362636 -> 238150469737362635	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362635 -> 4109969044283413077	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362634	[label=Kredietnotitie];
+	238150469737362633	[label=Land];
+	238150469737362637	[label=Organisatie];
+	238150469737362633 -> 238150469737362637	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362640	[label=Leverancier];
+	238150469737362639	[label=Offerte];
+	238150469737362639 -> 4109969044283413077	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362638	[label=Order];
+	238150469737362628	[label=Valuta];
+	238150469737362627	[label=Verkoopfactuur];
+	238150469737362627 -> 238150469737362636	[arrowhead=onormal,
+		color=red,
+		len=2];
+}

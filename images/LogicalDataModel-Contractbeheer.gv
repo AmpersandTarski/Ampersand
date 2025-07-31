@@ -1,0 +1,10 @@
+digraph "class diagram of Contractbeheer" {
+	graph [bgcolor=white,
+		label="class diagram of Contractbeheer",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

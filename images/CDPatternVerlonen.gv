@@ -1,0 +1,61 @@
+digraph {
+	graph [bgcolor=white,
+		landscape=false,
+		mode=ipsep,
+		nodesep=0.5,
+		outputorder=edgesfirst,
+		overlap=voronoi,
+		rank=same,
+		rankdir=BT,
+		ranksep=1,
+		remincross=true
+	];
+	node [bgcolor=lightgray,
+		label="\N",
+		shape=box,
+		style="rounded,filled,bold"
+	];
+	edge [color=black,
+		len=4
+	];
+	4109969044283413085	[label=Arbeidsrelatie];
+	4109969044283413086	[label=Basissalaris];
+	4109969044283413080	[label="Compensatie in geld"];
+	4109969044283413086 -> 4109969044283413080	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413087	[label=Compensatie];
+	4109969044283413080 -> 4109969044283413087	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413081	[label="Compensatie in tijd"];
+	4109969044283413081 -> 4109969044283413087	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413082	[label=Eindejaarsuitkering];
+	4109969044283413082 -> 4109969044283413080	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413083	[label="Gefiatteerde inzet (registratie)"];
+	4109969044283413076	[label="Inzet (Registratie)"];
+	4109969044283413083 -> 4109969044283413076	[arrowhead=onormal,
+		color=red,
+		len=2];
+	4109969044283413077	[label=Kengetal];
+	238150469737362636	[label="Kengetal waarde"];
+	238150469737362635	[label=Periode];
+	238150469737362634	[label=Politiearbeidsrelatie];
+	238150469737362634 -> 4109969044283413085	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362633	[label=Regeling];
+	238150469737362640	[label=Vakantiegeld];
+	238150469737362640 -> 4109969044283413080	[arrowhead=onormal,
+		color=red,
+		len=2];
+	238150469737362639	[label="Verlonen van inzet"];
+	238150469737362638	[label="Verloonde inzet (registratie)"];
+	238150469737362638 -> 4109969044283413076	[arrowhead=onormal,
+		color=red,
+		len=2];
+}

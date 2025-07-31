@@ -1,0 +1,10 @@
+digraph "class diagram of Betalingenbeheer" {
+	graph [bgcolor=white,
+		label="class diagram of Betalingenbeheer",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

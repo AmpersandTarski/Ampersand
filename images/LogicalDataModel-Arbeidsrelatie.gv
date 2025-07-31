@@ -1,0 +1,10 @@
+digraph "class diagram of Arbeidsrelatie" {
+	graph [bgcolor=white,
+		label="class diagram of Arbeidsrelatie",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}

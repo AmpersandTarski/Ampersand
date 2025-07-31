@@ -1,0 +1,10 @@
+digraph "class diagram of WervingEnSelectie" {
+	graph [bgcolor=white,
+		label="Werving en selectie",
+		rankdir=LR
+	];
+	node [label="\N"];
+	edge [fontsize=11,
+		minlen=4
+	];
+}
