@@ -5,6 +5,7 @@
 
 ## v5.5.1
 - minor enhancements on generated documentation
+
 ## v5.5.0
 - [Issue #1589](https://github.com/AmpersandTarski/Ampersand/issues/1589) Disalow underscores in names (this could break your script)
 - Several minor enhancements in the Shared Language chapter of generated documentation

@@ -41,7 +41,7 @@ parseTurtle raw = do
       defMappings = Nothing
       parser = TurtleParser defBaseUrl defMappings
   case parseString parser raw of
-    Left err -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
+    Left msg -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow msg)
     Right graph -> pure graph
 
 writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> Graph -> RIO env ()
@@ -142,9 +142,9 @@ graph2P_Context graph = do
         ctx_pats = patDefs,
         ctx_nm = ontologyName,
         ctx_metas = mempty,
-        ctx_markup = Just Markdown,
+        ctx_markup = Just defTurtleFormat,
         ctx_lbl = Nothing,
-        ctx_lang = Nothing,
+        ctx_lang = Just defTurtleLang,
         ctx_ks = mempty,
         ctx_ifcs = mempty,
         ctx_gs = isas,
@@ -304,14 +304,21 @@ mkConceptDef graph from cpt = do
       }
   where
     getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
-    getNameAndLabel lblNode = case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
-      Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
-      Just x -> pure x
+    getNameAndLabel lblNode =
+      (\m -> trace ("literalTextOf: " <> tshow lblNode <> "\n   " <> aap m) m)
+        $ case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
+          Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
+          Just x -> pure x
     def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
+    aap :: (Show a) => Guarded a -> Text
+    aap gA = case gA of
+      Checked a _ -> "getNameAndLabel: " <> (tshow a)
+      Errors msg -> tshow msg
 
 getMeanings :: Graph -> Node -> [PMeaning]
 getMeanings graph lblNode =
-  PMeaning
+  (\m -> trace ("getMeanings:\n  " <> (T.intercalate "\n   " . map tshow $ m)) m)
+    $ PMeaning
     <$> [ P_Markup
             { mString = txt,
               mLang = lang,
@@ -324,20 +331,35 @@ getMeanings graph lblNode =
         ]
 
 literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
-literalTextOf n = case n of
-  LNode (PlainL txt) -> (Just txt, Nothing, Nothing)
-  LNode (PlainLL txt format) ->
-    ( Just txt,
-      Nothing,
-      case T.toLower format of
-        "rest" -> Just ReST
-        "html" -> Just HTML
-        "latex" -> Just LaTeX
-        _ -> Just Markdown
-    )
-  LNode (TypedL txt _) -> (Just txt, Nothing, Just Markdown)
-  UNode txt -> (Just txt, Nothing, Nothing) -- TODO: Warning that this is not a literal
-  _ -> (Nothing, Nothing, Nothing)
+literalTextOf n =
+  (\m -> trace ("literalTextOf: " <> tshow n <> "\n   " <> tshow m) m)
+    $ case n of
+      LNode (PlainL txt) -> (Just txt, Just defTurtleLang, Just defTurtleFormat)
+      LNode (PlainLL txt format) -> result txt format
+      LNode (TypedL txt format) -> result txt format
+      UNode txt -> (Just txt, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+      BNodeGen _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+      BNode _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  where
+    result txt format =
+      (\(a, b, c) -> trace ("result: " <> tshow (b, c)) (a, b, c))
+        ( Just txt,
+          case T.toLower format of
+            "nl" -> Just Dutch
+            "en" -> Just English
+            _ -> Just defTurtleLang,
+          case T.toLower format of
+            "rest" -> Just ReST
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#html" -> Just HTML
+            "latex" -> Just LaTeX
+            _ -> Just defTurtleFormat
+        )
+
+defTurtleLang :: Lang
+defTurtleLang = Dutch
+
+defTurtleFormat :: PandocFormat
+defTurtleFormat = Markdown
 
 labelsOf :: Graph -> Node -> [Text]
 labelsOf graph n =
