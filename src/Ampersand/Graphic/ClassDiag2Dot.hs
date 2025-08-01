@@ -25,13 +25,14 @@ classdiagram2dot env cd =
   DotGraph
     { strictGraph = False,
       directedGraph = True,
-      graphID = Nothing,
+      graphID = Just . Str . TL.fromStrict . fullName $ cd,
       graphStatements =
         DotStmts
           { attrStmts =
               GraphAttrs
                 [ RankDir FromLeft,
-                  bgColor White
+                  bgColor White,
+                  Label . StrLabel . TL.fromStrict . label $ cd
                 ]
                 :
                 --    ++ [NodeAttrs  [ ]]
@@ -85,7 +86,6 @@ classdiagram2dot env cd =
         { nodeID = toMyDotNode cl,
           nodeAttributes =
             [ Shape PlainText,
-              GVcomp.Color [WC (X11Color Purple) Nothing],
               Label (HtmlLabel (Html.Table htmlTable))
             ]
         }
@@ -95,7 +95,6 @@ classdiagram2dot env cd =
             { Html.tableFontAttrs = Nothing,
               Html.tableAttrs =
                 [ Html.BGColor (X11Color White),
-                  Html.Color (X11Color Black), -- the color used for all cellborders
                   Html.Border 0, -- 0 = no border
                   Html.CellBorder 1,
                   Html.CellSpacing 0

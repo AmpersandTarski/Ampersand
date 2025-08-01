@@ -41,7 +41,7 @@ parseTurtle raw = do
       defMappings = Nothing
       parser = TurtleParser defBaseUrl defMappings
   case parseString parser raw of
-    Left err -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow err)
+    Left msg -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow msg)
     Right graph -> pure graph
 
 writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> Graph -> RIO env ()
@@ -142,9 +142,9 @@ graph2P_Context graph = do
         ctx_pats = patDefs,
         ctx_nm = ontologyName,
         ctx_metas = mempty,
-        ctx_markup = Just Markdown,
+        ctx_markup = Just defTurtleFormat,
         ctx_lbl = Nothing,
-        ctx_lang = Nothing,
+        ctx_lang = Just defTurtleLang,
         ctx_ks = mempty,
         ctx_ifcs = mempty,
         ctx_gs = isas,
@@ -193,38 +193,68 @@ graph2P_Context graph = do
                 pos = someTurtle
               }
     relationDefs :: [P_Relation]
-    relationDefs = relationsBasedOnRestrictions <> relationsWithoutRestrictions
+    relationDefs =
+      concat
+        . mapMaybe (buildRelation . subjectOf)
+        $ (select graph Nothing (is RDF._type) (is OWL._ObjectProperty))
+        <> (select graph Nothing (is RDF._type) (is OWL._DatatypeProperty))
       where
-        relationsBasedOnRestrictions :: [P_Relation]
-        relationsBasedOnRestrictions =
-          [ P_Relation
-              { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-                dec_prps = Set.fromList (getProps relNode blank),
-                dec_pragma = Nothing,
-                dec_pos = someTurtle,
-                dec_nm = nm,
-                dec_label = l,
-                dec_defaults = mempty,
-                dec_Mean = getMeanings graph relNode
-              }
-            | relNode <- map subjectOf $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
-              blank <- map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode),
-              tgtNode <-
-                map objectOf
-                  $ select graph (is blank) (is OWL.onClass) Nothing
-                  <> select graph (is blank) (is OWL.allValuesFrom) Nothing,
-              srcNode <- map subjectOf $ select graph Nothing (is RDFS.subClassOf) (is blank),
-              relLbl <- labelsOf graph relNode,
-              let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
-              srcLbl <- labelsOf graph srcNode,
-              let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-              tgtLbl <- labelsOf graph tgtNode,
-              let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
-          ]
+        buildRelation :: Node -> Maybe [P_Relation]
+        buildRelation relNode = do
+          (nm, l) <- nameAndLabelOfUri RelationName relNode
+          return
+            [ P_Relation
+                { dec_sign = P_Sign (PCpt src) (PCpt tgt),
+                  dec_prps = getProps restrictionsBlanks,
+                  dec_pragma = Nothing,
+                  dec_pos = someTurtle,
+                  dec_nm = nm,
+                  dec_label = l,
+                  dec_defaults = mempty,
+                  dec_Mean = map PMeaning $ getMarkups relNode (map is [SKOS.definition, RDFS.comment]) graph
+                }
+              | tgtNode <- L.nub . concatMap rangeNodesOfRestriction $ restrictionsBlanks,
+                srcNode <- L.nub . concatMap domainNodesOfRestriction $ restrictionsBlanks,
+                let (src, _) = case nameAndLabelOfUri ConceptName srcNode of
+                      Just x -> x
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow srcNode,
+                let (tgt, _) = case nameAndLabelOfUri ConceptName tgtNode of
+                      Just x -> x
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow tgtNode
+            ]
           where
-            getProps :: Node -> Node -> [PProp]
-            getProps relNode restrictionNode =
-              concat
+            nameAndLabelOfUri :: NameType -> Node -> Maybe (Name, Maybe Label)
+            nameAndLabelOfUri typ uri = do
+              lblUri <- case objectOf <$> select graph (is uri) (is RDFS.label) Nothing of
+                [] -> Nothing
+                (h : _) -> Just h
+              (nm, lbl) <- fmap (suggestName typ . toText1Unsafe) . fst3 . literalTextOf $ lblUri
+              pure (nm, lbl)
+            restrictionsBlanks :: [Node]
+            restrictionsBlanks =
+              map subjectOf
+                $ select graph Nothing (is OWL.onProperty) (is relNode)
+                <> select graph Nothing (is OWL.onClass) (is relNode)
+            rangeNodesOfRestriction :: Node -> [Node]
+            rangeNodesOfRestriction blank =
+              map objectOf
+                $ select graph (is blank) (is OWL.allValuesFrom) Nothing
+                <> select graph (is blank) (is OWL.onClass) Nothing
+                <> select graph (is blank) (is RDFS.range) Nothing
+            domainNodesOfRestriction :: Node -> [Node]
+            domainNodesOfRestriction blank =
+              map objectOf (select graph (is blank) (is RDFS.domain) Nothing)
+                <> map subjectOf (select graph Nothing (is RDFS.subClassOf) (is blank))
+            getProps :: [Node] -> Set PProp
+            getProps blanks =
+              Set.unions
+                [ getProps' restrictionNode
+                  | restrictionNode <- blanks
+                ]
+            getProps' :: Node -> Set PProp
+            getProps' restrictionNode =
+              Set.fromList
+                . concat
                 $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) (is OWL.qualifiedCardinality) Nothing]
                 <> [[P_Uni] | _ <- select graph (is restrictionNode) (is OWL.maxCardinality) Nothing]
                 <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) (is OWL.minCardinality) Nothing]
@@ -243,39 +273,6 @@ graph2P_Context graph = do
                         cardinalityNodes =
                           [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
                     _ -> []
-
-        relationsWithoutRestrictions :: [P_Relation]
-        relationsWithoutRestrictions =
-          [ P_Relation
-              { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-                dec_prps = mempty,
-                dec_pragma = Nothing,
-                dec_pos = someTurtle,
-                dec_nm = nm,
-                dec_label = l,
-                dec_defaults = mempty,
-                dec_Mean = mempty
-              }
-            | relNode <-
-                map subjectOf
-                  $ select graph Nothing (is RDF._type) (is OWL._ObjectProperty),
-              srcNode <-
-                map objectOf
-                  $ select graph (is relNode) (is RDFS.domain) Nothing,
-              tgtNode <-
-                map objectOf
-                  $ select graph (is relNode) (is RDFS.range) Nothing,
-              relLbl <- labelsOf graph relNode,
-              let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
-              let restrictions =
-                    map subjectOf
-                      $ select graph Nothing (is OWL.onProperty) (is relNode),
-              null restrictions,
-              srcLbl <- labelsOf graph srcNode,
-              let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-              tgtLbl <- labelsOf graph tgtNode,
-              let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
-          ]
 
 allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
@@ -296,48 +293,73 @@ mkConceptDef graph from cpt = do
   pure
     PConceptDef
       { cdname = nm,
-        cdmean = getMeanings graph cpt,
+        cdmean = meanings,
         cdlbl = l,
         cdfrom = from,
-        cddef2 = PCDDefLegacy def2 "",
+        cddef2 = PCDDefNew def,
         pos = someTurtle
       }
   where
-    getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
-    getNameAndLabel lblNode = case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
-      Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
-      Just x -> pure x
-    def2 = T.intercalate "\n" . mapMaybe (fst3 . literalTextOf . objectOf) $ select graph (is cpt) (is SKOS.definition) Nothing
+    def :: PMeaning
+    meanings :: [PMeaning]
+    (def, meanings) = case getMarkups cpt (map is [SKOS.definition, RDFS.comment]) graph of
+      [] ->
+        ( PMeaning
+            P_Markup
+              { mString = "GEEN DEFINITIE GEVONDEN",
+                mLang = Just defTurtleLang,
+                mFormat = Just defTurtleFormat
+              },
+          []
+        )
+      (h : tl) -> (PMeaning h, PMeaning <$> tl)
 
-getMeanings :: Graph -> Node -> [PMeaning]
-getMeanings graph lblNode =
-  PMeaning
-    <$> [ P_Markup
-            { mString = txt,
-              mLang = lang,
-              mFormat = format
-            }
-          | (mtxt, lang, format) <-
-              map (literalTextOf . objectOf)
-                $ select graph (is lblNode) (is RDFS.comment) Nothing,
-            txt <- maybeToList mtxt
-        ]
+    getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
+    getNameAndLabel lblNode =
+      case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
+        Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
+        Just x -> pure x
+
+getMarkups :: Node -> [NodeSelector] -> Graph -> [P_Markup]
+getMarkups thing sel graph =
+  [ P_Markup
+      { mString = txt,
+        mLang = lang,
+        mFormat = format
+      }
+    | (mtxt, lang, format) <-
+        map (literalTextOf . objectOf)
+          $ concat [select graph (is thing) selectr Nothing | selectr <- sel],
+      txt <- maybeToList mtxt
+  ]
 
 literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
-literalTextOf n = case n of
-  LNode (PlainL txt) -> (Just txt, Nothing, Nothing)
-  LNode (PlainLL txt format) ->
-    ( Just txt,
-      Nothing,
-      case T.toLower format of
-        "rest" -> Just ReST
-        "html" -> Just HTML
-        "latex" -> Just LaTeX
-        _ -> Just Markdown
-    )
-  LNode (TypedL txt _) -> (Just txt, Nothing, Just Markdown)
-  UNode txt -> (Just txt, Nothing, Nothing) -- TODO: Warning that this is not a literal
-  _ -> (Nothing, Nothing, Nothing)
+literalTextOf lblUri = case lblUri of
+  LNode (PlainL txt) -> (Just txt, Just defTurtleLang, Just defTurtleFormat)
+  LNode (PlainLL txt format) -> result txt format
+  LNode (TypedL txt format) -> result txt format
+  UNode txt -> (Just txt, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNodeGen _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNode _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  where
+    result txt format =
+      ( Just txt,
+        case T.toLower format of
+          "nl" -> Just Dutch
+          "en" -> Just English
+          _ -> Just defTurtleLang,
+        case T.toLower format of
+          "rest" -> Just ReST
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#html" -> Just HTML
+          "latex" -> Just LaTeX
+          _ -> Just defTurtleFormat
+      )
+
+defTurtleLang :: Lang
+defTurtleLang = Dutch
+
+defTurtleFormat :: PandocFormat
+defTurtleFormat = Markdown
 
 labelsOf :: Graph -> Node -> [Text]
 labelsOf graph n =

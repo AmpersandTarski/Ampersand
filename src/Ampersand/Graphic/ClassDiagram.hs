@@ -25,6 +25,7 @@ import qualified RIO.Text as T
 
 data ClassDiag = OOclassdiagram
   { cdName :: !Name,
+    cdLabel :: !(Maybe Label),
     -- | list of classes with the optional name of a subgraph in which they belong
     classes :: ![(Class, Maybe Name)],
     assocs :: ![Association], --
@@ -35,6 +36,9 @@ data ClassDiag = OOclassdiagram
 
 instance Named ClassDiag where
   name = cdName
+
+instance Labeled ClassDiag where
+  mLabel = cdLabel
 
 data Class = OOClass
   { -- | name of the class

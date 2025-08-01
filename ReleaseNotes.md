@@ -1,7 +1,10 @@
 ﻿# Release notes of Ampersand
 
-## v5.5.1
+## v5.5.2
 - [Issue #1593](https://github.com/AmpersandTarski/Ampersand/issues/1593) Draw extra relations in conceptual diagram of PATTERN
+
+## v5.5.1
+- minor enhancements on generated documentation
 
 ## v5.5.0
 - [Issue #1589](https://github.com/AmpersandTarski/Ampersand/issues/1589) Disalow underscores in names (this could break your script)
