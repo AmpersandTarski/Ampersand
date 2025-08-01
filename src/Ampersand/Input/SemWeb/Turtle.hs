@@ -201,7 +201,7 @@ graph2P_Context graph = do
       where
         buildRelation :: Node -> Maybe [P_Relation]
         buildRelation relNode = do
-          (nm, l) <- nameAndLabelOfUri relNode
+          (nm, l) <- nameAndLabelOfUri RelationName relNode
           return
             [ P_Relation
                 { dec_sign = P_Sign (PCpt src) (PCpt tgt),
@@ -215,23 +215,26 @@ graph2P_Context graph = do
                 }
               | tgtNode <- L.nub . concatMap rangeNodesOfRestriction $ restrictionsBlanks,
                 srcNode <- L.nub . concatMap domainNodesOfRestriction $ restrictionsBlanks,
-                let (src, _) = case nameAndLabelOfUri srcNode of
+                let (src, _) = case nameAndLabelOfUri ConceptName srcNode of
                       Just x -> x
-                      Nothing -> suggestName ContextName . toText1Unsafe $ tshow srcNode,
-                let (tgt, _) = case nameAndLabelOfUri tgtNode of
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow srcNode,
+                let (tgt, _) = case nameAndLabelOfUri ConceptName tgtNode of
                       Just x -> x
-                      Nothing -> suggestName ContextName . toText1Unsafe $ tshow tgtNode
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow tgtNode
             ]
           where
-            nameAndLabelOfUri :: Node -> Maybe (Name, Maybe Label)
-            nameAndLabelOfUri uri = do
+            nameAndLabelOfUri :: NameType -> Node -> Maybe (Name, Maybe Label)
+            nameAndLabelOfUri typ uri = do
               lblUri <- case objectOf <$> select graph (is uri) (is RDFS.label) Nothing of
                 [] -> Nothing
                 (h : _) -> Just h
-              (nm, lbl) <- fmap (suggestName RelationName . toText1Unsafe) . fst3 . literalTextOf $ lblUri
+              (nm, lbl) <- fmap (suggestName typ . toText1Unsafe) . fst3 . literalTextOf $ lblUri
               pure (nm, lbl)
             restrictionsBlanks :: [Node]
-            restrictionsBlanks = map subjectOf $ select graph Nothing (is OWL.onProperty) (is relNode)
+            restrictionsBlanks =
+              map subjectOf
+                $ select graph Nothing (is OWL.onProperty) (is relNode)
+                <> select graph Nothing (is OWL.onClass) (is relNode)
             rangeNodesOfRestriction :: Node -> [Node]
             rangeNodesOfRestriction blank =
               map objectOf
