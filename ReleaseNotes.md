@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- [Issue #1601](https://github.com/AmpersandTarski/Ampersand/issues/1601) Automatic inclusion of relations in patterns when reading .ttl file
+
 ## v5.5.2
 - [Issue #1593](https://github.com/AmpersandTarski/Ampersand/issues/1593) Draw extra relations in conceptual diagram of PATTERN
 

@@ -130,6 +130,10 @@ graph2P_Context graph = do
             let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
         ]
   patDefs <- patternDefs
+  let relationDefsInAPattern = concatMap pt_dcs patDefs
+  let relationDefsNotInPattern =
+        [ rd | rd <- relationDefs, rd `notElem` relationDefsInAPattern
+        ]
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -149,7 +153,7 @@ graph2P_Context graph = do
         ctx_ifcs = mempty,
         ctx_gs = isas,
         ctx_enfs = mempty,
-        ctx_ds = relationDefs,
+        ctx_ds = relationDefsNotInPattern,
         ctx_cs = cptDefs
       }
   where
@@ -173,7 +177,13 @@ graph2P_Context graph = do
                   thisPattern :: Node -> Bool
                   thisPattern n = not . null $ select graph (is n) (is SKOS.inScheme) (is patNode)
           cptDefs <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
-
+          let cptNames = map name cptDefs
+              isForPattern :: P_Relation -> Bool
+              isForPattern r =
+                name (pSrc . dec_sign $ r)
+                  `elem` cptNames
+                  && name (pTgt . dec_sign $ r)
+                  `elem` cptNames
           pure
             P_Pat
               { pt_xps = mempty,
@@ -186,12 +196,13 @@ graph2P_Context graph = do
                 pt_gns = mempty,
                 pt_enfs = mempty,
                 pt_end = someTurtle,
-                pt_dcs = mempty,
+                pt_dcs = filter isForPattern relationDefs,
                 pt_cds = cptDefs,
                 pt_Reprs = mempty,
                 pt_RRuls = mempty,
                 pos = someTurtle
               }
+
     relationDefs :: [P_Relation]
     relationDefs =
       concat
