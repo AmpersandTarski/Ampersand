@@ -12,9 +12,9 @@ where
 import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import Text.Pandoc (def, handleError, runIO, writeHtml5String)
 import Text.Pandoc.Builder
 

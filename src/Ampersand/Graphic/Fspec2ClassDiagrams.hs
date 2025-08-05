@@ -13,20 +13,23 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
+import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Misc.HasClasses
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Text as T
+import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
-    { cdName = prependToPlainName "classification_" $ name fSpec,
+    { cdName = prependToPlainName "classification diagram of " $ name fSpec,
+      cdLabel = Nothing,
       classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
       geners = map OOGener . vgens $ fSpec,
@@ -48,19 +51,15 @@ clAnalysis fSpec =
         { attNm = sqlAttToName att,
           attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
-          attProps = [Uni | isUni (attExpr att)] <> [Tot | isTot (attExpr att)]
+          attProps = Set.toList . properties $ attExpr att
         }
 
 propTypeName :: Name
-propTypeName = withNameSpace nameSpaceFormalAmpersand . mkName PropertyName $ toNamePart' (toText1Unsafe "Prop")
-
-toNamePart' :: Text1 -> NonEmpty NamePart
-toNamePart' x = toNamePart'' <$> splitOnDots x
-
-toNamePart'' :: Text1 -> NamePart
-toNamePart'' x = case toNamePart1 x of
-  Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-  Just np -> np
+propTypeName =
+  withNameSpace nameSpaceFormalAmpersand
+    $ case try2Name PropertyName "Prop" of
+      Left err -> fatal $ "Not a valid PropertyName: `" <> err <> "`"
+      Right (nm, _) -> nm
 
 class (ConceptStructure a, Language a) => CDAnalysable a where
   {-# MINIMAL cdAnalysis, relations, classCandidates #-}
@@ -74,11 +73,11 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
 
   -- | This function returns the relations of the given a.
   -- It is used to filter the relations that are shown in the class diagram.
-  relations :: a -> Relations
+  relations :: FSpec -> a -> Relations
 
   -- | This function returns the concepts that could become a class, together with an identifying name
   --   for the group in which they may be grouped.
-  classCandidates :: a -> [(A_Concept, Maybe Name)]
+  classCandidates :: a -> Map A_Concept (Maybe Name)
 
   classesAndAssociations :: (HasDocumentOpts env) => env -> FSpec -> a -> ([(Class, Maybe Name)], [Association])
   -- ^ This function returns all the classes in the given datamodel that should be drawn.
@@ -86,7 +85,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
   -- The idea is as follows:
   --   - Concepts with an univalent attribute or with a generalisation relation must be drawn as separate class.
   --   - Relations that are UNI and/or INJ are drawn as attributes of the class they belong to. Additionally,
-  --       If the relation is UNI and/or INJ, an edge is drawn between source and target.
+  --       If the relation is UNI and/or INJ, but not Asy and Sym, an edge is drawn between source and target.
   --   - Relations that are UNI nor INJ are drawn based on the fact if source and or target have attributes or generalisation, as follows:
   --     - If both the source and the target are, the relation is drawn as an association.
   --     - If only the source is, the relation is drawn as a multi-attribute of the source.
@@ -105,7 +104,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
     where
       mustBeDrawnAsClass = L.nub $ conceptsWithUniOrGens <> standalonConcepts
       uniOrInjs, nonUniOrInjs :: [Relation]
-      (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations a)
+      (uniOrInjs, nonUniOrInjs) = L.partition criterium (toList $ relations fSpec a)
         where
           criterium d = isUni d || isInj d
       uniAttributes :: [Expression]
@@ -117,11 +116,12 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
         [ rel
           | rel <- uniOrInjs,
             source rel `elem` map fst mustBeDrawnAsClass,
-            target rel `elem` map fst mustBeDrawnAsClass
+            target rel `elem` map fst mustBeDrawnAsClass,
+            not (isProp rel)
         ]
       conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
       (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
-        L.partition (isConceptWithUniOrGen . fst) (toList $ classCandidates a)
+        L.partition (isConceptWithUniOrGen . fst) (Map.toList $ classCandidates a)
         where
           isConceptWithUniOrGen :: A_Concept -> Bool
           isConceptWithUniOrGen cpt =
@@ -190,23 +190,62 @@ ooAttr r =
         h : _ -> name h,
       attTyp = if isProp r then propTypeName else (name . target) r,
       attOptional = (not . isTot) r,
-      attProps = [Uni | isUni r] <> [Tot | isTot r]
+      attProps = Set.toList $ properties r
     }
 
 instance CDAnalysable Pattern where
   cdAnalysis _ env fSpec pat =
     OOclassdiagram
-      { cdName = prependToPlainName "logical_" $ name pat,
-        classes = classes',
+      { cdName = prependToPlainName "class diagram of " $ name pat,
+        cdLabel = ptlbl pat,
+        classes = classes' <> superClasses <> subClasses,
         assocs = associations',
-        geners = map OOGener (gens pat),
+        geners = map OOGener generalisations',
         ooCpts = toList (concs pat)
       }
     where
       (classes', associations') = classesAndAssociations env fSpec pat
-  relations = ptdcs
-  classCandidates :: Pattern -> [(A_Concept, Maybe Name)]
-  classCandidates pat = map foo . toList . concs $ pat
+
+      generalisations' :: [AClassify]
+      generalisations' = filter shouldDraw . gens $ fSpec
+
+      shouldDraw gen = not . null $ (concs . genericAndSpecifics $ gen) `Set.intersection` classConcepts
+      classConcepts = Set.fromList . map fst $ mapMaybe (clcpt . fst) classes'
+      superClasses = concatMap (map toClass . greaters) generalisations'
+      subClasses = concatMap (map toClass . smallers) generalisations'
+
+      greaters :: AClassify -> [A_Concept]
+      greaters gen = case gen of
+        Isa {} -> [gengen gen]
+        IsE {} -> NE.toList $ genrhs gen
+      smallers :: AClassify -> [A_Concept]
+      smallers gen = [genspc gen]
+      toClass :: A_Concept -> (Class, Maybe Name)
+      toClass cpt =
+        ( OOClass
+            { clName = name cpt,
+              clcpt = Just (cpt, cptTType fSpec cpt),
+              clAtts = []
+            },
+          Nothing
+        )
+  relations :: FSpec -> Pattern -> Relations
+  relations fSpec pat =
+    ptdcs pat
+      <> Set.filter sourceAndTargetInPattern (vrels fSpec)
+    where
+      sourceAndTargetInPattern :: Relation -> Bool
+      sourceAndTargetInPattern rel =
+        source rel `elem` conceptsOfThisPattern && target rel `elem` conceptsOfThisPattern
+      conceptsOfThisPattern :: [A_Concept]
+      conceptsOfThisPattern =
+        [ acdcpt cDef
+          | cDef <- conceptDefs fSpec,
+            tshow (name pat) == tshow (acdfrom cDef)
+        ]
+
+  classCandidates :: Pattern -> Map A_Concept (Maybe Name)
+  classCandidates pat = Map.fromList . map foo . toList . concs $ pat
     where
       foo :: A_Concept -> (A_Concept, Maybe Name)
       foo cpt =
@@ -219,7 +258,8 @@ instance CDAnalysable Pattern where
 instance CDAnalysable A_Context where
   cdAnalysis grouped env fSpec ctx =
     OOclassdiagram
-      { cdName = prependToPlainName "logical_" $ name ctx,
+      { cdName = prependToPlainName "class diagram of " $ name ctx,
+        cdLabel = Nothing,
         classes = map handleGrouping classes',
         assocs = associations',
         geners = map OOGener (gens ctx),
@@ -228,28 +268,17 @@ instance CDAnalysable A_Context where
     where
       handleGrouping (cl, mName) = (cl, if grouped then mName else Nothing)
       (classes', associations') = classesAndAssociations env fSpec ctx
-  relations = relsDefdIn
-  classCandidates :: A_Context -> [(A_Concept, Maybe Name)]
-  classCandidates ctx = map foo . toList . concs $ ctx
+  relations _ = relsDefdIn
+  classCandidates :: A_Context -> Map A_Concept (Maybe Name)
+  classCandidates ctx = Map.fromList . map patternInWhichToDrawTheConcept . toList . concs $ ctx
     where
-      foo :: A_Concept -> (A_Concept, Maybe Name)
-      foo cpt =
-        ( cpt,
-          case L.sort
-            [ (cd, n) | (cd, n) <- cDefs, name cd == name cpt
-            ] of
-            [] -> Nothing
-            [(_, n)] -> Just n
-            ns ->
-              fatal
-                ( "A problem for drawing the logical datamodel:\nConcept "
-                    <> tshow (name cpt)
-                    <> " is defined in multiple patterns: "
-                    <> (T.concat . L.intersperse "\n  " . map showIt $ ns)
-                )
-        )
-        where
-          showIt (cd, n) = tshow (origin cd) <> ": " <> tshow n
+      patternInWhichToDrawTheConcept :: A_Concept -> (A_Concept, Maybe Name)
+      patternInWhichToDrawTheConcept cpt =
+        case L.sort
+          [ n | (cd, n) <- cDefs, name cd == name cpt
+          ] of
+          [] -> (cpt, Nothing)
+          (n : _) -> (cpt, Just n)
       cDefs :: [(AConceptDef, Name)]
       cDefs =
         [ (cd, name pat)
@@ -262,7 +291,8 @@ instance CDAnalysable A_Context where
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram
-    { cdName = prependToPlainName "technical_" $ name fSpec,
+    { cdName = prependToPlainName "technical class diagram of " $ name fSpec,
+      cdLabel = Nothing,
       classes = allClasses',
       assocs = allAssocs,
       geners = [],
@@ -282,12 +312,12 @@ tdAnalysis fSpec =
                   NE.toList
                     $ fmap mkOOattr (plugAttributes table)
                   where
-                    mkOOattr a =
+                    mkOOattr att =
                       OOAttr
-                        { attNm = sqlAttToName a,
-                          attTyp = (name . target . attExpr) a,
+                        { attNm = sqlAttToName att,
+                          attTyp = (name . target . attExpr) att,
                           attOptional = False, -- A BinSQL contains pairs, so NULL cannot occur.
-                          attProps = [Uni, Tot]
+                          attProps = Set.toList $ properties (attExpr att)
                         }
             },
           name <$> primKey table
@@ -311,7 +341,7 @@ tdAnalysis fSpec =
               then propTypeName
               else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
-          attProps = [Uni | isUni (attExpr att)] <> [Tot | isTot (attExpr att)]
+          attProps = Set.toList $ properties (attExpr att)
         }
     allAssocs = concatMap (filter isAssocBetweenClasses . relsOf) tables
       where
@@ -357,7 +387,9 @@ tdAnalysis fSpec =
             }
 
 sqlAttToName :: SqlAttribute -> Name
-sqlAttToName = mkName SqlAttributeName . toNamePart' . sqlColumNameToText1 . attSQLColName
+sqlAttToName att = case try2Name SqlAttributeName . tshow . attSQLColName $ att of
+  Left err -> fatal $ "Not a valid SqlAttributeName: `" <> err <> "`"
+  Right (nm, _) -> nm
 
 mults :: Expression -> Multiplicities
 mults r =

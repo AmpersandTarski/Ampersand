@@ -77,11 +77,9 @@ ruleFromIdentity identity =
         { rrnm =
             withNameSpace
               (nameSpaceOf identity)
-              . mkName RuleName
-              $ ( case toNamePart ("identity_" <> (tshow . abs . hash . tshow $ identity)) of
-                    Nothing -> fatal "Not a proper NamePart"
-                    Just np -> np NE.:| []
-                ),
+              $ case try2Name RuleName ("identity" <> (tshow . abs . hash . tshow $ identity)) of
+                Left err -> fatal $ "Not a proper Name: " <> err
+                Right (nm, _) -> nm,
           rrlbl = Just . Label $ "Identity rule for " <> tshow identity,
           formalExpression = term,
           rrfps = origin identity, -- position in source file

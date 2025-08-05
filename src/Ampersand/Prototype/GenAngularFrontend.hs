@@ -21,9 +21,9 @@ import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config
 import Data.Maybe (fromJust)
 import RIO.Char (toLower, toUpper)
+import RIO.FilePath
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial (splitOn)
-import System.FilePath
 import Text.StringTemplate (StringTemplate, setAttribute)
 import Text.StringTemplate.GenericStandard ()
 

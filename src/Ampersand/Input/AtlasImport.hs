@@ -694,9 +694,9 @@ instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
       buildTxt :: Text -> Text -> P_BoxItem a
       buildTxt nm txt =
         P_BxTxt
-          { obj_PlainName = case T.uncons nm of
-              Nothing -> Nothing
-              Just (h, tl) -> Just (Text1 h tl),
+          { obj_PlainName = do
+              (h, tl) <- T.uncons nm
+              Just (Text1 h tl),
             pos = OriginAtlas,
             box_txt = txt
           }
@@ -933,17 +933,6 @@ textToLabelInJSON :: Text -> Label
 textToLabelInJSON = Label
 
 textToNameInJSON :: NameType -> Text -> Guarded Name
-textToNameInJSON typ txt =
-  case T.words txt of
-    [] -> fatal "ERROR parsing JSON: Name must not be empty"
-    [wrd] -> case T.uncons wrd of
-      Nothing -> fatal "Impossible! a word cannot be empty"
-      Just (h, tl) -> mkName typ <$> toNamePart' (Text1 h tl)
-        where
-          toNamePart' :: Text1 -> Guarded (NonEmpty NamePart)
-          toNamePart' x = mapM toNamePart'' (splitOnDots x)
-          toNamePart'' :: Text1 -> Guarded NamePart
-          toNamePart'' x = case toNamePart1 x of
-            Nothing -> mkGenericParserError OriginAtlas ("Not a valid NamePart: " <> tshow x)
-            Just np -> Checked np []
-    _ -> mkGenericParserError OriginAtlas $ "ERROR parsing JSON: Name must not contain whitespace: `" <> txt <> "`."
+textToNameInJSON typ txt = case try2Name typ txt of
+  Left err -> mkGenericParserError OriginAtlas err
+  Right (nm, _) -> pure nm

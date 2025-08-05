@@ -10,9 +10,9 @@ import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 import System.Process (cwd, readCreateProcess, shell)
 
 createTablePHP :: TableSpec -> [Text]
@@ -106,14 +106,14 @@ executePHP phpPath = do
       errorHandler :: (HasLogFunc env) => IOException -> RIO env String
       errorHandler err = do
         logError . display $ "Could not execute PHP: " <> tshow err
-        fileContents <- readUTF8File phpPath
+        fileContents <- readFileUtf8 phpPath
         mapM_ (logError . display)
           $ case fileContents of
             Left msg -> msg
             Right txt -> addLineNumbers . T.lines $ txt
         return "ERROR"
   _ <- liftIO (readCreateProcess cp "") `catch` errorHandler
-  result <- readUTF8File outputFile
+  result <- readFileUtf8 outputFile
   case result of
     Right content -> do
       liftIO $ removeFile outputFile

@@ -4,10 +4,11 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Ampersand.Output.PandocAux
 import Ampersand.Output.ToPandoc.SharedAmongChapters
+import RIO.FilePath
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import System.FilePath
 
 chpDiagnosis ::
   (HasDirOutput env, HasDocumentOpts env) =>
@@ -169,7 +170,7 @@ chpDiagnosis env fSpec
 
     unusedConceptDefs :: Blocks
     unusedConceptDefs =
-      case undefinedConcepts of
+      case NE.groupWith name undefinedConcepts of
         [] ->
           if (null . conceptDefs) fSpec
             then mempty
@@ -180,7 +181,7 @@ chpDiagnosis env fSpec
                 $ ( NL "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties.",
                     EN "All concepts defined in this document are used in relations."
                   )
-        [c] ->
+        [c :| _] ->
           para
             ( (str . l)
                 ( NL "Het concept ",
@@ -195,7 +196,7 @@ chpDiagnosis env fSpec
         xs ->
           para
             ( (str . l) (NL "De concepten: ", EN "Concepts ")
-                <> (commaPandocAnd outputLang' . map (str . fullName) $ xs)
+                <> (commaPandocAnd outputLang' . fmap (str . fullName . NE.head) $ xs)
                 <> (str . l)
                   ( NL " zijn gedefinieerd, maar worden niet gebruikt.",
                     EN " are defined, but not used."
@@ -388,7 +389,7 @@ chpDiagnosis env fSpec
         pats =
           [ pat | pat <- instanceList fSpec, (not . null) (relsDefdIn pat Set.\\ bindedRelationsIn pat)
           ]
-        pictsWithUnusedRels = [makePicture env fSpec (PTDeclaredInPat pat) | pat <- pats]
+        pictsWithUnusedRels = makePicture env fSpec . PTConceptualModelOfRelationsInPattern <$> pats
 
     missingRules :: Blocks
     missingRules =

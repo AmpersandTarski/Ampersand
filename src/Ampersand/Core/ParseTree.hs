@@ -286,25 +286,42 @@ instance Show DefinitionContainer where
     PATTERN nm -> show nm
     Module nm -> show nm
 
+instance Ord DefinitionContainer where
+  compare a b = case (a, b) of
+    (CONTEXT x, CONTEXT y) -> compare x y
+    (PATTERN x, PATTERN y) -> compare x y
+    (Module x, Module y) -> compare x y
+    (CONTEXT _, _) -> LT
+    (_, CONTEXT _) -> GT
+    (PATTERN _, _) -> LT
+    (_, PATTERN _) -> GT
+
+instance Eq DefinitionContainer where
+  a == b = compare a b == EQ
+
 instance Ord PConceptDef where
-  compare a b = case compare (name a) (name b) of
-    EQ ->
-      fromMaybe
-        ( fatal
-            . T.intercalate "\n"
-            $ [ "ConceptDef should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
-              ]
-        )
-        (maybeOrdering (origin a) (origin b))
-    x -> x
+  compare a b =
+    -- We compare on the name, origin and the string representation of the definition because:
+    -- 1. The name is the most important part of a concept definition.
+    -- 2. The origin is important to distinguish between concept definitions with the same name.
+    -- 3. The definitionContainer is important to distinguish between concept definitions with the same name and origin.
+    --    This is especially important for places where Origin isn't properly fit for
+    --    traceability, like the Turtle and Atlas importers, Meatgrinder stuf. There whe have no exact and unique Origins.
+    compare
+      ( name a,
+        origin a,
+        cdfrom a
+      )
+      ( name b,
+        origin b,
+        cdfrom b
+      )
 
 instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
+  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "Ð" <> tshow x)
     where
       x = origin cd
 
@@ -450,7 +467,7 @@ instance Traced P_Relation where
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
 mergeRels :: [P_Relation] -> [P_Relation]
-mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+mergeRels rs = map fun (eqCl signat rs)
   where
     fun :: NonEmpty P_Relation -> P_Relation
     fun rels =

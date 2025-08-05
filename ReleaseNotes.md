@@ -6,6 +6,38 @@
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 
+## Unreleased
+- [Issue #1601](https://github.com/AmpersandTarski/Ampersand/issues/1601) Automatic inclusion of relations in patterns when reading .ttl file
+
+## v5.5.2
+- [Issue #1593](https://github.com/AmpersandTarski/Ampersand/issues/1593) Draw extra relations in conceptual diagram of PATTERN
+
+## v5.5.1
+- minor enhancements on generated documentation
+
+## v5.5.0
+- [Issue #1589](https://github.com/AmpersandTarski/Ampersand/issues/1589) Disalow underscores in names (this could break your script)
+- Several minor enhancements in the Shared Language chapter of generated documentation
+
+## v5.4.11
+- [Issue #1587](https://github.com/AmpersandTarski/Ampersand/issues/1587) Bugfix
+- [Issue #1570](https://github.com/AmpersandTarski/Ampersand/issues/1570) Cleaner way to draw properties on the data model graphic
+
+## v5.4.10
+- [Issue #1583](https://github.com/AmpersandTarski/Ampersand/issues/1583) Enable user to limit generation of visuals
+- [Issue #1582](https://github.com/AmpersandTarski/Ampersand/issues/1582) Take rdfs:domain and rdfs:range into account in turtle parser. Also add meanings
+
+## v5.4.9
+- [Issue #1576](https://github.com/AmpersandTarski/Ampersand/issues/1576) When importing .ttl files, only warn if a label is missing. 
+- [Issue #1578](https://github.com/AmpersandTarski/Ampersand/issues/1578) Harvest PATTERNs based on skos:ConceptScheme 
+- [Issue #1579](https://github.com/AmpersandTarski/Ampersand/issues/1579) Bugfix on equality of Concept definitions
+
+## v5.4.6 to v5.4.8
+- bugfix with reading .ttl files on Windows (encoding issue)
+
+## v5.4.5
+- [Issue #1568](https://github.com/AmpersandTarski/Ampersand/issues/1568) Parsing of .ttl files misses certain relations.
+
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 

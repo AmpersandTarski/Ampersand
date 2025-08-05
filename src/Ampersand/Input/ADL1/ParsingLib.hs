@@ -239,9 +239,9 @@ pDoubleQuotedString1 :: AmpParser Text1
 pDoubleQuotedString1 =
   check
     ( \case
-        LexDubbleQuotedString t -> case T.uncons t of
-          Nothing -> Nothing
-          Just _ -> Just (toText1Unsafe t)
+        LexDubbleQuotedString t -> do
+          _ <- T.uncons t
+          Just (toText1Unsafe t)
         _ -> Nothing
     )
     <?> "double quoted non-empty string"
@@ -296,8 +296,9 @@ pName typ =
     <*> localNamePart
   where
     build :: [NamePart] -> NamePart -> Name
-    build ns nm =
-      mkName typ . NE.reverse $ nm NE.:| reverse ns
+    build ns nm = case try2Name typ (T.intercalate "." (map tshow (ns <> [nm]))) of
+      Left err -> fatal $ "Not a proper Name: " <> err
+      Right (nm', _) -> nm'
     localNamePart :: AmpParser NamePart
     localNamePart =
       buildNamePart
@@ -323,9 +324,10 @@ pName typ =
         <*> pUnrestrictedID
         <* pDot
     buildNamePart :: Origin -> Text1 -> NamePart
-    buildNamePart orig txt1 = case toNamePart1 txt1 of
-      Nothing -> fatal $ "An unrestrictedID should be a valid namepart, but it isn't: " <> tshow txt1 <> "\n   " <> tshow orig
-      Just np -> np
+    buildNamePart orig txt1 = case try2Namepart (text1ToText txt1) of
+      Left (Left _) -> fatal $ "An unrestrictedID should be a valid namepart, but it isn't: " <> tshow txt1 <> "\n   " <> tshow orig
+      Left (Right np) -> np
+      Right np -> np
 
 pAnyKeyWord :: AmpParser Text1
 pAnyKeyWord = case map pKey keywords of

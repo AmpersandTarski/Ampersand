@@ -14,9 +14,9 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-  - pandoc-crossref-0.3.17.0
-  - rdf4h-5.2.0@sha256:0e5a3741011134f53317e192873c4b71deba64afd81e55041d440e54f576dd4d,6259
-  - simple-sql-parser-0.8.0
+  - pandoc-crossref-0.3.17.0@sha256:84507632d82a1cbda65bf8874dd8a2f2e03b87f82932a45ee961b6df51f211cf,9282
+  - rdf4h-5.2.1@sha256:1c69d452f036ff7c7639e071224ad6e9617b57b38778a0d244c229ba511c38fe,6259
+  - simple-sql-parser-0.8.0@sha256:5153612af09edda2af865e6dc1286d64ecea702541a1af824ac518268f0b5cb4,4417
   - SpreadsheetML-0.1@sha256:58aec77fb2d79779c6a1a4c2101526db0947dc558c064a46598cdde5745bfa74,1362
   #  - yaml-config-0.4.0@sha256:575103d9fa1ef074a2b419256babaae7be5f5257f37adf3ed2601052415b2d83,1814
   - text1-0.0.7.4@sha256:cc980c88b188384fadd02b56e6e8e5f9317a43e1459a16558273589a49bcf951,2741

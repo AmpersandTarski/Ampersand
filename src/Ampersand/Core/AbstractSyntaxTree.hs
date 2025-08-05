@@ -273,14 +273,32 @@ data AConceptDef = AConceptDef
 instance Named AConceptDef where
   name = acdname
 
+instance Labeled AConceptDef where
+  mLabel = acdlabel
+
 instance Traced AConceptDef where
   origin AConceptDef {pos = orig} = orig
 
-instance Ord AConceptDef where
-  compare = compare `on` name
-
 instance Eq AConceptDef where
   a == b = compare a b == EQ
+
+instance Ord AConceptDef where
+  -- We compare on the name, origin and the string representation of the definition because:
+  -- 1. The name is the most important part of a concept definition.
+  -- 2. The origin is important to distinguish between concept definitions with the same name.
+  -- 3. The definitionContainer is important to distinguish between concept definitions with the same name and origin.
+  --    This is especially important for places where Origin isn't properly fit for
+  --    traceability, like the Turtle and Atlas importers, Meatgrinder stuf. There whe have no exact and unique Origins.
+  compare a b =
+    compare
+      ( name a,
+        origin a,
+        acdfrom a
+      )
+      ( name b,
+        origin b,
+        acdfrom b
+      )
 
 data A_Representation = Arepr
   { -- | origin is used in error messages
@@ -598,7 +616,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 instance Unique ViewDef where
-  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("_" <> text1ToText (fullName1 (vdcpt vd)))
+  showUnique vd = toText1Unsafe "ViewDef_" <> fullName1 vd <> toText1Unsafe ("Ð" <> text1ToText (fullName1 (vdcpt vd)))
 
 instance Eq ViewDef where
   a == b = compare a b == EQ
@@ -926,7 +944,7 @@ instance Eq Purpose where
 instance Unique Purpose where
   showUnique p = toText1Unsafe $ "Purpose_" <> (tshow . abs . hash $ readable)
     where
-      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "_" <> tshow orig)
+      readable = text1ToText $ uniqueShowWithType (explMarkup p) <> toText1Unsafe (tshow (typeOf orig) <> "Ð" <> tshow orig)
       orig = origin p
 
 instance Traced Purpose where
@@ -1289,10 +1307,9 @@ getExpressionRelation expr = case getRelation expr of
           | i /= source e2 && t == source e2 -> Just (s, d, i, isFlipped)
           | otherwise -> Nothing
         _ -> Nothing
-    getRelation (EFlp e) =
-      case getRelation e of
-        Just (s, d, t, isFlipped) -> Just (t, d, s, not isFlipped)
-        Nothing -> Nothing
+    getRelation (EFlp e) = do
+      (s, d, t, isFlipped) <- getRelation e
+      Just (t, d, s, not isFlipped)
     getRelation (EDcD d) = Just (source d, Just d, target d, False)
     getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing
@@ -1557,13 +1574,12 @@ data Type
 instance Named Type where
   name t = case t of
     UserConcept nm -> nm
-    BuiltIn tt -> mkName ConceptName . fmap toNamePart' $ ("AmpersandBuiltIn" NE.:| [tshow tt])
-    RepresentSeparator -> mkName ConceptName . fmap toNamePart' $ "AmpersandBuiltIn" NE.:| ["RepresentSeparator"]
-    where
-      toNamePart' :: Text -> NamePart
-      toNamePart' x = case toNamePart x of
-        Nothing -> fatal $ "Not a proper namepart: " <> x
-        Just np -> np
+    BuiltIn tt -> case try2Name ConceptName ("AmpersandBuiltIn" <> tshow tt) of
+      Left err -> fatal $ "Not a proper name: " <> err
+      Right (nm, _) -> nm
+    RepresentSeparator -> case try2Name ConceptName ("AmpersandBuiltIn" <> "RepresentSeparator") of
+      Left err -> fatal $ "Not a proper name: " <> err
+      Right (nm, _) -> nm
 
 instance Show Type where
   show a = T.unpack $ case a of

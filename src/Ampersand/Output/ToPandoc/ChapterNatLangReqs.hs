@@ -40,7 +40,6 @@ chpNatLangReqs env lev fSpec =
                 <> " in natuurlijke taal. "
                 <> "Het hoofdstuk bevat definities en afspraken. "
                 <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
-                <> "Alle definities en afspraken zijn genummerd omwille van de traceerbaarheid. "
             )
         English ->
           para
@@ -49,7 +48,6 @@ chpNatLangReqs env lev fSpec =
                 <> " in natural language. "
                 <> "It contains definitions and agreements. "
                 <> "The purpose of this chapter is to create shared understanding among stakeholders. "
-                <> "All definitions and agreements have been numbered for the sake of traceability. "
             )
     genLegalRefs = view genLegalRefsL env
     legalRefs :: Blocks
@@ -107,7 +105,7 @@ chpNatLangReqs env lev fSpec =
                     ( NL "In het volgende wordt de taal geïntroduceerd ten behoeve van ",
                       EN "The sequel introduces the language of "
                     )
-                    <> (str . fullName) pat
+                    <> (str . label) pat
                     <> "."
                 )
                 <>
@@ -171,9 +169,7 @@ chpNatLangReqs env lev fSpec =
     printRel nDcl =
       (printPurposes . cDclPurps . theLoad) nDcl
         <> definitionList
-          [ ( (str . l) (NL "Relatie ", EN "Relation ")
-                <> (text . tshow . theNr $ nDcl)
-                <> ": "
+          [ ( (str . l) (NL "Relatie: ", EN "Relation: ")
                 <> xDefInln env fSpec (XRefSharedLangRelation dcl),
               [printMeaning outputLang' dcl]
                 <> ( case toList $ properties dcl of

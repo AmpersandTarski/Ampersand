@@ -38,8 +38,8 @@ import Data.Monoid hiding ((<>))
 import qualified Data.Text as T
 import Options.Applicative
 import Options.Applicative.Types (readerAsk)
-import System.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
-import System.FilePath (isRelative, splitFileName, takeBaseName, takeExtension, (</>))
+import RIO.Directory (doesDirectoryExist, getCurrentDirectory, getDirectoryContents)
+import RIO.FilePath (isRelative, splitFileName, takeBaseName, takeExtension, (</>))
 
 -- | Enable/disable flags for a 'Bool'.
 boolFlags ::

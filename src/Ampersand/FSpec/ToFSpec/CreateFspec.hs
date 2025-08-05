@@ -25,9 +25,9 @@ import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
 import Ampersand.Misc.HasClasses
+import Ampersand.Types.Config (HasRunner)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Partial as Partial
 import qualified RIO.Text as T
 
 -- | creating an FSpec is based on command-line options.
@@ -66,7 +66,7 @@ import qualified RIO.Text as T
 --     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
 --     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec ::
-  (HasTrimXLSXOpts env, HasFSpecGenOpts env, HasLogFunc env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasFSpecGenOpts env, HasRunner env) =>
   RIO env (Guarded FSpec)
 createFspec =
   do
@@ -180,8 +180,12 @@ data MetaModel = FormalAmpersand | PrototypeContext
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 instance Named MetaModel where
-  name FormalAmpersand = mkName ContextName (Partial.fromJust (toNamePart "Formal Ampersand") NE.:| [])
-  name PrototypeContext = mkName ContextName (Partial.fromJust (toNamePart "Prototype context") NE.:| [])
+  name FormalAmpersand = case try2Name ContextName "FormalAmpersand" of
+    Left msg -> fatal $ "MetaModel FormalAmpersand: " <> msg
+    Right (nm, _) -> nm
+  name PrototypeContext = case try2Name ContextName "PrototypeContext" of
+    Left msg -> fatal $ "MetaModel PrototypeContext: " <> msg
+    Right (nm, _) -> nm
 
 transformer2pop :: Transformer -> P_Population
 transformer2pop tr =
@@ -206,7 +210,7 @@ transformer2pop tr =
 -- | The 'grindInto' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a (Guarded) P_Context, so it can be merged with other Ampersand results.
-grindInto :: (HasTrimXLSXOpts env, HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
+grindInto :: (HasDirOutput env, HasTrimXLSXOpts env, HasRunner env, HasFSpecGenOpts env) => MetaModel -> Guarded FSpec -> RIO env (Guarded P_Context)
 grindInto metamodel specification = do
   env <- ask
   pContextOfMetaModel <- case metamodel of

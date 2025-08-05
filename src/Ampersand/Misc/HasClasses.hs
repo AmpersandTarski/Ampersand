@@ -6,8 +6,10 @@ module Ampersand.Misc.HasClasses where
 
 import Ampersand.Basics
 import Ampersand.Misc.Defaults (defaultDirPrototype)
+import Data.GraphViz (GraphvizOutput (..))
 import RIO.FilePath
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 class HasOptions a where
@@ -131,18 +133,16 @@ newtype Roots = Roots
   { -- | Normally this should be a non-empty list. However, the daemon command is an exception to
     --   this. The command `ampersand daemon` expects no script name. The script name(s) will be
     --   configured by means of the `.ampersand` configuration file.
-    getRoots :: [FilePath]
+    getRoots :: NonEmpty FilePath
   }
 
 instance Show Roots where
-  show = L.intercalate ", " . getRoots
+  show = L.intercalate ", " . NE.toList . getRoots
 
 class HasRootFile a where
   rootFileL :: Lens' a Roots
   baseName :: a -> FilePath
-  baseName x = case getRoots . view rootFileL $ x of
-    [] -> fatal "Cannot determine the basename of the script that is being compiled"
-    (h : _) -> takeBaseName h
+  baseName = takeBaseName . NE.head . getRoots . view rootFileL
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
   dirSource = takeDirectory . baseName
 
@@ -177,6 +177,10 @@ class (HasOutputLanguage a) => HasDocumentOpts a where
   genLegalRefsL = documentOptsL . lens xgenLegalRefs (\x y -> x {xgenLegalRefs = y})
   genGraphicsL :: Lens' a Bool -- Generate graphics. Useful for generating text and graphics separately.
   genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x {xgenGraphics = y})
+  visualsOutputFormatsL :: Lens' a (Set VisualsOutputFormat)
+  visualsOutputFormatsL = documentOptsL . lens xvisualsOutputFormats (\x y -> x {xvisualsOutputFormats = y})
+  focusOfVisualsL :: Lens' a (Set FocusOfVisual)
+  focusOfVisualsL = documentOptsL . lens xfocusOfVisuals (\x y -> x {xfocusOfVisuals = y})
   uniEdgesL :: Lens' a Bool -- Draw edges for univalent and/or injective relations in the LDM.
   uniEdgesL = documentOptsL . lens xuniEdges (\x y -> x {xuniEdges = y})
   genTextL :: Lens' a Bool -- Generate text. Useful for generating text and graphics separately.
@@ -369,6 +373,52 @@ instance HasOptions ProtoOpts where
            ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
          ]
 
+-- | Known outputformats for Ampersand.
+data VisualsOutputFormat
+  = VBmp
+  | VCanon
+  | VJpeg
+  | VPdf
+  | VPlain
+  | VPng
+  | VSvg
+  | VTiff
+  deriving (Eq, Ord, Enum, Bounded)
+
+-- | Show is used to represent the file extension of the output format.
+instance Show VisualsOutputFormat where
+  show :: VisualsOutputFormat -> String
+  show VBmp = "bmp"
+  show VCanon = "gv"
+  show VJpeg = "jpg"
+  show VPdf = "pdf"
+  show VPlain = "txt"
+  show VPng = "png"
+  show VSvg = "svg"
+  show VTiff = "tif"
+
+visualsOutputFormat2graphvizOutput :: VisualsOutputFormat -> GraphvizOutput
+visualsOutputFormat2graphvizOutput VBmp = Bmp
+visualsOutputFormat2graphvizOutput VCanon = Canon
+visualsOutputFormat2graphvizOutput VJpeg = Jpeg
+visualsOutputFormat2graphvizOutput VPdf = Pdf
+visualsOutputFormat2graphvizOutput VPlain = Plain
+visualsOutputFormat2graphvizOutput VPng = Png
+visualsOutputFormat2graphvizOutput VSvg = Svg
+visualsOutputFormat2graphvizOutput VTiff = Tiff
+
+-- | A type to denote the focus of generated visuals.
+data FocusOfVisual = VContext | VPattern | VRule | VRelation | VConcept
+  deriving (Eq, Ord, Enum, Bounded)
+
+instance Show FocusOfVisual where
+  show :: FocusOfVisual -> String
+  show VContext = "context"
+  show VPattern = "pattern"
+  show VRule = "rule"
+  show VRelation = "relation"
+  show VConcept = "concept"
+
 -- | Options for @ampersand documentation@.
 data DocOpts = DocOpts
   { -- | avoid coloring conventions to facilitate readable pictures in black and white.
@@ -379,6 +429,10 @@ data DocOpts = DocOpts
     xgenDatamodelImagesOnly :: !Bool,
     -- | enable/disable generation of graphics. Used to generate text and graphics in separation.
     xgenGraphics :: !Bool,
+    -- | GraphvizOutput types that are required to be generated when only graphics are generated.
+    xvisualsOutputFormats :: !(Set VisualsOutputFormat),
+    -- | FocusOfVisuals types that should be generated.
+    xfocusOfVisuals :: !(Set FocusOfVisual),
     -- | draw edges for univalent and/or injective relations in the LDM.
     xuniEdges :: !Bool,
     -- | enable/disable generation of text. Used to generate text and graphics in separation.

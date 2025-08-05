@@ -43,7 +43,6 @@ module Ampersand.Input.ADL1.CtxError
     mkRoundTripError,
     mkRoundTripTextError,
     mkSubInterfaceMustBeDefinedOnObject,
-    mkTurtleParseError,
     mkTurtleWarning,
     mkTypeMismatchError,
     mkUndeclaredError,
@@ -52,7 +51,7 @@ module Ampersand.Input.ADL1.CtxError
     mustBeOrdered,
     mustBeOrderedConcLst,
     mustBeOrderedLst,
-    mustBeValidNamePart,
+    mustBeValidName,
     nonMatchingRepresentTypes,
     unexpectedType,
     uniqueLables,
@@ -217,7 +216,7 @@ mkMultipleRootsError roots gs =
         <> ["Parhaps you could add the following statements:"]
         <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> rootName | cpt <- roots]
       where
-        rootName = T.intercalate "_Or_" . map (text1ToText . showWithAliases) $ roots
+        rootName = T.intercalate "Or" . map (text1ToText . showWithAliases) $ roots
 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =
@@ -641,13 +640,13 @@ mustBeBound o lst =
       ]
     <> ["  " <> writeBind e | (_, e) <- lst]
 
-mustBeValidNamePart :: Origin -> Text1 -> Guarded NamePart
-mustBeValidNamePart orig t1 =
+mustBeValidName :: Origin -> Text -> Guarded Name
+mustBeValidName orig t1 =
   Errors
     . pure
     . CTXE orig
     . T.unlines
-    $ [ "A single word is expected as name, which must start with a letter and may contain only alphanumerical letters, digits and underscore.",
+    $ [ "A single word is expected as name, which must start with a letter and may contain only alphanumerical letters and digits.",
         "  the following was found: `" <> tshow t1 <> "`."
       ]
 
@@ -707,10 +706,6 @@ mkCaseProblemWarning x y =
 
 mkGenericParserError :: Origin -> Text -> Guarded a
 mkGenericParserError orig msg = Errors . pure $ CTXE orig msg
-
-mkTurtleParseError :: FilePath -> Text -> Guarded a
-mkTurtleParseError filename msg =
-  Errors . pure $ CTXE (FileLoc (FilePos filename 0 0) "") msg
 
 mkParserStateWarning :: Origin -> Text -> Warning
 mkParserStateWarning = Warning

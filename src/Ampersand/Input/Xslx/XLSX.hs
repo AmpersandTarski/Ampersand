@@ -48,7 +48,7 @@ parseXlsxFile mFk file =
       Guarded P_Context
     xlsx2pContext env xlsx = do
       let orig = Origin $ "file `" <> tshow file1 <> "`"
-      namepart <- toNamePartGuarded orig file1
+      namepart <- toNameGuarded orig ContextName file1
       let pCtx = pop namepart
       ( case ctx_pops pCtx of
           [] -> addWarning $ mkParserStateWarning orig emptyMsg
@@ -63,86 +63,69 @@ parseXlsxFile mFk file =
               "Please make sure it is formatted as a regular Excel .xlsx file and that it is not empty."
             ]
 
-        pop namepart =
-          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles . mkName ContextName $ namepart NE.:| [])
+        pop nm =
+          mkContextOfPops (withNameSpace nameSpaceOfXLXSfiles nm)
             . concatMap (toPops env nameSpaceOfXLXSfiles file)
             . concatMap (theSheetCellsForTable nameSpaceOfXLXSfiles)
             $ (xlsx ^. xlSheets)
 
-toNamePartGuarded :: Origin -> Text1 -> Guarded NamePart
-toNamePartGuarded orig t = case toNamePart1 t of
-  Nothing -> mustBeValidNamePart orig t
-  Just np -> pure np
+toNameGuarded :: Origin -> NameType -> Text1 -> Guarded Name
+toNameGuarded orig typ t = case try2Name typ (text1ToText t) of
+  Left msg -> mustBeValidName orig msg
+  Right (nm, _) -> pure nm
 
 nameSpaceOfXLXSfiles :: NameSpace
 nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn more about namespaces.
 
 mkContextOfPops :: Name -> [P_Population] -> P_Context
-mkContextOfPops nm pops =
-  addRelations
-    PCtx
-      { ctx_nm = nm,
-        ctx_lbl = Nothing,
-        ctx_pos = [],
-        ctx_lang = Nothing,
-        ctx_markup = Nothing,
-        ctx_pats = [],
-        ctx_rs = [],
-        ctx_ds = [],
-        ctx_cs = [],
-        ctx_ks = [],
-        ctx_rrules = [],
-        ctx_reprs = [],
-        ctx_vs = [],
-        ctx_gs = [],
-        ctx_ifcs = [],
-        ctx_ps = [],
-        ctx_pops = pops,
-        ctx_metas = [],
-        ctx_enfs = []
-      }
-
--- | addRelations is meant to enrich a population to a P_Context
---   The result of addRelations is a P_Context enriched with the relations in genericRelations
---   The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
-addRelations :: P_Context -> P_Context
-addRelations pCtx = enrichedContext
+mkContextOfPops ctxName pops1 =
+  PCtx
+    { ctx_nm = ctxName,
+      ctx_lbl = Nothing,
+      ctx_pos = [],
+      ctx_lang = Nothing,
+      ctx_markup = Nothing,
+      ctx_pats = [],
+      ctx_rs = [],
+      ctx_ds = mergeRels genericRelations,
+      ctx_cs = [],
+      ctx_ks = [],
+      ctx_rrules = [],
+      ctx_reprs = [],
+      ctx_vs = [],
+      ctx_gs = [],
+      ctx_ifcs = [],
+      ctx_ps = [],
+      ctx_pops = genericPopulations,
+      ctx_metas = [],
+      ctx_enfs = []
+    }
   where
-    enrichedContext :: P_Context
-    enrichedContext =
-      pCtx
-        { ctx_ds = mergeRels (genericRelations <> declaredRelations),
-          ctx_pops = genericPopulations
-        }
-    declaredRelations :: [P_Relation] -- relations declared in the user's script
     popRelations :: [P_Relation] -- relations that are "annotated" by the user in Excel-sheets.
     -- popRelations are derived from P_Populations only.
-    declaredRelations = mergeRels (ctx_ds pCtx <> concatMap pt_dcs (ctx_pats pCtx))
-
     popRelations =
       [ rel
-      | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- ctx_pops pCtx <> [pop | pat <- ctx_pats pCtx, pop <- pt_pop pat],
-        Just src' <- [src],
-        Just tgt' <- [tgt],
-        rel <-
-          [ P_Relation
-              { dec_nm = name pop,
-                dec_sign = P_Sign src' tgt', -- SJ: TODO @Han, Why is this not fromMaybe (p_mbSign (p_nmdr pop)) ?
-                dec_label = Nothing,
-                dec_prps = mempty,
-                dec_defaults = mempty,
-                dec_pragma = Nothing,
-                dec_Mean = mempty,
-                dec_pos = origin pop
-              }
-          ],
-        signatur rel `notElem` map signatur declaredRelations
+        | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- pops1,
+          Just src' <- [src],
+          Just tgt' <- [tgt],
+          rel <-
+            [ P_Relation
+                { dec_nm = name pop,
+                  dec_sign = P_Sign src' tgt',
+                  dec_label = Nothing,
+                  dec_prps = mempty,
+                  dec_defaults = mempty,
+                  dec_pragma = Nothing,
+                  dec_Mean = mempty,
+                  dec_pos = origin pop
+                }
+            ]
       ]
 
     genericRelations :: [P_Relation] -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
     (genericRelations, genericPopulations) =
-      recur [] popRelations pops invGen
+      recur [] popRelations pops2 invGen
       where
         recur :: [P_Concept] -> [P_Relation] -> [P_Population] -> [(P_Concept, Set.Set P_Concept)] -> ([P_Relation], [P_Population])
         recur seen unseenrels unseenpops ((g, specs) : invGens) =
@@ -214,22 +197,17 @@ addRelations pCtx = enrichedContext
     invGen :: [(P_Concept, Set.Set P_Concept)] -- each pair contains a concept with all of its specializations
     invGen =
       [ (fst (NE.head cl), Set.fromList spcs)
-        | cl <- eqCl fst [(g, specific gen) | gen <- ctx_gs pCtx, g <- NE.toList (generics gen)],
+        | cl <- eqCl fst [(g, specific gen) | gen <- [], g <- NE.toList (generics gen)],
           g <- [fst (NE.head cl)],
           spcs <- [[snd c | c <- NE.toList cl, snd c /= g]],
           not (null spcs)
       ]
-    signatur :: P_Relation -> (Name, P_Sign)
-    signatur rel = (name rel, dec_sign rel)
     concepts =
       L.nub
-        $ [PCpt (name pop) | pop@P_CptPopu {} <- ctx_pops pCtx]
-        <> [src' | P_RelPopu {p_src = src} <- ctx_pops pCtx, Just src' <- [src]]
-        <> [tgt' | P_RelPopu {p_tgt = tgt} <- ctx_pops pCtx, Just tgt' <- [tgt]]
-        <> map sourc declaredRelations
-        <> map targt declaredRelations
-        <> concat [specific gen : NE.toList (generics gen) | gen <- ctx_gs pCtx]
-    pops = computeConceptPopulations (ctx_pops pCtx <> [p | pat <- ctx_pats pCtx, p <- pt_pop pat]) -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
+        $ [PCpt (name pop) | pop@P_CptPopu {} <- pops1]
+        <> [src' | P_RelPopu {p_src = src} <- pops1, Just src' <- [src]]
+        <> [tgt' | P_RelPopu {p_tgt = tgt} <- pops1, Just tgt' <- [tgt]]
+    pops2 = computeConceptPopulations pops1
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
       =
@@ -541,27 +519,23 @@ conceptNameWithOptionalDelimiter ::
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
 conceptNameWithOptionalDelimiter ns t'
-  | isBracketed t =
-      let mid = T.dropEnd 1 . T.drop 1 $ t
-       in case T.uncons . T.reverse $ mid of
-            Nothing -> Nothing
-            Just (d, revInit) ->
-              let nm = T.reverse revInit
-               in if isDelimiter d && isConceptName nm
-                    then Just (mkName' nm, Just d)
-                    else Nothing
+  | isBracketed t = do
+      (d, revInit) <- T.uncons . T.reverse . T.dropEnd 1 . T.drop 1 $ t
+      let nm = T.reverse revInit
+       in if isDelimiter d && isConceptName nm
+            then Just (mkName' nm, Just d)
+            else Nothing
   | isConceptName t = Just (mkName' t, Nothing)
   | otherwise = Nothing
   where
     t = trim t'
-    mkName' x =
-      withNameSpace ns
-        . mkName ConceptName
-        $ ( case toNamePart x of
-              Nothing -> fatal $ "Not a valid NamePart: " <> tshow x
-              Just np -> np
-          )
-        :| []
+    mkName' txt =
+      withNameSpace
+        ns
+        ( case try2Name ConceptName txt of
+            Left msg -> fatal $ "Not a valid NamePart: " <> msg
+            Right (nm, _) -> nm
+        )
 
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation

@@ -14,7 +14,7 @@ module Ampersand.Basics.Unique
 where
 
 import Ampersand.Basics.Hashing
-import Ampersand.Basics.Name (checkProperId)
+import Ampersand.Basics.Name (NameType (ContextName), try2Name)
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.String (text1ToText, toText1Unsafe)
 import Ampersand.Basics.Version (fatal)
@@ -34,7 +34,7 @@ class (Typeable e, Eq e) => Unique e where
 
   -- | representation of a Unique thing into a Text.
   uniqueShowWithType :: e -> Text1
-  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "_" <> (text1ToText . showUnique $ x)
+  uniqueShowWithType x = toText1Unsafe $ tshow (typeOf x) <> "Ð" <> (text1ToText . showUnique $ x)
 
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of
@@ -48,35 +48,19 @@ class (Typeable e, Eq e) => Unique e where
     Nothing -> fatal $ "idWithoutType could not be generated. " <> tshow (typeOf x) <> ": " <> (text1ToText . showUnique $ x)
     Just te -> te
   idWithoutType :: e -> Maybe Text1
-  idWithoutType x = case nameParts of
-    Nothing -> Nothing
-    Just nps ->
-      Just
-        . uniqueButNotTooLong -- because it could be stored in an SQL database
-        . toText1Unsafe
-        $ nps
+  idWithoutType x = do
+    nps <- theName
+    Just
+      . uniqueButNotTooLong -- because it could be stored in an SQL database
+      . toText1Unsafe
+      $ nps
     where
-      theName = text1ToText . showUnique $ x
-      nameParts :: Maybe Text
-      nameParts =
-        if all isJust probes
-          then Just . addDots . catMaybes $ probes
-          else Nothing
-        where
-          probes :: [Maybe Text1]
-          probes = check <$> T.split (== '.') theName
-          check :: Text -> Maybe Text1
-          check t = checkProperId =<< checkLength t
-      checkLength :: Text -> Maybe Text1
-      checkLength t = case T.uncons t of
-        Nothing -> Nothing
-        Just (h, tl) -> Just $ Text1 h tl
-      addDots :: [Text1] -> Text
-      addDots [] = mempty
-      addDots [h] = text1ToText h
-      addDots (h : h' : tl) = text1ToText h <> "." <> addDots (h' : tl)
+      dummy = ContextName
+      theName = case try2Name dummy . text1ToText . showUnique $ x of
+        Left _ -> Nothing
+        Right (nm, _) -> Just (tshow nm)
   addType :: e -> Text1 -> Text1
-  addType x string = toText1Unsafe $ tshow (typeOf x) <> "_" <> text1ToText string
+  addType x string = toText1Unsafe $ tshow (typeOf x) <> "Ð" <> text1ToText string
 
 uniqueButNotTooLong :: Text1 -> Text1
 uniqueButNotTooLong txt =
@@ -112,4 +96,4 @@ instance Unique Bool where
 -- | This function is ment to deliver unique values for lots of things in a uniform way. Disadvantage is that
 --   the results are hard to debug.
 showUniqueAsHash :: (Show a, Typeable a) => a -> Text1
-showUniqueAsHash x = toText1Unsafe (tshow (typeOf x) <> "_" <> (tshow . abs . hash . tshow $ x))
+showUniqueAsHash x = toText1Unsafe (tshow (typeOf x) <> "Ð" <> (tshow . abs . hash . tshow $ x))

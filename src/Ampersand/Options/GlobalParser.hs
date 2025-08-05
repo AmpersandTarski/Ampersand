@@ -15,9 +15,9 @@ import Data.Monoid (First (..)) -- , Any (..), Sum (..), Endo (..))
 -- import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
 -- import           Options.Applicative.Types
 -- import qualified RIO.List as L
--- import qualified System.Directory as D
+-- import qualified RIO.Directory as D
 -- import           System.Environment (getProgName, getArgs, withArgs)
--- import           System.FilePath (isValid, pathSeparator, takeDirectory)
+-- import           RIO.FilePath (isValid, pathSeparator, takeDirectory)
 import Generics.Deriving.Monoid (mappenddefault, memptydefault)
 import Options.Applicative
 import Options.Applicative.Builder.Extra
@@ -55,8 +55,7 @@ globalOptsParser _currentDir defLogLevel =
             globalMonoidTermWidth = termWidth,
             globalMonoidOutputDir = outputDir
           }
-   in build
-        <$> (First <$> logLevelOptsParser hide0 defLogLevel)
+   in (build . First <$> logLevelOptsParser hide0 defLogLevel)
         <*> firstBoolFlagsTrue
           "time-in-log"
           "inclusion of timings in logs, for the purposes of using diff with logs"

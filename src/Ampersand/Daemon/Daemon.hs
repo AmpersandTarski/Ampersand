@@ -14,10 +14,10 @@ import Ampersand.Daemon.Parser
 import Ampersand.Daemon.Types
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config
+import RIO.Directory
+import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Text as T
-import System.Directory
-import System.FilePath
 
 messages :: DaemonState -> [Load]
 messages = filter isMessage . loads
@@ -35,7 +35,7 @@ instance Show DaemonState where
     "DaemonState: #loads = " ++ (show . length . loads $ x) ++ " #loadResults = " ++ (show . length . loadResults $ x)
 
 startAmpersandDaemon ::
-  (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   RIO env DaemonState
 startAmpersandDaemon = do
   init <- initialState
@@ -44,13 +44,13 @@ startAmpersandDaemon = do
     Right s -> pure s
 
 initialState ::
-  (HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
+  (HasDirOutput env, HasTrimXLSXOpts env, HasDaemonOpts env, HasRunner env) =>
   RIO env (Either [Text] DaemonState)
 initialState = do
   daemonConfig <- view daemonConfigL
   curDir <- liftIO getCurrentDirectory
   dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
-  result <- readUTF8File dotAmpersand
+  result <- readFileUtf8 dotAmpersand
   case result of
     Right content -> do
       let files =

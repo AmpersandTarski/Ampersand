@@ -9,7 +9,9 @@ import Ampersand.Options.Utils
 import Options.Applicative
 import Options.Applicative.Builder.Extra
 import qualified RIO.List as L
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import qualified RIO.Text.Partial as Partial
 
 -- | Command-line parser for the document command.
 docOptsParser ::
@@ -20,6 +22,8 @@ docOptsParser =
     <*> chaptersP
     <*> datamodelOnlyP
     <*> genGraphicsP
+    <*> (Set.fromList <$> visualsOutputFormatsP)
+    <*> (Set.fromList <$> focusOfVisualsP)
     <*> uniEdgesP
     <*> genTextP
     <*> fSpecFormatP
@@ -143,8 +147,80 @@ docOptsParser =
       boolFlags
         True
         "text"
-        "generation the document file."
+        "generate the document file, which contains the text and graphics."
         mempty
+    visualsOutputFormatsP :: Parser [VisualsOutputFormat]
+    visualsOutputFormatsP =
+      option
+        parseList'
+        ( long "graphicFormats"
+            <> metavar "FORMAT1,FORMAT2,..."
+            <> value [VCanon, VPng]
+            <> showDefault
+            <> completeWith (map (T.unpack . tshow) visualFormats)
+            <> help
+              ( "Comma-separated list of graphic formats to generate."
+                  <> "   Possible formats are: "
+                  <> (L.intercalate "," . map show $ visualFormats)
+                  <> ". Note that there must not be any spaces in the list."
+              )
+        )
+      where
+        parseList' :: ReadM [VisualsOutputFormat]
+        parseList' =
+          eitherReader
+            ( \arg -> do
+                let parts = Partial.splitOn "," (T.pack arg)
+                mapM visualsOutputFormatP parts
+            )
+        visualsOutputFormatP :: Text -> Either String VisualsOutputFormat
+        visualsOutputFormatP s = case filter ((==) (T.toLower s) . T.toLower . tshow) [minBound ..] of
+          [x] -> Right x
+          _ ->
+            Left
+              $ "Invalid visual output format: "
+              <> T.unpack s
+              <> ". Valid formats: "
+              <> (L.intercalate "," . map show $ visualFormats)
+
+        visualFormats :: [VisualsOutputFormat]
+        visualFormats = [minBound ..]
+    focusOfVisualsP :: Parser [FocusOfVisual]
+    focusOfVisualsP =
+      option
+        parseList'
+        ( long "focus-of-visuals"
+            <> metavar "FOCUS1,FOCUS2,..."
+            <> value [VContext, VPattern]
+            <> showDefault
+            <> completeWith (map (T.unpack . tshow) focuses)
+            <> help
+              ( "Comma-separated list of things you'd like the graphics to focus on."
+                  <> "   Possible choices are: "
+                  <> (T.unpack . T.intercalate "," . map tshow $ focuses)
+                  <> ". Note that there must not be any spaces in the list."
+              )
+        )
+      where
+        parseList' :: ReadM [FocusOfVisual]
+        parseList' =
+          eitherReader
+            ( \arg -> do
+                let parts = Partial.splitOn "," (T.pack arg)
+                mapM focusOfVisualP parts
+            )
+        focusOfVisualP :: Text -> Either String FocusOfVisual
+        focusOfVisualP s = case filter ((==) (T.toLower s) . T.toLower . tshow) [minBound ..] of
+          [x] -> Right x
+          _ ->
+            Left
+              $ "Invalid focus: "
+              <> T.unpack s
+              <> ". Valid choices are: "
+              <> (L.intercalate "," . map show $ focuses)
+
+        focuses :: [FocusOfVisual]
+        focuses = [minBound ..]
 
     blackWhiteP :: Parser Bool
     blackWhiteP =

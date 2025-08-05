@@ -25,13 +25,14 @@ classdiagram2dot env cd =
   DotGraph
     { strictGraph = False,
       directedGraph = True,
-      graphID = Nothing,
+      graphID = Just . Str . TL.fromStrict . fullName $ cd,
       graphStatements =
         DotStmts
           { attrStmts =
               GraphAttrs
                 [ RankDir FromLeft,
-                  bgColor White
+                  bgColor White,
+                  Label . StrLabel . TL.fromStrict . label $ cd
                 ]
                 :
                 --    ++ [NodeAttrs  [ ]]
@@ -58,27 +59,26 @@ classdiagram2dot env cd =
     }
   where
     group2subgraph :: (Maybe Name, NonEmpty Class) -> Maybe (DotSubGraph MyDotNode)
-    group2subgraph (x, clss) = case x of
-      Nothing -> Nothing
-      Just nm ->
-        Just
-          DotSG
-            { isCluster = True,
-              subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
-              subGraphStmts =
-                DotStmts
-                  { attrStmts =
-                      [ GraphAttrs
-                          [ Label . StrLabel . TL.fromStrict . fullName $ nm,
-                            BgColor [WC (X11Color GhostWhite) Nothing],
-                            URL "https://ampersandtarski.github.io/"
-                          ]
-                      ],
-                    subGraphs = [],
-                    nodeStmts = class2node <$> toList clss,
-                    edgeStmts = []
-                  }
-            }
+    group2subgraph (x, clss) = do
+      nm <- x
+      Just
+        DotSG
+          { isCluster = True,
+            subGraphID = Just . Str . TL.fromStrict . fullName $ nm,
+            subGraphStmts =
+              DotStmts
+                { attrStmts =
+                    [ GraphAttrs
+                        [ Label . StrLabel . TL.fromStrict . fullName $ nm,
+                          -- URL "https://ampersandtarski.github.io/",
+                          BgColor [WC (X11Color GhostWhite) Nothing]
+                        ]
+                    ],
+                  subGraphs = [],
+                  nodeStmts = class2node <$> toList clss,
+                  edgeStmts = []
+                }
+          }
 
     class2node :: Class -> DotNode MyDotNode
     class2node cl =
@@ -86,7 +86,6 @@ classdiagram2dot env cd =
         { nodeID = toMyDotNode cl,
           nodeAttributes =
             [ Shape PlainText,
-              GVcomp.Color [WC (X11Color Purple) Nothing],
               Label (HtmlLabel (Html.Table htmlTable))
             ]
         }
@@ -96,7 +95,6 @@ classdiagram2dot env cd =
             { Html.tableFontAttrs = Nothing,
               Html.tableAttrs =
                 [ Html.BGColor (X11Color White),
-                  Html.Color (X11Color Black), -- the color used for all cellborders
                   Html.Border 0, -- 0 = no border
                   Html.CellBorder 1,
                   Html.CellSpacing 0
@@ -112,7 +110,7 @@ classdiagram2dot env cd =
                     ]
                     ( Html.Text
                         [ Html.Font
-                            [Html.Color (X11Color White)]
+                            [Html.Color (X11Color Gray90)]
                             [Html.Str . fromString . T.unpack . fullName $ cl]
                         ]
                     )
@@ -126,20 +124,34 @@ classdiagram2dot env cd =
                     ( Html.Text
                         [ Html.Str
                             ( fromString
-                                ( case (Tot `elem` attProps a, Uni `elem` attProps a) of
-                                    (True, True) -> "+"
-                                    (True, False) -> "m+"
-                                    (False, True) -> "o"
-                                    (False, False) -> "m"
+                                ( if isProp'
+                                    then "p"
+                                    else case (Tot `elem` attProps a, Uni `elem` attProps a) of
+                                      (True, True) -> "+"
+                                      (True, False) -> "m+"
+                                      (False, True) -> "o"
+                                      (False, False) -> "m"
                                 )
                                 <> " "
                             ),
                           Html.Str . fromString . T.unpack . fullName $ a,
-                          Html.Str (fromString " : "),
-                          Html.Str . fromString . T.unpack . fullName . attTyp $ a
+                          Html.Str
+                            . fromString
+                            $ ( if isProp'
+                                  then mempty
+                                  else " : "
+                              ),
+                          Html.Str
+                            . fromString
+                            $ ( if isProp'
+                                  then ""
+                                  else T.unpack . fullName . attTyp $ a
+                              )
                         ]
                     )
                 ]
+              where
+                isProp' = Asy `elem` attProps a && Sym `elem` attProps a
 
     association2edge :: Association -> DotEdge MyDotNode
     association2edge ass =

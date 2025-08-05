@@ -1,79 +1,139 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.SemWeb.Turtle
-  ( parseTurtleFile,
+  ( graph2P_Context,
+    writeRdfTList,
+    mergeGraphs,
+    parseTurtle,
+    myPrefixMappings,
   )
 where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
+import Ampersand.Misc.HasClasses
 import Data.RDF
-import RIO.Directory (doesFileExist)
+import qualified Data.RDF.Vocabulary.OWL as OWL
+import qualified Data.RDF.Vocabulary.RDF as RDF
+import qualified Data.RDF.Vocabulary.RDFS as RDFS
+import qualified Data.RDF.Vocabulary.SKOS as SKOS
+import Data.Tuple.Extra (fst3)
+import RIO.FilePath
 import qualified RIO.List as L
+import qualified RIO.Map as M
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
--- | Parse a Turtle (.ttl) file into an RDF TList, using the RIO monad.
-readTurtle :: FilePath -> RIO env (Guarded (RDF TList))
-readTurtle filePath = do
-  exists <- liftIO $ doesFileExist filePath
-  if exists
-    then do
-      raw <- readUTF8File filePath
+type Graph = RDF TList
 
-      let defBaseUrl =
-            ( case raw of
-                Left _ -> Nothing
-                Right content -> case filter isBaseLine . T.lines $ content of
-                  [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
-                    [x] -> Just (BaseUrl x)
-                    _ -> Nothing
-                  _ -> Nothing
-            )
-          defMappings = Nothing
-          parser = TurtleParser defBaseUrl defMappings
-      result <- liftIO $ parseFile parser filePath
-      case result of
-        Left err -> pure $ mkTurtleParseError filePath (tshow err)
-        Right graph -> pure . pure $ graph
-    else
-      return
-        $ mkErrorReadingINCLUDE
-          Nothing
-          [ "While looking for " <> T.pack filePath,
-            "   File does not exist."
-          ]
+parseTurtle :: Text -> Guarded Graph
+parseTurtle raw = do
+  let defBaseUrl = case filter (T.isPrefixOf "@base") . T.lines $ raw of
+        [baseline] -> case take 1 . reverse . take 2 . T.words $ baseline of
+          [x] -> Just (BaseUrl x)
+          _ -> Nothing
+        _ -> Nothing
+      defMappings = Nothing
+      parser = TurtleParser defBaseUrl defMappings
+  case parseString parser raw of
+    Left msg -> mkGenericParserError (Origin "Parsing some turtle file (.ttl)") (tshow msg)
+    Right graph -> pure graph
+
+writeRdfTList :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) => Int -> Graph -> RIO env ()
+writeRdfTList i rdfGraph = do
+  env <- ask
+  let filePath = filePath' env
+  liftIO $ withFile filePath WriteMode writer
+  logDebug $ "Written: " <> display (T.pack filePath)
   where
-    isBaseLine :: Text -> Bool
-    isBaseLine = T.isPrefixOf "@base"
+    filePath' env = Ampersand.Basics.view dirOutputL env </> (baseName env <> show i) -<.> ".ttl"
+    writer h = do
+      hWriteRdf serializer h rdfGraph
+      where
+        serializer = TurtleSerializer Nothing myPrefixMappings
 
--- | Parse a Turtle file and convert it into a 'P_Context'.
-parseTurtleFile :: FilePath -> RIO env (Guarded P_Context)
-parseTurtleFile filePath = do
-  guardedGraph <- readTurtle filePath
-  pure $ getContext filePath guardedGraph
+myPrefixMappings :: PrefixMappings
+myPrefixMappings =
+  PrefixMappings
+    . M.fromList
+    $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+        ("skos", "http://www.w3.org/2004/02/skos/core#"),
+        ("owl", "http://www.w3.org/2002/07/owl#"),
+        ("", "http://ampersand.example.org/"),
+        ("xsd", "http://www.w3.org/2001/XMLSchema#")
+      ]
 
--- myPrefixMappings :: PrefixMappings
--- myPrefixMappings =
---   PrefixMappings
---     . M.fromList
---     $ [ ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
---         ("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
---         ("skos", "http://www.w3.org/2004/02/skos/core#"),
---         ("owl", "http://www.w3.org/2002/07/owl#"),
---         ("", "http://ampersand.example.org/"),
---         ("xsd", "http://www.w3.org/2001/XMLSchema#")
---       ]
+-- merge multiple graphs into one
+mergeGraphs :: NonEmpty Graph -> Graph
+mergeGraphs (h NE.:| tl) = foldl' (mergeTriples Nothing) h tl
 
-getContext :: FilePath -> Guarded (RDF TList) -> Guarded P_Context
-getContext filePath guardedGraph = do
-  graph <- guardedGraph
-  nm <- ontologyName graph
-  cptDefs <- conceptDefs (CONTEXT nm) graph
-  let relDefs = relationDefs graph
-  let isas = classifyDefs graph
+-- mergeTriples assumes the triples are expanded
+mergeTriples :: Maybe Int -> Graph -> Graph -> Graph
+mergeTriples maxBlankNode graph1 graph2 =
+  case maxBlankNode of
+    Nothing -> mergeTriples (Just $ getMaxBlankNode graph1) graph1 graph2
+    Just i -> case map objectOf $ select graph2 Nothing Nothing (Just isBNode) of
+      [] -> foldl' addTriple graph1 (uniqTriplesOf graph2)
+      (h : _) -> mergeTriples (Just (i + 1)) graph1' graph2'
+        where
+          numberToReplace = case h of
+            BNodeGen x -> x
+            _ -> fatal $ "Expected a blank node, but found: " <> tshow h
+          graph1' = foldl' addTriple graph1 (map replaceBlankNode triplesWithBlankNode)
+          graph2' = foldl' removeTriple graph2 triplesWithBlankNode
+          triplesWithBlankNode =
+            select graph2 Nothing Nothing (is h)
+              <> select graph2 (is h) Nothing Nothing
+          replaceBlankNode (Triple sub p obj) = Triple sub' p obj'
+            where
+              sub' = substitute sub
+              obj' = substitute obj
+              substitute n = case n of
+                BNodeGen x -> if x == numberToReplace then BNodeGen (i + 1) else n
+                _ -> n
+
+getMaxBlankNode :: Graph -> Int
+getMaxBlankNode gr = length . map objectOf $ select gr Nothing Nothing (Just isBNode)
+
+-- \| Convert a list of fully expanded Triples into a 'P_Context'.
+graph2P_Context :: Graph -> Guarded P_Context
+graph2P_Context graph = do
+  ontologyName <- case select graph Nothing (is RDF._type) (is OWL._Ontology) of
+    [] -> mkError "No ontology triple found in Turtle file"
+    (Triple (UNode s) _ _) : _ -> pure . fst . suggestName ContextName . toText1Unsafe $ s
+    (t : _) ->
+      mkError
+        $ T.unlines
+          [ "Subject note of ontology triple should be a UNode.",
+            "  Found: " <> tshow (subjectOf t)
+          ]
+  let cptDefsNodes = filter hasNoPattern (allConceptNodes graph)
+        where
+          hasNoPattern n = null $ select graph (is n) (is SKOS.inScheme) Nothing
+  cptDefs <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
+  let isas =
+        [ PClassify
+            { specific = PCpt sName,
+              generics = PCpt gName NE.:| [],
+              pos = someTurtle
+            }
+          | Triple sNode _ gNode <- select graph Nothing (is RDFS.subClassOf) Nothing,
+            sLbl <- labelsOf graph sNode,
+            let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
+            gLbl <- labelsOf graph gNode,
+            let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
+        ]
+  patDefs <- patternDefs
+  let relationDefsInAPattern = concatMap pt_dcs patDefs
+  let relationDefsNotInPattern =
+        [ rd | rd <- relationDefs, rd `notElem` relationDefsInAPattern
+        ]
   pure
     $ PCtx
       { ctx_vs = mempty,
@@ -83,184 +143,256 @@ getContext filePath guardedGraph = do
         ctx_ps = mempty,
         ctx_pos = mempty,
         ctx_pops = mempty,
-        ctx_pats = mempty,
-        ctx_nm = nm,
+        ctx_pats = patDefs,
+        ctx_nm = ontologyName,
         ctx_metas = mempty,
-        ctx_markup = Just Markdown,
+        ctx_markup = Just defTurtleFormat,
         ctx_lbl = Nothing,
-        ctx_lang = Nothing,
+        ctx_lang = Just defTurtleLang,
         ctx_ks = mempty,
         ctx_ifcs = mempty,
         ctx_gs = isas,
         ctx_enfs = mempty,
-        ctx_ds = relDefs,
+        ctx_ds = relationDefsNotInPattern,
         ctx_cs = cptDefs
       }
   where
     mkError :: Text -> Guarded a
-    mkError = mkTurtleParseError filePath
-    orig = Origin $ "Somewhere in " <> T.pack filePath
-    ontologyName :: RDF TList -> Guarded Name
-    ontologyName graph = case select graph Nothing rdfType owlOntology of
-      [] -> mkError "No ontology triple found in Turtle file"
-      [Triple (UNode s) _ _] -> pure . fst . suggestName ContextName . toText1Unsafe $ s
-      _ -> mkError "Multiple ontology triples found in Turtle file"
-    classifyDefs :: RDF TList -> [PClassify]
-    classifyDefs graph =
-      [ PClassify
-          { specific = PCpt sName,
-            generics = PCpt gName NE.:| [],
-            pos = orig
-          }
-        | Triple sNode _ gNode <- select graph Nothing rdfsSubClassOf Nothing,
-          sLbl <- getLabels sNode,
-          let (sName, _) = suggestName ContextName . toText1Unsafe $ sLbl,
-          gLbl <- getLabels gNode,
-          let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
-      ]
+    mkError = mkGenericParserError someTurtle
+    patternDefs :: Guarded [P_Pattern]
+    patternDefs = mapM makePattern patNodes
       where
-        getLabels :: Node -> [Text]
-        getLabels n =
-          mapMaybe (getLiteralText . objectOf)
-            $ select graph (is n) rdfsLabel Nothing
-    relationDefs :: RDF TList -> [P_Relation]
-    relationDefs graph =
-      [ P_Relation
-          { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-            dec_prps = Set.fromList (getProps relNode blank),
-            dec_pragma = Nothing,
-            dec_pos = orig,
-            dec_nm = nm,
-            dec_label = l,
-            dec_defaults = mempty,
-            dec_Mean = mempty
-          }
-        | relNode <- map subjectOf $ select graph Nothing rdfType owlObjectProperty,
-          blank <- map subjectOf $ select graph Nothing owlOnProperty (is relNode),
-          tgtNode <- map objectOf $ select graph (is blank) owlOnClass Nothing,
-          srcNode <- map subjectOf $ select graph Nothing rdfsSubClassOf (is blank),
-          relLbl <- getLabels relNode,
-          let (nm, l) = suggestName RelationName . toText1Unsafe $ relLbl,
-          srcLbl <- getLabels srcNode,
-          let (src, _) = suggestName ContextName . toText1Unsafe $ srcLbl,
-          tgtLbl <- getLabels tgtNode,
-          let (tgt, _) = suggestName ContextName . toText1Unsafe $ tgtLbl
-      ]
-      where
-        getLabels :: Node -> [Text]
-        getLabels n =
-          mapMaybe (getLiteralText . objectOf)
-            $ select graph (is n) rdfsLabel Nothing
-        getProps :: Node -> Node -> [PProp]
-        getProps relNode restrictionNode =
-          concat
-            $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) owlQualifiedCardinality Nothing]
-            <> [[P_Uni] | _ <- select graph (is restrictionNode) owlMaxCardinality Nothing]
-            <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) owlMinCardinality Nothing]
-            <> [[P_Asy] | _ <- map subjectOf $ select graph Nothing owlInverseOf (is restrictionNode)]
-            <> [propsOfInverse inv | inv <- map subjectOf $ select graph Nothing owlInverseOf (is relNode)]
-          where
-            propsOfInverse :: Node -> [PProp]
-            propsOfInverse invRel =
-              case map subjectOf $ select graph Nothing owlOnProperty (is invRel) of
-                [blankInvRestriction] ->
-                  [P_Inj | not . null $ uniList]
-                    <> [P_Sur | not . null $ surList]
-                  where
-                    uniList = L.intersect [unode "http://www.w3.org/2002/07/owl#qualifiedCardinality", unode "http://www.w3.org/2002/07/owl#maxCardinality"] cardinalityNodes
-                    surList = L.intersect [unode "http://www.w3.org/2002/07/owl#qualifiedCardinality", unode "http://www.w3.org/2002/07/owl#minCardinality"] cardinalityNodes
-                    cardinalityNodes =
-                      [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
-                _ -> []
-    conceptDefs :: DefinitionContainer -> RDF TList -> Guarded [PConceptDef]
-    conceptDefs frm graph =
-      sequence
-        [ mkConceptDef cpt
-          | cpt <- map subjectOf $ select graph Nothing rdfType owlClass,
-            cpt
-              `elem` map subjectOf (select graph (is cpt) rdfType owlNamedIndividual)
-        ]
-      where
-        mkConceptDef :: Node -> Guarded PConceptDef
-        mkConceptDef cpt = do
-          (nm, l) <- case map objectOf $ select graph (is cpt) rdfsLabel Nothing of
-            [] -> mkGenericParserError orig $ "No label found for concept " <> tshow cpt
-            [lbl] -> getName lbl
-            (h : _) ->
-              addWarning
-                (mkTurtleWarning orig ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
-                (getName h)
+        patNodes :: [(Node, Text)]
+        patNodes =
+          [ (patNode, patLbl)
+            | conceptScheme <- instancesOf graph SKOS._ConceptScheme,
+              patNode <- conceptScheme : subclassesOf graph conceptScheme,
+              patLbl <- labelsOf graph patNode
+          ]
+        makePattern :: (Node, Text) -> Guarded P_Pattern
+        makePattern (patNode, patLbl) = do
+          let (nm, l) = suggestName PatternName . toText1Unsafe $ patLbl
+          let cptDefsNodes = filter thisPattern (allConceptNodes graph)
+                where
+                  thisPattern :: Node -> Bool
+                  thisPattern n = not . null $ select graph (is n) (is SKOS.inScheme) (is patNode)
+          cptDefs <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
+          let cptNames = map name cptDefs
+              isForPattern :: P_Relation -> Bool
+              isForPattern r =
+                name (pSrc . dec_sign $ r)
+                  `elem` cptNames
+                  && name (pTgt . dec_sign $ r)
+                  `elem` cptNames
           pure
-            PConceptDef
-              { cdname = nm,
-                cdmean = mempty,
-                cdlbl = l,
-                cdfrom = frm,
-                cddef2 = PCDDefLegacy def2 "",
-                pos = orig
+            P_Pat
+              { pt_xps = mempty,
+                pt_vds = mempty,
+                pt_rls = mempty,
+                pt_pop = mempty,
+                pt_nm = nm,
+                pt_lbl = l,
+                pt_ids = mempty,
+                pt_gns = mempty,
+                pt_enfs = mempty,
+                pt_end = someTurtle,
+                pt_dcs = filter isForPattern relationDefs,
+                pt_cds = cptDefs,
+                pt_Reprs = mempty,
+                pt_RRuls = mempty,
+                pos = someTurtle
               }
+
+    relationDefs :: [P_Relation]
+    relationDefs =
+      concat
+        . mapMaybe (buildRelation . subjectOf)
+        $ (select graph Nothing (is RDF._type) (is OWL._ObjectProperty))
+        <> (select graph Nothing (is RDF._type) (is OWL._DatatypeProperty))
+      where
+        buildRelation :: Node -> Maybe [P_Relation]
+        buildRelation relNode = do
+          (nm, l) <- nameAndLabelOfUri RelationName relNode
+          return
+            [ P_Relation
+                { dec_sign = P_Sign (PCpt src) (PCpt tgt),
+                  dec_prps = getProps restrictionsBlanks,
+                  dec_pragma = Nothing,
+                  dec_pos = someTurtle,
+                  dec_nm = nm,
+                  dec_label = l,
+                  dec_defaults = mempty,
+                  dec_Mean = map PMeaning $ getMarkups relNode (map is [SKOS.definition, RDFS.comment]) graph
+                }
+              | tgtNode <- L.nub . concatMap rangeNodesOfRestriction $ restrictionsBlanks,
+                srcNode <- L.nub . concatMap domainNodesOfRestriction $ restrictionsBlanks,
+                let (src, _) = case nameAndLabelOfUri ConceptName srcNode of
+                      Just x -> x
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow srcNode,
+                let (tgt, _) = case nameAndLabelOfUri ConceptName tgtNode of
+                      Just x -> x
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow tgtNode
+            ]
           where
-            getName :: Node -> Guarded (Name, Maybe Label)
-            getName lblNode = case suggestName ContextName . toText1Unsafe <$> getLiteralText lblNode of
-              Nothing -> mkGenericParserError orig $ "Label found for concept " <> tshow cpt <> " does not contain text."
-              Just x -> pure x
-            def2 = T.intercalate "\n" . mapMaybe (getLiteralText . objectOf) $ select graph (is cpt) skosDefinition Nothing
+            nameAndLabelOfUri :: NameType -> Node -> Maybe (Name, Maybe Label)
+            nameAndLabelOfUri typ uri = do
+              lblUri <- case objectOf <$> select graph (is uri) (is RDFS.label) Nothing of
+                [] -> Nothing
+                (h : _) -> Just h
+              (nm, lbl) <- fmap (suggestName typ . toText1Unsafe) . fst3 . literalTextOf $ lblUri
+              pure (nm, lbl)
+            restrictionsBlanks :: [Node]
+            restrictionsBlanks =
+              map subjectOf
+                $ select graph Nothing (is OWL.onProperty) (is relNode)
+                <> select graph Nothing (is OWL.onClass) (is relNode)
+            rangeNodesOfRestriction :: Node -> [Node]
+            rangeNodesOfRestriction blank =
+              map objectOf
+                $ select graph (is blank) (is OWL.allValuesFrom) Nothing
+                <> select graph (is blank) (is OWL.onClass) Nothing
+                <> select graph (is blank) (is RDFS.range) Nothing
+            domainNodesOfRestriction :: Node -> [Node]
+            domainNodesOfRestriction blank =
+              map objectOf (select graph (is blank) (is RDFS.domain) Nothing)
+                <> map subjectOf (select graph Nothing (is RDFS.subClassOf) (is blank))
+            getProps :: [Node] -> Set PProp
+            getProps blanks =
+              Set.unions
+                [ getProps' restrictionNode
+                  | restrictionNode <- blanks
+                ]
+            getProps' :: Node -> Set PProp
+            getProps' restrictionNode =
+              Set.fromList
+                . concat
+                $ [[P_Uni, P_Tot] | _ <- select graph (is restrictionNode) (is OWL.qualifiedCardinality) Nothing]
+                <> [[P_Uni] | _ <- select graph (is restrictionNode) (is OWL.maxCardinality) Nothing]
+                <> [[P_Tot] | LNode (TypedL "1" _) <- map objectOf $ select graph (is restrictionNode) (is OWL.minCardinality) Nothing]
+                <> [[P_Asy] | _ <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is restrictionNode)]
+                <> [propsOfInverse inv | inv <- map subjectOf $ select graph Nothing (is OWL.inverseOf) (is relNode)]
+              where
+                propsOfInverse :: Node -> [PProp]
+                propsOfInverse invRel =
+                  case map subjectOf $ select graph Nothing (is OWL.onProperty) (is invRel) of
+                    [blankInvRestriction] ->
+                      [P_Inj | not . null $ uniList]
+                        <> [P_Sur | not . null $ surList]
+                      where
+                        uniList = L.intersect [OWL.qualifiedCardinality, OWL.maxCardinality] cardinalityNodes
+                        surList = L.intersect [OWL.qualifiedCardinality, OWL.minCardinality] cardinalityNodes
+                        cardinalityNodes =
+                          [p | Triple _ p (LNode (TypedL "1" _)) <- select graph (is blankInvRestriction) Nothing Nothing]
+                    _ -> []
 
-getLiteralText :: Node -> Maybe Text
-getLiteralText n = case n of
-  LNode (PlainL txt) -> Just txt
-  LNode (PlainLL txt _) -> Just txt
-  LNode (TypedL txt _) -> Just txt
-  _ -> Nothing
+allConceptNodes :: Graph -> [Node]
+allConceptNodes graph =
+  filter (not . isBNode) $ subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
 
--- getExactlyOneMatchingTriple :: RDF TList -> Maybe Node -> Node -> Node -> Guarded Triple
-
-selector :: Text -> NodeSelector
-selector txt = Just fun
+mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
+mkConceptDef graph from cpt = do
+  (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
+    [] ->
+      addWarning
+        (mkTurtleWarning someTurtle ["No label found for concept " <> tshow cpt <> ", using URI as label"])
+        (getNameAndLabel cpt)
+    [h] -> getNameAndLabel h
+    (h : _) ->
+      addWarning
+        (mkTurtleWarning someTurtle ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
+        (getNameAndLabel h)
+  pure
+    PConceptDef
+      { cdname = nm,
+        cdmean = meanings,
+        cdlbl = l,
+        cdfrom = from,
+        cddef2 = PCDDefNew def,
+        pos = someTurtle
+      }
   where
-    fun x = x == unode txt
+    def :: PMeaning
+    meanings :: [PMeaning]
+    (def, meanings) = case getMarkups cpt (map is [SKOS.definition, RDFS.comment]) graph of
+      [] ->
+        ( PMeaning
+            P_Markup
+              { mString = "GEEN DEFINITIE GEVONDEN",
+                mLang = Just defTurtleLang,
+                mFormat = Just defTurtleFormat
+              },
+          []
+        )
+      (h : tl) -> (PMeaning h, PMeaning <$> tl)
+
+    getNameAndLabel :: Node -> Guarded (Name, Maybe Label)
+    getNameAndLabel lblNode =
+      case suggestName ContextName . toText1Unsafe <$> fst3 (literalTextOf lblNode) of
+        Nothing -> mkGenericParserError someTurtle $ "Label found for concept " <> tshow cpt <> " does not contain text."
+        Just x -> pure x
+
+getMarkups :: Node -> [NodeSelector] -> Graph -> [P_Markup]
+getMarkups thing sel graph =
+  [ P_Markup
+      { mString = txt,
+        mLang = lang,
+        mFormat = format
+      }
+    | (mtxt, lang, format) <-
+        map (literalTextOf . objectOf)
+          $ concat [select graph (is thing) selectr Nothing | selectr <- sel],
+      txt <- maybeToList mtxt
+  ]
+
+literalTextOf :: Node -> (Maybe Text, Maybe Lang, Maybe PandocFormat)
+literalTextOf lblUri = case lblUri of
+  LNode (PlainL txt) -> (Just txt, Just defTurtleLang, Just defTurtleFormat)
+  LNode (PlainLL txt format) -> result txt format
+  LNode (TypedL txt format) -> result txt format
+  UNode txt -> (Just txt, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNodeGen _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  BNode _ -> (Nothing, Just defTurtleLang, Just defTurtleFormat) -- TODO: Warning that this is not a literal
+  where
+    result txt format =
+      ( Just txt,
+        case T.toLower format of
+          "nl" -> Just Dutch
+          "en" -> Just English
+          _ -> Just defTurtleLang,
+        case T.toLower format of
+          "rest" -> Just ReST
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#html" -> Just HTML
+          "latex" -> Just LaTeX
+          _ -> Just defTurtleFormat
+      )
+
+defTurtleLang :: Lang
+defTurtleLang = Dutch
+
+defTurtleFormat :: PandocFormat
+defTurtleFormat = Markdown
+
+labelsOf :: Graph -> Node -> [Text]
+labelsOf graph n =
+  mapMaybe (fst3 . literalTextOf . objectOf)
+    $ select graph (is n) (is RDFS.label) Nothing
+
+-- getExactlyOneMatchingTriple :: Graph -> Maybe Node -> Node -> Node -> Guarded Triple
+
+instancesOf :: Graph -> Node -> [Node]
+instancesOf graph cls =
+  map subjectOf (select graph Nothing (is RDF._type) (is cls))
+    <> concatMap (instancesOf graph) (subclassesOf graph cls)
+
+subclassesOf :: Graph -> Node -> [Node]
+subclassesOf graph cls =
+  case map subjectOf
+    $ select graph Nothing (is RDFS.subClassOf) (is cls) of
+    [] -> []
+    subs -> subs <> concatMap (subclassesOf graph) subs
 
 is :: Node -> NodeSelector
 is n = Just (== n)
 
-owlClass :: NodeSelector
-owlClass = selector "http://www.w3.org/2002/07/owl#Class"
-
-owlNamedIndividual :: NodeSelector
-owlNamedIndividual = selector "http://www.w3.org/2002/07/owl#NamedIndividual"
-
-owlQualifiedCardinality :: NodeSelector
-owlQualifiedCardinality = selector "http://www.w3.org/2002/07/owl#qualifiedCardinality"
-
-owlInverseOf :: NodeSelector
-owlInverseOf = selector "http://www.w3.org/2002/07/owl#inverseOf"
-
-owlMaxCardinality :: NodeSelector
-owlMaxCardinality = selector "http://www.w3.org/2002/07/owl#maxCardinality"
-
-owlMinCardinality :: NodeSelector
-owlMinCardinality = selector "http://www.w3.org/2002/07/owl#minCardinality"
-
-owlObjectProperty :: NodeSelector
-owlObjectProperty = selector "http://www.w3.org/2002/07/owl#ObjectProperty"
-
-owlOnProperty :: NodeSelector
-owlOnProperty = selector "http://www.w3.org/2002/07/owl#onProperty"
-
-owlOnClass :: NodeSelector
-owlOnClass = selector "http://www.w3.org/2002/07/owl#onClass"
-
-owlOntology :: NodeSelector
-owlOntology = selector "http://www.w3.org/2002/07/owl#Ontology"
-
-rdfsLabel :: NodeSelector
-rdfsLabel = selector "http://www.w3.org/2000/01/rdf-schema#label"
-
-rdfsSubClassOf :: NodeSelector
-rdfsSubClassOf = selector "http://www.w3.org/2000/01/rdf-schema#subClassOf"
-
-skosDefinition :: NodeSelector
-skosDefinition = selector "http://www.w3.org/2004/02/skos/core#definition"
-
-rdfType :: NodeSelector
-rdfType = selector "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+someTurtle :: Origin
+someTurtle = Origin "Somewhere in imported .ttl files."

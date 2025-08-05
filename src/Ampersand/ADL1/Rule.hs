@@ -10,7 +10,6 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-import qualified RIO.NonEmpty as NE
 
 hasantecedent :: Rule -> Bool
 hasantecedent r =
@@ -45,11 +44,9 @@ rulefromProp prp rel =
     { rrnm =
         withNameSpace
           (nameSpaceOf rel)
-          . mkName RuleName
-          $ ( case toNamePart (tshow prp <> "_" <> (tshow . abs . hash . tshow $ rel)) of
-                Nothing -> fatal "Not a proper namepart."
-                Just np -> np NE.:| []
-            ),
+          $ case try2Name RuleName (tshow prp <> (tshow . abs . hash . tshow $ rel)) of
+            Left err -> fatal $ "Not a proper name: " <> err
+            Right (nm, _) -> nm,
       rrlbl = Just . Label $ tshow prp <> " rule for relation " <> tshow rel,
       formalExpression = rExpr,
       rrfps = PropertyRule relIdentifier (origin rel),
@@ -61,7 +58,7 @@ rulefromProp prp rel =
     }
   where
     relIdentifier :: Text1
-    relIdentifier = toText1Unsafe $ tshow prp <> "_" <> tshow rel
+    relIdentifier = toText1Unsafe $ tshow prp <> "Ð" <> tshow rel
     showDcl :: Text
     showDcl = tshow rel
     r :: Expression
