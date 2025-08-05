@@ -126,6 +126,7 @@ module.exports = {
                 'ampersand/the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
                 'ampersand/the-tools-we-use/building/haskell',
                 'ampersand/the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
+                'ampersand/the-tools-we-use/testing-infrastructure',
                 'ampersand/the-tools-we-use/deploying-rap3-with-azure',
                 'ampersand/the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
                 'ampersand/the-tools-we-use/deploying-with-kubernetes',
