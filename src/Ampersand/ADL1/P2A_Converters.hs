@@ -1302,9 +1302,9 @@ typeGraph contextInfo = L.foldr overlay empty [initialGraph, anyEdges, oneGraph]
 
 anyCpt :: A_Concept
 anyCpt = (PlainConcept . Set.fromList)
-            [(Name { nameParts = (toNamePartText1 . toText1Unsafe) "_ANY" :| [],
-                    nameType  = ConceptName
-                   }
+            [(case try2Name ConceptName "_ANY" of
+                Left err -> fatal $ "Not a proper concept name: _ANY. " <> err
+                Right (nm, _) -> nm
             , Nothing)]
 
 termPrim2Expr :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression

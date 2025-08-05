@@ -1451,9 +1451,9 @@ instance Named A_Concept where
   name ONE = nameOfONE
 
 toConceptName :: Text -> Set.Set A_Concept -> Name
-toConceptName opString cpts = case (toNamePart . T.intercalate opString . map tshow . Set.toList) cpts of
-  Nothing -> fatal $ "Not a proper concept name: " <> tshow cpts
-  Just np -> (mkName ConceptName . (NE.:| [])) np
+toConceptName opString cpts = case (try2Name ConceptName . T.intercalate opString . map tshow . Set.toList) cpts of
+  Left err -> fatal $ "Not a proper concept name: " <> tshow cpts <> ". " <> err
+  Right (nm, _) -> nm
 
 instance Labeled A_Concept where
   mLabel cpt = case cpt of

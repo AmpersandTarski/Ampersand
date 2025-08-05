@@ -120,6 +120,7 @@ extra-source-files:
     testing/StillUnsupported/Issue1397.adl
     testing/StillUnsupported/Issue1419.adl
     testing/StillUnsupported/Issue1420.adl
+    testing/StillUnsupported/Issue1594.adl
     testing/StillUnsupported/Issue166.adl
     testing/StillUnsupported/Issue166_2.adl
     testing/StillUnsupported/singletontest.adl
@@ -193,6 +194,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/ARM20-Test8.adl
     testing/Travis/testcases/Misc/ComparisonTest1.adl
     testing/Travis/testcases/Misc/css/Custom.css
+    testing/Travis/testcases/Misc/disambTestStef.adl
     testing/Travis/testcases/Misc/FraakTest1.adl
     testing/Travis/testcases/Misc/FraakTest2.adl
     testing/Travis/testcases/Misc/Hello.adl

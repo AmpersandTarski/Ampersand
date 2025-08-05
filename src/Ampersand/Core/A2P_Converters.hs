@@ -232,9 +232,9 @@ aConcept2pConcept cpt =
     PlainConcept {} -> PCpt { p_cptnm = name cpt }
   where
     toPcpt sep cs
-     = PCpt {p_cptnm = Name { nameParts = (toNamePartText1 . toText1Unsafe . T.intercalate sep . map tshow . toList) cs :| [],
-                              nameType  = ConceptName
-                            }
+     = PCpt {p_cptnm = case try2Name ConceptName (T.intercalate sep . map tshow . toList $ cs) of
+                         Left err -> fatal $ "Not a proper concept name: " <> T.intercalate sep (map tshow . toList $ cs) <> ". " <> err
+                         Right (nm, _) -> nm
             }
 
 aPurpose2pPurpose :: Purpose -> PPurpose
