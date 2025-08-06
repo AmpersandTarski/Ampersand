@@ -116,7 +116,9 @@ graph2P_Context graph = do
   let cptDefsNodes = filter hasNoPattern (allConceptNodes graph)
         where
           hasNoPattern n = null $ select graph (is n) (is SKOS.inScheme) Nothing
-  cptDefs <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
+  cptDefsAndPurposes <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
+  let cptDefs = fst <$> cptDefsAndPurposes
+      purposes = concatMap snd cptDefsAndPurposes
   let isas =
         [ PClassify
             { specific = PCpt sName,
@@ -140,7 +142,7 @@ graph2P_Context graph = do
         ctx_rs = mempty,
         ctx_rrules = mempty,
         ctx_reprs = mempty,
-        ctx_ps = mempty,
+        ctx_ps = purposes,
         ctx_pos = mempty,
         ctx_pops = mempty,
         ctx_pats = patDefs,
@@ -176,8 +178,11 @@ graph2P_Context graph = do
                 where
                   thisPattern :: Node -> Bool
                   thisPattern n = not . null $ select graph (is n) (is SKOS.inScheme) (is patNode)
-          cptDefs <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
+          cptDefsAndPurposes <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
           let cptNames = map name cptDefs
+              cptDefs = fst <$> cptDefsAndPurposes
+              purposes = concatMap snd cptDefsAndPurposes
+
               isForPattern :: P_Relation -> Bool
               isForPattern r =
                 name (pSrc . dec_sign $ r)
@@ -186,7 +191,7 @@ graph2P_Context graph = do
                   `elem` cptNames
           pure
             P_Pat
-              { pt_xps = mempty,
+              { pt_xps = purposes,
                 pt_vds = mempty,
                 pt_rls = mempty,
                 pt_pop = mempty,
@@ -289,7 +294,7 @@ allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
   filter (not . isBNode) $ subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
 
-mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
+mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded (PConceptDef, [PPurpose])
 mkConceptDef graph from cpt = do
   (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
     [] ->
@@ -301,15 +306,28 @@ mkConceptDef graph from cpt = do
       addWarning
         (mkTurtleWarning someTurtle ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
         (getNameAndLabel h)
+  let thePurposes :: [PPurpose]
+      thePurposes =
+        [ PPurpose
+            { pexRefIDs = mempty,
+              pexObj = PRef2ConceptDef nm,
+              pexMarkup = mrkUp,
+              pos = someTurtle
+            }
+          | mrkUp <- getMarkups cpt [is SKOS.scopeNote] graph
+        ]
+
   pure
-    PConceptDef
-      { cdname = nm,
-        cdmean = meanings,
-        cdlbl = l,
-        cdfrom = from,
-        cddef2 = PCDDefNew def,
-        pos = someTurtle
-      }
+    ( PConceptDef
+        { cdname = nm,
+          cdmean = meanings,
+          cdlbl = l,
+          cdfrom = from,
+          cddef2 = PCDDefNew def,
+          pos = someTurtle
+        },
+      thePurposes
+    )
   where
     def :: PMeaning
     meanings :: [PMeaning]
