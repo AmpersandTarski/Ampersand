@@ -120,7 +120,7 @@ createFspec =
     pure (pCtx2Fspec env =<< pContext)
 
 -- | make sure that the relations defined in formalampersand.adl are in sync with the transformers of formal ampersand.
-checkFormalAmpersandTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkFormalAmpersandTransformers :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded ()
 checkFormalAmpersandTransformers env x =
   case pCtx2Fspec env x of
     Errors err ->
@@ -131,7 +131,7 @@ checkFormalAmpersandTransformers env x =
     Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
-checkPrototypeContextTransformers :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded ()
+checkPrototypeContextTransformers :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded ()
 checkPrototypeContextTransformers env x =
   case pCtx2Fspec env x of
     Errors err ->
@@ -250,7 +250,7 @@ grindInto metamodel specification = do
             }
   return pCtx
 
-pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
+pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
   checkInvariants fSpec

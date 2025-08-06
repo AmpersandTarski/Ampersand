@@ -24,8 +24,10 @@ import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
+import Ampersand.Runners (logLevel)
+import Ampersand.Types.Config (HasRunner, runnerL)
 import Algebra.Graph.AdjacencyMap
-import Data.Tuple.Extra ({-fst3, -}snd3, thd3)
+import Data.Tuple.Extra (fst3, snd3, thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -225,7 +227,7 @@ onlyUserConcepts = fmap . userList . conceptMap
 --    Using the Applicative operations <$> and <*> causes these errors to be in parallel
 -- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
 pCtx2aCtx ::
-  (HasFSpecGenOpts env) =>
+  (HasFSpecGenOpts env, HasRunner env) =>
   env ->
   P_Context ->
   Guarded A_Context
@@ -570,7 +572,7 @@ pCtx2aCtx
       pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (conceptMap ci) (reprcpts repr), aReprTo = reprdom repr}
       pRepr2aRepr ci repr@ImplicitRepr {} =
         do
-          expr <- (term2Expr ci . reprTerm) repr
+          expr <- (term2Expr env ci . reprTerm) repr
           return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
@@ -578,7 +580,7 @@ pCtx2aCtx
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
-              expr <- term2Expr ci (Prim (PNamedR nmdr))
+              expr <- term2Expr env ci (Prim (PNamedR nmdr))
               let dcl = case expr of
                          EDcD d -> d
                          _ -> fatal ("Expected a relation in a population, but got "<>tshow expr<>".")
@@ -652,7 +654,7 @@ pCtx2aCtx
                 case payload of
                   P_ViewExp term ->
                     do
-                      viewExpr <- term2Expr ci (PCps orig (Prim (Pid orig cpt)) term)
+                      viewExpr <- term2Expr env ci (PCps orig (Prim (Pid orig cpt)) term)
                       pure (ViewExp viewExpr)
                   P_ViewText str -> pure $ ViewText str
 
@@ -683,7 +685,7 @@ pCtx2aCtx
           getInterface
            = case filter ((==si_str sub).name) p_interfaces of
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
-               [pIfc] -> do expr <- (term2Expr contextInfo . obj_term . ifc_Obj) pIfc
+               [pIfc] -> do expr <- (term2Expr env contextInfo . obj_term . ifc_Obj) pIfc
                             let srcCpt = source expr
                             case leq (conceptGraph contextInfo) tgtConcept srcCpt of
                               Just True  -> return srcCpt
@@ -705,11 +707,11 @@ pCtx2aCtx
               obj_mView = mView,
               obj_msub = p_msub
             } -> do
-              objExpr <- term2Expr contextInfo term
+              objExpr <- term2Expr env contextInfo term
               -- The following strange construction gives a type error if subinterfaces don't match with their parent's target concept.
               -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
               expr <- case mCpt of
-                           Just tgtConcept -> term2Expr contextInfo (PCps (origin term) (Prim (Pid (origin term) (aConcept2pConcept tgtConcept))) term)
+                           Just tgtConcept -> term2Expr env contextInfo (PCps (origin term) (Prim (Pid (origin term) (aConcept2pConcept tgtConcept))) term)
                            Nothing         -> pure objExpr
               a_msub <- traverse (pSubIfc2aSubIfc contextInfo (target objExpr)) p_msub
               checkCrud
@@ -961,7 +963,7 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            exp' <- term2Expr ci expr
+            exp' <- term2Expr env ci expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -991,17 +993,17 @@ pCtx2aCtx
             penfExpr = x
           } = case oper of
                 IsSuperSet {} ->
-                  do xpr <- term2Expr ci (PInc pos' x (Prim pRel))
+                  do xpr <- term2Expr env ci (PInc pos' x (Prim pRel))
                      case xpr of
                        EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 1 in pEnforce2aEnforce."
                 IsSubSet {} ->
-                  do xpr <- term2Expr ci (PInc pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci (PInc pos' (Prim pRel) x)
                      case xpr of
                        EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 2 in pEnforce2aEnforce."
                 IsSameSet {} ->
-                  do xpr <- term2Expr ci (PEqu pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci (PEqu pos' (Prim pRel) x)
                      case xpr of
                        EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 3 in pEnforce2aEnforce."
@@ -1054,7 +1056,7 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        do isegs <- traverse (term2Expr ci) (ix_ats pidt)
+        do isegs <- traverse (term2Expr env ci) (ix_ats pidt)
            return ( Id
                     { idPos = origin pidt,
                       idName = ix_name pidt,
@@ -1074,7 +1076,7 @@ pCtx2aCtx
         do
           let src = (aConcept2pConcept . source) expr
               tgt = (aConcept2pConcept . target) expr
-          e <- term2Expr ci (case s of
+          e <- term2Expr env ci (case s of
                               Src -> PCps o (Prim (Pid o src)) x
                               Tgt -> PCps o (Prim (Pid o tgt)) x
                             )
@@ -1139,10 +1141,13 @@ instance (Show a) => Show (OpTree a) where
         showIndented (indent <> "   ") r
 
 showOpTree :: OpTree (Expression, Signature) -> Text
-showOpTree opTree = T.intercalate "\n" (formatAligned opTree)
+showOpTree tree = T.intercalate "\n" (formatTree tree)
 {-
-showOpTree formats the OpTree structure in a readable way. (Cline built it on Aug 6th, 2025, because I would never have put in the effort myself.)
-Example output:
+showOpTree formats the OpTree structure in a readable way.
+Cline built it on Aug 6th, 2025.
+Personally, I would never have put in the effort myself but it was too much fun to let Cline do it.)
+Example output when compiling testing/Travis/testcases/prototype/shouldSucceed/try17.adl:
+Signatures yields:
 [X*Y]       └── result3 [X*Y]=result1 [X*Course];manages [Activity*Y]
 [X*Y]           ├── result3 [X*Y]
 [X*Y]           └── result1 [X*Course];manages [Activity*Y]
@@ -1151,44 +1156,34 @@ Example output:
 This function .
 -}
   where
-    formatAligned :: OpTree (Expression, Signature) -> [Text]
-    formatAligned tree = 
-      let maxSigWidth = calculateMaxSigWidth tree
-          alignedLines = shw maxSigWidth "" True tree
-      in alignedLines
+    formatTree :: OpTree (Expression, Signature) -> [Text]
+    formatTree t = let maxWidth = calculateMaxSigWidth t in shw maxWidth "" True t
     
     calculateMaxSigWidth :: OpTree (Expression, Signature) -> Int
-    calculateMaxSigWidth (STnullary ss) = 
-      T.length (T.intercalate ", " (fmap (tshow . snd) ss))
+    calculateMaxSigWidth (STnullary ss) = T.length (formatSigs ss)
     calculateMaxSigWidth (STbinary l r ss) = 
-      let currentWidth = T.length (T.intercalate ", " (fmap (tshow . snd) ss))
-          leftWidth = calculateMaxSigWidth l
-          rightWidth = calculateMaxSigWidth r
-      in max currentWidth (max leftWidth rightWidth)
+      max (T.length (formatSigs ss)) (max (calculateMaxSigWidth l) (calculateMaxSigWidth r))
+    
+    formatSigs :: [(Expression, Signature)] -> Text
+    formatSigs = T.intercalate ", " . fmap (tshow . snd)
+    
+    formatExprs :: [(Expression, Signature)] -> Text
+    formatExprs = T.intercalate ", " . fmap (showA . fst)
     
     shw :: Int -> Text -> Bool -> OpTree (Expression, Signature) -> [Text]
-    shw maxSigWidth treePrefix isLast (STnullary ss) = 
-      let signatures = T.intercalate ", " (fmap (tshow . snd) ss)
-          padding = T.replicate (maxSigWidth - T.length signatures) " "
-          treeChars = treePrefix <> (if isLast then "└── " else "├── ")
-          expressions = T.intercalate ", " (fmap (showA . fst) ss)
-      in [signatures <> padding <> "  " <> treeChars <> expressions]
+    shw maxWidth prefix isLast (STnullary ss) = 
+      [formatSigs ss <> padding <> "  " <> treeChars <> formatExprs ss]
+      where
+        padding = T.replicate (maxWidth - T.length (formatSigs ss)) " "
+        treeChars = prefix <> (if isLast then "└── " else "├── ")
           
-    shw maxSigWidth treePrefix isLast (STbinary l r ss) = 
-      let signatures = T.intercalate ", " (fmap (tshow . snd) ss)
-          padding = T.replicate (maxSigWidth - T.length signatures) " "
-          treeChars = treePrefix <> (if isLast then "└── " else "├── ")
-          expressions = showComplexExpr (fmap fst ss)
-          newTreePrefix = treePrefix <> (if isLast then "    " else "│   ")
-      in (signatures <> padding <> "  " <> treeChars <> expressions) :
-         shw maxSigWidth newTreePrefix False l <>
-         shw maxSigWidth newTreePrefix True r
-         
-    showComplexExpr :: [Expression] -> Text
-    showComplexExpr exprs = case exprs of
-      [] -> ""
-      [expr] -> showA expr
-      _ -> T.intercalate ", " (fmap showA exprs)
+    shw maxWidth prefix isLast (STbinary l r ss) = 
+      (formatSigs ss <> padding <> "  " <> treeChars <> formatExprs ss) :
+      shw maxWidth newPrefix False l <> shw maxWidth newPrefix True r
+      where
+        padding = T.replicate (maxWidth - T.length (formatSigs ss)) " "
+        treeChars = prefix <> (if isLast then "└── " else "├── ")
+        newPrefix = prefix <> (if isLast then "    " else "│   ")
 
 instance (Flippable a) => Flippable (OpTree a) where
   flp (STbinary a b ss) = STbinary (flp b) (flp a) (flp ss)
@@ -1200,8 +1195,8 @@ instance (Flippable a) => Flippable (OpTree a) where
 --   Post:
 --    - Every set of (expression, signature) pairs in the OpTree is not empty.
 --    - Every signature is consistent with the type rules of the term it corresponds to.
-signatures :: ContextInfo -> Term TermPrim -> Guarded (OpTree (Expression, Signature))
-signatures contextInfo trm = case trm of
+signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded (OpTree (Expression, Signature))
+signatures env contextInfo trm = case trm of
   Prim (PI _)               ->                       pure (STnullary [(EDcI anyCpt, ISgn anyCpt)])
   PCpl _ e@(Prim (PI _))    ->                       signats e
   Prim (Pid _ c)            -> let c'=pCpt2aCpt c in pure (STnullary [(EDcI c', ISgn c')])
@@ -1286,9 +1281,21 @@ signatures contextInfo trm = case trm of
                      , Just left<-[meet conceptsGraph between cpta] , Just right<-[meet conceptsGraph cptb between]
                      ]
          case trees of
-          []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis sgnsa sgnsb)
+          []  -> let baseMsg = "Cannot match the signatures of the two sides of the " <> kind <> "." <> diagnosis sgnsa sgnsb
+                     errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
+                     opTree = STbinary sgnaTree sgnbTree errorExprs
+                 in Errors . return $ CTXE o $ 
+                    if logLevel (view runnerL env) == LevelDebug
+                    then baseMsg <> "\n\nType analysis:\n" <> showOpTree opTree
+                    else baseMsg
           [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
-          triplesigns  -> (Errors . return . CTXE o) ("Ambiguous signatures of the two sides of the composition of "<>showP a<>" and "<>showP b<>".  You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd pairA)<>" ; "<>showP b<>tshow (snd pairB) | (_,pairA,pairB)<-triplesigns])
+          triplesigns  -> let baseMsg = "Ambiguous signatures of the two sides of the composition of " <> showP a <> " and " <> showP b
+                              suggestions = ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " ; " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
+                              opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
+                          in Errors . return $ CTXE o $ 
+                             if logLevel (view runnerL env) == LevelDebug
+                             then baseMsg <> suggestions <> "\n\nVerbose type analysis:\n" <> showOpTree opTree
+                             else baseMsg <> suggestions
         where
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
@@ -1336,7 +1343,7 @@ signatures contextInfo trm = case trm of
 
     pCpt2aCpt = conceptMap contextInfo
     conceptsGraph = typeGraph contextInfo
-    signats = signatures contextInfo
+    signats = signatures env contextInfo
 
 typeGraph :: ContextInfo -> AdjacencyMap A_Concept
 typeGraph contextInfo = L.foldr overlay empty [initialGraph, anyEdges, oneGraph] -- add the edges for the ANY concept to the initial graph
@@ -1384,14 +1391,14 @@ termPrim2Expr contextInfo sgns trmprim
       -- lsUpB = meet conceptGraph
       pCpt2aCpt = conceptMap contextInfo
 
-term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression
-term2Expr contextInfo term
-  = do sgnTree <- signatures contextInfo term
+term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
+term2Expr env contextInfo term
+  = do sgnTree <- signatures env contextInfo term
        trace ("\nSignatures yields:\n"<>showOpTree sgnTree) $ t2e sgnTree term
   where
     t2e :: OpTree (Expression, Signature) -> Term TermPrim -> Guarded Expression
     t2e sgnTree trm =
-      trace ("---   "<>showP trm<>" "<>tshow (opSigns sgnTree)) $
+      trace ("---   "<>(T.intercalate ", " . fmap (showA . fst) . opSigns) sgnTree)$
       case (trm, sgnTree) of
         (Prim tp   , STnullary pairs)            -> -- trace ("termPrim2Expr "<>tshow tp<>" with pairs: "<>tshow pairs) $
                                                      termPrim2Expr contextInfo (map snd pairs) tp
