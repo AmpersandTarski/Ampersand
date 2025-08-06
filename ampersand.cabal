@@ -353,8 +353,10 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try12.adl
     testing/Travis/testcases/prototype/shouldSucceed/try13.adl
     testing/Travis/testcases/prototype/shouldSucceed/try13b.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try14.adl
     testing/Travis/testcases/prototype/shouldSucceed/try15.adl
     testing/Travis/testcases/prototype/shouldSucceed/try16.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try17.adl
     testing/Travis/testcases/prototype/shouldSucceed/try18.adl
     testing/Travis/testcases/prototype/shouldSucceed/try18fail.adl
     testing/Travis/testcases/prototype/shouldSucceed/try19.adl

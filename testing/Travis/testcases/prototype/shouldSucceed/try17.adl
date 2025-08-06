@@ -1,0 +1,53 @@
+CONTEXT Try17 IN ENGLISH
+
+PURPOSE CONTEXT Try17 {+ Test disambiguation algorithm with concept hierarchies - challenging the type system to select correct relations based on hierarchy-aware meet operations. +}
+
+PATTERN Try17
+
+-- Create concept hierarchies to challenge the type system
+CLASSIFY Student ISA Person
+CLASSIFY Teacher ISA Person
+CLASSIFY Course ISA Activity
+CLASSIFY Subject ISA Activity
+
+-- Define three relations with same name but different signatures using hierarchy
+RELATION r[Student*Course]     -- r1: specific student-course relation
+RELATION r[Person*Activity]    -- r2: general person-activity relation  
+RELATION r[Teacher*Subject]    -- r3: specific teacher-subject relation
+
+-- Auxiliary relations for disambiguation context
+RELATION enrolls[X*Student]    -- Forces connection to Student hierarchy
+RELATION teaches[Z*Teacher]    -- Forces connection to Teacher hierarchy
+RELATION manages[Activity*Y]   -- Forces connection to Activity hierarchy
+
+-- Test 1: Should select r[Student*Course] through hierarchy reasoning
+-- enrolls targets Student, and Student ISA Person, but r[Student*Course] is most specific
+RULE TestHierarchyDisambiguation1: result1 = enrolls;r
+RELATION result1[X*Course]
+
+-- Test 2: Should select r[Teacher*Subject] through hierarchy reasoning  
+-- teaches targets Teacher, and Teacher ISA Person, but r[Teacher*Subject] is most specific
+RULE TestHierarchyDisambiguation2: result2 = teaches;r  
+RELATION result2[Z*Subject]
+
+-- Test 3: Complex composition forcing hierarchy-aware meet operations
+-- This should work because Course ISA Activity, so meet(Course, Activity) = Course
+RULE TestHierarchyMeet: result3 = result1;manages
+RELATION result3[X*Y]
+
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+Purpose: Test hierarchy-based disambiguation with CLASSIFY statements
+- Student, Teacher both ISA Person creates overlapping type choices
+- Course, Subject both ISA Activity creates overlapping type choices
+- Three relations named 'r' with hierarchical signatures challenge disambiguation:
+  * r[Student*Course] vs r[Person*Activity] vs r[Teacher*Subject]
+- enrolls;r should select r[Student*Course] (most specific match)
+- teaches;r should select r[Teacher*Subject] (most specific match)  
+- result1;manages tests hierarchy-aware composition (Course ISA Activity)
+- Tests the type system's ability to use concept hierarchies in meet operations
+Result: Should PASS with correct hierarchy-based disambiguation
+-}

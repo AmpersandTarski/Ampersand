@@ -1157,6 +1157,9 @@ instance (Flippable a) => Flippable (OpTree a) where
 -- | signatures constructs a tree with all possible signatures in each node of the tree.
 --   It is used by the function termPrim2Expr to weed out these signatures down to one,
 --   to establish a unique signature for the term and all of its subterms.
+--   Post:
+--    - Every signature set in in the OpTree is not empty.
+--    - Every signature is valid for the term it corresponds to.
 signatures :: ContextInfo -> Term TermPrim -> Guarded (OpTree Signature)
 signatures contextInfo trm = case trm of
   Prim (PI _)              ->                       pure (STnullary [ISgn anyCpt])
@@ -1242,7 +1245,7 @@ signatures contextInfo trm = case trm of
          case trees of
           []  -> (Errors . return . CTXE o) ("Cannot match the signatures of the two sides of the "<>kind<>"."<>diagnosis sgnsa sgnsb)
           [(sgn,sgnL,sgnR)] -> return (STbinary sgnaTree{opSigns=[sgnL]} sgnbTree{opSigns=[sgnR]} [sgn])
-          triplesigns  -> (Errors . return . CTXE o) ("Ambiguous signatures of the two sides of the composition.\n  triplesigns: "<>tshow triplesigns)
+          triplesigns  -> (Errors . return . CTXE o) ("Ambiguous signatures of the two sides of the composition of "<>showP a<>" and "<>showP b<>".  You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow sgna<>" ; "<>showP b<>tshow sgnb | (_,sgna,sgnb)<-triplesigns])
         where
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
@@ -1348,39 +1351,29 @@ term2Expr contextInfo term
       case (trm, sgnTree) of
         (Prim tp   , STnullary sgns)            -> -- trace ("termPrim2Expr "<>tshow tp<>" with sgns: "<>tshow sgns) $
                                                    termPrim2Expr contextInfo sgns tp
-        (PEqu _ a b, STbinary stLeft stRight sgns) -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PInc _ a b, STbinary stLeft stRight sgns) -> EInc <$> ((,) <$> t2e stLeft{opSigns = sgns} a <*> t2e stRight{opSigns = sgns} b)
-        (PIsc _ a b, STbinary stLeft stRight sgns) -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PUni _ a b, STbinary stLeft stRight sgns) -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PDif _ a b, STbinary stLeft stRight sgns) -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PLrs _ a b, STbinary stLeft stRight sgns) -> ELrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PRrs _ a b, STbinary stLeft stRight sgns) -> ERrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PDia _ a b, STbinary stLeft stRight sgns) -> EDia <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PCps _ a b, STbinary stLeft stRight sgns) -> trace ("sgnsa; "<>tshow sgnsa<>", sgnsb; "<>tshow sgnsb<>", opSigns stLeft; "<>tshow (opSigns stLeft)) $
-                                                      ECps <$> ((,) <$> t2e stLeft{opSigns = L.nub (map snd3 triples)} a <*> t2e stRight{opSigns = L.nub (map thd3 triples)} b)
-                                                      where
-                                                        sgnsa = refineSrc (L.nub (map source sgns)) (opSigns stLeft)
-                                                        sgnsb = refineTgt (L.nub (map target sgns)) (opSigns stRight)
-                                                        triples = case [ trace ("Between "<>showP a<>" and  "<>showP b<>" (meet): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca between, Sign between tgtb))
-                                                                         (Sign srca tgtb, Sign srca between, Sign between tgtb)
-                                                                       | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb
-                                                                       , Just between<-[meet conceptsGraph tgta srcb]
-                                                                       ] of
-                                                                    [] -> [(Sign srca tgtb, Sign srca anyCpt, Sign anyCpt tgtb) | Sign srca tgtb <- sgns]
-                                                                    _  -> triples
-                    --  [ -- trace ("Between "<>showP a<>" and  "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
-                    --    (Sign srca tgtb, Sign srca left, Sign right tgtb)
-                    --  | Sign srca tgta<-sgnsa, Sign srcb tgtb<-sgnsb -- , trace ("\n  cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
-                    --  , cmpare tgta srcb, Just between<-[meetORjoin conceptsGraph tgta srcb]
-                    --  , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph srcb between]
-                    --  ] <>
-        (PRad _ a b, STbinary stLeft stRight sgns) -> ERad <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PPrd _ a b, STbinary stLeft stRight sgns) -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PKl0 _ e  , _)                            -> EKl0 <$> t2e sgnTree e
-        (PKl1 _ e  , _)                            -> EKl1 <$> t2e sgnTree e
-        (PFlp _ e  , _)                            -> EFlp <$> t2e (flp sgnTree) e
-        (PCpl _ e  , _)                            -> ECpl <$> t2e sgnTree e
-        (PBrk _ e  , _)                            -> t2e sgnTree e
+        (trm, STbinary stLeft stRight sgns@(_:_:_)) -> Errors . return $ CTXE (origin trm) ("Ambiguous term " <> showP trm <> " might be one of: " <> T.intercalate ", " (map tshow sgns) <> ".\n  Please specify the signature explicitly.")
+        (PEqu _ a b, STbinary stLeft stRight sgns)  -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PInc _ a b, STbinary stLeft stRight sgns)  -> EInc <$> ((,) <$> t2e stLeft{opSigns = sgns} a <*> t2e stRight{opSigns = sgns} b)
+        (PIsc _ a b, STbinary stLeft stRight sgns)  -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PUni _ a b, STbinary stLeft stRight sgns)  -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PDif _ a b, STbinary stLeft stRight sgns)  -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PLrs _ a b, STbinary stLeft stRight sgns)  -> ELrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PRrs _ a b, STbinary stLeft stRight sgns)  -> ERrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PDia _ a b, STbinary stLeft stRight sgns)  -> EDia <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PCps _ a b, STbinary stLeft stRight [sgn]) -> ECps <$> ((,) <$> t2e stLeft{opSigns = L.nub (map snd3 triples)} a <*> t2e stRight{opSigns = L.nub (map thd3 triples)} b)
+                                                       where
+                                                         triples = [ trace ("Between "<>showP a<>" and  "<>showP b<>" (meet): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca between, Sign between tgtb))
+                                                                     (Sign srca tgtb, Sign srca between, Sign between tgtb)
+                                                                   | Sign srca tgta<-opSigns stLeft, Sign srcb tgtb<-opSigns stRight
+                                                                   , Just between<-[meet conceptsGraph tgta srcb]
+                                                                   ]
+        (PRad _ a b, STbinary stLeft stRight sgns)  -> ERad <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PPrd _ a b, STbinary stLeft stRight sgns)  -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PKl0 _ e  , _)                             -> EKl0 <$> t2e sgnTree e
+        (PKl1 _ e  , _)                             -> EKl1 <$> t2e sgnTree e
+        (PFlp _ e  , _)                             -> EFlp <$> t2e (flp sgnTree) e
+        (PCpl _ e  , _)                             -> ECpl <$> t2e sgnTree e
+        (PBrk _ e  , _)                             -> t2e sgnTree e
         _ -> fatal ("Software error: term2Expr encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
     conceptsGraph = trace ("conceptsGraph: "<>tshow (typeGraph contextInfo)) (typeGraph contextInfo)
     refineSrc :: [A_Concept] -> [Signature] -> [Signature]
