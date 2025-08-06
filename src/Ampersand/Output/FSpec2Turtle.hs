@@ -85,8 +85,8 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     relation2triples :: Relation -> Triples
     relation2triples rel =
       [ triple (uri rel) (unode "rdf:type") (unode "owl:ObjectProperty"),
-        triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
-        triple (uri rel) (unode "rdfs:range") (uri (target rel)),
+        --    triple (uri rel) (unode "rdfs:domain") (uri (source rel)),
+        --    triple (uri rel) (unode "rdfs:range") (uri (target rel)),
         triple (uri rel) (unode "rdfs:label") (lnode . plainL . label $ rel)
       ]
         <> [ triple (uri rel) (unode "rdf:type") (unode "owl:AsymmetricProperty")
@@ -222,4 +222,4 @@ shortenTriple b p (Triple s pr o) =
   Triple (shortenNode b p s) (shortenNode b p pr) (shortenNode b p o)
 
 uri :: (Unique a) => a -> Node
-uri a = unode $ unBaseUrl myBaseUrl <> "a_" <> (T.take 10 . tshow . abs . hash . tshow . text1ToText . uniqueShowWithType $ a)
+uri a = unode $ unBaseUrl myBaseUrl <> "a" <> (T.take 10 . tshow . abs . hash . tshow . text1ToText . uniqueShowWithType $ a)
