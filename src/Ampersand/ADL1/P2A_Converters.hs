@@ -1140,8 +1140,6 @@ instance (Show a) => Show (OpTree a) where
         showIndented (indent <> "   ") l <>
         showIndented (indent <> "   ") r
 
-showOpTree :: OpTree (Expression, Signature) -> Text
-showOpTree tree = T.intercalate "\n" (formatTree tree)
 {-
 showOpTree formats the OpTree structure in a readable way.
 Cline built it on Aug 6th, 2025.
@@ -1155,34 +1153,36 @@ Signatures yields:
 [Course*Y]          └── manages [Activity*Y]
 This function .
 -}
+showOpTree :: OpTree (Expression, Signature) -> Text
+showOpTree opTree = T.intercalate "\n" (map T.concat (L.transpose [sigTexts, paddings, treeLines, exprTexts]))
   where
-    formatTree :: OpTree (Expression, Signature) -> [Text]
-    formatTree t = let maxWidth = calculateMaxSigWidth t in shw maxWidth "" True t
-    
-    calculateMaxSigWidth :: OpTree (Expression, Signature) -> Int
-    calculateMaxSigWidth (STnullary ss) = T.length (formatSigs ss)
-    calculateMaxSigWidth (STbinary l r ss) = 
-      max (T.length (formatSigs ss)) (max (calculateMaxSigWidth l) (calculateMaxSigWidth r))
-    
-    formatSigs :: [(Expression, Signature)] -> Text
-    formatSigs = T.intercalate ", " . fmap (tshow . snd)
-    
-    formatExprs :: [(Expression, Signature)] -> Text
-    formatExprs = T.intercalate ", " . fmap (showA . fst)
-    
-    shw :: Int -> Text -> Bool -> OpTree (Expression, Signature) -> [Text]
-    shw maxWidth prefix isLast (STnullary ss) = 
-      [formatSigs ss <> padding <> "  " <> treeChars <> formatExprs ss]
+    -- Step 1: Extract all signatures as [Text]
+    sigTexts = extractSignatures opTree
+
+    -- Step 2: Compute maximum length and create padding list
+    maxSigWidth = foldr (max . T.length) 0 sigTexts
+    paddings = map (\sigText -> T.replicate (maxSigWidth - T.length sigText + 1) " ") sigTexts
+
+    -- Step 3: Create recursive tree of expressions as [Text]  
+    treeLines = extractTreeLines opTree "" True
+    exprTexts = extractExpressions opTree
+
+    extractSignatures :: OpTree (Expression, Signature) -> [Text]
+    extractSignatures (STnullary ss) = [T.intercalate ", " (map (tshow . snd) ss)]
+    extractSignatures (STbinary l r ss) = [T.intercalate ", " (map (tshow . snd) ss)] <> extractSignatures l <> extractSignatures r
+
+    extractExpressions :: OpTree (Expression, Signature) -> [Text]
+    extractExpressions (STnullary ss) = [T.intercalate ", " (map (showA . fst) ss)]
+    extractExpressions (STbinary l r ss) = [T.intercalate ", " (map (showA . fst) ss)] <> extractExpressions l <> extractExpressions r
+
+    extractTreeLines :: OpTree (Expression, Signature) -> Text -> Bool -> [Text]
+    extractTreeLines (STnullary _) prefix isLast =
+      [if T.null prefix then "" else prefix <> (if isLast then "└── " else "├── ")]
+    extractTreeLines (STbinary l r _) prefix isLast =
+      [if T.null prefix then "" else prefix <> (if isLast then "└── " else "├── ")] <>
+      extractTreeLines l newPrefix False <>
+      extractTreeLines r newPrefix True
       where
-        padding = T.replicate (maxWidth - T.length (formatSigs ss)) " "
-        treeChars = prefix <> (if isLast then "└── " else "├── ")
-          
-    shw maxWidth prefix isLast (STbinary l r ss) = 
-      (formatSigs ss <> padding <> "  " <> treeChars <> formatExprs ss) :
-      shw maxWidth newPrefix False l <> shw maxWidth newPrefix True r
-      where
-        padding = T.replicate (maxWidth - T.length (formatSigs ss)) " "
-        treeChars = prefix <> (if isLast then "└── " else "├── ")
         newPrefix = prefix <> (if isLast then "    " else "│   ")
 
 instance (Flippable a) => Flippable (OpTree a) where
@@ -1195,6 +1195,20 @@ instance (Flippable a) => Flippable (OpTree a) where
 --   Post:
 --    - Every set of (expression, signature) pairs in the OpTree is not empty.
 --    - Every signature is consistent with the type rules of the term it corresponds to.
+-- Helper function for creating verbose type error messages
+mkVerboseTypeError :: (HasRunner env) => env -> Origin -> Text -> OpTree (Expression, Signature) -> Guarded a
+mkVerboseTypeError env origin baseMsg opTree =
+  Errors . return $ CTXE origin $
+    if logLevel (view runnerL env) <= LevelInfo
+    then baseMsg <> "\n\nType analysis:\n" <> showOpTree opTree
+    else baseMsg
+
+-- Helper function for creating type mismatch errors with optional suggestions
+mkVerboseTypeMismatchError :: (HasRunner env) => env -> Origin -> Text -> Maybe Text -> OpTree (Expression, Signature) -> Guarded a
+mkVerboseTypeMismatchError env origin baseMsg maybeSuggestions opTree =
+  let fullMsg = baseMsg <> fromMaybe "" maybeSuggestions
+  in mkVerboseTypeError env origin fullMsg opTree
+
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded (OpTree (Expression, Signature))
 signatures env contextInfo trm = case trm of
   Prim (PI _)               ->                       pure (STnullary [(EDcI anyCpt, ISgn anyCpt)])
@@ -1284,18 +1298,12 @@ signatures env contextInfo trm = case trm of
           []  -> let baseMsg = "Cannot match the signatures of the two sides of the " <> kind <> "." <> diagnosis sgnsa sgnsb
                      errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
-                 in Errors . return $ CTXE o $ 
-                    if logLevel (view runnerL env) == LevelDebug
-                    then baseMsg <> "\n\nType analysis:\n" <> showOpTree opTree
-                    else baseMsg
+                 in mkVerboseTypeError env o baseMsg opTree
           [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
           triplesigns  -> let baseMsg = "Ambiguous signatures of the two sides of the composition of " <> showP a <> " and " <> showP b
-                              suggestions = ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " ; " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
+                              suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " ; " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                               opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
-                          in Errors . return $ CTXE o $ 
-                             if logLevel (view runnerL env) == LevelDebug
-                             then baseMsg <> suggestions <> "\n\nVerbose type analysis:\n" <> showOpTree opTree
-                             else baseMsg <> suggestions
+                          in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
         where
           diagnosis sgnsa sgnsb
            = case (kind, sgnsa==sgnsb) of
@@ -1327,11 +1335,17 @@ signatures env contextInfo trm = case trm of
                 ((combinator (expr_a, expr_b), Sign src tgt), (expr_a, Sign src tgt), (expr_b, Sign src tgt))
               | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb -- , trace (mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
               , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)], Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ] of
-          []  -> case (conceptsSrc, conceptsTgt) of
-                  ([],[])  -> (Errors . return . CTXE o) ("Cannot match the source concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd sgnsa)<>"\n   sgnsb: "<>tshow (map snd sgnsb))
-                  ([],_:_) -> (Errors . return . CTXE o) ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd) sgnsb))
-                  (_:_,[]) -> (Errors . return . CTXE o) ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd) sgnsb))
-                  _        -> (Errors . return . CTXE o) ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow (map snd sgnsa)<>"\n   sgnsb: "<>tshow (map snd sgnsb))
+          []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb ]
+                     opTree = STbinary sgnaTree sgnbTree errorExprs
+                 in case (conceptsSrc, conceptsTgt) of
+                  ([],[])  -> let baseMsg = "Cannot match the source concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd sgnsa)<>"\n   sgnsb: "<>tshow (map snd sgnsb)
+                              in mkVerboseTypeError env o baseMsg opTree
+                  ([],_:_) -> let baseMsg = "Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd) sgnsb)
+                              in mkVerboseTypeError env o baseMsg opTree
+                  (_:_,[]) -> let baseMsg = "Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd) sgnsb)
+                              in mkVerboseTypeError env o baseMsg opTree
+                  _        -> let baseMsg = "Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow (map snd sgnsa)<>"\n   sgnsb: "<>tshow (map snd sgnsb)
+                              in mkVerboseTypeError env o baseMsg opTree
                  where
                    showSgns :: Show a => [a] -> Text
                    showSgns sgns = case sgns of
@@ -1339,7 +1353,10 @@ signatures env contextInfo trm = case trm of
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
           [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
-          triplesigns -> (Errors . return . CTXE o) ("Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd pairA)<>" ; "<>showP b<>tshow (snd pairB) | (_,pairA,pairB)<-triplesigns])
+          triplesigns -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd pairA)<>" ; "<>showP b<>tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
+                             errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb ]
+                             opTree = STbinary sgnaTree sgnbTree errorExprs
+                         in mkVerboseTypeError env o baseMsg opTree
 
     pCpt2aCpt = conceptMap contextInfo
     conceptsGraph = typeGraph contextInfo
@@ -1394,7 +1411,7 @@ termPrim2Expr contextInfo sgns trmprim
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo term
   = do sgnTree <- signatures env contextInfo term
-       trace ("\nSignatures yields:\n"<>showOpTree sgnTree) $ t2e sgnTree term
+       trace ("\nsignatures yields:\n"<>showOpTree sgnTree) $ t2e sgnTree term
   where
     t2e :: OpTree (Expression, Signature) -> Term TermPrim -> Guarded Expression
     t2e sgnTree trm =
@@ -1402,15 +1419,45 @@ term2Expr env contextInfo term
       case (trm, sgnTree) of
         (Prim tp   , STnullary pairs)            -> -- trace ("termPrim2Expr "<>tshow tp<>" with pairs: "<>tshow pairs) $
                                                      termPrim2Expr contextInfo (map snd pairs) tp
-        (trm, STbinary stLeft stRight pairs@(_:_:_)) -> Errors . return $ CTXE (origin trm) ("Ambiguous term " <> showP trm <> " might be one of: " <> T.intercalate ", " (map (tshow . snd) pairs) <> ".\n  Please specify the signature explicitly.")
-        (PEqu _ a b, STbinary stLeft stRight pairs)  -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PInc _ a b, STbinary stLeft stRight pairs)  -> EInc <$> ((,) <$> t2e stLeft{opSigns = pairs} a <*> t2e stRight{opSigns = pairs} b)
-        (PIsc _ a b, STbinary stLeft stRight pairs)  -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PUni _ a b, STbinary stLeft stRight pairs)  -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PDif _ a b, STbinary stLeft stRight pairs)  -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PLrs _ a b, STbinary stLeft stRight pairs)  -> ELrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PRrs _ a b, STbinary stLeft stRight pairs)  -> ERrs <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PDia _ a b, STbinary stLeft stRight pairs)  -> EDia <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (trm, STbinary stLeft stRight pairs@(_:_:_)) -> let baseMsg = "Ambiguous term " <> showP trm <> " might be one of: " <> T.intercalate ", " (map (tshow . snd) pairs) <> ".\n  Please specify the signature explicitly."
+                                                            opTree = STbinary stLeft stRight pairs
+                                                        in mkVerboseTypeError env (origin trm) baseMsg opTree
+        (PEqu _ a b, STbinary stLeft stRight pairs)
+          -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PInc _ a b, STbinary stLeft stRight pairs)
+          -> EInc <$> ((,) <$> t2e stLeft{opSigns = pairs} a <*> t2e stRight{opSigns = pairs} b)
+        (PIsc _ a b, STbinary stLeft stRight pairs)
+          -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PUni _ a b, STbinary stLeft stRight pairs)
+          -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PDif _ a b, STbinary stLeft stRight pairs)
+          -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PLrs _ a b, STbinary stLeft stRight [(_, sgn)])
+          -> ELrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+             where
+               -- Note: For left residual (a/b), the right operand b is flipped in signature generation
+               -- So stRight already contains flipped signatures. We need to extract them for type checking.
+               rightFlippedSigns = [(expr, flp sig) | (expr, sig) <- opSigns stRight]
+               triples = [ trace ("On the right hand side of "<>showP a<>" and  "<>showP b<>" (join): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca between, Sign between tgtb))
+                           (Sign srca tgtb, Sign srca between, Sign between tgtb)
+                         | (_, Sign srca tgta)<-opSigns stLeft, (_, Sign srcb tgtb)<-rightFlippedSigns
+                         , Just between<-[join conceptsGraph tgta srcb]
+                         ]
+               leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
+               rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- rightFlippedSigns, trip <- triples]
+        (PRrs _ a b, STbinary stLeft stRight [(_, sgn)])
+          -> ERrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+             where
+               -- Note: For right residual (a\b), the left operand a is flipped in signature generation
+               -- So stLeft already contains flipped signatures. We need to extract them for type checking.
+               leftFlippedSigns = [(expr, flp sig) | (expr, sig) <- opSigns stLeft]
+               triples = [ trace ("On the left hand side of "<>showP a<>" and  "<>showP b<>" (join): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca between, Sign between tgtb))
+                           (Sign srca tgtb, Sign srca between, Sign between tgtb)
+                         | (_, Sign srca tgta)<-leftFlippedSigns, (_, Sign srcb tgtb)<-opSigns stRight
+                         , Just between<-[join conceptsGraph tgta srcb]
+                         ]
+               leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
+               rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
         (PCps _ a b, STbinary stLeft stRight [(_, sgn)]) -> ECps <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
                                                          where
                                                            triples = [ trace ("Between "<>showP a<>" and  "<>showP b<>" (meet): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca between, Sign between tgtb))
@@ -1429,18 +1476,6 @@ term2Expr env contextInfo term
         (PBrk _ e  , _)                             -> t2e sgnTree e
         _ -> fatal ("Software error: term2Expr encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
     conceptsGraph = trace ("conceptsGraph: "<>tshow (typeGraph contextInfo)) (typeGraph contextInfo)
-    refineSrc :: [A_Concept] -> [Signature] -> [Signature]
-    refineSrc cs sgns = case L.nub ([Sign left tgt
-                                    | Sign src tgt<-sgns, c<-cs, Just left <-[meet conceptsGraph src c]]<>
-                                    [ISgn m| ISgn c'<-sgns, c<-cs, Just m <-[meet conceptsGraph c' c]])
-                        of [] -> L.nub ([Sign anyCpt t | Sign _ t<-sgns]<>[ISgn anyCpt| ISgn _<-sgns])
-                           ss -> ss
-    refineTgt :: [A_Concept] -> [Signature] -> [Signature]
-    refineTgt cs sgns = case L.nub ([Sign src right
-                                    | Sign src tgt<-sgns, c<-cs, Just right<-[meet conceptsGraph tgt c]]<>
-                                    [ISgn m| ISgn c'<-sgns, c<-cs, Just m <-[meet conceptsGraph c' c]])
-                        of [] -> L.nub ([Sign s anyCpt | Sign s _<-sgns]<>[ISgn anyCpt| ISgn _<-sgns])
-                           ss -> ss
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
 pAtomPair2aAtomPair typ dcl pp =
