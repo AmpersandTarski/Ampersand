@@ -9,6 +9,7 @@
 - Added testing infrastructure documentation for contributors
 - Updated .clineignore configuration for better project file management
 - The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
+- Fixed formatting of relation names in verbose output: removed unwanted space between relation name and signature (now displays as `relationName[Signature]` instead of `relationName [Signature]`)
 - maintenance work for better maintainability.
 
 ## v5.4.3

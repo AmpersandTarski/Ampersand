@@ -138,7 +138,7 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
   pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack . localNameOf) nm <~> sign <~> lbl
+      <+> (text . T.unpack . localNameOf) nm <> pretty sign <~> lbl
       <+> props
       <+> if null dflts
         then empty
@@ -211,7 +211,7 @@ instance Pretty P_NamedRel where
   pretty (PNamedRel _ str mpSign)
    = case mpSign of -- This case statement prevents a space at the right side of the relation name.
        Nothing  -> (text . T.unpack . localNameOf) str
-       Just sgn -> (text . T.unpack . localNameOf) str <~> sgn
+       Just sgn -> (text . T.unpack . localNameOf) str <> pretty sgn
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
