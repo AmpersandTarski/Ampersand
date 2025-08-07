@@ -1,7 +1,15 @@
 ﻿# Release notes of Ampersand
 ## not yet released
+- [Issue #1417](https://github.com/AmpersandTarski/Ampersand/issues/1417) Refactoring the type checker.
+- Enhanced type analysis debugging: Improved `showOpTree` visualization with structured tree formatting using proper indentation and tree-drawing characters for better readability of type analysis results
+- Added logging support to type analysis functions to enable debug-level diagnostic output
+- Added disambiguation algorithm analysis documentation and implementation notes for type system improvements
+- Added new test cases for disambiguation testing (disambTestStef.adl, try14.adl, try17.adl)
+- Added comprehensive memorybank documentation for Cline covering active context, build/deploy processes, product context, project brief, and technical context
+- Added testing infrastructure documentation for contributors
+- Updated .clineignore configuration for better project file management
 - The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
-- a little maintenance work (minor)
+- maintenance work for better maintainability.
 
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.

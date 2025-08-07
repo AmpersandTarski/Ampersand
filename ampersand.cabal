@@ -362,6 +362,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try19.adl
     testing/Travis/testcases/prototype/shouldSucceed/try2.adl
     testing/Travis/testcases/prototype/shouldSucceed/try20.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try21.adl
     testing/Travis/testcases/prototype/shouldSucceed/try22.adl
     testing/Travis/testcases/prototype/shouldSucceed/try23.adl
     testing/Travis/testcases/prototype/shouldSucceed/try24.adl
@@ -400,6 +401,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try7.adl
     testing/Travis/testcases/prototype/shouldSucceed/try8.adl
     testing/Travis/testcases/prototype/shouldSucceed/try9.adl
+    testing/Travis/testcases/prototype/shouldSucceed/tryLeftResidual.adl
     testing/Travis/testcases/prototype/shouldSucceed/TTypeTest1.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue1293.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue148.adl
