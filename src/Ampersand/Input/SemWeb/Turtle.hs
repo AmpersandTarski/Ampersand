@@ -116,7 +116,9 @@ graph2P_Context graph = do
   let cptDefsNodes = filter hasNoPattern (allConceptNodes graph)
         where
           hasNoPattern n = null $ select graph (is n) (is SKOS.inScheme) Nothing
-  cptDefs <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
+  cptDefsAndPurposes <- mapM (mkConceptDef graph (CONTEXT ontologyName)) cptDefsNodes
+  let cptDefs = fst <$> cptDefsAndPurposes
+      purposes = concatMap snd cptDefsAndPurposes
   let isas =
         [ PClassify
             { specific = PCpt sName,
@@ -130,9 +132,9 @@ graph2P_Context graph = do
             let (gName, _) = suggestName ContextName . toText1Unsafe $ gLbl
         ]
   patDefs <- patternDefs
-  let relationDefsInAPattern = concatMap pt_dcs patDefs
+  let relationDefsInSomePattern = concatMap pt_dcs patDefs
   let relationDefsNotInPattern =
-        [ rd | rd <- relationDefs, rd `notElem` relationDefsInAPattern
+        [ (rd, relPurps) | (rd, relPurps) <- allRelationDefsAndPurposes, rd `notElem` relationDefsInSomePattern
         ]
   pure
     $ PCtx
@@ -140,7 +142,7 @@ graph2P_Context graph = do
         ctx_rs = mempty,
         ctx_rrules = mempty,
         ctx_reprs = mempty,
-        ctx_ps = mempty,
+        ctx_ps = purposes,
         ctx_pos = mempty,
         ctx_pops = mempty,
         ctx_pats = patDefs,
@@ -153,7 +155,7 @@ graph2P_Context graph = do
         ctx_ifcs = mempty,
         ctx_gs = isas,
         ctx_enfs = mempty,
-        ctx_ds = relationDefsNotInPattern,
+        ctx_ds = fst <$> relationDefsNotInPattern,
         ctx_cs = cptDefs
       }
   where
@@ -176,17 +178,22 @@ graph2P_Context graph = do
                 where
                   thisPattern :: Node -> Bool
                   thisPattern n = not . null $ select graph (is n) (is SKOS.inScheme) (is patNode)
-          cptDefs <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
+          cptDefsAndPurposes <- mapM (mkConceptDef graph (PATTERN nm)) cptDefsNodes
           let cptNames = map name cptDefs
-              isForPattern :: P_Relation -> Bool
-              isForPattern r =
+              cptDefs = fst <$> cptDefsAndPurposes
+              purposes =
+                concatMap snd cptDefsAndPurposes
+                  <> concatMap snd (filter isForPattern allRelationDefsAndPurposes)
+
+              isForPattern :: (P_Relation, a) -> Bool
+              isForPattern (r, _) =
                 name (pSrc . dec_sign $ r)
                   `elem` cptNames
                   && name (pTgt . dec_sign $ r)
                   `elem` cptNames
           pure
             P_Pat
-              { pt_xps = mempty,
+              { pt_xps = purposes,
                 pt_vds = mempty,
                 pt_rls = mempty,
                 pt_pop = mempty,
@@ -196,34 +203,53 @@ graph2P_Context graph = do
                 pt_gns = mempty,
                 pt_enfs = mempty,
                 pt_end = someTurtle,
-                pt_dcs = filter isForPattern relationDefs,
+                pt_dcs = fst <$> filter isForPattern allRelationDefsAndPurposes,
                 pt_cds = cptDefs,
                 pt_Reprs = mempty,
                 pt_RRuls = mempty,
                 pos = someTurtle
               }
 
-    relationDefs :: [P_Relation]
-    relationDefs =
+    allRelationDefsAndPurposes :: [(P_Relation, [PPurpose])]
+    allRelationDefsAndPurposes =
       concat
-        . mapMaybe (buildRelation . subjectOf)
+        . mapMaybe (mkRelation . subjectOf)
         $ (select graph Nothing (is RDF._type) (is OWL._ObjectProperty))
         <> (select graph Nothing (is RDF._type) (is OWL._DatatypeProperty))
       where
-        buildRelation :: Node -> Maybe [P_Relation]
-        buildRelation relNode = do
+        mkRelation :: Node -> Maybe [(P_Relation, [PPurpose])]
+        mkRelation relNode = do
           (nm, l) <- nameAndLabelOfUri RelationName relNode
+          let thePurposes :: Name -> P_Sign -> [PPurpose]
+              thePurposes relNm sig =
+                [ PPurpose
+                    { pexRefIDs = mempty,
+                      pexObj = PRef2Relation nmdRel,
+                      pexMarkup = mrkUp,
+                      pos = someTurtle
+                    }
+                  | mrkUp <- getMarkups relNode [is SKOS.scopeNote] graph
+                ]
+                where
+                  nmdRel =
+                    PNamedRel
+                      { p_nrnm = relNm,
+                        p_mbSign = Just sig,
+                        pos = someTurtle
+                      }
           return
-            [ P_Relation
-                { dec_sign = P_Sign (PCpt src) (PCpt tgt),
-                  dec_prps = getProps restrictionsBlanks,
-                  dec_pragma = Nothing,
-                  dec_pos = someTurtle,
-                  dec_nm = nm,
-                  dec_label = l,
-                  dec_defaults = mempty,
-                  dec_Mean = map PMeaning $ getMarkups relNode (map is [SKOS.definition, RDFS.comment]) graph
-                }
+            [ ( P_Relation
+                  { dec_sign = sig,
+                    dec_prps = getProps restrictionsBlanks,
+                    dec_pragma = Nothing,
+                    dec_pos = someTurtle,
+                    dec_nm = nm,
+                    dec_label = l,
+                    dec_defaults = mempty,
+                    dec_Mean = map PMeaning $ getMarkups relNode (map is [SKOS.definition, RDFS.comment]) graph
+                  },
+                thePurposes nm sig
+              )
               | tgtNode <- L.nub . concatMap rangeNodesOfRestriction $ restrictionsBlanks,
                 srcNode <- L.nub . concatMap domainNodesOfRestriction $ restrictionsBlanks,
                 let (src, _) = case nameAndLabelOfUri ConceptName srcNode of
@@ -231,7 +257,8 @@ graph2P_Context graph = do
                       Nothing -> suggestName ConceptName . toText1Unsafe $ tshow srcNode,
                 let (tgt, _) = case nameAndLabelOfUri ConceptName tgtNode of
                       Just x -> x
-                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow tgtNode
+                      Nothing -> suggestName ConceptName . toText1Unsafe $ tshow tgtNode,
+                let sig = P_Sign (PCpt src) (PCpt tgt)
             ]
           where
             nameAndLabelOfUri :: NameType -> Node -> Maybe (Name, Maybe Label)
@@ -289,7 +316,7 @@ allConceptNodes :: Graph -> [Node]
 allConceptNodes graph =
   filter (not . isBNode) $ subjectOf <$> select graph Nothing (is RDF._type) (is OWL._Class)
 
-mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded PConceptDef
+mkConceptDef :: Graph -> DefinitionContainer -> Node -> Guarded (PConceptDef, [PPurpose])
 mkConceptDef graph from cpt = do
   (nm, l) <- case map objectOf $ select graph (is cpt) (is RDFS.label) Nothing of
     [] ->
@@ -301,15 +328,28 @@ mkConceptDef graph from cpt = do
       addWarning
         (mkTurtleWarning someTurtle ["Multiple labels found for concept " <> tshow cpt <> ", using the first one."])
         (getNameAndLabel h)
+  let thePurposes :: [PPurpose]
+      thePurposes =
+        [ PPurpose
+            { pexRefIDs = mempty,
+              pexObj = PRef2ConceptDef nm,
+              pexMarkup = mrkUp,
+              pos = someTurtle
+            }
+          | mrkUp <- getMarkups cpt [is SKOS.scopeNote] graph
+        ]
+
   pure
-    PConceptDef
-      { cdname = nm,
-        cdmean = meanings,
-        cdlbl = l,
-        cdfrom = from,
-        cddef2 = PCDDefNew def,
-        pos = someTurtle
-      }
+    ( PConceptDef
+        { cdname = nm,
+          cdmean = meanings,
+          cdlbl = l,
+          cdfrom = from,
+          cddef2 = PCDDefNew def,
+          pos = someTurtle
+        },
+      thePurposes
+    )
   where
     def :: PMeaning
     meanings :: [PMeaning]

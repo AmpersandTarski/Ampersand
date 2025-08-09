@@ -1,7 +1,8 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
-- [#1605](https://github.com/AmpersandTarski/Ampersand/issues/1605)
+- [#1607](https://github.com/AmpersandTarski/Ampersand/issues/1607) Harvest skos:scopeNote into Purpose when parsing .ttl files
+- [#1605](https://github.com/AmpersandTarski/Ampersand/issues/1605) Remove underscore from generated uri when generating .ttl file
 
 ## v5.5.3
 - [#1601](https://github.com/AmpersandTarski/Ampersand/issues/1601) Automatic inclusion of relations in patterns when reading .ttl file
