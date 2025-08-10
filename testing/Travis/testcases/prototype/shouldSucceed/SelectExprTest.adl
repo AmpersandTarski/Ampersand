@@ -3,7 +3,7 @@ CONTEXT SelectExprTest IN ENGLISH
 PURPOSE PATTERN SelectExprTest IN ENGLISH 
 {+
 This pattern is meant to test the translation of Terms in Ampersand into
-SELECT statements in SQL.
+SELECT statements in SQL, covering multiple operators
 +}
 
 PATTERN SelectExprTest

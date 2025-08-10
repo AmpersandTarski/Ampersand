@@ -1335,14 +1335,28 @@ sessionConcept = PlainConcept {aliases = Set.fromList [(nameOfSESSION, Nothing)]
 
 type A_Concepts = Set.Set A_Concept
 
-makeGraph :: [AClassify] -> AdjacencyMap A_Concept
-makeGraph conceptPairs = overlays [vertex spc `connect` vertex gen | (spc,gen) <- pairs]
+makeGraph :: [AClassify] -> Set.Set A_Concept -> AdjacencyMap A_Concept
+makeGraph conceptPairs concepts
+ = overlays ([vertex spc `connect` vertex gen | (spc,gen) <- pairs]<>
+             [vertex cpt | cpt <- Set.toList concepts])
   where
     pairs = [ (genspc isa, gengen isa) | isa@(Isa{})<-conceptPairs]<>[ (genspc ise, c) | ise@(IsE{})<-conceptPairs, c<-toList (genrhs ise)]
 
 synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
 synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
 
+-- | Data type to represent missing edges in meet property validation
+data MissingMeetEdge = MissingMeetEdge
+  { mmeFrom :: A_Concept        -- ^ the meet concept m  
+  , mmeTo :: A_Concept          -- ^ the target concept (a or b)
+  , mmeMeetName :: Text         -- ^ descriptive name like "Course/\\Module"  
+  } deriving (Show, Eq, Ord)
+
+-- | Test function that validates the meet property of concept graphs.
+-- If edges (a,j) and (b,j) both exist in the graph, then a `meet` b should exist.
+-- When the meet does NOT exist, this function creates a concept with name "a/\\b" 
+-- and returns the missing edges (m,a) and (m,b) that should connect this meet to a and b.
+-- Returns an AdjacencyMap containing the missing edges that violate this property.
 
 -- Compute the least upper bound (join) of a list of pairs
 join :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
