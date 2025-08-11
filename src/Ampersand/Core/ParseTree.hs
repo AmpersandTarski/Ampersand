@@ -891,17 +891,17 @@ instance Named (P_Rule a) where
   name = rr_nm
 
 newtype PMeaning = PMeaning P_Markup
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 newtype PMessage = PMessage P_Markup
-  deriving (Show)
+  deriving (Show, Eq, Ord)
 
 data P_Markup = P_Markup
   { mLang :: Maybe Lang,
     mFormat :: Maybe PandocFormat,
     mString :: Text
   }
-  deriving (Show, Eq) -- for debugging only
+  deriving (Show, Eq, Ord)
 
 data P_Population
   = P_RelPopu
@@ -1248,28 +1248,7 @@ data PPurpose = PPurpose
     pexMarkup :: P_Markup, -- the piece of text, including markup and language info
     pexRefIDs :: [Text] -- the references (for traceability)
   }
-  deriving (Show)
-
-instance Ord PPurpose where -- Required for merge of P_Contexts
-  compare a b = case compare (pexObj a) (pexObj b) of
-    EQ -> case (origin a, origin b) of
-      (OriginUnknown, OriginUnknown) -> compare (pexRefIDs a) (pexRefIDs b)
-      (OriginUnknown, _) -> LT
-      (_, OriginUnknown) -> GT
-      (_, _) ->
-        fromMaybe
-          ( fatal
-              . T.intercalate "\n"
-              $ [ "PPurpose a should have a non-fuzzy Origin.",
-                  tshow (origin a),
-                  tshow (origin b)
-                ]
-          )
-          (maybeOrdering (origin a) (origin b))
-    x -> x
-
-instance Eq PPurpose where -- Required for merge of P_Contexts
-  a == b = compare a b == EQ
+  deriving (Show, Eq, Ord)
 
 instance Traced PPurpose where
   origin PPurpose {pos = orig} = orig

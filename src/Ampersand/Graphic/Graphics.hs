@@ -232,11 +232,11 @@ conceptualStructure fSpec pr =
        in CStruct
             { csCpts =
                 cpts'
-                  <> (Set.fromList . concat $ [[s, g] | (s, g) <- gs, g `elem` cpts' || s `elem` cpts']),
+                  <> concs (isaEdges cpts'), -- add all isa edges from the concepts,
               csRels =
                 bindedRelationsIn rulez -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   `Set.union` Set.fromList directRels,
-              csIdgs = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts' || s `elem` cpts'] --  all isa edges
+              csIdgs = isaEdges cpts'
             }
     --  PTConceptualModelOfRulesInPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
@@ -270,7 +270,7 @@ conceptualStructure fSpec pr =
           csIdgs = isaEdges cpts
         }
       where
-        cpts = concs rels `Set.union` concs pat
+        cpts = concs pat
         cpts' = cpts `Set.union` concs (isaEdges cpts)
         rels =
           relsDefdIn pat
@@ -292,7 +292,7 @@ conceptualStructure fSpec pr =
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
-    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
+    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts || s `elem` cpts]
     gs = fsisa fSpec
 
 -- write the visual in all the formats requested
@@ -316,23 +316,14 @@ writePicture pict = do
       FilePath ->
       GraphvizOutput ->
       RIO env ()
-    writeDot fp = writeAndPostProcess fp Nothing
-    writeAndPostProcess ::
-      (HasBlackWhite env, HasLogFunc env) =>
-      FilePath ->
-      Maybe (FilePath -> RIO env ()) -> -- Optional postprocessor
-      GraphvizOutput ->
-      RIO env ()
-    writeAndPostProcess fp postProcess gvOutput =
+    writeDot fp gvOutput =
       do
         env <- ask
         logDebug $ "Generating " <> displayShow gvOutput <> " using " <> displayShow gvCommand <> "."
-        path <- runGraphvizCommand' gvCommand (mkDotGraph env pict)
+        let contents = mkDotGraph env pict
+        path <- runGraphvizCommand' gvCommand contents
         absPath <- liftIO . makeAbsolute $ path
         logDebug $ display (T.pack absPath) <> " written."
-        case postProcess of
-          Nothing -> return ()
-          Just x -> x path
       where
         gvCommand = dotProgName pict
         runGraphvizCommand' ::
@@ -356,25 +347,6 @@ writePicture pict = do
               -- Run in debug mode to see the error message thrown by Graphviz, but they are gibberish:
               logDebug $ displayShow e
               return fp
-
--- The GraphVizOutput Pdf generates pixelized graphics on Linux
--- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
---     makePdf :: (HasLogFunc env ) =>
---                FilePath -> RIO env ()
---     makePdf path = do
---         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
---         liftIO $ callCommand (ps2pdfCmd path)
---         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
---       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
---                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
---                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
---
---     writePdf :: (HasBlackWhite env, HasLogFunc env)
---          => FilePath -> GraphvizOutput -> RIO env ()
---     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
---       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
---                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
---     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph MyDotNode
 mkDotGraph env pict =

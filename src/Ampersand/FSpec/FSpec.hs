@@ -200,6 +200,7 @@ instance Language FSpec where
   gens = maybe mempty gens . originalContext
   patterns = maybe mempty patterns . originalContext
   udefRoleRules = maybe mempty udefRoleRules . originalContext
+  allRoleRules = maybe mempty allRoleRules . originalContext
 
 data Atom = Atom
   { atmRoots :: [A_Concept], -- The root concept(s) of the atom.
