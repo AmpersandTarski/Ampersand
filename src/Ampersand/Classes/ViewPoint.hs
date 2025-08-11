@@ -59,9 +59,10 @@ class Language a where
   udefRoleRules ::
     a ->
     -- | all user defined RoleRules that are maintained within this viewpoint
-    [A_RoleRule]
-  allRoleRules :: a -> [A_RoleRule]
-  allRoleRules x = udefRoleRules x <> (concatMap roleRuleFromEnforceRule . enforces $ x)
+    RoleRules
+  allRoleRules :: a -> RoleRules
+
+-- allRoleRules x = udefRoleRules x `Set.union` foldMapM roleRuleFromEnforceRule (enforces x)
 
 ruleFromIdentity :: IdentityRule -> Rule
 ruleFromIdentity identity =
@@ -108,7 +109,8 @@ instance (Eq a, Language a) => Language [a] where
   enforces = concatMap enforces
   gens = L.nub . concatMap gens
   patterns = concatMap patterns
-  udefRoleRules = concatMap udefRoleRules
+  udefRoleRules = Set.unions . map udefRoleRules
+  allRoleRules = Set.unions . map allRoleRules
 
 instance (Eq a, Language a) => Language (Set.Set a) where
   relsDefdIn = Set.unions . map relsDefdIn . toList
@@ -118,7 +120,8 @@ instance (Eq a, Language a) => Language (Set.Set a) where
   enforces = L.nub . concatMap enforces . toList
   gens = L.nub . concatMap gens . toList
   patterns = L.nub . concatMap patterns . toList
-  udefRoleRules = L.nub . concatMap udefRoleRules . toList
+  udefRoleRules = Set.unions . map udefRoleRules . toList
+  allRoleRules = Set.unions . map allRoleRules . toList
 
 instance Language A_Context where
   relsDefdIn context =
@@ -141,13 +144,17 @@ instance Language A_Context where
             (NE.head rels)
               { decprps = Set.unions . fmap decprps $ rels
               }
-  udefrules context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
+  udefrules context = udefrules (ctxpats context) `Set.union` ctxrs context
   identities context = concatMap identities (ctxpats context) <> ctxks context
   viewDefs context = concatMap viewDefs (ctxpats context) <> ctxvs context
   enforces context = concatMap enforces (ctxpats context) <> ctxEnforces context
   gens context = L.nub $ concatMap gens (ctxpats context) <> ctxgs context
   patterns = ctxpats
-  udefRoleRules context = concatMap udefRoleRules (ctxpats context) <> ctxrrules context
+  udefRoleRules context = udefRoleRules (ctxpats context) `Set.union` ctxrrules context
+  allRoleRules context =
+    allRoleRules (ctxpats context)
+      `Set.union` ctxrrules context
+      `Set.union` foldMap roleRuleFromEnforceRule (ctxEnforces context)
 
 instance Language Pattern where
   relsDefdIn = ptdcs
@@ -158,20 +165,20 @@ instance Language Pattern where
   gens = ptgns
   patterns pat = [pat]
   udefRoleRules = ptrrs
+  allRoleRules pat = ptrrs pat `Set.union` foldMap roleRuleFromEnforceRule (ptenfs pat)
 
-roleRuleFromEnforceRule :: AEnforce -> [A_RoleRule]
-roleRuleFromEnforceRule x = map mkRoleRule . enfRules $ x
+roleRuleFromEnforceRule :: AEnforce -> RoleRules
+roleRuleFromEnforceRule x = Set.fromList . map mkRoleRule . enfRules $ x
   where
     mkRoleRule rul =
       A_RoleRule
         { arPos = origin rul,
-          arRoles =
+          arRole =
             Role
               { pos = origin x,
                 rlName = nameOfExecEngineRole,
                 rlLbl = Nothing,
                 rlIsService = False
-              }
-              NE.:| [],
-          arRules = name rul NE.:| []
+              },
+          arRule = name rul
         }

@@ -50,6 +50,7 @@ module Ampersand.Core.AbstractSyntaxTree
     ShowWithAliases (..),
     Meaning (..),
     A_RoleRule (..),
+    RoleRules,
     P_Representation (..),
     TType (..),
     unsafePAtomVal2AtomValue,
@@ -150,7 +151,7 @@ data A_Context = ACtx
     ctxcds :: ![AConceptDef],
     -- | The identity definitions defined in this context, outside the scope of patterns
     ctxks :: ![IdentityRule],
-    ctxrrules :: ![A_RoleRule],
+    ctxrrules :: !RoleRules,
     -- | The view definitions defined in this context, outside the scope of patterns
     ctxvs :: ![ViewDef],
     -- | The specialization statements defined in this context, outside the scope of patterns
@@ -204,7 +205,7 @@ data Pattern = A_Pat
     -- | The relations that are declared in this pattern
     ptdcs :: !Relations,
     -- | The role-rule assignments that are declared in this pattern
-    ptrrs :: ![A_RoleRule],
+    ptrrs :: !RoleRules,
     -- | The concept definitions that are declared in this pattern
     ptcds :: ![AConceptDef],
     -- | The concept definitions that are declared in this pattern
@@ -314,27 +315,14 @@ instance Traced A_Representation where
     [] -> fatal "A_Representation should have an Origin."
     (x : _) -> x
 
+type RoleRules = Set.Set A_RoleRule
+
 data A_RoleRule = A_RoleRule
   { arPos :: !Origin,
-    arRoles :: !(NE.NonEmpty Role),
-    arRules :: !(NE.NonEmpty Name) -- the names of the rules
+    arRole :: !Role,
+    arRule :: !Name -- the name of the rule
   }
-  deriving (Show)
-
-instance Ord A_RoleRule where
-  compare a b =
-    fromMaybe
-      ( fatal
-          . T.intercalate "\n"
-          $ [ "PPurpose a should have a non-fuzzy Origin.",
-              tshow (origin a),
-              tshow (origin b)
-            ]
-      )
-      (maybeOrdering (origin a) (origin b))
-
-instance Eq A_RoleRule where
-  a == b = compare a b == EQ
+  deriving (Show, Ord, Eq)
 
 instance Traced A_RoleRule where
   origin = arPos
@@ -794,18 +782,7 @@ instance Ord BoxItem where
       (BxExpr {}, BxExpr {}) -> compare (objE a) (objE b)
       (BxExpr {}, BxText {}) -> GT
       (BxText {}, BxExpr {}) -> LT
-      (BxText {}, BxText {}) -> case compare (boxPlainName a, boxtxt a) (boxPlainName b, boxtxt b) of
-        EQ ->
-          fromMaybe
-            ( fatal
-                . T.intercalate "\n"
-                $ [ "BxText should have a non-fuzzy Origin.",
-                    tshow (origin a),
-                    tshow (origin b)
-                  ]
-            )
-            (maybeOrdering (origin a) (origin b))
-        x -> x
+      (BxText {}, BxText {}) -> compare (boxPlainName a, boxtxt a) (boxPlainName b, boxtxt b)
 
 instance Eq BoxItem where
   a == b = compare a b == EQ
@@ -914,22 +891,8 @@ data Purpose = Expl
   }
   deriving (Show, Typeable)
 
--- instance Eq Purpose where
---  a == b = compare a b == EQ
-
 instance Ord Purpose where
-  compare a b = case compare (explObj a) (explObj b) of
-    EQ ->
-      fromMaybe
-        ( fatal
-            . T.intercalate "\n"
-            $ [ "Purpose should have a non-fuzzy Origin.",
-                tshow (origin a),
-                tshow (origin b)
-              ]
-        )
-        (maybeOrdering (origin a) (origin b))
-    x -> x
+  compare a b = compare (explObj a, explMarkup a, explRefIds a) (explObj b, explMarkup b, explRefIds b)
 
 instance Eq Purpose where
   a == b = compare a b == EQ

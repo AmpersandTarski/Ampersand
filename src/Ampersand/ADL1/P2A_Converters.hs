@@ -144,10 +144,9 @@ checkMultipleDefaultViews ctx =
 
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx =
-  case [ mkDanglingRefError "Rule" nm (arPos rr)
-         | rr <- ctxrrules ctx,
-           nm <- NE.toList $ arRules rr,
-           nm `notElem` map name (toList $ allRules ctx)
+  case [ mkDanglingRefError "Rule" (arRule rr) (arPos rr)
+         | rr <- Set.toList (ctxrrules ctx),
+           arRule rr `notElem` map name (toList $ allRules ctx)
        ] of
     [] -> return ()
     x : xs -> Errors (x NE.:| xs)
@@ -322,7 +321,12 @@ pCtx2aCtx
                 ctxcdsOutPats = allConceptDefsOutPats contextInfo,
                 ctxcds = allConceptDefs contextInfo,
                 ctxks = identdefs,
-                ctxrrules = udefRoleRules',
+                ctxrrules =
+                  Set.unions
+                    . map
+                      pRoleRule2aRoleRule
+                    $ p_roleRules
+                    <> concatMap pt_RRuls p_patterns,
                 ctxvs = viewdefs,
                 ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens,
                 ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
@@ -999,13 +1003,17 @@ pCtx2aCtx
           ttype :: A_Concept -> TType
           ttype = representationOf contextInfo
 
-      pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
+      pRoleRule2aRoleRule :: P_RoleRule -> Set A_RoleRule
       pRoleRule2aRoleRule prr =
-        A_RoleRule
-          { arRoles = mRoles prr,
-            arRules = mRules prr,
-            arPos = origin prr
-          }
+        Set.fromList
+          [ A_RoleRule
+              { arRole = rol,
+                arRule = rul,
+                arPos = origin prr
+              }
+            | rol <- NE.toList (mRoles prr),
+              rul <- NE.toList (mRules prr)
+          ]
 
       pPat2aPat :: ContextInfo -> P_Pattern -> Guarded Pattern
       pPat2aPat ci ppat =
@@ -1017,7 +1025,7 @@ pCtx2aCtx
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
           <*> traverse (pDecl2aDecl (representationOf ci) cptMap (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
-          <*> pure (fmap pRoleRule2aRoleRule (pt_RRuls ppat))
+          <*> pure (Set.unions . map pRoleRule2aRoleRule . pt_RRuls $ ppat)
           <*> pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
@@ -1240,11 +1248,6 @@ pCtx2aCtx
       allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
       allConceptDefs :: ContextInfo -> [AConceptDef]
       allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
-      udefRoleRules' :: [A_RoleRule]
-      udefRoleRules' =
-        map
-          pRoleRule2aRoleRule
-          (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
 leastConcept genLattice c str =

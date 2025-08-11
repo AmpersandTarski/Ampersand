@@ -43,7 +43,7 @@ aCtx2pCtx ctx =
       ctx_ds = map aRelation2pRelation . toList . ctxds $ ctx,
       ctx_cs = map aConcDef2pConcDef $ ctxcdsOutPats ctx,
       ctx_ks = map aIdentityDef2pIdentityDef . ctxks $ ctx,
-      ctx_rrules = map aRoleRule2pRoleRule . ctxrrules $ ctx,
+      ctx_rrules = map aRoleRule2pRoleRule . Set.toList . ctxrrules $ ctx,
       ctx_reprs = reprList (ctxInfo ctx),
       ctx_vs = map aViewDef2pViewDef . ctxvs $ ctx,
       ctx_gs = map aClassify2pClassify . ctxgs $ ctx,
@@ -83,7 +83,7 @@ aPattern2pPattern pat =
       pt_rls = map aRule2pRule . toList . ptrls $ pat,
       pt_gns = map aClassify2pClassify . ptgns $ pat,
       pt_dcs = map aRelation2pRelation . toList . ptdcs $ pat,
-      pt_RRuls = map aRoleRule2pRoleRule . udefRoleRules $ pat,
+      pt_RRuls = map aRoleRule2pRoleRule . Set.toList . udefRoleRules $ pat,
       pt_cds = map aConcDef2pConcDef (ptcds pat),
       pt_Reprs = ptrps pat,
       pt_ids = map aIdentityDef2pIdentityDef . ptids $ pat,
@@ -172,8 +172,8 @@ aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
 aRoleRule2pRoleRule rr =
   Maintain
     { pos = arPos rr,
-      mRoles = arRoles rr,
-      mRules = arRules rr
+      mRoles = arRole rr NE.:| [],
+      mRules = arRule rr NE.:| []
     }
 
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
