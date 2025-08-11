@@ -232,11 +232,11 @@ conceptualStructure fSpec pr =
        in CStruct
             { csCpts =
                 cpts'
-                  <> (Set.fromList . concat $ [[s, g] | (s, g) <- gs, g `elem` cpts' || s `elem` cpts']),
+                  <> concs (isaEdges cpts'), -- add all isa edges from the concepts,
               csRels =
                 bindedRelationsIn rulez -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   `Set.union` Set.fromList directRels,
-              csIdgs = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts' || s `elem` cpts'] --  all isa edges
+              csIdgs = isaEdges cpts'
             }
     --  PTConceptualModelOfRulesInPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
@@ -270,7 +270,7 @@ conceptualStructure fSpec pr =
           csIdgs = isaEdges cpts
         }
       where
-        cpts = concs rels `Set.union` concs pat
+        cpts = concs pat
         cpts' = cpts `Set.union` concs (isaEdges cpts)
         rels =
           relsDefdIn pat
@@ -292,7 +292,7 @@ conceptualStructure fSpec pr =
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
-    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts, s `elem` cpts]
+    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts || s `elem` cpts]
     gs = fsisa fSpec
 
 -- write the visual in all the formats requested

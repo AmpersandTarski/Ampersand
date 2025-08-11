@@ -62,16 +62,11 @@ mustBeConceptBecauseMath ci tp =
 -- Check whether all purposes refer to existing objects.
 checkPurposes :: A_Context -> Guarded ()
 checkPurposes ctx =
-  let topLevelPurposes = ctxps ctx
-      purposesInPatterns = concatMap ptxps (ctxpats ctx)
-      allPurposes = topLevelPurposes <> purposesInPatterns
+  let allPurposes = ctxps ctx <> concatMap ptxps (ctxpats ctx)
       danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
    in case danglingPurposes of
         [] -> pure ()
-        x : xs ->
-          Errors
-            $ mkDanglingPurposeError x
-            NE.:| map mkDanglingPurposeError xs
+        x : xs -> Errors . fmap mkDanglingPurposeError $ x NE.:| xs
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
