@@ -17,7 +17,6 @@ import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Exception
 import RIO.Directory (createDirectoryIfMissing, makeAbsolute)
 import RIO.FilePath
-import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
