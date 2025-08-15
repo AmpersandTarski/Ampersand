@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.5.5
+- [#1593](https://github.com/AmpersandTarski/Ampersand/issues/1593) Small additional fix: Too many concepts were drawn.
+
 ## v5.5.4
 - [#1607](https://github.com/AmpersandTarski/Ampersand/issues/1607) Harvest skos:scopeNote into Purpose when parsing .ttl files
 - [#1605](https://github.com/AmpersandTarski/Ampersand/issues/1605) Remove underscore from generated uri when generating .ttl file
