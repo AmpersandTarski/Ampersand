@@ -254,8 +254,8 @@ conceptualStructure fSpec pr =
             [ r | c <- orphans, r <- toList $ vrels fSpec, (c == source r && target r `elem` cpts) || (c == target r && source r `elem` cpts), source r /= target r, decusr r
             ]
         idgs = isaEdges cpts --  all isa edges within the concepts
-        cpts = cpts' `Set.union` Set.fromList [g | cl <- eqCl id [g | (s, g) <- gs, s `elem` cpts'], length cl < 3, g <- NE.toList cl] -- up to two more general concepts
-        cpts' = concs pat `Set.union` concs rels
+        cpts = cpts' `Set.union` concs (isaEdges cpts')
+        cpts' = concs pat `Set.union` concs (relsDefdIn pat)
         rels' = Set.filter (not . isProp . EDcD) . Set.filter (\rel -> (source rel `elem` cpts) && (target rel `elem` cpts)) . vrels $ fSpec
         rels = Set.filter (not . isProp . EDcD) (bindedRelationsIn pat)
 
@@ -292,7 +292,7 @@ conceptualStructure fSpec pr =
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
-    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, g `elem` cpts || s `elem` cpts]
+    isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, (s `elem` cpts && g `elem` cpts) || s `elem` cpts]
     gs = fsisa fSpec
 
 -- write the visual in all the formats requested
