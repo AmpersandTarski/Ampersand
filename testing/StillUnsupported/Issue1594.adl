@@ -1,0 +1,26 @@
+CONTEXT Issue1594 IN ENGLISH
+
+CONCEPT LandCode "A country code"
+CONCEPT Taal "A language"
+
+RELATION voorkeursTaal[LandCode*Taal] [UNI]
+RELATION correctCartesianResult[LandCode*Taal]
+
+POPULATION LandCode CONTAINS [ "NL", "UK", "VS" ]
+POPULATION Taal CONTAINS [ "Engels", "Nederlands", "Frans", "Duits", "Spaans" ]
+
+-- Expected result if cartesian product is evaluated correctly
+POPULATION correctCartesianResult CONTAINS 
+  [ ("NL", "Engels")
+  , ("UK", "Engels") 
+  , ("VS", "Engels")
+  ]
+
+-- This rule should have no violations if the cartesian product I#("Engels"[Taal]) is evaluated correctly
+-- It will have violations if the bug exists (incorrect evaluation showing all Taal values)
+RULE TestCartesianProductEvaluation : I[LandCode]#("Engels"[Taal]) = correctCartesianResult
+MEANING "The cartesian product I#(\"Engels\"[Taal]) should only contain pairs with Engels, not all Taal values."
+MESSAGE "Issue #1594 has not been solved yet:"
+VIOLATION (TXT "Pair (", SRC I, TXT ", ", TGT I, TXT ") is incorrect.")
+
+ENDCONTEXT
