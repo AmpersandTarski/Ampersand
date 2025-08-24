@@ -92,7 +92,7 @@ instance Instances Role where
   instances = Set.fromList . map fst . fRoles
 
 instance Instances A_RoleRule where
-  instances = maybe mempty (Set.fromList . ctxrrules) . originalContext
+  instances = allRoleRules
 
 instance Instances Signature where
   instances fSpec =

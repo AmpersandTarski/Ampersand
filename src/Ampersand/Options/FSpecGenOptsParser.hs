@@ -38,20 +38,21 @@ fSpecGenOptsParser isForDaemon =
 
     sqlBinTablesP :: Parser Bool
     sqlBinTablesP =
-      switch
-        ( long "sql-bin-tables"
-            <> help
-              ( "Generate binary tables instead of wide tables in SQL "
-                  <> "database, for testing purposes."
-              )
+      boolFlags
+        False
+        "sql-bin-tables"
+        ( "Generate binary tables instead of wide tables in SQL "
+            <> "database, for testing purposes."
         )
+        mempty
 
     genInterfacesP :: Parser Bool
     genInterfacesP =
-      switch
-        ( long "interfaces"
-            <> help "Generate interfaces, which currently does not work."
-        )
+      boolFlags
+        False
+        "interfaces"
+        "Generate interfaces, which currently does not work (see https://github.com/AmpersandTarski/Ampersand/issues/125)."
+        mempty
 
     namespaceP :: Parser Text
     namespaceP =
@@ -140,16 +141,16 @@ fSpecGenOptsParser isForDaemon =
 
     allowInvariantViolationsP :: Parser Bool
     allowInvariantViolationsP =
-      switch
-        ( long "ignore-invariant-violations"
-            <> help
-              ( "ignore invariant violations. In case of the prototype command, the "
-                  <> "generated prototype might not behave as you expect. "
-                  <> "Documentation is not affected. This means that invariant violations "
-                  <> "are reported anyway. "
-                  <> "(See https://github.com/AmpersandTarski/Ampersand/issues/728)"
-              )
+      boolFlags
+        False
+        "ignore-invariant-violations"
+        ( "ignore invariant violations. In case of the prototype command, the "
+            <> "generated prototype might not behave as you expect. "
+            <> "Documentation is not affected. This means that invariant violations "
+            <> "are reported anyway. "
+            <> "(See https://github.com/AmpersandTarski/Ampersand/issues/728)"
         )
+        mempty
 
 defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =

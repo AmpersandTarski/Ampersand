@@ -224,20 +224,20 @@ docOptsParser =
 
     blackWhiteP :: Parser Bool
     blackWhiteP =
-      switch
-        ( long "blackWhite"
-            <> help
-              ( "avoid coloring conventions to facilitate readable pictures in "
-                  <> "black and white."
-              )
+      boolFlags
+        False
+        "blackWhite"
+        ( "avoid coloring conventions to facilitate readable pictures in "
+            <> "black and white."
         )
+        mempty
     datamodelOnlyP :: Parser Bool
     datamodelOnlyP =
-      switch
-        ( long "datamodelOnly"
-            <> help
-              "Only generate datamodel images. This implies --no-text"
-        )
+      boolFlags
+        False
+        "datamodelOnly"
+        "Only generate datamodel images. This implies --no-text"
+        mempty
     genLegalRefsP :: Parser Bool
     genLegalRefsP =
       boolFlags

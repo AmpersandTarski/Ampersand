@@ -56,7 +56,7 @@ makeFSpec env context =
       fRoles =
         zip
           ( (L.sort . L.nub)
-              ( concatMap (NE.toList . arRoles) (ctxrrules context)
+              ( (map arRole . Set.toList . allRoleRules $ context)
                   <> concatMap ifcRoles (ctxifcs context)
               )
           )
@@ -255,9 +255,9 @@ makeFSpec env context =
               }
           ]
       where
-        rolesFromScript = L.nub . concatMap (NE.toList . arRoles) . filter forThisRule . udefRoleRules $ context
+        rolesFromScript = L.nub . map arRole . Set.toList . Set.filter forThisRule . udefRoleRules $ context
         forThisRule :: A_RoleRule -> Bool
-        forThisRule x = name r `elem` arRules x
+        forThisRule x = name r == arRule x
     isUserDefined rul =
       case rrkind rul of
         UserDefined -> True
