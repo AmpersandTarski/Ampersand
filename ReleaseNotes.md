@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 ## not yet released
 - [Issue #1417](https://github.com/AmpersandTarski/Ampersand/issues/1417) Refactoring the type checker.
+- **Enhanced concept lattice completeness**: The `completeLattice` function generates missing meet and join concepts to ensure proper lattice structure. If a set of nodes in the concept graph has a join, the system now guarantees that a corresponding meet concept exists. This is necessary for correct type checking.
 - Enhanced type analysis debugging: Improved `showOpTree` visualization with structured tree formatting using proper indentation and tree-drawing characters for better readability of type analysis results
 - Added logging support to type analysis functions to enable debug-level diagnostic output
 - Added disambiguation algorithm analysis documentation and implementation notes for type system improvements

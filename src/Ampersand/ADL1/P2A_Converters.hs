@@ -186,6 +186,51 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
       where
         toUpperName = T.toUpper . fullName
 
+-- | Complete a lattice by ensuring that every set of concepts that has a join also has a meet, and vice versa
+--   For debugging purpose, I have removed self-loops, so that the resulting graph is easier to read.
+completeLattice :: AdjacencyMap A_Concept -> AdjacencyMap A_Concept
+completeLattice graph = edges [ (a, b) | (a, b) <- meetEdges<>joinEdges, a /= b] -- remove self-loops to make the graph easier to read.
+  where
+    -- Ensure meets exist for join equivalence classes
+    meetEdges = 
+      [ (m, cpt)
+      | jClass <- eqCl snd (edgeList graph)
+      , m <- case findExistingMeetConcept jClass of
+          Just _ -> []
+          Nothing -> 
+            let meetName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "MEET" (fmap (fullName.fst) (NE.toList jClass)))
+            in [PlainConcept { aliases = Set.fromList [(meetName, Nothing)] }]
+      , cpt <- fmap fst (NE.toList jClass)
+      ]
+    
+    -- Ensure joins exist for meet equivalence classes
+    joinEdges = 
+      [ (cpt, j)
+      | mClass <- eqCl fst (edgeList graph)
+      , j <- case findExistingJoinConcept mClass of
+          Just _ -> []
+          Nothing -> 
+            let joinName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "JOIN" (fmap (fullName.snd) (NE.toList mClass)))
+            in [PlainConcept { aliases = Set.fromList [(joinName, Nothing)] }]
+      , cpt <- fmap snd (NE.toList mClass)
+      ]
+
+    -- Check if there's already a concept with exactly the same outgoing edges
+    findExistingMeetConcept :: NonEmpty (A_Concept, A_Concept) -> Maybe A_Concept
+    findExistingMeetConcept jClass = 
+      L.find hasExactSameEdges (vertexList graph)
+      where
+        targetConcepts = Set.fromList $ fmap fst (NE.toList jClass)
+        hasExactSameEdges candidate = postSet candidate graph == targetConcepts
+
+    -- Check if there's already a concept with exactly the same incoming edges
+    findExistingJoinConcept :: NonEmpty (A_Concept, A_Concept) -> Maybe A_Concept
+    findExistingJoinConcept mClass = 
+      L.find hasExactSameEdges (vertexList graph)
+      where
+        sourceConcepts = Set.fromList $ fmap snd (NE.toList mClass)
+        hasExactSameEdges candidate = preSet candidate graph == sourceConcepts
+
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign pCpt2aCpt (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
@@ -351,36 +396,45 @@ pCtx2aCtx
       alleGens = p_gens <> concatMap pt_gns p_patterns
       allReprs :: [P_Representation]
       allReprs = p_representations <> concatMap pt_Reprs p_patterns
+      
+
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        typeMap <- mkTypeMap connectedConcepts allReprs -- This is error free if every partition refers to precisely one technical type.
+        -- First compute connected concepts from the original relationships
+        let originalConnectedConcepts = connect' [] (map (toList . concs) gns)
+        typeMap <- mkTypeMap originalConnectedConcepts allReprs -- This is error free if every partition refers to precisely one technical type.
         -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
         --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
-        multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
         let reprOf cpt =
               fromMaybe
                 Alphanumeric -- See issue #1537
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        let initialGraph = makeGraph gns (concs decls `Set.union` concs allConcDefs)
+            conceptsGraph = overlay initialGraph (completeLattice initialGraph)
+        -- Use the original connected components - the lattice completion doesn't change typologies
+        multitypologies <- trace (tshow conceptsGraph) $
+                           traverse (mkTypology conceptsGraph) originalConnectedConcepts
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
         return
-          CI
-            { ctxiGens = gns,
-              representationOf = reprOf,
-              multiKernels = multitypologies,
-              reprList = allReprs,
-              declarationsMap = declMap,
-              soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-              allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
-              conceptGraph = makeGraph gns (concs decls `Set.union` concs allConcDefs),
-              conceptMap = pCpt2aCpt,
-              defaultLang = deflangCtxt,
-              defaultFormat = deffrmtCtxt
-            }
+            CI
+              { ctxiGens = gns,
+                representationOf = reprOf,
+                multiKernels = multitypologies,
+                reprList = allReprs,
+                declarationsMap = declMap,
+                soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
+                allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
+                conceptGraph = conceptsGraph,
+                conceptMap = pCpt2aCpt,
+                defaultLang = deflangCtxt,
+                defaultFormat = deffrmtCtxt
+              }
+      
         where
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
@@ -392,9 +446,6 @@ pCtx2aCtx
           -- See https://github.com/snowleopard/alga-paper for documentation and https://www.youtube.com/watch?v=EdQGLewU-8k for motivation.
           -- AdjacencyMap is an instance of the Graph type class. It is especially designed (and also efficient) for graphs with closures, such as our concept graph.
           -- postcondition: makeGraph is the transitive closure of gns.
-
-          connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-          connectedConcepts = connect' [] (map (toList . concs) gns)
 
           mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
@@ -468,8 +519,8 @@ pCtx2aCtx
                   disjoint :: (Eq a) => [a] -> [a] -> Bool
                   disjoint ys = null . L.intersect ys
 
-          mkTypology :: [A_Concept] -> Guarded Typology
-          mkTypology cs =
+          mkTypology :: AdjacencyMap A_Concept -> [A_Concept] -> Guarded Typology
+          mkTypology conceptsGraph cs =
             case filter (not . isSpecific) cs of
               [] -> fatal "Every typology must have at least one specific concept."
               -- When this fatal occurs, there is something wrong with detecting cycles in the p-structure.
@@ -485,7 +536,11 @@ pCtx2aCtx
                   x : xs -> x NE.:| xs
             where
               isSpecific :: A_Concept -> Bool
-              isSpecific cpt = cpt `elem` map genspc (filter (not . isTrivial) gns)
+              isSpecific cpt = 
+                -- A concept is specific (not a root) if it has incoming edges in the completed graph
+                -- or if it's specified as specific in the raw generalization statements
+                not (Set.null (preSet cpt conceptsGraph)) || 
+                cpt `elem` map genspc (filter (not . isTrivial) gns)
                 where
                   isTrivial g =
                     case g of
@@ -1370,38 +1425,8 @@ signatures env contextInfo trm = trace (tshow conceptsGraph) $
                          in mkVerboseTypeError env o opTree baseMsg
 
     pCpt2aCpt = conceptMap contextInfo
-    conceptsGraph = typeGraph contextInfo
+    conceptsGraph = (trace . tshow . conceptGraph) contextInfo $ overlay (conceptGraph contextInfo) (vertices [ONE])
     signats = signatures env contextInfo
-
-typeGraph :: ContextInfo -> AdjacencyMap A_Concept
-typeGraph contextInfo = L.foldr overlay empty [initialGraph, {- anyEdges, -} completeMeetLattice, oneGraph] -- add the edges for the ANY concept to the initial graph
-  where
-    initialGraph = conceptGraph contextInfo
-    -- anyEdges = edges [ (c, anyCpt) | c<-Set.toList (allConcepts contextInfo)]
-    oneGraph = vertices [ ONE]
-    
-    -- If a set of concepts has a join, it must have a meet. And if it has a meet, it must have a join.  
-    -- Check if there's already a concept with exactly the same outgoing edges
-    findExistingMeetConcept :: AdjacencyMap A_Concept -> NonEmpty (A_Concept, b) -> Maybe A_Concept
-    findExistingMeetConcept graph jClass = 
-      L.find hasExactSameEdges (vertexList graph)
-      where
-        targetConcepts = Set.fromList $ fmap fst (NE.toList jClass)
-        hasExactSameEdges candidate = postSet candidate graph == targetConcepts
-    
-    completeMeetLattice :: AdjacencyMap A_Concept
-    completeMeetLattice = edges $
-      [ (m, cpt)
-      | jClass <- eqCl snd (edgeList initialGraph)
-      , m <- case findExistingMeetConcept initialGraph jClass of
-          Just existing -> [existing]
-          Nothing -> 
-            let meetName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "MEET" (fmap (fullName.fst) (NE.toList jClass)))
-            in [PlainConcept { aliases = Set.fromList [(meetName, Nothing)] }]
-      , cpt <- fmap fst (NE.toList jClass)
-      ]
-
-
 
 anyCpt :: A_Concept
 anyCpt = (PlainConcept . Set.fromList)
@@ -1435,7 +1460,7 @@ termPrim2Expr contextInfo sgns trmprim
       rels rel = case p_mbSign rel of
                   Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
                   Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
-      conceptsGraph = typeGraph contextInfo
+      conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
       grLwB = meet conceptsGraph
       -- lsUpB = meet conceptGraph
       pCpt2aCpt = conceptMap contextInfo
@@ -1512,7 +1537,7 @@ term2Expr env contextInfo term
         (PCpl _ e  , _)                             -> ECpl <$> t2e sgnTree e
         (PBrk _ e  , _)                             -> t2e sgnTree e
         _ -> fatal ("Software error: term2Expr encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
-    conceptsGraph = trace ("conceptsGraph: "<>tshow (typeGraph contextInfo)) (typeGraph contextInfo)
+    conceptsGraph = conceptGraph contextInfo
     mjText :: Text -> A_Concept -> A_Concept  -> A_Concept -> Text
     mjText kind tgta srcb between =
       if tgta == srcb

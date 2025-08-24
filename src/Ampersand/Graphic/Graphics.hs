@@ -32,6 +32,7 @@ data PictureTyp
   | PTConceptualModelOfRule !Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDataModelOfContext !Bool -- logical data model of the entire script
   | PTLogicalDataModelOfPattern !Pattern -- logical data model of the pattern
+  | PTLogicalDataModelOfEntity !A_Concept -- logical data model of the entit
   | PTTechnicalDataModel -- technical data model of the entire script
 
 data DotContent
