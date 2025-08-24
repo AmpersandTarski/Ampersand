@@ -6,18 +6,39 @@ labels: ''
 assignees: ''
 ---
 
-**Is your feature request related to a problem? Please describe.**
+<!-- 
+For structure guidance, see example issue: https://github.com/AmpersandTarski/prototype/issues/272
+This template follows the same structure for consistency across feature requests.
+-->
+
+## Problem
 
 <!-- A clear and concise description of what the problem is. Ex. I'm always frustrated when [...] -->
 
-**Describe the solution you'd like**
+## Requirements
 
-<!-- A clear and concise description of what you want to happen. -->
+<!-- Describe what you want to achieve. List specific requirements if applicable. -->
 
-**Describe alternatives you've considered**
+## Design Choices
+
+<!-- A clear and concise description of the approach you want to take to solve the problem. Explain the reasoning behind your choices. -->
+
+## Solution
+
+<!-- Describe the solution and include technical details if applicable. -->
+
+## Alternatives
 
 <!-- A clear and concise description of any alternative solutions or features you've considered. -->
 
-**Additional context**
+## Additional context
 
 <!-- Add any other context or screenshots about the feature request here. -->
+
+### Files Modified/Created
+
+<!-- List any files that would need to be created or modified. Remove this section if not applicable. -->
+
+### Impact
+
+<!-- Describe the expected impact of this feature. Remove this section if not applicable. -->
