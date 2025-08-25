@@ -531,7 +531,7 @@ pCtx2aCtx
                   collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
 
           makeTypologies :: AdjacencyMap A_Concept -> [Typology]
-          makeTypologies dagGraph = trace (tshow (foldr1 overlay completeWCCs)) $
+          makeTypologies dagGraph = trace (tshow dagGraph) $
                                     map createTypology completeWCCs
             where
               wccs = wcComponents dagGraph -- weakly connected components of dagGraph

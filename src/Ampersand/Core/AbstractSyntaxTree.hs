@@ -1442,7 +1442,7 @@ instance Labeled A_Concept where
     m :: A_Concept -> Text
     m a = maybe "" tshow (mLabel a)
 instance Show A_Concept where
-  show = T.unpack . fullName
+  show = T.unpack . text1ToText . showWithAliases
 
 -- | special type of Show, for types that can have aliases. Its purpose is
 --   to use when giving feedback to the ampersand modeler, in cases aliases
