@@ -37,6 +37,7 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Data.List (minimumBy, foldr1, head)
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -448,73 +449,58 @@ pCtx2aCtx
                 Alphanumeric -- See issue #1537
                 (lookup cpt typeMap)
         decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+          -- An edge `(A,B)` in `dagGraph` means that the atoms of `A` are a subset of the atoms of `B`. We say: \"`A` is more specific than `B`\", which is a partial ordering relation on A_Concepts.
+          -- This partial ordering relation allows us to freely mix concepts from lattice theory (e.g. lattice, join, meet) and graph theory (vertex, edge) in our language.
+          -- The process of making typologies starts with the initialGraph :: AdjacencyMap A_Concept:
+          -- * `dagGraph = graph2dag initialGraph` ensures dagGraph is a DAG, and therefore acyclic.
+          -- * `wccs = wcComponents dagGraph` computes the weakly connected components of dagGraph. Every wcc will become a typology
+          -- * `completeLattice enhances the lattice structure so that each wcc has sufficient meet/join concepts for proper typology construction
+          -- * `map createTypology completeWCCs` gives us the typologies.
         let initialGraph = makeGraph gns (concs decls `Set.union` concs allConcDefs)
-            conceptsGraph = overlay initialGraph (completeLattice initialGraph)
-            dagGraph = graph2dag conceptsGraph
-            multitypologies = trace (tshow dagGraph) $
-                              makeTypologies dagGraph
+            dagGraph = graph2dag initialGraph -- convert to DAG by turning strongly connected components into single concepts with aliases
+            typologies = makeTypologies dagGraph
             declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-        let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
+            allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
         return
             CI
               { ctxiGens = gns,
                 representationOf = reprOf,
-                multiKernels = multitypologies,
+                multiKernels = typologies,
                 reprList = allReprs,
                 declarationsMap = declMap,
                 soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
                 allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
-                conceptGraph = conceptsGraph,
+                conceptGraph = dagGraph,
                 conceptMap = pCpt2aCpt,
                 defaultLang = deflangCtxt,
                 defaultFormat = deffrmtCtxt
               }
       
         where
-          
-          makeTypologies :: AdjacencyMap A_Concept -> [Typology]
-          makeTypologies dagGraph
-           = [createTypology component
-             | component <- map flatten (Alga.dfsForest symmetricGraph), not (null component), hasValidRoot component]
+          -- | Compute weakly connected components of a directed graph.
+          -- A weakly connected component is a maximal set of vertices such that for every pair
+          -- of vertices u and v, there is an undirected path between u and v in the underlying 
+          -- undirected graph (ignoring edge directions).
+          --
+          -- This function converts the directed graph to an undirected graph by overlaying it
+          -- with its transpose, then finds connected components using depth-first search.
+          -- Each returned AdjacencyMap A_Concept is a subgraph of the input containing exactly
+          -- the vertices and edges for that weakly connected component.
+          wcComponents :: AdjacencyMap A_Concept -> [AdjacencyMap A_Concept]
+          wcComponents dagGraph = map (createSubgraph dagGraph) (Alga.dfsForest symmetricGraph)
             where
-              symmetricGraph :: AdjacencyMap A_Concept
               symmetricGraph = overlay dagGraph (transpose dagGraph)
-
-              flatten :: Data.Tree.Tree A_Concept -> [A_Concept]
-              flatten (Data.Tree.Node x children) = x : concatMap flatten children
-
-              createTypology :: [A_Concept] -> Typology
-              createTypology cs =
-                let rootCandidates = filter (not . isSpecific) cs
-                    root = case rootCandidates of
-                             [r] -> r
-                             (r:_) -> r  -- Take first root if multiple
-                             [] -> case cs of
-                                     (c:_) -> c  -- Fallback to first concept if no clear root
-                                     [] -> fatal "Empty concept list in createTypology"
-                in Typology
-                     { tyroot = root,
-                       tyCpts = reverse . sortSpecific2Generic gns $ cs
-                     }
-              
-              hasValidRoot :: [A_Concept] -> Bool
-              hasValidRoot cs = 
-                let rootCandidates = filter (not . isSpecific) cs
-                in not (null rootCandidates)
-              
-              isSpecific :: A_Concept -> Bool
-              isSpecific cpt = 
-                -- A concept is specific (not a root) if it has incoming edges in the DAG
-                -- or if it's specified as specific in the raw generalization statements
-                not (Set.null (preSet cpt dagGraph)) || 
-                cpt `elem` map genspc (filter (not . isTrivial) gns)
-                where
-                  isTrivial g =
-                    case g of
-                      Isa {} -> gengen g == genspc g
-                      IsE {} -> genrhs g == genspc g NE.:| []
+              createSubgraph :: AdjacencyMap A_Concept -> Data.Tree.Tree A_Concept -> AdjacencyMap A_Concept
+              createSubgraph originalGraph tree = 
+                let vertexSet = Set.fromList (flattenTree tree)
+                    -- Filter edges to only include those between vertices in the component
+                    componentEdges = filter (\(from, to) -> from `Set.member` vertexSet && to `Set.member` vertexSet) 
+                                           (edgeList originalGraph)
+                in edges componentEdges
+              flattenTree :: Data.Tree.Tree A_Concept -> [A_Concept]
+              flattenTree (Data.Tree.Node x children) = x : concatMap flattenTree children
 
           -- | Convert a concept graph with potential cycles into a directed acyclic graph (DAG)
           -- by computing strongly connected components and condensing them into representative concepts.
@@ -543,6 +529,25 @@ pCtx2aCtx
                   collectAliases ONE = Set.singleton (nameOfONE, Nothing)
                   collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
                   collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
+
+          makeTypologies :: AdjacencyMap A_Concept -> [Typology]
+          makeTypologies dagGraph = trace (tshow (foldr1 overlay completeWCCs)) $
+                                    map createTypology completeWCCs
+            where
+              wccs = wcComponents dagGraph -- weakly connected components of dagGraph
+              completeWCCs = [ overlay wcc (completeLattice wcc) | wcc <- wccs ] -- ensure each wcc is a complete lattice
+              createTypology :: AdjacencyMap A_Concept -> Typology
+              createTypology subGraph =
+                let cs = vertexList subGraph
+                    root = case [ c | c <- vertexList subGraph, null (postSet c subGraph) ] of
+                             [r] -> r
+                             []  -> fatal "No root found in typology component."
+                             _   -> fatal "Multiple roots found in typology component."
+                in Typology
+                     { tyroot = root,
+                       tyCpts = reverse . sortSpecific2Generic gns $ cs
+                     }
+
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
 
