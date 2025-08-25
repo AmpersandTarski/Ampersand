@@ -29,6 +29,7 @@ import Ampersand.Types.Config (HasRunner, runnerL)
 import Algebra.Graph.AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alga
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import qualified Data.Tree
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
@@ -450,9 +451,9 @@ pCtx2aCtx
         let initialGraph = makeGraph gns (concs decls `Set.union` concs allConcDefs)
             conceptsGraph = overlay initialGraph (completeLattice initialGraph)
             dagGraph = graph2dag conceptsGraph
-        multitypologies <- trace (tshow dagGraph) $
-                           traverse (mkTypology dagGraph) originalConnectedConcepts
-        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
+            multitypologies = trace (tshow dagGraph) $
+                              makeTypologies dagGraph
+            declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
         let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
@@ -473,6 +474,48 @@ pCtx2aCtx
       
         where
           
+          makeTypologies :: AdjacencyMap A_Concept -> [Typology]
+          makeTypologies dagGraph
+           = [createTypology component
+             | component <- map flatten (Alga.dfsForest symmetricGraph), not (null component), hasValidRoot component]
+            where
+              symmetricGraph :: AdjacencyMap A_Concept
+              symmetricGraph = overlay dagGraph (transpose dagGraph)
+
+              flatten :: Data.Tree.Tree A_Concept -> [A_Concept]
+              flatten (Data.Tree.Node x children) = x : concatMap flatten children
+
+              createTypology :: [A_Concept] -> Typology
+              createTypology cs =
+                let rootCandidates = filter (not . isSpecific) cs
+                    root = case rootCandidates of
+                             [r] -> r
+                             (r:_) -> r  -- Take first root if multiple
+                             [] -> case cs of
+                                     (c:_) -> c  -- Fallback to first concept if no clear root
+                                     [] -> fatal "Empty concept list in createTypology"
+                in Typology
+                     { tyroot = root,
+                       tyCpts = reverse . sortSpecific2Generic gns $ cs
+                     }
+              
+              hasValidRoot :: [A_Concept] -> Bool
+              hasValidRoot cs = 
+                let rootCandidates = filter (not . isSpecific) cs
+                in not (null rootCandidates)
+              
+              isSpecific :: A_Concept -> Bool
+              isSpecific cpt = 
+                -- A concept is specific (not a root) if it has incoming edges in the DAG
+                -- or if it's specified as specific in the raw generalization statements
+                not (Set.null (preSet cpt dagGraph)) || 
+                cpt `elem` map genspc (filter (not . isTrivial) gns)
+                where
+                  isTrivial g =
+                    case g of
+                      Isa {} -> gengen g == genspc g
+                      IsE {} -> genrhs g == genspc g NE.:| []
+
           -- | Convert a concept graph with potential cycles into a directed acyclic graph (DAG)
           -- by computing strongly connected components and condensing them into representative concepts.
           graph2dag :: AdjacencyMap A_Concept -> AdjacencyMap A_Concept
@@ -582,36 +625,6 @@ pCtx2aCtx
                     [] -> pure []
                     [t] -> pure [(cpt, t) | cpt <- grp]
                     _ -> mkMultipleTypesInTypologyError typeList
-
-          mkTypology :: AdjacencyMap A_Concept -> [A_Concept] -> Guarded Typology
-          mkTypology conceptsGraph cs =
-            case filter (not . isSpecific) cs of
-              [] -> fatal "Every typology must have at least one specific concept."
-              -- When this fatal occurs, there is something wrong with detecting cycles in the p-structure.
-              [r] ->
-                pure
-                  Typology
-                    { tyroot = r,
-                      tyCpts = reverse . sortSpecific2Generic gns $ cs
-                    }
-              rs -> mkMultipleRootsError rs
-                $ case filter isInvolved gns of
-                  [] -> fatal "No involved gens"
-                  x : xs -> x NE.:| xs
-            where
-              isSpecific :: A_Concept -> Bool
-              isSpecific cpt = 
-                -- A concept is specific (not a root) if it has incoming edges in the completed graph
-                -- or if it's specified as specific in the raw generalization statements
-                not (Set.null (preSet cpt conceptsGraph)) || 
-                cpt `elem` map genspc (filter (not . isTrivial) gns)
-                where
-                  isTrivial g =
-                    case g of
-                      Isa {} -> gengen g == genspc g
-                      IsE {} -> genrhs g == genspc g NE.:| []
-              isInvolved :: AClassify -> Bool
-              isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
       pCpt2aCpt :: ConceptMap
       pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)

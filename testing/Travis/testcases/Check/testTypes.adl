@@ -1,0 +1,96 @@
+CONTEXT Try21 IN ENGLISH
+
+PURPOSE CONTEXT Try21 {+ Test left residual operator (/) with proper type checking and hierarchy-aware disambiguation. +}
+
+{- PREDICTION based on Ampersand theory:
+
+Test 1 (enrolled/requires): Should PASS
+- enrolled[Student*Course] / requires[Course*Subject] 
+- target(enrolled) = Course, source(requires) = Course → exact match
+- Result: Student*Subject (matches shouldPass declaration)
+
+Test 2 (enrolled/teaches): Likely to FAIL  
+- enrolled[Student*Course] / teaches[Teacher*Subject]
+- target(enrolled) = Course, source(teaches) = Teacher
+- No clear relationship between Course and Teacher in the hierarchy
+- The meet(Course,Teacher) is undefined, so type checking should fail
+
+Test 3-4: Depend on Test 1, should PASS if Test 1 passes
+
+Test 5 (enrolled/(requires/passed)): Likely to FAIL
+- requires[Course*Subject] / passed[Student*Subject]
+- target(requires) = Subject, source(passed) = Student  
+- No relationship between Subject and Student defined
+- Nested residual creates complex type constraints that likely won't resolve
+
+Expected outcome: Test 1 should pass, Tests 2 and 5 likely to fail due to type mismatches.
+-}
+
+PATTERN Try21
+
+-- Create concept hierarchies to test residual operators
+
+CLASSIFY Student ISA Person
+CLASSIFY Teacher ISA Person
+CLASSIFY Course ISA Subject
+CLASSIFY Course ISA Topic
+CLASSIFY AdvancedCourse ISA Course
+
+-- Basic relations for residual testing
+RELATION enrolled[Student*Course]     -- Student enrolled in Course
+RELATION teaches[Teacher*Subject]     -- Teacher teaches Subject  
+RELATION passed[Student*Subject]      -- Student passed Subject
+RELATION requires[Course*Subject]     -- Course requires Subject
+
+-- Test relations for results
+RELATION shouldPass[Student*Subject]  -- What a student should pass
+RELATION competent[Student*Teacher]   -- Student competent with teachers
+
+-- Auxiliary relations to force specific type contexts
+RELATION studentOf[X*Student]         -- Forces Student context
+RELATION courseOf[Y*Course]           -- Forces Course context
+RELATION subjectOf[Z*Subject]         -- Forces Subject context
+
+-- Test 1: Basic left residual - should work cleanly
+-- enrolled[Student*Course] / requires[Course*Subject] = shouldPass[Student*Subject]
+-- target(enrolled) = Course matches source(requires) = Course
+RULE TestLeftResidual1: shouldPass = enrolled;requires
+RULE TestLeftResidual2: shouldPass = enrolled/requires
+RULE TestLeftResidual3: shouldPass = enrolled/requires~
+{-
+-- Test 2: Left residual with problematic hierarchy 
+-- enrolled[Student*Course] / teaches[Teacher*Subject]
+-- target(enrolled) = Course, source(teaches) = Teacher - no clear meet
+RULE TestLeftResidualHierarchy: competent = enrolled/teaches
+
+-- Test 3: Complex composition with left residual (depends on Test 1)
+RULE TestLeftResidualComposition: result1 = studentOf;shouldPass
+RELATION result1[X*Subject]
+
+-- Test 4: Left residual in reverse composition (depends on Test 1)
+RULE TestLeftResidualComposition2: result2 = shouldPass;subjectOf
+RELATION result2[Student*Z]
+
+-- Test 5: Nested residuals - complex type propagation
+-- enrolled/(requires/passed) where requires/passed likely fails
+RULE TestNestedResiduals: result3 = enrolled/(requires/passed)
+RELATION result3[Student*Student]
+
+-}
+ENDPATTERN
+ENDCONTEXT
+
+{-
+Purpose: Test left residual operator (/) implementation with expected failures
+
+This test is designed to stress-test the left residual implementation:
+- Test 1 should demonstrate correct basic residual operation
+- Test 2 should reveal issues with unrelated concept hierarchies  
+- Tests 3-4 test residuals in larger expressions
+- Test 5 tests nested residual associativity with type mismatches
+
+If the implementation is correct:
+- Test 1 should succeed (clean type match)
+- Tests 2 and 5 should fail with clear type error messages
+- Tests 3-4 should succeed if Test 1 succeeds
+-}
