@@ -27,6 +27,8 @@ import Ampersand.Misc.HasClasses
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)
 import Algebra.Graph.AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alga
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
@@ -227,6 +229,42 @@ completeLattice graph = edges [ (a, b) | (a, b) <- meetEdges<>joinEdges, a /= b]
         sourceConcepts = Set.fromList $ fmap snd (NE.toList mClass)
         hasExactSameEdges candidate = preSet candidate graph == sourceConcepts
 
+-- | Create a condensed DAG from the concept graph by handling strongly connected components
+createCondensedDAG :: AdjacencyMap A_Concept -> [[A_Concept]] -> AdjacencyMap A_Concept
+createCondensedDAG originalGraph sccs = edges condensedEdges
+  where
+    -- Map each concept to its SCC representative (with all aliases preserved)
+    conceptToRep :: Map.Map A_Concept A_Concept
+    conceptToRep = Map.fromList [(c, rep) | scc <- sccs, let rep = createConceptWithSynonyms scc, c <- scc]
+    
+    -- Create a new concept that preserves all aliases from concepts in the SCC
+    createConceptWithSynonyms :: [A_Concept] -> A_Concept
+    createConceptWithSynonyms [] = fatal "Empty SCC encountered"
+    createConceptWithSynonyms [c] = c  -- Single concept, no synonyms needed
+    createConceptWithSynonyms cs = 
+      case L.sortBy (\a b -> compare (fullName a) (fullName b)) cs of
+        [] -> fatal "Empty sorted list"
+        primary : others -> 
+          -- Create a new concept with all aliases from all concepts in the SCC
+          PlainConcept { aliases = Set.unions (collectAliases primary : map collectAliases others) }
+    
+    -- Extract aliases from a concept, handling all concept types
+    collectAliases :: A_Concept -> Set.Set (Name, Maybe Label)
+    collectAliases (PlainConcept {aliases = als}) = als
+    collectAliases ONE = Set.singleton (nameOfONE, Nothing)
+    collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
+    collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
+    
+    -- Create edges between SCC representatives, eliminating cycles
+    condensedEdges :: [(A_Concept, A_Concept)]
+    condensedEdges = L.nub
+      [ (fromRep, toRep) 
+      | (from, to) <- edgeList originalGraph
+      , let fromRep = Map.findWithDefault from from conceptToRep
+      , let toRep = Map.findWithDefault to to conceptToRep
+      , fromRep /= toRep  -- Remove self-loops (cycles within SCCs)
+      ]
+
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign pCpt2aCpt (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
@@ -402,11 +440,8 @@ pCtx2aCtx
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
         -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        -- First compute connected concepts from the original relationships
         let originalConnectedConcepts = connect' [] (map (toList . concs) gns)
         typeMap <- mkTypeMap originalConnectedConcepts allReprs -- This is error free if every partition refers to precisely one technical type.
-        -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
-        --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
         let reprOf cpt =
               fromMaybe
                 Alphanumeric -- See issue #1537
@@ -414,9 +449,9 @@ pCtx2aCtx
         decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
         let initialGraph = makeGraph gns (concs decls `Set.union` concs allConcDefs)
             conceptsGraph = overlay initialGraph (completeLattice initialGraph)
-        -- Use the original connected components - the lattice completion doesn't change typologies
-        multitypologies <- trace (tshow conceptsGraph) $
-                           traverse (mkTypology conceptsGraph) originalConnectedConcepts
+            dagGraph = graph2dag conceptsGraph
+        multitypologies <- trace (tshow dagGraph) $
+                           traverse (mkTypology dagGraph) originalConnectedConcepts
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
@@ -437,6 +472,34 @@ pCtx2aCtx
               }
       
         where
+          
+          -- | Convert a concept graph with potential cycles into a directed acyclic graph (DAG)
+          -- by computing strongly connected components and condensing them into representative concepts.
+          graph2dag :: AdjacencyMap A_Concept -> AdjacencyMap A_Concept
+          graph2dag conceptsGraph = edges dagEdges
+            where
+              -- Compute strongly connected components to eliminate cycles
+              sccGraph = Alga.scc conceptsGraph -- AdjacencyMap (NonEmpty.AdjacencyMap A_Concept)
+              -- Extract individual SCCs and create representative concepts
+              sccs = vertexList sccGraph  -- [NonEmpty.AdjacencyMap A_Concept]
+              sccReps = map mintConcept sccs  -- [A_Concept]
+              -- Create mapping from SCC to representative concept
+              sccToRep = Map.fromList (zip sccs sccReps)
+              -- Create edges between representatives based on SCC graph structure
+              dagEdges = [(Map.findWithDefault (fatal "SCC not found in mapping") fromScc sccToRep, Map.findWithDefault (fatal "SCC not found in mapping") toScc sccToRep) | (fromScc, toScc) <- edgeList sccGraph]
+
+              mintConcept :: NonEmpty.AdjacencyMap A_Concept -> A_Concept
+              mintConcept scc = case L.sortBy (\a b -> compare (fullName a) (fullName b)) (NE.toList $ NonEmpty.vertexList1 scc) of
+                [] -> fatal "Empty SCC encountered"
+                [c] -> c  -- Single concept, no synonyms needed
+                primary:others -> PlainConcept { aliases = Set.unions (collectAliases primary : map collectAliases others) }
+                where
+                  -- Extract aliases from a concept, handling all concept types
+                  collectAliases :: A_Concept -> Set.Set (Name, Maybe Label)
+                  collectAliases (PlainConcept {aliases = als}) = als
+                  collectAliases ONE = Set.singleton (nameOfONE, Nothing)
+                  collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
+                  collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
 
@@ -447,6 +510,18 @@ pCtx2aCtx
           -- See https://github.com/snowleopard/alga-paper for documentation and https://www.youtube.com/watch?v=EdQGLewU-8k for motivation.
           -- AdjacencyMap is an instance of the Graph type class. It is especially designed (and also efficient) for graphs with closures, such as our concept graph.
           -- postcondition: makeGraph is the transitive closure of gns.
+
+          connect' :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
+          connect' acc [] = acc
+          connect' acc (h:tl) = connect' (connect'' h acc) tl
+          
+          connect'' :: [A_Concept] -> [[A_Concept]] -> [[A_Concept]]
+          connect'' [] acc = acc
+          connect'' h [] = [h]
+          connect'' h (a:as) =
+            if null (h `L.intersect` a)
+            then a : connect'' h as
+            else connect'' (L.nub (h <> a)) as
 
           mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
           mkTypeMap groups reprs =
@@ -507,18 +582,6 @@ pCtx2aCtx
                     [] -> pure []
                     [t] -> pure [(cpt, t) | cpt <- grp]
                     _ -> mkMultipleTypesInTypologyError typeList
-          connect' :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          connect' typols gss =
-            case gss of
-              [] -> typols
-              x : xs -> connect' (t : typols) rest
-                where
-                  (t, rest) = g' x xs
-                  g' a as = case L.partition (disjoint a) as of
-                    (_, []) -> (a, as)
-                    (hs', hs) -> g' (L.nub $ a <> concat hs) hs'
-                  disjoint :: (Eq a) => [a] -> [a] -> Bool
-                  disjoint ys = null . L.intersect ys
 
           mkTypology :: AdjacencyMap A_Concept -> [A_Concept] -> Guarded Typology
           mkTypology conceptsGraph cs =
