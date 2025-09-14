@@ -281,6 +281,7 @@ graph2P_Context graph = do
                 <> select graph (is blank) (is OWL.hasValue) Nothing
                 <> select graph (is blank) (is OWL.onClass) Nothing
                 <> select graph (is blank) (is RDFS.range) Nothing
+                <> select graph (is blank) (is OWL.onDataRange) Nothing
             domainNodesOfRestriction :: Node -> [Node]
             domainNodesOfRestriction blank =
               map objectOf (select graph (is blank) (is RDFS.domain) Nothing)
