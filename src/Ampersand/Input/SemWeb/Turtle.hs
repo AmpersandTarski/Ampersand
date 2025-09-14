@@ -22,6 +22,7 @@ import qualified Data.RDF.Vocabulary.RDF as RDF
 import qualified Data.RDF.Vocabulary.RDFS as RDFS
 import qualified Data.RDF.Vocabulary.SKOS as SKOS
 import Data.Tuple.Extra (fst3)
+import RIO.Char (toUpper)
 import RIO.FilePath
 import qualified RIO.List as L
 import qualified RIO.Map as M
@@ -156,7 +157,7 @@ graph2P_Context graph = do
         ctx_gs = isas,
         ctx_enfs = mempty,
         ctx_ds = fst <$> relationDefsNotInPattern,
-        ctx_cs = cptDefs
+        ctx_cs = addDataTypeConcepts cptDefs
       }
   where
     mkError :: Text -> Guarded a
@@ -204,12 +205,68 @@ graph2P_Context graph = do
                 pt_enfs = mempty,
                 pt_end = someTurtle,
                 pt_dcs = fst <$> filter isForPattern allRelationDefsAndPurposes,
-                pt_cds = cptDefs,
+                pt_cds = addDataTypeConcepts cptDefs,
                 pt_Reprs = mempty,
                 pt_RRuls = mempty,
                 pos = someTurtle
               }
-
+    addDataTypeConcepts :: [PConceptDef] -> [PConceptDef]
+    addDataTypeConcepts cds = cds <> L.nub (concatMap dataTypesFor cds)
+      where
+        dataTypesFor :: PConceptDef -> [PConceptDef]
+        dataTypesFor cd =
+          [ PConceptDef
+              { cdname = name candidate,
+                cdmean =
+                  [ PMeaning
+                      ( P_Markup
+                          { mString = "Auto-gegenereerd datatype",
+                            mLang = Just defTurtleLang,
+                            mFormat = Just defTurtleFormat
+                          }
+                      )
+                  ],
+                cdlbl = case T.stripPrefix xmlSchema (tshow (name candidate)) of
+                  Just rest -> case T.uncons rest of
+                    Just (h, tl) ->
+                      let txt :: Text
+                          txt = "xsd:" <> T.cons (toUpper h) tl
+                       in Just . Label $ txt
+                    Nothing -> Nothing
+                  Nothing -> Nothing,
+                cdfrom = cdfrom cd,
+                cddef2 =
+                  PCDDefNew
+                    ( PMeaning
+                        P_Markup
+                          { mString = "Standaard datatype, geen definitie beschikbaar.",
+                            mLang = Just defTurtleLang,
+                            mFormat = Just defTurtleFormat
+                          }
+                    ),
+                pos = someTurtle
+              }
+            | candidate <- candidates
+          ]
+          where
+            candidates :: [P_Concept]
+            candidates =
+              filter isXmlSchemaType
+                $ (map (pTgt . dec_sign) . filter tgtIsDataTypeCandidate $ (map fst allRelationDefsAndPurposes))
+                <> (map (pSrc . dec_sign) . filter srcIsDataTypeCandidate $ (map fst allRelationDefsAndPurposes))
+            tgtIsDataTypeCandidate rel =
+              (name . pSrc . dec_sign $ rel)
+                == name cd
+                && Set.fromList [P_Uni, P_Tot]
+                `Set.isSubsetOf` dec_prps rel
+            srcIsDataTypeCandidate rel =
+              (name . pTgt . dec_sign $ rel)
+                == name cd
+                && Set.fromList [P_Uni, P_Tot]
+                `Set.isSubsetOf` dec_prps rel
+            isXmlSchemaType :: P_Concept -> Bool
+            isXmlSchemaType cpt = xmlSchema `T.isPrefixOf` tshow (name cpt)
+    xmlSchema = "UNodehttpwww.w3.Org2001XmlSchema"
     allRelationDefsAndPurposes :: [(P_Relation, [PPurpose])]
     allRelationDefsAndPurposes =
       concat
