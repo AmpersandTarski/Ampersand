@@ -1,5 +1,8 @@
 ﻿# Release notes of Ampersand
 
+## v5.5.6
+- [#1613](https://github.com/AmpersandTarski/Ampersand/issues/1613) Harvest owl:DatatypeProperty from turtle files
+
 ## v5.5.5
 - [#1593](https://github.com/AmpersandTarski/Ampersand/issues/1593) Small additional fix: Too many concepts were drawn.
 
