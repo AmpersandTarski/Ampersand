@@ -266,6 +266,8 @@ graph2P_Context graph = do
                 `Set.isSubsetOf` dec_prps rel
             isXmlSchemaType :: P_Concept -> Bool
             isXmlSchemaType cpt = xmlSchema `T.isPrefixOf` tshow (name cpt)
+    -- \| This string represents the textual form of a UNode for the XML Schema namespace,
+    --   as produced by 'tshow (UNode "http://www.w3.org/2001/XMLSchema#")'.
     xmlSchema = "UNodehttpwww.w3.Org2001XmlSchema"
     allRelationDefsAndPurposes :: [(P_Relation, [PPurpose])]
     allRelationDefsAndPurposes =
