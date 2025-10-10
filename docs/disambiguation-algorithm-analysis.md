@@ -12,7 +12,8 @@
 
 ```haskell
 data OpTree a = STbinary {lSigns :: OpTree a, rSigns :: OpTree a, opSigns :: [a]}
-              | STnullary {opSigns :: [a]}
+              | STunary  { signs :: OpTree a,                     opSigns :: [a]}
+              | STnullary {                                       opSigns :: [a]}
 ```
 
 ## Two-Phase Disambiguation Process

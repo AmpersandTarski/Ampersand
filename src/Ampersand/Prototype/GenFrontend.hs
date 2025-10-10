@@ -49,9 +49,9 @@ copyTemplates = do
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists
     then do
-      logDebug $ "Copying project specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
+      logDebug $ "Copying project-specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
       copyDirRecursively tempDir toDir -- recursively copy all templates
-    else logDebug $ "No project specific templates are copied (there is no such directory " <> display (T.pack tempDir) <> ")"
+    else logDebug $ "No project-specific templates are copied (there is no such directory " <> display (T.pack tempDir) <> ")"
 
 buildFESpec :: (HasDirPrototype env) => FSpec -> RIO env FESpec
 buildFESpec fSpec = do

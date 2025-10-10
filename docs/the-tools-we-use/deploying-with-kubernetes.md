@@ -8,7 +8,7 @@ description: >-
 
 ## Purpose
 
-Deploying your Ampersand application to production can be done fast and frequent. For this purpose we are working on deployment on the Kubernetes platform. This allows you to deploy easily on your laptop \(for testing\), in your own data center \(The minimum you need is a virtual machiine that runs kubernetes\), or in the cloud \(to benefit from the reliability and security provided by hosting providers\). We use Kubernetes because it is open, free, well known, widely used, and is continuously being impoved by a large community. It lets you deploy fast and lets you upgrade the application without taking it offline.
+Deploying your Ampersand application to production can be done fast and frequent. For this purpose we are working on deployment on the Kubernetes platform. This allows you to deploy on your laptop \(for testing\), in your own data center \(The minimum you need is a virtual machiine that runs kubernetes\), or in the cloud \(to benefit from the reliability and security provided by hosting providers\). We use Kubernetes because it is open, free, well known, widely used, and is continuously being impoved by a large community. It lets you deploy fast and lets you upgrade the application without taking it offline.
 
 ## Way of working
 

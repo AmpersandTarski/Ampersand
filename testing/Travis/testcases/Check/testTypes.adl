@@ -32,7 +32,7 @@ PATTERN Try21
 
 CLASSIFY Student ISA Person
 CLASSIFY Teacher ISA Person
-CLASSIFY Course ISA Subject
+-- CLASSIFY Course ISA Subject
 CLASSIFY Course ISA Topic
 CLASSIFY AdvancedCourse ISA Course
 
@@ -58,6 +58,87 @@ RULE TestLeftResidual1: shouldPass = enrolled;requires
 RULE TestLeftResidual2: shouldPass = enrolled/requires
 RULE TestLeftResidual3: shouldPass = enrolled/requires~
 {-
+__Rule 1: `shouldPass = enrolled;requires`__
+
+- Left side: `shouldPass[Student*Subject]`
+- Right side: `enrolled[Student*Course];requires[Course*Subject]`
+- Composition type check: target of `enrolled` (Course) must match source of `requires` (Course) ✓
+- Result signature: `[Student*Subject]`
+- This matches `shouldPass[Student*Subject]` ✓
+- __Prediction: PASS__
+
+__Rule 2: `shouldPass = enrolled/requires`__
+
+- Left side: `shouldPass[Student*Subject]`
+- Right side: `enrolled[Student*Course]/requires[Course*Subject]`
+- Left residual type rule: For `a/r`, we need the target of `a` to be equal to or more generic than the target of `r`
+- Target of `enrolled` = Course, Target of `requires` = Subject
+- Since Course ISA Subject, Course is more specific than Subject, so this should work ✓
+- Result signature should be `[Student*Subject]`
+- __Prediction: PASS__
+
+__Rule 3: `shouldPass = enrolled/requires~`__
+
+- Left side: `shouldPass[Student*Subject]`
+- Right side: `enrolled[Student*Course]/requires~[Subject*Course]`
+- Left residual type rule: target of `enrolled` (Course) must be equal to or more generic than target of `requires~` (Subject)
+- But Course ISA Subject means Course is MORE SPECIFIC than Subject, not more generic
+- This violates the left residual type constraint
+- __Prediction: FAIL__
+
+So my predictions are:
+
+1. TestLeftResidual1: should PASS. Test result:
+     overlay (vertex ONE) (edges [(AdvancedCourse,Course),(Course,Subject),(Course,Topic),(Student,Person),(Teacher,Person)])
+     
+     PEqu (/workspaces/Ampersand/testing/Travis/testcases/Check/testTypes.adl:57:36) (shouldPass) (enrolled;requires)
+        sgnsa: [(EDcD shouldPass[Student*Subject],[Student*Subject])]
+        sgnsb: [(ECps (EDcD enrolled[Student*Course],EDcD requires[Course*Subject]),[Student*Subject])]
+        sgnsb: [(ECps (EDcD enrolled[Student*Course],EDcD requires[Course*Subject]),[Student*Subject])]
+     
+     Analyzing shouldPass=enrolled;requires
+     signatures yields:
+     [Student*Subject] shouldPass[Student*Subject]=enrolled[Student*Course];requires[Course*Subject]
+     [Student*Subject]     ├── shouldPass[Student*Subject]
+     [Student*Subject]     └── enrolled[Student*Course];requires[Course*Subject]
+     [Student*Course]          ├── enrolled[Student*Course]
+     [Course*Subject]          └── requires[Course*Subject]
+     Between enrolled and requires is: Course.
+
+2. TestLeftResidual2: should PASS. Test result:
+     overlay (vertex ONE) (edges [(AdvancedCourse,Course),(Course,Subject),(Course,Topic),(Student,Person),(Teacher,Person)])
+     
+     PEqu (/workspaces/Ampersand/testing/Travis/testcases/Check/testTypes.adl:58:36) (shouldPass) (enrolled/requires)
+        sgnsa: [(EDcD shouldPass[Student*Subject],[Student*Subject])]
+        sgnsb: [(ELrs (EDcD enrolled[Student*Course],EDcD requires[Course*Subject]),[Student*Subject])]
+        sgnsb: [(ELrs (EDcD enrolled[Student*Course],EDcD requires[Course*Subject]),[Student*Subject])]
+     
+     Analyzing shouldPass=enrolled/requires
+     signatures yields:
+     [Student*Subject] shouldPass[Student*Subject]=enrolled[Student*Course]/requires[Course*Subject]
+     [Student*Subject]     ├── shouldPass[Student*Subject]
+     [Student*Subject]     └── enrolled[Student*Course]/requires[Course*Subject]
+     [Student*Course]          ├── enrolled[Student*Course]
+     [Course*Subject]          └── requires[Course*Subject]
+     On the right hand side of enrolled and requires (Course `join` Subject yields: Subject)
+ 
+3. TestLeftResidual3: should FAIL. Test result:
+     overlay (vertex ONE) (edges [(AdvancedCourse,Course),(Course,Subject),(Course,Topic),(Student,Person),(Teacher,Person)])
+     /workspaces/Ampersand/testing/Travis/testcases/Check/testTypes.adl:59:46 error:
+       Cannot match the signatures on the left and right of the left residual.
+         The target of enrolled, which is Course, should be equal to or more generic than the target of requires~, which is Course.
+       
+       Type analysis:
+       [Student*Course] enrolled[Student*Course]/requires[Course*Subject]~
+       [Student*Course]     ├── enrolled[Student*Course]
+       [Subject*Course]     └── requires[Course*Subject]~
+       [Course*Subject]         └── requires[Course*Subject]
+     ExitFailure 10
+
+
+
+
+
 -- Test 2: Left residual with problematic hierarchy 
 -- enrolled[Student*Course] / teaches[Teacher*Subject]
 -- target(enrolled) = Course, source(teaches) = Teacher - no clear meet
