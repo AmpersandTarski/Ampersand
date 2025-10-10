@@ -1,0 +1,85 @@
+CONTEXT TestAllOperators IN ENGLISH
+
+PURPOSE CONTEXT TestAllOperators {+ Comprehensive test for all Ampersand operators. +}
+
+PATTERN TestAllOperators
+
+-- Minimal set of relations to test all operators
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION t[A*C]
+RELATION u[A*A]
+
+-- Expected results for various operators
+RELATION resultAC[A*C]
+RELATION resultAB[A*B]
+RELATION resultBC[B*C]
+RELATION resultBA[B*A]
+RELATION resultCB[C*B]
+RELATION resultAA[A*A]
+RELATION resultBB[B*B]
+RELATION resultCC[C*C]
+
+-- Test 1: Composition - should PASS
+RULE testComposition: resultAC = r;s
+
+-- Test 2: Left residual with matching targets - should PASS
+-- r[A*B]/s~[C*B] has result [A*C] because result = [source(r)*source(s~)]
+RULE testLeftResidual: resultAC = r/s~
+
+-- Test 3: Right residual with matching sources - should PASS  
+-- r~[B*A]\s[B*C] has result [A*C] because result = [target(r~)*target(s)]
+RULE testRightResidual: resultAC = r~\s
+
+-- Test 4: Diamond with matching concepts - should PASS
+RULE testDiamond: resultAC = r<>s
+
+-- Test 5: Flip - should PASS
+RULE testFlip: resultBA = r~
+
+-- Test 6: Relational addition with matching join - should PASS
+RULE testRelationalAddition: resultAC = r!s
+
+-- Test 7: Cartesian product - should PASS (always works)
+RULE testCartesianProduct: resultAC = r#s
+
+-- Test 8: Union - should PASS
+RULE testUnion: resultAC = t \/ (r;s)
+
+-- Test 9: Intersection - should PASS
+RULE testIntersection: resultAC = t /\ (r;s)
+
+-- Test 10: Difference - should PASS
+RULE testDifference: resultAC = t - (r;s)
+
+-- Test 11: Complement of endo-relation - should PASS
+RULE testComplement: resultAA = -u
+
+-- Test 12: Kleene star - should PASS
+RULE testKleeneStar: resultAA = u*
+
+-- Test 13: Kleene plus - should PASS
+RULE testKleenePlus: resultAA = u+
+
+-- Test 14: Identity - should PASS
+RULE testIdentity: resultAA = I[A]
+
+-- Test 15: Full relation - should PASS
+RULE testFull: resultAC = V[A*C]
+
+-- Negative tests (should FAIL)
+
+-- Test 16: Composition with mismatched concepts - should FAIL
+RULE testCompositionFail: resultAC = r;r~
+
+-- Test 17: Left residual with mismatched targets - should FAIL
+RULE testLeftResidualFail: resultAB = r/s
+
+-- Test 18: Right residual with mismatched sources - should FAIL
+RULE testRightResidualFail: resultBC = r\s~
+
+-- Test 19: Diamond with mismatched concepts - should FAIL
+RULE testDiamondFail: resultAC = r<>r~
+
+ENDPATTERN
+ENDCONTEXT

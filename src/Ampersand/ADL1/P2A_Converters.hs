@@ -1412,7 +1412,26 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                                         suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " / " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                                         opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
                                     in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
-  PRrs o a b -> checkIntra o "right residual"    ERrs (flp a) b join isLeq "PRrs" "join"
+  PRrs o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
+                   let pairsa = opSigns sgnaTree; pairsb = opSigns sgnbTree
+                       sgnsa = map snd pairsa; sgnsb = map snd pairsb
+                   -- Custom logic for PRrs: compare source(left) with source(right), result is [target(left)*target(right)]
+                   let trees = [ trace ("Right residual: joining source("<>showP a<>")="<>tshow srca<>" with source("<>showP b<>")="<>tshow srcb<>" yields "<>tshow between<>"\n   ")
+                                 ((ERrs (expr_a, expr_b), Sign tgta tgtb), (expr_a, Sign left tgta), (expr_b, Sign right tgtb))
+                               | (expr_a, Sign srca tgta)<-pairsa, (expr_b, Sign srcb tgtb)<-pairsb
+                               , Just between<-[join conceptsGraph srca srcb]  -- Compare sources!
+                               , Just left<-[meet conceptsGraph between srca]
+                               , Just right<-[meet conceptsGraph between srcb]
+                               ]
+                   case trees of
+                    []  -> let errorExprs = [(ERrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
+                               opTree = STbinary sgnaTree sgnbTree errorExprs
+                           in mkVerboseTypeError env o opTree ("Cannot match the source concepts of the right residual. Right residual "<>showP a<>"\\"<>showP b<>" requires that the join of source("<>showP a<>") and source("<>showP b<>") exists.")
+                    [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
+                    triplesigns  -> let baseMsg = "Ambiguous signatures of the right residual " <> showP a <> "\\" <> showP b
+                                        suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " \\ " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
+                                        opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
+                                    in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
   PDia o a b -> checkIntra o "diamond"           EDia a b       meet true  "PDia" "meet"
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b))
@@ -1609,19 +1628,21 @@ term2Expr env contextInfo term
           -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PDif _ a b, STbinary stLeft stRight pairs)
           -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PRrs _ a b, STbinary stLeft stRight [(_, sgn)])
-          -> ERrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+        (prrs@(PRrs _ a b), STbinary stLeft stRight [(_, sgn)])
+          -> case triples of
+               [] -> let errorExprs = [(ERrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-opSigns stLeft, (expr_b, sgn_b)<-opSigns stRight ]
+                         opTree = STbinary stLeft stRight errorExprs
+                     in mkVerboseTypeError env (origin prrs) opTree ("Cannot match the source concepts of the right residual. Right residual "<>showP prrs<>" requires that the join of source(r) and source(s) exists.")
+               _ -> ERrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
              where
-               -- Note: For right residual (a\b), the left operand a is flipped in signature generation
-               -- So stLeft already contains flipped signatures. We need to extract them for type checking.
-               leftFlippedSigns = [(expr, flp sig) | (expr, sig) <- opSigns stLeft]
-               triples = [ trace ("27. On the left hand side of "<>showP a<>" and "<>showP b<>mjText "join" tgta srcb between<>"\n   ")
-                           (Sign srca tgtb, sgna, sgnb)
-                         | (_, sgna@(Sign srca tgta))<-leftFlippedSigns, (_, sgnb@(Sign srcb tgtb))<-opSigns stRight
-                         , Just between<-[join conceptsGraph tgta srcb]
+               -- For PRrs, signatures compares sources directly, so no flipping needed here
+               triples = [ trace ("27. PRrs term2Expr: joining sources of "<>showP a<>" and "<>showP b<>mjText "join" srca srcb between<>"\n   ")
+                           (Sign tgta tgtb, sgna, sgnb)
+                         | (_, sgna@(Sign srca tgta))<-opSigns stLeft, (_, sgnb@(Sign srcb tgtb))<-opSigns stRight
+                         , Just between<-[join conceptsGraph srca srcb]  -- Compare sources!
                          ]
-               leftPairs = L.nubBy ((==) `on` snd) [(expr, flp (snd3 trip)) | (expr, _) <- opSigns stLeft, trip <- triples]
-               rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
+               leftPairs = L.nubBy ((==) `on` snd) [(expr, sgnL) | (expr, _) <- opSigns stLeft, (_,sgnL,_) <- triples]
+               rightPairs = L.nubBy ((==) `on` snd) [(expr, sgnR) | (expr, _) <- opSigns stRight, (_,_,sgnR) <- triples]
         (plrs@(PLrs _ a b), STbinary stLeft stRight [(_, sgn)])
           -> case triples of
                [] -> let errorExprs = [(ELrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-opSigns stLeft, (expr_b, sgn_b)<-opSigns stRight ]
@@ -1646,12 +1667,23 @@ term2Expr env contextInfo term
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
+        (PDia _ a b, STbinary stLeft stRight [(_, sgn)])
+         -> EDia <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+             where
+               triples = [ trace ("30. Diamond between "<>showP a<>" and "<>showP b<>mjText "meet" tgta srcb between<>"\n   ")
+                           (Sign srca tgtb, sgna, sgnb)
+                         | (_, sgna@(Sign srca tgta))<-opSigns stLeft, (_, sgnb@(Sign srcb tgtb))<-opSigns stRight
+                         , Just between<-[meet conceptsGraph tgta srcb]
+                         ]
+               leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
+               rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
         (PRad _ a b, STbinary stLeft stRight pairs)  -> ERad <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PPrd _ a b, STbinary stLeft stRight pairs)  -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PKl0 _ e,   STunary innerTree _)            -> EKl0 <$> t2e innerTree e
         (PKl1 _ e,   STunary innerTree _)            -> EKl1 <$> t2e innerTree e
         (PFlp _ e,   STunary innerTree _)            -> EFlp <$> t2e innerTree e
         (PCpl _ e,   STunary innerTree _)            -> ECpl <$> t2e innerTree e
+        (PBrk _ e,   _)                              -> t2e sgnTree e
         _ -> fatal ("Software error: t2e encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
     conceptsGraph = conceptGraph contextInfo
     mjText :: Text -> A_Concept -> A_Concept  -> A_Concept -> Text
