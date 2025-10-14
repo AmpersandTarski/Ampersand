@@ -81,5 +81,35 @@ RULE testRightResidualFail: resultBC = r\s~
 -- Test 19: Diamond with mismatched concepts - should FAIL
 RULE testDiamondFail: resultAC = r<>r~
 
+-- Test 20: Flip in wrong context - should FAIL (type mismatch)
+RULE testFlipFail: resultAC = r~
+
+-- Test 21: Relational addition with unmatchable concepts - should FAIL
+RULE testRelationalAdditionFail: resultAC = r!r~
+
+-- Test 22: Union with mismatched signatures - should FAIL
+RULE testUnionFail: resultAC = r \/ s
+
+-- Test 23: Intersection with mismatched signatures - should FAIL
+RULE testIntersectionFail: resultAC = r /\ s
+
+-- Test 24: Difference with mismatched signatures - should FAIL
+RULE testDifferenceFail: resultAC = r - s
+
+-- Test 25: Complement on non-endo relation - should FAIL
+RULE testComplementFail: resultAC = -t
+
+-- Test 26: Kleene star on non-endo relation - should FAIL
+RULE testKleeneStarFail: resultAC = t*
+
+-- Test 27: Kleene plus on non-endo relation - should FAIL
+RULE testKleenePlusFail: resultAC = t+
+
+-- Test 28: Identity with type mismatch - should FAIL
+RULE testIdentityFail: resultAC = I[A]
+
+-- Test 29: Full relation with type mismatch - should FAIL
+RULE testFullFail: resultAA = V[A*C]
+
 ENDPATTERN
 ENDCONTEXT

@@ -39,7 +39,6 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Data.List (minimumBy, foldr1, head)
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -233,42 +232,6 @@ completeLattice graph = overlay (edges [ (a, b) | (a, b) <- meetEdges<>joinEdges
       where
         sourceConcepts = Set.fromList $ fmap snd (NE.toList mClass)
         hasExactSameEdges candidate = preSet candidate graph == sourceConcepts
-
--- | Create a condensed DAG from the concept graph by handling strongly connected components
-createCondensedDAG :: AdjacencyMap A_Concept -> [[A_Concept]] -> AdjacencyMap A_Concept
-createCondensedDAG originalGraph sccs = edges condensedEdges
-  where
-    -- Map each concept to its SCC representative (with all aliases preserved)
-    conceptToRep :: Map.Map A_Concept A_Concept
-    conceptToRep = Map.fromList [(c, rep) | scc <- sccs, let rep = createConceptWithSynonyms scc, c <- scc]
-    
-    -- Create a new concept that preserves all aliases from concepts in the SCC
-    createConceptWithSynonyms :: [A_Concept] -> A_Concept
-    createConceptWithSynonyms [] = fatal "Empty SCC encountered"
-    createConceptWithSynonyms [c] = c  -- Single concept, no synonyms needed
-    createConceptWithSynonyms cs = 
-      case L.sortBy (\a b -> compare (fullName a) (fullName b)) cs of
-        [] -> fatal "Empty sorted list"
-        primary : others -> 
-          -- Create a new concept with all aliases from all concepts in the SCC
-          PlainConcept { aliases = Set.unions (collectAliases primary : map collectAliases others) }
-    
-    -- Extract aliases from a concept, handling all concept types
-    collectAliases :: A_Concept -> Set.Set (Name, Maybe Label)
-    collectAliases (PlainConcept {aliases = als}) = als
-    collectAliases ONE = Set.singleton (nameOfONE, Nothing)
-    collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
-    collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
-    
-    -- Create edges between SCC representatives, eliminating cycles
-    condensedEdges :: [(A_Concept, A_Concept)]
-    condensedEdges = L.nub
-      [ (fromRep, toRep) 
-      | (from, to) <- edgeList originalGraph
-      , let fromRep = Map.findWithDefault from from conceptToRep
-      , let toRep = Map.findWithDefault to to conceptToRep
-      , fromRep /= toRep  -- Remove self-loops (cycles within SCCs)
-      ]
 
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign pCpt2aCpt (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -497,12 +460,12 @@ pCtx2aCtx
             where
               symmetricGraph = overlay dagGraph (transpose dagGraph)
               createSubgraph :: AdjacencyMap A_Concept -> Data.Tree.Tree A_Concept -> AdjacencyMap A_Concept
-              createSubgraph originalGraph tree = 
-                let vertexSet = Set.fromList (flattenTree tree)
+              createSubgraph originalGraph conceptTree = 
+                let verticesInComponent = Set.fromList (flattenTree conceptTree)
                     -- Filter edges to only include those between vertices in the component
-                    componentEdges = filter (\(from, to) -> from `Set.member` vertexSet && to `Set.member` vertexSet) 
+                    componentEdges = filter (\(from, tgt) -> from `Set.member` verticesInComponent && tgt `Set.member` verticesInComponent) 
                                            (edgeList originalGraph)
-                in overlay (edges componentEdges) (vertices (Set.toList vertexSet))
+                in overlay (edges componentEdges) (vertices (Set.toList verticesInComponent))
               flattenTree :: Data.Tree.Tree A_Concept -> [A_Concept]
               flattenTree (Data.Tree.Node x children) = x : concatMap flattenTree children
 
@@ -1009,43 +972,6 @@ pCtx2aCtx
                    ]
 
 
-      -- pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-      -- pIfc2aIfc contextInfo (pIfc, objDisamb) =
-      --   build $ pBoxItemDisamb2BoxItem contextInfo objDisamb
-      --   where
-      --     build :: Guarded BoxItem -> Guarded Interface
-      --     build gb =
-      --       case gb of
-      --         Errors x -> Errors x
-      --         Checked obj' ws ->
-      --           addWarnings ws
-      --             $ case obj' of
-      --               BxExpr o ->
-      --                 case ttype . target . objExpression $ o of
-      --                   Object ->
-      --                     pure
-      --                       Ifc
-      --                         { ifcIsAPI = ifc_IsAPI pIfc,
-      --                           ifcname = name pIfc,
-      --                           ifclbl = mLabel pIfc,
-      --                           ifcRoles = ifc_Roles pIfc,
-      --                           ifcObj =
-      --                             o
-      --                               { objPlainName = Just . fullName1 . name $ pIfc,
-      --                                 objlbl = mLabel pIfc
-      --                               },
-      --                           ifcPos = origin pIfc,
-      --                           ifcPurpose = ifc_Prp pIfc
-      --                         }
-      --                   tt ->
-      --                     Errors
-      --                       . pure
-      --                       . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o)
-      --                       $ tt
-      --               BxText {} -> fatal "Unexpected BxTxt" -- Interface should not have TXT only. it should have a term object.
-      --     ttype :: A_Concept -> TType
-      --     ttype = representationOf contextInfo
-
       pRoleRule2aRoleRule :: P_RoleRule -> Set A_RoleRule
       pRoleRule2aRoleRule prr =
         Set.fromList
@@ -1216,8 +1142,8 @@ pCtx2aCtx
       typeCheckPairView ci o x (PairView lst) =
         PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
       typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term TermPrim) -> Guarded (PairViewSegment Expression)
-      typeCheckPairViewSeg _ _ _ (PairViewText orig x) = pure (PairViewText orig x)
-      typeCheckPairViewSeg ci o expr (PairViewExp orig s x) =
+      typeCheckPairViewSeg _ _ _ (PairViewText segOrigin x) = pure (PairViewText segOrigin x)
+      typeCheckPairViewSeg ci o expr (PairViewExp segOrigin s x) =
         do
           let src = (aConcept2pConcept . source) expr
               tgt = (aConcept2pConcept . target) expr
@@ -1225,19 +1151,19 @@ pCtx2aCtx
                               Src -> PCps o (Prim (Pid o src)) x
                               Tgt -> PCps o (Prim (Pid o tgt)) x
                             )
-          return (PairViewExp orig s e)
+          return (PairViewExp segOrigin s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci
         PPurpose
-          { pos = orig, -- :: Origin
+          { pos = purpOrigin, -- :: Origin
             pexObj = objref, -- :: PRefObj
             pexMarkup = pmarkup, -- :: P_Markup
             pexRefIDs = refIds -- :: [Text]
           } =
           ( \obj ->
               Expl
-                { explPos = orig,
+                { explPos = purpOrigin,
                   explObj = obj,
                   explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
                   explRefIds = refIds
@@ -1352,16 +1278,16 @@ instance (Flippable a) => Flippable (OpTree a) where
 --    - Every signature is consistent with the type rules of the term it corresponds to.
 -- Helper function for creating verbose type error messages
 mkVerboseTypeError :: (HasRunner env) => env -> Origin -> OpTree (Expression, Signature) -> Text -> Guarded a
-mkVerboseTypeError env origin opTree baseMsg =
-  Errors . return $ CTXE origin $
+mkVerboseTypeError env errorOrigin opTree baseMsg =
+  Errors . return $ CTXE errorOrigin $
     if logLevel (view runnerL env) <= LevelInfo
     then baseMsg <> "\n\nType analysis:\n" <> showOpTree opTree
     else baseMsg
 
 -- Helper function for creating type mismatch errors with optional suggestions
 mkVerboseTypeMismatchError :: (HasRunner env) => env -> Origin -> Text -> Maybe Text -> OpTree (Expression, Signature) -> Guarded a
-mkVerboseTypeMismatchError env origin baseMsg maybeSuggestions opTree =
-  mkVerboseTypeError env origin opTree (baseMsg <> fromMaybe "" maybeSuggestions)
+mkVerboseTypeMismatchError env errorOrigin baseMsg maybeSuggestions opTree =
+  mkVerboseTypeError env errorOrigin opTree (baseMsg <> fromMaybe "" maybeSuggestions)
 
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded (OpTree (Expression, Signature))
 signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
@@ -1399,9 +1325,9 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                    let trees = [ trace ("Left residual: joining target("<>showP a<>")="<>tshow tgta<>" with target("<>showP b<>")="<>tshow tgtb<>" yields "<>tshow between<>"\n   ")
                                  ((ELrs (expr_a, expr_b), Sign srca srcb), (expr_a, Sign srca left), (expr_b, Sign srcb right))
                                | (expr_a, Sign srca tgta)<-pairsa, (expr_b, Sign srcb tgtb)<-pairsb
-                               , Just between<-[join conceptsGraph tgta tgtb]  -- Compare targets!
-                               , Just left<-[meet conceptsGraph between tgta]
-                               , Just right<-[meet conceptsGraph between tgtb]
+                               , Just between<-[join (overlay (conceptGraph contextInfo) (vertices [ONE])) tgta tgtb]  -- Compare targets!
+                               , Just left<-[meet (overlay (conceptGraph contextInfo) (vertices [ONE])) between tgta]
+                               , Just right<-[meet (overlay (conceptGraph contextInfo) (vertices [ONE])) between tgtb]
                                ]
                    case trees of
                     []  -> let errorExprs = [(ELrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
@@ -1419,9 +1345,9 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                    let trees = [ trace ("Right residual: joining source("<>showP a<>")="<>tshow srca<>" with source("<>showP b<>")="<>tshow srcb<>" yields "<>tshow between<>"\n   ")
                                  ((ERrs (expr_a, expr_b), Sign tgta tgtb), (expr_a, Sign left tgta), (expr_b, Sign right tgtb))
                                | (expr_a, Sign srca tgta)<-pairsa, (expr_b, Sign srcb tgtb)<-pairsb
-                               , Just between<-[join conceptsGraph srca srcb]  -- Compare sources!
-                               , Just left<-[meet conceptsGraph between srca]
-                               , Just right<-[meet conceptsGraph between srcb]
+                               , Just between<-[join (overlay (conceptGraph contextInfo) (vertices [ONE])) srca srcb]  -- Compare sources!
+                               , Just left<-[meet (overlay (conceptGraph contextInfo) (vertices [ONE])) between srca]
+                               , Just right<-[meet (overlay (conceptGraph contextInfo) (vertices [ONE])) between srcb]
                                ]
                    case trees of
                     []  -> let errorExprs = [(ERrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
@@ -1438,10 +1364,16 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                                                       | (expr_a, sgn_a)<-opSigns sgnaTree, (expr_b, sgn_b)<-opSigns sgnbTree ])
   PFlp _ e   -> do sgnTree <- signats e
                    return (STunary sgnTree [(EFlp expr, flp sgn) | (expr, sgn)<-opSigns sgnTree])
-  PKl0 _ e   -> do sgnTree <- signats e
-                   return (STunary sgnTree [(EKl0 expr, sgn) | (expr, sgn)<-opSigns sgnTree])
-  PKl1 _ e   -> do sgnTree <- signats e
-                   return (STunary sgnTree [(EKl1 expr, sgn) | (expr, sgn)<-opSigns sgnTree])
+  PKl0 o e   -> do sgnTree <- signats e
+                   let endoSigns = [(EKl0 expr, sgn) | (expr, sgn)<-opSigns sgnTree, source sgn == target sgn]
+                   case endoSigns of
+                     [] -> mkVerboseTypeError env o sgnTree ("Kleene star (*) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn) <- opSigns sgnTree])
+                     _  -> return (STunary sgnTree endoSigns)
+  PKl1 o e   -> do sgnTree <- signats e
+                   let endoSigns = [(EKl1 expr, sgn) | (expr, sgn)<-opSigns sgnTree, source sgn == target sgn]
+                   case endoSigns of
+                     [] -> mkVerboseTypeError env o sgnTree ("Kleene plus (+) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn) <- opSigns sgnTree])
+                     _  -> return (STunary sgnTree endoSigns)
   PCpl _ e   -> do sgnTree <- signats e
                    return (STunary sgnTree [(ECpl expr, sgn) | (expr, sgn)<-opSigns sgnTree])
   PBrk _ e   -> signats e
@@ -1663,7 +1595,7 @@ term2Expr env contextInfo term
                triples = [ trace ("29. Between "<>showP a<>" and "<>showP b<>mjText "meet" tgta srcb between<>"\n   ")
                            (Sign srca tgtb, sgna, sgnb)
                          | (_, sgna@(Sign srca tgta))<-opSigns stLeft, (_, sgnb@(Sign srcb tgtb))<-opSigns stRight
-                         , Just between<-[meet conceptsGraph tgta srcb]
+                         , Just between<-[meet conceptsGraph tgta srcb] 
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
@@ -1677,16 +1609,22 @@ term2Expr env contextInfo term
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
-        (PRad _ a b, STbinary stLeft stRight pairs)  -> ERad <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PPrd _ a b, STbinary stLeft stRight pairs)  -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PKl0 _ e,   STunary innerTree _)            -> EKl0 <$> t2e innerTree e
-        (PKl1 _ e,   STunary innerTree _)            -> EKl1 <$> t2e innerTree e
-        (PFlp _ e,   STunary innerTree _)            -> EFlp <$> t2e innerTree e
-        (PCpl _ e,   STunary innerTree _)            -> ECpl <$> t2e innerTree e
-        (PBrk _ e,   _)                              -> t2e sgnTree e
-        _ -> fatal ("Software error: t2e encountered an unexpected term: " <> tshow trm <> " and opTree: " <> tshow sgnTree)
-    conceptsGraph = conceptGraph contextInfo
-    mjText :: Text -> A_Concept -> A_Concept  -> A_Concept -> Text
+        (PFlp _ e, STunary st _)
+          -> EFlp <$> t2e st e
+        (PKl0 _ e, STunary st _)
+          -> EKl0 <$> t2e st e
+        (PKl1 _ e, STunary st _)
+          -> EKl1 <$> t2e st e
+        (PCpl _ e, STunary st _)
+          -> ECpl <$> t2e st e
+        (PPrd _ a b, STbinary stLeft stRight _)
+          -> EPrd <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PRad _ a b, STbinary stLeft stRight _)
+          -> ERad <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
+        (PBrk _ e, _)
+          -> t2e sgnTree e
+        _ -> fatal $ "term2Expr: pattern match failure. This is a bug in the compiler.\n  Term: " <> tshow trm <> "\n  OpTree structure: " <> tshow (fmap (const "...") sgnTree)
+    conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
     mjText kind tgta srcb between =
       if tgta == srcb
       then " is: " <> tshow between <> "."

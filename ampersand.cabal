@@ -167,7 +167,10 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Issue406.adl
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
+    testing/Travis/testcases/Check/testAllOperators.adl
+    testing/Travis/testcases/Check/testDiamond.adl
     testing/Travis/testcases/Check/testinfo.yaml
+    testing/Travis/testcases/Check/testRightResidual.adl
     testing/Travis/testcases/Check/testTypes.adl
     testing/Travis/testcases/FuncSpec/Issue1275.adl
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
