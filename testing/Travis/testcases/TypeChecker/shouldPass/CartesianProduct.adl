@@ -1,0 +1,13 @@
+CONTEXT CartesianProductTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT CartesianProductTypeCheck
+{+ Test that Cartesian product always succeeds regardless of concept types.
+   This verifies the type checker correctly accepts r[A*B]#s[B*C] yielding [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[D*C]
+RELATION result[A*C]
+
+RULE testCartesianProduct: result = r#s
+
+ENDCONTEXT

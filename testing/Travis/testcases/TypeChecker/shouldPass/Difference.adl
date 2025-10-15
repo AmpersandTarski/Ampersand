@@ -1,0 +1,13 @@
+CONTEXT DifferenceTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT DifferenceTypeCheck
+{+ Test that difference succeeds when both operands have the same signature.
+   This verifies the type checker correctly accepts t[A*C] - r[A*C] yielding [A*C]. +}
+
+RELATION r[A*C]
+RELATION t[A*C]
+RELATION result[A*C]
+
+RULE testDifference: result = t - r
+
+ENDCONTEXT

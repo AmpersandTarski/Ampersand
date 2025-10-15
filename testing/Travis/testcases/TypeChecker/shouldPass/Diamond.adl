@@ -1,0 +1,13 @@
+CONTEXT DiamondTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT DiamondTypeCheck
+{+ Test that diamond operator succeeds when concepts can be matched.
+   This verifies the type checker correctly accepts r[A*B]<>s[B*C] yielding [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testDiamond: result = r<>s
+
+ENDCONTEXT

@@ -1,0 +1,13 @@
+CONTEXT LeftResidualTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualTypeMismatchCheck
+{+ Test that left residual fails when targets cannot be joined.
+   This verifies the type checker correctly rejects r[A*B]/s[B*C] due to mismatched targets. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*B]
+
+RULE testLeftResidualFail: result = r/s
+
+ENDCONTEXT

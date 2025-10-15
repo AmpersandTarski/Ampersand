@@ -1,0 +1,12 @@
+CONTEXT KleeneStarNonEndoCheck IN ENGLISH
+
+PURPOSE CONTEXT KleeneStarNonEndoCheck
+{+ Test that Kleene star fails on non-endomorphic relations.
+   This verifies the type checker correctly rejects t*[A*C] when source and target differ. +}
+
+RELATION t[A*C]
+RELATION result[A*C]
+
+RULE testKleeneStarFail: result = t*
+
+ENDCONTEXT

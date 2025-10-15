@@ -1,0 +1,12 @@
+CONTEXT KleenePlusTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT KleenePlusTypeCheck
+{+ Test that Kleene plus succeeds on endorelations.
+   This verifies the type checker correctly accepts u+[A*A] yielding [A*A]. +}
+
+RELATION u[A*A]
+RELATION result[A*A]
+
+RULE testKleenePlus: result = u+
+
+ENDCONTEXT

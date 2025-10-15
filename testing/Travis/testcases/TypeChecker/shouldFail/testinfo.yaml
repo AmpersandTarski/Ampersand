@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand export --verbose
+    exitcode: 10

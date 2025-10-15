@@ -1,0 +1,13 @@
+CONTEXT UnionTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT UnionTypeMismatchCheck
+{+ Test that union fails when operands have different signatures.
+   This verifies the type checker correctly rejects r[A*B] \/ s[B*C] due to signature mismatch. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testUnionFail: result = r \/ s
+
+ENDCONTEXT

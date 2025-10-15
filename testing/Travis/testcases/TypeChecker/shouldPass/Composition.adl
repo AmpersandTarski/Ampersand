@@ -1,0 +1,13 @@
+CONTEXT CompositionTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT CompositionTypeCheck
+{+ Test that composition succeeds when target of left operand matches source of right operand.
+   This verifies the type checker correctly accepts r[A*B];s[B*C] yielding [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testComposition: result = r;s
+
+ENDCONTEXT

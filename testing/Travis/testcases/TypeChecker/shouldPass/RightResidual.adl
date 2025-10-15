@@ -1,0 +1,13 @@
+CONTEXT RightResidualTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT RightResidualTypeCheck
+{+ Test that right residual succeeds when sources can be joined.
+   This verifies the type checker correctly accepts r~[B*A]\s[B*C] yielding [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testRightResidual: result = r~\s
+
+ENDCONTEXT

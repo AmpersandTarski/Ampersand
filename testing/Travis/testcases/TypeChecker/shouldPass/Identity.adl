@@ -1,0 +1,11 @@
+CONTEXT IdentityTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT IdentityTypeCheck
+{+ Test that identity relation is correctly typed.
+   This verifies the type checker correctly accepts I[A] yielding [A*A]. +}
+
+RELATION result[A*A]
+
+RULE testIdentity: result = I
+
+ENDCONTEXT

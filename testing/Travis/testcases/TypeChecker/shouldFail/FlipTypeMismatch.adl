@@ -1,0 +1,12 @@
+CONTEXT FlipTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT FlipTypeMismatchCheck
+{+ Test that flip operator fails when result signature doesn't match expected type.
+   This verifies the type checker correctly rejects r~[B*A] when [A*C] is expected. +}
+
+RELATION r[A*B]
+RELATION result[A*C]
+
+RULE testFlipFail: result = r~
+
+ENDCONTEXT

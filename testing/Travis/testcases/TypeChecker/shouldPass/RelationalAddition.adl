@@ -1,0 +1,13 @@
+CONTEXT RelationalAdditionTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT RelationalAdditionTypeCheck
+{+ Test that relational addition succeeds when concepts can be joined.
+   This verifies the type checker correctly accepts r[A*B]!s[B*C] yielding [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testRelationalAddition: result = r!s
+
+ENDCONTEXT

@@ -1,0 +1,12 @@
+CONTEXT ComplementTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT ComplementTypeCheck
+{+ Test that complement succeeds on endomorphic relations.
+   This verifies the type checker correctly accepts -u[A*B] yielding [A*B]. +}
+
+RELATION u[A*B]
+RELATION result[A*B]
+
+RULE testComplement: result = -u
+
+ENDCONTEXT

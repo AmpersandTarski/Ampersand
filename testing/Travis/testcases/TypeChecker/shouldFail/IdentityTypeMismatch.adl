@@ -1,0 +1,11 @@
+CONTEXT IdentityTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT IdentityTypeMismatchCheck
+{+ Test that identity fails when result signature doesn't match expected type.
+   This verifies the type checker correctly rejects I[A] when [A*C] is expected. +}
+
+RELATION result[A*C]
+
+RULE testIdentityFail: result = I[A]
+
+ENDCONTEXT

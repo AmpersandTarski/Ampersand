@@ -1,0 +1,11 @@
+CONTEXT FullRelationTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT FullRelationTypeCheck
+{+ Test that full relation is correctly typed with explicit signature.
+   This verifies the type checker correctly accepts V[A*C] yielding [A*C]. +}
+
+RELATION result[A*C]
+
+RULE testFull: result = V[A*C]
+
+ENDCONTEXT

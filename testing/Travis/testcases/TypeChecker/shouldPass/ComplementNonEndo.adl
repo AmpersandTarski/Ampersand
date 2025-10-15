@@ -1,0 +1,13 @@
+CONTEXT ComplementNonEndoCheck IN ENGLISH
+
+PURPOSE CONTEXT ComplementNonEndoCheck
+{+ Test that complement succeeds on non-endomorphic relations.
+   This verifies the type checker correctly accepts -t[A*C] even when source and target differ.
++}
+
+RELATION t[A*C]
+RELATION result[A*C]
+
+RULE testComplementNonEndo: result = -t
+
+ENDCONTEXT
