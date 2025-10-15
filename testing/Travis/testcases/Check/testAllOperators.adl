@@ -1,6 +1,7 @@
 CONTEXT TestAllOperators IN ENGLISH
 
-PURPOSE CONTEXT TestAllOperators {+ Comprehensive test for all Ampersand operators. +}
+PURPOSE CONTEXT TestAllOperators
+{+ Test each Ampersand operator once for success and once with a type error. +}
 
 PATTERN TestAllOperators
 

@@ -1185,16 +1185,21 @@ pCtx2aCtx
       allConceptDefs ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
 
 data OpTree a
-  = STbinary  { lSigns  :: OpTree a
-              , rSigns  :: OpTree a
-              , opSigns :: [a]
-              }
-  | STunary   { signs   :: OpTree a
-              , opSigns :: [a]
-              }
-  | STnullary { opSigns :: [a] }
+  = STbinary  (OpTree a) (OpTree a) [a]
+  | STunary   (OpTree a) [a]
+  | STnullary [a]
   deriving (Eq, Functor)
 
+opSigns :: OpTree a -> [a]
+opSigns (STbinary _ _ ss) = ss
+opSigns (STunary _ ss)    = ss
+opSigns (STnullary ss)    = ss
+
+assignOpSigns :: [a] -> OpTree a -> OpTree a
+assignOpSigns ss (STbinary l r _) = STbinary l r ss
+assignOpSigns ss (STunary e _) = STunary e ss
+assignOpSigns ss (STnullary _) = STnullary ss
+  
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure
     where
@@ -1293,7 +1298,7 @@ signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term
 signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
  case trm of
   Prim (PI _)               ->                       pure (STnullary [(EDcI anyCpt, ISgn anyCpt)])
-  PCpl _ e@(Prim (PI _))    ->                       pure (STnullary [(ECpl (EDcI anyCpt), ISgn anyCpt)])
+  PCpl _ (Prim (PI _))      ->                       pure (STnullary [(ECpl (EDcI anyCpt), ISgn anyCpt)])
   Prim (Pid _ c)            -> let c'=pCpt2aCpt c in pure (STnullary [(EDcI c', ISgn c')])
   Prim (Patm _ av (Just c)) -> let c'=pCpt2aCpt c in pure (STnullary [(EMp1 av c', ISgn c')])
   Prim (Patm _ av Nothing)  ->                       pure (STnullary [(EMp1 av anyCpt, ISgn anyCpt)])
@@ -1311,16 +1316,15 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                                in  case rels rel of
                                                 [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> tshow rel)
                                                 ds -> pure (STnullary [(EDcD d, sign d) | d <- ds])
-  PEqu o a b -> checkPeri  o "equation"          EEqu a b       meet true "PEqu" "meet"  -- -- extra parameters for tracing purpose: opStr mjString
-  PInc o a b -> checkPeri  o "inclusion"         EInc a b       meet true "PInc" "meet"  --
-  PIsc o a b -> checkPeri  o "intersection"      EIsc a b       meet true "PIsc" "meet"  --
-  PUni o a b -> checkPeri  o "union"             EUni a b       join true "PUni" "join"  --
-  PDif o a b -> checkPeri  o "difference"        EDif a b       join true "PDif" "join"  --
-  PCps o a b -> checkIntra o "composition"       ECps a b       meet true "PCps" "meet"
-  PRad o a b -> checkIntra o "relative addition" ERad a b       join true "PRad" "join"
+  PEqu o a b -> checkPeri  o "equation"          EEqu a b       meet true "PEqu"
+  PInc o a b -> checkPeri  o "inclusion"         EInc a b       meet true "PInc"
+  PIsc o a b -> checkPeri  o "intersection"      EIsc a b       meet true "PIsc"
+  PUni o a b -> checkPeri  o "union"             EUni a b       join true "PUni"
+  PDif o a b -> checkPeri  o "difference"        EDif a b       join true "PDif"
+  PCps o a b -> checkIntra o "composition"       ECps a b       meet true "PCps"
+  PRad o a b -> checkIntra o "relative addition" ERad a b       join true "PRad"
   PLrs o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let pairsa = opSigns sgnaTree; pairsb = opSigns sgnbTree
-                       sgnsa = map snd pairsa; sgnsb = map snd pairsb
                    -- Custom logic for PLrs: compare target(left) with target(right), result is [source(left)*source(right)]
                    let trees = [ trace ("Left residual: joining target("<>showP a<>")="<>tshow tgta<>" with target("<>showP b<>")="<>tshow tgtb<>" yields "<>tshow between<>"\n   ")
                                  ((ELrs (expr_a, expr_b), Sign srca srcb), (expr_a, Sign srca left), (expr_b, Sign srcb right))
@@ -1333,14 +1337,13 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                     []  -> let errorExprs = [(ELrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
                                opTree = STbinary sgnaTree sgnbTree errorExprs
                            in mkVerboseTypeError env o opTree ("Cannot match the target concepts of the left residual. Left residual "<>showP a<>"/"<>showP b<>" requires that the join of target("<>showP a<>") and target("<>showP b<>") exists.")
-                    [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
+                    [(pair_result, pairL, pairR)] -> return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
                     triplesigns  -> let baseMsg = "Ambiguous signatures of the left residual " <> showP a <> "/" <> showP b
                                         suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " / " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                                         opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
                                     in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
   PRrs o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let pairsa = opSigns sgnaTree; pairsb = opSigns sgnbTree
-                       sgnsa = map snd pairsa; sgnsb = map snd pairsb
                    -- Custom logic for PRrs: compare source(left) with source(right), result is [target(left)*target(right)]
                    let trees = [ trace ("Right residual: joining source("<>showP a<>")="<>tshow srca<>" with source("<>showP b<>")="<>tshow srcb<>" yields "<>tshow between<>"\n   ")
                                  ((ERrs (expr_a, expr_b), Sign tgta tgtb), (expr_a, Sign left tgta), (expr_b, Sign right tgtb))
@@ -1353,12 +1356,12 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                     []  -> let errorExprs = [(ERrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
                                opTree = STbinary sgnaTree sgnbTree errorExprs
                            in mkVerboseTypeError env o opTree ("Cannot match the source concepts of the right residual. Right residual "<>showP a<>"\\"<>showP b<>" requires that the join of source("<>showP a<>") and source("<>showP b<>") exists.")
-                    [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
+                    [(pair_result, pairL, pairR)] -> return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
                     triplesigns  -> let baseMsg = "Ambiguous signatures of the right residual " <> showP a <> "\\" <> showP b
                                         suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " \\ " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                                         opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
                                     in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
-  PDia o a b -> checkIntra o "diamond"           EDia a b       meet true  "PDia" "meet"
+  PDia o a b -> checkIntra o "diamond"           EDia a b       meet true  "PDia"
   PPrd _ a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b))
                                                       | (expr_a, sgn_a)<-opSigns sgnaTree, (expr_b, sgn_b)<-opSigns sgnbTree ])
@@ -1378,10 +1381,8 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                    return (STunary sgnTree [(ECpl expr, sgn) | (expr, sgn)<-opSigns sgnTree])
   PBrk _ e   -> signats e
   where
-    true, isGeq, isLeq :: A_Concept -> A_Concept -> Bool
+    true :: A_Concept -> A_Concept -> Bool
     true  _ _  = True
-    isGeq c c' = Just True == leq conceptsGraph c' c
-    isLeq c c' = Just True == leq conceptsGraph c c'
     checkIntra --, checkPeri
       :: {- o          -} Origin
       -> {- kind       -} Text
@@ -1392,19 +1393,18 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
       -> {- compare    -} (A_Concept -> A_Concept -> Bool)
       -- extra parameters for tracing purpose:
       -> {- opStr      -} Text
-      -> {- mjString   -} Text
       -> Guarded (OpTree (Expression, Signature))
-    checkIntra o kind combinator a b meetORjoin cmpare opStr mjString = -- extra parameters for tracing purpose:
+    checkIntra o kind combinator a b meetORjoin cmpare opStr = -- extra parameters for tracing purpose:
       do sgnaTree <- signats a; sgnbTree <- signats b
          let pairsa = opSigns sgnaTree; pairsb = opSigns sgnbTree
              sgnsa = map snd pairsa; sgnsb = map snd pairsb
          let trees = trace ("\n6.  "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
-                     makeTrees combinator meetORjoin pairsa pairsb cmpare opStr mjString -- extra parameters for tracing purpose:
+                     makeTrees combinator meetORjoin pairsa pairsb cmpare
          case trees of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-pairsa, (expr_b, sgn_b)<-pairsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
                  in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
-          [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
+          [(pair_result, pairL, pairR)] -> return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
           triplesigns  -> let baseMsg = "Ambiguous signatures of the " <> kind <> " of " <> showP a <> " and " <> showP b
                               suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd pairA) <> " ; " <> showP b <> tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                               opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
@@ -1434,10 +1434,8 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
               -> [(a, Signature)]
               -> [(a, Signature)]
               -> (A_Concept -> A_Concept -> Bool)
-              -> {- opStr      -} Text
-              -> {- mjString   -} Text
               -> [((a, Signature), (a, Signature), (a, Signature))]                      
-    makeTrees combinator meetORjoin pairsa pairsb cmpare opStr mjString -- extra parameters for tracing purpose:
+    makeTrees combinator meetORjoin pairsa pairsb cmpare
      = [ -- trace ("7.  Between "<>showP a<>" and "<>showP b<>" ("<>mjString<>"): "<>tshow between<>"\n   "<>tshow (Sign srca tgtb, Sign srca left, Sign right tgtb))
          ((combinator (expr_a, expr_b), Sign srca tgtb), (expr_a, Sign srca left), (expr_b, Sign right tgtb))
        | (expr_a, Sign srca tgta)<-pairsa, (expr_b, Sign srcb tgtb)<-pairsb -- , trace ("\n8.    cmpare tgta srcb = cmpare "<>tshow tgta<>" "<>tshow srcb<>" = "<>tshow (cmpare tgta srcb)) True
@@ -1464,11 +1462,12 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
        ]
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri o kind combinator a b meetORjoin _ opStr mjString = -- extra parameters for tracing purpose: 
+    checkPeri o kind combinator a b meetORjoin _ opStr = -- extra parameters for tracing purpose: 
       do sgnaTree <- signats a; sgnbTree <- signats b
          let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
              conceptsSrc = L.nub [ src | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
              conceptsTgt = L.nub [ tgt | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
+             mjString = "meet/join" :: Text
          case trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgnsb: "<>tshow sgnsb) $
               [ trace ("\n21. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
                 ((combinator (expr_a, expr_b), Sign src tgt), (expr_a, sgn_a), (expr_b, sgn_b))
@@ -1488,7 +1487,7 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
                                     [] ->     "untyped"
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-          [(pair_result, pairL, pairR)] -> return (STbinary sgnaTree{opSigns=[pairL]} sgnbTree{opSigns=[pairR]} [pair_result])
+          [(pair_result, pairL, pairR)] -> return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
           triplesigns -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd pairA)<>" ; "<>showP b<>tshow (snd pairB) | (_,pairA,pairB)<-triplesigns]
                              errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb ]
                              opTree = STbinary sgnaTree sgnbTree errorExprs
@@ -1547,25 +1546,25 @@ term2Expr env contextInfo term
       case (trm, sgnTree) of
         (Prim tp   , STnullary pairs)            ->  trace ("26. termPrim2Expr "<>tshow tp<>" with pairs: "<>tshow pairs) $
                                                      termPrim2Expr contextInfo (map snd pairs) tp
-        (trm, STbinary stLeft stRight pairs@(_:_:_)) -> let baseMsg = "Ambiguous term " <> showP trm <> " might be one of: " <> T.intercalate ", " (map (tshow . snd) pairs) <> ".\n  Please specify the signature explicitly."
-                                                            opTree = STbinary stLeft stRight pairs
-                                                        in mkVerboseTypeError env (origin trm) opTree baseMsg
-        (PEqu _ a b, STbinary stLeft stRight pairs)
+        (_, STbinary stLeft stRight pairs@(_:_:_)) -> let baseMsg = "Ambiguous term " <> showP trm <> " might be one of: " <> T.intercalate ", " (map (tshow . snd) pairs) <> ".\n  Please specify the signature explicitly."
+                                                          opTree = STbinary stLeft stRight pairs
+                                                      in mkVerboseTypeError env (origin trm) opTree baseMsg
+        (PEqu _ a b, STbinary stLeft stRight _)
           -> EEqu <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
         (PInc _ a b, STbinary stLeft stRight pairs)
-          -> EInc <$> ((,) <$> t2e stLeft{opSigns = pairs} a <*> t2e stRight{opSigns = pairs} b)
-        (PIsc _ a b, STbinary stLeft stRight pairs)
+          -> EInc <$> ((,) <$> t2e (assignOpSigns pairs stLeft) a <*> t2e (assignOpSigns pairs stRight) b)
+        (PIsc _ a b, STbinary stLeft stRight _)
           -> EIsc <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PUni _ a b, STbinary stLeft stRight pairs)
+        (PUni _ a b, STbinary stLeft stRight _)
           -> EUni <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (PDif _ a b, STbinary stLeft stRight pairs)
+        (PDif _ a b, STbinary stLeft stRight _)
           -> EDif <$> ((,) <$> t2e stLeft a <*> t2e stRight b)
-        (prrs@(PRrs _ a b), STbinary stLeft stRight [(_, sgn)])
+        (prrs@(PRrs _ a b), STbinary stLeft stRight [(_, _)])
           -> case triples of
                [] -> let errorExprs = [(ERrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-opSigns stLeft, (expr_b, sgn_b)<-opSigns stRight ]
                          opTree = STbinary stLeft stRight errorExprs
                      in mkVerboseTypeError env (origin prrs) opTree ("Cannot match the source concepts of the right residual. Right residual "<>showP prrs<>" requires that the join of source(r) and source(s) exists.")
-               _ -> ERrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+               _ -> ERrs <$> ((,) <$> t2e (assignOpSigns leftPairs stLeft) a <*> t2e (assignOpSigns rightPairs stRight) b)
              where
                -- For PRrs, signatures compares sources directly, so no flipping needed here
                triples = [ trace ("27. PRrs term2Expr: joining sources of "<>showP a<>" and "<>showP b<>mjText "join" srca srcb between<>"\n   ")
@@ -1575,12 +1574,12 @@ term2Expr env contextInfo term
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, sgnL) | (expr, _) <- opSigns stLeft, (_,sgnL,_) <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, sgnR) | (expr, _) <- opSigns stRight, (_,_,sgnR) <- triples]
-        (plrs@(PLrs _ a b), STbinary stLeft stRight [(_, sgn)])
+        (plrs@(PLrs _ a b), STbinary stLeft stRight [(_, _)])
           -> case triples of
                [] -> let errorExprs = [(ELrs (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-opSigns stLeft, (expr_b, sgn_b)<-opSigns stRight ]
                          opTree = STbinary stLeft stRight errorExprs
                      in mkVerboseTypeError env (origin plrs) opTree ("Cannot match the target concepts of the left residual. Left residual "<>showP plrs<>" requires that the join of target(s) and target(r) exists.")
-               _ -> ELrs <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+               _ -> ELrs <$> ((,) <$> t2e (assignOpSigns leftPairs stLeft) a <*> t2e (assignOpSigns rightPairs stRight) b)
              where
                triples = [ trace ("28. PLrs term2Expr: joining targets of "<>showP a<>" and "<>showP b<>mjText "join" tgta tgtb between<>"\n   ")
                            (Sign srca srcb, sgna, sgnb)
@@ -1589,8 +1588,8 @@ term2Expr env contextInfo term
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, sgnL) | (expr, _) <- opSigns stLeft, (_,sgnL,_) <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, sgnR) | (expr, _) <- opSigns stRight, (_,_,sgnR) <- triples]
-        (PCps _ a b, STbinary stLeft stRight [(_, sgn)])
-         -> ECps <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+        (PCps _ a b, STbinary stLeft stRight [(_, _)])
+         -> ECps <$> ((,) <$> t2e (assignOpSigns leftPairs stLeft) a <*> t2e (assignOpSigns rightPairs stRight) b)
              where
                triples = [ trace ("29. Between "<>showP a<>" and "<>showP b<>mjText "meet" tgta srcb between<>"\n   ")
                            (Sign srca tgtb, sgna, sgnb)
@@ -1599,8 +1598,8 @@ term2Expr env contextInfo term
                          ]
                leftPairs = L.nubBy ((==) `on` snd) [(expr, snd3 trip) | (expr, _) <- opSigns stLeft, trip <- triples]
                rightPairs = L.nubBy ((==) `on` snd) [(expr, thd3 trip) | (expr, _) <- opSigns stRight, trip <- triples]
-        (PDia _ a b, STbinary stLeft stRight [(_, sgn)])
-         -> EDia <$> ((,) <$> t2e stLeft{opSigns = leftPairs} a <*> t2e stRight{opSigns = rightPairs} b)
+        (PDia _ a b, STbinary stLeft stRight [(_, _)])
+         -> EDia <$> ((,) <$> t2e (assignOpSigns leftPairs stLeft) a <*> t2e (assignOpSigns rightPairs stRight) b)
              where
                triples = [ trace ("30. Diamond between "<>showP a<>" and "<>showP b<>mjText "meet" tgta srcb between<>"\n   ")
                            (Sign srca tgtb, sgna, sgnb)
