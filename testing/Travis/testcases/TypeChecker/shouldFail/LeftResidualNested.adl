@@ -1,0 +1,13 @@
+CONTEXT LeftResidualNested IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualNested
+{+ This test must fail due to nested residual with incompatible types. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION t[D*C]
+RELATION result[A*D]
+
+RULE testNestedResidual: result = r/(s/t)
+
+ENDCONTEXT

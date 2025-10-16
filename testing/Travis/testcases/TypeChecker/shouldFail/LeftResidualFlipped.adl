@@ -1,0 +1,14 @@
+CONTEXT LeftResidualFlipped IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualFlipped
+{+ This test must fail because target(r) is more specific than target(s~). +}
+
+CLASSIFY A ISA B
+
+RELATION r[W*A]
+RELATION s[B*Z]
+RELATION result[W*B]
+
+RULE testLeftResidualFlipped: result = r/s~
+
+ENDCONTEXT

@@ -1,0 +1,12 @@
+CONTEXT RightResidualHetero IN ENGLISH
+
+PURPOSE CONTEXT RightResidualHetero
+{+ This test must succeed because join(A,A) = A exists (matching sources). +}
+
+RELATION r[A*B]
+RELATION s[A*C]
+RELATION result[B*C]
+
+RULE testRightResidualHetero: result = r\s
+
+ENDCONTEXT
