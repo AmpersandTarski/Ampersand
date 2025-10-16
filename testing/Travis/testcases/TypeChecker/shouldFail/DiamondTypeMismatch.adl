@@ -1,8 +1,8 @@
 CONTEXT DiamondTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT DiamondTypeMismatchCheck
-{+ Test that diamond operator fails when concepts cannot be matched.
-   This verifies the type checker correctly rejects r[A*B]<>r~[B*A] due to type mismatch. +}
+{+ This test must fail because meet(C,A) does not exist.
+   The target of result[A*C] and the target of r<>r~ do not match. +}
 
 RELATION r[A*B]
 RELATION result[A*C]

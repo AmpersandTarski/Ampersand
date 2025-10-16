@@ -1,8 +1,7 @@
 CONTEXT LeftResidualTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT LeftResidualTypeCheck
-{+ Test that left residual succeeds when targets can be matched.
-   This verifies the type checker correctly accepts r[A*B]/s[C*B] yielding [A*C]. +}
+{+ This test must succeed because meet(B,B) = B exists (exact match on targets). +}
 
 RELATION r[A*B]
 RELATION s[C*B]

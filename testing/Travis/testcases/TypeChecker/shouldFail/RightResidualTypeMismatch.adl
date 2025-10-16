@@ -1,8 +1,7 @@
 CONTEXT RightResidualTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT RightResidualTypeMismatchCheck
-{+ Test that right residual fails when sources cannot be joined.
-   This verifies the type checker correctly rejects r[A*B]\s~[C*B] due to mismatched sources. +}
+{+ This test must fail because the right residual r\s~ requires that the join of source(r) and source(s~) exists. +}
 
 RELATION r[A*B]
 RELATION s[C*B]

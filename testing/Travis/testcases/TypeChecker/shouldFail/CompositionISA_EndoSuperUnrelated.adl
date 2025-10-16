@@ -1,0 +1,16 @@
+CONTEXT CompositionISA_EndoSuperUnrelated IN ENGLISH
+
+PURPOSE CONTEXT CompositionISA_EndoSuperUnrelated
+{+ Test composition with ISA hierarchy: endorelation on supertype to unrelated.
+   Given A ISA B, test r[B*B];s[C*Z] where join(B,C) doesn't exist (C is unrelated).
+   This should FAIL because the type checker cannot find a join. +}
+
+CLASSIFY A ISA B
+
+RELATION r[B*B]
+RELATION s[C*Z]
+RELATION result[B*Z]
+
+RULE testCompositionISAFail: result = r;s
+
+ENDCONTEXT

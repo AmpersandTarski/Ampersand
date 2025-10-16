@@ -1,8 +1,7 @@
 CONTEXT FullRelationTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT FullRelationTypeMismatchCheck
-{+ Test that full relation fails when signature doesn't match expected type.
-   This verifies the type checker correctly rejects V[A*C] when [A*A] is expected. +}
+{+ This test must fail because the target of result[A*A] and the target of V[A*C] do not match. +}
 
 RELATION result[A*A]
 

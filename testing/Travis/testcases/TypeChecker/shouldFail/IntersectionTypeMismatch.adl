@@ -1,8 +1,7 @@
 CONTEXT IntersectionTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT IntersectionTypeMismatchCheck
-{+ Test that intersection fails when operands have different signatures.
-   This verifies the type checker correctly rejects r[A*B] /\ s[B*C] due to signature mismatch. +}
+{+ This test must fail because intersection requires both operands to have the same signature. +}
 
 RELATION r[A*B]
 RELATION s[B*C]

@@ -1,8 +1,7 @@
 CONTEXT RelationalAdditionTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT RelationalAdditionTypeMismatchCheck
-{+ Test that relational addition fails when concepts cannot be joined.
-   This verifies the type checker correctly rejects r[A*B]!r~[B*A] due to type mismatch. +}
+{+ This test must fail because the target of result[A*C] and the target of r!r~ do not match. +}
 
 RELATION r[A*B]
 RELATION result[A*C]

@@ -1,8 +1,7 @@
 CONTEXT KleeneStarTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT KleeneStarTypeCheck
-{+ Test that Kleene star succeeds on endorelations.
-   This verifies the type checker correctly accepts u*[A*A] yielding [A*A]. +}
+{+ This test must succeed because u is an endorelation (source = target). +}
 
 RELATION u[A*A]
 RELATION result[A*A]

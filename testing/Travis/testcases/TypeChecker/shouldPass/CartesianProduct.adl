@@ -1,8 +1,7 @@
 CONTEXT CartesianProductTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT CartesianProductTypeCheck
-{+ Test that Cartesian product always succeeds regardless of concept types.
-   This verifies the type checker correctly accepts r[A*B]#s[B*C] yielding [A*C]. +}
+{+ This test must succeed because Cartesian product # always succeeds (no type matching required). +}
 
 RELATION r[A*B]
 RELATION s[D*C]

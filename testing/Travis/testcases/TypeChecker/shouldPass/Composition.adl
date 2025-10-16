@@ -1,8 +1,7 @@
 CONTEXT CompositionTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT CompositionTypeCheck
-{+ Test that composition succeeds when target of left operand matches source of right operand.
-   This verifies the type checker correctly accepts r[A*B];s[B*C] yielding [A*C]. +}
+{+ This test must succeed because the types match exactly: meet(B,B) = B exists. +}
 
 RELATION r[A*B]
 RELATION s[B*C]

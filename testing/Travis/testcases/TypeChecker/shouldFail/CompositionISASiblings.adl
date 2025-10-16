@@ -1,0 +1,16 @@
+CONTEXT CompositionISASiblings IN ENGLISH
+
+PURPOSE CONTEXT CompositionISASiblings
+{+ This test must fail because meet(A,B) does not exist.
+   A and B are sibling types (both subtypes of C) with no ordering between them. +}
+
+CLASSIFY A ISA C
+CLASSIFY B ISA C
+
+RELATION r[W*A]
+RELATION s[B*Z]
+RELATION result[W*Z]
+
+RULE testCompositionISASibling: result = r;s
+
+ENDCONTEXT

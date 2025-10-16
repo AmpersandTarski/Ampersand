@@ -1,8 +1,7 @@
 CONTEXT LeftResidualTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT LeftResidualTypeMismatchCheck
-{+ Test that left residual fails when targets cannot be joined.
-   This verifies the type checker correctly rejects r[A*B]/s[B*C] due to mismatched targets. +}
+{+ This test must fail because join(B,C) does not exist. +}
 
 RELATION r[A*B]
 RELATION s[B*C]

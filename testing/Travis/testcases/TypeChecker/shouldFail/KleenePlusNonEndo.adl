@@ -1,8 +1,7 @@
 CONTEXT KleenePlusNonEndoCheck IN ENGLISH
 
 PURPOSE CONTEXT KleenePlusNonEndoCheck
-{+ Test that Kleene plus fails on non-endomorphic relations.
-   This verifies the type checker correctly rejects t+[A*C] when source and target differ. +}
+{+ This test must fail because Kleene plus requires an endorelation (source = target). +}
 
 RELATION t[A*C]
 RELATION result[A*C]

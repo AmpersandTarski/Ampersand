@@ -1,8 +1,7 @@
 CONTEXT FlipTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT FlipTypeCheck
-{+ Test that flip operator succeeds and correctly reverses the signature.
-   This verifies the type checker correctly accepts r~[B*A] when r[A*B]. +}
+{+ This test must succeed because flip always succeeds (reverses source and target). +}
 
 RELATION r[A*B]
 RELATION result[B*A]

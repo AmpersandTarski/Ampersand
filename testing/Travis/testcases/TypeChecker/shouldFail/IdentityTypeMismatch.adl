@@ -1,11 +1,10 @@
 CONTEXT IdentityTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT IdentityTypeMismatchCheck
-{+ Test that identity fails when result signature doesn't match expected type.
-   This verifies the type checker correctly rejects I[A] when [A*C] is expected. +}
+{+ This test must fail because the target of result[A*C] and the target of I[A] do not match. +}
 
 RELATION result[A*C]
 
-RULE testIdentityFail: result = I[A]
+RULE testIdentityFail: result = I
 
 ENDCONTEXT

@@ -1,8 +1,7 @@
 CONTEXT IdentityTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT IdentityTypeCheck
-{+ Test that identity relation is correctly typed.
-   This verifies the type checker correctly accepts I[A] yielding [A*A]. +}
+{+ This test must succeed because identity I is always endomorphic. +}
 
 RELATION result[A*A]
 

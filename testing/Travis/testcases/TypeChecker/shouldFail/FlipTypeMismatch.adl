@@ -1,8 +1,7 @@
 CONTEXT FlipTypeMismatchCheck IN ENGLISH
 
 PURPOSE CONTEXT FlipTypeMismatchCheck
-{+ Test that flip operator fails when result signature doesn't match expected type.
-   This verifies the type checker correctly rejects r~[B*A] when [A*C] is expected. +}
+{+ This test must fail because meet(B,A) and meet(A,C) do not exist. +}
 
 RELATION r[A*B]
 RELATION result[A*C]

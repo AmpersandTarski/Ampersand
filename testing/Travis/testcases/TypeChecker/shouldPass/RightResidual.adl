@@ -1,8 +1,7 @@
 CONTEXT RightResidualTypeCheck IN ENGLISH
 
 PURPOSE CONTEXT RightResidualTypeCheck
-{+ Test that right residual succeeds when sources can be joined.
-   This verifies the type checker correctly accepts r~[B*A]\s[B*C] yielding [A*C]. +}
+{+ This test must succeed because there is an exact match on B). +}
 
 RELATION r[A*B]
 RELATION s[B*C]
