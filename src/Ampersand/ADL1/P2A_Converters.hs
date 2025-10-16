@@ -501,8 +501,11 @@ pCtx2aCtx
           makeTypologies dagGraph = trace ("3.  "<>tshow dagGraph) $
                                     map createTypology completeWCCs
             where
-              wccs = wcComponents dagGraph -- weakly connected components of dagGraph
-              completeWCCs = [ overlay wcc (completeLattice wcc) | wcc <- wccs ] -- ensure each wcc is a complete lattice
+              -- Only keep those wccs of dagGraph that have edges (i.e., actual generalization hierarchies)
+              -- and ensure each wcc is a complete lattice
+              completeWCCs = [ overlay wcc (completeLattice wcc)
+                             | wcc <- wcComponents dagGraph -- weakly connected components
+                             , (not . null . edgeList) wcc ]
               createTypology :: AdjacencyMap A_Concept -> Typology
               createTypology subGraph =
                 let cs = vertexList subGraph
@@ -1462,18 +1465,21 @@ signatures env contextInfo trm = -- trace ("4.  "<>tshow conceptsGraph) $
        ]
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri o kind combinator a b meetORjoin _ opStr = -- extra parameters for tracing purpose: 
-      do sgnaTree <- signats a; sgnbTree <- signats b
-         let sgnsa = opSigns sgnaTree; sgnsb = opSigns sgnbTree
-             conceptsSrc = L.nub [ src | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
-             conceptsTgt = L.nub [ tgt | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
-             mjString = "meet/join" :: Text
-         case trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgnsb: "<>tshow sgnsb) $
-              [ trace ("\n21. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
-                ((combinator (expr_a, expr_b), Sign src tgt), (expr_a, sgn_a), (expr_b, sgn_b))
-              | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
-              , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)]
-              , Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ] of
+    checkPeri o kind combinator a b meetORjoin _ opStr = -- extra parameters for tracing purpose:
+      do
+        sgnaTree <- signats a
+        sgnbTree <- signats b
+        let sgnsa = opSigns sgnaTree
+            sgnsb = opSigns sgnbTree
+            conceptsSrc = L.nub [ src | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
+            conceptsTgt = L.nub [ tgt | sgn_a<-fmap snd sgnsa, sgn_b<-fmap snd sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
+            mjString = "meet/join" :: Text
+        case trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgnsb: "<>tshow sgnsb) $
+            [ trace ("\n21. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
+              ((combinator (expr_a, expr_b), Sign src tgt), (expr_a, Sign src tgt), (expr_b, Sign src tgt))
+            | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
+            , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)]
+            , Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ] of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b)) | (expr_a, sgn_a)<-sgnsa, (expr_b, sgn_b)<-sgnsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
                  in case (conceptsSrc, conceptsTgt) of

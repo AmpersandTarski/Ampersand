@@ -1321,9 +1321,20 @@ data MissingMeetEdge = MissingMeetEdge
 -- and returns the missing edges (m,a) and (m,b) that should connect this meet to a and b.
 -- Returns an AdjacencyMap containing the missing edges that violate this property.
 
+-- | The ANY concept - universal upper bound for all concepts
+anyCpt :: A_Concept
+anyCpt = PlainConcept . Set.fromList $
+  [(case try2Name ConceptName "_ANY" of
+      Left err -> fatal $ "Not a proper concept name: _ANY. " <> err
+      Right (nm, _) -> nm
+    , Nothing)]
+
 -- Compute the least upper bound (join) of a list of pairs
-join :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+-- Special case: ANY is treated as the universal upper bound
+join :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 join conceptsGraph a b
+    | a == anyCpt = Just anyCpt
+    | b == anyCpt = Just anyCpt
     | hasEdge a b rtc = Just b
     | hasEdge b a rtc = Just a
     | otherwise =
@@ -1335,8 +1346,11 @@ join conceptsGraph a b
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
 -- Compute the greatest lower bound (meet) of a list of pairs
-meet :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe a
+-- Special case: ANY is treated as the universal upper bound, so meet with ANY returns the other concept
+meet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 meet conceptsGraph a b
+    | a == anyCpt = Just b
+    | b == anyCpt = Just a
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
