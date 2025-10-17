@@ -167,10 +167,7 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Issue406.adl
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
-    testing/Travis/testcases/Check/testAllOperators.adl
     testing/Travis/testcases/Check/testinfo.yaml
-    testing/Travis/testcases/Check/testRightResidual.adl
-    testing/Travis/testcases/Check/testTypes.adl
     testing/Travis/testcases/FuncSpec/Issue1275.adl
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
@@ -438,20 +435,23 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/IntersectionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/KleenePlusNonEndo.adl
     testing/Travis/testcases/TypeChecker/shouldFail/KleeneStarNonEndo.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualFlipped.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualNested.adl
     testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualUnrelatedTargets.adl
     testing/Travis/testcases/TypeChecker/shouldFail/RelationalAdditionTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/RightResidualFlipped.adl
     testing/Travis/testcases/TypeChecker/shouldFail/RightResidualTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/RightResidualUnrelatedSources.adl
     testing/Travis/testcases/TypeChecker/shouldFail/testinfo.yaml
     testing/Travis/testcases/TypeChecker/shouldFail/UnionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CartesianProduct.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Complement.adl
-    testing/Travis/testcases/TypeChecker/shouldPass/ComplementNonEndo.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Composition.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CompositionISA_EndoSubtype.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CompositionISA_HeteroSubSuper.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CompositionISA_HeteroSuperSub.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CompositionISA_SiblingAC.adl
-    testing/Travis/testcases/TypeChecker/shouldPass/CompositionISA_SiblingBC.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Diamond.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Difference.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Flip.adl
@@ -461,8 +461,12 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldPass/KleenePlus.adl
     testing/Travis/testcases/TypeChecker/shouldPass/KleeneStar.adl
     testing/Travis/testcases/TypeChecker/shouldPass/LeftResidual.adl
+    testing/Travis/testcases/TypeChecker/shouldPass/LeftResidualComposition.adl
+    testing/Travis/testcases/TypeChecker/shouldPass/LeftResidualComposition2.adl
+    testing/Travis/testcases/TypeChecker/shouldPass/LeftResidualISA.adl
     testing/Travis/testcases/TypeChecker/shouldPass/RelationalAddition.adl
     testing/Travis/testcases/TypeChecker/shouldPass/RightResidual.adl
+    testing/Travis/testcases/TypeChecker/shouldPass/RightResidualHetero.adl
     testing/Travis/testcases/TypeChecker/shouldPass/testinfo.yaml
     testing/Travis/testcases/TypeChecker/shouldPass/Union.adl
     testing/Travis/testcases/TypeChecker/testinfo.yaml
