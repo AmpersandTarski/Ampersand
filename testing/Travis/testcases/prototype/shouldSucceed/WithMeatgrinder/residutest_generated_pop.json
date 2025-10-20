@@ -1,0 +1,166 @@
+{
+    "atoms": [
+        {
+            "atoms": [
+                "c5",
+                "c4",
+                "c7",
+                "c6",
+                "c1",
+                "c3",
+                "c2"
+            ],
+            "concept": "A"
+        },
+        {
+            "atoms": [
+                "Inspectie",
+                "Support",
+                "Pauze",
+                "Toezicht",
+                "Reistijd naar inspectielokatie",
+                "Compensatie verlof",
+                "Advies",
+                "Overleg"
+            ],
+            "concept": "B"
+        },
+        {
+            "atoms": [
+                "Pauze",
+                "Compensatie",
+                "Werktijd"
+            ],
+            "concept": "C"
+        },
+        {
+            "atoms": [
+                "e3",
+                "e2",
+                "e1"
+            ],
+            "concept": "D"
+        }
+    ],
+    "links": [
+        {
+            "links": [
+                {
+                    "src": "c5",
+                    "tgt": "Advies"
+                },
+                {
+                    "src": "c4",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "c4",
+                    "tgt": "Compensatie verlof"
+                },
+                {
+                    "src": "c7",
+                    "tgt": "Compensatie verlof"
+                },
+                {
+                    "src": "c6",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "c1",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "c1",
+                    "tgt": "Compensatie verlof"
+                },
+                {
+                    "src": "c1",
+                    "tgt": "Advies"
+                },
+                {
+                    "src": "c3",
+                    "tgt": "Compensatie verlof"
+                },
+                {
+                    "src": "c3",
+                    "tgt": "Advies"
+                },
+                {
+                    "src": "c2",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "c2",
+                    "tgt": "Advies"
+                }
+            ],
+            "relation": "r[A*B]"
+        },
+        {
+            "links": [
+                {
+                    "src": "Inspectie",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "Support",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "Pauze",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "Toezicht",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "Reistijd naar inspectielokatie",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "Compensatie verlof",
+                    "tgt": "Compensatie"
+                },
+                {
+                    "src": "Advies",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "Overleg",
+                    "tgt": "Werktijd"
+                }
+            ],
+            "relation": "s[B*C]"
+        },
+        {
+            "links": [
+                {
+                    "src": "e3",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "e3",
+                    "tgt": "Compensatie"
+                },
+                {
+                    "src": "e3",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "e2",
+                    "tgt": "Pauze"
+                },
+                {
+                    "src": "e2",
+                    "tgt": "Werktijd"
+                },
+                {
+                    "src": "e1",
+                    "tgt": "Werktijd"
+                }
+            ],
+            "relation": "t[D*C]"
+        }
+    ]
+}

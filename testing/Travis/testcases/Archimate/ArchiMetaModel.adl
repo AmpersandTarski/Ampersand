@@ -1,0 +1,1123 @@
+CONTEXT RepositoryUmcu  IN DUTCH 
+
+PURPOSE RELATION name[ArchiRepo*Text]  
+{+
+name[ArchiRepo*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessActor*Text]  
+{+
+name[BusinessActor*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessObject*Text]  
+{+
+name[BusinessObject*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessEvent*Text]  
+{+
+name[BusinessEvent*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessProcess*Text]  
+{+
+name[BusinessProcess*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessRole*Text]  
+{+
+name[BusinessRole*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessService*Text]  
+{+
+name[BusinessService*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[BusinessFunction*Text]  
+{+
+name[BusinessFunction*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[ApplicationComponent*Text]  
+{+
+name[ApplicationComponent*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[ApplicationFunction*Text]  
+{+
+name[ApplicationFunction*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[DataObject*Text]  
+{+
+name[DataObject*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION propOf[Property*ArchiObject]  
+{+
+propOf[Property*ArchiObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION key[Property*Text]  
+{+
+key[Property*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION value[Property*Text]  
+{+
+value[Property*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[ApplicationCollaboration*Text]  
+{+
+name[ApplicationCollaboration*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[ApplicationService*Text]  
+{+
+name[ApplicationService*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[CommunicationNetwork*Text]  
+{+
+name[CommunicationNetwork*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[Location*Text]  
+{+
+name[Location*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[CommunicationNetwork*ApplicationComponent]  
+{+
+realization[CommunicationNetwork*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[Relationship*Text]  
+{+
+name[Relationship*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION type[Relationship*Text]  
+{+
+type[Relationship*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*CommunicationNetwork]  
+{+
+source[Relationship*CommunicationNetwork] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*ApplicationComponent]  
+{+
+target[Relationship*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[ApplicationComponent*ApplicationFunction]  
+{+
+realization[ApplicationComponent*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*ApplicationComponent]  
+{+
+source[Relationship*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*ApplicationFunction]  
+{+
+target[Relationship*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION access[ApplicationFunction*DataObject]  
+{+
+access[ApplicationFunction*DataObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*ApplicationFunction]  
+{+
+source[Relationship*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*DataObject]  
+{+
+target[Relationship*DataObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION assignment[BusinessRole*BusinessProcess]  
+{+
+assignment[BusinessRole*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*BusinessRole]  
+{+
+source[Relationship*BusinessRole] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*BusinessProcess]  
+{+
+target[Relationship*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION serving[ApplicationComponent*ApplicationComponent]  
+{+
+serving[ApplicationComponent*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION assignment[ApplicationComponent*ApplicationFunction]  
+{+
+assignment[ApplicationComponent*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION access[BusinessProcess*BusinessObject]  
+{+
+access[BusinessProcess*BusinessObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*BusinessProcess]  
+{+
+source[Relationship*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*BusinessObject]  
+{+
+target[Relationship*BusinessObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION serving[BusinessProcess*ApplicationFunction]  
+{+
+serving[BusinessProcess*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION triggering[BusinessProcess*BusinessProcess]  
+{+
+triggering[BusinessProcess*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[ApplicationFunction*BusinessProcess]  
+{+
+realization[ApplicationFunction*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION serving[ApplicationFunction*BusinessProcess]  
+{+
+serving[ApplicationFunction*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION triggering[BusinessActor*BusinessEvent]  
+{+
+triggering[BusinessActor*BusinessEvent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*BusinessActor]  
+{+
+source[Relationship*BusinessActor] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*BusinessEvent]  
+{+
+target[Relationship*BusinessEvent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[Location*ApplicationComponent]  
+{+
+realization[Location*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*Location]  
+{+
+source[Relationship*Location] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION triggering[BusinessEvent*BusinessProcess]  
+{+
+triggering[BusinessEvent*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*BusinessEvent]  
+{+
+source[Relationship*BusinessEvent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION triggering[BusinessActor*ApplicationFunction]  
+{+
+triggering[BusinessActor*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[BusinessFunction*BusinessService]  
+{+
+realization[BusinessFunction*BusinessService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*BusinessFunction]  
+{+
+source[Relationship*BusinessFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*BusinessService]  
+{+
+target[Relationship*BusinessService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION serving[BusinessFunction*ApplicationFunction]  
+{+
+serving[BusinessFunction*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[BusinessProcess*BusinessService]  
+{+
+realization[BusinessProcess*BusinessService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION triggering[BusinessProcess*BusinessFunction]  
+{+
+triggering[BusinessProcess*BusinessFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*BusinessFunction]  
+{+
+target[Relationship*BusinessFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION aggregation[ApplicationCollaboration*ApplicationComponent]  
+{+
+aggregation[ApplicationCollaboration*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*ApplicationCollaboration]  
+{+
+source[Relationship*ApplicationCollaboration] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION assignment[ApplicationCollaboration*ApplicationFunction]  
+{+
+assignment[ApplicationCollaboration*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[CommunicationNetwork*ApplicationService]  
+{+
+realization[CommunicationNetwork*ApplicationService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION target[Relationship*ApplicationService]  
+{+
+target[Relationship*ApplicationService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[ApplicationComponent*ApplicationService]  
+{+
+realization[ApplicationComponent*ApplicationService] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[CommunicationNetwork*ApplicationFunction]  
+{+
+realization[CommunicationNetwork*ApplicationFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION realization[DataObject*BusinessObject]  
+{+
+realization[DataObject*BusinessObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION source[Relationship*DataObject]  
+{+
+source[Relationship*DataObject] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION name[View*Text]  
+{+
+name[View*Text] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessService*View]  
+{+
+inView[BusinessService*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessFunction*View]  
+{+
+inView[BusinessFunction*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[ApplicationFunction*View]  
+{+
+inView[ApplicationFunction*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessProcess*View]  
+{+
+inView[BusinessProcess*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[ApplicationCollaboration*View]  
+{+
+inView[ApplicationCollaboration*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[ApplicationComponent*View]  
+{+
+inView[ApplicationComponent*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[Relationship*View]  
+{+
+inView[Relationship*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[BusinessProcess*BusinessFunction]  
+{+
+inside[BusinessProcess*BusinessFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[BusinessFunction*BusinessFunction]  
+{+
+inside[BusinessFunction*BusinessFunction] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[BusinessProcess*BusinessProcess]  
+{+
+inside[BusinessProcess*BusinessProcess] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[Location*View]  
+{+
+inView[Location*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessActor*View]  
+{+
+inView[BusinessActor*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessObject*View]  
+{+
+inView[BusinessObject*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessEvent*View]  
+{+
+inView[BusinessEvent*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[BusinessRole*View]  
+{+
+inView[BusinessRole*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[CommunicationNetwork*View]  
+{+
+inView[CommunicationNetwork*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[ApplicationComponent*Location]  
+{+
+inside[ApplicationComponent*Location] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[ApplicationFunction*ApplicationComponent]  
+{+
+inside[ApplicationFunction*ApplicationComponent] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[ApplicationComponent*CommunicationNetwork]  
+{+
+inside[ApplicationComponent*CommunicationNetwork] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[DataObject*View]  
+{+
+inView[DataObject*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inView[ApplicationService*View]  
+{+
+inView[ApplicationService*View] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[ApplicationFunction*CommunicationNetwork]  
+{+
+inside[ApplicationFunction*CommunicationNetwork] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[DataObject*CommunicationNetwork]  
+{+
+inside[DataObject*CommunicationNetwork] serves to embody the ArchiMate metamodel
++}
+PURPOSE RELATION inside[ApplicationService*CommunicationNetwork]  
+{+
+inside[ApplicationService*CommunicationNetwork] serves to embody the ArchiMate metamodel
++}
+PATTERN Office365 LABEL "Office 365"
+
+
+
+
+
+
+
+
+
+
+
+ENDPATTERN
+PATTERN Pharmacy 
+
+
+
+
+
+
+
+
+
+
+
+ENDPATTERN
+
+RELATION name[ArchiRepo*Text]  [UNI] 
+RELATION name[BusinessActor*Text]  [UNI] 
+RELATION triggering[BusinessActor*BusinessEvent]   
+RELATION triggering[BusinessActor*ApplicationFunction]   
+RELATION inView[BusinessActor*View]   
+RELATION name[BusinessObject*Text]  [UNI] 
+RELATION inView[BusinessObject*View]   
+RELATION name[BusinessEvent*Text]  [UNI] 
+RELATION triggering[BusinessEvent*BusinessProcess]   
+RELATION inView[BusinessEvent*View]   
+RELATION name[BusinessProcess*Text]  [UNI] 
+RELATION access[BusinessProcess*BusinessObject]   
+RELATION serving[BusinessProcess*ApplicationFunction]   
+RELATION triggering[BusinessProcess*BusinessProcess]   
+RELATION realization[BusinessProcess*BusinessService]   
+RELATION triggering[BusinessProcess*BusinessFunction]   
+RELATION inView[BusinessProcess*View]   
+RELATION inside[BusinessProcess*BusinessFunction]   
+RELATION inside[BusinessProcess*BusinessProcess]   
+RELATION name[BusinessRole*Text]  [UNI] 
+RELATION assignment[BusinessRole*BusinessProcess]   
+RELATION inView[BusinessRole*View]   
+RELATION name[BusinessService*Text]  [UNI] 
+RELATION inView[BusinessService*View]   
+RELATION name[BusinessFunction*Text]  [UNI] 
+RELATION realization[BusinessFunction*BusinessService]   
+RELATION serving[BusinessFunction*ApplicationFunction]   
+RELATION inView[BusinessFunction*View]   
+RELATION inside[BusinessFunction*BusinessFunction]   
+RELATION name[ApplicationComponent*Text]  [UNI] 
+RELATION realization[ApplicationComponent*ApplicationFunction]   
+RELATION serving[ApplicationComponent*ApplicationComponent]   
+RELATION assignment[ApplicationComponent*ApplicationFunction]   
+RELATION realization[ApplicationComponent*ApplicationService]   
+RELATION inView[ApplicationComponent*View]   
+RELATION inside[ApplicationComponent*Location]   
+RELATION inside[ApplicationComponent*CommunicationNetwork]   
+RELATION name[ApplicationFunction*Text]  [UNI] 
+RELATION access[ApplicationFunction*DataObject]   
+RELATION realization[ApplicationFunction*BusinessProcess]   
+RELATION serving[ApplicationFunction*BusinessProcess]   
+RELATION inView[ApplicationFunction*View]   
+RELATION inside[ApplicationFunction*ApplicationComponent]   
+RELATION inside[ApplicationFunction*CommunicationNetwork]   
+RELATION name[DataObject*Text]  [UNI] 
+RELATION realization[DataObject*BusinessObject]   
+RELATION inView[DataObject*View]   
+RELATION inside[DataObject*CommunicationNetwork]   
+RELATION propOf[Property*ArchiObject]  [UNI] 
+RELATION key[Property*Text]  [UNI] 
+RELATION value[Property*Text]  [UNI] 
+RELATION name[ApplicationCollaboration*Text]  [UNI] 
+RELATION aggregation[ApplicationCollaboration*ApplicationComponent]   
+RELATION assignment[ApplicationCollaboration*ApplicationFunction]   
+RELATION inView[ApplicationCollaboration*View]   
+RELATION name[ApplicationService*Text]  [UNI] 
+RELATION inView[ApplicationService*View]   
+RELATION inside[ApplicationService*CommunicationNetwork]   
+RELATION name[CommunicationNetwork*Text]  [UNI] 
+RELATION realization[CommunicationNetwork*ApplicationComponent]   
+RELATION realization[CommunicationNetwork*ApplicationService]   
+RELATION realization[CommunicationNetwork*ApplicationFunction]   
+RELATION inView[CommunicationNetwork*View]   
+RELATION name[Location*Text]  [UNI] 
+RELATION realization[Location*ApplicationComponent]   
+RELATION inView[Location*View]   
+RELATION name[Relationship*Text]  [UNI] 
+RELATION type[Relationship*Text]  [UNI] 
+RELATION source[Relationship*CommunicationNetwork]  [UNI] 
+RELATION target[Relationship*ApplicationComponent]  [UNI] 
+RELATION source[Relationship*ApplicationComponent]  [UNI] 
+RELATION target[Relationship*ApplicationFunction]  [UNI] 
+RELATION source[Relationship*ApplicationFunction]  [UNI] 
+RELATION target[Relationship*DataObject]  [UNI] 
+RELATION source[Relationship*BusinessRole]  [UNI] 
+RELATION target[Relationship*BusinessProcess]  [UNI] 
+RELATION source[Relationship*BusinessProcess]  [UNI] 
+RELATION target[Relationship*BusinessObject]  [UNI] 
+RELATION source[Relationship*BusinessActor]  [UNI] 
+RELATION target[Relationship*BusinessEvent]  [UNI] 
+RELATION source[Relationship*Location]  [UNI] 
+RELATION source[Relationship*BusinessEvent]  [UNI] 
+RELATION source[Relationship*BusinessFunction]  [UNI] 
+RELATION target[Relationship*BusinessService]  [UNI] 
+RELATION target[Relationship*BusinessFunction]  [UNI] 
+RELATION source[Relationship*ApplicationCollaboration]  [UNI] 
+RELATION target[Relationship*ApplicationService]  [UNI] 
+RELATION source[Relationship*DataObject]  [UNI] 
+RELATION inView[Relationship*View]   
+RELATION name[View*Text]  [UNI] 
+
+
+
+
+
+
+
+POPULATION name[ArchiRepo*Text] CONTAINS [( "62327ae6-cd0b-4d9d-8452-489a323c7a8c" , "repositoryUMCU" )]
+POPULATION name[BusinessActor*Text] CONTAINS [( "5a48ce8e-d0fe-4e02-9bdb-2969da063200" , "Pati\235nt  " )]
+POPULATION name[BusinessObject*Text] CONTAINS [( "a9933926-cca1-4a50-827d-8ec646acfdab" , "Patient file " )]
+POPULATION name[BusinessEvent*Text] CONTAINS [( "05df36e0-1dde-4f07-85d4-de4b0c9e7586" , "Recipe " )]
+POPULATION name[BusinessProcess*Text] CONTAINS [( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "BSN and COV check insurance data" )
+                                               ,( "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" , "Process recipe in CGM " )
+                                               ,( "6ca08836-ac55-47f2-82d6-ff5485b2ed82" , "Provide medication " )
+                                               ,( "43afbf7c-423e-4951-8f1e-0d90025eb060" , "Medication monitoring " )
+                                               ,( "d77816d8-013f-4322-a77d-16be3adafec2" , "Employment" )
+                                               ,( "7d89ffac-03ae-47e8-a698-78d80587c2c0" , "Termination of employment" )
+                                               ,( "74a4e919-e25d-4b3e-8373-40ab98bc5732" , "Function change" )
+                                               ,( "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" , "User provisioning" )
+                                               ,( "3384f350-ffa7-4798-bff4-410b66ca1044" , "User deprovisioning" )
+                                               ,( "067bae77-838b-423f-a788-e078197fa633" , "Authorization management" )
+                                               ,( "50c0a317-98f8-4b7c-b17b-d87d24b5bd05" , "Delivery workplace" )
+                                               ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "Distribute chat application" )
+                                               ,( "22548614-8da8-4734-8311-11922da051ea" , "Access exchange" )
+                                               ,( "da0de292-09ea-4ad5-843b-ced641ced8ca" , "Distribution Outlook client" )
+                                               ,( "73dcf768-2105-4e6d-a0b6-b63103928a49" , "User provisioning Exchange" )
+                                               ,( "cbaa6931-504a-4e6b-a616-09f80d7a1d38" , "Self-service SharePoint" )
+                                               ,( "3d9fa7d7-abf0-4df4-ac3e-e054680dd36c" , "License management" )
+                                               ,( "3e21bdbe-c339-4a02-80d9-7f8c15d1b96f" , "Capacity management" )]
+POPULATION name[BusinessRole*Text] CONTAINS [( "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" , "Pharmacist assistent" )
+                                            ,( "08976727-c437-4493-9a14-1b83e44d5c21" , "Pharmacist " )]
+POPULATION name[BusinessService*Text] CONTAINS [( "77c76f36-6b0c-4ab4-8a8b-aa2ad81db69f" , "Personnel administration" )
+                                               ,( "867688b0-b7c1-4807-b3ed-5cb0346ad19c" , "Access facilities" )
+                                               ,( "9b8bad05-1f66-48db-95a5-958ae088d96e" , "Provide access to ICT" )
+                                               ,( "413dbfe2-de05-4fad-a107-695ca78a772e" , "Provide video conferencing for workplace" )
+                                               ,( "e5ba09e3-8363-40ee-a60e-4d270c43bfbe" , "Supply chat function" )
+                                               ,( "3921014e-b606-47b2-8658-60a95823c617" , "Deliver email function" )
+                                               ,( "f0eb5ccd-7962-4789-8526-543194eddf5f" , "Provide global address book" )
+                                               ,( "448c701f-5372-412f-af46-fcb077013e2d" , "Deliver electronic agenda" )
+                                               ,( "adc163e5-e9dc-4bdd-9e9c-bcbc6db7bd2c" , "Deliver team site" )
+                                               ,( "594937c9-b70a-44ac-a6ca-f2d8d5907881" , "Supply document library" )
+                                               ,( "3f39d8e9-dddb-4cb0-97a9-3cbdbbf816ef" , "Guarantee continuity" )]
+POPULATION name[BusinessFunction*Text] CONTAINS [( "37d64852-3ed1-466e-99d7-22a64c36516d" , "Personnel administration" )
+                                                ,( "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" , "IAM" )
+                                                ,( "fa69bf84-a264-4d38-bf96-04a0dfd34644" , "Account and group management" )
+                                                ,( "d8d6062f-a5a2-4c59-a0b7-85af380adba5" , "Create account" )
+                                                ,( "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" , "Deactivate account" )
+                                                ,( "c185778b-fff7-4f73-8627-c9d736787bc5" , "Assign application rights" )
+                                                ,( "77bb5f5f-c55c-4bc4-987f-2fa63554dace" , "Conservation" )]
+POPULATION name[ApplicationComponent*Text] CONTAINS [( "d9e0a493-22f4-4af0-9a22-02a306af3217" , "EZorg" )
+                                                    ,( "36bd0535-24eb-4b49-9336-c60645338b1e" , "National Exchange Point " )
+                                                    ,( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "Central application (Chipsoft HiX)" )
+                                                    ,( "a2db7d7a-6f8d-47d8-873d-6edbc2058c72" , "ServiLocker" )
+                                                    ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "MIRA (CGM Pharmacy) " )
+                                                    ,( "544cafff-741a-4a8a-aa9e-b783a14a6f9c" , "Autopharma " )
+                                                    ,( "69f14ce3-22ab-444b-9c1e-89d80caf10c5" , "Brocacef  supplier (orders)" )
+                                                    ,( "78acdb3c-6042-4233-ae33-a2cbe8c713cc" , "Active Directory local" )
+                                                    ,( "30dbbcea-cfc4-4246-af5c-69edae0623c0" , "Azure AD" )
+                                                    ,( "08dec599-e8ce-4815-aaaf-d437d433b19e" , "App-V/ThinApp" )
+                                                    ,( "6c87cb60-b587-4f36-a218-5d94db323fe6" , "SCCM" )
+                                                    ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "Tenant management Office 365" )]
+POPULATION name[ApplicationFunction*Text] CONTAINS [( "2b3e7be2-002a-4922-a53c-3e3fa64429be" , "BSN Check (Social security number check) " )
+                                                   ,( "c9254518-86b2-459c-898f-cc542dcc9e47" , "COV Check " )
+                                                   ,( "d3c76a5b-6eed-44b5-be87-16ed3541df68" , "CS Poli-Apotheek " )
+                                                   ,( "1ba340ed-662f-4908-906a-02b73e7d3458" , "Patient resgistration  " )
+                                                   ,( "1be100b3-73d7-401a-8cf6-2cc18cd52067" , "Process recipe " )
+                                                   ,( "ccfa9686-07c6-44e8-9b62-1379bca80c97" , "HR registration" )
+                                                   ,( "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" , "Identity provisioning" )
+                                                   ,( "1378415e-4511-4584-b72b-034e335523e4" , "Access management" )
+                                                   ,( "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" , "Account administration" )
+                                                   ,( "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" , "Groups administration" )
+                                                   ,( "8bb2eb3b-534b-4918-9b15-666bc2ecb040" , "Application distribution Office" )
+                                                   ,( "5022df09-5721-4f71-a74d-89e5d652f855" , "Manage user profiles" )
+                                                   ,( "76817d41-2d8a-4204-847c-6d40a08ae932" , "Site management SharePoint" )
+                                                   ,( "72f68233-3a69-48d6-b343-66b77b9506ba" , "Exchange management" )
+                                                   ,( "c0ab1ae3-420a-401c-9fb3-46f95bea486a" , "Skype4-Business management" )
+                                                   ,( "532f8b72-0f40-4fea-9e4a-00dc91572ba8" , "Monitoring medication" )
+                                                   ,( "797b4d91-f17e-46b3-a5ba-4dbcceab6ddf" , "Medical data" )]
+POPULATION name[DataObject*Text] CONTAINS [( "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" , "Patient data " )]
+POPULATION propOf[Property*ArchiObject] CONTAINS [( "pr-0" , "544cafff-741a-4a8a-aa9e-b783a14a6f9c" )]
+POPULATION key[Property*Text] CONTAINS [( "pr-0" , "location" )]
+POPULATION value[Property*Text] CONTAINS [( "pr-0" , "Central" )]
+POPULATION name[ApplicationCollaboration*Text] CONTAINS [( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "AD synchronisation" )]
+POPULATION name[ApplicationService*Text] CONTAINS [( "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" , "SMS/E-mail (track and trace)" )]
+POPULATION name[CommunicationNetwork*Text] CONTAINS [( "e8335d50-9b06-45ce-b634-77dc6add7e3f" , "UMC Utrecht LAN " )
+                                                    ,( "70441db5-0436-42b9-9c10-39f1dd0310a4" , "CGM" )]
+POPULATION name[Location*Text] CONTAINS [( "18df25ec-9db9-4aa7-9ef5-7948c3f37112" , "KPN " )]
+POPULATION realization[CommunicationNetwork*ApplicationComponent] CONTAINS [( "70441db5-0436-42b9-9c10-39f1dd0310a4" , "544cafff-741a-4a8a-aa9e-b783a14a6f9c" )]
+POPULATION name[Relationship*Text] CONTAINS [( "5decc339-ed4b-4ec7-a507-89097030ded7" , "realization" )
+                                            ,( "f258b9c8-0f8b-45a0-a9b3-24a19451c0dc" , "realization" )
+                                            ,( "16b8e5df-aec3-4d91-b0e3-a4ee5141b9f8" , "access" )
+                                            ,( "f028c3f7-baf8-4ad4-a82a-430b1255648d" , "assignment" )
+                                            ,( "9bd11262-1285-4f9c-9bfa-ae0430cd99b9" , "serving" )
+                                            ,( "07932ed9-e171-4a1f-9023-e616875fbdd5" , "assignment" )
+                                            ,( "aaa773ba-0374-4e62-bee4-bc5038d4b744" , "assignment" )
+                                            ,( "384f7cd7-d9b5-4586-ac27-88a384c98565" , "serving" )
+                                            ,( "454835c3-2af0-4966-9433-572eb6032e1b" , "realization" )
+                                            ,( "b8fab7ad-c9c4-4ae7-a3dd-58ee5d1977bf" , "assignment" )
+                                            ,( "2e7a3250-7264-41d9-ae80-1edf4518cd3c" , "access" )
+                                            ,( "29bac926-b612-4bd0-9522-0c46b72cdd5e" , "serving" )
+                                            ,( "f76e93d2-799b-407d-a8b2-048caf10323f" , "triggering" )
+                                            ,( "efc75eac-c631-4863-8702-3a53a9d2af69" , "realization" )
+                                            ,( "2d0cb8cc-107b-4d88-a5ac-9545787b46d9" , "triggering" )
+                                            ,( "9047cb83-6d9d-49bf-aab1-81d035fecdaa" , "serving" )
+                                            ,( "0c564c06-0e60-4ccc-8d57-83148d908697" , "serving" )
+                                            ,( "ddb8540d-591a-49d9-905b-23597cbd75bc" , "triggering" )
+                                            ,( "b5123b52-8d82-41be-bf22-a833824a5be9" , "assignment" )
+                                            ,( "02d33469-3c4f-4bb1-bdd5-43db3d5d87c3" , "triggering" )
+                                            ,( "90896c38-2f37-448b-b342-180c5bd553f6" , "serving" )
+                                            ,( "e83896f8-c2d7-4c2c-99c8-555ee1c97399" , "realization" )
+                                            ,( "78470d26-af5a-4da7-8b90-4e948fbe3ae8" , "triggering" )
+                                            ,( "9f773c17-2279-441e-b7e1-4825049fe630" , "realization" )
+                                            ,( "b7cdbf4f-0ae6-49a0-8029-af7587780330" , "serving" )
+                                            ,( "ce7fed35-be2c-4707-b207-1403be5265fa" , "realization" )
+                                            ,( "280d7b39-652a-467d-bc99-0b2515ae9608" , "triggering" )
+                                            ,( "afcd8d71-3be3-475e-af28-a480de898f6d" , "realization" )
+                                            ,( "0d18ed89-3722-4b95-bdaf-4ad10a2db611" , "serving" )
+                                            ,( "c3033e29-40c4-45e4-ae66-9bc3111d4180" , "realization" )
+                                            ,( "d5671bfb-1ca1-4645-af28-3fd51ef377e6" , "realization" )
+                                            ,( "bf9b5463-5926-4104-81cb-a66f9751c09e" , "realization" )
+                                            ,( "aa11788e-9173-4cca-b834-47f836ee84d5" , "triggering" )
+                                            ,( "56730609-aa13-46d7-9d0a-62b5de065f31" , "triggering" )
+                                            ,( "be57eb92-782f-4a01-9e72-1005c18520a9" , "triggering" )
+                                            ,( "92353845-463e-4970-a6a1-0b9c296df1e3" , "triggering" )
+                                            ,( "443f0b58-4f45-411f-8f1d-03853d0d2ced" , "triggering" )
+                                            ,( "f24675d1-6889-4250-889c-b203ca2fe211" , "triggering" )
+                                            ,( "b0327768-c512-437e-870e-f329448e612f" , "serving" )
+                                            ,( "cb08ca78-1e2e-4dd2-b800-feb939aedfd9" , "serving" )
+                                            ,( "5d268f23-cd69-4bcc-8fa6-72145f08cf24" , "serving" )
+                                            ,( "1c2a5e5d-210a-4f5d-987a-3d558fa23d51" , "serving" )
+                                            ,( "357cda21-053d-4545-8ae5-eb85168ec44a" , "realization" )
+                                            ,( "b36978b7-41df-45f4-8440-c7055a008058" , "triggering" )
+                                            ,( "41571e78-6399-4d54-86fd-b67318faf2cd" , "serving" )
+                                            ,( "9f7f21de-87a0-4ccb-b485-605f31232493" , "serving" )
+                                            ,( "a49b92ee-88d3-4fee-a2d3-017f439bf4be" , "serving" )
+                                            ,( "867a47bd-2742-42da-a716-4eae381fc730" , "serving" )
+                                            ,( "158d2c0f-9833-4bd6-998d-f6dc4489684f" , "serving" )
+                                            ,( "115a183a-85cc-45e6-b258-bf1d5f87f0d6" , "serving" )
+                                            ,( "57c5a3fc-c544-4d8d-a7c6-5a0e80b16b84" , "serving" )
+                                            ,( "56d244c7-b2be-4e32-9eba-c25f31e200fb" , "serving" )
+                                            ,( "277ee398-73bb-4939-ac13-5aa7ba286444" , "realization" )
+                                            ,( "b4387b86-db10-4e5a-a16c-e8f5f30928c3" , "realization" )
+                                            ,( "e9f9bb5f-baac-42c7-985e-9b536d00ebc7" , "realization" )
+                                            ,( "ef8541f1-e6eb-402a-ae40-e93907f033b1" , "realization" )
+                                            ,( "ed1ff7b2-349f-4ce6-968e-22342cf92f9d" , "realization" )
+                                            ,( "3e0b8e0a-e04a-4d7f-9267-83a6bc002d41" , "realization" )
+                                            ,( "ea234ae7-dc82-49c5-aeca-4f65782d01e7" , "triggering" )
+                                            ,( "d3be4fff-59f1-4390-ae2d-0f911d35b953" , "aggregation" )
+                                            ,( "062bfd72-9c5b-46f1-a0ca-807a94a31142" , "aggregation" )
+                                            ,( "f1e27990-08ef-4653-8b2b-de2b14173684" , "assignment" )
+                                            ,( "17b7f312-69b9-44c6-8e67-1a5dbf7db6fa" , "assignment" )
+                                            ,( "c8f39c30-e037-413e-a937-3b78fc84127a" , "assignment" )
+                                            ,( "ecb83862-e83e-47d0-8f40-10d490ce76e5" , "assignment" )
+                                            ,( "c092e9f4-89fe-4c54-a28f-4b623d652ec4" , "assignment" )
+                                            ,( "2b03c0b3-2a48-47c0-ab73-8a690b04b01a" , "assignment" )
+                                            ,( "b41a8917-17b1-4133-8291-8049a8353ab8" , "assignment" )
+                                            ,( "98419431-d9e8-42a5-9d7e-3e7a56e7674c" , "assignment" )
+                                            ,( "99d03343-4904-45bc-b2cc-caf2bd66e991" , "realization" )
+                                            ,( "e74ce1cf-cfc0-44ce-b694-b4b09f3ee629" , "realization" )
+                                            ,( "0535fddd-9992-4a1c-a0b4-cb75bf34c0fd" , "realization" )
+                                            ,( "c96696c8-1bfc-479d-b993-178e4aabf221" , "realization" )
+                                            ,( "23d646e8-391c-445e-a91f-3f0910664ce4" , "realization" )
+                                            ,( "8a9c4e32-c904-4577-97f7-d8dd9e94088e" , "realization" )]
+POPULATION type[Relationship*Text] CONTAINS [( "5decc339-ed4b-4ec7-a507-89097030ded7" , "realization" )
+                                            ,( "f258b9c8-0f8b-45a0-a9b3-24a19451c0dc" , "realization" )
+                                            ,( "16b8e5df-aec3-4d91-b0e3-a4ee5141b9f8" , "access" )
+                                            ,( "f028c3f7-baf8-4ad4-a82a-430b1255648d" , "assignment" )
+                                            ,( "9bd11262-1285-4f9c-9bfa-ae0430cd99b9" , "serving" )
+                                            ,( "07932ed9-e171-4a1f-9023-e616875fbdd5" , "assignment" )
+                                            ,( "aaa773ba-0374-4e62-bee4-bc5038d4b744" , "assignment" )
+                                            ,( "384f7cd7-d9b5-4586-ac27-88a384c98565" , "serving" )
+                                            ,( "454835c3-2af0-4966-9433-572eb6032e1b" , "realization" )
+                                            ,( "b8fab7ad-c9c4-4ae7-a3dd-58ee5d1977bf" , "assignment" )
+                                            ,( "2e7a3250-7264-41d9-ae80-1edf4518cd3c" , "access" )
+                                            ,( "29bac926-b612-4bd0-9522-0c46b72cdd5e" , "serving" )
+                                            ,( "f76e93d2-799b-407d-a8b2-048caf10323f" , "triggering" )
+                                            ,( "efc75eac-c631-4863-8702-3a53a9d2af69" , "realization" )
+                                            ,( "2d0cb8cc-107b-4d88-a5ac-9545787b46d9" , "triggering" )
+                                            ,( "9047cb83-6d9d-49bf-aab1-81d035fecdaa" , "serving" )
+                                            ,( "0c564c06-0e60-4ccc-8d57-83148d908697" , "serving" )
+                                            ,( "ddb8540d-591a-49d9-905b-23597cbd75bc" , "triggering" )
+                                            ,( "b5123b52-8d82-41be-bf22-a833824a5be9" , "assignment" )
+                                            ,( "02d33469-3c4f-4bb1-bdd5-43db3d5d87c3" , "triggering" )
+                                            ,( "90896c38-2f37-448b-b342-180c5bd553f6" , "serving" )
+                                            ,( "e83896f8-c2d7-4c2c-99c8-555ee1c97399" , "realization" )
+                                            ,( "78470d26-af5a-4da7-8b90-4e948fbe3ae8" , "triggering" )
+                                            ,( "9f773c17-2279-441e-b7e1-4825049fe630" , "realization" )
+                                            ,( "b7cdbf4f-0ae6-49a0-8029-af7587780330" , "serving" )
+                                            ,( "ce7fed35-be2c-4707-b207-1403be5265fa" , "realization" )
+                                            ,( "280d7b39-652a-467d-bc99-0b2515ae9608" , "triggering" )
+                                            ,( "afcd8d71-3be3-475e-af28-a480de898f6d" , "realization" )
+                                            ,( "0d18ed89-3722-4b95-bdaf-4ad10a2db611" , "serving" )
+                                            ,( "c3033e29-40c4-45e4-ae66-9bc3111d4180" , "realization" )
+                                            ,( "d5671bfb-1ca1-4645-af28-3fd51ef377e6" , "realization" )
+                                            ,( "bf9b5463-5926-4104-81cb-a66f9751c09e" , "realization" )
+                                            ,( "aa11788e-9173-4cca-b834-47f836ee84d5" , "triggering" )
+                                            ,( "56730609-aa13-46d7-9d0a-62b5de065f31" , "triggering" )
+                                            ,( "be57eb92-782f-4a01-9e72-1005c18520a9" , "triggering" )
+                                            ,( "92353845-463e-4970-a6a1-0b9c296df1e3" , "triggering" )
+                                            ,( "443f0b58-4f45-411f-8f1d-03853d0d2ced" , "triggering" )
+                                            ,( "f24675d1-6889-4250-889c-b203ca2fe211" , "triggering" )
+                                            ,( "b0327768-c512-437e-870e-f329448e612f" , "serving" )
+                                            ,( "cb08ca78-1e2e-4dd2-b800-feb939aedfd9" , "serving" )
+                                            ,( "5d268f23-cd69-4bcc-8fa6-72145f08cf24" , "serving" )
+                                            ,( "1c2a5e5d-210a-4f5d-987a-3d558fa23d51" , "serving" )
+                                            ,( "357cda21-053d-4545-8ae5-eb85168ec44a" , "realization" )
+                                            ,( "b36978b7-41df-45f4-8440-c7055a008058" , "triggering" )
+                                            ,( "41571e78-6399-4d54-86fd-b67318faf2cd" , "serving" )
+                                            ,( "9f7f21de-87a0-4ccb-b485-605f31232493" , "serving" )
+                                            ,( "a49b92ee-88d3-4fee-a2d3-017f439bf4be" , "serving" )
+                                            ,( "867a47bd-2742-42da-a716-4eae381fc730" , "serving" )
+                                            ,( "158d2c0f-9833-4bd6-998d-f6dc4489684f" , "serving" )
+                                            ,( "115a183a-85cc-45e6-b258-bf1d5f87f0d6" , "serving" )
+                                            ,( "57c5a3fc-c544-4d8d-a7c6-5a0e80b16b84" , "serving" )
+                                            ,( "56d244c7-b2be-4e32-9eba-c25f31e200fb" , "serving" )
+                                            ,( "277ee398-73bb-4939-ac13-5aa7ba286444" , "realization" )
+                                            ,( "b4387b86-db10-4e5a-a16c-e8f5f30928c3" , "realization" )
+                                            ,( "e9f9bb5f-baac-42c7-985e-9b536d00ebc7" , "realization" )
+                                            ,( "ef8541f1-e6eb-402a-ae40-e93907f033b1" , "realization" )
+                                            ,( "ed1ff7b2-349f-4ce6-968e-22342cf92f9d" , "realization" )
+                                            ,( "3e0b8e0a-e04a-4d7f-9267-83a6bc002d41" , "realization" )
+                                            ,( "ea234ae7-dc82-49c5-aeca-4f65782d01e7" , "triggering" )
+                                            ,( "d3be4fff-59f1-4390-ae2d-0f911d35b953" , "aggregation" )
+                                            ,( "062bfd72-9c5b-46f1-a0ca-807a94a31142" , "aggregation" )
+                                            ,( "f1e27990-08ef-4653-8b2b-de2b14173684" , "assignment" )
+                                            ,( "17b7f312-69b9-44c6-8e67-1a5dbf7db6fa" , "assignment" )
+                                            ,( "c8f39c30-e037-413e-a937-3b78fc84127a" , "assignment" )
+                                            ,( "ecb83862-e83e-47d0-8f40-10d490ce76e5" , "assignment" )
+                                            ,( "c092e9f4-89fe-4c54-a28f-4b623d652ec4" , "assignment" )
+                                            ,( "2b03c0b3-2a48-47c0-ab73-8a690b04b01a" , "assignment" )
+                                            ,( "b41a8917-17b1-4133-8291-8049a8353ab8" , "assignment" )
+                                            ,( "98419431-d9e8-42a5-9d7e-3e7a56e7674c" , "assignment" )
+                                            ,( "99d03343-4904-45bc-b2cc-caf2bd66e991" , "realization" )
+                                            ,( "e74ce1cf-cfc0-44ce-b694-b4b09f3ee629" , "realization" )
+                                            ,( "0535fddd-9992-4a1c-a0b4-cb75bf34c0fd" , "realization" )
+                                            ,( "c96696c8-1bfc-479d-b993-178e4aabf221" , "realization" )
+                                            ,( "23d646e8-391c-445e-a91f-3f0910664ce4" , "realization" )
+                                            ,( "8a9c4e32-c904-4577-97f7-d8dd9e94088e" , "realization" )]
+POPULATION source[Relationship*CommunicationNetwork] CONTAINS [( "5decc339-ed4b-4ec7-a507-89097030ded7" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                              ,( "99d03343-4904-45bc-b2cc-caf2bd66e991" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                              ,( "0535fddd-9992-4a1c-a0b4-cb75bf34c0fd" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )]
+POPULATION target[Relationship*ApplicationComponent] CONTAINS [( "5decc339-ed4b-4ec7-a507-89097030ded7" , "544cafff-741a-4a8a-aa9e-b783a14a6f9c" )
+                                                              ,( "9bd11262-1285-4f9c-9bfa-ae0430cd99b9" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                              ,( "384f7cd7-d9b5-4586-ac27-88a384c98565" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                              ,( "9047cb83-6d9d-49bf-aab1-81d035fecdaa" , "69f14ce3-22ab-444b-9c1e-89d80caf10c5" )
+                                                              ,( "90896c38-2f37-448b-b342-180c5bd553f6" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                              ,( "e83896f8-c2d7-4c2c-99c8-555ee1c97399" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                              ,( "d3be4fff-59f1-4390-ae2d-0f911d35b953" , "78acdb3c-6042-4233-ae33-a2cbe8c713cc" )
+                                                              ,( "062bfd72-9c5b-46f1-a0ca-807a94a31142" , "30dbbcea-cfc4-4246-af5c-69edae0623c0" )]
+POPULATION realization[ApplicationComponent*ApplicationFunction] CONTAINS [( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "1ba340ed-662f-4908-906a-02b73e7d3458" )
+                                                                          ,( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "c9254518-86b2-459c-898f-cc542dcc9e47" )
+                                                                          ,( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "2b3e7be2-002a-4922-a53c-3e3fa64429be" )
+                                                                          ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "1be100b3-73d7-401a-8cf6-2cc18cd52067" )
+                                                                          ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "532f8b72-0f40-4fea-9e4a-00dc91572ba8" )
+                                                                          ,( "36bd0535-24eb-4b49-9336-c60645338b1e" , "797b4d91-f17e-46b3-a5ba-4dbcceab6ddf" )]
+POPULATION source[Relationship*ApplicationComponent] CONTAINS [( "f258b9c8-0f8b-45a0-a9b3-24a19451c0dc" , "eb063b52-6882-452e-8faf-4bfa91aa278f" )
+                                                              ,( "9bd11262-1285-4f9c-9bfa-ae0430cd99b9" , "36bd0535-24eb-4b49-9336-c60645338b1e" )
+                                                              ,( "07932ed9-e171-4a1f-9023-e616875fbdd5" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                              ,( "384f7cd7-d9b5-4586-ac27-88a384c98565" , "eb063b52-6882-452e-8faf-4bfa91aa278f" )
+                                                              ,( "454835c3-2af0-4966-9433-572eb6032e1b" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                              ,( "9047cb83-6d9d-49bf-aab1-81d035fecdaa" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                              ,( "90896c38-2f37-448b-b342-180c5bd553f6" , "eb063b52-6882-452e-8faf-4bfa91aa278f" )
+                                                              ,( "9f773c17-2279-441e-b7e1-4825049fe630" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                              ,( "ce7fed35-be2c-4707-b207-1403be5265fa" , "eb063b52-6882-452e-8faf-4bfa91aa278f" )
+                                                              ,( "c8f39c30-e037-413e-a937-3b78fc84127a" , "08dec599-e8ce-4815-aaaf-d437d433b19e" )
+                                                              ,( "ecb83862-e83e-47d0-8f40-10d490ce76e5" , "6c87cb60-b587-4f36-a218-5d94db323fe6" )
+                                                              ,( "c092e9f4-89fe-4c54-a28f-4b623d652ec4" , "cf09bb74-b118-41e1-99f4-0387bfe07d20" )
+                                                              ,( "2b03c0b3-2a48-47c0-ab73-8a690b04b01a" , "cf09bb74-b118-41e1-99f4-0387bfe07d20" )
+                                                              ,( "b41a8917-17b1-4133-8291-8049a8353ab8" , "cf09bb74-b118-41e1-99f4-0387bfe07d20" )
+                                                              ,( "98419431-d9e8-42a5-9d7e-3e7a56e7674c" , "cf09bb74-b118-41e1-99f4-0387bfe07d20" )
+                                                              ,( "e74ce1cf-cfc0-44ce-b694-b4b09f3ee629" , "544cafff-741a-4a8a-aa9e-b783a14a6f9c" )
+                                                              ,( "c96696c8-1bfc-479d-b993-178e4aabf221" , "eb063b52-6882-452e-8faf-4bfa91aa278f" )
+                                                              ,( "23d646e8-391c-445e-a91f-3f0910664ce4" , "36bd0535-24eb-4b49-9336-c60645338b1e" )]
+POPULATION target[Relationship*ApplicationFunction] CONTAINS [( "f258b9c8-0f8b-45a0-a9b3-24a19451c0dc" , "1ba340ed-662f-4908-906a-02b73e7d3458" )
+                                                             ,( "07932ed9-e171-4a1f-9023-e616875fbdd5" , "d3c76a5b-6eed-44b5-be87-16ed3541df68" )
+                                                             ,( "454835c3-2af0-4966-9433-572eb6032e1b" , "c9254518-86b2-459c-898f-cc542dcc9e47" )
+                                                             ,( "29bac926-b612-4bd0-9522-0c46b72cdd5e" , "c9254518-86b2-459c-898f-cc542dcc9e47" )
+                                                             ,( "9f773c17-2279-441e-b7e1-4825049fe630" , "2b3e7be2-002a-4922-a53c-3e3fa64429be" )
+                                                             ,( "b7cdbf4f-0ae6-49a0-8029-af7587780330" , "2b3e7be2-002a-4922-a53c-3e3fa64429be" )
+                                                             ,( "ce7fed35-be2c-4707-b207-1403be5265fa" , "1be100b3-73d7-401a-8cf6-2cc18cd52067" )
+                                                             ,( "280d7b39-652a-467d-bc99-0b2515ae9608" , "1ba340ed-662f-4908-906a-02b73e7d3458" )
+                                                             ,( "0d18ed89-3722-4b95-bdaf-4ad10a2db611" , "ccfa9686-07c6-44e8-9b62-1379bca80c97" )
+                                                             ,( "b0327768-c512-437e-870e-f329448e612f" , "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" )
+                                                             ,( "cb08ca78-1e2e-4dd2-b800-feb939aedfd9" , "1378415e-4511-4584-b72b-034e335523e4" )
+                                                             ,( "5d268f23-cd69-4bcc-8fa6-72145f08cf24" , "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" )
+                                                             ,( "1c2a5e5d-210a-4f5d-987a-3d558fa23d51" , "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" )
+                                                             ,( "41571e78-6399-4d54-86fd-b67318faf2cd" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                             ,( "9f7f21de-87a0-4ccb-b485-605f31232493" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                             ,( "a49b92ee-88d3-4fee-a2d3-017f439bf4be" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                             ,( "867a47bd-2742-42da-a716-4eae381fc730" , "76817d41-2d8a-4204-847c-6d40a08ae932" )
+                                                             ,( "158d2c0f-9833-4bd6-998d-f6dc4489684f" , "5022df09-5721-4f71-a74d-89e5d652f855" )
+                                                             ,( "115a183a-85cc-45e6-b258-bf1d5f87f0d6" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                             ,( "57c5a3fc-c544-4d8d-a7c6-5a0e80b16b84" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                             ,( "56d244c7-b2be-4e32-9eba-c25f31e200fb" , "76817d41-2d8a-4204-847c-6d40a08ae932" )
+                                                             ,( "f1e27990-08ef-4653-8b2b-de2b14173684" , "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" )
+                                                             ,( "17b7f312-69b9-44c6-8e67-1a5dbf7db6fa" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                             ,( "c8f39c30-e037-413e-a937-3b78fc84127a" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                             ,( "ecb83862-e83e-47d0-8f40-10d490ce76e5" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                             ,( "c092e9f4-89fe-4c54-a28f-4b623d652ec4" , "5022df09-5721-4f71-a74d-89e5d652f855" )
+                                                             ,( "2b03c0b3-2a48-47c0-ab73-8a690b04b01a" , "72f68233-3a69-48d6-b343-66b77b9506ba" )
+                                                             ,( "b41a8917-17b1-4133-8291-8049a8353ab8" , "76817d41-2d8a-4204-847c-6d40a08ae932" )
+                                                             ,( "98419431-d9e8-42a5-9d7e-3e7a56e7674c" , "c0ab1ae3-420a-401c-9fb3-46f95bea486a" )
+                                                             ,( "0535fddd-9992-4a1c-a0b4-cb75bf34c0fd" , "532f8b72-0f40-4fea-9e4a-00dc91572ba8" )
+                                                             ,( "c96696c8-1bfc-479d-b993-178e4aabf221" , "532f8b72-0f40-4fea-9e4a-00dc91572ba8" )
+                                                             ,( "23d646e8-391c-445e-a91f-3f0910664ce4" , "797b4d91-f17e-46b3-a5ba-4dbcceab6ddf" )]
+POPULATION access[ApplicationFunction*DataObject] CONTAINS [( "1ba340ed-662f-4908-906a-02b73e7d3458" , "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" )]
+POPULATION source[Relationship*ApplicationFunction] CONTAINS [( "16b8e5df-aec3-4d91-b0e3-a4ee5141b9f8" , "1ba340ed-662f-4908-906a-02b73e7d3458" )
+                                                             ,( "efc75eac-c631-4863-8702-3a53a9d2af69" , "1be100b3-73d7-401a-8cf6-2cc18cd52067" )
+                                                             ,( "0c564c06-0e60-4ccc-8d57-83148d908697" , "532f8b72-0f40-4fea-9e4a-00dc91572ba8" )]
+POPULATION target[Relationship*DataObject] CONTAINS [( "16b8e5df-aec3-4d91-b0e3-a4ee5141b9f8" , "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" )]
+POPULATION assignment[BusinessRole*BusinessProcess] CONTAINS [( "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" , "6ca08836-ac55-47f2-82d6-ff5485b2ed82" )
+                                                             ,( "08976727-c437-4493-9a14-1b83e44d5c21" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )
+                                                             ,( "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                             ,( "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" , "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" )]
+POPULATION source[Relationship*BusinessRole] CONTAINS [( "f028c3f7-baf8-4ad4-a82a-430b1255648d" , "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" )
+                                                      ,( "aaa773ba-0374-4e62-bee4-bc5038d4b744" , "08976727-c437-4493-9a14-1b83e44d5c21" )
+                                                      ,( "b8fab7ad-c9c4-4ae7-a3dd-58ee5d1977bf" , "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" )
+                                                      ,( "b5123b52-8d82-41be-bf22-a833824a5be9" , "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" )]
+POPULATION target[Relationship*BusinessProcess] CONTAINS [( "f028c3f7-baf8-4ad4-a82a-430b1255648d" , "6ca08836-ac55-47f2-82d6-ff5485b2ed82" )
+                                                         ,( "aaa773ba-0374-4e62-bee4-bc5038d4b744" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )
+                                                         ,( "b8fab7ad-c9c4-4ae7-a3dd-58ee5d1977bf" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "f76e93d2-799b-407d-a8b2-048caf10323f" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )
+                                                         ,( "efc75eac-c631-4863-8702-3a53a9d2af69" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "2d0cb8cc-107b-4d88-a5ac-9545787b46d9" , "6ca08836-ac55-47f2-82d6-ff5485b2ed82" )
+                                                         ,( "0c564c06-0e60-4ccc-8d57-83148d908697" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )
+                                                         ,( "ddb8540d-591a-49d9-905b-23597cbd75bc" , "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" )
+                                                         ,( "b5123b52-8d82-41be-bf22-a833824a5be9" , "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" )
+                                                         ,( "78470d26-af5a-4da7-8b90-4e948fbe3ae8" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "aa11788e-9173-4cca-b834-47f836ee84d5" , "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" )
+                                                         ,( "56730609-aa13-46d7-9d0a-62b5de065f31" , "3384f350-ffa7-4798-bff4-410b66ca1044" )
+                                                         ,( "be57eb92-782f-4a01-9e72-1005c18520a9" , "067bae77-838b-423f-a788-e078197fa633" )
+                                                         ,( "b36978b7-41df-45f4-8440-c7055a008058" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                         ,( "ea234ae7-dc82-49c5-aeca-4f65782d01e7" , "22548614-8da8-4734-8311-11922da051ea" )]
+POPULATION serving[ApplicationComponent*ApplicationComponent] CONTAINS [( "36bd0535-24eb-4b49-9336-c60645338b1e" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                                       ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )
+                                                                       ,( "d9e0a493-22f4-4af0-9a22-02a306af3217" , "69f14ce3-22ab-444b-9c1e-89d80caf10c5" )
+                                                                       ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )]
+POPULATION assignment[ApplicationComponent*ApplicationFunction] CONTAINS [( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "d3c76a5b-6eed-44b5-be87-16ed3541df68" )
+                                                                         ,( "08dec599-e8ce-4815-aaaf-d437d433b19e" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                                         ,( "6c87cb60-b587-4f36-a218-5d94db323fe6" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                                         ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "5022df09-5721-4f71-a74d-89e5d652f855" )
+                                                                         ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "72f68233-3a69-48d6-b343-66b77b9506ba" )
+                                                                         ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "76817d41-2d8a-4204-847c-6d40a08ae932" )
+                                                                         ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "c0ab1ae3-420a-401c-9fb3-46f95bea486a" )]
+POPULATION access[BusinessProcess*BusinessObject] CONTAINS [( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "a9933926-cca1-4a50-827d-8ec646acfdab" )]
+POPULATION source[Relationship*BusinessProcess] CONTAINS [( "2e7a3250-7264-41d9-ae80-1edf4518cd3c" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "29bac926-b612-4bd0-9522-0c46b72cdd5e" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "f76e93d2-799b-407d-a8b2-048caf10323f" , "6ca08836-ac55-47f2-82d6-ff5485b2ed82" )
+                                                         ,( "2d0cb8cc-107b-4d88-a5ac-9545787b46d9" , "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" )
+                                                         ,( "ddb8540d-591a-49d9-905b-23597cbd75bc" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "b7cdbf4f-0ae6-49a0-8029-af7587780330" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )
+                                                         ,( "bf9b5463-5926-4104-81cb-a66f9751c09e" , "50c0a317-98f8-4b7c-b17b-d87d24b5bd05" )
+                                                         ,( "aa11788e-9173-4cca-b834-47f836ee84d5" , "d77816d8-013f-4322-a77d-16be3adafec2" )
+                                                         ,( "56730609-aa13-46d7-9d0a-62b5de065f31" , "7d89ffac-03ae-47e8-a698-78d80587c2c0" )
+                                                         ,( "be57eb92-782f-4a01-9e72-1005c18520a9" , "74a4e919-e25d-4b3e-8373-40ab98bc5732" )
+                                                         ,( "92353845-463e-4970-a6a1-0b9c296df1e3" , "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" )
+                                                         ,( "443f0b58-4f45-411f-8f1d-03853d0d2ced" , "3384f350-ffa7-4798-bff4-410b66ca1044" )
+                                                         ,( "f24675d1-6889-4250-889c-b203ca2fe211" , "067bae77-838b-423f-a788-e078197fa633" )
+                                                         ,( "357cda21-053d-4545-8ae5-eb85168ec44a" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                         ,( "b36978b7-41df-45f4-8440-c7055a008058" , "067bae77-838b-423f-a788-e078197fa633" )
+                                                         ,( "9f7f21de-87a0-4ccb-b485-605f31232493" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                         ,( "a49b92ee-88d3-4fee-a2d3-017f439bf4be" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                         ,( "867a47bd-2742-42da-a716-4eae381fc730" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                         ,( "158d2c0f-9833-4bd6-998d-f6dc4489684f" , "73dcf768-2105-4e6d-a0b6-b63103928a49" )
+                                                         ,( "115a183a-85cc-45e6-b258-bf1d5f87f0d6" , "da0de292-09ea-4ad5-843b-ced641ced8ca" )
+                                                         ,( "57c5a3fc-c544-4d8d-a7c6-5a0e80b16b84" , "da0de292-09ea-4ad5-843b-ced641ced8ca" )
+                                                         ,( "56d244c7-b2be-4e32-9eba-c25f31e200fb" , "cbaa6931-504a-4e6b-a616-09f80d7a1d38" )
+                                                         ,( "277ee398-73bb-4939-ac13-5aa7ba286444" , "cbaa6931-504a-4e6b-a616-09f80d7a1d38" )
+                                                         ,( "b4387b86-db10-4e5a-a16c-e8f5f30928c3" , "cbaa6931-504a-4e6b-a616-09f80d7a1d38" )
+                                                         ,( "ef8541f1-e6eb-402a-ae40-e93907f033b1" , "22548614-8da8-4734-8311-11922da051ea" )
+                                                         ,( "ed1ff7b2-349f-4ce6-968e-22342cf92f9d" , "22548614-8da8-4734-8311-11922da051ea" )
+                                                         ,( "3e0b8e0a-e04a-4d7f-9267-83a6bc002d41" , "22548614-8da8-4734-8311-11922da051ea" )
+                                                         ,( "ea234ae7-dc82-49c5-aeca-4f65782d01e7" , "067bae77-838b-423f-a788-e078197fa633" )]
+POPULATION target[Relationship*BusinessObject] CONTAINS [( "2e7a3250-7264-41d9-ae80-1edf4518cd3c" , "a9933926-cca1-4a50-827d-8ec646acfdab" )
+                                                        ,( "8a9c4e32-c904-4577-97f7-d8dd9e94088e" , "a9933926-cca1-4a50-827d-8ec646acfdab" )]
+POPULATION serving[BusinessProcess*ApplicationFunction] CONTAINS [( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "c9254518-86b2-459c-898f-cc542dcc9e47" )
+                                                                 ,( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "2b3e7be2-002a-4922-a53c-3e3fa64429be" )
+                                                                 ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                                 ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                                 ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "76817d41-2d8a-4204-847c-6d40a08ae932" )
+                                                                 ,( "73dcf768-2105-4e6d-a0b6-b63103928a49" , "5022df09-5721-4f71-a74d-89e5d652f855" )
+                                                                 ,( "da0de292-09ea-4ad5-843b-ced641ced8ca" , "8bb2eb3b-534b-4918-9b15-666bc2ecb040" )
+                                                                 ,( "da0de292-09ea-4ad5-843b-ced641ced8ca" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )
+                                                                 ,( "cbaa6931-504a-4e6b-a616-09f80d7a1d38" , "76817d41-2d8a-4204-847c-6d40a08ae932" )]
+POPULATION triggering[BusinessProcess*BusinessProcess] CONTAINS [( "6ca08836-ac55-47f2-82d6-ff5485b2ed82" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )
+                                                                ,( "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" , "6ca08836-ac55-47f2-82d6-ff5485b2ed82" )
+                                                                ,( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" )
+                                                                ,( "d77816d8-013f-4322-a77d-16be3adafec2" , "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" )
+                                                                ,( "7d89ffac-03ae-47e8-a698-78d80587c2c0" , "3384f350-ffa7-4798-bff4-410b66ca1044" )
+                                                                ,( "74a4e919-e25d-4b3e-8373-40ab98bc5732" , "067bae77-838b-423f-a788-e078197fa633" )
+                                                                ,( "067bae77-838b-423f-a788-e078197fa633" , "c0132f25-03f8-40c0-945b-f1c0460c1216" )
+                                                                ,( "067bae77-838b-423f-a788-e078197fa633" , "22548614-8da8-4734-8311-11922da051ea" )]
+POPULATION realization[ApplicationFunction*BusinessProcess] CONTAINS [( "1be100b3-73d7-401a-8cf6-2cc18cd52067" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )]
+POPULATION serving[ApplicationFunction*BusinessProcess] CONTAINS [( "532f8b72-0f40-4fea-9e4a-00dc91572ba8" , "43afbf7c-423e-4951-8f1e-0d90025eb060" )]
+POPULATION triggering[BusinessActor*BusinessEvent] CONTAINS [( "5a48ce8e-d0fe-4e02-9bdb-2969da063200" , "05df36e0-1dde-4f07-85d4-de4b0c9e7586" )]
+POPULATION source[Relationship*BusinessActor] CONTAINS [( "02d33469-3c4f-4bb1-bdd5-43db3d5d87c3" , "5a48ce8e-d0fe-4e02-9bdb-2969da063200" )
+                                                       ,( "280d7b39-652a-467d-bc99-0b2515ae9608" , "5a48ce8e-d0fe-4e02-9bdb-2969da063200" )]
+POPULATION target[Relationship*BusinessEvent] CONTAINS [( "02d33469-3c4f-4bb1-bdd5-43db3d5d87c3" , "05df36e0-1dde-4f07-85d4-de4b0c9e7586" )]
+POPULATION realization[Location*ApplicationComponent] CONTAINS [( "18df25ec-9db9-4aa7-9ef5-7948c3f37112" , "d9e0a493-22f4-4af0-9a22-02a306af3217" )]
+POPULATION source[Relationship*Location] CONTAINS [( "e83896f8-c2d7-4c2c-99c8-555ee1c97399" , "18df25ec-9db9-4aa7-9ef5-7948c3f37112" )]
+POPULATION triggering[BusinessEvent*BusinessProcess] CONTAINS [( "05df36e0-1dde-4f07-85d4-de4b0c9e7586" , "3f7dfb5e-4af7-402d-bc98-d991338223b3" )]
+POPULATION source[Relationship*BusinessEvent] CONTAINS [( "78470d26-af5a-4da7-8b90-4e948fbe3ae8" , "05df36e0-1dde-4f07-85d4-de4b0c9e7586" )]
+POPULATION triggering[BusinessActor*ApplicationFunction] CONTAINS [( "5a48ce8e-d0fe-4e02-9bdb-2969da063200" , "1ba340ed-662f-4908-906a-02b73e7d3458" )]
+POPULATION realization[BusinessFunction*BusinessService] CONTAINS [( "37d64852-3ed1-466e-99d7-22a64c36516d" , "77c76f36-6b0c-4ab4-8a8b-aa2ad81db69f" )
+                                                                  ,( "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" , "867688b0-b7c1-4807-b3ed-5cb0346ad19c" )
+                                                                  ,( "fa69bf84-a264-4d38-bf96-04a0dfd34644" , "9b8bad05-1f66-48db-95a5-958ae088d96e" )
+                                                                  ,( "77bb5f5f-c55c-4bc4-987f-2fa63554dace" , "3f39d8e9-dddb-4cb0-97a9-3cbdbbf816ef" )]
+POPULATION source[Relationship*BusinessFunction] CONTAINS [( "afcd8d71-3be3-475e-af28-a480de898f6d" , "37d64852-3ed1-466e-99d7-22a64c36516d" )
+                                                          ,( "0d18ed89-3722-4b95-bdaf-4ad10a2db611" , "37d64852-3ed1-466e-99d7-22a64c36516d" )
+                                                          ,( "c3033e29-40c4-45e4-ae66-9bc3111d4180" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                          ,( "d5671bfb-1ca1-4645-af28-3fd51ef377e6" , "fa69bf84-a264-4d38-bf96-04a0dfd34644" )
+                                                          ,( "b0327768-c512-437e-870e-f329448e612f" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                          ,( "cb08ca78-1e2e-4dd2-b800-feb939aedfd9" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                          ,( "5d268f23-cd69-4bcc-8fa6-72145f08cf24" , "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" )
+                                                          ,( "1c2a5e5d-210a-4f5d-987a-3d558fa23d51" , "d8d6062f-a5a2-4c59-a0b7-85af380adba5" )
+                                                          ,( "41571e78-6399-4d54-86fd-b67318faf2cd" , "c185778b-fff7-4f73-8627-c9d736787bc5" )
+                                                          ,( "e9f9bb5f-baac-42c7-985e-9b536d00ebc7" , "77bb5f5f-c55c-4bc4-987f-2fa63554dace" )]
+POPULATION target[Relationship*BusinessService] CONTAINS [( "afcd8d71-3be3-475e-af28-a480de898f6d" , "77c76f36-6b0c-4ab4-8a8b-aa2ad81db69f" )
+                                                         ,( "c3033e29-40c4-45e4-ae66-9bc3111d4180" , "867688b0-b7c1-4807-b3ed-5cb0346ad19c" )
+                                                         ,( "d5671bfb-1ca1-4645-af28-3fd51ef377e6" , "9b8bad05-1f66-48db-95a5-958ae088d96e" )
+                                                         ,( "bf9b5463-5926-4104-81cb-a66f9751c09e" , "413dbfe2-de05-4fad-a107-695ca78a772e" )
+                                                         ,( "357cda21-053d-4545-8ae5-eb85168ec44a" , "e5ba09e3-8363-40ee-a60e-4d270c43bfbe" )
+                                                         ,( "277ee398-73bb-4939-ac13-5aa7ba286444" , "adc163e5-e9dc-4bdd-9e9c-bcbc6db7bd2c" )
+                                                         ,( "b4387b86-db10-4e5a-a16c-e8f5f30928c3" , "594937c9-b70a-44ac-a6ca-f2d8d5907881" )
+                                                         ,( "e9f9bb5f-baac-42c7-985e-9b536d00ebc7" , "3f39d8e9-dddb-4cb0-97a9-3cbdbbf816ef" )
+                                                         ,( "ef8541f1-e6eb-402a-ae40-e93907f033b1" , "448c701f-5372-412f-af46-fcb077013e2d" )
+                                                         ,( "ed1ff7b2-349f-4ce6-968e-22342cf92f9d" , "f0eb5ccd-7962-4789-8526-543194eddf5f" )
+                                                         ,( "3e0b8e0a-e04a-4d7f-9267-83a6bc002d41" , "3921014e-b606-47b2-8658-60a95823c617" )]
+POPULATION serving[BusinessFunction*ApplicationFunction] CONTAINS [( "37d64852-3ed1-466e-99d7-22a64c36516d" , "ccfa9686-07c6-44e8-9b62-1379bca80c97" )
+                                                                  ,( "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" , "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" )
+                                                                  ,( "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" , "1378415e-4511-4584-b72b-034e335523e4" )
+                                                                  ,( "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" , "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" )
+                                                                  ,( "d8d6062f-a5a2-4c59-a0b7-85af380adba5" , "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" )
+                                                                  ,( "c185778b-fff7-4f73-8627-c9d736787bc5" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )]
+POPULATION realization[BusinessProcess*BusinessService] CONTAINS [( "50c0a317-98f8-4b7c-b17b-d87d24b5bd05" , "413dbfe2-de05-4fad-a107-695ca78a772e" )
+                                                                 ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "e5ba09e3-8363-40ee-a60e-4d270c43bfbe" )
+                                                                 ,( "cbaa6931-504a-4e6b-a616-09f80d7a1d38" , "adc163e5-e9dc-4bdd-9e9c-bcbc6db7bd2c" )
+                                                                 ,( "cbaa6931-504a-4e6b-a616-09f80d7a1d38" , "594937c9-b70a-44ac-a6ca-f2d8d5907881" )
+                                                                 ,( "22548614-8da8-4734-8311-11922da051ea" , "448c701f-5372-412f-af46-fcb077013e2d" )
+                                                                 ,( "22548614-8da8-4734-8311-11922da051ea" , "f0eb5ccd-7962-4789-8526-543194eddf5f" )
+                                                                 ,( "22548614-8da8-4734-8311-11922da051ea" , "3921014e-b606-47b2-8658-60a95823c617" )]
+POPULATION triggering[BusinessProcess*BusinessFunction] CONTAINS [( "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" , "d8d6062f-a5a2-4c59-a0b7-85af380adba5" )
+                                                                 ,( "3384f350-ffa7-4798-bff4-410b66ca1044" , "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" )
+                                                                 ,( "067bae77-838b-423f-a788-e078197fa633" , "c185778b-fff7-4f73-8627-c9d736787bc5" )]
+POPULATION target[Relationship*BusinessFunction] CONTAINS [( "92353845-463e-4970-a6a1-0b9c296df1e3" , "d8d6062f-a5a2-4c59-a0b7-85af380adba5" )
+                                                          ,( "443f0b58-4f45-411f-8f1d-03853d0d2ced" , "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" )
+                                                          ,( "f24675d1-6889-4250-889c-b203ca2fe211" , "c185778b-fff7-4f73-8627-c9d736787bc5" )]
+POPULATION aggregation[ApplicationCollaboration*ApplicationComponent] CONTAINS [( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "78acdb3c-6042-4233-ae33-a2cbe8c713cc" )
+                                                                               ,( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "30dbbcea-cfc4-4246-af5c-69edae0623c0" )]
+POPULATION source[Relationship*ApplicationCollaboration] CONTAINS [( "d3be4fff-59f1-4390-ae2d-0f911d35b953" , "59c4c496-77f8-42d8-afc5-5aab4baaeda2" )
+                                                                  ,( "062bfd72-9c5b-46f1-a0ca-807a94a31142" , "59c4c496-77f8-42d8-afc5-5aab4baaeda2" )
+                                                                  ,( "f1e27990-08ef-4653-8b2b-de2b14173684" , "59c4c496-77f8-42d8-afc5-5aab4baaeda2" )
+                                                                  ,( "17b7f312-69b9-44c6-8e67-1a5dbf7db6fa" , "59c4c496-77f8-42d8-afc5-5aab4baaeda2" )]
+POPULATION assignment[ApplicationCollaboration*ApplicationFunction] CONTAINS [( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" )
+                                                                             ,( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" )]
+POPULATION realization[CommunicationNetwork*ApplicationService] CONTAINS [( "70441db5-0436-42b9-9c10-39f1dd0310a4" , "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" )]
+POPULATION target[Relationship*ApplicationService] CONTAINS [( "99d03343-4904-45bc-b2cc-caf2bd66e991" , "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" )
+                                                            ,( "e74ce1cf-cfc0-44ce-b694-b4b09f3ee629" , "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" )]
+POPULATION realization[ApplicationComponent*ApplicationService] CONTAINS [( "544cafff-741a-4a8a-aa9e-b783a14a6f9c" , "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" )]
+POPULATION realization[CommunicationNetwork*ApplicationFunction] CONTAINS [( "70441db5-0436-42b9-9c10-39f1dd0310a4" , "532f8b72-0f40-4fea-9e4a-00dc91572ba8" )]
+POPULATION realization[DataObject*BusinessObject] CONTAINS [( "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" , "a9933926-cca1-4a50-827d-8ec646acfdab" )]
+POPULATION source[Relationship*DataObject] CONTAINS [( "8a9c4e32-c904-4577-97f7-d8dd9e94088e" , "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" )]
+POPULATION name[View*Text] CONTAINS [( "2ff78e32-4104-4fdd-b800-4984233ffca2" , "Office 365" )
+                                    ,( "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" , "Pharmacy" )]
+POPULATION inView[BusinessService*View] CONTAINS [( "77c76f36-6b0c-4ab4-8a8b-aa2ad81db69f" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "867688b0-b7c1-4807-b3ed-5cb0346ad19c" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "9b8bad05-1f66-48db-95a5-958ae088d96e" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "413dbfe2-de05-4fad-a107-695ca78a772e" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "e5ba09e3-8363-40ee-a60e-4d270c43bfbe" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3921014e-b606-47b2-8658-60a95823c617" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "f0eb5ccd-7962-4789-8526-543194eddf5f" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "448c701f-5372-412f-af46-fcb077013e2d" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "adc163e5-e9dc-4bdd-9e9c-bcbc6db7bd2c" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "594937c9-b70a-44ac-a6ca-f2d8d5907881" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3f39d8e9-dddb-4cb0-97a9-3cbdbbf816ef" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )]
+POPULATION inView[BusinessFunction*View] CONTAINS [( "37d64852-3ed1-466e-99d7-22a64c36516d" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "fa69bf84-a264-4d38-bf96-04a0dfd34644" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "77bb5f5f-c55c-4bc4-987f-2fa63554dace" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "d8d6062f-a5a2-4c59-a0b7-85af380adba5" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                  ,( "c185778b-fff7-4f73-8627-c9d736787bc5" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )]
+POPULATION inView[ApplicationFunction*View] CONTAINS [( "ccfa9686-07c6-44e8-9b62-1379bca80c97" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "9011ba31-a2e7-4d6c-9eed-2f2a11eb05a3" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "1378415e-4511-4584-b72b-034e335523e4" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "4e38bfa0-da33-402f-9db9-dbc7df9fa05e" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "29a5fc96-0a8b-4bbb-a93f-bbb69f1cc58b" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "8bb2eb3b-534b-4918-9b15-666bc2ecb040" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "5022df09-5721-4f71-a74d-89e5d652f855" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "76817d41-2d8a-4204-847c-6d40a08ae932" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "72f68233-3a69-48d6-b343-66b77b9506ba" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "c0ab1ae3-420a-401c-9fb3-46f95bea486a" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                     ,( "797b4d91-f17e-46b3-a5ba-4dbcceab6ddf" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "2b3e7be2-002a-4922-a53c-3e3fa64429be" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "c9254518-86b2-459c-898f-cc542dcc9e47" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "d3c76a5b-6eed-44b5-be87-16ed3541df68" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "1ba340ed-662f-4908-906a-02b73e7d3458" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "1be100b3-73d7-401a-8cf6-2cc18cd52067" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                     ,( "532f8b72-0f40-4fea-9e4a-00dc91572ba8" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[BusinessProcess*View] CONTAINS [( "50c0a317-98f8-4b7c-b17b-d87d24b5bd05" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "c0132f25-03f8-40c0-945b-f1c0460c1216" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "22548614-8da8-4734-8311-11922da051ea" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "cbaa6931-504a-4e6b-a616-09f80d7a1d38" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "d77816d8-013f-4322-a77d-16be3adafec2" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "7d89ffac-03ae-47e8-a698-78d80587c2c0" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "74a4e919-e25d-4b3e-8373-40ab98bc5732" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3384f350-ffa7-4798-bff4-410b66ca1044" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "067bae77-838b-423f-a788-e078197fa633" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "da0de292-09ea-4ad5-843b-ced641ced8ca" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "73dcf768-2105-4e6d-a0b6-b63103928a49" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3d9fa7d7-abf0-4df4-ac3e-e054680dd36c" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3e21bdbe-c339-4a02-80d9-7f8c15d1b96f" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                 ,( "3f7dfb5e-4af7-402d-bc98-d991338223b3" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                 ,( "bbd75f0f-43cf-49d8-99ae-ed0c6c4d11a0" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                 ,( "6ca08836-ac55-47f2-82d6-ff5485b2ed82" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                 ,( "43afbf7c-423e-4951-8f1e-0d90025eb060" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[ApplicationCollaboration*View] CONTAINS [( "59c4c496-77f8-42d8-afc5-5aab4baaeda2" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )]
+POPULATION inView[ApplicationComponent*View] CONTAINS [( "78acdb3c-6042-4233-ae33-a2cbe8c713cc" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                      ,( "30dbbcea-cfc4-4246-af5c-69edae0623c0" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                      ,( "08dec599-e8ce-4815-aaaf-d437d433b19e" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                      ,( "6c87cb60-b587-4f36-a218-5d94db323fe6" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                      ,( "cf09bb74-b118-41e1-99f4-0387bfe07d20" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                                      ,( "36bd0535-24eb-4b49-9336-c60645338b1e" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "69f14ce3-22ab-444b-9c1e-89d80caf10c5" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "d9e0a493-22f4-4af0-9a22-02a306af3217" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "a2db7d7a-6f8d-47d8-873d-6edbc2058c72" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "544cafff-741a-4a8a-aa9e-b783a14a6f9c" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[Relationship*View] CONTAINS [( "0d18ed89-3722-4b95-bdaf-4ad10a2db611" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "afcd8d71-3be3-475e-af28-a480de898f6d" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "aa11788e-9173-4cca-b834-47f836ee84d5" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "56730609-aa13-46d7-9d0a-62b5de065f31" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "be57eb92-782f-4a01-9e72-1005c18520a9" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "cb08ca78-1e2e-4dd2-b800-feb939aedfd9" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "c3033e29-40c4-45e4-ae66-9bc3111d4180" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "b0327768-c512-437e-870e-f329448e612f" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "92353845-463e-4970-a6a1-0b9c296df1e3" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "443f0b58-4f45-411f-8f1d-03853d0d2ced" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "ea234ae7-dc82-49c5-aeca-4f65782d01e7" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "b36978b7-41df-45f4-8440-c7055a008058" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "f24675d1-6889-4250-889c-b203ca2fe211" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "d5671bfb-1ca1-4645-af28-3fd51ef377e6" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "1c2a5e5d-210a-4f5d-987a-3d558fa23d51" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "5d268f23-cd69-4bcc-8fa6-72145f08cf24" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "41571e78-6399-4d54-86fd-b67318faf2cd" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "bf9b5463-5926-4104-81cb-a66f9751c09e" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "9f7f21de-87a0-4ccb-b485-605f31232493" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "867a47bd-2742-42da-a716-4eae381fc730" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "a49b92ee-88d3-4fee-a2d3-017f439bf4be" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "357cda21-053d-4545-8ae5-eb85168ec44a" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "3e0b8e0a-e04a-4d7f-9267-83a6bc002d41" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "ed1ff7b2-349f-4ce6-968e-22342cf92f9d" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "ef8541f1-e6eb-402a-ae40-e93907f033b1" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "57c5a3fc-c544-4d8d-a7c6-5a0e80b16b84" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "115a183a-85cc-45e6-b258-bf1d5f87f0d6" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "158d2c0f-9833-4bd6-998d-f6dc4489684f" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "b4387b86-db10-4e5a-a16c-e8f5f30928c3" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "277ee398-73bb-4939-ac13-5aa7ba286444" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "56d244c7-b2be-4e32-9eba-c25f31e200fb" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "e9f9bb5f-baac-42c7-985e-9b536d00ebc7" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "17b7f312-69b9-44c6-8e67-1a5dbf7db6fa" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "f1e27990-08ef-4653-8b2b-de2b14173684" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "062bfd72-9c5b-46f1-a0ca-807a94a31142" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "d3be4fff-59f1-4390-ae2d-0f911d35b953" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "c8f39c30-e037-413e-a937-3b78fc84127a" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "ecb83862-e83e-47d0-8f40-10d490ce76e5" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "b41a8917-17b1-4133-8291-8049a8353ab8" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "c092e9f4-89fe-4c54-a28f-4b623d652ec4" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "98419431-d9e8-42a5-9d7e-3e7a56e7674c" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "2b03c0b3-2a48-47c0-ab73-8a690b04b01a" , "2ff78e32-4104-4fdd-b800-4984233ffca2" )
+                                              ,( "e83896f8-c2d7-4c2c-99c8-555ee1c97399" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "9047cb83-6d9d-49bf-aab1-81d035fecdaa" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "23d646e8-391c-445e-a91f-3f0910664ce4" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "9bd11262-1285-4f9c-9bfa-ae0430cd99b9" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "280d7b39-652a-467d-bc99-0b2515ae9608" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "02d33469-3c4f-4bb1-bdd5-43db3d5d87c3" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "78470d26-af5a-4da7-8b90-4e948fbe3ae8" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "b7cdbf4f-0ae6-49a0-8029-af7587780330" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "2e7a3250-7264-41d9-ae80-1edf4518cd3c" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "29bac926-b612-4bd0-9522-0c46b72cdd5e" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "ddb8540d-591a-49d9-905b-23597cbd75bc" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "b5123b52-8d82-41be-bf22-a833824a5be9" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "f028c3f7-baf8-4ad4-a82a-430b1255648d" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "b8fab7ad-c9c4-4ae7-a3dd-58ee5d1977bf" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "2d0cb8cc-107b-4d88-a5ac-9545787b46d9" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "f76e93d2-799b-407d-a8b2-048caf10323f" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "aaa773ba-0374-4e62-bee4-bc5038d4b744" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "07932ed9-e171-4a1f-9023-e616875fbdd5" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "9f773c17-2279-441e-b7e1-4825049fe630" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "454835c3-2af0-4966-9433-572eb6032e1b" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "99d03343-4904-45bc-b2cc-caf2bd66e991" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "5decc339-ed4b-4ec7-a507-89097030ded7" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "0535fddd-9992-4a1c-a0b4-cb75bf34c0fd" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "16b8e5df-aec3-4d91-b0e3-a4ee5141b9f8" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "efc75eac-c631-4863-8702-3a53a9d2af69" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "8a9c4e32-c904-4577-97f7-d8dd9e94088e" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "c96696c8-1bfc-479d-b993-178e4aabf221" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "ce7fed35-be2c-4707-b207-1403be5265fa" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "90896c38-2f37-448b-b342-180c5bd553f6" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "384f7cd7-d9b5-4586-ac27-88a384c98565" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "f258b9c8-0f8b-45a0-a9b3-24a19451c0dc" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "e74ce1cf-cfc0-44ce-b694-b4b09f3ee629" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "0c564c06-0e60-4ccc-8d57-83148d908697" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inside[BusinessProcess*BusinessFunction] CONTAINS [( "d77816d8-013f-4322-a77d-16be3adafec2" , "37d64852-3ed1-466e-99d7-22a64c36516d" )
+                                                             ,( "7d89ffac-03ae-47e8-a698-78d80587c2c0" , "37d64852-3ed1-466e-99d7-22a64c36516d" )
+                                                             ,( "74a4e919-e25d-4b3e-8373-40ab98bc5732" , "37d64852-3ed1-466e-99d7-22a64c36516d" )
+                                                             ,( "aa2d0e70-5d0f-4e43-bf80-574cefaa5382" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                             ,( "3384f350-ffa7-4798-bff4-410b66ca1044" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                             ,( "067bae77-838b-423f-a788-e078197fa633" , "823b1d78-3424-4ab7-b677-b4d9e4d4af5a" )
+                                                             ,( "3d9fa7d7-abf0-4df4-ac3e-e054680dd36c" , "77bb5f5f-c55c-4bc4-987f-2fa63554dace" )
+                                                             ,( "3e21bdbe-c339-4a02-80d9-7f8c15d1b96f" , "77bb5f5f-c55c-4bc4-987f-2fa63554dace" )]
+POPULATION inside[BusinessFunction*BusinessFunction] CONTAINS [( "d8d6062f-a5a2-4c59-a0b7-85af380adba5" , "fa69bf84-a264-4d38-bf96-04a0dfd34644" )
+                                                              ,( "b7a14070-8fab-4343-ab67-46cb9f0ad9d8" , "fa69bf84-a264-4d38-bf96-04a0dfd34644" )
+                                                              ,( "c185778b-fff7-4f73-8627-c9d736787bc5" , "fa69bf84-a264-4d38-bf96-04a0dfd34644" )]
+POPULATION inside[BusinessProcess*BusinessProcess] CONTAINS [( "da0de292-09ea-4ad5-843b-ced641ced8ca" , "22548614-8da8-4734-8311-11922da051ea" )
+                                                            ,( "73dcf768-2105-4e6d-a0b6-b63103928a49" , "22548614-8da8-4734-8311-11922da051ea" )]
+POPULATION inView[Location*View] CONTAINS [( "18df25ec-9db9-4aa7-9ef5-7948c3f37112" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[BusinessActor*View] CONTAINS [( "5a48ce8e-d0fe-4e02-9bdb-2969da063200" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[BusinessObject*View] CONTAINS [( "a9933926-cca1-4a50-827d-8ec646acfdab" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[BusinessEvent*View] CONTAINS [( "05df36e0-1dde-4f07-85d4-de4b0c9e7586" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[BusinessRole*View] CONTAINS [( "6e6eac90-a4ac-4aa7-9fdb-373c409f44fe" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                              ,( "08976727-c437-4493-9a14-1b83e44d5c21" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[CommunicationNetwork*View] CONTAINS [( "e8335d50-9b06-45ce-b634-77dc6add7e3f" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )
+                                                      ,( "70441db5-0436-42b9-9c10-39f1dd0310a4" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inside[ApplicationComponent*Location] CONTAINS [( "d9e0a493-22f4-4af0-9a22-02a306af3217" , "18df25ec-9db9-4aa7-9ef5-7948c3f37112" )]
+POPULATION inside[ApplicationFunction*ApplicationComponent] CONTAINS [( "797b4d91-f17e-46b3-a5ba-4dbcceab6ddf" , "36bd0535-24eb-4b49-9336-c60645338b1e" )
+                                                                     ,( "2b3e7be2-002a-4922-a53c-3e3fa64429be" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                                     ,( "c9254518-86b2-459c-898f-cc542dcc9e47" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )
+                                                                     ,( "d3c76a5b-6eed-44b5-be87-16ed3541df68" , "18eb2171-7085-4c23-9154-2e2a44d5bc6c" )]
+POPULATION inside[ApplicationComponent*CommunicationNetwork] CONTAINS [( "18eb2171-7085-4c23-9154-2e2a44d5bc6c" , "e8335d50-9b06-45ce-b634-77dc6add7e3f" )
+                                                                      ,( "a2db7d7a-6f8d-47d8-873d-6edbc2058c72" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                                      ,( "eb063b52-6882-452e-8faf-4bfa91aa278f" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                                      ,( "544cafff-741a-4a8a-aa9e-b783a14a6f9c" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )]
+POPULATION inView[DataObject*View] CONTAINS [( "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inView[ApplicationService*View] CONTAINS [( "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" , "0c1c4b21-3d11-44a5-b85c-9c5c0e7d4152" )]
+POPULATION inside[ApplicationFunction*CommunicationNetwork] CONTAINS [( "1ba340ed-662f-4908-906a-02b73e7d3458" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                                     ,( "1be100b3-73d7-401a-8cf6-2cc18cd52067" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )
+                                                                     ,( "532f8b72-0f40-4fea-9e4a-00dc91572ba8" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )]
+POPULATION inside[DataObject*CommunicationNetwork] CONTAINS [( "0f757b06-f8e3-4dda-acc2-2f5aa6a39c65" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )]
+POPULATION inside[ApplicationService*CommunicationNetwork] CONTAINS [( "95ed6c76-65f6-4995-bc33-bfdb74eb44c3" , "70441db5-0436-42b9-9c10-39f1dd0310a4" )]
+
+ENDCONTEXT

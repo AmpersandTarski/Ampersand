@@ -303,8 +303,7 @@ instance Pretty P_Interface where
 
 prettyObject :: ObjectKind -> P_BoxItem TermPrim -> Doc
 prettyObject objectKind obj =
-  maybeQuoteLabel
-    (obj_PlainName obj)
+  labelPart
     <+> ( case obj of
             (P_BoxItemTerm _ _ _ ctx mCrud mView msub) -> case objectKind of
               InterfaceKind -> view mView <$> pretty msub
@@ -315,6 +314,10 @@ prettyObject objectKind obj =
               text "TXT" <+> quote str
         )
   where
+    -- Don't output label for interfaces (it's already at the interface level)
+    labelPart = case objectKind of
+      InterfaceKind -> empty
+      _ -> maybeQuoteLabel (obj_PlainName obj)
     crud Nothing = empty
     crud (Just cruds) = pretty cruds
     view :: Maybe Name -> Doc

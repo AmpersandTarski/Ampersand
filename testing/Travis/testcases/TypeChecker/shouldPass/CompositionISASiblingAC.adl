@@ -1,6 +1,6 @@
-CONTEXT CompositionISA_SiblingAC IN ENGLISH
+CONTEXT CompositionISAsiblingAC IN ENGLISH
 
-PURPOSE CONTEXT CompositionISA_SiblingAC
+PURPOSE CONTEXT CompositionISAsiblingAC
 {+ Test composition with sibling ISA types (A and B both subtypes of C).
    Given A ISA C and B ISA C, test r[W*A];s[C*Z] where join(A,C) = C exists.
    This should PASS because the type checker can find join C. +}

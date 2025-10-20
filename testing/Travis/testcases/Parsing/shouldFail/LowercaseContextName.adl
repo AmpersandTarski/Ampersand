@@ -1,0 +1,5 @@
+CONTEXT lowercaseContext IN ENGLISH
+-- This test must fail because context names must start with an uppercase letter.
+-- The parser should give a clear error message indicating this requirement.
+
+ENDCONTEXT

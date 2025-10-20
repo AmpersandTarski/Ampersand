@@ -1,0 +1,43 @@
+{
+    "atoms": [
+        {
+            "atoms": [
+                "Afd1"
+            ],
+            "concept": "Afdeling"
+        },
+        {
+            "atoms": [
+                "N",
+                "N2",
+                "N3",
+                "N1"
+            ],
+            "concept": "Norm"
+        }
+    ],
+    "links": [
+        {
+            "links": [
+                {
+                    "src": "Afd1",
+                    "tgt": "N3"
+                }
+            ],
+            "relation": "heeftVoldaanAan[Afdeling*Norm]"
+        },
+        {
+            "links": [
+                {
+                    "src": "N2",
+                    "tgt": "N"
+                },
+                {
+                    "src": "N1",
+                    "tgt": "N"
+                }
+            ],
+            "relation": "isDeelnormVan[Norm*Norm]"
+        }
+    ]
+}

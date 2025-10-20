@@ -1,6 +1,6 @@
-CONTEXT CompositionISA_EndoSubtype IN ENGLISH
+CONTEXT CompositionISAendoSubtype IN ENGLISH
 
-PURPOSE CONTEXT CompositionISA_EndoSubtype
+PURPOSE CONTEXT CompositionISAendoSubtype
 {+ This test must succeed because meet(A,A) = A exists (exact match). +}
 
 CLASSIFY A ISA B

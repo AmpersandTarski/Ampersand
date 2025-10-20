@@ -121,9 +121,8 @@ archiNameSpace = []
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops = do
   let orig = Origin "Somewhere during reading an ArchiMate file."
-  nm <- case try2Name PatternName . text1ToText . archRepoName $ archiRepo of
-    Left msg -> mustBeValidName orig msg
-    Right (nm', _) -> pure nm'
+      -- Use suggestName to ensure the context name satisfies all identifier restrictions
+      (nm, _) = suggestName ContextName (archRepoName archiRepo)
   pure
     PCtx
       { ctx_nm = withNameSpace archiNameSpace nm,

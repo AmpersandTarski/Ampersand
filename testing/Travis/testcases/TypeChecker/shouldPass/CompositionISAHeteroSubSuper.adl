@@ -1,6 +1,6 @@
-CONTEXT CompositionISA_HeteroSubSuper IN ENGLISH
+CONTEXT CompositionISAheteroSubSuper IN ENGLISH
 
-PURPOSE CONTEXT CompositionISA_HeteroSubSuper
+PURPOSE CONTEXT CompositionISAheteroSubSuper
 {+ This test must succeed because meet(A,B) = A exists.
    A is a subtype of B, so they share concept A. +}
 

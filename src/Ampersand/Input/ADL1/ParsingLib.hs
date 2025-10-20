@@ -304,13 +304,13 @@ pName typ =
       buildNamePart
         <$> currPos
         <*> case typ of
-          ConceptName -> pUpperCaseID
-          ContextName -> pUpperCaseID
+          ConceptName -> pUpperCaseID <?> "concept name (must start with uppercase letter)"
+          ContextName -> pUpperCaseID <?> "context name (must start with uppercase letter)"
           IdentName -> pUnrestrictedID
           InterfaceName -> pUnrestrictedID
-          PatternName -> pUpperCaseID
-          PropertyName -> pUpperCaseID
-          RelationName -> pLowerCaseID
+          PatternName -> pUpperCaseID <?> "pattern name (must start with uppercase letter)"
+          PropertyName -> pUpperCaseID <?> "property name (must start with uppercase letter)"
+          RelationName -> pLowerCaseID <?> "relation name (must start with lowercase letter)"
           RoleName -> pUnrestrictedID
           RuleName -> pUnrestrictedID
           SqlAttributeName -> pUnrestrictedID
