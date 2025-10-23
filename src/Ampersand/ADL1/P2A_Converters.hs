@@ -497,14 +497,17 @@ pCtx2aCtx
                   collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
 
           makeTypologies :: AdjacencyMap A_Concept -> [Typology]
-          makeTypologies dagGraph = -- trace ("3.  "<>tshow dagGraph) $
-                                    map createTypology completeWCCs
+          makeTypologies dagGraph = {- trace ("3. dagGraph =\n   "<>tshow dagGraph<>
+                                           "\n   wcComponents =\n   "<>tshow (wcComponents dagGraph)<>
+                                           "\n   completeWCCs =\n   "<>tshow completeWCCs<>
+                                           "\n   typologies =\n   "<>tshow typologies) $ -}
+                                    typologies
             where
-              -- Only keep those wccs of dagGraph that have edges (i.e., actual generalization hierarchies)
-              -- and ensure each wcc is a complete lattice
+              typologies = map createTypology completeWCCs
+              -- Ensure each wcc is a complete lattice
               completeWCCs = [ overlay wcc (completeLattice wcc)
                              | wcc <- wcComponents dagGraph -- weakly connected components
-                             , (not . null . edgeList) wcc ]
+                             ]
               createTypology :: AdjacencyMap A_Concept -> Typology
               createTypology subGraph =
                 let cs = vertexList subGraph
@@ -1314,11 +1317,11 @@ signatures env contextInfo trm =
                                in  case rels rel of
                                                 [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> tshow rel)
                                                 ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
-  PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet true ("PEqu" :: String)
-  PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b meet true ("PInc" :: String)
-  PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet true ("PIsc" :: String)
-  PUni o a b -> checkPeri  o "union"             EUni (PUni o) a b join true ("PUni" :: String)
-  PDif o a b -> checkPeri  o "difference"        EDif (PDif o) a b join true ("PDif" :: String)
+  PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet" "PEqu"
+  PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b meet "meet" "PInc"
+  PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet "meet" "PIsc"
+  PUni o a b -> checkPeri  o "union"             EUni (PUni o) a b join "join" "PUni"
+  PDif o a b -> checkPeri  o "difference"        EDif (PDif o) a b join "join" "PDif"
   PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b meet true ("PCps" :: String)
   PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b join true ("PRad" :: String)
   PLrs o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
@@ -1363,7 +1366,7 @@ signatures env contextInfo trm =
   PPrd o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), PPrd o trm_a trm_b)
                                                       | (expr_a, sgn_a, trm_a)<-opSigns sgnaTree, (expr_b, sgn_b, trm_b)<-opSigns sgnbTree ])
-  PFlp o e   -> do sgnTree <- signats e
+  PFlp _ e   -> do sgnTree <- signats e
                    return (STunary sgnTree [(EFlp expr, flp sgn, trm') | (expr, sgn, trm')<-opSigns sgnTree])
   PKl0 o e   -> do sgnTree <- signats e
                    let endoSigns = [(EKl0 expr, sgn, trm') | (expr, sgn, trm')<-opSigns sgnTree, source sgn == target sgn]
@@ -1458,8 +1461,8 @@ signatures env contextInfo trm =
        ]
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> (A_Concept -> A_Concept -> Bool) -> String -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b meetORjoin _ _ {-opStr-}  = -- extra parameters for tracing purpose:
+    checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> Text -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+    checkPeri o kind combinator pCombinator a b meetORjoin mjString opStr {-mjString opStr-}  = -- extra parameters for tracing purpose:
       do
         sgnaTree <- signats a
         sgnbTree <- signats b
@@ -1468,7 +1471,7 @@ signatures env contextInfo trm =
             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
             -- mjString = "meet/join" :: Text
-        case -- trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   sgnsb: "<>tshow sgnsb) $
+        case -- trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
             [ -- trace ("\n21. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
               ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
             | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb -- , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
@@ -1504,31 +1507,31 @@ anyCpt = (PlainConcept . Set.fromList)
                 Right (nm, _) -> nm
             , Nothing)]
 
-termPrim2Expr :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
-termPrim2Expr contextInfo sgns trmprim
-  = case trmprim of
-      Pid _ _c       -> guard ([ EDcI cpt | ISgn cpt<-sgns]<>[ EDcI src | Sign src tgt<-sgns, src==tgt ])
-      Patm _ av (Just c) -> guard ([ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EMp1 av src | Sign src tgt<-sgns, src==tgt ])
-      Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` pCpt2aCpt s], Just _tgt<-[target sgn `grLwB` pCpt2aCpt t]]
-      PBind _ oper c -> guard ([ EBin oper cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EBin oper src | Sign src tgt<-sgns, src==tgt ])
-      PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
-      _ -> fatal ("termPrim2Expr: unexpected term primitive: "<>showP trmprim) -- because other cases are prevented by the caller, which is `signatures`
-    where
-      guard :: [Expression] -> Guarded Expression
-      guard []     = Errors . return $ CTXE (origin trmprim) ("Can derive no signature for "<>showP trmprim<>".")
-      guard [expr] | source expr == anyCpt && target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
-      guard [expr] | source expr == anyCpt                          = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"[ANY*"<>tshow (target expr)<>"]")
-      guard [expr] |                          target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"["<>tshow (source expr)<>"*ANY]")
-      guard [expr] = pure expr
-      guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". You should specify the type explicitly"<>if length exprs>4 then "" else ", for instance one of: "<>T.intercalate ", " (map (tshow . sign) exprs)<>".")
-      rels :: P_NamedRel -> [Relation]
-      rels rel = case p_mbSign rel of
-                  Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
-                  Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
-      conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
-      grLwB = meet conceptsGraph
-      -- lsUpB = meet conceptGraph
-      pCpt2aCpt = conceptMap contextInfo
+-- termPrim2Expr :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
+-- termPrim2Expr contextInfo sgns trmprim
+--   = case trmprim of
+--       Pid _ _c       -> guard ([ EDcI cpt | ISgn cpt<-sgns]<>[ EDcI src | Sign src tgt<-sgns, src==tgt ])
+--       Patm _ av (Just c) -> guard ([ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EMp1 av src | Sign src tgt<-sgns, src==tgt ])
+--       Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` pCpt2aCpt s], Just _tgt<-[target sgn `grLwB` pCpt2aCpt t]]
+--       PBind _ oper c -> guard ([ EBin oper cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EBin oper src | Sign src tgt<-sgns, src==tgt ])
+--       PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
+--       _ -> fatal ("termPrim2Expr: unexpected term primitive: "<>showP trmprim) -- because other cases are prevented by the caller, which is `signatures`
+--     where
+--       guard :: [Expression] -> Guarded Expression
+--       guard []     = Errors . return $ CTXE (origin trmprim) ("Can derive no signature for "<>showP trmprim<>".")
+--       guard [expr] | source expr == anyCpt && target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
+--       guard [expr] | source expr == anyCpt                          = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"[ANY*"<>tshow (target expr)<>"]")
+--       guard [expr] |                          target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"["<>tshow (source expr)<>"*ANY]")
+--       guard [expr] = pure expr
+--       guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". You should specify the type explicitly"<>if length exprs>4 then "" else ", for instance one of: "<>T.intercalate ", " (map (tshow . sign) exprs)<>".")
+--       rels :: P_NamedRel -> [Relation]
+--       rels rel = case p_mbSign rel of
+--                   Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
+--                   Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
+--       conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
+--       grLwB = meet conceptsGraph
+--       -- lsUpB = meet conceptGraph
+--       pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo term
@@ -1540,15 +1543,15 @@ term2Expr env contextInfo term
     t2e sgnTree =
       case sgnTree of
         STnullary triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (tshow . thd3) triples) <> ".\n  Please specify the signature explicitly."
+          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STnullary [(expr, _, _)] -> pure expr  -- Single expression - already reduced, return it
         STnullary [] -> fatal "Empty triples list in STnullary"
-        STbinary stLeft stRight triples@((_, _, trm):_:_) -> 
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (tshow . thd3) triples) <> ".\n  Please specify the signature explicitly."
+        STbinary _ _ triples@((_, _, trm):_:_) -> 
+          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
-        STunary st triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (tshow . thd3) triples) <> ".\n  Please specify the signature explicitly."
+        STunary _ triples@((_, _, trm):_:_) ->
+          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STbinary stLeft stRight [(_, _, PEqu _ _ _)]
           -> EEqu <$> ((,) <$> t2e stLeft <*> t2e stRight)
@@ -1568,7 +1571,7 @@ term2Expr env contextInfo term
           -> ECps <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PDia _ _ _)]
           -> EDia <$> ((,) <$> t2e stLeft <*> t2e stRight)
-        STunary st [(expr, _, _)] -> pure expr  -- Single unary expression - already reduced
+        STunary _ [(expr, _, _)] -> pure expr  -- Single unary expression - already reduced
         STbinary stLeft stRight [(_, _, PPrd _ _ _)]
           -> EPrd <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PRad _ _ _)]
@@ -1580,7 +1583,7 @@ term2Expr env contextInfo term
         describeStructure (STnullary xs) = "STnullary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
         describeStructure (STunary _ xs) = "STunary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
         describeStructure (STbinary _ _ xs) = "STbinary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
-    conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
+    -- conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
     -- mjText kind tgta srcb between =
     --   if tgta == srcb
     --   then " is: " <> tshow between <> "."

@@ -104,10 +104,10 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     candidateTables :: [PlugSQL]
     candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
-    components =
-      map componentsForTypology (typologies context)
-        <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+    components = {- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps) -} comps
       where
+        comps = map componentsForTypology (typologies context)
+          <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
         componentsForTypology typol =
           (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
         componentsForOrphanRelation rel = (Nothing, [rel])
@@ -344,15 +344,14 @@ suitableAsKey st =
     Object -> True
     TypeOfOne -> fatal "ONE has no key at all. does it?"
 
-typologies :: A_Context -> [Typology]
+typologies :: A_Context -> [Typology]  
 typologies context =
-  (multiKernels . ctxInfo $ context)
-    <> [ Typology
-           { tyroot = c,
-             tyCpts = [c]
-           }
-         | c <- toList $ concs context Set.\\ concs (gens context)
-       ]
+  let kernelConcepts = Set.fromList $ concatMap tyCpts (multiKernels . ctxInfo $ context)
+  in (multiKernels . ctxInfo $ context)
+       <> [ Typology {tyroot = c, tyCpts = [c]}
+            | c <- toList $ concs context Set.\\ concs (gens context),
+              c `Set.notMember` kernelConcepts
+          ]
 
 -- | ConceptOrRelation is ment to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.
