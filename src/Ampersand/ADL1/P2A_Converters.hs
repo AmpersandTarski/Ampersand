@@ -1462,7 +1462,7 @@ signatures env contextInfo trm =
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
     checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> Text -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b meetORjoin mjString opStr {-mjString opStr-}  = -- extra parameters for tracing purpose:
+    checkPeri o kind combinator pCombinator a b meetORjoin _ _ {-mjString opStr-}  = -- extra parameters for tracing purpose:
       do
         sgnaTree <- signats a
         sgnbTree <- signats b
@@ -1476,7 +1476,10 @@ signatures env contextInfo trm =
               ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
             | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb -- , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
             , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)]
-            , Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ] of
+            , Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)]
+            , if isEndo sgn_a || isEndo sgn_b then src == tgt else True
+            ]
+         of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
                  in case (conceptsSrc, conceptsTgt) of
