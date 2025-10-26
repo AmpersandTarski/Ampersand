@@ -16,10 +16,12 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes hiding (gens)
+import qualified Debug.Trace as Trace
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 genericAndSpecifics :: AClassify -> [(A_Concept, A_Concept)]
 genericAndSpecifics gen = filter (uncurry (/=))
@@ -63,10 +65,11 @@ atomValuesOf ci pt c =
     ONE -> Set.singleton AtomValueOfONE
     PlainConcept {} ->
       let smallerconcs = c : smallerConcepts (ctxiGens ci) c
-       in Set.fromList
+          result = Set.fromList
             $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+       in Trace.trace (T.unpack $ "TRACE atomValuesOf: concept=" <> tshow c <> ", smallerconcs=" <> tshow smallerconcs <> ", result size=" <> tshow (Set.size result) <> ", atoms=" <> tshow result) result
     UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
     ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
 
@@ -148,7 +151,10 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             ECpl x -> contents (EDcV (sign x) .-. x)
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
-            EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
+            EDcI c -> 
+              let result = Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
+                  atoms = toList $ aVals c
+               in Trace.trace (T.unpack $ "TRACE EDcI: concept=" <> tshow c <> ", atoms=" <> tshow atoms <> ", map size=" <> tshow (Map.size result) <> ", map=" <> tshow result) result
             EBin oper c ->
               Map.fromList
                 [ (s, Set.fromList cod)

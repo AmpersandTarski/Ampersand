@@ -159,6 +159,7 @@ makeFSpec env context =
         _ -> fatal ("concept " <> fullName cpt <> " should be in exactly one typology!")
     pairsinexpr :: Expression -> AAtomPairs
     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+    
     -- Purpose: to write a rule violation in Text as specified in the user's script,
     -- to be used in error messages too.
     apply_viol_text :: Rule -> AAtomPair -> Text
@@ -182,13 +183,18 @@ makeFSpec env context =
                 [] -> ""
                 xs -> "{" <> T.intercalate ", " xs <> "}"
     ruleviolations :: Rule -> AAtomPairs
-    ruleviolations r = case formalExpression r of
-      EEqu {} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
-      EInc {} -> cra Set.\\ crc
-      _ -> pairsinexpr (EDcV (sign (consequent r))) Set.\\ crc -- everything not in con
-      where
-        cra = pairsinexpr (antecedent r)
-        crc = pairsinexpr (consequent r)
+    ruleviolations r = 
+      case formalExpression r of
+        EEqu (antExpr, consExpr) -> 
+          let cra = pairsinexpr antExpr
+              crc = pairsinexpr consExpr
+          in (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
+        EInc (antExpr, consExpr) ->
+          let cra = pairsinexpr antExpr
+              crc = pairsinexpr consExpr
+          in cra Set.\\ crc
+        expr -> -- Rule without |- or =, treat as invariant: expr must be empty
+          pairsinexpr expr
     conjunctViolations :: Conjunct -> AAtomPairs
     conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
@@ -210,13 +216,13 @@ makeFSpec env context =
                 popdcl = dcl,
                 popps = Set.unions [popps pop | pop <- NE.toList eqclass]
               }
-        | eqclass <- eqCl popdcl [pop | pop@ARelPopu {} <- populations]
+      | eqclass <- eqCl popdcl [pop | pop@ARelPopu {} <- populations]
       ]
         <> [ ACptPopu
                { popcpt = popcpt (NE.head eqclass),
                  popas = (L.nub . concat) [popas pop | pop <- NE.toList eqclass]
                }
-             | eqclass <- eqCl popcpt [pop | pop@ACptPopu {} <- populations]
+           | eqclass <- eqCl popcpt [pop | pop@ACptPopu {} <- populations]
            ]
       where
         populations = ctxpopus context <> concatMap ptups (patterns context)

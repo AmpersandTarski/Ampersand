@@ -10,7 +10,7 @@ CONTEXT PrototypeContext IN ENGLISH
 
     API PrototypeContext.AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*PrototypeContext.Role] BOX
         [ "id"              : I
-        , "label"           : PrototypeContext.label
+        , "label"           : PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label]
         -- , "maintains"       : 
         -- , "interfaces"      :
         ]

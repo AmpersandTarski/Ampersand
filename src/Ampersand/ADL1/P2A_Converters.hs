@@ -796,10 +796,12 @@ pCtx2aCtx
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
                [pIfc] -> do expr <- (term2Expr env contextInfo . obj_term . ifc_Obj) pIfc
                             let srcCpt = source expr
-                            case leq (conceptGraph contextInfo) tgtConcept srcCpt of
-                              Just True  -> return srcCpt
-                              Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow tgtConcept <> " ISA " <> tshow srcCpt)
-                              Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow tgtConcept <> ".")
+                            if tgtConcept == anyCpt
+                              then return srcCpt  -- Skip compatibility check when target is ANY
+                              else case leq (conceptGraph contextInfo) tgtConcept srcCpt of
+                                Just True  -> return srcCpt
+                                Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow tgtConcept <> " ISA " <> tshow srcCpt)
+                                Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow tgtConcept <> ".")
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
       -- | mCpt is the A_Concept that links the objExpression of this BoxItem to the objExpressions of its subBoxes.
@@ -956,7 +958,7 @@ pCtx2aCtx
           let objExpr = objExpression boxItem
               ifcSource = source objExpr
               ifcSourceType = representationOf contextInfo ifcSource
-          if ifcSourceType==Object
+          if ifcSourceType==Object || ifcSource == anyCpt
             then return
                    Ifc
                      { ifcIsAPI = ifc_IsAPI pIfc,
@@ -1314,9 +1316,9 @@ signatures env contextInfo trm =
                                    rels r = case p_mbSign r of
                                      Just sg -> (findRelsTyped (declarationsMap contextInfo) (name r) . pSign2aSign pCpt2aCpt) sg
                                      Nothing -> (findDecls (declarationsMap contextInfo) . name) r
-                               in  case rels rel of
-                                                [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> tshow rel)
-                                                ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
+                             in  case rels rel of
+                                              [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
+                                              ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
   PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet" "PEqu"
   PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b meet "meet" "PInc"
   PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet "meet" "PIsc"
@@ -1472,14 +1474,30 @@ signatures env contextInfo trm =
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
             -- mjString = "meet/join" :: Text
         case -- trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
-            [ -- trace ("\n21. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
-              ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
-            | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb -- , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
-            , Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)]
-            , Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)]
-            , if isEndo sgn_a || isEndo sgn_b then src == tgt else True
-            ]
-         of
+               [ -- trace ("\n26. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
+                 ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
+               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb -- , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
+               , Just src<-[meetORjoin conceptsGraph src_a src_b]
+               , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
+               ]
+            -- Add cases for ISgn matching - for equations/inclusions, identities can match with any endomorphic signature
+            <> [ -- trace ("\n27. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src src))
+                 ((combinator (expr_a, expr_b), Sign src src, pCombinator trm_a trm_b), (expr_a, Sign src src, trm_a), (expr_b, ISgn src, trm_b))
+               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
+               , src_a == tgt_a  -- Left side must be endomorphic
+               , Just src<-[meetORjoin conceptsGraph src_a cpt_b]  -- Find the meet/join of the two concepts
+               ]
+            <> [ -- trace ("\n28. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src src))
+                 ((combinator (expr_a, expr_b), Sign src src, pCombinator trm_a trm_b), (expr_a, ISgn src, trm_a), (expr_b, Sign src_b tgt_b, trm_b))
+               | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
+               , src_b == tgt_b  -- Right side must be endomorphic
+               , Just src<-[meetORjoin conceptsGraph cpt_a src_b]  -- Find the meet/join of the two concepts
+               ]
+            <> [ -- trace ("\n29. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (ISgn cpt))
+                 ((combinator (expr_a, expr_b), ISgn cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt, trm_a), (expr_b, ISgn cpt, trm_b))
+               | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
+               , Just cpt<-[meetORjoin conceptsGraph cpt_a cpt_b]
+               ] of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
                  in case (conceptsSrc, conceptsTgt) of
@@ -1539,27 +1557,28 @@ anyCpt = (PlainConcept . Set.fromList)
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo term
   = do sgnTree <- signatures env contextInfo term
-       -- trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
-       t2e sgnTree
+       trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
+        t2e sgnTree
   where
     t2e :: OpTree (Expression, Signature, Term TermPrim) -> Guarded Expression
     t2e sgnTree =
       case sgnTree of
         STnullary triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
+          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STnullary [(expr, _, _)] -> pure expr  -- Single expression - already reduced, return it
         STnullary [] -> fatal "Empty triples list in STnullary"
         STbinary _ _ triples@((_, _, trm):_:_) -> 
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
+          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STunary _ triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term might be one of: " <> T.intercalate ", " (map (showP . thd3) triples) <> ".\n  Please specify the signature explicitly."
+          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STbinary stLeft stRight [(_, _, PEqu _ _ _)]
           -> EEqu <$> ((,) <$> t2e stLeft <*> t2e stRight)
-        STbinary stLeft stRight triples@[(_, _, PInc _ _ _)]
-          -> EInc <$> ((,) <$> t2e (assignOpSigns triples stLeft) <*> t2e (assignOpSigns triples stRight))
+        STbinary stLeft stRight {- triples@ -}[(_, _, PInc _ _ _)]
+          -> -- trace ("\n[PInc] stLeft: " <> tshow stLeft <> "\n[PInc] stRight: " <> tshow stRight <> "\n[PInc] triples: " <> tshow triples <> "\n[PInc] assignOpSigns triples stLeft: " <> tshow (assignOpSigns triples stLeft)) $
+             EInc <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PIsc _ _ _)]
           -> EIsc <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PUni _ _ _)]
@@ -1582,6 +1601,9 @@ term2Expr env contextInfo term
      -- PBrk cannot occur because the function `signatures` does not produce it.
         other -> fatal $ "term2Expr: pattern match failure. This is a bug in the compiler.\n  OpTree structure: " <> describeStructure other <> "\n  Full tree: " <> tshow sgnTree
       where
+        showTriples :: [(Expression, Signature, Term TermPrim)] -> Text
+        showTriples ts@((e, _, _):_) = showA e <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) ts)
+        showTriples [] = fatal "Don't call showTriples on an empty list."
         describeStructure :: OpTree (Expression, Signature, Term TermPrim) -> Text
         describeStructure (STnullary xs) = "STnullary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
         describeStructure (STunary _ xs) = "STunary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)

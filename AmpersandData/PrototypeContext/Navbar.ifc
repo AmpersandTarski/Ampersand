@@ -1,18 +1,18 @@
 CONTEXT PrototypeContext IN ENGLISH
 
-    VIEW PrototypeContext.NavMenuItem : PrototypeContext.NavMenuItem DEFAULT { label : PrototypeContext.label } ENDVIEW
+    VIEW PrototypeContext.NavMenuItem : PrototypeContext.NavMenuItem DEFAULT { label : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label] } ENDVIEW
     
     --[ADMIN INTERFACES to adapt the menus]--------------------------------------------------------
     INTERFACE PrototypeContext.Editnavigationmenu LABEL "Edit navigation menu" FOR Administrator: "_SESSION";V[SESSION*PrototypeContext.NavMenu] INTERFACE PrototypeContext.Editmenuitem
 
     INTERFACE PrototypeContext.Editmenuitem LABEL "Edit menu item" FOR Administrator: I[PrototypeContext.NavMenuItem] cRud BOX
-        [ "Label"        : PrototypeContext.label
+        [ "Label"        : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]
         , "Parent"       : PrototypeContext.isSubItemOf              cRUd
         , "Items"        : PrototypeContext.isSubItemOf~ CRuD BOX <TABLE sortable sortBy="Order" order="asc">
             [ "Item"     : I LINKTO INTERFACE PrototypeContext.Editmenuitem
             , "Order"    : PrototypeContext.seqNr                    cRUd
             , "Visible"  : PrototypeContext.isVisible                cRUd
-            , "Label"    : PrototypeContext.label                    cRUd
+            , "Label"    : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]                    cRUd
             , "Roles"    : PrototypeContext.navItemRoles          cRud
             ]
         , "Interface ref": PrototypeContext.ifc                      cRUd
@@ -23,7 +23,7 @@ CONTEXT PrototypeContext IN ENGLISH
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------
     API PrototypeContext.MenuItems LABEL "Menu items" FOR SYSTEM: PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role];PrototypeContext.navItemRoles~;PrototypeContext.isVisible BOX
         [ "id"              : I
-        , "label"           : PrototypeContext.label
+        , "label"           : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]
         , "seqNr"           : PrototypeContext.seqNr
         , "ifc"             : PrototypeContext.ifc
         , "url"             : PrototypeContext.url
