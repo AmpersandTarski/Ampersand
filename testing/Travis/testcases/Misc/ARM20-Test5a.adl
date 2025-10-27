@@ -1,0 +1,50 @@
+CONTEXT ARM20Test5a IN DUTCH
+{- This is the dual of ARM20-Test5.adl, testing UNION instead of INTERSECTION.
+   
+   In ARM20-Test5.adl we test that:
+      I[Criterium] /\ oblTAV;critBF~  has type [Verplichting*Verplichting]
+   
+   In this dual test ARM20-Test5a.adl we test that:
+      I[Criterium] \/ oblTAV;critBF~  has type [Criterium*Criterium]
+   
+   The key difference:
+   - Intersection uses MEET (greatest lower bound) → most specific type
+   - Union uses JOIN (least upper bound) → most generic type
+   
+   With the same lattice:
+      Criterium (top)
+      /      \
+   Verplichting  Verwachting
+      \      /
+   VerplichtingVerwachting (bottom)
+   
+   For intersection: I[Criterium] /\ oblTAV;critBF~
+   - meet(Criterium, Verplichting, Criterium) = Verplichting
+   - Result: [Verplichting*Verplichting] (most specific)
+   
+   For union: I[Criterium] \/ oblTAV;critBF~
+   - join(Criterium, Verplichting, Criterium) = Criterium
+   - Result: [Criterium*Criterium] (most generic)
+-}
+------------------------------------------------------------
+PATTERN ARM20Test5a
+
+RELATION critBF[Criterium*Bedrijfsfunctie] [MAP]
+
+CLASSIFY Verplichting ISA Criterium
+RELATION oblTAV[Verplichting*Bedrijfsfunctie] [UNI] 
+
+CLASSIFY Verwachting ISA Criterium
+RELATION expTAV[Verwachting*Bedrijfsfunctie] [UNI]
+
+CLASSIFY VerplichtingVerwachting IS Verplichting /\ Verwachting
+
+-- Test that union with identity produces the join (most generic type)
+-- Left side: I[Criterium] \/ oblTAV;critBF~ should have type [Criterium*Criterium]
+-- Right side: expTAV;critBF~ has type [Verwachting*Criterium]
+-- This tests that the union correctly computes join instead of meet
+RULE ARM20Test5a : I[Criterium] \/ oblTAV;critBF~ |- expTAV;critBF~
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

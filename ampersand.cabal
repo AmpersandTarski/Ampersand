@@ -194,6 +194,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/ARM20-Test3.adl
     testing/Travis/testcases/Misc/ARM20-Test4.adl
     testing/Travis/testcases/Misc/ARM20-Test5.adl
+    testing/Travis/testcases/Misc/ARM20-Test5a.adl
     testing/Travis/testcases/Misc/ARM20-Test6.adl
     testing/Travis/testcases/Misc/ARM20-Test7.adl
     testing/Travis/testcases/Misc/ARM20-Test8.adl

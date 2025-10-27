@@ -216,7 +216,7 @@ mkMultipleRootsError roots gs =
         <> ["Parhaps you could add the following statements:"]
         <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> rootName | cpt <- roots]
       where
-        rootName = T.intercalate "Or" . map (text1ToText . showWithAliases) $ roots
+        rootName = T.intercalate "\\/" . map (text1ToText . showWithAliases) $ roots
 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =

@@ -200,7 +200,7 @@ completeLattice graph = overlay (edges [ (a, b) | (a, b) <- meetEdges<>joinEdges
       , m <- case findExistingMeetConcept jClass of
           Just _ -> []
           Nothing -> 
-            let meetName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "MEET" (fmap (fullName.fst) (NE.toList jClass)))
+            let meetName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "/\\" (fmap (fullName.fst) (NE.toList jClass)))
             in [PlainConcept { aliases = Set.fromList [(meetName, Nothing)] }]
       , cpt <- fmap fst (NE.toList jClass)
       ]
@@ -212,7 +212,7 @@ completeLattice graph = overlay (edges [ (a, b) | (a, b) <- meetEdges<>joinEdges
       , j <- case findExistingJoinConcept mClass of
           Just _ -> []
           Nothing -> 
-            let joinName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "JOIN" (fmap (fullName.snd) (NE.toList mClass)))
+            let joinName = fst $ suggestName ConceptName (toText1Unsafe $ T.intercalate "\\/" (fmap (fullName.snd) (NE.toList mClass)))
             in [PlainConcept { aliases = Set.fromList [(joinName, Nothing)] }]
       , cpt <- fmap snd (NE.toList mClass)
       ]
@@ -424,11 +424,11 @@ pCtx2aCtx
         let allConceptsForGraph = concs decls `Set.union` concs gns `Set.union` concs allConcDefs `Set.union` Set.fromList ([ONE] <> if null p_interfaces then [] else [sessionConcept])
             initialGraph = makeGraph gns allConceptsForGraph
             dagGraph = graph2dag initialGraph -- convert to DAG by turning strongly connected components into single concepts with aliases
-            typologies = makeTypologies dagGraph
             declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
             allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
+        typologies <- makeTypologies dagGraph
         return
             CI
               { ctxiGens = gns,
@@ -496,29 +496,32 @@ pCtx2aCtx
                   collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
                   collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
 
-          makeTypologies :: AdjacencyMap A_Concept -> [Typology]
+          makeTypologies :: AdjacencyMap A_Concept -> Guarded [Typology]
           makeTypologies dagGraph = {- trace ("3. dagGraph =\n   "<>tshow dagGraph<>
                                            "\n   wcComponents =\n   "<>tshow (wcComponents dagGraph)<>
                                            "\n   completeWCCs =\n   "<>tshow completeWCCs<>
                                            "\n   typologies =\n   "<>tshow typologies) $ -}
-                                    typologies
+                                    traverse createTypology completeWCCs
             where
-              typologies = map createTypology completeWCCs
               -- Ensure each wcc is a complete lattice
               completeWCCs = [ overlay wcc (completeLattice wcc)
                              | wcc <- wcComponents dagGraph -- weakly connected components
                              ]
-              createTypology :: AdjacencyMap A_Concept -> Typology
+              createTypology :: AdjacencyMap A_Concept -> Guarded Typology
               createTypology subGraph =
                 let cs = vertexList subGraph
-                    root = case [ c | c <- vertexList subGraph, null (postSet c subGraph) ] of
-                             [r] -> r
-                             []  -> fatal "No root found in typology component."
-                             _   -> fatal "Multiple roots found in typology component."
-                in Typology
-                     { tyroot = root,
-                       tyCpts = reverse . sortSpecific2Generic gns $ cs
-                     }
+                    roots = [ c | c <- vertexList subGraph, null (postSet c subGraph) ]
+                in case roots of
+                     [r] -> pure Typology
+                              { tyroot = r,
+                                tyCpts = reverse . sortSpecific2Generic gns $ cs
+                              }
+                     []  -> Errors . pure $ CTXE OriginUnknown "No root found in typology component."
+                     _   -> case filter (isRelevantGen cs) gns of
+                              [] -> Errors . pure $ CTXE OriginUnknown "Multiple roots found but no relevant generalization statements."
+                              g:gs -> mkMultipleRootsError roots (g NE.:| gs)
+              isRelevantGen :: [A_Concept] -> AClassify -> Bool
+              isRelevantGen cs g = genspc g `elem` cs
 
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
@@ -1464,7 +1467,7 @@ signatures env contextInfo trm =
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
     checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> Text -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b meetORjoin mjString opStr {-mjString opStr-}  = -- extra parameters for tracing purpose:
+    checkPeri o kind combinator pCombinator a b meetORjoin _ _ {-mjString opStr-}  = -- extra parameters for tracing purpose:
       do
         sgnaTree <- signats a
         sgnbTree <- signats b
@@ -1511,9 +1514,9 @@ signatures env contextInfo trm =
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
           [(pair_result, pairL, pairR)] -> 
-            trace ("\n[checkPeri " <> kind <> "] Computed signature: " <> tshow (snd3 pair_result) <>
-                   "\n  Left operand: " <> showP a <> " with signature " <> tshow (snd3 pairL) <>
-                   "\n  Right operand: " <> showP b <> " with signature " <> tshow (snd3 pairR)) $
+            -- trace ("\n[checkPeri " <> kind <> "] Computed signature: " <> tshow (snd3 pair_result) <>
+            --        "\n  Left operand: " <> showP a <> " with signature " <> tshow (snd3 pairL) <>
+            --        "\n  Right operand: " <> showP b <> " with signature " <> tshow (snd3 pairR)) $
             return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
           triplesigns -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd3 pairA)<>" ; "<>showP b<>tshow (snd3 pairB) | (_,pairA,pairB)<-triplesigns]
                              errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
@@ -1530,32 +1533,6 @@ anyCpt = (PlainConcept . Set.fromList)
                 Left err -> fatal $ "Not a proper concept name: _ANY. " <> err
                 Right (nm, _) -> nm
             , Nothing)]
-
--- termPrim2Expr :: ContextInfo -> [Signature] -> TermPrim -> Guarded Expression
--- termPrim2Expr contextInfo sgns trmprim
---   = case trmprim of
---       Pid _ _c       -> guard ([ EDcI cpt | ISgn cpt<-sgns]<>[ EDcI src | Sign src tgt<-sgns, src==tgt ])
---       Patm _ av (Just c) -> guard ([ EMp1 av cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EMp1 av src | Sign src tgt<-sgns, src==tgt ])
---       Pfull _ s t    -> guard [ EDcV sgn | sgn<-sgns, Just _src<-[source sgn `grLwB` pCpt2aCpt s], Just _tgt<-[target sgn `grLwB` pCpt2aCpt t]]
---       PBind _ oper c -> guard ([ EBin oper cpt | ISgn cpt<-sgns, pCpt2aCpt c==cpt]<>[ EBin oper src | Sign src tgt<-sgns, src==tgt ])
---       PNamedR rel    -> guard [ EDcD decl | sgn<-sgns, decl<-rels rel, Just _src<-[source sgn `grLwB` source decl], Just _tgt<-[target sgn `grLwB` target decl]]
---       _ -> fatal ("termPrim2Expr: unexpected term primitive: "<>showP trmprim) -- because other cases are prevented by the caller, which is `signatures`
---     where
---       guard :: [Expression] -> Guarded Expression
---       guard []     = Errors . return $ CTXE (origin trmprim) ("Can derive no signature for "<>showP trmprim<>".")
---       guard [expr] | source expr == anyCpt && target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>".")
---       guard [expr] | source expr == anyCpt                          = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"[ANY*"<>tshow (target expr)<>"]")
---       guard [expr] |                          target expr == anyCpt = Errors . return $ CTXE (origin trmprim) ("Cannot derive a signature for "<>showP trmprim<>"["<>tshow (source expr)<>"*ANY]")
---       guard [expr] = pure expr
---       guard exprs  = Errors . return $ CTXE (origin trmprim) ("Ambiguous "<>showP trmprim<>". You should specify the type explicitly"<>if length exprs>4 then "" else ", for instance one of: "<>T.intercalate ", " (map (tshow . sign) exprs)<>".")
---       rels :: P_NamedRel -> [Relation]
---       rels rel = case p_mbSign rel of
---                   Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
---                   Nothing -> (findDecls (declarationsMap contextInfo) . name) rel
---       conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
---       grLwB = meet conceptsGraph
---       -- lsUpB = meet conceptGraph
---       pCpt2aCpt = conceptMap contextInfo
 
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo term
