@@ -162,7 +162,6 @@ extra-source-files:
     testing/Travis/testcases/Check/Issue_1531.adl
     testing/Travis/testcases/Check/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
-    testing/Travis/testcases/Check/ShouldFail/export.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1281.adl
     testing/Travis/testcases/Check/ShouldFail/Issue298.adl

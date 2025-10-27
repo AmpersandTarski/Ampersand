@@ -1464,7 +1464,7 @@ signatures env contextInfo trm =
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
     checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> Text -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b meetORjoin _ _ {-mjString opStr-}  = -- extra parameters for tracing purpose:
+    checkPeri o kind combinator pCombinator a b meetORjoin mjString opStr {-mjString opStr-}  = -- extra parameters for tracing purpose:
       do
         sgnaTree <- signats a
         sgnbTree <- signats b
@@ -1472,29 +1472,28 @@ signatures env contextInfo trm =
             sgnsb = opSigns sgnbTree
             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
-            -- mjString = "meet/join" :: Text
         case -- trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
                [ -- trace ("\n26. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
                  ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
-               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb -- , trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
+               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb -- , -- trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
                , Just src<-[meetORjoin conceptsGraph src_a src_b]
                , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
                ]
             -- Add cases for ISgn matching - for equations/inclusions, identities can match with any endomorphic signature
-            <> [ -- trace ("\n27. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src src))
-                 ((combinator (expr_a, expr_b), Sign src src, pCombinator trm_a trm_b), (expr_a, Sign src src, trm_a), (expr_b, ISgn src, trm_b))
+            <> [ -- trace ("\n27. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
+                 ((combinator (expr_a, expr_b), Sign cpt cpt, pCombinator trm_a trm_b), (expr_a, Sign src_a tgt_a, trm_a), (expr_b, ISgn cpt, trm_b))
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
-               , src_a == tgt_a  -- Left side must be endomorphic
-               , Just src<-[meetORjoin conceptsGraph src_a cpt_b]  -- Find the meet/join of the two concepts
+               , Just between_a <- [meetORjoin conceptsGraph src_a tgt_a]  -- Left side must match with I
+               , Just cpt<-[meetORjoin conceptsGraph between_a cpt_b]  -- Find the meet/join of the two concepts
                ]
-            <> [ -- trace ("\n28. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src src))
-                 ((combinator (expr_a, expr_b), Sign src src, pCombinator trm_a trm_b), (expr_a, ISgn src, trm_a), (expr_b, Sign src_b tgt_b, trm_b))
+            <> [ -- trace ("\n28. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
+                 ((combinator (expr_a, expr_b), Sign cpt cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt, trm_a), (expr_b, Sign src_b tgt_b, trm_b))
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
-               , src_b == tgt_b  -- Right side must be endomorphic
-               , Just src<-[meetORjoin conceptsGraph cpt_a src_b]  -- Find the meet/join of the two concepts
+               , Just between_b <- [meetORjoin conceptsGraph src_b tgt_b]  -- Right side must match with I
+               , Just cpt<-[meetORjoin conceptsGraph cpt_a between_b]  -- Find the meet/join of the two concepts
                ]
             <> [ -- trace ("\n29. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (ISgn cpt))
-                 ((combinator (expr_a, expr_b), ISgn cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt, trm_a), (expr_b, ISgn cpt, trm_b))
+                 ((combinator (expr_a, expr_b), ISgn cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt_a, trm_a), (expr_b, ISgn cpt_b, trm_b))
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
                , Just cpt<-[meetORjoin conceptsGraph cpt_a cpt_b]
                ] of
@@ -1511,7 +1510,11 @@ signatures env contextInfo trm =
                                     [] ->     "untyped"
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-          [(pair_result, pairL, pairR)] -> return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
+          [(pair_result, pairL, pairR)] -> 
+            trace ("\n[checkPeri " <> kind <> "] Computed signature: " <> tshow (snd3 pair_result) <>
+                   "\n  Left operand: " <> showP a <> " with signature " <> tshow (snd3 pairL) <>
+                   "\n  Right operand: " <> showP b <> " with signature " <> tshow (snd3 pairR)) $
+            return (STbinary (assignOpSigns [pairL] sgnaTree) (assignOpSigns [pairR] sgnbTree) [pair_result])
           triplesigns -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>tshow (snd3 pairA)<>" ; "<>showP b<>tshow (snd3 pairB) | (_,pairA,pairB)<-triplesigns]
                              errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                              opTree = STbinary sgnaTree sgnbTree errorExprs
@@ -1557,8 +1560,8 @@ anyCpt = (PlainConcept . Set.fromList)
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo term
   = do sgnTree <- signatures env contextInfo term
-       trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
-        t2e sgnTree
+       -- trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
+       t2e sgnTree
   where
     t2e :: OpTree (Expression, Signature, Term TermPrim) -> Guarded Expression
     t2e sgnTree =

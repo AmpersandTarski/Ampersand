@@ -1214,7 +1214,12 @@ instance Flippable Expression where
 instance HasSignature Expression where
   sign (EEqu (l, r)) = Sign (source l) (target r)
   sign (EInc (l, r)) = Sign (source l) (target r)
-  sign (EIsc (l, r)) = Sign (source l) (target r)
+  sign (EIsc (l, r)) = 
+    trace ("\n[EIsc.sign] Recomputing signature as Sign (source l) (target r)" <>
+           "\n  source l = " <> tshow (source l) <>
+           "\n  target r = " <> tshow (target r) <>
+           "\n  Result: " <> tshow result) result
+    where result = Sign (source l) (target r)
   sign (EUni (l, r)) = Sign (source l) (target r)
   sign (EDif (l, r)) = Sign (source l) (target r)
   sign (ELrs (l, r)) = Sign (source l) (source r)
