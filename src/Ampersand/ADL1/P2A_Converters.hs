@@ -1327,8 +1327,8 @@ signatures env contextInfo trm =
   PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet "meet" "PIsc"
   PUni o a b -> checkPeri  o "union"             EUni (PUni o) a b join "join" "PUni"
   PDif o a b -> checkPeri  o "difference"        EDif (PDif o) a b join "join" "PDif"
-  PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b meet true ("PCps" :: String)
-  PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b join true ("PRad" :: String)
+  PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b meet ("PCps" :: String)
+  PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b join ("PRad" :: String)
   PLrs o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
                    -- Custom logic for PLrs: compare target(left) with target(right), result is [source(left)*source(right)]
@@ -1367,7 +1367,7 @@ signatures env contextInfo trm =
                                         suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> tshow (snd3 pairA) <> " \\ " <> showP b <> tshow (snd3 pairB) | (_,pairA,pairB)<-triplesigns]
                                         opTree = STbinary sgnaTree sgnbTree (map fst3 triplesigns)
                                     in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
-  PDia o a b -> checkIntra o "diamond"           EDia (PDia o) a b meet true  "PDia"
+  PDia o a b -> checkIntra o "diamond"           EDia (PDia o) a b meet "PDia"
   PPrd o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), PPrd o trm_a trm_b)
                                                       | (expr_a, sgn_a, trm_a)<-opSigns sgnaTree, (expr_b, sgn_b, trm_b)<-opSigns sgnbTree ])
@@ -1387,8 +1387,6 @@ signatures env contextInfo trm =
                    return (STunary sgnTree [(ECpl expr, sgn, trm') | (expr, sgn, trm')<-opSigns sgnTree])
   PBrk _ e   -> signats e
   where
-    true :: A_Concept -> A_Concept -> Bool
-    true  _ _  = True
     checkIntra --, checkPeri
       :: {- o           -} Origin
       -> {- kind        -} Text
@@ -1397,16 +1395,15 @@ signatures env contextInfo trm =
       -> {- a           -} Term TermPrim
       -> {- b           -} Term TermPrim
       -> {- meetORjoin  -} (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
-      -> {- compare     -} (A_Concept -> A_Concept -> Bool)
       -- extra parameters for tracing purpose:
       -> {- opStr       -} String
       -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkIntra o kind combinator pCombinator a b meetORjoin cmpare _ {-opStr-} = -- extra parameters for tracing purpose:
+    checkIntra o kind combinator pCombinator a b meetORjoin _ {-opStr-} = -- extra parameters for tracing purpose:
       do sgnaTree <- signats a; sgnbTree <- signats b
          let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
              sgnsa = map (\(_,s,_) -> s) triplesa; sgnsb = map (\(_,s,_) -> s) triplesb
          let trees = -- trace ("\n6.  "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
-                     makeTrees combinator pCombinator meetORjoin triplesa triplesb cmpare
+                     makeTrees combinator pCombinator meetORjoin triplesa triplesb
          case trees of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
@@ -1441,28 +1438,26 @@ signatures env contextInfo trm =
               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
               -> [(Expression, Signature, Term TermPrim)]
               -> [(Expression, Signature, Term TermPrim)]
-              -> (A_Concept -> A_Concept -> Bool)
               -> [((Expression, Signature, Term TermPrim), (Expression, Signature, Term TermPrim), (Expression, Signature, Term TermPrim))]                      
-    makeTrees combinator pCombinator meetORjoin triplesa triplesb cmpare
+    makeTrees combinator pCombinator meetORjoin triplesa triplesb 
      = [  ((combinator (expr_a, expr_b), Sign srca tgtb, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (expr_b, Sign right tgtb, trm_b))
        | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
-       , cmpare tgta srcb, Just between<-[meetORjoin conceptsGraph tgta srcb]
+       , Just between<-[meetORjoin conceptsGraph tgta srcb]
        , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph srcb between]
        ] <>
-       [  ((combinator (expr_a, expr_b), Sign srca right, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (expr_b, ISgn right, trm_b))
+       [  ((combinator (expr_a, expr_b), Sign srca between, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (expr_b, ISgn between, trm_b))
        | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
-       , cmpare tgta cptb, Just between<-[meetORjoin conceptsGraph tgta cptb]
-       , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph cptb between]
+       , Just between<-[meetORjoin conceptsGraph tgta cptb]
+       , Just left<-[meet conceptsGraph between tgta]
        ] <>
-       [ ((combinator (expr_a, expr_b), Sign left tgtb, pCombinator trm_a trm_b), (expr_a, ISgn left, trm_a), (expr_b, Sign right tgtb, trm_b))
+       [ ((combinator (expr_a, expr_b), Sign between tgtb, pCombinator trm_a trm_b), (expr_a, ISgn between, trm_a), (expr_b, Sign right tgtb, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
-       , cmpare cpta srcb, Just between<-[meetORjoin conceptsGraph cpta srcb]
-       , Just left<-[meet conceptsGraph between cpta] , Just right<-[meet conceptsGraph srcb between]
+       , Just between<-[meetORjoin conceptsGraph cpta srcb]
+       , Just right<-[meet conceptsGraph srcb between]
        ] <>
-       [ ((combinator (expr_a, expr_b), Sign left right, pCombinator trm_a trm_b), (expr_a, ISgn left, trm_a), (expr_b, ISgn right, trm_b))
+       [ ((combinator (expr_a, expr_b), Sign between between, pCombinator trm_a trm_b), (expr_a, ISgn between, trm_a), (expr_b, ISgn between, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
-       , cmpare cpta cptb, Just between<-[meetORjoin conceptsGraph cpta cptb]
-       , Just left<-[meet conceptsGraph between cpta] , Just right<-[meet conceptsGraph cptb between]
+       , Just between<-[meetORjoin conceptsGraph cpta cptb]
        ]
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
