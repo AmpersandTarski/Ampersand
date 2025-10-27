@@ -59,3 +59,6 @@ miscellaneous/AmpersandBackup.jgfns
 
 # Local history extention of vs-code
 .history
+
+# Docker compose database data
+mariadb_data/

@@ -1,0 +1,28 @@
+version: '3.8'
+# This docker-compose file sets up a MariaDB database just for testing 'ampersand validate' locally.
+# All it does is bring the MariaDB up in a container and link it to the right port, so 'ampersand validate' gets to see a working database.
+
+services:
+  mariadb:
+    image: mariadb:11.5
+    container_name: ampersand-mariadb
+    restart: unless-stopped
+    command: --bind-address=0.0.0.0
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ampersand
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mariadb_data:
+    driver: local

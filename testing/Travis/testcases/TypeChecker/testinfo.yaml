@@ -1,3 +1,0 @@
-# Type checker regression tests
-# These tests verify correct type checking behavior for all Ampersand operators
-# Split into shouldPass (tests that must type check successfully) and shouldFail (tests that must produce type errors)

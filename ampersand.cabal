@@ -480,7 +480,6 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldPass/RightResidualHetero.adl
     testing/Travis/testcases/TypeChecker/shouldPass/testinfo.yaml
     testing/Travis/testcases/TypeChecker/shouldPass/Union.adl
-    testing/Travis/testcases/TypeChecker/testinfo.yaml
 
 custom-setup
   setup-depends:
