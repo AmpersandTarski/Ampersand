@@ -635,7 +635,7 @@ nonSpecialSelectExpr fSpec expr =
                                   [uName "="]
                                   (Iden [fenceName (i + 1), sourceAlias])
                               )
-                          -- When one or both sides have no fenceTable, that is because of optimation of
+                          -- When one or both sides have no fenceTable, that is because of optimization of
                           -- the SQL statement. Check the code of fenceTable for more details
                           (Just _, Nothing) ->
                             case fenceExpr (i + 1) of

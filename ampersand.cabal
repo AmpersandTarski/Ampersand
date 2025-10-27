@@ -224,7 +224,6 @@ extra-source-files:
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.adl
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.xlsx
     testing/Travis/testcases/Parsing/xlsxParsing/testinfo.yaml
-    testing/Travis/testcases/Preprocessor/export.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
