@@ -112,7 +112,18 @@ executePHP phpPath = do
             Left msg -> msg
             Right txt -> addLineNumbers . T.lines $ txt
         return "ERROR"
-  _ <- liftIO (readCreateProcess cp "") `catch` errorHandler
+  execResult <- liftIO (readCreateProcess cp "") `catch` errorHandler
+  -- Check if PHP execution failed
+  when (execResult == "ERROR") $
+    exitWith
+      . PHPExecutionFailed
+      $ [ "PHP execution failed:",
+          "  The PHP interpreter could not execute the script.",
+          "  Possible causes:",
+          "  - PHP is not installed or not in PATH",
+          "  - The generated PHP script has syntax errors",
+          "  - File permissions issue"
+        ]
   result <- readFileUtf8 outputFile
   case result of
     Right content -> do
@@ -129,6 +140,17 @@ addLineNumbers = zipWith (curry withNumber) [0 ..]
   where
     withNumber :: (Int, Text) -> Text
     withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
+
+-- | Truncate a list to show only the first and last n elements
+-- If the list has <= 2*n elements, return the whole list
+-- Otherwise, show first n, a separator line, and last n
+truncateMiddle :: Int -> [Text] -> [Text]
+truncateMiddle n xs
+  | length xs <= 2 * n = xs
+  | otherwise =
+      take n xs
+        <> ["... (" <> tshow (length xs - 2 * n) <> " lines omitted) ..."]
+        <> drop (length xs - n) xs
 
 showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
@@ -203,9 +225,9 @@ createTempDatabase fSpec = do
           $ [ "Temp database creation failed! :",
               "The result:",
               result,
-              "The statements:"
+              "The statements (showing first and last 10 lines):"
             ]
-          <> addLineNumbers phpStr
+          <> truncateMiddle 10 (addLineNumbers phpStr)
 
   return (T.null result)
   where

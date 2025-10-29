@@ -29,7 +29,7 @@ PATTERN FormalAmpersand.Context
     RELATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedContextName
-      RULE FormalAmpersand.DelUnusedContextName LABEL "del unused ContextName" : I[FormalAmpersand.ContextName] |- FormalAmpersand.name~;FormalAmpersand.name
+      RULE FormalAmpersand.DelUnusedContextName LABEL "del unused ContextName" : I[FormalAmpersand.ContextName] |- FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]~;FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]
       MEANING "A ContextName without Context will be removed."
       VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ContextName;", SRC I )
 
@@ -111,7 +111,7 @@ PATTERN FormalAmpersand.Validity
     VIOLATION (TXT "FormalAmpersand.Concept ", SRC FormalAmpersand.name, TXT " is not valid in context ", TGT I)
 
     ROLE ExecEngine MAINTAINS FormalAmpersand.ValidityConcepts
-    RULE FormalAmpersand.ValidityConcepts LABEL "validity of concepts in a context" : FormalAmpersand.uses;FormalAmpersand.declaredIn~;I[FormalAmpersand.Relation];FormalAmpersand.sign;(FormalAmpersand.tgt\/FormalAmpersand.src) |- FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]~
+    RULE FormalAmpersand.ValidityConcepts LABEL "validity of concepts in a context" : FormalAmpersand.uses;FormalAmpersand.declaredIn~;I[FormalAmpersand.Relation];FormalAmpersand.sign[FormalAmpersand.Relation*FormalAmpersand.Signature];(FormalAmpersand.tgt\/FormalAmpersand.src) |- FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]~
     MEANING "Every concept in the signature of relations is valid in every context that uses the pattern in which that relation is declared.."
     VIOLATION ( TXT "{EX} InsPair;FormalAmpersand.context;FormalAmpersand.Concept;", TGT I, TXT ";FormalAmpersand.Context;", SRC I )
 
@@ -136,5 +136,3 @@ PATTERN FormalAmpersand.Validity
 ENDPATTERN
 
 ENDCONTEXT
-
-

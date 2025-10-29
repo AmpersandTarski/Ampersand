@@ -97,7 +97,7 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
           lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> Set.Set a
           lkp = Map.findWithDefault Set.empty
        in case expr of
-            EEqu (l, r) -> contents ((l .|-. r) ./\. (r .|-. l))
+            EEqu (l, r) -> contents ((l .|-. r) .\/. (r .|-. l))  -- compute the symmetric difference
             EInc (l, r) -> contents (notCpl l .\/. r)
             EUni (l, r) -> unions (contents l) (contents r)
             EIsc (l, r) -> inters (contents l) (contents r)

@@ -11,7 +11,7 @@ PATTERN Patterns
     RELATION FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedPatternName
-      RULE FormalAmpersand.DelUnusedPatternName LABEL "del unused PatternName" : I[FormalAmpersand.PatternName] |- FormalAmpersand.name~;FormalAmpersand.name
+      RULE FormalAmpersand.DelUnusedPatternName LABEL "del unused PatternName" : I[FormalAmpersand.PatternName] |- FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName]~;FormalAmpersand.name[FormalAmpersand.Pattern*FormalAmpersand.PatternName]
       MEANING "A PatternName without Pattern will be removed."
       VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.PatternName;", SRC I )
 
@@ -178,5 +178,3 @@ PATTERN FormalAmpersand.StringCombination
 ENDPATTERN
 
 ENDCONTEXT
-
-
