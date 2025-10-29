@@ -684,7 +684,7 @@ pCtx2aCtx
       pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (conceptMap ci) (reprcpts repr), aReprTo = reprdom repr}
       pRepr2aRepr ci repr@ImplicitRepr {} =
         do
-          expr <- (term2Expr env ci . reprTerm) repr
+          expr <- (term2Expr env ci Nothing . reprTerm) repr
           return (Arepr [origin repr] (target expr :| []) Object)
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
@@ -692,7 +692,7 @@ pCtx2aCtx
         case pop of
           P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
             do
-              expr <- term2Expr env ci (Prim (PNamedR nmdr))
+              expr <- term2Expr env ci Nothing (Prim (PNamedR nmdr))
               let dcl = case expr of
                          EDcD d -> d
                          _ -> fatal ("Expected a relation in a population, but got "<>tshow expr<>".")
@@ -766,21 +766,19 @@ pCtx2aCtx
                 case payload of
                   P_ViewExp term ->
                     do
-                      viewExpr <- term2Expr env ci (PCps orig (Prim (Pid orig cpt)) term)
+                      viewExpr <- term2Expr env ci (Just cpt) (PCps orig (Prim (Pid orig cpt)) term)
                       pure (ViewExp viewExpr)
                   P_ViewText str -> pure $ ViewText str
 
       isa :: Type -> Type -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
 
-      -- | pSubIfc2aSubIfc takes the target of its object-expression (i.e. tgtConcept) and composes it with the object-expression of every sub-interface.
-      -- Thus, the type checker can ensure that all box-items in the interface are properly typed.
-      -- pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
-      pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
-      pSubIfc2aSubIfc contextInfo tgtConcept sub =
+      -- | pSubIfc2aSubIfc uses the box concept from the parent box to constrain type-checking of sub-interfaces.
+      pSubIfc2aSubIfc :: ContextInfo -> P_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
+      pSubIfc2aSubIfc contextInfo boxConcept sub =
         case sub of
-          P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem contextInfo (Just tgtConcept)) (si_box sub)
-                        return (Box{ pos = origin sub, siConcept = tgtConcept, siHeader = si_header sub, siObjs = subBoxes})
+          P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem contextInfo (Just boxConcept)) (si_box sub)
+                        return (Box{ pos = origin sub, siConcept = pCpt2aCpt boxConcept, siHeader = si_header sub, siObjs = subBoxes})
           P_InterfaceRef
             { pos       = orig,
               si_isLink = isLink,
@@ -792,25 +790,26 @@ pCtx2aCtx
                                            siConcept = srcIfc
                                          })
         where
-          -- | prefixWithI inserts the target of the enveloping box expression to ensure that the sub-boxes are properly typed.
+          -- | getInterface retrieves the interface concept and checks compatibility with the box concept.
           getInterface :: Guarded A_Concept
           getInterface
            = case filter ((==si_str sub).name) p_interfaces of
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
-               [pIfc] -> do expr <- (term2Expr env contextInfo . obj_term . ifc_Obj) pIfc
+               [pIfc] -> do expr <- (term2Expr env contextInfo (Just boxConcept) . obj_term . ifc_Obj) pIfc
                             let srcCpt = source expr
-                            if tgtConcept == anyCpt
+                                boxAConcept = pCpt2aCpt boxConcept
+                            if boxAConcept == anyCpt
                               then return srcCpt  -- Skip compatibility check when target is ANY
-                              else case leq (conceptGraph contextInfo) tgtConcept srcCpt of
+                              else case leq (conceptGraph contextInfo) boxAConcept srcCpt of
                                 Just True  -> return srcCpt
-                                Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow tgtConcept <> " ISA " <> tshow srcCpt)
-                                Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow tgtConcept <> ".")
+                                Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow boxAConcept <> " ISA " <> tshow srcCpt)
+                                Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow boxAConcept <> ".")
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
-      -- | mCpt is the A_Concept that links the objExpression of this BoxItem to the objExpressions of its subBoxes.
-      --   It is "Maybe" because on the top level, in pIfc2aIfc, there is no concept to link to. 
-      pBoxItem2aBoxItem :: ContextInfo -> Maybe A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
-      pBoxItem2aBoxItem contextInfo mCpt pBoxItem =
+      -- | mBoxConcept is the P_Concept from the parent box, used to constrain type-checking of relations.
+      --   It is "Maybe" because on the top level, in pIfc2aIfc, there is no parent box concept. 
+      pBoxItem2aBoxItem :: ContextInfo -> Maybe P_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
+      pBoxItem2aBoxItem contextInfo mBoxConcept pBoxItem =
         case pBoxItem of
           P_BoxItemTerm
             { obj_PlainName = nm,
@@ -821,20 +820,17 @@ pCtx2aCtx
               obj_mView = mView,
               obj_msub = p_msub
             } -> do
-              objExpr <- term2Expr env contextInfo term
               -- The following strange construction gives a type error if subinterfaces don't match with their parent's target concept.
               -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
-              expr <- case mCpt of
-                           Just tgtConcept -> term2Expr env contextInfo (PCps (origin term) (Prim (Pid (origin term) (aConcept2pConcept tgtConcept))) term)
-                           Nothing         -> pure objExpr
-              a_msub <- traverse (pSubIfc2aSubIfc contextInfo (target objExpr)) p_msub
+              objExpr <- term2Expr env contextInfo mBoxConcept term
+              a_msub <- traverse (pSubIfc2aSubIfc contextInfo (aConcept2pConcept (target objExpr))) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
               crud <- pCruds2aCruds objExpr mCrud
               return (BxExpr ObjectDef{ objPlainName  = nm,
                                         objlbl        = lbl',
                                         objPos        = orig,
-                                        objExpression = expr,
+                                        objExpression = objExpr,
                                         objcrud       = crud,
                                         objmView      = mView,
                                         objmsub       = a_msub
@@ -1044,7 +1040,7 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            exp' <- term2Expr env ci expr
+            exp' <- term2Expr env ci Nothing expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -1074,17 +1070,17 @@ pCtx2aCtx
             penfExpr = x
           } = case oper of
                 IsSuperSet {} ->
-                  do xpr <- term2Expr env ci (PInc pos' x (Prim pRel))
+                  do xpr <- term2Expr env ci Nothing (PInc pos' x (Prim pRel))
                      case xpr of
                        EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 1 in pEnforce2aEnforce."
                 IsSubSet {} ->
-                  do xpr <- term2Expr env ci (PInc pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci Nothing (PInc pos' (Prim pRel) x)
                      case xpr of
                        EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 2 in pEnforce2aEnforce."
                 IsSameSet {} ->
-                  do xpr <- term2Expr env ci (PEqu pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci Nothing (PEqu pos' (Prim pRel) x)
                      case xpr of
                        EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
                        _ -> fatal "Alternative 3 in pEnforce2aEnforce."
@@ -1137,7 +1133,7 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        do isegs <- traverse (term2Expr env ci) (ix_ats pidt)
+        do isegs <- traverse (term2Expr env ci (Just (ix_cpt pidt))) (ix_ats pidt)
            return ( Id
                     { idPos = origin pidt,
                       idName = ix_name pidt,
@@ -1157,7 +1153,7 @@ pCtx2aCtx
         do
           let src = (aConcept2pConcept . source) expr
               tgt = (aConcept2pConcept . target) expr
-          e <- term2Expr env ci (case s of
+          e <- term2Expr env ci Nothing (case s of
                               Src -> PCps o (Prim (Pid o src)) x
                               Tgt -> PCps o (Prim (Pid o tgt)) x
                             )
@@ -1304,8 +1300,25 @@ mkVerboseTypeMismatchError :: (HasRunner env) => env -> Origin -> Text -> Maybe 
 mkVerboseTypeMismatchError env errorOrigin baseMsg maybeSuggestions opTree =
   mkVerboseTypeError env errorOrigin opTree (baseMsg <> fromMaybe "" maybeSuggestions)
 
-signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-signatures env contextInfo trm =
+-- | BoxConstraint tracks whether we should match source or target when filtering relations in a box context.
+-- This becomes important when dealing with flipped relations, where we need to match the target instead of source.
+data BoxConstraint = MatchSource P_Concept | MatchTarget P_Concept
+
+instance Flippable BoxConstraint where
+  flp (MatchSource c) = MatchTarget c
+  flp (MatchTarget c) = MatchSource c
+
+-- | Compute all possible type signatures for a term.
+--   
+--   When type-checking expressions in boxes (interfaces/APIs) or views, the box concept provides context
+--   that can help disambiguate relation names. The optional source concept parameter (mSrcConcept) allows
+--   filtering relation candidates to those whose source matches the box concept.
+signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+signatures env contextInfo mBoxConcept trm = signaturesWithConstraint env contextInfo (fmap MatchSource mBoxConcept) trm
+
+-- | Internal function that handles box constraints for both source and target matching
+signaturesWithConstraint :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe BoxConstraint -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+signaturesWithConstraint env contextInfo mConstraint trm =
  case trm of
   Prim (PI o)               -> signats (Prim (Pid o (aConcept2pConcept anyCpt)))
   Prim (Pid _ c)            -> let c'=pCpt2aCpt c in pure (STnullary [(EDcI c', ISgn c', trm)])
@@ -1319,7 +1332,12 @@ signatures env contextInfo trm =
                                    rels r = case p_mbSign r of
                                      Just sg -> (findRelsTyped (declarationsMap contextInfo) (name r) . pSign2aSign pCpt2aCpt) sg
                                      Nothing -> (findDecls (declarationsMap contextInfo) . name) r
-                             in  case rels rel of
+                                   -- Filter relations by box constraint if provided and no explicit signature
+                                   filteredRels = case (mConstraint, p_mbSign rel) of
+                                     (Just (MatchSource boxPCpt), Nothing) -> filter (\d -> source d == pCpt2aCpt boxPCpt) (rels rel)
+                                     (Just (MatchTarget boxPCpt), Nothing) -> filter (\d -> target d == pCpt2aCpt boxPCpt) (rels rel)
+                                     _                                     -> rels rel
+                             in  case filteredRels of
                                               [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
                                               ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
   PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet" "PEqu"
@@ -1371,7 +1389,8 @@ signatures env contextInfo trm =
   PPrd o a b -> do sgnaTree <- signats a; sgnbTree <- signats b
                    return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), PPrd o trm_a trm_b)
                                                       | (expr_a, sgn_a, trm_a)<-opSigns sgnaTree, (expr_b, sgn_b, trm_b)<-opSigns sgnbTree ])
-  PFlp _ e   -> do sgnTree <- signats e
+  PFlp _ e   -> do -- When flipping, swap the constraint using the Flippable instance
+                   sgnTree <- signaturesWithConstraint env contextInfo (flp <$> mConstraint) e
                    return (STunary sgnTree [(EFlp expr, flp sgn, trm') | (expr, sgn, trm')<-opSigns sgnTree])
   PKl0 o e   -> do sgnTree <- signats e
                    let endoSigns = [(EKl0 expr, sgn, trm') | (expr, sgn, trm')<-opSigns sgnTree, source sgn == target sgn]
@@ -1520,7 +1539,7 @@ signatures env contextInfo trm =
 
     pCpt2aCpt = conceptMap contextInfo
     conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
-    signats = signatures env contextInfo
+    signats = signaturesWithConstraint env contextInfo Nothing  -- No box constraint for subexpressions
 
 anyCpt :: A_Concept
 anyCpt = (PlainConcept . Set.fromList)
@@ -1529,9 +1548,9 @@ anyCpt = (PlainConcept . Set.fromList)
                 Right (nm, _) -> nm
             , Nothing)]
 
-term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Term TermPrim -> Guarded Expression
-term2Expr env contextInfo term
-  = do sgnTree <- signatures env contextInfo term
+term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded Expression
+term2Expr env contextInfo mBoxConcept term
+  = do sgnTree <- signatures env contextInfo mBoxConcept term
        -- trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
        t2e sgnTree
   where
