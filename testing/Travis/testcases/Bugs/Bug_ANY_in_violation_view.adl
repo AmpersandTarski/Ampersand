@@ -1,0 +1,56 @@
+CONTEXT BugANYInViolationView IN DUTCH
+
+PURPOSE CONTEXT BugANYInViolationView
+{+
+Dit testbestand reproduceert een bug waarbij I[ANY] verschijnt in violation views.
+
+PROBLEEM:
+Bij het uitvoeren van de test verschijnt de volgende melding:
+  "Mismatch between SQL and Ampersand
+   Origin: violation view for rule BewerkersHebbenPrecies1verantwoordelijke, 
+           term: I[ANY];verwerkingsVerantwoordelijke[Verwerking*Partij]"
+
+OORZAAK:
+In de violation view wordt I[ANY] gegenereerd in plaats van I[Verwerking].
+Dit wordt veroorzaakt doordat de compiler ANY toestaat in een context waar
+elke term precies één type zou moeten hebben. ANY is alleen bedoeld voor 
+intern gebruik in de type checker.
+
+VERWACHT GEDRAG:
+De term in de violation view zou I[Verwerking] moeten zijn, niet I[ANY].
+
+REPRODUCEREN:
+Dit testbestand bevat een minimale set van relaties en een regel die het
+probleem reproduceert. De VIOLATION statement in de regel gebruikt SRC I,
+wat blijkbaar vertaald wordt naar I[ANY] in plaats van het correcte type.
++}
+
+-- Minimale concepten
+CONCEPT Verwerking "Een specificatie van handelingen"
+CONCEPT Partij "Een natuurlijke of rechtspersoon"
+
+-- Minimale relaties
+RELATION verwerkingBewerker[Verwerking*Partij]
+PRAGMA "De feitelijke uitvoering van " " is uitbesteed aan "
+
+RELATION verwerkingsVerantwoordelijke[Verwerking*Partij]
+PRAGMA "Voor " " draagt " " verantwoordelijkheid"
+
+-- De regel die het probleem veroorzaakt
+RULE BewerkersHebbenPrecies1verantwoordelijke LABEL "Bewerkers hebben precies 1 verantwoordelijke": 
+I /\ verwerkingBewerker;verwerkingBewerker~
+  /\ verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
+ |- (-(verwerkingsVerantwoordelijke;-I;verwerkingsVerantwoordelijke~) \/ -V)
+MEANING "Voor elke bewerker moet eenduidig bepaald kunnen worden wie de bijbehorende verantwoordelijke is"
+VIOLATION (TXT "Omdat verwerking '", SRC I, TXT "' een verwerker heeft, namelijk ", SRC verwerkingBewerker, TXT ", moet de verantwoordelijkheid eenduidig zijn belegd, en niet bij meerdere partijen, zoals ", SRC verwerkingsVerantwoordelijke)
+
+-- Test populatie om de violation te triggeren
+POPULATION verwerkingBewerker CONTAINS
+  [ ("Vw_ALS", "Partij_0") ]
+
+POPULATION verwerkingsVerantwoordelijke CONTAINS
+  [ ("Vw_ALS", "Partij_0")
+  , ("Vw_ALS", "Partij_1")
+  ]
+
+ENDCONTEXT

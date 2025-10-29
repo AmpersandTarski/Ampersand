@@ -822,7 +822,11 @@ pCtx2aCtx
             } -> do
               -- The following strange construction gives a type error if subinterfaces don't match with their parent's target concept.
               -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
-              objExpr <- term2Expr env contextInfo mBoxConcept term
+              -- When there's a box concept, prepend I[boxConcept]; to enable proper concept hierarchy checking
+              let termWithBoxContext = case mBoxConcept of
+                    Just boxConcept -> PCps orig (Prim (Pid orig boxConcept)) term
+                    Nothing -> term
+              objExpr <- term2Expr env contextInfo Nothing termWithBoxContext
               a_msub <- traverse (pSubIfc2aSubIfc contextInfo (aConcept2pConcept (target objExpr))) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
@@ -1133,7 +1137,11 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        do isegs <- traverse (term2Expr env ci (Just (ix_cpt pidt))) (ix_ats pidt)
+        do let cpt = ix_cpt pidt
+               orig = origin pidt
+               -- Prepend I[cpt]; to each identity attribute for proper concept hierarchy checking
+               termsWithContext = fmap (\term -> PCps orig (Prim (Pid orig cpt)) term) (ix_ats pidt)
+           isegs <- traverse (term2Expr env ci Nothing) termsWithContext
            return ( Id
                     { idPos = origin pidt,
                       idName = ix_name pidt,
@@ -1332,12 +1340,7 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                                    rels r = case p_mbSign r of
                                      Just sg -> (findRelsTyped (declarationsMap contextInfo) (name r) . pSign2aSign pCpt2aCpt) sg
                                      Nothing -> (findDecls (declarationsMap contextInfo) . name) r
-                                   -- Filter relations by box constraint if provided and no explicit signature
-                                   filteredRels = case (mConstraint, p_mbSign rel) of
-                                     (Just (MatchSource boxPCpt), Nothing) -> filter (\d -> source d == pCpt2aCpt boxPCpt) (rels rel)
-                                     (Just (MatchTarget boxPCpt), Nothing) -> filter (\d -> target d == pCpt2aCpt boxPCpt) (rels rel)
-                                     _                                     -> rels rel
-                             in  case filteredRels of
+                             in  case rels rel of
                                               [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
                                               ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
   PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet" "PEqu"
@@ -1452,6 +1455,13 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                           []    -> " is undefined because "<>showP expr<>" is untypable"
                           _     -> ", which can be any of "<>tshow cpts
 
+    -- | Replace EDcI ANY with EDcI <concrete_concept> when we know the type from context
+    refineIdentity :: Expression -> A_Concept -> Expression  
+    refineIdentity (EDcI c) targetConcept 
+      | c == anyCpt = EDcI targetConcept
+      | otherwise = EDcI c
+    refineIdentity expr _ = expr
+
     makeTrees :: ((Expression, Expression) -> Expression)
               -> (Term TermPrim -> Term TermPrim -> Term TermPrim)
               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
@@ -1464,19 +1474,23 @@ signaturesWithConstraint env contextInfo mConstraint trm =
        , Just between<-[meetORjoin conceptsGraph tgta srcb]
        , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph srcb between]
        ] <>
-       [  ((combinator (expr_a, expr_b), Sign srca between, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (expr_b, ISgn between, trm_b))
+       [  ((combinator (expr_a, refined_expr_b), Sign srca between, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (refined_expr_b, ISgn between, trm_b))
        | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph tgta cptb]
        , Just left<-[meet conceptsGraph between tgta]
+       , let refined_expr_b = refineIdentity expr_b between
        ] <>
-       [ ((combinator (expr_a, expr_b), Sign between tgtb, pCombinator trm_a trm_b), (expr_a, ISgn between, trm_a), (expr_b, Sign right tgtb, trm_b))
+       [ ((combinator (refined_expr_a, expr_b), Sign between tgtb, pCombinator trm_a trm_b), (refined_expr_a, ISgn between, trm_a), (expr_b, Sign right tgtb, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph cpta srcb]
        , Just right<-[meet conceptsGraph srcb between]
+       , let refined_expr_a = refineIdentity expr_a between
        ] <>
-       [ ((combinator (expr_a, expr_b), Sign between between, pCombinator trm_a trm_b), (expr_a, ISgn between, trm_a), (expr_b, ISgn between, trm_b))
+       [ ((combinator (refined_expr_a, refined_expr_b), Sign between between, pCombinator trm_a trm_b), (refined_expr_a, ISgn between, trm_a), (refined_expr_b, ISgn between, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph cpta cptb]
+       , let refined_expr_a = refineIdentity expr_a between
+       , let refined_expr_b = refineIdentity expr_b between
        ]
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
