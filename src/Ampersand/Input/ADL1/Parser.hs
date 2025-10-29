@@ -63,7 +63,7 @@ pContext =
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
             ctx_reprs =
               [r | CRep r <- ces]
-                <> [ImplicitRepr trm | Cifc s <- ces, obj <- [ifc_Obj s], trm <- harvestTerms obj],
+                <> [ImplicitRepr (PFlp (origin trm) trm) | Cifc s <- ces, obj <- [ifc_Obj s], trm <- obj_term obj : harvestTerms obj], -- TODO for Cline: explain
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
             ctx_ps = [e | CPrp e <- ces], -- The purposes defined in this context, outside the scope of patterns
