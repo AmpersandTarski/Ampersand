@@ -1,0 +1,11 @@
+CONTEXT Issue960
+
+VIEW Note : Note HTML TEMPLATE "Note.html" ENDVIEW
+
+ENDCONTEXT
+
+{- 
+   Purpose: to check that a simple VIEW definition with a TEMPLATE clause is accepted.
+   However, there is no definition of the concept Note. That would require that Note is
+   defined as a CONCEPT, in a RELATION, in a CLASSIFY statement or in a rule.
+   Result: FAIL
