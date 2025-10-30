@@ -182,7 +182,9 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
+    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
+    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -209,6 +211,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/Issue1499.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
+    testing/Travis/testcases/Parsing/shouldFail/export.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl

@@ -18,6 +18,7 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set, guard, join)
 import Ampersand.Classes
+import Ampersand.Classes.ConceptStructure (PConceptStructure(..))
 import Ampersand.Core.A2P_Converters (aConcept2pConcept)
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
@@ -437,7 +438,7 @@ pCtx2aCtx
                 reprList = allReprs,
                 declarationsMap = declMap,
                 soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-                allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs,
+                allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs `Set.union` reprConcepts,
                 conceptGraph = dagGraph,
                 conceptMap = pCpt2aCpt,
                 defaultLang = deflangCtxt,
@@ -525,6 +526,11 @@ pCtx2aCtx
 
           allConcDefs :: Set.Set AConceptDef
           allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
+
+          reprConcepts :: Set.Set A_Concept
+          reprConcepts = Set.fromList [pCpt2aCpt cpt | repr <- allReprs, cpt <- case repr of
+                                                                                    Repr{} -> NE.toList (reprcpts repr)
+                                                                                    ImplicitRepr{} -> []]
 
           gns :: [AClassify]
           gns = mapMaybe pClassify2aClassify alleGens
@@ -706,15 +712,14 @@ pCtx2aCtx
                     popsrc = fromMaybe (source dcl) src',
                     poptgt = fromMaybe (target dcl) tgt'
                   }
-          P_CptPopu {} ->
+          P_CptPopu {} -> do
+            validatePConceptsInSchema ci (origin pop) pop ("POPULATION for " <> fullName (p_cpt pop))
             let cpt = pCpt2aCpt (p_cpt pop)
-             in ( \vals ->
-                    ACptPopu
-                      { popcpt = cpt,
-                        popas = vals
-                      }
-                )
-                  <$> traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
+            vals <- traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
+            pure ACptPopu
+                  { popcpt = cpt,
+                    popas = vals
+                  }
 
       isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
       isMoreGeneric o dcl sourceOrTarget givenType =
@@ -724,14 +729,17 @@ pCtx2aCtx
 
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
       pViewDef2aViewDef ci
-        P_Vd{ pos = orig,
+        pvd@P_Vd{ pos = orig,
               vd_nm = nm,
               vd_label = lbl',
               vd_cpt = cpt,
               vd_isDefault = isDefault,
               vd_html = mHtml,
               vd_ats = segmnts
-            } = do segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
+            } = do
+                   -- Validate all concepts in the view definition
+                   validatePConceptsInSchema ci orig pvd ("VIEW " <> fullName nm)
+                   segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
                    uniqueLables orig toLabel . filter hasLabel $ segments
                    return
                          Vd
@@ -795,15 +803,19 @@ pCtx2aCtx
           getInterface
            = case filter ((==si_str sub).name) p_interfaces of
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
-               [pIfc] -> do expr <- (term2Expr env contextInfo (Just boxConcept) . obj_term . ifc_Obj) pIfc
-                            let srcCpt = source expr
-                                boxAConcept = pCpt2aCpt boxConcept
-                            if boxAConcept == anyCpt
-                              then return srcCpt  -- Skip compatibility check when target is ANY
-                              else case leq (conceptGraph contextInfo) boxAConcept srcCpt of
-                                Just True  -> return srcCpt
-                                Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow boxAConcept <> " ISA " <> tshow srcCpt)
-                                Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow boxAConcept <> ".")
+               [pIfc] -> do 
+                 -- First check if the referenced interface has undeclared concepts - if so, skip type-checking
+                 validatePConceptsInSchema contextInfo (origin pIfc) pIfc ("INTERFACE " <> fullName pIfc)
+                 -- Only proceed if validation succeeded
+                 expr <- (term2Expr env contextInfo (Just boxConcept) . obj_term . ifc_Obj) pIfc
+                 let srcCpt = source expr
+                     boxAConcept = pCpt2aCpt boxConcept
+                 if boxAConcept == anyCpt
+                   then return srcCpt  -- Skip compatibility check when target is ANY
+                   else case leq (conceptGraph contextInfo) boxAConcept srcCpt of
+                     Just True  -> return srcCpt
+                     Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow boxAConcept <> " ISA " <> tshow srcCpt)
+                     Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow boxAConcept <> ".")
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
       -- | mBoxConcept is the P_Concept from the parent box, used to constrain type-checking of relations.
@@ -952,34 +964,38 @@ pCtx2aCtx
                      ]
 
       pIfc2aIfc :: ContextInfo -> P_Interface -> Guarded Interface
-      pIfc2aIfc contextInfo pIfc =
-        do
-          pBox <- pBoxItem2aBoxItem contextInfo Nothing (ifc_Obj pIfc)
-          boxItem <- case pBox of
-                      BxExpr{} -> pure (objE pBox)
-                      _ -> (Errors . return . CTXE (origin pIfc)) "TXT is not expected here."
-          let objExpr = objExpression boxItem
-              ifcSource = source objExpr
-              ifcSourceType = representationOf contextInfo ifcSource
-          if ifcSourceType==Object || ifcSource == anyCpt
-            then return
-                   Ifc
-                     { ifcIsAPI = ifc_IsAPI pIfc,
-                       ifcname = name pIfc,
-                       ifclbl = mLabel pIfc,
-                       ifcRoles = ifc_Roles pIfc,
-                       ifcObj =
-                         boxItem
-                           { objPlainName = Just . fullName1 . name $ pIfc,
-                             objlbl = mLabel pIfc
-                           },
-                       ifcPos = origin pIfc,
-                       ifcPurpose = ifc_Prp pIfc
-                     }
-            else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
-                   [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-                     "However, the TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
-                   ]
+      pIfc2aIfc contextInfo pIfc = 
+        -- Validate concepts first - if this fails, return immediately without processing box items
+        case validatePConceptsInSchema contextInfo (origin pIfc) pIfc ("INTERFACE " <> fullName pIfc) of
+          Errors err -> Errors err
+          Checked () warnings -> addWarnings warnings $ do
+            -- Only proceed with type-checking if validation succeeded
+            pBox <- pBoxItem2aBoxItem contextInfo Nothing (ifc_Obj pIfc)
+            boxItem <- case pBox of
+                          BxExpr{} -> pure (objE pBox)
+                          _ -> (Errors . return . CTXE (origin pIfc)) "TXT is not expected here."
+            let objExpr = objExpression boxItem
+                ifcSource = source objExpr
+                ifcSourceType = representationOf contextInfo ifcSource
+            if ifcSourceType==Object || ifcSource == anyCpt
+                then return
+                       Ifc
+                         { ifcIsAPI = ifc_IsAPI pIfc,
+                           ifcname = name pIfc,
+                           ifclbl = mLabel pIfc,
+                           ifcRoles = ifc_Roles pIfc,
+                           ifcObj =
+                             boxItem
+                               { objPlainName = Just . fullName1 . name $ pIfc,
+                                 objlbl = mLabel pIfc
+                               },
+                           ifcPos = origin pIfc,
+                           ifcPurpose = ifc_Prp pIfc
+                         }
+                else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
+                       [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
+                         "However, the TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
+                       ]
 
 
       pRoleRule2aRoleRule :: P_RoleRule -> Set A_RoleRule
@@ -1139,7 +1155,8 @@ pCtx2aCtx
       pIdentity2aIdentity ci mPat pidt =
         do let cpt = ix_cpt pidt
                orig = origin pidt
-               -- Prepend I[cpt]; to each identity attribute for proper concept hierarchy checking
+           validatePConceptsInSchema ci orig pidt ("IDENT " <> fullName (ix_name pidt))
+           let -- Prepend I[cpt]; to each identity attribute for proper concept hierarchy checking
                termsWithContext = fmap (\term -> PCps orig (Prim (Pid orig cpt)) term) (ix_ats pidt)
            isegs <- traverse (term2Expr env ci Nothing) termsWithContext
            return ( Id
@@ -1169,21 +1186,21 @@ pCtx2aCtx
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp
         ci
-        PPurpose
+        ppurp@PPurpose
           { pos = purpOrigin, -- :: Origin
             pexObj = objref, -- :: PRefObj
             pexMarkup = pmarkup, -- :: P_Markup
             pexRefIDs = refIds -- :: [Text]
-          } =
-          ( \obj ->
-              Expl
+          } = do
+          -- Validate concepts in PURPOSE (only validates PRef2ConceptDef)
+          validatePConceptsInSchema ci purpOrigin ppurp "PURPOSE"
+          obj <- pRefObj2aRefObj ci objref
+          pure Expl
                 { explPos = purpOrigin,
                   explObj = obj,
                   explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
                   explRefIds = refIds
                 }
-          )
-            <$> pRefObj2aRefObj ci objref
       pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
       pRefObj2aRefObj ci (PRef2ConceptDef s) = (pure . ExplConcept . conceptMap ci . mkPConcept) s
       pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declarationsMap ci) tm
@@ -1315,6 +1332,16 @@ data BoxConstraint = MatchSource P_Concept | MatchTarget P_Concept
 instance Flippable BoxConstraint where
   flp (MatchSource c) = MatchTarget c
   flp (MatchTarget c) = MatchSource c
+
+-- | Validate that P_Concepts in a P-structure are in the schema
+-- SESSION is always implicitly declared, so it's exempt from validation
+validatePConceptsInSchema :: PConceptStructure a => ContextInfo -> Origin -> a -> Text -> Guarded ()
+validatePConceptsInSchema ci orig pStruct contextName =
+  case [ pc | pc <- Set.toList (pConcs pStruct), fullName (name pc) /= "SESSION", fullName (name pc) /= "ONE", pCpt2aCpt pc `Set.notMember` allConcepts ci] of
+    [] -> pure ()
+    c:cs -> Errors . fmap (\pc -> mkConceptNotInSchemaError orig (name pc) contextName) $ c NE.:| cs
+  where
+    pCpt2aCpt = conceptMap ci
 
 -- | Compute all possible type signatures for a term.
 --   
@@ -1646,6 +1673,7 @@ pDecl2aDecl ::
   Guarded Relation
 pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
   do
+    -- Note: We don't validate concepts here because RELATION statements implicitly declare their signature concepts
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
     dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd

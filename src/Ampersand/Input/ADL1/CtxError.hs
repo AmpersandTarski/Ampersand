@@ -37,6 +37,7 @@ module Ampersand.Input.ADL1.CtxError
     mkMultipleTypesInTypologyError,
     mkNoBoxItemsWarning,
     mkOperatorError,
+    mkConceptNotInSchemaError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
     mkParserStateWarning,
@@ -532,6 +533,15 @@ mkOtherAtomInSessionError atomValue =
 mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `" <> showA pr <> "` by populating the relation `" <> showA r <> "`."
+
+mkConceptNotInSchemaError :: Origin -> Name -> Text -> CtxError
+mkConceptNotInSchemaError orig cptName contextName =
+  CTXE orig
+    $ "Concept "
+    <> fullName cptName
+    <> " is not used in a RELATION, CLASSIFY, REPRESENT, or RULE statement, so "
+    <> contextName
+    <> " cannot be compiled."
 
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =

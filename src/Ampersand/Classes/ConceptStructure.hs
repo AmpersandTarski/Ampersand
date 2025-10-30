@@ -1,12 +1,111 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Ampersand.Classes.ConceptStructure (ConceptStructure (..)) where
+module Ampersand.Classes.ConceptStructure (ConceptStructure (..), PConceptStructure (..)) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Ordering (..))
 import Ampersand.Classes.ViewPoint
+import Ampersand.Core.ParseTree (mkPConcept)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+
+-- | Class for collecting P_Concepts from P-level structures (before type checking)
+class PConceptStructure a where
+  pConcs :: a -> Set.Set P_Concept
+
+instance (PConceptStructure a, PConceptStructure b) => PConceptStructure (a, b) where
+  pConcs (a, b) = pConcs a `Set.union` pConcs b
+
+instance (PConceptStructure a) => PConceptStructure (Maybe a) where
+  pConcs = maybe Set.empty pConcs
+
+instance (PConceptStructure a) => PConceptStructure [a] where
+  pConcs = Set.unions . map pConcs
+
+instance (PConceptStructure a) => PConceptStructure (NE.NonEmpty a) where
+  pConcs = Set.unions . fmap pConcs
+
+instance (PConceptStructure a) => PConceptStructure (Set.Set a) where
+  pConcs = Set.unions . map pConcs . toList
+
+instance PConceptStructure (Term TermPrim) where
+  pConcs (Prim (Pid _ c)) = Set.singleton c
+  pConcs (Prim (Patm _ _ (Just c))) = Set.singleton c
+  pConcs (Prim (Patm _ _ Nothing)) = Set.empty
+  pConcs (Prim (Pfull _ src tgt)) = Set.fromList [src, tgt]
+  pConcs (Prim (PBind _ _ c)) = Set.singleton c
+  pConcs (Prim (PBin _ _)) = Set.empty  -- PBin will become PBind during type checking
+  pConcs (Prim PI{}) = Set.empty
+  pConcs (Prim PVee{}) = Set.empty
+  pConcs (Prim PNamedR{}) = Set.empty
+  pConcs (PEqu _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PInc _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PIsc _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PUni _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PDif _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PLrs _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PRrs _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PDia _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PCps _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PRad _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PPrd _ a b) = pConcs a `Set.union` pConcs b
+  pConcs (PKl0 _ e) = pConcs e
+  pConcs (PKl1 _ e) = pConcs e
+  pConcs (PFlp _ e) = pConcs e
+  pConcs (PCpl _ e) = pConcs e
+  pConcs (PBrk _ e) = pConcs e
+
+instance PConceptStructure (P_BoxItem TermPrim) where
+  pConcs P_BoxItemTerm{obj_term = term, obj_msub = mSub} = 
+    pConcs term `Set.union` pConcs mSub
+  pConcs P_BxTxt{} = Set.empty
+
+instance PConceptStructure (P_SubIfc TermPrim) where
+  pConcs P_Box{si_box = boxItems} = pConcs boxItems
+  pConcs P_InterfaceRef{} = Set.empty  -- Interface refs will be checked when that interface is processed
+
+instance PConceptStructure P_Interface where
+  pConcs pIfc = pConcs (ifc_Obj pIfc)
+
+-- P_Sign extracts source and target concepts
+instance PConceptStructure P_Sign where
+  pConcs (P_Sign src tgt) = Set.fromList [src, tgt]
+
+-- P_Relation extracts concepts from signature
+instance PConceptStructure P_Relation where
+  pConcs rel = pConcs (dec_sign rel)
+
+-- P_ViewD extracts concept and concepts from view segments (concrete instance for TermPrim)
+instance PConceptStructure (P_ViewD TermPrim) where
+  pConcs vd = Set.insert (vd_cpt vd) (Set.unions (map pConcs (vd_ats vd)))
+
+-- P_ViewSegment extracts concepts from the payload (concrete instance for TermPrim)
+instance PConceptStructure (P_ViewSegment TermPrim) where
+  pConcs seg = pConcs (vsm_load seg)
+
+-- P_ViewSegmtPayLoad extracts concepts from expressions (concrete instance for TermPrim)
+instance PConceptStructure (P_ViewSegmtPayLoad TermPrim) where
+  pConcs (P_ViewExp term) = pConcs term
+  pConcs (P_ViewText _) = Set.empty
+
+-- P_IdentDf extracts concept and concepts from identity attributes (concrete instance for TermPrim)
+instance PConceptStructure (P_IdentDf TermPrim) where
+  pConcs ident = Set.insert (ix_cpt ident) (Set.unions (map pConcs (NE.toList (ix_ats ident))))
+
+-- P_Population extracts concept from P_CptPopu case
+instance PConceptStructure P_Population where
+  pConcs (P_CptPopu _ cpt _) = Set.singleton cpt
+  pConcs P_RelPopu {} = Set.empty  -- Relations are validated separately
+
+-- PRef2Obj extracts concept from PRef2ConceptDef
+instance PConceptStructure PRef2Obj where
+  pConcs (PRef2ConceptDef nm) = Set.singleton (mkPConcept nm)
+  pConcs _ = Set.empty
+
+-- PPurpose extracts concepts from the reference object
+instance PConceptStructure PPurpose where
+  pConcs purp = pConcs (pexObj purp)
+
 
 class ConceptStructure a where
   concs ::
