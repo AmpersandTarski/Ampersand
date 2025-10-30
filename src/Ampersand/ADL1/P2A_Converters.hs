@@ -438,7 +438,7 @@ pCtx2aCtx
                 reprList = allReprs,
                 declarationsMap = declMap,
                 soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-                allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs `Set.union` reprConcepts,
+                allConcepts = concs decls `Set.union` concs gns `Set.union` concs allConcDefs `Set.union` reprConcepts `Set.union` ruleConcepts,
                 conceptGraph = dagGraph,
                 conceptMap = pCpt2aCpt,
                 defaultLang = deflangCtxt,
@@ -531,6 +531,9 @@ pCtx2aCtx
           reprConcepts = Set.fromList [pCpt2aCpt cpt | repr <- allReprs, cpt <- case repr of
                                                                                     Repr{} -> NE.toList (reprcpts repr)
                                                                                     ImplicitRepr{} -> []]
+
+          ruleConcepts :: Set.Set A_Concept
+          ruleConcepts = Set.fromList [pCpt2aCpt cpt | rule <- p_rules <> concatMap pt_rls p_patterns, cpt <- Set.toList (pConcs (rr_exp rule))]
 
           gns :: [AClassify]
           gns = mapMaybe pClassify2aClassify alleGens
@@ -1489,6 +1492,13 @@ signaturesWithConstraint env contextInfo mConstraint trm =
       | otherwise = EDcI c
     refineIdentity expr _ = expr
 
+    -- | Refine atom expressions from ANY to a concrete concept when type inference determines the actual concept
+    refineAtomExpr :: Expression -> A_Concept -> Expression
+    refineAtomExpr (EMp1 av c) targetConcept
+      | c == anyCpt = EMp1 av targetConcept
+      | otherwise = EMp1 av c
+    refineAtomExpr expr _ = expr
+
     makeTrees :: ((Expression, Expression) -> Expression)
               -> (Term TermPrim -> Term TermPrim -> Term TermPrim)
               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
@@ -1538,20 +1548,21 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
                ]
             -- Add cases for ISgn matching - for equations/inclusions, identities can match with any endomorphic signature
+            -- When matching ISgn with Sign, refine the atom expression to use the inferred concept instead of ANY
             <> [ -- trace ("\n27. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
-                 ((combinator (expr_a, expr_b), Sign cpt cpt, pCombinator trm_a trm_b), (expr_a, Sign src_a tgt_a, trm_a), (expr_b, ISgn cpt, trm_b))
+                 ((combinator (expr_a, refineAtomExpr expr_b cpt), Sign cpt cpt, pCombinator trm_a trm_b), (expr_a, Sign src_a tgt_a, trm_a), (refineAtomExpr expr_b cpt, ISgn cpt, trm_b))
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
                , Just between_a <- [meetORjoin conceptsGraph src_a tgt_a]  -- Left side must match with I
                , Just cpt<-[meetORjoin conceptsGraph between_a cpt_b]  -- Find the meet/join of the two concepts
                ]
             <> [ -- trace ("\n28. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
-                 ((combinator (expr_a, expr_b), Sign cpt cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt, trm_a), (expr_b, Sign src_b tgt_b, trm_b))
+                 ((combinator (refineAtomExpr expr_a cpt, expr_b), Sign cpt cpt, pCombinator trm_a trm_b), (refineAtomExpr expr_a cpt, ISgn cpt, trm_a), (expr_b, Sign src_b tgt_b, trm_b))
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
                , Just between_b <- [meetORjoin conceptsGraph src_b tgt_b]  -- Right side must match with I
                , Just cpt<-[meetORjoin conceptsGraph cpt_a between_b]  -- Find the meet/join of the two concepts
                ]
             <> [ -- trace ("\n29. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (ISgn cpt))
-                 ((combinator (expr_a, expr_b), ISgn cpt, pCombinator trm_a trm_b), (expr_a, ISgn cpt_a, trm_a), (expr_b, ISgn cpt_b, trm_b))
+                 ((combinator (refineAtomExpr expr_a cpt, refineAtomExpr expr_b cpt), ISgn cpt, pCombinator trm_a trm_b), (refineAtomExpr expr_a cpt, ISgn cpt_a, trm_a), (refineAtomExpr expr_b cpt, ISgn cpt_b, trm_b))
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
                , Just cpt<-[meetORjoin conceptsGraph cpt_a cpt_b]
                ] of
