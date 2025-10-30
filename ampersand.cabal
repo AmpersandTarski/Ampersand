@@ -154,7 +154,6 @@ extra-source-files:
     testing/Travis/testcases/Bugs/Fixed/SQL/Bug_SingletonExpression.adl
     testing/Travis/testcases/Bugs/Fixed/SQL/Bug_Totality.adl
     testing/Travis/testcases/Bugs/Fixed/SQL/testinfo.yaml
-    testing/Travis/testcases/Bugs/NoSentinel/Bug29_InterfaceRefLoop.adl
     testing/Travis/testcases/Bugs/NoSentinel/Bug30_InterfaceRefBug.adl
     testing/Travis/testcases/Bugs/NoSentinel/Bug434.adl
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
