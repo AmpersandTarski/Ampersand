@@ -1499,6 +1499,41 @@ signaturesWithConstraint env contextInfo mConstraint trm =
       | otherwise = EMp1 av c
     refineAtomExpr expr _ = expr
 
+    -- | Replace V[ANY*ANY] with V[src*tgt] when we know the types from context
+    -- This function recursively refines V expressions throughout the expression tree
+    refineV :: Expression -> Signature -> Expression
+    refineV expr targetSig = case expr of
+      EDcV (Sign src tgt) -> case targetSig of
+        Sign newSrc newTgt ->
+          if src == anyCpt && tgt == anyCpt 
+          then EDcV (Sign newSrc newTgt)
+          else if src == anyCpt 
+               then EDcV (Sign newSrc tgt)
+               else if tgt == anyCpt 
+                    then EDcV (Sign src newTgt)
+                    else EDcV (Sign src tgt)
+        ISgn _ -> expr  -- Don't refine if target signature is ISgn
+      -- Recursively refine in binary operations
+      EEqu (e1, e2) -> EEqu (refineV e1 targetSig, refineV e2 targetSig)
+      EInc (e1, e2) -> EInc (refineV e1 targetSig, refineV e2 targetSig)
+      EIsc (e1, e2) -> EIsc (refineV e1 targetSig, refineV e2 targetSig)
+      EUni (e1, e2) -> EUni (refineV e1 targetSig, refineV e2 targetSig)
+      EDif (e1, e2) -> EDif (refineV e1 targetSig, refineV e2 targetSig)
+      ELrs (e1, e2) -> ELrs (refineV e1 targetSig, refineV e2 targetSig)
+      ERrs (e1, e2) -> ERrs (refineV e1 targetSig, refineV e2 targetSig)
+      EDia (e1, e2) -> EDia (refineV e1 targetSig, refineV e2 targetSig)
+      ECps (e1, e2) -> ECps (refineV e1 (Sign (source targetSig) (source e2)), refineV e2 (Sign (target e1) (target targetSig)))
+      ERad (e1, e2) -> ERad (refineV e1 targetSig, refineV e2 targetSig)
+      EPrd (e1, e2) -> EPrd (refineV e1 (Sign (source targetSig) (target e1)), refineV e2 (Sign (source e2) (target targetSig)))
+      -- Recursively refine in unary operations  
+      EFlp e -> EFlp (refineV e (flp targetSig))
+      ECpl e -> ECpl (refineV e targetSig)
+      EBrk e -> EBrk (refineV e targetSig)
+      EKl0 e -> EKl0 (refineV e targetSig)
+      EKl1 e -> EKl1 (refineV e targetSig)
+      -- Base cases - no refinement needed
+      _ -> expr
+
     makeTrees :: ((Expression, Expression) -> Expression)
               -> (Term TermPrim -> Term TermPrim -> Term TermPrim)
               -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept)
@@ -1506,22 +1541,26 @@ signaturesWithConstraint env contextInfo mConstraint trm =
               -> [(Expression, Signature, Term TermPrim)]
               -> [((Expression, Signature, Term TermPrim), (Expression, Signature, Term TermPrim), (Expression, Signature, Term TermPrim))]                      
     makeTrees combinator pCombinator meetORjoin triplesa triplesb 
-     = [  ((combinator (expr_a, expr_b), Sign srca tgtb, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (expr_b, Sign right tgtb, trm_b))
+     = [  ((combinator (refined_expr_a, refined_expr_b), Sign srca tgtb, pCombinator trm_a trm_b), (refined_expr_a, Sign srca left, trm_a), (refined_expr_b, Sign right tgtb, trm_b))
        | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph tgta srcb]
        , Just left<-[meet conceptsGraph between tgta] , Just right<-[meet conceptsGraph srcb between]
+       , let refined_expr_a = refineV expr_a (Sign srca left)
+       , let refined_expr_b = refineV expr_b (Sign right tgtb)
        ] <>
-       [  ((combinator (expr_a, refined_expr_b), Sign srca between, pCombinator trm_a trm_b), (expr_a, Sign srca left, trm_a), (refined_expr_b, ISgn between, trm_b))
+       [  ((combinator (refined_expr_a, refined_expr_b), Sign srca between, pCombinator trm_a trm_b), (refined_expr_a, Sign srca left, trm_a), (refined_expr_b, ISgn between, trm_b))
        | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph tgta cptb]
        , Just left<-[meet conceptsGraph between tgta]
+       , let refined_expr_a = refineV expr_a (Sign srca left)
        , let refined_expr_b = refineIdentity expr_b between
        ] <>
-       [ ((combinator (refined_expr_a, expr_b), Sign between tgtb, pCombinator trm_a trm_b), (refined_expr_a, ISgn between, trm_a), (expr_b, Sign right tgtb, trm_b))
+       [ ((combinator (refined_expr_a, refined_expr_b), Sign between tgtb, pCombinator trm_a trm_b), (refined_expr_a, ISgn between, trm_a), (refined_expr_b, Sign right tgtb, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
        , Just between<-[meetORjoin conceptsGraph cpta srcb]
        , Just right<-[meet conceptsGraph srcb between]
        , let refined_expr_a = refineIdentity expr_a between
+       , let refined_expr_b = refineV expr_b (Sign right tgtb)
        ] <>
        [ ((combinator (refined_expr_a, refined_expr_b), Sign between between, pCombinator trm_a trm_b), (refined_expr_a, ISgn between, trm_a), (refined_expr_b, ISgn between, trm_b))
        | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
@@ -1542,10 +1581,12 @@ signaturesWithConstraint env contextInfo mConstraint trm =
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
         case -- trace ("\n20. "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
                [ -- trace ("\n26. "<>mjString<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
-                 ((combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b), (expr_a, Sign src tgt, trm_a), (expr_b, Sign src tgt, trm_b))
+                 ((combinator (refined_expr_a, refined_expr_b), Sign src tgt, pCombinator trm_a trm_b), (refined_expr_a, Sign src tgt, trm_a), (refined_expr_b, Sign src tgt, trm_b))
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb -- , -- trace ("\n22. "<>mjString<>" "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (source sgn_a) (source sgn_b))<>" and "<>mjString<>" "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meetORjoin conceptsGraph (target sgn_a) (target sgn_b))) True
                , Just src<-[meetORjoin conceptsGraph src_a src_b]
                , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
+               , let refined_expr_a = refineV expr_a (Sign src tgt)
+               , let refined_expr_b = refineV expr_b (Sign src tgt)
                ]
             -- Add cases for ISgn matching - for equations/inclusions, identities can match with any endomorphic signature
             -- When matching ISgn with Sign, refine the atom expression to use the inferred concept instead of ANY
