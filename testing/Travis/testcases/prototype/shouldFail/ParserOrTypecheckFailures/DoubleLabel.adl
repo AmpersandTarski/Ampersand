@@ -8,13 +8,11 @@ INTERFACE Overview : I[ONE]
 ENDCONTEXT
 
 {- 
-   Purpose: to examine the error message caused by multiple instances of the same field.
+   Purpose: to examine the error message caused by duplicate labels in a BOX statement.
    Result: FAIL
-   Reason: Field names in interfaces must be unique, because they are being referred to.
+   Reason: Label names in BOX statements must be unique.
    
-   Message:
-   The interface named "Overview" contains errors:
-   line 3:11, file "DoubleLabel.adl": Different fields have the same name:
-      (Unknown origin)      "l" : V[ONE*ONE]
-      (Unknown origin)      "l" : V[ONE*ONE]
+   Expected Message:
+   The label `l` occurs 2 times
+   in the BOX defined at: ...
 -}

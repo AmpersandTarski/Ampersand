@@ -55,7 +55,7 @@ module Ampersand.Input.ADL1.CtxError
     mustBeValidName,
     nonMatchingRepresentTypes,
     unexpectedType,
-    uniqueLables,
+    uniqueLabels,
     uniqueNames,
     whenCheckedM,
   )
@@ -337,19 +337,17 @@ uniqueNames nameclass = uniqueBy name messageFor
             <> "."
         )
 
-uniqueLables :: Origin -> (a -> Text1) -> [a] -> Guarded ()
-uniqueLables orig toLabel = uniqueBy toLabel (messageFor . fmap toLabel)
+uniqueLabels :: Origin -> (a -> Text1) -> [a] -> Text -> Guarded ()
+uniqueLabels orig toLabel items thing = uniqueBy toLabel (messageFor . fmap toLabel) items
   where
     messageFor :: NonEmpty Text1 -> CtxError
     messageFor x =
       CTXE orig
         . T.intercalate "\n    "
-        $ [ "The label `" <> text1ToText lable <> "` occurs " <> tshow (NE.length x) <> " times",
-            "in the VIEW statement defined at: ",
-            "   " <> tshow orig <> "."
+        $ [ "The label `" <> text1ToText (NE.head x) <> "` occurs " <> tshow (NE.length x) <>
+            " times in the " <> thing <> " defined at: ",
+            tshow orig <> "."
           ]
-      where
-        lable = NE.head x
 
 -- | Helper function to check for uniqueness.
 uniqueBy ::

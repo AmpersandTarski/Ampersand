@@ -743,7 +743,7 @@ pCtx2aCtx
                    -- Validate all concepts in the view definition
                    validatePConceptsInSchema ci orig pvd ("VIEW " <> fullName nm)
                    segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
-                   uniqueLables orig toLabel . filter hasLabel $ segments
+                   uniqueLabels orig toLabel (filter hasLabel segments) "VIEW statement"
                    return
                          Vd
                            { vdpos = orig,
@@ -789,6 +789,7 @@ pCtx2aCtx
       pSubIfc2aSubIfc contextInfo boxConcept sub =
         case sub of
           P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem contextInfo (Just boxConcept)) (si_box sub)
+                        uniqueLabels (origin sub) toLabel (filter hasLabel subBoxes) "BOX"
                         return (Box{ pos = origin sub, siConcept = pCpt2aCpt boxConcept, siHeader = si_header sub, siObjs = subBoxes})
           P_InterfaceRef
             { pos       = orig,
@@ -801,6 +802,16 @@ pCtx2aCtx
                                            siConcept = srcIfc
                                          })
         where
+          toLabel :: BoxItem -> Text1
+          toLabel (BxExpr obj) = case objPlainName obj of
+            Nothing -> fatal "Box items without a plain name should have been filtered out here"
+            Just nm -> nm
+          toLabel (BxText {}) = fatal "BxText items should have been filtered out"
+          
+          hasLabel :: BoxItem -> Bool
+          hasLabel (BxExpr obj) = isJust (objPlainName obj)
+          hasLabel (BxText {}) = False
+          
           -- | getInterface retrieves the interface concept and checks compatibility with the box concept.
           getInterface :: Guarded A_Concept
           getInterface
@@ -977,6 +988,10 @@ pCtx2aCtx
             boxItem <- case pBox of
                           BxExpr{} -> pure (objE pBox)
                           _ -> (Errors . return . CTXE (origin pIfc)) "TXT is not expected here."
+            -- Check for duplicate labels in the top-level box
+            case objmsub boxItem of
+              Just (Box { siObjs = subBoxes }) -> uniqueLabels (origin pIfc) toLabel (filter hasLabel subBoxes) "BOX"
+              _ -> pure ()
             let objExpr = objExpression boxItem
                 ifcSource = source objExpr
                 ifcSourceType = representationOf contextInfo ifcSource
@@ -999,6 +1014,16 @@ pCtx2aCtx
                        [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
                          "However, the TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
                        ]
+        where
+          toLabel :: BoxItem -> Text1
+          toLabel (BxExpr obj) = case objPlainName obj of
+            Nothing -> fatal "Box items without a plain name should have been filtered out here"
+            Just nm -> nm
+          toLabel (BxText {}) = fatal "BxText items should have been filtered out"
+          
+          hasLabel :: BoxItem -> Bool
+          hasLabel (BxExpr obj) = isJust (objPlainName obj)
+          hasLabel (BxText {}) = False
 
 
       pRoleRule2aRoleRule :: P_RoleRule -> Set A_RoleRule

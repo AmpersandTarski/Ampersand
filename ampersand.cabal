@@ -251,6 +251,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ComparisonTest2.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/CyclicInterfaceRef.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/DoubleLabel.adl
+    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/DoubleLabelInView.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/DuplicateInterfaces.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceRefCheck.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceTest1.adl

@@ -1,0 +1,19 @@
+CONTEXT Test IN ENGLISH
+
+CONCEPT Person "A person"
+
+VIEW PersonView : Person { l : V[Person]
+                         , l : V[Person]
+                         } ENDVIEW
+
+ENDCONTEXT
+
+{- 
+   Purpose: to examine the error message caused by duplicate labels in a VIEW statement.
+   Result: FAIL
+   Reason: Label names in VIEW statements must be unique.
+   
+   Expected Message:
+   The label `l` occurs 2 times
+   in the VIEW statement defined at: ...
+-}
