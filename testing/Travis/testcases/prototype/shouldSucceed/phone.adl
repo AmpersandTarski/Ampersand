@@ -8,6 +8,4 @@ RULE carrier~ ; number |- reachableBy
 CLASSIFY CellPhone ISA Phone
 
 
-{- Het spreekt voor zich dat de regel niet goed is getypeerd. Echter, ampersand versie 1072 klaagt hier niet over.... -}
-
 ENDCONTEXT 
