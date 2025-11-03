@@ -1088,8 +1088,7 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            exp' <- -- trace ("\n1. Calling term2Expr from pRul2aRul with "<>showP expr) $
-                    term2Expr env ci Nothing expr
+            exp' <- term2Expr env ci Nothing expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -1678,26 +1677,27 @@ anyCpt = (PlainConcept . Set.fromList)
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo mBoxConcept term
   = do sgnTree <- signatures env contextInfo mBoxConcept term
-      --  trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
-       t2e sgnTree
+       -- trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
+       case sgnTree of
+         STnullary triples@((_, _, _):_:_)                                                   -> msg triples sgnTree "Please specify the signature explicitly."
+         STunary _ triples@((_, _, _):_:_)                                                   -> msg triples sgnTree "Please specify the signature explicitly."
+         STbinary _ _ triples@((_, _, _):_:_)                                                -> msg triples sgnTree "Please specify the signature explicitly."
+         STnullary triples@([(_, sgn, _)])    | source sgn == anyCpt || target sgn == anyCpt -> msg triples sgnTree "The signature may not contain ANY."
+         STunary _ triples@([(_, sgn, _)])    | source sgn == anyCpt || target sgn == anyCpt -> msg triples sgnTree "The signature may not contain ANY."
+         STbinary _ _ triples@([(_, sgn, _)]) | source sgn == anyCpt || target sgn == anyCpt -> msg triples sgnTree "The signature may not contain ANY."
+         STnullary [(expr, _, _)] -> pure expr  -- Single expression - already reduced, return it
+         STnullary []    -> fatal "Empty triples list in STnullary"
+         STunary _ []    -> fatal "Empty triples list in STunary"
+         STbinary _ _ [] -> fatal "Empty triples list in STbinary"
+         _ -> t2e sgnTree
   where
+    msg :: [(Expression, Signature, Term TermPrim)] -> OpTree (Expression, Signature, Term TermPrim) -> Text -> Guarded Expression
+    msg triples@((_, _, trm):_:_) sgnTree str = mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>str)
+    msg [(_, sgn, trm)]           sgnTree str = mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " has signature " <> tshow sgn <> ".\n  "<>str)
+    msg  _                         _       _  = fatal "msg: pattern match failure. This is a bug in the compiler."
     t2e :: OpTree (Expression, Signature, Term TermPrim) -> Guarded Expression
     t2e sgnTree =
       case sgnTree of
-        STnullary triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
-          in mkVerboseTypeError env (origin trm) sgnTree baseMsg
-        STnullary triples@([(_, sgn, trm)]) | source sgn==anyCpt || target sgn==anyCpt ->
-          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
-          in mkVerboseTypeError env (origin trm) sgnTree baseMsg
-        STnullary [(expr, _, _)]  -> pure expr  -- Single expression - already reduced, return it
-        STnullary [] -> fatal "Empty triples list in STnullary"
-        STbinary _ _ triples@((_, _, trm):_:_) -> 
-          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
-          in mkVerboseTypeError env (origin trm) sgnTree baseMsg
-        STunary _ triples@((_, _, trm):_:_) ->
-          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
-          in mkVerboseTypeError env (origin trm) sgnTree baseMsg
         STbinary stLeft stRight [(_, _, PEqu _ _ _)]
           -> EEqu <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight {- triples@ -}[(_, _, PInc _ _ _)]
@@ -1724,19 +1724,10 @@ term2Expr env contextInfo mBoxConcept term
           -> ERad <$> ((,) <$> t2e stLeft <*> t2e stRight)
      -- PBrk cannot occur because the function `signatures` does not produce it.
         other -> fatal $ "term2Expr: pattern match failure. This is a bug in the compiler.\n  OpTree structure: " <> describeStructure other <> "\n  Full tree: " <> tshow sgnTree
-      where
-        showTriples :: [(Expression, Signature, Term TermPrim)] -> Text
-        showTriples ts@((e, _, _):_) = showA e <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) ts)
-        showTriples [] = fatal "Don't call showTriples on an empty list."
-        describeStructure :: OpTree (Expression, Signature, Term TermPrim) -> Text
-        describeStructure (STnullary xs) = "STnullary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
-        describeStructure (STunary _ xs) = "STunary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
-        describeStructure (STbinary _ _ xs) = "STbinary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
-    -- conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
-    -- mjText kind tgta srcb between =
-    --   if tgta == srcb
-    --   then " is: " <> tshow between <> "."
-    --   else " (" <> tshow tgta <> " `" <> kind <> "` " <> tshow srcb <> " yields: " <> tshow between <> ")"
+    describeStructure :: OpTree (Expression, Signature, Term TermPrim) -> Text
+    describeStructure (STnullary xs) = "STnullary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
+    describeStructure (STunary _ xs) = "STunary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
+    describeStructure (STbinary _ _ xs) = "STbinary with " <> tshow (length xs) <> " items, terms: " <> T.intercalate ", " (map (showP . thd3) xs)
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
 pAtomPair2aAtomPair typ dcl pp =

@@ -179,9 +179,7 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
-    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
-    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -264,7 +262,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue757.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue890.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ParseFail.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/phone.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/RuleNamesMustBeUnique.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/SingleRoot.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/testinfo.yaml
@@ -277,10 +274,8 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try12.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try14.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try15.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try17b.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try18b.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try2.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try20.adl
@@ -303,6 +298,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Bug335_Kl0Kl1.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug_ANY_in_violation_view.adl
+    testing/Travis/testcases/prototype/shouldSucceed/ClosedWorld.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
     testing/Travis/testcases/prototype/shouldSucceed/CPLbug1.adl
@@ -348,6 +344,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1.adl
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/README.md
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldSucceed/phone.adl
     testing/Travis/testcases/prototype/shouldSucceed/propertytests.adl
     testing/Travis/testcases/prototype/shouldSucceed/SelectExprTest.adl
     testing/Travis/testcases/prototype/shouldSucceed/SequencesBug.adl
@@ -392,6 +389,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try37.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try38.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try39.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try4.adl
     testing/Travis/testcases/prototype/shouldSucceed/try40.adl
     testing/Travis/testcases/prototype/shouldSucceed/try41.adl
     testing/Travis/testcases/prototype/shouldSucceed/try41a.adl
@@ -419,14 +417,11 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
     testing/Travis/testcases/Simple/Delivery.adl
     testing/Travis/testcases/Simple/DeliverySimple.adl
     testing/Travis/testcases/Simple/DeliverySimple.css
