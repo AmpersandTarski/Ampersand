@@ -1717,11 +1717,12 @@ term2Expr env contextInfo mBoxConcept term
           -> ECps <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PDia _ _ _)]
           -> EDia <$> ((,) <$> t2e stLeft <*> t2e stRight)
-        STunary _ [(expr, _, _)] -> pure expr  -- Single unary expression - already reduced
         STbinary stLeft stRight [(_, _, PPrd _ _ _)]
           -> EPrd <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PRad _ _ _)]
           -> ERad <$> ((,) <$> t2e stLeft <*> t2e stRight)
+        STunary _ [(expr, _, _)] -> pure expr  -- Single unary expression - already reduced
+        STnullary [(expr, _, _)] -> pure expr  -- Single nullary expression - already reduced
      -- PBrk cannot occur because the function `signatures` does not produce it.
         other -> fatal $ "term2Expr: pattern match failure. This is a bug in the compiler.\n  OpTree structure: " <> describeStructure other <> "\n  Full tree: " <> tshow sgnTree
     describeStructure :: OpTree (Expression, Signature, Term TermPrim) -> Text

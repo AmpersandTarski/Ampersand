@@ -206,7 +206,6 @@ extra-source-files:
     testing/Travis/testcases/Misc/Issue1499.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
-    testing/Travis/testcases/Parsing/shouldFail/export.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl
