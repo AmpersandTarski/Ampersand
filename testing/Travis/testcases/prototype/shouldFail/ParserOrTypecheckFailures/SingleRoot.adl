@@ -1,4 +1,4 @@
-﻿CONTEXT SingleRoot IN ENGLISH
+CONTEXT SingleRoot IN ENGLISH
 {-
 To enable the use of tables, each typology should have a single root element (the most generic concept). 
 If there is none, it is feasable to have & create one automatically. However, then a name must be choosen. 

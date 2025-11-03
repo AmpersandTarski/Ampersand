@@ -1088,7 +1088,8 @@ pCtx2aCtx
             rr_viol = viols
           } =
           do
-            exp' <- term2Expr env ci Nothing expr
+            exp' <- -- trace ("\n1. Calling term2Expr from pRul2aRul with "<>showP expr) $
+                    term2Expr env ci Nothing expr
             vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
             return
               Rule
@@ -1677,7 +1678,7 @@ anyCpt = (PlainConcept . Set.fromList)
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo mBoxConcept term
   = do sgnTree <- signatures env contextInfo mBoxConcept term
-       -- trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
+      --  trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
        t2e sgnTree
   where
     t2e :: OpTree (Expression, Signature, Term TermPrim) -> Guarded Expression
@@ -1686,7 +1687,10 @@ term2Expr env contextInfo mBoxConcept term
         STnullary triples@((_, _, trm):_:_) ->
           let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
           in mkVerboseTypeError env (origin trm) sgnTree baseMsg
-        STnullary [(expr, _, _)] -> pure expr  -- Single expression - already reduced, return it
+        STnullary triples@([(_, sgn, trm)]) | source sgn==anyCpt || target sgn==anyCpt ->
+          let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."
+          in mkVerboseTypeError env (origin trm) sgnTree baseMsg
+        STnullary [(expr, _, _)]  -> pure expr  -- Single expression - already reduced, return it
         STnullary [] -> fatal "Empty triples list in STnullary"
         STbinary _ _ triples@((_, _, trm):_:_) -> 
           let baseMsg = "Ambiguous term: " <> showTriples triples <> ".\n  Please specify the signature explicitly."

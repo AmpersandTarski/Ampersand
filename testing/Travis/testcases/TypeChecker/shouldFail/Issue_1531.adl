@@ -1,0 +1,15 @@
+CONTEXT Issue1531 IN DUTCH
+
+RELATION r[A*Prio] [UNI]
+
+INTERFACE Eenheid : I[Eenheid] BOX
+   [ Eenheid : I
+   ]
+
+ENDCONTEXT
+
+{- This test should fail because concept 'Eenheid' is not used in any RELATION,
+   CLASSIFY, REPRESENT, or RULE statement, so the context cannot be compiled.
+   The reason is that Eenheid will not occur in the schema,
+   so a standalone interface will not be compatible with the schema.
+-}

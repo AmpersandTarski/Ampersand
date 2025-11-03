@@ -535,11 +535,11 @@ mkOtherTupleInSessionError r pr =
 mkConceptNotInSchemaError :: Origin -> Name -> Text -> CtxError
 mkConceptNotInSchemaError orig cptName contextName =
   CTXE orig
-    $ "Concept "
-    <> fullName cptName
-    <> " is not used in a RELATION, CLASSIFY, REPRESENT, or RULE statement, so "
+    $ "Cannot compile "
     <> contextName
-    <> " cannot be compiled."
+    <> " because"
+    <> fullName cptName
+    <> " does not occur in a RELATION, CLASSIFY, REPRESENT, or RULE statement."
 
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =

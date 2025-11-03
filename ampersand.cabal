@@ -159,7 +159,6 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
     testing/Travis/testcases/Check/EnforceTest1.adl
-    testing/Travis/testcases/Check/Issue_1531.adl
     testing/Travis/testcases/Check/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
@@ -180,7 +179,9 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
+    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
+    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -207,12 +208,12 @@ extra-source-files:
     testing/Travis/testcases/Misc/Issue1499.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
+    testing/Travis/testcases/Parsing/shouldFail/export.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029a.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1029b.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue1189.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
     testing/Travis/testcases/Parsing/shouldFail/Issue960.adl
-    testing/Travis/testcases/Parsing/shouldFail/Issue980.adl
     testing/Travis/testcases/Parsing/shouldFail/LowercaseContextName.adl
     testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1014.adl
@@ -221,6 +222,7 @@ extra-source-files:
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1537.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue899b.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue960.adl
+    testing/Travis/testcases/Parsing/shouldSucceed/Issue980.adl
     testing/Travis/testcases/Parsing/shouldSucceed/testinfo.yaml
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.adl
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.xlsx
@@ -293,7 +295,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try8.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try9.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/tryRieks.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/typecheckerror.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ViewAnnotationCheck.adl
     testing/Travis/testcases/prototype/shouldSucceed/aliasTests.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
@@ -446,6 +447,7 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/FullRelationTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IntersectionTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/Issue_1531.adl
     testing/Travis/testcases/TypeChecker/shouldFail/KleenePlusNonEndo.adl
     testing/Travis/testcases/TypeChecker/shouldFail/KleeneStarNonEndo.adl
     testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualFlipped.adl

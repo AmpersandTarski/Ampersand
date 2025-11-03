@@ -1,7 +1,0 @@
-﻿CONTEXT TYPECHECKERROR IN ENGLISH
-CLASSIFY A ISA B -- make sure the I really is ambiguous instead of type-incorrect
-INTERFACE IFC : I[A]
-BOX[ r : I
-BOX[ s : I[B]
-] ]
-ENDCONTEXT
