@@ -1,0 +1,9 @@
+CONTEXT TestAnyInDifference IN ENGLISH
+
+RELATION r[A*B]
+
+-- This should type check: I should be refined to I[A]
+-- But currently I stays as I[ANY]
+RULE testDiff : I - r;r~
+
+ENDCONTEXT
