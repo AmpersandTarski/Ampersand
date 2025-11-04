@@ -6,6 +6,9 @@ MEANING "De persoon 'Sinterklaas' bestaat niet."
 RULE sinterklaasBestaat : "Sinterklaas";I[Idee]
 MEANING "Het is ondenkbaar dat de idee 'Sinterklaas' niet bestaat." 
 
+RULE sinterklaasBestaatNogSteeds : V |- "Sinterklaas";I[Idee]
+MEANING "Het is ondenkbaar dat de idee 'Sinterklaas' niet bestaat." 
+
 POPULATION Idee CONTAINS ["Sinterklaas"]
 
 INTERFACE Personen : "_SESSION"[SESSION]

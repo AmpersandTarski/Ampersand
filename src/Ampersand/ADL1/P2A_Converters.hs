@@ -1094,7 +1094,13 @@ pCtx2aCtx
               Rule
                 { rrnm = nm,
                   rrlbl = lbl',
-                  formalExpression = exp',
+                  -- According to Ampersand semantics, a rule without |- or = 
+                  -- (i.e., "RULE name : expr") should be equivalent to "V |- expr"
+                  -- This means the expression must hold for all pairs (i.e., must equal V)
+                  formalExpression = case exp' of
+                                       EInc _ -> exp'  -- Already has |-
+                                       EEqu _ -> exp'  -- Already has =
+                                       _      -> EInc (EDcV (sign exp'), exp'),
                   rrfps = orig,
                   rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings,
                   rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs,
@@ -1704,13 +1710,13 @@ term2Expr env contextInfo mBoxConcept term
   = do sgnTree <- signatures env contextInfo mBoxConcept term
        trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
         case sgnTree of
-         STnullary triples@((_, _, _):_:_)                                                   -> msg triples sgnTree "Please specify the signature explicitly."
-         STunary _ triples@((_, _, _):_:_)                                                   -> msg triples sgnTree "Please specify the signature explicitly."
-         STbinary _ _ triples@((_, _, _):_:_)                                                -> msg triples sgnTree "Please specify the signature explicitly."
-         STnullary [(expr, _, _)] -> pure expr  -- Single expression - already reduced, return it
-         STnullary []    -> fatal "Empty triples list in STnullary"
-         STunary _ []    -> fatal "Empty triples list in STunary"
-         STbinary _ _ [] -> fatal "Empty triples list in STbinary"
+         STnullary    triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
+         STunary _    triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
+         STbinary _ _ triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
+         STnullary    [(expr, _, _)]          -> pure expr  -- Single expression - already reduced, return it
+         STnullary    []                      -> fatal "Empty triples list in STnullary"
+         STunary _    []                      -> fatal "Empty triples list in STunary"
+         STbinary _ _ []                      -> fatal "Empty triples list in STbinary"
          _ -> t2e sgnTree
   where
     msg :: [(Expression, Signature, Term TermPrim)] -> OpTree (Expression, Signature, Term TermPrim) -> Text -> Guarded Expression
