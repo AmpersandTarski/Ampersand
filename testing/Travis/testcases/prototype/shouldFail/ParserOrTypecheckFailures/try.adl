@@ -1,0 +1,13 @@
+CONTEXT Try
+INCLUDE "try.xlsx"
+
+RELATION r[Person*A]
+CLASSIFY Student ISA Person
+
+POPULATION r[Person*A] CONTAINS
+  [ ("Alice", "20")
+  , ("Bob", "22")
+  , ("Charlie", "21")
+  ]
+
+ENDCONTEXT

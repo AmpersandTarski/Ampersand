@@ -269,6 +269,8 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket441.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket442.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket726.adl
+    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try.adl
+    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/try.xlsx
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try1.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl

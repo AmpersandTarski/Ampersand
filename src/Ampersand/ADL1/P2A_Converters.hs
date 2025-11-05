@@ -1385,7 +1385,15 @@ validatePConceptsInSchema ci orig pStruct contextName =
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
 signatures env contextInfo mBoxConcept trm = signaturesWithConstraint env contextInfo (fmap MatchSource mBoxConcept) trm
 
--- | Internal function that handles box constraints for both source and target matching
+-- | The signaturesWithConstraint function  yields an OpTree of all possible (Expression, Signature, Term) triples for a given term.
+--   The structure of this tree matches the recursive structure of the term exactly.
+--   Every node in that tree contains at least one such triple; if it cannot construct valid triples it returns a type error instead.
+--   Every node in that tree contains at most one such triple.
+--   This is obvious for nullary terms because they correspond with Prim terms, which all yield one triple.
+--   For unary terms of expression e, the number of triples equals the number of triples of e, which is 1 (by inductive reasoning).
+--   For binary terms PLrs, PRrs, PDia, and PPrd, the code ensures that only one triple is constructed because the alternatives yield a type error.
+--   For other binary terms, checkIntra and checkPeri ensure that only one triple is constructed.
+--   Hence, the OpTree signaturesWithConstraint returns has exactly one triple per node.
 signaturesWithConstraint :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe BoxConstraint -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
 signaturesWithConstraint env contextInfo mConstraint trm =
  case trm of
@@ -1401,9 +1409,9 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                                    rels r = case p_mbSign r of
                                      Just sg -> (findRelsTyped (declarationsMap contextInfo) (name r) . pSign2aSign pCpt2aCpt) sg
                                      Nothing -> (findDecls (declarationsMap contextInfo) . name) r
-                             in  case rels rel of
-                                              [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
-                                              ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
+                                in  case rels rel of
+                                      [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
+                                      ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
   PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet" "PEqu"
   PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b meet "meet" "PInc"
   PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet "meet" "PIsc"
@@ -1516,7 +1524,7 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                           []    -> " is undefined because "<>showP expr<>" is untypable"
                           _     -> ", which can be any of "<>tshow cpts
 
-    -- | Replace ANY with concrete concepts based on inferred signature.
+      -- | Replace ANY with concrete concepts based on inferred signature.
     --
     -- Recursively refines expressions by decomposing the target signature based on operation type.
     -- This implements backward type propagation: constraints flow from root to leaves.
@@ -1528,6 +1536,9 @@ signaturesWithConstraint env contextInfo mConstraint trm =
     --
     -- This ensures V[SinText*ANY] in "pref;V" gets refined to V[SinText*Sequence]
     -- when the composition is required to produce [Item*Sequence].
+    --
+    -- IMPORTANT: This function now uses meet-based specialization:
+    -- When refining concept g with target concept s, we compute meet(s, g).
     refineANY :: Expression -> Signature -> Expression
     refineANY expr targetSig = case expr of
       -- Identity with ANY: use source of target signature
@@ -1687,9 +1698,7 @@ signaturesWithConstraint env contextInfo mConstraint trm =
                                     [] ->     "untyped"
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-          [result] -> 
-            -- trace ("\n[checkPeri " <> kind <> "] Computed signature: " <> tshow (snd3 result)) $
-            return (STbinary sgnaTree sgnbTree [result])
+          [result] -> return (STbinary sgnaTree sgnbTree [result])
           results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                          opTree = STbinary sgnaTree sgnbTree results
                      in mkVerboseTypeError env o opTree baseMsg
@@ -1708,17 +1717,23 @@ anyCpt = (PlainConcept . Set.fromList)
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe P_Concept -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo mBoxConcept term
   = do sgnTree <- signatures env contextInfo mBoxConcept term
-       trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
-        case sgnTree of
+      --  trace ("\n24. Analyzing "<>showP term<>"\nsignatures yields:\n"<>showOpTree sgnTree) $
+       case sgnTree of
          STnullary    triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
          STunary _    triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
          STbinary _ _ triples@((_, _, _):_:_) -> msg triples sgnTree "Please specify the signature explicitly."
-         STnullary    [(expr, _, _)]          -> pure expr  -- Single expression - already reduced, return it
+         STnullary    [(expr, sig, _)]        
+           | containsANY sig -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains ANY: " <> tshow sig)
+           | otherwise -> pure expr  -- Single expression - already reduced, return it
          STnullary    []                      -> fatal "Empty triples list in STnullary"
          STunary _    []                      -> fatal "Empty triples list in STunary"
          STbinary _ _ []                      -> fatal "Empty triples list in STbinary"
          _ -> t2e sgnTree
   where
+    containsANY :: Signature -> Bool
+    containsANY (Sign src tgt) = src == anyCpt || tgt == anyCpt
+    containsANY (ISgn cpt) = cpt == anyCpt
+
     msg :: [(Expression, Signature, Term TermPrim)] -> OpTree (Expression, Signature, Term TermPrim) -> Text -> Guarded Expression
     msg triples@((_, _, trm):_:_) sgnTree str = mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>str)
     msg [(_, sgn, trm)]           sgnTree str = mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " has signature " <> tshow sgn <> ".\n  "<>str)
@@ -1749,8 +1764,10 @@ term2Expr env contextInfo mBoxConcept term
           -> EPrd <$> ((,) <$> t2e stLeft <*> t2e stRight)
         STbinary stLeft stRight [(_, _, PRad _ _ _)]
           -> ERad <$> ((,) <$> t2e stLeft <*> t2e stRight)
-        STunary _ [(expr, _, _)] -> pure expr  -- Single unary expression - already reduced
-        STnullary [(expr, _, _)] -> pure expr  -- Single nullary expression - already reduced
+        STunary _ [(expr, _, _)]
+          -> pure expr  -- Single unary expression - already reduced
+        STnullary [(expr, _, _)]
+          -> pure expr  -- Single nullary expression - already reduced
      -- PBrk cannot occur because the function `signatures` does not produce it.
         other -> fatal $ "term2Expr: pattern match failure. This is a bug in the compiler.\n  OpTree structure: " <> describeStructure other <> "\n  Full tree: " <> tshow sgnTree
     describeStructure :: OpTree (Expression, Signature, Term TermPrim) -> Text
