@@ -7,6 +7,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+-- import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
@@ -37,6 +38,9 @@ evaluateExpSQL fSpec dbNm expr = do
   env <- ask
   let violationsExpr = conjNF env expr
       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
+  --     sqlText = queryAsSQL violationsQuery
+  --     traceMsg = "\n=== SQL for expression: " <> showA expr <> " ===\n" <> sqlText <> "\n=== END SQL ===\n"
+  -- trace traceMsg $
   performQuery dbNm violationsQuery
 
 performQuery ::

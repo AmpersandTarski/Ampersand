@@ -1284,6 +1284,7 @@ normStep
       nM _ (EInc (l, r)) _ = (notCpl l .\/. r, ["remove |-"], "<=>")
       --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
       --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
+      nM _ (ECpl (EEqu (l, r))) _ = (EUni (EDif (l, r), EDif (r, l)), ["-(x=y) = (x-y)\\/(y-x) (symmetric difference)"], "<=>")
       nM _ e@(ECpl EIsc {}) _ = (deMorganEIsc e, ["De Morgan"], "<=>")
       nM _ e@(ECpl EUni {}) _ = (deMorganEUni e, ["De Morgan"], "<=>")
       nM _ e@(ECpl (ERad (_, ECpl {}))) _ = (deMorganERad e, ["De Morgan"], "<=>")

@@ -122,12 +122,8 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EBrk e -> isFalse e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
-  isIdent expr = ( \x ->
-                     if x && (source expr /= target expr)
-                       then fatal $ "Something wrong with isIdent." <> tshow expr
-                       else x
-                 )
-    $ case expr of
+  isIdent expr =
+    case expr of
       EEqu (l, r) -> isIdent (EIsc (EInc (l, r), EInc (r, l))) -- TODO: maybe derive something better?
       EInc (l, r) -> isIdent (EUni (ECpl l, r)) -- TODO: maybe derive something better?
       EIsc (l, r) -> isIdent l && isIdent r

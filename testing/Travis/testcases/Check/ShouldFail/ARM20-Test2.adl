@@ -1,0 +1,29 @@
+CONTEXT ARM20Test2 IN DUTCH
+--$ Onderstaand pattern geeft een beoogde fout -}
+------------------------------------------------------------
+PATTERN ARM20Test2
+
+RELATION critBF[Criterium*Bedrijfsfunctie] [MAP] PRAGMA "" " wordt gehanteerd binnen "
+RELATION bfCrit[Bedrijfsfunctie*Criterium] [MAP] PRAGMA "" " heeft als criterium "
+CLASSIFY Criterium ISA Verwachting
+RELATION expID[Verwachting*ExpectationID] [MAP] PRAGMA "" "staat in de business bekend als"
+
+VIEW Verwachtingen: Verwachting(critBF, bfCrit~, expID)
+{- FOUTMELDING voor bovenstaande regel:
+.../Ampersand/testing/Travis/testcases/Check/ShouldFail/ARM20-Test2.adl:11:33 error:
+  The expression in a VIEW segment is too narrow for the VIEW concept.
+    Expression: critBF[Criterium*Bedrijfsfunctie]
+    VIEW concept: Verwachting
+    The source of the expression (Criterium) is more specific than the VIEW concept (Verwachting).
+    A VIEW expression must work for all instances of the VIEW concept, not just a subset.
+------------------------------
+.../Ampersand/testing/Travis/testcases/Check/ShouldFail/ARM20-Test2.adl:11:41 error:
+  The expression in a VIEW segment is too narrow for the VIEW concept.
+    Expression: bfCrit[Bedrijfsfunctie*Criterium]~
+    VIEW concept: Verwachting
+    The source of the expression (Criterium) is more specific than the VIEW concept (Verwachting).
+    A VIEW expression must work for all instances of the VIEW concept, not just a subset.
+-}
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

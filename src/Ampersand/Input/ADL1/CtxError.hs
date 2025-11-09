@@ -38,6 +38,8 @@ module Ampersand.Input.ADL1.CtxError
     mkNoBoxItemsWarning,
     mkOperatorError,
     mkConceptNotInSchemaError,
+    mkRelationTooNarrowForViewError,
+    mkViewExpressionMismatchError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
     mkParserStateWarning,
@@ -537,9 +539,32 @@ mkConceptNotInSchemaError orig cptName contextName =
   CTXE orig
     $ "Cannot compile "
     <> contextName
-    <> " because"
+    <> " because "
     <> fullName cptName
     <> " does not occur in a RELATION, CLASSIFY, REPRESENT, or RULE statement."
+
+mkRelationTooNarrowForViewError :: Origin -> Expression -> A_Concept -> CtxError
+mkRelationTooNarrowForViewError orig expr viewConcept =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The expression in a VIEW segment is too narrow for the VIEW concept.",
+        "Expression: " <> showA expr,
+        "VIEW concept: " <> (text1ToText . showWithAliases) viewConcept,
+        "The source of the expression (" <> (text1ToText . showWithAliases . source) expr <> ") is more specific than the VIEW concept (" <> (text1ToText . showWithAliases) viewConcept <> ").",
+        "A VIEW expression must work for all instances of the VIEW concept, not just a subset."
+      ]
+
+mkViewExpressionMismatchError :: Origin -> Expression -> A_Concept -> CtxError
+mkViewExpressionMismatchError orig expr viewConcept =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The expression in a VIEW segment has an incompatible type.",
+        "Expression: " <> showA expr,
+        "Expression source: " <> (text1ToText . showWithAliases . source) expr,
+        "VIEW concept: " <> (text1ToText . showWithAliases) viewConcept,
+        "The source of the expression and the VIEW concept have no ISA relationship.",
+        "The expression source must be equal to or more general than the VIEW concept."
+      ]
 
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =

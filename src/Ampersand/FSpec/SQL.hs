@@ -843,6 +843,33 @@ nonSpecialSelectExpr fSpec expr =
                 where
                   first' = uName "fst"
                   secnd = uName "snd"
+       where
+        one :: BinQueryExpr
+        one =
+          BinQEComment
+            [BlockComment "Just ONE"]
+            BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
+              { bseSetQuantifier = SQDefault,
+                bseSrc = theONESingleton,
+                bseTrg = theONESingleton,
+                bseTbl =
+                  [ TRQueryExpr
+                      Select
+                        { qeSetQuantifier = SQDefault,
+                          qeSelectList = [(NumLit "1", Nothing)],
+                          qeFrom = [],
+                          qeWhere = Nothing,
+                          qeGroupBy = [],
+                          qeHaving = Nothing,
+                          qeOrderBy = [],
+                          qeOffset = Nothing,
+                          qeFetchFirst = Nothing
+                        }
+                      `as` uName "ONE"
+                  ],
+                bseWhr = Nothing
+              }
+
     (EDcI c) -> traceComment ["case: EDcI c"]
       $ case c of
         ONE ->
@@ -1619,32 +1646,6 @@ emptySet =
   where
     a = uName "a"
     nothing = uName "nothing"
-
-one :: BinQueryExpr
-one =
-  BinQEComment
-    [BlockComment "Just ONE"]
-    BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
-      { bseSetQuantifier = SQDefault,
-        bseSrc = theONESingleton,
-        bseTrg = theONESingleton,
-        bseTbl =
-          [ TRQueryExpr
-              Select
-                { qeSetQuantifier = SQDefault,
-                  qeSelectList = [(NumLit "1", Nothing)],
-                  qeFrom = [],
-                  qeWhere = Nothing,
-                  qeGroupBy = [],
-                  qeHaving = Nothing,
-                  qeOrderBy = [],
-                  qeOffset = Nothing,
-                  qeFetchFirst = Nothing
-                }
-              `as` uName "ONE"
-          ],
-        bseWhr = Nothing
-      }
 
 theDialect :: Dialect
 theDialect = mysql -- maybe in the future other dialects will be supported.

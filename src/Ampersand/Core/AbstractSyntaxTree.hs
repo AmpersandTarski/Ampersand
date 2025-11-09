@@ -1366,8 +1366,11 @@ meet conceptsGraph a b
       maximum a' b' = if hasEdge a' b' rtc then b' else a'
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
-leq :: (Ord a) =>AdjacencyMap a -> a -> a -> Maybe Bool
+leq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe Bool
 leq conceptsGraph a b
+    | a == b          = Just True
+    | a == anyCpt     = Just False  -- ANY is not more specific than anything
+    | b == anyCpt     = Just True   -- Everything is more specific than (or equal to) ANY
     | hasEdge a b rtc = Just True
     | hasEdge b a rtc = Just False
     | otherwise       = Nothing

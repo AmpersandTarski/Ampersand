@@ -8,6 +8,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree (sessionConcept)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
 import Ampersand.FSpec.FSpec
@@ -194,7 +195,7 @@ makeFSpec env context =
               crc = pairsinexpr consExpr
           in cra Set.\\ crc
         expr -> -- Rule without |- or =, treat as invariant: expr must be empty
-          pairsinexpr expr
+          pairsinexpr (notCpl expr)
     conjunctViolations :: Conjunct -> AAtomPairs
     conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
@@ -518,7 +519,7 @@ makeFSpec env context =
                   { objPos = Origin "generated attribute object: step 4b",
                     objPlainName = Just $ fullName1 c,
                     objlbl = Nothing,
-                    objExpression = EDcV (Sign ONE c),
+                    objExpression = EDcV (Sign sessionConcept c),
                     objcrud = defaultGeneratedCruds,
                     objmView = Nothing,
                     objmsub = Nothing
