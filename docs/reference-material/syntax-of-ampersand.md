@@ -1164,7 +1164,7 @@ Interface template that provides a botton that, when clicked, can set, clear and
 The interface provides means to:
 
 - construct the label (i.e. the text that shows on the button) from fixed texts (i.e. `TXT "some text here"`) as well as valiues of expression. This allows you to create detailed/customized texts on a button.
-- flip, set, and clear (up to 3) property-relations. This allows you to easily create complex state machines, where clicking a single button can flip, set and clear several property-relations simultaneously.
+- flip, set, and clear (up to 3) property-relations. This allows you to create complex state machines, where clicking a single button can flip, set and clear several property-relations simultaneously.
 - specify the color of the button, and a different color for when it is disabled.
 - hide and/or disable the button by specifying an expression (that must be a [PROP]-type).
 - provide a popover text for the button, both when it is enabled and when it is disabled. 

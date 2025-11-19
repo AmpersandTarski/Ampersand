@@ -79,6 +79,71 @@ In case the Ampersand compiler is called by software and fails, it is useful to 
 | 80 | Back-end | The compiler failed to install the prototype framework. This is most likely a configuration error.  |
 
 
+## Commands
+
+Ampersand provides several commands for different purposes. Each command processes your Ampersand script in a different way.
+
+### check
+
+Validates your script for syntax and type errors without generating any output.
+
+```bash
+ampersand check MyModel.adl
+```
+
+This command:
+- Parses your script
+- Checks for syntax errors
+- Performs type checking
+- Reports any errors found
+
+Use this command for quick validation during development.
+
+### validate
+
+Compares the results of rule evaluation in Haskell and SQL to test the correctness of the Ampersand compiler's SQL generation.
+
+```bash
+ampersand validate MyModel.adl
+```
+
+This command:
+- Compiles your script as a prototype (loads PrototypeContext)
+- Creates a temporary database
+- Evaluates all expressions in both Haskell and SQL
+- Reports mismatches between Haskell and SQL results
+
+**Requirements:**
+- PHP command-line with MySQL support must be installed
+- The script must compile without errors
+
+**When to use:**
+- Testing the Ampersand compiler itself
+- Debugging SQL generation issues
+- Verifying that database queries match the formal semantics
+
+Note: This command is for compiler development and debugging, not for normal use.
+
+### proto
+
+Generates a working prototype application from your script.
+
+```bash
+ampersand proto --proto-dir /var/www/myapp MyModel.adl
+```
+
+See the prototype documentation for details.
+
+### documentation
+
+Generates documentation from your specification.
+
+```bash
+ampersand documentation MyModel.adl
+```
+
+See the section below for details.
+
 ## Generating Documentation from Your Model
 
 Ampersand is aimed at deriving software directly from a formal specification provided by the user. One of the outcomes of this process is a generated document that reflects the user's specification in a structured and analyzable format.
