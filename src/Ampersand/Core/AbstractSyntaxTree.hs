@@ -74,7 +74,8 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     Type (..),
     typeOrConcept,
-    join, meet, leq, meetSubsets,
+    anyCpt, nilCpt,
+    join, meet, geq, meetSubsets,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -1326,7 +1327,7 @@ data MissingMeetEdge = MissingMeetEdge
 -- and returns the missing edges (m,a) and (m,b) that should connect this meet to a and b.
 -- Returns an AdjacencyMap containing the missing edges that violate this property.
 
--- | The ANY concept - universal upper bound for all concepts
+-- | The ANY concept - universal upper bound for all concepts. It is more generic than every other concept.
 anyCpt :: A_Concept
 anyCpt = PlainConcept . Set.fromList $
   [(case try2Name ConceptName "_ANY" of
@@ -1334,12 +1335,24 @@ anyCpt = PlainConcept . Set.fromList $
       Right (nm, _) -> nm
     , Nothing)]
 
+-- | The NIL concept - universal lower bound for all concepts. It is more specific than every other concept.
+nilCpt :: A_Concept
+nilCpt = PlainConcept . Set.fromList $
+  [(case try2Name ConceptName "_NIL" of
+      Left err -> fatal $ "Not a proper concept name: __NIL. " <> err
+      Right (nm, _) -> nm
+    , Nothing)]
+
+{- Design decision:
+anyCpt and nilCpt are universal bottom and top elements.
+-}
 -- Compute the least upper bound (join) of a list of pairs
--- Special case: ANY is treated as the universal upper bound
 join :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 join conceptsGraph a b
     | a == anyCpt = Just anyCpt
     | b == anyCpt = Just anyCpt
+    | a == nilCpt = Just b
+    | b == nilCpt = Just a
     | hasEdge a b rtc = Just b
     | hasEdge b a rtc = Just a
     | otherwise =
@@ -1351,11 +1364,12 @@ join conceptsGraph a b
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
 -- Compute the greatest lower bound (meet) of a list of pairs
--- Special case: ANY is treated as the universal upper bound, so meet with ANY returns the other concept
 meet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 meet conceptsGraph a b
     | a == anyCpt = Just b
     | b == anyCpt = Just a
+    | a == nilCpt = Just nilCpt
+    | b == nilCpt = Just nilCpt
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
@@ -1366,13 +1380,15 @@ meet conceptsGraph a b
       maximum a' b' = if hasEdge a' b' rtc then b' else a'
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
-leq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe Bool
-leq conceptsGraph a b
+geq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe Bool
+geq conceptsGraph a b
     | a == b          = Just True
-    | a == anyCpt     = Just False  -- ANY is not more specific than anything
-    | b == anyCpt     = Just True   -- Everything is more specific than (or equal to) ANY
-    | hasEdge a b rtc = Just True
-    | hasEdge b a rtc = Just False
+    | b == anyCpt     = Just False  -- ANY is more specific than anything else
+    | a == anyCpt     = Just True   -- Everything other than ANY is more generic than ANY
+    | a == nilCpt     = Just False  -- Everything other than NIL is more specific than NIL
+    | b == nilCpt     = Just True   -- NIL is more generic than anything else
+    | hasEdge a b rtc = Just False
+    | hasEdge b a rtc = Just True
     | otherwise       = Nothing
     where
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)

@@ -241,11 +241,11 @@ findRels :: DeclMap -> Name -> Map.Map SignOrd Relation
 findRels declMap x = Map.findWithDefault Map.empty x declMap -- get all relations with the same name as x
 
 namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
-namedRel2Decl ci declMap (PNamedRel o r mSgn)
+namedRel2Decl ci declMap rel@(PNamedRel o r mSgn)
  = case decls of
     [dcl] -> pure dcl
-    []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>tshow r)
-    ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>tshow r<>"\n"<>tshow ds)
+    []    -> (Errors . return . CTXE o) ("Undefined relation named: "<>showP rel)
+    ds    -> (Errors . return . CTXE o) ("Ambiguous relation named: "<>showP rel<>"\n"<>tshow ds)
    where
      decls = case mSgn of
                Nothing -> findDecls declMap r
@@ -777,28 +777,13 @@ pCtx2aCtx
                 case payload of
                   P_ViewExp term ->
                     do
-                      -- Constrain the term to have source=viewConcept and target=ANY
-                      xpr <- term2Expr env ci (Just (Sign (conceptMap ci cpt) anyCpt)) term
+                      -- Constrain the term to have source=viewConcept and target=NIL (serves as a wildcard here)
                       let viewConcept = conceptMap ci cpt
-                      -- Check if xpr's source is more specific than viewConcept
-                      -- The term must work for ALL instances of viewConcept
-                      case leq (conceptGraph ci) (source xpr) viewConcept of
-                        Just True -> 
-                          -- source xpr ISA viewConcept (source is more specific) - check if equal
-                          if source xpr == viewConcept
-                            then do
-                              -- Equal is OK - now create the final expression with I prepended
-                              pure (ViewExp xpr)
-                            else 
-                              -- More specific is an error - won't work for all VIEW concept instances
-                              Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
-                        Just False ->
-                          -- viewConcept ISA source xpr (view concept is more specific) - this is OK
-                          do
-                            pure (ViewExp xpr)
-                        Nothing ->
-                          -- No ISA relationship - concepts are unrelated
-                          Errors . pure $ mkViewExpressionMismatchError orig xpr viewConcept
+                      xpr <- term2Expr env ci (Just (Sign viewConcept nilCpt)) term
+                      case geq (conceptGraph ci) (source xpr) viewConcept of
+                        Just True  -> pure (ViewExp xpr)
+                        Just False -> Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
+                        Nothing    -> Errors . pure $ mkViewExpressionMismatchError orig xpr viewConcept
                   P_ViewText str -> pure $ ViewText str
 
       isa :: Type -> Type -> Bool
@@ -841,15 +826,15 @@ pCtx2aCtx
                  -- First check if the referenced interface has undeclared concepts - if so, skip type-checking
                  validatePConceptsInSchema contextInfo (origin pIfc) pIfc ("INTERFACE " <> fullName pIfc)
                  -- Only proceed if validation succeeded
-                 expr <- (term2Expr env contextInfo (Just (Sign (conceptMap contextInfo boxConcept) anyCpt)) . obj_term . ifc_Obj) pIfc
+                 expr <- (term2Expr env contextInfo (Just (Sign (conceptMap contextInfo boxConcept) nilCpt)) . obj_term . ifc_Obj) pIfc
                  let srcCpt = source expr
                      boxAConcept = pCpt2aCpt boxConcept
-                 if boxAConcept == anyCpt
-                   then return srcCpt  -- Skip compatibility check when target is ANY
-                   else case leq (conceptGraph contextInfo) boxAConcept srcCpt of
+                 if isConcreteSignature (ISgn boxAConcept)
+                   then case geq (conceptGraph contextInfo) srcCpt boxAConcept of
                      Just True  -> return srcCpt
-                     Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow boxAConcept <> " ISA " <> tshow srcCpt)
+                     Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow srcCpt <> " ISA " <> tshow boxAConcept)
                      Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow boxAConcept <> ".")
+                   else fatal ("Unexpected: boxAConcept == "<>tshow boxAConcept<>" in interface "<>tshow (name pIfc) )
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
       -- | mBoxConcept is the P_Concept from the parent box, used to constrain type-checking of relations.
@@ -869,10 +854,10 @@ pCtx2aCtx
               -- The following strange construction gives a type error if subinterfaces don't match with their parent's target concept.
               -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
               -- When there's a box concept, prepend I[boxConcept]; to enable proper concept hierarchy checking
-              let termWithBoxContext = case mBoxConcept of
-                    Just boxConcept -> PCps orig (Prim (Pid orig boxConcept)) term
-                    Nothing -> term
-              objExpr <- term2Expr env contextInfo Nothing termWithBoxContext
+              let mConstraint = case mBoxConcept of
+                    Just boxConcept -> Just (Sign (pCpt2aCpt boxConcept) nilCpt)
+                    Nothing -> Nothing
+              objExpr <- term2Expr env contextInfo mConstraint term
               a_msub <- traverse (pSubIfc2aSubIfc contextInfo (aConcept2pConcept (target objExpr))) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
@@ -1399,6 +1384,10 @@ validatePConceptsInSchema ci orig pStruct contextName =
   where
     pCpt2aCpt = conceptMap ci
 
+isConcreteSignature :: Signature -> Bool
+isConcreteSignature (Sign src tgt) = src/=anyCpt && src/=nilCpt && tgt/=anyCpt && tgt/=nilCpt
+isConcreteSignature (ISgn cpt)     = cpt/=anyCpt && cpt/=nilCpt
+
 -- | Compute all possible type signatures for a term.
 --   
 --   When type-checking expressions in boxes (interfaces/APIs) or views, a constraint signature provides context
@@ -1414,16 +1403,30 @@ validatePConceptsInSchema ci orig pStruct contextName =
 --   For other binary terms, checkIntra and checkPeri ensure that only one triple is constructed.
 --   Hence, the OpTree signatures returns has exactly one triple per node.
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-signatures env contextInfo mConstraintSig trm = 
+signatures env contextInfo mConstraintSig trm =
+ let mConstr
+      = case mConstraintSig of   -- mConstr is meant to substitute mConstraintSig for PI, Patm with Nothing, and pBin because we must enforce their source and target to be
+          Just (Sign s t) -> case join conceptsGraph s t of
+                               Just c -> Just (ISgn c)
+                               Nothing -> fatal ("Cannot compute meet of source concept " <> tshow s <> " and target concept " <> tshow t )
+          _ -> mConstraintSig
+     resultTriple e o c
+      = case mConstr of   -- This function is there merely to save some code duplication.
+          Just (ISgn c') -> case meet conceptsGraph (pCpt2aCpt c) c' of
+                             Just m -> pure (e m)
+                             Nothing -> (Errors . return . CTXE o) 
+                                          ("Cannot match concept " <> showP c <> " with " <> tshow c' <> " in " <> showP trm <> ".")
+          _ -> pure (e (pCpt2aCpt c))
+ in
  case trm of
-  Prim (PI o)               -> signats mConstraintSig (Prim (Pid o (aConcept2pConcept anyCpt)))
-  Prim (Pid _ c)            -> let c'=pCpt2aCpt c in pure (STnullary [(EDcI c', ISgn c', trm)])
-  Prim (Patm o av Nothing)  -> signats mConstraintSig (Prim (Patm o av (Just (aConcept2pConcept anyCpt))))
-  Prim (Patm _ av (Just c)) -> let c'=pCpt2aCpt c in pure (STnullary [(EMp1 av c', ISgn c', trm)])
+  Prim (PI o)               -> signats mConstr (Prim (Pid o (aConcept2pConcept anyCpt)))
+  Prim (Pid o c)            -> resultTriple (\x -> STnullary [(EDcI x, ISgn x, trm)]) o c
+  Prim (Patm o av Nothing)  -> signats mConstr (Prim (Patm o av (Just (aConcept2pConcept anyCpt))))
+  Prim (Patm o av (Just c)) -> resultTriple (\x -> STnullary [(EMp1 av x, ISgn x, trm)]) o c
   Prim (PVee o)             -> signats mConstraintSig (Prim (Pfull o (aConcept2pConcept anyCpt) (aConcept2pConcept anyCpt)))
   Prim (Pfull _ src tgt)    -> let sgn = Sign (pCpt2aCpt src) (pCpt2aCpt tgt) in pure (STnullary [(EDcV sgn, sgn, trm)])
-  Prim (PBin o oper)        -> signats mConstraintSig (Prim (PBind o oper (aConcept2pConcept anyCpt)))
-  Prim (PBind _ oper c)     -> let c'=pCpt2aCpt c in pure (STnullary [(EBin oper c', ISgn c', trm)])
+  Prim (PBin o oper)        -> signats mConstr (Prim (PBind o oper (aConcept2pConcept anyCpt)))
+  Prim (PBind o oper c)     -> resultTriple (\x -> STnullary [(EBin oper x, ISgn x, trm)]) o c
   Prim (PNamedR rel)        -> let rels :: P_NamedRel -> [Relation]
                                    rels r = case p_mbSign r of
                                      Just sg -> (findRelsTyped (declarationsMap contextInfo) (name r) . pSign2aSign pCpt2aCpt) sg
@@ -1431,30 +1434,20 @@ signatures env contextInfo mConstraintSig trm =
                                    -- Filter relations to keep only those with signatures wider or equal to constraint
                                    filterByConstraint :: [Relation] -> [Relation]
                                    filterByConstraint ds = 
-                                     -- trace ("\nPNamedR filtering for " <> showP trm <> 
-                                     --        "\n  Constraint: " <> tshow mConstraintSig <>
-                                     --        "\n  Available relations: " <> T.intercalate ", " [tshow (sign d) | d <- ds]) $
+                                    -- trace ("\nPNamedR filtering for " <> showP trm <> " on " <> tshow (origin trm) <>
+                                    --        "\n  Constraint: " <> tshow mConstraintSig <>
+                                    --        "\n  Available relations: " <> T.intercalate ", " [showA d | d <- ds]) $
                                      case mConstraintSig of
-                                       Nothing -> ds
                                        Just (Sign constraintSrc constraintTgt) ->
                                          let results = [ d | d <- ds
-                                                           , let relSrc = source (sign d)
-                                                                 relTgt = target (sign d)
-                                                                 -- Treat anyCpt as wildcard - it matches any concept
-                                                                 srcCheck = leq (conceptGraph contextInfo) relSrc constraintSrc
-                                                                 tgtCheck = leq (conceptGraph contextInfo) relTgt constraintTgt
-                                                           -- , trace ("\n    Checking " <> tshow (sign d) <>
-                                                           --         "\n      srcCheck (" <> tshow constraintSrc <> " <= " <> tshow relSrc <> "): " <> tshow srcCheck <>
-                                                           --         "\n      tgtCheck (" <> tshow constraintTgt <> " <= " <> tshow relTgt <> "): " <> tshow tgtCheck) $
-                                                           , case (srcCheck, tgtCheck) of
-                                                               (Just True, Just True) -> True  -- Both source and target are wider/equal
-                                                               (Nothing, Just True) -> constraintSrc == relSrc  -- Source equal, target wider/equal
-                                                               (Just True, Nothing) -> constraintTgt == relTgt  -- Source wider/equal, target equal
-                                                               (Nothing, Nothing) -> constraintSrc == relSrc && constraintTgt == relTgt  -- Both equal
-                                                               _ -> False
+                                                          --  , trace ("\n    Checking " <> tshow (sign d) <>
+                                                          --          "\n      srcCheck (" <> tshow constraintSrc <> " ISA " <> tshow (source (sign d)) <> "): " <> tshow (geq conceptsGraph (source (sign d)) constraintSrc) <>
+                                                          --          "\n      tgtCheck (" <> tshow constraintTgt <> " ISA " <> tshow (target (sign d)) <> "): " <> tshow (geq conceptsGraph (target (sign d)) constraintTgt)) True
+                                                           , Just True <- [geq conceptsGraph (source (sign d)) constraintSrc]
+                                                           , Just True <- [geq conceptsGraph (target (sign d)) constraintTgt]
                                                        ]
                                          in {- trace ("  Filtered to: " <> T.intercalate ", " [tshow (sign d) | d <- results]) -} results
-                                       Just (ISgn _) -> ds  -- ISgn constraint doesn't filter
+                                       _ -> ds  -- ISgn constraint and Nothing don't filter
                                 in  case filterByConstraint (rels rel) of
                                       [] -> (Errors . return . CTXE (origin trm)) ("Undeclared relation "<> showP trm)
                                       ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
@@ -1527,12 +1520,12 @@ signatures env contextInfo mConstraintSig trm =
   PBrk _ e   -> signats mConstraintSig e
   where
     lConstrain :: Maybe Signature -> Maybe Signature
-    lConstrain (Just (Sign src tgt)) = if src == anyCpt && tgt == anyCpt then Nothing else Just (Sign src anyCpt)
+    lConstrain (Just (Sign src tgt)) = if src == nilCpt && tgt == nilCpt then Nothing else Just (Sign src nilCpt)
     lConstrain (Just (ISgn cpt))     = Just (ISgn cpt)
     lConstrain Nothing               = Nothing
 
     rConstrain :: Maybe Signature -> Maybe Signature
-    rConstrain (Just (Sign src tgt)) = if src == anyCpt && tgt == anyCpt then Nothing else Just (Sign anyCpt tgt)
+    rConstrain (Just (Sign src tgt)) = if src == nilCpt && tgt == nilCpt then Nothing else Just (Sign nilCpt tgt)
     rConstrain (Just (ISgn cpt))     = Just (ISgn cpt)
     rConstrain Nothing               = Nothing
 
@@ -1551,8 +1544,8 @@ signatures env contextInfo mConstraintSig trm =
       do sgnaTree <- signats (lConstrain mConstraintSig) a; sgnbTree <- signats (rConstrain mConstraintSig) b
          let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
              sgnsa = map (\(_,s,_) -> s) triplesa; sgnsb = map (\(_,s,_) -> s) triplesb
-         let trees = {- trace ("\n6.  "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $ -}
-                     makeTrees combinator pCombinator meetORjoin triplesa triplesb
+         let trees = -- trace ("\n6.  "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb) $
+                      makeTrees combinator pCombinator meetORjoin triplesa triplesb
          case trees of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
@@ -1766,13 +1759,6 @@ signatures env contextInfo mConstraintSig trm =
     conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
     signats = signatures env contextInfo  -- Pass constraint to subexpressions for disambiguation
 
-anyCpt :: A_Concept
-anyCpt = (PlainConcept . Set.fromList)
-            [(case try2Name ConceptName "_ANY" of
-                Left err -> fatal $ "Not a proper concept name: _ANY. " <> err
-                Right (nm, _) -> nm
-            , Nothing)]
-
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo mConstraintSig term
   = do sgnTree <- signatures env contextInfo mConstraintSig term
@@ -1782,12 +1768,12 @@ term2Expr env contextInfo mConstraintSig term
          STunary _    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STbinary _ _ triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STnullary    [(expr, sig, _)]        
-           | containsANY sig -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains ANY: " <> tshow sig)
+           | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains " <> tshow sig)
            | otherwise -> pure expr  -- Single expression - already reduced, return it
          STunary _    [(_, sig, _)]
-           | containsANY sig -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains ANY: " <> tshow sig)
+           | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains " <> tshow sig)
          STbinary _ _ [(_, sig, _)]
-           | containsANY sig -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains ANY: " <> tshow sig)
+           | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for " <> showP term <> ". The inferred signature contains " <> tshow sig)
          STnullary    []     -> fatal "Empty triples list in STnullary"
          STunary _    []     -> fatal "Empty triples list in STunary"
          STbinary _ _ []     -> fatal "Empty triples list in STbinary"
@@ -1801,10 +1787,6 @@ term2Expr env contextInfo mConstraintSig term
                     _ -> fatal ("term2Expr: pattern match failure after refineSgn. Refined OpTree yields:\n"<>showOpTree refinedTree<>"\nThis is a bug in the compiler.")
   where
     conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
-
-    containsANY :: Signature -> Bool
-    containsANY (Sign src tgt) = src == anyCpt || tgt == anyCpt
-    containsANY (ISgn cpt) = cpt == anyCpt
 
     rootSignature sgnTree =
        case sgnTree of
@@ -1982,7 +1964,7 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
     checkEndoProps
     -- propLists <- mapM pProp2aProps . Set.toList $ dec_prps pd
     dflts <- mapM pReldefault2aReldefaults . L.nub $ dec_defaults pd
-    return
+    return ( -- trace ("pd =  " <> tshow pd) $
       Relation
         { decnm = dec_nm pd,
           decsgn = decSign,
@@ -1995,7 +1977,7 @@ pDecl2aDecl typ cptMap maybePatLabel defLanguage defFormat pd =
           decusr = True,
           decpat = maybePatLabel,
           dechash = hash (dec_nm pd) `hashWithSalt` decSign
-        }
+        })
   where
     pReldefault2aReldefaults :: PRelationDefault -> Guarded ARelDefault
     pReldefault2aReldefaults x = case x of

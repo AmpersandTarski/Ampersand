@@ -4,11 +4,13 @@
   "runArgs": [],
   "build": {
     "context": "..",
-    "dockerfile": "Dockerfile"
+    "dockerfile": "DockerfileUpstream"
   },
   "mounts": [
     "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/,target=/home/vscode/.ssh,readonly"
   ],
+  "postCreateCommand": "ghcup install hls --set recommended || true",
+  // The `|| true` ensures container creation succeeds even if HLS installation fails (e.g., if already installed or ghcup unavailable)
   "postStartCommand": "stack build",
   "customizations": {
     "vscode": {

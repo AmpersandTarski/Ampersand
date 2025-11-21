@@ -124,12 +124,12 @@ pContext =
 pNameWithoutLabel :: NameType -> AmpParser Name
 pNameWithoutLabel typ
   | typ == RelationName = properParser
-  | otherwise = properParser <|> depricatedParser
+  | otherwise = properParser <|> deprecatedParser
   where
     properParser :: AmpParser Name
     properParser = pName typ
-    depricatedParser :: AmpParser Name
-    depricatedParser = do
+    deprecatedParser :: AmpParser Name
+    deprecatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
       case try2Name typ (text1ToText txt) of
@@ -139,15 +139,15 @@ pNameWithoutLabel typ
           pure nm
 
 pNameWithOptionalLabel :: NameType -> AmpParser (Name, Maybe Label)
-pNameWithOptionalLabel typ = properParser <|> depricatedParser
+pNameWithOptionalLabel typ = properParser <|> deprecatedParser
   where
     properParser :: AmpParser (Name, Maybe Label)
     properParser = do
       nm <- pName typ
       mLab <- pMaybe pLabel
       return (nm, mLab)
-    depricatedParser :: AmpParser (Name, Maybe Label)
-    depricatedParser = do
+    deprecatedParser :: AmpParser (Name, Maybe Label)
+    deprecatedParser = do
       orig <- currPos
       txt <- pDoubleQuotedString1
       case try2Name typ (text1ToText txt) of
@@ -156,7 +156,7 @@ pNameWithOptionalLabel typ = properParser <|> depricatedParser
           addParserWarning orig $ mkWarnText typ txt
           pure (nm, lbl)
 
--- depricatedParser =
+-- deprecatedParser =
 --   do
 --     orig <- currPos
 --     txt <- pDoubleQuotedString1

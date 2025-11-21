@@ -13,6 +13,7 @@ ENV USERNAME=${USERNAME} \
 
 
 # install dependencies (source: https://www.haskell.org/ghcup/install/ )
+# Note: php-cli is included for running Ampersand validation tests (ampersand validate)
 RUN \
     apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -32,6 +33,7 @@ RUN \
     libnuma-dev \
     lsb-release \
     openssh-server \
+    php-cli \
     pkg-config \
     software-properties-common \
     wget \

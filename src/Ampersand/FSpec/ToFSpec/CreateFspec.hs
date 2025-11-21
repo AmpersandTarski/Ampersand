@@ -127,7 +127,7 @@ checkFormalAmpersandTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["Formal Ampersand script does not compile:"]
-        <> T.lines (tshow err)
+        <> concatMap (T.lines . tshow) (NE.toList err)
     Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
@@ -138,7 +138,7 @@ checkPrototypeContextTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["The relations defined in prototypecontext.adl are not in sync with the transformers of prototypecontext:"]
-        <> T.lines (tshow err)
+        <> concatMap (T.lines . tshow) (NE.toList err)
     Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
@@ -222,7 +222,7 @@ grindInto metamodel specification = do
                   FormalAmpersand -> transformersFormalAmpersand <$> specification
                   PrototypeContext -> transformersPrototypeContext <$> specification
               )
-        filtered <- filter (not . null . tPairs) <$> transformers
+        allTransformers <- filter (not . null . tPairs) <$> transformers
         guardedFSpecOfMetaModel <- pCtx2Fspec env <$> pContextOfMetaModel
         fSpecOfMetaModel <- guardedFSpecOfMetaModel
         specName <- name <$> specification
@@ -244,7 +244,7 @@ grindInto metamodel specification = do
               ctx_gs = [],
               ctx_ifcs = [],
               ctx_ps = [],
-              ctx_pops = map transformer2pop filtered,
+              ctx_pops = map transformer2pop allTransformers,
               ctx_metas = [],
               ctx_enfs = []
             }
