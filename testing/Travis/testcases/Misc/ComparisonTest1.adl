@@ -22,20 +22,20 @@ POPULATION groterDan CONTAINS [
  
 RULE ouderIsOuder1 : isOuderVan |- leeftijd ; groterDan ; leeftijd~
 RULE ouderIsOuder2 : isOuderVan |- leeftijd ;>; leeftijd~
-VIOLATION (TXT "De leeftijd van ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
+VIOLATION (TXT "De leeftijd van ouder ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van kind ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
 
 RULE kindIsJonger1 : isOuderVan~ |- leeftijd ;-groterDan; leeftijd~
 RULE kindIsJonger2 : isOuderVan~ |- leeftijd ;<; leeftijd~
-VIOLATION (TXT "De leeftijd van ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
+VIOLATION (TXT "De leeftijd van kind ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ouder ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
 
 
 RULE ouderIsOuder3 : isOuderVan |- leeftijd ; groterDan ; leeftijd~
 RULE ouderIsOuder4 : isOuderVan |- leeftijd ;>=; leeftijd~
-VIOLATION (TXT "De leeftijd van ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
+VIOLATION (TXT "De leeftijd van ouder ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van kind", TGT I, TXT " is ", TGT leeftijd, TXT ".")
 
 RULE kindIsJonger3 : isOuderVan~ |- leeftijd ;-groterDan; leeftijd~
 RULE kindIsJonger4 : isOuderVan~ |- leeftijd ;<=; leeftijd~
-VIOLATION (TXT "De leeftijd van ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
+VIOLATION (TXT "De leeftijd van kind ", SRC I, TXT " is ", SRC leeftijd, TXT ", maar de leeftijd van ouder ", TGT I, TXT " is ", TGT leeftijd, TXT ".")
 
 POPULATION leeftijd CONTAINS [
     ("Amber de Vries", 28),

@@ -1215,12 +1215,7 @@ instance Flippable Expression where
 instance HasSignature Expression where
   sign (EEqu (l, r)) = Sign (source l) (target r)
   sign (EInc (l, r)) = Sign (source l) (target r)
-  sign (EIsc (l, r)) = 
-    -- trace ("\n[EIsc.sign] Recomputing signature as Sign (source l) (target r)" <>
-    --        "\n  source l = " <> tshow (source l) <>
-    --        "\n  target r = " <> tshow (target r) <>
-    --        "\n  Result: " <> tshow (Sign (source l) (target r)))
-                       Sign (source l) (target r)
+  sign (EIsc (l, r)) = Sign (source l) (target r)
   sign (EUni (l, r)) = Sign (source l) (target r)
   sign (EDif (l, r)) = Sign (source l) (target r)
   sign (ELrs (l, r)) = Sign (source l) (source r)
@@ -1235,11 +1230,11 @@ instance HasSignature Expression where
   sign (ECpl e) = sign e
   sign (EBrk e) = sign e
   sign (EDcD d) = sign d
-  sign (EDcI c) = Sign c c
-  sign (EBin _ c) = Sign c c
+  sign (EDcI c) = ISgn c
+  sign (EBin _ c) = ISgn c
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
-  sign (EMp1 _ c) = Sign c c
+  sign (EMp1 _ c) = ISgn c
 
 showSign :: (HasSignature a) => a -> Text1
 showSign x = case sign x of

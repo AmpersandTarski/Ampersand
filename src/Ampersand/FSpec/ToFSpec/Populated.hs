@@ -84,8 +84,9 @@ pairsOf ci ps dcl =
     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
-fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+fullContents ci ps e = Set.fromList result
   where
+    result = [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
       where
@@ -151,8 +152,10 @@ fullContents ci ps e = Set.fromList [mkAtomPair a b | let pairMap = contents e, 
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
-            EBin oper c ->
-              Map.fromList
+            EBin oper c -> -- trace ("EBin "<>tshow oper<>" "<>tshow c<>" "<>tshow result) $
+                           Map.fromList binOpPop
+             where
+               binOpPop =
                 [ (s, Set.fromList cod)
                   | s <- toList $ aVals c,
                     let cod = filter (binaryFunction oper s) . toList $ aVals c,

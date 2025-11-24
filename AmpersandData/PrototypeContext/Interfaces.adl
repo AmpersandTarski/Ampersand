@@ -1,7 +1,7 @@
 CONTEXT PrototypeContext IN ENGLISH
 
-    CONCEPT Interface ""
-        REPRESENT PrototypeContext.Interface TYPE OBJECT
+    CONCEPT PrototypeContext.Interface ""
+    REPRESENT PrototypeContext.Interface TYPE OBJECT
 
     -- RELATION label[Interface*Label] needs to be TOT because the prototype framework depends on having an interface label
     -- The identitier of the Interface itself can contain escaped characters, e.g. "Interface_32_label"
