@@ -1774,8 +1774,8 @@ signatures env contextInfo mConstraintSig trm =
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded Expression
 term2Expr env contextInfo mConstraintSig term
   = do sgnTree <- signatures env contextInfo mConstraintSig term
-       trace ("signatures ("<>showP (length (opSigns sgnTree))<>" "<>tshow (opSigns sgnTree)<>") "<>showP term<>") yields:\n"<>showOpTree sgnTree) $
-        case sgnTree of
+      --  trace ("signatures ("<>showP (length (opSigns sgnTree))<>" "<>tshow (opSigns sgnTree)<>") "<>showP term<>") yields:\n"<>showOpTree sgnTree) $
+       case sgnTree of
          STnullary    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous nullary term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STunary _    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous unary term: "   <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STbinary _ _ triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous binary term: "  <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
@@ -1789,7 +1789,7 @@ term2Expr env contextInfo mConstraintSig term
          STnullary    []     -> fatal "Empty triples list in STnullary"
          STunary _    []     -> fatal "Empty triples list in STunary"
          STbinary _ _ []     -> fatal "Empty triples list in STbinary"
-         _ -> case refineSgn (rootSignature sgnTree) sgnTree of
+         _ -> case refineSgn sgnTree of
                 Errors errs -> Errors errs
                 Checked refinedTree _ ->
                   case refinedTree of
@@ -1800,91 +1800,68 @@ term2Expr env contextInfo mConstraintSig term
   where
     conceptsGraph = overlay (conceptGraph contextInfo) (vertices [ONE])
 
-    rootSignature sgnTree =
-       case sgnTree of
-         STbinary _ _ [(_, sgn, _)] -> sgn
-         STunary _    [(_, sgn, _)] -> sgn
-         STnullary    [(_, sgn, _)] -> sgn
-         _                          -> fatal ("term2Expr: pattern match failure in rootSignature. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-
-    refine :: Signature -> Signature -> Maybe Signature
-    refine sgn mold =
-      case (meet conceptsGraph (source mold) (source sgn), meet conceptsGraph (target mold) (target sgn)) of
-        (Just s, Just t) -> Just (Sign s t)
-        _                -> Nothing
-
     showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
-    -- | refineSgn recursively refines an OpTree by filtering out triples that do not fit in the mold signature.
+    -- | refineSgn recursively refines an OpTree by filtering out triples that do not match.
     --   It produces an OpTree with a single triple at each node, which can then be converted to Expression.
-    --   Precondition: opSigns sgnTree is a singleton, whose signature is the mold for its subtrees.
-    --   Precondition: mold == rootSignature sgnTree
-    --   Precondition: if the triple in the root of sgnTree is (expr, sgn, t), then term2Expr t == expr (Cannot test this because it gives an infinite loop)
-    refineSgn :: Signature -> OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    refineSgn _    sgnTree | length (opSigns sgnTree) /= 1 = fatal ("Pre: opSigns sgnTree "<>T.intercalate ", " (map showTriple (opSigns sgnTree))<>"of length "<>tshow (length (opSigns sgnTree)))
-    refineSgn mold sgnTree =
-      case trace ("\n>>> refineSgn called:"
-                 <>"\n  mold: "<>tshow mold
-                 <>"\n  sgnTree: "<>case sgnTree of
-                     STnullary ss -> "STnullary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items."
-                     STunary _ ss -> "STunary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items."
-                     STbinary _ _ ss -> "STbinary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items.")
+    refineSgn :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+    refineSgn sgnTree =
+      case -- trace ("\n>>> refineSgn called:"
+           --       <>"\n  sgnTree: "<>case sgnTree of
+           --           STnullary ss -> "STnullary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items."
+           --           STunary _ ss -> "STunary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items."
+           --           STbinary _ _ ss -> "STbinary "<>T.concat (map showTriple ss)<>" with "<>tshow (length ss)<>" items.")
            sgnTree of
         STnullary triples ->
           case triples of
             [triple] -> pure (STnullary [triple])
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STnullary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STnullary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
 
         STunary subTree triples ->
               -- Check if this is a PFlp AFTER refinement - we need to check the refined triples
-          let isFlip = case [ () | (_, _, PFlp _ _) <- triples ] of
-                         _:_ -> True
-                         [] -> False
-          in case triples of
-            [triple@(_, sgn, _)] ->
-              -- For PFlp: the refined signature is flipped, but subTree contains unflipped relations
-              -- So we must flip the signature back before recursing
-              do refinedSubTree <- refineSgn (if isFlip then flp sgn else sgn) subTree
+          case triples of
+            [triple@(_, _, _)] ->
+              do refinedSubTree <- refineSgn subTree
                  pure (STunary refinedSubTree [triple])
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STunary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STunary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
 
-        STbinary stLeft stRight [triple@(_,_,PPrd o _ _)] ->
-          do refinedLeft  <- refineSgn mold stLeft
-             refinedRight <- refineSgn mold stRight
+        STbinary stLeft stRight [triple@(_,_,PPrd _ _ _)] ->
+          do refinedLeft  <- refineSgn stLeft
+             refinedRight <- refineSgn stRight
              pure (STbinary refinedLeft refinedRight [triple])
         STbinary stLeft stRight triples | isInter sgnTree ->
-          case [ (expr, sgn', t) | (expr, sgn, t) <- triples, Just sgn' <- [refine sgn mold] ] of
+          case triples of
             [triple] ->
-                 do refinedLeft  <- refineSgn mold stLeft
-                    refinedRight <- refineSgn mold stRight
+                 do refinedLeft  <- refineSgn stLeft
+                    refinedRight <- refineSgn stRight
                     pure (STbinary refinedLeft refinedRight [triple])
-            [] -> fatal (tshow (origin (getTerm sgnTree))<>" No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isIntra sgnTree ->
-          case [ (expr, sgn', t) | (expr, sgn, t) <- triples, Just sgn' <- [refine sgn mold] ] of
-            [triple@(_, refinedSig, _)] ->
-                 do refinedLeft  <- refineSgn (Sign (source refinedSig) nilCpt) (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (source sgnb)]] stLeft)
-                    refinedRight <- refineSgn (Sign nilCpt (target refinedSig)) (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (source sgnb)]] stRight)
+          case triples of
+            [triple@(_, _, _)] ->
+                 do refinedLeft  <- refineSgn (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (source sgnb)]] stLeft)
+                    refinedRight <- refineSgn (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (source sgnb)]] stRight)
                     pure (STbinary refinedLeft refinedRight [triple])
-            [] -> fatal (tshow (origin (getTerm sgnTree))<>"No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isPLrs sgnTree ->
-          case [ (expr, sgn', t) | (expr, sgn, t) <- triples, Just sgn' <- [refine sgn mold] ] of
-            [triple@(_, refinedSig, _)] ->
-                  do refinedLeft  <- refineSgn (Sign (source refinedSig) nilCpt) (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (target sgnb)]] stLeft)
-                     refinedRight <- refineSgn (Sign (target refinedSig) nilCpt) (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (target sgnb)]] stRight)
+          case triples of
+            [triple@(_, _, _)] ->
+                  do refinedLeft  <- refineSgn (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (target sgnb)]] stLeft)
+                     refinedRight <- refineSgn (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (target sgna) (target sgnb)]] stRight)
                      pure (STbinary refinedLeft refinedRight [triple])
-            [] -> fatal (tshow (origin (getTerm sgnTree))<>"No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isPRrs sgnTree ->
-          case [ (expr, sgn', t) | (expr, sgn, t) <- triples, Just sgn' <- [refine sgn mold] ] of
-            [triple@(_, refinedSig, _)] ->
-                  do refinedLeft  <- refineSgn (Sign nilCpt (source refinedSig)) (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (source sgna) (source sgnb)]] stLeft)
-                     refinedRight <- refineSgn (Sign nilCpt (target refinedSig)) (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (source sgna) (source sgnb)]] stRight)
+          case triples of
+            [triple@(_, _, _)] ->
+                  do refinedLeft  <- refineSgn (assignOpSigns [ tr | tr@(_,sgna,_)<-opSigns stLeft, (_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (source sgna) (source sgnb)]] stLeft)
+                     refinedRight <- refineSgn (assignOpSigns [ tr | (_,sgna,_)<-opSigns stLeft, tr@(_,sgnb,_)<-opSigns stRight, Just _ <- [meet conceptsGraph (source sgna) (source sgnb)]] stRight)
                      pure (STbinary refinedLeft refinedRight [triple])
-            [] -> fatal (tshow (origin (getTerm sgnTree))<>"No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
+            [] -> fatal ("No usable signature found on "<>tshow (origin (getTerm sgnTree))<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         _ -> fatal ("refineSgn: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
 
@@ -1896,39 +1873,6 @@ term2Expr env contextInfo mConstraintSig term
         STbinary _ _ ((_, _, t):_) -> t
         _                          -> fatal ("getTerm: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
 
-    refineSgnL, refineSgnR :: A_Concept -> OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    refineSgnL mold sgnTree@(STbinary _ _ triples) =
-       case [ (expr, Sign src (target sgn), t) | (expr, sgn, t) <- triples, Just src <- [meet conceptsGraph (source sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining left concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            -- The following is a fatal because refineSgnL may only be called with a sgnTree that has precisely one triple in its root node. Therefore, having multiple matching triples is a bug and not a type error for the user.
-            _ -> fatal ("refineSgnL: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-    refineSgnL mold sgnTree@(STunary _ triples) =
-       case [ (expr, Sign src (target sgn), t) | (expr, sgn, t) <- triples, Just src <- [meet conceptsGraph (source sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining left concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            _ -> fatal ("refineSgnL: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-    refineSgnL mold sgnTree@(STnullary triples) =
-       case [ (expr, Sign src (target sgn), t) | (expr, sgn, t) <- triples, Just src <- [meet conceptsGraph (source sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining left concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            filtered -> msg filtered sgnTree "Please specify the signature explicitly."
-
-    refineSgnR mold sgnTree@(STbinary _ _ triples) =
-       case [ (expr, Sign (source sgn) tgt, t) | (expr, sgn, t) <- triples, Just tgt <- [meet conceptsGraph (target sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining right concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            _ -> fatal ("refineSgnR: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-    refineSgnR mold sgnTree@(STunary _ triples) =
-       case [ (expr, Sign (source sgn) tgt, t) | (expr, sgn, t) <- triples, Just tgt <- [meet conceptsGraph (target sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining right concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            _ -> fatal ("refineSgnR: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-    refineSgnR mold sgnTree@(STnullary triples) =
-       case [ (expr, Sign (source sgn) tgt, t) | (expr, sgn, t) <- triples, Just tgt <- [meet conceptsGraph (target sgn) mold] ] of
-            [(_, refinedSig, _)] -> refineSgn refinedSig sgnTree
-            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No matching signature found when refining right concept in:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
-            filtered -> msg filtered sgnTree "Please specify the signature explicitly."
 
     isInter, isPLrs, isPRrs, isIntra :: OpTree (Expression, Signature, Term TermPrim) -> Bool
     isInter sgnTree = case sgnTree of
