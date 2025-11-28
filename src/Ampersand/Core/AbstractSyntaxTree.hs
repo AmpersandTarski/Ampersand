@@ -5,6 +5,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-spec-constr #-}
 
 module Ampersand.Core.AbstractSyntaxTree
   ( A_Context (..),
@@ -56,6 +57,7 @@ module Ampersand.Core.AbstractSyntaxTree
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
     Signature (..),
+    PartialOrder(..),
     Population (..),
     HasSignature (..),
     Traced (..),
@@ -74,8 +76,8 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     Type (..),
     typeOrConcept,
-    anyCpt, nilCpt,
-    join, meet, geq, meetSubsets,
+    topCpt, botCpt,
+    join, meet, meetSubsets,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -1322,32 +1324,32 @@ data MissingMeetEdge = MissingMeetEdge
 -- and returns the missing edges (m,a) and (m,b) that should connect this meet to a and b.
 -- Returns an AdjacencyMap containing the missing edges that violate this property.
 
--- | The ANY concept - universal upper bound for all concepts. It is more generic than every other concept.
-anyCpt :: A_Concept
-anyCpt = PlainConcept . Set.fromList $
-  [(case try2Name ConceptName "_ANY" of
-      Left err -> fatal $ "Not a proper concept name: _ANY. " <> err
+-- | The TOP concept - universal upper bound for all concepts. It is more generic than every other concept.
+topCpt :: A_Concept
+topCpt = PlainConcept . Set.fromList $
+  [(case try2Name ConceptName "_TOP" of
+      Left err -> fatal $ "Not a proper concept name: _TOP. " <> err
       Right (nm, _) -> nm
     , Nothing)]
 
--- | The NIL concept - universal lower bound for all concepts. It is more specific than every other concept.
-nilCpt :: A_Concept
-nilCpt = PlainConcept . Set.fromList $
-  [(case try2Name ConceptName "_NIL" of
-      Left err -> fatal $ "Not a proper concept name: __NIL. " <> err
+-- | The BOT concept - universal lower bound for all concepts. It is more specific than every other concept.
+botCpt :: A_Concept
+botCpt = PlainConcept . Set.fromList $
+  [(case try2Name ConceptName "_BOT" of
+      Left err -> fatal $ "Not a proper concept name: _BOT. " <> err
       Right (nm, _) -> nm
     , Nothing)]
 
 {- Design decision:
-anyCpt and nilCpt are universal bottom and top elements.
+topCpt and botCpt are universal bottom and top elements.
 -}
 -- Compute the least upper bound (join) of a list of pairs
 join :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 join conceptsGraph a b
-    | a == anyCpt = Just anyCpt
-    | b == anyCpt = Just anyCpt
-    | a == nilCpt = Just b
-    | b == nilCpt = Just a
+    | a == topCpt = Just topCpt
+    | b == topCpt = Just topCpt
+    | a == botCpt = Just b
+    | b == botCpt = Just a
     | hasEdge a b rtc = Just b
     | hasEdge b a rtc = Just a
     | otherwise =
@@ -1361,10 +1363,10 @@ join conceptsGraph a b
 -- Compute the greatest lower bound (meet) of a list of pairs
 meet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 meet conceptsGraph a b
-    | a == anyCpt = Just b
-    | b == anyCpt = Just a
-    | a == nilCpt = Just nilCpt
-    | b == nilCpt = Just nilCpt
+    | a == topCpt = Just b
+    | b == topCpt = Just a
+    | a == botCpt = Just botCpt
+    | b == botCpt = Just botCpt
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
@@ -1375,18 +1377,27 @@ meet conceptsGraph a b
       maximum a' b' = if hasEdge a' b' rtc then b' else a'
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
-geq :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe Bool
-geq conceptsGraph a b
+class PartialOrder b where
+  geq :: AdjacencyMap A_Concept -> b -> b -> Maybe Bool
+
+instance PartialOrder A_Concept where
+  geq conceptsGraph a b
     | a == b          = Just True
-    | b == anyCpt     = Just False  -- ANY is more specific than anything else
-    | a == anyCpt     = Just True   -- Everything other than ANY is more generic than ANY
-    | a == nilCpt     = Just False  -- Everything other than NIL is more specific than NIL
-    | b == nilCpt     = Just True   -- NIL is more generic than anything else
+    | b == topCpt     = Just False  -- TOP is more specific than anything else
+    | a == topCpt     = Just True   -- Everything other than TOP is more generic than TOP
+    | a == botCpt     = Just False  -- Everything other than BOT is more specific than BOT
+    | b == botCpt     = Just True   -- BOT is more generic than anything else
     | hasEdge a b rtc = Just False
     | hasEdge b a rtc = Just True
     | otherwise       = Nothing
     where
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
+
+instance PartialOrder Signature where
+  geq conceptsGraph a b =
+    case (geq conceptsGraph (source a) (source b), geq conceptsGraph (target a) (target b)) of
+      (Just sCondition, Just tCondition) -> Just (sCondition && tCondition)
+      _                                  -> Nothing
 
 -- | Let conceptsGraph be a directed acyclic graph, i.e. a poset.
 --   meetSubsets computes the largest subsets of the concepts in conceptsGraph that have a unique lub within this poset.

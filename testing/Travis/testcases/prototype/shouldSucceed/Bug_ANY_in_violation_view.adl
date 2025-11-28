@@ -2,27 +2,27 @@ CONTEXT BugANYInViolationView IN DUTCH
 
 PURPOSE CONTEXT BugANYInViolationView
 {+
-Dit testbestand reproduceert een bug waarbij I[ANY] verschijnt in violation views.
+Dit testbestand reproduceert een bug waarbij I[TOP] verschijnt in violation views.
 
 PROBLEEM:
 Bij het uitvoeren van de test verschijnt de volgende melding:
   "Mismatch between SQL and Ampersand
    Origin: violation view for rule BewerkersHebbenPrecies1verantwoordelijke, 
-           term: I[ANY];verwerkingsVerantwoordelijke[Verwerking*Partij]"
+           term: I[TOP];verwerkingsVerantwoordelijke[Verwerking*Partij]"
 
 OORZAAK:
-In de violation view wordt I[ANY] gegenereerd in plaats van I[Verwerking].
-Dit wordt veroorzaakt doordat de compiler ANY toestaat in een context waar
-elke term precies één type zou moeten hebben. ANY is alleen bedoeld voor 
+In de violation view wordt I[TOP] gegenereerd in plaats van I[Verwerking].
+Dit wordt veroorzaakt doordat de compiler TOP toestaat in een context waar
+elke term precies één type zou moeten hebben. TOP is alleen bedoeld voor 
 intern gebruik in de type checker.
 
 VERWACHT GEDRAG:
-De term in de violation view zou I[Verwerking] moeten zijn, niet I[ANY].
+De term in de violation view zou I[Verwerking] moeten zijn, niet I[TOP].
 
 REPRODUCEREN:
 Dit testbestand bevat een minimale set van relaties en een regel die het
 probleem reproduceert. De VIOLATION statement in de regel gebruikt SRC I,
-wat blijkbaar vertaald wordt naar I[ANY] in plaats van het correcte type.
+wat blijkbaar vertaald wordt naar I[TOP] in plaats van het correcte type.
 +}
 
 -- Minimale concepten

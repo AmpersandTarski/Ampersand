@@ -11,7 +11,7 @@ These notes capture important lessons learned from mathematical analysis of the 
 
 **Implementation Detail:**
 ```haskell
-Prim (PI _) -> pure (STnullary [ISgn anyCpt])
+Prim (PI _) -> pure (STnullary [ISgn topCpt])
 ```
 
 **Documentation Improvement Needed:**
