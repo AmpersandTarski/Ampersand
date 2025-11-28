@@ -41,7 +41,6 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Ampersand (Maybe(Nothing))
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -1573,30 +1572,38 @@ signatures env contextInfo mConstraintSig trm =
       -> {- opStr       -} Text
       -> Guarded (OpTree (Expression, Signature, Term TermPrim))
     checkIntra o kind combinator pCombinator a b opStr = -- extra parameters for tracing purpose: opStr
-      do sgnaTree <- signats nothConstraint a; sgnbTree <- signats nothConstraint b
+      do let lConstraint = case mConstraintSig of
+                              Just (Sign src _) -> Just (Sign src botCpt)
+                              Just (ISgn cpt)   -> Just (ISgn cpt)
+                              Nothing           -> Nothing
+         let rConstraint = case mConstraintSig of
+                              Just (Sign _ tgt) -> Just (Sign botCpt tgt)
+                              Just (ISgn cpt)   -> Just (ISgn cpt)
+                              Nothing           -> Nothing
+         sgnaTree <- signats lConstraint a; sgnbTree <- signats rConstraint b
          let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
              sgnsa = map (\(_,s,_) -> s) triplesa; sgnsb = map (\(_,s,_) -> s) triplesb
-         let trees = trace ("\ncheckIntra:  "<>opStr<>" ("<>tshow o<>") ("<>tshow mConstraintSig<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   nothConstraint: "<>tshow nothConstraint<>"\n   nothConstraint: "<>tshow nothConstraint) $
-                     makeTrees triplesa triplesb
-         trace ("makeTrees yields "<>tshow (length trees)<>" trees: "<>T.intercalate ", " (map showTriple trees)) $
+         let trees = trace ("\ncheckIntra:  "<>opStr<>" ("<>tshow o<>") ("<>tshow mConstraintSig<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   lConstraint: "<>tshow lConstraint<>"\n   rConstraint: "<>tshow rConstraint) $
+                     makeTriples triplesa triplesb
+         trace ("makeTriples yields "<>tshow (length trees)<>" triples: "<>T.intercalate ", " (map showTriple trees)) $
           case trees of
            []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                       opTree = STbinary sgnaTree sgnbTree errorExprs
                   in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
            [tr] -> let result = STbinary sgnaTree sgnbTree [tr]
-                   in trace ("checkIntra yields: \n"<>showOpTree result) $
+                   in trace ("\ncheckIntra yields: \n"<>showOpTree result) $
                        return result
            results  -> let baseMsg = "Ambiguous signatures of the " <> kind <> " of " <> showP a <> " and " <> showP b
                            suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showP a <> " ; " <> showP b <> " with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
       where
-        -- | makeTrees constructs all possible (Expression, Signature, Term) triples for binary operations.
-        makeTrees :: [(Expression, Signature, Term TermPrim)]
-                  -> [(Expression, Signature, Term TermPrim)]
-                  -> [(Expression, Signature, Term TermPrim)]
-        makeTrees triplesa triplesb
-         = trace ("\nmakeTrees called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
+        -- | makeTriples constructs all possible (Expression, Signature, Term) triples for binary operations.
+        makeTriples :: [(Expression, Signature, Term TermPrim)]
+                    -> [(Expression, Signature, Term TermPrim)]
+                    -> [(Expression, Signature, Term TermPrim)]
+        makeTriples triplesa triplesb
+         = trace ("\nmakeTriples called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
            [ -- trace ("\nlist comprehension with:\n  between: "<>tshow between<>"\n  left: "<>tshow left<>"\n  right: "<>tshow right) $
              let refined_expr_a = refineANY expr_a (Sign srca between)
                  refined_expr_b = refineANY expr_b (Sign between tgtb)

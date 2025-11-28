@@ -1,22 +1,19 @@
+<!-- For contributors. We expect a contributor to have a basic understanding of sets.  -->
 # Concept Hierarchies and Database Mapping
 
 ## Overview
 
 This document explains how Ampersand transforms `CLASSIFY` statements into relational database schemas. The process applies graph theory and lattice mathematics to create efficient database structures.
 
-## From CLASSIFY to Set Theory
-
-### Basic Interpretation
-
+## Interpretation of concepts as sets of atoms
 A `CLASSIFY` statement represents a subset relationship:
 
 ```ampersand
 CLASSIFY Car ISA Vehicle
 ```
+In mathematical notation, we informally say `Car ⊆ Vehicle`, but we actually mean that the set of atoms associated with `Car` is a subset of the set of atoms associated with `Vehicle`.
 
-**Mathematical meaning:** `Car ⊆ Vehicle`
-
-Every atom that is a Car is also a Vehicle.
+For an Ampersand user, this classify statement means that every atom that is a Car is also a Vehicle.
 
 ### Building the Concept Graph
 
@@ -38,24 +35,17 @@ Vehicle
 └── Van
     └── Minivan
 ```
+Every classify statement `CLASSIFY <A> ISA <B>` yields an edge between concepts `A` and `B` in the concept graph. From this concept graph, Ampersand deduces:
+1. For every `<A>`,  `CLASSIFY <A> ISA <A>` is valid, meaning that any concept is a subset of itself.
+2. For every `<A>`,`<B>`,`<Z>`, if `CLASSIFY <A> ISA <B>` and `CLASSIFY <B> ISA <Z>` are valid, then so is `CLASSIFY <A> ISA <Z>`
 
-## Handling Concept Synonyms
+This has implications. Suppose `CLASSIFY <A> ISA <B>` and `CLASSIFY <B> ISA <A>`. Ampersand will treat `<A>` and `<B>` as synonyms. For an Ampersand user, this means `<A>` and `<B>` can be used interchangeably.
 
 ### Strongly Connected Components
-
-Consider these statements:
-```ampersand
-CLASSIFY A ISA B
-CLASSIFY B ISA A
-```
-
-Both `A ⊆ B` and `B ⊆ A` hold, which means `A = B`. The concepts A and B contain identical atoms.
-
-Ampersand detects such cycles using strongly connected components (SCC) in the concept graph. Each SCC becomes a single concept with multiple names (aliases).
-
-### SCC Condensation
-
-After identifying strongly connected components, Ampersand condenses each SCC into one concept node. This removes all cycles and creates a directed acyclic graph (DAG).
+The Ampersand compiler computes strongly connected components (SCC) to identify cycles in the graph.
+It condenses every SCC into one single concept, which is then known by multiple names (aliases).
+For this purpose, Ampersand uses the library Algebra.Graph.AdjacencyMap.Algorithm’ (algebraic-graphs-0.7).
+This removes all cycles and creates a directed acyclic graph (DAG).
 
 **Before condensation:**
 ```
@@ -72,9 +62,17 @@ C
 
 ## Connected Components as Join-Semilattices
 
-### Finding Connected Components
+### Finding concept hierarchies
 
-After SCC condensation produces a DAG, Ampersand finds connected components by treating the DAG as an undirected graph. Each connected component forms a concept hierarchy.
+Once the concept graph is a DAG, Ampersand identifies concept hierarchies in the graph by partitioning the graph into weakly connected components (WCC) in the DAG.
+The purpose of that is to create database tables, one for each component.
+To make that possible, Ampersand must ensure that every component has a single root.
+The compiler does this by enforcing:
+
+D → A and D → B imply there is a concept C such that A → C and B → C
+
+Violation of this rule yields a type error.
+This ensures each WCC is a join-semilattice, which the Ampersand programmer perceives as a concept hierarchy. 
 
 ### Join-Semilattice Properties
 
@@ -89,8 +87,10 @@ Each connected component has these mathematical properties:
 Vehicle         (root - most general)
 ├── Car
 │   └── Cabrio
+│       └── ORF
 ├── Van    
 │   └── Minivan
+│   └── ORF
 └── Motorcycle
 ```
 
@@ -98,74 +98,47 @@ In this component:
 - `join(Car, Van) = Vehicle`
 - `join(Minivan, Motorcycle) = Vehicle`  
 - `Vehicle` is the unique root
+- `ORF` (stands for Open Roof Vehicle) is both a `Van` and a `Cabrio`, but that's all right because in the end it is a vehicle, so we still have a valid concept hierarchy.
 
 ## Database Table Mapping
 
 ### One Table Per Component
 
-Each connected component maps to exactly one database table. This mapping exploits the join-semilattice structure.
+Each WCC maps to exactly one database table.
+The atoms of all concepts in a WCC will be maintained in this table.
+Since the WCCs for a partition of all concepts, every concept has its own, unique table.
 
-**Mathematical justification:**
-- All concepts in the component share the same root concept
-- Every atom belongs to at least the root concept
-- Specialization creates a hierarchy within the same atom space
+NOTE: If Ampersand were to allow the atoms of one concept to be stored in multiple tables,
+we could lift the restriction of a unique root.
+This seems an attractive enhancement of Ampersand because it gives us multiple inheritance.
+We will save this enhancement for the future.
 
 ### Table Structure
 
 The database table contains:
-- A primary key column for atom identifiers
+- A primary key column for atoms of the root concept identifiers
 - A concept column indicating the most specific concept for each atom
 - Relation columns for relations between concepts in this component
 
 **Example table for the Vehicle component:**
 
-| AtomID | Concept    | Brand   | Doors | Payload |
-|--------|------------|---------|-------|---------|
-| v001   | Car        | Toyota  | 4     | NULL    |
-| v002   | Minivan    | Ford    | 5     | 1200    |
-| v003   | Cabrio     | BMW     | 2     | NULL    |
-| v004   | Motorcycle | Honda   | NULL  | NULL    |
+| AtomID | Car  | Van  | Minivan | Cabrio | ORF  | Motorcycle | Brand      | Doors | Payload |
+|--------|------|------|---------|--------|------|------------|------------|-------|---------|
+| v001   | v001 | NULL | NULL    | v001   | NULL | NULL       | Toyota     | 4     | NULL    |
+| v002   | NULL | v002 | v002    | NULL   | NULL | NULL       | Ford       | 5     | 1200    |
+| v003   | v003 | NULL | NULL    | v003   | NULL | NULL       | BMW        | 2     | NULL    |
+| v004   | NULL | NULL | NULL    | NULL   | NULL | v004       | Honda      | NULL  | NULL    |
 
-### Storage Efficiency
-
-This mapping provides efficiency gains:
-- **No joins needed** for queries within the component
-- **Sparse storage** handles specialization attributes efficiently  
-- **Type checking** ensures data consistency at the concept level
 
 ### Query Examples
-
-Finding all vehicles:
-```sql
-SELECT * FROM VehicleTable;
-```
-
-Finding only cars:
-```sql
-SELECT * FROM VehicleTable WHERE Concept = 'Car';
-```
-
-Finding vehicles with payload capacity (vans only):
-```sql
-SELECT * FROM VehicleTable WHERE Payload IS NOT NULL;
-```
 
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:
 
 1. **Parse CLASSIFY statements** into a directed graph of subset relationships
-2. **Find strongly connected components** to identify concept synonyms
-3. **Condense SCCs** to create a directed acyclic graph
-4. **Find connected components** in the undirected version of the DAG
-5. **Verify join-semilattice properties** for each component
-6. **Generate one database table** per connected component
-
-## Mathematical Foundation
-
-This approach rests on established mathematical principles:
-- **Graph theory** for handling concept relationships
-- **Lattice theory** for understanding hierarchical structures  
-- **Relational algebra** for efficient database operations
-
-The join-semilattice structure guarantees that each connected component can be stored in a single relational table while preserving all concept relationships and enabling efficient queries.
+2. **Find SCCs** to identify concept synonyms
+3. **Condense SCCs** to create a DAG
+4. **Find WCCs** in the DAG
+5. **Verify join-semilattice properties** by checking the constraint of a unique root concept per WCC.
+6. **Generate one database table** per WCC

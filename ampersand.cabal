@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -17,9 +17,9 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
+build-type:     Custom
 tested-with:
     GHC == 9.6.6
-build-type:     Custom
 extra-source-files:
     LICENSE
     ReleaseNotes.md
@@ -181,9 +181,7 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
-    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
-    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -228,7 +226,6 @@ extra-source-files:
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.adl
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.xlsx
     testing/Travis/testcases/Parsing/xlsxParsing/testinfo.yaml
-    testing/Travis/testcases/Preprocessor/export.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
@@ -424,15 +421,11 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
-    testing/Travis/testcases/prototype/shouldSucceed/~$Issue142.xlsx
     testing/Travis/testcases/Simple/Delivery.adl
     testing/Travis/testcases/Simple/DeliverySimple.adl
     testing/Travis/testcases/Simple/DeliverySimple.css
