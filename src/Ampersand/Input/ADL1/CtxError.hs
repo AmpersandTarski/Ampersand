@@ -216,10 +216,10 @@ mkMultipleRootsError roots gs =
             "The following CLASSIFY statements define a typology with multiple root concepts: "
           ]
         <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
-        <> ["Parhaps you could add the following statements:"]
-        <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> rootName | cpt <- roots]
+        <> ["The following concepts do not comply:"]
+        <> ["  Concept " <> (text1ToText . showWithAliases) cpt <> " has roots " <> rootNames | cpt <- roots]
       where
-        rootName = T.intercalate "\\/" . map (text1ToText . showWithAliases) $ roots
+        rootNames = T.intercalate ", " . map (text1ToText . showWithAliases) $ roots
 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =

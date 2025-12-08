@@ -1,6 +1,7 @@
 module Ampersand.Classes.Relational
   ( HasProps (..),
     Relational (..),
+    Flippable(..),
     hasAttributes,
     isONE,
     isSESSION,

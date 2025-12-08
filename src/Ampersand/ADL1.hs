@@ -64,6 +64,7 @@ import Ampersand.Core.AbstractSyntaxTree
     DnfClause (..),
     ExplObj (..),
     Expression (..),
+    Flippable(..),
     HasSignature (..),
     IdentityRule (..),
     IdentitySegment (..),

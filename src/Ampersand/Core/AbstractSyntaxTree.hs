@@ -53,6 +53,7 @@ module Ampersand.Core.AbstractSyntaxTree
     A_RoleRule (..),
     RoleRules,
     P_Representation (..),
+    Flippable (..),
     TType (..),
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
@@ -77,7 +78,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Type (..),
     typeOrConcept,
     topCpt, botCpt,
-    join, meet, meetSubsets,
+    join, meet,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -117,6 +118,7 @@ import Ampersand.Core.ParseTree
     TType (..),
     Traced (..),
     ViewHtmlTemplate (..),
+    Flippable (..),
     maybeOrdering,
     mkPConcept,
   )
@@ -1399,19 +1401,6 @@ instance PartialOrder Signature where
       (Just sCondition, Just tCondition) -> Just (sCondition && tCondition)
       _                                  -> Nothing
 
--- | Let conceptsGraph be a directed acyclic graph, i.e. a poset.
---   meetSubsets computes the largest subsets of the concepts in conceptsGraph that have a unique lub within this poset.
-meetSubsets :: Ord a => AdjacencyMap a -> [Set.Set a]
-meetSubsets conceptsGraph = lubs
-  where
-    es = edgeList conceptsGraph
-    lubs = [ Set.fromList [a] `Set.union` (cone . Set.fromList) [a] | (a, _) <- es, null [ c | (c,d) <- es, d==a]]
-    cone as
-      | Set.null increment = as
-      | otherwise = cone (as `Set.union` increment)
-      where
-        increment = Set.fromList [ b | (a,b) <- es, a `elem` as]
-
 {- Here is some test output for the join and meet functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
 
@@ -1498,7 +1487,9 @@ instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept {aliases=names} =
     case Set.toList names of
       []  -> fatal "This A_Concept has no name"
-      [_] -> fullName1 cpt
+      [(_, Just (Label labelText))] -> toText1Unsafe labelText  -- Use label if it's the only alias
+      [(nm, Nothing)] -> fullName1 nm  -- Use name if no label
+      (_, Just (Label labelText)):_ -> toText1Unsafe labelText  -- Prefer label for display
       xs -> fullName1 cpt <> toText1Unsafe ("(" <> T.intercalate ", " (fmap (fullName.fst)  xs) <> ")")
   showWithAliases _ = fullName1 ONE
   -- showWithAliases cpt@PlainConcept {} =

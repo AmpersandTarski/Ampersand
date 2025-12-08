@@ -13,7 +13,7 @@ ENV USERNAME=${USERNAME} \
 
 
 # install dependencies (source: https://www.haskell.org/ghcup/install/ )
-# Note: php-cli is included for running Ampersand validation tests (ampersand validate)
+# Note: php-cli and php-mysqli are included for running Ampersand validation tests (ampersand validate)
 RUN \
     apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -34,6 +34,7 @@ RUN \
     lsb-release \
     openssh-server \
     php-cli \
+    php-mysqli \
     pkg-config \
     software-properties-common \
     wget \

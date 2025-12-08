@@ -5,6 +5,7 @@
 
 module Ampersand.Core.ParseTree
   ( P_Context (..),
+    Flippable (..),
     mergeContexts,
     MetaData (..),
     P_RoleRule (..),
@@ -489,7 +490,7 @@ mergeRels rs = map fun (eqCl signat rs)
       where
         (r0 :| _) = rels
     signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
-
+  
 data PAtomPair = PPair
   { pos :: Origin,
     ppLeft :: PAtomValue,
@@ -695,18 +696,25 @@ instance Traversable Term where
     where
       f = traverse f'
 
--- | We need Flippable (Term TermPrim) for type checking, for swapping the type annotations in the Term TermPrim.
+
+class Flippable a where
+  flp :: a -> a
+
+instance Flippable a => Flippable [a] where
+  flp = fmap flp
+
 instance Flippable TermPrim where 
   flp (PI o) = PI o
   flp (Pid o c) = Pid o c
   flp (Patm o v mC) = Patm o v mC
   flp (PVee o) = PVee o
   flp (Pfull o c1 c2) = Pfull o c2 c1
-  flp (PBin o op) = PBin o op
-  flp (PBind o op c) = PBind o op c
-  flp (PNamedR r) = case p_mbSign r of
+  flp PBin{} = fatal ("flp (PBin o op) has not been implemented yet.")
+  flp PBind{} = fatal ("flp (PBind o op c) has not been implemented yet.")
+  flp PNamedR{} = fatal ("flp (PNamedR r) has not been implemented. Use flpTerm instead")
+                    {- case p_mbSign r of
                       Nothing -> PNamedR r
-                      Just s -> PNamedR (r {p_mbSign = Just (flp s)})
+                      Just s -> PNamedR (r {p_mbSign = Just (flp s)}) -}
 
 instance Flippable a => Flippable (Term a) where
   flp (Prim a) = Prim (flp a)
@@ -723,7 +731,7 @@ instance Flippable a => Flippable (Term a) where
   flp (PPrd o a b) = PPrd o (flp a) (flp b)
   flp (PKl0 o a) = PKl0 o (flp a)
   flp (PKl1 o a) = PKl1 o (flp a)
-  flp (PFlp o a) = PFlp o (flp a)
+  flp (PFlp _ a) = flp a
   flp (PCpl o a) = PCpl o (flp a)
   flp (PBrk o a) = PBrk o (flp a)
 

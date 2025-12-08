@@ -7,12 +7,12 @@ module Ampersand.Basics.Name
     --    mkName,
     MyDotNode,
     mkName,
-    Name,
+    Name (..),
     Named (..),
     nameOfExecEngineRole,
     nameOfONE,
     nameOfSESSION,
-    NamePart,
+    NamePart (..),
     namePartToText,
     namePartToText1,
     NameSpace,
@@ -147,10 +147,10 @@ try2Namepart t = case T.uncons t of
 suggestName :: NameType -> Text1 -> (Name, Maybe Label)
 suggestName typ t =
   case try2Name typ . pascal . text1ToText $ t of
-    Left msg -> fatal $ "suggestName: " <> msg
+    Left msg -> fatal ("suggestName: " <> msg)
     Right (nm, _) ->
       ( nm,
-        if text1ToText t == tshow nm then Nothing else Just . Label . text1ToText $ t
+        if text1ToText t == tshow nm then Nothing else (Just . Label . text1ToText) t
       )
 
 namePartToText :: NamePart -> Text
