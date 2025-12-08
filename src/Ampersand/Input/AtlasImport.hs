@@ -471,13 +471,26 @@ instance JSON.FromJSON (Guarded (P_Rule TermPrim)) where
 parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
 parseTerm = runParser pTerm
 
+{-
+The following instance accepts JSON like:
+
+```json
+{
+  "relation": "relationName",
+  "operator": "inclusion|subset|sameset",
+  "rhs": "expression text",
+  "flipped": true  // optional, defaults to false
+}
+```
+-}
 instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
   parseJSON val = case val of
     JSON.Object v ->
-      -- todo: if operator = .. then ...
       build
         <$> v
         JSON..: "relation"
+        <*> v
+        JSON..:? "flipped" -- Optional field, defaults to False
         <*> v
         JSON..: "operator"
         <*> v
@@ -487,13 +500,14 @@ instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
         "parsing P_Enforce failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Guarded P_NamedRel -> EnforceOperator -> Text -> Guarded (P_Enforce TermPrim)
-      build gRel oper formexp = do
+      build :: Guarded P_NamedRel -> Maybe Bool -> EnforceOperator -> Text -> Guarded (P_Enforce TermPrim)
+      build gRel mFlipped oper formexp = do
         rel <- gRel
         pure
           $ P_Enforce
             { pos = OriginAtlas,
               penfRel = PNamedR rel,
+              penfFlipped = fromMaybe False mFlipped, -- Defaults to False if not provided
               penfOp = oper,
               penfExpr = case parseTerm ("Json file from Atlas, at a P_enforce `" <> "` expression .") formexp of
                 Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)

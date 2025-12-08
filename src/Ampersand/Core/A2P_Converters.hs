@@ -59,6 +59,7 @@ aEnforce2pEnforce (AEnforce orig rel op expr _ _) =
   P_Enforce
     { pos = orig,
       penfRel = PNamedR . aRelation2pNamedRel $ rel,
+      penfFlipped = False,
       penfOp = op,
       penfExpr = aExpression2pTermPrim expr
     }

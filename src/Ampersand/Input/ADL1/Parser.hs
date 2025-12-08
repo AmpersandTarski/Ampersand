@@ -312,30 +312,18 @@ pPatternDef =
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population | Enforce
 pPatElem :: AmpParser PatElem
 pPatElem =
-  Pr
-    <$> pRuleDef
-    <|> Py
-    <$> pClassify
-    <|> Pd
-    <$> pRelationDef
-    <|> Pm
-    <$> pRoleRule
-    <|> Pm
-    <$> pServiceRule
-    <|> Pc
-    <$> pConceptDef
-    <|> Prep
-    <$> pRepresentation
-    <|> Pk
-    <$> pIdentDef
-    <|> Pv
-    <$> pViewDef
-    <|> Pe
-    <$> pPurpose
-    <|> Pp
-    <$> pPopulation
-    <|> Penf
-    <$> pEnforce
+  Pr   <$> pRuleDef        <|>
+  Py   <$> pClassify       <|>
+  Pd   <$> pRelationDef    <|>
+  Pm   <$> pRoleRule       <|>
+  Pm   <$> pServiceRule    <|>
+  Pc   <$> pConceptDef     <|>
+  Prep <$> pRepresentation <|>
+  Pk   <$> pIdentDef       <|>
+  Pv   <$> pViewDef        <|>
+  Pe   <$> pPurpose        <|>
+  Pp   <$> pPopulation     <|>
+  Penf <$> pEnforce
 
 data PatElem
   = Pr (P_Rule TermPrim)
@@ -350,13 +338,14 @@ data PatElem
   | Pp P_Population
   | Penf (P_Enforce TermPrim)
 
---- Enforce ::= 'ENFORCE' Relation (':=' | ':<' | '>:' ) Expression
+-- <Enforce> ::= 'ENFORCE' <Relation> ['~'] (':=' | ':<' | '>:' ) <Expression>
 pEnforce :: AmpParser (P_Enforce TermPrim)
 pEnforce =
   P_Enforce
     <$> currPos
-    <* (pKey . toText1Unsafe) "ENFORCE"
+    <*  (pKey . toText1Unsafe) "ENFORCE"
     <*> (PNamedR <$> pNamedRel)
+    <*> pIsThere ((pOperator . toText1Unsafe) "~")
     <*> pEnforceOperator
     <*> pTerm
   where

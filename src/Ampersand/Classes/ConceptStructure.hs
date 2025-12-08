@@ -38,6 +38,7 @@ instance PConceptStructure (Term TermPrim) where
   pConcs (Prim PI{}) = Set.empty
   pConcs (Prim PVee{}) = Set.empty
   pConcs (Prim PNamedR{}) = Set.empty
+  pConcs (Prim PFlipped{}) = Set.empty
   pConcs (PEqu _ a b) = pConcs a `Set.union` pConcs b
   pConcs (PInc _ a b) = pConcs a `Set.union` pConcs b
   pConcs (PIsc _ a b) = pConcs a `Set.union` pConcs b

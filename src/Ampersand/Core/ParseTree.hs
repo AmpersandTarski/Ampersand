@@ -150,6 +150,7 @@ data EnforceOperator
 data P_Enforce a = P_Enforce
   { pos :: !Origin,
     penfRel :: !a,
+    penfFlipped :: !Bool,
     penfOp :: !EnforceOperator,
     penfExpr :: !(Term a)
   }
@@ -160,8 +161,8 @@ instance Functor P_Enforce where fmap = fmapDefault
 instance Foldable P_Enforce where foldMap = foldMapDefault
 
 instance Traversable P_Enforce where
-  traverse f (P_Enforce orig rel op expr) =
-    (\r e -> P_Enforce orig r op e)
+  traverse f (P_Enforce orig rel flipped op expr) =
+    (\r e -> P_Enforce orig r flipped op e)
       <$> f rel
       <*> traverse f expr
 
@@ -591,6 +592,8 @@ mkPair o l r =
       ppRight = r
     }
 
+-- | TermPrim represents the leaves on a term. Ampersand interprets them as relations.
+--   They represent the nullary terms (STnullary).
 data TermPrim
   = -- | identity element without a type
     --   At parse time, there may be zero or one element in the list of concepts.
@@ -618,6 +621,8 @@ data TermPrim
     PBind !Origin !PBinOp !P_Concept
   | -- | a named relation
     PNamedR !P_NamedRel
+  | -- | the flipped primitive
+    PFlipped !TermPrim
   deriving (Show) -- For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel
@@ -709,12 +714,10 @@ instance Flippable TermPrim where
   flp (Patm o v mC) = Patm o v mC
   flp (PVee o) = PVee o
   flp (Pfull o c1 c2) = Pfull o c2 c1
-  flp PBin{} = fatal ("flp (PBin o op) has not been implemented yet.")
-  flp PBind{} = fatal ("flp (PBind o op c) has not been implemented yet.")
-  flp PNamedR{} = fatal ("flp (PNamedR r) has not been implemented. Use flpTerm instead")
-                    {- case p_mbSign r of
-                      Nothing -> PNamedR r
-                      Just s -> PNamedR (r {p_mbSign = Just (flp s)}) -}
+  flp t@PBin{} = PFlipped t
+  flp t@PBind{} = PFlipped t
+  flp t@PNamedR{} = PFlipped t
+  flp (PFlipped r) = r
 
 instance Flippable a => Flippable (Term a) where
   flp (Prim a) = Prim (flp a)
@@ -731,7 +734,7 @@ instance Flippable a => Flippable (Term a) where
   flp (PPrd o a b) = PPrd o (flp a) (flp b)
   flp (PKl0 o a) = PKl0 o (flp a)
   flp (PKl1 o a) = PKl1 o (flp a)
-  flp (PFlp _ a) = flp a
+  flp (PFlp _ a) = a
   flp (PCpl o a) = PCpl o (flp a)
   flp (PBrk o a) = PBrk o (flp a)
 
@@ -765,6 +768,7 @@ instance Traced TermPrim where
     Patm orig _ _ -> orig
     PVee orig -> orig
     Pfull orig _ _ -> orig
+    PFlipped t -> origin t
     PNamedR r -> origin r
     PBin orig _ -> orig
     PBind orig _ _ -> orig

@@ -776,7 +776,7 @@ dRule pCpt2aCpt term0 = case term0 of
             PKl1 _ e -> RKl1 (term2rTerm e)
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
-            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt (pSrc sgn)) (pCpt2aCpt (pTgt sgn))
+            Prim (PFlipped trm) -> RFlp (term2rTerm (Prim trm))
             Prim (Pid _ c) -> RId (pCpt2aCpt c)
             Prim (PBind _ oper c) -> RBind oper (pCpt2aCpt c)
             Prim (Pfull _ s t) -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
@@ -785,6 +785,7 @@ dRule pCpt2aCpt term0 = case term0 of
             Prim (PBin _ _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
+            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt (pSrc sgn)) (pCpt2aCpt (pTgt sgn))
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
 

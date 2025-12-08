@@ -1109,25 +1109,30 @@ pCtx2aCtx
         P_Enforce
           { pos = pos',
             penfRel = pRel,
+            penfFlipped = isFlipped,
             penfOp = oper,
             penfExpr = x
           } = case oper of
                 IsSuperSet {} ->
-                  do xpr <- term2Expr env ci Nothing (PInc pos' x (Prim pRel))
+                  do xpr <- term2Expr env ci Nothing (PInc pos' x relTerm)
                      case xpr of
                        EInc (expr,EDcD rel) -> return (toAEnforce rel expr)
+                       EInc (expr,EFlp (EDcD rel)) -> return (toAEnforce rel (flp expr))
                        _ -> fatal "Alternative 1 in pEnforce2aEnforce."
                 IsSubSet {} ->
-                  do xpr <- term2Expr env ci Nothing (PInc pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci Nothing (PInc pos' relTerm x)
                      case xpr of
                        EInc (EDcD rel,expr) -> return (toAEnforce rel expr)
+                       EInc (EFlp (EDcD rel),expr) -> return (toAEnforce rel (flp expr))
                        _ -> fatal "Alternative 2 in pEnforce2aEnforce."
                 IsSameSet {} ->
-                  do xpr <- term2Expr env ci Nothing (PEqu pos' (Prim pRel) x)
+                  do xpr <- term2Expr env ci Nothing (PEqu pos' relTerm x)
                      case xpr of
                        EEqu (EDcD rel,expr) -> return (toAEnforce rel expr)
+                       EInc (EFlp (EDcD rel),expr) -> return (toAEnforce rel (flp expr))
                        _ -> fatal "Alternative 3 in pEnforce2aEnforce."
           where
+            relTerm = if isFlipped then Prim (flp pRel) else Prim pRel
             toAEnforce :: Relation -> Expression -> AEnforce
             toAEnforce rel expr
              = AEnforce
@@ -1325,33 +1330,8 @@ instance (Flippable a) => Flippable (OpTree a) where
   flp (STunary t ss) = STunary (flp t) (flp ss)
   flp (STnullary ss) = STnullary (flp ss)
 
-instance (Flippable a, Flippable b) => Flippable (a,b,Term TermPrim) where
-  flp (e,s,trm) = (flp e, flp s, flpTerm trm)
-
--- | We need flpTerm for type checking. because Haskell doesn't let me define  Flippable (Term TermPrim)
-flpTerm :: Term TermPrim -> Term TermPrim
-flpTerm (Prim (PNamedR r))     = PFlp (origin r) (Prim (PNamedR r))
-flpTerm (Prim (PBin o op))     = PFlp o (Prim (PBin o op))
-flpTerm (Prim (PBind o op c))  = PFlp o (Prim (PBind o op c))
-flpTerm (Prim (Pfull o c1 c2)) = Prim (Pfull o c2 c1)
-flpTerm (Prim a)               = Prim a
-flpTerm (PEqu o a b) = PEqu o (flpTerm a) (flpTerm b)
-flpTerm (PInc o a b) = PInc o (flpTerm a) (flpTerm b)
-flpTerm (PIsc o a b) = PIsc o (flpTerm a) (flpTerm b)
-flpTerm (PUni o a b) = PUni o (flpTerm a) (flpTerm b)
-flpTerm (PDif o a b) = PDif o (flpTerm a) (flpTerm b)
-flpTerm (PLrs o a b) = PLrs o (flpTerm a) (flpTerm b)
-flpTerm (PRrs o a b) = PRrs o (flpTerm a) (flpTerm b)
-flpTerm (PDia o a b) = PDia o (flpTerm a) (flpTerm b)
-flpTerm (PCps o a b) = PCps o (flpTerm a) (flpTerm b)
-flpTerm (PRad o a b) = PRad o (flpTerm a) (flpTerm b)
-flpTerm (PPrd o a b) = PPrd o (flpTerm a) (flpTerm b)
-flpTerm (PKl0 o a) = PKl0 o (flpTerm a)
-flpTerm (PKl1 o a) = PKl1 o (flpTerm a)
-flpTerm (PFlp _ a) = a
-flpTerm (PCpl o a) = PCpl o (flpTerm a)
-flpTerm (PBrk o a) = PBrk o (flpTerm a)
-
+instance (Flippable a, Flippable b, Flippable c) => Flippable (a,b,c) where
+  flp (e,s,trm) = (flp e, flp s, flp trm)
 
 -- | signatures constructs a tree with all possible (expression, signature) pairs in each node of the tree.
 --   It is used by the function term2Expr to weed out these pairs down to one for every (sub-)term,
@@ -1401,7 +1381,7 @@ isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
 -- | The signatures function yields an OpTree with the exact recursive structure of the term.
 --   In every node there is a nonempty list of triples (Expression, Signature, Term)
 --   that details the (sub-)expression of that node.
---   If signatures cannot construct at least one valid triple in each node, it returns a type error instead.
+--   If signatures cannot construct at least one valid triple in each node, it returns a type error.
 --   Nullary terms correspond to Prim terms and they end the recursion.
 --
 --   When type-checking expressions in boxes (interfaces/APIs) or views, a constraint signature provides context
@@ -1423,6 +1403,7 @@ signatures env contextInfo mConstraintSig trm =
           --                       Nothing -> fatal ("Cannot compute meet of source concept " <> tshow s <> " and target concept " <> tshow t )
           Just (Sign s t) ->  case trm of
                                 Prim (PNamedR _) -> mConstraintSig
+                                Prim (PFlipped (PNamedR _)) -> mConstraintSig
                                 Prim _           -> case join conceptsGraph s t of
                                                       Just c  -> if c == botCpt then Nothing else Just (ISgn c)
                                                       Nothing -> fatal ("Cannot compute meet of source concept " <> tshow s <> " and target concept " <> tshow t )
@@ -1455,6 +1436,8 @@ signatures env contextInfo mConstraintSig trm =
         Prim (Pfull _ src tgt)    -> let sgn = Sign (pCpt2aCpt src) (pCpt2aCpt tgt) in pure (STnullary [(EDcV sgn, sgn, trm)])
         Prim (PBin o oper)        -> signats mConstr (Prim (PBind o oper (aConcept2pConcept topCpt)))
         Prim (PBind o oper c)     -> resultTriple (\x -> STnullary [(EBin oper x, ISgn x, trm)]) o c
+        Prim (PFlipped t)         -> do sgnTree <- signats (fmap flp mConstr) (Prim t)
+                                        pure (flp sgnTree)
         Prim (PNamedR rel)        -> let rels ::  [Relation]
                                          rels = case p_mbSign rel of
                                            Just sg -> (findRelsTyped (declarationsMap contextInfo) (name rel) . pSign2aSign pCpt2aCpt) sg
@@ -1497,17 +1480,17 @@ signatures env contextInfo mConstraintSig trm =
         -- Intra-type operations: decompose constraint
         PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b "PCps"
         PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b "PRad"
-        PLrs o a b -> case checkIntra o "left residual" ECps (PCps o) a (flpTerm b) "PLrs" of
+        PLrs o a b -> case checkIntra o "left residual" ECps (PCps o) a (flp b) "PLrs" of
                         Checked (STbinary trL trR trs) _ -> pure (STbinary trL (flp trR) (map flpRight trs))
                                                             where
-                                                              flpRight (ECps (el,er), sgn, PCps o' pl pr) = (ELrs (el,flp er), sgn, PLrs o' pl (flpTerm pr))
+                                                              flpRight (ECps (el,er), sgn, PCps o' pl pr) = (ELrs (el,flp er), sgn, PLrs o' pl (flp pr))
                                                               flpRight _ = fatal ("Unexpected triple in a pattern of a PLrs term at "<> tshow o)
                         Checked _ _ -> fatal "Unexpected non-binary OpTree in PLrs"
                         Errors errs -> Errors errs
-        PRrs o a b -> case checkIntra o "right residual" ECps (PCps o) (flpTerm a) b "PRrs" of
+        PRrs o a b -> case checkIntra o "right residual" ECps (PCps o) (flp a) b "PRrs" of
                         Checked (STbinary trL trR trs) _ -> pure (STbinary (flp trL) trR (map flpLeft trs))
                                                             where
-                                                              flpLeft (ECps (el,er), sgn, PCps o' pl pr) = (ERrs (flp el, er), sgn, PRrs o' (flpTerm pl) pr)
+                                                              flpLeft (ECps (el,er), sgn, PCps o' pl pr) = (ERrs (flp el, er), sgn, PRrs o' (flp pl) pr)
                                                               flpLeft _ = fatal ("Unexpected triple in a pattern of a PRrs term at "<> tshow o)
                         Checked _ _ -> fatal "Unexpected non-binary OpTree in PRrs"
                         Errors errs -> Errors errs
@@ -1565,7 +1548,7 @@ signatures env contextInfo mConstraintSig trm =
            []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                       opTree = STbinary sgnaTree sgnbTree errorExprs
                   in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
-           [tr] -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree [tr])) $
+           [tr] -> trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree [tr])) $
                    return (STbinary sgnaTree sgnbTree [tr])
            results  -> let baseMsg = "Ambiguous signatures of the " <> kind <> " of " <> showPa <> " and " <> showPb
                            suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showPa <> " ; " <> showPb <> " with result " <> tshow sig | (_,sig,_)<-results]
@@ -1614,8 +1597,8 @@ signatures env contextInfo mConstraintSig trm =
      = case (kind, sgnsa==sgnsb) of
         ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
         ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-        ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flpTerm b)<>"."
-        ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flpTerm a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+        ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flp b)<>"."
+        ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flp a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
         ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
         _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
       where
@@ -1648,10 +1631,10 @@ signatures env contextInfo mConstraintSig trm =
     -- Pre: source expr `geq` source targetSig && target expr `geq` target targetSig
     refineANY :: Expression -> Signature -> Expression
     refineANY expr targetSig
-     = case (geq conceptsGraph (source expr) (source targetSig), geq conceptsGraph (target expr) (target targetSig)) of
-        (Just True, Just True) -> -- trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr)
-                                  refinedExpr
-        _                      -> fatal ("refineANY precondition violated for expr " <> showA expr <> " with targetSig " <> tshow targetSig)
+     = trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr) $
+       case (geq conceptsGraph (source expr) (source targetSig), geq conceptsGraph (target expr) (target targetSig)) of
+         (Just True, Just True) -> refinedExpr
+         _                      -> fatal ("refineANY precondition violated for expr " <> showA expr <> " with type "<>tshow (sign expr)<>", but targetSig=" <> tshow targetSig)
        where
         iSig = case targetSig of
                  ISgn cpt     -> cpt
@@ -1679,9 +1662,9 @@ signatures env contextInfo mConstraintSig trm =
          (EDif (e1, e2), _)   -> EDif (refineANY e1 targetSig, refineANY e2 targetSig)
          (ECps (e1, e2), sgn) -> ECps (refineANY e1 (Sign (source sgn) between), refineANY e2 (Sign between (target sgn)))
                                  where between = fromMaybe botCpt (meet conceptsGraph (target e1) (source e2))
-         (ELrs (e1, e2), sgn) -> ELrs (refineANY e1 (Sign between (source sgn)), refineANY e2 (Sign between (target sgn)))
+         (ELrs (e1, e2), sgn) -> ELrs (refineANY e1 (Sign (source sgn) between), refineANY e2 (Sign (target sgn) between))
                                  where between = fromMaybe botCpt (meet conceptsGraph (target e1) (target e2))
-         (ERrs (e1, e2), sgn) -> ERrs (refineANY e1 (Sign (source sgn) between), refineANY e2 (Sign (target sgn) between))
+         (ERrs (e1, e2), sgn) -> ERrs (refineANY e1 (Sign between (source sgn)), refineANY e2 (Sign between (target sgn)))
                                  where between = fromMaybe botCpt (meet conceptsGraph (source e1) (source e2))
          (EDia (e1, e2), sgn) -> EDia (refineANY e1 (Sign (source sgn) between), refineANY e2 (Sign between (target sgn)))
                                  where between = fromMaybe botCpt (meet conceptsGraph (target e1) (source e2))
@@ -1697,7 +1680,7 @@ signatures env contextInfo mConstraintSig trm =
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
     checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b _  = -- extra parameters for tracing purpose: {- opStr -}
+    checkPeri o kind combinator pCombinator a b opStr  = -- extra parameters for tracing purpose: {- opStr -}
       do
         sgnaTree <- signats mConstraintSig a
         sgnbTree <- signats mConstraintSig b
@@ -1705,10 +1688,11 @@ signatures env contextInfo mConstraintSig trm =
             sgnsb = opSigns sgnbTree
             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meet conceptsGraph (source sgn_a) (source sgn_b)] ]
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meet conceptsGraph (target sgn_a) (target sgn_b)] ]
-        case -- trace ("\n16.checkPeri "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
-               [ -- trace ("\n26. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
+        case trace ("\n16.checkPeri "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
+               [ trace ("\n26. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
                  (combinator (refineANY expr_a (Sign src tgt), refineANY expr_b (Sign src tgt)), Sign src tgt, pCombinator trm_a trm_b)
-               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb -- , -- -- trace ("\n22. meet "<>tshow (source sgn_a)<>" "<>tshow (source sgn_b)<>" yields "<>tshow (meet conceptsGraph (source sgn_a) (source sgn_b))<>" and meet "<>tshow (target sgn_a)<>" "<>tshow (target sgn_b)<>" yields "<>tshow (meet conceptsGraph (target sgn_a) (target sgn_b))) True
+               | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
+               , trace ("\n22. meet "<>tshow src_a<>" "<>tshow src_b<>" yields "<>tshow (meet conceptsGraph src_a src_b)<>" and meet "<>tshow tgt_a<>" "<>tshow tgt_b<>" yields "<>tshow (meet conceptsGraph tgt_a tgt_b)) True
                , Just src<-[meet conceptsGraph src_a src_b]
                , Just tgt<-[meet conceptsGraph tgt_a tgt_b]
                ]

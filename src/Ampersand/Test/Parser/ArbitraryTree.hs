@@ -342,7 +342,8 @@ instance Arbitrary TermPrim where
         Patm <$> arbitrary <*> arbitrary <*> arbitrary,
         PVee <$> arbitrary,
         Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-        PNamedR <$> arbitrary
+        PNamedR <$> arbitrary,
+        PFlipped <$> arbitrary
       ]
 
 instance Arbitrary (PairView (Term TermPrim)) where
@@ -388,10 +389,12 @@ instance Arbitrary (P_Enforce TermPrim) where
       <*> arbitrary
       `suchThat` isNamedRelation
       <*> arbitrary
+      <*> arbitrary
       <*> genNonRuleTerm
     where
       isNamedRelation :: TermPrim -> Bool
       isNamedRelation PNamedR {} = True
+      isNamedRelation (PFlipped trm) = isNamedRelation trm
       isNamedRelation _ = False
 
 instance Arbitrary EnforceOperator where

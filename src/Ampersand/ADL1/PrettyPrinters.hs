@@ -199,6 +199,7 @@ instance Pretty TermPrim where
     PVee _ -> text "V"
     Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
     PNamedR rel -> pretty rel
+    PFlipped t -> pretty t <> text "~"
 
 instance Pretty PBinOp where
   pretty p = case p of
@@ -242,9 +243,10 @@ instance Pretty (P_Rule TermPrim) where
         <~\> viol
 
 instance Pretty (P_Enforce TermPrim) where
-  pretty (P_Enforce _ rel op expr) =
+  pretty (P_Enforce _ rel flipped op expr) =
     text "ENFORCE"
       <+> pretty rel
+      <+> (if flipped then text "~" else empty)
       <+> pretty op
         <~> expr
 
