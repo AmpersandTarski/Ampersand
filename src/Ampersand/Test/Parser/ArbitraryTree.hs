@@ -386,16 +386,10 @@ instance Arbitrary (P_Enforce TermPrim) where
   arbitrary =
     P_Enforce
       <$> arbitrary
-      <*> arbitrary
-      `suchThat` isNamedRelation
+      <*> (PNamedR <$> arbitrary) -- Always PNamedR; penfFlipped Bool controls the tilde
       <*> arbitrary
       <*> arbitrary
       <*> genNonRuleTerm
-    where
-      isNamedRelation :: TermPrim -> Bool
-      isNamedRelation PNamedR {} = True
-      isNamedRelation (PFlipped trm) = isNamedRelation trm
-      isNamedRelation _ = False
 
 instance Arbitrary EnforceOperator where
   arbitrary =

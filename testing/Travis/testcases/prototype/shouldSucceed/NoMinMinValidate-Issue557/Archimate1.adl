@@ -53,7 +53,8 @@ CLASSIFY BusinessInterface ISA BusinessConcept
 
 RELATION provides[BusinessRole*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business role " " provides Business interface ".
 RELATION takesPart[BusinessRole*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business role " " takes part in providing Business interface ".
-RELATION provides[BusinessCollaboration*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business collaboration " " provides Business interface ".
+-- The following is wrong because  BusinessCollaboration ISA BusinessRole  and because  RELATION provides[BusinessRole*BusinessInterface]  is declared.
+-- RELATION provides[BusinessCollaboration*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business collaboration " " provides Business interface ".
 RULE R002: comp;I[BusinessCollaboration];provides \/ provides = takesPart
  MEANING "An interface provided by a business collaboration is considered to be provided by all participants in the collaboration."
 

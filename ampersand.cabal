@@ -181,9 +181,7 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
-    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
-    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -228,7 +226,6 @@ extra-source-files:
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.adl
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.xlsx
     testing/Travis/testcases/Parsing/xlsxParsing/testinfo.yaml
-    testing/Travis/testcases/Preprocessor/export.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
@@ -251,6 +248,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/Issue142.adl
     testing/Travis/testcases/prototype/shouldFail/Issue142.xlsx
+    testing/Travis/testcases/prototype/shouldFail/overlappingRelations.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM_Test10.adl
@@ -430,6 +428,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
@@ -449,6 +448,7 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/CompositionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DiamondTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DifferenceTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/export.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FlipTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FullRelationTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl
