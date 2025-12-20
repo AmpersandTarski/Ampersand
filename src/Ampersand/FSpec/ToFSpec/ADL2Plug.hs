@@ -145,7 +145,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       where
         allConceptsInTable =
           -- All concepts from the typology, orderd from generic to specific
-          reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
+          L.nubBy (\a b -> fullName a == fullName b) $ reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
 
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
@@ -391,7 +391,7 @@ instance TableArtefact A_Concept where
 instance TableArtefact Relation where
   toConceptOrRelation = Right
 
-determineSqlName :: [ConceptOrRelation] -> ConceptOrRelation -> SqlName
+determineSqlName :: HasCallStack => [ConceptOrRelation] -> ConceptOrRelation -> SqlName
 determineSqlName scope conceptOrRelation =
   text1ToSqlName
     . (if mustBeDisambiguated then disambiguatedName else fullName1)

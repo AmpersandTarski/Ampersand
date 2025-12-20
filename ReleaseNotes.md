@@ -6,12 +6,14 @@
 - Enhanced type analysis debugging: Improved `showOpTree` visualization with structured tree formatting using proper indentation and tree-drawing characters for better readability of type analysis results
 - Added logging support to type analysis functions to enable debug-level diagnostic output
 - Added disambiguation algorithm analysis documentation and implementation notes for type system improvements
-- Added new test cases for disambiguation testing (disambTestStef.adl, try14.adl, try17.adl)
+- Added new test cases for disambiguation testing (disambTestStef.adl, try14.adl, try17.adl) and overlapping relations testing
 - Added comprehensive memorybank documentation for Cline covering active context, build/deploy processes, product context, project brief, and technical context
 - Added testing infrastructure documentation for contributors
 - Updated .clineignore configuration for better project file management
 - The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
 - Fixed formatting of relation names in verbose output: removed unwanted space between relation name and signature (now displays as `relationName[Signature]` instead of `relationName [Signature]`)
+- **Fixed devcontainer startup issue**: Removed conflicting ENTRYPOINT directive from DockerfileUpstream that prevented containers from starting properly
+- **Enhanced devcontainer documentation**: Added troubleshooting section with diagnostic steps and solutions for container startup failures, plus explanation of configuration choices and reasoning behind devcontainer setup decisions
 - maintenance work for better maintainability.
 
 ## v5.4.3
@@ -166,7 +168,7 @@
 - [#1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
 - [#1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
 - [#1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
-- Development of Ampersand generator can now be done with codespaces (Check it out!).
+- Development of Ampersand compiler can now be done with codespaces (Check it out!).
 
 ## v4.7.6 (26 february 2023)
 

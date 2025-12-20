@@ -1,11 +1,9 @@
 {
   "name": "Ampersand 5 devcontainer",
   // "remoteUser": "root",
-  "runArgs": [],
-  "build": {
-    "context": "..",
-    "dockerfile": "DockerfileUpstream"
-  },
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "ampersand-dev",
+  "workspaceFolder": "/workspaces/Ampersand",
   "mounts": [
     "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/,target=/home/vscode/.ssh,readonly"
   ],
