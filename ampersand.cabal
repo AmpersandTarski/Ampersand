@@ -152,7 +152,6 @@ extra-source-files:
     testing/Travis/testcases/Bugs/Fixed/Other/testinfo.yaml
     testing/Travis/testcases/Bugs/Fixed/SQL/Bug_HaskellViolationTest.adl
     testing/Travis/testcases/Bugs/Fixed/SQL/Bug_RelAdd.adl
-    testing/Travis/testcases/Bugs/Fixed/SQL/Bug_SingletonExpression.adl
     testing/Travis/testcases/Bugs/Fixed/SQL/Bug_Totality.adl
     testing/Travis/testcases/Bugs/Fixed/SQL/testinfo.yaml
     testing/Travis/testcases/Bugs/NoSentinel/Bug30_InterfaceRefBug.adl
@@ -162,6 +161,7 @@ extra-source-files:
     testing/Travis/testcases/Check/EnforceTest1.adl
     testing/Travis/testcases/Check/NamespaceRule.adl
     testing/Travis/testcases/Check/ShouldFail/ARM20-Test2.adl
+    testing/Travis/testcases/Check/ShouldFail/Bug_SingletonExpression.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1281.adl
@@ -201,6 +201,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/ARM20-Test6.adl
     testing/Travis/testcases/Misc/ARM20-Test7.adl
     testing/Travis/testcases/Misc/ARM20-Test8.adl
+    testing/Travis/testcases/Misc/Bug_SingletonExpression.adl
     testing/Travis/testcases/Misc/ComparisonTest1.adl
     testing/Travis/testcases/Misc/css/Custom.css
     testing/Travis/testcases/Misc/disambTestStef.adl
@@ -244,6 +245,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/ISAtest/Strange.adl
     testing/Travis/testcases/prototype/ISAtest/testinfo.yaml
     testing/Travis/testcases/prototype/README.md
+    testing/Travis/testcases/prototype/shouldFail/Bug_ANY_in_violation_view.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/IDENT-test-fail.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/Issue708.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/showViolationMessages.adl
@@ -307,7 +309,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/BroadTableTest.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug335_Kl0Kl1.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
-    testing/Travis/testcases/prototype/shouldSucceed/Bug_ANY_in_violation_view.adl
     testing/Travis/testcases/prototype/shouldSucceed/ClosedWorld.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
@@ -425,9 +426,12 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
     testing/Travis/testcases/Simple/Delivery.adl

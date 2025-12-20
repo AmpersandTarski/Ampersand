@@ -1257,8 +1257,8 @@ opSigns (STnullary ss)    = ss
 -- assignOpSigns ss (STunary e _) = STunary e ss
 -- assignOpSigns ss (STnullary _) = STnullary ss
 
--- showTriple :: (Expression, Signature, Term TermPrim) -> Text
--- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
+showTriple :: (Expression, Signature, Term TermPrim) -> Text
+showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure
@@ -1389,10 +1389,10 @@ isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
 --   whose signatures are wider or equal to the constraint.
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
 signatures env contextInfo mConstraintSig trm =
---  trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields: "<>
---          case result of
---                  Checked sgnTree _ -> "["<>T.intercalate ", " (map showTriple (opSigns sgnTree))<>"]\n"<>showOpTree sgnTree
---                  Errors _ -> "Type error")
+  trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields: "<>
+          case result of
+                  Checked sgnTree _ -> "["<>T.intercalate ", " (map showTriple (opSigns sgnTree))<>"]\n"<>showOpTree sgnTree
+                  Errors _ -> "Type error")
  result
   where
     mConstr :: Maybe Signature
@@ -1464,8 +1464,12 @@ signatures env contextInfo mConstraintSig trm =
                                                      ([d], Just (Sign constraintSrc constraintTgt)) -> ("There is no match for relation "<>showP rel<>" because ") <> T.intercalate " and " 
                                                             ([ "its source concept "<>tshow (source (sign d))<>" should be "<>tshow constraintSrc<>" (or more generic)."
                                                              | Just False <- [geq conceptsGraph (source (sign d)) constraintSrc]] <>
+                                                             [ "its source concept "<>tshow (source (sign d))<>" is unrelated to "<>tshow constraintSrc<>"."
+                                                             | Nothing <- [geq conceptsGraph (source (sign d)) constraintSrc]] <>
                                                              [ "its target concept "<>tshow (target (sign d))<>" should be "<>tshow constraintTgt<>" (or more generic)."
-                                                             | Just False <- [geq conceptsGraph (target (sign d)) constraintTgt]])
+                                                             | Just False <- [geq conceptsGraph (target (sign d)) constraintTgt]] <>
+                                                             [ "its target concept "<>tshow (target (sign d))<>" is unrelated to "<>tshow constraintTgt<>"."
+                                                             | Nothing <- [geq conceptsGraph (target (sign d)) constraintTgt]])
                                                      ([],_)  -> "Undeclared relation "<> showP trm
                                                      _   -> "None of the relations: " <> T.intercalate ", " [showA d | d <- rels] <> " match on " <>showP rel<>"."
                                             ds -> pure (STnullary [(EDcD d, sign d, trm) | d <- ds])
@@ -1785,12 +1789,12 @@ term2Expr env contextInfo mConstraintSig term
     --   Precondition: if the triple in the root of sgnTree is (expr, sgn, t), then term2Expr t == expr
     refineSgn :: Signature -> OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
     refineSgn mold sgnTree =
-      case {- trace ("\n18.>>> refineSgn called:"
+      case trace ("\n18.>>> refineSgn called:"
                     <>"\n  mold: "<>tshow mold
                     <>"\n  sgnTree: "<>case sgnTree of
                         STnullary ss -> "STnullary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
                         STunary _ ss -> "STunary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
-                        STbinary _ _ ss -> "STbinary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)) -}
+                        STbinary _ _ ss -> "STbinary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss))
               sgnTree of
         STnullary triples ->
           case [ (expr, sgn, t) | (expr, sgn, t) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
@@ -1816,6 +1820,17 @@ term2Expr env contextInfo mConstraintSig term
             [triple@(_, sgn, _)] -> do refinedLeft  <- refineSgn sgn stLeft
                                        refinedRight <- refineSgn sgn stRight
                                        pure (STbinary refinedLeft refinedRight [triple])
+            [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
+            filtered -> msg filtered sgnTree "Please specify the signature explicitly."
+        STbinary stLeft stRight triples | isPPrd sgnTree ->
+          -- Product operator: no "between" concept constraint - left and right are independent
+          case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
+            [triple@(_, sgn, _)] -> 
+                 -- For product e1#e2, refine left with ISgn(source) and right with ISgn(target)
+                 -- because the operands are independent - there's no shared "between" concept
+                 do refinedLeft  <- refineSgn (ISgn (source sgn)) stLeft
+                    refinedRight <- refineSgn (ISgn (target sgn)) stRight
+                    pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isIntra sgnTree ->
@@ -1873,7 +1888,7 @@ term2Expr env contextInfo mConstraintSig term
     getBetweenConcept (EPrd (_ , _ )) = topCpt  -- Product doesn't have a between concept constraint
     getBetweenConcept e = fatal ("getBetweenConcept: pattern match failure on expression "<>showA e<>"\nThis is a bug in the compiler.")
 
-    isInter, isPLrs, isPRrs, isIntra :: OpTree (Expression, Signature, Term TermPrim) -> Bool
+    isInter, isPLrs, isPRrs, isPPrd, isIntra :: OpTree (Expression, Signature, Term TermPrim) -> Bool
     isInter sgnTree = case sgnTree of
                         STbinary _ _ [(_, _, PEqu{})] -> True
                         STbinary _ _ [(_, _, PInc{})] -> True
@@ -1887,11 +1902,14 @@ term2Expr env contextInfo mConstraintSig term
     isPRrs sgnTree = case sgnTree of
                         STbinary _ _ [(_, _, PRrs{})] -> True
                         _                             -> False
+    isPPrd sgnTree = case sgnTree of
+                        STbinary _ _ [(_, _, PPrd{})] -> True
+                        _                             -> False
     isIntra sgnTree = case sgnTree of
                         STbinary _ _ [(_, _, PCps{})] -> True
                         STbinary _ _ [(_, _, PDia{})] -> True
                         STbinary _ _ [(_, _, PRad{})] -> True
-                        STbinary _ _ [(_, _, PPrd{})] -> True
+                        -- Note: PPrd is handled separately by isPPrd, not here
                         _                             -> False
 
     msg :: [(Expression, Signature, Term TermPrim)] -> OpTree (Expression, Signature, Term TermPrim) -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))

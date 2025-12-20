@@ -1,0 +1,9 @@
+CONTEXT Bugs IN ENGLISH
+
+RELATION rel[A*B] []
+  = [ ("a1", "b1"); ("a1", "b2"); ("a2", "b1"); ("a2", "b2")]
+
+INTERFACE Accounts : V[ONE*B]
+BOX [ bug : rel; "b1" ]
+
+ENDCONTEXT
