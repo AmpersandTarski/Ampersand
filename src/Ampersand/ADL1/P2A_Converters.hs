@@ -1389,10 +1389,10 @@ isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
 --   whose signatures are wider or equal to the constraint.
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
 signatures env contextInfo mConstraintSig trm =
-  trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields: "<>
-          case result of
-                  Checked sgnTree _ -> "["<>T.intercalate ", " (map showTriple (opSigns sgnTree))<>"]\n"<>showOpTree sgnTree
-                  Errors _ -> "Type error")
+  -- trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields: "<>
+  --         case result of
+  --                 Checked sgnTree _ -> "["<>T.intercalate ", " (map showTriple (opSigns sgnTree))<>"]\n"<>showOpTree sgnTree
+  --                 Errors _ -> "Type error")
  result
   where
     mConstr :: Maybe Signature
@@ -1476,11 +1476,13 @@ signatures env contextInfo mConstraintSig trm =
                                           where      
 
         -- Inter-type operations: both operands get the same constraint
-        PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b "PEqu"
-        PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b "PInc"
-        PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b "PIsc"
-        PUni o a b -> checkPeri  o "union"             EUni (PUni o) a b "PUni"
-        PDif o a b -> checkPeri  o "difference"        EDif (PDif o) a b "PDif"
+        -- For union, use join (least upper bound) to find the common supertype
+        -- For other operations (intersection, equation, inclusion, difference), use meet (greatest lower bound)
+        PEqu o a b -> checkPeri  o "equation"          EEqu (PEqu o) a b meet "meet"
+        PInc o a b -> checkPeri  o "inclusion"         EInc (PInc o) a b meet "meet"
+        PIsc o a b -> checkPeri  o "intersection"      EIsc (PIsc o) a b meet "meet"
+        PUni o a b -> checkPeri  o "union"             EUni (PUni o) a b join "join"
+        PDif o a b -> checkPeri  o "difference"        EDif (PDif o) a b meet "meet"
         -- Intra-type operations: decompose constraint
         PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b "PCps"
         PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b "PRad"
@@ -1635,10 +1637,8 @@ signatures env contextInfo mConstraintSig trm =
     -- Pre: source expr `geq` source targetSig && target expr `geq` target targetSig
     refineANY :: Expression -> Signature -> Expression
     refineANY expr targetSig
-     = -- trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr) $
-       case (geq conceptsGraph (source expr) (source targetSig), geq conceptsGraph (target expr) (target targetSig)) of
-         (Just True, Just True) -> refinedExpr
-         _                      -> fatal ("refineANY precondition violated for expr " <> showA expr <> " with type "<>tshow (sign expr)<>", but targetSig=" <> tshow targetSig)
+     = -- trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr)
+        refinedExpr
        where
         iSig = case targetSig of
                  ISgn cpt     -> cpt
@@ -1647,10 +1647,22 @@ signatures env contextInfo mConstraintSig trm =
                                    Nothing -> fatal ("refineANY: cannot compute meet of source expr " <> tshow (source expr) <> " and targetSig source " <> tshow src <> " for expr " <> showA expr)
         refinedExpr = case (expr, targetSig) of
       -- Nullary operations:
-         (EDcI _,    ISgn cpt)   -> EDcI cpt
-         (EDcI _,    _)          -> EDcI iSig
-         (EMp1 av _, ISgn cpt)   -> EMp1 av cpt
-         (EMp1 av _, _)          -> EMp1 av iSig
+      -- For EDcI: only narrow, never widen. If expr's concept is already narrower than target, keep it.
+      -- geq returns Just True if first arg >= second arg (first is more generic)
+      -- We want to keep expr when exprCpt <= tgtCpt (exprCpt is narrower), i.e., when tgtCpt >= exprCpt
+         (EDcI exprCpt, ISgn tgtCpt) -> case geq conceptsGraph tgtCpt exprCpt of
+                                          Just True  -> expr  -- tgtCpt >= exprCpt, so exprCpt is already narrower or equal, keep it
+                                          _          -> EDcI tgtCpt  -- narrow down to tgtCpt
+         (EDcI exprCpt, _)           -> case geq conceptsGraph iSig exprCpt of
+                                          Just True  -> expr  -- iSig >= exprCpt, so exprCpt is already narrower or equal, keep it
+                                          _          -> EDcI iSig  -- narrow down to iSig
+      -- For EMp1: only narrow, never widen. If expr's concept is already narrower than target, keep it.
+         (EMp1 av exprCpt, ISgn tgtCpt) -> case geq conceptsGraph tgtCpt exprCpt of
+                                             Just True  -> expr  -- tgtCpt >= exprCpt, so exprCpt is already narrower or equal, keep it
+                                             _          -> EMp1 av tgtCpt  -- narrow down to tgtCpt
+         (EMp1 av exprCpt, _)           -> case geq conceptsGraph iSig exprCpt of
+                                             Just True  -> expr  -- iSig >= exprCpt, so exprCpt is already narrower or equal, keep it
+                                             _          -> EMp1 av iSig  -- narrow down to iSig
          (EDcD _,    _)          -> expr -- Declarations are concrete already
          (EEps _ _,  _)          -> expr
          (EBin oper _, ISgn cpt) -> EBin oper cpt
@@ -1683,43 +1695,50 @@ signatures env contextInfo mConstraintSig trm =
 
 
     -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
-    checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    checkPeri o kind combinator pCombinator a b _  = -- extra parameters for tracing purpose: {- opStr -}
+    -- The meetORjoin parameter determines how to combine concept types:
+    -- - For union, use join (least upper bound) to find the common supertype
+    -- - For other operations (intersection, equation, inclusion, difference), use meet (greatest lower bound)
+    checkPeri :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> (AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept) -> Text -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+    checkPeri o kind combinator pCombinator a b meetORjoin meetORjoinName = -- extra parameters for tracing purpose: {- meetORjoinName -}
       do
         sgnaTree <- signats mConstraintSig a
         sgnbTree <- signats mConstraintSig b
         let sgnsa = opSigns sgnaTree
             sgnsb = opSigns sgnbTree
-            conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meet conceptsGraph (source sgn_a) (source sgn_b)] ]
-            conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meet conceptsGraph (target sgn_a) (target sgn_b)] ]
-        case -- trace ("\n16.checkPeri "<>opStr<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
-               [ -- trace ("\n26. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
-                 (combinator (refineANY expr_a (Sign src tgt), refineANY expr_b (Sign src tgt)), Sign src tgt, pCombinator trm_a trm_b)
+            conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
+            conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
+        case -- trace ("\n16.checkPeri "<>meetORjoinName<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
+               [ -- trace ("\n26. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
+                 -- For union (join), operands keep their original types - the result type is the join
+                 -- For other ops (meet), operands are refined to the common subtype
+                 (combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b)
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
-               -- , trace ("\n22. meet "<>tshow src_a<>" "<>tshow src_b<>" yields "<>tshow (meet conceptsGraph src_a src_b)<>" and meet "<>tshow tgt_a<>" "<>tshow tgt_b<>" yields "<>tshow (meet conceptsGraph tgt_a tgt_b)) True
-               , Just src<-[meet conceptsGraph src_a src_b]
-               , Just tgt<-[meet conceptsGraph tgt_a tgt_b]
+               -- , trace ("\n22. "<>meetORjoinName<>" "<>tshow src_a<>" "<>tshow src_b<>" yields "<>tshow (meetORjoin conceptsGraph src_a src_b)<>" and "<>meetORjoinName<>" "<>tshow tgt_a<>" "<>tshow tgt_b<>" yields "<>tshow (meetORjoin conceptsGraph tgt_a tgt_b)) True
+               , Just src<-[meetORjoin conceptsGraph src_a src_b]
+               , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
                ]
             -- Add cases for ISgn matching - for equations/inclusions, identities can match with any endomorphic signature
             -- When matching ISgn with Sign, refine the atom expression to use the inferred concept instead of TOP
-            <> [ -- trace ("\n27. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
+            <> [ -- trace ("\n27. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
                  (combinator (refineANY expr_a (Sign cpt cpt), refineANY expr_b (ISgn cpt)), Sign cpt cpt, pCombinator trm_a trm_b)
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
-               , Just between_a <- [meet conceptsGraph src_a tgt_a]  -- Left side must match with I
-               , Just cpt<-[meet conceptsGraph between_a cpt_b]  -- Find the meet/join of the two concepts
+               , Just between_a <- [meetORjoin conceptsGraph src_a tgt_a]  -- Left side must match with I
+               , Just cpt<-[meetORjoin conceptsGraph between_a cpt_b]  -- Find the meet/join of the two concepts
                ]
                --    sgnsa: (I[TOP], [TOP], I[TOP])
                --    sgnsb: (op[Beslissing*Verzoek]~;op[Beslissing*Verzoek], [Verzoek*Verzoek], op~;op)
-            <> [ -- trace ("\n28. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
+            <> [ -- trace ("\n28. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign cpt cpt))
                  (combinator (refineANY expr_a (ISgn cpt), refineANY expr_b (Sign cpt cpt)), Sign cpt cpt, pCombinator trm_a trm_b)
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
-               , Just between_b <- [meet conceptsGraph src_b tgt_b]  -- Right side must match with I
-               , Just cpt<-[meet conceptsGraph cpt_a between_b]  -- Find the meet/join of the two concepts
+               , Just between_b <- [meetORjoin conceptsGraph src_b tgt_b]  -- Right side must match with I
+               , Just cpt<-[meetORjoin conceptsGraph cpt_a between_b]  -- Find the meet/join of the two concepts
                ]
-            <> [ -- trace ("\n29. meet on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (ISgn cpt))
-                 (combinator (refineANY expr_a (ISgn cpt), refineANY expr_b (ISgn cpt)), ISgn cpt, pCombinator trm_a trm_b)
+            <> [ -- trace ("\n29. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (ISgn cpt))
+                 -- For join (union), operands keep their types; for meet, refine to common subtype
+                 (combinator (if meetORjoinName == "join" then expr_a else refineANY expr_a (ISgn cpt), 
+                              if meetORjoinName == "join" then expr_b else refineANY expr_b (ISgn cpt)), ISgn cpt, pCombinator trm_a trm_b)
                | (expr_a, ISgn cpt_a, trm_a)<-sgnsa, (expr_b, ISgn cpt_b, trm_b)<-sgnsb
-               , Just cpt<-[meet conceptsGraph cpt_a cpt_b]
+               , Just cpt<-[meetORjoin conceptsGraph cpt_a cpt_b]
                ] of
           []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                      opTree = STbinary sgnaTree sgnbTree errorExprs
@@ -1789,18 +1808,32 @@ term2Expr env contextInfo mConstraintSig term
     --   Precondition: if the triple in the root of sgnTree is (expr, sgn, t), then term2Expr t == expr
     refineSgn :: Signature -> OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
     refineSgn mold sgnTree =
-      case trace ("\n18.>>> refineSgn called:"
-                    <>"\n  mold: "<>tshow mold
-                    <>"\n  sgnTree: "<>case sgnTree of
-                        STnullary ss -> "STnullary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
-                        STunary _ ss -> "STunary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
-                        STbinary _ _ ss -> "STbinary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss))
+      case -- trace ("\n18.>>> refineSgn called:"
+           --           <>"\n  mold: "<>tshow mold
+           --           <>"\n  sgnTree: "<>case sgnTree of
+           --               STnullary ss -> "STnullary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
+           --               STunary _ ss -> "STunary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss)
+           --               STbinary _ _ ss -> "STbinary with "<>tshow (length ss)<>" items: "<>T.concat (map showTriple ss))
               sgnTree of
         STnullary triples ->
-          case [ (expr, sgn, t) | (expr, sgn, t) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
+          case [ (expr, sn,  t) | (expr, sgn, t) <- triples, isIdentityOrV expr, Just sn <- [meetSig sgn mold]]<>
+               [ (expr, sgn, t) | (expr, sgn, t) <- triples, not (isIdentityOrV expr), Just True <- [geq conceptsGraph sgn mold]]
+           of
             [triple] -> pure (STnullary [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STnullary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
+          where
+            isIdentityOrV :: Expression -> Bool
+            isIdentityOrV (EDcI _) = True
+            isIdentityOrV (EDcV _) = True
+            isIdentityOrV _ = False
+            -- Compute meet of two signatures
+            meetSig :: Signature -> Signature -> Maybe Signature
+            meetSig (ISgn c1) (ISgn c2) = ISgn <$> meet conceptsGraph c1 c2
+            meetSig (ISgn c) (Sign src tgt) = ISgn <$> (meet conceptsGraph c =<< meet conceptsGraph src tgt)
+            meetSig (Sign src tgt) (ISgn c) = ISgn <$> (meet conceptsGraph c =<< meet conceptsGraph src tgt)
+            meetSig (Sign src1 tgt1) (Sign src2 tgt2) = 
+              Sign <$> meet conceptsGraph src1 src2 <*> meet conceptsGraph tgt1 tgt2
         
         STunary subTree triples ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
@@ -1889,6 +1922,7 @@ term2Expr env contextInfo mConstraintSig term
     getBetweenConcept e = fatal ("getBetweenConcept: pattern match failure on expression "<>showA e<>"\nThis is a bug in the compiler.")
 
     isInter, isPLrs, isPRrs, isPPrd, isIntra :: OpTree (Expression, Signature, Term TermPrim) -> Bool
+    -- isInter handles operations where operands are refined to the common subtype (meet)
     isInter sgnTree = case sgnTree of
                         STbinary _ _ [(_, _, PEqu{})] -> True
                         STbinary _ _ [(_, _, PInc{})] -> True
