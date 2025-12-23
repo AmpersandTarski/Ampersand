@@ -1376,6 +1376,16 @@ isConcreteSignature :: Signature -> Bool
 isConcreteSignature (Sign src tgt) = src/=topCpt && src/=botCpt && tgt/=topCpt && tgt/=botCpt
 isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
 
+-- | Check if a signature contains the TOP concept
+containsTOP :: Signature -> Bool
+containsTOP (Sign src tgt) = src==topCpt || tgt==topCpt
+containsTOP (ISgn cpt)     = cpt==topCpt
+
+-- | Check if a signature contains the BOT concept
+containsBOT :: Signature -> Bool
+containsBOT (Sign src tgt) = src==botCpt || tgt==botCpt
+containsBOT (ISgn cpt)     = cpt==botCpt
+
 -- | Compute all possible type signatures for a term.
 --   
 -- | The signatures function yields an OpTree with the exact recursive structure of the term.
@@ -1637,7 +1647,7 @@ signatures env contextInfo mConstraintSig trm =
     -- Pre: source expr `geq` source targetSig && target expr `geq` target targetSig
     refineANY :: Expression -> Signature -> Expression
     refineANY expr targetSig
-     = -- trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr)
+     = trace ("15. refineANY (" <> showA expr <> ") (" <> tshow targetSig <> ") yields " <> showA refinedExpr)
         refinedExpr
        where
         iSig = case targetSig of
@@ -1707,13 +1717,13 @@ signatures env contextInfo mConstraintSig trm =
             sgnsb = opSigns sgnbTree
             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meetORjoin conceptsGraph (source sgn_a) (source sgn_b)] ]
             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meetORjoin conceptsGraph (target sgn_a) (target sgn_b)] ]
-        case -- trace ("\n16.checkPeri "<>meetORjoinName<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
-               [ -- trace ("\n26. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
+        case trace ("\n16.checkPeri "<>kind<>" "<>meetORjoinName<>" ("<>tshow o<>") ("<>showP a<>") ("<>showP b<>")\n   sgnsa: "<>T.intercalate ", " (map showTriple sgnsa)<>"\n   sgnsb: "<>T.intercalate ", " (map showTriple sgnsb)) $
+               [ trace ("\n26. "<>meetORjoinName<>" on "<>showP a<>" and "<>showP b<>" yields: "<>tshow (Sign src tgt))
                  -- For union (join), operands keep their original types - the result type is the join
                  -- For other ops (meet), operands are refined to the common subtype
                  (combinator (expr_a, expr_b), Sign src tgt, pCombinator trm_a trm_b)
                | (expr_a, Sign src_a tgt_a, trm_a)<-sgnsa, (expr_b, Sign src_b tgt_b, trm_b)<-sgnsb
-               -- , trace ("\n22. "<>meetORjoinName<>" "<>tshow src_a<>" "<>tshow src_b<>" yields "<>tshow (meetORjoin conceptsGraph src_a src_b)<>" and "<>meetORjoinName<>" "<>tshow tgt_a<>" "<>tshow tgt_b<>" yields "<>tshow (meetORjoin conceptsGraph tgt_a tgt_b)) True
+               , trace ("\n22. "<>meetORjoinName<>" "<>tshow src_a<>" "<>tshow src_b<>" yields "<>tshow (meetORjoin conceptsGraph src_a src_b)<>" and "<>meetORjoinName<>" "<>tshow tgt_a<>" "<>tshow tgt_b<>" yields "<>tshow (meetORjoin conceptsGraph tgt_a tgt_b)) True
                , Just src<-[meetORjoin conceptsGraph src_a src_b]
                , Just tgt<-[meetORjoin conceptsGraph tgt_a tgt_b]
                ]
@@ -1753,7 +1763,7 @@ signatures env contextInfo mConstraintSig trm =
                                     [] ->     "untyped"
                                     [sgn] ->  tshow sgn
                                     sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-          [res] -> -- trace ("\n17. Checkperi yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [result]))
+          [res] -> trace ("\n17. Checkperi yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res]))
                       return (STbinary sgnaTree sgnbTree [res])
           results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                          opTree = STbinary sgnaTree sgnbTree results
@@ -1819,7 +1829,7 @@ term2Expr env contextInfo mConstraintSig term
           case [ (expr, sn,  t) | (expr, sgn, t) <- triples, isIdentityOrV expr, Just sn <- [meetSig sgn mold]]<>
                [ (expr, sgn, t) | (expr, sgn, t) <- triples, not (isIdentityOrV expr), Just True <- [geq conceptsGraph sgn mold]]
            of
-            [triple] -> pure (STnullary [triple])
+            [triple@(_, sgn, trm)] -> checkConcreteness sgn trm (pure (STnullary [triple]))
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STnullary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
           where
@@ -1838,10 +1848,11 @@ term2Expr env contextInfo mConstraintSig term
         STunary subTree triples ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
             [triple@(_, sgn, trm)] -> 
-              -- For PFlp: the refined signature is flipped, but subTree contains unflipped relations
-              -- So we must flip the signature back before recursing
-              do refinedSubTree <- refineSgn (if isFlip trm then flp sgn else sgn) subTree
-                 pure (STunary refinedSubTree [triple])
+              checkConcreteness sgn trm $ do
+                -- For PFlp: the refined signature is flipped, but subTree contains unflipped relations
+                -- So we must flip the signature back before recursing
+                refinedSubTree <- refineSgn (if isFlip trm then flp sgn else sgn) subTree
+                pure (STunary refinedSubTree [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STunary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
            where
@@ -1850,53 +1861,71 @@ term2Expr env contextInfo mConstraintSig term
 
         STbinary stLeft stRight triples | isInter sgnTree ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
-            [triple@(_, sgn, _)] -> do refinedLeft  <- refineSgn sgn stLeft
-                                       refinedRight <- refineSgn sgn stRight
-                                       pure (STbinary refinedLeft refinedRight [triple])
+            [triple@(_, sgn, trm)] -> 
+              checkConcreteness sgn trm $ do
+                refinedLeft  <- refineSgn sgn stLeft
+                refinedRight <- refineSgn sgn stRight
+                pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isPPrd sgnTree ->
           -- Product operator: no "between" concept constraint - left and right are independent
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
-            [triple@(_, sgn, _)] -> 
-                 -- For product e1#e2, refine left with ISgn(source) and right with ISgn(target)
-                 -- because the operands are independent - there's no shared "between" concept
-                 do refinedLeft  <- refineSgn (ISgn (source sgn)) stLeft
-                    refinedRight <- refineSgn (ISgn (target sgn)) stRight
-                    pure (STbinary refinedLeft refinedRight [triple])
+            [triple@(_, sgn, trm)] -> 
+              checkConcreteness sgn trm $ do
+                -- For product e1#e2, refine left with ISgn(source) and right with ISgn(target)
+                -- because the operands are independent - there's no shared "between" concept
+                refinedLeft  <- refineSgn (ISgn (source sgn)) stLeft
+                refinedRight <- refineSgn (ISgn (target sgn)) stRight
+                pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isIntra sgnTree ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
-            [triple@(expr, sgn, _)] -> 
-                 -- Extract the 'between' concept from the refined expression to properly constrain subtrees.
-                 -- For compositions e1;e2, the between concept is target(e1) = source(e2).
-                 -- Using botCpt would allow multiple signatures to pass through incorrectly.
-                 let between = getBetweenConcept expr
-                 in do refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
-                       refinedRight <- refineSgn (Sign between (target sgn)) stRight
-                       pure (STbinary refinedLeft refinedRight [triple])
+            [triple@(expr, sgn, trm)] -> 
+              checkConcreteness sgn trm $ do
+                -- Extract the 'between' concept from the refined expression to properly constrain subtrees.
+                -- For compositions e1;e2, the between concept is target(e1) = source(e2).
+                -- Using botCpt would allow multiple signatures to pass through incorrectly.
+                let between = getBetweenConcept expr
+                refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
+                refinedRight <- refineSgn (Sign between (target sgn)) stRight
+                pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isPLrs sgnTree ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
-            [triple@(expr, sgn, _)] ->
-                 let between = getBetweenConcept expr
-                 in do refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
-                       refinedRight <- refineSgn (Sign (target sgn) between) stRight
-                       pure (STbinary refinedLeft refinedRight [triple])
+            [triple@(expr, sgn, trm)] ->
+              checkConcreteness sgn trm $ do
+                let between = getBetweenConcept expr
+                refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
+                refinedRight <- refineSgn (Sign (target sgn) between) stRight
+                pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         STbinary stLeft stRight triples | isPRrs sgnTree ->
           case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph sgn mold] ] of
-            [triple@(expr, sgn, _)] ->
-                 let between = getBetweenConcept expr
-                 in do refinedLeft  <- refineSgn (Sign between (source sgn)) stLeft
-                       refinedRight <- refineSgn (Sign between (target sgn)) stRight
-                       pure (STbinary refinedLeft refinedRight [triple])
+            [triple@(expr, sgn, trm)] ->
+              checkConcreteness sgn trm $ do
+                let between = getBetweenConcept expr
+                refinedLeft  <- refineSgn (Sign between (source sgn)) stLeft
+                refinedRight <- refineSgn (Sign between (target sgn)) stRight
+                pure (STbinary refinedLeft refinedRight [triple])
             [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
             filtered -> msg filtered sgnTree "Please specify the signature explicitly."
         _ -> fatal ("refineSgn: pattern match failure.\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
+      where
+        -- | Check that a signature is concrete (contains no TOP or BOT).
+        -- If BOT is found, it's a fatal error (compiler bug).
+        -- If TOP is found, it's a type error (user needs to add explicit signature).
+        checkConcreteness :: Signature -> Term TermPrim -> Guarded a -> Guarded a
+        checkConcreteness sgn trm action =
+          case (containsTOP sgn, containsBOT sgn) of
+            (False, False) -> action
+            (_, True) -> fatal $ "BOT concept found in signature " <> tshow sgn <> " in " <> showP trm <> ". This is a bug in the type checker."
+            (True, False) -> Errors . pure $ CTXE (origin trm) $
+              "Cannot determine a concrete type for (sub-)expression " <> showP trm <> 
+              "Please add a signature."
 
     getTerm :: OpTree (Expression, Signature, Term TermPrim) -> Term TermPrim
     getTerm sgnTree =

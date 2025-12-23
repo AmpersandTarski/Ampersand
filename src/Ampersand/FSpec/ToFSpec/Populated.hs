@@ -16,6 +16,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes hiding (gens)
+-- import Ampersand.Core.ShowAStruct (showA)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -84,9 +85,12 @@ pairsOf ci ps dcl =
     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
-fullContents ci ps e = Set.fromList result
+fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <> " ===") $
+                        Set.fromList result
   where
-    result = [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+    result = -- trace ("  Result pairs: " <> tshow resultPairs)
+             resultPairs
+      where resultPairs = [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
       where
@@ -102,7 +106,14 @@ fullContents ci ps e = Set.fromList result
             EInc (l, r) -> contents (notCpl l .\/. r)
             EUni (l, r) -> unions (contents l) (contents r)
             EIsc (l, r) -> inters (contents l) (contents r)
-            EDif (l, r) -> differ (contents l) (contents r)
+            EDif (l, r) -> 
+              -- trace ("\n  EDif case: " <> showA l <> " - " <> showA r <>
+              --        "\n    left contents: " <> tshow (Map.toList $ contents l) <>
+              --        "\n    right contents: " <> tshow (Map.toList $ contents r) <>
+              --        "\n    result: " <> tshow resultMap)
+               resultMap
+                where
+                  resultMap = differ (contents l) (contents r)
             -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
             ELrs (l, r) ->
               Map.fromListWith
@@ -133,12 +144,17 @@ fullContents ci ps e = Set.fromList result
                     a <- toList $ aVals (source l)
                 ]
             ECps (l, r) ->
-              Map.fromListWith
-                Set.union
-                [ (x, Set.singleton y) | (x, xv) <- Map.toList (contents l), (y, yv) <- Map.toList flipr, (not . Set.null) (xv `Set.intersection` yv)
-                ]
-              where
-                flipr = contents (EFlp r)
+              -- trace ("\n  ECps case: " <> showA l <> " ; " <> showA r <>
+              --        "\n    left contents: " <> tshow (Map.toList $ contents l) <>
+              --        "\n    right contents: " <> tshow (Map.toList $ contents r) <>
+              --        "\n    result map: " <> tshow resultMap)
+              resultMap
+               where
+                 flipr = contents (EFlp r)
+                 resultMap = Map.fromListWith
+                   Set.union
+                   [ (x, Set.singleton y) | (x, xv) <- Map.toList (contents l), (y, yv) <- Map.toList flipr, (not . Set.null) (xv `Set.intersection` yv)
+                   ]
             EKl0 x ->
               if source x == target x -- see #166
                 then transClosureMap (Map.unionWith Set.union (contents x) (contents (EDcI (source x))))
@@ -163,17 +179,25 @@ fullContents ci ps e = Set.fromList result
                 ]
             EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals i]
             EDcV sgn ->
-              Map.fromList
-                [ (s, Set.fromList cod)
-                  | let cod = toList $ aVals (target sgn),
-                    not (null cod),
-                    s <- toList $ aVals (source sgn)
-                ]
+              -- trace ("\n  EDcV case: " <> tshow sgn <>
+              --        "\n    source atoms: " <> tshow (toList $ aVals (source sgn)) <>
+              --        "\n    target atoms: " <> tshow (toList $ aVals (target sgn)) <>
+              --        "\n    result map: " <> tshow resultMap)
+              resultMap
+               where
+                 resultMap = Map.fromList
+                   [ (s, Set.fromList cod)
+                     | let cod = toList $ aVals (target sgn),
+                       not (null cod),
+                       s <- toList $ aVals (source sgn)
+                   ]
             EMp1 val c ->
-              if isSESSION c -- prevent populating SESSION with "_SESSION"
-                && tshow val
-                == tshow ("_SESSION" :: Text)
-                then Map.empty
-                else Map.singleton av (Set.singleton av)
-              where
-                av = safePSingleton2AAtomVal ci c val
+              -- trace ("\n  EMp1 case: atom " <> tshow val <> " in concept " <> tshow c <>
+              --        "\n    result: " <> tshow resultMap)
+              resultMap
+               where
+                 resultMap = if isSESSION c -- prevent populating SESSION with "_SESSION"
+                               && tshow val == tshow ("_SESSION" :: Text)
+                             then Map.empty
+                             else Map.singleton av (Set.singleton av)
+                 av = safePSingleton2AAtomVal ci c val
