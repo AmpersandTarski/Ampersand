@@ -584,7 +584,7 @@ expr2RTerm expr =
         EDcD {} -> RConst expr
         EDcI c -> RId c
         EEps {} -> RConst expr
-        EBin oper c -> RBind oper c
+        EBin oper sgn -> RBind oper (source sgn) -- TODO enhance to full signature
         EDcV sgn -> RVee (source sgn) (target sgn)
         EMp1 a c -> RAtm a c
 
@@ -626,7 +626,7 @@ rTerm2expr term =
     RFlp e -> EFlp $ rTerm2expr e
     RVar r s t -> EDcD (makeDecl r (Sign s t))
     RId c -> EDcI c
-    RBind oper c -> EBin oper c
+    RBind oper c -> EBin oper (Sign c c)
     RVee s t -> EDcV (Sign s t)
     RAtm a c -> EMp1 a c
     RConst e -> e

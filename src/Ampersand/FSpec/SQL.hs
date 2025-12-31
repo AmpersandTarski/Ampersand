@@ -935,7 +935,7 @@ nonSpecialSelectExpr fSpec expr =
                   bseWhr = Just (notNull cAtt)
                 }
         _ -> fatal ("EEps: unexpected concept type" <> tshow c)
-    (EBin oper c) -> traceComment ["case: EBin oper c "] $ case c of
+    (EBin oper sgn) -> traceComment ["case: EBin oper sgn "] $ case source sgn of -- TODO enhance to full signature
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
         BinSelect
@@ -970,10 +970,10 @@ nonSpecialSelectExpr fSpec expr =
                   ]
           }
         where
-          theName = sqlAttConcept fSpec c
+          theName = sqlAttConcept fSpec (source sgn) -- TODO enhance for EBin with full signature
           first' = uName "fst"
           secnd = uName "snd"
-      _ -> fatal ("EBin: unexpected concept type" <> tshow c)
+      _ -> fatal ("EBin: unexpected signature" <> tshow sgn)
     (EDcD d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->

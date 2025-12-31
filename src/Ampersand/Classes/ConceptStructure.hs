@@ -242,7 +242,7 @@ instance ConceptStructure ViewSegmentPayLoad where
 instance ConceptStructure Expression where
   concs (EDcD d) = concs d
   concs (EDcI c) = Set.singleton c
-  concs (EBin _ c) = Set.singleton c
+  concs (EBin _ sgn) = concs sgn
   concs (EEps i sgn) = Set.singleton i `Set.union` concs sgn
   concs (EDcV sgn) = concs sgn
   concs (EMp1 _ c) = Set.singleton c

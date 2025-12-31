@@ -127,7 +127,8 @@ checkFormalAmpersandTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["Formal Ampersand script does not compile:"]
-        <> concatMap (T.lines . tshow) (NE.toList err)
+        <> concatMap (T.lines . tshow) (NE.toList err) <>
+        [ tshow (length (NE.toList err)) <> " errors found in checkFormalAmpersandTransformers." ]
     Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
@@ -138,7 +139,8 @@ checkPrototypeContextTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["The relations defined in prototypecontext.adl are not in sync with the transformers of prototypecontext:"]
-        <> concatMap (T.lines . tshow) (NE.toList err)
+        <> concatMap (T.lines . tshow) (NE.toList err) <>
+        [ tshow (length (NE.toList err)) <> " errors found in checkPrototypeContextTransformers." ]
     Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()

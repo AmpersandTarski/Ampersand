@@ -314,7 +314,7 @@ aExpression2pTermPrim expr =
     EBrk e -> PBrk o (aExpression2pTermPrim e)
     EDcD dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
-    EBin oper cpt -> Prim . PBind o oper . aConcept2pConcept $ cpt
+    EBin oper sgn -> Prim . PBind o oper . aConcept2pConcept $ source sgn  -- TODO enhance PBind to full signature.
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where

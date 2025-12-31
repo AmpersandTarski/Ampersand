@@ -168,13 +168,13 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
             EBrk x -> contents x
             EDcD dcl -> pairsOf ci ps dcl
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
-            EBin oper c -> -- trace ("EBin "<>tshow oper<>" "<>tshow c<>" "<>tshow result) $
+            EBin oper sgn -> -- trace ("EBin "<>tshow oper<>" "<>tshow sgn<>" "<>tshow result) $
                            Map.fromList binOpPop
              where
                binOpPop =
                 [ (s, Set.fromList cod)
-                  | s <- toList $ aVals c,
-                    let cod = filter (binaryFunction oper s) . toList $ aVals c,
+                  | s <- toList $ aVals (source sgn),
+                    let cod = filter (binaryFunction oper s) . toList $ aVals (target sgn),
                     not (null cod)
                 ]
             EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals i]

@@ -227,6 +227,7 @@ extra-source-files:
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.adl
     testing/Travis/testcases/Parsing/xlsxParsing/Issue1056.xlsx
     testing/Travis/testcases/Parsing/xlsxParsing/testinfo.yaml
+    testing/Travis/testcases/Preprocessor/export.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
@@ -424,11 +425,15 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
     testing/Travis/testcases/Simple/Delivery.adl
     testing/Travis/testcases/Simple/DeliverySimple.adl
     testing/Travis/testcases/Simple/DeliverySimple.css
@@ -445,6 +450,7 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/CompositionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DiamondTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DifferenceTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/export.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FlipTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FullRelationTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl

@@ -299,7 +299,7 @@ instance ShowMath Expression where
       showExpr (EBrk e) = "(" <> showExpr e <> ")"
       showExpr (EDcD d) = inMathText . fullName $ d
       showExpr (EDcI c) = "I_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
-      showExpr (EBin oper c) = showMathOper oper <> "_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
+      showExpr (EBin oper sgn) = showMathOper oper <> "_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
       showExpr EEps {} = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
       showExpr (EDcV sgn) = "V_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
       showExpr (EMp1 val _) = atomVal2Math val -- "\texttt{"<>show val<>"}"

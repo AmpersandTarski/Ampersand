@@ -1099,7 +1099,7 @@ data Expression
   | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
     EEps !A_Concept !Signature
   | -- | relation based on a simple binary operator  (e.g. x > y)
-    EBin !PBinOp !A_Concept
+    EBin !PBinOp !Signature
   | -- | Cartesian product relation
     EDcV !Signature
   | -- | constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
@@ -1130,7 +1130,7 @@ instance Hashable Expression where
         EDcI c -> (17 :: Int) `hashWithSalt` c
         EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
-        EBin op c -> (20 :: Int) `hashWithSalt` op `hashWithSalt` c
+        EBin oper sgn -> (20 :: Int) `hashWithSalt` oper `hashWithSalt` sgn
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
@@ -1211,7 +1211,7 @@ instance Flippable Expression where
     EBrk f -> EBrk (flp f)
     EDcD {} -> EFlp expr
     EDcI {} -> expr
-    EBin op c -> EBin (flp op) c
+    EBin oper sgn -> EBin (flp oper) sgn
     EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
@@ -1235,7 +1235,7 @@ instance HasSignature Expression where
   sign (EBrk e) = sign e
   sign (EDcD d) = sign d
   sign (EDcI c) = ISgn c
-  sign (EBin _ c) = ISgn c
+  sign (EBin _ sgn) = sgn
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = ISgn c
@@ -1348,6 +1348,7 @@ topCpt and botCpt are universal bottom and top elements.
 -- Compute the least upper bound (join) of a list of pairs
 join :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 join conceptsGraph a b
+    | a == b = Just a  -- Mathematical identity: join(x, x) = x
     | a == topCpt = Just topCpt
     | b == topCpt = Just topCpt
     | a == botCpt = Just b
@@ -1365,6 +1366,7 @@ join conceptsGraph a b
 -- Compute the greatest lower bound (meet) of a list of pairs
 meet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 meet conceptsGraph a b
+    | a == b = Just a  -- Mathematical identity: meet(x, x) = x
     | a == topCpt = Just b
     | b == topCpt = Just a
     | a == botCpt = Just botCpt
@@ -1397,9 +1399,12 @@ instance PartialOrder A_Concept where
 
 instance PartialOrder Signature where
   geq conceptsGraph a b =
-    case (geq conceptsGraph (source a) (source b), geq conceptsGraph (target a) (target b)) of
-      (Just sCondition, Just tCondition) -> Just (sCondition && tCondition)
-      _                                  -> Nothing
+   case (geq conceptsGraph (source a) (source b), geq conceptsGraph (target a) (target b)) of
+     (Just True, Just True) -> case (a,b) of
+                                 (ISgn{}, Sign{}) -> Just False
+                                 _                -> Just True
+     (Just _,    Just _)    -> Just False
+     _                      -> Nothing
 
 {- Here is some test output for the join and meet functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]

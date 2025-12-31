@@ -1380,7 +1380,7 @@ exprInfo expr =
           userTgt' = Nothing,
           singleton' = Nothing
         }
-    (EBin oper cpt) ->
+    (EBin oper sgn) ->
       ExprInfo
         { binOp' = Nothing,
           unaryOp' = Nothing,
@@ -1389,7 +1389,7 @@ exprInfo expr =
           second' = Nothing,
           arg' = Nothing,
           param' = Just oper,
-          userCpt' = Just cpt,
+          userCpt' = Just (source sgn), -- TODO enhance to full signature
           userSrc' = Nothing,
           userTgt' = Nothing,
           singleton' = Nothing
