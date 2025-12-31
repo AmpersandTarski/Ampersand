@@ -1489,29 +1489,6 @@ signatures env contextInfo mConstraintSig trm =
                   Errors _ -> "Type error")
   refinedResult
     where
-      iCpt = case mConstraintSig of
-               Just (ISgn cpt)     -> cpt
-               Just (Sign src tgt) -> case join conceptsGraph src tgt of
-                                        Just m  -> m
-                                        Nothing -> fatal ("signatures: cannot compute join of source constraint " <> tshow src <> " and target constraint " <> tshow tgt <> " for term " <> showP trm)
-               Nothing             -> topCpt
-      mConstr :: Maybe Signature
-      mConstr
-        = case mConstraintSig of   -- mConstr is meant to substitute mConstraintSig for PI, Patm _ Nothing, and pBin because we must enforce their source and target to be
-            -- Just (Sign s t) ->  case join conceptsGraph s t of
-            --                       Just c  -> if c == botCpt then Nothing else Just (ISgn c)
-            --                       Nothing -> fatal ("Cannot compute meet of source concept " <> tshow s <> " and target concept " <> tshow t )
-            Just (Sign s t) ->  case trm of
-                                  Prim (PNamedR _) -> mConstraintSig
-                                  Prim (PFlipped (PNamedR _)) -> mConstraintSig
-                                  Prim _           -> case join conceptsGraph s t of
-                                                        Just c  -> if c == botCpt then Nothing else Just (ISgn c)
-                                                        Nothing -> fatal ("Cannot compute meet of source concept " <> tshow s <> " and target concept " <> tshow t )
-                                  _                -> mConstraintSig
-            Just (ISgn cpt) | cpt==botCpt -> Nothing
-                            | otherwise   -> mConstraintSig
-            Nothing                       -> Nothing
-
       -- applyConstraint checks if a signature is wider or equal to the constraint signature (if any), for the purpose checking box items.
       applyConstraint :: Signature -> Maybe Bool
       applyConstraint sgn
@@ -1520,15 +1497,6 @@ signatures env contextInfo mConstraintSig trm =
            Just mold@(ISgn cpt)     -> if cpt == botCpt                  then Just True else geq conceptsGraph sgn mold
            Nothing                  -> Just True
 
-      resultTriple :: (A_Concept -> OpTree (Expression, Signature, Term TermPrim)) -> Origin -> P_Concept -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-      resultTriple e o c
-        = case mConstr of   -- This function is there merely to save some code duplication.
-            Just (ISgn c') -> case meet conceptsGraph (pCpt2aCpt c) c' of
-                               Just m -> pure (e m)
-                               Nothing -> (Errors . return . CTXE o)
-                                            ("Cannot match concept " <> showP c <> " with " <> tshow c' <> " in " <> showP trm <> ".")
-            _ -> pure (e (pCpt2aCpt c))
-   
       refinedResult :: Guarded (OpTree (Expression, Signature, Term TermPrim))
       refinedResult =
         do optree <- result
@@ -1547,7 +1515,7 @@ signatures env contextInfo mConstraintSig trm =
            Pfull _ src tgt    -> let sgn = Sign (pCpt2aCpt src) (pCpt2aCpt tgt) in pure (STnullary [(EDcV sgn, sgn, Prim trmPrim)])
            PBin o oper        -> let x = botCpt      in pure (STnullary [(EBin oper (Sign x x), Sign x x, Prim trmPrim)])
            PBind o oper c     -> let x = pCpt2aCpt c in pure (STnullary [(EBin oper (Sign x x), Sign x x, Prim trmPrim)])
-           PFlipped t         -> do sgnTree <- signats (fmap flp mConstr) (Prim t)
+           PFlipped t         -> do sgnTree <- signats (fmap flp mConstraintSig) (Prim t)
                                     pure (flp sgnTree)
            PNamedR rel        -> let rels ::  [Relation]
                                      rels = case p_mbSign rel of
@@ -1774,7 +1742,7 @@ signatures env contextInfo mConstraintSig trm =
            let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
                allTriples = makeTriples triplesa triplesb
                sgnsa = fmap (\(_,s,_) -> s) triplesa; sgnsb = fmap (\(_,s,_) -> s) triplesb
-               triples = trace ("\n9. checkIntra:  "<>opStr<>" ("<>tshow o<>") (mConstraintSig: "<>tshow mConstraintSig<>") (mConstr: "<>tshow mConstr<>") ("<>showPa<>") ("<>showPb<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   lConstraint: "<>tshow lConstraint<>"\n   rConstraint: "<>tshow rConstraint) $
+               triples = trace ("\n9. checkIntra:  "<>opStr<>" ("<>tshow o<>") (mConstraintSig: "<>tshow mConstraintSig<>") ("<>showPa<>") ("<>showPb<>")\n   sgnsa: "<>tshow sgnsa<>"\n   sgnsb: "<>tshow sgnsb<>"\n   lConstraint: "<>tshow lConstraint<>"\n   rConstraint: "<>tshow rConstraint) $
                          [ trpl | trpl@(_, sgn, _) <- allTriples, Just True <- [applyConstraint sgn]]
            trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
             case triples of
