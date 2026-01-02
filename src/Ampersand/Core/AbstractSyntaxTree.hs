@@ -78,7 +78,8 @@ module Ampersand.Core.AbstractSyntaxTree
     Type (..),
     typeOrConcept,
     topCpt, botCpt,
-    join, meet,
+    join, meet, realMeet,
+    joinSig, meetSig, isConcreteSignature,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
     (.|-.),
@@ -1217,11 +1218,14 @@ instance Flippable Expression where
     EMp1 {} -> expr
 
 instance HasSignature Expression where
-  sign (EEqu (l, r)) = Sign (source l) (target r)
-  sign (EInc (l, r)) = Sign (source l) (target r)
-  sign (EIsc (l, r)) = Sign (source l) (target r)
-  sign (EUni (l, r)) = Sign (source l) (target r)
-  sign (EDif (l, r)) = Sign (source l) (target r)
+  -- For inter-type operations without a graph, we use the left operand's signature as a fallback.
+  -- This is not correct, but allows us to proceed in the absence of a concept graph. This code needs to disappear once we have implemented a concept-graph-based function to compute signatures.
+  -- The correct signature calculation happens in signWithGraph when the conceptGraph is available.
+  sign (EEqu (l, _)) = sign l
+  sign (EInc (l, _)) = sign l
+  sign (EIsc (l, _)) = sign l
+  sign (EUni (l, _)) = sign l
+  sign (EDif (l, _)) = sign l
   sign (ELrs (l, r)) = Sign (source l) (source r)
   sign (ERrs (l, r)) = Sign (target l) (target r)
   sign (EDia (l, r)) = Sign (source l) (target r)
@@ -1239,6 +1243,52 @@ instance HasSignature Expression where
   sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = ISgn c
+
+  -- signWithGraph computes the correct signature using the concept graph
+  -- for inter-type operations (EEqu, EInc, EIsc, EUni, EDif)
+  signWithGraph g (EEqu (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EEqu: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
+                                            (joinSig g (signWithGraph g l) (signWithGraph g r))
+  signWithGraph g (EInc (l, _)) = signWithGraph g l
+  signWithGraph g (EIsc (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EIsc: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
+                                            (meetSig g (signWithGraph g l) (signWithGraph g r))
+  signWithGraph g (EUni (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EUni: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
+                                            (joinSig g (signWithGraph g l) (signWithGraph g r))
+  signWithGraph g (EDif (l, _)) = signWithGraph g l
+  signWithGraph g (ELrs (l, r)) = Sign (source (signWithGraph g l)) (source (signWithGraph g r))
+  signWithGraph g (ERrs (l, r)) = Sign (target (signWithGraph g l)) (target (signWithGraph g r))
+  signWithGraph g (EDia (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
+  signWithGraph g (ECps (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
+  signWithGraph g (ERad (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
+  signWithGraph g (EPrd (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
+  signWithGraph g (EKl0 e) = signWithGraph g e
+  signWithGraph g (EKl1 e) = signWithGraph g e
+  signWithGraph g (EFlp e) = flp (signWithGraph g e)
+  signWithGraph g (ECpl e) = signWithGraph g e
+  signWithGraph g (EBrk e) = signWithGraph g e
+  signWithGraph _ (EDcD d) = sign d
+  signWithGraph _ (EDcI c) = ISgn c
+  signWithGraph _ (EBin _ sgn) = sgn
+  signWithGraph _ (EEps _ sgn) = sgn
+  signWithGraph _ (EDcV sgn) = sgn
+  signWithGraph _ (EMp1 _ c) = ISgn c
+
+-- Compute meet of two signatures
+meetSig :: AdjacencyMap A_Concept -> Signature -> Signature -> Maybe Signature
+meetSig conceptsGraph (ISgn c1) (ISgn c2)               = ISgn <$> meet conceptsGraph c1 c2
+meetSig conceptsGraph (ISgn c) (Sign src tgt)           = ISgn <$> (meet conceptsGraph c =<< meet conceptsGraph src tgt)
+meetSig conceptsGraph (Sign src tgt) (ISgn c)           = ISgn <$> (meet conceptsGraph c =<< meet conceptsGraph src tgt)
+meetSig conceptsGraph (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> meet conceptsGraph src1 src2 <*> meet conceptsGraph tgt1 tgt2
+
+-- Compute join of two signatures
+joinSig :: AdjacencyMap A_Concept -> Signature -> Signature -> Maybe Signature
+joinSig conceptsGraph (ISgn c1) (ISgn c2)               = ISgn <$> join conceptsGraph c1 c2
+joinSig conceptsGraph (ISgn c) (Sign src tgt)           = Sign <$> join conceptsGraph c src <*> join conceptsGraph c tgt
+joinSig conceptsGraph (Sign src tgt) (ISgn c)           = Sign <$> join conceptsGraph src c <*> join conceptsGraph tgt c
+joinSig conceptsGraph (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join conceptsGraph src1 src2 <*> join conceptsGraph tgt1 tgt2
+
+isConcreteSignature :: Signature -> Bool
+isConcreteSignature (Sign src tgt) = src/=topCpt && src/=botCpt && tgt/=topCpt && tgt/=botCpt
+isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
 
 showSign :: (HasSignature a) => a -> Text1
 showSign x = case sign x of
@@ -1287,6 +1337,8 @@ data A_Concept
       { -- | List of names that the concept is refered to, in random order
         aliases :: !(Set (Name, Maybe Label))
       }
+  | -- | The disjunction type of concepts:
+    DISJT !(Set.Set A_Concept)
   | -- | The union type of concepts:
     UNION !(Set.Set A_Concept)
   | -- | The intersection type of concepts:
@@ -1313,13 +1365,6 @@ makeGraph conceptPairs concepts
 synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
 synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
 
--- | Data type to represent missing edges in meet property validation
-data MissingMeetEdge = MissingMeetEdge
-  { mmeFrom :: A_Concept        -- ^ the meet concept m  
-  , mmeTo :: A_Concept          -- ^ the target concept (a or b)
-  , mmeMeetName :: Text         -- ^ descriptive name like "Course/\\Module"  
-  } deriving (Show, Eq, Ord)
-
 -- | Test function that validates the meet property of concept graphs.
 -- If edges (a,j) and (b,j) both exist in the graph, then a `meet` b should exist.
 -- When the meet does NOT exist, this function creates a concept with name "a/\\b" 
@@ -1337,7 +1382,7 @@ topCpt = PlainConcept . Set.fromList $
 -- | The BOT concept - universal lower bound for all concepts. It is more specific than every other concept.
 botCpt :: A_Concept
 botCpt = PlainConcept . Set.fromList $
-  [(case try2Name ConceptName "_BOT" of
+  [(case try2Name ConceptName "_Cannot_Assign_A_type" of
       Left err -> fatal $ "Not a proper concept name: _BOT. " <> err
       Right (nm, _) -> nm
     , Nothing)]
@@ -1363,7 +1408,8 @@ join conceptsGraph a b
       minimum a' b' = if hasEdge a' b' rtc then a' else b'
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
 
--- Compute the greatest lower bound (meet) of a list of pairs
+-- | This meet function includes some Ampersand-specific features, that deviate from the mathematical definition of meet.
+--   The purpose is to enable disjunctions.
 meet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
 meet conceptsGraph a b
     | a == b = Just a  -- Mathematical identity: meet(x, x) = x
@@ -1374,9 +1420,32 @@ meet conceptsGraph a b
     | hasEdge a b rtc = Just a
     | hasEdge b a rtc = Just b
     | otherwise =
+       -- Without disjunctions, Ampersand assumes that a meet exists if a join exists. So, we check for join nodes.
+       case ( Set.toList (postSet a rtc `Set.intersection` postSet b rtc) L.\\ [a,b] -- join nodes
+            , Set.toList  (preSet a rtc `Set.intersection` preSet b rtc)  L.\\ [a,b] -- meet nodes
+            ) of
+         ([], []) -> Nothing
+         ([], _:_) -> Nothing -- This is an error, but I'm unsure (yet) as to whether this can be a fatal.
+         (_:_, []) -> (Just . ISECT . Set.fromList) [a,b] -- find the maximum of the lower bounds
+         (_:_, m:ms) -> Just (L.foldr maximum m ms) -- find the maximum of the lower bounds
+    where
+      maximum a' b' = if hasEdge a' b' rtc then b' else a'
+      rtc = reflexiveClosure (transitiveClosure conceptsGraph)
+
+-- | This is the mathematical definition of meet, without Ampersand additions.
+realMeet :: AdjacencyMap A_Concept -> A_Concept -> A_Concept -> Maybe A_Concept
+realMeet conceptsGraph a b
+    | a == b = Just a  -- Mathematical identity: meet(x, x) = x
+    | a == topCpt = Just b
+    | b == topCpt = Just a
+    | a == botCpt = Just botCpt
+    | b == botCpt = Just botCpt
+    | hasEdge a b rtc = Just a
+    | hasEdge b a rtc = Just b
+    | otherwise =
        case Set.toList (preSet a rtc `Set.intersection` preSet b rtc) L.\\ [a,b] of
         [] -> Nothing
-        x:xs -> Just (L.foldr maximum x xs) -- find the minimum of the upper bounds
+        x:xs -> Just (L.foldr maximum x xs) -- find the maximum of the lower bounds
     where
       maximum a' b' = if hasEdge a' b' rtc then b' else a'
       rtc = reflexiveClosure (transitiveClosure conceptsGraph)
@@ -1400,11 +1469,18 @@ instance PartialOrder A_Concept where
 instance PartialOrder Signature where
   geq conceptsGraph a b =
    case (geq conceptsGraph (source a) (source b), geq conceptsGraph (target a) (target b)) of
+     (Just geq_a, Just geq_b) -> Just (geq_a && geq_b)
+     _                        -> Nothing
+
+{- Should we distinguish between ISgn and Sign here?
+  geq conceptsGraph a b =
+   case (geq conceptsGraph (source a) (source b), geq conceptsGraph (target a) (target b)) of
      (Just True, Just True) -> case (a,b) of
                                  (ISgn{}, Sign{}) -> Just False
                                  _                -> Just True
      (Just _,    Just _)    -> Just False
      _                      -> Nothing
+-}
 
 {- Here is some test output for the join and meet functions, applied on the following graph:
 edges [("even","int"),("float","num"),("int","num"),("integer","even"),("integer","oneven"),("num","gegeven"),("oneven","int")]
@@ -1454,13 +1530,15 @@ instance Hashable A_Concept where
     s
       `hashWithSalt` ( case cpt of
                          PlainConcept {} -> (0 :: Int) `hashWithSalt` (fmap (text1ToText . fullName1 . fst) . Set.toList . aliases) cpt
-                         UNION cpts -> (1 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
-                         ISECT cpts -> (2 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
-                         ONE -> (3 :: Int) `hashWithSalt` ("ONE" :: String)
+                         DISJT cpts -> (1 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
+                         UNION cpts -> (2 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
+                         ISECT cpts -> (3 :: Int) `hashWithSalt` (show . L.sort . Set.toList $ cpts)
+                         ONE -> (4 :: Int) `hashWithSalt` ("ONE" :: String)
                      )
 
 instance Named A_Concept where
   name PlainConcept {aliases = names} = case Set.toList names of (nm, _) : _ -> nm; _ -> fatal "This A_Concept has no name"
+  name (DISJT cpts) = toConceptName "><"  cpts
   name (UNION cpts) = toConceptName "\\/" cpts
   name (ISECT cpts) = toConceptName "/\\" cpts
   name ONE = nameOfONE
@@ -1473,6 +1551,7 @@ toConceptName opString cpts = case (try2Name ConceptName . T.intercalate opStrin
 instance Labeled A_Concept where
   mLabel cpt = case cpt of
     PlainConcept {aliases = names} -> case Set.toList names of (_, lbl) : _ -> lbl; _ -> fatal "This A_Concept has no name"
+    DISJT cs -> (Just . Label . T.intercalate "><"  . fmap m . Set.toList) cs
     UNION cs -> (Just . Label . T.intercalate "\\/" . fmap m . Set.toList) cs
     ISECT cs -> (Just . Label . T.intercalate "/\\" . fmap m . Set.toList) cs
     _ -> Nothing
@@ -1543,6 +1622,11 @@ class HasSignature a where
   source = source . sign
   target = target . sign
   sign :: a -> Signature
+  -- | Compute the signature using the concept graph for proper join/meet calculations.
+  --   This is needed for inter-type operations (EEqu, EInc, EIsc, EUni, EDif) where
+  --   the signature depends on the concept hierarchy.
+  signWithGraph :: AdjacencyMap A_Concept -> a -> Signature
+  signWithGraph _ = sign  -- default implementation: ignore graph, use simple sign
   isEndo :: a -> Bool
   isEndo s = source s == target s
 

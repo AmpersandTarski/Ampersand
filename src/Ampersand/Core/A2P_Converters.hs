@@ -227,10 +227,11 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
   case cpt of
+    PlainConcept {} -> PCpt { p_cptnm = name cpt }
     ONE             -> P_ONE
+    DISJT cs        -> toPcpt "><"  cs
     UNION cs        -> toPcpt "\\/" cs
     ISECT cs        -> toPcpt "/\\" cs
-    PlainConcept {} -> PCpt { p_cptnm = name cpt }
   where
     toPcpt sep cs
      = PCpt {p_cptnm = case try2Name ConceptName (T.intercalate sep . map tshow . toList $ cs) of

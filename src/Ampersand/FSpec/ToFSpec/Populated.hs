@@ -70,6 +70,7 @@ atomValuesOf ci pt c =
             ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
        in -- trace ("TRACE atomValuesOf: concept=" <> tshow c <> ", smallerconcs=" <> tshow smallerconcs <> ", result size=" <> tshow (Set.size result) <> ", atoms=" <> tshow result)
           result
+    DISJT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts -- needs to be computed to check that it is empty.
     UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
     ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
 
