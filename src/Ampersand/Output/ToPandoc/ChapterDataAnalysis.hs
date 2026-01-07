@@ -261,7 +261,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                      cpt /= cpt',
                      attr <- attributesOfConcept fSpec cpt',
                      nTgtConcept <- [(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr :: SqlAttribute)],
-                     pairs <- [pairsInExpr fSpec (EDcI cpt .:. EEps cpt' (Sign cpt cpt') .:. attExpr attr)]
+                     pairs <- [pairsInExpr fSpec (EDcI cpt .:. attExpr attr)]
                  ]
           )
         <> let asscs =
@@ -545,11 +545,6 @@ primExpr2pandocMath lang e =
             English -> text "the identityrelation of "
             <> math (mathLabel srcTable)
     (EDcI c) ->
-      case lang of
-        Dutch -> text "de identiteitsrelatie van "
-        English -> text "the identityrelation of "
-        <> math (mathLabel c)
-    (EEps c _) ->
       case lang of
         Dutch -> text "de identiteitsrelatie van "
         English -> text "the identityrelation of "

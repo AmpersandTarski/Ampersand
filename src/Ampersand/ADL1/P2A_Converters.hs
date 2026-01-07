@@ -1423,7 +1423,6 @@ refineANY conceptsGraph targetSig expr
       -- For EMp1: only narrow, never widen. If expr's concept is already narrower than target, keep it.
       EMp1 av cpt     -> if cpt==botCpt then EMp1 av iCpt else expr
       EDcD _          -> expr -- Declarations are concrete already
-      EEps _ _        -> expr -- obsolete; remove later
       EBin oper sgn   -> case (source sgn==botCpt, target sgn==botCpt) of
                            (True , True ) -> EBin oper targetSig
                            (True , False) -> EBin oper (source targetSig `Sign` target sgn)

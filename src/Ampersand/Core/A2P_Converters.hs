@@ -301,13 +301,9 @@ aExpression2pTermPrim expr =
     ELrs (l, r) -> PLrs o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     ERrs (l, r) -> PRrs o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EDia (l, r) -> PDia o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
-    ECps (l, r)
-      | isEEps l -> aExpression2pTermPrim r
-      | isEEps r -> aExpression2pTermPrim l
-      | otherwise -> PCps o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
+    ECps (l, r) -> PCps o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     ERad (l, r) -> PRad o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EPrd (l, r) -> PPrd o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
-    EEps a _ -> aExpression2pTermPrim $ EDcI a
     EKl0 e -> PKl0 o (aExpression2pTermPrim e)
     EKl1 e -> PKl1 o (aExpression2pTermPrim e)
     EFlp e -> PFlp o (aExpression2pTermPrim e)

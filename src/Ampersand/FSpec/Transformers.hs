@@ -1394,20 +1394,6 @@ exprInfo expr =
           userTgt' = Nothing,
           singleton' = Nothing
         }
-    (EEps cpt _) ->
-      ExprInfo
-        { binOp' = Nothing,
-          unaryOp' = Nothing,
-          bindedRel' = Nothing,
-          first' = Nothing,
-          second' = Nothing,
-          arg' = Nothing,
-          param' = Nothing,
-          userCpt' = Just cpt,
-          userSrc' = Nothing,
-          userTgt' = Nothing,
-          singleton' = Nothing
-        }
     (EDcV sgn) ->
       ExprInfo
         { binOp' = Nothing,

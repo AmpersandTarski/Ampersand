@@ -178,7 +178,6 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
                     let cod = filter (binaryFunction oper s) . toList $ aVals (target sgn),
                     not (null cod)
                 ]
-            EEps i _ -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals i]
             EDcV sgn ->
               -- trace ("\n  EDcV case: " <> tshow sgn <>
               --        "\n    source atoms: " <> tshow (toList $ aVals (source sgn)) <>

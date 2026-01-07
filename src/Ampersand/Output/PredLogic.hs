@@ -240,7 +240,6 @@ toPredLogic expr =
     propagate _ (EDcD dcl) (a, b) = (R (Variable a) dcl (Variable b), Set.fromList [a, b])
     propagate _ (EDcI _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
     propagate _ (EBin oper _) (a, b) = (Bin oper a b, Set.fromList [a, b])
-    propagate _ (EEps _ _) (a, b) = (Equiv (Variable a) (Variable b), Set.fromList [a, b])
     propagate _ (EDcV _) (a, b) = (Vee a b, Set.fromList [a, b])
     propagate _ (EMp1 pAV _) _ = (Constant (T.pack (show pAV)), Set.empty)
 

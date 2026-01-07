@@ -754,7 +754,6 @@ instance ShowHS Expression where
   showHS _ _ (EDcD dcl) = "EDcD " <> showHSName dcl
   showHS _ _ (EDcI c) = "EDcI " <> showHSName c
   showHS env _ (EBin oper sgn) = "EBin " <> tshow oper <> showHS env "" sgn
-  showHS env _ (EEps i sgn) = "EEps (" <> showHS env "" i <> ") (" <> showHS env "" sgn <> ")"
   showHS env _ (EDcV sgn) = "EDcV (" <> showHS env "" sgn <> ")"
   showHS _ _ (EMp1 a c) = "EMp1 " <> tshow a <> " " <> showHSName c
 

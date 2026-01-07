@@ -367,7 +367,6 @@ tdAnalysis fSpec =
           let expr = attExpr att
            in case expr of
                 EDcI {} -> Nothing
-                EEps {} -> Nothing
                 EDcD d -> if target d `elem` kernelConcepts then Just (expr, att) else Nothing
                 EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr, att) else Nothing
                 _ -> fatal ("Unexpected expression: " <> tshow expr)

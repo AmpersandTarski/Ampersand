@@ -163,7 +163,6 @@ class ConceptStructure a where
           EFlp {} -> False
           ECpl {} -> False
           EBrk {} -> False
-          EEps {} -> False
           EMp1 {} -> False
 
 instance (ConceptStructure a, ConceptStructure b) => ConceptStructure (a, b) where
@@ -243,7 +242,6 @@ instance ConceptStructure Expression where
   concs (EDcD d) = concs d
   concs (EDcI c) = Set.singleton c
   concs (EBin _ sgn) = concs sgn
-  concs (EEps i sgn) = Set.singleton i `Set.union` concs sgn
   concs (EDcV sgn) = concs sgn
   concs (EMp1 _ c) = Set.singleton c
   concs e = concs . Set.toList . primitives $ e

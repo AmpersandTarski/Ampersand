@@ -149,7 +149,8 @@ makeFSpec env context =
       [] -> cpt
       x : _ -> getLargestConcept x
     handleType :: A_Concept -> A_Concept -> Expression
-    handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
+    handleType gen spc = EDcI gen .:. EDcI spc .:. EDcI gen -- TODO: check if this is correct
+     -- Purpose: to be able to handle types when computing atom values of a concept including smaller concepts.
     fMaintains' :: Role -> Rules
     fMaintains' role' = Set.filter f (allRules context)
       where

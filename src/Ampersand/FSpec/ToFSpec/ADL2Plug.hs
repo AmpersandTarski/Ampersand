@@ -200,10 +200,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               attFlipped = False
             }
           where
-            expr =
-              if cpt == tableKey
-                then EDcI cpt
-                else EEps cpt (Sign tableKey cpt)
+            expr = EDcI cpt
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att

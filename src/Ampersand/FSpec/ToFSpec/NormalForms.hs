@@ -583,7 +583,6 @@ expr2RTerm expr =
         EBrk e -> expr2RTerm e
         EDcD {} -> RConst expr
         EDcI c -> RId c
-        EEps {} -> RConst expr
         EBin oper sgn -> RBind oper (source sgn) -- TODO enhance to full signature
         EDcV sgn -> RVee (source sgn) (target sgn)
         EMp1 a c -> RAtm a c
@@ -1294,12 +1293,6 @@ normStep
       nM posCpl (ECpl e) _ = (notCpl res', steps, equ')
         where
           (res', steps, equ') = nM (not posCpl) e []
-      nM _ (ECps (EEps c (Sign s _), EEps c' (Sign _ t'))) _ | c == c' = (EEps c (Sign s t'), [], "<=>")
-      nM _ (ECps (EEps c (Sign s t), EEps c' (Sign _ t'))) _ | c == t = (EEps c' (Sign s t'), [], "<=>")
-      nM _ (ECps (EEps c (Sign s _), EEps c' (Sign s' t'))) _ | s' == c' = (EEps c (Sign s t'), [], "<=>")
-      nM _ (ECps (EEps c (Sign s _), ECps (EEps c' (Sign _ t'), r))) _ | c == c' = (ECps (EEps c (Sign s t'), r), [], "<=>")
-      nM _ (ECps (EEps c (Sign s t), ECps (EEps c' (Sign _ t'), r))) _ | c == t = (ECps (EEps c' (Sign s t'), r), [], "<=>")
-      nM _ (ECps (EEps c (Sign s _), ECps (EEps c' (Sign s' t'), r))) _ | s' == c' = (ECps (EEps c (Sign s t'), r), [], "<=>")
       nM _ (ECps (ERrs (x, e), y)) _ | not eq && isIdent e = (ERrs (x, y), ["Jipsen&Tsinakis: (x\\I);y |- x\\y"], "==>")
       nM _ (ECps (x, ELrs (e, y))) _ | not eq && isIdent e = (ELrs (x, y), ["Jipsen&Tsinakis: x;(I/y) |- x/y"], "==>")
       nM _ (ECps (ERrs (x, y), z)) _ | not eq = (ERrs (x, ECps (y, z)), ["Jipsen&Tsinakis: (x\\y);z |- x\\(y;z)"], "==>")
@@ -1323,7 +1316,6 @@ normStep
         where
           (t, steps, equ') = nM posCpl l []
           (f, steps', equ'') = nM posCpl r (l : rs)
-      nM _ x@(EEps i sgn) _ | source sgn == i && i == target sgn = (EDcI i, ["source and target are equal to " <> fullName i <> ", so " <> showA x <> "=" <> showA (EDcI i)], "<=>")
       nM _ (ELrs (ECps (x, y), z)) _ | not eq && y == z = (x, ["(x;y)/y |- x"], "==>")
       nM _ (ELrs (ECps (x, y), z)) _
         | not eq && flp x == z =

@@ -497,7 +497,6 @@ nonSpecialSelectExpr fSpec expr =
                                   c = case map fst esI of
                                     [] -> fatal "This list must not be empty here."
                                     EDcI cpt : _ -> cpt
-                                    EEps cpt _ : _ -> cpt
                                     e : _ -> fatal $ "Unexpected expression: " <> tshow e
                     where
                       --             showComment :: Text -> (Expression, Name) -> Comment
@@ -507,7 +506,6 @@ nonSpecialSelectExpr fSpec expr =
                       isI e =
                         case e of
                           EDcI c -> Just (e, sqlAttConcept fSpec c)
-                          EEps c _ -> Just (e, sqlAttConcept fSpec c)
                           _ -> Nothing
                       nonOptimizedIntersectSelectExpr :: BinQueryExpr
                       nonOptimizedIntersectSelectExpr =
@@ -902,39 +900,6 @@ nonSpecialSelectExpr fSpec expr =
                   bseWhr = Just (notNull cAtt)
                 }
         _ -> fatal ("EDcI: unexpected concept type" <> tshow c)
-    -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
-    (EEps c _) -> traceComment ["case: EEps c _"]
-      $ case c of -- select the population of the most specific concept, which is the source.
-        ONE ->
-          BinSelect
-            { bseSetQuantifier = SQDefault,
-              bseSrc = theONESingleton,
-              bseTrg = theONESingleton,
-              bseTbl = [],
-              bseWhr = Nothing
-            }
-        PlainConcept {} ->
-          let cAtt = Iden [sqlAttConcept fSpec c]
-           in BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
-                    Col
-                      { cTable = [],
-                        cCol = [sqlAttConcept fSpec c],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTrg =
-                    Col
-                      { cTable = [],
-                        cCol = [sqlAttConcept fSpec c],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTbl = [sqlConceptTable fSpec c],
-                  bseWhr = Just (notNull cAtt)
-                }
-        _ -> fatal ("EEps: unexpected concept type" <> tshow c)
     (EBin oper sgn) -> traceComment ["case: EBin oper sgn "] $ case source sgn of -- TODO enhance to full signature
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
@@ -1778,11 +1743,6 @@ attInBroadQuery fSpec cpt = get
       case expr of
         EBrk e -> get e
         EDcI c ->
-          let (p, a) = getConceptTableInfo fSpec c
-           in if p == broadTable
-                then Just a
-                else Nothing
-        EEps c _ ->
           let (p, a) = getConceptTableInfo fSpec c
            in if p == broadTable
                 then Just a

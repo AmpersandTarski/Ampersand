@@ -6,7 +6,6 @@ module Ampersand.ADL1.Expression
     primitives,
     subExpressions,
     isMp1,
-    isEEps,
     isEDcD,
     isPos,
     isNeg,
@@ -62,7 +61,6 @@ subst (decl, expr) = subs
       | otherwise = e
     subs e@EDcI {} = e
     subs e@EBin {} = e
-    subs e@EEps {} = e
     subs e@EDcV {} = e
     subs e@EMp1 {} = e
 
@@ -90,7 +88,6 @@ primitives expr =
     EDcD {} -> Set.singleton expr
     EDcI {} -> Set.singleton expr
     EBin {} -> Set.singleton expr
-    EEps {} -> Set.empty -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
     EDcV {} -> Set.singleton expr
     EMp1 {} -> Set.singleton expr
 
@@ -116,7 +113,6 @@ subExpressions expr =
     EDcD {} -> Set.singleton expr
     EDcI {} -> Set.singleton expr
     EBin {} -> Set.singleton expr
-    EEps {} -> Set.singleton expr
     EDcV {} -> Set.singleton expr
     EMp1 {} -> Set.singleton expr
 
@@ -168,9 +164,6 @@ isMp1 :: Expression -> Bool
 isMp1 EMp1 {} = True
 isMp1 _ = False
 
-isEEps :: Expression -> Bool
-isEEps EEps {} = True
-isEEps _ = False
 
 isEDcD :: Expression -> Bool
 isEDcD EDcD {} = True
@@ -188,10 +181,7 @@ isFitForCrudC expr =
   case expr of
     EFlp e -> isFitForCrudC e
     EBrk e -> isFitForCrudC e
-    ECps (EEps _ _, e) -> isFitForCrudC e
-    ECps (e, EEps _ _) -> isFitForCrudC e
     ECps (_, _) -> True
-    EEps _ _ -> False
     EMp1 {} -> False
     _ -> True
 
@@ -210,8 +200,6 @@ isFitForCrudU expr =
     EDcD {} -> True
     EFlp e -> isFitForCrudU e
     EBrk e -> isFitForCrudU e
-    ECps (EEps _ _, e) -> isFitForCrudU e
-    ECps (e, EEps _ _) -> isFitForCrudU e
     ECps (e, EDcI {}) -> isFitForCrudU e
     ECps (_, _) -> False
     _ -> False
@@ -255,6 +243,6 @@ insParentheses = insPar 0
     insPar _ (EFlp e) = EFlp (insPar 10 e)
     insPar _ (ECpl e) = ECpl (insPar 10 e)
     insPar i (EBrk e) = insPar i e
-    insPar _ x = x -- x@EDcD{} or EDcI{} or EEps{} or EDcV{} or EMp1{}
+    insPar _ x = x -- x@EDcD{} or EDcI{} or EDcV{} or EMp1{}
     foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
     foldr1 fun nonempty = foldr fun (NE.last nonempty) (NE.init nonempty)

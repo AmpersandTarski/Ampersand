@@ -19,7 +19,6 @@ import Ampersand.ADL1.Expression
     exprUni2list,
     insParentheses,
     isCpl,
-    isEEps,
     isFitForCrudC,
     isFitForCrudD,
     isFitForCrudR,

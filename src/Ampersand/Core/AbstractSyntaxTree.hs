@@ -1097,8 +1097,6 @@ data Expression
     EDcD !Relation
   | -- | Identity relation
     EDcI !A_Concept
-  | -- | Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
-    EEps !A_Concept !Signature
   | -- | relation based on a simple binary operator  (e.g. x > y)
     EBin !PBinOp !Signature
   | -- | Cartesian product relation
@@ -1129,7 +1127,6 @@ instance Hashable Expression where
         EBrk e -> (15 :: Int) `hashWithSalt` e
         EDcD d -> (16 :: Int) `hashWithSalt` d
         EDcI c -> (17 :: Int) `hashWithSalt` c
-        EEps c sgn -> (18 :: Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn -> (19 :: Int) `hashWithSalt` sgn
         EBin oper sgn -> (20 :: Int) `hashWithSalt` oper `hashWithSalt` sgn
         EMp1 val c -> (21 :: Int) `hashWithSalt` show val `hashWithSalt` c
@@ -1213,7 +1210,6 @@ instance Flippable Expression where
     EDcD {} -> EFlp expr
     EDcI {} -> expr
     EBin oper sgn -> EBin (flp oper) sgn
-    EEps i sgn -> EEps i (flp sgn)
     EDcV sgn -> EDcV (flp sgn)
     EMp1 {} -> expr
 
@@ -1240,7 +1236,6 @@ instance HasSignature Expression where
   sign (EDcD d) = sign d
   sign (EDcI c) = ISgn c
   sign (EBin _ sgn) = sgn
-  sign (EEps _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = ISgn c
 
@@ -1268,7 +1263,6 @@ instance HasSignature Expression where
   signWithGraph _ (EDcD d) = sign d
   signWithGraph _ (EDcI c) = ISgn c
   signWithGraph _ (EBin _ sgn) = sgn
-  signWithGraph _ (EEps _ sgn) = sgn
   signWithGraph _ (EDcV sgn) = sgn
   signWithGraph _ (EMp1 _ c) = ISgn c
 
@@ -1329,7 +1323,6 @@ getExpressionRelation expr = case getRelation expr of
       (s, d, t, isFlipped) <- getRelation e
       Just (t, d, s, not isFlipped)
     getRelation (EDcD d) = Just (source d, Just d, target d, False)
-    getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing
 
 data A_Concept

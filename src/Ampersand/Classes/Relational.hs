@@ -63,7 +63,6 @@ instance HasProps Expression where
   properties expr = case expr of
     EDcD dcl -> properties dcl
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
-    EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
       Set.fromList
         $
@@ -103,7 +102,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EFlp e -> isTrue e
       ECpl e -> isFalse e
       EDcI c -> isONE c
-      EEps i _ -> isONE i
       EDcV {} -> True
       EBrk e -> isTrue e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
@@ -136,7 +134,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
       ECpl e -> isImin e
       EDcD _ -> False -- was: name dcl == "="
       EDcI {} -> True
-      EEps {} -> False
       EDcV sgn -> isEndo sgn && isONE (source sgn)
       EBrk f -> isIdent f
       EFlp f -> isIdent f
@@ -151,7 +148,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
     ECpl e -> isIdent e
     EDcD {} -> False
     EDcI {} -> False
-    EEps {} -> False
     EDcV {} -> False
     EBrk f -> isImin f
     EFlp f -> isImin f
@@ -188,10 +184,6 @@ isTotSur prop expr =
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
     EBin {} -> todo
-    EEps c sgn -> case prop of
-      Tot -> c == source sgn
-      Sur -> c == target sgn
-      _ -> fatal $ "isTotSur must not be called with " <> tshow prop
     EDcV {} -> todo
     EBrk e -> isTotSur prop e
     EMp1 {} -> True
@@ -219,7 +211,6 @@ isUniInj prop expr =
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
     EBin {} -> todo
-    EEps {} -> True
     EDcV {} -> todo
     EBrk e -> isUniInj prop e
     EMp1 {} -> True
