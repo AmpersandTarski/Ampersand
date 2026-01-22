@@ -36,6 +36,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     showPredLogic,
     legacyTable,
     printConcept,
+    showWlabel,
   )
 where
 
@@ -118,6 +119,9 @@ instance Xreferenceable CustomSection where
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  " <> tshow (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  " <> tshow (refStuff a))) id (hyperTarget env fSpec a)
 
+showWlabel :: FSpec -> A_Concept -> Text
+showWlabel fSpec cpt = maybe (fullName cpt) tshow (conceptLabel fSpec cpt)
+
 hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines
 hyperTarget env fSpec a =
   case a of
@@ -131,9 +135,9 @@ hyperTarget env fSpec a =
           ( (str . label $ d)
               <> text " ("
               <> (text . l) (NL "Vanuit ", EN "From ")
-              <> (str . label . source $ d)
+              <> str (showWlabel fSpec (source d))
               <> (text . l) (NL " naar ", EN " to ")
-              <> (str . label . target $ d)
+              <> str (showWlabel fSpec (target d))
               <> ")"
           )
     --   Left $ divWith (xSafeLabel a,[],[])
@@ -224,7 +228,7 @@ class Identifyble a where
   mkId :: a -> Ident
 
 instance Identifyble Relation where
-  mkId rel = IdentRel (label rel) (label . source $ rel) (label . target $ rel)
+  mkId rel = IdentRel (fullName rel) ("["<>tshow (source rel)<>"*") (tshow (target rel)<>"]")
 
 instance Identifyble AConceptDef where
   mkId = IdentByName . label

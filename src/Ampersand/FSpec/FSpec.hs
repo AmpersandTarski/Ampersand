@@ -52,6 +52,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import qualified Ampersand.Core.AbstractSyntaxTree as AST
 import Ampersand.FSpec.Crud
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -157,7 +158,9 @@ data FSpec = FSpec
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
     allEnforces :: ![AEnforce],
-    isSignal :: !(Rule -> Bool)
+    isSignal :: !(Rule -> Bool),
+    -- | Function to get label for a concept from its definition
+    conceptLabel :: !(A_Concept -> Maybe Label)
   }
   deriving (Typeable)
 
@@ -228,7 +231,7 @@ data APair = Pair
 instance HasSignature APair where
   sign = sign . lnkDcl
 
-instance Unique APair where∂
+instance Unique APair where
   showUnique x =
     showUnique (lnkDcl x)
       <> showUnique (lnkLeft x)
@@ -255,7 +258,9 @@ instance Labeled FSpec where
   mLabel = fsLabel
 
 conceptLabelInFSpec :: FSpec -> A_Concept -> Maybe Label
-conceptLabelInFSpec fSpec = conceptLabel (originalContext fSpec)
+conceptLabelInFSpec fSpec cpt = case originalContext fSpec of
+  Nothing -> Nothing
+  Just ctx -> AST.conceptLabel ctx cpt
 
 data Quad = Quad
   { qDcl :: Relation, -- The relation that, when affected, triggers a restore action.
@@ -603,5 +608,6 @@ emptyFSpec nm =
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",
       generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec.",
       allEnforces = [],
-      isSignal = fatal "Don't ask for isSignal in an empty FSpec."
+      isSignal = fatal "Don't ask for isSignal in an empty FSpec.",
+      conceptLabel = fatal "Don't ask for concept labels in the empty FSpec."
     }

@@ -9,6 +9,7 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree (sessionConcept, largerConcepts, smallerConcepts, geq)
+import qualified Ampersand.Core.AbstractSyntaxTree as AST
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
 import Ampersand.FSpec.FSpec
@@ -114,7 +115,8 @@ makeFSpec env context =
       specializationsOf = smallerConcepts,
       generalizationsOf = largerConcepts,
       allEnforces = fSpecAllEnforces,
-      isSignal = fIsSignal
+      isSignal = fIsSignal,
+      conceptLabel = AST.conceptLabel context
     }
   where
     mergeByName :: [Pattern] -> [Pattern]

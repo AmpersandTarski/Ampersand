@@ -4,6 +4,7 @@ module Ampersand.Graphic.Graphics (makePicture, writePicture, Picture (..), Pict
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Label)
+import qualified Ampersand.Basics.Name as Name
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
@@ -241,7 +242,8 @@ conceptualStructure fSpec pr =
               csRels =
                 bindedRelationsIn rulez -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   `Set.union` Set.fromList directRels,
-              csIdgs = isaEdges cpts'
+              csIdgs = isaEdges cpts',
+              csFSpec = fSpec
             }
     --  PTConceptualModelOfRulesInPattern makes a picture of at least the relations within pat;
     --  extended with a limited number of more general concepts;
@@ -250,7 +252,8 @@ conceptualStructure fSpec pr =
       CStruct
         { csCpts = cpts,
           csRels = rels `Set.union` rels' `Set.union` xrels, -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
-          csIdgs = idgs
+          csIdgs = idgs,
+          csFSpec = fSpec
         }
       where
         orphans = [c | c <- toList cpts, not (c `elem` concs idgs || c `elem` concs rels)]
@@ -272,7 +275,8 @@ conceptualStructure fSpec pr =
             Set.filter (not . isProp . EDcD)
               . Set.filter decusr
               $ rels,
-          csIdgs = isaEdges cpts
+          csIdgs = isaEdges cpts,
+          csFSpec = fSpec
         }
       where
         cpts = concs pat
@@ -290,7 +294,8 @@ conceptualStructure fSpec pr =
                 Set.filter (not . isProp . EDcD)
                   . Set.filter decusr
                   $ bindedRelationsIn r,
-              csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
+              csIdgs = idgs, -- involve all isa links from concepts touched by one of the affected rules
+              csFSpec = fSpec
             }
     PTClassificationDiagram -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTLogicalDataModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
@@ -385,11 +390,13 @@ data ConceptualStructure = CStruct
     -- | The relations, (the edges in the graph)
     csRels :: Set Relation,
     -- | list of Isa relations
-    csIdgs :: Set (A_Concept, A_Concept)
+    csIdgs :: Set (A_Concept, A_Concept),
+    -- | The FSpec for looking up concept labels
+    csFSpec :: FSpec
   }
 
 conceptual2Dot :: ConceptualStructure -> DotGraph MyDotNode
-conceptual2Dot cs@(CStruct _ rels idgs) =
+conceptual2Dot cs@(CStruct _ rels idgs _fSpec) =
   DotGraph
     { strictGraph = False,
       directedGraph = True,
@@ -459,7 +466,7 @@ baseNodeId x c =
     _ -> fatal ("element " <> fullName c <> " not found by nodeLabel.")
 
 allCpts :: ConceptualStructure -> Set A_Concept
-allCpts (CStruct cpts' rels idgs) = cpts' `Set.union` concs rels `Set.union` concs idgs
+allCpts (CStruct cpts' rels idgs _) = cpts' `Set.union` concs rels `Set.union` concs idgs
 
 edgeLenFactor :: Double -> Attribute
 edgeLenFactor x = Len (4 * x)
@@ -469,7 +476,9 @@ instance HasDotParts A_Concept where
     [ DotNode
         { nodeID = toMyDotNode $ baseNodeId x cpt,
           nodeAttributes =
-            [ Label . StrLabel . TL.fromStrict . label $ cpt
+            [ Label . StrLabel . TL.fromStrict $ case conceptLabel (csFSpec x) cpt of
+                Nothing -> localNameOf cpt
+                Just (Name.Label t) -> t
             ]
         }
     ]

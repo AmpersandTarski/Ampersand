@@ -5,6 +5,7 @@
 module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 
 import Ampersand.ADL1
+import qualified Ampersand.Basics.Name as Name
 import Ampersand.Core.AbstractSyntaxTree ( smallerConcepts, largerConcepts )
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
@@ -78,7 +79,9 @@ instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
       { cptJSONname = fullName cpt,
-        cptJSONlabel = label cpt,
+        cptJSONlabel = case conceptLabel fSpec cpt of
+            Nothing -> localNameOf cpt
+            Just (Name.Label t) -> t,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
         cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts $ cpt,
         cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts $ cpt,

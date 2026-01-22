@@ -143,7 +143,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van concept ",
                   EN "The concept "
                 )
-                <> (singleQuoted . str . label) c
+                <> (singleQuoted . str . showWlabel fSpec) c
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remains without a purpose."
@@ -155,7 +155,7 @@ chpDiagnosis env fSpec
                 ( NL "Het oogmerk (purpose) van de concepten: ",
                   EN "Concepts "
                 )
-                <> commaPandocAnd outputLang' (map (str . label) xs)
+                <> commaPandocAnd outputLang' (map (str . showWlabel fSpec) xs)
                 <> (str . l)
                   ( NL " is niet gedocumenteerd.",
                     EN " remain without a purpose."
@@ -647,15 +647,15 @@ chpDiagnosis env fSpec
           if isEndo (formalExpression r) && apLeft p == apRight p
             then
               singleQuoted
-                ( (str . label . source . formalExpression) r
+                ( (str . showWlabel fSpec . source . formalExpression) r
                     <> (str . showValADL . apLeft) p
                 )
             else
               "("
-                <> (str . label . source . formalExpression) r
+                <> (str . showWlabel fSpec . source . formalExpression) r
                 <> (str . showValADL . apLeft) p
                 <> ", "
-                <> (str . label . target . formalExpression) r
+                <> (str . showWlabel fSpec . target . formalExpression) r
                 <> (str . showValADL . apRight) p
                 <> ")"
         popwork :: [(Rule, AAtomPairs)]
@@ -749,7 +749,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             [(AlignLeft, 1.0)]
             -- Header:
-            [(plain . str . label . source . formalExpression) r]
+            [(plain . str . showWlabel fSpec . source . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p]
               | p <- take 10 . toList $ ps -- max 10 rows
@@ -760,7 +760,7 @@ chpDiagnosis env fSpec
             -- Alignment:
             (replicate 2 (AlignLeft, 1 / 2))
             -- Header:
-            [(plain . str . label . source . formalExpression) r, (plain . str . label . target . formalExpression) r]
+            [(plain . str . showWlabel fSpec . source . formalExpression) r, (plain . str . showWlabel fSpec . target . formalExpression) r]
             -- Data rows:
             [ [(plain . str . showValADL . apLeft) p, (plain . str . showValADL . apRight) p]
               | p <- take 10 . toList $ ps -- max 10 rows
