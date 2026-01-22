@@ -186,9 +186,7 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONtxt = Nothing
           }
         where
-          viewToUse = case objmView object of
-            Just nm -> lookupView fSpec nm
-            Nothing -> getDefaultViewForConcept fSpec tgtConcept
+          viewToUse = maybe (getDefaultViewForConcept fSpec tgtConcept) (lookupView fSpec) (objmView object)
           normalizedInterfaceExp = conjNF env $ objExpression object
           (tgtConcept, mEditableDecl) =
             case getExpressionRelation normalizedInterfaceExp of

@@ -8,7 +8,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree (sessionConcept)
+import Ampersand.Core.AbstractSyntaxTree (sessionConcept, largerConcepts, smallerConcepts, geq)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
 import Ampersand.FSpec.FSpec
@@ -74,7 +74,7 @@ makeFSpec env context =
       vquads = allQuads,
       allUsedDecls = bindedRelationsIn context,
       vrels = relsDefdInContext,
-      cptTType = representationOf contextinfo,
+      cptTType = ctxReprType context,
       fsisa = L.nub . concatMap genericAndSpecifics . gens $ context,
       vpatterns = mergeByName . patterns $ context,
       vgens = gens context,
@@ -87,13 +87,13 @@ makeFSpec env context =
       fSexpls = Set.fromList $ ctxps context <> concatMap ptxps (patterns context),
       metas = ctxmetas context,
       crudInfo = mkCrudInfo (concs context) relsDefdInContext fSpecAllInterfaces,
-      atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript, -- TODO: Write in a nicer way, like `atomsBySmallestConcept`
+      atomsInCptIncludingSmaller = atomValuesOf initialpopsDefinedInScript, -- TODO: Write in a nicer way, like `atomsBySmallestConcept`
       atomsBySmallestConcept = \cpt ->
         Set.map apLeft
           . pairsinexpr
           . foldl' (.-.) (EDcI cpt)
           . map (handleType cpt)
-          . smallerConcepts (gens context)
+          . smallerConcepts
           $ cpt,
       tableContents = tblcontents contextinfo initialpopsDefinedInScript,
       pairsInExpr = pairsinexpr,
@@ -110,10 +110,9 @@ makeFSpec env context =
         ],
       fcontextInfo = contextinfo,
       ftypologies = typologies context,
-      typologyOf = typologyOf',
       largestConcept = getLargestConcept,
-      specializationsOf = smallerConcepts (gens context),
-      generalizationsOf = largerConcepts (gens context),
+      specializationsOf = smallerConcepts,
+      generalizationsOf = largerConcepts,
       allEnforces = fSpecAllEnforces,
       isSignal = fIsSignal
     }
@@ -145,7 +144,7 @@ makeFSpec env context =
     fIsSignal :: Rule -> Bool
     fIsSignal = not . null . maintainersOf
 
-    getLargestConcept cpt = case largerConcepts (gens context) cpt of
+    getLargestConcept cpt = case largerConcepts cpt of
       [] -> cpt
       x : _ -> getLargestConcept x
     handleType :: A_Concept -> A_Concept -> Expression
@@ -155,10 +154,6 @@ makeFSpec env context =
     fMaintains' role' = Set.filter f (allRules context)
       where
         f rule = role' `elem` maintainersOf rule
-    typologyOf' cpt =
-      case [t | t <- typologies context, cpt `elem` tyCpts t] of
-        [t] -> t
-        _ -> fatal ("concept " <> fullName cpt <> " should be in exactly one typology!")
     pairsinexpr :: Expression -> AAtomPairs
     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
     
@@ -240,7 +235,7 @@ makeFSpec env context =
         ]
       where
         smaller :: A_Concept -> [A_Concept]
-        smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
+        smaller cpt = L.nub $ cpt : smallerConcepts cpt
     allQuads = quadsOfRules env (allRules context)
     relsDefdInContext :: Relations
     relsDefdInContext = relsDefdIn context
@@ -283,25 +278,35 @@ makeFSpec env context =
     -- get all views for a specific concept and all larger concepts.
     getAllViewsForConcept' :: A_Concept -> [ViewDef]
     getAllViewsForConcept' concpt =
-      concatMap viewsOfThisConcept
-        . sortSpecific2Generic (gens context)
-        $ concpt
-        : largerConcepts (gens context) concpt
+      [ vd | cpt <- concpt : largerConcepts concpt, vd <- viewDefs context, fromMaybe False (vdcpt vd `geq` cpt) ]
 
-    viewsOfThisConcept :: A_Concept -> [ViewDef]
-    viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
-      where
-        isForConcept :: ViewDef -> Bool
-        isForConcept vd = vdcpt vd == cpt
+    -- viewsOfThisConcept :: A_Concept -> [ViewDef]
+    -- viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
+    --   where
+    --     isForConcept :: ViewDef -> Bool
+    --     isForConcept vd = vdcpt vd == cpt
+
     -- Return the default view for cpt, which is either the view for cpt itself (if it has one) or the view for
     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
+    -- TODO: needs refactoring due to overcomplication caused by bitrot.
     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
-    getDefaultViewForConcept' cpt =
-      case (concatMap (filter vdIsDefault . viewsOfThisConcept) . sortSpecific2Generic (gens context))
-        $ cpt
-        : largerConcepts (gens context) cpt of
+    getDefaultViewForConcept' concpt =
+      case [ vd | cpt <- sortSpecific2Generic (concpt : largerConcepts concpt)
+                , vd <- viewDefs context, vdIsDefault vd
+                , fromMaybe False (vdcpt vd `geq` cpt)
+           ] <> getAllViewsForConcept' concpt of
+        vd:_ -> Just vd
         [] -> Nothing
-        (vd : _) -> Just vd
+      where
+        -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the
+        --   list, if a is more specific than b, a will be to the left of b in the resulting list.
+        sortSpecific2Generic :: [A_Concept] -> [A_Concept]
+        sortSpecific2Generic = go []
+          where
+            go xs [] = xs
+            go xs (y : ys) = case [y' | y' <- L.nub ys, y' `elem` Set.fromList (smallerConcepts y)] of
+              [] -> go (xs ++ [y]) ys
+              _ : _ -> go xs (ys ++ [y])
 
     --------------
     -- making plugs
@@ -554,14 +559,14 @@ tblcontents ci ps plug =
           (L.nub . L.transpose)
             ( map Just (toList cAtoms)
                 : [ case fExp of
-                      EDcI c -> [if a `elem` atomValuesOf ci ps c then Just a else Nothing | a <- toList cAtoms]
+                      EDcI c -> [if a `elem` atomValuesOf ps c then Just a else Nothing | a <- toList cAtoms]
                       _ -> [(lkp att a . fullContents ci ps) fExp | a <- toList cAtoms]
                     | att <- fs,
                       let fExp = attExpr att
                   ]
             )
           where
-            cAtoms = (atomValuesOf ci ps . source . attExpr) f
+            cAtoms = (atomValuesOf ps . source . attExpr) f
             lkp :: SqlAttribute -> AAtomValue -> AAtomPairs -> Maybe AAtomValue
             lkp att a pairs =
               case [p | p <- toList pairs, a == apLeft p] of

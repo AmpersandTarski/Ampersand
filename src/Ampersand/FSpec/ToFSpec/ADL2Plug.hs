@@ -13,12 +13,13 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import Algebra.Graph.AdjacencyMap ( vertex )
+
 
 maxLengthOfDatabaseTableName :: Int
 maxLengthOfDatabaseTableName = 64
@@ -116,9 +117,8 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
             Nothing -> False
-            Just x -> x `elem` tyCpts typol
+            Just x -> aliases x `elem` tyCpts typol
 
-    repr = representationOf (ctxInfo context)
     allRelationsInContext = toList (relsDefdIn context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
@@ -128,7 +128,10 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
       (Just typol, _) -> makeConceptTable typol rels
     allKeyConcepts :: [A_Concept]
-    allKeyConcepts = map tyroot . typologies $ context
+    allKeyConcepts = map tyrootToConcept . typologies $ context
+      where
+        tyrootToConcept :: Typology -> A_Concept
+        tyrootToConcept typol = PlainConcept { aliases = tyroot typol, typology = typol }
     allLinkTableRelations :: [Relation]
     allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
     makeConceptTable :: Typology -> [Relation] -> PlugSQL
@@ -143,17 +146,19 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           mainItem = toConceptOrRelation tableKey
         }
       where
-        allConceptsInTable =
-          -- All concepts from the typology, orderd from generic to specific
-          L.nubBy (\a b -> fullName a == fullName b) $ reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
-
+        allConceptsInTable :: [A_Concept]
+        allConceptsInTable = 
+          map aliasSetToConcept (tyCpts typol)
+          where
+            aliasSetToConcept :: Set.Set Name -> A_Concept  
+            aliasSetToConcept aliasSet = PlainConcept { aliases = aliasSet, typology = typol }
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
             (map toConceptOrRelation allKeyConcepts)
             (toConceptOrRelation keyConcept)
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
-        tableKey = tyroot typol
+        tableKey = PlainConcept { aliases = tyroot typol, typology = typol }
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
@@ -186,11 +191,11 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = determineSqlName tableScope (toConceptOrRelation cpt),
               attExpr = expr,
-              attType = repr cpt,
+              attType = ctxReprType context cpt,
               attUse =
                 if cpt
                   == tableKey
-                  && repr cpt
+                  && ctxReprType context cpt
                   == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                   then PrimaryKey cpt
                   else PlainAttr,
@@ -206,9 +211,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = determineSqlName tableScope (toConceptOrRelation dcl),
               attExpr = dclAttExpression,
-              attType = repr (target dclAttExpression),
+              attType = ctxReprType context (target dclAttExpression),
               attUse =
-                if suitableAsKey . repr . target $ dclAttExpression
+                if suitableAsKey . ctxReprType context . target $ dclAttExpression
                   then ForeignKey (target dclAttExpression)
                   else PlainAttr,
               attNull = not . isTot $ keyToTargetExpr,
@@ -277,9 +282,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
               attExpr = domExpr,
-              attType = repr (source domExpr),
+              attType = ctxReprType context (source domExpr),
               attUse =
-                if suitableAsKey . repr . source $ domExpr
+                if suitableAsKey . ctxReprType context . source $ domExpr
                   then ForeignKey (source domExpr)
                   else PlainAttr,
               attNull = False, -- false for link tables
@@ -291,9 +296,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
-              attType = repr (target codExpr),
+              attType = ctxReprType context (target codExpr),
               attUse =
-                if suitableAsKey . repr . target $ codExpr
+                if suitableAsKey . ctxReprType context . target $ codExpr
                   then ForeignKey (target codExpr)
                   else PlainAttr,
               attNull = False, -- false for link tables
@@ -345,9 +350,9 @@ typologies :: A_Context -> [Typology]
 typologies context =
   let kernelConcepts = Set.fromList $ concatMap tyCpts (multiKernels . ctxInfo $ context)
   in (multiKernels . ctxInfo $ context)
-       <> [ Typology {tyroot = c, tyCpts = [c]}
-            | c <- toList $ concs context Set.\\ concs (gens context),
-              c `Set.notMember` kernelConcepts
+       <> [ Typology {tyroot = c, tyCpts = [c], tyGrph = vertex c}
+          | c <- map aliases . toList $ concs context Set.\\ concs (gens context),
+            c `Set.notMember` kernelConcepts
           ]
 
 -- | ConceptOrRelation is ment to be things that can end up in a database. It is designed

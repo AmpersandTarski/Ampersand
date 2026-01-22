@@ -97,16 +97,17 @@ data P_Context = PCtx
     ctx_rs :: ![P_Rule TermPrim],
     -- | The relations defined in this context, outside the scope of patterns
     ctx_ds :: ![P_Relation],
-    -- | The concept definitions defined in this context, outside the scope of patterns
+    -- | The concept definitions from this context, outside the scope of patterns
     ctx_cs :: ![PConceptDef],
-    -- | The identity definitions defined in this context, outside the scope of patterns
+    -- | The identity definitions from this context, outside the scope of patterns
     ctx_ks :: ![P_IdentDef],
-    -- | The MAINTAIN definitions defined in this context, outside the scope of patterns
+    -- | The MAINTAIN definitions from this context, outside the scope of patterns
     ctx_rrules :: ![P_RoleRule],
+    -- | All REPRESENT definitions from this context, outside the scope of patterns
     ctx_reprs :: ![P_Representation],
-    -- | The view definitions defined in this context, outside the scope of patterns
+    -- | The view definitions from this context, outside the scope of patterns
     ctx_vs :: ![P_ViewDef],
-    -- | The gen definitions defined in this context, outside the scope of patterns
+    -- | The gen definitions from this context, outside the scope of patterns
     ctx_gs :: ![PClassify],
     -- | The interfaces defined in this context
     ctx_ifcs :: ![P_Interface],
@@ -219,7 +220,7 @@ data P_Pattern = P_Pat
     pt_RRuls :: ![P_RoleRule],
     -- | The concept definitions defined in this pattern
     pt_cds :: ![PConceptDef],
-    -- | The type into which concepts is represented
+    -- | The REPRESENT definitions from this pattern, which bind technical types to concepts
     pt_Reprs :: ![P_Representation],
     -- | The identity definitions defined in this pattern
     pt_ids :: ![P_IdentDef],
@@ -265,7 +266,7 @@ instance Traced P_Pattern where
 data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
-    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    -- | The name of the concept for which this is the definition. The corresponding P_Concept is PCpt cdname.
     cdname :: !Name,
     cdlbl :: !(Maybe Label),
     -- | The textual definition of this concept.
@@ -351,7 +352,9 @@ data PCDDef
       }
   deriving (Show, Typeable)
 
+-- P_Representation binds a technical type to one or more concepts.
 data P_Representation
+  -- The REPRESENTATION statement in the syntax translates to Repr:
   = Repr
       { pos :: !Origin,
         -- | the concepts
@@ -359,15 +362,10 @@ data P_Representation
         -- | the type of the concept the atom is in
         reprdom :: !TType
       }
-  | ImplicitRepr
-      { -- | the type of the concept the atom is in
-        reprTerm :: !(Term TermPrim)
-      }
   deriving (Show)
 
 instance Traced P_Representation where
   origin Repr {pos = orig} = orig
-  origin r@ImplicitRepr {} = origin (reprTerm r)
 
 data TType
   = Alphanumeric

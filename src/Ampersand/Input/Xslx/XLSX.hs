@@ -105,13 +105,12 @@ mkContextOfPops ctxName pops1 =
     -- popRelations are derived from P_Populations only.
     popRelations =
       [ rel
-        | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- pops1,
-          Just src' <- [src],
-          Just tgt' <- [tgt],
+        | pop@P_RelPopu {} <- pops1,
           rel <-
             [ P_Relation
                 { dec_nm = name pop,
-                  dec_sign = P_Sign src' tgt',
+                  dec_sign = (fromMaybe (fatal ("Manufacturing error in Ampersand: relation "<>tshow (name pop)<>" ("<>tshow (origin pop)<>") has no signature.")) .
+                              p_mbSign . p_nmdr) pop,
                   dec_label = Nothing,
                   dec_prps = mempty,
                   dec_defaults = mempty,

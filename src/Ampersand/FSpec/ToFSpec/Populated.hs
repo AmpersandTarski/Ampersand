@@ -1,9 +1,6 @@
 module Ampersand.FSpec.ToFSpec.Populated
   ( fullContents,
     atomValuesOf,
-    smallerConcepts,
-    largerConcepts,
-    sortSpecific2Generic,
     genericAndSpecifics,
     safePSingleton2AAtomVal,
   )
@@ -15,6 +12,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree ( smallerConcepts )
 import Ampersand.Classes hiding (gens)
 -- import Ampersand.Core.ShowAStruct (showA)
 import qualified RIO.List as L
@@ -28,61 +26,35 @@ genericAndSpecifics gen = filter (uncurry (/=))
     Isa {} -> [(genspc gen, gengen gen)]
     IsE {} -> [(genspc gen, g) | g <- NE.toList $ genrhs gen]
 
--- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
---   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
-smallerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
-smallerConcepts gs cpt =
-  L.nub $ oneSmaller ++ concatMap (smallerConcepts gs) oneSmaller
-  where
-    oneSmaller = L.delete cpt . L.nub $ [genspc g | g@Isa {} <- gs, gengen g == cpt] ++ [genspc g | g@IsE {} <- gs, cpt `elem` genrhs g]
-
--- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
-largerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
-largerConcepts gs cpt =
-  L.nub $ oneLarger ++ concatMap (largerConcepts gs) oneLarger
-  where
-    oneLarger = L.delete cpt . L.nub $ [gengen g | g@Isa {} <- gs, genspc g == cpt] ++ [c | g@IsE {} <- gs, genspc g == cpt, c <- NE.toList $ genrhs g]
-
--- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the
---   list, if a is more specific than b, a will be to the left of b in the resulting list.
-sortSpecific2Generic :: [AClassify] -> [A_Concept] -> [A_Concept]
-sortSpecific2Generic gens = go []
-  where
-    go xs [] = xs
-    go xs (y : ys) = case [y' | y' <- L.nub ys, y' `elem` Set.fromList (smallerConcepts gens y)] of
-      [] -> go (xs ++ [y]) ys
-      _ : _ -> go xs (ys ++ [y])
-
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomValuesOf ::
-  ContextInfo -> -- the relevant info of the context
   [Population] ->
   A_Concept -> -- the concept from which the population is requested
   AAtomValues -- the elements in the concept's set of atoms
-atomValuesOf ci pt c =
+atomValuesOf pt c =
   case c of
     ONE -> Set.singleton AtomValueOfONE
     PlainConcept {} ->
-      let smallerconcs = c : smallerConcepts (ctxiGens ci) c
+      let smallerconcs = c : smallerConcepts c
           result = Set.fromList
             $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
             ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
        in -- trace ("TRACE atomValuesOf: concept=" <> tshow c <> ", smallerconcs=" <> tshow smallerconcs <> ", result size=" <> tshow (Set.size result) <> ", atoms=" <> tshow result)
           result
-    DISJT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts -- needs to be computed to check that it is empty.
-    UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
-    ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf ci pt) . Set.toList) cpts
+    DISJT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts -- needs to be computed to check that it is empty.
+    UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts
+    ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts
 
-pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
-pairsOf ci ps dcl =
+pairsOf :: [Population] -> Relation -> Map.Map AAtomValue AAtomValues
+pairsOf ps dcl =
   Map.unionsWith
     Set.union
     [ Map.fromListWith Set.union [(apLeft p, Set.singleton $ apRight p) | p <- toList $ popps pop]
       | pop@ARelPopu {} <- ps,
         name dcl == name (popdcl pop),
-        let s = source (popdcl pop) in s `elem` source dcl : smallerConcepts (ctxiGens ci) (source dcl),
-        let t = target (popdcl pop) in t `elem` target dcl : smallerConcepts (ctxiGens ci) (target dcl)
+        let s = source (popdcl pop) in s `elem` source dcl : smallerConcepts (source dcl),
+        let t = target (popdcl pop) in t `elem` target dcl : smallerConcepts (target dcl)
     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
@@ -99,7 +71,7 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
     differ = Map.differenceWith (\l r -> Just (Set.difference l r))
     contents :: Expression -> Map.Map AAtomValue AAtomValues
     contents expr =
-      let aVals = atomValuesOf ci ps
+      let aVals = atomValuesOf ps
           lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> Set.Set a
           lkp = Map.findWithDefault Set.empty
        in case expr of
@@ -167,7 +139,7 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
             EFlp x -> Map.fromListWith Set.union [(b, Set.singleton a) | (a, bs) <- Map.assocs (contents x), b <- Set.toList bs]
             ECpl x -> contents (EDcV (sign x) .-. x)
             EBrk x -> contents x
-            EDcD dcl -> pairsOf ci ps dcl
+            EDcD dcl -> pairsOf ps dcl
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
             EBin oper sgn -> -- trace ("EBin "<>tshow oper<>" "<>tshow sgn<>" "<>tshow result) $
                            Map.fromList binOpPop

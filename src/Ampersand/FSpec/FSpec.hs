@@ -45,6 +45,7 @@ module Ampersand.FSpec.FSpec
     showSQL,
     substituteReferenceObjectDef,
     violationsOfInvariants,
+    conceptLabelInFSpec,
   )
 where
 
@@ -152,7 +153,6 @@ data FSpec = FSpec
     allExprs :: !Expressions,
     fcontextInfo :: !ContextInfo,
     ftypologies :: ![Typology],
-    typologyOf :: !(A_Concept -> Typology),
     largestConcept :: !(A_Concept -> A_Concept),
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
@@ -228,7 +228,7 @@ data APair = Pair
 instance HasSignature APair where
   sign = sign . lnkDcl
 
-instance Unique APair where
+instance Unique APair where∂
   showUnique x =
     showUnique (lnkDcl x)
       <> showUnique (lnkLeft x)
@@ -239,11 +239,13 @@ concDefs fSpec c =
   case c of
     PlainConcept {} -> filter isDefinitionOf . conceptDefs $ fSpec
       where
-        isDefinitionOf cdef = name cdef `elem` (fmap fst . Set.toList . aliases) c
+        isDefinitionOf cdef = name cdef `elem` Set.toList (aliases c)
     _ -> []
 
 instance ConceptStructure FSpec where
-  concs = allConcepts . fcontextInfo
+  concs fSpec = case originalContext fSpec of
+    Nothing -> mempty
+    Just ctx -> Set.fromList (ctxcs ctx)
   expressionsIn = allExprs
 
 instance Named FSpec where
@@ -251,6 +253,9 @@ instance Named FSpec where
 
 instance Labeled FSpec where
   mLabel = fsLabel
+
+conceptLabelInFSpec :: FSpec -> A_Concept -> Maybe Label
+conceptLabelInFSpec fSpec = conceptLabel (originalContext fSpec)
 
 data Quad = Quad
   { qDcl :: Relation, -- The relation that, when affected, triggers a restore action.
@@ -594,7 +599,6 @@ emptyFSpec nm =
       -- All expressions in the fSpec
       fcontextInfo = fatal "Don't ask for the original context in the empty FSpec.",
       ftypologies = [],
-      typologyOf = fatal "Don't ask for typologies in the empty FSpec.",
       largestConcept = fatal "Don't ask for the largest concept in the empty FSpec.",
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",
       generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec.",

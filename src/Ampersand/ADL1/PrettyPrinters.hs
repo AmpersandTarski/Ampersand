@@ -280,7 +280,6 @@ instance Pretty P_Population where
 
 instance Pretty P_Representation where
   pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
-  pretty (ImplicitRepr {}) = text ""
 
 instance Pretty TType where
   pretty = text . show

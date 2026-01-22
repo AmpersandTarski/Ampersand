@@ -68,15 +68,23 @@ instance PConceptStructure (P_SubIfc TermPrim) where
 instance PConceptStructure P_Interface where
   pConcs pIfc = pConcs (ifc_Obj pIfc)
 
--- P_Sign extracts source and target concepts
 instance PConceptStructure P_Sign where
   pConcs (P_Sign src tgt) = Set.fromList [src, tgt]
 
--- P_Relation extracts concepts from signature
+instance PConceptStructure PConceptDef where
+  pConcs = Set.singleton . PCpt . cdname
+
+instance PConceptStructure PClassify where
+  pConcs pCls = Set.fromList ([specific pCls] <> NE.toList (generics pCls))
+
+-- P_Relation extracts the source and target concepts from signature
 instance PConceptStructure P_Relation where
   pConcs rel = pConcs (dec_sign rel)
 
--- P_ViewD extracts concept and concepts from view segments (concrete instance for TermPrim)
+instance PConceptStructure (P_Rule TermPrim) where
+  pConcs rule = pConcs (rr_exp rule)
+
+-- P_ViewD extracts its view-concept and the concepts from all view segments
 instance PConceptStructure (P_ViewD TermPrim) where
   pConcs vd = Set.insert (vd_cpt vd) (Set.unions (map pConcs (vd_ats vd)))
 
@@ -96,7 +104,10 @@ instance PConceptStructure (P_IdentDf TermPrim) where
 -- P_Population extracts concept from P_CptPopu case
 instance PConceptStructure P_Population where
   pConcs (P_CptPopu _ cpt _) = Set.singleton cpt
-  pConcs P_RelPopu {} = Set.empty  -- Relations are validated separately
+  pConcs pop@P_RelPopu{} = (pConcs . p_nmdr) pop  -- Relations are validated separately
+
+instance PConceptStructure P_NamedRel where
+  pConcs pnRel = pConcs (p_mbSign pnRel)
 
 -- PRef2Obj extracts concept from PRef2ConceptDef
 instance PConceptStructure PRef2Obj where

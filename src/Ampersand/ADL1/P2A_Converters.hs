@@ -19,25 +19,20 @@ module Ampersand.ADL1.P2A_Converters
 where
 
 import Ampersand.ADL1.Expression
-import Ampersand.ADL1.Lattices
 import Ampersand.Basics hiding (conc, set, guard, join)
 import Ampersand.Classes
 import Ampersand.Classes.ConceptStructure (PConceptStructure(..))
 import Ampersand.Core.A2P_Converters (aConcept2pConcept)
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.AbstractSyntaxTree hiding (Guarded(..), Errors, Warning, CTXE, CtxError, Checked)
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct (showP)
-import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)
 import Algebra.Graph.AdjacencyMap
-import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alga
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
-import qualified Data.Tree
-import Data.Tuple.Extra (fst3, snd3, thd3)
+import Data.Tuple.Extra (fst3, snd3)
 import RIO.Char (toLower, toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -45,22 +40,23 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
-pConcToType :: P_Concept -> Type
-pConcToType P_ONE = BuiltIn TypeOfOne
-pConcToType p = UserConcept (name p)
+-- Obsolete per Jan 21st, 2026:
+-- pConcToType :: P_Concept -> Type
+-- pConcToType P_ONE = BuiltIn TypeOfOne
+-- pConcToType p = UserConcept (name p)
 
-aConcToType :: A_Concept -> Type
-aConcToType ONE = BuiltIn TypeOfOne
-aConcToType p = (usc . fmap fst . Set.toList . aliases) p
- where usc (nm:_) = UserConcept nm; usc _ = fatal "Not a proper A_Concept"
+-- aConcToType :: A_Concept -> Type
+-- aConcToType ONE = BuiltIn TypeOfOne
+-- aConcToType p = (usc . Set.toList . aliases) p
+--  where usc (nm:_) = UserConcept nm; usc _ = fatal "Not a proper A_Concept"
 
-getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
-getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
-  Right x -> unexpectedType o x
-  Left x -> return x
+-- getAsConcept :: ContextInfo -> Origin -> Type -> Guarded A_Concept
+-- getAsConcept ci o v = case typeOrConcept (conceptMap ci) v of
+--   Right x -> unexpectedType o x
+--   Left x -> return x
 
-userList :: ConceptMap -> [Type] -> [A_Concept]
-userList fun = lefts . fmap (typeOrConcept fun)
+-- userList :: ConceptMap -> [Type] -> [A_Concept]
+-- userList fun = lefts . fmap (typeOrConcept fun)
 
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
@@ -192,26 +188,6 @@ warnCaseProblems ctx = addWarnings warnings $ pure ()
       where
         toUpperName = T.toUpper . fullName
 
-{- | Complete a lattice by adding concepts and edges to ensure that every set of concepts that has a meet also has a join.
-     This was probably not a good idea, so it is disabled.
-completeLattice :: AdjacencyMap A_Concept -> AdjacencyMap A_Concept
-completeLattice graph = overlay (edges joinIncrement) graph
-  where
-    subs :: ((A_Concept, A_Concept) -> A_Concept) -> ((A_Concept, A_Concept) -> A_Concept) -> [Set A_Concept]
-    subs f g = (fmap (Set.fromList . map g . NE.toList) . eqCl f . edgeList . transitiveClosure) graph
-    joinSubsets = subs fst snd
-    meetSubsets = subs snd fst
-    joinName :: Set A_Concept -> Name
-    joinName = text2NameUnsafe . T.intercalate "/\\" . fmap fullName . Set.toList
-      where
-        text2NameUnsafe t = Name {nameParts = NamePart (toText1Unsafe t) :| [], nameType = ConceptName}
-    joinIncrement -- the missing join concepts, with edges, to ensure that every set of concepts that has a meet also has a join.
-       = [ (PlainConcept { aliases = Set.fromList [(joinName cSubset, Nothing)] }, s)
-         | cSubset <- meetSubsets L.\\ joinSubsets
-         , s <- Set.toList cSubset
-         ]
--}
-
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign pCpt2aCpt (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
@@ -239,8 +215,33 @@ findRelsTyped declMap x tp = let result = Map.findWithDefault [] (SignOrd tp) (M
 
 type DeclMap = Map.Map Name (Map.Map SignOrd Relation)
 
-onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
-onlyUserConcepts = fmap . userList . conceptMap
+-- | pCpt2aCpt converts a P_Concept to A_Concept using the concept table
+-- Note that:      type ConceptMap = P_Concept -> A_Concept
+-- pCpt2aCpt is a lookup function that raises a fatal error if the concept
+-- has not been seen before (which should never happen if typologies are constructed correctly)
+makePCpt2ACpt :: [Typology] -> ConceptMap
+makePCpt2ACpt typologies = pCpt2aCpt
+  where
+    pCpt2aCpt :: P_Concept -> A_Concept
+    pCpt2aCpt P_ONE = ONE
+    pCpt2aCpt (PCpt nm) =
+      case Map.lookup nm conceptTable of
+        Just aCpt -> aCpt
+        Nothing -> fatal $
+          "Concept " <> fullName nm <> " not found in concept table. " <>
+          "This should not happen as all concepts should have been registered during typology construction."
+    -- | Build a concept table from typologies
+    -- This creates a lookup map from concept names to A_Concepts
+    conceptTable :: Map.Map Name A_Concept
+    conceptTable = Map.fromList
+      [ (nm, PlainConcept
+               { aliases = aliasSet
+               , typology = typo
+               })
+      | typo <- typologies
+      , aliasSet <- vertexList (tyGrph typo)
+      , nm <- Set.toList aliasSet
+      ]
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -254,13 +255,8 @@ onlyUserConcepts = fmap . userList . conceptMap
 --    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
 --    Using the Applicative operations <$> and <*> causes these errors to be in parallel
 -- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
-pCtx2aCtx ::
-  (HasFSpecGenOpts env, HasRunner env) =>
-  env ->
-  P_Context ->
-  Guarded A_Context
-pCtx2aCtx
-  env
+pCtx2aCtx :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded A_Context
+pCtx2aCtx env
   PCtx
     { ctx_nm = n1,
       ctx_lbl = lbl,
@@ -283,27 +279,27 @@ pCtx2aCtx
       ctx_enfs = p_enfs
     } =
     do
-      contextInfoPre <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
-      -- aReprs contains all concepts that have TTypes given in REPRESENT statements and in Interfaces (i.e. Objects)
-      aReprs <- traverse (pRepr2aRepr contextInfoPre) (p_representations <> concatMap pt_Reprs p_patterns) :: Guarded [A_Representation] --  The representations defined in this context
-      -- allReprs contains all concepts and every concept has precisely one TType
-      allReps <- makeComplete contextInfoPre aReprs
-      let contextInfo = contextInfoPre {representationOf = defaultTType allReps}
-      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
+      contextInfoPre <- g_contextInfo
+      identdefs <- traverse (pIdentity2aIdentity contextInfoPre Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
+      viewdefs <- traverse (pViewDef2aViewDef contextInfoPre) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
+      interfaces <- traverse (pIfc2aIfc contextInfoPre) p_interfaces
+      let objectReprs = getObjReprs interfaces viewdefs identdefs
+          explicitReprs = [Arepr {aReprFrom = fmap (conceptMap contextInfoPre) (reprcpts pRepr), aReprTo = reprdom pRepr} | pRepr <- p_representations <> concatMap pt_Reprs p_patterns]
+      checkDuplicateReprTypes (explicitReprs <> objectReprs)
+      let contextInfo = contextInfoPre {reprType = reprTypeDefaults (explicitReprs <> objectReprs)}
+          allAConcepts = map (conceptMap contextInfo) (Set.toList (allPConcepts contextInfo))
+      let classifies = map (pClassify2aClassify contextInfo) p_gens --  The specialization statements defined in this context, outside the scope of patterns
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
-      uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
-      uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
-      identdefs <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
-      uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
-      viewdefs <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
-      uniqueNames "interface" p_interfaces
-      interfaces <- traverse (pIfc2aIfc contextInfo) p_interfaces
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
-      udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      relations <-
-        traverse (pDecl2aDecl (representationOf contextInfo) pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) p_relations
+      udpops <- traverse (pPop2aPop contextInfo) p_pops --  [Population], user-defined
+      relations <- traverse (pDecl2aDecl (reprType contextInfo) (conceptMap contextInfo) Nothing deflangCtxt deffrmtCtxt) p_relations
       enforces' <- traverse (pEnforce2aEnforce contextInfo Nothing) p_enfs
+      --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
+      uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
+      uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
+      uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
+      uniqueNames "interface" p_interfaces
       let actx =
             ACtx
               { ctxnm = n1,
@@ -312,6 +308,7 @@ pCtx2aCtx
                 ctxlang = deflangCtxt,
                 ctxmarkup = deffrmtCtxt,
                 ctxpats = pats,
+                ctxcs = allAConcepts,
                 ctxrs = Set.fromList rules,
                 ctxds = Set.fromList relations,
                 ctxpopus = udpops, -- the content is copied from p_pops
@@ -325,8 +322,8 @@ pCtx2aCtx
                     $ p_roleRules
                     <> concatMap pt_RRuls p_patterns,
                 ctxvs = viewdefs,
-                ctxgs = mapMaybe pClassify2aClassify p_gens,
-                ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (: []) (Set.toList $ soloConcs contextInfo)),
+                ctxgs = classifies,
+                ctxReprType = reprType contextInfo,
                 ctxifcs = interfaces,
                 ctxps = purposes,
                 ctxmetas = p_metas,
@@ -342,384 +339,251 @@ pCtx2aCtx
       warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       return actx
     where
-      makeComplete :: ContextInfo -> [A_Representation] -> Guarded [A_Representation]
-      makeComplete ci aReprs = checkDuplicates
+
+      -- | Extract object representations from interfaces, views, and identities
+      -- All these concepts must be represented as Object type
+      getObjReprs :: [Interface] -> [ViewDef] -> [IdentityRule] -> [A_Representation]
+      getObjReprs interfaces viewdefs identdefs =
+        case Set.toList (getInterfaceConcepts interfaces `Set.union` getViewConcepts viewdefs `Set.union` getIdentityConcepts identdefs) of
+             [] -> []
+             cpt:cpts ->  [ Arepr (cpt :| cpts) Object ]
         where
-          -- \| ttypeAnalysis exposes duplicate TTypes, so we can make error messages
-          ttypeAnalysis :: [([A_Concept], [(TType, [Origin])])]
-          ttypeAnalysis =
-            [ (typolConcs, case ttOrigPairs of [] -> [(Alphanumeric, [])]; _ -> ttOrigPairs)
-              | typolConcs <- typolSets <> [[c] | c <- Set.toList (allConcepts ci `Set.union` ttypedConcepts), c `notElem` concat typolSets],
-                let ttOrigPairs = ttPairs typolConcs
-            ]
-            where
-              -- \| To ensure that all concepts that will be Object are treated as declared objects, we compute ttypedConcepts. Without it,
-              ttypedConcepts :: Set.Set A_Concept
-              ttypedConcepts = (Set.fromList . concat) [(NE.toList . aReprFrom) aRepr | aRepr <- aReprs]
-              typolSets = map tyCpts (multiKernels ci)
-              ttPairs :: [A_Concept] -> [(TType, [Origin])]
-              ttPairs typology =
-                [ (t, [origin aRepr | aRepr <- NE.toList cl])
-                  | cl <- eqCl aReprTo [aRepr | aRepr <- aReprs, not . null $ NE.toList (aReprFrom aRepr) `L.intersect` typology],
-                    t <- L.nub [aReprTo aRepr | aRepr <- NE.toList cl]
-                ]
-          checkDuplicates :: Guarded [A_Representation]
-          checkDuplicates =
-            case [(cs, tts) | (cs, tts@(_ : _ : _)) <- ttypeAnalysis] of
-              [] -> pure [Arepr os (c :| cs) t | (c : cs, [(t, os)]) <- ttypeAnalysis]
-              errs -> traverse mkMultipleRepresentTypesError errs
-      defaultTType :: [A_Representation] -> A_Concept -> TType
-      defaultTType aReprs c =
-        if c == ONE || show c == "SESSION"
+          -- | Extract all concepts from interfaces (source + all box targets recursively)
+          getInterfaceConcepts :: [Interface] -> Set.Set A_Concept
+          getInterfaceConcepts ifcs = Set.fromList [ source (objExpression (ifcObj ifc)) | ifc <- ifcs ] `Set.union`
+                                      Set.unions [ getObjectConcepts (ifcObj ifc) | ifc <- ifcs ]
+
+          -- | Recursively extract all target concepts from box expressions
+          getObjectConcepts :: ObjectDef -> Set.Set A_Concept
+          getObjectConcepts obj =
+            Set.singleton (target (objExpression obj)) `Set.union` maybe Set.empty getSubInterfaceConcepts (objmsub obj)
+
+          -- | Extract concepts from sub-interfaces
+          getSubInterfaceConcepts :: SubInterface -> Set.Set A_Concept
+          getSubInterfaceConcepts (Box {siObjs = boxItems}) = Set.unions (map getBoxItemConcepts boxItems)
+          getSubInterfaceConcepts (InterfaceRef {siConcept = cpt}) = Set.singleton cpt
+
+          -- | Extract concepts from box items
+          getBoxItemConcepts :: BoxItem -> Set.Set A_Concept
+          getBoxItemConcepts (BxExpr obj) = getObjectConcepts obj
+          getBoxItemConcepts (BxText {}) = Set.empty
+
+          -- | Extract concepts from views
+          getViewConcepts :: [ViewDef] -> Set.Set A_Concept
+          getViewConcepts vds = Set.fromList (map vdcpt vds)
+
+          -- | Extract concepts from identities
+          getIdentityConcepts :: [IdentityRule] -> Set.Set A_Concept
+          getIdentityConcepts ids = Set.fromList (map idCpt ids)
+
+      -- Create the final representation function
+      reprTypeDefaults :: [A_Representation] -> A_Concept -> TType
+      reprTypeDefaults representationPairs cpt =
+        if cpt == ONE || show cpt == "SESSION"
           then Object
-          else case L.nub [aReprTo aRepr | aRepr <- L.nub aReprs, c `elem` NE.toList (aReprFrom aRepr)] of
-            [] -> Alphanumeric
-            [t] -> t
-            _ -> fatal "Multiple representations for a single concept"
-      concGroups = getGroups genLatticeIncomplete :: [[Type]]
+          else Map.findWithDefault Alphanumeric cpt reprTypeMap
+        where
+          reprTypeMap :: Map.Map A_Concept TType
+          reprTypeMap = Map.fromList
+            [ (c, aReprTo aRepr)
+            | aRepr <- L.nub representationPairs
+            , c <- NE.toList (aReprFrom aRepr)
+            ]
+
+      -- | Check for duplicate TTypes assigned to the same concept
+      checkDuplicateReprTypes :: [A_Representation] -> Guarded ()
+      checkDuplicateReprTypes reprs =
+        case [ NE.toList cl | cl <- (eqCl fst . L.nub) [ (c, aReprTo r) | r <- reprs, c <- NE.toList (aReprFrom r)], length cl>1] of
+          []   -> pure ()
+          x:xs -> Errors (fmap mkDuplicateReprTypeError (x :| xs))
+        where
+          mkDuplicateReprTypeError :: [(A_Concept,TType)] -> CtxError
+          mkDuplicateReprTypeError pairs =
+            CTXE (Origin "representation check") $
+              "Concept " <> (T.intercalate ", " . map showWithAliases . L.nub . map fst) pairs <>
+              " has multiple representation types: " <>
+              T.intercalate ", " (map (tshow . snd) pairs)
+
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
-      alleGens :: [PClassify]
-      alleGens = p_gens <> concatMap pt_gns p_patterns
+      -- allReprs contains P_Concept - TType bindings.
       allReprs :: [P_Representation]
-      allReprs = p_representations <> concatMap pt_Reprs p_patterns
+      allReprs = p_representations             <> -- P_Concept - TType bindings from REPRESENT statements outside of patterns
+                 concatMap pt_Reprs p_patterns <> -- P_Concept - TType bindings from REPRESENT statements inside patterns
+                 identReprs                    <> -- implicit P_Concept - Object bindings for IDENT concepts 
+                 viewReprs                        -- implicit P_Concept - Object bindings for VIEW concepts
+        where
+          -- In the process of parsing, we cannot create representations for box concepts yet. because we do not know the target concept of the box term.
+          -- The type checker needs to determine the target concept of the box term first.
 
+          -- Create explicit representations for IDENT concepts
+          identReprs :: [P_Representation]
+          identReprs = [Repr (origin ident) (ix_cpt ident :| []) Object
+                       | ident <- p_identdefs <> concatMap pt_ids p_patterns]
+
+          -- Create explicit representations for VIEW concepts  
+          viewReprs :: [P_Representation]
+          viewReprs = [Repr (origin viewDef) (vd_cpt viewDef :| []) Object
+                      | viewDef <- p_viewdefs <> concatMap pt_vds p_patterns]
 
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
-        -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-        let originalConnectedConcepts = connect' [] (map (toList . concs) gns)
-        typeMap <- mkTypeMap originalConnectedConcepts allReprs -- This is error free if every partition refers to precisely one technical type.
-        let reprOf cpt =
-              fromMaybe
-                Alphanumeric -- See issue #1537
-                (lookup cpt typeMap)
+        let pCpts = pConcs (p_conceptdefs <> concatMap pt_cds p_patterns) `Set.union`
+                    pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
+                    pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
+                    pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
+                    Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
+        typols <- (makeTypologies . makeAliasGraph . makePGraph (p_gens <> concatMap pt_gns p_patterns)) pCpts
+        let pCpt2aCpt = makePCpt2ACpt typols
+            reprMap = [ Arepr {aReprFrom = fmap pCpt2aCpt (reprcpts repr), aReprTo = reprdom repr}
+                      | repr<-p_representations <> concatMap pt_Reprs p_patterns ]
+            reprOf :: A_Concept -> TType
+            reprOf cpt =
+              if cpt == ONE || show cpt == "SESSION"
+                then Object
+                else case [aReprTo r | r <- L.nub reprMap, cpt `elem` aReprFrom r] of
+                       [t] -> t
+                       []  -> fatal $ "No representation found for concept " <> showWithAliases cpt <> ". This should not happen as all concepts should have a representation assigned."
+                       ts  -> fatal $ "Multiple representations found for concept " <> showWithAliases cpt <> ": " <> tshow ts <> ". This should not happen as all concepts should have only one representation assigned."
         decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
+              where
+                groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
           -- An edge `(A,B)` in `dagGraph` means that the atoms of `A` are a subset of the atoms of `B`. We say: \"`A` is more specific than `B`\", which is a partial ordering relation on A_Concepts.
           -- This partial ordering relation allows us to freely mix concepts from lattice theory (e.g. lattice, join, meet) and graph theory (vertex, edge) in our language.
-          -- The process of making typologies starts with the initialGraph :: AdjacencyMap A_Concept:
+          -- The process of making typologies starts with the initialGraph :: AdjacencyMap P_Concept:
           -- * `dagGraph = graph2dag initialGraph` ensures dagGraph is a DAG, and therefore acyclic.
           -- * `wccs = wcComponents dagGraph` computes the weakly connected components of dagGraph. Every wcc will become a typology
           -- * `map createTypology completeWCCs` gives us the typologies.
-        let allConceptsForGraph = concs decls         `Set.union` 
-                                  concs gns           `Set.union` 
-                                  concs allConcDefs   `Set.union` 
-                                  ruleConcepts        `Set.union` 
-                                  reprConcepts        `Set.union` 
-                                  popConcepts         `Set.union` 
-                                  Set.fromList ([ONE] <> ([sessionConcept | not (null p_interfaces)]))
-            initialGraph = makeGraph gns allConceptsForGraph
-          -- * `completeLattice enhances the lattice structure so that each wcc has sufficient meet/join concepts for proper typology construction
-            dagGraph = {- completeLattice -} (graph2dag initialGraph) -- convert to DAG by turning strongly connected components into single concepts with aliases
-            declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
-              where
-                groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]
-            allConcs = Set.fromList (map aConcToType (map source decls <> map target decls)) :: Set.Set Type
-        typologies <- makeTypologies dagGraph
-        return
-            CI
-              { ctxiGens = gns,
-                representationOf = reprOf,
-                multiKernels = typologies,
-                reprList = allReprs,
-                declarationsMap = declMap,
-                soloConcs = Set.filter (not . isInSystem genLattice) allConcs,
-                allConcepts = allConceptsForGraph,
-                conceptGraph = overlay dagGraph (vertices [ONE]),
-                conceptMap = pCpt2aCpt,
-                defaultLang = deflangCtxt,
-                defaultFormat = deffrmtCtxt
-              }
-
-        where
-          -- | Compute weakly connected components of a directed graph.
-          -- A weakly connected component is a maximal set of vertices such that for every pair
-          -- of vertices u and v, there is an undirected path between u and v in the underlying 
-          -- undirected graph (ignoring edge directions).
-          --
-          -- This function converts the directed graph to an undirected graph by overlaying it
-          -- with its transpose, then finds connected components using depth-first search.
-          -- Each returned AdjacencyMap A_Concept is a subgraph of the input containing exactly
-          -- the vertices and edges for that weakly connected component.
-          wcComponents :: AdjacencyMap A_Concept -> [AdjacencyMap A_Concept]
-          wcComponents dagGraph = map (createSubgraph dagGraph) (Alga.dfsForest symmetricGraph)
-            where
-              symmetricGraph = overlay dagGraph (transpose dagGraph)
-              createSubgraph :: AdjacencyMap A_Concept -> Data.Tree.Tree A_Concept -> AdjacencyMap A_Concept
-              createSubgraph originalGraph conceptTree =
-                let verticesInComponent = Set.fromList (flattenTree conceptTree)
-                    -- Filter edges to only include those between vertices in the component
-                    componentEdges = filter (\(from, tgt) -> from `Set.member` verticesInComponent && tgt `Set.member` verticesInComponent)
-                                           (edgeList originalGraph)
-                in overlay (edges componentEdges) (vertices (Set.toList verticesInComponent))
-              flattenTree :: Data.Tree.Tree A_Concept -> [A_Concept]
-              flattenTree (Data.Tree.Node x children) = x : concatMap flattenTree children
-
-          -- | Convert a concept graph with potential cycles into a directed acyclic graph (DAG)
-          -- by computing strongly connected components and condensing them into representative concepts.
-          graph2dag :: AdjacencyMap A_Concept -> AdjacencyMap A_Concept
-          graph2dag conceptsGraph = overlay (edges dagEdges) (vertices sccReps)
-            where
-              -- The graph of strongly connected components contains no cycles because each cycle is condensed into a single vertex.
-              sccGraph = Alga.scc conceptsGraph -- AdjacencyMap (NonEmpty.AdjacencyMap A_Concept)
-              -- Extract individual SCCs and create representative concepts
-              sccs = vertexList sccGraph  -- [NonEmpty.AdjacencyMap A_Concept]
-              -- Create one representative A_Concept for each SCC (each of which is a NonEmpty.AdjacencyMap A_Concept)
-              sccReps = map mintConcept sccs  -- [A_Concept]
-              -- Create mapping from SCC to representative concept
-              sccToRep = Map.fromList (zip sccs sccReps)
-              -- Create edges between representatives based on SCC graph structure
-              dagEdges = [(Map.findWithDefault (fatal "SCC not found in mapping") fromScc sccToRep, Map.findWithDefault (fatal "SCC not found in mapping") toScc sccToRep) | (fromScc, toScc) <- edgeList sccGraph]
-
-              mintConcept :: NonEmpty.AdjacencyMap A_Concept -> A_Concept
-              mintConcept scc = case L.sortBy (\a b -> compare (fullName a) (fullName b)) (NE.toList $ NonEmpty.vertexList1 scc) of
-                [] -> fatal "Empty SCC encountered"
-                [c] -> c  -- Single concept, no synonyms needed
-                primary:others -> PlainConcept { aliases = Set.unions (collectAliases primary : map collectAliases others) }
-                where
-                  -- Extract aliases from a concept, handling all concept types
-                  collectAliases :: A_Concept -> Set.Set (Name, Maybe Label)
-                  collectAliases (PlainConcept {aliases = als}) = als
-                  collectAliases ONE = Set.singleton (nameOfONE, Nothing)
-                  collectAliases (UNION _) = Set.empty  -- Complex types don't have simple aliases
-                  collectAliases (ISECT _) = Set.empty  -- Complex types don't have simple aliases
-                  collectAliases (DISJT _) = Set.empty  -- Complex types don't have simple aliases
-
-          makeTypologies :: AdjacencyMap A_Concept -> Guarded [Typology]
-          makeTypologies dagGraph = -- trace ("3. dagGraph =\n   "<>tshow dagGraph<>
-                                    --        "\n   wcComponents =\n   "<>tshow (wcComponents dagGraph)) $
-                                    traverse createTypology (wcComponents dagGraph)
-            where
-              createTypology :: AdjacencyMap A_Concept -> Guarded Typology
-              createTypology subGraph =
-                let cs = vertexList subGraph
-                    roots = [ c | c <- vertexList subGraph, null (postSet c subGraph) ]
-                in case roots of
-                     [r] -> pure Typology
-                              { tyroot = r,
-                                tyCpts = reverse . sortSpecific2Generic gns $ cs
-                              }
-                     []  -> Errors . pure $ CTXE OriginUnknown "No root found in typology component."
-                     _   -> case filter (isRelevantGen cs) gns of
-                              [] -> Errors . pure $ CTXE OriginUnknown "Multiple roots found but no relevant generalization statements."
-                              g:gs -> mkMultipleRootsError roots (g NE.:| gs)
-              isRelevantGen :: [A_Concept] -> AClassify -> Bool
-              isRelevantGen cs g = genspc g `elem` cs
-
-          allConcDefs :: Set.Set AConceptDef
-          allConcDefs = Set.fromList (map (pConcDef2aConcDef pCpt2aCpt deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns))
-
-          reprConcepts :: Set.Set A_Concept
-          reprConcepts = Set.fromList [pCpt2aCpt cpt | repr <- allReprs, cpt <- case repr of
-                                                                                    Repr{} -> NE.toList (reprcpts repr)
-                                                                                    ImplicitRepr{} -> []]
-
-          ruleConcepts :: Set.Set A_Concept
-          ruleConcepts = Set.fromList [pCpt2aCpt cpt | rule <- p_rules <> concatMap pt_rls p_patterns, cpt <- Set.toList (pConcs (rr_exp rule))]
-
-          popConcepts :: Set.Set A_Concept
-          popConcepts = Set.fromList 
-            [ pCpt2aCpt cpt 
-            | pop <- p_pops <> concatMap pt_pop p_patterns
-            , cpt <- case pop of
-                P_CptPopu _ c _ -> [c]  -- Concept populations
-                P_RelPopu msrc mtgt _ _ _ -> [ c | Just c <- [msrc]<>[mtgt] ]  -- Relation population endpoints
-            ]
-
-          gns :: [AClassify]
-          gns = mapMaybe pClassify2aClassify alleGens
-
-          -- | We make concept graphs with Algebra.Graph.AdjacencyMap.
-          -- See https://github.com/snowleopard/alga-paper for documentation and https://www.youtube.com/watch?v=EdQGLewU-8k for motivation.
-          -- AdjacencyMap is an instance of the Graph type class. It is especially designed (and also efficient) for graphs with closures, such as our concept graph.
-          -- postcondition: makeGraph is the transitive closure of gns.
-
-          connect' :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          connect' acc [] = acc
-          connect' acc (h:tl) = connect' (connect'' h acc) tl
-
-          connect'' :: [A_Concept] -> [[A_Concept]] -> [[A_Concept]]
-          connect'' [] acc = acc
-          connect'' h [] = [h]
-          connect'' h (a:as) =
-            if null (h `L.intersect` a)
-            then a : connect'' h as
-            else connect'' (L.nub (h <> a)) as
-
-          mkTypeMap :: [[A_Concept]] -> [P_Representation] -> Guarded [(A_Concept, TType)]
-          mkTypeMap groups reprs =
-            f
-              <$> traverse typeOfGroup groups
-              <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
-            where
-              f :: [[(A_Concept, TType)]] -> [Maybe (A_Concept, TType, [Origin])] -> [(A_Concept, TType)]
-              f typesOfGroups typesOfOthers =
-                concat typesOfGroups <> map stripOrigin (catMaybes typesOfOthers)
-              stripOrigin :: (A_Concept, TType, [Origin]) -> (A_Concept, TType)
-              stripOrigin (cpt, t, _) = (cpt, t)
-              reprTrios :: [(A_Concept, TType, Origin)]
-              reprTrios = nubTrios $ concatMap toReprs reprs
-                where
-                  toReprs :: P_Representation -> [(A_Concept, TType, Origin)]
-                  toReprs r@Repr {} = [(pCpt2aCpt cpt, reprdom r, origin r) | cpt <- NE.toList $ reprcpts r]
-                  toReprs ImplicitRepr {} = []
-                  nubTrios :: [(A_Concept, TType, Origin)] -> [(A_Concept, TType, Origin)]
-                  nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
-                    where
-                      withNonFuzzyOrigin :: NE.NonEmpty (A_Concept, TType, Origin) -> (A_Concept, TType, Origin)
-                      withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thdOf3) xs of
-                        [] -> NE.head xs
-                        h : _ -> h
-                      groupCondition :: (A_Concept, TType, Origin) -> (A_Concept, TType, Origin) -> Bool
-                      groupCondition (cptA, typA, _) (cptB, typB, _) = cptA == cptB && typA == typB
-                      thdOf3 (_, _, x) = x
-              conceptsOfGroups :: [A_Concept]
-              conceptsOfGroups = L.nub (concat groups)
-              conceptsOfReprs :: [A_Concept]
-              conceptsOfReprs = L.nub $ map fstOf3 reprTrios
-                where
-                  fstOf3 (cpt, _, _) = cpt
-              typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept, TType, [Origin]))
-              typeOfSingle cpt =
-                case filter ofCpt reprTrios of
-                  [] -> pure Nothing
-                  rs -> case L.nub (map getTType rs) of
-                    [] -> fatal "Impossible empty list."
-                    [t] -> pure (Just (cpt, t, map getOrigin rs))
-                    _ -> mkMultipleRepresentTypesError ([cpt], lst)
-                      where
-                        lst = [(snd3 (NE.head cl), fmap thd3 (NE.toList cl)) | cl <- eqCl snd3 rs]
-                where
-                  ofCpt :: (A_Concept, TType, Origin) -> Bool
-                  ofCpt (cpt', _, _) = cpt == cpt'
-                  getOrigin :: (A_Concept, TType, Origin) -> Origin
-                  getOrigin (_, _, o) = o
-              getTType :: (a, TType, b) -> TType
-              getTType (_, t, _) = t
-              typeOfGroup :: [A_Concept] -> Guarded [(A_Concept, TType)]
-              typeOfGroup grp =
-                do
-                  singleTypes <- traverse typeOfSingle grp
-                  let typeList = catMaybes singleTypes
-                  case L.nub (map getTType typeList) of
-                    [] -> pure []
-                    [t] -> pure [(cpt, t) | cpt <- grp]
-                    _ -> mkMultipleTypesInTypologyError typeList
-
-      pCpt2aCpt :: ConceptMap
-      pCpt2aCpt = makeConceptMap (p_conceptdefs <> concatMap pt_cds p_patterns) (p_gens <> concatMap pt_gns p_patterns)
+        return CI{ reprType = reprOf
+                 , multiKernels = typols
+                 , reprList = allReprs
+                 , declarationsMap = declMap
+                --  , soloConcs = Set.filter (not . isInSystem genLattice) allConcs
+                 , allPConcepts = pCpts
+                 , conceptMap = pCpt2aCpt
+                 , defaultLang = deflangCtxt
+                 , defaultFormat = deffrmtCtxt
+                 }
 
       -- story about genRules and genLattice
       -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
       -- the genLattice is the resulting optimized structure
-      genRules :: [(Set.Set Type, Set.Set Type)] -- SJ: Why not [(NE.NonEmpty Type, NE.NonEmpty Type)] ?
-      genRules =
-        [ ( Set.fromList [pConcToType (specific x)],
-            Set.fromList . NE.toList . NE.map pConcToType . generics $ x
-          )
-          | x <- alleGens
-        ]
 
-      completeTypePairs :: [(Set Type, Set Type)]
-      completeTypePairs =
-        genRules
-          <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
-               | x@Repr {} <- p_representations <> concatMap pt_Reprs p_patterns,
-                 cpt <- NE.toList $ reprcpts x
-             ]
-          <> [ ( Set.singleton RepresentSeparator,
-                 Set.fromList
-                   [ BuiltIn Alphanumeric,
-                     BuiltIn BigAlphanumeric,
-                     BuiltIn HugeAlphanumeric,
-                     BuiltIn Password,
-                     BuiltIn Binary,
-                     BuiltIn BigBinary,
-                     BuiltIn HugeBinary,
-                     BuiltIn Date,
-                     BuiltIn DateTime,
-                     BuiltIn Boolean,
-                     BuiltIn Integer,
-                     BuiltIn Float,
-                     -- , BuiltIn TypeOfOne -- not a valid way to represent something! Also treated differently in this code
-                     BuiltIn Object,
-                     RepresentSeparator
-                   ]
-               )
-             ]
-      genLatticeIncomplete :: Op1EqualitySystem Type -- used to derive the concept groups
-      genLatticeIncomplete = optimize1 (foldr addEquality emptySystem genRules)
-      genLattice :: Op1EqualitySystem Type
-      genLattice = optimize1 (foldr addEquality emptySystem completeTypePairs)
+-- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
+      -- genRules :: [(Set.Set Type, Set.Set Type)] -- SJ: Why not [(NE.NonEmpty Type, NE.NonEmpty Type)] ?
+      -- genRules =
+      --   [ ( Set.fromList [pConcToType (specific x)],
+      --       Set.fromList . NE.toList . NE.map pConcToType . generics $ x
+      --     )
+      --     | x <- p_gens <> concatMap pt_gns p_patterns
+      --   ]
 
-      pClassify2aClassify :: PClassify -> Maybe AClassify
-      pClassify2aClassify pg =
-        case NE.tail (generics pg) of
-          [] -> case filter (/= specCpt) [pCpt2aCpt . NE.head $ generics pg] of
-            [] -> Nothing
-            h : _ ->
-              Just
-                Isa
-                  { genpos = origin pg,
-                    gengen = h,
-                    genspc = specCpt
-                  }
-          _ -> case NE.filter (/= specCpt) . fmap pCpt2aCpt $ generics pg of
-            [] -> Nothing
-            h : tl ->
-              Just
-                IsE
-                  { genpos = origin pg,
-                    genrhs = h NE.:| tl,
-                    genspc = specCpt
-                  }
+      -- completeTypePairs :: [(Set Type, Set Type)]
+      -- completeTypePairs =
+      --   genRules
+      --     <> [ (Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt])
+      --          | x@Repr {} <- p_representations <> concatMap pt_Reprs p_patterns,
+      --            cpt <- NE.toList $ reprcpts x
+      --        ]
+      --     <> [ ( Set.singleton RepresentSeparator,
+      --            Set.fromList
+      --              [ BuiltIn Alphanumeric,
+      --                BuiltIn BigAlphanumeric,
+      --                BuiltIn HugeAlphanumeric,
+      --                BuiltIn Password,
+      --                BuiltIn Binary,
+      --                BuiltIn BigBinary,
+      --                BuiltIn HugeBinary,
+      --                BuiltIn Date,
+      --                BuiltIn DateTime,
+      --                BuiltIn Boolean,
+      --                BuiltIn Integer,
+      --                BuiltIn Float,
+      --                -- , BuiltIn TypeOfOne -- not a valid way to represent something! Also treated differently in this code
+      --                BuiltIn Object,
+      --                RepresentSeparator
+      --              ]
+      --          )
+      --        ]
+      -- genLattice :: Op1EqualitySystem Type
+      -- genLattice = optimize1 (foldr addEquality emptySystem completeTypePairs)
+
+      -- TODO: The definition of PClassify (in ParseTree) does not support IsE, so the original IS statement is likely not reproduced correctly in all cases.
+      pClassify2aClassify :: ContextInfo -> PClassify -> AClassify
+      pClassify2aClassify ci pg = case NE.tail (generics pg) of
+        [] -> Isa
+               { genpos = origin pg,
+                 gengen = (pCpt2aCpt . NE.head . generics) pg,
+                 genspc = (pCpt2aCpt . specific) pg
+               }
+        _ -> IsE
+               { genpos = origin pg,
+                 genrhs = (NE.map pCpt2aCpt . generics) pg,
+                 genspc = (pCpt2aCpt . specific) pg
+               }
         where
-          specCpt = pCpt2aCpt (specific pg)
+          pCpt2aCpt = conceptMap ci
 
-      userConcept :: P_Concept -> Type
-      userConcept P_ONE = BuiltIn TypeOfOne
-      userConcept (PCpt nm) = UserConcept nm
+        -- case NE.tail (generics pg) of
+        --   [] -> case filter (/= specCpt) [pCpt2aCpt . NE.head $ generics pg] of
+        --     [] -> Nothing
+        --     h : _ ->
+        --       Just
+        --         Isa
+        --           { genpos = origin pg,
+        --             gengen = h,
+        --             genspc = specCpt
+        --           }
+        --   _ -> case NE.filter (/= specCpt) . fmap pCpt2aCpt $ generics pg of
+        --     [] -> Nothing
+        --     h : tl ->
+        --       Just
+        --         IsE
+        --           { genpos = origin pg,
+        --             genrhs = h NE.:| tl,
+        --             genspc = specCpt
+        --           }
+        -- where
+        --   specCpt = pCpt2aCpt (specific pg)
 
-      pRepr2aRepr :: ContextInfo -> P_Representation -> Guarded A_Representation
-      pRepr2aRepr ci repr@Repr {} = pure Arepr {origins = [origin repr], aReprFrom = fmap (conceptMap ci) (reprcpts repr), aReprTo = reprdom repr}
-      pRepr2aRepr ci repr@ImplicitRepr {} =
-        do
-          expr <- (term2Expr env ci Nothing . reprTerm) repr
-          return (Arepr [origin repr] (target expr :| []) Object)
+-- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
+      -- userConcept :: P_Concept -> Type
+      -- userConcept P_ONE = BuiltIn TypeOfOne
+      -- userConcept (PCpt nm) = UserConcept nm
 
       pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
       pPop2aPop ci pop =
         case pop of
-          P_RelPopu {p_nmdr = nmdr, p_popps = aps, p_src = src, p_tgt = tgt} ->
+          P_RelPopu {p_nmdr = nmdr, p_popps = aps} ->
             do
               expr <- term2Expr env ci Nothing (Prim (PNamedR nmdr))
               let dcl = case expr of
                          EDcD d -> d
                          _ -> fatal ("Expected a relation in a population, but got "<>tshow expr<>".")
-              aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
-              src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< isMoreGeneric (origin pop) dcl Src . userConcept) src
-              tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
+              aps' <- traverse (pAtomPair2aAtomPair (reprType ci) dcl) aps
               return
                 ARelPopu
                   { popdcl = dcl,
                     popps = Set.fromList aps',
-                    popsrc = fromMaybe (source dcl) src',
-                    poptgt = fromMaybe (target dcl) tgt'
+                    popsrc = source dcl,
+                    poptgt = target dcl
                   }
           P_CptPopu {} -> do
             validatePConceptsInSchema ci (origin pop) pop ("POPULATION for " <> fullName (p_cpt pop))
-            let cpt = pCpt2aCpt (p_cpt pop)
-            vals <- traverse (pAtomValue2aAtomValue (representationOf ci) cpt) (p_popas pop)
+            let cpt = conceptMap ci (p_cpt pop)
+            vals <- traverse (pAtomValue2aAtomValue (reprType ci) cpt) (p_popas pop)
             pure ACptPopu
                   { popcpt = cpt,
                     popas = vals
                   }
 
-      isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
-      isMoreGeneric o dcl sourceOrTarget givenType =
-        if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
-          then pure givenType
-          else mkTypeMismatchError o dcl sourceOrTarget givenType
+-- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
+      -- isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+      -- isMoreGeneric o dcl sourceOrTarget givenType =
+      --   if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
+      --     then pure givenType
+      --     else mkTypeMismatchError o dcl sourceOrTarget givenType
 
       pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
       pViewDef2aViewDef ci
@@ -770,20 +634,22 @@ pCtx2aCtx
                       -- Constrain the term to have source=viewConcept and target=BOT (serves as a wildcard here)
                       let viewConcept = conceptMap ci cpt
                       xpr <- term2Expr env ci (Just (Sign viewConcept botCpt)) term
-                      case geq (conceptGraph ci) (source xpr) viewConcept of
+                      case geq (source xpr) viewConcept of
                         Just True  -> pure (ViewExp xpr)
                         Just False -> Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
                         Nothing    -> Errors . pure $ mkViewExpressionMismatchError orig xpr viewConcept
                   P_ViewText str -> pure $ ViewText str
 
-      isa :: Type -> Type -> Bool
-      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
+-- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
+      -- isa :: Type -> Type -> Bool
+      -- isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
 
       -- | pSubIfc2aSubIfc uses the box concept from the parent box to constrain type-checking of sub-interfaces.
       pSubIfc2aSubIfc :: ContextInfo -> P_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
       pSubIfc2aSubIfc ci boxConcept sub =
         case sub of
-          P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem ci (Just boxConcept)) (si_box sub)
+          P_Box{} -> do let pCpt2aCpt = conceptMap ci
+                        subBoxes <- mapM (pBoxItem2aBoxItem ci (Just boxConcept)) (si_box sub)
                         uniqueLabels (origin sub) toLabel (filter hasLabel subBoxes) "BOX"
                         return (Box{ pos = origin sub, siConcept = pCpt2aCpt boxConcept, siHeader = si_header sub, siObjs = subBoxes})
           P_InterfaceRef
@@ -813,6 +679,7 @@ pCtx2aCtx
            = case filter ((==si_str sub).name) p_interfaces of
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
                [pIfc] -> do
+                 let pCpt2aCpt = conceptMap ci
                  -- First check if the referenced interface has undeclared concepts - if so, skip type-checking
                  validatePConceptsInSchema ci (origin pIfc) pIfc ("INTERFACE " <> fullName pIfc)
                  -- Only proceed if validation succeeded
@@ -820,7 +687,7 @@ pCtx2aCtx
                  let srcCpt = source expr
                      boxAConcept = pCpt2aCpt boxConcept
                  if isConcreteSignature (ISgn boxAConcept)
-                   then case geq (conceptGraph ci) srcCpt boxAConcept of
+                   then case geq srcCpt boxAConcept of
                      Just True  -> return srcCpt
                      Just False -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   It requires CLASSIFY " <> tshow srcCpt <> " ISA " <> tshow boxAConcept)
                      Nothing    -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.name) pIfc <> " from " <> (tshow.origin) pIfc <> " is incompatible.\n   Its concept is " <> tshow srcCpt <> " but I expected " <> tshow boxAConcept <> ".")
@@ -845,7 +712,7 @@ pCtx2aCtx
               -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
               -- When there's a box concept, prepend I[boxConcept]; to enable proper concept hierarchy checking
               let mConstraint = case mBoxConcept of
-                    Just boxConcept -> Just (Sign (pCpt2aCpt boxConcept) botCpt)
+                    Just boxConcept -> Just (Sign (conceptMap ci boxConcept) botCpt)
                     Nothing -> Nothing
               objExpr <- term2Expr env ci mConstraint term
               a_msub <- traverse (pSubIfc2aSubIfc ci (aConcept2pConcept (target objExpr))) p_msub
@@ -876,15 +743,10 @@ pCtx2aCtx
                 typeCheckViewAnnotation objExpr (Just viewId) =
                   case lookupView viewId of
                     Just vd ->
-                      let viewAnnCptStr = aConcToType $ target objExpr
-                          viewDefCptStr = pConcToType $ vd_cpt vd
-                          viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
-                       in if viewIsCompatible
-                            then pure ()
-                            else
-                              Errors
-                                . pure
-                                $ mkIncompatibleViewError pBoxItem viewId viewAnnCptStr viewDefCptStr
+                     case conceptMap ci (vd_cpt vd) `geq` target objExpr of
+                            Just True  -> pure ()
+                            Just False -> Errors . pure $ mkViewTooSpecificError (origin pBoxItem) vd objExpr
+                            Nothing    -> Errors . pure $ mkViewExpressionMismatchError (origin pBoxItem) objExpr (conceptMap ci (vd_cpt vd))
                     Nothing -> Errors . pure $ mkUndeclaredError "view" pBoxItem viewId
           P_BxTxt
             { obj_PlainName = nm,
@@ -989,7 +851,7 @@ pCtx2aCtx
               _ -> pure ()
             let objExpr = objExpression boxItem
                 ifcSource = source objExpr
-                ifcSourceType = representationOf ci ifcSource
+                ifcSourceType = reprType ci ifcSource
             if ifcSourceType==Object || ifcSource == topCpt
                 then return
                        Ifc
@@ -1007,7 +869,7 @@ pCtx2aCtx
                          }
                 else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
                        [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-                         "However, the TYPE of the concept `" <> (text1ToText . showWithAliases) ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
+                         "However, the TYPE of the concept `" <> showWithAliases ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
                        ]
         where
           toLabel :: BoxItem -> Text1
@@ -1041,30 +903,32 @@ pCtx2aCtx
           <*> traverse (pPop2aPop ci) (pt_pop ppat)
           <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
           <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-          <*> traverse (pDecl2aDecl (representationOf ci) (conceptMap ci) (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+          <*> traverse (pDecl2aDecl (reprType ci) (conceptMap ci) (Just $ label ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
           <*> pure (fmap (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat))
           <*> pure (Set.unions . map pRoleRule2aRoleRule . pt_RRuls $ ppat)
           <*> pure (pt_Reprs ppat)
           <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
-          f rules' keys' pops' views' xpls relations conceptdefs roleRules representations enforces' =
+          f rules' keys' pops' views' purps' relations conceptdefs roleRules representations enforces' =
             A_Pat
-              { ptnm = name ppat,
-                ptlbl = mLabel ppat,
-                ptpos = origin ppat,
-                ptend = pt_end ppat,
-                ptrls = Set.fromList rules',
-                ptgns = mapMaybe pClassify2aClassify (pt_gns ppat),
-                ptdcs = Set.fromList relations,
-                ptrrs = roleRules,
-                ptcds = conceptdefs,
-                ptrps = representations,
-                ptups = pops',
-                ptids = keys',
-                ptvds = views',
-                ptxps = xpls,
+              { ptnm   = name ppat,
+                ptlbl  = mLabel ppat,
+                ptpos  = origin ppat,
+                ptend  = pt_end ppat,
+                ptrls  = Set.fromList rules',
+                ptgns  = gns',
+                ptdcs  = Set.fromList relations,
+                ptrrs  = roleRules,
+                ptcds  = conceptdefs,
+                ptrps  = representations,
+                ptups  = pops',
+                ptids  = keys',
+                ptvds  = views',
+                ptxps  = purps',
                 ptenfs = enforces'
               }
+          gns' = map (pClassify2aClassify ci) (pt_gns ppat)
+  
       pRul2aRul ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
@@ -1187,7 +1051,8 @@ pCtx2aCtx
         P_IdentDef ->
         Guarded IdentityRule
       pIdentity2aIdentity ci mPat pidt =
-        do let cpt = pCpt2aCpt (ix_cpt pidt)
+        do let pCpt2aCpt = conceptMap ci
+           let cpt = pCpt2aCpt (ix_cpt pidt)
                orig = origin pidt
            validatePConceptsInSchema ci orig pidt ("IDENT " <> fullName (ix_name pidt))
            let mConstraint = Just (Sign cpt botCpt)
@@ -1209,39 +1074,40 @@ pCtx2aCtx
       typeCheckPairViewSeg _ _ _ (PairViewText segOrigin x) = pure (PairViewText segOrigin x)
       typeCheckPairViewSeg ci o expr (PairViewExp segOrigin s x) =
         do
-          let src = (aConcept2pConcept . source) expr; srcConstraint = Just (Sign (pCpt2aCpt src) botCpt)
+          let pCpt2aCpt = conceptMap ci
+              src = (aConcept2pConcept . source) expr; srcConstraint = Just (Sign (pCpt2aCpt src) botCpt)
               tgt = (aConcept2pConcept . target) expr; tgtConstraint = Just (Sign (pCpt2aCpt tgt) botCpt)
           e <- case s of
                  Src -> term2Expr env ci srcConstraint (PCps o (Prim (Pid o src)) x)
                  Tgt -> term2Expr env ci tgtConstraint (PCps o (Prim (Pid o tgt)) x)
           return (PairViewExp segOrigin s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
-      pPurp2aPurp
-        ci
-        ppurp@PPurpose
-          { pos = purpOrigin,    -- :: Origin
-            pexObj = objref,     -- :: PRefObj
-            pexMarkup = pmarkup, -- :: P_Markup
-            pexRefIDs = refIds   -- :: [Text]
-          } = do
+      pPurp2aPurp ci ppurp@PPurpose{ pos = purpOrigin,    -- :: Origin
+                                     pexObj = objref,     -- :: PRefObj
+                                     pexMarkup = pmarkup, -- :: P_Markup
+                                     pexRefIDs = refIds   -- :: [Text]
+                                   }
+       = do
           -- Validate concepts in PURPOSE (only validates PRef2ConceptDef)
           validatePConceptsInSchema ci purpOrigin ppurp "PURPOSE"
-          obj <- pRefObj2aRefObj ci objref
+          obj <- pRefObj2aRefObj objref
           pure Expl
                 { explPos = purpOrigin,
                   explObj = obj,
                   explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup,
                   explRefIds = refIds
                 }
-      pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
-      pRefObj2aRefObj ci (PRef2ConceptDef s) = (pure . ExplConcept . conceptMap ci . mkPConcept) s
-      pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declarationsMap ci) tm
-      pRefObj2aRefObj _ (PRef2Rule s) = pure $ ExplRule s
-      pRefObj2aRefObj _ (PRef2IdentityDef s) = pure $ ExplIdentityDef s
-      pRefObj2aRefObj _ (PRef2ViewDef s) = pure $ ExplViewDef s
-      pRefObj2aRefObj _ (PRef2Pattern s) = pure $ ExplPattern s
-      pRefObj2aRefObj _ (PRef2Interface s) = pure $ ExplInterface s
-      pRefObj2aRefObj _ (PRef2Context s) = pure $ ExplContext s
+          where
+            pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj
+            pRefObj2aRefObj (PRef2ConceptDef s) = (pure . ExplConcept . conceptMap ci . mkPConcept) s
+            pRefObj2aRefObj (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (conceptMap ci) (declarationsMap ci) tm
+            pRefObj2aRefObj (PRef2Rule s) = pure $ ExplRule s
+            pRefObj2aRefObj (PRef2IdentityDef s) = pure $ ExplIdentityDef s
+            pRefObj2aRefObj (PRef2ViewDef s) = pure $ ExplViewDef s
+            pRefObj2aRefObj (PRef2Pattern s) = pure $ ExplPattern s
+            pRefObj2aRefObj (PRef2Interface s) = pure $ ExplInterface s
+            pRefObj2aRefObj (PRef2Context s) = pure $ ExplContext s
+
       allConceptDefsOutPats :: ContextInfo -> [AConceptDef]
       allConceptDefsOutPats ci = map (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
       allConceptDefs :: ContextInfo -> [AConceptDef]
@@ -1372,11 +1238,9 @@ mkVerboseTypeMismatchError env errorOrigin baseMsg maybeSuggestions opTree =
 -- SESSION is always implicitly declared, so it's exempt from validation
 validatePConceptsInSchema :: PConceptStructure a => ContextInfo -> Origin -> a -> Text -> Guarded ()
 validatePConceptsInSchema ci orig pStruct contextName =
-  case [ pc | pc <- Set.toList (pConcs pStruct), fullName (name pc) /= "SESSION", fullName (name pc) /= "ONE", pCpt2aCpt pc `Set.notMember` allConcepts ci] of
+  case [ pc | pc <- Set.toList (pConcs pStruct), fullName (name pc) /= "SESSION", fullName (name pc) /= "ONE", pc `Set.notMember` allPConcepts ci] of
     [] -> pure ()
     c:cs -> Errors . fmap (\pc -> mkConceptNotInSchemaError orig (name pc) contextName) $ c NE.:| cs
-  where
-    pCpt2aCpt = conceptMap ci
 
 -- | Check if a signature contains the TOP concept
 -- containsTOP :: Signature -> Bool
@@ -1394,26 +1258,26 @@ validatePConceptsInSchema ci orig pStruct contextName =
 -- For right residual e1\e2, the between concept is meet(source(e1), source(e2)).
 -- This handles cases where the subexpressions are concrete declarations
 -- whose signatures weren't changed by refineANY.
-getBetweenConcept :: AdjacencyMap A_Concept -> Expression -> A_Concept
-getBetweenConcept conceptsGraph (ECps (e1, e2)) = fromMaybe botCpt (meet conceptsGraph (target e1) (source e2))
-getBetweenConcept conceptsGraph (EDia (e1, e2)) = fromMaybe botCpt (join conceptsGraph (target e1) (source e2))
-getBetweenConcept conceptsGraph (ERad (e1, e2)) = fromMaybe botCpt (join conceptsGraph (target e1) (source e2))
-getBetweenConcept conceptsGraph (ELrs (e1, e2)) = fromMaybe botCpt (meet conceptsGraph (target e1) (target e2))
-getBetweenConcept conceptsGraph (ERrs (e1, e2)) = fromMaybe botCpt (meet conceptsGraph (source e1) (source e2))
-getBetweenConcept _             (EPrd (_ , _ )) = topCpt  -- Product doesn't have a between concept constraint
-getBetweenConcept _ e = fatal ("getBetweenConcept: pattern match failure on expression "<>showA e<>"\nThis is a bug in the compiler.")
+getBetweenConcept :: Expression -> A_Concept
+getBetweenConcept (ECps (e1, e2)) = fromMaybe botCpt (meet (target e1) (source e2))
+getBetweenConcept (EDia (e1, e2)) = fromMaybe botCpt (join (target e1) (source e2))
+getBetweenConcept (ERad (e1, e2)) = fromMaybe botCpt (join (target e1) (source e2))
+getBetweenConcept (ELrs (e1, e2)) = fromMaybe botCpt (meet (target e1) (target e2))
+getBetweenConcept (ERrs (e1, e2)) = fromMaybe botCpt (meet (source e1) (source e2))
+getBetweenConcept (EPrd (_ , _ )) = topCpt  -- Product doesn't have a between concept constraint
+getBetweenConcept e = fatal ("getBetweenConcept: pattern match failure on expression "<>showA e<>"\nThis is a bug in the compiler.")
 
 -- | Refine an expression by replacing TOP with more specific concepts, capped with a target signature. Only narrow, never widen.
 -- This function is used both during type inference and as a final cleanup step.
 -- It only narrows types (makes them more specific), never widens them.
-refineANY :: AdjacencyMap A_Concept -> Signature -> Expression -> Expression
-refineANY conceptsGraph targetSig expr
+refineANY :: Signature -> Expression -> Expression
+refineANY targetSig expr
  = trace ("refineANY (" <> tshow targetSig <> ") (" <> showA expr <> ") yields " <> showA refinedExpr)
    refinedExpr
   where
     iCpt = case targetSig of
              ISgn cpt     -> cpt
-             Sign src tgt -> case meet conceptsGraph src tgt of
+             Sign src tgt -> case meet src tgt of
                                Just m  -> m
                                Nothing -> fatal ("refineANY: cannot compute meet of source expr " <> tshow (source expr) <> " and targetSig source " <> tshow src <> " for expr " <> showA expr)
     refinedExpr = case expr of
@@ -1434,28 +1298,28 @@ refineANY conceptsGraph targetSig expr
                            (False, True ) -> EDcV (source sgn `Sign` target targetSig)
                            (False, False) -> EDcV sgn
       -- Binary operations:
-      EEqu (e1, e2)   -> EEqu (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      EInc (e1, e2)   -> EInc (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      EPrd (e1, e2)   -> EPrd (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      EUni (e1, e2)   -> EUni (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      EIsc (e1, e2)   -> EIsc (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      EDif (e1, e2)   -> EDif (refineANY conceptsGraph targetSig e1, refineANY conceptsGraph targetSig e2)
-      ECps (e1, e2)   -> ECps (refineANY conceptsGraph (Sign (source targetSig) between) e1, refineANY conceptsGraph (Sign between (target targetSig)) e2)
-                            where between = getBetweenConcept conceptsGraph expr
-      ELrs (e1, e2)   -> ELrs (refineANY conceptsGraph (Sign (source targetSig) between) e1, refineANY conceptsGraph (Sign (target targetSig) between) e2)
-                            where between = getBetweenConcept conceptsGraph expr
-      ERrs (e1, e2)   -> ERrs (refineANY conceptsGraph (Sign between (source targetSig)) e1, refineANY conceptsGraph (Sign between (target targetSig)) e2)
-                            where between = getBetweenConcept conceptsGraph expr
-      EDia (e1, e2)   -> EDia (refineANY conceptsGraph (Sign (source targetSig) between) e1, refineANY conceptsGraph (Sign between (target targetSig)) e2)
-                            where between = getBetweenConcept conceptsGraph expr
-      ERad (e1, e2)   -> ERad (refineANY conceptsGraph (Sign (source targetSig) between) e1, refineANY conceptsGraph (Sign between (target targetSig)) e2)
-                            where between = getBetweenConcept conceptsGraph expr
+      EEqu (e1, e2)   -> EEqu (refineANY targetSig e1, refineANY targetSig e2)
+      EInc (e1, e2)   -> EInc (refineANY targetSig e1, refineANY targetSig e2)
+      EPrd (e1, e2)   -> EPrd (refineANY targetSig e1, refineANY targetSig e2)
+      EUni (e1, e2)   -> EUni (refineANY targetSig e1, refineANY targetSig e2)
+      EIsc (e1, e2)   -> EIsc (refineANY targetSig e1, refineANY targetSig e2)
+      EDif (e1, e2)   -> EDif (refineANY targetSig e1, refineANY targetSig e2)
+      ECps (e1, e2)   -> ECps (refineANY (Sign (source targetSig) between) e1, refineANY (Sign between (target targetSig)) e2)
+                            where between = getBetweenConcept expr
+      ELrs (e1, e2)   -> ELrs (refineANY (Sign (source targetSig) between) e1, refineANY (Sign (target targetSig) between) e2)
+                            where between = getBetweenConcept expr
+      ERrs (e1, e2)   -> ERrs (refineANY (Sign between (source targetSig)) e1, refineANY (Sign between (target targetSig)) e2)
+                            where between = getBetweenConcept expr
+      EDia (e1, e2)   -> EDia (refineANY (Sign (source targetSig) between) e1, refineANY (Sign between (target targetSig)) e2)
+                            where between = getBetweenConcept expr
+      ERad (e1, e2)   -> ERad (refineANY (Sign (source targetSig) between) e1, refineANY (Sign between (target targetSig)) e2)
+                            where between = getBetweenConcept expr
       -- Unary operations:
-      EFlp e          -> EFlp (refineANY conceptsGraph (flp targetSig) e)
-      ECpl e          -> ECpl (refineANY conceptsGraph targetSig e)
-      EBrk e          -> EBrk (refineANY conceptsGraph targetSig e)
-      EKl0 e          -> EKl0 (refineANY conceptsGraph targetSig e)
-      EKl1 e          -> EKl1 (refineANY conceptsGraph targetSig e)
+      EFlp e          -> EFlp (refineANY (flp targetSig) e)
+      ECpl e          -> ECpl (refineANY targetSig e)
+      EBrk e          -> EBrk (refineANY targetSig e)
+      EKl0 e          -> EKl0 (refineANY targetSig e)
+      EKl1 e          -> EKl1 (refineANY targetSig e)
 
 -- | Compute all possible type signatures for a term.
 --   
@@ -1480,12 +1344,12 @@ signatures env ci mConstraintSig trm =
       applyConstraint :: Signature -> Maybe Bool
       applyConstraint sgn
        = case mConstraintSig of
-           Just mold@(Sign src tgt) -> if src == botCpt && tgt == botCpt then Just True else geq conceptsGraph sgn mold
-           Just mold@(ISgn cpt)     -> if cpt == botCpt                  then Just True else geq conceptsGraph sgn mold
+           Just mold@(Sign src tgt) -> if src == botCpt && tgt == botCpt then Just True else geqSig sgn mold
+           Just mold@(ISgn cpt)     -> if cpt == botCpt                  then Just True else geqSig sgn mold
            Nothing                  -> Just True
 
       refinedResult :: Guarded (OpTree (Expression, Signature, Term TermPrim))
-      refinedResult = fmap (\(expr, sgn, t) -> (refineANY conceptsGraph (fromMaybe sgn mConstraintSig) expr, sgn, t)) <$> result
+      refinedResult = fmap (\(expr, sgn, t) -> (refineANY (fromMaybe sgn mConstraintSig) expr, sgn, t)) <$> result
 
       resultPrim :: TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
       resultPrim trmPrim
@@ -1510,20 +1374,20 @@ signatures env ci mConstraintSig trm =
                                   in  case filteredByConstraint of
                                         [] -> Errors . return . CTXE (origin trmPrim) $
                                               case (rels, mConstraintSig) of
-                                                 ([d], Just (Sign constraintSrc constraintTgt)) -> ("There is no match for relation "<>showP rel<>" because ") <> T.intercalate " and " 
+                                                 ([d], Just (Sign constraintSrc constraintTgt)) -> ("There is no match for relation "<>showP rel<>" because ") <> T.intercalate " and "
                                                         ([ "its source concept "<>tshow (source (sign d))<>" should be "<>tshow constraintSrc<>" (or more generic)"
-                                                         | Just False <- [geq conceptsGraph (source (sign d)) constraintSrc]] <>
+                                                         | Just False <- [geq (source (sign d)) constraintSrc]] <>
                                                          [ "its source concept "<>tshow (source (sign d))<>" is unrelated to "<>tshow constraintSrc
-                                                         | Nothing <- [geq conceptsGraph (source (sign d)) constraintSrc]] <>
+                                                         | Nothing <- [geq (source (sign d)) constraintSrc]] <>
                                                          [ "its target concept "<>tshow (target (sign d))<>" should be "<>tshow constraintTgt<>" (or more generic)"
-                                                         | Just False <- [geq conceptsGraph (target (sign d)) constraintTgt]] <>
+                                                         | Just False <- [geq (target (sign d)) constraintTgt]] <>
                                                          [ "its target concept "<>tshow (target (sign d))<>" is unrelated to "<>tshow constraintTgt
-                                                         | Nothing <- [geq conceptsGraph (target (sign d)) constraintTgt]])<>"."
+                                                         | Nothing <- [geq (target (sign d)) constraintTgt]])<>"."
                                                  ([],_)  -> "Undeclared relation "<> showP trmPrim
                                                  _   -> "None of the relations: " <> T.intercalate ", " [showA d | d <- rels] <> " match on " <>showP rel<>"."
                                         ds -> pure (STnullary [(EDcD d, sign d, Prim trmPrim) | d <- ds])
          where
-   
+
       result :: Guarded (OpTree (Expression, Signature, Term TermPrim))
       result
        = case trm of
@@ -1578,8 +1442,8 @@ signatures env ci mConstraintSig trm =
 
       errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
        = let errorOpTree = STbinary sgnaTree sgnbTree [(combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, _, trm_b)<-sgnsb ]
-             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join conceptsGraph (source sgn_a) (source sgn_b)] ]
-             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join conceptsGraph (target sgn_a) (target sgn_b)] ]
+             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join (source sgn_a) (source sgn_b)] ]
+             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join (target sgn_a) (target sgn_b)] ]
              getRootSig opTree = case opTree of
                                  STbinary _ _ [(_, sgn, _)] -> sgn
                                  STunary _    [(_, sgn, _)] -> sgn
@@ -1588,11 +1452,11 @@ signatures env ci mConstraintSig trm =
              -- Check for ISgn types to provide better error messages
          in case (getRootSig sgnaTree, getRootSig sgnbTree) of
               -- Special case: when one or both sides have ISgn (identity) types
-              (ISgn cptA, Sign srcB tgtB) | cptA==botCpt -> 
-                    mkVerboseTypeError env o errorOpTree 
+              (ISgn cptA, Sign srcB tgtB) | cptA==botCpt ->
+                    mkVerboseTypeError env o errorOpTree
                       ("Cannot assign a type to "<>showP a<>" because " <> tshow srcB <> " and " <> tshow tgtB <> " are not equal.")
-              (Sign srcA tgtA, ISgn cptB) | cptB==botCpt -> 
-                    mkVerboseTypeError env o errorOpTree 
+              (Sign srcA tgtA, ISgn cptB) | cptB==botCpt ->
+                    mkVerboseTypeError env o errorOpTree
                       ("Cannot assign a type to "<>showP b<>" because " <> tshow srcA <> " and " <> tshow tgtA <> " are not equal.")
               _ -> case (conceptsSrc, conceptsTgt) of
                      ([],[])  -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts nor the target concepts in the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
@@ -1615,7 +1479,7 @@ signatures env ci mConstraintSig trm =
               sgnsb = opSigns sgnbTree
           case [ (combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b)
                | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just True <- [geq conceptsGraph sgn_a sgn_b]
+               , Just True <- [geqSig sgn_a sgn_b]
                ] of
             []  -> errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
             [res] -> -- trace ("\n17. Checkperi yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res]))
@@ -1623,7 +1487,7 @@ signatures env ci mConstraintSig trm =
             results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeError env o opTree baseMsg
-   
+
       checkEqtn :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
       checkEqtn o kind combinator pCombinator a b =
         do
@@ -1633,17 +1497,17 @@ signatures env ci mConstraintSig trm =
               sgnsb = opSigns sgnbTree
           case [ (refinedExpr, sign refinedExpr, pCombinator trm_a trm_b)
                | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just combinedSgn <- ([meetSig conceptsGraph sgn_a sgn_b | not (isConcreteSignature sgn_a && isConcreteSignature sgn_b)]<>
-                                      [joinSig conceptsGraph sgn_a sgn_b | isConcreteSignature sgn_a && isConcreteSignature sgn_b])
+               , Just combinedSgn <- ([meetSig sgn_a sgn_b | not (isConcreteSignature sgn_a && isConcreteSignature sgn_b)]<>
+                                      [joinSig sgn_a sgn_b | isConcreteSignature sgn_a && isConcreteSignature sgn_b])
                , Just True <- [applyConstraint combinedSgn]
-               , let refinedExpr = refineANY conceptsGraph combinedSgn (combinator (refineANY conceptsGraph combinedSgn expr_a, refineANY conceptsGraph combinedSgn expr_b))
+               , let refinedExpr = refineANY combinedSgn (combinator (refineANY combinedSgn expr_a, refineANY combinedSgn expr_b))
                ] of
             []  -> errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
             [res] -> return (STbinary sgnaTree sgnbTree [res])
             results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeError env o opTree baseMsg
-   
+
       -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
       -- The meetORjoin parameter determines how to combine concept types:
       -- - For union, use join (least upper bound) to find the common supertype
@@ -1657,11 +1521,11 @@ signatures env ci mConstraintSig trm =
               sgnsb = opSigns sgnbTree
           case [ (combinator (expr_a, expr_b), sgn, pCombinator trm_a trm_b)
                | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just sgn<-[meetSig conceptsGraph sgn_a sgn_b], Just True <- [applyConstraint sgn]] of
+               , Just sgn<-[meetSig sgn_a sgn_b], Just True <- [applyConstraint sgn]] of
             []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                        opTree = STbinary sgnaTree sgnbTree errorExprs
-                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meet conceptsGraph (target sgn_a) (target sgn_b)] ]
-                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meet conceptsGraph (source sgn_a) (source sgn_b)] ]
+                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meet (target sgn_a) (target sgn_b)] ]
+                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meet (source sgn_a) (source sgn_b)] ]
                    in case (conceptsSrc, conceptsTgt) of
                     ([],[])  -> mkVerboseTypeError env o opTree ("Cannot match the concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
                     ([],_:_) -> mkVerboseTypeError env o opTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
@@ -1677,7 +1541,7 @@ signatures env ci mConstraintSig trm =
             results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeError env o opTree baseMsg
-   
+
       checkUnin :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
       checkUnin o kind combinator pCombinator a b =
         do
@@ -1687,11 +1551,11 @@ signatures env ci mConstraintSig trm =
               sgnsb = opSigns sgnbTree
           case [ (combinator (expr_a, expr_b), sgn, pCombinator trm_a trm_b)
                | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just sgn<-[joinSig conceptsGraph sgn_a sgn_b], Just True <- [applyConstraint sgn]] of
+               , Just sgn<-[joinSig sgn_a sgn_b], Just True <- [applyConstraint sgn]] of
             []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
                        opTree = STbinary sgnaTree sgnbTree errorExprs
-                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join conceptsGraph (target sgn_a) (target sgn_b)] ]
-                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join conceptsGraph (source sgn_a) (source sgn_b)] ]
+                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join (target sgn_a) (target sgn_b)] ]
+                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join (source sgn_a) (source sgn_b)] ]
                    in case (conceptsSrc, conceptsTgt) of
                     ([],[])  -> mkVerboseTypeError env o opTree ("Cannot match the concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
                     ([],_:_) -> mkVerboseTypeError env o opTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
@@ -1707,7 +1571,7 @@ signatures env ci mConstraintSig trm =
             results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeError env o opTree baseMsg
-   
+
       checkIntra --, checkPeri
         :: {- o           -} Origin
         -> {- kind        -} Text
@@ -1753,27 +1617,27 @@ signatures env ci mConstraintSig trm =
           makeTriples triplesa triplesb
            = -- trace ("\n12. makeTriples called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
              [ -- trace ("\n13. list comprehension with:\n  between: "<>tshow between) $
-               let result_expr = combinator (refineANY conceptsGraph (Sign srca between) expr_a, refineANY conceptsGraph (Sign between tgtb) expr_b)
+               let result_expr = combinator (refineANY (Sign srca between) expr_a, refineANY (Sign between tgtb) expr_b)
                in (result_expr, sign result_expr, pCombinator trm_a trm_b)
              | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
-             , Just between<-[meet conceptsGraph tgta srcb]
+             , Just between<-[meet tgta srcb]
              ] <>
-             [ let result_expr = combinator (refineANY conceptsGraph (Sign srca between) expr_a, refineANY conceptsGraph (ISgn between) expr_b)
+             [ let result_expr = combinator (refineANY (Sign srca between) expr_a, refineANY (ISgn between) expr_b)
                in (result_expr, sign result_expr, pCombinator trm_a trm_b)
              | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
-             , Just between<-[meet conceptsGraph tgta cptb]
+             , Just between<-[meet tgta cptb]
              ] <>
-             [ let result_expr = combinator (refineANY conceptsGraph (ISgn between) expr_a, refineANY conceptsGraph (Sign between tgtb) expr_b)
+             [ let result_expr = combinator (refineANY (ISgn between) expr_a, refineANY (Sign between tgtb) expr_b)
                in (result_expr, sign result_expr, pCombinator trm_a trm_b)
              | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
-             , Just between<-[meet conceptsGraph cpta srcb]
+             , Just between<-[meet cpta srcb]
              ] <>
-             [ let result_expr = combinator (refineANY conceptsGraph (ISgn cpta) expr_a, refineANY conceptsGraph (ISgn between) expr_b)
+             [ let result_expr = combinator (refineANY (ISgn cpta) expr_a, refineANY (ISgn between) expr_b)
                in (result_expr, sign result_expr, pCombinator trm_a trm_b)
              | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
-             , Just between<-[meet conceptsGraph cpta cptb]
+             , Just between<-[meet cpta cptb]
              ]
-   
+
       -- diagnosis :: Text -> a -> a -> [a] -> [a] -> Text
       diagnosis kind a b sgnsa sgnsb
        = case (kind, sgnsa==sgnsb) of
@@ -1794,9 +1658,8 @@ signatures env ci mConstraintSig trm =
                             [cpt] -> ", which is "<>tshow cpt
                             []    -> " is undefined because "<>showP expr<>" is untypable"
                             _     -> ", which can be any of "<>tshow cpts
-   
+
       pCpt2aCpt = conceptMap ci
-      conceptsGraph = conceptGraph ci
       signats = signatures env ci  -- Pass constraint to subexpressions for disambiguation
 
 -- | term2Expr converts a Term to an Expression, ensuring that the Expression and each of its subexpressions has precisely one concrete signature.
@@ -1815,8 +1678,7 @@ signatures env ci mConstraintSig trm =
 --   If ambiguities still remain, these are reported as type errors to the user.
 term2Expr :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded Expression
 term2Expr env ci mConstraintSig term
-  = -- trace ("Conceptsgraph: " <> tshow conceptsGraph<>"\n") $
-    do sgnTree <- signatures env ci mConstraintSig term
+  = do sgnTree <- signatures env ci mConstraintSig term
        case sgnTree of
          STnullary    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous nullary term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STunary _    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous unary term: "   <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
@@ -1838,7 +1700,7 @@ term2Expr env ci mConstraintSig term
                   expr <- rootExpression refinedTree
                   let finalSig = rootSignature sgnTree
                   -- Apply refineANY one more time to eliminate any remaining TOP/BOT
-                  let finalExpr = refineANY conceptsGraph finalSig expr
+                  let finalExpr = refineANY finalSig expr
                       finalExprSig = sign finalExpr
                   -- Check if the final expression is concrete
                   if isConcreteSignature finalExprSig
@@ -1848,8 +1710,6 @@ term2Expr env ci mConstraintSig term
                       "The inferred signature " <> tshow finalExprSig <> " contains TOP or BOT. " <>
                       "Please add an explicit signature."
   where
-    conceptsGraph = conceptGraph ci
-
     rootSignature sgnTree =
        case sgnTree of
          STbinary _ _ [(_, sgn, _)] -> sgn
@@ -1879,7 +1739,7 @@ term2Expr env ci mConstraintSig term
                     Checked r _ -> tshow (rootSignature r)
                     Errors _ -> "error(s)") $
        result
-      where 
+      where
         trmP :: Term TermPrim
         trmP = case opSigns sgnTree of
                  [(_, _, t)] -> t
@@ -1888,10 +1748,10 @@ term2Expr env ci mConstraintSig term
            = case sgnTree of
                STnullary triples ->
                  case [ (expr, sn,  t) | (expr, sgn, t) <- triples, isIdentityOrVorB expr
-                                       , Just sn <- [ trace ("       meetSig ("<>tshow mold<>") ("<>tshow sgn<>") = "<>tshow (meetSig conceptsGraph mold sgn)) $
-                                                      meetSig conceptsGraph mold sgn ]]<>
+                                       , Just sn <- [ trace ("       meetSig ("<>tshow mold<>") ("<>tshow sgn<>") = "<>tshow (meetSig mold sgn)) $
+                                                      meetSig mold sgn ]]<>
                       [ (expr, sgn, t) | (expr, sgn, t) <- triples, not (isIdentityOrVorB expr)
-                                       , Just _ <- [joinSig conceptsGraph mold sgn]]
+                                       , Just _ <- [joinSig mold sgn]]
                   of
                    [triple] -> pure (STnullary [triple])
                    [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature found that matches "<>tshow mold<>" in STnullary\n"<>showOpTree sgnTree)
@@ -1902,9 +1762,9 @@ term2Expr env ci mConstraintSig term
                    isIdentityOrVorB (EDcV{}) = True
                    isIdentityOrVorB (EBin{}) = True
                    isIdentityOrVorB _ = False
-               
+
                STunary subTree triples ->
-                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just _ <- [joinSig conceptsGraph sgn mold] ] of
+                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just _ <- [joinSig sgn mold] ] of
                    [triple@(_, sgn, trm)] -> do
                      -- For PFlp: the refined signature is flipped, but subTree contains unflipped relations
                      -- So we must flip the signature back before recursing
@@ -1915,9 +1775,9 @@ term2Expr env ci mConstraintSig term
                   where
                      isFlip (PFlp _ _) = True
                      isFlip _          = False
-       
+
                STbinary stLeft stRight triples | isInter sgnTree ->
-                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph mold sgn] ] of
+                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geqSig mold sgn] ] of
                    [triple@(_, sgn, _)] -> -- trace ("\n18. isInter case: refining with sgn=" <> tshow sgn <> ", mold=" <> tshow mold) $
                          do
                            refinedLeft  <- refineSgn sgn stLeft
@@ -1926,30 +1786,30 @@ term2Expr env ci mConstraintSig term
                    [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature of "<>showP trmP<>" found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
                    filtered -> msg filtered sgnTree "Please specify the signature explicitly."
                STbinary stLeft stRight triples | isPLrs sgnTree ->
-                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph mold sgn] ] of
+                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geqSig mold sgn] ] of
                    [triple@(expr, sgn, _)] -> do
-                     let between = getBetweenConcept conceptsGraph expr
+                     let between = getBetweenConcept expr
                      refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
                      refinedRight <- refineSgn (Sign (target sgn) between) stRight
                      pure (STbinary refinedLeft refinedRight [triple])
                    [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature of "<>showP trmP<>" found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
                    filtered -> msg filtered sgnTree "Please specify the signature explicitly."
                STbinary stLeft stRight triples | isPRrs sgnTree ->
-                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph mold sgn] ] of
+                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geqSig mold sgn] ] of
                    [triple@(expr, sgn, _)] -> do
-                     let between = getBetweenConcept conceptsGraph expr
+                     let between = getBetweenConcept expr
                      refinedLeft  <- refineSgn (Sign between (source sgn)) stLeft
                      refinedRight <- refineSgn (Sign between (target sgn)) stRight
                      pure (STbinary refinedLeft refinedRight [triple])
                    [] -> Errors . pure $ CTXE (origin (getTerm sgnTree)) ("No signature of "<>showP trmP<>" found that matches "<>tshow mold<>" in STbinary\n"<>showOpTree sgnTree)
                    filtered -> msg filtered sgnTree "Please specify the signature explicitly."
                STbinary stLeft stRight triples | isIntra sgnTree ->
-                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geq conceptsGraph mold sgn] ] of
+                 case [ (expr, sgn, trm) | (expr, sgn, trm) <- triples, Just True <- [geqSig mold sgn] ] of
                    [triple@(expr, sgn, _)] -> do
                      -- Extract the 'between' concept from the refined expression to properly constrain subtrees.
                      -- For compositions e1;e2, the between concept is target(e1) = source(e2).
                      -- Using botCpt would allow multiple signatures to pass through incorrectly.
-                     let between = getBetweenConcept conceptsGraph expr
+                     let between = getBetweenConcept expr
                      refinedLeft  <- refineSgn (Sign (source sgn) between) stLeft
                      refinedRight <- refineSgn (Sign between (target sgn)) stRight
                      pure (STbinary refinedLeft refinedRight [triple])
@@ -2145,6 +2005,7 @@ maybeOverGuarded :: (t -> Guarded a) -> Maybe t -> Guarded (Maybe a)
 maybeOverGuarded _ Nothing = pure Nothing
 maybeOverGuarded f (Just x) = Just <$> f x
 
-getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
-getConcept Src = aConcToType . source
-getConcept Tgt = aConcToType . target
+-- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
+-- getConcept :: (HasSignature a) => SrcOrTgt -> a -> Type
+-- getConcept Src = aConcToType . source
+-- getConcept Tgt = aConcToType . target
