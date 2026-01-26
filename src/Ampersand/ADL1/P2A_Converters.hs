@@ -292,14 +292,14 @@ pCtx2aCtx env
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       uniqueNames "interface" p_interfaces
       let actx =
-           trace ("\n🔍 DEBUG allAConcepts created. Count: " <> tshow (length allAConcepts) <> 
-                     "\n  Concepts with their aliases:" <>
-                     T.concat ["\n    - " <> tshow cpt <> " -> aliases: " <> 
-                              (case cpt of 
-                                PlainConcept{aliases=als} -> tshow (Set.toList als)
-                                ONE -> "[special ONE]"
-                                _ -> "[complex type]")
-                              | cpt <- allAConcepts]) $
+          --  trace ("\n🔍 DEBUG allAConcepts created. Count: " <> tshow (length allAConcepts) <> 
+          --            "\n  Concepts with their aliases:" <>
+          --            T.concat ["\n    - " <> tshow cpt <> " -> aliases: " <> 
+          --                     (case cpt of 
+          --                       PlainConcept{aliases=als} -> tshow (Set.toList als)
+          --                       ONE -> "[special ONE]"
+          --                       _ -> "[complex type]")
+          --                     | cpt <- allAConcepts]) $
             ACtx
               { ctxnm = n1,
                 ctxlbl = lbl,

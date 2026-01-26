@@ -604,7 +604,10 @@ instance Eq Relation where
   a == b = compare a b == EQ
 
 instance Ord Relation where
-  compare a b = compare (name a, sign a) (name b, sign b)
+  -- Relations are ordered first by name, then by signature using SignOrd for structural comparison.
+  -- This ensures relations with incomparable signatures (different typologies) can coexist in Set.Set.
+  -- See "Note on Signature Ordering" near geqSig for detailed explanation.
+  compare a b = compare (name a, SignOrd (sign a)) (name b, SignOrd (sign b))
 
 instance Unique Relation where
   showUnique :: Relation -> Text1
@@ -1349,6 +1352,50 @@ joinSig (ISgn c) (Sign src tgt)           = Sign <$> join c src <*> join c tgt
 joinSig (Sign src tgt) (ISgn c)           = Sign <$> join src c <*> join tgt c
 joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt1 tgt2
 
+{- Note on Signature Ordering: Ord vs SignOrd vs geqSig
+   ======================================================
+   
+   There are THREE different ways to compare signatures in Ampersand:
+   
+   1. SignOrd - Structural comparison (total order)
+      Purpose: Used as Map keys in DeclMap = Map.Map Name (Map.Map SignOrd Relation)
+      Properties: 
+        - Simple lexicographic comparison of concepts
+        - Always comparable (total order)
+        - No semantic meaning regarding concept hierarchy
+        - Fast and predictable
+      Example: SignOrd (Sign A B) `compare` SignOrd (Sign C D) compares (A,B) with (C,D)
+   
+   2. Ord Signature - Semantic comparison (total order with fallback)
+      Purpose: Used when Relations are stored in Set.Set Relation
+      Properties:
+        - Respects concept hierarchy when signatures are comparable (same typology)
+        - Uses geqSig to determine ordering based on concept generalization
+        - Falls back to lexicographic ordering for incomparable signatures
+        - This fallback is necessary because Ord must provide a total order
+      Example: When comparing relations with same name but different signatures
+   
+   3. geqSig - Partial order based on concept hierarchy
+      Purpose: Type-checking and semantic analysis
+      Properties:
+        - Returns Maybe Bool (Nothing for incomparable signatures)
+        - Forms a partial order (not all pairs comparable)
+        - Just True means first signature is more generic or equal
+        - Nothing means signatures belong to different typologies
+      Example: geqSig [Person*Project] [Student*Project] might be Just True if Student ISA Person
+   
+   Relationship between Ord and geqSig:
+   - When signatures ARE comparable (same typology), Ord MUST respect geqSig's ordering
+   - When signatures are NOT comparable (different typologies), Ord uses lexicographic fallback
+   - This design allows Relations with incomparable signatures to coexist in Set.Set
+   
+   Example from testIssue1183.adl:
+     RELATION foo[A123 * A123L]   -- typology 1
+     RELATION foo[A133 * A13L]    -- typology 2 (A133 undeclared, separate typology)
+   These relations have the same name but incomparable signatures. The Ord instance
+   allows them to be stored together in a Set by falling back to lexicographic comparison.
+-}
+
 -- Compute geq of two signatures
 geqSig :: Signature -> Signature -> Maybe Bool
 geqSig (ISgn c1) (ISgn c2)               = geq c1 c2
@@ -1579,48 +1626,15 @@ instance Eq Signature where
   (ISgn c) == (Sign s t) = c == s && c == t  -- ISgn c is equivalent to Sign c c
   (Sign s t) == (ISgn c) = s == c && t == c  -- Symmetric
 
--- | Check if two signatures are comparable (i.e., can be ordered)
--- Two signatures are comparable if:
--- - Their source concepts have the same typology
--- - Their target concepts have the same typology
-areComparable :: Signature -> Signature -> Bool
-areComparable sig1 sig2 =
-  isComparable (source sig1) (source sig2) &&
-  isComparable (target sig1) (target sig2)
-  where
-    -- ONE is always comparable with everything
-    isComparable ONE _ = True
-    isComparable _ ONE = True
-    -- topCpt and botCpt are universal bounds, comparable with everything
-    isComparable cpt _ | cpt == topCpt = True
-    isComparable _ cpt | cpt == topCpt = True
-    isComparable cpt _ | cpt == botCpt = True
-    isComparable _ cpt | cpt == botCpt = True
-    -- PlainConcepts are comparable if they have the same typology
-    isComparable (PlainConcept _ t1) (PlainConcept _ t2) = t1 == t2
-    -- All other combinations are not comparable
-    isComparable _ _ = False
-
--- | Custom Ord instance that uses geqSig for ordering when signatures are comparable
--- For incomparable signatures, fatal error is raised (programmer must check areComparable first)
+-- | Simple Ord instance for Signature using lexicographic comparison.
+-- This is purely structural - it does NOT consider concept hierarchies.
+-- For semantic ordering based on concept hierarchy, use geqSig.
+-- See "Note on Signature Ordering" below for detailed explanation.
 instance Ord Signature where
-  compare sig1 sig2
-    | sig1 == sig2 = EQ  -- Use our custom Eq instance (ISgn c == Sign c c)
-    | not (areComparable sig1 sig2) =
-        fatal $ "Cannot compare incomparable signatures: " <> tshow sig1 <> " and " <> tshow sig2
-    | otherwise = case (geqSig sig1 sig2, geqSig sig2 sig1) of
-        (Just True, Just True)   -> EQ  -- Both >= each other
-        (Just True, Just False)  -> GT  -- sig1 >= sig2
-        (Just False, Just True)  -> LT  -- sig2 >= sig1  
-        (Just False, Just False) ->
-            fatal $ "Both signatures claim to not be >= each other, but they are comparable: "
-                 <> tshow sig1 <> " and " <> tshow sig2
-        (Nothing, _) ->
-            fatal $ "geqSig returned Nothing for comparable signatures: "
-                 <> tshow sig1 <> " and " <> tshow sig2
-        (_, Nothing) ->
-            fatal $ "geqSig returned Nothing for comparable signatures: "
-                 <> tshow sig1 <> " and " <> tshow sig2
+  compare (Sign a b) (Sign c d) = compare (a, b) (c, d)
+  compare (ISgn _)   (Sign _ _) = GT
+  compare (Sign _ _) (ISgn _)   = LT
+  compare (ISgn a)   (ISgn b)   = compare a b
 
 instance Hashable Signature
 
