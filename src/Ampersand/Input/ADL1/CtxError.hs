@@ -237,28 +237,6 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
           showC Nothing = "???"
           showC (Just tp) = showA tp
 
--- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
--- mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
--- mkTypeMismatchError o rel sot typ =
---   Errors . pure $ CTXE (origin o) message
---   where
---     message =
---       "The "
---         <> ( case sot of
---                Src -> "source"
---                Tgt -> "target"
---            )
---         <> "("
---         <> tshow typ
---         <> ") for the population pairs "
---         <> "\n  must be more specific or equal to that of the "
---         <> "relation you wish to populate ("
---         <> tshow rel
---         <> showWithAliases (sign rel)
---         <> " found at "
---         <> tshow (origin rel)
---         <> ")."
-
 -- | Rules, identity statements, view definitions, interfaces, and box labels
 --   need unique names.
 uniqueNames ::

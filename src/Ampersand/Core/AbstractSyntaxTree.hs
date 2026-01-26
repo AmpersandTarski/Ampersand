@@ -81,11 +81,8 @@ module Ampersand.Core.AbstractSyntaxTree
     showSign,
     SignOrd (..),
     AliasGraph, makeAliasGraph,
--- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
-    -- Type (..),
-    -- typeOrConcept,
     topCpt, botCpt,
-    geq, join, meet,
+    geq, join, meet, meetIsect,
     conceptLabel,
     smallerConcepts, largerConcepts,
     joinSig, meetSig, geqSig, isConcreteSignature,
@@ -1281,7 +1278,7 @@ l .!. r  = ERad (l, r)
 l .*. r  = EPrd (l, r)
 
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
-   Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
+   Suppose the user says CLASSIFY Student ISA Person and CLASSIFY Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
    does not. In that case, -(r!s) (with target r=Student and source s=Employee) is defined, but -r;-s is not.
    So in order to let -(r!s) be equal to -r;-s we must not check for the existence of these types, for the Rotterdam paper already shows that this is fine.
 -}
@@ -1315,11 +1312,11 @@ instance HasSignature Expression where
   -- Since the type system is closed, all signatures are correct unless there is an error in this compiler.
   sign (EEqu (l, _)) = sign l
   sign (EInc (l, _)) = sign l
-  sign (EIsc (l, r)) = fromMaybe (fatal ("Incompatible signatures in intersection: "<> tshow (sign l) <> " /\\ " <> tshow (sign r))) 
+  sign (EIsc (l, r)) = fromMaybe (fatal ("Incompatible signatures in intersection: "<> tshow (sign l) <> " /\\ " <> tshow (sign r)))
                                  (sign l `meetSig` sign r)
-  sign (EUni (l, r)) = fromMaybe (fatal ("Incompatible signatures in union: "<> tshow (sign l) <> " \\/ " <> tshow (sign r))) 
+  sign (EUni (l, r)) = fromMaybe (fatal ("Incompatible signatures in union: "<> tshow (sign l) <> " \\/ " <> tshow (sign r)))
                                  (sign l `joinSig` sign r)
-  sign (EDif (l, r)) = fromMaybe (fatal ("Incompatible signatures in difference: "<> tshow (sign l) <> " - " <> tshow (sign r))) 
+  sign (EDif (l, r)) = fromMaybe (fatal ("Incompatible signatures in difference: "<> tshow (sign l) <> " - " <> tshow (sign r)))
                                  (sign l `joinSig` sign r)
   sign (ELrs (l, r)) = Sign (source l) (source r)
   sign (ERrs (l, r)) = Sign (target l) (target r)
@@ -1337,35 +1334,6 @@ instance HasSignature Expression where
   sign (EBin _ sgn) = sgn
   sign (EDcV sgn) = sgn
   sign (EMp1 _ c) = ISgn c
-
-  -- Obsolete: signWithGraph computes the correct signature using the concept graph
-  -- for inter-type operations (EEqu, EInc, EIsc, EUni, EDif)
-  {- Deprecated
-  signWithGraph g (EEqu (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EEqu: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
-                                            (joinSig (signWithGraph g l) (signWithGraph g r))
-  signWithGraph g (EInc (l, _)) = signWithGraph g l
-  signWithGraph g (EIsc (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EIsc: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
-                                            (meetSig (signWithGraph g l) (signWithGraph g r))
-  signWithGraph g (EUni (l, r)) = fromMaybe (fatal $ "Cannot compute signature for EUni: " <> tshow (signWithGraph g l) <> " and " <> tshow (signWithGraph g r)) 
-                                            (joinSig (signWithGraph g l) (signWithGraph g r))
-  signWithGraph g (EDif (l, _)) = signWithGraph g l
-  signWithGraph g (ELrs (l, r)) = Sign (source (signWithGraph g l)) (source (signWithGraph g r))
-  signWithGraph g (ERrs (l, r)) = Sign (target (signWithGraph g l)) (target (signWithGraph g r))
-  signWithGraph g (EDia (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
-  signWithGraph g (ECps (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
-  signWithGraph g (ERad (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
-  signWithGraph g (EPrd (l, r)) = Sign (source (signWithGraph g l)) (target (signWithGraph g r))
-  signWithGraph g (EKl0 e) = signWithGraph g e
-  signWithGraph g (EKl1 e) = signWithGraph g e
-  signWithGraph g (EFlp e) = flp (signWithGraph g e)
-  signWithGraph g (ECpl e) = signWithGraph g e
-  signWithGraph g (EBrk e) = signWithGraph g e
-  signWithGraph _ (EDcD d) = sign d
-  signWithGraph _ (EDcI c) = ISgn c
-  signWithGraph _ (EBin _ sgn) = sgn
-  signWithGraph _ (EDcV sgn) = sgn
-  signWithGraph _ (EMp1 _ c) = ISgn c
--}
 
 -- Compute meet of two signatures
 meetSig :: Signature -> Signature -> Maybe Signature
@@ -1522,7 +1490,7 @@ aConceptDataType = mkDataType "Ampersand.Core.AbstractSyntaxTree.A_Concept"
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
 sessionConcept :: A_Concept
-sessionConcept = PlainConcept {aliases = Set.fromList [nameOfSESSION], typology = singletonTypology nameOfSESSION}
+sessionConcept = PlainConcept {aliases = Set.singleton nameOfSESSION, typology = singletonTypology nameOfSESSION}
 
 type A_Concepts = Set.Set A_Concept
 
@@ -1579,18 +1547,6 @@ toConceptName opString cpts = case (try2Name ConceptName . T.intercalate opStrin
   Left err -> fatal $ "Not a proper concept name: " <> tshow cpts <> ". " <> err
   Right (nm, _) -> nm
 
--- Obsolete:
--- instance Labeled A_Concept where
---   mLabel cpt = case cpt of
---     PlainConcept {aliases = names} -> case Set.toList names of (_, lbl) : _ -> lbl; _ -> fatal "This A_Concept has no name"
---     DISJT cs -> (Just . Label . T.intercalate "><"  . fmap m . Set.toList) cs
---     UNION cs -> (Just . Label . T.intercalate "\\/" . fmap m . Set.toList) cs
---     ISECT cs -> (Just . Label . T.intercalate "/\\" . fmap m . Set.toList) cs
---     _ -> Nothing
---    where
---     m :: A_Concept -> Text
---     m a = maybe "" tshow (mLabel a)
-
 instance Show A_Concept where
   show = T.unpack . showWithAliases
 
@@ -1603,7 +1559,7 @@ class (Show a) => ShowWithAliases a where
 instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept {aliases=names} =
     case Set.toList names of
-      []  -> fatal "This A_Concept has no name"
+      []  -> fatal "2This A_Concept has no name"
       [nm] -> fullName nm  -- Use name if no label
       xs -> fullName cpt <> "(alias: " <> T.intercalate ", " (fmap fullName xs) <> ")"
   showWithAliases _ = fullName ONE
@@ -1614,7 +1570,57 @@ instance Unique (A_Concept, PAtomValue) where
       readable = tshow val <> "[" <> text1ToText (showUnique c) <> "]"
 
 data Signature = Sign !A_Concept  !A_Concept
-               | ISgn !A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
+               | ISgn !A_Concept deriving (Typeable, Generic, Data)
+
+-- | Custom Eq instance that treats ISgn c and Sign c c as equivalent
+instance Eq Signature where
+  (Sign s1 t1) == (Sign s2 t2) = s1 == s2 && t1 == t2
+  (ISgn c1) == (ISgn c2) = c1 == c2
+  (ISgn c) == (Sign s t) = c == s && c == t  -- ISgn c is equivalent to Sign c c
+  (Sign s t) == (ISgn c) = s == c && t == c  -- Symmetric
+
+-- | Check if two signatures are comparable (i.e., can be ordered)
+-- Two signatures are comparable if:
+-- - Their source concepts have the same typology
+-- - Their target concepts have the same typology
+areComparable :: Signature -> Signature -> Bool
+areComparable sig1 sig2 =
+  isComparable (source sig1) (source sig2) &&
+  isComparable (target sig1) (target sig2)
+  where
+    -- ONE is always comparable with everything
+    isComparable ONE _ = True
+    isComparable _ ONE = True
+    -- topCpt and botCpt are universal bounds, comparable with everything
+    isComparable cpt _ | cpt == topCpt = True
+    isComparable _ cpt | cpt == topCpt = True
+    isComparable cpt _ | cpt == botCpt = True
+    isComparable _ cpt | cpt == botCpt = True
+    -- PlainConcepts are comparable if they have the same typology
+    isComparable (PlainConcept _ t1) (PlainConcept _ t2) = t1 == t2
+    -- All other combinations are not comparable
+    isComparable _ _ = False
+
+-- | Custom Ord instance that uses geqSig for ordering when signatures are comparable
+-- For incomparable signatures, fatal error is raised (programmer must check areComparable first)
+instance Ord Signature where
+  compare sig1 sig2
+    | sig1 == sig2 = EQ  -- Use our custom Eq instance (ISgn c == Sign c c)
+    | not (areComparable sig1 sig2) =
+        fatal $ "Cannot compare incomparable signatures: " <> tshow sig1 <> " and " <> tshow sig2
+    | otherwise = case (geqSig sig1 sig2, geqSig sig2 sig1) of
+        (Just True, Just True)   -> EQ  -- Both >= each other
+        (Just True, Just False)  -> GT  -- sig1 >= sig2
+        (Just False, Just True)  -> LT  -- sig2 >= sig1  
+        (Just False, Just False) ->
+            fatal $ "Both signatures claim to not be >= each other, but they are comparable: "
+                 <> tshow sig1 <> " and " <> tshow sig2
+        (Nothing, _) ->
+            fatal $ "geqSig returned Nothing for comparable signatures: "
+                 <> tshow sig1 <> " and " <> tshow sig2
+        (_, Nothing) ->
+            fatal $ "geqSig returned Nothing for comparable signatures: "
+                 <> tshow sig1 <> " and " <> tshow sig2
 
 instance Hashable Signature
 
@@ -1668,8 +1674,6 @@ data ContextInfo = CI
     -- | a map of declarations and the corresponding types. We need this to look up declarations during type checking.
     declarationsMap :: !(Map.Map Name (Map.Map SignOrd Relation)),
     -- | types not used in any declaration
--- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
-    -- soloConcs :: !(Set.Set Type),
     allPConcepts :: !(Set.Set P_Concept),
     -- | a map that must be used to convert P_Concept to A_Concept, i.e. pCpt2aCpt
     conceptMap :: !ConceptMap,
@@ -1679,35 +1683,6 @@ data ContextInfo = CI
     defaultFormat :: !PandocFormat
   }
   deriving (Show)
-
--- Obsolete per Jan 21st, 2026, removing Type-related code from P2A_Converters:
--- typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
--- typeOrConcept fun (BuiltIn TypeOfOne) = Left . fun $ mkPConcept nameOfONE
--- typeOrConcept fun (UserConcept nm) = Left . fun $ mkPConcept nm
--- typeOrConcept _ (BuiltIn x) = Right (Just x)
--- typeOrConcept _ RepresentSeparator = Right Nothing
-
--- data Type
---   = UserConcept !Name
---   | BuiltIn !TType
---   | RepresentSeparator
---   deriving (Eq, Ord)
-
--- instance Named Type where
---   name t = case t of
---     UserConcept nm -> nm
---     BuiltIn tt -> case try2Name ConceptName ("AmpersandBuiltIn" <> tshow tt) of
---       Left err -> fatal $ "Not a proper name: " <> err
---       Right (nm, _) -> nm
---     RepresentSeparator -> case try2Name ConceptName ("AmpersandBuiltIn" <> "RepresentSeparator") of
---       Left err -> fatal $ "Not a proper name: " <> err
---       Right (nm, _) -> nm
-
--- instance Show Type where
---   show a = T.unpack $ case a of
---     UserConcept nm -> fullName nm
---     BuiltIn tt -> "BuiltIn " <> tshow tt
---     RepresentSeparator -> "RepresentSeparator"
 
 -- for faster comparison
 newtype SignOrd = SignOrd Signature
@@ -2009,7 +1984,7 @@ emptyTypology :: Typology
 emptyTypology = Typology
   { tyroot = Set.singleton nameOfONE
   , tyCpts = []
-  , tyGrph = empty
+  , tyGrph = vertex (Set.singleton nameOfONE)
   }
 
 singletonTypology :: Name -> Typology
@@ -2114,7 +2089,7 @@ topCpt and botCpt are universal bottom and top elements.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
 smallerConcepts :: A_Concept -> [A_Concept]
 smallerConcepts ONE = []
-smallerConcepts cpt@PlainConcept{} = 
+smallerConcepts cpt@PlainConcept{} =
   let rtc = (transitiveClosure . tyGrph . typology) cpt
       -- preSet gives all predecessors (more specific concepts)
       moreSpecific = Set.toList $ preSet (aliases cpt) rtc
@@ -2135,31 +2110,49 @@ largerConcepts _ = []  -- DISJT, UNION, ISECT
 
 -- | geq for A_Concepts using embedded typology (no external graph needed!)
 geq :: A_Concept -> A_Concept -> Maybe Bool
-geq a b
-  | a == b = Just True
-  | a == topCpt = Just True
-  | b == topCpt = Just False
-  | b == botCpt = Just True
-  | a == botCpt = Just False
+geq a@PlainConcept{} b@PlainConcept{}
+  | a == b                   = Just True
+  | a == topCpt              = Just True
+  | b == topCpt              = Just False
+  | b == botCpt              = Just True
+  | a == botCpt              = Just False
   | typology a /= typology b = Nothing  -- Different typologies, no geq
   | otherwise = Just (hasEdge (aliases a) (aliases b) (tyGrph (typology a)))
+geq a b | a==b = Just True
+geq _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 -- | Jjoin for A_Concepts using embedded typology (no external graph needed!)
 join :: A_Concept -> A_Concept -> Maybe A_Concept
 join a b
-  | a == b = Just a
-  | a == topCpt = Just topCpt
-  | b == topCpt = Just topCpt
-  | a == botCpt = Just b
-  | b == botCpt = Just a
+  | a == b                   = Just a
+  | a == topCpt              = Just topCpt
+  | b == topCpt              = Just topCpt
+  | a == botCpt              = Just b
+  | b == botCpt              = Just a
   | typology a /= typology b = Nothing  -- Different typologies, no join
   | otherwise = case joinX (tyGrph (typology a)) a b of
+                  Just result | Set.null result || nameOfONE `Set.member` result -> 
+                    fatal $ tshow a <> " `join` " <> tshow b <> " produced alias set: " <> tshow result
                   Just result -> Just (PlainConcept result (typology a))
                   Nothing -> Nothing
 
 -- | meet for A_Concepts using embedded typology
 meet :: A_Concept -> A_Concept -> Maybe A_Concept
 meet a b
+  | a == b                   = Just a
+  | a == topCpt              = Just b
+  | b == topCpt              = Just a
+  | a == botCpt              = Just botCpt
+  | b == botCpt              = Just botCpt
+  | typology a /= typology b = Nothing
+  | otherwise = case meetX (tyGrph (typology a)) a b of
+                  Just result | Set.null result || nameOfONE `Set.member` result -> 
+                    fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
+                  Just result -> Just (PlainConcept result (typology a))
+                  Nothing -> Nothing
+
+meetIsect :: A_Concept -> A_Concept -> Maybe A_Concept
+meetIsect a b
   | a == b = Just a
   | a == topCpt = Just b
   | b == topCpt = Just a
@@ -2167,6 +2160,8 @@ meet a b
   | b == botCpt = Just botCpt
   | typology a /= typology b = Nothing
   | otherwise = case meetX (tyGrph (typology a)) a b of
+                  Just result | Set.null result || nameOfONE `Set.member` result -> 
+                    fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
                   Just result -> Just (PlainConcept result (typology a))
                   Nothing -> Just (ISECT (Set.fromList [a, b]))  -- Fallback to disjunction
 
@@ -2262,7 +2257,7 @@ The join intersection set for "oneven" and "float" is: ["gegeven","num"]
 -- | Get the label for a concept from its AConceptDef in a context.
 --   Returns the label if defined in any AConceptDef with the same name.
 conceptLabel :: A_Context -> A_Concept -> Maybe Label
-conceptLabel ctx cpt = 
+conceptLabel ctx cpt =
   case [acdlabel cd | cd <- ctxcds ctx, acdcpt cd == cpt] of
     [] -> Nothing
     lbl:_ -> lbl
@@ -2276,10 +2271,10 @@ conceptLabel ctx cpt =
 --   So, it is a directed acyclic graph.
 --   P_Concepts are mapped to A_Concepts, and all cycles in the classification of P_Concepts are condensed into one
 --   A_Concept. This is done by the function `makeConceptMap`.
-type ConceptMap = P_Concept -> A_Concept
+type ConceptMap = Origin -> P_Concept -> Guarded A_Concept
 
 instance Show ConceptMap where
-  show _ = "The function that maps P_Concepts to A_Concepts"
+  show _ = "The (guarded) function that maps P_Concepts to A_Concepts"
 
 {-
 makeConceptMap :: [PConceptDef] -> [PClassify] -> Map.Map Name (AdjacencyMap A_Concept) -> ConceptMap

@@ -1,5 +1,5 @@
 CONTEXT ARM20Test2 IN DUTCH
---$ Onderstaand pattern geeft een beoogde fout -}
+--$ This test validates that field expressions must be wider than the view concept
 ------------------------------------------------------------
 PATTERN ARM20Test2
 
@@ -9,7 +9,7 @@ CLASSIFY Criterium ISA Verwachting
 RELATION expID[Verwachting*ExpectationID] [MAP] PRAGMA "" "staat in de business bekend als"
 
 VIEW Verwachtingen: Verwachting(critBF, bfCrit~, expID)
-{- FOUTMELDING voor bovenstaande regel:
+{- Errors expected for VIEW Verwachtingen:
 .../Ampersand/testing/Travis/testcases/Check/ShouldFail/ARM20-Test2.adl:11:33 error:
   The expression in a VIEW segment is too narrow for the VIEW concept.
     Expression: critBF[Criterium*Bedrijfsfunctie]
@@ -24,6 +24,9 @@ VIEW Verwachtingen: Verwachting(critBF, bfCrit~, expID)
     The source of the expression (Criterium) is more specific than the VIEW concept (Verwachting).
     A VIEW expression must work for all instances of the VIEW concept, not just a subset.
 -}
+
+VIEW Bedrijfsfuncties: Bedrijfsfunctie(critBF~, bfCrit)
+{- No errors expected -}
 ENDPATTERN
 ------------------------------------------------------------
 ENDCONTEXT

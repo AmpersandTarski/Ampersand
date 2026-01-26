@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -163,6 +163,7 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/ARM20-Test2.adl
     testing/Travis/testcases/Check/ShouldFail/Bug_SingletonExpression.adl
     testing/Travis/testcases/Check/ShouldFail/EnforceTest1.adl
+    testing/Travis/testcases/Check/ShouldFail/export.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1063.adl
     testing/Travis/testcases/Check/ShouldFail/Issue1281.adl
     testing/Travis/testcases/Check/ShouldFail/Issue298.adl

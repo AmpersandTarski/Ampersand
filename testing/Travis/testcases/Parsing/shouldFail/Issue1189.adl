@@ -1,7 +1,6 @@
 CONTEXT Issue1189
 
-RELATION r[A * B] DEFAULT TGT EVALPHP "Ordina" SRC VALUE 10, 20
+RELATION r[Amper * Zand] DEFAULT TGT EVALPHP "Open Universiteit" SRC VALUE 10, "NL"
+-- This should fail, because 10 should match the TType of Amper, which defaults to ALPHANUMERIC.
 
 ENDCONTEXT
-
--- This should fail, because 10 should match the TType of A

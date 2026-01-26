@@ -14,6 +14,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (ConceptMap)
+import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Basics
 import Ampersand.Classes.Relational
 import Ampersand.Core.ShowAStruct
@@ -717,6 +718,11 @@ dRule pCpt2aCpt term0 = case term0 of
   -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
   where
     term2rTerm :: Term TermPrim -> RTerm
+    getConcept :: Origin -> P_Concept -> A_Concept
+    getConcept orig pcpt = case pCpt2aCpt orig pcpt of
+      Checked c _ -> c
+      Errors errs -> fatal ("Concept lookup failed in dRule: " <> tshow errs)
+
     term2rTerm term1 =
       if isValid result
         then result
@@ -776,15 +782,15 @@ dRule pCpt2aCpt term0 = case term0 of
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
             Prim (PFlipped trm) -> RFlp (term2rTerm (Prim trm))
-            Prim (Pid _ c) -> RId (pCpt2aCpt c)
-            Prim (PBind _ oper c) -> RBind oper (pCpt2aCpt c)
-            Prim (Pfull _ s t) -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
-            Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
+            Prim (Pid _ c) -> RId (getConcept (Origin "Pid") c)
+            Prim (PBind _ oper c) -> RBind oper (getConcept (Origin "PBind") c)
+            Prim (Pfull _ s t) -> RVee (getConcept (Origin "Pfull") s) (getConcept (Origin "Pfull") t)
+            Prim (Patm _ a (Just c)) -> RAtm a (getConcept (Origin "Patm") c)
             Prim (PI _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PBin _ _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
-            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt (pSrc sgn)) (pCpt2aCpt (pTgt sgn))
+            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (getConcept (Origin "PNamedR") (pSrc sgn)) (getConcept (Origin "PNamedR") (pTgt sgn))
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
 

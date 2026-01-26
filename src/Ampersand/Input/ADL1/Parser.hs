@@ -511,7 +511,10 @@ pPragma =
 
 --- RelDefaults ::= 'DEFAULT' RelDefault*
 pRelDefaults :: AmpParser [PRelationDefault]
-pRelDefaults = (pKey . toText1Unsafe) "DEFAULT" *> (toList <$> many1 pRelDefault)
+pRelDefaults = do
+  _ <- (pKey . toText1Unsafe) "DEFAULT"
+  defaults <- toList <$> many1 pRelDefault
+  trace ("PARSER: pRelDefaults parsed " <> tshow (length defaults) <> " defaults: " <> tshow defaults) $ pure defaults
 
 --- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
 pRelDefault :: AmpParser PRelationDefault

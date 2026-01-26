@@ -105,8 +105,11 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     candidateTables :: [PlugSQL]
     candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
-    components = {- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps) -} comps
+    components = -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
+                 comps
       where
+        -- Orphan relations are relations that cause link tables in the database,
+        -- i.e relation that are neither univalent nor injective.
         comps = map componentsForTypology (typologies context)
           <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
         componentsForTypology typol =
@@ -116,8 +119,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
         relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
+            Just x@(PlainConcept{}) -> aliases x `elem` tyCpts typol
+            Just _ -> False
             Nothing -> False
-            Just x -> aliases x `elem` tyCpts typol
 
     allRelationsInContext = toList (relsDefdIn context)
 
@@ -126,9 +130,10 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
       (Nothing, [rel]) -> makeLinkTable rel
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
-      (Just typol, _) -> makeConceptTable typol rels
+      (Just typol, _) | not (Set.null (tyroot typol)) -> makeConceptTable typol rels
+      (Just typol, _) -> fatal $ "Typology with empty root cannot be used to build a concept table: " <> tshow typol
     allKeyConcepts :: [A_Concept]
-    allKeyConcepts = map tyrootToConcept . typologies $ context
+    allKeyConcepts = [ tyrootToConcept typol | typol<-typologies context, (not . null . tyroot) typol ]
       where
         tyrootToConcept :: Typology -> A_Concept
         tyrootToConcept typol = PlainConcept { aliases = tyroot typol, typology = typol }
@@ -151,14 +156,14 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           map aliasSetToConcept (tyCpts typol)
           where
             aliasSetToConcept :: Set.Set Name -> A_Concept  
-            aliasSetToConcept aliasSet = PlainConcept { aliases = aliasSet, typology = typol }
+            aliasSetToConcept aliasSet = if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
             (map toConceptOrRelation allKeyConcepts)
             (toConceptOrRelation keyConcept)
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
-        tableKey = PlainConcept { aliases = tyroot typol, typology = typol }
+        tableKey = if Set.null (tyroot typol) then fatal "2 Empty tyroot in typology" else PlainConcept { aliases = tyroot typol, typology = typol }
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
@@ -346,16 +351,16 @@ suitableAsKey st =
     Object -> True
     TypeOfOne -> fatal "ONE has no key at all. does it?"
 
-typologies :: A_Context -> [Typology]  
+typologies :: A_Context -> [Typology] 
 typologies context =
-  let kernelConcepts = Set.fromList $ concatMap tyCpts (multiKernels . ctxInfo $ context)
-  in (multiKernels . ctxInfo $ context)
-       <> [ Typology {tyroot = c, tyCpts = [c], tyGrph = vertex c}
-          | c <- map aliases . toList $ concs context Set.\\ concs (gens context),
-            c `Set.notMember` kernelConcepts
-          ]
+  multiKernels (ctxInfo context)
+  <> [ Typology {tyroot = c, tyCpts = [c], tyGrph = vertex c}
+     | cpt@PlainConcept{} <- toList $ concs context Set.\\ concs (gens context),
+       let c = aliases cpt,
+       c `notElem` (concatMap tyCpts  . multiKernels . ctxInfo) context
+     ]
 
--- | ConceptOrRelation is ment to be things that can end up in a database. It is designed
+-- | ConceptOrRelation is meant to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.
 type ConceptOrRelation = Either A_Concept Relation
 
