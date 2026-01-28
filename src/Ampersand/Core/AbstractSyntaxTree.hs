@@ -1396,21 +1396,26 @@ joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt
    allows them to be stored together in a Set by falling back to lexicographic comparison.
 -}
 
--- Compute geq of two signatures
+-- Compute geq of two signatures (applicative style)
 geqSig :: Signature -> Signature -> Maybe Bool
 geqSig (ISgn c1) (ISgn c2)               = geq c1 c2
-geqSig (ISgn c) (Sign src tgt)           = do
-  g1 <- geq c src
-  g2 <- geq c tgt
-  Just (g1 && g2)
-geqSig (Sign src tgt) (ISgn c)           = do
-  g1 <- geq src c
-  g2 <- geq tgt c
-  Just (g1 && g2)
-geqSig (Sign src1 tgt1) (Sign src2 tgt2) = do
-  g1 <- geq src1 src2
-  g2 <- geq tgt1 tgt2
-  Just (g1 && g2)
+geqSig (ISgn c) (Sign src tgt)           = (&&) <$> geq c src <*> geq c tgt
+geqSig (Sign src tgt) (ISgn c)           = (&&) <$> geq src c <*> geq tgt c
+geqSig (Sign src1 tgt1) (Sign src2 tgt2) = (&&) <$> geq src1 src2 <*> geq tgt1 tgt2
+-- Compute geq of two signatures (monadic style), just for the fun of it:
+-- geqSig (ISgn c1) (ISgn c2)               = geq c1 c2
+-- geqSig (ISgn c) (Sign src tgt)           = do
+--   g1 <- geq c src
+--   g2 <- geq c tgt
+--   Just (g1 && g2)
+-- geqSig (Sign src tgt) (ISgn c)           = do
+--   g1 <- geq src c
+--   g2 <- geq tgt c
+--   Just (g1 && g2)
+-- geqSig (Sign src1 tgt1) (Sign src2 tgt2) = do
+--   g1 <- geq src1 src2
+--   g2 <- geq tgt1 tgt2
+--   Just (g1 && g2)
 
 isConcreteSignature :: Signature -> Bool
 isConcreteSignature (Sign src tgt) = src/=topCpt && src/=botCpt && tgt/=topCpt && tgt/=botCpt
@@ -2089,7 +2094,7 @@ topCpt = PlainConcept
 botCpt :: A_Concept
 botCpt = PlainConcept
   { aliases = Set.fromList
-      [case try2Name ConceptName "_Cannot_Assign_A_type" of
+      [case try2Name ConceptName "_BOT" of
           Left err -> fatal $ "Not a proper concept name: _BOT. " <> err
           Right (nm, _) -> nm
       ]
