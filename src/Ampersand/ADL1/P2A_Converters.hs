@@ -1060,17 +1060,17 @@ assignOpSigns ss (STunary e _) = STunary e ss
 assignOpSigns ss (STnullary _) = STnullary ss
 
 -- Uncomment showTriple and showGuardedOpTree for certain trace statements. (Search for showTriple or showGuardedOpTree to find out which ones.)
-showTriple :: (Expression, Signature, Term TermPrim) -> Text
-showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
+-- showTriple :: (Expression, Signature, Term TermPrim) -> Text
+-- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
-showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
-showGuardedOpTree (Errors errs) = 
-  "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
-showGuardedOpTree (Checked opTree []) = showOpTree opTree
-showGuardedOpTree (Checked opTree warnings) = 
-  "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
-  showOpTree opTree <> "\n\nWarnings:\n" <> 
-  T.intercalate "\n" (map tshow warnings)
+-- showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
+-- showGuardedOpTree (Errors errs) = 
+--   "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
+-- showGuardedOpTree (Checked opTree []) = showOpTree opTree
+-- showGuardedOpTree (Checked opTree warnings) = 
+--   "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
+--   showOpTree opTree <> "\n\nWarnings:\n" <> 
+--   T.intercalate "\n" (map tshow warnings)
 
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure
@@ -1214,7 +1214,7 @@ getBetweenConcept e = fatal ("getBetweenConcept: pattern match failure on expres
 -- It only narrows types (makes them more specific), never widens them.
 refineANY :: Signature -> Expression -> Expression
 refineANY targetSig expr
- = trace ("refineANY (" <> tshow targetSig <> ") (" <> showA expr <> ") yields " <> showA refinedExpr)
+ = -- trace ("refineANY (" <> tshow targetSig <> ") (" <> showA expr <> ") yields " <> showA refinedExpr)
    refinedExpr
   where
     iCpt = case targetSig of
@@ -1225,9 +1225,9 @@ refineANY targetSig expr
     refinedExpr = case expr of
       -- Nullary operations:
       -- geq returns Just True if first arg is more generic than the second arg
-      EDcI cpt        -> if cpt==botCpt then EDcI iCpt else expr
+      EDcI cpt        -> if cpt==botCpt || cpt==topCpt then EDcI iCpt else expr
       -- For EMp1: only narrow, never widen. If expr's concept is already narrower than target, keep it.
-      EMp1 av cpt     -> if cpt==botCpt then EMp1 av iCpt else expr
+      EMp1 av cpt     -> if cpt==botCpt || cpt==topCpt then EMp1 av iCpt else expr
       EDcD _          -> expr -- Declarations are concrete already
       EBin oper sgn   -> case (source sgn==botCpt, target sgn==botCpt) of
                            (True , True ) -> EBin oper targetSig
@@ -1277,23 +1277,52 @@ refineANY targetSig expr
 
 signatures :: (HasFSpecGenOpts env, HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
 signatures env ci mConstraintSig trm = do
-  opTree <- trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields:")
+  opTree <- -- trace ("4. signatures ("<>tshow mConstraintSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields:")
             resultTerm
-  let refinedOpTree = trace ("   resultTerm:  "<>showOpTree opTree) $
+  let refinedOpTree = -- trace ("   resultTerm:  "<>showOpTree opTree) $
                       fmap (\(expr, sgn, t) -> (refineANY sgn expr, sgn, t)) opTree
-  trace ("   refinedOpTree: "<>showOpTree refinedOpTree) $
-   constrain refinedOpTree
+  -- trace ("   refinedOpTree: " <> showOpTree refinedOpTree <> "\n   constrain refinedOpTree: " <> showGuardedOpTree (constrain refinedOpTree)) $
+  constrain refinedOpTree
     where
       constrain :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
       constrain opTree =
         case mConstraintSig of
           Nothing -> pure opTree
           Just constraintSig ->
-            case [ (expr, sgn, trm) | (expr, sgn, trm) <- opSigns opTree, withinSig sgn == Just True ] of
-              [] -> mkVerboseTypeMismatchError env (origin trm)
-                     ("No matching signatures for term " <> showP trm <> " within the constraint signature " <> tshow constraintSig <> ".")
-                     (Just ("Expected a signature that is wider or equal to the constraint signature " <> tshow constraintSig <> "."))
-                     opTree
+            case [ (expr, narrowedSig, term) 
+                 | (expr, sgn, term) <- opSigns opTree
+                 , withinSig sgn == Just True
+                 , let narrowedSig = case expr of
+                         -- For narrowable expressions (I, V, atoms, bind), compute the meet
+                         EDcI _   -> fromMaybe sgn (meetSig constraintSig sgn)
+                         EDcV _   -> fromMaybe sgn (meetSig constraintSig sgn)
+                         EMp1 _ _ -> fromMaybe sgn (meetSig constraintSig sgn)
+                         EBin _ _ -> fromMaybe sgn (meetSig constraintSig sgn)
+                         -- For declared relations, only accept if constraint doesn't change the signature
+                         EDcD _ -> case meetSig constraintSig sgn of
+                                     Just narrowed | narrowed == sgn -> sgn  -- Constraint matches, OK
+                                     Just narrowed -> fatal ("Cannot narrow declared relation " <> showP trm <> " from signature " <> tshow sgn <> " to " <> tshow narrowed)
+                                     Nothing -> fatal ("Incompatible constraint " <> tshow constraintSig <> " for declared relation " <> showP trm <> " with signature " <> tshow sgn)
+                         -- All other expressions keep their signature
+                         _ -> sgn
+                 ] of
+              [] -> -- Provide detailed error message for declared relations
+                    case ([ sgn | (EDcD _, sgn, _) <- opSigns opTree ], constraintSig) of
+                      ([sgn], Sign constraintSrc constraintTgt) ->
+                        Errors . return . CTXE (origin trm) $
+                          ("There is no match for relation " <> showP trm <> " because ") <> T.intercalate " and "
+                            ([ "its source concept " <> tshow (source sgn) <> " should be " <> tshow constraintSrc <> " (or more generic)"
+                             | Just False <- [geq (source sgn) constraintSrc]] <>
+                             [ "its source concept " <> tshow (source sgn) <> " is unrelated to " <> tshow constraintSrc
+                             | Nothing <- [geq (source sgn) constraintSrc]] <>
+                             [ "its target concept " <> tshow (target sgn) <> " should be " <> tshow constraintTgt <> " (or more generic)"
+                             | Just False <- [geq (target sgn) constraintTgt]] <>
+                             [ "its target concept " <> tshow (target sgn) <> " is unrelated to " <> tshow constraintTgt
+                             | Nothing <- [geq (target sgn) constraintTgt]]) <> "."
+                      _ -> mkVerboseTypeMismatchError env (origin trm)
+                             ("No matching signatures for term " <> showP trm <> " within the constraint signature " <> tshow constraintSig <> ".")
+                             (Just ("Expected a signature that is wider or equal to the constraint signature " <> tshow constraintSig <> "."))
+                             opTree
               filteredTriples  -> pure (assignOpSigns filteredTriples opTree)
         where
           -- withinSig checks if a signature, sgn, is narrower (i.e. more specific) or equal to mConstraintSig, for the purpose checking box items.
@@ -1304,11 +1333,11 @@ signatures env ci mConstraintSig trm = do
               f :: Maybe Signature -> Maybe Bool
               f _mConstraintSig@Nothing                                = Just True
               f (Just (Sign src tgt)) | src == topCpt && tgt == topCpt = Just True
-              f (Just (Sign src tgt)) | src == topCpt                  = geq tgt (target sgn)
-              f (Just (Sign src tgt)) | tgt == topCpt                  = geq src (source sgn)
-              f (Just (Sign src tgt))                                  = (&&) <$> geq src (source sgn) <*> geq tgt (target sgn)
+              f (Just (Sign src tgt)) | src == topCpt                  = geq (target sgn) tgt
+              f (Just (Sign src tgt)) | tgt == topCpt                  = geq (source sgn) src
+              f (Just (Sign src tgt))                                  = (&&) <$> geq (source sgn) src <*> geq (target sgn) tgt
               f (Just (ISgn cpt)    ) | cpt == topCpt                  = Just True
-              f (Just (ISgn cpt)    )                                  = geq cpt (source sgn)
+              f (Just (ISgn cpt)    )                                  = geq (source sgn) cpt
 
 
       -- | resultPrim yields all possible (expression, signature, term) triples for a Prim term.
@@ -1337,19 +1366,7 @@ signatures env ci mConstraintSig trm = do
                                                     pure (findRelsTyped (declarationsMap ci) (name rel) sgn)
                                       Nothing -> pure (findDecls (declarationsMap ci) (name rel))
                                     case relsList of
-                                       [] -> Errors . return . CTXE (origin trmPrim) $
-                                             case (relsList, mConstraintSig) of
-                                                ([d], Just (Sign constraintSrc constraintTgt)) -> ("There is no match for relation "<>showP rel<>" because ") <> T.intercalate " and "
-                                                       ([ "its source concept "<>tshow (source (sign d))<>" should be "<>tshow constraintSrc<>" (or more generic)"
-                                                        | Just False <- [geq (source (sign d)) constraintSrc]] <>
-                                                        [ "its source concept "<>tshow (source (sign d))<>" is unrelated to "<>tshow constraintSrc
-                                                        | Nothing <- [geq (source (sign d)) constraintSrc]] <>
-                                                        [ "its target concept "<>tshow (target (sign d))<>" should be "<>tshow constraintTgt<>" (or more generic)"
-                                                        | Just False <- [geq (target (sign d)) constraintTgt]] <>
-                                                        [ "its target concept "<>tshow (target (sign d))<>" is unrelated to "<>tshow constraintTgt
-                                                        | Nothing <- [geq (target (sign d)) constraintTgt]])<>"."
-                                                ([],_)  -> "Undeclared relation "<> showP trmPrim
-                                                _   -> "None of the relations: " <> T.intercalate ", " [showA d | d <- relsList] <> " match on " <>showP rel<>"."
+                                       [] -> Errors . return . CTXE (origin trmPrim) $ "Undeclared relation " <> showP trmPrim
                                        ds -> pure (STnullary [(EDcD d, sign d, Prim trmPrim) | d <- ds])
 
       -- | resultTerm yields all possible (expression, signature, term) triples for a term.
@@ -1646,7 +1663,7 @@ term2Expr env ci mConstraintSig term
          STbinary _ _ triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous binary term: "  <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STnullary    [(expr, sig, _)]
            | isConcreteSignature sig -> pure expr  -- Single expression - already reduced, return it
-           | otherwise -> trace ("\nterm2Expr (mConstraintSig="<>tshow mConstraintSig<>") ("<>showP term<>"):\n"<>showOpTree sgnTree) $
+           | otherwise -> -- trace ("\nterm2Expr (mConstraintSig="<>tshow mConstraintSig<>") ("<>showP term<>"):\n"<>showOpTree sgnTree) $
                            mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for nullary term " <> showP term <> ". The inferred signature contains " <> tshow sig)
          STunary _    [(_, sig, _)]
            | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for unary term " <> showP term <> ". The inferred signature contains " <> tshow sig)
