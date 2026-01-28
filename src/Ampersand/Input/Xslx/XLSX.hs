@@ -144,7 +144,6 @@ mkContextOfPops ctxName pops1 =
                           let test prop = prop `elem` foldr (Set.intersection . dec_prps) Set.empty sRel
                            in Set.fromList $ filter (not . test) [P_Uni, P_Tot, P_Inj, P_Sur]
                       }, -- the generic relation that summarizes sRel
-                      --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
                     [rel | rel <- NE.toList sRel, sourc rel `notElem` specs] -- the remaining relations
                   )
                   | sRel <- sameNameTargetRels,
@@ -167,7 +166,6 @@ mkContextOfPops ctxName pops1 =
             (genericPops, remainingPops) =
               L.unzip
                 [ ( headPop {p_src = Just g}, -- the generic relation that summarizes sRel
-                --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
                     [pop | pop <- NE.toList sPop, srcPop pop `notElem` specs] -- the remaining relations
                   )
                   | sPop <- sameNameTargetPops,

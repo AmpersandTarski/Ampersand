@@ -438,7 +438,7 @@ pCtx2aCtx env
         let reprOf :: A_Concept -> TType
             reprOf cpt =
               if cpt == ONE || show cpt == "SESSION"
-                then Alphanumeric
+                then Object
                 else case [aReprTo r | r <- L.nub reprs, cpt `elem` aReprFrom r] of
                        [t] -> t
                        []  -> Alphanumeric
@@ -1164,16 +1164,6 @@ mkVerboseTypeMismatchError :: (HasRunner env) => env -> Origin -> Text -> Maybe 
 mkVerboseTypeMismatchError env errorOrigin baseMsg maybeSuggestions opTree =
   mkVerboseTypeError env errorOrigin opTree (baseMsg <> fromMaybe "" maybeSuggestions)
 
--- obsolete:
--- | BoxConstraint tracks whether we should match source or target when filtering relations in a box context.
--- This becomes important when dealing with flipped relations, where we need to match the target instead of source.
--- data BoxConstraint = MatchSource P_Concept 
---                    | MatchTarget P_Concept
-
--- instance Flippable BoxConstraint where
---   flp (MatchSource c) = MatchTarget c
---   flp (MatchTarget c) = MatchSource c
-
 -- | Validate that P_Concepts in a P-structure are in the schema
 -- SESSION is always implicitly declared, so it's exempt from validation
 validatePConceptsInSchema :: PConceptStructure a => ContextInfo -> Origin -> a -> Text -> Guarded ()
@@ -1308,6 +1298,25 @@ signatures env ci mConstraintSig trm = do
                  ] of
               [] -> -- Provide detailed error message for declared relations
                     case ([ sgn | (EDcD _, sgn, _) <- opSigns opTree ], constraintSig) of
+                      -- Special case: box item context where target is topCpt (irrelevant)
+                      ([sgn], Sign constraintSrc constraintTgt) | constraintTgt == topCpt ->
+                        Errors . return . CTXE (origin trm) $
+                          ("The source of " <> showP trm <> " must match " <> tshow constraintSrc <> ". ") <>
+                          "However, " <> showP trm <> " has source " <> tshow (source sgn) <>
+                          case geq (source sgn) constraintSrc of
+                            Nothing    -> ", which is unrelated to " <> tshow constraintSrc <> "."
+                            Just False -> ", which is too specific (not wider than or equal to " <> tshow constraintSrc <> ")."
+                            Just True  -> fatal "Unexpected: source matches but we're in error branch"
+                      -- Special case: box item context where source is topCpt (irrelevant)
+                      ([sgn], Sign constraintSrc constraintTgt) | constraintSrc == topCpt ->
+                        Errors . return . CTXE (origin trm) $
+                          ("The target of " <> showP trm <> " must match " <> tshow constraintTgt <> ". ") <>
+                          "However, " <> showP trm <> " has target " <> tshow (target sgn) <>
+                          case geq (target sgn) constraintTgt of
+                            Nothing    -> ", which is unrelated to " <> tshow constraintTgt <> "."
+                            Just False -> ", which is too specific (not wider than or equal to " <> tshow constraintTgt <> ")."
+                            Just True  -> fatal "Unexpected: target matches but we're in error branch"
+                      -- Normal case: both source and target matter
                       ([sgn], Sign constraintSrc constraintTgt) ->
                         Errors . return . CTXE (origin trm) $
                           ("There is no match for relation " <> showP trm <> " because ") <> T.intercalate " and "
@@ -1321,7 +1330,7 @@ signatures env ci mConstraintSig trm = do
                              | Nothing <- [geq (target sgn) constraintTgt]]) <> "."
                       _ -> mkVerboseTypeMismatchError env (origin trm)
                              ("No matching signatures for term " <> showP trm <> " within the constraint signature " <> tshow constraintSig <> ".")
-                             (Just ("Expected a signature that is wider or equal to the constraint signature " <> tshow constraintSig <> "."))
+                             (Just ("Expected a signature that is wider (or equal)."))
                              opTree
               filteredTriples  -> pure (assignOpSigns filteredTriples opTree)
         where
