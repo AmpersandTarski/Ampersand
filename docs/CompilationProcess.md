@@ -221,7 +221,8 @@ The public API for A_Concept operations includes:
 
 ## Technical types (TType)
 
-Every A_Concept has a technical type (TType) that determines its database representation. The assignment of TTypes to concepts happens in `pCtx2aCtx` through the following process:
+Every A_Concept gets precisely one technical type (TType) to determines its physical representation (in databases or whatever else).
+The assignment of TTypes to concepts happens in `pCtx2aCtx` through the following process:
 
 ### 1. Collect Explicit Representations
 
@@ -229,13 +230,14 @@ From the P-structure, we collect all explicit `REPRESENT` statements as `P_Repre
 
 ### 2. Extract Object Representations
 
-After type checking interfaces, views, and identity rules (which require type-checked expressions), we identify concepts that must be represented as `Object`:
+After type checking interfaces, views, violation messages, and identity rules (all of which require type-checked expressions), we identify concepts that must be represented as `Object`:
 
 - **Interface concepts**: The source concept of every interface expression must be Object (because interfaces render objects in a UI)
 - **View concepts**: Concepts that have VIEW definitions must be Object (to render structured data)
 - **Identity concepts**: Concepts with IDENT rules must be Object (to support unique identification)
 
 The function `getObjReprs` extracts these concepts from the A-structure and creates `A_Representation` entries mapping them to `Object`.
+Needless to say that getObjReprs must be called after interfaces have been type checked, because source and target objects are defined on Expressions (so that is in the A-structure) and not on Terms (in the P-structure).
 
 ### 3. Convert to A_Representation
 

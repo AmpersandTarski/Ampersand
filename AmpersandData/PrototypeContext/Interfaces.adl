@@ -8,7 +8,6 @@ CONTEXT PrototypeContext IN ENGLISH
     -- We want to show the user "Interface label" instead
     -- The label is added to the population file by the meatgrinder using the Proto build recipe
     RELATION PrototypeContext.label[PrototypeContext.Interface*PrototypeContext.Label] [UNI,TOT]
-        REPRESENT PrototypeContext.Label TYPE ALPHANUMERIC
 
     RELATION PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role]
         MEANING "This relation contains the roles for which an interface is available"

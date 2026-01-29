@@ -27,6 +27,7 @@ module Ampersand.Input.ADL1.CtxError
     mkIncompatibleInterfaceError,
     mkIncompatibleViewError,
     mkInterfaceMustBeDefinedOnObject,
+    mkInterfaceRefNarrowerError,
     mkInterfaceRefCycleError,
     mkInvalidCRUDError,
     mkInvariantViolationsError,
@@ -403,6 +404,19 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
         <> showWithAliases expTgt
         <> " of the term at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
+
+mkInterfaceRefNarrowerError :: Origin -> Name -> Expression -> A_Concept -> A_Concept -> CtxError
+mkInterfaceRefNarrowerError refOrigin ifcName parentExpr ifcConcept expectedConcept =
+  CTXE refOrigin
+    $ "The interface "
+    <> fullName ifcName
+    <> " works on concept "
+    <> showWithAliases ifcConcept
+    <> ", which is narrower (i.e. more specific) than "
+    <> showWithAliases expectedConcept
+    <> ", being the target of "
+    <> showA parentExpr
+    <> ". Please refer to an interface with a wider (or equal) interface-concept."
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =

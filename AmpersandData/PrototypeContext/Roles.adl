@@ -5,7 +5,6 @@ CONTEXT PrototypeContext IN ENGLISH
         POPULATION PrototypeContext.Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
     RELATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] [UNI] --TODO: Should be TOT as wel, but that still gives problems.
-        REPRESENT PrototypeContext.Label TYPE ALPHANUMERIC
         POPULATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
     API PrototypeContext.AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*PrototypeContext.Role] BOX

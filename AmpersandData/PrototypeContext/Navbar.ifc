@@ -6,18 +6,18 @@ CONTEXT PrototypeContext IN ENGLISH
     INTERFACE PrototypeContext.Editnavigationmenu LABEL "Edit navigation menu" FOR Administrator: "_SESSION";V[SESSION*PrototypeContext.NavMenu] INTERFACE PrototypeContext.Editmenuitem
 
     INTERFACE PrototypeContext.Editmenuitem LABEL "Edit menu item" FOR Administrator: I[PrototypeContext.NavMenuItem] cRud BOX
-        [ "Label"        : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]
-        , "Parent"       : PrototypeContext.isSubItemOf              cRUd
-        , "Items"        : PrototypeContext.isSubItemOf~ CRuD BOX <TABLE sortable sortBy="Order" order="asc">
-            [ "Item"     : I LINKTO INTERFACE PrototypeContext.Editmenuitem
-            , "Order"    : PrototypeContext.seqNr                    cRUd
-            , "Visible"  : PrototypeContext.isVisible                cRUd
-            , "Label"    : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]                    cRUd
-            , "Roles"    : PrototypeContext.navItemRoles          cRud
-            ]
-        , "Interface ref": PrototypeContext.ifc                      cRUd
-        , "Url"          : PrototypeContext.url                      cRUd
-        , "Roles"        : PrototypeContext.navItemRoles          cRUd
+        [ -- "Label"        : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]
+        -- , "Parent"       : PrototypeContext.isSubItemOf              cRUd
+        -- , "Items"        : PrototypeContext.isSubItemOf~ CRuD BOX <TABLE sortable sortBy="Order" order="asc">
+        --     [ "Item"     : I LINKTO INTERFACE PrototypeContext.Editmenuitem
+        --     , "Order"    : PrototypeContext.seqNr                    cRUd
+        --     , "Visible"  : PrototypeContext.isVisible                cRUd
+        --     , "Label"    : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]                    cRUd
+        --     , "Roles"    : PrototypeContext.navItemRoles          cRud
+        --     ]
+        -- , "Interface ref": PrototypeContext.ifc                      cRUd
+        -- , "Url"          : PrototypeContext.url                      cRUd
+        -- , "Roles"        : PrototypeContext.navItemRoles          cRUd
         ]
 
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------

@@ -11,7 +11,6 @@ CONTEXT PrototypeContext IN ENGLISH
     RELATION PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label] [UNI,TOT] 
         MEANING "The human readable text that represents the navbar item and is shown to the user"
         CONCEPT PrototypeContext.Label ""
-        REPRESENT PrototypeContext.Label TYPE ALPHANUMERIC
 
     RELATION PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem] [PROP]
         MEANING "A navbar item can be visible or not"
@@ -60,7 +59,7 @@ CONTEXT PrototypeContext IN ENGLISH
     --[NAV MENUS]----------------------------------------------------------------------------------
     CONCEPT PrototypeContext.NavMenu ""
         CLASSIFY PrototypeContext.NavMenu ISA PrototypeContext.NavMenuItem
-        REPRESENT PrototypeContext.NavMenu TYPE OBJECT
+ --     REPRESENT PrototypeContext.NavMenu TYPE OBJECT
 
     RELATION PrototypeContext.isPartOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenu] [UNI,TOT]
         MEANING "A navbar item is part of a certain navmenu"
