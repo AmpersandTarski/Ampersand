@@ -1600,7 +1600,7 @@ signatures env ci mConstraintSig trm = do
            case triples of
              []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                         opTree = STbinary sgnaTree sgnbTree errorExprs
-                    in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
+                    in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis sgnsa sgnsb)
              [tr] -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree [tr])) $
                      return (STbinary sgnaTree sgnbTree [tr])
              results  -> let baseMsg = "Ambiguous signatures of the " <> kind <> " of " <> showPa <> " and " <> showPb
