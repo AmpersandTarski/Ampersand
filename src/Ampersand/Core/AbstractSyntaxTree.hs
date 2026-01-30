@@ -82,7 +82,7 @@ module Ampersand.Core.AbstractSyntaxTree
     SignOrd (..),
     AliasGraph, makeAliasGraph,
     topCpt, botCpt,
-    geq, join, meet, meetIsect,
+    geq, join, meet, meetIsect, MeetOrJoin (..),
     conceptLabel,
     smallerConcepts, largerConcepts,
     joinSig, meetSig, geqSig, isConcreteSignature,
@@ -2140,7 +2140,9 @@ geq a@PlainConcept{} b@PlainConcept{}
 geq a b | a==b = Just True
 geq _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
--- | Jjoin for A_Concepts using embedded typology (no external graph needed!)
+data MeetOrJoin = Meet | Join deriving (Show) -- for preventing code duplication in the type checker
+
+-- | join for A_Concepts using embedded typology (no external graph needed!)
 join :: A_Concept -> A_Concept -> Maybe A_Concept
 join a b
   | a == b                   = Just a

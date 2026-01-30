@@ -1507,16 +1507,16 @@ signatures env ci mConstraintSig trm = do
           -- Inter-type operations: both operands get the same constraint
           -- For union, use join (least upper bound) to find the common supertype
           -- For other operations (intersection, equation, inclusion, difference), use meet (greatest lower bound)
-          PInc o a b -> checkIncl  o "inclusion"    EInc (PInc o) a b
-          PEqu o a b -> checkEqtn  o "equation"     EEqu (PEqu o) a b
-          PIsc o a b -> checkIsct  o "intersection" EIsc (PIsc o) a b
-          PUni o a b -> checkUnin  o "union"        EUni (PUni o) a b
-          PDif o a b -> checkUnin  o "difference"   EDif (PDif o) a b
+          PInc o a b -> checkPeri  o "inclusion"    Join EInc (PInc o) a b
+          PEqu o a b -> checkPeri  o "equation"     Join EEqu (PEqu o) a b
+          PIsc o a b -> checkPeri  o "intersection" Meet EIsc (PIsc o) a b
+          PUni o a b -> checkPeri  o "union"        Join EUni (PUni o) a b
+          PDif o a b -> checkPeri  o "difference"   Join EDif (PDif o) a b
 
-      errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
+      errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
        = let errorOpTree = STbinary sgnaTree sgnbTree [(combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, _, trm_b)<-sgnsb ]
-             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join (source sgn_a) (source sgn_b)] ]
-             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join (target sgn_a) (target sgn_b)] ]
+             conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[joinOrMeet (source sgn_a) (source sgn_b)] ]
+             conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[joinOrMeet (target sgn_a) (target sgn_b)] ]
              getRootSig opTree = case opTree of
                                  STbinary _ _ [(_, sgn, _)] -> sgn
                                  STunary _    [(_, sgn, _)] -> sgn
@@ -1532,10 +1532,10 @@ signatures env ci mConstraintSig trm = do
                     mkVerboseTypeError env o errorOpTree
                       ("Cannot assign a type to "<>showP b<>" because " <> tshow srcA <> " and " <> tshow tgtA <> " are not equal.")
               _ -> case (conceptsSrc, conceptsTgt) of
-                     ([],[])  -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts nor the target concepts in the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
+                     ([],[])  -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts nor the target concepts in the "<>kind<>")\n   on the left hand side: "<>tshow (map snd3 sgnsa)<>"\n   on the right hand side: "<>tshow (map snd3 sgnsb))
                      ([],_:_) -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
                      (_:_,[]) -> mkVerboseTypeError env o errorOpTree ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd3) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd3) sgnsb))
-                     _        -> mkVerboseTypeError env o errorOpTree ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
+                     _        -> mkVerboseTypeError env o errorOpTree ("Cannot match the signatures at either side of the "<>kind<>".\n   on the left hand side: "<>tshow (map snd3 sgnsa)<>"\n   on the right hand side: "<>tshow (map snd3 sgnsb))
          where
            showSgns :: Show a => [a] -> Text
            showSgns sgns = case sgns of
@@ -1543,108 +1543,36 @@ signatures env ci mConstraintSig trm = do
                             [sgn] ->  tshow sgn
                             sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
 
-      checkIncl :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-      checkIncl o kind combinator pCombinator a b =
-        do
-          sgnaTree <- signats mConstraintSig a
-          sgnbTree <- signats mConstraintSig b
-          let sgnsa = opSigns sgnaTree
-              sgnsb = opSigns sgnbTree
-          case [ (combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b)
-               | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just True <- [geqSig sgn_a sgn_b]
-               ] of
-            []  -> errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
-            [res] -> -- trace ("\n17. Checkperi yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res]))
-                     return (STbinary sgnaTree sgnbTree [res])
-            results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
-                           opTree = STbinary sgnaTree sgnbTree results
-                       in mkVerboseTypeError env o opTree baseMsg
-
-      checkEqtn :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-      checkEqtn o kind combinator pCombinator a b =
-        do
-          sgnaTree <- signats mConstraintSig a
-          sgnbTree <- signats mConstraintSig b
-          let sgnsa = opSigns sgnaTree
-              sgnsb = opSigns sgnbTree
-          case [ (refinedExpr, sign refinedExpr, pCombinator trm_a trm_b)
-               | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just combinedSgn <- [meetSig sgn_a sgn_b | not (isConcreteSignature sgn_a && isConcreteSignature sgn_b)]<>
-                                     [joinSig sgn_a sgn_b | isConcreteSignature sgn_a && isConcreteSignature sgn_b]
-               , let refinedExpr = refineANY combinedSgn (combinator (refineANY combinedSgn expr_a, refineANY combinedSgn expr_b))
-               ] of
-            []  -> errorsInter o kind combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
-            [res] -> return (STbinary sgnaTree sgnbTree [res])
-            results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
-                           opTree = STbinary sgnaTree sgnbTree results
-                       in mkVerboseTypeError env o opTree baseMsg
-
       -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
       -- The meetORjoin parameter determines how to combine concept types:
       -- - For union, use join (least upper bound) to find the common supertype
       -- - For other operations (intersection, equation, inclusion, difference), use meet (greatest lower bound)
-      checkIsct :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-      checkIsct o kind combinator pCombinator a b =
+
+      checkPeri :: Origin -> Text -> MeetOrJoin -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+      checkPeri o kind moj combinator pCombinator a b =
         do
           sgnaTree <- signats mConstraintSig a
           sgnbTree <- signats mConstraintSig b
           let sgnsa = opSigns sgnaTree
               sgnsb = opSigns sgnbTree
-          case [ (combinator (expr_a, expr_b), sgn, pCombinator trm_a trm_b)
+          case [ (combinator (refineANY sgn expr_a, refineANY sgn expr_b), sgn, pCombinator trm_a trm_b)
                | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just sgn<-[meetSig sgn_a sgn_b]] of
-            []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
-                       opTree = STbinary sgnaTree sgnbTree errorExprs
-                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[meet (target sgn_a) (target sgn_b)] ]
-                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[meet (source sgn_a) (source sgn_b)] ]
-                   in case (conceptsSrc, conceptsTgt) of
-                    ([],[])  -> mkVerboseTypeError env o opTree ("Cannot match the concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
-                    ([],_:_) -> mkVerboseTypeError env o opTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
-                    (_:_,[]) -> mkVerboseTypeError env o opTree ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd3) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd3) sgnsb))
-                    _        -> mkVerboseTypeError env o opTree ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
-                   where
-                     showSgns :: Show a => [a] -> Text
-                     showSgns sgns = case sgns of
-                                      [] ->     "untyped"
-                                      [sgn] ->  tshow sgn
-                                      sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-            [res] -> return (STbinary sgnaTree sgnbTree [res])
+               , Just sgn <- [meetSig sgn_a sgn_b | not (isConcreteSignature sgn_a && isConcreteSignature sgn_b)]<>
+                             [joinOrMeetSig sgn_a sgn_b | isConcreteSignature sgn_a && isConcreteSignature sgn_b]
+               ] of
+            []  -> errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
+            [res] -> -- trace ("\n17. checkIncl yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res])) $
+                      return (STbinary sgnaTree sgnbTree [res])
             results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                            opTree = STbinary sgnaTree sgnbTree results
                        in mkVerboseTypeError env o opTree baseMsg
+          where
+            joinOrMeetSig :: Signature -> Signature -> Maybe Signature
+            joinOrMeetSig = case moj of Join -> joinSig; Meet -> meetSig
+            joinOrMeet :: A_Concept -> A_Concept -> Maybe A_Concept
+            joinOrMeet = case moj of Join -> join; Meet -> meet
 
-      checkUnin :: Origin -> Text -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-      checkUnin o kind combinator pCombinator a b =
-        do
-          sgnaTree <- signats mConstraintSig a
-          sgnbTree <- signats mConstraintSig b
-          let sgnsa = opSigns sgnaTree
-              sgnsb = opSigns sgnbTree
-          case [ (combinator (expr_a, expr_b), sgn, pCombinator trm_a trm_b)
-               | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-               , Just sgn<-[joinSig sgn_a sgn_b]] of
-            []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb ]
-                       opTree = STbinary sgnaTree sgnbTree errorExprs
-                       conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[join (target sgn_a) (target sgn_b)] ]
-                       conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[join (source sgn_a) (source sgn_b)] ]
-                   in case (conceptsSrc, conceptsTgt) of
-                    ([],[])  -> mkVerboseTypeError env o opTree ("Cannot match the concepts on both sides of the "<>kind<>")\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
-                    ([],_:_) -> mkVerboseTypeError env o opTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
-                    (_:_,[]) -> mkVerboseTypeError env o opTree ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd3) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd3) sgnsb))
-                    _        -> mkVerboseTypeError env o opTree ("Cannot match the signatures at either side of the "<>kind<>".\n   sgnsa: "<>tshow (map snd3 sgnsa)<>"\n   sgnsb: "<>tshow (map snd3 sgnsb))
-                   where
-                     showSgns :: Show a => [a] -> Text
-                     showSgns sgns = case sgns of
-                                      [] ->     "untyped"
-                                      [sgn] ->  tshow sgn
-                                      sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-            [res] -> return (STbinary sgnaTree sgnbTree [res])
-            results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
-                           opTree = STbinary sgnaTree sgnbTree results
-                       in mkVerboseTypeError env o opTree baseMsg
-
-      checkIntra --, checkPeri
+      checkIntra
         :: {- o           -} Origin
         -> {- kind        -} Text
         -> {- combinator  -} ((Expression, Expression) -> Expression)
@@ -1708,26 +1636,26 @@ signatures env ci mConstraintSig trm = do
              , Just between<-[meet cpta cptb]
              ]
 
-      -- diagnosis :: Text -> a -> a -> [a] -> [a] -> Text
-      diagnosis kind a b sgnsa sgnsb
-       = case (kind, sgnsa==sgnsb) of
-          ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-          ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-          ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flp b)<>"."
-          ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flp a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-          ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-          _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
-        where
-            displayLeft cpts expr =
-              showP expr<>case cpts of
-                            [cpt] -> ", which is "<>tshow cpt<>", "
-                            []    -> " is undefined because "<>showP expr<>" is untypable, but it "
-                            _     -> ", which can be any of "<>tshow cpts<>", "
-            displayRight cpts expr =
-              showP expr<>case cpts of
-                            [cpt] -> ", which is "<>tshow cpt
-                            []    -> " is undefined because "<>showP expr<>" is untypable"
-                            _     -> ", which can be any of "<>tshow cpts
+          -- diagnosis :: Text -> a -> a -> [a] -> [a] -> Text
+          diagnosis sgnsa sgnsb
+           = case (kind, sgnsa==sgnsb) of
+              ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flp b)<>"."
+              ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flp a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+              _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
+            where
+                displayLeft cpts expr =
+                  showP expr<>case cpts of
+                                [cpt] -> ", which is "<>tshow cpt<>", "
+                                []    -> " is undefined because "<>showP expr<>" is untypable, but it "
+                                _     -> ", which can be any of "<>tshow cpts<>", "
+                displayRight cpts expr =
+                  showP expr<>case cpts of
+                                [cpt] -> ", which is "<>tshow cpt
+                                []    -> " is undefined because "<>showP expr<>" is untypable"
+                                _     -> ", which can be any of "<>tshow cpts
 
       pCpt2aCpt = conceptMap ci
       signats = signatures env ci  -- Pass constraint to subexpressions for disambiguation
