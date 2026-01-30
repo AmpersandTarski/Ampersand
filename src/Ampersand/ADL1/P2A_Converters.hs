@@ -389,7 +389,8 @@ pCtx2aCtx env
       getObjReprs interfaces viewdefs identdefs =
         case Set.toList (getInterfaceConcepts interfaces `Set.union` getViewConcepts viewdefs `Set.union` getIdentityConcepts identdefs) of
              [] -> []
-             cpt:cpts ->  [ Arepr (cpt :| cpts) Object ]
+             cpt:cpts -> -- trace ("8. getObjReprs "<>T.intercalate " " (NE.toList (fmap showA (cpt :| cpts))))
+                         [ Arepr (cpt :| cpts) Object ]
         where
           -- | Extract all concepts from interfaces (source + all box targets recursively)
           getInterfaceConcepts :: [Interface] -> Set.Set A_Concept
@@ -399,12 +400,18 @@ pCtx2aCtx env
           -- | Recursively extract all target concepts from box expressions
           getObjectConcepts :: ObjectDef -> Set.Set A_Concept
           getObjectConcepts obj =
-            Set.singleton (target (objExpression obj)) `Set.union` maybe Set.empty getSubInterfaceConcepts (objmsub obj)
+            case objmsub obj of
+              Nothing -> Set.empty  -- No BOX = endpoint, target doesn't need OBJECT representation
+              Just si -> Set.singleton (target (objExpression obj)) `Set.union` getSubInterfaceConcepts si
 
           -- | Extract concepts from sub-interfaces
           getSubInterfaceConcepts :: SubInterface -> Set.Set A_Concept
           getSubInterfaceConcepts (Box {siObjs = boxItems}) = Set.unions (map getBoxItemConcepts boxItems)
-          getSubInterfaceConcepts (InterfaceRef {siConcept = cpt}) = Set.singleton cpt
+          getSubInterfaceConcepts (InterfaceRef {siIfcId = refId}) = 
+            -- Look up the referenced interface and get its actual source concept
+            case filter ((== refId) . name) interfaces of
+              [refIfc] -> Set.singleton (source (objExpression (ifcObj refIfc)))
+              _ -> fatal ("Manufacturing error in the Ampersand compiler: there should be exactly one interface with name " <> tshow refId <> ", but none or multiple were found.")
 
           -- | Extract concepts from box items
           getBoxItemConcepts :: BoxItem -> Set.Set A_Concept
@@ -815,28 +822,22 @@ pCtx2aCtx env
             case objmsub boxItem of
               Just (Box { siObjs = subBoxes }) -> uniqueLabels (origin pIfc) toLabel (filter hasLabel subBoxes) "BOX"
               _ -> pure ()
-            let objExpr = objExpression boxItem
-                ifcSource = source objExpr
-                ifcSourceType = reprType ci ifcSource
-            if ifcSourceType==Object || ifcSource == topCpt
-                then return
-                       Ifc
-                         { ifcIsAPI = ifc_IsAPI pIfc,
-                           ifcname = name pIfc,
-                           ifclbl = mLabel pIfc,
-                           ifcRoles = ifc_Roles pIfc,
-                           ifcObj =
-                             boxItem
-                               { objPlainName = Just . fullName1 . name $ pIfc,
-                                 objlbl = mLabel pIfc
-                               },
-                           ifcPos = origin pIfc,
-                           ifcPurpose = ifc_Prp pIfc
-                         }
-                else Errors . pure . CTXE (origin pIfc) . T.intercalate "\n  " $
-                       [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-                         "However, the TYPE of the concept `" <> showWithAliases ifcSource <> "` for interface `" <> fullName pIfc <> "` is " <> tshow ifcSourceType <> "."
-                       ]
+            -- Note: We don't check the TType here because it hasn't been determined yet.
+            -- The TType (Object) will be assigned automatically by getObjReprs after all interfaces are type-checked.
+            return
+              Ifc
+                { ifcIsAPI = ifc_IsAPI pIfc,
+                  ifcname = name pIfc,
+                  ifclbl = mLabel pIfc,
+                  ifcRoles = ifc_Roles pIfc,
+                  ifcObj =
+                    boxItem
+                      { objPlainName = Just . fullName1 . name $ pIfc,
+                        objlbl = mLabel pIfc
+                      },
+                  ifcPos = origin pIfc,
+                  ifcPurpose = ifc_Prp pIfc
+                }
         where
           toLabel :: BoxItem -> Text1
           toLabel (BxExpr obj) = case objPlainName obj of
@@ -1050,8 +1051,8 @@ pCtx2aCtx env
            let srcConstraint = Just (Sign srcConcept topCpt)
                tgtConstraint = Just (Sign tgtConcept topCpt)
            e <- case s of
-                  Src -> term2Expr env ci srcConstraint (PCps o (Prim (Pid o src)) x)
-                  Tgt -> term2Expr env ci tgtConstraint (PCps o (Prim (Pid o tgt)) x)
+                  Src -> term2Expr env ci srcConstraint x
+                  Tgt -> term2Expr env ci tgtConstraint x
            return (PairViewExp segOrigin s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp ci ppurp@PPurpose{ pos = purpOrigin,    -- :: Origin
@@ -1113,6 +1114,7 @@ assignOpSigns ss (STnullary _) = STnullary ss
 --   "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
 --   showOpTree opTree <> "\n\nWarnings:\n" <> 
 --   T.intercalate "\n" (map tshow warnings)
+
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure
     where
@@ -1142,7 +1144,11 @@ Example output when compiling testing/Travis/testcases/prototype/shouldSucceed/t
 [Course*Subject]          └── requires[Course*Subject]
 -}
 showOpTree :: OpTree (Expression, Signature, Term TermPrim) -> Text
-showOpTree opTree = T.intercalate "\n" (map T.concat (L.transpose [sigTexts, paddings, treeLines, exprTexts]))
+showOpTree opTree = 
+  let outputLines = map T.concat (L.transpose [sigTexts, paddings, treeLines, exprTexts])
+  in if length outputLines == 1
+     then ""
+     else T.intercalate "\n" outputLines
   where
     -- Step 1: Extract all signatures as [Text]
     sigTexts = extractSignatures opTree
@@ -1197,7 +1203,10 @@ mkVerboseTypeError :: (HasRunner env) => env -> Origin -> OpTree (Expression, Si
 mkVerboseTypeError env errorOrigin opTree baseMsg =
   Errors . return $ CTXE errorOrigin $
     if logLevel (view runnerL env) <= LevelInfo
-    then baseMsg <> "\n\nType analysis:\n" <> showOpTree opTree
+    then let treeOutput = showOpTree opTree
+         in if T.null treeOutput
+            then baseMsg
+            else baseMsg <> "\n\nType analysis:\n" <> treeOutput
     else baseMsg
 
 -- Helper function for creating type mismatch errors with optional suggestions
@@ -1324,9 +1333,16 @@ signatures env ci mConstraintSig trm = do
         case mConstraintSig of
           Nothing -> pure opTree
           Just constraintSig ->
-            case [ (expr, narrowedSig, term) 
+            case [ (narrowedExpr, narrowedSig, term) 
                  | (expr, sgn, term) <- opSigns opTree
-                 , widerSig sgn == Just True
+                 -- Use narrowerSig for narrowable expressions, widerSig for declared relations
+                 , case expr of
+                     EDcI _   -> narrowerSig sgn == Just True
+                     EDcV _   -> narrowerSig sgn == Just True
+                     EMp1 _ _ -> narrowerSig sgn == Just True
+                     EBin _ _ -> narrowerSig sgn == Just True
+                     EDcD _   -> widerSig sgn == Just True
+                     _        -> True  -- Other expressions pass through
                  , let narrowedSig = case expr of
                          -- For narrowable expressions (I, V, atoms, bind), compute the meet
                          EDcI _   -> fromMaybe sgn (meetSig constraintSig sgn)
@@ -1337,6 +1353,17 @@ signatures env ci mConstraintSig trm = do
                          EDcD _ -> sgn
                          -- All other expressions keep their signature
                          _ -> sgn
+                       -- Update the expression to match the narrowed signature
+                       narrowedExpr = case expr of
+                         EDcI _ -> case narrowedSig of
+                                     ISgn c -> EDcI c
+                                     Sign s _ -> EDcI s
+                         EDcV _ -> EDcV narrowedSig
+                         EMp1 av _ -> case narrowedSig of
+                                        ISgn c -> EMp1 av c
+                                        Sign s _ -> EMp1 av s
+                         EBin oper _ -> EBin oper narrowedSig
+                         _ -> expr  -- Keep other expressions unchanged
                  ] of
               [] -> -- Provide detailed error message for declared relations
                     case ([ sgn | (EDcD _, sgn, _) <- opSigns opTree ], constraintSig) of
@@ -1376,7 +1403,7 @@ signatures env ci mConstraintSig trm = do
                              opTree
               filteredTriples  -> pure (assignOpSigns filteredTriples opTree)
         where
-          -- widerSig checks if a signature is wider (i.e. more general) or equal to the constraint.
+          -- widerSig checks if a signature is equal to or wider (i.e. more general) than the constraint.
           -- Relations must be at least as general as the constraint to be usable in that context.
           widerSig :: Signature -> Maybe Bool
           widerSig sgn = f mConstraintSig
@@ -1389,6 +1416,20 @@ signatures env ci mConstraintSig trm = do
               f (Just (Sign src tgt))                                  = (&&) <$> geq src (source sgn) <*> geq tgt (target sgn)
               f (Just (ISgn cpt)    ) | cpt == topCpt                  = Just True
               f (Just (ISgn cpt)    )                                  = geq cpt (source sgn)
+          -- narrowerSig checks if a signature is equal to or narrower (i.e. more specific) than the constraint.
+          -- For declared relations: they must be at most as general as the constraint to be usable in that context.
+          -- For narrowable expressions (I, V, atoms, bind): they can be narrowed, so check if they CAN be narrowed to the constraint.
+          narrowerSig :: Signature -> Maybe Bool
+          narrowerSig sgn = f mConstraintSig
+            where
+              f :: Maybe Signature -> Maybe Bool
+              f _mConstraintSig@Nothing                                = Just True
+              f (Just (Sign src tgt)) | src == topCpt && tgt == topCpt = Just True
+              f (Just (Sign src tgt)) | src == topCpt                  = geq (target sgn) tgt
+              f (Just (Sign src tgt)) | tgt == topCpt                  = geq (source sgn) src
+              f (Just (Sign src tgt))                                  = (&&) <$> geq (source sgn) src <*> geq (target sgn) tgt
+              f (Just (ISgn cpt)    ) | cpt == topCpt                  = Just True
+              f (Just (ISgn cpt)    )                                  = geq (source sgn) cpt
 
 
       -- | resultPrim yields all possible (expression, signature, term) triples for a Prim term.

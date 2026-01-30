@@ -230,14 +230,26 @@ From the P-structure, we collect all explicit `REPRESENT` statements as `P_Repre
 
 ### 2. Extract Object Representations
 
-After type checking interfaces, views, violation messages, and identity rules (all of which require type-checked expressions), we identify concepts that must be represented as `Object`:
+After type checking interfaces, we identify concepts that must be represented as `Object`:
+In an interface, all BOX concepts need to have TType Object to ensure interfaces are physically implementable.
+So, the source concept of every interface expression must be Object.
+Additionally, only expressions that have a BOX subinterface following them need their target concept to be Object.
+Box item expressions without a BOX (i.e., leaf/endpoint expressions) do NOT require their target concepts to be Object.
 
-- **Interface concepts**: The source concept of every interface expression must be Object (because interfaces render objects in a UI)
-- **View concepts**: Concepts that have VIEW definitions must be Object (to render structured data)
-- **Identity concepts**: Concepts with IDENT rules must be Object (to support unique identification)
+For example:
+
+```Ampersand
+INTERFACE MyInterface : I[Person] BOX
+  [ "address" : lives   BOX          -- lives[Person*Address]: target Address must be OBJECT (has BOX)
+      [ "street" : street             -- street[Address*Street]: target Street can be ALPHANUMERIC (no BOX, endpoint)
+      , "number" : houseNr            -- houseNr[Address*Integer]: target Integer can be INTEGER (no BOX, endpoint)
+      ]
+  ]
+```
 
 The function `getObjReprs` extracts these concepts from the A-structure and creates `A_Representation` entries mapping them to `Object`.
 Needless to say that getObjReprs must be called after interfaces have been type checked, because source and target objects are defined on Expressions (so that is in the A-structure) and not on Terms (in the P-structure).
+Every concept without a representation and which is not an object, defaults to Alphanumeric.
 
 ### 3. Convert to A_Representation
 
@@ -257,3 +269,16 @@ Finally, `enrichedReprType` creates the function `A_Concept -> TType` that:
 - Defaults to `Alphanumeric` if no representation is specified
 
 This function is stored in `ctxReprType` and used throughout code generation to determine database column types.
+
+## The use of mConstraintSig
+Here is a problem:
+The target of a box expression (type Expression) must be equal or narrower than the source of a box item expression.
+So we cannot simply check every term in isolation because we would miss this constraint that links a box expression to its box item expressions.
+
+The compiler uses a Signature, mConstraintSig, to link the two.
+After a box expression gets its type, the target is known and used as the source of mConstraintSig.
+That in turn is used as a constraint when checking the box item expressions in the box.
+The type checker ensures that all box item expressions are wider than the constraint.
+When checking, the target of mConstraintSig is topCpt because there is no constraint on the target of a box item expression.
+Since interfaces have a recursive structure, this mechanism is used recursively throughout the interface's box tree.
+The same mechanism is used for IDENT statements, VIOLATION statements, and VIEW statements, albeit they are not recursive.
