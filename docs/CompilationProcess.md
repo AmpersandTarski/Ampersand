@@ -282,3 +282,166 @@ The type checker ensures that all box item expressions are wider than the constr
 When checking, the target of mConstraintSig is topCpt because there is no constraint on the target of a box item expression.
 Since interfaces have a recursive structure, this mechanism is used recursively throughout the interface's box tree.
 The same mechanism is used for IDENT statements, VIOLATION statements, and VIEW statements, albeit they are not recursive.
+
+### Contravariance in Constraint Checking
+
+When type-checking expressions against mConstraintSig, the compiler must respect **contravariance** on concept hierarchies.
+This is a fundamental principle from type theory that applies when concepts have specialization relationships.
+
+#### The Contravariance Principle
+
+If `SpecificConcept ISA GeneralConcept`, then an expression defined on `GeneralConcept` can be applied to atoms of `SpecificConcept`.
+This is analogous to function parameter types in programming languages: a function that works on a general type can accept arguments of more specific types.
+
+For example, if `BindedRelation ISA Term`, then `I[Term]` (the identity on Term) is valid in a context expecting `I[BindedRelation]`, because every BindedRelation is also a Term.
+
+#### Why Expressions Must NOT Be Auto-Narrowed
+
+When an expression like `I[Term]` appears in a constrained context (e.g., a PairView with source `BindedRelation`), the compiler must **not** automatically narrow it to `I[BindedRelation]`. Here's why:
+
+1. **Preservation of Meaning**: `I[Term]` semantically means "identity on Term", which is different from `I[BindedRelation]`. The user declared their intent explicitly.
+
+2. **Runtime Reflection**: The PHP runtime engine reads signatures from the compiled code. If a relation is declared as `usedIn[Relation*Term]`, the generated code must reference this exact signature. Auto-narrowing to `usedIn[Relation*BindedRelation]` would create a reference to a non-existent relation.
+
+3. **Declarative Integrity**: Relations are declared with specific signatures. PairView expressions should respect these declarations rather than silently changing them.
+
+#### Implementation in the Type Checker
+
+When filtering expression alternatives in the `constrain` function, the type checker uses contravariance:
+
+For narrowable expressions (`I`, `V`, atoms, `bind`), the filter checks: "Is the expression's source concept more general than (or equal to) the constraint source?"
+
+This is implemented as:
+```haskell
+geq (source sgn) constraintSrc == Just True
+```
+
+This ensures that:
+- `I[Term]` is accepted when constraint source is `BindedRelation` (✓ contravariance)
+- `I[BindedRelation]` is rejected when constraint source is `Term` (✗ would be covariance, which is unsound)
+
+For declared relations (`EDcD`), a different check applies: the relation must be usable as-is in the constrained context.
+
+### Two-Phase Interface Reference Validation
+
+Interface references (using the `INTERFACE` keyword to reference another interface within a BOX) require special handling due to potential cyclic dependencies during type-checking.
+
+#### The Cyclic Dependency Problem
+
+When interface A references interface B, and we try to type-check A, we need to know the source concept of B. But if B also references A (directly or indirectly), we have a cyclic dependency that prevents straightforward type-checking.
+
+Consider this example:
+```Ampersand
+INTERFACE InterfaceA : I[ConceptA] BOX
+  [ "field" : someRelation 
+      INTERFACE InterfaceB  -- References InterfaceB
+  ]
+
+INTERFACE InterfaceB : I[ConceptB] BOX
+  [ "field" : anotherRelation
+      INTERFACE InterfaceA  -- References InterfaceA
+  ]
+```
+
+If we try to type-check InterfaceA, we need to know the source concept of InterfaceB. But to know that, we'd need to type-check InterfaceB first, which in turn needs the source concept of InterfaceA.
+
+#### Two-Phase Solution
+
+The compiler resolves this by splitting interface reference validation into two phases:
+
+**Phase 1: Type-Checking (in `pSubIfc2aSubIfc`)**
+- When encountering an `INTERFACE` reference, verify that the referenced interface exists
+- Store `topCpt` as a placeholder for the referenced interface's source concept
+- This allows type-checking to complete for all interfaces without requiring knowledge of other interfaces' types
+
+**Phase 2: Compatibility Validation (in `validateInterfaceRefs`)**
+- After all interfaces have been type-checked and their source concepts are known
+- Traverse all interface references again
+- For each reference, check that the parent expression's target concept is compatible with the referenced interface's source concept
+- Use `geq expectedConcept refConcept == Just True` to verify that what we're passing (expectedConcept) is at least as specific as what the interface expects (refConcept)
+
+#### Example Validation
+
+```Ampersand
+CLASSIFY Dog ISA Animal
+
+INTERFACE ParentInterface : I[Dog] BOX
+  [ "details" : name  -- name[Animal*String]
+      INTERFACE AnimalInterface
+  ]
+
+INTERFACE AnimalInterface : I[Animal] BOX
+  [ "Name" : name ]
+```
+
+**Phase 1**: 
+- Type-check `ParentInterface`: `I[Dog]` has source `Dog`
+- Type-check the `name` relation: it has signature `[Animal*String]`
+- Find `AnimalInterface` reference: exists ✓, store `topCpt` as placeholder
+- Phase 1 completes successfully
+
+**Phase 2**:
+- Validate the reference: parent's target is `String`, referenced interface expects `Animal`
+- Check: `geq String Animal == Nothing` (incompatible concepts)
+- Actually, in this case the box item's expression target should be checked, not the parent interface's target
+- The actual check is: target of `name` (which is `String`) vs source of `AnimalInterface` (which is `Animal`)
+- This would fail, showing the interface reference structure is incorrect
+
+The key insight is that separating existence checking (Phase 1) from compatibility checking (Phase 2) breaks the cyclic dependency while still ensuring type safety.
+
+### Constraint Signature Patterns
+
+When constructing constraint signatures for `mConstraintSig`, different patterns are used depending on what needs to be constrained:
+
+#### Pattern 1: Source Constraint Only - `Sign sourceConcept topCpt`
+
+This pattern constrains only the source of the expression, leaving the target unconstrained.
+
+**Usage**: Box items, VIEW expressions, IDENT statements, PairView expressions
+
+**Meaning**: "The expression's source must be compatible with `sourceConcept`, but the target can be anything"
+
+**Example**:
+```Haskell
+-- In pBoxItem2aBoxItem when there's a parent box:
+mConstraint <- case mBoxConcept of
+  Just boxConcept -> do 
+    src <- conceptMap ci (origin pBoxItem) boxConcept
+    pure (Just (Sign src topCpt))
+  Nothing -> pure Nothing
+```
+
+This allows relations like `name[Animal*String]` to be used in a box with concept `Dog` (where `Dog ISA Animal`), because:
+- Source check: `Animal geq Dog` produces a concrete concept (the meet)
+- Target: unconstrained (`topCpt` accepts any target)
+
+#### Pattern 2: Target Constraint Only - `Sign topCpt targetConcept`
+
+This pattern would constrain only the target of the expression, leaving the source unconstrained.
+
+**Usage**: Rarely used in practice (most constraints are on source concepts)
+
+**Meaning**: "The expression's target must be compatible with `targetConcept`, but the source can be anything"
+
+#### Pattern 3: Both Constrained - `Sign sourceConcept targetConcept`
+
+This pattern constrains both source and target.
+
+**Usage**: Explicit signature constraints where both endpoints matter
+
+**Meaning**: "The expression must have source compatible with `sourceConcept` AND target compatible with `targetConcept`"
+
+#### Understanding `topCpt` in Constraints
+
+In constraint signatures, `topCpt` serves as a wildcard meaning "any concept is acceptable here":
+
+- `Sign cpt topCpt`: "Source must match `cpt`, target can be anything"
+- `Sign topCpt cpt`: "Source can be anything, target must match `cpt`"
+- `Sign topCpt topCpt`: "Both source and target can be anything" (no constraint)
+
+This is sound because:
+1. `topCpt` is the most generic concept (everything is more specific than `topCpt`)
+2. When filtering alternatives, expressions are accepted if they're more general than or equal to the constraint
+3. Any concrete concept is more specific than `topCpt`, so it passes the constraint check
+
+**Important**: `topCpt` in constraints is different from `topCpt` in expression signatures. A constraint containing `topCpt` means "unconstrained", while an expression with `topCpt` in its signature means "we couldn't infer a concrete type" and results in a type error.

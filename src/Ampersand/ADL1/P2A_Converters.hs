@@ -1,6 +1,4 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -22,7 +20,6 @@ import Ampersand.ADL1.Expression
 import Ampersand.Basics hiding (conc, set, guard, join)
 import Ampersand.Classes
 import Ampersand.Classes.ConceptStructure (PConceptStructure(..))
-import Ampersand.Core.A2P_Converters (aConcept2pConcept)
 import Ampersand.Core.AbstractSyntaxTree hiding (Guarded(..), Errors, Warning, CTXE, CtxError, Checked)
 import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
@@ -138,39 +135,37 @@ validateInterfaceRefs ctx =
     x : xs -> Errors (x NE.:| xs)
   where
     checkInterface :: Interface -> [CtxError]
-    checkInterface ifc = checkObjectDef (objExpression (ifcObj ifc)) (ifcObj ifc)
-    
-    checkObjectDef ::  Expression -> ObjectDef -> [CtxError]
-    checkObjectDef parentExpr obj =
-      case objmsub obj of
-        Nothing -> []
-        Just subIfc -> checkSubInterface parentExpr subIfc
-    
-    checkSubInterface :: Expression -> SubInterface -> [CtxError]
-    checkSubInterface parentExpr subIfc =
-      case subIfc of
-        Box { siObjs = boxItems } ->
-          concatMap checkBoxItem boxItems
-          where
-            checkBoxItem :: BoxItem -> [CtxError]
-            checkBoxItem (BxExpr obj) = checkObjectDef (objExpression obj) obj
-            checkBoxItem (BxText {}) = []
-        
-        InterfaceRef { pos = refOrigin, siIfcId = refName, siConcept = _placeholder } ->
-          -- Look up the referenced interface
-          case filter ((== refName) . name) (ctxifcs ctx) of
-            [] -> fatal ("Interface " <> tshow refName <> " not found. This should have been caught when checking the interfaces.")
-            [refIfc] ->
-              let refConcept = source (objExpression (ifcObj refIfc))
-                  expectedConcept = target parentExpr
-              -- Check if expectedConcept (what we're passing) >= refConcept (what interface expects)
-              -- This ensures we're passing something at least as specific as what the interface needs
-              in case geq expectedConcept refConcept of
-                   Just True  -> [] -- expectedConcept is more general or equal - OK
-                   Just False -> [mkInterfaceRefNarrowerError refOrigin refName parentExpr refConcept expectedConcept]
-                   Nothing    -> [CTXE refOrigin $ "The interface " <> tshow refName <> " works on concept " <> tshow refConcept <> 
-                                  ", which is incompatible with " <> tshow expectedConcept <> ", the target of " <> showA parentExpr <> "."]
-            _ -> fatal ("Multiple interfaces with name " <> tshow refName <> ". This should have been caught when checking the interfaces.")
+    checkInterface ifc = checkObjectDef ifc (ifcObj ifc)
+
+    checkObjectDef :: Interface ->  ObjectDef -> [CtxError]
+    checkObjectDef ifc obj =
+      maybe [] checkSubInterface (objmsub obj)
+      where
+        parentExpr = objExpression obj
+        checkSubInterface :: SubInterface -> [CtxError]
+        checkSubInterface subIfc =
+          case subIfc of
+            Box { siObjs = boxItems } ->
+              concatMap recur boxItems
+              where
+                recur :: BoxItem -> [CtxError]
+                recur (BxExpr subObj) = checkObjectDef ifc subObj
+                recur (BxText {}) = []
+
+            InterfaceRef {pos = refOrigin, siIfcId = refName} ->
+              -- Look up the referenced interface
+              case filter ((== refName) . name) (ctxifcs ctx) of
+                [] -> fatal ("Interface " <> tshow refName <> " not found. This should have been caught when checking the interfaces.")
+                [refIfc] ->
+                  let refConcept = source (objExpression (ifcObj refIfc))
+                      parentConcept = target parentExpr
+                  -- Check if expectedConcept (what we're passing) >= refConcept (what interface expects)
+                  -- This ensures we're passing something at least as specific as what the interface needs
+                  in case geq refConcept parentConcept of
+                       Just True  -> [] -- parentConcept is more general or equal - OK
+                       Just False -> [mkInterfaceRefNarrowerError refOrigin refName parentExpr refConcept]
+                       Nothing    -> [mkIncompatibleInterfaceError refOrigin parentConcept refConcept refName]
+                _ -> fatal ("Multiple interfaces with name " <> tshow refName <> ". This should have been caught when checking the interfaces.")
 
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx =
@@ -240,6 +235,11 @@ findRelsTyped declMap x tp = let result = Map.findWithDefault [] (SignOrd tp) (M
 
 type DeclMap = Map.Map Name (Map.Map SignOrd Relation)
 
+-- | Partition REPRESENT statements into valid and invalid based on concept existence
+partitionValidRepresentations :: Set.Set P_Concept -> [P_Representation] -> ([P_Representation], [P_Representation])
+partitionValidRepresentations pCpts reprs =
+  L.partition (\(Repr _ cpts _) -> all (`Set.member` pCpts) (NE.toList cpts)) reprs
+
 -- | pCpt2aCpt converts a P_Concept to A_Concept using the concept table
 -- Note that:      type ConceptMap = Origin -> P_Concept -> Guarded A_Concept
 -- pCpt2aCpt is a lookup function that raises a fatal error if the concept
@@ -308,14 +308,27 @@ pCtx2aCtx env
       ctx_enfs = p_enfs
     } =
     do
+      -- Early filtering: get all P_Concepts that exist in the schema (before type checking)
+      let pCpts = pConcs (p_conceptdefs <> concatMap pt_cds p_patterns) `Set.union`
+                  pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
+                  pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
+                  pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
+                  Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
+
       contextInfoPre <- g_contextInfo
       identdefs <- traverse (pIdentity2aIdentity contextInfoPre Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs <- traverse (pViewDef2aViewDef contextInfoPre) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
+      -- Filter REPRESENT statements before trying to convert them
+      let allRepresentations = p_representations <> concatMap pt_Reprs p_patterns
+          (validReprs, invalidReprs) = partitionValidRepresentations pCpts allRepresentations
+      -- Issue warnings for orphaned REPRESENT statements
+      addWarnings (map mkOrphanedRepresentWarning invalidReprs) $ pure ()
       interfaces <- traverse (pIfc2aIfc contextInfoPre) p_interfaces
+      -- Only process valid REPRESENT statements
       explicitReprs <- traverse (\pRepr -> do
                           aCpts <- traverse (conceptMap contextInfoPre (origin pRepr)) (reprcpts pRepr)
                           pure Arepr {aReprFrom = aCpts, aReprTo = reprdom pRepr})
-                        (p_representations <> concatMap pt_Reprs p_patterns)
+                        validReprs
       let objectReprs = getObjReprs interfaces viewdefs identdefs
       checkDuplicateReprTypes (explicitReprs <> objectReprs)
       let contextInfo = contextInfoPre {reprType = reprTypeDefaults (explicitReprs <> objectReprs)}
@@ -407,7 +420,7 @@ pCtx2aCtx env
           -- | Extract concepts from sub-interfaces
           getSubInterfaceConcepts :: SubInterface -> Set.Set A_Concept
           getSubInterfaceConcepts (Box {siObjs = boxItems}) = Set.unions (map getBoxItemConcepts boxItems)
-          getSubInterfaceConcepts (InterfaceRef {siIfcId = refId}) = 
+          getSubInterfaceConcepts (InterfaceRef {siIfcId = refId}) =
             -- Look up the referenced interface and get its actual source concept
             case filter ((== refId) . name) interfaces of
               [refIfc] -> Set.singleton (source (objExpression (ifcObj refIfc)))
@@ -485,7 +498,13 @@ pCtx2aCtx env
                     Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
         typols <- (makeTypologies . makeAliasGraph . makePGraph (p_gens <> concatMap pt_gns p_patterns)) pCpts
         let pCpt2aCpt = makePCpt2ACpt typols
-        reprs <- traverse (pRepr2aRepr pCpt2aCpt) (p_representations <> concatMap pt_Reprs p_patterns)
+        -- Filter REPRESENT statements to only those with existing concepts
+        let allRepresentations = p_representations <> concatMap pt_Reprs p_patterns
+            (validReprs, invalidReprs) = partitionValidRepresentations pCpts allRepresentations
+        -- Issue warnings for orphaned REPRESENT statements
+        addWarnings (map mkOrphanedRepresentWarning invalidReprs) $ pure ()
+        -- Only process valid REPRESENT statements
+        reprs <- traverse (pRepr2aRepr pCpt2aCpt) validReprs
         let reprOf :: A_Concept -> TType
             reprOf cpt =
               if cpt == ONE || show cpt == "SESSION"
@@ -522,10 +541,7 @@ pCtx2aCtx env
       -- TODO: The definition of PClassify (in ParseTree) does not support IsE, so the original IS statement is likely not reproduced correctly in all cases.
       pClassify2aClassify :: ContextInfo -> PClassify -> Guarded AClassify
       pClassify2aClassify ci pg = case NE.tail (generics pg) of
-        [] -> Isa
-               <$> pure (origin pg)
-               <*> pCpt2aCpt (NE.head (generics pg))
-               <*> pCpt2aCpt (specific pg)
+        [] -> (Isa (origin pg) <$> pCpt2aCpt (NE.head (generics pg))) <*> pCpt2aCpt (specific pg)
         _ -> do
           genGenerics <- traverse pCpt2aCpt (generics pg)
           genSpec <- pCpt2aCpt (specific pg)
@@ -610,9 +626,9 @@ pCtx2aCtx env
                 case payload of
                   P_ViewExp term ->
                     do
-                      -- Constrain the term to have source=viewConcept and target=BOT (serves as a wildcard here)
+                      -- Constrain the term to have source=viewConcept
                       viewConcept <- conceptMap ci origPL cpt
-                      xpr <- term2Expr env ci (Just (Sign viewConcept topCpt)) term
+                      xpr <- term2Expr env ci (Just viewConcept) term
                       case geq viewConcept (source xpr) of
                         Just True  -> pure (ViewExp xpr)
                         Just False -> Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
@@ -620,13 +636,12 @@ pCtx2aCtx env
                   P_ViewText str -> pure $ ViewText str
 
       -- | pSubIfc2aSubIfc uses the box concept from the parent box to constrain type-checking of sub-interfaces.
-      pSubIfc2aSubIfc :: ContextInfo -> P_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
+      pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
       pSubIfc2aSubIfc ci boxConcept sub =
         case sub of
-          P_Box{} -> do boxAConcept <- conceptMap ci (origin sub) boxConcept
-                        subBoxes <- mapM (pBoxItem2aBoxItem ci (Just boxConcept)) (si_box sub)
+          P_Box{} -> do subBoxes <- mapM (pBoxItem2aBoxItem ci (Just boxConcept)) (si_box sub)
                         uniqueLabels (origin sub) toLabel (filter hasLabel subBoxes) "BOX"
-                        return (Box{ pos = origin sub, siConcept = boxAConcept, siHeader = si_header sub, siObjs = subBoxes})
+                        return (Box{ pos = origin sub, siConcept = boxConcept, siHeader = si_header sub, siObjs = subBoxes})
           P_InterfaceRef
             { pos       = orig,
               si_isLink = isLink,
@@ -654,15 +669,16 @@ pCtx2aCtx env
           getInterface
            = case filter ((==si_str sub).name) p_interfaces of
                [] -> (Errors . return . CTXE (origin sub)) ("Interface " <> (tshow.si_str) sub <> " not found")
-               [_pIfc] -> 
+               [_pIfc] ->
                  -- Phase 1: Just check existence, return topCpt as placeholder
                  -- The actual compatibility check happens in Phase 2 after all interfaces are typed
                  pure topCpt
                _ -> (Errors . return . CTXE (origin sub)) ("Multiple interfaces with name " <> (tshow.si_str) sub <> " found")
 
-      -- | mBoxConcept is the P_Concept from the parent box, used to constrain type-checking of relations.
-      --   It is "Maybe" because on the top level, in pIfc2aIfc, there is no parent box concept. 
-      pBoxItem2aBoxItem :: ContextInfo -> Maybe P_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
+      -- | mBoxConcept is the A_Concept from the parent box, used to constrain type-checking of relations.
+      --   It is "Maybe" because on the top level, in pIfc2aIfc, there is no parent box concept.
+      --   It is "A_Concept" it can be the target concept of an expression, so it cannot be a P_Concept. 
+      pBoxItem2aBoxItem :: ContextInfo -> Maybe A_Concept -> P_BoxItem TermPrim -> Guarded BoxItem
       pBoxItem2aBoxItem ci mBoxConcept pBoxItem =
         case pBoxItem of
           P_BoxItemTerm
@@ -674,19 +690,11 @@ pCtx2aCtx env
               obj_mView = mView,
               obj_msub = p_msub
             } -> do
-              -- The mConstraint causes a type error if subinterfaces don't match with their parent's target concept.
-              -- This ensures that checkCrud will give the correct error messages because it works on objExpr.
-              -- The result must be more generic than or equal to the mConstraint.
-              mConstraint <- case mBoxConcept of
-                    Just boxConcept -> do src <- conceptMap ci (origin pBoxItem) boxConcept
-                                          pure (Just (Sign src topCpt))
-                    Nothing -> pure Nothing
-              objExpr <- term2Expr env ci mConstraint term
-              -- Guard against TOP/BOT: these are type-checking wildcards, not real concepts
-              -- Don't try to look them up via conceptMap in pSubIfc2aSubIfc
+              -- The result must be more generic than or equal to the mBoxConcept.
+              objExpr <- term2Expr env ci mBoxConcept term
               a_msub <- if target objExpr == topCpt || target objExpr == botCpt
                         then pure Nothing  -- Skip sub-interface processing for wildcard types
-                        else traverse (pSubIfc2aSubIfc ci (aConcept2pConcept (target objExpr))) p_msub
+                        else traverse (pSubIfc2aSubIfc ci (target objExpr)) p_msub
               checkCrud
               typeCheckViewAnnotation objExpr mView
               crud <- pCruds2aCruds objExpr mCrud
@@ -894,7 +902,17 @@ pCtx2aCtx env
                 ptxps  = purps',
                 ptenfs = enforces'
               }
-  
+
+      typeCheckPairView :: ContextInfo -> Expression -> PairView (Term TermPrim) -> Guarded (PairView Expression)
+      typeCheckPairView ci expr (PairView lst) =
+        PairView <$> traverse typeCheckPairViewSeg lst
+        where
+          typeCheckPairViewSeg (PairViewText segOrigin x)  = pure (PairViewText segOrigin x)
+          typeCheckPairViewSeg (PairViewExp segOrigin s x) =
+            do let mConstraint = Just ((case s of Src->source; Tgt->target) expr)
+               e <- term2Expr env ci mConstraint x
+               return (PairViewExp segOrigin s e)
+
       pRul2aRul ::
         ContextInfo ->
         Maybe Text -> -- name of pattern the rule is defined in (if any), just for documentation purposes.
@@ -914,7 +932,7 @@ pCtx2aCtx env
           } =
           do
             exp' <- term2Expr env ci Nothing expr
-            vls <- maybeOverGuarded (typeCheckPairView ci orig exp') viols
+            vls <- maybeOverGuarded (typeCheckPairView ci exp') viols
             return
               Rule
                 { rrnm = nm,
@@ -1020,8 +1038,7 @@ pCtx2aCtx env
         do let orig = origin pidt
            cpt <- conceptMap ci orig (ix_cpt pidt)
            validatePConceptsInSchema ci orig pidt ("IDENT " <> fullName (ix_name pidt))
-           let mConstraint = Just (Sign cpt topCpt)
-           isegs <- traverse (term2Expr env ci mConstraint) (ix_ats pidt)
+           isegs <- traverse (term2Expr env ci (Just cpt)) (ix_ats pidt)
            return ( Id
                     { idPos = orig,
                       idName = ix_name pidt,
@@ -1030,28 +1047,8 @@ pCtx2aCtx env
                       idPat = mPat,
                       identityAts = isegs
                     }
-                 )
+                  )
 
-      typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term TermPrim) -> Guarded (PairView Expression)
-      typeCheckPairView ci o x (PairView lst) =
-        PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
-      typeCheckPairViewSeg :: ContextInfo -> Origin -> Expression -> PairViewSegment (Term TermPrim) -> Guarded (PairViewSegment Expression)
-      typeCheckPairViewSeg _ _ _ (PairViewText segOrigin x) = pure (PairViewText segOrigin x)
-      typeCheckPairViewSeg ci o expr (PairViewExp segOrigin s x) =
-        do let src = (aConcept2pConcept . source) expr
-               tgt = (aConcept2pConcept . target) expr
-           srcConcept <- if source expr == topCpt -- prevent a lookup of topCpt in conceptMap
-                         then pure topCpt 
-                         else conceptMap ci o src
-           tgtConcept <- if target expr == topCpt -- prevent a lookup of topCpt in conceptMap
-                         then pure topCpt 
-                         else conceptMap ci o tgt
-           let srcConstraint = Just (Sign srcConcept topCpt)
-               tgtConstraint = Just (Sign tgtConcept topCpt)
-           e <- case s of
-                  Src -> term2Expr env ci srcConstraint x
-                  Tgt -> term2Expr env ci tgtConstraint x
-           return (PairViewExp segOrigin s e)
       pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
       pPurp2aPurp ci ppurp@PPurpose{ pos = purpOrigin,    -- :: Origin
                                      pexObj = objref,     -- :: PRefObj
@@ -1100,10 +1097,10 @@ assignOpSigns ss (STbinary l r _) = STbinary l r ss
 assignOpSigns ss (STunary e _) = STunary e ss
 assignOpSigns ss (STnullary _) = STnullary ss
 
--- Uncomment showTriple and showGuardedOpTree for certain trace statements. (Search for showTriple or showGuardedOpTree to find out which ones.)
--- showTriple :: (Expression, Signature, Term TermPrim) -> Text
--- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
+showTriple :: (Expression, Signature, Term TermPrim) -> Text
+showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
+-- Uncomment showGuardedOpTree for certain trace statements. (Search for showGuardedOpTree to find out which ones.)
 -- showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
 -- showGuardedOpTree (Errors errs) = 
 --   "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
@@ -1142,7 +1139,7 @@ Example output when compiling testing/Travis/testcases/prototype/shouldSucceed/t
 [Course*Subject]          └── requires[Course*Subject]
 -}
 showOpTree :: OpTree (Expression, Signature, Term TermPrim) -> Text
-showOpTree opTree = 
+showOpTree opTree =
   let outputLines = map T.concat (L.transpose [sigTexts, paddings, treeLines, exprTexts])
   in if length outputLines == 1
      then ""
@@ -1186,6 +1183,9 @@ instance (Flippable a) => Flippable (OpTree a) where
   flp (STbinary a b ss) = STbinary (flp b) (flp a) (flp ss)
   flp (STunary t ss) = STunary (flp t) (flp ss)
   flp (STnullary ss) = STnullary (flp ss)
+
+instance (Flippable a, Flippable b) => Flippable (a,b) where
+  flp (e,s) = (flp e, flp s)
 
 instance (Flippable a, Flippable b, Flippable c) => Flippable (a,b,c) where
   flp (e,s,trm) = (flp e, flp s, flp trm)
@@ -1260,12 +1260,12 @@ refineANY targetSig expr
       -- For EMp1: only narrow, never widen. If expr's concept is already narrower than target, keep it.
       EMp1 av cpt     -> if cpt==topCpt then EMp1 av iCpt else expr
       EDcD _          -> expr -- Declarations are concrete already
-      EBin oper sgn   -> case (source sgn==botCpt, target sgn==botCpt) of
+      EBin oper sgn   -> case (source sgn==topCpt, target sgn==topCpt) of
                            (True , True ) -> EBin oper targetSig
                            (True , False) -> EBin oper (source targetSig `Sign` target sgn)
                            (False, True ) -> EBin oper (source sgn `Sign` target targetSig)
                            (False, False) -> EBin oper sgn
-      EDcV sgn        -> case (source sgn==botCpt, target sgn==botCpt) of
+      EDcV sgn        -> case (source sgn==topCpt, target sgn==topCpt) of
                            (True , True ) -> EDcV targetSig
                            (True , False) -> EDcV (source targetSig `Sign` target sgn)
                            (False, True ) -> EDcV (source sgn `Sign` target targetSig)
@@ -1304,10 +1304,10 @@ refineANY targetSig expr
 --   If it cannot do that, it produces relevant error messages the user can understand.
 --   Thus, term2Expr ensures that the expression has a well-defined population, as specified in the documentation.
 --   As a consequence, the expression can be translated to SQL unambiguously and a database can realize those semantics.
-term2Expr :: (HasRunner env) => env -> ContextInfo -> Maybe Signature -> Term TermPrim -> Guarded Expression
-term2Expr env ci mConstraintSig term
-  = do sgnTree <- -- trace ("🔍 term2Expr called with constraint=" <> tshow mConstraintSig <> ", term=" <> showP term <> " at " <> tshow (origin term)) $
-                   signatures mConstraintSig term
+term2Expr :: (HasRunner env) => env -> ContextInfo -> Maybe A_Concept -> Term TermPrim -> Guarded Expression
+term2Expr env ci mConstraintCpt term
+  = do sgnTree <- -- trace ("🔍 term2Expr called with constraint=" <> tshow mConstraintCpt <> ", term=" <> showP term <> " at " <> tshow (origin term)) $
+                   signatures (case mConstraintCpt of Just cpt -> Just (Src, cpt); Nothing -> Nothing) term
        case -- trace (showOpTree sgnTree)
             sgnTree of
          STnullary    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous nullary term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
@@ -1340,6 +1340,15 @@ term2Expr env ci mConstraintSig term
          STbinary _ _ [ (expr, _, _) ] -> pure expr
          _                          -> fatal ("term2Expr: pattern match failure in rootExpression. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
 
+    -- Keep this in case you might ever need to deduplicate the OpTree. (It uses pairs because Eq Term is not defined.)
+    -- nubOpTree :: OpTree (Expression, Signature, Term TermPrim) -> OpTree (Expression, Signature, Term TermPrim)
+    -- nubOpTree opTree = assignOpSigns [ (expr, sgn, term) | (expr, sgn) <- L.nub [ (expr, sgn) | (expr, sgn, _) <- triples ] ] opTree
+    --   where
+    --     triples = opSigns opTree
+    --     term = case triples of
+    --              (_, _, t):_ -> t
+    --              []          -> fatal "nubOptree: empty triples list"
+
     -- | The signatures function computes all possible type signatures for a term within a constraint.
     --   It yields an OpTree with the exact recursive structure of the term.
     --   In every node there is a nonempty list of triples (Expression, Signature, Term)
@@ -1349,10 +1358,10 @@ term2Expr env ci mConstraintSig term
     --
     --   mConstrSig::Signature is use for type-checking expressions in boxes (interfaces/APIs), IDENT statements, pairviews or views,
     --   to communicate the expected signature from the context. The signature must remain within mConstrSig.
-    
-    signatures :: Maybe Signature -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
-    signatures mConstrSig trm = do
-      opTree <- -- trace ("4. signatures ("<>tshow mConstrSig<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields:")
+
+    signatures :: Maybe (SrcOrTgt, A_Concept) -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
+    signatures mConstraint trm = do
+      opTree <- -- trace ("4. signatures ("<>tshow mConstraint<>") ("<>showP trm<>") in "<>tshow (origin trm)<>" yields:")
                 resultTerm
       let refinedOpTree = -- trace ("   resultTerm:  "<>showOpTree opTree) $
                           fmap (\(expr, sgn, t) -> (refineANY sgn expr, sgn, t)) opTree
@@ -1378,7 +1387,7 @@ term2Expr env ci mConstraintSig term
              PBin _ oper        -> let x = topCpt      in pure (STnullary [(EBin oper (Sign x x), Sign x x, Prim trmPrim)])
              PBind o oper c     -> do x <- conceptMap ci o c
                                       pure (STnullary [(EBin oper (Sign x x), Sign x x, Prim trmPrim)])
-             PFlipped t         -> do sgnTree <- signatures (fmap flp mConstrSig) (Prim t)
+             PFlipped t         -> do sgnTree <- signatures (fmap flp mConstraint) (Prim t)
                                       pure (flp sgnTree)
              PNamedR rel        -> do relsList <- case p_mbSign rel of
                                         Just sg -> do sgn <- pSign2aSign (conceptMap ci (origin trmPrim)) sg
@@ -1387,7 +1396,7 @@ term2Expr env ci mConstraintSig term
                                       case relsList of
                                          [] -> Errors . return . CTXE (origin trmPrim) $ "Undeclared relation " <> showP trmPrim
                                          ds -> pure (STnullary [(EDcD d, sign d, Prim trmPrim) | d <- ds])
-  
+
         -- | resultTerm yields all possible (expression, signature, term) triples for a term.
         resultTerm :: Guarded (OpTree (Expression, Signature, Term TermPrim))
         resultTerm
@@ -1411,25 +1420,25 @@ term2Expr env ci mConstraintSig term
                                                                   flpLeft _ = fatal ("Unexpected triple in a pattern of a PRrs term at "<> tshow o)
                             Checked _ _ -> fatal "Unexpected non-binary OpTree in PRrs"
                             Errors errs -> Errors errs -- TODO: check error messages for flipping the left operand
-            PPrd o a b -> do sgnaTree <- signatures mConstrSig a; sgnbTree <- signatures mConstrSig b
+            PPrd o a b -> do sgnaTree <- signatures mConstraint a; sgnbTree <- signatures mConstraint b
                              return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), PPrd o trm_a trm_b)
                                                                 | (expr_a, sgn_a, trm_a)<-opSigns sgnaTree, (expr_b, sgn_b, trm_b)<-opSigns sgnbTree])
             PFlp _ e   -> do -- When flipping, swap the constraint using the Flippable instance
-                             sgnTree <- signatures (flp <$> mConstrSig) e
+                             sgnTree <- signatures (fmap flp mConstraint) e
                              return (STunary sgnTree [(EFlp expr, flp sgn, trm) | (expr, sgn, _)<-opSigns sgnTree])
-            PKl0 o e   -> do sgnTree <- signatures mConstrSig e
+            PKl0 o e   -> do sgnTree <- signatures mConstraint e
                              let endoSigns = [(EKl0 expr, sgn, trm) | (expr, sgn, _)<-opSigns sgnTree, source sgn == target sgn]
                              case endoSigns of
                                [] -> mkVerboseTypeError env o sgnTree ("Kleene star (*) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn, _) <- opSigns sgnTree])
                                _  -> return (STunary sgnTree endoSigns)
-            PKl1 o e   -> do sgnTree <- signatures mConstrSig e
+            PKl1 o e   -> do sgnTree <- signatures mConstraint e
                              let endoSigns = [(EKl1 expr, sgn, trm) | (expr, sgn, _)<-opSigns sgnTree, source sgn == target sgn]
                              case endoSigns of
                                [] -> mkVerboseTypeError env o sgnTree ("Kleene plus (+) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn, _) <- opSigns sgnTree])
                                _  -> return (STunary sgnTree endoSigns)
-            PCpl _ e   -> do sgnTree <- signatures mConstrSig e
+            PCpl _ e   -> do sgnTree <- signatures mConstraint e
                              return (STunary sgnTree [(ECpl expr, sgn, trm) | (expr, sgn, _)<-opSigns sgnTree])
-            PBrk _ e   -> do sgnTree <- signatures mConstrSig e
+            PBrk _ e   -> do sgnTree <- signatures mConstraint e
                              return (STunary sgnTree [(EBrk expr, sgn, trm) | (expr, sgn, _)<-opSigns sgnTree])
             -- Inter-type operations: both operands get the same constraint
             -- For union, use join (least upper bound) to find the common supertype
@@ -1439,7 +1448,7 @@ term2Expr env ci mConstraintSig term
             PIsc o a b -> checkPeri  o "intersection" Meet EIsc (PIsc o) a b
             PUni o a b -> checkPeri  o "union"        Join EUni (PUni o) a b
             PDif o a b -> checkPeri  o "difference"   Join EDif (PDif o) a b
-  
+
         errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
          = let errorOpTree = STbinary sgnaTree sgnbTree [(combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, _, trm_b)<-sgnsb ]
                conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[joinOrMeet (source sgn_a) (source sgn_b)] ]
@@ -1469,17 +1478,17 @@ term2Expr env ci mConstraintSig term
                               [] ->     "untyped"
                               [sgn] ->  tshow sgn
                               sgn:ss -> (T.intercalate ", " . map tshow) ss<>", or "<>tshow sgn
-  
+
         -- | checkPeri generates a type error message for equations, inclusions, unions, intersects, and difference.
         -- The meetORjoin parameter determines how to combine concept types:
         -- - For union, use join (least upper bound) to find the common supertype
         -- - For other operations (intersection, equation, inclusion, difference), use meet (greatest lower bound)
-  
+
         checkPeri :: Origin -> Text -> MeetOrJoin -> ((Expression, Expression) -> Expression) -> (Term TermPrim -> Term TermPrim -> Term TermPrim) -> Term TermPrim -> Term TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         checkPeri o kind moj combinator pCombinator a b =
           do
-            sgnaTree <- signatures mConstrSig a
-            sgnbTree <- signatures mConstrSig b
+            sgnaTree <- signatures mConstraint a
+            sgnbTree <- signatures mConstraint b
             let sgnsa = opSigns sgnaTree
                 sgnsb = opSigns sgnbTree
             case [ (combinator (refineANY sgn expr_a, refineANY sgn expr_b), sgn, pCombinator trm_a trm_b)
@@ -1498,10 +1507,10 @@ term2Expr env ci mConstraintSig term
               joinOrMeetSig = case moj of Join -> joinSig; Meet -> meetSig
               joinOrMeet :: A_Concept -> A_Concept -> Maybe A_Concept
               joinOrMeet = case moj of Join -> join; Meet -> meet
-  
+
         checkIntra
           :: {- o           -} Origin
-          -> {- kind        -} Text
+          -> {- kind        -} Text   -- e.g., "composition", "left residual", ...
           -> {- combinator  -} ((Expression, Expression) -> Expression)
           -> {- pCombinator -} (Term TermPrim -> Term TermPrim -> Term TermPrim)
           -> {- a           -} Term TermPrim
@@ -1511,14 +1520,12 @@ term2Expr env ci mConstraintSig term
           -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         checkIntra o kind combinator pCombinator a b _opStr = -- activate the last parameter opStr when using the trace statements: 
           do let showPa = showP a; showPb = showP b -- for tracing purposes only
-             let lConstraint = case mConstrSig of
-                                  Just (Sign src _) -> Just (Sign src botCpt)
-                                  Just (ISgn cpt)   -> Just (Sign cpt botCpt)
-                                  Nothing           -> Nothing
-             let rConstraint = case mConstrSig of
-                                  Just (Sign _ tgt) -> Just (Sign botCpt tgt)
-                                  Just (ISgn cpt)   -> Just (Sign botCpt cpt)
-                                  Nothing           -> Nothing
+             let lConstraint = case mConstraint of
+                                  Just (Src, _) -> mConstraint
+                                  _             -> Nothing
+             let rConstraint = case mConstraint of
+                                  Just (Tgt, _) -> mConstraint
+                                  _             -> Nothing
              sgnaTree <- signatures lConstraint a; sgnbTree <- signatures rConstraint b
              let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
                  triples = makeTriples triplesa triplesb
@@ -1562,7 +1569,7 @@ term2Expr env ci mConstraintSig term
                | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
                , Just between<-[meet cpta cptb]
                ]
-  
+
             -- diagnosis :: Text -> a -> a -> [a] -> [a] -> Text
             diagnosis sgnsa sgnsb
              = case (kind, sgnsa==sgnsb) of
@@ -1586,106 +1593,35 @@ term2Expr env ci mConstraintSig term
 
         constrain :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         constrain opTree =
-          case mConstrSig of
+          case mConstraint of
             Nothing -> pure opTree
-            Just constraintSig ->
-              case [ (narrowedExpr, narrowedSig, t) 
+            Just (sot, limit) -> -- ensure that the signatures in opTree are equal or wider than the constraint
+              case [ case expr of
+                       -- For narrow§able expressions (I, V, atoms, bind), compute the meet
+                       EDcI _      -> (EDcI (source sgn'), sgn', t)
+                       EDcV _      -> (EDcV sgn', sgn', t)
+                       EMp1 av _   -> (EMp1 av (source sgn'), sgn', t)
+                       EBin oper _ -> (EBin oper sgn', sgn', t)
+                       _           -> (expr, sgn, t)
                    | (expr, sgn, t) <- opSigns opTree
-                   -- Use narrowerSig for narrowable expressions, widerSig for declared relations
-                   , case expr of
-                       EDcI _   -> narrowerSig sgn == Just True
-                       EDcV _   -> narrowerSig sgn == Just True
-                       EMp1 _ _ -> narrowerSig sgn == Just True
-                       EBin _ _ -> narrowerSig sgn == Just True
-                       EDcD _   -> widerSig sgn == Just True
-                       _        -> True  -- Other expressions pass through
-                   , let narrowedSig = case expr of
-                           -- For narrowable expressions (I, V, atoms, bind), compute the meet
-                           EDcI _   -> fromMaybe sgn (meetSig constraintSig sgn)
-                           EDcV _   -> fromMaybe sgn (meetSig constraintSig sgn)
-                           EMp1 _ _ -> fromMaybe sgn (meetSig constraintSig sgn)
-                           EBin _ _ -> fromMaybe sgn (meetSig constraintSig sgn)
-                           -- For declared relations, keep original signature (already validated by widerSig)
-                           EDcD _ -> sgn
-                           -- All other expressions keep their signature
-                           _ -> sgn
-                         -- Update the expression to match the narrowed signature
-                         narrowedExpr = case expr of
-                           EDcI _ -> case narrowedSig of
-                                       ISgn c -> EDcI c
-                                       Sign s _ -> EDcI s
-                           EDcV _ -> EDcV narrowedSig
-                           EMp1 av _ -> case narrowedSig of
-                                          ISgn c -> EMp1 av c
-                                          Sign s _ -> EMp1 av s
-                           EBin oper _ -> EBin oper narrowedSig
-                           _ -> expr  -- Keep other expressions unchanged
+                   -- Apply contravariance principle (see docs/CompilationProcess.md)
+                   -- For narrowable expressions (I, V, atoms, bind): use wider signatures (contravariance)
+                   -- For declared relations: they must match exactly or be wider than the constraint
+                   , (case sot of Src -> source; Tgt -> target) expr `geq` limit  == Just True
+                   , let sgn' = case (sot, sgn) of
+                                 (Src, ISgn _)     | source expr==topCpt -> ISgn limit
+                                 (Src, Sign _ tgt) | source expr==topCpt -> Sign limit tgt
+                                 (Tgt, ISgn _)     | target expr==topCpt -> ISgn limit
+                                 (Tgt, Sign src _) | target expr==topCpt -> Sign src limit
+                                 _                                       -> sgn
                    ] of
-                [] -> -- Provide detailed error message for declared relations
-                      case ([ sgn | (EDcD _, sgn, _) <- opSigns opTree ], constraintSig) of
-                        -- Special case: box item context where target is topCpt (irrelevant)
-                        ([sgn], Sign constraintSrc constraintTgt) | constraintTgt == topCpt ->
-                          Errors . return . CTXE (origin trm) $
-                            ("The source of " <> showP trm <> " must match " <> tshow constraintSrc <> ". ") <>
-                            "However, " <> showP trm <> " has source " <> tshow (source sgn) <>
-                            case geq constraintSrc (source sgn) of
-                              Nothing    -> ", which is unrelated to " <> tshow constraintSrc <> "."
-                              Just False -> ", which is too narrow (not wider than or equal to " <> tshow constraintSrc <> ")."
-                              Just True  -> fatal "Unexpected: source matches but we're in error branch"
-                        -- Special case: box item context where source is topCpt (irrelevant)
-                        ([sgn], Sign constraintSrc constraintTgt) | constraintSrc == topCpt ->
-                          Errors . return . CTXE (origin trm) $
-                            ("The target of " <> showP trm <> " must match " <> tshow constraintTgt <> ". ") <>
-                            "However, " <> showP trm <> " has target " <> tshow (target sgn) <>
-                            case geq constraintTgt (target sgn) of
-                              Nothing    -> ", which is unrelated to " <> tshow constraintTgt <> "."
-                              Just False -> ", which is too narrow (not wider than or equal to " <> tshow constraintTgt <> ")."
-                              Just True  -> fatal "Unexpected: target matches but we're in error branch"
-                        -- Normal case: both source and target matter
-                        ([sgn], Sign constraintSrc constraintTgt) ->
-                          Errors . return . CTXE (origin trm) $
-                            ("There is no match for relation " <> showP trm <> " because ") <> T.intercalate " and "
-                              ([ "its source concept " <> tshow (source sgn) <> " should be " <> tshow constraintSrc <> " (or more specific)"
-                               | Just False <- [geq constraintSrc (source sgn)]] <>
-                               [ "its source concept " <> tshow (source sgn) <> " is unrelated to " <> tshow constraintSrc
-                               | Nothing <- [geq constraintSrc (source sgn)]] <>
-                               [ "its target concept " <> tshow (target sgn) <> " should be " <> tshow constraintTgt <> " (or more specific)"
-                               | Just False <- [geq constraintTgt (target sgn)]] <>
-                               [ "its target concept " <> tshow (target sgn) <> " is unrelated to " <> tshow constraintTgt
-                               | Nothing <- [geq constraintTgt (target sgn)]]) <> "."
-                        _ -> mkVerboseTypeMismatchError env (origin trm)
-                               ("No matching signatures for term " <> showP trm <> " within the constraint signature " <> tshow constraintSig <> ". ")
-                               (Just "Expected a signature that is wider (or equal).")
-                               opTree
+                [] -> -- No alternatives match the constraint
+                      Errors . return . CTXE (origin trm) $
+                        "Cannot match term " <> showP trm <> " with constraint  " <> tshow mConstraint <> ".\n" <>
+                        "  Triples: " <> (T.intercalate ", " . map showTriple . opSigns) opTree <> "\n" <>
+                        "  Constraint: " <> tshow mConstraint <> "\n" <>
+                        "  geq: " <> T.intercalate ", " [tshow sot<>" ("<> showA expr<>") `geq` "<>tshow limit<>" == " <> tshow ((case sot of Src -> source; Tgt -> target) expr `geq` limit) | (expr, _, _) <- opSigns opTree]
                 filteredTriples  -> pure (assignOpSigns filteredTriples opTree)
-          where
-            -- widerSig checks if a signature is equal to or wider (i.e. more general) than the constraint.
-            -- Relations must be at least as general as the constraint to be usable in that context.
-            widerSig :: Signature -> Maybe Bool
-            widerSig sgn = f mConstrSig
-              where
-                f :: Maybe Signature -> Maybe Bool
-                f _mConstraintSig@Nothing                                = Just True
-                f (Just (Sign src tgt)) | src == topCpt && tgt == topCpt = Just True
-                f (Just (Sign src tgt)) | src == topCpt                  = geq tgt (target sgn)
-                f (Just (Sign src tgt)) | tgt == topCpt                  = geq src (source sgn)
-                f (Just (Sign src tgt))                                  = (&&) <$> geq src (source sgn) <*> geq tgt (target sgn)
-                f (Just (ISgn cpt)    ) | cpt == topCpt                  = Just True
-                f (Just (ISgn cpt)    )                                  = geq cpt (source sgn)
-            -- narrowerSig checks if a signature is equal to or narrower (i.e. more specific) than the constraint.
-            -- For declared relations: they must be at most as general as the constraint to be usable in that context.
-            -- For narrowable expressions (I, V, atoms, bind): they can be narrowed, so check if they CAN be narrowed to the constraint.
-            narrowerSig :: Signature -> Maybe Bool
-            narrowerSig sgn = f mConstrSig
-              where
-                f :: Maybe Signature -> Maybe Bool
-                f _mConstraintSig@Nothing                                = Just True
-                f (Just (Sign src tgt)) | src == topCpt && tgt == topCpt = Just True
-                f (Just (Sign src tgt)) | src == topCpt                  = geq (target sgn) tgt
-                f (Just (Sign src tgt)) | tgt == topCpt                  = geq (source sgn) src
-                f (Just (Sign src tgt))                                  = (&&) <$> geq (source sgn) src <*> geq (target sgn) tgt
-                f (Just (ISgn cpt)    ) | cpt == topCpt                  = Just True
-                f (Just (ISgn cpt)    )                                  = geq (source sgn) cpt
 
 instance HasSignature (OpTree (Expression, Signature, Term TermPrim)) where
   sign sgnTree = case sgnTree of

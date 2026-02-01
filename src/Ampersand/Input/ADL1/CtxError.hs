@@ -51,6 +51,7 @@ module Ampersand.Input.ADL1.CtxError
     mkTurtleWarning,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
+    mkOrphanedRepresentWarning,
     mustBeBound,
     mustBeOrdered,
     mustBeOrderedConcLst,
@@ -387,36 +388,27 @@ mkInterfaceRefCycleError cyclicIfcs =
     showIfc :: Interface -> Text
     showIfc i = "- " <> fullName i <> " at position " <> tshow (origin i)
 
-mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name -> CtxError
-mkIncompatibleInterfaceError objDef expTgt refSrc ref =
-  case objDef of
-    P_BoxItemTerm {} ->
-      CTXE (origin objDef)
-        $ "Incompatible interface reference "
+mkIncompatibleInterfaceError :: Origin -> A_Concept -> A_Concept -> Name -> CtxError
+mkIncompatibleInterfaceError orig expTgt refSrc ref =
+      CTXE orig
+        $ "Incompatible reference to interface "
         <> fullName ref
-        <> " at field "
-        <> maybe "without a label" tshow (obj_PlainName objDef)
-        <> ":\nReferenced interface "
-        <> fullName ref
-        <> " has type "
+        <> ".\n   It has type "
         <> showWithAliases refSrc
         <> ", which is not comparable to the target "
         <> showWithAliases expTgt
         <> " of the term at this field."
-    _ -> fatal "Improper use of mkIncompatibleInterfaceError"
 
-mkInterfaceRefNarrowerError :: Origin -> Name -> Expression -> A_Concept -> A_Concept -> CtxError
-mkInterfaceRefNarrowerError refOrigin ifcName parentExpr ifcConcept expectedConcept =
+mkInterfaceRefNarrowerError :: Origin -> Name -> Expression -> A_Concept -> CtxError
+mkInterfaceRefNarrowerError refOrigin ifcName parentExpr ifcConcept =
   CTXE refOrigin
     $ "The interface "
     <> fullName ifcName
     <> " works on concept "
     <> showWithAliases ifcConcept
     <> ", which is narrower (i.e. more specific) than "
-    <> showWithAliases expectedConcept
-    <> ", being the target of "
-    <> showA parentExpr
-    <> ". Please refer to an interface with a wider (or equal) interface-concept."
+    <> showWithAliases (target parentExpr)
+    <> ". Use an interface with a wider (or equal) interface-concept."
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
@@ -677,6 +669,13 @@ mkCaseProblemWarning x y =
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."
       ]
+
+mkOrphanedRepresentWarning :: P_Representation -> Warning
+mkOrphanedRepresentWarning (Repr orig cpts _) =
+  Warning orig
+    $ "REPRESENT statement references undefined concept(s): "
+    <> T.intercalate ", " (map fullName (NE.toList cpts))
+    <> ". This statement will be ignored."
 
 mkGenericParserError :: Origin -> Text -> Guarded a
 mkGenericParserError orig msg = Errors . pure $ CTXE orig msg

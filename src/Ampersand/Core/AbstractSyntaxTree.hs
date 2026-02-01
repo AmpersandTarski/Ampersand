@@ -1286,6 +1286,9 @@ l .*. r  = EPrd (l, r)
    So in order to let -(r!s) be equal to -r;-s we must not check for the existence of these types, for the Rotterdam paper already shows that this is fine.
 -}
 
+instance Flippable A_Concept where
+  flp = id
+
 instance Flippable Expression where
   flp expr = case expr of
     EEqu (l, r) -> EEqu (flp l, flp r)
@@ -2136,7 +2139,7 @@ geq a@PlainConcept{} b@PlainConcept{}
   | b == botCpt              = Just True
   | a == botCpt              = Just False
   | typology a /= typology b = Nothing  -- Different typologies, no geq
-  | otherwise = Just (hasEdge (aliases a) (aliases b) (tyGrph (typology a)))
+  | otherwise = Just (hasEdge (aliases b) (aliases a) (tyGrph (typology a)))
 geq a b | a==b = Just True
 geq _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
