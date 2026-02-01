@@ -10,7 +10,7 @@ Compilation of an Ampersand script proceeds as follows:
    INCLUDE cycles are allowed because Ampersand compiles all files that are in the transitive closure of all include statements that are reachable from the main script.
 2. **Lexing**
 
-   Parsing starts with tokenization, so the parser gets to parse token sequences.
+   Parsing starts with tokenization of all included files, so the parser gets to parse a token sequence.
 3. **Parsing**
 
    The parser produces a P_Context, which is a Haskell data type.
@@ -38,10 +38,10 @@ Compilation of an Ampersand script proceeds as follows:
 
 The CLASSIFY statement places concepts in a specialization relation. `CLASSIFY `$A$` ISA `$B$ means that every instance of concept $A$ is also an instance of concept $B$.
 This places concepts in a lexical hierarchy which we call *Taxonomy*. Every concept is member of precisely one taxonomy, even if it is the only member.
-The parsing process builds up these taxonomies in the P-structure. It must not use information that requires type checking because that creates a bootstrap conflict.
+The parsing process builds up these taxonomies in the P-structure.
 This chapter discusses the parsing process.
 
-### Collect all P_Concepts → `allPConceptsForGraph`
+### Collect all P_Concepts (function: `makePGraph`)
 
 First we collect all concepts in the entire script and all classify statements as a preparation for making a concept graph:
 
@@ -60,12 +60,19 @@ The initial concept graph is given by:
    makePGraph alleGens allPConceptsForGraph
 ``` 
 
-### Build typologies → `typologies`
+### Aliases (function: makeAliasGraph)
 
-Cycles in the graph are treated as alias sets. As a result, if $A$ isa $B$ and $B$ isa $A$, then $A$ and $B$ are synonym to each other.
+Cycles in the graph causes concepts to be synonym.
+If $A$ isa $B$ and $B$ isa $A$, then $A$ and $B$ are synonym to each other.
 We use `makeAliasGraph` to compute alias sets and create a directed acyclic graph from it.
-A typology is a weakly connected component within the alias graph.
-The function `makeTypologies` creates a guarded graph. It is guarded because the initial graph may contain errors.
+It uses the mathematical idea of a strongly connected components (SCCs), each of which contains all concepts that are connected cyclically.
+The resulting alias graph doesn't contain any cycles, so it is a directed acyclic graph.
+
+### Build typologies (function: typologies)
+
+A typology is a weakly connected component of the alias graph.
+The function `makeTypologies` creates a guarded graph.
+It is guarded because the initial graph may contain errors.
 The set of typologies is computed by
 
 ```Haskell
@@ -73,7 +80,10 @@ The set of typologies is computed by
 ``` 
 
 ### Create `pCpt2aCpt` from typologies
-NOW we can create pCpt2aCpt
+We need a function, `pCpt2aCpt :: P_Concept -> A_Concept`, for the A-structure.
+There, concepts are subjected to lattice-theoretical functions `meet` and `join`.
+For this purpose, every `A_Concept` has access to the typology it belongs to.
+`pCpt2aCpt` is made by `makePCpt2ACpt`
 
 ```Haskell
    let pCpt2aCpt = makePCpt2ACpt typologies
