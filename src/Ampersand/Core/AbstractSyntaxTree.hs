@@ -1484,7 +1484,7 @@ data A_Concept
 
 -- | Equality for A_Concept ignores the typology field
 instance Eq A_Concept where
-  PlainConcept {aliases = a1} == PlainConcept {aliases = a2} = a1 == a2
+  PlainConcept {aliases = a1} == PlainConcept {aliases = a2} = (not.null) (a1 `Set.intersection` a2)
   DISJT c1 == DISJT c2 = c1 == c2
   UNION c1 == UNION c2 = c1 == c2
   ISECT c1 == ISECT c2 = c1 == c2
@@ -2139,7 +2139,7 @@ geq a@PlainConcept{} b@PlainConcept{}
   | b == botCpt              = Just True
   | a == botCpt              = Just False
   | typology a /= typology b = Nothing  -- Different typologies, no geq
-  | otherwise = Just (hasEdge (aliases b) (aliases a) (tyGrph (typology a)))
+  | otherwise = (Just . hasEdge (aliases b) (aliases a) . transitiveClosure . tyGrph . typology) a
 geq a b | a==b = Just True
 geq _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 

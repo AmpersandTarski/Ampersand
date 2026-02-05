@@ -58,8 +58,8 @@ PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
     CONCEPT FormalAmpersand.Epsilon "An term between two concepts that have an generalisation relation between them" 
     CLASSIFY FormalAmpersand.Epsilon ISA FormalAmpersand.Term
     RELATION FormalAmpersand.userCpt[FormalAmpersand.Epsilon*FormalAmpersand.Concept] [UNI]
-    CONCEPT FormalAmpersand.I "The identity term on a concept."
-    CLASSIFY FormalAmpersand.I ISA FormalAmpersand.Epsilon
+    -- CONCEPT FormalAmpersand.I "The identity term on a concept."
+    -- CLASSIFY FormalAmpersand.I ISA FormalAmpersand.Epsilon
     
     CLASSIFY FormalAmpersand.Equivalence ISA FormalAmpersand.BinaryTerm
     CLASSIFY FormalAmpersand.Inclusion   ISA FormalAmpersand.BinaryTerm
@@ -81,20 +81,20 @@ PATTERN FormalAmpersand.TermDefinitions LABEL "Term definitions"
     CLASSIFY FormalAmpersand.LeftResidual       ISA FormalAmpersand.BinaryTerm
     CLASSIFY FormalAmpersand.RightResidual      ISA FormalAmpersand.BinaryTerm
 
-    CONCEPT FormalAmpersand.BinaryMinus ""
-    CONCEPT FormalAmpersand.CartesianProduct ""
-    CONCEPT FormalAmpersand.Composition ""
-    CONCEPT FormalAmpersand.Converse ""
-    CONCEPT FormalAmpersand.Equivalence ""
-    CONCEPT FormalAmpersand.Inclusion ""
-    CONCEPT FormalAmpersand.Intersection ""
-    CONCEPT FormalAmpersand.KleenePlus ""
-    CONCEPT FormalAmpersand.KleeneStar ""
-    CONCEPT FormalAmpersand.LeftResidual ""
-    CONCEPT FormalAmpersand.RelationalAddition ""
-    CONCEPT FormalAmpersand.RightResidual ""
-    CONCEPT FormalAmpersand.UnaryMinus ""
-    CONCEPT FormalAmpersand.Union ""
+    -- CONCEPT FormalAmpersand.BinaryMinus ""
+    -- CONCEPT FormalAmpersand.CartesianProduct ""
+    -- CONCEPT FormalAmpersand.Composition ""
+    -- CONCEPT FormalAmpersand.Converse ""
+    -- CONCEPT FormalAmpersand.Equivalence ""
+    -- CONCEPT FormalAmpersand.Inclusion ""
+    -- CONCEPT FormalAmpersand.Intersection ""
+    -- CONCEPT FormalAmpersand.KleenePlus ""
+    -- CONCEPT FormalAmpersand.KleeneStar ""
+    -- CONCEPT FormalAmpersand.LeftResidual ""
+    -- CONCEPT FormalAmpersand.RelationalAddition ""
+    -- CONCEPT FormalAmpersand.RightResidual ""
+    -- CONCEPT FormalAmpersand.UnaryMinus ""
+    -- CONCEPT FormalAmpersand.Union ""
 
  --   CONCEPT FormalAmpersand.BindedRelation ""
 

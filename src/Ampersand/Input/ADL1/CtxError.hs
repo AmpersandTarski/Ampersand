@@ -41,6 +41,8 @@ module Ampersand.Input.ADL1.CtxError
     mkConceptNotInSchemaError,
     mkRelationTooNarrowForViewError,
     mkViewTooSpecificError,
+    mkViewIncompatibleError,
+    mkViewIncomparableError,
     mkViewExpressionMismatchError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
@@ -474,13 +476,10 @@ mkConceptNotInSchemaError orig cptName contextName =
 mkRelationTooNarrowForViewError :: Origin -> Expression -> A_Concept -> CtxError
 mkRelationTooNarrowForViewError orig expr viewConcept =
   CTXE orig
-    $ T.intercalate "\n  "
-    $ [ "The expression in a VIEW segment is too specific for the VIEW concept.",
-        "Expression: " <> showA expr,
-        "VIEW concept: " <> showWithAliases viewConcept,
-        "The source of the expression (" <> (showWithAliases . source) expr <> ") is more specific than the VIEW concept (" <> showWithAliases viewConcept <> ").",
-        "A VIEW expression must work for all instances of the VIEW concept, not just a subset."
-      ]
+    $ "The expression " <> showA expr<>
+      " in the VIEW segment on "<>tshow orig<>
+      " has source " <> (showWithAliases . source) expr <> 
+      ", which is too specific for the VIEW concept " <> showWithAliases viewConcept <> "."
 
 mkViewTooSpecificError :: Origin -> P_ViewDef -> Expression -> CtxError
 mkViewTooSpecificError orig vd objExpr =
@@ -488,6 +487,22 @@ mkViewTooSpecificError orig vd objExpr =
     $ T.intercalate "\n  "
     $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
         "This is too specific for the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> "."
+      ]
+
+mkViewIncompatibleError :: Origin -> A_Concept -> P_ViewDef -> Expression -> CtxError
+mkViewIncompatibleError orig joinCpt vd objExpr =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
+        "This is incompatible with the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> ", even though both are " <> showA joinCpt <> "."
+      ]
+
+mkViewIncomparableError :: Origin -> P_ViewDef -> Expression -> CtxError
+mkViewIncomparableError orig vd objExpr =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
+        "This is unrelated to the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> ". These concepts are in different typologies."
       ]
 
 mkViewExpressionMismatchError :: Origin -> Expression -> A_Concept -> CtxError

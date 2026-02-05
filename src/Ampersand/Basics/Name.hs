@@ -30,11 +30,10 @@ where
 
 import Ampersand.Basics.Hashing
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode)
+import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode, unCap, upCap)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
-import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -120,11 +119,9 @@ try2Name typ txt =
          in reverse (lastPart : namespaceParts)
       where
         handleFirstChar :: Text -> Text
-        handleFirstChar t = case T.uncons t of
-          Nothing -> t
-          Just (h, tl) -> case typ of
-            ConceptName -> T.cons (toUpper h) tl
-            RelationName -> T.cons (toLower h) tl
+        handleFirstChar t = case typ of
+            ConceptName -> upCap t  -- convert first char to uppercase
+            RelationName -> unCap t -- convert first char to lowercase
             _ -> t
 
 -- | This function checks if a text is a proper Namepart. There are three possible outcomes:

@@ -79,6 +79,14 @@ The set of typologies is computed by
    typologies <- makeTypologies (makeAliasGraph (makePGraph alleGens allPConceptsForGraph))
 ``` 
 
+## Type checking
+
+The transformation from P-Structure to A-Structure requires that every term gets a unique signature.
+The type checker `pTerm2Expr :: Term -> Expression` does just that.
+Let us discus this bottom-up, starting with concepts, via relations and rules, and on to the more complicated structures in the language.
+
+### Concepts
+
 ### Create `pCpt2aCpt` from typologies
 We need a function, `pCpt2aCpt :: P_Concept -> A_Concept`, for the A-structure.
 There, concepts are subjected to lattice-theoretical functions `meet` and `join`.
@@ -96,10 +104,6 @@ We need `pCpt2aCpt` to create a table of declarations:
 ### Build ContextInfo
 
 
-
-## Type checking
-
-### Concepts
 
 #### Lattice Theory Foundation
 
@@ -228,6 +232,28 @@ The public API for A_Concept operations includes:
 
 - `join :: A_Concept -> A_Concept -> Maybe A_Concept`
 - `meet :: A_Concept -> A_Concept -> Maybe A_Concept`
+
+## Constraint Propagation for Binary Operators
+
+### Intra-type operators (`;`, `/`, `\`, `◇`, `!`)
+Use `checkIntra` which:
+- Splits constraints: left gets source, right gets target
+- Uses `makeTriples` to compute "between" concept via `meet`
+- Requires compatible concepts (meet must exist)
+
+### Inter-type operators (`∪`, `∩`, `|-`, `=`, `-`)  
+Use `checkPeri` which:
+- Passes same constraint to both operands
+- Uses `join` or `meet` to find common signature
+- Allows heterogeneous operands
+
+### Cartesian Product (`#`)
+Special case:
+- Splits constraints like `checkIntra`: left gets source, right gets target
+- Does NOT use `makeTriples` (no "between" concept needed)
+- Simply combines refined subexpressions: `a#b` has signature `[source a * target b]`
+- Relies on `constrain` to refine subexpressions before combination
+
 
 ## Technical types (TType)
 

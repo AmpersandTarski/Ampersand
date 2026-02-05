@@ -79,10 +79,11 @@ nameSpaceOfXLXSfiles = [] -- Just for a start. Let's fix this whenever we learn 
 
 mkContextOfPops :: Name -> [P_Population] -> P_Context
 mkContextOfPops ctxName pops1 =
+  -- trace ("pops1 = " <> tshow pops1)
   PCtx
     { ctx_nm = ctxName,
       ctx_lbl = Nothing,
-      ctx_pos = [],
+      ctx_pos = map origin pops1,
       ctx_lang = Nothing,
       ctx_markup = Nothing,
       ctx_pats = [],

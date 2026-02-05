@@ -5,6 +5,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# HLINT ignore "Use catMaybes" #-}
+{-# HLINT ignore "Eta reduce" #-}
 -- {-# LANGUAGE TupleSections #-}
 
 module Ampersand.ADL1.P2A_Converters
@@ -500,10 +501,7 @@ pCtx2aCtx env
         let pCpt2aCpt = makePCpt2ACpt typols
         -- Filter REPRESENT statements to only those with existing concepts
         let allRepresentations = p_representations <> concatMap pt_Reprs p_patterns
-            (validReprs, invalidReprs) = partitionValidRepresentations pCpts allRepresentations
-        -- Issue warnings for orphaned REPRESENT statements
-        addWarnings (map mkOrphanedRepresentWarning invalidReprs) $ pure ()
-        -- Only process valid REPRESENT statements
+            (validReprs, _invalidReprs) = partitionValidRepresentations pCpts allRepresentations
         reprs <- traverse (pRepr2aRepr pCpt2aCpt) validReprs
         let reprOf :: A_Concept -> TType
             reprOf cpt =
@@ -591,9 +589,9 @@ pCtx2aCtx env
             } = do
                    -- Validate all concepts in the view definition
                    validatePConceptsInSchema ci orig pvd ("VIEW " <> fullName nm)
-                   segments <- traverse typeCheckViewSegment (zip [0 ..] segmnts)
-                   uniqueLabels orig toLabel (filter hasLabel segments) "VIEW statement"
                    viewConcept <- conceptMap ci orig cpt
+                   segments <- traverse (typeCheckViewSegment viewConcept) (zip [0 ..] segmnts)
+                   uniqueLabels orig toLabel (filter hasLabel segments) "VIEW statement"
                    return
                          Vd
                            { vdpos = orig,
@@ -611,29 +609,25 @@ pCtx2aCtx env
             Just x -> x
           hasLabel :: ViewSegment -> Bool
           hasLabel = isJust . vsmlabel
-          typeCheckViewSegment :: (Integer, P_ViewSegment TermPrim) -> Guarded ViewSegment
-          typeCheckViewSegment (seqNr, seg) =
-           do payload <- typecheckPayload (origin seg) (vsm_load seg)
-              return
-                ViewSegment
-                  { vsmpos = origin seg,
-                    vsmlabel = vsm_labl seg,
-                    vsmSeqNr = seqNr,
-                    vsmLoad = payload
-                  }
-          typecheckPayload :: Origin -> P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
-          typecheckPayload origPL payload =
-                case payload of
-                  P_ViewExp term ->
-                    do
-                      -- Constrain the term to have source=viewConcept
-                      viewConcept <- conceptMap ci origPL cpt
-                      xpr <- term2Expr env ci (Just viewConcept) term
-                      case geq viewConcept (source xpr) of
-                        Just True  -> pure (ViewExp xpr)
-                        Just False -> Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
-                        Nothing    -> Errors . pure $ mkViewExpressionMismatchError orig xpr viewConcept
-                  P_ViewText str -> pure $ ViewText str
+
+          typeCheckViewSegment :: A_Concept -> (Integer, P_ViewSegment TermPrim) -> Guarded ViewSegment
+          typeCheckViewSegment viewConcept (seqNr, seg) = do
+            payload <- typeCheckPayload (origin seg) (vsm_load seg)
+            return ViewSegment
+              { vsmpos = origin seg,
+                vsmlabel = vsm_labl seg,
+                vsmSeqNr = seqNr,
+                vsmLoad = payload
+              }
+            where
+              typeCheckPayload :: Origin -> P_ViewSegmtPayLoad TermPrim -> Guarded ViewSegmentPayLoad
+              typeCheckPayload origPL (P_ViewExp term) = do
+                xpr <- term2Expr env ci (Just viewConcept) term
+                case geq (source xpr) viewConcept of
+                  Just True  -> pure (ViewExp xpr)
+                  Just False -> Errors . pure $ mkRelationTooNarrowForViewError origPL xpr viewConcept
+                  Nothing    -> Errors . pure $ mkViewExpressionMismatchError origPL xpr viewConcept
+              typeCheckPayload _ (P_ViewText str) = pure $ ViewText str
 
       -- | pSubIfc2aSubIfc uses the box concept from the parent box to constrain type-checking of sub-interfaces.
       pSubIfc2aSubIfc :: ContextInfo -> A_Concept -> P_SubIfc TermPrim -> Guarded SubInterface
@@ -723,10 +717,12 @@ pCtx2aCtx env
                   case lookupView viewId of
                     Just vd -> do
                       viewConcept <- conceptMap ci (origin pBoxItem) (vd_cpt vd)
-                      case viewConcept `geq` target objExpr of
-                            Just True  -> pure ()
-                            Just False -> Errors . pure $ mkViewTooSpecificError (origin pBoxItem) vd objExpr
-                            Nothing    -> Errors . pure $ mkViewExpressionMismatchError (origin pBoxItem) objExpr viewConcept
+                      -- Check both directions to distinguish between "too specific" and "incompatible"
+                      case (viewConcept `geq` target objExpr, target objExpr `join` viewConcept) of
+                            (Just True, _)    -> pure ()  -- viewConcept is more general or equal: OK
+                            (Just False, _)   -> Errors . pure $ mkViewTooSpecificError (origin pBoxItem) vd objExpr  -- target is more general: too specific
+                            (_, Just joinCpt) -> Errors . pure $ mkViewIncompatibleError (origin pBoxItem) joinCpt vd objExpr  -- Different typologies: incompatible
+                            (_, Nothing) -> Errors . pure $ mkViewIncomparableError (origin pBoxItem) vd objExpr
                     Nothing -> Errors . pure $ mkUndeclaredError "view" pBoxItem viewId
           P_BxTxt
             { obj_PlainName = nm,
@@ -1248,17 +1244,24 @@ refineANY targetSig expr
  = -- trace ("refineANY (" <> tshow targetSig <> ") (" <> showA expr <> ") yields " <> showA refinedExpr)
    refinedExpr
   where
-    iCpt = case targetSig of
-             ISgn cpt     -> cpt
-             Sign src tgt -> case meet src tgt of
-                               Just m  -> m
-                               Nothing -> fatal ("refineANY: cannot compute meet of source expr " <> tshow (source expr) <> " and targetSig source " <> tshow src <> " for expr " <> showA expr)
+    -- For heterogeneous signatures (where src and tgt have no meet),
+    -- we cannot refine narrowable expressions like I, V, atoms, etc.
+    -- In such cases, mIcpt will be Nothing
+    mIcpt = case targetSig of
+              ISgn cpt     -> Just cpt
+              Sign src tgt -> meet src tgt
     refinedExpr = case expr of
       -- Nullary operations:
       -- geq returns Just True if first arg is more generic than the second arg
-      EDcI cpt        -> if cpt==topCpt then EDcI iCpt else expr
+      EDcI cpt        -> if cpt==topCpt
+                         then maybe expr EDcI mIcpt  -- Cannot refine for heterogeneous signature
+                         else expr
       -- For EMp1: only narrow, never widen. If expr's concept is already narrower than target, keep it.
-      EMp1 av cpt     -> if cpt==topCpt then EMp1 av iCpt else expr
+      EMp1 av cpt     -> if cpt==topCpt
+                         then case mIcpt of
+                                Just iCpt -> EMp1 av iCpt
+                                Nothing   -> expr  -- Cannot refine for heterogeneous signature
+                         else expr
       EDcD _          -> expr -- Declarations are concrete already
       EBin oper sgn   -> case (source sgn==topCpt, target sgn==topCpt) of
                            (True , True ) -> EBin oper targetSig
@@ -1273,7 +1276,6 @@ refineANY targetSig expr
       -- Binary operations:
       EEqu (e1, e2)   -> EEqu (refineANY targetSig e1, refineANY targetSig e2)
       EInc (e1, e2)   -> EInc (refineANY targetSig e1, refineANY targetSig e2)
-      EPrd (e1, e2)   -> EPrd (refineANY targetSig e1, refineANY targetSig e2)
       EUni (e1, e2)   -> EUni (refineANY targetSig e1, refineANY targetSig e2)
       EIsc (e1, e2)   -> EIsc (refineANY targetSig e1, refineANY targetSig e2)
       EDif (e1, e2)   -> EDif (refineANY targetSig e1, refineANY targetSig e2)
@@ -1292,6 +1294,7 @@ refineANY targetSig expr
       ERad (e1, e2)   -> case getBetweenConcept expr of
                            Just between -> ERad (refineANY (Sign (source targetSig) between) e1, refineANY (Sign between (target targetSig)) e2)
                            Nothing -> expr
+      EPrd (e1, e2)   -> EPrd (refineANY (Sign (source targetSig) (target e1)) e1, refineANY (Sign (source e2) (target targetSig)) e2)
       -- Unary operations:
       EFlp e          -> EFlp (refineANY (flp targetSig) e)
       ECpl e          -> ECpl (refineANY targetSig e)
@@ -1379,7 +1382,7 @@ term2Expr env ci mConstraintCpt term
              Patm _ av Nothing  -> pure (STnullary [(EMp1 av topCpt, ISgn topCpt, Prim trmPrim)])
              Patm o av (Just c) -> do c' <- conceptMap ci o c
                                       pure (STnullary [(EMp1 av c', ISgn c', Prim trmPrim)])
-             PVee _             -> let sgn = Sign topCpt topCpt                   in pure (STnullary [(EDcV sgn, sgn, Prim trmPrim)])
+             PVee _             -> let sgn = Sign topCpt topCpt in pure (STnullary [(EDcV sgn, sgn, Prim trmPrim)])
              Pfull o src tgt    -> do src' <- conceptMap ci o src
                                       tgt' <- conceptMap ci o tgt
                                       let sgn = Sign src' tgt'
@@ -1420,9 +1423,21 @@ term2Expr env ci mConstraintCpt term
                                                                   flpLeft _ = fatal ("Unexpected triple in a pattern of a PRrs term at "<> tshow o)
                             Checked _ _ -> fatal "Unexpected non-binary OpTree in PRrs"
                             Errors errs -> Errors errs -- TODO: check error messages for flipping the left operand
-            PPrd o a b -> do sgnaTree <- signatures mConstraint a; sgnbTree <- signatures mConstraint b
-                             return (STbinary sgnaTree sgnbTree [ (EPrd (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), PPrd o trm_a trm_b)
-                                                                | (expr_a, sgn_a, trm_a)<-opSigns sgnaTree, (expr_b, sgn_b, trm_b)<-opSigns sgnbTree])
+            PPrd o a b -> do let lConstraint = case mConstraint of
+                                                  Just (Src, _) -> mConstraint
+                                                  _             -> Nothing
+                                 rConstraint = case mConstraint of
+                                                  Just (Tgt, _) -> mConstraint
+                                                  _             -> Nothing
+                             sgnaTree <- signatures lConstraint a
+                             sgnbTree <- signatures rConstraint b
+                             -- For PPrd, combine refined expressions directly, avoiding calls to checkIntra and makeTriples
+                             let triples = [ let expr = EPrd (expr_a, expr_b)
+                                                in (expr, sign expr, PPrd o trm_a trm_b)
+                                           | (expr_a, _sgn_a, trm_a) <- opSigns sgnaTree
+                                           , (expr_b, _sgn_b, trm_b) <- opSigns sgnbTree
+                                           ]
+                             return (STbinary sgnaTree sgnbTree triples)
             PFlp _ e   -> do -- When flipping, swap the constraint using the Flippable instance
                              sgnTree <- signatures (fmap flp mConstraint) e
                              return (STunary sgnTree [(EFlp expr, flp sgn, trm) | (expr, sgn, _)<-opSigns sgnTree])
@@ -1468,10 +1483,10 @@ term2Expr env ci mConstraintCpt term
                       mkVerboseTypeError env o errorOpTree
                         ("Cannot assign a type to "<>showP b<>" because " <> tshow srcA <> " and " <> tshow tgtA <> " are not equal.")
                 _ -> case (conceptsSrc, conceptsTgt) of
-                       ([],[])  -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts nor the target concepts in the "<>kind<>")\n   on the left hand side: "<>tshow (map snd3 sgnsa)<>"\n   on the right hand side: "<>tshow (map snd3 sgnsb))
+                       ([],[])  -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts nor the target concepts in the "<>kind<>")\n   on the left hand side: "<>showSgns (map snd3 sgnsa)<>"\n   on the right hand side: "<>showSgns (map snd3 sgnsb))
                        ([],_:_) -> mkVerboseTypeError env o errorOpTree ("Cannot match the source concepts on the left side of the "<>kind<>".\n   The source of "<>showP a<>" is "<>showSgns (map (source . snd3) sgnsa)<>"\n   The source of "<>showP b<>" is "<>showSgns (map (source . snd3) sgnsb))
                        (_:_,[]) -> mkVerboseTypeError env o errorOpTree ("Cannot match the target concepts of the right side of the "<>kind<>".\n   The target of "<>showP a<>" is "<>showSgns (map (target . snd3) sgnsa)<>"\n   The target of "<>showP b<>" is "<>showSgns (map (target . snd3) sgnsb))
-                       _        -> mkVerboseTypeError env o errorOpTree ("Cannot match the signatures at either side of the "<>kind<>".\n   on the left hand side: "<>tshow (map snd3 sgnsa)<>"\n   on the right hand side: "<>tshow (map snd3 sgnsb))
+                       _        -> mkVerboseTypeError env o errorOpTree ("Cannot match the signatures at either side of the "<>kind<>".\n   on the left hand side: "<>showSgns (map snd3 sgnsa)<>"\n   on the right hand side: "<>showSgns (map snd3 sgnsb))
            where
              showSgns :: Show a => [a] -> Text
              showSgns sgns = case sgns of
@@ -1491,22 +1506,50 @@ term2Expr env ci mConstraintCpt term
             sgnbTree <- signatures mConstraint b
             let sgnsa = opSigns sgnaTree
                 sgnsb = opSigns sgnbTree
-            case [ (combinator (refineANY sgn expr_a, refineANY sgn expr_b), sgn, pCombinator trm_a trm_b)
+            case [ (refineANY sgn (combinator (expr_a, expr_b)), sgn, pCombinator trm_a trm_b)
                  | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-                 , Just sgn <- [meetSig sgn_a sgn_b | not (isConcreteSignature sgn_a && isConcreteSignature sgn_b)]<>
-                               [joinOrMeetSig sgn_a sgn_b | isConcreteSignature sgn_a && isConcreteSignature sgn_b]
+                 , Just sgn <- [joinOrMeetSig sgn_a sgn_b]
                  ] of
               []  -> errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
-              [res] -> -- trace ("\n17. checkIncl yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res])) $
+              [res] -> trace ("\n17. checkPeri yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res])) $
                         return (STbinary sgnaTree sgnbTree [res])
               results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
                              opTree = STbinary sgnaTree sgnbTree results
                          in mkVerboseTypeError env o opTree baseMsg
             where
-              joinOrMeetSig :: Signature -> Signature -> Maybe Signature
-              joinOrMeetSig = case moj of Join -> joinSig; Meet -> meetSig
               joinOrMeet :: A_Concept -> A_Concept -> Maybe A_Concept
               joinOrMeet = case moj of Join -> join; Meet -> meet
+
+              joinOrMeetSig :: Signature -> Signature -> Maybe Signature
+              joinOrMeetSig sgn_a sgn_b =
+               trace ("joinOrMeetSig on "<>tshow o<>"\n   "<>tshow sgn_a<>" `"<>(unCap . tshow) moj<>"` "<>tshow sgn_b<>"  yields: "<>tshow jOmSig) $
+                jOmSig
+               where
+                jOmSig = do
+                  mSrc  <- source sgn_a `meet` source sgn_b
+                  mTgt  <- target sgn_a `meet` target sgn_b
+                  mBoth <- mSrc `meet` mTgt
+                  jSrc  <- source sgn_a `join` source sgn_b
+                  jTgt  <- target sgn_a `join` target sgn_b
+                  return $
+                   case (sgn_a, moj, sgn_b) of
+                    (ISgn c, Join, ISgn c') | c == topCpt || c' == topCpt -> ISgn mSrc
+                    (ISgn _, Join, ISgn _)                                -> ISgn jSrc
+                    (ISgn _, Meet, ISgn _)                                -> ISgn mSrc
+                    (ISgn c, Join, Sign _ _) | c == topCpt                -> sgn_b
+                    (ISgn _, Join, Sign _ _)                              -> Sign jSrc jTgt
+                    (ISgn _, Meet, Sign _ _)                              -> ISgn mBoth
+                    (Sign _ _, Join, ISgn c') | c' == topCpt              -> sgn_a
+                    (Sign _ _, Join, ISgn _)                              -> Sign jSrc jTgt
+                    (Sign _ _, Meet, ISgn _)                              -> ISgn mBoth
+                    (Sign s t, _, Sign s' t') ->
+                     case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
+                       (True , True ,  _  , False, False) -> sgn_b
+                       (False, False,  _  , True , True ) -> sgn_a
+                       (False, False, Join, False, False) -> Sign jSrc jTgt
+                       (False,   _  , Join, False,   _  ) -> Sign jSrc mTgt
+                       (  _  , False, Join,   _  , False) -> Sign mSrc jTgt
+                       _                                  -> Sign mSrc mTgt
 
         checkIntra
           :: {- o           -} Origin
