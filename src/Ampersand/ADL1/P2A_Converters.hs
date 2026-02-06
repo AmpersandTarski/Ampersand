@@ -1522,34 +1522,38 @@ term2Expr env ci mConstraintCpt term
 
               joinOrMeetSig :: Signature -> Signature -> Maybe Signature
               joinOrMeetSig sgn_a sgn_b =
-               trace ("joinOrMeetSig on "<>tshow o<>"\n   "<>tshow sgn_a<>" `"<>(unCap . tshow) moj<>"` "<>tshow sgn_b<>"  yields: "<>tshow jOmSig) $
+               trace ("joinOrMeetSig on "<>tshow o<>"\n   "<>tshow sgn_a<>" `"<>(unCap . tshow) moj<>"Sig` "<>tshow sgn_b<>"  yields: "<>tshow jOmSig) $
                 jOmSig
                where
-                jOmSig = do
-                  mSrc  <- source sgn_a `meet` source sgn_b
-                  mTgt  <- target sgn_a `meet` target sgn_b
-                  mBoth <- mSrc `meet` mTgt
-                  jSrc  <- source sgn_a `join` source sgn_b
-                  jTgt  <- target sgn_a `join` target sgn_b
-                  return $
-                   case (sgn_a, moj, sgn_b) of
-                    (ISgn c, Join, ISgn c') | c == topCpt || c' == topCpt -> ISgn mSrc
-                    (ISgn _, Join, ISgn _)                                -> ISgn jSrc
-                    (ISgn _, Meet, ISgn _)                                -> ISgn mSrc
-                    (ISgn c, Join, Sign _ _) | c == topCpt                -> sgn_b
-                    (ISgn _, Join, Sign _ _)                              -> Sign jSrc jTgt
-                    (ISgn _, Meet, Sign _ _)                              -> ISgn mBoth
-                    (Sign _ _, Join, ISgn c') | c' == topCpt              -> sgn_a
-                    (Sign _ _, Join, ISgn _)                              -> Sign jSrc jTgt
-                    (Sign _ _, Meet, ISgn _)                              -> ISgn mBoth
-                    (Sign s t, _, Sign s' t') ->
-                     case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
-                       (True , True ,  _  , False, False) -> sgn_b
-                       (False, False,  _  , True , True ) -> sgn_a
-                       (False, False, Join, False, False) -> Sign jSrc jTgt
-                       (False,   _  , Join, False,   _  ) -> Sign jSrc mTgt
-                       (  _  , False, Join,   _  , False) -> Sign mSrc jTgt
-                       _                                  -> Sign mSrc mTgt
+                jOmSig = case (sgn_a, moj, sgn_b) of
+                          (ISgn c, Join, ISgn c') 
+                            | c == topCpt || c' == topCpt -> ISgn <$> (c `meet` c')
+                            | otherwise                   -> ISgn <$> (c `join` c')
+                          (ISgn c, Meet, ISgn c')         -> ISgn <$> (c `meet` c')
+                          (ISgn c, Join, Sign s' t') 
+                            | c == topCpt                 -> ISgn <$> (s' `join` t')
+                            | otherwise                   -> Sign <$> (c `join` s') <*> (c `join` t')
+                          (ISgn c, Meet, Sign s' t')      -> do
+                            mSrc <- c `meet` s'
+                            mTgt <- c `meet` t'
+                            mBoth <- mSrc `meet` mTgt
+                            return (ISgn mBoth)
+                          (Sign s t, Join, ISgn c') 
+                            | c' == topCpt                -> ISgn <$> (s `join` t)
+                            | otherwise                   -> Sign <$> (s `join` c') <*> (t `join` c')
+                          (Sign s t, Meet, ISgn c')       -> do
+                            mSrc <- s `meet` c'
+                            mTgt <- t `meet` c'
+                            mBoth <- mSrc `meet` mTgt
+                            return (ISgn mBoth)
+                          (Sign s t, _ , Sign s' t') ->
+                           case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
+                             (True , True ,  _  , False, False) -> Just sgn_b
+                             (False, False,  _  , True , True ) -> Just sgn_a
+                             (False, False, Join, False, False) -> Sign <$> (s `join` s') <*> (t `join` t')
+                             (False,   _  , Join, False,   _  ) -> Sign <$> (s `join` s') <*> (t `meet` t')
+                             (  _  , False, Join,   _  , False) -> Sign <$> (s `meet` s') <*> (t `join` t')
+                             _                                  -> Sign <$> (s `meet` s') <*> (t `meet` t')
 
         checkIntra
           :: {- o           -} Origin
