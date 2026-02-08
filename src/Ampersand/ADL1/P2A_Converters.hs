@@ -162,9 +162,11 @@ validateInterfaceRefs ctx =
                       parentConcept = target parentExpr
                   -- Check if expectedConcept (what we're passing) >= refConcept (what interface expects)
                   -- This ensures we're passing something at least as specific as what the interface needs
-                  in case geq refConcept parentConcept of
+                  in case refConcept `geq` parentConcept of
                        Just True  -> [] -- parentConcept is more general or equal - OK
-                       Just False -> [mkInterfaceRefNarrowerError refOrigin refName parentExpr refConcept]
+                       Just False -> case parentConcept `geq` refConcept of -- refConcept `join` parentConcept of
+                                       Just True  -> [mkInterfaceRefNarrowerError refOrigin refName parentExpr refConcept]
+                                       _          -> [mkIncompatibleInterfaceError refOrigin parentConcept refConcept refName]
                        Nothing    -> [mkIncompatibleInterfaceError refOrigin parentConcept refConcept refName]
                 _ -> fatal ("Multiple interfaces with name " <> tshow refName <> ". This should have been caught when checking the interfaces.")
 
@@ -905,8 +907,8 @@ pCtx2aCtx env
         where
           typeCheckPairViewSeg (PairViewText segOrigin x)  = pure (PairViewText segOrigin x)
           typeCheckPairViewSeg (PairViewExp segOrigin s x) =
-            do let mConstraint = Just ((case s of Src->source; Tgt->target) expr)
-               e <- term2Expr env ci mConstraint x
+            do let requiredConcept = (case s of Src->source; Tgt->target) expr
+               e <- term2Expr env ci (Just requiredConcept) x
                return (PairViewExp segOrigin s e)
 
       pRul2aRul ::
@@ -1093,8 +1095,8 @@ assignOpSigns ss (STbinary l r _) = STbinary l r ss
 assignOpSigns ss (STunary e _) = STunary e ss
 assignOpSigns ss (STnullary _) = STnullary ss
 
-showTriple :: (Expression, Signature, Term TermPrim) -> Text
-showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
+-- showTriple :: (Expression, Signature, Term TermPrim) -> Text
+-- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
 -- Uncomment showGuardedOpTree for certain trace statements. (Search for showGuardedOpTree to find out which ones.)
 -- showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
@@ -1196,11 +1198,6 @@ mkVerboseTypeError env errorOrigin opTree baseMsg =
             then baseMsg
             else baseMsg <> "\n\nType analysis:\n" <> treeOutput
     else baseMsg
-
--- Helper function for creating type mismatch errors with optional suggestions
-mkVerboseTypeMismatchError :: (HasRunner env) => env -> Origin -> Text -> Maybe Text -> OpTree (Expression, Signature, Term TermPrim) -> Guarded a
-mkVerboseTypeMismatchError env errorOrigin baseMsg maybeSuggestions opTree =
-  mkVerboseTypeError env errorOrigin opTree (baseMsg <> fromMaybe "" maybeSuggestions)
 
 -- | Validate that P_Concepts in a P-structure are in the schema
 -- SESSION is always implicitly declared, so it's exempt from validation
@@ -1504,56 +1501,57 @@ term2Expr env ci mConstraintCpt term
           do
             sgnaTree <- signatures mConstraint a
             sgnbTree <- signatures mConstraint b
-            let sgnsa = opSigns sgnaTree
-                sgnsb = opSigns sgnbTree
-            case [ (refineANY sgn (combinator (expr_a, expr_b)), sgn, pCombinator trm_a trm_b)
-                 | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, sgn_b, trm_b)<-sgnsb
-                 , Just sgn <- [joinOrMeetSig sgn_a sgn_b]
-                 ] of
-              []  -> errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree sgnsa sgnsb
-              [res] -> trace ("\n17. checkPeri yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree [res])) $
-                        return (STbinary sgnaTree sgnbTree [res])
-              results -> let baseMsg = "Ambiguous signatures at either side of the "<>kind<>".\n   You might mean one of: "<>T.concat [ "\n    -   "<>showP a<>" ; "<>showP b<>" with result " <> tshow sig | (_,sig,_)<-results]
-                             opTree = STbinary sgnaTree sgnbTree results
-                         in mkVerboseTypeError env o opTree baseMsg
+            let triplesa = opSigns sgnaTree
+                triplesb = opSigns sgnbTree
+                triples = makeTriples triplesa triplesb
+            case triples of
+              []  -> errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree triplesa triplesb
+              _ -> -- trace ("\n17. checkPeri yields:\n"<>showOpTree (STbinary sgnaTree sgnbTree triples)) $
+                   return (STbinary sgnaTree sgnbTree triples)
             where
               joinOrMeet :: A_Concept -> A_Concept -> Maybe A_Concept
               joinOrMeet = case moj of Join -> join; Meet -> meet
 
+              -- | makeTriples constructs all possible (Expression, Signature, Term) triples for binary peri operations (equations, unions, etc.).
+              -- This filters based on whether joinOrMeetSig succeeds for the operand signatures.
+              makeTriples :: [(Expression, Signature, Term TermPrim)]
+                          -> [(Expression, Signature, Term TermPrim)]
+                          -> [(Expression, Signature, Term TermPrim)]
+              makeTriples triplesa triplesb =
+                [ (refineANY resSign (combinator (expr_a, expr_b)), resSign, pCombinator trm_a trm_b)
+                | (expr_a, sgn_a, trm_a) <- triplesa
+                , (expr_b, sgn_b, trm_b) <- triplesb
+                , Just resSign <- [joinOrMeetSig sgn_a sgn_b]
+                ]
+
               joinOrMeetSig :: Signature -> Signature -> Maybe Signature
               joinOrMeetSig sgn_a sgn_b =
-               trace ("joinOrMeetSig on "<>tshow o<>"\n   "<>tshow sgn_a<>" `"<>(unCap . tshow) moj<>"Sig` "<>tshow sgn_b<>"  yields: "<>tshow jOmSig) $
-                jOmSig
-               where
-                jOmSig = case (sgn_a, moj, sgn_b) of
-                          (ISgn c, Join, ISgn c') 
-                            | c == topCpt || c' == topCpt -> ISgn <$> (c `meet` c')
-                            | otherwise                   -> ISgn <$> (c `join` c')
-                          (ISgn c, Meet, ISgn c')         -> ISgn <$> (c `meet` c')
-                          (ISgn c, Join, Sign s' t') 
-                            | c == topCpt                 -> ISgn <$> (s' `join` t')
-                            | otherwise                   -> Sign <$> (c `join` s') <*> (c `join` t')
-                          (ISgn c, Meet, Sign s' t')      -> do
-                            mSrc <- c `meet` s'
-                            mTgt <- c `meet` t'
-                            mBoth <- mSrc `meet` mTgt
-                            return (ISgn mBoth)
-                          (Sign s t, Join, ISgn c') 
-                            | c' == topCpt                -> ISgn <$> (s `join` t)
-                            | otherwise                   -> Sign <$> (s `join` c') <*> (t `join` c')
-                          (Sign s t, Meet, ISgn c')       -> do
-                            mSrc <- s `meet` c'
-                            mTgt <- t `meet` c'
-                            mBoth <- mSrc `meet` mTgt
-                            return (ISgn mBoth)
-                          (Sign s t, _ , Sign s' t') ->
-                           case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
-                             (True , True ,  _  , False, False) -> Just sgn_b
-                             (False, False,  _  , True , True ) -> Just sgn_a
-                             (False, False, Join, False, False) -> Sign <$> (s `join` s') <*> (t `join` t')
-                             (False,   _  , Join, False,   _  ) -> Sign <$> (s `join` s') <*> (t `meet` t')
-                             (  _  , False, Join,   _  , False) -> Sign <$> (s `meet` s') <*> (t `join` t')
-                             _                                  -> Sign <$> (s `meet` s') <*> (t `meet` t')
+                case (sgn_a, moj, sgn_b) of
+                  (ISgn c, Join, ISgn c') 
+                    | c == topCpt || c' == topCpt -> ISgn <$> (c `meet` c')
+                    | otherwise                   -> ISgn <$> (c `join` c')
+                  (ISgn c, Meet, ISgn c')         -> ISgn <$> (c `meet` c')
+                  (ISgn c, _, Sign s t)           -> deduplicate moj c s t
+                  (Sign s t, _, ISgn c)           -> deduplicate moj c s t
+                  (Sign s t, _ , Sign s' t') ->
+                    case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
+                      (True , True ,  _  , False, False) -> Just sgn_b
+                      (False, False,  _  , True , True ) -> Just sgn_a
+                      (False, False, Join, False, False) -> Sign <$> (s `join` s') <*> (t `join` t')
+                      (False,   _  , Join, False,   _  ) -> Sign <$> (s `join` s') <*> (t `meet` t')
+                      (  _  , False, Join,   _  , False) -> Sign <$> (s `meet` s') <*> (t `join` t')
+                      _                                  -> Sign <$> (s `meet` s') <*> (t `meet` t')
+                 where
+                   deduplicate Join c s t
+                     | topCpt == s && topCpt == t = Just (ISgn c)
+                     | c == topCpt                = Just (Sign s t)
+                     | topCpt == s                = Sign c <$> (c `join` t)
+                     | topCpt == t                = Sign <$> (c `join` s) <*> Just c
+                     | otherwise                  = Sign <$> (c `join` s) <*> (c `join` t)  -- Normaal geval, zonder topCpt
+                   deduplicate Meet c s t         = do mSrc <- c `meet` s
+                                                       mTgt <- c `meet` t
+                                                       mBoth <- mSrc `meet` mTgt
+                                                       return (ISgn mBoth)
 
         checkIntra
           :: {- o           -} Origin
@@ -1566,8 +1564,7 @@ term2Expr env ci mConstraintCpt term
           -> {- opStr       -} Text -- for tracing purpose
           -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         checkIntra o kind combinator pCombinator a b _opStr = -- activate the last parameter opStr when using the trace statements: 
-          do let showPa = showP a; showPb = showP b -- for tracing purposes only
-             let lConstraint = case mConstraint of
+          do let lConstraint = case mConstraint of
                                   Just (Src, _) -> mConstraint
                                   _             -> Nothing
              let rConstraint = case mConstraint of
@@ -1582,12 +1579,8 @@ term2Expr env ci mConstraintCpt term
                []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                           opTree = STbinary sgnaTree sgnbTree errorExprs
                       in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis sgnsa sgnsb)
-               [tr] -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree [tr])) $
-                       return (STbinary sgnaTree sgnbTree [tr])
-               results  -> let baseMsg = "Ambiguous signatures of the " <> kind <> " of " <> showPa <> " and " <> showPb
-                               suggestions = Just $ ". You might mean one of: " <> T.concat [ "\n    -   " <> showPa <> " ; " <> showPb <> " with result " <> tshow sig | (_,sig,_)<-results]
-                               opTree = STbinary sgnaTree sgnbTree results
-                           in mkVerboseTypeMismatchError env o baseMsg suggestions opTree
+               _ -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree triples)) $
+                    return (STbinary sgnaTree sgnbTree triples)
           where
             -- | makeTriples constructs all possible (Expression, Signature, Term) triples for binary operations.
             makeTriples :: [(Expression, Signature, Term TermPrim)]
@@ -1596,22 +1589,22 @@ term2Expr env ci mConstraintCpt term
             makeTriples triplesa triplesb
              = -- trace ("\n12. makeTriples called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
                [ -- trace ("\n13. list comprehension with:\n  between: "<>tshow between) $
-                 let result_expr = combinator (refineANY (Sign srca between) expr_a, refineANY (Sign between tgtb) expr_b)
+                 let result_expr = refineANY (Sign srca tgtb) (combinator (expr_a, expr_b))
                  in (result_expr, sign result_expr, pCombinator trm_a trm_b)
                | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
-               , Just between<-[meet tgta srcb]
+               , Just _between<-[meet tgta srcb]
                ] <>
-               [ let result_expr = combinator (refineANY (Sign srca between) expr_a, refineANY (ISgn between) expr_b)
+               [ let result_expr = refineANY (Sign srca between) (combinator (expr_a, expr_b))
                  in (result_expr, sign result_expr, pCombinator trm_a trm_b)
                | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
                , Just between<-[meet tgta cptb]
                ] <>
-               [ let result_expr = combinator (refineANY (ISgn between) expr_a, refineANY (Sign between tgtb) expr_b)
+               [ let result_expr = refineANY (Sign between tgtb) (combinator (expr_a, expr_b))
                  in (result_expr, sign result_expr, pCombinator trm_a trm_b)
                | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
                , Just between<-[meet cpta srcb]
                ] <>
-               [ let result_expr = combinator (refineANY (ISgn cpta) expr_a, refineANY (ISgn between) expr_b)
+               [ let result_expr = refineANY (ISgn between) (combinator (expr_a, expr_b))
                  in (result_expr, sign result_expr, pCombinator trm_a trm_b)
                | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
                , Just between<-[meet cpta cptb]
@@ -1644,7 +1637,7 @@ term2Expr env ci mConstraintCpt term
             Nothing -> pure opTree
             Just (sot, limit) -> -- ensure that the signatures in opTree are equal or wider than the constraint
               case [ case expr of
-                       -- For narrow§able expressions (I, V, atoms, bind), compute the meet
+                       -- For narrowable expressions (I, V, atoms, bind), compute the meet
                        EDcI _      -> (EDcI (source sgn'), sgn', t)
                        EDcV _      -> (EDcV sgn', sgn', t)
                        EMp1 av _   -> (EMp1 av (source sgn'), sgn', t)
@@ -1662,13 +1655,20 @@ term2Expr env ci mConstraintCpt term
                                  (Tgt, Sign src _) | target expr==topCpt -> Sign src limit
                                  _                                       -> sgn
                    ] of
-                [] -> -- No alternatives match the constraint
-                      Errors . return . CTXE (origin trm) $
-                        "Cannot match term " <> showP trm <> " with constraint  " <> tshow mConstraint <> ".\n" <>
-                        "  Triples: " <> (T.intercalate ", " . map showTriple . opSigns) opTree <> "\n" <>
-                        "  Constraint: " <> tshow mConstraint <> "\n" <>
-                        "  geq: " <> T.intercalate ", " [tshow sot<>" ("<> showA expr<>") `geq` "<>tshow limit<>" == " <> tshow ((case sot of Src -> source; Tgt -> target) expr `geq` limit) | (expr, _, _) <- opSigns opTree]
-                filteredTriples  -> pure (assignOpSigns filteredTriples opTree)
+                [] -> case errs of
+                        (err:errors) -> Errors (err NE.:| errors)
+                        [] -> fatal "No errors found"
+                      where
+                        errs = [mkConstraintError (origin t) sot t expr limit | (expr, _sgn, t) <- opSigns opTree]
+                filteredTriples -> pure (assignOpSigns filteredTriples opTree)
+          where
+            mkConstraintError o sot t expr limit =
+              CTXE o $
+                "The term " <> showP t <> " has " <> (case sot of Src -> "source"; Tgt -> "target") <> " " <> tshow cpt <> ", which is "<>diagnosticString<>" " <> tshow limit <> ".\n" <>
+                "  Use a term with a " <> (case sot of Src -> "source"; Tgt -> "target") <> " equal to or wider than " <> tshow limit <> "."
+              where
+                cpt = (case sot of Src -> source; Tgt -> target) expr
+                diagnosticString = if limit `geq` (case sot of Src -> source; Tgt -> target) expr == Just True then "narrower than" else "incompatible with"
 
 instance HasSignature (OpTree (Expression, Signature, Term TermPrim)) where
   sign sgnTree = case sgnTree of

@@ -1,6 +1,7 @@
 CONTEXT Try44 IN ENGLISH
 -----------------------------------------------------------
 PATTERN DocumentationByLanguage LABEL "Documentation by Language"
+RELATION r[X]
 
 PURPOSE CONCEPT X IN ENGLISH {+Some english text+}
 PURPOSE CONCEPT X IN DUTCH {+Enige nederlandse woorden+}

@@ -7,6 +7,7 @@ REPRESENT Message TYPE ALPHANUMERIC
 POPULATION Account CONTAINS [ "god" ]
 
 RELATION sessionLoginAssist[SESSION*SESSION] [PROP]
+RELATION r[Account*Message]
 
 INTERFACE Login : "_SESSION"[SESSION]
 BOX[ "Please help" : sessionLoginAssist <SessionProperty>

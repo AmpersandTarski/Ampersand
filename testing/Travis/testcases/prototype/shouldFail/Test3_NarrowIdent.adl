@@ -1,0 +1,9 @@
+CONTEXT Test3NarrowIdent
+-- Test: IDENT statement with too narrow expression
+-- Expected: "The Src expression is too narrow" error
+
+CLASSIFY Book ISA Product
+
+IDENT BookID : Product (I[Book])  -- Too narrow: Product is required, Book is provided
+
+ENDCONTEXT

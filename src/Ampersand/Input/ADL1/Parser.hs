@@ -694,7 +694,7 @@ pIdentDef =
         { ix_label = lbl,
           ix_name = nm,
           ix_cpt = cpt,
-          ix_ats = PCps orig (Prim (Pid orig cpt)) <$> lst,
+          ix_ats = lst,
           pos = orig
         }
 

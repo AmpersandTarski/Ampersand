@@ -44,6 +44,7 @@ module Ampersand.Input.ADL1.CtxError
     mkViewIncompatibleError,
     mkViewIncomparableError,
     mkViewExpressionMismatchError,
+    mkConstrainedExpressionTooNarrowError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
     mkParserStateWarning,
@@ -516,6 +517,25 @@ mkViewExpressionMismatchError orig expr viewConcept =
         "The source of the expression and the VIEW concept have no ISA relationship.",
         "The expression source must be equal to or more general than the VIEW concept."
       ]
+
+mkConstrainedExpressionTooNarrowError :: Origin -> SrcOrTgt -> Expression -> A_Concept -> CtxError
+mkConstrainedExpressionTooNarrowError orig srcOrTgt expr requiredConcept =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The " <> tshow srcOrTgt <> " expression is too narrow.",
+        "Expression: " <> showA expr,
+        "Expression " <> tshow srcOrTgt <> ": " <> showWithAliases actualConcept,
+        "Required " <> tshow srcOrTgt <> ": " <> showWithAliases requiredConcept,
+        "Atoms of type " <> showWithAliases requiredConcept <> " that are not " <> 
+          showWithAliases actualConcept <> " will be excluded.",
+        "Solution: use " <> tshow srcOrTgt <> " I[" <> fullName requiredConcept <> "]" <>
+          " or explicitly " <> tshow srcOrTgt <> " I[" <> fullName requiredConcept <> 
+          "];I[" <> fullName actualConcept <> "] if you want to filter."
+      ]
+  where
+    actualConcept = case srcOrTgt of
+                      Src -> source expr
+                      Tgt -> target expr
 
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =

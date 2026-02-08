@@ -1,0 +1,11 @@
+CONTEXT Test2NarrowView
+-- Test: VIEW segment with too narrow expression
+-- Expected: "The Src expression is too narrow" error
+
+CLASSIFY Book ISA Product
+
+VIEW BookView : Product DEFAULT
+{ name : I[Book]  -- Too narrow: Product is required, Book is provided
+} ENDVIEW
+
+ENDCONTEXT

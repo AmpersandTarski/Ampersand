@@ -1,0 +1,13 @@
+CONTEXT Test4NarrowInterface
+-- Test: Interface box with too narrow expression
+-- Expected: "The Src expression is too narrow" error
+
+CLASSIFY Book ISA Product
+
+RELATION name[Product * String]
+
+INTERFACE ProductInterface : I[Product]
+BOX [ name : I[Book]  -- Too narrow: target of parent is Product, but we use I[Book]
+    ]
+
+ENDCONTEXT

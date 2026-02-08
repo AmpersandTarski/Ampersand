@@ -102,10 +102,10 @@ extra-source-files:
     testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
     testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
     testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+    testing/Sentinel/Tests/ShouldFail/InterfaceRefTypeCheckTest.adl
     testing/Sentinel/Tests/ShouldFail/OnlyProto/testinfo.yaml
     testing/Sentinel/Tests/ShouldFail/OnlyProto/ViewAnnotationCheck.adl
     testing/Sentinel/Tests/ShouldFail/singletontest.adl
-    testing/Sentinel/Tests/ShouldSucceed/InterfaceRefTypeCheckTest.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Bug337_FatalONE.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue233.adl
     testing/Sentinel/Tests/ShouldSucceed/OnlyValidation/Issue280.adl
@@ -255,12 +255,15 @@ extra-source-files:
     testing/Travis/testcases/prototype/ISAtest/testinfo.yaml
     testing/Travis/testcases/prototype/README.md
     testing/Travis/testcases/prototype/shouldFail/Bug_ANY_in_violation_view.adl
+    testing/Travis/testcases/prototype/shouldFail/InterfaceRefCheck.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/IDENT-test-fail.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/Issue708.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/showViolationMessages.adl
     testing/Travis/testcases/prototype/shouldFail/InvariantViolations/testinfo.yaml
     testing/Travis/testcases/prototype/shouldFail/Issue142.adl
     testing/Travis/testcases/prototype/shouldFail/Issue142.xlsx
+    testing/Travis/testcases/prototype/shouldFail/Issue766.adl
+    testing/Travis/testcases/prototype/shouldFail/NarrowExpressionTests.adl
     testing/Travis/testcases/prototype/shouldFail/overlappingRelations.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl
@@ -297,6 +300,10 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try48.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try49.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ViewAnnotationCheck.adl
+    testing/Travis/testcases/prototype/shouldFail/Test1_NarrowViolation.adl
+    testing/Travis/testcases/prototype/shouldFail/Test2_NarrowView.adl
+    testing/Travis/testcases/prototype/shouldFail/Test3_NarrowIdent.adl
+    testing/Travis/testcases/prototype/shouldFail/Test4_NarrowInterface.adl
     testing/Travis/testcases/prototype/shouldFail/try12.adl
     testing/Travis/testcases/prototype/shouldFail/try17.adl
     testing/Travis/testcases/prototype/shouldFail/try18b.adl
@@ -346,7 +353,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue340.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue711.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue760.adl
-    testing/Travis/testcases/prototype/shouldSucceed/Issue766.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue785.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue855.adl
     testing/Travis/testcases/prototype/shouldSucceed/MultipleDeclaredRules.adl
@@ -452,6 +458,7 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/CompositionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DiamondTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DifferenceTypeMismatch.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/export.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FlipTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FullRelationTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl

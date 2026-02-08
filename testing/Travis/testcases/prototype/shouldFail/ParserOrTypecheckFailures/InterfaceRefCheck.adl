@@ -4,11 +4,13 @@ CONTEXT InterfaceRefCheck IN ENGLISH
 CLASSIFY Lime ISA Citrus
 CLASSIFY Orange ISA Citrus
 CLASSIFY Limorange IS Lime /\ Orange
+RELATION tasty[Peach] [PROP]
 
 INTERFACE Overview : I[ONE]
-BOX [ "Lime      as Orange"    : V[ONE*Lime]      INTERFACE Orange -- should fail  
-    , "Orange    as Lime"      : V[ONE*Orange]    INTERFACE Lime   -- should fail  
-    , "Limorange as Peach"     : V[ONE*Limorange] INTERFACE Peach  -- should fail  
+BOX [ "Lime      as Orange"    : V[ONE*Lime]      INTERFACE Orange -- should fail: incompatible types 
+    , "Orange    as Lime"      : V[ONE*Orange]    INTERFACE Lime   -- should fail: incompatible types 
+    , "Limorange as Peach"     : V[ONE*Limorange] INTERFACE Peach  -- should fail: incompatible types (different typologies)
+    , "Citrus    as Lime"      : V[ONE*Citrus]    INTERFACE Lime   -- should fail: too narrow 
     ]
 
 INTERFACE Citrus : I[Citrus]
