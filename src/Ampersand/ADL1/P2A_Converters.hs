@@ -1406,20 +1406,8 @@ term2Expr env ci mConstraintCpt term
             PCps o a b -> checkIntra o "composition"       ECps (PCps o) a b "PCps"
             PRad o a b -> checkIntra o "relative addition" ERad (PRad o) a b "PRad"
             PDia o a b -> checkIntra o "diamond"           EDia (PDia o) a b "PDia"
-            PLrs o a b -> case checkIntra o "left residual" ECps (PCps o) a (flp b) "PLrs" of
-                            Checked (STbinary trL trR trs) _ -> pure (STbinary trL (flp trR) (map flpRight trs))
-                                                                where
-                                                                  flpRight (ECps (el,er), sgn, PCps o' pl pr) = (ELrs (el,flp er), sgn, PLrs o' pl (flp pr))
-                                                                  flpRight _ = fatal ("Unexpected triple in a pattern of a PLrs term at "<> tshow o)
-                            Checked _ _ -> fatal "Unexpected non-binary OpTree in PLrs"
-                            Errors errs -> Errors errs -- TODO: check error messages for flipping the right operand
-            PRrs o a b -> case checkIntra o "right residual" ECps (PCps o) (flp a) b "PRrs" of
-                            Checked (STbinary trL trR trs) _ -> pure (STbinary (flp trL) trR (map flpLeft trs))
-                                                                where
-                                                                  flpLeft (ECps (el,er), sgn, PCps o' pl pr) = (ERrs (flp el, er), sgn, PRrs o' (flp pl) pr)
-                                                                  flpLeft _ = fatal ("Unexpected triple in a pattern of a PRrs term at "<> tshow o)
-                            Checked _ _ -> fatal "Unexpected non-binary OpTree in PRrs"
-                            Errors errs -> Errors errs -- TODO: check error messages for flipping the left operand
+            PLrs o a b -> checkPLrs  o "left residual"     ELrs (PLrs o) a b "PLrs"
+            PRrs o a b -> checkPRrs  o "right residual"    ERrs (PRrs o) a b "PRrs"
             PPrd o a b -> do let lConstraint = case mConstraint of
                                                   Just (Src, _) -> mConstraint
                                                   _             -> Nothing
@@ -1553,7 +1541,7 @@ term2Expr env ci mConstraintCpt term
                                                        mBoth <- mSrc `meet` mTgt
                                                        return (ISgn mBoth)
 
-        checkIntra
+        checkIntra, checkPRrs, checkPLrs
           :: {- o           -} Origin
           -> {- kind        -} Text   -- e.g., "composition", "left residual", ...
           -> {- combinator  -} ((Expression, Expression) -> Expression)
@@ -1578,7 +1566,7 @@ term2Expr env ci mConstraintCpt term
              case triples of
                []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
                           opTree = STbinary sgnaTree sgnbTree errorExprs
-                      in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis sgnsa sgnsb)
+                      in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
                _ -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree triples)) $
                     return (STbinary sgnaTree sgnbTree triples)
           where
@@ -1610,26 +1598,119 @@ term2Expr env ci mConstraintCpt term
                , Just between<-[meet cpta cptb]
                ]
 
-            -- diagnosis :: Text -> a -> a -> [a] -> [a] -> Text
-            diagnosis sgnsa sgnsb
-             = case (kind, sgnsa==sgnsb) of
-                ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-                ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-                ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flp b)<>"."
-                ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flp a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-                ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
-                _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
-              where
-                  displayLeft cpts expr =
-                    showP expr<>case cpts of
-                                  [cpt] -> ", which is "<>tshow cpt<>", "
-                                  []    -> " is undefined because "<>showP expr<>" is untypable, but it "
-                                  _     -> ", which can be any of "<>tshow cpts<>", "
-                  displayRight cpts expr =
-                    showP expr<>case cpts of
-                                  [cpt] -> ", which is "<>tshow cpt
-                                  []    -> " is undefined because "<>showP expr<>" is untypable"
-                                  _     -> ", which can be any of "<>tshow cpts
+        checkPRrs o kind combinator pCombinator a b _opStr = -- activate the last parameter opStr when using the trace statements: 
+          do let lConstraint = case mConstraint of
+                                  Just (Src, c) -> Just (Tgt, c)
+                                  _             -> Nothing
+             let rConstraint = case mConstraint of
+                                  Just (Tgt, _) -> mConstraint
+                                  _             -> Nothing
+             sgnaTree <- signatures lConstraint a; sgnbTree <- signatures rConstraint b
+             let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
+                 triples = makeTriples triplesa triplesb
+                 sgnsa = fmap (\(_,s,_) -> s) triplesa; sgnsb = fmap (\(_,s,_) -> s) triplesb
+             -- trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
+             case triples of
+               []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (target sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
+                          opTree = STbinary sgnaTree sgnbTree errorExprs
+                      in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
+               _ -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree triples)) $
+                    return (STbinary sgnaTree sgnbTree triples)
+          where
+            -- | makeTriples constructs all possible (Expression, Signature, Term) triples for binary operations.
+            makeTriples :: [(Expression, Signature, Term TermPrim)]
+                        -> [(Expression, Signature, Term TermPrim)]
+                        -> [(Expression, Signature, Term TermPrim)]
+            makeTriples triplesa triplesb
+             = -- trace ("\n12. makeTriples called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
+               [ -- trace ("\n13. list comprehension with:\n  between: "<>tshow between) $
+                 let result_expr = refineANY (Sign tgta tgtb) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
+               , Just _between<-[meet srca srcb]
+               ] <>
+               [ let result_expr = refineANY (Sign tgta between) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
+               , Just between<-[meet srca cptb]
+               ] <>
+               [ let result_expr = refineANY (Sign between tgtb) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
+               , Just between<-[meet cpta srcb]
+               ] <>
+               [ let result_expr = refineANY (ISgn between) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
+               , Just between<-[meet cpta cptb]
+               ]
+
+        checkPLrs o kind combinator pCombinator a b _opStr = -- activate the last parameter opStr when using the trace statements: 
+          do let lConstraint = case mConstraint of
+                                  Just (Src, _) -> mConstraint
+                                  _             -> Nothing
+             let rConstraint = case mConstraint of
+                                  Just (Tgt, c) -> Just (Src, c)
+                                  _             -> Nothing
+             sgnaTree <- signatures lConstraint a; sgnbTree <- signatures rConstraint b
+             let triplesa = opSigns sgnaTree; triplesb = opSigns sgnbTree
+                 triples = makeTriples triplesa triplesb
+                 sgnsa = fmap (\(_,s,_) -> s) triplesa; sgnsb = fmap (\(_,s,_) -> s) triplesb
+             -- trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
+             case triples of
+               []  -> let errorExprs = [(combinator (expr_a, expr_b), Sign (source sgn_a) (source sgn_b), pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-triplesa, (expr_b, sgn_b, trm_b)<-triplesb ]
+                          opTree = STbinary sgnaTree sgnbTree errorExprs
+                      in mkVerboseTypeError env o opTree ("Cannot match the signatures on the left and right of the " <> kind <> "." <> diagnosis kind a b sgnsa sgnsb)
+               _ -> -- trace ("\n11. checkIntra yields: \n"<>showOpTree (STbinary sgnaTree sgnbTree triples)) $
+                    return (STbinary sgnaTree sgnbTree triples)
+          where
+            -- | makeTriples constructs all possible (Expression, Signature, Term) triples for binary operations.
+            makeTriples :: [(Expression, Signature, Term TermPrim)]
+                        -> [(Expression, Signature, Term TermPrim)]
+                        -> [(Expression, Signature, Term TermPrim)]
+            makeTriples triplesa triplesb
+             = -- trace ("\n12. makeTriples called with:\n  triplesa signatures: "<>T.intercalate ", " (map showTriple triplesa)<>"\n  triplesb signatures: "<>T.intercalate ", " (map showTriple triplesb)) $
+               [ -- trace ("\n13. list comprehension with:\n  between: "<>tshow between) $
+                 let result_expr = refineANY (Sign srca srcb) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
+               , Just _between<-[meet tgta tgtb]
+               ] <>
+               [ let result_expr = refineANY (Sign srca between) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, Sign srca tgta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
+               , Just between<-[meet tgta cptb]
+               ] <>
+               [ let result_expr = refineANY (Sign between srcb) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, Sign srcb tgtb, trm_b)<-triplesb
+               , Just between<-[meet cpta tgtb]
+               ] <>
+               [ let result_expr = refineANY (ISgn between) (combinator (expr_a, expr_b))
+                 in (result_expr, sign result_expr, pCombinator trm_a trm_b)
+               | (expr_a, ISgn cpta, trm_a)<-triplesa, (expr_b, ISgn cptb, trm_b)<-triplesb
+               , Just between<-[meet cpta cptb]
+               ]
+
+        diagnosis kind a b sgnsa sgnsb
+         = case (kind, sgnsa==sgnsb) of
+            ("composition"      , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+            ("relative addition", eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should match "<>(if eq then "" else "with")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+            ("left residual"    , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to or more generic than" )<>" the target of "<>displayRight (map target sgnsb) (flp b)<>"."
+            ("right residual"   , eq) -> "\n  The source of "<>displayLeft (map source sgnsa) (flp a)<>"should "<>(if eq then "match" else "be equal to or more specific than")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+            ("diamond"          , eq) -> "\n  The target of "<>displayLeft (map target sgnsa) a<>"should "<>(if eq then "match" else "be equal to (or share a concept with)")<>" the source of "<>displayRight (map source sgnsb) b<>"."
+            _ -> fatal ("Unknown kind of operation in diagnosis: "<>kind)
+          where
+              displayLeft cpts expr =
+                showP expr<>case cpts of
+                              [cpt] -> ", which is "<>tshow cpt<>", "
+                              []    -> " is undefined because "<>showP expr<>" is untypable, but it "
+                              _     -> ", which can be any of "<>tshow cpts<>", "
+              displayRight cpts expr =
+                showP expr<>case cpts of
+                              [cpt] -> ", which is "<>tshow cpt
+                              []    -> " is undefined because "<>showP expr<>" is untypable"
+                              _     -> ", which can be any of "<>tshow cpts
 
         constrain :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         constrain opTree =

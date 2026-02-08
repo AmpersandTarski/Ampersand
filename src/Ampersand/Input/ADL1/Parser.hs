@@ -473,7 +473,7 @@ pRelationDef :: AmpParser (P_Relation, [P_Population])
 pRelationDef =
   reorder
     <$> currPos
-    <*> (pRelationNew <|> pRelationOld)
+    <*> pRelationNew -- was:   (pRelationNew <|> pRelationOld), but pRelationOld is now deprecated
     <*> optSet pProps
     <*> optList pRelDefaults
     <*> pMaybe pPragma
@@ -553,18 +553,18 @@ pRelationNew =
     <*> optional pLabel
     <*> return Set.empty
 
---- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
-pRelationOld :: AmpParser (Name, P_Sign, Maybe Label, PProps)
-pRelationOld =
-  relOld
-    <$> pNameWithoutLabel RelationName
-    <* (pOperator . toText1Unsafe) "::"
-    <*> pConceptRef
-    <*> pFun
-    <*> pConceptRef
-    <*> optional pLabel
-  where
-    relOld nm src fun tgt lbl = (nm, P_Sign src tgt, lbl, fun)
+-- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
+-- pRelationOld :: AmpParser (Name, P_Sign, Maybe Label, PProps)
+-- pRelationOld =
+--   relOld
+--     <$> pNameWithoutLabel RelationName
+--     <* (pOperator . toText1Unsafe) "::"
+--     <*> pConceptRef
+--     <*> pFun
+--     <*> pConceptRef
+--     <*> optional pLabel
+--   where
+--     relOld nm src fun tgt lbl = (nm, P_Sign src tgt, lbl, fun)
 
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser (Set.Set PProp)
@@ -591,24 +591,24 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
             then ps `Set.union` Set.fromList [P_Uni, P_Inj]
             else ps
 
---- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
-pFun :: AmpParser PProps
-pFun =
-  Set.empty
-    <$ (pOperator . toText1Unsafe) "*"
-    <|> Set.fromList [P_Uni, P_Tot]
-    <$ (pOperator . toText1Unsafe) "->"
-    <|> Set.fromList [P_Inj, P_Sur]
-    <$ (pOperator . toText1Unsafe) "<-"
-    <|> pBrackets pMults
-  where
-    --- Mults ::= Mult '-' Mult
-    pMults :: AmpParser PProps
-    pMults =
-      Set.union
-        <$> optSet (pMult (P_Sur, P_Inj))
-        <* pDash
-        <*> optSet (pMult (P_Tot, P_Uni))
+--- Deprecated:   Fun ::= '*' | '->' | '<-' | '[' Mults ']'
+-- pFun :: AmpParser PProps
+-- pFun =
+--   Set.empty
+--     <$ (pOperator . toText1Unsafe) "*"
+--     <|> Set.fromList [P_Uni, P_Tot]
+--     <$ (pOperator . toText1Unsafe) "->"
+--     <|> Set.fromList [P_Inj, P_Sur]
+--     <$ (pOperator . toText1Unsafe) "<-"
+--     <|> pBrackets pMults
+--   where
+--     --- Mults ::= Mult '-' Mult
+--     pMults :: AmpParser PProps
+--     pMults =
+--       Set.union
+--         <$> optSet (pMult (P_Sur, P_Inj))
+--         <* pDash
+--         <*> optSet (pMult (P_Tot, P_Uni))
 
     --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
     -- TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
@@ -702,14 +702,14 @@ pIdentDef =
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pViewDefImproved <|> pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Name Label? ConceptOneRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Name Label? ConceptRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
 pViewDefImproved :: AmpParser P_ViewDef
 pViewDefImproved =
   mkViewDef
     <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
     <*> pNameWithOptionalLabelAndColon ViewName
-    <*> pConceptOneRef
+    <*> pConceptRef
     <*> pIsThere ((pKey . toText1Unsafe) "DEFAULT")
     <*> pBraces (pViewSegment Improved `sepBy` pComma)
     `opt` []
@@ -764,14 +764,14 @@ pViewSegment viewKind =
           vsm_load = load
         }
 
---- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
+--- ViewDefLegacy ::= 'VIEW' Label ConceptRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
 pViewDefLegacy =
   build
     <$> currPos
     <* (pKey . toText1Unsafe) "VIEW"
     <*> pNameWithOptionalLabelAndColon ViewName
-    <*> pConceptOneRef
+    <*> pConceptRef
     <*> pParens (pViewSegment Legacy `sepBy` pComma)
   where
     build ::
@@ -1189,7 +1189,7 @@ rightAssociate combinator operator term =
     g orig y Nothing = (orig, y)
     g orig y (Just (org, z)) = (orig, combinator org y z)
 
---- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptRef ']')? | 'V' Signature? | Singleton ('[' ConceptRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef =
   PNamedR
@@ -1197,7 +1197,7 @@ pRelationRef =
     <|> pid
     <$> currPos
     <* (pKey . toText1Unsafe) "I"
-    <*> (pMaybe . pBrackets $ pConceptOneRef)
+    <*> (pMaybe . pBrackets $ pConceptRef)
     <|> pfull
     <$> currPos
     <* (pKey . toText1Unsafe) "V"
@@ -1205,11 +1205,11 @@ pRelationRef =
     <|> pBin
     <$> currPos
     <*> pPBinOp
-    <*> (pMaybe . pBrackets $ pConceptOneRef)
+    <*> (pMaybe . pBrackets $ pConceptRef)
     <|> Patm
     <$> currPos
     <*> pSingleton
-    <*> (pMaybe . pBrackets $ pConceptOneRef)
+    <*> (pMaybe . pBrackets $ pConceptRef)
   where
     pid orig Nothing = PI orig
     pid orig (Just c) = Pid orig c
@@ -1260,20 +1260,16 @@ value2PAtomValue o v = case v of
 pNamedRel :: AmpParser P_NamedRel
 pNamedRel = PNamedRel <$> currPos <*> pNameWithoutLabel RelationName <*> pMaybe pSign
 
---- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
+--- Signature ::= '[' ConceptRef ('*' ConceptRef)? ']'
 pSign :: AmpParser P_Sign
 pSign = pBrackets sign
   where
-    sign = mkSign <$> pConceptOneRef <*> pMaybe ((pOperator . toText1Unsafe) "*" *> pConceptOneRef)
+    sign = mkSign <$> pConceptRef <*> pMaybe ((pOperator . toText1Unsafe) "*" *> pConceptRef)
     mkSign src mTgt = P_Sign src (fromMaybe src mTgt)
 
---- ConceptRef ::= ConceptName
+--- ConceptRef ::= 'ONE' | ConceptRef
 pConceptRef :: AmpParser P_Concept
-pConceptRef = PCpt <$> pNameWithoutLabel ConceptName
-
---- ConceptOneRef ::= 'ONE' | ConceptRef
-pConceptOneRef :: AmpParser P_Concept
-pConceptOneRef = P_ONE <$ (pKey . toText1Unsafe) "ONE" <|> pConceptRef
+pConceptRef = P_ONE <$ (pKey . toText1Unsafe) "ONE" <|> PCpt <$> pNameWithoutLabel ConceptName
 
 pTex1AndColon :: AmpParser Text1
 pTex1AndColon = pUnrestrictedText1 <* pColon

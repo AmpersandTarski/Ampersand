@@ -81,7 +81,7 @@ module Ampersand.Core.AbstractSyntaxTree
     showSign,
     SignOrd (..),
     AliasGraph, makeAliasGraph,
-    topCpt, botCpt,
+    topCpt, botCpt, -- oneCpt,
     geq, join, meet, meetIsect, MeetOrJoin (..),
     conceptLabel,
     smallerConcepts, largerConcepts,
@@ -2104,6 +2104,17 @@ botCpt = PlainConcept
   , typology = emptyTypology
   }
 
+-- | The ONE concept - universal lower bound for all concepts. It is more specific than every other concept.
+-- oneCpt :: A_Concept
+-- oneCpt = PlainConcept
+--   { aliases = Set.fromList
+--       [case try2Name ConceptName "ONE" of
+--           Left err -> fatal $ "Not a proper concept name: ONE. " <> err
+--           Right (nm, _) -> nm
+--       ]
+--   , typology = emptyTypology
+--   }
+
 {- Design decision:
 topCpt and botCpt are universal bottom and top elements.
 -}
@@ -2147,7 +2158,7 @@ data MeetOrJoin = Meet | Join deriving (Show) -- for preventing code duplication
 
 -- | join for A_Concepts using embedded typology (no external graph needed!)
 join :: A_Concept -> A_Concept -> Maybe A_Concept
-join a b
+join a@PlainConcept{} b@PlainConcept{}
   | a == b                   = Just a
   | a == topCpt              = Just topCpt
   | b == topCpt              = Just topCpt
@@ -2159,10 +2170,12 @@ join a b
                     fatal $ tshow a <> " `join` " <> tshow b <> " produced alias set: " <> tshow result
                   Just result -> Just (PlainConcept result (typology a))
                   Nothing -> Nothing
+join a b | a==b = Just a
+join _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 -- | meet for A_Concepts using embedded typology
 meet :: A_Concept -> A_Concept -> Maybe A_Concept
-meet a b
+meet a@PlainConcept{} b@PlainConcept{}
   | a == b                   = Just a
   | a == topCpt              = Just b
   | b == topCpt              = Just a
@@ -2174,9 +2187,11 @@ meet a b
                     fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
                   Just result -> Just (PlainConcept result (typology a))
                   Nothing -> Nothing
+meet a b | a==b = Just a
+meet _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 meetIsect :: A_Concept -> A_Concept -> Maybe A_Concept
-meetIsect a b
+meetIsect a@PlainConcept{} b@PlainConcept{}
   | a == b = Just a
   | a == topCpt = Just b
   | b == topCpt = Just a
@@ -2188,6 +2203,8 @@ meetIsect a b
                     fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
                   Just result -> Just (PlainConcept result (typology a))
                   Nothing -> Just (ISECT (Set.fromList [a, b]))  -- Fallback to disjunction
+meetIsect a b | a==b = Just a
+meetIsect _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 findNode :: (Named a) => AliasGraph -> a -> Maybe (Set.Set Name)
 findNode aliasGraph x = L.find (Set.member (name x)) (vertexList aliasGraph)
