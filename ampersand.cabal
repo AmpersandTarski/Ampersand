@@ -360,6 +360,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue855.adl
     testing/Travis/testcases/prototype/shouldSucceed/MultipleDeclaredRules.adl
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/README.md
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/phone.adl
@@ -433,6 +434,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
