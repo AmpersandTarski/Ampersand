@@ -1,0 +1,29 @@
+CONTEXT Test IN ENGLISH
+  CLASSIFY A ISA AOrB
+  CLASSIFY B ISA AOrB
+
+PATTERN Test18
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[A*Y]
+RELATION t[B*Y]
+RULE Test:r = s;I[A];t
+CLASSIFY D IS A/\B
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+try18fail.adl:10:13 error:
+  Ambiguous binary term: r=s;I[A];t might be one of [X*Y], [X*Y].
+    Please specify the signature explicitly.
+  
+  Type analysis:
+  [X*Y], [X*Y] r[X*Y]=s[X*A];I[A];t[A*Y], r[X*Y]=s[X*A];I[A];t[B*Y]
+  [X*Y]            ├── r[X*Y]
+  [X*Y], [X*Y]     └── s[X*A];I[A];t[A*Y], s[X*A];I[A];t[B*Y]
+  [X*A]                ├── s[X*A]
+  [A*Y], [A*Y]         └── I[A];t[A*Y], I[A];t[B*Y]
+  [A]                      ├── I[A]
+  [A*Y], [B*Y]             └── t[A*Y], t[B*Y]
+-}

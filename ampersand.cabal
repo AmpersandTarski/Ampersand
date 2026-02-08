@@ -263,7 +263,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/Issue142.adl
     testing/Travis/testcases/prototype/shouldFail/Issue142.xlsx
     testing/Travis/testcases/prototype/shouldFail/Issue766.adl
-    testing/Travis/testcases/prototype/shouldFail/NarrowExpressionTests.adl
     testing/Travis/testcases/prototype/shouldFail/overlappingRelations.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/443_InterfaceRefType.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ARM20-Test2wrong.adl
@@ -307,12 +306,16 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/try12.adl
     testing/Travis/testcases/prototype/shouldFail/try17.adl
     testing/Travis/testcases/prototype/shouldFail/try18b.adl
+    testing/Travis/testcases/prototype/shouldFail/try18fail.adl
     testing/Travis/testcases/prototype/shouldFail/try2.adl
     testing/Travis/testcases/prototype/shouldFail/try2b.adl
     testing/Travis/testcases/prototype/shouldFail/try36.adl
     testing/Travis/testcases/prototype/shouldFail/try4.adl
     testing/Travis/testcases/prototype/shouldFail/try41a.adl
+    testing/Travis/testcases/prototype/shouldFail/try5.adl
     testing/Travis/testcases/prototype/shouldFail/Try50.adl
+    testing/Travis/testcases/prototype/shouldFail/try5a.adl
+    testing/Travis/testcases/prototype/shouldFail/try6.adl
     testing/Travis/testcases/prototype/shouldFail/try7.adl
     testing/Travis/testcases/prototype/shouldFail/try8.adl
     testing/Travis/testcases/prototype/shouldFail/try9.adl
@@ -381,9 +384,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try14.adl
     testing/Travis/testcases/prototype/shouldSucceed/try15.adl
     testing/Travis/testcases/prototype/shouldSucceed/try16.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try17.adl
     testing/Travis/testcases/prototype/shouldSucceed/try18.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try18fail.adl
     testing/Travis/testcases/prototype/shouldSucceed/try19.adl
     testing/Travis/testcases/prototype/shouldSucceed/try2.adl
     testing/Travis/testcases/prototype/shouldSucceed/try20.adl
@@ -405,7 +406,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try37.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try38.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try39.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try4.adl
     testing/Travis/testcases/prototype/shouldSucceed/try40.adl
     testing/Travis/testcases/prototype/shouldSucceed/try41.adl
     testing/Travis/testcases/prototype/shouldSucceed/try42.adl
@@ -415,14 +415,10 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/try45.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try46.adl
     testing/Travis/testcases/prototype/shouldSucceed/try47.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try5.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try50.adl
-    testing/Travis/testcases/prototype/shouldSucceed/Try51.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try52.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try53.adl
     testing/Travis/testcases/prototype/shouldSucceed/Try54.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try5a.adl
-    testing/Travis/testcases/prototype/shouldSucceed/try6.adl
     testing/Travis/testcases/prototype/shouldSucceed/try7.adl
     testing/Travis/testcases/prototype/shouldSucceed/try8.adl
     testing/Travis/testcases/prototype/shouldSucceed/try9.adl

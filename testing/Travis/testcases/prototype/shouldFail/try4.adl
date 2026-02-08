@@ -4,17 +4,17 @@ PATTERN Test4
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
-CLASSIFY B ISA E
-CLASSIFY A ISA E
--- CLASSIFY D ISA B
--- CLASSIFY D ISA A
+-- CLASSIFY B ISA E
+-- CLASSIFY A ISA E
+CLASSIFY D ISA B
+CLASSIFY D ISA A
 RULE r = s;t
 ENDPATTERN
 
 ENDCONTEXT
 
 {-
-   Purpose: This script demonstrates how NOT to specify an intersection type D between A and B.
-   Result: Fail
-   Reason: the intersection between A and B should exists for s;t to be well-typed.
+   Purpose: This script demonstrates how to specify an intersection type D between A and B.
+   Result: Succeed
+   Reason: the intersection between A and B exists as concept D
 -}

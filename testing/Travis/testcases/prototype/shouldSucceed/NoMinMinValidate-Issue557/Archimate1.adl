@@ -55,8 +55,8 @@ RELATION provides[BusinessRole*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business
 RELATION takesPart[BusinessRole*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business role " " takes part in providing Business interface ".
 -- The following is wrong because  BusinessCollaboration ISA BusinessRole  and because  RELATION provides[BusinessRole*BusinessInterface]  is declared.
 -- RELATION provides[BusinessCollaboration*BusinessInterface] [UNI,TOT,SUR] PRAGMA "Business collaboration " " provides Business interface ".
-RULE R002: comp;I[BusinessCollaboration];provides \/ provides = takesPart
- MEANING "An interface provided by a business collaboration is considered to be provided by all participants in the collaboration."
+-- RULE R002: comp;I[BusinessCollaboration];provides \/ provides = takesPart
+--  MEANING "An interface provided by a business collaboration is considered to be provided by all participants in the collaboration."
 
 RELATION requires[BusinessRole*BusinessInterface] [TOT,SUR] PRAGMA "Business role " " requires Business interface ".
 
@@ -125,7 +125,7 @@ CLASSIFY Value ISA BusinessConcept
 RELATION associate[Value*BusinessService] PRAGMA "Value " " is associated with Business service ".
 
 -- Vraag 5.
-RULE R003: aggr[BusinessService*Product];associate[Product*Value] |- associate~
+RULE R003: aggr[BusinessService*Product];associate[Product*Value] |- associate[Value*BusinessService]~
 MEANING "If a product is associated with a value, all business services taking part in the product are associated with that value."
 
 RELATION comp[Value*Value] [RFX,TRN,ASY] PRAGMA "Value " " is a component of Value ".

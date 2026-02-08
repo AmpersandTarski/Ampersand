@@ -1,0 +1,34 @@
+CONTEXT Try5 IN ENGLISH
+  CLASSIFY B ISA BorEorA
+  CLASSIFY E ISA BorEorA
+  CLASSIFY A ISA BorEorA
+
+PATTERN Try5
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION u[E*Y]
+RULE Try5: r = s;(t/\u)
+-- was:  RULE r0: I[D] = (I[A]/\I[B])/\I[E]
+--       RULE r1: I[F] = I[B]/\I[E]
+--       RULE r2: I[G] = I[A]/\I[B]
+CLASSIFY D IS (A/\B)/\E
+CLASSIFY F IS B/\E
+CLASSIFY G IS A/\B
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+try5.adl:11:17 error:
+  Cannot match the signatures on the left and right of the composition.
+    The target of s, which is A, should be equal to (or share a concept with) the source of (t/\u), which is F.
+  
+  Type analysis:
+  [X*Y] s[X*A];(t[B*Y]/\u[E*Y])
+  [X*A]     ├── s[X*A]
+  [F*Y]     └── (t[B*Y]/\u[E*Y])
+  [F*Y]         └── t[B*Y]/\u[E*Y]
+  [B*Y]             ├── t[B*Y]
+  [E*Y]             └── u[E*Y]
+-}

@@ -1,19 +1,79 @@
-﻿CONTEXT Test IN ENGLISH
+CONTEXT Try17 IN ENGLISH
 
-PATTERN Test17
-RELATION r[X*Y]
-RELATION s[X*A]
-RELATION t[B*Y]
-RULE r = s;t
-RULE I[D] = I[A]\/I[B]
+PURPOSE CONTEXT Try17 {+ Test disambiguation algorithm with concept hierarchies - challenging the type system to select correct relations based on hierarchy-aware meet operations. +}
+
+PATTERN Try17
+
+-- Create concept hierarchies to challenge the type system
+CLASSIFY Student ISA Person
+CLASSIFY Teacher ISA Person
+CLASSIFY Course ISA Activity
+CLASSIFY Subject ISA Activity
+
+-- Define three relations with same name but different signatures using hierarchy
+RELATION r[Student*Course]     -- r1: specific student-course relation
+RELATION r[Person*Activity]    -- r2: general person-activity relation  
+RELATION r[Teacher*Subject]    -- r3: specific teacher-subject relation
+
+-- Auxiliary relations for disambiguation context
+RELATION enrolls[X*Student]    -- Forces connection to Student hierarchy
+RELATION teaches[Z*Teacher]    -- Forces connection to Teacher hierarchy
+RELATION manages[Activity*Y]   -- Forces connection to Activity hierarchy
+
+-- Test 1: Should select r[Student*Course] through hierarchy reasoning
+-- enrolls targets Student, and Student ISA Person, but r[Student*Course] is most specific
+RULE TestHierarchyDisambiguation1: result1 = enrolls;r
+RELATION result1[X*Course]
+
+-- Test 2: Should select r[Teacher*Subject] through hierarchy reasoning  
+-- teaches targets Teacher, and Teacher ISA Person, but r[Teacher*Subject] is most specific
+RULE TestHierarchyDisambiguation2: result2 = teaches;r  
+RELATION result2[Z*Subject]
+
+-- Test 3: Complex composition forcing hierarchy-aware meet operations
+-- This should work because Course ISA Activity, so meet(Course, Activity) = Course
+RULE TestHierarchyMeet: result3 = result1;manages
+RELATION result3[X*Y]
+
 ENDPATTERN
 
 ENDCONTEXT
 
 {-
-   Purpose: This script shows that a type conflict (between A and B) can be resolved
-            by defining a union type D.
-   Result: FAIL
-   Reason:  This requires an intersection type between A and B, which is not there.
-   Adding RULE I[E] = I[A]/\I[B] helps, because this yields concept E to be the type between s and t.
+Purpose: Test hierarchy-based disambiguation with CLASSIFY statements
+- Student, Teacher both ISA Person creates overlapping type choices
+- Course, Subject both ISA Activity creates overlapping type choices
+- Three relations named 'r' with hierarchical signatures challenge disambiguation:
+  * r[Student*Course] vs r[Person*Activity] vs r[Teacher*Subject]
+- result1;manages tests hierarchy-aware composition (Course ISA Activity)
+- Tests the type system's ability to use concept hierarchies in meet operations
+
+ This test has two ambiguities:
+try17.adl:25:44 error:
+  Ambiguous binary term: result1=enrolls;r might be one of [X*Activity], [X*Course].
+    Please specify the signature explicitly.
+  
+  Type analysis:
+  [X*Activity], [X*Course]                               result1[X*Course]=enrolls[X*Student];r[Person*Activity], result1[X*Course]=enrolls[X*Student];r[Student*Course]
+  [X*Course]                                                 ├── result1[X*Course]
+  [X*Activity], [X*Course]                                   └── enrolls[X*Student];r[Person*Activity], enrolls[X*Student];r[Student*Course]
+  [X*Student]                                                    ├── enrolls[X*Student]
+  [Person*Activity], [Student*Course], [Teacher*Subject]         └── r[Person*Activity], r[Student*Course], r[Teacher*Subject]
+------------------------------
+try17.adl:30:44 error:
+  Ambiguous binary term: result2=teaches;r might be one of [Z*Activity], [Z*Subject].
+    Please specify the signature explicitly.
+  
+  Type analysis:
+  [Z*Activity], [Z*Subject]                              result2[Z*Subject]=teaches[Z*Teacher];r[Person*Activity], result2[Z*Subject]=teaches[Z*Teacher];r[Teacher*Subject]
+  [Z*Subject]                                                ├── result2[Z*Subject]
+  [Z*Activity], [Z*Subject]                                  └── teaches[Z*Teacher];r[Person*Activity], teaches[Z*Teacher];r[Teacher*Subject]
+  [Z*Teacher]                                                    ├── teaches[Z*Teacher]
+  [Person*Activity], [Student*Course], [Teacher*Subject]         └── r[Person*Activity], r[Student*Course], r[Teacher*Subject]
+
+
+Discussion:
+- Should the compiler select r[Student*Course] when analyzing enrolls;r to obtain the most specific match, or should it report an ambiguity because both r[Student*Course] and r[Person*Activity] are applicable?
+- Similarly, should the compiler select r[Teacher*Subject] when analyzing teaches;r to obtain the most specific match?
+For now, I let the compiler report ambiguities so the user will be aware of the multiple applicable relations and can choose explicitly.
 -}
