@@ -174,9 +174,10 @@ connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
   [ "// Try to connect to the MySQL server",
     "global $DB_host,$DB_user,$DB_pass;",
-    "$DB_host='127.0.0.1';",
-    "$DB_user='root';",
-    "$DB_pass='';",
+    "// Read connection parameters from environment variables (for containerized setups) or use defaults",
+    "$DB_host = getenv('MYSQL_HOST') ?: '127.0.0.1';",
+    "$DB_user = getenv('MYSQL_USER') ?: 'root';",
+    "$DB_pass = getenv('MYSQL_PASSWORD') ?: '';",
     ""
   ]
     <> ( case mDbName of

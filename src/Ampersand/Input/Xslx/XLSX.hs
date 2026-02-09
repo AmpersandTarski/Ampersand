@@ -286,7 +286,7 @@ toPops env ns file x = map popForColumn (colNrs x)
             { pos = popOrigin,
               p_src = src,
               p_tgt = trg,
-              p_nmdr = PNamedRel popOrigin relationName Nothing, -- The P-to-A converter must assign the type.
+              p_nmdr = PNamedRel popOrigin relationName signature,
               p_popps = thePairs
             }
       where
@@ -294,6 +294,10 @@ toPops env ns file x = map popForColumn (colNrs x)
         (src, trg) = case mTargetConceptName of
           Just tCptName -> both (fmap mkPConcept) $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
           Nothing -> (Nothing, Nothing)
+        signature :: Maybe P_Sign
+        signature = case (src, trg) of
+          (Just s, Just t) -> Just (P_Sign s t)
+          _ -> Nothing
         popOrigin :: Origin
         popOrigin = originOfCell (relNamesRow, targetCol)
         relNamesRow, conceptNamesRow :: RowIndex

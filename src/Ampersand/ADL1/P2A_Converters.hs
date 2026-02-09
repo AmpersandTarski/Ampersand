@@ -1099,14 +1099,14 @@ assignOpSigns ss (STnullary _) = STnullary ss
 -- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
 -- Uncomment showGuardedOpTree for certain trace statements. (Search for showGuardedOpTree to find out which ones.)
-showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
-showGuardedOpTree (Errors errs) = 
-  "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
-showGuardedOpTree (Checked opTree []) = showOpTree opTree
-showGuardedOpTree (Checked opTree warnings) = 
-  "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
-  showOpTree opTree <> "\n\nWarnings:\n" <> 
-  T.intercalate "\n" (map tshow warnings)
+-- showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
+-- showGuardedOpTree (Errors errs) = 
+--   "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
+-- showGuardedOpTree (Checked opTree []) = showOpTree opTree
+-- showGuardedOpTree (Checked opTree warnings) = 
+--   "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
+--   showOpTree opTree <> "\n\nWarnings:\n" <> 
+--   T.intercalate "\n" (map tshow warnings)
 
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure

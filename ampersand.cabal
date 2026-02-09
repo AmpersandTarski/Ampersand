@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -456,7 +456,6 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/CompositionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DiamondTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/DifferenceTypeMismatch.adl
-    testing/Travis/testcases/TypeChecker/shouldFail/export.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FlipTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/FullRelationTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl
