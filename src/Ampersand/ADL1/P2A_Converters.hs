@@ -1099,14 +1099,14 @@ assignOpSigns ss (STnullary _) = STnullary ss
 -- showTriple (expr, sgn, trm) = "("<>showA expr<>", "<>tshow sgn<>", "<>showP trm<>")"
 
 -- Uncomment showGuardedOpTree for certain trace statements. (Search for showGuardedOpTree to find out which ones.)
--- showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
--- showGuardedOpTree (Errors errs) = 
---   "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
--- showGuardedOpTree (Checked opTree []) = showOpTree opTree
--- showGuardedOpTree (Checked opTree warnings) = 
---   "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
---   showOpTree opTree <> "\n\nWarnings:\n" <> 
---   T.intercalate "\n" (map tshow warnings)
+showGuardedOpTree :: Guarded (OpTree (Expression, Signature, Term TermPrim)) -> Text
+showGuardedOpTree (Errors errs) = 
+  "Errors:\n" <> T.intercalate "\n" (map tshow (NE.toList errs))
+showGuardedOpTree (Checked opTree []) = showOpTree opTree
+showGuardedOpTree (Checked opTree warnings) = 
+  "Checked (with " <> tshow (length warnings) <> " warning(s)):\n" <> 
+  showOpTree opTree <> "\n\nWarnings:\n" <> 
+  T.intercalate "\n" (map tshow warnings)
 
 instance (Show a) => Show (OpTree a) where
   show = T.unpack . showOpTreeStructure
@@ -1516,26 +1516,26 @@ term2Expr env ci mConstraintCpt term
               joinOrMeetSig sgn_a sgn_b =
                 case (sgn_a, moj, sgn_b) of
                   (ISgn c, Join, ISgn c') 
-                    | c == topCpt || c' == topCpt -> ISgn <$> (c `meet` c')
-                    | otherwise                   -> ISgn <$> (c `join` c')
-                  (ISgn c, Meet, ISgn c')         -> ISgn <$> (c `meet` c')
+                    | c == topCpt || c' == topCpt -> ISgn  <$>  c `meet` c'
+                    | otherwise                   -> ISgn  <$>  c `join` c'
+                  (ISgn c, Meet, ISgn c')         -> ISgn  <$>  c `meet` c'
                   (ISgn c, _, Sign s t)           -> deduplicate moj c s t
                   (Sign s t, _, ISgn c)           -> deduplicate moj c s t
                   (Sign s t, _ , Sign s' t') ->
                     case (topCpt == s, topCpt == t, moj, topCpt == s', topCpt == t') of
                       (True , True ,  _  , False, False) -> Just sgn_b
                       (False, False,  _  , True , True ) -> Just sgn_a
-                      (False, False, Join, False, False) -> Sign <$> (s `join` s') <*> (t `join` t')
-                      (False,   _  , Join, False,   _  ) -> Sign <$> (s `join` s') <*> (t `meet` t')
-                      (  _  , False, Join,   _  , False) -> Sign <$> (s `meet` s') <*> (t `join` t')
-                      _                                  -> Sign <$> (s `meet` s') <*> (t `meet` t')
+                      (False, False, Join, False, False) -> Sign  <$>  s `join` s'  <*>  t `join` t'
+                      (False,   _  , Join, False,   _  ) -> Sign  <$>  s `join` s'  <*>  t `meet` t'
+                      (  _  , False, Join,   _  , False) -> Sign  <$>  s `meet` s'  <*>  t `join` t'
+                      _                                  -> Sign  <$>  s `meet` s'  <*>  t `meet` t'
                  where
                    deduplicate Join c s t
                      | topCpt == s && topCpt == t = Just (ISgn c)
-                     | c == topCpt                = Just (Sign s t)
-                     | topCpt == s                = Sign c <$> (c `join` t)
-                     | topCpt == t                = Sign <$> (c `join` s) <*> Just c
-                     | otherwise                  = Sign <$> (c `join` s) <*> (c `join` t)  -- Normaal geval, zonder topCpt
+                     | c == topCpt                = ISgn  <$>  s `join` t
+                     | topCpt == s                = Sign c  <$>  c `join` t   -- This is equal to Sign  <*>  Just c  <$>  c `join` t
+                     | topCpt == t                = Sign  <$>  c `join` s  <*>  Just c
+                     | otherwise                  = Sign  <$>  c `join` s  <*>  c `join` t   -- Normaal geval, zonder topCpt
                    deduplicate Meet c s t         = do mSrc <- c `meet` s
                                                        mTgt <- c `meet` t
                                                        mBoth <- mSrc `meet` mTgt
