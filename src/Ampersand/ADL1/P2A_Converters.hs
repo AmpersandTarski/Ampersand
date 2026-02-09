@@ -1307,12 +1307,10 @@ refineANY targetSig expr
 term2Expr :: (HasRunner env) => env -> ContextInfo -> Maybe A_Concept -> Term TermPrim -> Guarded Expression
 term2Expr env ci mConstraintCpt term
   = do sgnTree <- -- trace ("🔍 term2Expr called with constraint=" <> tshow mConstraintCpt <> ", term=" <> showP term <> " at " <> tshow (origin term)) $
-                   signatures (case mConstraintCpt of Just cpt -> Just (Src, cpt); Nothing -> Nothing) term
+                  signatures (case mConstraintCpt of Just cpt -> Just (Src, cpt); Nothing -> Nothing) term
+       checkAmbiguities sgnTree
        case -- trace (showOpTree sgnTree)
             sgnTree of
-         STnullary    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous nullary term: " <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
-         STunary _    triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous unary term: "   <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
-         STbinary _ _ triples@((_, _, trm):_:_) -> mkVerboseTypeError env (origin trm) sgnTree ("Ambiguous binary term: "  <> showP trm <> " might be one of " <> T.intercalate ", " (map (tshow . snd3) triples) <> ".\n  "<>"Please specify the signature explicitly.")
          STnullary    [(expr, sig, _)]
            | isConcreteSignature sig -> pure expr  -- Single expression - already reduced, return it
            | otherwise -> -- trace ("\nterm2Expr (mConstraintSig="<>tshow mConstraintSig<>") ("<>showP term<>"):\n"<>showOpTree sgnTree) $
@@ -1321,9 +1319,12 @@ term2Expr env ci mConstraintCpt term
            | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for unary term " <> showP term <> ". The inferred signature contains " <> tshow sig)
          STbinary _ _ [(_, sig, _)]
            | not (isConcreteSignature sig) -> mkVerboseTypeError env (origin term) sgnTree ("Cannot determine a concrete type for binary term " <> showP term <> ". The inferred signature contains " <> tshow sig)
-         STnullary    []     -> fatal "Empty triples list in STnullary"
-         STunary _    []     -> fatal "Empty triples list in STunary"
-         STbinary _ _ []     -> fatal "Empty triples list in STbinary"
+         STnullary    []      -> fatal "Empty triples list in STnullary"
+         STunary _    []      -> fatal "Empty triples list in STunary"
+         STbinary _ _ []      -> fatal "Empty triples list in STbinary"
+         STnullary    (_:_:_) -> fatal ("term2Expr: pattern match failure in STnullary. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
+         STunary _    (_:_:_) -> fatal ("term2Expr: pattern match failure in STunary. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
+         STbinary _ _ (_:_:_) -> fatal ("term2Expr: pattern match failure in STbinary. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
          _ -> -- trace ("term2Expr:\n"<>showOpTree sgnTree <> " at " <> tshow (origin term)) $
                do finalExpr <- rootExpression sgnTree
                   if isConcreteSignature (sign finalExpr)
@@ -1340,14 +1341,43 @@ term2Expr env ci mConstraintCpt term
          STbinary _ _ [ (expr, _, _) ] -> pure expr
          _                          -> fatal ("term2Expr: pattern match failure in rootExpression. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
 
-    -- Keep this in case you might ever need to deduplicate the OpTree. (It uses pairs because Eq Term is not defined.)
-    -- nubOpTree :: OpTree (Expression, Signature, Term TermPrim) -> OpTree (Expression, Signature, Term TermPrim)
-    -- nubOpTree opTree = assignOpSigns [ (expr, sgn, term) | (expr, sgn) <- L.nub [ (expr, sgn) | (expr, sgn, _) <- triples ] ] opTree
-    --   where
-    --     triples = opSigns opTree
-    --     term = case triples of
-    --              (_, _, t):_ -> t
-    --              []          -> fatal "nubOptree: empty triples list"
+    checkAmbiguities :: OpTree (Expression, Signature, Term TermPrim) -> Guarded ()
+    checkAmbiguities opTree = 
+      case findAmbiguities True opTree of
+        [] -> pure ()
+        err:errs -> Errors (err NE.:| errs)
+      where
+        findAmbiguities :: Bool -> OpTree (Expression, Signature, Term TermPrim) -> [CtxError]
+        findAmbiguities isRoot node =
+          let triples = opSigns node
+              sigs = map (\(_, s, _) -> s) triples
+              uniqueSigs = L.nub sigs
+          in case triples of
+              [_] -> []  -- Only one triple → no ambiguity here
+              []  -> fatal "findAmbiguities: empty triples list. This is a bug in the compiler."
+              _   -> if length sigs == length uniqueSigs
+                     then [makeAmbiguityError isRoot triples uniqueSigs]
+                     else case node of
+                         STnullary _ -> []  -- Leaf nodes cannot have underlying ambiguities
+                         STunary child _ -> findAmbiguities False child
+                         STbinary l r _ -> findAmbiguities False l <> findAmbiguities False r
+        
+        makeAmbiguityError :: Bool -> [(Expression, Signature, Term TermPrim)] -> [Signature] -> CtxError
+        makeAmbiguityError isRoot triples uniqueSigs =
+          let trm = case triples of
+                      (_, _, t):_ -> t
+                      []          -> fatal "makeAmbiguityError: empty triples list"
+              -- Group expressions by signature
+              exprsBySig = [ (sig, [expr | (expr, s, _) <- triples, s == sig])
+                           | sig <- uniqueSigs ]
+          in CTXE (origin trm) $
+               "Ambiguity in "<>(if isRoot then "" else "sub")<>"expression " <> showP trm <> ".\n" <>
+               "This "<>(if isRoot then "" else "sub")<>"expression can have signatures " <> 
+               T.intercalate " or " (map tshow uniqueSigs) <> 
+               ", depending on the choice for either\n  " <>
+               T.intercalate "\nor\n  " 
+                 [ showA expr
+                 | (_, expr:_) <- exprsBySig ]
 
     -- | The signatures function computes all possible type signatures for a term within a constraint.
     --   It yields an OpTree with the exact recursive structure of the term.
@@ -1366,7 +1396,8 @@ term2Expr env ci mConstraintCpt term
       let refinedOpTree = -- trace ("   resultTerm:  "<>showOpTree opTree) $
                           fmap (\(expr, sgn, t) -> (refineANY sgn expr, sgn, t)) opTree
       -- trace ("   refinedOpTree: " <> showOpTree refinedOpTree <> "\n   constrain refinedOpTree: " <> showGuardedOpTree (constrain refinedOpTree)) $
-      constrain refinedOpTree
+      constrainedOpTree <- constrain refinedOpTree
+      pure constrainedOpTree
       where
         -- | resultPrim yields all possible (expression, signature, term) triples for a Prim term.
                                       -- Filter relations to keep only those with signatures wider or equal to constraint
@@ -1712,6 +1743,9 @@ term2Expr env ci mConstraintCpt term
                               []    -> " is undefined because "<>showP expr<>" is untypable"
                               _     -> ", which can be any of "<>tshow cpts
 
+        -- | Check for ambiguous subexpressions in the OpTree
+        -- An ambiguity exists when a node has multiple triples with different signatures
+        -- If all triples have the same signature, there's an underlying ambiguity in a subexpression
         constrain :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         constrain opTree =
           case mConstraint of
