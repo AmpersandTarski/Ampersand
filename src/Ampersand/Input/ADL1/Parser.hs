@@ -612,16 +612,16 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 
     --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
     -- TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-    pMult :: (PProp, PProp) -> AmpParser PProps
-    pMult (ts, ui) =
-      Set.union
-        <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
-        <* (pOperator . toText1Unsafe) ".."
-        <*> (Set.singleton ui <$ try pOne <|> Set.empty <$ (pOperator . toText1Unsafe) "*")
-        <|> Set.empty
-        <$ (pOperator . toText1Unsafe) "*"
-        <|> Set.fromList [ts, ui]
-        <$ try pOne
+    -- pMult :: (PProp, PProp) -> AmpParser PProps
+    -- pMult (ts, ui) =
+    --   Set.union
+    --     <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
+    --     <* (pOperator . toText1Unsafe) ".."
+    --     <*> (Set.singleton ui <$ try pOne <|> Set.empty <$ (pOperator . toText1Unsafe) "*")
+    --     <|> Set.empty
+    --     <$ (pOperator . toText1Unsafe) "*"
+    --     <|> Set.fromList [ts, ui]
+    --     <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
 pConceptDef :: AmpParser (DefinitionContainer -> PConceptDef)

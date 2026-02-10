@@ -35,8 +35,7 @@ INTERFACE Person  : I[Person]
 BOX [ "Person atom" : I
     , "ownsNectarines"  : ownsNectarines
     , "ownsOranges"  : ownsOranges
-    , "ownsLimes"  : ownsLimes
-        INTERFACE Lime
+    , "ownsLimes"  : ownsLimes INTERFACE Lime
     , "ownsLimoranges" : ownsLimoranges
     , "ownsCitrus" : ownsCitrus
     , "ownsCitrus;I[Lime]" : ownsCitrus;I[Lime]
