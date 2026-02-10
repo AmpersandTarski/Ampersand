@@ -17,6 +17,7 @@ import Ampersand.ADL1.P2A_Converters (ConceptMap)
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+import Ampersand.Core.AbstractSyntaxTree (geq, meet)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
@@ -1309,8 +1310,10 @@ normStep
       nM _ (ECps (ELrs (x, y), ELrs (y', z))) _ | y == y' && x == y && x == z = (ERrs (x, z), ["Jipsen&Tsinakis: (x/x);(x/x) = x/x"], "<=>")
       nM _ (ECps (x, ERrs (y, z))) _ | x == y && x == z = (x, ["Jipsen&Tsinakis: x;(x\\x) = x"], "<=>")
       nM _ (ECps (ELrs (x, y), z)) _ | x == z && y == z = (x, ["Jipsen&Tsinakis: (x/x);x = x"], "<=>")
-      nM _ (ECps (l, r)) _ | isIdent l = (r, ["I;x = x"], "<=>")
-      nM _ (ECps (l, r)) _ | isIdent r = (l, ["x;I = x"], "<=>")
+      nM _ (ECps (l, ECps (r, s))) _ | isIdent l && isIdent r, Just c <- meet (target l) (source r) = (ECps (EDcI c, s), ["I[A];I[B] = I[meet(A,B)]"], "<=>")
+      nM _ (ECps (l, r)) _           | isIdent l && isIdent r, Just c <- meet (target l) (source r) = (EDcI c, ["I[A];I[B] = I[meet(A,B)]"], "<=>")
+      nM _ (ECps (l, r)) _ | isIdent l && (target l `geq` source l == Just True) = (r, ["I;x = x"], "<=>")
+      nM _ (ECps (l, r)) _ | isIdent r && (source r `geq` target l == Just True) = (l, ["x;I = x"], "<=>")
       nM True (ECps (r, ERad (s, q))) _ | not eq = ((r .:. s) .!. q, ["Peirce: r;(s!q) |- (r;s)!q"], "==>")
       nM True (ECps (ERad (r, s), q)) _ | not eq = (r .!. (s .:. q), ["Peirce: (r!s);q |- r!(s;q)"], "==>")
       nM _ x@(ECps (l@EFlp {}, r)) _ | not eq && flp l == r && isInj l = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")

@@ -1060,28 +1060,47 @@ data AAtomValue
         aavtyp :: !TType,
         aavtxt :: !Text
       }
-  | AAVInteger
-      { aavtyp :: !TType,
-        aavint :: !Integer
-      }
-  | AAVFloat
-      { aavtyp :: !TType,
-        aavflt :: !Double
-      }
-  | AAVBoolean
-      { aavtyp :: !TType,
-        aavbool :: !Bool
-      }
-  | AAVDate
-      { aavtyp :: !TType,
-        aadateDay :: !Day
-      }
-  | AAVDateTime
-      { aavtyp :: !TType,
-        aadatetime :: !UTCTime
-      }
+  | AAVInteger { aavtyp :: !TType, aavint :: !Integer }
+  | AAVFloat { aavtyp :: !TType, aavflt :: !Double }
+  | AAVBoolean { aavtyp :: !TType, aavbool :: !Bool }
+  | AAVDate { aavtyp :: !TType, aadateDay :: !Day }
+  | AAVDateTime { aavtyp :: !TType, aadatetime :: !UTCTime }
   | AtomValueOfONE
-  deriving (Eq, Ord, Show, Data)
+  deriving (Show, Data)
+
+-- Custom Eq instance that ignores aavtyp
+instance Eq AAtomValue where
+  AAVString _ _ t1 == AAVString _ _ t2 = t1 == t2
+  AAVInteger _ i1 == AAVInteger _ i2 = i1 == i2
+  AAVFloat _ f1 == AAVFloat _ f2 = f1 == f2
+  AAVBoolean _ b1 == AAVBoolean _ b2 = b1 == b2
+  AAVDate _ d1 == AAVDate _ d2 = d1 == d2
+  AAVDateTime _ dt1 == AAVDateTime _ dt2 = dt1 == dt2
+  AtomValueOfONE == AtomValueOfONE = True
+  _ == _ = False
+
+-- Custom Ord instance consistent with Eq (also ignoring aavtyp)
+instance Ord AAtomValue where
+  compare (AAVString _ _ t1) (AAVString _ _ t2) = compare t1 t2
+  compare (AAVInteger _ i1) (AAVInteger _ i2) = compare i1 i2
+  compare (AAVFloat _ f1) (AAVFloat _ f2) = compare f1 f2
+  compare (AAVBoolean _ b1) (AAVBoolean _ b2) = compare b1 b2
+  compare (AAVDate _ d1) (AAVDate _ d2) = compare d1 d2
+  compare (AAVDateTime _ dt1) (AAVDateTime _ dt2) = compare dt1 dt2
+  compare AtomValueOfONE AtomValueOfONE = EQ
+  -- Define ordering between different constructors
+  compare (AAVString _ _ _) _ = LT
+  compare _ (AAVString _ _ _) = GT
+  compare (AAVInteger _ _) _ = LT
+  compare _ (AAVInteger _ _) = GT
+  compare (AAVFloat _ _) _ = LT
+  compare _ (AAVFloat _ _) = GT
+  compare (AAVBoolean _ _) _ = LT
+  compare _ (AAVBoolean _ _) = GT
+  compare (AAVDate _ _) _ = LT
+  compare _ (AAVDate _ _) = GT
+  compare (AAVDateTime _ _) AtomValueOfONE = LT
+  compare AtomValueOfONE (AAVDateTime _ _) = GT
 
 instance Unique AAtomValue where -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique value = toText1Unsafe $ "AtomValue_" <> (tshow . abs . hash $ readable)

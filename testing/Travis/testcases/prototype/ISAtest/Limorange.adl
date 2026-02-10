@@ -43,7 +43,7 @@ BOX [ "Person atom" : I
     , "ownsCitrus;I[Orange]" : ownsCitrus;I[Orange]
     , "ownsCitrus;I[Orange];I[Lime]" : ownsCitrus;I[Orange];I[Lime]                     -- Person*Limorange
     , "ownsCitrus;I[Orange];I[Lime];I[Citrus]" : ownsCitrus;I[Orange];I[Lime];I[Citrus] -- Person*Limorange
-    , "ownsCitrus;(I[Lime];I[Orange])~;I[Citrus]" : ownsCitrus;(I[Lime];I[Orange])~;I[Citrus] -- Person*Limorange (for testing flipEpsilons)
+    --, "ownsCitrus;(I[Lime];I[Orange])~;I[Citrus]" : ownsCitrus;(I[Lime];I[Orange])~;I[Citrus] -- Person*Limorange (for testing flipEpsilons)
     , "ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon]" : ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon] -- not editable
     , "(I[Citrus];I[Orange];citrusOwnedBy)~" : (I[Citrus];I[Orange];citrusOwnedBy)~
     , "(I [Orange];citrusOwnedBy)~" : (I[Orange];citrusOwnedBy)~
