@@ -39,13 +39,13 @@ evaluateExpSQL fSpec dbNm expr = do
   let violationsExpr = conjNF env expr
       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
       sqlText = queryAsSQL violationsQuery
-  logInfo ""
-  logInfo $ "=== Original expression: " <> display (showA expr) <> " ==="
-  logInfo $ "=== Normalized (conjNF): " <> display (showA violationsExpr) <> " ==="
-  logInfo $ "=== Generated SQL: ==="
-  logInfo $ display sqlText
-  logInfo "=== END SQL ==="
-  logInfo ""
+  -- logInfo ""
+  -- logInfo $ "=== Original expression: " <> display (showA expr) <> " ==="
+  -- logInfo $ "=== Normalized (conjNF): " <> display (showA violationsExpr) <> " ==="
+  -- logInfo $ "=== Generated SQL: ==="
+  -- logInfo $ display sqlText
+  -- logInfo "=== END SQL ==="
+  -- logInfo ""
   performQuery dbNm violationsQuery
 
 performQuery ::
