@@ -179,7 +179,7 @@ makeFSpec env context =
             lrToText g expr =
               case fmap (showA . apRight) . toList . Set.filter (\ap -> g violPair == apLeft ap) . pairsinexpr $ expr of
                 [h] -> h
-                [] -> showA (g violPair)  -- Show raw atom value when no VIEW is defined
+                [] -> ""
                 xs -> "{" <> T.intercalate ", " xs <> "}"
     ruleviolations :: Rule -> AAtomPairs
     ruleviolations r = 

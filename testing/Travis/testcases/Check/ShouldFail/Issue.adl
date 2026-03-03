@@ -1,0 +1,10 @@
+CONTEXT Issue
+
+RELATION a[X*Y] = [("aap", "noot"), ("mies", "zus")]
+RELATION b[X*Y]
+
+RULE a |- b
+VIOLATION (TXT "a bevat (", SRC I, TXT ",", TGT I, TXT "), maar b bevat ", SRC b, TXT ".")
+
+
+ENDCONTEXT
