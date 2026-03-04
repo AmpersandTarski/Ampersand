@@ -513,7 +513,14 @@ pCtx2aCtx env
                        [t] -> t
                        []  -> Alphanumeric
                        ts  -> fatal $ "Multiple representations found for concept " <> showWithAliases cpt <> ": " <> tshow ts <> ". This should not happen as all concepts should have only one representation assigned."
-        decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+        -- Fix for bug: Excel-imported relations (in p_relations / ctx_ds) have dec_prps = {}
+        -- while the same relation declared in an ADL pattern (pt_dcs) may have dec_prps = {UNI, ...}.
+        -- By applying mergeRels first, the union of dec_prps from both sources is computed,
+        -- so that ADL-declared properties are not silently overwritten by the Excel import.
+        -- mergeRels is the same function used by mergeContexts in ParseTree.hs — no duplicate logic.
+        -- See docs/isuni-trace-analysis.md for the full bug analysis and proof.
+        let mergedPRelations = mergeRels (p_relations <> concatMap pt_dcs p_patterns)
+        decls <- traverse (pDecl2aDecl reprOf pCpt2aCpt Nothing deflangCtxt deffrmtCtxt) mergedPRelations
         let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d, [d]) | d <- decls])  :: Map Name (Map SignOrd Relation)
               where
                 groupOnTp lst = Map.fromListWith const [(SignOrd $ sign d, d) | d <- lst]

@@ -208,6 +208,21 @@ isUniInj prop expr =
     ERrs _ -> todo
     EDia _ -> todo
     ERad _ -> todo
+    -- TRACE 3 (uitgecommentarieerd: bewezen dat isUniInj correct werkt gegeven de invoer;
+    --           de bug zit in de Relation-instantie die decprps=[] heeft, zie TRACE 2):
+    -- EDcD d ->
+    --   let result = prop `elem` properties d
+    --       relName = fullName d
+    --   in if "rnqpOrganisme" `T.isInfixOf` relName
+    --        then trace
+    --               ( "[TRACE isUniInj] prop=" <> tshow prop
+    --                 <> "  relatie=" <> relName
+    --                 <> "[" <> fullName (source d) <> "*" <> fullName (target d) <> "]"
+    --                 <> "  decprps=" <> tshow (properties d)
+    --                 <> "  -> " <> tshow result
+    --               )
+    --               result
+    --        else result
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
     EBin {} -> todo

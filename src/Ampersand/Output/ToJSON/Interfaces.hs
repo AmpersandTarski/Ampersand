@@ -97,7 +97,8 @@ instance ToJSON JSONTemplateKeyValue where
   toJSON = amp2Jason
 
 instance JSON FSpec Interfaces where
-  fromAmpersand env fSpec _ = Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
+  fromAmpersand env fSpec _ =
+    Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
   fromAmpersand env fSpec si =
