@@ -25,7 +25,7 @@ data Concept = Concept
     cptJSONaffectedConjuncts :: [Text],
     cptJSONinterfaces :: [Text],
     cptJSONdefaultViewName :: Maybe Text,
-    cptJSONconceptTable :: TableCols,
+    cptJSONconceptTable :: Maybe TableCols,
     cptJSONlargestConcept :: Text
   }
   deriving (Generic, Show)
@@ -73,7 +73,9 @@ instance JSON FSpec Concepts where
   fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (filter isUsed . toList $ concs fSpec))
     where
       isUsed :: A_Concept -> Bool
-      isUsed cpt = cpt `Set.member` concs (instanceList fSpec :: [Relation])
+      isUsed cpt =
+        isONE cpt -- ONE is a built-in concept required by the prototype framework when used in interfaces
+          || cpt `Set.member` concs (instanceList fSpec :: [Relation])
 
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
@@ -90,7 +92,10 @@ instance JSON A_Concept Concept where
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
         cptJSONinterfaces = fmap fullName . filter hasAsSourceCpt . interfaceS $ fSpec,
         cptJSONdefaultViewName = fmap fullName . getDefaultViewForConcept fSpec $ cpt,
-        cptJSONconceptTable = fromAmpersand env fSpec cpt,
+        cptJSONconceptTable =
+          if isONE cpt
+            then Nothing -- ONE has no SQL table; the prototype framework handles null conceptTable
+            else Just (fromAmpersand env fSpec cpt),
         cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
     where
