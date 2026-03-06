@@ -62,3 +62,7 @@ miscellaneous/AmpersandBackup.jgfns
 
 # Docker compose database data
 mariadb_data/
+
+# Ampersand generated files
+MetaModel.adl
+*.json

@@ -11,7 +11,7 @@ A relation `R :: A -> B` is **total** if every element in the source concept A m
 
 **Example violation:**
 ```
-PropertyRule for TOTÐnamens[Mandaat*Bestuursorgaan]
+PropertyRule for TOT_namens[Mandaat*Bestuursorgaan]
 ```
 This means every `Mandaat` must have a related `Bestuursorgaan` in the `namens` relation.
 
@@ -20,7 +20,7 @@ A relation `R :: A -> B` is **surjective** if every element in the target concep
 
 **Example violation:**
 ```
-PropertyRule for SURÐformatie[Bestuursorgaan*Functie]
+PropertyRule for SUR_formatie[Bestuursorgaan*Functie]
 ```
 This means every `Functie` must be referenced by at least one `Bestuursorgaan` in the `formatie` relation.
 
@@ -28,7 +28,7 @@ This means every `Functie` must be referenced by at least one `Bestuursorgaan` i
 
 Compiler error format:
 ```
-PropertyRule for TOTÐrelationName[SourceConcept*TargetConcept] which is defined at ...
+PropertyRule for TOT_relationName[SourceConcept*TargetConcept] which is defined at ...
   There are N violations of RULE ...:
     ("atom1", "atom1")
     ("atom2", "atom2")
@@ -46,8 +46,8 @@ For each violation:
 ### Example Fix for Kernmodel.adl
 
 **Original violations:**
-- `TOTÐnamens[Mandaat*Bestuursorgaan]` - Mandaat_1, Mandaat_2, Mandaat_3 had no bestuursorgaan
-- `SURÐformatie[Bestuursorgaan*Functie]` - Functie_1, Functie_2, Functie_3 were not in any formatie
+- `TOT_namens[Mandaat*Bestuursorgaan]` - Mandaat_1, Mandaat_2, Mandaat_3 had no bestuursorgaan
+- `SUR_formatie[Bestuursorgaan*Functie]` - Functie_1, Functie_2, Functie_3 were not in any formatie
 
 **Fix applied:**
 ```ampersand
