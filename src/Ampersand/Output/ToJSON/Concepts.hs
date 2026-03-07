@@ -76,7 +76,7 @@ instance JSON FSpec Concepts where
       isUsed cpt =
         isONE cpt -- ONE is a built-in concept required by the prototype framework when used in interfaces
           || cpt `Set.member` concs (instanceList fSpec :: [Relation])
-
+          || cpt `Set.member` concs (instanceList fSpec :: [AClassify])
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
