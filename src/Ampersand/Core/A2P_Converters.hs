@@ -387,47 +387,23 @@ aAtomPair2pAtomPair pr =
     }
 
 aAtomValue2pAtomValue :: AAtomValue -> PAtomValue
-aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in convertion to P-structure"
+aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conversion to P-structure"
 aAtomValue2pAtomValue val =
-  case aavtyp val of
-    Alphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    BigAlphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    HugeAlphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    Password -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    Binary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    BigBinary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    HugeBinary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    Date -> case val of
-      AAVDate {} ->
-        -- TODO: Needs rethinking. A string or a double?
-        ScriptString o (showValADL val)
-      _ -> fatal "Unexpected combination of value types"
-    DateTime -> case val of
-      AAVDateTime {} ->
-        -- TODO: Needs rethinking. A string or a double?
-        ScriptString o (showValADL val)
-      _ -> fatal "Unexpected combination of value types"
-    Integer -> case val of
-      AAVInteger {} -> XlsxDouble o (fromInteger (aavint val))
-      _ -> fatal "Unexpected combination of value types"
-    Float -> case val of
-      AAVFloat {} -> XlsxDouble o (aavflt val)
-      _ -> fatal "Unexpected combination of value types"
-    Boolean -> case val of
-      AAVBoolean {} -> ComnBool o (aavbool val)
-      _ -> fatal "Unexpected combination of value types"
-    Object -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    TypeOfOne -> fatal "Unexpected combination of value types"
+  case (aavtyp val, val) of
+    (Alphanumeric,     AAVString {}) -> ScriptString o (aavtxt val)
+    (BigAlphanumeric,  AAVString {}) -> ScriptString o (aavtxt val)
+    (HugeAlphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
+    (Password,         AAVString {}) -> ScriptString o (aavtxt val)
+    (Binary, _)                      -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (BigBinary, _)                   -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (HugeBinary, _)                  -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (Date,               AAVDate {}) -> ScriptString o (showValADL val)  -- TODO: Needs rethinking. A string or a double?
+    (DateTime,       AAVDateTime {}) -> ScriptString o (showValADL val)  -- TODO: Needs rethinking. A string or a double?
+    (Integer,         AAVInteger {}) -> XlsxDouble o (fromInteger (aavint val))
+    (Float,             AAVFloat {}) -> XlsxDouble o (aavflt val)
+    (Boolean,         AAVBoolean {}) -> ComnBool o (aavbool val)
+    (Object,           AAVString {}) -> ScriptString o (aavtxt val)
+    _ -> fatal ("Unexpected combination of value types in aAtomValue2pAtomValue: val=" <> tshow val<> " and type=" <> tshow (aavtyp val))
   where
     o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 

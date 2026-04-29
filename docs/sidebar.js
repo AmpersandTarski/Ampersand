@@ -148,6 +148,11 @@ module.exports = {
             id: 'ampersand/guides/best-practices'
         },
         {
+            label: 'Computing transitive closures',
+            type: 'doc',
+            id: 'ampersand/guides/transitive-closure'
+        },
+        {
             label: 'Configuring your application',
             type: 'doc',
             id: 'ampersand/reference-material/configuring-your-application'

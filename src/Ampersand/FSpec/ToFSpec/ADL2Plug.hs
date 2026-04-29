@@ -3,7 +3,6 @@
 
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   ( makeGeneratedSqlPlugs,
-    typologies,
     suitableAsKey,
     attributesOfConcept,
   )
@@ -18,8 +17,7 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Algebra.Graph.AdjacencyMap ( vertex )
-
+import Ampersand.Core.AbstractSyntaxTree (Guarded(..))
 
 maxLengthOfDatabaseTableName :: Int
 maxLengthOfDatabaseTableName = 64
@@ -42,15 +40,11 @@ attributesOfConcept fSpec c =
 
 -- was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs ::
-  (HasFSpecGenOpts env) =>
-  env ->
-  A_Context ->
-  [PlugSQL]
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = inspectedCandidateTables
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [PlugSQL]
+makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
   where
     inspectedCandidateTables :: [PlugSQL]
     inspectedCandidateTables
@@ -78,8 +72,8 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           [ "",
             "Please report this as a bug! ",
             "When these fatals are thrown, it is good to know that these sqlnames are disambiguated by adding a gitLikeSha. This is a hash",
-            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough. That is why",
-            "after the generation of the tables this check is done.",
+            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough.",
+            "That is why after the generation of the tables this check is done.",
             "This text is here to help the developer of ampersand to investigate."
           ]
         myShow :: NonEmpty PlugSQL -> [Text]
@@ -110,7 +104,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       where
         -- Orphan relations are relations that cause link tables in the database,
         -- i.e relation that are neither univalent nor injective.
-        comps = map componentsForTypology (typologies context)
+        comps = map componentsForTypology (multiKernels (ctxInfo context))
           <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
         componentsForTypology typol =
           (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
@@ -120,6 +114,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
             Just x@(PlainConcept{}) -> aliases x `elem` tyCpts typol
+            Just ONE -> True -- ONE is in every typology, but does not belong to any concept table. However, it has no attributes, so this clause is only here for theorecal completeness.
             Just _ -> False
             Nothing -> False
 
@@ -130,13 +125,11 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
       (Nothing, [rel]) -> makeLinkTable rel
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
-      (Just typol, _) | not (Set.null (tyroot typol)) -> makeConceptTable typol rels
-      (Just typol, _) -> fatal $ "Typology with empty root cannot be used to build a concept table: " <> tshow typol
+      (Just typol, _) -> makeConceptTable typol rels
     allKeyConcepts :: [A_Concept]
-    allKeyConcepts = [ tyrootToConcept typol | typol<-typologies context, (not . null . tyroot) typol ]
-      where
-        tyrootToConcept :: Typology -> A_Concept
-        tyrootToConcept typol = PlainConcept { aliases = tyroot typol, typology = typol }
+    allKeyConcepts = [ cpt | typol<-multiKernels (ctxInfo context), Checked cpt _warning<-[pCpt2aCpt (tyroot typol)] ]
+    pCpt2aCpt :: P_Concept -> Guarded A_Concept
+    pCpt2aCpt = conceptMap (ctxInfo context) OriginUnknown
     allLinkTableRelations :: [Relation]
     allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
     makeConceptTable :: Typology -> [Relation] -> PlugSQL
@@ -154,16 +147,22 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         allConceptsInTable :: [A_Concept]
         allConceptsInTable = 
           map aliasSetToConcept (tyCpts typol)
-          where
-            aliasSetToConcept :: Set.Set Name -> A_Concept  
-            aliasSetToConcept aliasSet = if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
+        aliasSetToConcept :: Set.Set Name -> A_Concept  
+        aliasSetToConcept aliasSet
+         = -- if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
+           case Set.toList aliasSet of
+             [] -> fatal "Empty alias set in concept table"
+             nm:_ | nm == nameOfONE -> ONE
+                  | otherwise       -> PlainConcept { aliases = aliasSet, typology = typol }
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
             (map toConceptOrRelation allKeyConcepts)
             (toConceptOrRelation keyConcept)
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
-        tableKey = if Set.null (tyroot typol) then fatal "2 Empty tyroot in typology" else PlainConcept { aliases = tyroot typol, typology = typol }
+        tableKey = case pCpt2aCpt (tyroot typol) of
+          Checked cpt _warning -> cpt
+          _ -> fatal ("The root of a typology "<>tshow (tyroot typol) <> " should always be a PlainConcept, so this should not happen.")
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
@@ -311,6 +310,29 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
+    -- tableForONE :: [PlugSQL]
+    -- tableForONE =
+    --   [ TblSQL
+    --       { sqlname = text1ToSqlName (fullName1 ONE),
+    --         attributes = [oneAttribute],
+    --         cLkpTbl = [(ONE, oneAttribute)],
+    --         dLkpTbl = [],
+    --         mainItem = toConceptOrRelation ONE
+    --       }
+    --   ]
+    --   where
+    --     oneAttribute :: SqlAttribute
+    --     oneAttribute =
+    --       Att
+    --         { attSQLColName = text1ToSqlName (fullName1 ONE),
+    --           attExpr = EDcI ONE,
+    --           attType = ctxReprType context ONE, -- = Object
+    --           attUse = PrimaryKey ONE,
+    --           attNull = False,
+    --           attDBNull = False,
+    --           attUniq = True,
+    --           attFlipped = False
+    --         }
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
@@ -349,16 +371,7 @@ suitableAsKey st =
     Integer -> True
     Float -> False
     Object -> True
-    TypeOfOne -> fatal "ONE has no key at all. does it?"
-
-typologies :: A_Context -> [Typology] 
-typologies context =
-  multiKernels (ctxInfo context)
-  <> [ Typology {tyroot = c, tyCpts = [c], tyGrph = vertex c}
-     | cpt@PlainConcept{} <- toList $ concs context Set.\\ concs (gens context),
-       let c = aliases cpt,
-       c `notElem` (concatMap tyCpts  . multiKernels . ctxInfo) context
-     ]
+    TypeOfOne -> True
 
 -- | ConceptOrRelation is meant to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.

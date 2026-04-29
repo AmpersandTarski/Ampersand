@@ -52,17 +52,23 @@ It parses all other data using the RELATION approach.
 The benefit of this method is that you do not have to change your spreadsheets when you modify the names of relations in your Ampersand script.
 It is also more readable for third parties because the spreadsheet has a direct correspondence with the field labels of the prototype on your screen.
 
-This method is used to import data from a sheet in a spreadsheet document whenever the title of the sheet is the name of an INTERFACE that you have defined in your script. For example, if your sheet is called `Accounts`, and you have defined:
+This method is used to import data from a sheet in a spreadsheet document whenever the title of the sheet is the name of an INTERFACE that you have defined in your script.
+
+The interface must have `SESSION` as its source concept. The importer always starts from the current session as its entry point, and navigates from there to the atoms it needs to create or update. An interface rooted at a specific atom of another concept — for example `I[Account]` — does not give the importer a starting point, because it would not know which Account atom to start from. An interface rooted at `SESSION` always has a well-defined starting point: the session that is active at the time of the import.
+
+This means you always write import interfaces in the form `"_SESSION";V[SESSION*Concept]`, like this:
 
 ```text
-INTERFACE "Accounts": I[Account] cRud BOX
+INTERFACE "Accounts": "_SESSION";V[SESSION*Account] cRud BOX
    [ "Username": accUserid cRUd
    , "Password": accPassword cRUd
    , "Role": accAllowedRoles cRUd
    ]
 ```
 
-the corresponding sheet in your .xlsx file could look like this:
+Note that you name the interface `"Accounts"` to match the sheet title, and that you start from `"_SESSION"` so the importer can use it.
+
+The corresponding sheet in your .xlsx file looks like this:
 
 | `Account` | `Username` | `Password` | `Role` |
 | :--- | :--- | :--- | :--- |
@@ -71,7 +77,9 @@ the corresponding sheet in your .xlsx file could look like this:
 
 Importing this sheet creates two accounts, one for `peterpan` and another for `dollydot`.
 
-As you can see, the first cell must contain the concept of the INTERFACE (`Account`), and subsequent header fields have the names of the labels in the INTERFACE. You can change the order of the columns, as long as the first column remains as is.
+The first cell in the header row must contain the target concept of the interface (`Account`). The other cells in the header row must contain the labels of the sub-interfaces, exactly as they appear in your INTERFACE definition. You may change the order of the columns, as long as column A always holds the concept name.
+
+A common mistake is to write an interface of the form `I[Account]` instead of `"_SESSION";V[SESSION*Account]`. This causes the error message: `Source concept of interface 'Accounts' must be SESSION in order to be used as import interface.` If you see this message, check that your interface starts with `"_SESSION"`.
 
 ### Using the RELATION approach
 

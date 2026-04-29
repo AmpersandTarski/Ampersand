@@ -1,0 +1,32 @@
+CONTEXT EnforceBugTest
+
+CONCEPT Country "A country"
+CONCEPT Language "A language"
+
+RELATION officialLang[Country*Language]
+MEANING "Official languages of a country"
+
+RELATION defaultLang[Country*Language] [UNI]
+MEANING "Default language for a country"
+
+-- This ENFORCE statement causes infinite loop
+-- ENFORCE defaultLang := officialLang \/ -officialLang#"English"
+
+-- Manual ExecEngine rules to replicate ENFORCE behavior
+ROLE ExecEngine MAINTAINS InsDefaultLang, DelDefaultLang
+
+RULE InsDefaultLang: (officialLang \/ -officialLang#"English") |- defaultLang
+VIOLATION (TXT "InsPair;defaultLang;Country;", SRC I, TXT ";Language;", TGT I)
+
+RULE DelDefaultLang: defaultLang |- (officialLang \/ -officialLang#"English")
+VIOLATION (TXT "DelPair;defaultLang;Country;", SRC I, TXT ";Language;", TGT I)
+
+POPULATION officialLang CONTAINS
+[ ("Netherlands", "Dutch")
+, ("Belgium", "Dutch")  
+, ("Belgium", "French")
+, ("Germany", "German")
+, ("France", "French")
+]
+
+ENDCONTEXT

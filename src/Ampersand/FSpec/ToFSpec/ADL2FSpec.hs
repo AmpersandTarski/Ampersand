@@ -110,7 +110,7 @@ makeFSpec env context =
         [ (conj, viols) | conj <- allConjs, let viols = conjunctViolations conj, not $ null viols
         ],
       fcontextInfo = contextinfo,
-      ftypologies = typologies context,
+      ftypologies = multiKernels contextinfo,
       largestConcept = getLargestConcept,
       specializationsOf = smallerConcepts,
       generalizationsOf = largerConcepts,

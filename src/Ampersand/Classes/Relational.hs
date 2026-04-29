@@ -3,7 +3,6 @@ module Ampersand.Classes.Relational
     Relational (..),
     Flippable(..),
     hasAttributes,
-    isONE,
     isSESSION,
   )
 where
@@ -39,11 +38,6 @@ class Relational r where
 instance HasProps Relation where
   properties = decprps
 
--- | Is the concept the ONE and only? (universal singleton)
-isONE :: A_Concept -> Bool
-isONE ONE = True
-isONE _ = False
-
 isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
@@ -68,9 +62,9 @@ instance HasProps Expression where
         $
         -- NOT totaal
         -- NOT surjective
-        [Inj | isONE (source sgn)]
-        ++ [Uni | isONE (target sgn)]
-        ++ [Asy | isEndo sgn, isONE (source sgn)]
+        [Inj | source sgn==ONE]
+        ++ [Uni | target sgn==ONE]
+        ++ [Asy | isEndo sgn, source sgn==ONE]
         ++ [Sym | isEndo sgn]
         ++ [Rfx | isEndo sgn]
         ++ [Trn | isEndo sgn]
@@ -101,7 +95,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl1 e -> isTrue e
       EFlp e -> isTrue e
       ECpl e -> isFalse e
-      EDcI c -> isONE c
+      EDcI c -> c==ONE
       EDcV {} -> True
       EBrk e -> isTrue e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
@@ -134,7 +128,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       ECpl e -> isImin e
       EDcD _ -> False -- was: name dcl == "="
       EDcI {} -> True
-      EDcV sgn -> isEndo sgn && isONE (source sgn)
+      EDcV sgn -> isEndo sgn && source sgn==ONE
       EBrk f -> isIdent f
       EFlp f -> isIdent f
       _ -> False -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad

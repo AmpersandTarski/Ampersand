@@ -86,6 +86,16 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . setAttribute "exprIsTot" (exprIsTot . feiObj $ interf)
           . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
           . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
+          . setAttribute "sourceLabel"
+               ( case conceptLabelInFSpec fSpec (source . ifcExp $ interf) of
+                   Just (Label lbl) -> lbl
+                   Nothing -> (text1ToText . idWithoutType' . source . ifcExp $ interf)
+               )
+          . setAttribute "targetLabel"
+               ( case conceptLabelInFSpec fSpec (target . ifcExp $ interf) of
+                   Just (Label lbl) ->  lbl
+                   Nothing -> (text1ToText . idWithoutType' . target . ifcExp $ interf)
+               )
           . setAttribute "crudC" (objCrudC . feiObj $ interf)
           . setAttribute "crudR" (objCrudR . feiObj $ interf)
           . setAttribute "crudU" (objCrudU . feiObj $ interf)
@@ -119,8 +129,8 @@ genSingleFileFromTemplate fSpec feSpec templateFilePath targetFilePath = do
           . setAttribute "targetFilePath" targetFilePath
   writePrototypeAppFile targetFilePath contents
 
-objectAttributes :: FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
-objectAttributes obj loglevel =
+objectAttributes :: FSpec -> FEObject -> LogLevel -> StringTemplate String -> StringTemplate String
+objectAttributes fSpec obj loglevel =
   setAttribute "exprIsUni" (exprIsUni obj)
     . setAttribute "exprIsTot" (exprIsTot obj)
     . setAttribute "name" (escapeIdentifier' . objName $ obj)
@@ -128,6 +138,16 @@ objectAttributes obj loglevel =
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
     . setAttribute "source" (text1ToText . idWithoutType' . source . objExp $ obj)
     . setAttribute "target" (text1ToText . idWithoutType' . target . objExp $ obj)
+    . setAttribute "sourceLabel"
+        ( case conceptLabelInFSpec fSpec (source . objExp $ obj) of
+            Just (Label lbl) -> lbl
+            Nothing -> text1ToText . idWithoutType' . source . objExp $ obj
+        )
+    . setAttribute "targetLabel"
+        ( case conceptLabelInFSpec fSpec (target . objExp $ obj) of
+            Just (Label lbl) -> lbl
+            Nothing -> text1ToText . idWithoutType' . target . objExp $ obj
+        )
     . setAttribute "crudC" (objCrudC obj)
     . setAttribute "crudR" (objCrudR obj)
     . setAttribute "crudU" (objCrudU obj)
@@ -186,7 +206,7 @@ genHTMLView fSpec depth obj =
             . T.intercalate eol
             . T.lines
             . renderTemplate Nothing template
-            $ objectAttributes obj (logLevel runner)
+            $ objectAttributes fSpec obj (logLevel runner)
         FEBox
           { boxHeader = header,
             boxSubObjs = subObjs
@@ -198,7 +218,7 @@ genHTMLView fSpec depth obj =
             return
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) parentTemplate
-              $ objectAttributes obj (logLevel runner)
+              $ objectAttributes fSpec obj (logLevel runner)
               . setAttribute "isRoot" (depth == 0)
               . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "<span>" <> objTxt obj <> "</span>"
@@ -271,7 +291,7 @@ genTypescriptInterface fSpec depth obj =
             return
               . indentSubStructure
               . renderTemplate (Just . btKeys $ header) boxTemplate
-              $ objectAttributes obj (logLevel runner)
+              $ objectAttributes fSpec obj (logLevel runner)
               . setAttribute "isRoot" (depth == 0)
               . setAttribute "subObjects" subObjAttrs
     FEObjT {} -> pure $ "'" <> objTxt obj <> "'"

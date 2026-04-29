@@ -66,3 +66,6 @@ mariadb_data/
 # Ampersand generated files
 MetaModel.adl
 *.json
+
+# Local environment credentials (never commit)
+.env

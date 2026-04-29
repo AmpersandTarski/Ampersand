@@ -70,12 +70,11 @@ instance ToJSON TableCols where
   toJSON = amp2Jason
 
 instance JSON FSpec Concepts where
-  fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (filter isUsed . toList $ concs fSpec))
+  fromAmpersand env fSpec _ = (Concepts . map (fromAmpersand env fSpec) . filter isUsed . toList . concs) fSpec
     where
       isUsed :: A_Concept -> Bool
-      isUsed ONE = True -- ONE is always there, even if not explicitly mentioned in the FSpec, because it's required by the prototype framework when used in interfaces
-      isUsed cpt = cpt `Set.member` concs (instanceList fSpec :: [Relation])
-      isUsed cpt = cpt `Set.member` concs (instanceList fSpec :: [AClassify])
+      isUsed ONE = True -- ONE is always there, even if not explicitly mentioned in the FSpec.
+      isUsed cpt = cpt `Set.member` (concs (instanceList fSpec :: [Relation]) `Set.union` concs (instanceList fSpec :: [AClassify]))
 
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
@@ -116,7 +115,7 @@ instance JSON A_Concept TableCols where
       cptTable = case lookupCpt fSpec cpt of
         [(table, _)] -> table
         [] -> fatal ("Concept `" <> fullName cpt <> "` not found in a table.")
-        _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
+        _  -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

@@ -87,7 +87,7 @@ module Ampersand.Core.AbstractSyntaxTree
     smallerConcepts, largerConcepts,
     joinSig, meetSig, geqSig, isConcreteSignature,
     makeTypologies,
-    singletonTypology,
+    singletonTypology, oneTypology,
     sortGeneric2Specific,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
@@ -2010,7 +2010,7 @@ makeAliasGraph graph = overlay (edges dagEdges) (vertices sccReps)
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements,
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
 data Typology = Typology
-  { tyroot :: !(Set.Set Name)              -- the most generic node in the typology, which identifies the typology.
+  { tyroot :: !P_Concept              -- This is the P_Concept because an A_Concept has a typology and we don't want to have a circular definition.
   , tyCpts :: ![Set.Set Name]              -- all concepts from the alias graph, from generic to specific, used in the database table for this typology.
   , tyGrph :: AliasGraph  -- the subgraph of the alias graph that represents this typology, used for join/meet calculations.
   }
@@ -2023,14 +2023,21 @@ data Typology = Typology
 -- | Empty typology used as a placeholder when typology is not relevant
 emptyTypology :: Typology
 emptyTypology = Typology
-  { tyroot = Set.singleton nameOfONE
+  { tyroot = P_ONE
   , tyCpts = []
+  , tyGrph = vertex (Set.singleton nameOfONE)
+  }
+
+oneTypology :: Typology
+oneTypology = Typology
+  { tyroot = P_ONE
+  , tyCpts = [Set.singleton nameOfONE]
   , tyGrph = vertex (Set.singleton nameOfONE)
   }
 
 singletonTypology :: Name -> Typology
 singletonTypology nm = Typology
-  { tyroot = Set.singleton nm
+  { tyroot = P_ONE
   , tyCpts = [Set.singleton nm]
   , tyGrph = vertex (Set.singleton nm)
   }
@@ -2070,7 +2077,7 @@ makeTypologies aliasGraph = traverse createTypology wcComponents
           roots = [as | as <- aliasSets, null (postSet as subGraph)]
       in case roots of
            [r] -> pure Typology
-                    { tyroot = r
+                    { tyroot = if r == Set.singleton nameOfONE then P_ONE else case Set.toList r of nm:_ -> PCpt nm; _ -> fatal "makeTypologies: This should not happen: alias set without names"
                     , tyCpts = sortGeneric2Specific subGraph aliasSets
                     , tyGrph = subGraph
                     }

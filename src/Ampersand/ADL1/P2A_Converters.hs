@@ -273,7 +273,7 @@ makePCpt2ACpt typologies = pCpt2aCpt
           | typo <- typologies
           , aliasSet <- vertexList (tyGrph typo)
           , nm <- Set.toList aliasSet
-          ] <> [ (nameOfONE, ONE) ] -- Add SESSION concept manually
+          ] -- ONE is already present in typologies.
 
 -- | pCtx2aCtx has three tasks:
 -- 1. Disambiguate the structures.
@@ -311,13 +311,6 @@ pCtx2aCtx env
       ctx_enfs = p_enfs
     } =
     do
-      -- Early filtering: get all P_Concepts that exist in the schema (before type checking)
-      let pCpts = pConcs (p_conceptdefs <> concatMap pt_cds p_patterns) `Set.union`
-                  pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
-                  pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
-                  pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
-                  Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
-
       contextInfoPre <- g_contextInfo
       identdefs <- traverse (pIdentity2aIdentity contextInfoPre Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs <- traverse (pViewDef2aViewDef contextInfoPre) p_viewdefs --  The view definitions defined in this context, outside the scope of patterns
@@ -332,7 +325,7 @@ pCtx2aCtx env
                           aCpts <- traverse (conceptMap contextInfoPre (origin pRepr)) (reprcpts pRepr)
                           pure Arepr {aReprFrom = aCpts, aReprTo = reprdom pRepr})
                         validReprs
-      let objectReprs = getObjReprs interfaces viewdefs identdefs
+      let objectReprs = getObjReprs interfaces viewdefs identdefs ++ [ Arepr (ONE NE.:| []) Object ] -- Ensure that ONE also gets an OBJECT representation
       checkDuplicateReprTypes (explicitReprs <> objectReprs)
       let contextInfo = contextInfoPre {reprType = reprTypeDefaults (explicitReprs <> objectReprs)}
       allAConcepts <- traverse (conceptMap contextInfo (Origin "allAConcepts")) (Set.toList (allPConcepts contextInfo))
@@ -398,6 +391,13 @@ pCtx2aCtx env
       warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       return actx
     where
+      -- Early filtering: get all P_Concepts that exist in the schema (before type checking)
+      pCpts :: Set.Set P_Concept
+      pCpts = pConcs (p_conceptdefs <> concatMap pt_cds p_patterns) `Set.union`
+              pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
+              pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
+              pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
+              Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
 
       -- | Extract object representations from interfaces, views, and identities
       -- All these concepts must be represented as Object type
@@ -494,11 +494,6 @@ pCtx2aCtx env
 
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
-        let pCpts = pConcs (p_conceptdefs <> concatMap pt_cds p_patterns) `Set.union`
-                    pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
-                    pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
-                    pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
-                    Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
         typols <- (makeTypologies . makeAliasGraph . makePGraph (p_gens <> concatMap pt_gns p_patterns)) pCpts
         let pCpt2aCpt = makePCpt2ACpt typols
         -- Filter REPRESENT statements to only those with existing concepts
@@ -1491,18 +1486,20 @@ term2Expr env ci mConstraintCpt term
          = let errorOpTree = STbinary sgnaTree sgnbTree [(combinator (expr_a, expr_b), sgn_a, pCombinator trm_a trm_b) | (expr_a, sgn_a, trm_a)<-sgnsa, (expr_b, _, trm_b)<-sgnsb ]
                conceptsSrc = L.nub [ src | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just src<-[joinOrMeet (source sgn_a) (source sgn_b)] ]
                conceptsTgt = L.nub [ tgt | (_,sgn_a,_)<-sgnsa, (_,sgn_b,_)<-sgnsb, Just tgt<-[joinOrMeet (target sgn_a) (target sgn_b)] ]
-               getRootSig opTree = case opTree of
-                                   STbinary _ _ [(_, sgn, _)] -> sgn
-                                   STunary _    [(_, sgn, _)] -> sgn
-                                   STnullary    [(_, sgn, _)] -> sgn
-                                   _ -> fatal ("Optree should have 1 triple, but has " <> tshow (length (opSigns opTree))) -- Sign botCpt botCpt  -- fallback
+               -- | getRootSig extracts the unique Signature from an OpTree that has exactly 1 triple.
+               -- Returns Nothing if the tree has 0 or more than 1 triple (e.g. when the expression is ambiguous).
+               -- In the Nothing case, the ISgn special-case error messages cannot be used, and we fall through
+               -- to the general error handler below.
+               getRootSig opTree = case opSigns opTree of
+                                   [(_, sgn, _)] -> Just sgn
+                                   _             -> Nothing
                -- Check for ISgn types to provide better error messages
            in case (getRootSig sgnaTree, getRootSig sgnbTree) of
                 -- Special case: when one or both sides have ISgn (identity) types
-                (ISgn cptA, Sign srcB tgtB) | cptA==botCpt ->
+                (Just (ISgn cptA), Just (Sign srcB tgtB)) | cptA==botCpt ->
                       mkVerboseTypeError env o errorOpTree
                         ("Cannot assign a type to "<>showP a<>" because " <> tshow srcB <> " and " <> tshow tgtB <> " are not equal.")
-                (Sign srcA tgtA, ISgn cptB) | cptB==botCpt ->
+                (Just (Sign srcA tgtA), Just (ISgn cptB)) | cptB==botCpt ->
                       mkVerboseTypeError env o errorOpTree
                         ("Cannot assign a type to "<>showP b<>" because " <> tshow srcA <> " and " <> tshow tgtA <> " are not equal.")
                 _ -> case (conceptsSrc, conceptsTgt) of
