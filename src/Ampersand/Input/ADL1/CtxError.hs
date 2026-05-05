@@ -47,6 +47,7 @@ module Ampersand.Input.ADL1.CtxError
     mkConstrainedExpressionTooNarrowError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
+    mkSingletonRepresentationError,
     mkParserStateWarning,
     mkRoundTripError,
     mkRoundTripTextError,
@@ -464,6 +465,39 @@ mkOtherAtomInSessionError atomValue =
 mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `" <> showA pr <> "` by populating the relation `" <> showA r <> "`."
+
+-- | Error for when a singleton atom value (e.g. from #"0") cannot be
+--   converted to the required representation type of its concept.
+mkSingletonRepresentationError :: PAtomValue -> A_Concept -> TType -> CtxError
+mkSingletonRepresentationError pav cpt typ =
+  CTXE (origin pav) $
+    "The target of " <> atomValueText pav
+    <> " is " <> tshow cpt
+    <> ", which requires representation as " <> T.toLower (tshow typ)
+    <> ". However, " <> atomValueKind pav <> " is encountered."
+  where
+    atomValueText :: PAtomValue -> Text
+    atomValueText v = case v of
+      PSingleton _ str _   -> "\"" <> str <> "\""
+      ScriptString _ str   -> "\"" <> str <> "\""
+      XlsxString _ str     -> "\"" <> str <> "\""
+      ScriptInt _ i        -> tshow i
+      ScriptFloat _ f      -> tshow f
+      XlsxDouble _ d       -> tshow d
+      ComnBool _ b         -> tshow b
+      ScriptDate _ d       -> tshow d
+      ScriptDateTime _ dt  -> tshow dt
+    atomValueKind :: PAtomValue -> Text
+    atomValueKind v = case v of
+      PSingleton {}     -> "a singleton string"
+      ScriptString {}   -> "a string"
+      XlsxString {}     -> "a string"
+      ScriptInt {}      -> "an integer"
+      ScriptFloat {}    -> "a float"
+      XlsxDouble {}     -> "a number"
+      ComnBool {}       -> "a boolean"
+      ScriptDate {}     -> "a date"
+      ScriptDateTime {} -> "a date/time"
 
 mkConceptNotInSchemaError :: Origin -> Name -> Text -> CtxError
 mkConceptNotInSchemaError orig cptName contextName =

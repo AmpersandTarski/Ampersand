@@ -170,6 +170,21 @@ validateInterfaceRefs ctx =
                        Nothing    -> [mkIncompatibleInterfaceError refOrigin parentConcept refConcept refName]
                 _ -> fatal ("Multiple interfaces with name " <> tshow refName <> ". This should have been caught when checking the interfaces.")
 
+-- | Check that all singleton atom values in expressions (EMp1 nodes) are
+--   compatible with the representation type of their concept.
+--   This prevents a fatal crash later in 'safePSingleton2AAtomVal'.
+checkSingletonAtomValues :: A_Context -> Guarded ()
+checkSingletonAtomValues ctx =
+  case [ mkSingletonRepresentationError pav cpt typ
+       | EMp1 pav cpt <- toList (expressionsIn ctx)
+       , let typ = reprType ci cpt
+       , Left _ <- [unsafePAtomVal2AtomValue typ (Just cpt) pav]
+       ] of
+    []     -> pure ()
+    x : xs -> Errors (x NE.:| xs)
+  where
+    ci = ctxInfo ctx
+
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx =
   case [ mkOtherAtomInSessionError atom
@@ -381,6 +396,7 @@ pCtx2aCtx env
                 ctxInfo = contextInfo,
                 ctxEnforces = enforces'
               }
+      checkSingletonAtomValues actx  -- Check singleton atom values match their concept's representation type
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
