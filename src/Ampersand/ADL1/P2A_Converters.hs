@@ -1344,7 +1344,7 @@ term2Expr env ci mConstraintCpt term
          _                          -> fatal ("term2Expr: pattern match failure in rootExpression. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
 
     checkAmbiguities :: OpTree (Expression, Signature, Term TermPrim) -> Guarded ()
-    checkAmbiguities opTree = 
+    checkAmbiguities opTree =
       case findAmbiguities True opTree of
         [] -> pure ()
         err:errs -> Errors (err NE.:| errs)
@@ -1363,7 +1363,7 @@ term2Expr env ci mConstraintCpt term
                          STnullary _ -> []  -- Leaf nodes cannot have underlying ambiguities
                          STunary child _ -> findAmbiguities False child
                          STbinary l r _ -> findAmbiguities False l <> findAmbiguities False r
-        
+
         makeAmbiguityError :: Bool -> [(Expression, Signature, Term TermPrim)] -> [Signature] -> CtxError
         makeAmbiguityError isRoot triples uniqueSigs =
           let trm = case triples of
@@ -1374,10 +1374,10 @@ term2Expr env ci mConstraintCpt term
                            | sig <- uniqueSigs ]
           in CTXE (origin trm) $
                "Ambiguity in "<>(if isRoot then "" else "sub")<>"expression " <> showP trm <> ".\n" <>
-               "This "<>(if isRoot then "" else "sub")<>"expression can have signatures " <> 
-               T.intercalate " or " (map tshow uniqueSigs) <> 
+               "This "<>(if isRoot then "" else "sub")<>"expression can have signatures " <>
+               T.intercalate " or " (map tshow uniqueSigs) <>
                ", depending on the choice for either\n  " <>
-               T.intercalate "\nor\n  " 
+               T.intercalate "\nor\n  "
                  [ showA expr
                  | (_, expr:_) <- exprsBySig ]
 
@@ -1398,11 +1398,10 @@ term2Expr env ci mConstraintCpt term
       let refinedOpTree = -- trace ("   resultTerm:  "<>showOpTree opTree) $
                           fmap (\(expr, sgn, t) -> (refineANY sgn expr, sgn, t)) opTree
       -- trace ("   refinedOpTree: " <> showOpTree refinedOpTree <> "\n   constrain refinedOpTree: " <> showGuardedOpTree (constrain refinedOpTree)) $
-      constrainedOpTree <- constrain refinedOpTree
-      pure constrainedOpTree
+      constrain refinedOpTree
       where
         -- | resultPrim yields all possible (expression, signature, term) triples for a Prim term.
-                                      -- Filter relations to keep only those with signatures wider or equal to constraint
+        -- Filter relations to keep only those with signatures wider or equal to constraint
         resultPrim :: TermPrim -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         resultPrim trmPrim
          = case trmPrim of
@@ -1426,9 +1425,15 @@ term2Expr env ci mConstraintCpt term
                                         Just sg -> do sgn <- pSign2aSign (conceptMap ci (origin trmPrim)) sg
                                                       pure (findRelsTyped (declarationsMap ci) (name rel) sgn)
                                         Nothing -> pure (findDecls (declarationsMap ci) (name rel))
+                                      -- ( if tshow (name rel) == "productnaam"
+                                      --       then trace ("DEBUG relsList for productnaam: ["
+                                      --                <> T.intercalate ", " (map (tshow . sign) relsList)
+                                      --                <> "]")
+                                      --       else id
+                                      --   ) $
                                       case relsList of
-                                         [] -> Errors . return . CTXE (origin trmPrim) $ "Undeclared relation " <> showP trmPrim
-                                         ds -> pure (STnullary [(EDcD d, sign d, Prim trmPrim) | d <- ds])
+                                          [] -> Errors . return . CTXE (origin trmPrim) $ "Undeclared relation " <> showP trmPrim
+                                          ds -> pure (STnullary [(EDcD d, sign d, Prim trmPrim) | d <- ds])
 
         -- | resultTerm yields all possible (expression, signature, term) triples for a term.
         resultTerm :: Guarded (OpTree (Expression, Signature, Term TermPrim))
@@ -1550,7 +1555,7 @@ term2Expr env ci mConstraintCpt term
               joinOrMeetSig :: Signature -> Signature -> Maybe Signature
               joinOrMeetSig sgn_a sgn_b =
                 case (sgn_a, moj, sgn_b) of
-                  (ISgn c, Join, ISgn c') 
+                  (ISgn c, Join, ISgn c')
                     | c == topCpt || c' == topCpt -> ISgn  <$>  c `meet` c'
                     | otherwise                   -> ISgn  <$>  c `join` c'
                   (ISgn c, Meet, ISgn c')         -> ISgn  <$>  c `meet` c'
@@ -1749,7 +1754,7 @@ term2Expr env ci mConstraintCpt term
 
         -- | Check for ambiguous subexpressions in the OpTree
         -- An ambiguity exists when a node has multiple triples with different signatures
-        -- If all triples have the same signature, there's an underlying ambiguity in a subexpression
+        -- If all (of more than one) triples have the same signature, there's an underlying ambiguity in a subexpression
         constrain :: OpTree (Expression, Signature, Term TermPrim) -> Guarded (OpTree (Expression, Signature, Term TermPrim))
         constrain opTree =
           case mConstraint of

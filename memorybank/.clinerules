@@ -15,6 +15,17 @@ I want to understand my user better all the time, so I can help achieve project 
 - Make relevant patterns immediately visible
 - Prevents missing procedures that already exist
 
+## 🐛 DEBUGGING RITUAL (AUTOMATION)
+**BEFORE STARTING ANY DEBUGGING SESSION: ALWAYS read `memorybank/debugging-methodology-lessons.md` first — no exceptions.**
+
+This document contains lessons from a real debugging session. Reading it takes less time than repeating the mistakes it describes.
+
+Key reminders:
+- Trace first, theorize second. Never write a fix based on an unconfirmed assumption.
+- Ask "does the input of this function look correct?" before asking "is the logic wrong?"
+- The bug is often one layer earlier than the error message suggests.
+- Make assumptions explicit before acting on them.
+
 ## Core Rules
 
 1. Between sessions I forget everything I learned in this session. Everything I want to remember must be written down. I make notes in Markdown format in the directory `./memorybank/`.
@@ -174,5 +185,5 @@ Note: When triggered by **update memory bank**, I MUST review every memory bank 
 
 REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
 
-**Last updated:** August 24, 2025  
-**Version:** 3.0 (Merged)
+**Last updated:** May 1, 2026  
+**Version:** 3.1 (Added debugging ritual)
