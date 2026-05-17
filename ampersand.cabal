@@ -474,6 +474,7 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/RightResidualFlipped.adl
     testing/Travis/testcases/TypeChecker/shouldFail/RightResidualTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/RightResidualUnrelatedSources.adl
+    testing/Travis/testcases/TypeChecker/shouldFail/SingletonStringForIntegerType.adl
     testing/Travis/testcases/TypeChecker/shouldFail/testinfo.yaml
     testing/Travis/testcases/TypeChecker/shouldFail/UnionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldPass/CartesianProduct.adl

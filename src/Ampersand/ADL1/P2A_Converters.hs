@@ -413,6 +413,7 @@ pCtx2aCtx env
               pConcs (p_relations <> concatMap pt_dcs p_patterns)   `Set.union`
               pConcs (p_gens <> concatMap pt_gns p_patterns)        `Set.union`
               pConcs (p_rules <> concatMap pt_rls p_patterns)       `Set.union`
+              Set.fromList (concatMap (NE.toList . reprcpts) (p_representations <> concatMap pt_Reprs p_patterns)) `Set.union`
               Set.fromList ([P_ONE] <> [PCpt nameOfSESSION | not (null p_interfaces)])
 
       -- | Extract object representations from interfaces, views, and identities
