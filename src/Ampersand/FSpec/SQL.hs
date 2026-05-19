@@ -981,6 +981,7 @@ nonSpecialSelectExpr fSpec expr =
           where
             concpt = sqlAttConcept fSpec c
         _ ->
+          -- trace ("\n[TRACE3] ECpl general case (CARTESIAN PRODUCT!). Expression: ECpl (" <> showA e <> ")") $
           traceComment
             ["case: ECpl e"]
             BinSelect

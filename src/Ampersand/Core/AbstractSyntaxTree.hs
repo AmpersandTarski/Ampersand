@@ -1337,8 +1337,9 @@ instance HasSignature Expression where
   -- Since the type system is closed, all signatures are correct unless there is an error in this compiler.
   sign (EEqu (l, _)) = sign l
   sign (EInc (l, _)) = sign l
+  -- You might expect "sign l `meetSig` sign r" in the subexpression sign (EIsc (l, r)), but that would inhibit manipulations such as De Morgan. To keep type checking closed, EIs, EUni, and EDif all require a joinSig.
   sign (EIsc (l, r)) = fromMaybe (fatal ("Incompatible signatures in intersection: "<> tshow (sign l) <> " /\\ " <> tshow (sign r)))
-                                 (sign l `meetSig` sign r)
+                                 (sign l `joinSig` sign r)
   sign (EUni (l, r)) = fromMaybe (fatal ("Incompatible signatures in union: "<> tshow (sign l) <> " \\/ " <> tshow (sign r)))
                                  (sign l `joinSig` sign r)
   sign (EDif (l, r)) = fromMaybe (fatal ("Incompatible signatures in difference: "<> tshow (sign l) <> " - " <> tshow (sign r)))

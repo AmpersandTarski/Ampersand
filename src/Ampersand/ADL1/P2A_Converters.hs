@@ -344,6 +344,9 @@ pCtx2aCtx env
       checkDuplicateReprTypes (explicitReprs <> objectReprs)
       let contextInfo = contextInfoPre {reprType = reprTypeDefaults (explicitReprs <> objectReprs)}
       allAConcepts <- traverse (conceptMap contextInfo (Origin "allAConcepts")) (Set.toList (allPConcepts contextInfo))
+      -- Check that concepts in the same ISA typology all have the same REPRESENT type.
+      -- E.g. CLASSIFY B ISA A with REPRESENT A TYPE INTEGER and REPRESENT B TYPE FLOAT must be rejected.
+      checkTypologyRepresentTypes (multiKernels contextInfoPre) allAConcepts validReprs
       classifies <- traverse (pClassify2aClassify contextInfo) p_gens --  The specialization statements defined in this context, outside the scope of patterns
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
@@ -486,6 +489,31 @@ pCtx2aCtx env
               "Concept " <> (T.intercalate ", " . map showWithAliases . L.nub . map fst) pairs <>
               " has multiple representation types: " <>
               T.intercalate ", " (map (tshow . snd) pairs)
+
+      -- | Check that all explicitly typed concepts within the same ISA typology share the same
+      -- representation type. Detects e.g. 'CLASSIFY B ISA A' combined with
+      -- 'REPRESENT A TYPE INTEGER' and 'REPRESENT B TYPE FLOAT', which must be rejected
+      -- because a B atom (a float) cannot be stored in A's INTEGER column.
+      checkTypologyRepresentTypes :: [Typology] -> [A_Concept] -> [P_Representation] -> Guarded ()
+      checkTypologyRepresentTypes typols aConcepts pReprs =
+        traverse_ mkMultipleTypesInTypologyError violations
+        where
+          violations =
+            [ perCptTriples
+            | typol <- typols
+            , let grp = [ c | c@PlainConcept {} <- aConcepts, typology c == typol ]
+            , let typedReprs =
+                    [ (c, reprdom r, origin r)
+                    | c <- grp
+                    , r <- pReprs
+                    , any (\pCpt -> p_cptnm pCpt `Set.member` aliases c) (NE.toList (reprcpts r))
+                    ]
+            , length (L.nub (map (\(_, t, _) -> t) typedReprs)) > 1
+            , let perCptTriples =
+                    L.nubBy (\(c1, _, _) (c2, _, _) -> c1 == c2)
+                      [(c, t, [o]) | (c, t, o) <- typedReprs]
+            , not (null perCptTriples)
+            ]
 
       deflangCtxt = fromMaybe English ctxmLang
       deffrmtCtxt = fromMaybe ReST pandocf
@@ -1019,7 +1047,8 @@ pCtx2aCtx env
                  }
               where
                 insPair = mkRule "InsPair" (EInc (expr, EDcD rel))
-                delPair = mkRule "DelPair" (EInc (EDcD rel, expr))
+                delPair = --  trace ("\n[TRACE1] delPair.formalExpression (after type-checking): " <> showA (EInc (EDcD rel, expr))) $
+                          mkRule "DelPair" (EInc (EDcD rel, expr))
                 mkRule command fExpr =
                   Rule
                     { rrnm =

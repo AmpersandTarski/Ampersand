@@ -110,11 +110,16 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
                 [ (x, Set.singleton y) | x <- toList $ aVals (source l), y <- toList $ aVals (target r), null (aVals (target l) Set.\\ (lkp x (contents l) `Set.union` lkp y (contents (EFlp r))))
                 ]
             EPrd (l, r) ->
+              -- EPrd(l,r) is the Cartesian product of the domain of l with the codomain of r.
+              -- dom(l) = the set of source atoms that actually appear in l
+              -- cod(r) = the set of target atoms that actually appear in r
               Map.fromList
                 [ (a, Set.fromList cod)
-                  | let cod = toList $ aVals (target r),
+                  | let contentsL = contents l
+                        contentsR = contents r
+                        cod = Set.toList . Map.foldl Set.union Set.empty $ contentsR,
                     not (null cod),
-                    a <- toList $ aVals (source l)
+                    a <- Map.keys contentsL
                 ]
             ECps (l, r) ->
               -- trace ("\n  ECps case: " <> showA l <> " ; " <> showA r <>

@@ -722,7 +722,7 @@ dRule pCpt2aCpt term0 = case term0 of
     getConcept :: Origin -> P_Concept -> A_Concept
     getConcept orig pcpt = case pCpt2aCpt orig pcpt of
       Checked c _ -> c
-      Errors errs -> fatal ("Concept lookup failed in dRule: " <> tshow errs)
+      Errors errs -> fatal ("Concept lookup failed in dRule: " <> tshow orig <> " " <> tshow errs)
 
     term2rTerm term1 =
       if isValid result
@@ -1280,6 +1280,18 @@ normStep
       nM _ x _ | simpl = (x, [], "<=>")
       -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
       nM _ (EEqu (l, r)) _ = ((l .|-. r) ./\. (r .|-. l), ["remove ="], "<=>")
+      nM posCpl (ECpl (EInc (l, ECpl r))) _ = (t ./\. f, steps <> steps', fEqu [equ', equ''])
+        where
+          (t, steps, equ') = nM (not posCpl) l []
+          (f, steps', equ'') = nM posCpl r []
+      nM posCpl (ECpl (EInc (l, r))) _ = (t .-. f, steps <> steps', fEqu [equ', equ''])
+        where
+          (t, steps, equ') = nM posCpl l []
+          (f, steps', equ'') = nM (not posCpl) r []
+      nM posCpl (EInc (ECpl l, r)) _  = (t .\/. f, steps <> steps', fEqu [equ', equ''])
+        where
+          (t, steps, equ') = nM (not posCpl) l []
+          (f, steps', equ'') = nM posCpl r []
       nM _ (EInc (x, r@(ELrs (z, y)))) _ =
         if sign x == sign z -- necessary to guarantee that sign expr is equal to sign of the result
           then (x .:. y .|-. z, ["remove left residual (/)"], "<=>")
@@ -1440,6 +1452,15 @@ normStep
             let posList' = head posList NE.:| tail posList
              in ( foldl' (.-.) (foldr1 (./\.) posList') (map notCpl negList),
                   ["Avoid complements, using law x/\\-y = x-y"],
+                  "<=>"
+                )
+        -- All-negative: -x/\-y/\.../\-z = V-(x\/y\/...\/z)
+        -- Only fire when the outer context (rs) also contains no positive terms,
+        -- otherwise Avoid-complements will handle it better at the outer level.
+        | null posList && not (null negList) && all isNeg rs =
+            let negInners = map notCpl negList
+             in ( EDif (EDcV (sign l), foldr1 (.\/.) (head negInners NE.:| tail negInners)),
+                  ["All-negative intersection: -x/\\-y = V-(x\\/y)"],
                   "<=>"
                 )
         | otherwise = (t ./\. f, steps <> steps', fEqu [equ', equ''])
@@ -1665,9 +1686,9 @@ isEIsc _ = False
 conjuncts :: env -> Rule -> NE.NonEmpty Expression
 conjuncts env =
   exprIsc2list
-    --  . (\e -> trace ("conjNF of that term: "<>show e) e)
+    --  . (\e -> trace ("\n[TRACE2b] After conjNF: " <> showA e) e)
     . conjNF env
-    --  . (\e -> trace ("FormalExpression: "<>show e) e)
+    --  . (\e -> trace ("\n[TRACE2a] FormalExpression (before conjNF): " <> showA e) e)
     . formalExpression
 
 allShifts :: env -> DnfClause -> [DnfClause]

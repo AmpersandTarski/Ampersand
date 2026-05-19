@@ -291,7 +291,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket441.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket442.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Ticket726.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try1.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try10.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try11.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl
@@ -329,6 +328,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/BroadTableTest.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug335_Kl0Kl1.adl
     testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
+    testing/Travis/testcases/prototype/shouldSucceed/CartesianTest.adl
     testing/Travis/testcases/prototype/shouldSucceed/ClosedWorld.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
     testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
