@@ -1300,6 +1300,15 @@ normStep
         if sign y == sign z -- necessary to guarantee that sign expr is equal to sign of the result
           then (x .:. y .|-. z, ["remove right residual (\\)"], "<=>")
           else (notCpl y .\/. r, ["remove |-"], "<=>")
+      -- Cartesian product against a PROP-relation inside an inclusion can be
+      -- eliminated: since r ⊆ I[B] for a PROP relation r, we have
+      --   x |- I[A] # r   <=>   x |- x;r
+      -- This removes the V (cross join) that EPrd would otherwise produce in SQL.
+      nM _ (EInc (x, EPrd (l, r))) _ | isIdent l && isProp r =
+        (EInc (x, x .:. r), ["x |- I[A]#r with r PROP <=> x |- x;r"], "<=>")
+      -- Symmetric variant: x |- r # I[B]  with r ⊆ I[A]   <=>   x |- r;x
+      nM _ (EInc (x, EPrd (l, r))) _ | isIdent r && isProp l =
+        (EInc (x, l .:. x), ["x |- l#I[A] with l PROP <=> x |- l;x"], "<=>")
       nM _ (EInc (l, r)) _ = (notCpl l .\/. r, ["remove |-"], "<=>")
       --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
       --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")

@@ -15,6 +15,7 @@ module Ampersand.Input.ADL1.CtxError
     lexerError2CtxError,
     lexerWarning2Warning,
     mkBoxRowsnhWarning,
+    mkCartesianProductWarning,
     mkCaseProblemWarning,
     mkCrudForRefInterfaceError,
     mkCrudWarning,
@@ -81,6 +82,7 @@ where
 import Ampersand.ADL1
 -- import Ampersand.ADL1.Disambiguate (DisambPrim (..))
 import Ampersand.Basics
+import Ampersand.Core.A2P_Converters (aExpression2pTermPrim)
 import Ampersand.Core.AbstractSyntaxTree (showWithAliases, Guarded(..), CtxError(..), Warning(..))
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
@@ -729,6 +731,77 @@ mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
 mkUnusedCptDefWarning :: AConceptDef -> Warning
 mkUnusedCptDefWarning cptDef =
   Warning (origin cptDef) $ "The concept '" <> fullName cptDef <> "' is not used in any relation."
+
+-- | Warning emitted when the SQL generator will produce a query that computes
+--   a Cartesian product. The warning shows the rule (or interface) it occurs in,
+--   plus the offending subexpression, both rendered with showP (via
+--   'aExpression2pTermPrim') so they appear in the same notation the user wrote.
+--
+--   When @--verbose@ is active the caller passes a 'Just' for the
+--   'verboseExtras' argument, containing
+--
+--     * the normalized expression that will actually be handed to
+--       'selectExpr' (the SQL generator)
+--     * a human-readable rendering of the generated SQL statement
+--
+--   so the user can see how their term is transformed in three steps
+--   (term2Expr ▸ conjNF ▸ selectExpr).
+mkCartesianProductWarning ::
+  Origin ->    -- ^ Origin of the rule/object containing the offending expression
+  Text ->      -- ^ Description of the context (e.g. "RULE foo" or "INTERFACE bar")
+  Expression -> -- ^ The complete (original) expression (output of term2Expr)
+  Expression -> -- ^ The offending subexpression that forces a Cartesian product
+  Maybe (Expression, Text) -> -- ^ When --verbose: (normalized expression, pretty SQL)
+  Warning
+mkCartesianProductWarning orig context fullExpr offending verboseExtras =
+  Warning orig
+    $ T.intercalate "\n    " (basicLines <> tipLines)
+   <> case verboseExtras of
+        Nothing -> ""
+        Just (normalized, sql) ->
+          "\n    " <> T.intercalate "\n    " (verboseLines normalized sql)
+  where
+    basicLines =
+      [ "SQL will compute a Cartesian product for " <> context
+      -- @Cline: insert the original term, before type checking, here.
+      , "Term (after term2Expr): " <> (showP . aExpression2pTermPrim) fullExpr
+      , "(reason: " <> reasonFor offending <> ")"
+      ]
+    -- Pattern-specific advice.  Currently only one situation is recognised:
+    -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
+    -- type bridge.  In that case the rule can usually be reformulated on an
+    -- endo-relation, which removes the cross join.
+    tipLines = case (offending, fullExpr) of
+      (EDcV _, EInc (lhs, rhs)) | endsInV rhs ->
+        [ "tip: the V[A*B] sits at the tail of the right-hand side as a"
+        , "     type bridge.  Try reformulating the rule on type A*A, e.g."
+        , "         (I[A] /\\ lhs;lhs~) |- r;r~"
+        , "     where r;r~ replaces the prefix that precedes the V."
+        ]
+      _ -> []
+    verboseLines normalized sql =
+      [ "--- verbose ---"
+      , "Normalized (as offered to selectExpr):"
+      , "  " <> (showP . aExpression2pTermPrim) normalized
+      -- , "Generated SQL:"
+      ]
+      -- <> map ("  " <>) (T.lines sql)
+    reasonFor e = case e of
+      EDcV  _      -> "V[A*B] generates a cross join of two concept tables"
+      EPrd  _      -> "the cartesian product operator (#) is rewritten to l;V;r, which uses V"
+      ECpl  _      -> "computing the complement requires the full domain V, hence a cross join"
+      ERrs  _      -> "the right residual (\\) generates a cross join of two concept tables"
+      ELrs  _      -> "the left residual (/) is rewritten via the right residual, which uses a cross join"
+      EDia  _      -> "the diamond (<>) is rewritten using residuals, which use cross joins"
+      ERad  _      -> "relative addition (!) is rewritten using complement/residuals, which use cross joins"
+      _            -> "this construct introduces a cross join in SQL"
+    -- | True when the expression is an ECps-chain whose right-most leaf is V.
+    --   Recurses to the right because ECps is right-associative in Ampersand.
+    endsInV :: Expression -> Bool
+    endsInV (ECps (_, r)) = endsInV r
+    endsInV (EBrk e)      = endsInV e
+    endsInV (EDcV _)      = True
+    endsInV _             = False
 
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =

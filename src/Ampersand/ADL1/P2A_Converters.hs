@@ -408,6 +408,8 @@ pCtx2aCtx env
       validateInterfaceRefs actx -- Phase 2: Validate interface reference compatibility
       warnCaseProblems actx -- Warn if there are problems with the casing of names of relations and/or concepts
       warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
+      -- Note: warnCartesianProducts is now emitted by pCtx2Fspec, because it needs FSpec
+      -- (for normalization and SQL generation) when --verbose is active.
       return actx
     where
       -- Early filtering: get all P_Concepts that exist in the schema (before type checking)
@@ -1041,15 +1043,24 @@ pCtx2aCtx env
                    enfExpr = expr,
                    enfPatName = mPat,
                    enfRules = case oper of
-                               IsSuperSet {} -> [insPair]
-                               IsSubSet {} -> [delPair]
-                               IsSameSet {} -> [insPair, delPair]
+                               IsSuperSet {} -> insPairs
+                               IsSubSet {} -> delPairs
+                               IsSameSet {} -> insPairs <> delPairs
                  }
               where
-                insPair = mkRule "InsPair" (EInc (expr, EDcD rel))
-                delPair = --  trace ("\n[TRACE1] delPair.formalExpression (after type-checking): " <> showA (EInc (EDcD rel, expr))) $
-                          mkRule "DelPair" (EInc (EDcD rel, expr))
-                mkRule command fExpr =
+                -- ENFORCE r >: (a \/ b \/ ...) is split into separate rules:
+                --   r >: a, r >: b, ...
+                -- This avoids the "All-negative intersection" normalization step
+                -- in NormalForms.hs (line 1457) which would introduce V (cartesian product).
+                -- Algebraically: (a \/ b) |- r <=> (a |- r) /\ (b |- r), so splitting is sound.
+                insPairs = [ mkRule "InsPair" subExpr (EInc (subExpr, EDcD rel))
+                           | subExpr <- NE.toList (exprUni2list expr) ]
+                -- ENFORCE r <: (a /\ b /\ ...) is split into separate rules:
+                --   r <: a, r <: b, ...
+                -- Algebraically: r |- (a /\ b) <=> (r |- a) /\ (r |- b), so splitting is sound.
+                delPairs = [ mkRule "DelPair" subExpr (EInc (EDcD rel, subExpr))
+                           | subExpr <- NE.toList (exprIsc2list expr) ]
+                mkRule command subExpr fExpr =
                   Rule
                     { rrnm =
                         case try2Name RuleName $ "Compute" <> (tshow . abs . hash $ lbl') of
@@ -1073,7 +1084,9 @@ pCtx2aCtx env
                     }
                   where
                     lbl' :: Text
-                    lbl' = "Compute " <> tshow rel <> " using " <> command
+                    -- Include the sub-expression in the label so split rules get unique names.
+                    -- Without this, multiple ENFORCEs for the same relation collide on rule name.
+                    lbl' = "Compute " <> tshow rel <> " using " <> command <> " for " <> tshow subExpr
 
       pIdentity2aIdentity ::
         ContextInfo ->

@@ -21,14 +21,20 @@ import Ampersand.Core.A2P_Converters (aRelation2pRelation)
 import Ampersand.Core.ParseTree (mkPConcept)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
+import Ampersand.FSpec.SQL (prettySQLQuery, SqlQuery(..))
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
+import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
+import Ampersand.Input.ADL1.CtxError (mkCartesianProductWarning, addWarnings)
 import Ampersand.Misc.HasClasses
-import Ampersand.Types.Config (HasRunner)
+import Ampersand.Runners (logLevel)
+import Ampersand.Types.Config (HasRunner, runnerL)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
+
 
 -- | creating an FSpec is based on command-line options.
 --   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
@@ -255,6 +261,7 @@ grindInto metamodel specification = do
 pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
+  warnCartesianProducts env fSpec
   checkInvariants fSpec
   where
     checkInvariants :: FSpec -> Guarded FSpec
@@ -264,3 +271,109 @@ pCtx2Fspec env c = do
         else case violationsOfInvariants fSpec of
           [] -> pure fSpec
           h : tl -> Errors (fmap (mkInvariantViolationsError (applyViolText fSpec)) (h NE.:| tl))
+
+-- | Detect all subexpressions in an Expression that will cause the SQL
+--   generator to compute a Cartesian product (i.e. a cross join without an
+--   equijoin condition between the two tables).
+--
+--   Direct Cartesian-producing constructors in SQL.hs:
+--
+--     * 'EDcV' (when source and target are both not ONE)  — V[A*B] is
+--       translated to @FROM tA, tB@
+--     * 'EPrd'                                            — rewritten to
+--       @l;V;r@ so it always introduces V
+--     * 'ECpl' (unless its argument is 'EDcV')            — the complement
+--       uses V(sign e) as the closed world
+--     * 'ERrs', 'ELrs', 'EDia', 'ERad'                    — translated via
+--       right residual / complement, all need cross joins
+findCartesianSubexprs :: Expression -> [Expression]
+findCartesianSubexprs expr = case expr of
+  -- After conjNF, a rule  x |- y  has the form  EUni(ECpl x, y).
+  -- The ECpl at the top level is intrinsic to the rule form and does not
+  -- by itself cause a Cartesian product in the violations SQL.  We therefore
+  -- skip the outer ECpl and continue inside its argument.
+  EUni (ECpl x, y) ->
+    findCartesianSubexprs x <> findCartesianSubexprs y
+  EUni (y, ECpl x) ->
+    findCartesianSubexprs y <> findCartesianSubexprs x
+  EDcV (Sign s t)
+    | s /= ONE && t /= ONE -> [expr]
+    | otherwise            -> []
+  EPrd (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
+  ECpl e -> case e of
+    EDcV _ -> findCartesianSubexprs e   -- -V is the empty set, no cartesian
+    _      -> expr : findCartesianSubexprs e
+  ERrs (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
+  ELrs (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
+  EDia (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
+  ERad (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
+  -- Recurse into the other subexpressions
+  EEqu (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  EInc (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  EIsc (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  EUni (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  EDif (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  ECps (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
+  EKl0 e      -> findCartesianSubexprs e
+  EKl1 e      -> findCartesianSubexprs e
+  EFlp e      -> findCartesianSubexprs e
+  EBrk e      -> findCartesianSubexprs e
+  EDcD {}     -> []
+  EDcI {}     -> []
+  EBin {}     -> []
+  EMp1 {}     -> []
+
+-- | Warn about every user-defined rule whose expression will cause the SQL
+--   generator to compute a Cartesian product.
+--
+--   In the regular path the warning shows two things:
+--
+--     * the original Expression (as produced by 'term2Expr', stored in
+--       'formalExpression' of the 'Rule'), rendered with @showP@ via
+--       'aExpression2pTermPrim';
+--     * the offending subexpression that triggers the Cartesian product.
+--
+--   When @--verbose@ is active (i.e. the runtime log level is at most
+--   'LevelInfo'), the warning is extended with
+--
+--     * the /normalized/ expression as it is offered to the SQL generator
+--       ('conjNF' applied to the original expression);
+--     * a pretty-printed version of the resulting SQL statement
+--       (via 'prettySQLQuery').
+warnCartesianProducts ::
+  (HasRunner env) =>
+  env ->
+  FSpec ->
+  Guarded ()
+warnCartesianProducts env fSpec
+  | not verbose = pure ()                    -- silent unless --verbose
+  | otherwise   = addWarnings warnings $ pure ()
+  where
+    -- The default log level is LevelInfo; using --verbose lowers it to LevelDebug.
+    verbose :: Bool
+    verbose = logLevel (view runnerL env) <= LevelDebug
+
+    warnings :: [Warning]
+    warnings =
+      [ mkCartesianProductWarning
+          (rrfps rule)
+          ("RULE " <> fullName rule)
+          origExpr
+          sub
+          (Just (normExpr, prettySQL normExpr))
+      | rule <- Set.toList (vrules fSpec)
+      , let origExpr = formalExpression rule
+      , let normExpr = conjNF env origExpr
+      -- Search the *normalized* expression, so that rewrites in normStep
+      -- (e.g. eliminating the cross join in  x |- I[A]#r  when r is a PROP
+      -- relation) actually silence the warning.
+      , sub <- findCartesianSubexprs normExpr
+      ]
+
+    -- | Render the SQL query that 'selectExpr' will produce for the
+    --   normalized expression, in a human-readable form.
+    prettySQL :: Expression -> Text
+    prettySQL expr = case prettySQLQuery 6 fSpec expr of
+      SqlQueryPlain t   -> t
+      SqlQueryPretty ls -> T.intercalate "\n" ls
+      SqlQuerySimple t  -> t
