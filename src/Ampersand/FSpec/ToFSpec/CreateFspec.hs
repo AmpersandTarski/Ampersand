@@ -358,6 +358,7 @@ warnCartesianProducts env fSpec
       [ mkCartesianProductWarning
           (rrfps rule)
           ("RULE " <> fullName rule)
+          (rrOriginalTerm rule)
           origExpr
           sub
           (Just (normExpr, prettySQL normExpr))

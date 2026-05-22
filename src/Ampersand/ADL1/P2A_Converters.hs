@@ -994,10 +994,14 @@ pCtx2aCtx env
                   rrfps = orig,
                   rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings,
                   rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs,
-                  rrviol = vls,
-                  rrpat = mPat,
-                  rrkind = UserDefined
-                }
+                   rrviol = vls,
+                   rrpat = mPat,
+                   rrkind = UserDefined,
+                   -- Preserve the original term as written by the user, before type checking.
+                   -- This is the P-level term ('expr'); 'formalExpression' may differ
+                   -- because of the implicit "V |- expr" wrapping above.
+                   rrOriginalTerm = showP expr
+                 }
       -- | The AEnforce calls the PHP-ExecEngine in the rrviol field of mkRule in the where-part, to enforce this rule.
       pEnforce2aEnforce ::
         ContextInfo ->
@@ -1078,10 +1082,13 @@ pCtx2aCtx env
                           NE.:| [ PairViewExp pos' Src (EDcI (source rel)),
                                   PairViewText pos' $ ";" <> fullName (target rel) <> ";",
                                   PairViewExp pos' Tgt (EDcI (target rel))
-                                ],
-                      rrpat = mPat,
-                      rrkind = Enforce
-                    }
+                                 ],
+                       rrpat = mPat,
+                       rrkind = Enforce,
+                       -- Machine-generated rule from an ENFORCE statement: there is no
+                       -- original (pre-typecheck) term. Record the generated expression.
+                       rrOriginalTerm = tshow fExpr
+                     }
                   where
                     lbl' :: Text
                     -- Include the sub-expression in the label so split rules get unique names.

@@ -456,7 +456,11 @@ data Rule = Rule
     -- | If the rule is defined in the context of a pattern, the label of that pattern for documentation purposes.
     rrpat :: !(Maybe Text),
     -- | Where does this rule come from?
-    rrkind :: !RuleKind
+    rrkind :: !RuleKind,
+    -- | Rendered original term as written by the user, before type checking.
+    --   For machine-generated rules (Propty, Identity, Enforce), this contains
+    --   the generated expression rendered with 'showA'.
+    rrOriginalTerm :: !Text
   }
   deriving (Typeable)
 

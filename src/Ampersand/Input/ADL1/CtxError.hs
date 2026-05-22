@@ -749,11 +749,12 @@ mkUnusedCptDefWarning cptDef =
 mkCartesianProductWarning ::
   Origin ->    -- ^ Origin of the rule/object containing the offending expression
   Text ->      -- ^ Description of the context (e.g. "RULE foo" or "INTERFACE bar")
+  Text ->      -- ^ The original term, as written by the user, before type checking
   Expression -> -- ^ The complete (original) expression (output of term2Expr)
   Expression -> -- ^ The offending subexpression that forces a Cartesian product
   Maybe (Expression, Text) -> -- ^ When --verbose: (normalized expression, pretty SQL)
   Warning
-mkCartesianProductWarning orig context fullExpr offending verboseExtras =
+mkCartesianProductWarning orig context originalTerm fullExpr offending verboseExtras =
   Warning orig
     $ T.intercalate "\n    " (basicLines <> tipLines)
    <> case verboseExtras of
@@ -763,9 +764,9 @@ mkCartesianProductWarning orig context fullExpr offending verboseExtras =
   where
     basicLines =
       [ "SQL will compute a Cartesian product for " <> context
-      -- @Cline: insert the original term, before type checking, here.
-      , "Term (after term2Expr): " <> (showP . aExpression2pTermPrim) fullExpr
-      , "(reason: " <> reasonFor offending <> ")"
+      , "Term: " <> originalTerm
+      , "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
+      -- , "(reason: " <> reasonFor offending <> ")"
       ]
     -- Pattern-specific advice.  Currently only one situation is recognised:
     -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
