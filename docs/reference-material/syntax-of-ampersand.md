@@ -8,6 +8,10 @@ This page defines the syntax and semantics of the statements in the Ampersand la
 [Terms](./terms.md) and [interfaces](./interfaces.md) are defined in separate pages.
 Please use it as a reference document rather than an introductory course.
 
+:::tip New to Ampersand?
+If you are just getting started, begin with the [tutorial](../tutorial-rap4.md) and the [student learning path](../landingpage/2-student.md). Keep this page open alongside them and use it to look up the exact form of a statement whenever you need it — you do not need to read it from top to bottom.
+:::
+
 ## Structuring your Ampersand specification
 
 Structuring an Ampersand specification effectively is crucial for readability, maintainability, and ease of development. There are several ways that can help:
