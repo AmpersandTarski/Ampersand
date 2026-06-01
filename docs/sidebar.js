@@ -107,11 +107,6 @@ module.exports = {
             id: 'ampersand/guides/deploying-your-prototype'
         },
         {
-            label: 'Manual installation',
-            type: 'doc',
-            id: 'ampersand/guides/best-practices'
-        },
-        {
             label: 'Contributor\'s guide',
             type: 'category',
             items: [
