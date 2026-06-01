@@ -6,7 +6,7 @@ title: For contributors
 
 Many people have contributed to the Ampersand project in the past, each in her or his own way. We're very proud of the results and we are amazed daily of the software that tiny specifications can produce.
 
-If you want to be part of it, contact [stefjoosten](<mailto:Stef.Joosten@ordina.nl?subject=Request contribution meeting>) on Github to discuss your contribution.
+If you want to be part of it, [open an issue on GitHub](https://github.com/AmpersandTarski/Ampersand/issues) with your own GitHub account, or contact [Stef Joosten](https://github.com/stefjoosten) on GitHub to discuss your contribution.
 
 This page serves as your central resource hub for everything you need as an Ampersand contributor.
 
