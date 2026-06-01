@@ -1,6 +1,11 @@
 module.exports = {
     ampersandLandingpagesSidebar: [
         {
+            label: 'Start here',
+            type: 'doc',
+            id: 'ampersand/intro'
+        },
+        {
             label: 'Interested visitor',
             type: 'doc',
             id: 'ampersand/landingpage/interested-visitor'
@@ -153,6 +158,37 @@ module.exports = {
             type: 'doc',
             id: 'ampersand/videos'
         },
+        {
+            label: 'Working with Docker',
+            type: 'category',
+            items: [
+                'ampersand/docker/README',
+                'ampersand/docker/compiler',
+                'ampersand/docker/modelling-environment',
+                'ampersand/docker/prototype-database',
+                'ampersand/docker/prototype-multi-stage-build',
+            ]
+        },
+        {
+            label: 'Exercises',
+            type: 'doc',
+            id: 'ampersand/exercises'
+        },
+        {
+            label: 'Reusing available modules',
+            type: 'doc',
+            id: 'ampersand/reusing-available-modules'
+        },
+        {
+            label: 'Troubleshooting',
+            type: 'doc',
+            id: 'ampersand/troubleshooting'
+        },
+        {
+            label: 'Tutorial (RAP4)',
+            type: 'doc',
+            id: 'ampersand/tutorial-rap4'
+        },
     ],
     ampersandTheorySidebar: [
         {
@@ -180,45 +216,31 @@ module.exports = {
             type: 'doc',
             id: 'ampersand/future-plans'
         },
-
+        {
+            label: 'Why declarative?',
+            type: 'doc',
+            id: 'ampersand/conceptual/why-declarative'
+        },
+        {
+            label: 'Modelling',
+            type: 'category',
+            items: [
+                'ampersand/modeling/README',
+                'ampersand/modeling/architecture',
+                'ampersand/modeling/conceptual-modeling',
+                'ampersand/modeling/data-modeling',
+                'ampersand/modeling/legal-modeling',
+                'ampersand/modeling/limitations-of-ampersand',
+            ]
+        },
+        {
+            label: 'Ownership',
+            type: 'doc',
+            id: 'ampersand/ownership/README'
+        },
     ],
     ampersandMainSidebar: [
-
-        {
-            type: 'doc',
-            id: 'ampersand/intro',
-        }
-        ,
-
-    ].concat((
-        [
-
-            {
-                label: 'More documents',
-                type: 'category',
-                items: [
-                    'ampersand/conceptual/why-declarative',
-                    'ampersand/docker/README',
-                    'ampersand/docker/compiler',
-                    'ampersand/docker/modelling-environment',
-                    'ampersand/docker/prototype-database',
-                    'ampersand/docker/prototype-multi-stage-build',
-                    'ampersand/exercises',
-                    'ampersand/modeling/README',
-                    'ampersand/modeling/architecture',
-                    'ampersand/modeling/conceptual-modeling',
-                    'ampersand/modeling/data-modeling',
-                    'ampersand/modeling/legal-modeling',
-                    'ampersand/modeling/limitations-of-ampersand',
-                    'ampersand/ownership/README',
-                    'ampersand/reusing-available-modules',
-                    'ampersand/troubleshooting',
-                    'ampersand/tutorial-rap4',
-                ]
-            },
-        ]
-    )
-    ),
+    ],
 
     toolsWeUseMainSidebar: [
     ],
