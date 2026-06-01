@@ -146,8 +146,6 @@ data FSpec = FSpec
     tableContents :: !(PlugSQL -> [[Maybe AAtomValue]]),
     pairsInExpr :: !(Expression -> AAtomPairs),
     applyViolText :: !(Rule -> AAtomPair -> Text),
-    -- | All conjuncts that have process-rule violations.
-    initialConjunctSignals :: ![(Conjunct, AAtomPairs)],
     -- | All invariant rules with violations.
     allViolations :: ![(Rule, AAtomPairs)],
     -- | All expressions in the fSpec
@@ -596,8 +594,6 @@ emptyFSpec nm =
       -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
       pairsInExpr = fatal "Don't ask for pairs from expressions in the empty FSpec.",
       applyViolText = fatal "Don't ask for the function applyViolText in the empty FSpec.",
-      initialConjunctSignals = [],
-      -- All conjuncts that have process-rule violations.
       allViolations = [],
       -- All invariant rules with violations.
       allExprs = Set.empty,

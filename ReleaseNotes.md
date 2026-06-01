@@ -15,6 +15,9 @@
 - **Fixed devcontainer startup issue**: Removed conflicting ENTRYPOINT directive from DockerfileUpstream that prevented containers from starting properly
 - **Enhanced devcontainer documentation**: Added troubleshooting section with diagnostic steps and solutions for container startup failures, plus explanation of configuration choices and reasoning behind devcontainer setup decisions
 - maintenance work for better maintainability.
+- **Warnings for Cartesian products**: The compiler now warns when an expression produces a Cartesian product. The warning includes the original term text so the source location is easy to find.
+- **Optimized normalization**: Improved the performance of `normStep` in the term normalizer.
+- **Diagnosis output**: Added a diagnosis module (`Ampersand.Diagnosis`) and an Excel (`.xlsx`) export of diagnostic results.
 
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.

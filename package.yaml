@@ -125,6 +125,10 @@ library:
     - Ampersand.Core.ParseTree
     - Ampersand.Core.ShowAStruct
     - Ampersand.Core.ShowPStruct
+    - Ampersand.Diagnosis.ClassifyGraph
+    - Ampersand.Diagnosis.Extract
+    - Ampersand.Diagnosis.PatternGraph
+    - Ampersand.Diagnosis.Types
     - Ampersand.FSpec
     - Ampersand.FSpec.Crud
     - Ampersand.FSpec.FSpec
@@ -163,6 +167,7 @@ library:
     - Ampersand.Options.Utils
     - Ampersand.Output
     - Ampersand.Output.FSpec2Pandoc
+    - Ampersand.Output.Diagnosis2Xlsx
     - Ampersand.Output.FSpec2SQL
     - Ampersand.Output.PandocAux
     - Ampersand.Output.Population2Xlsx

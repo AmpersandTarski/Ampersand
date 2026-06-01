@@ -209,7 +209,14 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
           writerNumberSections = True,
           writerTemplate = Just template,
           writerVariables = defaultWriterVariables env fSpec,
-          writerHTMLMathMethod = MathML
+          writerHTMLMathMethod = MathML,
+          -- The default 'WriterOptions' from Pandoc starts with
+          -- 'emptyExtensions', which causes the Markdown / GFM writer
+          -- to print "[TABLE]" placeholders instead of rendering
+          -- tables (because @pipe_tables@ / @simple_tables@ are off).
+          -- We restore the per-format default extension set so that
+          -- 'simpleTable' produces a real table in every output.
+          writerExtensions = getDefaultExtensions writerName
           --  , writerMediaBag=bag
           --  , writerReferenceDocx=Just docxStyleUserPath
           --  , writerVerbose=optVerbosity

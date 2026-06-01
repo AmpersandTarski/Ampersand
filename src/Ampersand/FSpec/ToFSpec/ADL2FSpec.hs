@@ -106,9 +106,6 @@ makeFSpec env context =
             not (null vs)
         ],
       allExprs = expressionsIn context `Set.union` expressionsIn allConjs,
-      initialConjunctSignals =
-        [ (conj, viols) | conj <- allConjs, let viols = conjunctViolations conj, not $ null viols
-        ],
       fcontextInfo = contextinfo,
       ftypologies = multiKernels contextinfo,
       largestConcept = getLargestConcept,
@@ -194,8 +191,6 @@ makeFSpec env context =
           in cra Set.\\ crc
         expr -> -- Rule without |- or =, treat as invariant: expr must be empty
           pairsinexpr (notCpl expr)
-    conjunctViolations :: Conjunct -> AAtomPairs
-    conjunctViolations conj = pairsinexpr (notCpl (rcConjunct conj))
     contextinfo = ctxInfo context
     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
     fSpecAllInterfaces :: [Interface]

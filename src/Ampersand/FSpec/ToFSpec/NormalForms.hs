@@ -1313,6 +1313,11 @@ normStep
       --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
       --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
       nM _ (ECpl (EEqu (l, r))) _ = (EUni (EDif (l, r), EDif (r, l)), ["-(x=y) = (x-y)\\/(y-x) (symmetric difference)"], "<=>")
+      -- Cartesian-frame complement:  -(V - x) = x   (in the typed Boolean lattice)
+      -- This removes the cartesian product V[A*B] that would otherwise have to
+      -- be enumerated for the violations of a rule whose body has no positive
+      -- term (e.g.  V |- -r /\ -s /\ -u).
+      nM _ (ECpl (EDif (EDcV _, x))) _ = (x, ["-(V-x) = x"], "<=>")
       nM _ e@(ECpl EIsc {}) _ = (deMorganEIsc e, ["De Morgan"], "<=>")
       nM _ e@(ECpl EUni {}) _ = (deMorganEUni e, ["De Morgan"], "<=>")
       nM _ e@(ECpl (ERad (_, ECpl {}))) _ = (deMorganERad e, ["De Morgan"], "<=>")
@@ -1404,6 +1409,20 @@ normStep
         -- Inconsistency:    x/\\V-  -->  False
         | isFalse l = (notCpl (EDcV (sign x)), ["-V/\\x = -V"], "<=>")
         | isFalse r = (notCpl (EDcV (sign x)), ["x/\\-V = -V"], "<=>")
+        -- All-negative: -x/\-y/\.../\-z = V-(x\/y\/...\/z)
+        -- IMPORTANT: this must fire BEFORE the recursive-normalisation guard
+        -- (t /= l || f /= r) below, otherwise inner recursion will rewrite the
+        -- innermost 2-term EIsc first, leaving the outer EIsc with a mix of
+        -- negative and positive terms, so the rewrite never gets a chance to
+        -- apply to the full flattened EIsc list.
+        -- The guard `all isNeg rs` ensures we only do this when the surrounding
+        -- context also has no positive terms, so that no information is lost.
+        | null posList && not (null negList) && all isNeg rs =
+            let negInners = map notCpl negList
+             in ( EDif (EDcV (sign x), foldr1 (.\/.) (head negInners NE.:| tail negInners)),
+                  ["All-negative intersection: -x/\\-y/\\... = V-(x\\/y\\/...)"],
+                  "<=>"
+                )
         -- Absorb if r is antisymmetric:    r/\r~ --> I
         | t /= l || f /= r =
             (t ./\. f, steps <> steps', fEqu [equ', equ''])
@@ -1463,15 +1482,8 @@ normStep
                   ["Avoid complements, using law x/\\-y = x-y"],
                   "<=>"
                 )
-        -- All-negative: -x/\-y/\.../\-z = V-(x\/y\/...\/z)
-        -- Only fire when the outer context (rs) also contains no positive terms,
-        -- otherwise Avoid-complements will handle it better at the outer level.
-        | null posList && not (null negList) && all isNeg rs =
-            let negInners = map notCpl negList
-             in ( EDif (EDcV (sign l), foldr1 (.\/.) (head negInners NE.:| tail negInners)),
-                  ["All-negative intersection: -x/\\-y = V-(x\\/y)"],
-                  "<=>"
-                )
+        -- (the All-negative clause has been moved up, BEFORE the
+        -- `t /= l || f /= r` recursive-normalisation guard. See above.)
         | otherwise = (t ./\. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM posCpl l []

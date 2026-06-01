@@ -69,3 +69,50 @@ MetaModel.adl
 
 # Local environment credentials (never commit)
 .env
+
+# Claude's files
+local_config.yaml
+*.py
+*.ghci
+testing_with_populations
+*.sh
+
+# Scratch / werkmateriaal (lokaal houden, niet committen) - expliciet benoemd
+# Analyse-notities (root)
+Adressen kuisen.md
+POPULATION_ENHANCEMENT_SUMMARY.md
+SAME_ERRORS_CHECKLIST.md
+prompts per groep.md
+# Analyse-notities (docs/)
+docs/analysis-normalstep-fix.md
+docs/analysis-selectexpr-fix.md
+docs/analysis-selectexpr-v-problem.md
+docs/diagnosis-refactor-plan.md
+docs/diagnosis-stubs-checklist.md
+docs/fc5-cartesian-products-checklist.md
+docs/fc5-diagnose-verification.md
+docs/prompt-compiler-cartesian-product.md
+docs/report-selectexpr-fix.md
+docs/sandbox-prompt-ecpl-leftjoin.md
+docs/sandbox-prompt-normalstep-fix.md
+docs/sandbox-prompt-selectexpr-fix.md
+docs/scenario.xlsx
+# Diagrammen
+Nieuw-LogicalDataModel_Grouped_By_Pattern.gv
+Nieuw-LogicalDataModel_Grouped_By_Pattern.png
+Oud-LogicalDataModel_Grouped_By_Pattern.gv
+Oud-LogicalDataModel_Grouped_By_Pattern.png
+# Haskell scratch
+Sandbox.hs
+DiagnoseCheck.hs
+# ADL demo's
+cart_demo.adl
+cart_a1_demo.adl
+testscript.adl
+# Overig
+validate_tests_analysis.csv
+.proto/
+
+# Nog scratch: testcase, voorlopig niet committen
+testing/Travis/testcases/prototype/shouldSucceed/CartesianTest.adl
+docs/guides/roadmap-matrix.svg

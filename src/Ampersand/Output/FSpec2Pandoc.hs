@@ -2,6 +2,7 @@
 
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc) where
 
+import Ampersand.Diagnosis.Extract (extractDiagnostics)
 import Ampersand.Output.ToPandoc
 import qualified RIO.List as L
 import qualified RIO.Text as T
@@ -53,7 +54,7 @@ import Text.Pandoc.CrossRef
 -- Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc ::
-  (HasDirOutput env, HasDocumentOpts env) =>
+  (HasDirOutput env, HasDocumentOpts env, HasFSpecGenOpts env) =>
   env ->
   UTCTime ->
   FSpec ->
@@ -148,9 +149,14 @@ fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
     picturesByChapter :: [[Picture]]
     (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env
 
+    -- Diagnose-data wordt eenmaal geëxtraheerd uit het FSpec; zowel de
+    -- Pandoc-renderer (`chpDiagnosis`) als de xlsx-renderer (zie
+    -- "Ampersand.Commands.Documentation") werken op deze pure waarde.
+    diagData = extractDiagnostics outputLang' fSpec
+
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro = (chpIntroduction env now fSpec, [])
     fspec2Blocks SharedLang = (chpNatLangReqs env 0 fSpec, [])
-    fspec2Blocks Diagnosis = chpDiagnosis env fSpec
+    fspec2Blocks Diagnosis = chpDiagnosis env fSpec diagData
     fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis env 0 fSpec
     fspec2Blocks DataAnalysis = chpDataAnalysis env fSpec
