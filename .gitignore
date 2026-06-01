@@ -84,18 +84,6 @@ POPULATION_ENHANCEMENT_SUMMARY.md
 SAME_ERRORS_CHECKLIST.md
 prompts per groep.md
 # Analyse-notities (docs/)
-docs/analysis-normalstep-fix.md
-docs/analysis-selectexpr-fix.md
-docs/analysis-selectexpr-v-problem.md
-docs/diagnosis-refactor-plan.md
-docs/diagnosis-stubs-checklist.md
-docs/fc5-cartesian-products-checklist.md
-docs/fc5-diagnose-verification.md
-docs/prompt-compiler-cartesian-product.md
-docs/report-selectexpr-fix.md
-docs/sandbox-prompt-ecpl-leftjoin.md
-docs/sandbox-prompt-normalstep-fix.md
-docs/sandbox-prompt-selectexpr-fix.md
 docs/scenario.xlsx
 # Diagrammen
 Nieuw-LogicalDataModel_Grouped_By_Pattern.gv
