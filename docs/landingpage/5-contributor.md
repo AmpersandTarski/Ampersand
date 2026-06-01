@@ -27,6 +27,12 @@ This page serves as your central resource hub for everything you need as an Ampe
 
 ## 📝 Documentation & Communication
 
+### How is the documentation organised, and why?
+- **[The architecture of the Ampersand documentation](../guides/documentation-architecture.md)** - The documentation system, its design choices, and how we grow it
+  - One site assembled from the Ampersand, Prototype, and RAP repositories
+  - Audience landing pages and the Diátaxis structure
+  - The matrix model for extending and maintaining the docs
+
 ### How do I document my changes to the codebase?
 - **[Documenting Prototype Framework Changes](../../prototype/guides/documenting-prototype-changes.md)** - Step-by-step guide for contributors
   - Understanding the multi-repository documentation architecture

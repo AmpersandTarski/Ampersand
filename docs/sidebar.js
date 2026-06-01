@@ -115,6 +115,7 @@ module.exports = {
             label: 'Contributor\'s guide',
             type: 'category',
             items: [
+                'ampersand/guides/documentation-architecture',
                 'ampersand/guides/onboarding',
                 'ampersand/the-tools-we-use/README',
                 'ampersand/the-tools-we-use/ampersand-language-support',
