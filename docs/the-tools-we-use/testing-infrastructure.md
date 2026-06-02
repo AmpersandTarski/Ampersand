@@ -140,7 +140,7 @@ testing/Travis/testcases/Bugs/Issue123/
 
 The CI pipeline (`.github/workflows/ci2.yml`) runs tests on:
 - **Ubuntu 22.04**: Primary Linux testing environment
-- **macOS 13**: Cross-platform compatibility
+- **macOS 14**: Cross-platform compatibility
 - **Windows 2022**: Windows support verification
 - **Docker**: Containerized environment testing
 
