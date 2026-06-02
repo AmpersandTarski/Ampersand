@@ -52,9 +52,9 @@ jobs:
           upgrade-stack: false
           cache-save-always: true
 
-  build-and-test-macOS-13:
-    name: Build and test on macos-13  🏗 🧪
-    runs-on: macos-13
+  build-and-test-macOS-14:
+    name: Build and test on macos-14  🏗 🧪
+    runs-on: macos-14
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v4

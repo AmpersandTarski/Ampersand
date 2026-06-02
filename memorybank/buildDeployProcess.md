@@ -164,7 +164,7 @@ grep -A 50 "allStaticFiles" src/Ampersand/Prototype/StaticFiles_Generated.hs
 
 **Matrix Testing:**
 - Ubuntu 22.04 (Linux)
-- macOS-13 
+- macOS-14 
 - Windows 2022
 - Docker build
 

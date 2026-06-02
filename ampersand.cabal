@@ -184,13 +184,16 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/Issue1275-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/Issue1275.adl
     testing/Travis/testcases/FuncSpec/Issue1275.docx
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/testIssue1183-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testIssue1183.docx
+    testing/Travis/testcases/FuncSpec/testPredLogic-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
