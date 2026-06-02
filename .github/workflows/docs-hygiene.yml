@@ -1,0 +1,31 @@
+name: Documentation hygiene
+
+# Keeps the published docs clean: no duplicate sidebar ids, no broken
+# sidebar references, and no internal scratch notes leaking into the
+# published tree. Runs on any change to the docs or the check script.
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "scripts/check-docs-sidebar.js"
+      - ".github/workflows/docs-hygiene.yml"
+  push:
+    branches:
+      - main
+      - documentation
+    paths:
+      - "docs/**"
+      - "scripts/check-docs-sidebar.js"
+      - ".github/workflows/docs-hygiene.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check documentation hygiene
+        run: node scripts/check-docs-sidebar.js
