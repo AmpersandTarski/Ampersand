@@ -1,5 +1,7 @@
 # Best practices For Ampersand Modellers
 
+This guide is part of [designing your model](../landingpage/3-ampersand-user.md#stage-2--design-your-model). Use it alongside the [Syntax of Ampersand](../reference-material/syntax-of-ampersand) for the exact form of each statement, and the [Modelling](../modeling/README) background for the underlying ideas. The practices below help you build a model that stays correct and maintainable as it grows.
+
 ## Use `PURPOSE`-statements abundantly
 
 Curious people want to know the purpose of everything.
