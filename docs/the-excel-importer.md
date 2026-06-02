@@ -202,10 +202,27 @@ POPULATION uBA CONTAINS [ ("beta1"), ("alfa1")
    1. The runtime importer does not implement multi-columns yet.
 
 4. **built-in datatypes:**
-   The importer recognizes the built-in datatypes of spreadsheet: strings, dates, numbers, etc.
-   It transforms these datatypes to Ampersand's built-in datatypes without you noticing it. However, if it expects a different type than your .xlsx-file contains, it gives an error.
-   This documentation must be refined to specify this transformation, so you can understand what happens.
+   The importer recognizes the built-in datatypes of a spreadsheet (text, numbers, booleans, dates) and transforms them to Ampersand's built-in datatypes. The exact rules are described in [Datatype conversion](#datatype-conversion) below. If a cell does not match the type Ampersand expects for that concept, you get an error.
    The error messages in the importers, especially the run-time importer, are yet to be improved to assist in such situations.
+
+## Datatype conversion
+A spreadsheet cell carries its own type: text, a number, or a boolean. Ampersand converts each cell to the [representation type](./reference-material/syntax-of-ampersand) (`REPRESENT`) of the concept it populates. The conversion depends on both the cell's type and the expected Ampersand type:
+
+| Cell in your `.xlsx` | Expected Ampersand type | Result |
+| --- | --- | --- |
+| Text | `ALPHANUMERIC`, `BIGALPHANUMERIC`, `HUGEALPHANUMERIC`, `PASSWORD`, `OBJECT` | used as-is |
+| Text | `BOOLEAN` | parsed (case-insensitive) from `TRUE`/`FALSE`, `YES`/`NO`, `JA`/`NEE`, `WAAR`/`ONWAAR`, `WEL`/`NIET`; anything else is an error |
+| Text | `INTEGER` / `FLOAT` | parsed as a number; non-numeric text is an error |
+| Text | `DATE` / `DATETIME` | error — use a real date cell, not text |
+| Number | `INTEGER` | accepted only when there is no fractional part, otherwise an error |
+| Number | `FLOAT` | used as-is |
+| Number | `DATE` / `DATETIME` | interpreted as an Excel serial date (`DATETIME` is rounded to whole seconds for database compatibility) |
+| Number | `ALPHANUMERIC` (and the other text types), `OBJECT` | rendered to text (a trailing `.0` is dropped, so `34.0` becomes `34`) |
+| Number | `BOOLEAN` | error |
+| Boolean | `BOOLEAN` | used as-is |
+| Boolean | any other type | error |
+
+The `BINARY`, `BIGBINARY` and `HUGEBINARY` types cannot be populated from a spreadsheet. Whitespace around text cells is trimmed by default; use `--no-trim-cellvalues` on the command-line importer to keep it.
 
 ## Design considerations
 Data import has been designed to facilitate the reuse of existing spreadsheets in .xlsx format.
