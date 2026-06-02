@@ -115,7 +115,16 @@ Notice the following features:\
 
 ## Layout and Widgets
 
-TODO
+So far you have seen how the `BOX` keyword controls the *layout* of an interface. Under the hood, Ampersand uses **templates** to turn an interface definition into a screen. There are three kinds:
+
+- **Box templates** decide how a box and its sub-boxes are arranged. You have already met `BOX <FORM>` (the default, one field per row), `BOX <TABLE>` (a tabular layout) and `BOX <TABS>` (tabbed sub-boxes). A few more are available:
+  - `BOX <RAW>` shows the same data without styling or extra functionality, handy when you supply your own layout.
+  - `BOX <PROPBUTTON>` renders a button that sets, clears or flips one or more property-relations when clicked.
+  - `BOX <OBJECTDROPDOWN>` and `BOX <VALUEDROPDOWN>` let the user pick from a dropdown to populate a relation (use `OBJECTDROPDOWN` for objects, `VALUEDROPDOWN` for values that have a `REPRESENT` type).
+- **Atomic templates** render the leaf fields (the box items that show a single value). Ampersand picks the right *widget* automatically from the concept's type: a text field for alphanumeric values, a number field, a date picker for dates, a checkbox for booleans, and so on.
+- **View templates** are used when a box item refers to a user-defined `VIEW` (for example `pl <PersonEmail>`), so you can control exactly how an atom is shown.
+
+For prototyping you rarely need more than `FORM`, `TABLE` and `TABS`. When you do, the [interface templates section of the syntax reference](../reference-material/syntax-of-ampersand#interface-templates) lists every template and its attributes.
 
 ## Assignment
 
