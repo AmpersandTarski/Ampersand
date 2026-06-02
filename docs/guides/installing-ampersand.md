@@ -51,7 +51,9 @@ The following instructions presume that you are familiar with the basics of your
 
 #### The easy way: Use a prebuilt executable file
 
-The easiest way is by use of available executables. We release frequently. Have a look at [our latest release](https://github.com/AmpersandTarski/Ampersand/releases). For Windows users, there is a file called ampersand.exe in the release. Put it on your disk on a location of your choice, for example /Ampersand/bin/. Make sure [your `$PATH`(or: `PATH`) environment variable contains this location](https://www.google.com/search?q=setting+your+path+variable), so the command "ampersand" is known on the command line. That's all. Note that double-clicking`ampersand.exe`will not work, because it is a command line tool.
+The easiest way is by use of available executables. We release frequently. Have a look at [our latest release](https://github.com/AmpersandTarski/Ampersand/releases). Prebuilt binaries are available for **Windows** (a file called `ampersand.exe`) and **Linux**. Put the file on your disk on a location of your choice, for example /Ampersand/bin/. Make sure [your `$PATH`(or: `PATH`) environment variable contains this location](https://www.google.com/search?q=setting+your+path+variable), so the command "ampersand" is known on the command line. That's all. Note that double-clicking the executable will not work, because it is a command line tool.
+
+On **macOS** we no longer ship a prebuilt binary. Run Ampersand through [Docker](./deploying-your-prototype) (the same way prototypes are deployed), or build the compiler from source as described below.
 
 Here is a way to test whether or not you have succeeded: open a command line tool (e.g. `CMD` on Windows), and type `ampersand -v`. If all is well, the version number of the Ampersand tool is output.
 
@@ -176,3 +178,7 @@ Usually, you would have some demands regarding particulars of the generation. Fo
 1\. Do **not** use Hackage to get ampersand. It does not contain all non-haskell files. (See [issue #213](https://github.com/AmpersandTarski/ampersand/issues/213))\
 2\. `stack` memory usage may require other applications to be terminated (e.g. on 8GB Windows systems). If `stack` terminates prematurely, re-invoking the command will pick-up where it stopped.\
 3\. `stack` may terminate on various errors [(See this issue)](https://github.com/commercialhaskell/stack/issues/2617), e.g. that it doesn't have permission to access or rename files. Again, if `stack` terminates prematurely, re-invoking the command will pick-up where it stopped. Users have mentioned having to restart `stack` several times before it would finally complete building Ampersand.exe.
+
+## Next step
+
+Once you can generate a prototype from your script, put it online with [Deploying your prototype](./deploying-your-prototype).
