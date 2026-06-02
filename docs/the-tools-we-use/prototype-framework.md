@@ -23,10 +23,3 @@
 * As php code is compiled at runtime, the prototype framework can contain errors that can't be caught and/or handled by the API framework. This especially holds for errors early in the execution, when initializing the API framework or AmpersandApp object.
 * We use a [static analyzer](https://github.com/phan/phan) to check the code during development. This prevents us from introducing bugs that can be detected by such an analyzer \(which is actually a lot\).
   * At most class methods we specify input and return type definitions. This improves the static analyses.
-
-## Frontend implementation \(AngularJS\)
-
-### Building and packaging the application
-
-TODO explain: Bower, NPM, Gulp
-
