@@ -190,7 +190,7 @@ We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note th
 
 ### Your own layout and your own widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](./syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
+You don't have to put up with the [Ampersand built-in layout options](./syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by writing your own HTML templates: a **custom BOX template** controls the layout of a box, while a **custom VIEW template** controls how a single atom is displayed. You drop the template file in your project's `templates/` folder and reference it from your script (`BOX<yourtemplate>` or a `HTML TEMPLATE` clause in a `VIEW`). See [Creating Custom BOX Templates](../../prototype/guides/creating-custom-box-templates) and [Creating Custom VIEW Templates](../../prototype/guides/creating-custom-view-templates).
 
 ## CRUD {#CRUD}
 
