@@ -73,9 +73,11 @@ In this example, the outermost box contains seven **box items** and the innermos
 
 ---
 
-## description: 'TODO: This example is subject to bitrot. It has to be redone.'
-
 # Example: Login {#interfaces-example-login}
+
+:::caution Outdated example
+This Login example is shown for illustration only and is scheduled to be redone. Its code still uses the deprecated interface templates `<HROWS>`, `<HCOLS>`, `<ROWS>` and `<ROWSNL>`. In current Ampersand these are replaced by `BOX <FORM ...>` (was `ROWS`/`HROWS`) and `BOX <TABLE ...>` (was `COLS`/`HCOLS`); see the [interface templates reference](reference-material/syntax-of-ampersand#interface-templates).
+:::
 
 This example defines a login/logout interface,  
 because it is familiar. We show this example to demonstrate how to get different interface structures under varying conditions.
