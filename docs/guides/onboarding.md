@@ -1,71 +1,41 @@
 # Onboarding
 
-> Welcome to the Ampersand team!
+> Welcome to the Ampersand project!
 
-Below you wil find a list of activities to get a new contributor up-to speed with Ampersand development.
+Below you will find a list of activities to get a new contributor up to speed with Ampersand development.
 
 - To get started, [open an issue on GitHub](https://github.com/AmpersandTarski/Ampersand/issues) using your own GitHub account, or contact [Stef Joosten](https://github.com/stefjoosten) on GitHub. Describe how you would like to contribute and what access you need.
-  - Request access to the GitHub repository as [described below](#github-memberships).
-- Clone the needed repositories [described below](#github-workflow-and-info)
+  - Request access to the GitHub repositories as [described below](#github-memberships).
+- Clone the repositories you need, [described below](#github-workflow-and-info).
 
 ## GitHub memberships
 
-Ensure you have a GitHub account. This can be a 'professional' account connected to a work email, or any other account.
+Ensure you have a GitHub account. This can be a 'professional' account connected to a work email, or any other account. When you request access, mention your GitHub account name (or a link to your profile page).
 
-Request membership to
-
-- [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization and
-- [Ordina A-team](https://github.com/orgs/AmpersandTarski/teams/ordina-a-team/members).
-
-Above links only work for members of AmpersandTarski
-
-:::tip
-Make sure when you contact Han about this that you provide him with your Github account name (or URL to your GitHub profile page).
-:::
-
-## Microsoft Teams memberships
-
-The Ampersand team members and also some old members can be found in the teams group channel.
-
-- Membership Microsoft Teams project [Project A & NUT-Vluchtelingen open source
-  ](https://teams.microsoft.com/l/team/19%3ayM9P1tFiWIADqDUbLDyX7ksB1Oavi04StkxyS6grh7A1%40thread.tacv2/conversations?groupId=09b86f1c-3ba6-411d-9b16-f0915eb2ed8a&tenantId=a254b169-0a6b-47f9-af4c-169704421c2e).
-- Owner permissions on that project (seems to be current practice).
-- Tagged as _AmpersandTarski A-team_ (facilitates initiating chats).
-
-## Meetings
-
-Request invitations to the regular (Microsoft Teams) meetings.
-
-These are currently:
-
-- NUTwente/Ampersand wekelijkse overleg; every monday 11:30, 1 hour.
-- Daily standup; tuesday till friday 11:30, 30 minutes
-- A-team: Sprint review; at end of sprint, friday 9:00, 50 minutes
-- A-team: Sprint retrospective; at end of sprint, friday 10:00, 50 minutes
-- A-team: Sprint planning; at end of sprint, friday 11:00, 50 minutes
+Request membership to the [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization.
 
 ## Github workflow and info
 
-To work on the project you wil need a local version of the different repositories depending on what you are going to work on. Below is a short description of all the different repositories and what they are used for.
+To work on the project you will need a local copy of the repositories you intend to work on. Below is a short description of each repository and what it is used for.
 
 ### Ampersand
 
-[The ampersand repository](https://github.com/AmpersandTarski/Ampersand) contains the ampersand application that compiles and builds ampersand applications.
+[The Ampersand repository](https://github.com/AmpersandTarski/Ampersand) contains the Ampersand application that compiles and builds Ampersand applications.
 
 ### Prototype
 
-[The prototype repository](https://github.com/AmpersandTarski/prototype) makes sure that a ampersand application has a visual interface for the user to interact with your applications.
+[The prototype repository](https://github.com/AmpersandTarski/prototype) gives an Ampersand application a visual interface for users to interact with.
 
 ### RAP
 
-[The RAP repository](https://github.com/AmpersandTarski/RAP) is an ampersand application that can be used to create a new ampersand application. This app is mainly used by the Open University of the Netherlands in the course Rule Based Design.
+[The RAP repository](https://github.com/AmpersandTarski/RAP) is an Ampersand application used to create new Ampersand applications. It is used mainly by the Open University of the Netherlands in the course Rule Based Design.
 
 ### AmpersandTarski.github.io
 
-[The AmpersandTarski.github.io repository](https://github.com/AmpersandTarski/AmpersandTarski.github.io) is used to create the docusaurus documentation webpage. It pulls the different documents from the docs folders of all the repositories. While working this way we need to make sure to work in the correct docs folders.
+[The AmpersandTarski.github.io repository](https://github.com/AmpersandTarski/AmpersandTarski.github.io) builds the Docusaurus documentation website. It pulls the `docs` folders from all the repositories, so make sure to work in the correct `docs` folder.
 
-> For Example a document that references or is meant for RAP needs to be in the RAP repository docs folder.
+> For example, a document that is meant for RAP needs to be in the RAP repository's `docs` folder.
 
 :::info
-Make sure to work in the ***documentation branch*** while creating or editing documentation to prevent unnecessary usage of the pipelines. 
+Work in the **`documentation` branch** while creating or editing documentation, to avoid unnecessary use of the build pipelines.
 :::
