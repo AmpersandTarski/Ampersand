@@ -185,9 +185,12 @@ module.exports = {
             id: 'ampersand/troubleshooting'
         },
         {
-            label: 'Tutorial (RAP4)',
-            type: 'doc',
-            id: 'ampersand/tutorial-rap4'
+            label: 'Tutorials',
+            type: 'category',
+            items: [
+                'ampersand/tutorial-rap4',
+                'ampersand/tutorial/interfaces',
+            ]
         },
     ],
     ampersandTheorySidebar: [
