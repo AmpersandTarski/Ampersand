@@ -27,7 +27,28 @@ RAP4 is an Ampersand repository, in which multiple users can store and use their
 
 ### How to change Ampersand itself
 
-If you want to change the Ampersand compiler for your own purposes, you need access to the source files, and a Haskell development environment. This section still has to be written. It will describe the software process for developing Ampersand itself.
+If you want to change the Ampersand compiler itself, you need the source files and a Haskell development environment.
+
+1. Install [Stack](https://docs.haskellstack.org/), the build tool used by Ampersand. Stack downloads the correct compiler for you, so you do not have to install GHC separately.
+2. Clone the source repository:
+   ```bash
+   git clone https://github.com/AmpersandTarski/Ampersand.git
+   cd Ampersand
+   ```
+3. Build the compiler. The first build also installs the matching compiler (GHC 9.6.6, pinned through resolver `lts-22.39` in `stack.yaml`) and may take a while:
+   ```bash
+   stack build          # use `stack build --fast` for quicker, unoptimised builds
+   ```
+4. Run your freshly built compiler without installing it system-wide:
+   ```bash
+   stack exec ampersand -- check path/to/your/script.adl
+   ```
+5. Run the regression test suite to check that your changes did not break anything:
+   ```bash
+   stack test
+   ```
+
+For day-to-day development we recommend [Visual Studio Code](https://code.visualstudio.com/) with the [Haskell extension](https://marketplace.visualstudio.com/items?itemName=haskell.haskell) (Haskell Language Server) for real-time type checking and error reporting.
 
 The remainder of this chapter explains in detail all the things you need to get you up and running with Ampersand. The instructions presume that you are familiar with your own computer(s).
 
