@@ -4,6 +4,7 @@
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
 - Add `CLAUDE.md` with repository conventions (release-notes enforcement, docs publishing branch, internal-notes convention).
 - CI/release: drop the macOS build entirely. GitHub deprecated the macos-13 runner and the Apple-Silicon (macos-14) build was failing; since Ampersand runs under Linux/Docker on macOS anyway, the native macOS binary is no longer built or attached to releases. Prebuilt binaries are now Linux and Windows; on macOS, use Docker or build from source.
+- CI: trigger the build/quality/format workflows from an explicit build-kernel allowlist (`src`, `app`, `AmpersandData`, `outputTemplates`, `testing`, the package/stack files, `Dockerfile`, lint configs) instead of `paths-ignore: docs/**`. Non-build changes (docs, ReleaseNotes, READMEs, workflow files) no longer start a build.
 
 ## v5.5.6
 - [#1613](https://github.com/AmpersandTarski/Ampersand/issues/1613) Harvest owl:DatatypeProperty from turtle files
