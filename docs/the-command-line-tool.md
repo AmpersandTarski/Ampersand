@@ -23,10 +23,16 @@ The following is the base command on Linux (works for bash as well as zsh)
 docker run -it -v $(pwd):/scripts ampersandtarski/ampersand
 ```
 
-On the Windows-10 command-line this looks slightly different (todo: check this!)
+On Windows the way to refer to the current directory depends on your shell. In PowerShell:
+
+```powershell
+docker run -it -v ${PWD}:/scripts ampersandtarski/ampersand
+```
+
+In the classic Command Prompt (`cmd.exe`):
 
 ```
-docker run -it -v $PWD:/scripts ampersandtarski/ampersand
+docker run -it -v %cd%:/scripts ampersandtarski/ampersand
 ```
 
 This runs the Ampersand compiler (from your command prompt). The first time you do this, docker will take some time to download the images it needs.
