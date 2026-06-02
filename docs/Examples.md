@@ -208,10 +208,10 @@ To understand this fragment, take notice of:
 7. Field terms are subject to type checking. The following relations provide an example for getting a type-correct interface:
 
    ```
-   RELATION personName :: Person * PersonName [UNI]
-   RELATION personStatus :: Person * PersonStatus [UNI]
-   RELATION personEmail :: Person * Email [UNI,TOT]
-   RELATION workswith :: Person * Person
+   RELATION personName[Person*PersonName] [UNI]
+   RELATION personStatus[Person*PersonStatus] [UNI]
+   RELATION personEmail[Person*Email] [UNI,TOT]
+   RELATION workswith[Person*Person]
    ```
 
    The source concepts of a field term must match the target concept of the interface term.
