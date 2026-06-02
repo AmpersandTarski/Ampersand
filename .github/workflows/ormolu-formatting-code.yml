@@ -8,8 +8,27 @@ on:
     # This is needed to allow skipping enforcement of the changelog in PRs with specific labels,
     # as defined in the (optional) "skipLabels" property.
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
-    paths-ignore:
-      - "docs/**" # If only documentation changes, no need to build.
+    paths:
+      # Build kernel: only changes to what the compiler build actually
+      # consumes should trigger a (re)build. Update this list only when you
+      # change what goes into the build. Everything else (docs, memorybank,
+      # ReleaseNotes.md, READMEs, the workflow files themselves) is ignored
+      # on purpose, so non-build changes do not spin up the Haskell build.
+      - "src/**"
+      - "app/**"
+      - "AmpersandData/**"      # bundled into the binary (extra-source-files)
+      - "outputTemplates/**"    # bundled into the binary (extra-source-files)
+      - "testing/**"            # test-suite inputs (extra-source-files)
+      - "package.yaml"
+      - "ampersand.cabal"
+      - "stack.yaml"
+      - "stack.yaml.lock"
+      - "Setup.hs"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".hlint.yaml"
+      - "weeder.dhall"
+      - "hie.yaml"
 
 jobs:
   # Enforces the use of ormolu formatting of each Haskell file on every pull request
