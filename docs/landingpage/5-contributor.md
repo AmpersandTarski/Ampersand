@@ -4,120 +4,55 @@ title: For contributors
 
 # Contributing to Ampersand
 
-Many people have contributed to the Ampersand project in the past, each in her or his own way. We're very proud of the results and we are amazed daily of the software that tiny specifications can produce.
+Many people have contributed to the Ampersand project, each in their own way. We're proud of the results, and amazed daily at the software that tiny specifications can produce.
 
 If you want to be part of it, [open an issue on GitHub](https://github.com/AmpersandTarski/Ampersand/issues) with your own GitHub account, or contact [Stef Joosten](https://github.com/stefjoosten) on GitHub to discuss your contribution.
 
-This page serves as your central resource hub for everything you need as an Ampersand contributor.
+This page is your central hub for everything you need as an Ampersand contributor.
 
-## 🚀 Getting Started as a New Contributor
+## 🚀 Getting started
 
-### How do I join the team?
-- **[Complete Onboarding Process](../guides/onboarding.md)** - Essential first steps for new Ordina A-team members
-  - Schedule meetings with team leads
-  - Get access to GitHub repositories and Microsoft Teams
-  - Join sprint meetings and daily standups
-  - Clone necessary repositories
+New here? Work through the [onboarding guide](../guides/onboarding.md): request access to the GitHub organisation, clone the repositories you need, and learn how the project is organised.
 
-### What coding standards should I follow?
-- **[Contributor's Guide](../guides/onboarding.md)** - Access the comprehensive contributor resources in the main menu
-  - Complete onboarding process for new team members
-  - Development tools and infrastructure documentation
-  - Team coordination and workflow information
+## 📝 Documentation & communication
 
-## 📝 Documentation & Communication
+Day-to-day communication runs through GitHub: [issues](https://github.com/AmpersandTarski/Ampersand/issues) for questions and bugs, pull requests for changes, and [discussions](https://github.com/AmpersandTarski/Ampersand/discussions) for broader topics.
 
 ### How is the documentation organised, and why?
-- **[The architecture of the Ampersand documentation](../guides/documentation-architecture.md)** - The documentation system, its design choices, and how we grow it
-  - One site assembled from the Ampersand, Prototype, and RAP repositories
-  - Audience landing pages and the Diátaxis structure
-  - The matrix model for extending and maintaining the docs
+
+- **[The architecture of the Ampersand documentation](../guides/documentation-architecture.md)** — the documentation system, its design choices, and how we grow it.
 
 ### How do I document my changes to the codebase?
-- **[Documenting Prototype Framework Changes](../../prototype/guides/documenting-prototype-changes.md)** - Step-by-step guide for contributors
-  - Understanding the multi-repository documentation architecture
-  - Proper file structure and naming conventions
-  - Updating sidebar.js configuration
-  - Testing and deployment workflow
 
-### What's the project structure?
-The Ampersand ecosystem consists of four main repositories:
+- **[Documenting Prototype Framework Changes](../../prototype/guides/documenting-prototype-changes.md)** — where files go, naming conventions, `sidebar.js`, and the test/deploy workflow.
 
-1. **[Ampersand](https://github.com/AmpersandTarski/Ampersand)** - Core compiler and language implementation
-2. **[Prototype](https://github.com/AmpersandTarski/prototype)** - Visual interface framework for Ampersand applications  
-3. **[RAP](https://github.com/AmpersandTarski/RAP)** - Repository for Ampersand Projects (used by Open University)
-4. **[AmpersandTarski.github.io](https://github.com/AmpersandTarski/AmpersandTarski.github.io)** - Documentation website builder
+## 🏗 The project structure
 
-## 🔧 Development Workflow
+The Ampersand ecosystem consists of four repositories:
 
-### Architecture Resources
-- **[Architecture of an Ampersand Application](../reference-material/architecture-of-an-ampersand-application.md)** - Understanding what Ampersand produces
-- Technical specifications and system design documentation
+1. **[Ampersand](https://github.com/AmpersandTarski/Ampersand)** — the core compiler and language implementation.
+2. **[Prototype](https://github.com/AmpersandTarski/prototype)** — the interface framework for Ampersand applications.
+3. **[RAP](https://github.com/AmpersandTarski/RAP)** — Repository for Ampersand Projects (used by the Open University).
+4. **[AmpersandTarski.github.io](https://github.com/AmpersandTarski/AmpersandTarski.github.io)** — the documentation website builder.
 
-### Team Coordination
+## 🔧 Development workflow
 
-**Regular Meetings:**
-- **Weekly Overview**: Monday 11:30 (1 hour) - NUTwente/Ampersand coordination
-- **Daily Standup**: Tuesday-Friday 11:30 (30 minutes) - Progress updates
-- **Sprint Events** (End of sprint, Fridays):
-  - Sprint Review: 9:00 (50 minutes)
-  - Sprint Retrospective: 10:00 (50 minutes) 
-  - Sprint Planning: 11:00 (50 minutes)
+- Understand what Ampersand produces: **[Architecture of an Ampersand application](../reference-material/architecture-of-an-ampersand-application.md)**.
+- When you work on documentation, edit the `docs/` folder of the **right repository** and work in the **`documentation` branch** — this keeps documentation changes from triggering the heavy build pipelines. Update the relevant `sidebar.js` when you add a page.
 
-**Communication Channels:**
-- **Microsoft Teams**: [Project A & NUT-Vluchtelingen open source](https://teams.microsoft.com/l/team/19%3ayM9P1tFiWIADqDUbLDyX7ksB1Oavi04StkxyS6grh7A1%40thread.tacv2/conversations?groupId=09b86f1c-3ba6-411d-9b16-f0915eb2ed8a&tenantId=a254b169-0a6b-47f9-af4c-169704421c2e)
-- **WhatsApp Group**: Ampersand team communication
-- **GitHub**: [AmpersandTarski Organization](https://github.com/orgs/AmpersandTarski/people)
+## 💡 Where you can help
 
-### GitHub Workflow
+- **Core development**: compiler improvements, prototype-framework enhancements, RAP development.
+- **Documentation**: guides, tutorials and reference material.
+- **Quality**: tests, code review, performance, and bug fixes.
 
-**Required Access:**
-- Membership in [AmpersandTarski](https://github.com/orgs/AmpersandTarski/people) organization
-- [Ordina A-team](https://github.com/orgs/AmpersandTarski/teams/ordina-a-team/members) team membership
+## Guidelines
 
-**Documentation Workflow:**
-- Work in the **documentation branch** when creating/editing documentation
-- Ensure documents are in the correct repository's docs folder
-- Update relevant sidebar.js files when adding new documentation
+- Follow the established coding standards and best practices.
+- Document your changes (see above).
+- Test thoroughly before submitting.
+- Keep the focus on user needs and maintainability.
 
-## 💡 Contribution Areas
+Ready to contribute? Start with the [onboarding guide](../guides/onboarding.md), and when you're ready to document your work, follow the [documentation guide](../../prototype/guides/documenting-prototype-changes.md).
 
-### Core Development
-- Ampersand language compiler improvements
-- Prototype framework enhancements
-- RAP application development
-
-### Documentation
-- User guides and tutorials
-- Technical reference materials
-- API documentation
-- Architecture diagrams
-
-### Quality Assurance
-- Testing and validation
-- Code reviews
-- Performance optimization
-- Bug fixes and maintenance
-
-## 📚 Quick Reference
-
-### Key Contacts
-- **Stef Joosten**: Project leadership and strategic direction
-- **Han Joosten**: Access management and technical coordination
-
-### Important Guidelines
-- Follow established coding standards and best practices
-- Document all changes appropriately
-- Test thoroughly before submitting contributions
-- Participate actively in team meetings and reviews
-- Maintain focus on user needs and system maintainability
-
-## 🔗 External Resources
-
-- **GitHub Organization**: [AmpersandTarski](https://github.com/AmpersandTarski)
-- **Documentation Website**: [ampersandtarski.github.io](https://ampersandtarski.github.io/)
-- **Project Coordination**: Microsoft Teams channels and meetings
-
-Ready to contribute? Start with the [onboarding process](../guides/onboarding.md) and explore the [Contributor's guide](../guides/onboarding.md) section in the main menu for comprehensive resources. When you're ready to document your work, follow our [documentation guide](../../prototype/guides/documenting-prototype-changes.md).
-
-Welcome to the team! 🎉
+Welcome aboard! 🎉
