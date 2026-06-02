@@ -225,6 +225,11 @@ module.exports = {
             id: 'ampersand/conceptual/why-declarative'
         },
         {
+            label: 'Business Rules Manifesto',
+            type: 'doc',
+            id: 'ampersand/why-ampersand/BRManifestoAndAmpersand'
+        },
+        {
             label: 'Modelling',
             type: 'category',
             items: [
