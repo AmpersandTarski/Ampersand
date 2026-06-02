@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
+- Add `CLAUDE.md` with repository conventions (release-notes enforcement, docs publishing branch, internal-notes convention).
 
 
 ## v5.5.6
