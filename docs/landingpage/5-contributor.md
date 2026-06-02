@@ -40,6 +40,14 @@ The Ampersand ecosystem consists of four repositories:
 - Understand what Ampersand produces: **[Architecture of an Ampersand application](../reference-material/architecture-of-an-ampersand-application.md)**.
 - When you work on documentation, edit the `docs/` folder of the **right repository** and work in the **`documentation` branch** — this keeps documentation changes from triggering the heavy build pipelines. Update the relevant `sidebar.js` when you add a page.
 
+## 📦 Submitting your contribution
+
+1. Create a branch for your change (or work from a fork if you are not a member of the organisation).
+2. Open a pull request. Documentation changes target the **`documentation`** branch; code changes follow the normal review process.
+3. **Add a release note for code changes.** Any pull request that touches files **outside `docs/`** must add an entry to `ReleaseNotes.md`, or the *Check release notes* CI check fails. Pure documentation changes (only `docs/**`) are exempt.
+4. **Let CI run.** Documentation changes are checked by the documentation-hygiene workflow (no duplicate sidebar ids, no broken references, no internal notes published). Changes to the build kernel (`src`, `app`, the package/stack files, and so on) run the build, quality and formatting workflows. Make sure the checks pass.
+5. A maintainer reviews and merges your pull request.
+
 ## 💡 Where you can help
 
 - **Core development**: compiler improvements, prototype-framework enhancements, RAP development.
