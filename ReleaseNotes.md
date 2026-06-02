@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## Unreleased
+- CI/release: drop the macOS build entirely. GitHub deprecated the macos-13 runner and the Apple-Silicon (macos-14) build was failing; since Ampersand runs under Linux/Docker on macOS anyway, the native macOS binary is no longer built or attached to releases. Prebuilt binaries are now Linux and Windows; on macOS, use Docker or build from source.
+
+
 ## v5.5.6
 - [#1613](https://github.com/AmpersandTarski/Ampersand/issues/1613) Harvest owl:DatatypeProperty from turtle files
 
