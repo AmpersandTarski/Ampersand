@@ -35,6 +35,12 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
 - `scripts/check-docs-sidebar.js` (run in CI) fails on duplicate sidebar ids, broken
   sidebar references, and scratch notes in the published tree. Run it before pushing
   documentation changes.
+- `scripts/check-docs-links.js` (run in CI) fails on broken **intra-repo** doc links —
+  including links to a `README`/`index` without `.md` (those map to the folder route,
+  not `/README`) and casing mismatches. It deliberately skips cross-repo links
+  (`../../prototype/...`, `../../../rap/...`) and external links to avoid false
+  positives, so a green run never blocks a good PR. Link cross-repo and README targets
+  with the `.md` extension so Docusaurus resolves them to the right route.
 
 ## Gotcha
 

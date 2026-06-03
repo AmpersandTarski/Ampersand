@@ -9,6 +9,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/check-docs-sidebar.js"
+      - "scripts/check-docs-links.js"
       - ".github/workflows/docs-hygiene.yml"
   push:
     branches:
@@ -17,6 +18,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/check-docs-sidebar.js"
+      - "scripts/check-docs-links.js"
       - ".github/workflows/docs-hygiene.yml"
 
 jobs:
@@ -29,3 +31,5 @@ jobs:
           node-version: "20"
       - name: Check documentation hygiene
         run: node scripts/check-docs-sidebar.js
+      - name: Check documentation links
+        run: node scripts/check-docs-links.js
