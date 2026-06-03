@@ -12,6 +12,18 @@ Every pull request that changes a file **outside `docs/`** must add an entry to
 Pull requests that touch **only** `docs/**` are exempt — that workflow sets
 `paths-ignore: docs/**` — so pure documentation changes need no ReleaseNotes entry.
 
+## Branching & merging
+
+- The **`documentation`** branch is merged **directly** (fast-forward / direct
+  merge) — **no pull request**. Other branches (notably `main`) go through a PR.
+- A push to `main` or `documentation` that changes `docs/**` automatically
+  rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
+  `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual
+  deploy and no PR are needed to publish docs.
+- The site build runs Docusaurus with `onBrokenLinks: 'throw'` on case-sensitive
+  Linux, so a link whose casing differs from the target file (fine on macOS)
+  breaks the build. Keep doc filenames and links lowercase.
+
 ## Documentation
 
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
