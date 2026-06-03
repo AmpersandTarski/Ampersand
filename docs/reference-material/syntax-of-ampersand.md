@@ -1392,7 +1392,7 @@ By specifying a markup language, Ampersand interprets the text as specified. If 
 PURPOSE RULE CheckDigitCharacter
 IN ENGLISH MARKDOWN
 {+ This rule enforces the use of a check digit character
-   as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
+   as described in [ISO 7064](https://en.wikipedia.org/wiki/ISO/IEC_7064).
    This is applicatble to IBAN bank account numbers.
 +}
 ```
