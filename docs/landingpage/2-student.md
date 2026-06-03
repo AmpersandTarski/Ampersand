@@ -4,7 +4,7 @@ title: For students
 
 # Learning Ampersand
 
-If you are eager to learn how to use Ampersand, you have come to the right place. With Ampersand you specify an information system in terms of *business rules*, and let the tooling generate a working prototype for you. This page is your guided route from "never heard of it" to "I can build my own".
+There is a particular satisfaction in watching something you described come to life and run. You can have that here: sketch a small world — who may enrol in which course, say — click through a working application within the hour, and then deepen your understanding one idea at a time. What follows is a short, ordered path — tutorial first, then the ideas beneath it, then practice — with rough timings, so you can see the whole route before you take a single step, and judge whether it suits the way you like to learn.
 
 You do not need any prior knowledge of Ampersand. A little familiarity with information systems helps, but the tutorial explains the ideas as you go. The whole path below takes roughly a day of study, and you can stop and resume at any step.
 

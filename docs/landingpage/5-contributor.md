@@ -4,11 +4,11 @@ title: For contributors
 
 # Contributing to Ampersand
 
+People who care make worthwhile software, and there is genuinely satisfying work here for someone who does — a compiler, a framework, and the documentation around them, all in the open. Below you will find how we organise the project, where your kind of work lives, and exactly what a first contribution involves — branch, change, release note, review — so you can see clearly what you would be stepping into, and decide, on your own terms, whether to take a seat.
+
 Many people have contributed to the Ampersand project, each in their own way. We're proud of the results, and amazed daily at the software that tiny specifications can produce.
 
 If you want to be part of it, [open an issue on GitHub](https://github.com/AmpersandTarski/Ampersand/issues) with your own GitHub account, or contact [Stef Joosten](https://github.com/stefjoosten) on GitHub to discuss your contribution.
-
-This page is your central hub for everything you need as an Ampersand contributor.
 
 ## 🚀 Getting started
 

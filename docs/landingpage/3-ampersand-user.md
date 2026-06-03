@@ -4,7 +4,7 @@ title: For users of Ampersand
 
 # Building an information system
 
-If you want to build an information system with Ampersand, you have come to the right place. You write a specification in terms of *concepts*, *relations* and *business rules*, and Ampersand generates a working web-based prototype from it. This page is the journey from a first idea to a deployed, maintainable application.
+Imagine the rules you write being the system itself — not a description you keep hopefully in step with the code, but the very thing that runs. That is what this page invites you to build on: state what must hold in your domain, and Ampersand generates the working application that keeps it true, change after change. The journey below sets out that path in stages — from a first model to a deployed, maintainable application — and names what each stage asks of you, so you can weigh, before you begin, whether this way of building fits your work.
 
 If you have never used Ampersand before, start with the [student learning path](./2-student.md) and come back here once you have run your first prototype.
 

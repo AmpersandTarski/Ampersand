@@ -3,7 +3,8 @@ title: Just curious?
 ---
 
 # Why Ampersand?
-Thank you for being curious. 
+
+Some ideas are worth slowing down for. Here is one: write down the rules a business lives by — precisely enough — and Ampersand generates a working information system that upholds them. It is a large claim with a clean idea underneath, and half the pleasure is seeing how far that idea reaches. If that is the kind of thing that draws you in, read on: this page paints a plain-language picture of what Ampersand is, what sets it apart, and what it is not — enough to decide, in a few minutes, whether it deserves more of your time.
 
 Ampersand automates the development of software for information systems.
 Ampersand is many things:
