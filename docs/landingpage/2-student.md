@@ -4,9 +4,9 @@ title: For students
 
 # Learning Ampersand
 
-There is a particular satisfaction in watching something you described come to life and run. You can have that here: sketch a small world — who may enrol in which course, say — click through a working application within the hour, and then deepen your understanding one idea at a time. What follows is a short, ordered path — tutorial first, then the ideas beneath it, then practice — with rough timings, so you can see the whole route before you take a single step, and judge whether it suits the way you like to learn.
+There is a particular satisfaction in watching something you described come to life and run. You can have that very kick here: sketch a small world — who may enrol in which course, say — click through a working application within the hour, and then deepen your understanding one idea at a time. What follows is a short, ordered path — tutorial first, then the ideas beneath it, then practice. So, you can see the whole route before you take a single step and judge whether it suits the way you like to learn.
 
-You do not need any prior knowledge of Ampersand. A little familiarity with information systems helps, but the tutorial explains the ideas as you go. The whole path below takes roughly a day of study, and you can stop and resume at any step.
+You do not need any prior knowledge of Ampersand. A little familiarity with information systems helps, but the tutorial explains the ideas as you go, one step at a time.
 
 ## Your learning path
 
@@ -18,11 +18,11 @@ Start with the [tutorial](../tutorial-rap4). You will look at a small informatio
 
 While you work through the tutorial and start writing your own code, keep the [Syntax of Ampersand](../reference-material/syntax-of-ampersand) open in a second tab. It is a *reference*, not a course: use it to look up the exact form of a statement the moment you need it, rather than reading it front to back. The companion pages on [terms](../reference-material/terms) and [interfaces](../tutorial/interfaces) go one level deeper when you are ready.
 
-### Step 3 — Understand the idea behind the rules *(about 1 hour)*
+### Step 3 — Understand the idea behind the rules
 
 Ampersand rests on a small but powerful idea: a business rule is a statement in [relation algebra](https://en.wikipedia.org/wiki/Relational_algebra). You do not need to master the mathematics to be productive, but a little goes a long way. Read the *conceptual model* section of the tutorial, and follow the link to relation algebra when you want to understand *why* a rule constrains your data the way it does.
 
-### Step 4 — Practice on your own *(open-ended)*
+### Step 4 — Practice on your own
 
 Learning sticks when you build something. Study the [examples](../examples) of real Ampersand specifications to see idioms in context, then take on the [exercises](../exercises) to sharpen your skills. Try to specify a small system of your own — even a to-do list or a library — and run it in RAP4.
 

@@ -6,7 +6,7 @@ title: For scientists
 
 Behind Ampersand sits a claim worth examining: that a relation-algebraic theory of information systems can be precise enough for a compiler to generate the very software it describes — with defined semantics, a compiler that embodies them, and two decades of peer-reviewed work to reason from. If you look for ideas solid enough to stand on and extend, read on: below, you will find the theoretical foundation, the publications and the concrete results, all out in the open — enough to judge for yourself whether this is ground worth building on.
 
-Ampersand is a research programme into the automatic generation of information systems from formal specifications. It originates at the Open University of the Netherlands, with research contributions over the years from partners including TNO and Ordina. The quest is to develop better information systems, faster, by keeping specifications as close to *the business* as possible and generating software that is actually deployed in production.
+Ampersand is a research programme into the automatic generation of information systems from formal specifications. It originated at the Open University of the Netherlands, with research contributions over the years from partners including TNO and Ordina. The quest is to develop better information systems, faster, by keeping specifications as close to *the business* as possible and generating software that is actually deployed in production.
 
 ## The theoretical foundation
 

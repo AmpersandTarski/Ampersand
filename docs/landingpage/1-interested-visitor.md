@@ -4,15 +4,17 @@ title: Just curious?
 
 # Why Ampersand?
 
-Some ideas are worth slowing down for. Here is one: write down the rules a business lives by — precisely enough — and Ampersand generates a working information system that upholds them. It is a large claim with a clean idea underneath, and half the pleasure is seeing how far that idea reaches. If that is the kind of thing that draws you in, read on: this page paints a plain-language picture of what Ampersand is, what sets it apart, and what it is not — enough to decide, in a few minutes, whether it deserves more of your time.
+Some ideas are worth slowing down for. Here is one: If you know the rules of your business, you have what you need to generate a working information system. It is a large claim with a clean idea underneath, and half the pleasure is seeing how far that idea reaches. If that is the kind of thing that draws you in, read on: this page paints a plain-language picture of what Ampersand is, what sets it apart, and what it is not — enough to decide, in a few minutes, whether it deserves more of your time.
 
 Ampersand automates the development of software for information systems.
 Ampersand is many things:
-* It is a [programming language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can define your own information systems.
+* It is a migration instrument that lets you clean up your data, get rid of spreadsheet administrations, and simplify your business accordingly.
 * It is a way of formalizing domain models to standardize language and produce software at the same time.
 * It is a scientific quest into generative software, making formal theories useful for practitioners.
-* It is a [development environment](https://rap.cs.ou.nl) in which you can make your prototypes.
+* It is a development environment in which production information systems have been built.
+* It is a prototyping environment, that lets you experiment with real users of a future application during its design.
 * It is an [open source project](https://github.com/AmpersandTarski/), driven by enthousiasts without budget.
+* It is a [programming/specification language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can specify your own information systems.
 
 In the Ampersand project,
 we believe in correct data, to help information intensive organizations to prevent mistakes and save them the effort of fixing those mistakes.
