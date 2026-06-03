@@ -19,7 +19,7 @@ Do the [tutorial](../tutorial-rap4). It walks you through a small system end to 
 This is where most of your work happens. Capture your domain as concepts, relations and rules, and let the rules express the business logic.
 
 - Write correct code with the [Syntax of Ampersand](../reference-material/syntax-of-ampersand) as your companion — keep it open while you work.
-- Learn the craft of modelling from the [best practices for Ampersand modellers](../guides/best-practices) and the [Modelling](../modeling/README) background.
+- Learn the craft of modelling from the [best practices for Ampersand modellers](../guides/best-practices) and the [Modelling](../modeling/README.md) background.
 - Reuse what exists: there are [modules available for re-use](../reusing-available-modules) that can save you a lot of time.
 
 ### Stage 3 — Install Ampersand
