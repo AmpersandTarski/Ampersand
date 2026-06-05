@@ -1,0 +1,39 @@
+CONTEXT Oscillatie IN DUTCH
+-- Minimale reproductie van de oscillatie "Maximum reruns exceeded".
+-- BUGGY versie. Zet de juiste POPULATION aan (onderaan) om #1 of #2 te zien.
+
+RELATION eppoCodeBron[Naam*Code]            -- de "spreadsheet": naam -> EPPO-code
+RELATION voorkeursNaam[Organisme*Naam] [UNI,INJ]   -- sleutel 1 van Organisme
+RELATION eppoCode[Organisme*Code] [UNI]            -- sleutel 2 van Organisme
+
+-- Creatie, NAAM-gestuurd (de buggy keuze): maak per naam (die nog geen voorkeursNaam is) een Organisme.
+ROLE ExecEngine MAINTAINS maakOrganisme
+RULE maakOrganisme : eppoCodeBron - voorkeursNaam~;V[Organisme*Code]
+                   |- voorkeursNaam~;I[Organisme];eppoCode
+VIOLATION ( TXT "{EX} InsAtom;Organisme"
+          , TXT "{EX} InsPair;voorkeursNaam;Organisme;_NEW;Naam;", SRC I[Naam]
+          , TXT "{EX} InsPair;eppoCode;Organisme;_NEW;Code;", TGT I )
+
+-- Merge per code: twee Organismen met dezelfde code zijn hetzelfde.
+ROLE ExecEngine MAINTAINS uniekeCode
+RULE uniekeCode : eppoCode;eppoCode~ |- I[Organisme]
+VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
+
+-- Merge per naam: twee Organismen met dezelfde voorkeursNaam zijn hetzelfde.
+ROLE ExecEngine MAINTAINS uniekeNaam
+RULE uniekeNaam : voorkeursNaam;voorkeursNaam~ |- I[Organisme]
+VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
+
+-- OSCILLATIE #1 (synoniemen: twee namen -> één code). Botsende regels: uniekeCode <-> maakOrganisme.
+POPULATION eppoCodeBron CONTAINS
+  [ ("Solanum tuberosum", "SOLTU")
+  ; ("Solanum esculentum", "SOLTU")
+  ]
+
+-- OSCILLATIE #2 (typefout: één naam -> twee codes). Botsende regels: uniekeNaam <-> maakOrganisme.
+-- Zet #1 uit en deze aan om #2 te zien:
+-- POPULATION eppoCodeBron CONTAINS
+--   [ ("Begomovirus coheni", "TYLCV0")
+--   ; ("Begomovirus coheni", "TYLCVO")
+--   ]
+ENDCONTEXT

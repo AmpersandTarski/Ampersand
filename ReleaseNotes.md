@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+- Documentation: add a worked student lesson on diagnosing ExecEngine oscillations (`Maximum reruns exceeded`) under `docs/guides/oscillations/`, with a buggy/fixed demo script pair. Linked from the Guides sidebar and the Troubleshooting page.
 - CI: upgrade `actions/checkout` and `actions/setup-node` to v5 (Node.js 24), resolving the Node.js 20 deprecation warning on the runners.
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
 - Add `CLAUDE.md` with repository conventions (release-notes enforcement, docs publishing branch, internal-notes convention).

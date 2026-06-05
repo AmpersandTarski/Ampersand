@@ -8,5 +8,10 @@ Whenever you run into problems with Ampersand, and you cannot find what you are 
 <!---
 This is ment to become a list that helps users with frequent asked questions
 -->
+ 1. **`Maximum reruns exceeded` while running a prototype.** The ExecEngine is caught in an
+    *oscillation*: your invariants are, given the data, jointly unsatisfiable, so the automatic
+    repair never reaches a fixpoint. Do **not** raise the rerun limit — that hides the
+    contradiction. The worked case [Diagnosing oscillations](guides/oscillations/README.md)
+    (in Dutch) shows how to trace it back to the colliding rules and fix it properly.
  1. The documentation is far from complete. We are working on it though. If you are stuck, please create an issue! You are more than welcome! 
 

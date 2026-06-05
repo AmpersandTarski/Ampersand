@@ -1,0 +1,37 @@
+CONTEXT Oscillatie IN DUTCH
+-- OPGELOSTE versie van oscillatie #1 (synoniemen).
+-- Verandering t.o.v. buggy: creatie is CODE-gestuurd, en een extra regel bewaart
+-- de niet-voorkeursnamen als synoniem (anders gaan ze bij de merge verloren).
+
+RELATION eppoCodeBron[Naam*Code]
+RELATION voorkeursNaam[Organisme*Naam] [UNI,INJ]
+RELATION eppoCode[Organisme*Code] [UNI]
+RELATION synoniem[Organisme*Naam]                  -- nieuw: opslag voor extra namen
+
+-- Creatie, CODE-gestuurd: maak een Organisme voor elke code die er nog geen heeft.
+ROLE ExecEngine MAINTAINS maakOrganisme
+RULE maakOrganisme : eppoCodeBron - V[Naam*Organisme];eppoCode
+                   |- voorkeursNaam~;I[Organisme];eppoCode
+VIOLATION ( TXT "{EX} InsAtom;Organisme"
+          , TXT "{EX} InsPair;voorkeursNaam;Organisme;_NEW;Naam;", SRC I[Naam]
+          , TXT "{EX} InsPair;eppoCode;Organisme;_NEW;Code;", TGT I )
+
+-- Bewaar elke bronnaam die via dezelfde code bij een Organisme hoort maar niet de voorkeursNaam is.
+ROLE ExecEngine MAINTAINS maakSynoniem
+RULE maakSynoniem : eppoCodeBron;eppoCode~ - voorkeursNaam~ |- synoniem~
+VIOLATION ( TXT "{EX} InsPair;synoniem;Organisme;", TGT I, TXT ";Naam;", SRC I )
+
+ROLE ExecEngine MAINTAINS uniekeCode
+RULE uniekeCode : eppoCode;eppoCode~ |- I[Organisme]
+VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
+
+ROLE ExecEngine MAINTAINS uniekeNaam
+RULE uniekeNaam : voorkeursNaam;voorkeursNaam~ |- I[Organisme]
+VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
+
+-- Synoniem-geval: convergeert nu (1 Organisme met code SOLTU, één voorkeursNaam + één synoniem).
+POPULATION eppoCodeBron CONTAINS
+  [ ("Solanum tuberosum", "SOLTU")
+  ; ("Solanum esculentum", "SOLTU")
+  ]
+ENDCONTEXT
