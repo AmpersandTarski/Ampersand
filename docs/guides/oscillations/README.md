@@ -21,14 +21,14 @@
 
 ## Before you start: rules and the ExecEngine
 
-Oscillations are an ExecEngine phenomenon, so you need just enough about rules to follow them.
+Oscillations are an ExecEngine phenomenon, so let us dive into it.
 For the full story, see [the RULE statement](../../reference-material/syntax-of-ampersand.md#the-rule-statement)
 in the reference material.
 
 A **rule** states something that should always hold, usually of the form `antecedent |-
 consequent` ("antecedent is a subset of consequent"). A population that breaks a rule has
 **violations**: the pairs in the antecedent that are missing from the consequent. What happens
-to a violation depends on the kind of rule. There are **three**:
+to a violation depends on the kind of rule:
 
 - **Invariant** — the default: a `RULE` with no role. It must hold after every transaction. A
   violation makes Ampersand **reject** the transaction and roll everything back. For a data
@@ -69,8 +69,8 @@ If this never converges to a fixpoint, the loop would run forever. So there is a
 Maximum reruns exceeded. Rules fixed in last run: <rule A>, <rule B>
 ```
 
-Remember that last line: **"Rules fixed in last run" names exactly the rules that were still
-fixing in the last round** — those are your suspects.
+That last line names your suspects: **"Rules fixed in last run"** lists exactly the rules
+still fixing in the last round.
 
 ---
 
@@ -116,8 +116,8 @@ whole EPPO list was not loaded, while the app still "seemed" to run.
 
 ## 2. The analysis — how do you trace it back?
 
-Work from symptom to cause, not the other way around. Do not theorise about the fix before
-you have established the cause.
+This section works from symptom to cause: it establishes the cause first, and only then
+chooses a fix.
 
 **Step 1 — Read the two guilty rules from the error message.** Here: `OrganismeUniekeEPPO`
 and `eppoCodeMaaktOrganisme`. Find their definitions in the `.adl` source:
@@ -158,7 +158,7 @@ FROM <source table> GROUP BY WetenschappelijkeNaam HAVING COUNT(DISTINCT EPPOcod
 ```
 
 In the FC5 source it turned out: **several names point to the same EPPO code** (synonyms).
-That is the trigger. Hold on to this for the next section.
+That is the trigger.
 
 ---
 
@@ -184,7 +184,7 @@ The engine never reaches zero violations and stops at the rerun limit.
 
 ### 3b. Mathematical: the rules are jointly unsatisfiable
 
-This is the core you really want to grasp. Write the requirements as statements about
+Write the requirements as statements about
 relations (in relation algebra; read `;` as composition and `~` as converse):
 
 - `voorkeursNaam` is `[UNI,INJ]` → an **injective partial function** `Organisme → Naam`: each
@@ -228,7 +228,7 @@ once. Given this data, the specification is **unsatisfiable (inconsistent)**.
 
 ## 4. The solution choices — and the principle behind them
 
-When rules are jointly unsatisfiable with the data, you have three knobs. Choose deliberately.
+When rules are jointly unsatisfiable with the data, you have three choices:
 
 **Choice A — Weaken the model so the requirements can hold together.**
 The contradiction arose because we demanded both "one Organisme per name" and "one Organisme
@@ -325,7 +325,7 @@ Here **choice B (repair the data)** is right, not A. An important methodological
 > **Lesson 3.** One symptom (oscillation), two different causes, two different correct fixes.
 > Synonyms are a *model issue* (weaken the model); typos are a *data issue* (repair the data).
 > The mathematical diagnosis — which side of the bijection is violated, and is that a genuine
-> domain phenomenon or an error? — points you to the right knob.
+> domain phenomenon or an error? — points you to the right choice.
 
 ### Robustness afterwards: invariant → process rule
 
@@ -347,7 +347,8 @@ as an unreadable signal.)
 
 ## 7. Validation — how do you know it really works?
 
-Not "it seems to work", but measure. After the rebuild (`./nvwa_prototype_init.sh`):
+A fix is verified by measurement, not by the impression that it works. After the rebuild
+(`./nvwa_prototype_init.sh`):
 
 1. **No more oscillation** in the log:
    ```bash
@@ -408,7 +409,7 @@ easiest in a [RAP environment](../../tutorial-rap4.md), or with a local
   colliding rules;
 - with `oscillatie-fixed.adl` the run descends cleanly to zero violations.
 
-**Experiments that cement understanding:**
+**Experiments to try:**
 
 1. In the buggy version, change the population to two *different* codes for two *different*
    names. → No oscillation. (Why? The bijection requirement is not violated.)
@@ -428,12 +429,11 @@ easiest in a [RAP environment](../../tutorial-rap4.md), or with a local
   contradiction.
 - Diagnose **mathematically**: which impossible requirement do the rules impose together
   (here: a bijection name ↔ code), and which side does the data violate?
-- Choose a knob deliberately: **weaken the model** (A, for a genuine domain phenomenon such as
+- Choose with oscillation risks in mind: **weaken the model** (A, for a genuine domain phenomenon such as
   synonyms), **repair the data** (B, for errors — consult the source of truth), or **demote an
   invariant to a signal** (C, when a human must decide).
 - **Validate** that the loop is gone, the transaction succeeds, and the invariants now really
   hold.
-- Never just raise the rerun limit: that hides a logical contradiction instead of solving it.
 
 > An oscillation is not a setback but **feedback**: the runtime proves that your rules
 > contradict each other and points to where. Use that knowledge to make your specification
