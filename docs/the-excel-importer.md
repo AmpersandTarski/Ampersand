@@ -102,9 +102,9 @@ You can have blocks on different sheets and you can have multiple blocks on one 
 
 Here is an example of a block:
 
-| `[A]` | `rAA` | `rAB` | `rAC` | `[rAC,]` | `rAC` | `sAB` | `[tAD/]` | `uBA~` |
+| `[A]` | `rAA` | `rAB` | `rAC` | `rAC` | `rAC` | `sAB` | `tAD` | `uBA~` |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `A` | `A` | `B` | `C` | `C` | `C` | `B` | `Delta` | `B` |
+| `A` | `A` | `B` | `C` | `[C,]` | `C` | `B` | `[Delta/]` | `B` |
 | `alfa1` | `alfa1` | `beta1` | `char1` | `char2` | `char3` | `beta2` | `d1/d2` | `beta1` |
 |  | `CMT` |  |  |  |  |  |  | `beta2` |
 | `alfa2` |  | `beta2` |  | `char2` |  |  | `d2/pete/d1` | `beta3` |
@@ -143,9 +143,9 @@ So, assuming that concept A is in the first column of row 2, a relation name r i
 
 9. In any data row, the leftmost cell and the cell underneath a relation are considered a pair in that relation, provided they are not empty. So, the cells in row A together with the cells in a column constitute the contents of the relation specified in the first two rows.
 10. Sometimes, people put multiple values in one cell, separated by a delimiter like comma, semicolon, or whatever.
-    If the second row of a column specifies not only a concept, but also a delimiter, you can handle this situation.
-    The importer recognizes `[rAC,]` as a multi-column, which means that cells can contain multiple values separated by a comma.
-    Similarly, `[tAD/]` means that cells can contain multiple values separated by a slash symbol.
+    To handle this, specify the delimiter in the second header row together with the concept: wrap the concept name in square brackets with the delimiter just before the closing bracket.
+    The importer recognizes `[C,]` as a multi-column, which means that cells in that column can contain multiple values separated by a comma.
+    Similarly, `[Delta/]` means that cells can contain multiple values separated by a slash symbol.
 
 This means that the example is equivalent to the following population specification.
 Note that the importer disregards the cell containing 'CMT':
@@ -186,7 +186,7 @@ POPULATION uBA CONTAINS [ ("beta1"), ("alfa1")
    This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc.
    Note, however, that Excel has flaws, which cause some functions to misbehave. Always check your results.
    (We know, for example, that functions `VLOOKUP` and `HLOOKUP` have produced errors in the past, so you may avoid such functions.)
-3. If you use '\_NEW' in the first column, the importer generates a new atom that differs from all other atoms. If you use '\_NEW' in a subsequent column on the same row, this stands for the newly generated atom from the first column \(which you can use e.g. to populate property-relations\).
+3. If you use '\_NEW' in the first column, the importer generates a new atom that differs from all other atoms. If you use '\_NEW' in a subsequent column on the same row, this stands for the newly generated atom from the first column \(which you can use e.g. to populate property-relations\). The runtime importer gives each new atom a random identifier. The compile-time importer instead derives a stable identifier from the file, sheet and row, so the same spreadsheet always yields the same population.
 4. It is possible to store all sorts of data in the spreadsheet that will not interfere with the database population. The contents of the following cells is disregarded and can therefore be used for other purposes:
    * cells in a row whose first cell is empty.
    * cells in a column where the cell that specifies the relation name or the TGT concept is empty.
@@ -199,7 +199,7 @@ POPULATION uBA CONTAINS [ ("beta1"), ("alfa1")
    Error messages, validation feedback, or debugging is not yet implemented in the runtime importer, so you get crappy error messages if anything fails.
 
 3. **Differences between the compile-time and run-time importer:**
-   1. The runtime importer does not implement multi-columns yet.
+   The run-time importer now supports multi-columns as well, so both importers handle the block format in the same way. The main remaining difference is in error reporting (see point 2 above).
 
 4. **built-in datatypes:**
    The importer recognizes the built-in datatypes of a spreadsheet (text, numbers, booleans, dates) and transforms them to Ampersand's built-in datatypes. The exact rules are described in [Datatype conversion](#datatype-conversion) below. If a cell does not match the type Ampersand expects for that concept, you get an error.

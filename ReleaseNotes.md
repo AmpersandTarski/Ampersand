@@ -18,6 +18,8 @@
 - **Warnings for Cartesian products**: The compiler now warns when an expression produces a Cartesian product. The warning includes the original term text so the source location is easy to find.
 - **Optimized normalization**: Improved the performance of `normStep` in the term normalizer.
 - **Diagnosis output**: Added a diagnosis module (`Ampersand.Diagnosis`) and an Excel (`.xlsx`) export of diagnostic results.
+- **Excel importer — INTERFACE approach at compile time**: The compile-time importer now imports a worksheet through an `INTERFACE` whenever the worksheet title equals the interface label, exactly like the runtime importer. Cell A1 holds the target concept and the column headers are sub-interface labels (with the `[label,]` multi-value syntax), each resolving to its editable relation (flipped when the sub-interface uses `~`). Previously such worksheets were silently ignored.
+- **Excel importer — `_NEW` support**: `_NEW` in column A now generates a fresh atom (and `_NEW` in a later column refers to that atom) for both the relation- and interface-approach. The compile-time importer derives a stable identifier from file/sheet/row (the runtime importer uses a random one). Note: `_NEW` was previously treated as a literal atom value.
 
 ## v5.4.3
 - [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
