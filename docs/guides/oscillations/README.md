@@ -3,6 +3,9 @@
 > **Who is this for?** Students and developers who work with Ampersand and want to understand
 > why the ExecEngine sometimes gets stuck with *"Maximum reruns exceeded"*.
 >
+> **Prerequisites.** You can read Ampersand and relation algebra. The Ampersand terms below link
+> to the reference material on first use.
+>
 > **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to your
 > rules, which collide, (3) understand that an oscillation expresses a mathematical inconsistency, and
 > (4) use such an oscillation as an *opportunity* to make your rules (or your data)
@@ -33,7 +36,7 @@ See [the RULE statement](../../reference-material/syntax-of-ampersand.md#the-rul
 the reference material for the full syntax.
 
 A rule of the form `antecedent |- consequent` ("antecedent is a subset of consequent") is broken
-by **violations**: the pairs in the antecedent that are missing from the consequent. What happens
+by **violations**: the [pairs](../../reference-material/dictionary.md) in the antecedent that are missing from the consequent. What happens
 next depends on the `ROLE ... MAINTAINS`:
 
 - **Invariant** — a `RULE` without `ROLE ... MAINTAINS`. It must hold after every transaction. A
@@ -56,9 +59,9 @@ in it starts with `{EX}` and calls a built-in function:
 
 | Function | Does |
 | --- | --- |
-| `InsAtom;C` | creates a new atom in concept `C` (placeholder `_NEW`) |
+| `InsAtom;C` | creates a new [atom](../../reference-material/atoms.md) in [concept](../../reference-material/syntax-of-ampersand.md#the-concept-statement) `C` (placeholder `_NEW`) |
 | `DelAtom;C;a` | deletes atom `a` from concept `C` |
-| `InsPair;r;A;a;B;b` | adds pair `(a,b)` to relation `r[A*B]` |
+| `InsPair;r;A;a;B;b` | adds pair `(a,b)` to [relation](../../reference-material/syntax-of-ampersand.md#the-relation-statement) `r[A*B]` |
 | `DelPair;r;A;a;B;b` | removes pair `(a,b)` from `r` |
 | `MrgAtoms;C;a;C;b` | merges atom `b` into `a`: all links of `b` move to `a`, `b` disappears |
 
@@ -66,7 +69,7 @@ in it starts with `{EX}` and calls a built-in function:
 
 1. Evaluate all automated rules and collect the violations.
 2. Run their `{EX}` fixes.
-3. Those fixes change the population → *new* violations may arise, or old ones may be solved.
+3. Those fixes change the [population](../../reference-material/syntax-of-ampersand.md#the-population-statement) → *new* violations may arise, or old ones may be solved.
    So: **rerun** (back to step 1).
 4. Stop once a round fixes nothing more (a **fixpoint**: violations = 0).
 
@@ -196,7 +199,7 @@ round:
    voorkeursNaam, so the rule fires twice: `Org1(voorkeursNaam=A1, eppoCode=X)` and
    `Org2(voorkeursNaam=A2, eppoCode=X)` appear.
 2. **Round 1, merge.** `OrganismeUniekeEPPO` sees two Organismen with code `X` → `MrgAtoms`.
-   The result is one Organisme. But `voorkeursNaam` is `[UNI]` (at most one per Organisme), so
+   The result is one Organisme. But `voorkeursNaam` is [`[UNI]`](../../reference-material/syntax-of-ampersand.md#properties) (at most one per Organisme), so
    after the merge only one name survives, say `A1`. **`A2` has lost its voorkeursNaam.**
 3. **Round 2, create.** Now `A2` is again the voorkeursNaam of no Organisme → the create rule
    fires again for `(A2, X)` → another Organisme appears for `A2`.
@@ -206,6 +209,9 @@ round:
 The engine never reaches zero violations and stops at the rerun limit.
 
 ### 3b. Mathematical: the rules are jointly unsatisfiable
+
+The relation properties used here — univalent (`UNI`), injective (`INJ`), and bijection — are
+defined in [the reference](../../reference-material/syntax-of-ampersand.md#properties).
 
 Write the requirements as statements about
 relations (in relation algebra; read `;` as composition and `~` as converse):
