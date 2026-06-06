@@ -27,36 +27,40 @@ in the reference material.
 
 A **rule** states something that should always hold, usually of the form `antecedent |-
 consequent` ("antecedent is a subset of consequent"). A population that breaks a rule has
-**violations**: the pairs in the antecedent that are missing from the consequent. What happens
-to a violation depends on the kind of rule:
+**violations**: the pairs in the antecedent that are missing from the consequent. Every rule is
+a constraint; what differs is how Ampersand enforces it. Three kinds matter here:
 
 - **Invariant** — the default: a `RULE` with no role. It must hold after every transaction. A
-  violation makes Ampersand **reject** the transaction and roll everything back. For a data
-  import, the whole import then fails.
-- **Process rule** — a `RULE` preceded by `ROLE <role> MAINTAINS`. A violation is allowed; it
-  shows up as a **signal** for that role (a person) to resolve. The transaction proceeds.
-- **Enforce rule** — a process rule whose role is the **ExecEngine**, a robot user. It resolves
-  a violation automatically by running the rule's `VIOLATION` script, so the data is repaired
-  every time, without a human. Ampersand also offers the dedicated
+  violation makes Ampersand block the transaction and roll everything back. For a data import,
+  the whole import then fails.
+- **Process rule** — a `RULE` you assign to a role with `ROLE <role> MAINTAINS`. A violation is
+  allowed; the user in that role gets a **signal**, which stays until that user resolves it. The
+  transaction proceeds.
+- **Automated rule** — a rule the **ExecEngine** restores by itself. You assign it to the
+  ExecEngine with `ROLE ExecEngine MAINTAINS` and write the repair as the rule's `VIOLATION`
+  script. The ExecEngine is a role the runtime plays itself, not a person, so it runs that
+  script on each violation and repairs the data without human intervention. The dedicated
   [`ENFORCE` statement](../../reference-material/syntax-of-ampersand.md#the-enforce-statement)
-  as concise sugar for the common case of keeping a relation's population in step with a term.
+  is concise sugar for the common case of keeping a relation's population in step with a term.
 
-Enforce rules are the crux here: because they **change the data by themselves**, they can keep
-changing it forever. That endless back-and-forth is the oscillation.
+The rules in this lesson are automated rules, and they are the crux: because they **change the
+data by themselves**, they can keep changing it forever. That endless back-and-forth is the
+oscillation.
 
-An enforce rule's `VIOLATION` script starts each instruction with `{EX}` and calls built-in
+An automated rule's `VIOLATION` script starts each instruction with `{EX}` and calls built-in
 functions:
 
 | Function | Does |
 | --- | --- |
 | `InsAtom;C` | creates a new atom in concept `C` (placeholder `_NEW`) |
+| `DelAtom;C;a` | deletes atom `a` from concept `C` |
 | `InsPair;r;A;a;B;b` | adds pair `(a,b)` to relation `r[A*B]` |
 | `DelPair;r;A;a;B;b` | removes pair `(a,b)` from `r` |
 | `MrgAtoms;C;a;C;b` | merges atom `b` into `a`: all links of `b` move to `a`, `b` disappears |
 
 **The rerun loop.** The ExecEngine works iteratively:
 
-1. Evaluate all enforce rules and collect the violations.
+1. Evaluate all automated rules and collect the violations.
 2. Run their `{EX}` fixes.
 3. Those fixes change the population → *new* violations may arise, or old ones may be solved.
    So: **rerun** (back to step 1).
@@ -242,7 +246,7 @@ make the mapping correct. → Fits **typos and placeholders** (see §6, oscillat
 
 **Choice C — Demote an overly strict invariant to a signal.**
 Sometimes you do not want to repair automatically; you want a human to decide. Change the rule
-from an invariant (or an enforce rule) into a **process rule** under a human role. The
+from an invariant (or an automated rule) into a **process rule** under a human role. The
 violation then crashes nothing; it appears as a worklist. → Fits **checks** that really mean
 "report this to the administrator".
 
@@ -339,7 +343,7 @@ RULE checkEPPOcode : ...
 ```
 
 Now an inconsistency no longer blocks the import; it appears as a signal for the role
-`IMPORTER`. (Note: do this *only* for *readable checks*. An `{EX}` fix makes a rule an enforce
+`IMPORTER`. (Note: do this *only* for *readable checks*. An `{EX}` fix makes a rule an automated
 rule, which belongs to the ExecEngine, not to a human role — otherwise the `{EX}` text shows up
 as an unreadable signal.)
 
@@ -351,9 +355,11 @@ A fix is verified by measurement, not by the impression that it works. After the
 (`./nvwa_prototype_init.sh`):
 
 1. **No more oscillation** in the log:
+
    ```bash
    docker compose logs prototype 2>&1 | grep -ci "maximum reruns exceeded"   # expect: 0
    ```
+
 2. **The transaction no longer rolls back** — the data is now really loaded:
 
    | measurement | before | after |
@@ -363,6 +369,7 @@ A fix is verified by measurement, not by the impression that it works. After the
    | synonym pairs | 0 | 4295 |
 
 3. **The invariants now demonstrably hold** (the requirements that caused the oscillation):
+
    ```sql
    -- every code belongs to exactly one Organisme? -> expect 0
    SELECT COUNT(*) FROM (SELECT eppoCode FROM Organisme WHERE eppoCode IS NOT NULL
@@ -370,6 +377,7 @@ A fix is verified by measurement, not by the impression that it works. After the
    -- no Organisme without a code? -> expect 0
    SELECT COUNT(*) FROM Organisme WHERE eppoCode IS NULL;
    ```
+
 4. **Spot checks against the source of truth:** `TYLCV0 → Begomovirus coheni` (one record, no
    duplicate), and no Organisme left with the name `(code niet gevonden in EPPO)`.
 
