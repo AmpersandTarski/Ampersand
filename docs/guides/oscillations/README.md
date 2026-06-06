@@ -21,34 +21,38 @@
 
 ## Before you start: rules and the ExecEngine
 
-Oscillations are an ExecEngine phenomenon, so let us dive into it.
-For the full story, see [the RULE statement](../../reference-material/syntax-of-ampersand.md#the-rule-statement)
-in the reference material.
+In Ampersand you write **rules**, and you write them with one of two statements:
 
-A **rule** states something that should always hold, usually of the form `antecedent |-
-consequent` ("antecedent is a subset of consequent"). A population that breaks a rule has
-**violations**: the pairs in the antecedent that are missing from the consequent. Every rule is
-a constraint; what differs is how Ampersand enforces it. Three kinds matter here:
+- a **`RULE`** statement — a constraint, optionally followed by `ROLE ... MAINTAINS`, which says
+  who keeps the rule satisfied;
+- an **`ENFORCE`** statement — a syntax-sugared `RULE` that the ExecEngine keeps satisfied:
+  shorter to write, same meaning.
 
-- **Invariant** — the default: a `RULE` with no role. It must hold after every transaction. A
+See [the RULE statement](../../reference-material/syntax-of-ampersand.md#the-rule-statement) and
+[the ENFORCE statement](../../reference-material/syntax-of-ampersand.md#the-enforce-statement) in
+the reference material for the full syntax.
+
+A rule of the form `antecedent |- consequent` ("antecedent is a subset of consequent") is broken
+by **violations**: the pairs in the antecedent that are missing from the consequent. What happens
+next depends on the `ROLE ... MAINTAINS`:
+
+- **Invariant** — a `RULE` without `ROLE ... MAINTAINS`. It must hold after every transaction. A
   violation makes Ampersand block the transaction and roll everything back. For a data import,
   the whole import then fails.
-- **Process rule** — a `RULE` you assign to a role with `ROLE <role> MAINTAINS`. A violation is
+- **Process rule** — a `RULE` with `ROLE <role> MAINTAINS` for a human role. A violation is
   allowed; the user in that role gets a **signal**, which stays until that user resolves it. The
   transaction proceeds.
-- **Automated rule** — a rule the **ExecEngine** restores by itself. You assign it to the
-  ExecEngine with `ROLE ExecEngine MAINTAINS` and write the repair as the rule's `VIOLATION`
-  script. The ExecEngine is a role the runtime plays itself, not a person, so it runs that
-  script on each violation and repairs the data without human intervention. The dedicated
-  [`ENFORCE` statement](../../reference-material/syntax-of-ampersand.md#the-enforce-statement)
-  is concise sugar for the common case of keeping a relation's population in step with a term.
+- **Automated rule** — a `RULE` with `ROLE ExecEngine MAINTAINS`, or the shorter `ENFORCE` that
+  expands to one. The ExecEngine is a role the runtime plays itself, so a violation is repaired
+  automatically, with no person involved.
 
-The rules in this lesson are automated rules, and they are the crux: because they **change the
-data by themselves**, they can keep changing it forever. That endless back-and-forth is the
-oscillation.
+An automated rule can therefore be written two ways — a `RULE` plus `ROLE ExecEngine MAINTAINS`,
+or the shorter `ENFORCE` — and both hand the rule to the ExecEngine. Automated rules are the crux
+of oscillations: because the ExecEngine **changes the data by itself** to satisfy them, it can
+keep changing it forever. That is why understanding oscillations starts with the ExecEngine.
 
-An automated rule's `VIOLATION` script starts each instruction with `{EX}` and calls built-in
-functions:
+In the `RULE ... MAINTAINS` form, the repair is the rule's `VIOLATION` script. Each instruction
+in it starts with `{EX}` and calls a built-in function:
 
 | Function | Does |
 | --- | --- |
@@ -66,7 +70,7 @@ functions:
    So: **rerun** (back to step 1).
 4. Stop once a round fixes nothing more (a **fixpoint**: violations = 0).
 
-If this never converges to a fixpoint, the loop would run forever. So there is a
+If this never converges, the loop would run forever. So there is a
 **maximum number of reruns**. When it is reached, the engine stops with the error:
 
 ```text
@@ -113,8 +117,8 @@ A second, serious consequence you do not see right away: the import ran inside a
 `eppoCode[WetenschappelijkeNaam*EPPOcode]` stayed at **1 row** (instead of ~1400) — so the
 whole EPPO list was not loaded, while the app still "seemed" to run.
 
-> **Lesson 1.** An oscillation is doubly dangerous: it not only stops the engine, it also
-> rolls back the surrounding transaction. "The app starts" does not mean "the data is loaded".
+> **Lesson 1.** An oscillation stops the engine. So, it also
+> rolls back the surrounding transaction because not all violations are resolved.
 
 ---
 
