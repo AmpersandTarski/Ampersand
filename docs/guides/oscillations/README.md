@@ -127,8 +127,22 @@ whole EPPO list was not loaded, while the app still "seemed" to run.
 This section works from symptom to cause: it establishes the cause first, and only then
 chooses a fix.
 
-**Step 1 — Read the two guilty rules from the error message.** Here: `OrganismeUniekeEPPO`
-and `eppoCodeMaaktOrganisme`. Find their definitions in the `.adl` source:
+**Step 1 — Identify the colliding rules.** The error's "Rules fixed in last run" line lists the
+suspects: the automated rules still firing when the engine gave up. Often that is the whole
+conflict, as here — `OrganismeUniekeEPPO` and `eppoCodeMaaktOrganisme`. When the line names more
+rules, three signals from the log narrow it down:
+
+- **Opposing actions.** A cycle needs two fixes that undo each other: one that *adds* a fact
+  (`InsAtom`, `InsPair`) and one that *removes* it (`DelPair`, `DelAtom`, `MrgAtoms`), touching
+  the same relation or atom. The pair whose actions alternate is the conflict.
+- **Counts that do not fall.** Each round logs `ExecEngine fixed N violations for rule X`. A rule
+  in the cycle keeps reporting violations round after round; a rule outside it drops to zero and
+  stays there.
+- **A write that feeds another antecedent.** For each suspect, see what its `VIOLATION` script
+  changes, and whether that change lands in another suspect's antecedent. If rule A's fix creates
+  a violation of rule B, and B's fix re-creates one of A, those two are the pair.
+
+Find the definitions of the colliding rules in the `.adl` source:
 
 ```text
 -- create rule
