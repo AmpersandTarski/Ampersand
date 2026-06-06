@@ -3,15 +3,15 @@
 > **Who is this for?** Students and developers who work with Ampersand and want to understand
 > why the ExecEngine sometimes gets stuck with *"Maximum reruns exceeded"*.
 >
-> **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to the
-> colliding rules, (3) see that an oscillation expresses a mathematical inconsistency, and
+> **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to your
+> rules, which collide, (3) understand that an oscillation expresses a mathematical inconsistency, and
 > (4) use such an oscillation as an *opportunity* to make your rules (or your data)
-> consistent. By the end you can reproduce it yourself with a minimal script.
+> consistent. By the end you can reproduce an example by yourself with a minimal script.
 >
 > **Key message.** An oscillation is not an annoying bug that you silence by raising the
 > rerun limit. It is the runtime telling you: *your invariants contradict each other.* Use
 > that to make them consistent.
-
+>
 > **About the example.** This case comes from a Dutch project (FC5, plant-health inspection),
 > so the rule and relation names are Dutch — for instance `Organisme` (organism),
 > `voorkeursNaam` (preferred name), `eppoCode`, and `WetenschappelijkeNaam` (scientific name).
@@ -41,7 +41,7 @@ The **ExecEngine** is a special "role": a robot user. For every rule with
 when a violation occurs. Those instructions start with `{EX}` and call built-in functions:
 
 | Function | Does |
-|---|---|
+| --- | --- |
 | `InsAtom;C` | creates a new atom in concept `C` (placeholder `_NEW`) |
 | `InsPair;r;A;a;B;b` | adds pair `(a,b)` to relation `r[A*B]` |
 | `DelPair;r;A;a;B;b` | removes pair `(a,b)` from `r` |
@@ -58,7 +58,7 @@ when a violation occurs. Those instructions start with `{EX}` and call built-in 
 If this never converges to a fixpoint, the loop would run forever. So there is a
 **maximum number of reruns**. When it is reached, the engine stops with the error:
 
-```
+```text
 Maximum reruns exceeded. Rules fixed in last run: <rule A>, <rule B>
 ```
 
@@ -72,7 +72,7 @@ fixing in the last round** — those are your suspects.
 In the FC5 case this surfaced while loading the EPPO code list. The prototype log
 (`docker compose logs prototype`) shows:
 
-```
+```text
 EXECENGINE.ERROR: Maximum reruns exceeded. Rules fixed in last run:OrganismeUniekeEPPO, eppoCodeMaaktOrganisme)
 APPLICATION.ERROR: Maximum reruns exceeded for ExecEngine
    {"Rules fixed in last run":["...Rule: OrganismeUniekeEPPO","...Rule: eppoCodeMaaktOrganisme"]}
@@ -80,7 +80,7 @@ APPLICATION.ERROR: Maximum reruns exceeded for ExecEngine
 
 Around it you see a typical rhythm of fixes alternating:
 
-```
+```text
 EXECENGINE.INFO: InsAtom(Organisme)
 EXECENGINE.INFO: InsPair(voorkeursNaam,Organisme,_NEW,WetenschappelijkeNaam,'Candidatus Phytoplasma solani')
 EXECENGINE.INFO: InsPair(eppoCode,Organisme,_NEW,EPPOcode,PHYPSO)
@@ -115,7 +115,7 @@ you have established the cause.
 **Step 1 — Read the two guilty rules from the error message.** Here: `OrganismeUniekeEPPO`
 and `eppoCodeMaaktOrganisme`. Find their definitions in the `.adl` source:
 
-```
+```text
 -- create rule
 ROLE ExecEngine MAINTAINS eppoCodeMaaktOrganisme
 RULE eppoCodeMaaktOrganisme : eppoCode - voorkeursNaam~;V[Organisme*EPPOcode] |- voorkeursNaam~;I[Organisme];eppoCode
@@ -130,6 +130,7 @@ VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
 ```
 
 **Step 2 — Translate each rule into plain language.**
+
 - `eppoCodeMaaktOrganisme`: "for every scientific name in the source that is not yet the
   `voorkeursNaam` of an Organisme: create an Organisme with that name and that EPPO code."
   → this is **name-driven**: one Organisme per *name*.
@@ -189,7 +190,7 @@ relations (in relation algebra; read `;` as composition and `~` as converse):
 Add up these requirements. Through the Organisme as an intermediate step, together they force
 a **bijection** between the names and the codes that occur in the source:
 
-```
+```text
 Naam  <--(voorkeursNaam, bijective)-->  Organisme  <--(eppoCode, bijective)-->  Code
 ```
 
@@ -211,7 +212,7 @@ once. Given this data, the specification is **unsatisfiable (inconsistent)**.
 >
 > In short: **unsatisfiable invariants + automatic repair = oscillation.** The oscillation is
 > the *observable consequence* of a *logical contradiction*.
-
+>
 > **Lesson 2.** Each individual rule was reasonable ("codes unique", "names unique",
 > "everything gets an Organisme"). The *combination* is the contradiction. Inconsistency is a
 > property of the *set* of rules, not of one rule.
@@ -255,7 +256,7 @@ Chosen: **A** (weaken the model) — because synonyms are legitimate.
 name", but "one Organisme per code that does not have one yet". Only the subtracted term in
 the antecedent changes:
 
-```
+```text
 -- was (name-driven): subtract = "name is already a voorkeursNaam"
 RULE eppoCodeMaaktOrganisme : eppoCode - voorkeursNaam~;V[Organisme*EPPOcode] |- voorkeursNaam~;I[Organisme];eppoCode
 
@@ -265,7 +266,7 @@ RULE eppoCodeMaaktOrganisme : eppoCode - V[WetenschappelijkeNaam*Organisme];eppo
 
 **Change 2 — keep the non-chosen names as synonyms** (otherwise the merge loses them):
 
-```
+```text
 ROLE ExecEngine MAINTAINS eppoCodeSynoniem
 RULE eppoCodeSynoniem : eppoCode;eppoCode[Organisme*EPPOcode]~ - voorkeursNaam~ |- synoniem~
 VIOLATION ( TXT "{EX} InsPair;synoniem;Organisme;", TGT I, TXT ";WetenschappelijkeNaam;", SRC I )
@@ -300,6 +301,7 @@ merge throws away one code → that code gets no Organisme again → creation ma
 loop. Mathematically: the same bijection requirement, now violated on the **name side**.
 
 The cause turned out to be **dirty data** in `EPPOcodes.xlsx`:
+
 - six non-existent codes shared the placeholder name `(code niet gevonden in EPPO)`;
 - an O/0 typo: `Begomovirus coheni` appeared under both `TYLCV0` (digit zero) and `TYLCVO`
   (letter O).
@@ -308,7 +310,7 @@ Here **choice B (repair the data)** is right, not A. An important methodological
 **consult the source of truth.** The EPPO database (`data.eppo.int`) settled it:
 
 | Code | EPPO `/names` | Verdict |
-|---|---|---|
+| --- | --- | --- |
 | `TYLCV0` | Begomovirus coheni | real → keep |
 | `TYLCVO` | `null` | does not exist → typo, remove |
 | the 6 placeholder codes | `null` | do not exist → remove |
@@ -324,7 +326,7 @@ What if contradictory data arrives again later? Then you want the import to **re
 instead of crash. That is **choice C**, applied to the invariant `checkEPPOcode` (which checks
 whether the EPPO code of a POcombinatie matches the code list):
 
-```
+```text
 ROLE IMPORTER MAINTAINS checkEPPOcode      -- from invariant to process rule
 RULE checkEPPOcode : ...
 ```
@@ -345,11 +347,13 @@ Not "it seems to work", but measure. After the rebuild (`./nvwa_prototype_init.s
    docker compose logs prototype 2>&1 | grep -ci "maximum reruns exceeded"   # expect: 0
    ```
 2. **The transaction no longer rolls back** — the data is now really loaded:
+
    | measurement | before | after |
-   |---|---|---|
+   | --- | --- | --- |
    | `eppoCode[WN*EPPO]` (rows) | 1 | 1400 |
    | Organismen | 792 | 1496 |
    | synonym pairs | 0 | 4295 |
+
 3. **The invariants now demonstrably hold** (the requirements that caused the oscillation):
    ```sql
    -- every code belongs to exactly one Organisme? -> expect 0
@@ -398,6 +402,7 @@ easiest in a [RAP environment](../../tutorial-rap4.md), or with a local
 - with `oscillatie-fixed.adl` the run descends cleanly to zero violations.
 
 **Experiments that cement understanding:**
+
 1. In the buggy version, change the population to two *different* codes for two *different*
    names. → No oscillation. (Why? The bijection requirement is not violated.)
 2. In the fixed version, remove the rule `maakSynoniem`. → No oscillation, but the second name
