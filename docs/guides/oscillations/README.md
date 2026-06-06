@@ -3,11 +3,10 @@
 > **Who is this for?** Students and developers who work with Ampersand and want to understand
 > why the ExecEngine sometimes gets stuck with *"Maximum reruns exceeded"*.
 >
-> **Prerequisites.** You can read Ampersand and relation algebra. The Ampersand terms below link
-> to the reference material on first use.
+> **Prerequisites.** You can read Ampersand and you have a beginner's understanding of relation algebra.
 >
-> **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to your
-> rules, which collide, (3) understand that an oscillation expresses a mathematical inconsistency, and
+> **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to
+> rules that collide, (3) understand that an oscillation expresses a mathematical inconsistency, and
 > (4) use such an oscillation as an *opportunity* to make your rules (or your data)
 > consistent. By the end you can reproduce an example by yourself with a minimal script.
 >

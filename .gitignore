@@ -5,7 +5,9 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 .ampersand
-Ampersand.archimate.bak
+*.bak
+/testing_with_populations
+.proto
 
 # key pairs for automated access to GitHub
 *GitHub*
@@ -26,6 +28,11 @@ BuildInfo_Generated.hs
 ###################
 /.vscode
 *.code-workspace
+
+# AI stuff
+###################
+*.ghci
+*.py
 
 # Compiled source #
 ###################
