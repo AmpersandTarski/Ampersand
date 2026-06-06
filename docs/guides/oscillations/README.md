@@ -19,26 +19,33 @@
 
 ---
 
-## Before you start: how the ExecEngine works
+## Before you start: rules and the ExecEngine
 
-To understand the phenomenon you must know what the ExecEngine does. Do not skip this.
+Oscillations are an ExecEngine phenomenon, so you need just enough about rules to follow them.
+For the full story, see [the RULE statement](../../reference-material/syntax-of-ampersand.md#the-rule-statement)
+in the reference material.
 
-In Ampersand a **rule** is a requirement that must always hold, usually of the form
-`antecedent |- consequent` ("antecedent is a subset of consequent"). A state (the population
-of all relations) that breaks a rule has **violations**: the pairs that sit in the antecedent
-but not in the consequent.
+A **rule** states something that should always hold, usually of the form `antecedent |-
+consequent` ("antecedent is a subset of consequent"). A population that breaks a rule has
+**violations**: the pairs in the antecedent that are missing from the consequent. What happens
+to a violation depends on the kind of rule. There are **three**:
 
-There are two kinds of rules:
+- **Invariant** — the default: a `RULE` with no role. It must hold after every transaction. A
+  violation makes Ampersand **reject** the transaction and roll everything back. For a data
+  import, the whole import then fails.
+- **Process rule** — a `RULE` preceded by `ROLE <role> MAINTAINS`. A violation is allowed; it
+  shows up as a **signal** for that role (a person) to resolve. The transaction proceeds.
+- **Enforce rule** — a process rule whose role is the **ExecEngine**, a robot user. It resolves
+  a violation automatically by running the rule's `VIOLATION` script, so the data is repaired
+  every time, without a human. Ampersand also offers the dedicated
+  [`ENFORCE` statement](../../reference-material/syntax-of-ampersand.md#the-enforce-statement)
+  as concise sugar for the common case of keeping a relation's population in step with a term.
 
-- **Invariant** (a `RULE` *without* `ROLE ... MAINTAINS`). It must hold *after every
-  transaction*. If it breaks, Ampersand **rejects** the transaction and rolls everything back.
-  For a data import this means the whole import fails.
-- **Process rule** (a `RULE` *with* `ROLE <role> MAINTAINS`). A violation is *allowed* here;
-  it shows up as a **signal** to that role. The transaction proceeds.
+Enforce rules are the crux here: because they **change the data by themselves**, they can keep
+changing it forever. That endless back-and-forth is the oscillation.
 
-The **ExecEngine** is a special "role": a robot user. For every rule with
-`ROLE ExecEngine MAINTAINS` it automatically runs the instructions in the `VIOLATION` block
-when a violation occurs. Those instructions start with `{EX}` and call built-in functions:
+An enforce rule's `VIOLATION` script starts each instruction with `{EX}` and calls built-in
+functions:
 
 | Function | Does |
 | --- | --- |
@@ -49,7 +56,7 @@ when a violation occurs. Those instructions start with `{EX}` and call built-in 
 
 **The rerun loop.** The ExecEngine works iteratively:
 
-1. Evaluate all ExecEngine rules and collect the violations.
+1. Evaluate all enforce rules and collect the violations.
 2. Run their `{EX}` fixes.
 3. Those fixes change the population → *new* violations may arise, or old ones may be solved.
    So: **rerun** (back to step 1).
@@ -235,7 +242,7 @@ make the mapping correct. → Fits **typos and placeholders** (see §6, oscillat
 
 **Choice C — Demote an overly strict invariant to a signal.**
 Sometimes you do not want to repair automatically; you want a human to decide. Change the rule
-from an invariant (or ExecEngine merge) into a **process rule** under a human role. The
+from an invariant (or an enforce rule) into a **process rule** under a human role. The
 violation then crashes nothing; it appears as a worklist. → Fits **checks** that really mean
 "report this to the administrator".
 
@@ -332,9 +339,9 @@ RULE checkEPPOcode : ...
 ```
 
 Now an inconsistency no longer blocks the import; it appears as a signal for the role
-`IMPORTER`. (Note: do this *only* for *readable checks*. An invariant with an `{EX}` fix
-belongs to the ExecEngine, not to a human role — otherwise the `{EX}` text shows up as an
-unreadable signal.)
+`IMPORTER`. (Note: do this *only* for *readable checks*. An `{EX}` fix makes a rule an enforce
+rule, which belongs to the ExecEngine, not to a human role — otherwise the `{EX}` text shows up
+as an unreadable signal.)
 
 ---
 
