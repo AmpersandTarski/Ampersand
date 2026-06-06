@@ -85,7 +85,7 @@ In VS2022, you need support for C# and the following NuGet packages:
  - SpecFlow.Plus.LivingDocPlugin
  - Newtonsoft.Json
 
-Next, Docker Desktop must be installed. Then, RAP must be run in Docker Desktop. To get RAP4 up and running you can look [here](rap/deployment-guide.md) for the 
+Next, Docker Desktop must be installed. Then, RAP must be run in Docker Desktop. To get RAP4 up and running you can look [here](../../../rap/deployment-guide.md) for the 
 explanation in the documentation.
 
 Here you will also find the explanation of where to find a clone of the RAP repository.

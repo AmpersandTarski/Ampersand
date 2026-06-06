@@ -78,6 +78,21 @@ ADL Script → Ampersand Compiler → Generated Code → Framework → Web Appli
 - Relational structure derived from Ampersand concepts
 - Automatic constraints and business rules
 
+### Framework Engineering
+
+#### Adaptability
+**Repository goal:** Software engineers can adapt the framework themselves
+- Modify code-generation templates
+- Extend UI components
+- Performance optimizations
+- Add framework features
+
+#### Extensibility
+- **Template system** for custom UI generation
+- **Plugin architecture** for custom business logic
+- **API endpoints** for external integrations
+- **Configuration management** via YAML files
+
 ## Core User Questions & Primary Resources
 
 ### "What is Ampersand and why should I use it?"
@@ -174,5 +189,19 @@ ADL Script → Ampersand Compiler → Generated Code → Framework → Web Appli
 - **RAP (Rule-based Analysis & Prototyping)** - alternative web-based interface
 - **VS Code Extension** - development environment support
 - **Documentation Site** - user documentation and tutorials
+
+## Current Status & Roadmap
+
+### Active Development (August 2025)
+- **38 open issues** for framework improvements
+- **3 "good first issue"** labels for new contributors
+- **MIT license** for open-source adoption
+- **Small but active community**
+
+### Technical Improvements
+- Continuous integration/deployment optimizations
+- Framework performance and stability
+- Expanded documentation via GitHub Pages
+- Improved VS Code development experience
 
 This product context shows how the Ampersand Prototype Framework plays a crucial role in realizing the Ampersand methodology - from academic theory to practical, working software.

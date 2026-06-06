@@ -1,39 +1,97 @@
-# Ampersand - Project Specifieke Instructies
+# Ampersand — Project Instructions
 
-Telkens als je iets nieuws leert, specifiek over het FC5 project, wat nut heeft voor toekomstige ingrepen in deze werkdirectory (FC5), dan mag je deze instructies aanpassen.
+Whenever you learn something new about this Ampersand working directory that will
+help with future work here, update these instructions. Keep this file concise:
+short, accurate conventions that are easy to miss.
 
-## 1. Tech Stack & Architectuur
-- **Taal:** Haskell (GHC 9.6.6)
-- **Build Tool:** Stack (LTS 22.39) met Cabal
-- **Extensies:** `NoImplicitPrelude`, `OverloadedStrings`
-- **Kritieke Libraries:** `parsec`, `megaparsec`, `aeson`, `yaml`, `pandoc`, `xlsx`
-- **Ecosysteem:** Ampersand compileert ADL (Ampersand Definition Language) naar een PHP/Angular framework met een MariaDB 10.4 database.
+## Tech stack & architecture
 
-## 2. Build & Test Workflow
-**ALTIJD `stack build` uitvoeren na codewijzigingen en VOORDAT je test met `stack exec ampersand`.**
-Dit is een harde eis. Zonder build test je oude code.
+- **Language:** Haskell (GHC 9.6.6)
+- **Build tool:** Stack (LTS 22.39) with Cabal
+- **Extensions:** `NoImplicitPrelude`, `OverloadedStrings`
+- **Key libraries:** `parsec`, `megaparsec`, `aeson`, `yaml`, `pandoc`, `xlsx`
+- **Ecosystem:** Ampersand compiles ADL (Ampersand Definition Language) into a
+  PHP/Angular framework backed by a MariaDB 10.4 database.
 
-**Standaard cyclus:**
-1. Wijzig code
-2. `stack build` (of `stack build --fast`)
+## Build & test workflow
+
+**Always run `stack build` after changing code and before testing with
+`stack exec ampersand`.** This is a hard requirement — without a build you test
+stale code.
+
+Standard cycle:
+
+1. Change code
+2. `stack build` (or `stack build --fast`)
 3. `stack exec ampersand -- check <file.adl>`
-4. Itereren
+4. Iterate
 
-## 3. Veelgebruikte Commando's
-- **Snelle build:** `stack build --fast`
-- **Regressie test suite draaien:** `stack test` (of `nice -n 10 time stack test 2>&1 | tee test.log`)
-- **Specifiek ADL bestand checken:** `stack exec ampersand -- check <pad/naar/bestand.adl>`
+## Common commands
+
+- **Fast build:** `stack build --fast`
+- **Run the regression suite:** `stack test`
+  (or `nice -n 10 time stack test 2>&1 | tee test.log`)
+- **Check a specific ADL file:** `stack exec ampersand -- check <path/to/file.adl>`
 - **CLI help:** `stack exec ampersand -- --help`
-- **Code quality:** `hlint src/`
-- **Documentatie genereren:** `stack haddock`
+- **Lint:** `hlint src/`
+- **Generate docs:** `stack haddock`
 
-## 4. Test Infrastructuur
-- De originele testset bevindt zich in `testing/`.
-- Een verbeterde testset met populaties bevindt zich in `testing_with_populations/`.
-- Om de nieuwe set te testen, hernoem je tijdelijk de mappen zodat `testing_with_populations` de naam `testing` krijgt, waarna je `stack test` draait.
-- Let op: Er zijn ~14 bekende bestanden die pre-existing compiler bugs triggeren (zie `COMPILATION_STATUS_REPORT.md`).
+## Test infrastructure
 
-## 5. Debugging & Ontwikkeling
-- **Type Holes:** Gebruik `_` in de code om GHC de verwachte types te laten infereren.
-- **Debug.Trace:** Gebruik dit voor runtime debugging output.
-- **HLS:** Maak gebruik van de Haskell Language Server in VS Code voor real-time foutcontrole.
+- The original test set is in `testing/`.
+- An improved test set with populations is in `testing_with_populations/`.
+- To run the new set, temporarily rename the directories so
+  `testing_with_populations` takes the name `testing`, then run `stack test`.
+- ~14 known files trigger pre-existing compiler bugs (see
+  `COMPILATION_STATUS_REPORT.md`).
+
+## Debugging & development
+
+- **Type holes:** Put `_` in the code to have GHC infer the expected type.
+- **Debug.Trace:** Use for runtime debugging output.
+- **HLS:** Use the Haskell Language Server in VS Code for real-time error checking.
+
+## Release notes are enforced on pull requests
+
+Every pull request that changes a file **outside `docs/`** must add an entry to
+`ReleaseNotes.md`, or the CI check **"Check release notes / changelog"**
+(the `dangoslen/changelog-enforcer` action) fails. Add a bullet under an
+`## Unreleased` section at the top of `ReleaseNotes.md`.
+
+Pull requests that touch **only** `docs/**` are exempt — that workflow sets
+`paths-ignore: docs/**` — so pure documentation changes need no ReleaseNotes entry.
+
+## Branching & merging
+
+- The **`documentation`** branch is merged **directly** (fast-forward / direct
+  merge) — **no pull request**. Other branches (notably `main`) go through a PR.
+- A push to `main` or `documentation` that changes `docs/**` automatically
+  rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
+  `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual
+  deploy and no PR are needed to publish docs.
+- The site build runs Docusaurus with `onBrokenLinks: 'throw'` on case-sensitive
+  Linux, so a link whose casing differs from the target file (fine on macOS)
+  breaks the build. Keep doc filenames and links lowercase.
+
+## Documentation
+
+- The documentation site (Docusaurus) is assembled from the `docs/` folders of
+  several repositories. Ampersand's docs are published from the **`documentation`**
+  branch, not `main`.
+- Internal or work-in-progress notes must not be published. Put them under a
+  `_`-prefixed path (e.g. `docs/_notes/`); Docusaurus excludes `_`-prefixed files by
+  default. Long-lived developer notes live in `memorybank/`.
+- `scripts/check-docs-sidebar.js` (run in CI) fails on duplicate sidebar ids, broken
+  sidebar references, and scratch notes in the published tree. Run it before pushing
+  documentation changes.
+- `scripts/check-docs-links.js` (run in CI) fails on broken **intra-repo** doc links —
+  including links to a `README`/`index` without `.md` (those map to the folder route,
+  not `/README`) and casing mismatches. It deliberately skips cross-repo links
+  (`../../prototype/...`, `../../../rap/...`) and external links to avoid false
+  positives, so a green run never blocks a good PR. Link cross-repo and README targets
+  with the `.md` extension so Docusaurus resolves them to the right route.
+
+## Gotcha
+
+- The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
+  **new** workflow file requires `git add -f`.

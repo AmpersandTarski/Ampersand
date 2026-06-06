@@ -8,6 +8,10 @@ This page defines the syntax and semantics of the statements in the Ampersand la
 [Terms](./terms.md) and [interfaces](./interfaces.md) are defined in separate pages.
 Please use it as a reference document rather than an introductory course.
 
+:::tip New to Ampersand?
+If you are just getting started, begin with the [tutorial](../tutorial-rap4.md) and the [student learning path](../landingpage/2-student.md). Keep this page open alongside them and use it to look up the exact form of a statement whenever you need it — you do not need to read it from top to bottom.
+:::
+
 ## Structuring your Ampersand specification
 
 Structuring an Ampersand specification effectively is crucial for readability, maintainability, and ease of development. There are several ways that can help:
@@ -1388,7 +1392,7 @@ By specifying a markup language, Ampersand interprets the text as specified. If 
 PURPOSE RULE CheckDigitCharacter
 IN ENGLISH MARKDOWN
 {+ This rule enforces the use of a check digit character
-   as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
+   as described in [ISO 7064](https://en.wikipedia.org/wiki/ISO/IEC_7064).
    This is applicatble to IBAN bank account numbers.
 +}
 ```

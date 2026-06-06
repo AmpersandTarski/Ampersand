@@ -1,6 +1,6 @@
 # This workflow triggers on a new release that is being created
 # It build-pushes a release image to DockerHub
-# and it attaches Linux, MacOS and Windows binary files to the release
+# and it attaches Linux and Windows binary files to the release
 name: Release
 on:
   release:
@@ -11,9 +11,9 @@ jobs:
     name: Add release notes to artefacts
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Upload macOS artifact
+      - name: Upload ReleaseNotes
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -67,7 +67,6 @@ jobs:
     needs:
       [
         build-without-test-ubuntu,
-        build-without-test-macOS,
         build-without-test-windows,
       ]
     runs-on: ubuntu-22.04
@@ -91,18 +90,6 @@ jobs:
           files: release/Linux/
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
 
-      - name: Download artifacts (macOS)
-        uses: actions/download-artifact@v4
-        with:
-          name: macOS-binaries
-          path: release/macOS
-
-      - name: zip the binaries (macOS)
-        uses: papeloto/action-zip@v1
-        with:
-          files: release/macOS/
-          dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
-
       - name: Download artifacts (Windows)
         uses: actions/download-artifact@v4
         with:
@@ -125,16 +112,6 @@ jobs:
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
 
-      - name: Upload macOS artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_name: ampersand-${{ steps.get-version.outputs.version }}-macOS-binaries.zip
-          asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
-          asset_content_type: application/zip
-
       - name: Upload Windows artifact
         uses: actions/upload-release-asset@v1
         env:
@@ -150,7 +127,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -167,37 +144,12 @@ jobs:
           name: Linux-binaries
           path: /home/runner/.local/bin/*
 
-  build-without-test-macOS:
-    name: Build without test on macos-13  🏗 🧪
-    runs-on: macos-13
-    steps:
-      - name: Checkout project contents 📡
-        uses: actions/checkout@v4
-      - name: Set up Mariadb 🧰
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: "mariadb-11.5"
-      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
-      ## - run: curl -sSL https://get.haskellstack.org/ | sh
-      - run: brew install php
-      - name: Build without test  🏗 🧪
-        uses: freckle/stack-action@v5
-        with:
-          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
-          upgrade-stack: false
-          test: false
-      - name: Upload artifacts (macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS-binaries
-          path: /Users/runner/.local/bin/*
-
   build-without-test-windows:
     name: build without test on windows-2022 🏗 🧪
     runs-on: windows-2022
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       # - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
       # uses: actions/cache@v4
       # # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml

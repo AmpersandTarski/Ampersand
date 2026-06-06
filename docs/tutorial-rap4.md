@@ -298,11 +298,18 @@ After finishing your assignment, you have learned:
 
 ### Want to learn more?
 
-1. How to describe functionality in a [conceptual model](#conceptual-model-enrollment)?
-2. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
 1. How can I create my own information system in RAP4? Go to [Your tool: RAP4](#your-tool-rap4).
-2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment.](#conceptual-model-enrollment)
+2. What is the conceptual model behind an Ampersand model? Go to [Conceptual Model: Enrollment](#conceptual-model-enrollment).
 3. How can I upload [bulk data](./reference-material/syntax-of-ampersand#population-in-spreadsheets) from spreadsheets into my application?
+
+### Continue learning
+
+You now have a working prototype and the basics of the language. Good next steps:
+
+- Add a user interface to your model with the [interfaces tutorial](./tutorial/interfaces.md).
+- Look up any statement you need in the [Syntax of Ampersand](./reference-material/syntax-of-ampersand.md) — keep it open as your companion.
+- Sharpen your skills with the [exercises](./exercises.md), or browse the [examples](./examples.md) for inspiration.
+- Lost the overview? Return to the [student learning path](./landingpage/2-student.md).
 
 ### Disclaimer
 

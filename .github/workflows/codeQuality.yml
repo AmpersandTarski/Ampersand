@@ -15,7 +15,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run hlint
         uses: haskell-actions/hlint-scan@v1
   weeder:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build the project 🌿🌿🌿
         uses: freckle/stack-action@v5
         with:

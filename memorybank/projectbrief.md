@@ -2,18 +2,17 @@
 
 ## Project Overview
 
-**Project Name:** Ampersand Compiler & Ecosystem
+**Project Name:** Ampersand Compiler & Prototype Framework Ecosystem
 **Organization:** AmpersandTarski (GitHub)
-**Type:** Academic research platform + production-ready compiler toolchain
+**Type:** Academic research platform + production-ready compiler toolchain + generated prototype runtime
 **Repository:** https://github.com/AmpersandTarski/Ampersand
 **License:** GPL-3.0
 **Status:** Actively developed (latest update: August 2025)
 
 ## Core Mission
 
-This GitHub repository, AmpersandTarski/Ampersand, contains the source code of the Ampersand compiler.
-It compiles and deploys an Ampersand script into software that serves as a prototype of the specified system.
-It can also document that system by generating text, based on text fragments specified in the Ampersand script.
+This GitHub repository, AmpersandTarski/Ampersand, contains the source code of the Ampersand compiler and the surrounding ecosystem that turns an Ampersand script into working software.
+It compiles and deploys an Ampersand script into software that serves as a prototype of the specified system, and it can also document that system from text fragments specified in the ADL model.
 The purpose of Ampersand is to design information systems in a mathematically precise way, to speed up development and to prevent errors in the software as much as possible.
 
 ## AmpersandTarski Organization Overview

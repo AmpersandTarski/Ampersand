@@ -14,7 +14,7 @@ jobs:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Prepare for docker
         run: |
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -52,30 +52,12 @@ jobs:
           upgrade-stack: false
           cache-save-always: true
 
-  build-and-test-macOS-14:
-    name: Build and test on macos-14  🏗 🧪
-    runs-on: macos-14
-    steps:
-      - name: Checkout project contents 📡
-        uses: actions/checkout@v4
-      - name: Set up Mariadb 🧰
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: "mariadb-11.5"
-      # See issue https://github.com/freckle/stack-action/issues/80 for why we need to install stack and php as well
-      ## run: curl -sSL https://get.haskellstack.org/ | sh
-      # - run: brew install php
-      - name: Build and test  🏗 🧪
-        uses: freckle/stack-action@v5
-        with:
-          stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
-          test: false #Temporarily disable test because of bug in MariaDB with macOS. See https://jira.mariadb.org/browse/MDEV-35173
   build-and-test-windows:
     name: Build and test on windows-2022 🏗 🧪
     runs-on: windows-2022
     steps:
       - name: Checkout project contents 📡
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
         uses: actions/cache@v4
         # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml

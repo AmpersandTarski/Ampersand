@@ -1,0 +1,78 @@
+<svg width="680" viewBox="0 0 680 392" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Roadmap matrix: audiences against shared topics</title>
+<desc>A matrix with five audiences as columns and seven shared topics as rows. Colour intensity shows how central a topic is for an audience. Numbered badges show the suggested order of work, with a foundation phase on top.</desc>
+<style>
+text{font-family:'Helvetica Neue',Arial,sans-serif}
+.t{font-size:14px;fill:#21303B}
+.ts{font-size:12px;fill:#5F5E5A}
+.th{font-size:14px;fill:#21303B;font-weight:500}
+</style>
+<rect x="0" y="0" width="680" height="392" fill="#FFFFFF"/>
+<rect x="40" y="14" width="600" height="32" rx="8" fill="#FAEEDA" stroke="#EF9F27"/>
+<text class="th" x="340" y="34" text-anchor="middle" fill="#854F0B">Foundation — shared base, conventions and the story (cross-cutting)</text>
+<text class="ts" x="248.5" y="72" text-anchor="middle">Visitor</text>
+<text class="ts" x="335.5" y="72" text-anchor="middle">Student</text>
+<text class="ts" x="422.5" y="72" text-anchor="middle">User</text>
+<text class="ts" x="509.5" y="72" text-anchor="middle">Scientist</text>
+<text class="ts" x="596.5" y="72" text-anchor="middle">Contributor</text>
+
+<text class="t" x="44" y="104">Orientation &amp; why</text>
+<rect x="211" y="86" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+<rect x="298" y="86" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+<rect x="385" y="86" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+<rect x="472" y="86" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+<rect x="559" y="86" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="140">Learning (tutorial)</text>
+<rect x="211" y="122" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="298" y="122" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+<rect x="385" y="122" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+<rect x="472" y="122" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="559" y="122" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="176">Language &amp; reference</text>
+<rect x="211" y="158" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="298" y="158" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+<rect x="385" y="158" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+<rect x="472" y="158" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+<rect x="559" y="158" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="212">Building &amp; running</text>
+<rect x="211" y="194" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="298" y="194" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+<rect x="385" y="194" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+<rect x="472" y="194" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="559" y="194" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="248">Prototype &amp; deploy</text>
+<rect x="211" y="230" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="298" y="230" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="385" y="230" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+<rect x="472" y="230" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="559" y="230" width="75" height="28" rx="4" fill="#5DCAA5" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="284">Theory &amp; research</text>
+<rect x="211" y="266" width="75" height="28" rx="4" fill="#9FE1CB" stroke="#D3D1C7"/>
+<rect x="298" y="266" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="385" y="266" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="472" y="266" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+<rect x="559" y="266" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+
+<text class="t" x="44" y="320">Contributing &amp; tooling</text>
+<rect x="211" y="302" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="298" y="302" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="385" y="302" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="472" y="302" width="75" height="28" rx="4" fill="#FFFFFF" stroke="#D3D1C7"/>
+<rect x="559" y="302" width="75" height="28" rx="4" fill="#1D9E75" stroke="#D3D1C7"/>
+
+<circle cx="248.5" cy="100" r="11" fill="#1D9E75"/><text class="th" x="248.5" y="104" text-anchor="middle" fill="#FFFFFF">✓</text>
+<circle cx="335.5" cy="136" r="11" fill="#D85A30"/><text class="th" x="335.5" y="140" text-anchor="middle" fill="#FFFFFF">1</text>
+<circle cx="422.5" cy="208" r="11" fill="#D85A30"/><text class="th" x="422.5" y="212" text-anchor="middle" fill="#FFFFFF">2</text>
+<circle cx="509.5" cy="280" r="11" fill="#D85A30"/><text class="th" x="509.5" y="284" text-anchor="middle" fill="#FFFFFF">3</text>
+<circle cx="596.5" cy="316" r="11" fill="#D85A30"/><text class="th" x="596.5" y="320" text-anchor="middle" fill="#FFFFFF">4</text>
+
+<rect x="44" y="350" width="15" height="13" rx="3" fill="#1D9E75"/><text class="ts" x="64" y="361">core</text>
+<rect x="110" y="350" width="15" height="13" rx="3" fill="#5DCAA5"/><text class="ts" x="130" y="361">important</text>
+<rect x="205" y="350" width="15" height="13" rx="3" fill="#9FE1CB"/><text class="ts" x="225" y="361">secondary</text>
+<text class="ts" x="305" y="361">1–4 = suggested order · ✓ = already mature</text>
+</svg>

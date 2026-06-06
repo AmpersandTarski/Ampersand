@@ -1,12 +1,11 @@
 ## Current work focus
-The current work focuses on refactoring the disambiguation algorithm.
-In the new situation, a function term2Expr :: ContextInfo -> Term TermPrim -> Guarded Expression will replace the code for disambiguation and type checking of terms. A term is a Haskell object of type Term Termprim.
-We are halfway that change. The function term2Expr has been written and sits in P2A_Converters.hs. We are busy to resolve the type until it is error-free and warning-free.
+The current work focuses on refactoring the disambiguation and type-checking path in the Haskell compiler.
+The new term2Expr path is intended to replace the older term-to-expression handling in P2A_Converters.hs, and the main goal is to make that code path error-free and warning-free before applying the same cleanup to the rest of the compiler.
 
 ## Recent changes
-- Working on disambiguation algorithm refactoring in P2A_Converters.hs
-- Function term2Expr has been written but needs error resolution
-- Currently addressing merge conflicts between HEAD (technical work) and documentation branches
+- Refactoring the disambiguation algorithm in P2A_Converters.hs
+- Replacing the older term-to-expression handling with the new term2Expr pathway
+- Keeping the broader Ampersand ecosystem context in view: compiler, generated prototype framework, RAP, and documentation
 
 ## Next steps
 As soon as we have resolved errors from P2A_Converters.hs and made it free of warnings, we will do the same for the other files in ./Ampersand/src/, so the entire package will be error-free and warning-free.

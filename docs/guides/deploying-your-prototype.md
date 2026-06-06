@@ -22,6 +22,8 @@ Please watch [this video](https://youtu.be/XqHTJfTVnoQ) (8 minutes) to see what 
 
 You need a computer that runs Docker and that has an internet connection. That lets you generate a Docker image from your Ampersand source code. Then run your program on Docker on localhost.
 
+You also need the Ampersand compiler to generate your prototype in the first place. If you have not installed it yet, follow [Installing Ampersand](./installing-ampersand) and generate your prototype before you continue here.
+
 ## What do you do to run your Ampersand program?
 
 First, you create a directory in which you will organize your Ampersand (.adl) files and some other stuff. We will refer to this directory as your working directory. In this working directory, make sure you have:
