@@ -1,71 +1,76 @@
-# Oscillaties in Ampersand begrijpen — een uitgewerkte casus
+# Understanding oscillations in Ampersand — a worked case
 
-> **Voor wie?** Studenten en ontwikkelaars die met Ampersand werken en willen begrijpen
-> waarom de ExecEngine soms vastloopt met *"Maximum reruns exceeded"*.
+> **Who is this for?** Students and developers who work with Ampersand and want to understand
+> why the ExecEngine sometimes gets stuck with *"Maximum reruns exceeded"*.
 >
-> **Leerdoel.** Je leert (1) het verschijnsel herkennen, (2) het terugtraceren tot de
-> botsende regels, (3) zien dat een oscillatie een vorm van **wiskundige
-> onvervulbaarheid** is, en (4) zo'n oscillatie gebruiken als *kans* om je regels (of je
-> data) consistent te maken. Aan het eind kun je het zelf naspelen met een minimaal script.
+> **Learning goals.** You learn to (1) recognise the phenomenon, (2) trace it back to the
+> colliding rules, (3) see that an oscillation expresses a mathematical inconsistency, and
+> (4) use such an oscillation as an *opportunity* to make your rules (or your data)
+> consistent. By the end you can reproduce it yourself with a minimal script.
 >
-> **Kernboodschap.** Een oscillatie is geen lastige bug die je met een hogere rerun-limiet
-> "weg" zet. Het is de runtime die je vertelt: *jouw invarianten spreken elkaar tegen.*
-> Dat is precies de informatie die je nodig hebt om ze kloppend te maken.
+> **Key message.** An oscillation is not an annoying bug that you silence by raising the
+> rerun limit. It is the runtime telling you: *your invariants contradict each other.* Use
+> that to make them consistent.
+
+> **About the example.** This case comes from a Dutch project (FC5, plant-health inspection),
+> so the rule and relation names are Dutch — for instance `Organisme` (organism),
+> `voorkeursNaam` (preferred name), `eppoCode`, and `WetenschappelijkeNaam` (scientific name).
+> The reasoning is language-independent.
 
 ---
 
-## 0. Eerst: hoe werkt de ExecEngine? (de "waarom" onder alles)
+## Before you start: how the ExecEngine works
 
-Om het verschijnsel te begrijpen moet je weten wat de ExecEngine doet. Sla dit niet over.
+To understand the phenomenon you must know what the ExecEngine does. Do not skip this.
 
-In Ampersand is een **regel** een eis die altijd waar moet zijn, meestal van de vorm
-`antecedent |- consequent` ("antecedent is deelverzameling van consequent"). Een toestand
-(de populatie van alle relaties) die een regel schendt, heeft **violations**: de paren die
-wél in de antecedent maar niet in de consequent zitten.
+In Ampersand a **rule** is a requirement that must always hold, usually of the form
+`antecedent |- consequent` ("antecedent is a subset of consequent"). A state (the population
+of all relations) that breaks a rule has **violations**: the pairs that sit in the antecedent
+but not in the consequent.
 
-Er zijn twee soorten regels:
+There are two kinds of rules:
 
-- **Invariant** (een `RULE` *zonder* `ROLE ... MAINTAINS`). Deze moet *na elke transactie*
-  waar zijn. Wordt hij geschonden, dan **weigert** Ampersand de transactie en draait alles
-  terug. Bij een data-import betekent dit: de hele import faalt.
-- **Procesregel** (een `RULE` *met* `ROLE <rol> MAINTAINS`). Een schending is hier
-  *toegestaan*; hij wordt als **signaal** aan die rol getoond. De transactie gaat door.
+- **Invariant** (a `RULE` *without* `ROLE ... MAINTAINS`). It must hold *after every
+  transaction*. If it breaks, Ampersand **rejects** the transaction and rolls everything back.
+  For a data import this means the whole import fails.
+- **Process rule** (a `RULE` *with* `ROLE <role> MAINTAINS`). A violation is *allowed* here;
+  it shows up as a **signal** to that role. The transaction proceeds.
 
-De **ExecEngine** is een bijzondere "rol": een robot-gebruiker. Voor elke regel met
-`ROLE ExecEngine MAINTAINS` voert hij bij een violation automatisch de instructies in het
-`VIOLATION`-blok uit. Die instructies beginnen met `{EX}` en roepen ingebouwde functies aan:
+The **ExecEngine** is a special "role": a robot user. For every rule with
+`ROLE ExecEngine MAINTAINS` it automatically runs the instructions in the `VIOLATION` block
+when a violation occurs. Those instructions start with `{EX}` and call built-in functions:
 
-| Functie | Doet |
+| Function | Does |
 |---|---|
-| `InsAtom;C` | maakt een nieuw atoom in concept `C` (placeholder `_NEW`) |
-| `InsPair;r;A;a;B;b` | voegt paar `(a,b)` toe aan relatie `r[A*B]` |
-| `DelPair;r;A;a;B;b` | verwijdert paar `(a,b)` uit `r` |
-| `MrgAtoms;C;a;C;b` | versmelt atoom `b` in `a`: alle links van `b` gaan naar `a`, `b` verdwijnt |
+| `InsAtom;C` | creates a new atom in concept `C` (placeholder `_NEW`) |
+| `InsPair;r;A;a;B;b` | adds pair `(a,b)` to relation `r[A*B]` |
+| `DelPair;r;A;a;B;b` | removes pair `(a,b)` from `r` |
+| `MrgAtoms;C;a;C;b` | merges atom `b` into `a`: all links of `b` move to `a`, `b` disappears |
 
-**De rerun-lus.** De ExecEngine werkt iteratief:
+**The rerun loop.** The ExecEngine works iteratively:
 
-1. Evalueer alle ExecEngine-regels en verzamel de violations.
-2. Voer hun `{EX}`-fixes uit.
-3. Die fixes veranderen de populatie → er kunnen *nieuwe* violations zijn ontstaan, of oude
-   zijn opgelost. Dus: **rerun** (terug naar stap 1).
-4. Stop zodra een ronde niets meer fixt (een **fixpunt**: violations = 0).
+1. Evaluate all ExecEngine rules and collect the violations.
+2. Run their `{EX}` fixes.
+3. Those fixes change the population → *new* violations may arise, or old ones may be solved.
+   So: **rerun** (back to step 1).
+4. Stop once a round fixes nothing more (a **fixpoint**: violations = 0).
 
-Werkt dit niet naartoe een fixpunt, dan zou de lus eeuwig draaien. Daarom is er een
-**maximum aantal reruns**. Wordt dat bereikt, dan stopt de engine met de fout:
+If this never converges to a fixpoint, the loop would run forever. So there is a
+**maximum number of reruns**. When it is reached, the engine stops with the error:
 
 ```
-Maximum reruns exceeded. Rules fixed in last run: <regel A>, <regel B>
+Maximum reruns exceeded. Rules fixed in last run: <rule A>, <rule B>
 ```
 
-Onthoud die laatste zin goed: **"Rules fixed in last run" noemt precies de regels die in de
-láátste ronde nóg steeds zaten te fixen** — dat zijn je verdachten.
+Remember that last line: **"Rules fixed in last run" names exactly the rules that were still
+fixing in the last round** — those are your suspects.
 
 ---
 
-## 1. Het verschijnsel — hoe zie je het?
+## 1. The phenomenon — how do you spot it?
 
-In de FC5-casus dook dit op tijdens het inladen van de EPPO-codelijst. In de log van het
-prototype (`docker compose logs prototype`) verschijnt:
+In the FC5 case this surfaced while loading the EPPO code list. The prototype log
+(`docker compose logs prototype`) shows:
 
 ```
 EXECENGINE.ERROR: Maximum reruns exceeded. Rules fixed in last run:OrganismeUniekeEPPO, eppoCodeMaaktOrganisme)
@@ -73,7 +78,7 @@ APPLICATION.ERROR: Maximum reruns exceeded for ExecEngine
    {"Rules fixed in last run":["...Rule: OrganismeUniekeEPPO","...Rule: eppoCodeMaaktOrganisme"]}
 ```
 
-Daaromheen zie je een typisch ritme van fixes die elkaar afwisselen:
+Around it you see a typical rhythm of fixes alternating:
 
 ```
 EXECENGINE.INFO: InsAtom(Organisme)
@@ -87,183 +92,178 @@ EXECENGINE.NOTICE: ExecEngine fixed 8 violations for rule 'eppoCodeMaaktOrganism
 EXECENGINE.ERROR: Maximum reruns exceeded ...
 ```
 
-> **Waarom is dit al verdacht?** Een gezonde ExecEngine-run *daalt* naar nul violations: elke
-> ronde fixt hij minder. Hier zie je het tegenovergestelde — `MrgAtoms` (samenvoegen) en
-> `InsAtom`/`InsPair` (aanmaken) blijven elkaar afwisselen. Iets wordt gemaakt, weer
-> weggehaald, weer gemaakt. Dat heen-en-weer is de **oscillatie**.
+> **Why is this already suspicious?** A healthy ExecEngine run *descends* towards zero
+> violations: each round fixes less. Here you see the opposite — `MrgAtoms` (merge) and
+> `InsAtom`/`InsPair` (create) keep alternating. Something is created, removed, created again.
+> That back-and-forth is the **oscillation**.
 
-Een tweede, ernstig gevolg dat je niet meteen ziet: de import draaide om een
-**transactie**. Door de fout wordt die teruggedraaid. Concreet bleef in de FC5-database de
-bronrelatie `eppoCode[WetenschappelijkeNaam*EPPOcode]` op **1 rij** steken (i.p.v. ~1400) —
-de hele EPPO-lijst was dus niet geladen, terwijl de app gewoon "leek" te draaien.
+A second, serious consequence you do not see right away: the import ran inside a
+**transaction**. The error rolls it back. Concretely, in the FC5 database the source relation
+`eppoCode[WetenschappelijkeNaam*EPPOcode]` stayed at **1 row** (instead of ~1400) — so the
+whole EPPO list was not loaded, while the app still "seemed" to run.
 
-> **Les 1.** Een oscillatie is dubbel gevaarlijk: hij stopt niet alleen de engine, hij rolt
-> ook de omringende transactie terug. "De app start" betekent niet "de data is geladen".
+> **Lesson 1.** An oscillation is doubly dangerous: it not only stops the engine, it also
+> rolls back the surrounding transaction. "The app starts" does not mean "the data is loaded".
 
 ---
 
-## 2. De analyse — hoe trace je het terug?
+## 2. The analysis — how do you trace it back?
 
-Werk van symptoom naar oorzaak, niet andersom (theoretiseer niet over de fix vóór je de
-oorzaak hebt vastgesteld).
+Work from symptom to cause, not the other way around. Do not theorise about the fix before
+you have established the cause.
 
-**Stap 1 — Lees de twee schuldige regels uit de foutmelding.** Hier: `OrganismeUniekeEPPO`
-en `eppoCodeMaaktOrganisme`. Zoek hun definitie op in de `.adl`-bron:
+**Step 1 — Read the two guilty rules from the error message.** Here: `OrganismeUniekeEPPO`
+and `eppoCodeMaaktOrganisme`. Find their definitions in the `.adl` source:
 
 ```
--- creatie-regel
+-- create rule
 ROLE ExecEngine MAINTAINS eppoCodeMaaktOrganisme
 RULE eppoCodeMaaktOrganisme : eppoCode - voorkeursNaam~;V[Organisme*EPPOcode] |- voorkeursNaam~;I[Organisme];eppoCode
 VIOLATION ( TXT "{EX} InsAtom;Organisme"
           , TXT "{EX} InsPair;voorkeursNaam;Organisme;_NEW;WetenschappelijkeNaam;", SRC I[WetenschappelijkeNaam]
           , TXT "{EX} InsPair;eppoCode;Organisme;_NEW;EPPOcode;", TGT I )
 
--- merge-regel
+-- merge rule
 ROLE ExecEngine MAINTAINS OrganismeUniekeEPPO
 RULE OrganismeUniekeEPPO : eppoCode[Organisme*EPPOcode];eppoCode[Organisme*EPPOcode]~ |- I[Organisme]
 VIOLATION ( TXT "{EX} MrgAtoms;Organisme;", SRC I, TXT ";Organisme;", TGT I )
 ```
 
-**Stap 2 — Vertaal elke regel naar gewone taal.**
-- `eppoCodeMaaktOrganisme`: "voor elke wetenschappelijke naam in de bron die nog géén
-  `voorkeursNaam` van een Organisme is: maak een Organisme met die naam én die EPPO-code."
-  → dit is **naam-gestuurd**: één Organisme per *naam*.
-- `OrganismeUniekeEPPO`: "twee Organismen met dezelfde EPPO-code zijn hetzelfde" → **merge
-  per code**: één Organisme per *code*.
+**Step 2 — Translate each rule into plain language.**
+- `eppoCodeMaaktOrganisme`: "for every scientific name in the source that is not yet the
+  `voorkeursNaam` of an Organisme: create an Organisme with that name and that EPPO code."
+  → this is **name-driven**: one Organisme per *name*.
+- `OrganismeUniekeEPPO`: "two Organismen with the same EPPO code are the same" → **merge per
+  code**: one Organisme per *code*.
 
-**Stap 3 — Lees de `{EX}`-acties in de log als bewijs.** De `InsPair(voorkeursNaam,…)` en
-`InsPair(eppoCode,…)` laten zien wélke namen/codes het betreft. Door ze te volgen zie je
-hetzelfde Organisme ontstaan, samensmelten en opnieuw ontstaan.
+**Step 3 — Read the `{EX}` actions in the log as evidence.** The `InsPair(voorkeursNaam,…)`
+and `InsPair(eppoCode,…)` show which names and codes are involved. Follow them and you watch
+the same Organisme appear, merge, and appear again.
 
-**Stap 4 — Controleer de invoer (de data), niet alleen de logica.** Vraag: *kan de bron de
-aannames van deze regels schenden?* Query de bron:
+**Step 4 — Check the input (the data), not just the logic.** Ask: *can the source violate the
+assumptions of these rules?* Query the source:
 
 ```sql
 SELECT WetenschappelijkeNaam, COUNT(DISTINCT EPPOcode)
-FROM <brontabel> GROUP BY WetenschappelijkeNaam HAVING COUNT(DISTINCT EPPOcode) > 1;  -- één naam, meerdere codes?
--- en omgekeerd: één code, meerdere namen?
+FROM <source table> GROUP BY WetenschappelijkeNaam HAVING COUNT(DISTINCT EPPOcode) > 1;  -- one name, several codes?
+-- and the reverse: one code, several names?
 ```
 
-In de FC5-bron bleek: **meerdere namen wijzen naar dezelfde EPPO-code** (synoniemen). Dat is
-de trigger. Houd dat vast voor de volgende paragraaf.
+In the FC5 source it turned out: **several names point to the same EPPO code** (synonyms).
+That is the trigger. Hold on to this for the next section.
 
 ---
 
-## 3. De oorzaak — concreet én wiskundig
+## 3. The cause — concrete and mathematical
 
-### 3a. Concreet: het draaiboek van de lus
+### 3a. Concrete: the script of the loop
 
-Neem één code `X` met twee namen `A1` en `A2` (synoniemen). Volg de ExecEngine ronde voor
-ronde:
+Take one code `X` with two names `A1` and `A2` (synonyms). Follow the ExecEngine round by
+round:
 
-1. **Ronde 1, creatie.** `eppoCodeMaaktOrganisme` is naam-gestuurd. `A1` en `A2` zijn nog
-   geen voorkeursNaam, dus de regel vuurt twee keer: er ontstaan `Org1(voorkeursNaam=A1, eppoCode=X)`
-   en `Org2(voorkeursNaam=A2, eppoCode=X)`.
-2. **Ronde 1, merge.** `OrganismeUniekeEPPO` ziet twee Organismen met code `X` → `MrgAtoms`.
-   Het resultaat is één Organisme. Maar `voorkeursNaam` is `[UNI]` (hoogstens één per
-   Organisme), dus na de merge overleeft maar één naam, zeg `A1`. **`A2` is z'n voorkeursNaam
-   kwijt.**
-3. **Ronde 2, creatie.** Nu is `A2` weer geen voorkeursNaam van enig Organisme → de
-   creatie-regel vuurt opnieuw voor `(A2, X)` → er ontstaat wéér een Organisme voor `A2`.
-4. **Ronde 2, merge.** Twee Organismen met code `X` → merge → `A2` raakt z'n naam weer kwijt.
-5. → terug naar stap 3. **Maken → samenvoegen → maken → samenvoegen → …** Eeuwig.
+1. **Round 1, create.** `eppoCodeMaaktOrganisme` is name-driven. `A1` and `A2` are not yet a
+   voorkeursNaam, so the rule fires twice: `Org1(voorkeursNaam=A1, eppoCode=X)` and
+   `Org2(voorkeursNaam=A2, eppoCode=X)` appear.
+2. **Round 1, merge.** `OrganismeUniekeEPPO` sees two Organismen with code `X` → `MrgAtoms`.
+   The result is one Organisme. But `voorkeursNaam` is `[UNI]` (at most one per Organisme), so
+   after the merge only one name survives, say `A1`. **`A2` has lost its voorkeursNaam.**
+3. **Round 2, create.** Now `A2` is again the voorkeursNaam of no Organisme → the create rule
+   fires again for `(A2, X)` → another Organisme appears for `A2`.
+4. **Round 2, merge.** Two Organismen with code `X` → merge → `A2` loses its name again.
+5. → back to step 3. **Create → merge → create → merge → …** Forever.
 
-De engine bereikt nooit nul violations en stopt bij de rerun-limiet.
+The engine never reaches zero violations and stops at the rerun limit.
 
-### 3b. Wiskundig: de regels zijn samen onvervulbaar
+### 3b. Mathematical: the rules are jointly unsatisfiable
 
-Dit is de kern die je echt wilt snappen. Schrijf de eisen op als uitspraken over relaties
-(in relatie-algebra; lees `;` als compositie en `~` als omdraaien):
+This is the core you really want to grasp. Write the requirements as statements about
+relations (in relation algebra; read `;` as composition and `~` as converse):
 
-- `voorkeursNaam` is `[UNI,INJ]` → een **injectieve partiële functie** `Organisme → Naam`:
-  elk Organisme heeft hoogstens één naam, en elke naam hoort bij hoogstens één Organisme.
-- `eppoCode` is `[UNI]` en `OrganismeUniekeEPPO` zegt bovendien dat verschillende Organismen
-  niet dezelfde code mogen hebben → `eppoCode` is óók een **injectieve partiële functie**
-  `Organisme → Code`.
-- `eppoCodeMaaktOrganisme` eist dat élke `(naam, code)` uit de bron een Organisme heeft met
-  precies die naam als voorkeursNaam én die code.
+- `voorkeursNaam` is `[UNI,INJ]` → an **injective partial function** `Organisme → Naam`: each
+  Organisme has at most one name, and each name belongs to at most one Organisme.
+- `eppoCode` is `[UNI]`, and `OrganismeUniekeEPPO` adds that different Organismen may not share
+  a code → `eppoCode` is **also** an injective partial function `Organisme → Code`.
+- `eppoCodeMaaktOrganisme` requires that *every* `(name, code)` from the source has an
+  Organisme with exactly that name as voorkeursNaam and that code.
 
-Tel die eisen op. Via het Organisme als tussenstap dwingen ze samen een **bijectie** af
-tussen de namen en de codes die in de bron voorkomen:
+Add up these requirements. Through the Organisme as an intermediate step, together they force
+a **bijection** between the names and the codes that occur in the source:
 
 ```
-Naam  <--(voorkeursNaam, bijectief)-->  Organisme  <--(eppoCode, bijectief)-->  Code
+Naam  <--(voorkeursNaam, bijective)-->  Organisme  <--(eppoCode, bijective)-->  Code
 ```
 
-Een samenstelling van twee bijecties is een bijectie. Dus de regels eisen dat de
-bron-afbeelding **naam ↔ code één-op-één** is.
+A composition of two bijections is a bijection. So the rules require the source mapping
+**name ↔ code to be one-to-one**.
 
-Maar de **data** zegt: `A1 ↦ X` en `A2 ↦ X` — twee namen, één code. Dat is per definitie
-*niet* injectief, dus *geen* bijectie. Er bestaat dus **geen enkele populatie** die alle
-regels tegelijk waarmaakt. De specificatie is, gegeven deze data, **onvervulbaar
-(inconsistent)**.
+But the **data** says: `A1 ↦ X` and `A2 ↦ X` — two names, one code. That is by definition
+*not* injective, so *not* a bijection. Therefore **no population** satisfies all rules at
+once. Given this data, the specification is **unsatisfiable (inconsistent)**.
 
-> **Waarom volgt daar een oneindige lus uit, en niet "gewoon" een foutmelding?**
-> De ExecEngine zoekt naar een **fixpunt**: een toestand die hij niet meer hoeft te
-> repareren. Dat werkt netjes als reparaties *monotoon* zijn (alleen maar feiten toevoegen):
-> dan groeit de populatie naar een kleinste fixpunt en stopt (stelling van Kleene/Tarski).
-> Hier is dat niet zo: `MrgAtoms` **verwijdert** een feit (een voorkeursNaam) dat de
-> creatie-regel meteen weer **toevoegt**. De reparatie-afbeelding is niet-monotoon en heeft
-> géén gemeenschappelijk fixpunt; in plaats daarvan beschrijft hij een **cykel met
-> periode 2** (maken ↔ samenvoegen). Geen fixpunt = geen terminatie. De rerun-limiet hakt de
-> oneindige lus af.
+> **Why does an infinite loop follow, and not "just" an error message?**
+> The ExecEngine looks for a **fixpoint**: a state it no longer needs to repair. That works
+> cleanly when repairs are *monotone* (they only add facts): the population then grows towards
+> a least fixpoint and stops (Kleene/Tarski theorem). Here it does not: `MrgAtoms`
+> **removes** a fact (a voorkeursNaam) that the create rule immediately **adds** again. The
+> repair mapping is non-monotone and has no common fixpoint; instead it describes a **cycle
+> with period 2** (create ↔ merge). No fixpoint means no termination. The rerun limit cuts off
+> the infinite loop.
 >
-> Kort: **onvervulbare invarianten + automatische reparatie = oscillatie.** De oscillatie is
-> het *waarneembare gevolg* van een *logische tegenspraak*.
+> In short: **unsatisfiable invariants + automatic repair = oscillation.** The oscillation is
+> the *observable consequence* of a *logical contradiction*.
 
-> **Les 2.** Elke afzonderlijke regel was redelijk ("codes uniek", "namen uniek", "alles
-> krijgt een Organisme"). De *combinatie* is de tegenspraak. Inconsistentie is een
-> eigenschap van de *verzameling* regels, niet van één regel.
+> **Lesson 2.** Each individual rule was reasonable ("codes unique", "names unique",
+> "everything gets an Organisme"). The *combination* is the contradiction. Inconsistency is a
+> property of the *set* of rules, not of one rule.
 
 ---
 
-## 4. De oplossingskeuzes — en het principe erachter
+## 4. The solution choices — and the principle behind them
 
-Als regels samen onvervulbaar zijn met de data, heb je in essentie drie knoppen. Kies bewust.
+When rules are jointly unsatisfiable with the data, you have three knobs. Choose deliberately.
 
-**Keuze A — Verzwak het model zodat de eisen wél samen kunnen.**
-De tegenspraak ontstond doordat we tegelijk "één Organisme per naam" én "één Organisme per
-code" eisten. Laat één kant los: sta toe dat één code meerdere namen heeft, met één
-*voorkeursnaam* en de rest als *synoniem*. Dan is de afbeelding code → {namen} legaal en
-verdwijnt de bijectie-eis. → Past bij **synoniemen**, die een echt domeinverschijnsel zijn.
+**Choice A — Weaken the model so the requirements can hold together.**
+The contradiction arose because we demanded both "one Organisme per name" and "one Organisme
+per code". Drop one side: allow one code to have several names, with one *preferred name* and
+the rest as *synonyms*. Then the mapping code → {names} is legal and the bijection requirement
+disappears. → Fits **synonyms**, a genuine domain phenomenon.
 
-**Keuze B — Repareer de data zodat ze de eisen wél kan waarmaken.**
-Als de tegenspraak voortkomt uit een *fout* in de bron (geen echt domeinverschijnsel), maak
-de afbeelding dan kloppend. → Past bij **typefouten en placeholders** (zie §6, oscillatie #2).
+**Choice B — Repair the data so it can satisfy the requirements.**
+If the contradiction stems from an *error* in the source (not a genuine domain phenomenon),
+make the mapping correct. → Fits **typos and placeholders** (see §6, oscillation #2).
 
-**Keuze C — Degradeer een te strenge invariant tot een signaal.**
-Soms wíl je niet automatisch repareren, maar een mens laten beslissen. Verander de regel van
-invariant (of ExecEngine-merge) naar **procesregel** onder een menselijke rol. De schending
-crasht dan niets meer; ze verschijnt als werklijst. → Past bij **checks** die eigenlijk
-"meld dit aan de beheerder" betekenen.
+**Choice C — Demote an overly strict invariant to a signal.**
+Sometimes you do not want to repair automatically; you want a human to decide. Change the rule
+from an invariant (or ExecEngine merge) into a **process rule** under a human role. The
+violation then crashes nothing; it appears as a worklist. → Fits **checks** that really mean
+"report this to the administrator".
 
-> **Het principe.** Het doel is niet "de oscillatie wegmaken" maar **de regelverzameling
-> samen vervulbaar maken** — door het model, de data, óf de strengheid aan te passen. De
-> oscillatie heeft je precies verteld wélke regels je daarvoor onder de loep moet nemen.
+> **The principle.** The goal is not "make the oscillation go away" but **make the rule set
+> jointly satisfiable** — by adjusting the model, the data, or the strictness. The oscillation
+> told you exactly which rules to examine.
 >
-> **Anti-patroon:** de rerun-limiet ophogen. Dat verbergt de tegenspraak; hij blijft bestaan
-> en sloopt elders (een teruggedraaide transactie, ontbrekende data) je systeem.
+> **Anti-pattern:** raising the rerun limit. That hides the contradiction; it stays and breaks
+> your system elsewhere (a rolled-back transaction, missing data).
 
 ---
 
-## 5. De oplossing (oscillatie #1: synoniemen)
+## 5. The solution (oscillation #1: synonyms)
 
-Gekozen: **A** (model verzwakken) — want synoniemen zijn legitiem.
+Chosen: **A** (weaken the model) — because synonyms are legitimate.
 
-**Wijziging 1 — maak de creatie code-gestuurd i.p.v. naam-gestuurd.** Niet langer "één
-Organisme per naam", maar "één Organisme per code die er nog geen heeft". Alleen de
-afgetrokken term in de antecedent verandert:
+**Change 1 — make creation code-driven instead of name-driven.** No longer "one Organisme per
+name", but "one Organisme per code that does not have one yet". Only the subtracted term in
+the antecedent changes:
 
 ```
--- was (naam-gestuurd): subtract = "naam is al een voorkeursNaam"
+-- was (name-driven): subtract = "name is already a voorkeursNaam"
 RULE eppoCodeMaaktOrganisme : eppoCode - voorkeursNaam~;V[Organisme*EPPOcode] |- voorkeursNaam~;I[Organisme];eppoCode
 
--- wordt (code-gestuurd): subtract = "code zit al op een Organisme"
+-- becomes (code-driven): subtract = "code is already on an Organisme"
 RULE eppoCodeMaaktOrganisme : eppoCode - V[WetenschappelijkeNaam*Organisme];eppoCode[Organisme*EPPOcode] |- voorkeursNaam~;I[Organisme];eppoCode
 ```
 
-**Wijziging 2 — bewaar de niet-gekozen namen als synoniem** (anders gaan ze bij de merge
-verloren):
+**Change 2 — keep the non-chosen names as synonyms** (otherwise the merge loses them):
 
 ```
 ROLE ExecEngine MAINTAINS eppoCodeSynoniem
@@ -271,115 +271,115 @@ RULE eppoCodeSynoniem : eppoCode;eppoCode[Organisme*EPPOcode]~ - voorkeursNaam~ 
 VIOLATION ( TXT "{EX} InsPair;synoniem;Organisme;", TGT I, TXT ";WetenschappelijkeNaam;", SRC I )
 ```
 
-**Waarom termineert dit nu?** Volg `X` met namen `A1, A2` opnieuw:
+**Why does this terminate now?** Follow `X` with names `A1, A2` again:
 
-1. Ronde 1: code-gestuurde creatie maakt (in deze ronde nog) twee Organismen voor `X`;
-   `OrganismeUniekeEPPO` merget ze tot één (voorkeursNaam = `A1`); `eppoCodeSynoniem` zet
-   `A2` als synoniem.
-2. Ronde 2: code `X` *heeft* nu een Organisme → de creatie-regel vuurt **niet** meer (dat is
-   het verschil!); de merge is tevreden; het synoniem staat er al. **Nul violations → stop.**
+1. Round 1: code-driven creation still makes two Organismen for `X` this round;
+   `OrganismeUniekeEPPO` merges them into one (voorkeursNaam = `A1`); `eppoCodeSynoniem` sets
+   `A2` as a synonym.
+2. Round 2: code `X` now *has* an Organisme → the create rule fires **no more** (that is the
+   difference!); the merge is satisfied; the synonym is already there. **Zero violations →
+   stop.**
 
-De cruciale verandering: de creatie hangt nu aan de **code** (die de merge intact laat), niet
-aan de **naam** (die de merge juist weggooit). Daardoor "herstelt" de creatie niet meer wat
-de merge net deed. De lus is verbroken omdat de regels nu **samen vervulbaar** zijn: één
-code → één Organisme → één voorkeursnaam + nul-of-meer synoniemen. Geen bijectie-eis meer.
+The crucial change: creation now hangs on the **code** (which the merge leaves intact), not on
+the **name** (which the merge throws away). So creation no longer "restores" what the merge
+just did. The loop breaks because the rules are now **jointly satisfiable**: one code → one
+Organisme → one preferred name + zero-or-more synonyms. No bijection requirement anymore.
 
 ---
 
-## 6. Hetzelfde verschijnsel, andere oorzaak (oscillatie #2)
+## 6. Same phenomenon, different cause (oscillation #2)
 
-Na de fix van #1 verscheen een **tweede** oscillatie — nu tussen `OrganismeUniekeNaam` en
-`eppoCodeMaaktOrganisme`. Dit is het **spiegelbeeld**: niet meerdere namen per code, maar
-**meerdere codes per naam**.
+After fixing #1 a **second** oscillation appeared — now between `OrganismeUniekeNaam` and
+`eppoCodeMaaktOrganisme`. This is the **mirror image**: not several names per code, but
+**several codes per name**.
 
-`OrganismeUniekeNaam` merget Organismen met dezelfde voorkeursNaam. Door de code-gestuurde
-creatie maakt het model nu één Organisme per code; als twee codes dezelfde naam dragen,
-ontstaan twee Organismen met identieke voorkeursNaam → merge → maar `eppoCode` is `[UNI]`,
-dus de merge gooit een code weg → die code krijgt weer geen Organisme → creatie maakt
-opnieuw → lus. Wiskundig: dezelfde bijectie-eis, nu geschonden aan de **naam-kant**.
+`OrganismeUniekeNaam` merges Organismen with the same voorkeursNaam. Because creation is now
+code-driven, the model makes one Organisme per code; if two codes carry the same name, two
+Organismen with identical voorkeursNaam appear → merge → but `eppoCode` is `[UNI]`, so the
+merge throws away one code → that code gets no Organisme again → creation makes it again →
+loop. Mathematically: the same bijection requirement, now violated on the **name side**.
 
-De oorzaak bleek **vuile data** in `EPPOcodes.xlsx`:
-- zes niet-bestaande codes deelden de placeholder-naam `(code niet gevonden in EPPO)`;
-- een O/0-typefout: `Begomovirus coheni` stond zowel onder `TYLCV0` (cijfer nul) als `TYLCVO`
+The cause turned out to be **dirty data** in `EPPOcodes.xlsx`:
+- six non-existent codes shared the placeholder name `(code niet gevonden in EPPO)`;
+- an O/0 typo: `Begomovirus coheni` appeared under both `TYLCV0` (digit zero) and `TYLCVO`
   (letter O).
 
-Hier is **keuze B (data repareren)** juist, niet A. Belangrijk methodisch punt: **raadpleeg
-de bron van waarheid.** De EPPO-database (`data.eppo.int`) gaf uitsluitsel:
+Here **choice B (repair the data)** is right, not A. An important methodological point:
+**consult the source of truth.** The EPPO database (`data.eppo.int`) settled it:
 
-| Code | EPPO `/names` | Oordeel |
+| Code | EPPO `/names` | Verdict |
 |---|---|---|
-| `TYLCV0` | Begomovirus coheni | echt → houden |
-| `TYLCVO` | `null` | bestaat niet → typefout, verwijderen |
-| de 6 placeholder-codes | `null` | bestaan niet → verwijderen |
+| `TYLCV0` | Begomovirus coheni | real → keep |
+| `TYLCVO` | `null` | does not exist → typo, remove |
+| the 6 placeholder codes | `null` | do not exist → remove |
 
-> **Les 3.** Eén symptoom (oscillatie), twee verschillende oorzaken, twee verschillende
-> juiste fixes. Synoniemen zijn een *modelkwestie* (verzwak het model); typefouten zijn een
-> *datakwestie* (repareer de data). De wiskundige diagnose (welke kant van de bijectie wordt
-> geschonden, en is dat een echt domeinverschijnsel of een fout?) wijst je de juiste knop.
+> **Lesson 3.** One symptom (oscillation), two different causes, two different correct fixes.
+> Synonyms are a *model issue* (weaken the model); typos are a *data issue* (repair the data).
+> The mathematical diagnosis — which side of the bijection is violated, and is that a genuine
+> domain phenomenon or an error? — points you to the right knob.
 
-### Robuustheid achteraf: invariant → procesregel
+### Robustness afterwards: invariant → process rule
 
-Wat als er in de toekomst tóch weer tegenstrijdige data binnenkomt? Dan wil je dat de import
-het **meldt** in plaats van crasht. Dat is **keuze C**, toegepast op de invariant
-`checkEPPOcode` (die controleert of de EPPO-code van een POcombinatie overeenkomt met de
-codelijst):
+What if contradictory data arrives again later? Then you want the import to **report** it
+instead of crash. That is **choice C**, applied to the invariant `checkEPPOcode` (which checks
+whether the EPPO code of a POcombinatie matches the code list):
 
 ```
-ROLE IMPORTER MAINTAINS checkEPPOcode      -- van invariant naar procesregel
+ROLE IMPORTER MAINTAINS checkEPPOcode      -- from invariant to process rule
 RULE checkEPPOcode : ...
 ```
 
-Nu blokkeert een inconsistentie de import niet meer; ze verschijnt als signaal voor de rol
-`IMPORTER`. (Let op: doe dit alléén bij *leesbare checks*. Een invariant met een `{EX}`-fix
-hoort bij de ExecEngine, niet bij een mens-rol — anders verschijnt de `{EX}`-tekst als
-onleesbaar signaal.)
+Now an inconsistency no longer blocks the import; it appears as a signal for the role
+`IMPORTER`. (Note: do this *only* for *readable checks*. An invariant with an `{EX}` fix
+belongs to the ExecEngine, not to a human role — otherwise the `{EX}` text shows up as an
+unreadable signal.)
 
 ---
 
-## 7. De validatie — hoe weet je dat het écht klopt?
+## 7. Validation — how do you know it really works?
 
-Niet "het lijkt te werken", maar meten. Na de herbouw (`./nvwa_prototype_init.sh`):
+Not "it seems to work", but measure. After the rebuild (`./nvwa_prototype_init.sh`):
 
-1. **Geen oscillatie meer** in de log:
+1. **No more oscillation** in the log:
    ```bash
-   docker compose logs prototype 2>&1 | grep -ci "maximum reruns exceeded"   # verwacht: 0
+   docker compose logs prototype 2>&1 | grep -ci "maximum reruns exceeded"   # expect: 0
    ```
-2. **De transactie rolt niet meer terug** — de data is nu echt geladen:
-   | meting | vóór | na |
+2. **The transaction no longer rolls back** — the data is now really loaded:
+   | measurement | before | after |
    |---|---|---|
-   | `eppoCode[WN*EPPO]` (rijen) | 1 | 1400 |
+   | `eppoCode[WN*EPPO]` (rows) | 1 | 1400 |
    | Organismen | 792 | 1496 |
-   | synoniem-paren | 0 | 4295 |
-3. **De invarianten kloppen nu aantoonbaar** (de eisen die de oscillatie veroorzaakten):
+   | synonym pairs | 0 | 4295 |
+3. **The invariants now demonstrably hold** (the requirements that caused the oscillation):
    ```sql
-   -- elke code hoort bij precies één Organisme? -> verwacht 0
+   -- every code belongs to exactly one Organisme? -> expect 0
    SELECT COUNT(*) FROM (SELECT eppoCode FROM Organisme WHERE eppoCode IS NOT NULL
                          GROUP BY eppoCode HAVING COUNT(*)>1) t;
-   -- geen Organisme zonder code? -> verwacht 0
+   -- no Organisme without a code? -> expect 0
    SELECT COUNT(*) FROM Organisme WHERE eppoCode IS NULL;
    ```
-4. **Spot-checks tegen de bron van waarheid:** `TYLCV0 → Begomovirus coheni` (één record,
-   geen dubbel), en geen Organisme meer met de naam `(code niet gevonden in EPPO)`.
+4. **Spot checks against the source of truth:** `TYLCV0 → Begomovirus coheni` (one record, no
+   duplicate), and no Organisme left with the name `(code niet gevonden in EPPO)`.
 
-> **Les 4.** Een oscillatie-fix is pas af als je kunt aantonen dat (a) de lus weg is, (b) de
-> omringende transactie nu slaagt, én (c) de invarianten die botsten nu daadwerkelijk gelden.
-> Punt (c) is het bewijs dat je de tegenspraak hebt *opgelost*, niet *verstopt*.
+> **Lesson 4.** An oscillation fix is only done when you can show that (a) the loop is gone,
+> (b) the surrounding transaction now succeeds, and (c) the invariants that collided now
+> actually hold. Point (c) proves you *solved* the contradiction rather than *hid* it.
 
 ---
 
-## 8. Zelf naspelen (minimaal voorbeeld)
+## 8. Reproduce it yourself (minimal example)
 
-Naast deze les staan twee zelfstandige, foutvrij compilerende scripts:
+Alongside this lesson sit two self-contained scripts that compile cleanly:
 
-- **`oscillatie-buggy.adl`** — reproduceert de oscillatie. Bevat de naam-gestuurde creatie
-  plus de twee merge-regels (`uniekeCode`, `uniekeNaam`), en een populatie met twee namen op
-  één code. Onderaan staat een tweede populatie (één naam, twee codes) die je kunt aanzetten
-  om oscillatie #2 te zien.
-- **`oscillatie-fixed.adl`** — de opgeloste versie (code-gestuurde creatie + `maakSynoniem`).
-  Convergeert op het synoniem-geval.
+- **`oscillatie-buggy.adl`** — reproduces the oscillation. It holds the name-driven creation
+  plus the two merge rules (`uniekeCode`, `uniekeNaam`), and a population with two names on one
+  code. At the bottom sits a second population (one name, two codes) that you can switch on to
+  see oscillation #2.
+- **`oscillatie-fixed.adl`** — the solved version (code-driven creation + `maakSynoniem`). It
+  converges on the synonym case.
 
-**Type-checken** (valideert alleen de syntax/typen, niet de runtime-lus). Voer dit uit in de
-map waarin de scripts staan:
+**Type-check** (this validates only the syntax and types, not the runtime loop). Run it in the
+folder that holds the scripts:
 
 ```bash
 docker run --rm --platform linux/amd64 -v "$PWD:/scripts" \
@@ -387,47 +387,48 @@ docker run --rm --platform linux/amd64 -v "$PWD:/scripts" \
 # => "contains no type errors and no population errors."
 ```
 
-**De oscillatie écht zien** vergt de *runtime* (de ExecEngine draait niet bij `check`, maar
-bij het uitvoeren van een prototype). Genereer en start een prototype van het script — het
-eenvoudigst in een [RAP-omgeving](../../tutorial-rap4.md), of met een lokale
-[prototype-deployment](../deploying-your-prototype.md). Trigger daarna de ExecEngine (de "run
-execengine"-actie of een data-import) en lees de log:
+**To really see the oscillation** you need the *runtime* (the ExecEngine does not run on
+`check`, only when you run a prototype). Generate and start a prototype of the script —
+easiest in a [RAP environment](../../tutorial-rap4.md), or with a local
+[prototype deployment](../deploying-your-prototype.md). Then trigger the ExecEngine (the
+"run execengine" action or a data import) and read the log:
 
-- met `oscillatie-buggy.adl` verschijnt `Maximum reruns exceeded` met de twee botsende regels;
-- met `oscillatie-fixed.adl` daalt de run netjes naar nul violations.
+- with `oscillatie-buggy.adl` the message `Maximum reruns exceeded` appears, naming the two
+  colliding rules;
+- with `oscillatie-fixed.adl` the run descends cleanly to zero violations.
 
-**Experimenten die het begrip vastzetten:**
-1. Verander in de buggy-versie de populatie naar twee *verschillende* codes voor twee
-   *verschillende* namen. → Geen oscillatie. (Waarom? De bijectie-eis wordt niet geschonden.)
-2. Haal in de fixed-versie de regel `maakSynoniem` weg. → Geen oscillatie, maar de tweede
-   naam gaat *verloren*. (Les: termineren is niet hetzelfde als correct.)
-3. Zet in de buggy-versie de tweede populatie (één naam, twee codes) aan. → Oscillatie #2,
-   nu met `uniekeNaam` als botsende regel. Repareer hem door de typefout uit de populatie te
-   halen (keuze B), niet door een regel te schrappen.
-
----
-
-## 9. Samenvatting — de oscillatie als kans
-
-- Een oscillatie (`Maximum reruns exceeded`) betekent: **je invarianten zijn, gegeven de
-  data, samen onvervulbaar.** De automatische reparatie vindt geen fixpunt en cykelt.
-- De foutmelding noemt de **botsende regels**. Dat is een cadeau: het lokaliseert de
-  tegenspraak.
-- Diagnostiseer **wiskundig**: welke onmogelijke eis leggen de regels samen op (hier: een
-  bijectie naam ↔ code), en welke kant schendt de data?
-- Kies bewust een knop: **model verzwakken** (A, bij een echt domeinverschijnsel als
-  synoniemen), **data repareren** (B, bij fouten — raadpleeg de bron van waarheid), of
-  **invariant tot signaal degraderen** (C, als een mens moet beslissen).
-- **Valideer** dat de lus weg is, de transactie slaagt, én de invarianten nu echt gelden.
-- Hoog nooit zomaar de rerun-limiet op: dat verbergt een logische tegenspraak in plaats van
-  hem op te lossen.
-
-> Een oscillatie is geen tegenslag maar **feedback**: de runtime bewijst dat je regels elkaar
-> tegenspreken en wijst aan wáár. Gebruik die kennis om je specificatie consistent te maken —
-> dan is je model er aantoonbaar beter van geworden.
+**Experiments that cement understanding:**
+1. In the buggy version, change the population to two *different* codes for two *different*
+   names. → No oscillation. (Why? The bijection requirement is not violated.)
+2. In the fixed version, remove the rule `maakSynoniem`. → No oscillation, but the second name
+   is *lost*. (Lesson: terminating is not the same as correct.)
+3. In the buggy version, switch on the second population (one name, two codes). → Oscillation
+   #2, now with `uniekeNaam` as the colliding rule. Repair it by removing the typo from the
+   population (choice B), not by deleting a rule.
 
 ---
 
-*Verwante documenten:* [Automating Rules in Ampersand](../../conceptual/automated-rules.md)
-(hoe ExecEngine-regels de populatie automatisch repareren — de achtergrond onder deze casus),
-en [Best practices for Ampersand modellers](../best-practices.md).
+## 9. Summary — the oscillation as an opportunity
+
+- An oscillation (`Maximum reruns exceeded`) means: **given the data, your invariants are
+  jointly unsatisfiable.** The automatic repair finds no fixpoint and cycles.
+- The error message names the **colliding rules**. That is a gift: it locates the
+  contradiction.
+- Diagnose **mathematically**: which impossible requirement do the rules impose together
+  (here: a bijection name ↔ code), and which side does the data violate?
+- Choose a knob deliberately: **weaken the model** (A, for a genuine domain phenomenon such as
+  synonyms), **repair the data** (B, for errors — consult the source of truth), or **demote an
+  invariant to a signal** (C, when a human must decide).
+- **Validate** that the loop is gone, the transaction succeeds, and the invariants now really
+  hold.
+- Never just raise the rerun limit: that hides a logical contradiction instead of solving it.
+
+> An oscillation is not a setback but **feedback**: the runtime proves that your rules
+> contradict each other and points to where. Use that knowledge to make your specification
+> consistent — then your model is demonstrably the better for it.
+
+---
+
+*Related documents:* [Automating Rules in Ampersand](../../conceptual/automated-rules.md)
+(how ExecEngine rules repair the population automatically — the background under this case),
+and [Best practices for Ampersand modellers](../best-practices.md).

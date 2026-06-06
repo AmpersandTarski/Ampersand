@@ -147,7 +147,7 @@ module.exports = {
             id: 'ampersand/guides/best-practices'
         },
         {
-            label: 'Diagnosing oscillations (worked case, in Dutch)',
+            label: 'Diagnosing oscillations (worked case)',
             type: 'doc',
             id: 'ampersand/guides/oscillations/README'
         },
