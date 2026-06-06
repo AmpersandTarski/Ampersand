@@ -9,7 +9,7 @@
 > consistent. By the end you can reproduce an example by yourself with a minimal script.
 >
 > **Key message.** An oscillation is not an annoying bug that you silence by raising the
-> rerun limit. It is the runtime telling you: *your invariants contradict each other.* Use
+> rerun limit. It is the runtime telling you: *your rules contradict each other.* Use
 > that to make them consistent.
 >
 > **About the example.** This case comes from a Dutch project (FC5, plant-health inspection),
@@ -117,8 +117,9 @@ A second, serious consequence you do not see right away: the import ran inside a
 `eppoCode[WetenschappelijkeNaam*EPPOcode]` stayed at **1 row** (instead of ~1400) — so the
 whole EPPO list was not loaded, while the app still "seemed" to run.
 
-> **Lesson 1.** An oscillation stops the engine. So, it also
-> rolls back the surrounding transaction because not all violations are resolved.
+> **Lesson 1.** An oscillation is doubly damaging: it stops the engine, and because it leaves
+> violations unresolved, the surrounding transaction rolls back. "The app starts" does not mean
+> "the data is loaded".
 
 ---
 
@@ -209,10 +210,11 @@ The engine never reaches zero violations and stops at the rerun limit.
 Write the requirements as statements about
 relations (in relation algebra; read `;` as composition and `~` as converse):
 
-- `voorkeursNaam` is `[UNI,INJ]` → an **injective partial function** `Organisme → Naam`: each
-  Organisme has at most one name, and each name belongs to at most one Organisme.
+- `voorkeursNaam` is `[UNI,INJ]` → an **injective partial function** `Organisme →
+  WetenschappelijkeNaam`: each Organisme has at most one name, and each name belongs to at most
+  one Organisme.
 - `eppoCode` is `[UNI]`, and `OrganismeUniekeEPPO` adds that different Organismen may not share
-  a code → `eppoCode` is **also** an injective partial function `Organisme → Code`.
+  a code → `eppoCode` is **also** an injective partial function `Organisme → EPPOcode`.
 - `eppoCodeMaaktOrganisme` requires that *every* `(name, code)` from the source has an
   Organisme with exactly that name as voorkeursNaam and that code.
 
@@ -220,7 +222,7 @@ Add up these requirements. Through the Organisme as an intermediate step, togeth
 a **bijection** between the names and the codes that occur in the source:
 
 ```text
-Naam  <--(voorkeursNaam, bijective)-->  Organisme  <--(eppoCode, bijective)-->  Code
+WetenschappelijkeNaam  <--(voorkeursNaam, bijective)-->  Organisme  <--(eppoCode, bijective)-->  EPPOcode
 ```
 
 A composition of two bijections is a bijection. So the rules require the source mapping
@@ -239,7 +241,7 @@ once. Given this data, the specification is **unsatisfiable (inconsistent)**.
 > with period 2** (create ↔ merge). No fixpoint means no termination. The rerun limit cuts off
 > the infinite loop.
 >
-> In short: **unsatisfiable invariants + automatic repair = oscillation.** The oscillation is
+> In short: **unsatisfiable rules + automatic repair = oscillation.** The oscillation is
 > the *observable consequence* of a *logical contradiction*.
 >
 > **Lesson 2.** Each individual rule was reasonable ("codes unique", "names unique",
@@ -386,7 +388,7 @@ A fix is verified by measurement, not by the impression that it works. After the
    | Organismen | 792 | 1496 |
    | synonym pairs | 0 | 4295 |
 
-3. **The invariants now demonstrably hold** (the requirements that caused the oscillation):
+3. **The requirements now demonstrably hold** (the ones that caused the oscillation):
 
    ```sql
    -- every code belongs to exactly one Organisme? -> expect 0
@@ -400,8 +402,8 @@ A fix is verified by measurement, not by the impression that it works. After the
    duplicate), and no Organisme left with the name `(code niet gevonden in EPPO)`.
 
 > **Lesson 4.** An oscillation fix is only done when you can show that (a) the loop is gone,
-> (b) the surrounding transaction now succeeds, and (c) the invariants that collided now
-> actually hold. Point (c) proves you *solved* the contradiction rather than *hid* it.
+> (b) the surrounding transaction now succeeds, and (c) the rules that collided now actually
+> hold. Point (c) proves you *solved* the contradiction rather than *hid* it.
 
 ---
 
@@ -415,6 +417,10 @@ Alongside this lesson sit two self-contained scripts that compile cleanly:
   see oscillation #2.
 - **`oscillatie-fixed.adl`** — the solved version (code-driven creation + `maakSynoniem`). It
   converges on the synonym case.
+
+These minimal scripts use short rule names; mapped to the case above, `maakOrganisme` is
+`eppoCodeMaaktOrganisme`, `uniekeCode` is `OrganismeUniekeEPPO`, `uniekeNaam` is
+`OrganismeUniekeNaam`, and `maakSynoniem` is `eppoCodeSynoniem`.
 
 **Type-check** (this validates only the syntax and types, not the runtime loop). Run it in the
 folder that holds the scripts:
@@ -449,17 +455,16 @@ easiest in a [RAP environment](../../tutorial-rap4.md), or with a local
 
 ## 9. Summary — the oscillation as an opportunity
 
-- An oscillation (`Maximum reruns exceeded`) means: **given the data, your invariants are
-  jointly unsatisfiable.** The automatic repair finds no fixpoint and cycles.
-- The error message names the **colliding rules**. That is a gift: it locates the
-  contradiction.
+- An oscillation (`Maximum reruns exceeded`) means: **given the data, your rules are jointly
+  unsatisfiable.** The automatic repair finds no fixpoint and cycles.
+- The error message points at the **colliding rules** (the ones still being fixed). That is a
+  gift: it locates the contradiction.
 - Diagnose **mathematically**: which impossible requirement do the rules impose together
   (here: a bijection name ↔ code), and which side does the data violate?
 - Choose with oscillation risks in mind: **weaken the model** (A, for a genuine domain phenomenon such as
   synonyms), **repair the data** (B, for errors — consult the source of truth), or **demote an
   invariant to a signal** (C, when a human must decide).
-- **Validate** that the loop is gone, the transaction succeeds, and the invariants now really
-  hold.
+- **Validate** that the loop is gone, the transaction succeeds, and the rules now really hold.
 
 > An oscillation is not a setback but **feedback**: the runtime proves that your rules
 > contradict each other and points to where. Use that knowledge to make your specification
