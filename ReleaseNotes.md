@@ -26,6 +26,7 @@
 - Documentation: add a worked student lesson on diagnosing ExecEngine oscillations (`Maximum reruns exceeded`) under `docs/guides/oscillations/`, with a buggy/fixed demo script pair. Linked from the Guides sidebar and the Troubleshooting page.
 - CI: upgrade `actions/checkout` and `actions/setup-node` to v5 (Node.js 24), resolving the Node.js 20 deprecation warning on the runners.
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
+- Documentation tooling: add `scripts/check-docs-links.js` (CI) that fails on broken intra-repo doc links (including README/index targets written without `.md`) and casing mismatches, plus a `docs-hygiene` workflow that runs the sidebar and link checks on pull requests.
 - Add `CLAUDE.md` with repository conventions (release-notes enforcement, docs publishing branch, internal-notes convention).
 - CI/release: drop the macOS build entirely. GitHub deprecated the macos-13 runner and the Apple-Silicon (macos-14) build was failing; since Ampersand runs under Linux/Docker on macOS anyway, the native macOS binary is no longer built or attached to releases. Prebuilt binaries are now Linux and Windows; on macOS, use Docker or build from source.
 
