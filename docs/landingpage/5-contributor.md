@@ -75,83 +75,83 @@ Welcome, contributor. Whether you are hacking on the Haskell compiler, building 
 ### Getting started & project structure
 
 **Where should I start as a new contributor?**
-The fastest path in: open a GitHub issue or contact Stef Joosten, request membership of the AmpersandTarski organization, then clone only the repositories you need. [Learn more →](https://ampersandtarski.github.io/ampersand/guides/onboarding)
+The fastest path in: open a GitHub issue or contact Stef Joosten, request membership of the AmpersandTarski organization, then clone only the repositories you need. [Learn more →](../guides/onboarding.md)
 
 **Which repositories make up the Ampersand ecosystem, and what does each do?**
-Knowing where code lives saves you hunting: **Ampersand** is the compiler, **Prototype** gives the visual interface and BOX/VIEW templates, **RAP** stores and builds Ampersand scripts, and **AmpersandTarski.github.io** builds the documentation site. The wider Git org also holds ampersand-models, Ampersand-Language-Support and Publications. [Learn more →](https://ampersandtarski.github.io/ampersand/landingpage/contributor)
+Knowing where code lives saves you hunting: **Ampersand** is the compiler, **Prototype** gives the visual interface and BOX/VIEW templates, **RAP** stores and builds Ampersand scripts, and **AmpersandTarski.github.io** builds the documentation site. The wider Git org also holds ampersand-models, Ampersand-Language-Support and Publications. [Learn more →](./5-contributor.md)
 
 **How do I clone the source with Git?**
-Get yourself coding in minutes: create a GitHub account, ask for team membership, set up an SSH key, then run `git clone git@github.com:AmpersandTarski/Ampersand.git`. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/git)
+Get yourself coding in minutes: create a GitHub account, ask for team membership, set up an SSH key, then run `git clone git@github.com:AmpersandTarski/Ampersand.git`. [Learn more →](../the-tools-we-use/git.md)
 
 **Which tools does the project use, and what role does each play?**
-Before you set up your machine, this is your shopping list: Haskell, Stack, Docker, Git, Graphviz, MariaDB, Node.js, Pandoc, VS Code and more, each with its specific job spelled out. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/tools-used-in-the-ampersand-project)
+Before you set up your machine, this is your shopping list: Haskell, Stack, Docker, Git, Graphviz, MariaDB, Node.js, Pandoc, VS Code and more, each with its specific job spelled out. [Learn more →](../the-tools-we-use/tools-used-in-the-ampersand-project.md)
 
 **Are there videos to walk me through setting up the environment?**
-If you learn faster by watching, the Quick Start Guide videos cover setup and build, folder structure, and local setup; have Git and Docker installed first. [Learn more →](https://ampersandtarski.github.io/ampersand/video-tutorials)
+If you learn faster by watching, the Quick Start Guide videos cover setup and build, folder structure, and local setup; have Git and Docker installed first. [Learn more →](../video-tutorials.md)
 
 **Where should I start reading these docs for my role?**
-Don't waste time wandering: the introduction routes you to the right starting point depending on whether you are curious, a student, a professional, a scientist, or a software engineer. [Learn more →](https://ampersandtarski.github.io/ampersand/intro)
+Don't waste time wandering: the introduction routes you to the right starting point depending on whether you are curious, a student, a professional, a scientist, or a software engineer. [Learn more →](../intro.md)
 
 **What working principles does the team follow?**
-Aligning with the team's habits makes reviews smoother: produce free open-source software, automate production, write for maintainability, and diagnose issues on GitHub before fixing. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use)
+Aligning with the team's habits makes reviews smoother: produce free open-source software, automate production, write for maintainability, and diagnose issues on GitHub before fixing. [Learn more →](../the-tools-we-use/README.md)
 
 **What editor support is available for writing Ampersand models?**
-Get syntax help while you model: the `ampersandtarski.language-ampersand` VS Code extension adds modelling support with settings like the main script name and project folder, and needs `ampersand` on your PATH. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/ampersand-language-support)
+Get syntax help while you model: the `ampersandtarski.language-ampersand` VS Code extension adds modelling support with settings like the main script name and project folder, and needs `ampersand` on your PATH. [Learn more →](../the-tools-we-use/ampersand-language-support.md)
 
 ### Building the compiler — Haskell, Stack, Docker, VS Code
 
 **How do I build the compiler from source?**
-This is your core dev loop: install Stack, clone the repo, run `stack build` (it installs the pinned GHC), then `stack test` to run the regression suite. With package.yaml in your working directory you can also `stack install`, adding `--flag ampersand:buildAll` to include the preprocessor. [Learn more →](https://ampersandtarski.github.io/ampersand/guides/installing-ampersand)
+This is your core dev loop: install Stack, clone the repo, run `stack build` (it installs the pinned GHC), then `stack test` to run the regression suite. With package.yaml in your working directory you can also `stack install`, adding `--flag ampersand:buildAll` to include the preprocessor. [Learn more →](../guides/installing-ampersand.md)
 
 **Which build tools build the compiler and related artefacts?**
-Pick the right tool for the job: Stack builds the compiler binary on MacOS/Windows, while Docker builds images for the compiler, applications and RAP. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/building)
+Pick the right tool for the job: Stack builds the compiler binary on MacOS/Windows, while Docker builds images for the compiler, applications and RAP. [Learn more →](../the-tools-we-use/building/README.md)
 
 **How do I set up a Haskell dev environment in VS Code?**
-Skip the manual toolchain setup: use the provided `.devcontainer` with the Remote Development extension and Docker, then "Reopen in Container" for a ready-made Haskell environment. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/group-1/development-using-vs-code)
+Skip the manual toolchain setup: use the provided `.devcontainer` with the Remote Development extension and Docker, then "Reopen in Container" for a ready-made Haskell environment. [Learn more →](../the-tools-we-use/group-1/development-using-vs-code.md)
 
 **How must I format Haskell code before contributing?**
-Avoid a red CI check on your PR: all Haskell code must be formatted with ormolu, enforced by a GitHub action — enable format-on-save or run `stack exec ormolu inplace`. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/group-1/development-using-vs-code)
+Avoid a red CI check on your PR: all Haskell code must be formatted with ormolu, enforced by a GitHub action — enable format-on-save or run `stack exec ormolu inplace`. [Learn more →](../the-tools-we-use/group-1/development-using-vs-code.md)
 
 **How do I build a Docker image with the compiler?**
-To reproduce a clean build in a container, clone the repo and run `docker build -t myampersand ~/Ampersand/`; it is a 2-stage build and needs at least 5G of Docker memory. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image)
+To reproduce a clean build in a container, clone the repo and run `docker build -t myampersand ~/Ampersand/`; it is a 2-stage build and needs at least 5G of Docker memory. [Learn more →](../the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image.md)
 
 **How do I reproduce a build manually?**
-When CI does something you want to repeat by hand, from the repo root run `docker build .` for the image, or `stack install` for the compiler. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/building/automated-builds)
+When CI does something you want to repeat by hand, from the repo root run `docker build .` for the image, or `stack install` for the compiler. [Learn more →](../the-tools-we-use/building/automated-builds.md)
 
 **Which container images does the project use, and what is each for?**
-Handy when you are debugging the image stack: Ampersand uses haskell and debian base images, the ampersand compiler and devcontainer images, ampersand-rap, mariadb, phpMyAdmin, and the prototype-framework image. [Learn more →](https://ampersandtarski.github.io/ampersand/docker)
+Handy when you are debugging the image stack: Ampersand uses haskell and debian base images, the ampersand compiler and devcontainer images, ampersand-rap, mariadb, phpMyAdmin, and the prototype-framework image. [Learn more →](../docker/README.md)
 
 **What do the compiler exit codes mean?**
-When a build script fails, the exit code tells you why: e.g. 0 success, 10 invalid script, 20 inconsistent population, 50 sanity-check violations, and 70 wrong arguments. [Learn more →](https://ampersandtarski.github.io/ampersand/the-command-line-tool)
+When a build script fails, the exit code tells you why: e.g. 0 success, 10 invalid script, 20 inconsistent population, 50 sanity-check violations, and 70 wrong arguments. [Learn more →](../the-command-line-tool.md)
 
 ### The contribution workflow — Git, releasing, CI/CD, documentation
 
 **What does submitting a contribution involve?**
-Here is the whole loop in one breath: create a branch, open a PR (docs target the `documentation` branch), add a ReleaseNotes entry for code changes, let CI pass, and a maintainer reviews and merges. [Learn more →](https://ampersandtarski.github.io/ampersand/landingpage/contributor)
+Here is the whole loop in one breath: create a branch, open a PR (docs target the `documentation` branch), add a ReleaseNotes entry for code changes, let CI pass, and a maintainer reviews and merges. [Learn more →](./5-contributor.md)
 
 **What branching strategy does Ampersand use?**
-Branch with confidence: experiment in feature branches off main, record your intentions in ReleaseNotes.md, and merge to the release-only main branch via pull request. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/releasing-ampersand-and-workflow-details)
+Branch with confidence: experiment in feature branches off main, record your intentions in ReleaseNotes.md, and merge to the release-only main branch via pull request. [Learn more →](../the-tools-we-use/releasing-ampersand-and-workflow-details.md)
 
 **How do I release a new Ampersand version?**
-When it is your turn to cut a release: update the version in package.yaml and ReleaseNotes.md on development, push to trigger tests, verify the build, then open a pull request from development to master. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/releasing-ampersand-and-workflow-details)
+When it is your turn to cut a release: update the version in package.yaml and ReleaseNotes.md on development, push to trigger tests, verify the build, then open a pull request from development to master. [Learn more →](../the-tools-we-use/releasing-ampersand-and-workflow-details.md)
 
 **Why and how is releasing automated?**
-So you spend your time on code, not ceremony: releases run on GitHub Actions with git-flow branching, producing frequent, reliable, reproducible builds. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/automation-of-releasing-ci-cd)
+So you spend your time on code, not ceremony: releases run on GitHub Actions with git-flow branching, producing frequent, reliable, reproducible builds. [Learn more →](../the-tools-we-use/automation-of-releasing-ci-cd/README.md)
 
 **How can I list the packages and versions published to the repo?**
-To check what shipped, send a GraphQL POST to `api.github.com/graphql` with a packages query, using a personal access token and the `packages-preview` Accept header. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/automation-of-releasing-ci-cd/github-packages)
+To check what shipped, send a GraphQL POST to `api.github.com/graphql` with a packages query, using a personal access token and the `packages-preview` Accept header. [Learn more →](../the-tools-we-use/automation-of-releasing-ci-cd/github-packages.md)
 
 **How can I contribute to the documentation?**
-Improving the docs is one of the easiest first contributions; this page introduces how to help. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/Documentation)
+Improving the docs is one of the easiest first contributions; this page introduces how to help. [Learn more →](../the-tools-we-use/Documentation.md)
 
 **How is the documentation site assembled?**
-Knowing this prevents you from editing the wrong copy: it is one Docusaurus site built from the docs/ folders of the Ampersand, Prototype and RAP repos, organised by audience landing pages plus a Diataxis structure. [Learn more →](https://ampersandtarski.github.io/ampersand/guides/documentation-architecture)
+Knowing this prevents you from editing the wrong copy: it is one Docusaurus site built from the docs/ folders of the Ampersand, Prototype and RAP repos, organised by audience landing pages plus a Diataxis structure. [Learn more →](../guides/documentation-architecture.md)
 
 **Where should I put a new documentation page?**
-Place it in the docs/ folder of the repository it describes, and in the Diataxis area (guides, reference, theory, or introduction) that matches its kind — so readers and the sidebar find it where they expect. [Learn more →](https://ampersandtarski.github.io/ampersand/guides/documentation-architecture)
+Place it in the docs/ folder of the repository it describes, and in the Diataxis area (guides, reference, theory, or introduction) that matches its kind — so readers and the sidebar find it where they expect. [Learn more →](../guides/documentation-architecture.md)
 
 **Which audiences do the docs target?**
-Write for the right reader: the docs serve five audiences — the interested visitor, the student, the user, the scientist, and the contributor. [Learn more →](https://ampersandtarski.github.io/ampersand/guides/documentation-architecture)
+Write for the right reader: the docs serve five audiences — the interested visitor, the student, the user, the scientist, and the contributor. [Learn more →](../guides/documentation-architecture.md)
 
 **How do my doc changes reach the live website?**
 Publishing is push-button: three repositories feed one Docusaurus site, and pushing docs/ changes to main triggers the automated build. [Learn more →](https://ampersandtarski.github.io/prototype)
@@ -166,7 +166,7 @@ Follow this checklist to go live: write the page, register it in docs/sidebar.js
 If you are documenting framework internals, your pages go in guides/ and reference-material/ under docs/, aimed at framework developers and advanced users, and published to the site from the main branch. [Learn more →](https://ampersandtarski.github.io/prototype)
 
 **Under which licence are the docs published?**
-Reuse them freely with attribution: the documentation is licensed under Creative Commons Attribution-ShareAlike 4.0 International unless otherwise specified. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use)
+Reuse them freely with attribution: the documentation is licensed under Creative Commons Attribution-ShareAlike 4.0 International unless otherwise specified. [Learn more →](../the-tools-we-use/README.md)
 
 ### The Prototype framework — templates, components & generation
 
@@ -237,13 +237,13 @@ Hook into the data lifecycle: connect a listener to the framework's Symfony even
 Swap storage without touching app code: it uses the Flysystem PHP abstraction with a default Local adapter on the `AmpersandApp` object, swappable for adapters like SFTP. [Learn more →](https://ampersandtarski.github.io/prototype/reference-material/prototype-framework)
 
 **How does the framework handle errors and exceptions?**
-This is what to expect when debugging: it throws exceptions using HTTP status codes — 4xx are user errors shown in full, 5xx are server errors hidden unless `debugMode` is on, and all are logged. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/prototype-framework)
+This is what to expect when debugging: it throws exceptions using HTTP status codes — 4xx are user errors shown in full, 5xx are server errors hidden unless `debugMode` is on, and all are logged. [Learn more →](../the-tools-we-use/prototype-framework.md)
 
 **What hookpoints can I use to extend a generated application?**
-Plug in cleanly: hookpoints use camelCased names prefixed with pre/post (e.g. `postDatabaseUpdate`) and are listed alongside the extensions that use them. [Learn more →](https://ampersandtarski.github.io/ampersand/reference-material/architecture-of-an-ampersand-application)
+Plug in cleanly: hookpoints use camelCased names prefixed with pre/post (e.g. `postDatabaseUpdate`) and are listed alongside the extensions that use them. [Learn more →](../reference-material/architecture-of-an-ampersand-application.md)
 
 **How can an Ampersand application authenticate users with OAuth?**
-Add named-user access without rolling your own auth: an application can grant access via the OAuth standard, for example using GitHub as the access provider. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/authentication-and-access-management-with-oauth)
+Add named-user access without rolling your own auth: an application can grant access via the OAuth standard, for example using GitHub as the access provider. [Learn more →](../the-tools-we-use/authentication-and-access-management-with-oauth.md)
 
 ### Releasing the Prototype framework
 
@@ -339,19 +339,19 @@ Go straight to the "Prepare Azure Kubernetes Service (AKS)" topic, which walks t
 ### Testing & regression testing
 
 **How do I run the regression test suite locally?**
-Catch breakage before CI does: run `bash stacktest.sh`, which sets up PHP and MariaDB and then runs `stack test` (equivalently `ampersand test testing`). You can also run `stack test --flag ampersand:buildAll`. [Learn more →](https://ampersandtarski.github.io/ampersand/regression-testing)
+Catch breakage before CI does: run `bash stacktest.sh`, which sets up PHP and MariaDB and then runs `stack test` (equivalently `ampersand test testing`). You can also run `stack test --flag ampersand:buildAll`. [Learn more →](../regression-testing.md)
 
 **How does the regression runner decide what to test and what passes?**
-So you know what "green" means: it walks `testing/` for directories with a `testinfo.yaml`, runs each command against every `.adl`/`.archimate` script, and passes when the actual exit code matches the expected `exitcode`. [Learn more →](https://ampersandtarski.github.io/ampersand/regression-testing)
+So you know what "green" means: it walks `testing/` for directories with a `testinfo.yaml`, runs each command against every `.adl`/`.archimate` script, and passes when the actual exit code matches the expected `exitcode`. [Learn more →](../regression-testing.md)
 
 **How do I add a new regression test for a bug fix?**
-Lock in your fix: create a directory under `testing/Travis/testcases/`, add your `.adl` files and a `testinfo.yaml` with the expected behaviour, and make sure it passes before opening a PR. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/testing-infrastructure)
+Lock in your fix: create a directory under `testing/Travis/testcases/`, add your `.adl` files and a `testinfo.yaml` with the expected behaviour, and make sure it passes before opening a PR. [Learn more →](../the-tools-we-use/testing-infrastructure.md)
 
 **How can I park a test case that fails due to a pre-existing limitation?**
-Don't let a known-broken case block the build: move it (and its companion files) to `testing/StillUnsupported/`, which has no `testinfo.yaml`, so its scripts are walked but never executed. [Learn more →](https://ampersandtarski.github.io/ampersand/regression-testing)
+Don't let a known-broken case block the build: move it (and its companion files) to `testing/StillUnsupported/`, which has no `testinfo.yaml`, so its scripts are walked but never executed. [Learn more →](../regression-testing.md)
 
 **What is the difference between Travis tests and Sentinel tests?**
-Know which tests gate your PR: Travis tests are regression tests that must pass, while Sentinel tests document known issues expected to fail and don't block development. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/testing-infrastructure)
+Know which tests gate your PR: Travis tests are regression tests that must pass, while Sentinel tests document known issues expected to fail and don't block development. [Learn more →](../the-tools-we-use/testing-infrastructure.md)
 
 **How is RAP tested, and what does it test?**
 RAP uses the Gatling framework to simulate user behaviour, exercising flows like login, registration, and creating and compiling a script. [Learn more →](https://ampersandtarski.github.io/rap/tests)
@@ -362,50 +362,50 @@ To extend them, follow the liatrio folder layout (common, requests, scenarios, s
 ### Architecture, design & governance
 
 **What does the architecture of a generated application look like?**
-The big picture before you extend it: Ampersand generates a monolithic web application with a stateful database service and a stateless service of interfaces, fronted by an API and an MVC-style front-end. [Learn more →](https://ampersandtarski.github.io/ampersand/reference-material/architecture-of-an-ampersand-application)
+The big picture before you extend it: Ampersand generates a monolithic web application with a stateful database service and a stateless service of interfaces, fronted by an API and an MVC-style front-end. [Learn more →](../reference-material/architecture-of-an-ampersand-application.md)
 
 **What design principles underlie the Ampersand language?**
-These principles guide what a "good" contribution looks like: Ampersand favours constraints over obligations, reliable relation-algebraic semantics, automated design, and working systems over comprehensive documentation, supporting incremental development. [Learn more →](https://ampersandtarski.github.io/ampersand/reference-material/design-considerations)
+These principles guide what a "good" contribution looks like: Ampersand favours constraints over obligations, reliable relation-algebraic semantics, automated design, and working systems over comprehensive documentation, supporting incremental development. [Learn more →](../reference-material/design-considerations.md)
 
 **What problem does ExecEngine rule automation solve in the compiler?**
-It is the heart of a major compiler feature: deriving the violation-repair code of an automated rule automatically, instead of writing ExecEngine code by hand. [Learn more →](https://ampersandtarski.github.io/ampersand/conceptual/automated-rules)
+It is the heart of a major compiler feature: deriving the violation-repair code of an automated rule automatically, instead of writing ExecEngine code by hand. [Learn more →](../conceptual/automated-rules.md)
 
 **How do I write an automated rule the ExecEngine will restore?**
-The pattern you'll reuse: give the rule a `ROLE ExecEngine MAINTAINS` clause and a `VIOLATION` with EX/InsPair/DelAtom actions that fix the data. [Learn more →](https://ampersandtarski.github.io/ampersand/conceptual/automated-rules)
+The pattern you'll reuse: give the rule a `ROLE ExecEngine MAINTAINS` clause and a `VIOLATION` with EX/InsPair/DelAtom actions that fix the data. [Learn more →](../conceptual/automated-rules.md)
 
 **How does the compiler detect when automated rules might oscillate?**
-A design-time analysis you can extend: the compiler builds a signed, refined rule-level triggering graph and warns when ExecEngine rules form a cycle through a delete or merge that may never reach a fixpoint ("Maximum reruns exceeded"). The reasoning, the design decisions and the planned Stage 2 are written up as unpublished research. [Learn more →](https://ampersandtarski.github.io/ampersand/ongoing-research/making-oscillation-risk-visible)
+A design-time analysis you can extend: the compiler builds a signed, refined rule-level triggering graph and warns when ExecEngine rules form a cycle through a delete or merge that may never reach a fixpoint ("Maximum reruns exceeded"). The reasoning, the design decisions and the planned Stage 2 are written up as unpublished research. [Learn more →](../ongoing-research/making-oscillation-risk-visible.md)
 
 **How can I conditionally include or exclude parts of a script?**
-Toggle code fragments with the preprocessor's `--#IF` / `--#IFNOT` / `--#ELSE` / `--#ENDIF` directives and variables set in INCLUDE statements. [Learn more →](https://ampersandtarski.github.io/ampersand/reference-material/the-preprocessor)
+Toggle code fragments with the preprocessor's `--#IF` / `--#IFNOT` / `--#ELSE` / `--#ENDIF` directives and variables set in INCLUDE statements. [Learn more →](../reference-material/the-preprocessor.md)
 
 **What is on the roadmap, and what's planned next?**
-See where you can make an impact: planned work includes low-code Ampersand, schema-changing data migration, NoSQL storage, OpenAPI documentation, OWL/RDFS input, GraphQL, and Kleene operators. [Learn more →](https://ampersandtarski.github.io/ampersand/future-plans)
+See where you can make an impact: planned work includes low-code Ampersand, schema-changing data migration, NoSQL storage, OpenAPI documentation, OWL/RDFS input, GraphQL, and Kleene operators. [Learn more →](../future-plans.md)
 
 **How could Kleene star and plus operators be added to the language?**
-A concrete extension idea: precompile each Kleene term into a new relation plus ENFORCE rules that maintain the transitive closure. [Learn more →](https://ampersandtarski.github.io/ampersand/future-plans)
+A concrete extension idea: precompile each Kleene term into a new relation plus ENFORCE rules that maintain the transitive closure. [Learn more →](../future-plans.md)
 
 **How is the project governed and who decides?**
-Set expectations on how change happens: it is a volunteer-driven, non-commercial research project where a core team of Stef, Han and Michiel Joosten/Stornebrink makes the decisions, valuing maintainability above all. [Learn more →](https://ampersandtarski.github.io/ampersand/landingpage/interested-visitor)
+Set expectations on how change happens: it is a volunteer-driven, non-commercial research project where a core team of Stef, Han and Michiel Joosten/Stornebrink makes the decisions, valuing maintainability above all. [Learn more →](./1-interested-visitor.md)
 
 **What do contributors agree to regarding rights and compensation?**
-Know the deal before you commit: contributors subscribe to the ownership philosophy, waive financial rights on their contributions, and receive no compensation from the project. [Learn more →](https://ampersandtarski.github.io/ampersand/ownership)
+Know the deal before you commit: contributors subscribe to the ownership philosophy, waive financial rights on their contributions, and receive no compensation from the project. [Learn more →](../ownership/README.md)
 
 ### Legacy & older setups
 
 These pages describe older recipes (RAP4-era or dated drafts). They may be out of date — treat them as historical reference rather than current practice.
 
 **How were the Ampersand and RAP4 Docker images baked and published to Docker Hub?**
-The older recipe: run `build.sh` to build the Ampersand base image, build the RAP image on top, then `docker push` to Docker Hub. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/making-docker-images)
+The older recipe: run `build.sh` to build the Ampersand base image, build the RAP image on top, then `docker push` to Docker Hub. [Learn more →](../the-tools-we-use/making-docker-images.md)
 
 **How do I set up a local Kubernetes cluster with Minikube?**
-This dated (2017, under-construction) draft installs kubectl, docker, minikube and virtualbox, runs `minikube start`, then builds, pushes and deploys images. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/deploying-with-kubernetes)
+This dated (2017, under-construction) draft installs kubectl, docker, minikube and virtualbox, runs `minikube start`, then builds, pushes and deploys images. [Learn more →](../the-tools-we-use/deploying-with-kubernetes.md)
 
 **How do I configure my laptop so localhost behaves like a top-level domain?**
-For older local testing setups, ensure localhost and its subdomains route to 127.0.0.1, using a local DNS server (e.g. dnsmasq) or by editing the hosts file. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/building/testing-with-docker-on-your-own-laptop)
+For older local testing setups, ensure localhost and its subdomains route to 127.0.0.1, using a local DNS server (e.g. dnsmasq) or by editing the hosts file. [Learn more →](../the-tools-we-use/building/testing-with-docker-on-your-own-laptop.md)
 
 **How do I set up and extend the SpecFlow tests for RAP4?**
-Using the older SpecFlow harness: open VS2022 with Docker Desktop, install the listed NuGet packages, run RAP in Docker, then load `SpecFlowRAP.sln` and run the tests. [Learn more →](https://ampersandtarski.github.io/ampersand/the-tools-we-use/building/testing-with-docker-on-your-own-laptop)
+Using the older SpecFlow harness: open VS2022 with Docker Desktop, install the listed NuGet packages, run RAP in Docker, then load `SpecFlowRAP.sln` and run the tests. [Learn more →](../the-tools-we-use/building/testing-with-docker-on-your-own-laptop.md)
 
 
 Ready to contribute? Start with the [onboarding guide](../guides/onboarding.md), and when you're ready to document your work, follow the [documentation guide](../../prototype/guides/documenting-prototype-changes.md).
