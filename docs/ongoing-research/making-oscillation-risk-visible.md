@@ -11,8 +11,9 @@ description: "Unpublished research: a literature-grounded analysis and a Stage-1
 > Sections 1–5 are the literature analysis; sections 6–7 document the
 > implementation and the open questions.
 
-*Literature-grounded analysis and plan. Search id 1; 16 references in
-`literature_search.csv`. Citations use `[@cite_key]`.*
+*Literature-grounded analysis and plan. Search id 1; 17 references in
+`literature_search.csv`. In-text citations use the symbolic keys `[@cite_key]`; the full
+reference for each key is listed under [References](#references) at the end.*
 
 ---
 
@@ -463,6 +464,32 @@ sound over-approximation must over-flag, and Stage 2 is where the false positive
 
 ---
 
-*Reference list: see `literature_search.csv` (search id 1). The open-access copy of
-[@Joosten2018GraphSaturation] is archived under `copies/`; the remaining 15 items are queued
-in `literature_search/worklist.md` for OU-library retrieval.*
+## References
+
+The in-text citations use symbolic keys of the form `[@Key]`. The full references
+follow, ordered alphabetically by key; each ends with a resolvable DOI link. (GitHub
+and Docusaurus do not render Pandoc/BibTeX-style citations, so this list is maintained
+by hand. The machine-readable source is `literature_search.csv`, search id 1.)
+
+- **[@Aiken1995StaticAnalysis]** Aiken, A., Hellerstein, J.M., Widom, J. (1995). *Static analysis techniques for predicting the behavior of active database rules.* ACM Transactions on Database Systems 20(1), 3–41. [doi:10.1145/202106.202107](https://doi.org/10.1145/202106.202107)
+- **[@Apt1988DeclarativeKnowledge]** Apt, K.R., Blair, H.A., Walker, A. (1988). *Towards a theory of declarative knowledge.* In: Minker, J. (ed.) Foundations of Deductive Databases and Logic Programming, Morgan Kaufmann, pp. 89–148. [doi:10.1016/B978-0-934613-40-8.50006-3](https://doi.org/10.1016/B978-0-934613-40-8.50006-3)
+- **[@Baralis1996Modularization]** Baralis, E., Ceri, S., Paraboschi, S. (1996). *Modularization techniques for active rules design.* ACM Transactions on Database Systems 21(1), 1–29. [doi:10.1145/227604.227605](https://doi.org/10.1145/227604.227605)
+- **[@Baralis2000AlgebraicApproach]** Baralis, E., Widom, J. (2000). *An algebraic approach to static analysis of active database rules.* ACM Transactions on Database Systems 25(3), 269–332. [doi:10.1145/363951.363954](https://doi.org/10.1145/363951.363954)
+- **[@Calautti2016EGDChaseTermination]** Calautti, M., Greco, S., Molinaro, C., Trubitsyna, I. (2016). *Exploiting equality generating dependencies in checking chase termination.* Proceedings of the VLDB Endowment 9(5), 396–407. [doi:10.14778/2876473.2876475](https://doi.org/10.14778/2876473.2876475)
+- **[@Cali2013TamingChase]** Calì, A., Gottlob, G., Kifer, M. (2013). *Taming the infinite chase: Query answering under expressive relational constraints.* Journal of Artificial Intelligence Research 48, 115–174. [doi:10.1613/jair.3873](https://doi.org/10.1613/jair.3873)
+- **[@Couchot2002ImprovingRTG]** Couchot, A. (2002). *Improving the refined triggering graph method for active rules termination analysis.* In: Advances in Databases and Information Systems (ADBIS), LNCS 2435, pp. 191–204. [doi:10.1007/3-540-45495-0_16](https://doi.org/10.1007/3-540-45495-0_16)
+- **[@CuencaGrau2013AcyclicityNotions]** Cuenca Grau, B., Horrocks, I., Krötzsch, M., Kupke, C., Magka, D., Motik, B., Wang, Z. (2013). *Acyclicity notions for existential rules and their application to query answering in ontologies.* Journal of Artificial Intelligence Research 47, 741–808. [doi:10.1613/jair.3949](https://doi.org/10.1613/jair.3949)
+- **[@Deutsch2008ChaseRevisited]** Deutsch, A., Nash, A., Remmel, J. (2008). *The chase revisited.* In: Proceedings of PODS 2008, pp. 149–158. [doi:10.1145/1376916.1376938](https://doi.org/10.1145/1376916.1376938)
+- **[@Fagin2005DataExchange]** Fagin, R., Kolaitis, P.G., Miller, R.J., Popa, L. (2005). *Data exchange: semantics and query answering.* Theoretical Computer Science 336(1), 89–124. [doi:10.1016/j.tcs.2004.10.033](https://doi.org/10.1016/j.tcs.2004.10.033)
+- **[@Greco2011StratificationCriteria]** Greco, S., Spezzano, F., Trubitsyna, I. (2011). *Stratification criteria and rewriting techniques for checking chase termination.* Proceedings of the VLDB Endowment 4(11), 1158–1168. [doi:10.14778/3402707.3402750](https://doi.org/10.14778/3402707.3402750)
+- **[@Joosten2018GraphSaturation]** Joosten, S.J.C. (2018). *Finding models through graph saturation.* Journal of Logical and Algebraic Methods in Programming 100, 98–112. [doi:10.1016/j.jlamp.2018.06.005](https://doi.org/10.1016/j.jlamp.2018.06.005)
+- **[@Lambers2006ConflictDetection]** Lambers, L., Ehrig, H., Orejas, F. (2006). *Efficient detection of conflicts in graph-based model transformation.* Electronic Notes in Theoretical Computer Science 152, 97–109. [doi:10.1016/j.entcs.2006.01.017](https://doi.org/10.1016/j.entcs.2006.01.017)
+- **[@Marnette2009GeneralizedSchemaMappings]** Marnette, B. (2009). *Generalized schema-mappings: from termination to tractability.* In: Proceedings of PODS 2009, pp. 13–22. [doi:10.1145/1559795.1559799](https://doi.org/10.1145/1559795.1559799)
+- **[@Onet2013ChaseProcedure]** Onet, A. (2013). *The chase procedure and its applications in data exchange.* In: Data Exchange, Integration, and Streams, Dagstuhl Follow-Ups, vol. 5, pp. 1–37. [doi:10.4230/DFU.Vol5.10452.1](https://doi.org/10.4230/DFU.Vol5.10452.1)
+- **[@Paton1999ActiveDB]** Paton, N.W., Díaz, O. (1999). *Active database systems.* ACM Computing Surveys 31(1), 63–103. [doi:10.1145/311531.311623](https://doi.org/10.1145/311531.311623)
+- **[@Urban1999RefinedTriggering]** Urban, S.D., Tschudi, M.K., Dietrich, S.W., Karadimce, A.P. (1999). *Active rule termination analysis: an implementation and evaluation of the refined triggering graph method.* Journal of Intelligent Information Systems 12(2–3), 215–243. [doi:10.1023/A:1026430919467](https://doi.org/10.1023/A:1026430919467)
+
+*Reading copies: the open-access PDF of Joosten2018GraphSaturation, together with the
+open-access items Cali2013TamingChase, Onet2013ChaseProcedure and
+CuencaGrau2013AcyclicityNotions, are archived under `copies/`; the remaining items are
+retrieved through the OU library (see `literature_search/worklist.md`).*
