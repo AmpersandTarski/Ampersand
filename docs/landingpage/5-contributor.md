@@ -59,6 +59,7 @@ The Ampersand ecosystem consists of four repositories:
 - **Core development**: compiler improvements, prototype-framework enhancements, RAP development.
 - **Documentation**: guides, tutorials and reference material.
 - **Quality**: tests, code review, performance, and bug fixes.
+- **Research & design directions**: pick up an open design thread documented under [unpublished research](../research#unpublished-research) — for example [making oscillation risk visible](../ongoing-research/making-oscillation-risk-visible.md), whose Stage 2 is the next step.
 
 ## Guidelines
 
@@ -371,6 +372,9 @@ It is the heart of a major compiler feature: deriving the violation-repair code 
 
 **How do I write an automated rule the ExecEngine will restore?**
 The pattern you'll reuse: give the rule a `ROLE ExecEngine MAINTAINS` clause and a `VIOLATION` with EX/InsPair/DelAtom actions that fix the data. [Learn more →](https://ampersandtarski.github.io/ampersand/conceptual/automated-rules)
+
+**How does the compiler detect when automated rules might oscillate?**
+A design-time analysis you can extend: the compiler builds a signed, refined rule-level triggering graph and warns when ExecEngine rules form a cycle through a delete or merge that may never reach a fixpoint ("Maximum reruns exceeded"). The reasoning, the design decisions and the planned Stage 2 are written up as unpublished research. [Learn more →](https://ampersandtarski.github.io/ampersand/ongoing-research/making-oscillation-risk-visible)
 
 **How can I conditionally include or exclude parts of a script?**
 Toggle code fragments with the preprocessor's `--#IF` / `--#IFNOT` / `--#ELSE` / `--#ENDIF` directives and variables set in INCLUDE statements. [Learn more →](https://ampersandtarski.github.io/ampersand/reference-material/the-preprocessor)

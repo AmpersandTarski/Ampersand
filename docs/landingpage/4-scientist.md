@@ -22,6 +22,7 @@ Ampersand rests on relation algebra: business rules are formal constraints whose
 
 - [Which research papers have been produced?](../research#Publications) — the full list of publications by the Ampersand team, from 2000 to today.
 - [Which research results have been produced?](../research#Results) — RAP, graduations, the *Rule Based Design* course and book, and systems built in production.
+- [Unpublished research](../research#unpublished-research) — working notes not yet peer-reviewed, such as [making ExecEngine oscillation risk visible](../ongoing-research/making-oscillation-risk-visible.md).
 
 ## Background and direction
 

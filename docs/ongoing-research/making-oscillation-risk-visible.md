@@ -1,4 +1,15 @@
+---
+sidebar_label: "Oscillation risk (Stage 1)"
+description: "Unpublished research: a literature-grounded analysis and a Stage-1 compiler implementation that makes ExecEngine oscillation risk (Maximum reruns exceeded) visible at design time."
+---
+
 # Investigative Report: Making Oscillation Risk Visible in Ampersand
+
+> **Status: unpublished research.** This is a working research note, not a
+> peer-reviewed publication. It records a literature study and the design and
+> validation of the Stage-1 oscillation-risk analysis now in the compiler.
+> Sections 1–5 are the literature analysis; sections 6–7 document the
+> implementation and the open questions.
 
 *Literature-grounded analysis and plan. Search id 1; 16 references in
 `literature_search.csv`. Citations use `[@cite_key]`.*

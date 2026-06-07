@@ -58,6 +58,12 @@ Stef Joosten and Rieks Joosten, [Specifying business processes by means of rules
 
 Stef Joosten, [Rekenen met Taal](https://www.researchgate.net/publication/236340036_Rekenen_met_taal). Informatie, juni 2000, Elsevier.
 
+## Unpublished research
+
+Work that is not (yet) peer-reviewed but documents the reasoning behind a feature lives here, so that scientists and contributors can read, scrutinise and build on it.
+
+- [Making oscillation risk visible in Ampersand](./ongoing-research/making-oscillation-risk-visible.md) — a literature study of why the ExecEngine sometimes oscillates (`Maximum reruns exceeded`), framed through the chase, active databases, graph rewriting and stratification, with an advised staged approach. Its Stage 1 (a signed, refined rule-level triggering graph) is implemented in the compiler; the note also records the design decisions and validation.
+
 ## Results  
 <!--  The main page in AmpersandTarski.github.io refers to this header, so please don't change it frivolously. -->
 The application [RAP](https://rap.cs.ou.nl) was built as an educational tool, and developed further into a tool in which anyone can build and run their own prototypes.

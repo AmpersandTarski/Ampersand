@@ -224,6 +224,13 @@ module.exports = {
             id: 'ampersand/research'
         },
         {
+            label: 'Unpublished research',
+            type: 'category',
+            items: [
+                'ampersand/ongoing-research/making-oscillation-risk-visible',
+            ]
+        },
+        {
             type: 'doc',
             id: 'ampersand/future-plans'
         },
