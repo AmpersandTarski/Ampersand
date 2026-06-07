@@ -21,6 +21,7 @@ import Ampersand.Core.A2P_Converters (aRelation2pRelation)
 import Ampersand.Core.ParseTree (mkPConcept)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
+import Ampersand.FSpec.Oscillation (warnOscillationRisk)
 import Ampersand.FSpec.SQL (prettySQLQuery, SqlQuery(..))
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
@@ -262,6 +263,7 @@ pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarde
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
   warnCartesianProducts env fSpec
+  warnOscillationRisk fSpec
   checkInvariants fSpec
   where
     checkInvariants :: FSpec -> Guarded FSpec
@@ -299,6 +301,10 @@ findCartesianSubexprs expr = case expr of
   EDcV (Sign s t)
     | s /= ONE && t /= ONE -> [expr]
     | otherwise            -> []
+  -- V on a single concept (ISgn c) is V[c*c]; a cross join unless c is ONE.
+  EDcV (ISgn c)
+    | c /= ONE  -> [expr]
+    | otherwise -> []
   EPrd (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
   ECpl e -> case e of
     EDcV _ -> findCartesianSubexprs e   -- -V is the empty set, no cartesian

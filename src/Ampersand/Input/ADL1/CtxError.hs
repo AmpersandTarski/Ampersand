@@ -16,6 +16,7 @@ module Ampersand.Input.ADL1.CtxError
     lexerWarning2Warning,
     mkBoxRowsnhWarning,
     mkCartesianProductWarning,
+    mkOscillationWarning,
     mkCaseProblemWarning,
     mkCrudForRefInterfaceError,
     mkCrudWarning,
@@ -731,6 +732,33 @@ mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
 mkUnusedCptDefWarning :: AConceptDef -> Warning
 mkUnusedCptDefWarning cptDef =
   Warning (origin cptDef) $ "The concept '" <> fullName cptDef <> "' is not used in any relation."
+
+-- | Warning emitted by the Stage-1 oscillation-risk analysis
+--   ('Ampersand.FSpec.Oscillation'). It names the ExecEngine rules that form a
+--   cycle through a non-monotone (delete/merge) edge, and the opposing writes on
+--   which they collide — the static twin of the runtime's
+--   /Maximum reruns exceeded. Rules fixed in last run: .../ message.
+mkOscillationWarning ::
+  Origin ->   -- ^ Origin to attach the warning to (a rule in the cycle)
+  [Text] ->   -- ^ The names of the automated rules in the cycle
+  [Text] ->   -- ^ Descriptions of the non-monotone (negative) edges in the cycle
+  Warning
+mkOscillationWarning orig ruleNames negEdges =
+  Warning orig
+    . T.intercalate "\n    "
+    $ [ "Possible oscillation risk among the ExecEngine rules: "
+          <> T.intercalate ", " ruleNames <> ".",
+        "These automated rules can re-trigger each other in a cycle, and at least one",
+        "repair in that cycle deletes or merges what another repair creates. Such a",
+        "non-monotone cycle may never reach a fixpoint, so the ExecEngine can abort with",
+        "\"Maximum reruns exceeded\" on some populations."
+      ]
+      <> ["Opposing writes:"]
+      <> map ("  - " <>) negEdges
+      <> [ "This is a static over-approximation: a flagged cycle need not oscillate on every",
+           "population, but an insert-only (monotone) cycle is never flagged. See the guide",
+           "docs/guides/oscillations/README.md for how to make the rules jointly satisfiable."
+         ]
 
 -- | Warning emitted when the SQL generator will produce a query that computes
 --   a Cartesian product. The warning shows the rule (or interface) it occurs in,

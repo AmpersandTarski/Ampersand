@@ -1,0 +1,17 @@
+CONTEXT MergeAlone IN ENGLISH
+-- Negative test for the Stage-1 oscillation analysis.
+-- A single uniqueness/merge rule. Merging strictly reduces the number of
+-- atoms, so it always terminates on its own. The monotonicity refinement
+-- must therefore NOT flag this rule with a (spurious) negative self-loop:
+-- although the merge writes the concept E (which the rule reads via I[E]),
+-- it deletes from `key` which occurs only POSITIVELY in `key;key~`, so a
+-- delete cannot grow this rule's own violation set.
+
+RELATION key[E*K] [UNI]
+
+ROLE ExecEngine MAINTAINS uniqueKey
+RULE uniqueKey : key;key~ |- I[E]
+VIOLATION ( TXT "{EX} MrgAtoms;E;", SRC I, TXT ";E;", TGT I )
+
+POPULATION key CONTAINS [ ("e1","k1") ; ("e2","k1") ]
+ENDCONTEXT

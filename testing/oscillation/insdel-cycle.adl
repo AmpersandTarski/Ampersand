@@ -1,0 +1,23 @@
+CONTEXT InsDelCycle IN ENGLISH
+-- Positive test for the Stage-1 oscillation analysis.
+-- A genuine non-monotone cycle on a single relation `light`:
+--   * mustLight inserts a `light` pair for every `trigger` pair;
+--   * noLight deletes any `light` pair that is also a `trigger` pair.
+-- These two repairs undo each other on `light`, so the ExecEngine oscillates.
+-- This MUST be flagged (cycle through a delete = negative edge).
+
+RELATION trigger[Room*Bulb]
+RELATION light[Room*Bulb]
+
+-- every trigger must be lit (insert light)
+ROLE ExecEngine MAINTAINS mustLight
+RULE mustLight : trigger |- light
+VIOLATION ( TXT "{EX} InsPair;light;Room;", SRC I, TXT ";Bulb;", TGT I )
+
+-- a lit trigger is forbidden (delete light)
+ROLE ExecEngine MAINTAINS noLight
+RULE noLight : light /\ trigger |- -light
+VIOLATION ( TXT "{EX} DelPair;light;Room;", SRC I, TXT ";Bulb;", TGT I )
+
+POPULATION trigger CONTAINS [ ("r1","b1") ]
+ENDCONTEXT

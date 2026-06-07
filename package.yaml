@@ -134,6 +134,7 @@ library:
     - Ampersand.FSpec.FSpec
     - Ampersand.FSpec.FSpecAux
     - Ampersand.FSpec.Motivations
+    - Ampersand.FSpec.Oscillation
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
     - Ampersand.FSpec.ToFSpec.ADL2FSpec
