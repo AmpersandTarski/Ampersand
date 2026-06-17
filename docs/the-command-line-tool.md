@@ -136,9 +136,15 @@ Generates a working prototype application from your script.
 
 ```bash
 ampersand proto --proto-dir /var/www/myapp MyModel.adl
+ampersand proto --production MyModel.adl   # build for a production deployment
 ```
 
-See the prototype documentation for details.
+Use `--production` to build for a production deployment: developer interfaces are hidden and
+the OpenAPI description (`openapi.json`) is not generated, so the prototype publishes no API
+docs. A development build (the default) does both. `--[no-]openapi` overrides whether the
+spec is generated. The build target is passed to the framework as `global.productionEnv`,
+which keeps generation and publication consistent. See the prototype documentation and
+[Generating an OpenAPI description](the-tools-we-use/openapi-generation.md) for details.
 
 ### documentation
 

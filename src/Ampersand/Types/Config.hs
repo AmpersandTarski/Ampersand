@@ -201,6 +201,9 @@ instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where
 instance (HasGenerateMetamodel a) => HasGenerateMetamodel (ExtendedRunner a) where
   generateMetamodelL = cmdOptsL . generateMetamodelL
 
+instance (HasGenerateOpenAPI a) => HasGenerateOpenAPI (ExtendedRunner a) where
+  generateOpenAPIL = cmdOptsL . generateOpenAPIL
+
 instance (HasFSpecGenOpts a, HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
 

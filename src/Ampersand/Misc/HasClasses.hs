@@ -128,6 +128,12 @@ class HasGenerateMetamodel a where
 instance HasGenerateMetamodel ProtoOpts where
   generateMetamodelL = lens xgenerateMetamodel (\x y -> x {xgenerateMetamodel = y})
 
+class HasGenerateOpenAPI a where
+  generateOpenAPIL :: Lens' a Bool
+
+instance HasGenerateOpenAPI ProtoOpts where
+  generateOpenAPIL = lens xgenerateOpenAPI (\x y -> x {xgenerateOpenAPI = y})
+
 -- | A type to denote the root file(s) to be parsed for the creation of an Fspec
 newtype Roots = Roots
   { -- | Normally this should be a non-empty list. However, the daemon command is an exception to
@@ -358,7 +364,11 @@ data ProtoOpts = ProtoOpts
     xdirPrototype :: !(Maybe FilePath),
     xgenerateFrontend :: !Bool,
     xgenerateBackend :: !Bool,
-    xgenerateMetamodel :: !Bool
+    xgenerateMetamodel :: !Bool,
+    -- | Build for a production deployment. Passed on to the prototype framework
+    -- (as @global.productionEnv@) and used as the default for openapi generation.
+    xproduction :: !Bool,
+    xgenerateOpenAPI :: !Bool
   }
   deriving (Show)
 
@@ -370,7 +380,9 @@ instance HasOptions ProtoOpts where
       <> [ ("--proto-dir", maybe "" tshow $ xdirPrototype opts),
            ("--[no-]frontend", tshow $ xgenerateFrontend opts),
            ("--[no-]backend", tshow $ xgenerateBackend opts),
-           ("--[no-]metamodel", tshow $ xgenerateMetamodel opts)
+           ("--[no-]metamodel", tshow $ xgenerateMetamodel opts),
+           ("--[no-]production", tshow $ xproduction opts),
+           ("--[no-]openapi", tshow $ xgenerateOpenAPI opts)
          ]
 
 -- | Known outputformats for Ampersand.
