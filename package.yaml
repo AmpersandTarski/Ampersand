@@ -182,6 +182,7 @@ library:
     - Ampersand.Output.ToJSON.Conjuncts
     - Ampersand.Output.ToJSON.Interfaces
     - Ampersand.Output.ToJSON.JSONutils
+    - Ampersand.Output.ToJSON.OpenAPI
     - Ampersand.Output.ToJSON.Populations
     - Ampersand.Output.ToJSON.Relations
     - Ampersand.Output.ToJSON.Roles

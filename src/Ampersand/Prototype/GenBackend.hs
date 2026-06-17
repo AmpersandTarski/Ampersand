@@ -6,6 +6,7 @@ import Ampersand.Basics
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
 import Ampersand.Output.FSpec2SQL (databaseStructureSql)
+import Ampersand.Output.ToJSON.OpenAPI (openAPIToJSON)
 import Ampersand.Output.ToJSON.ToJson
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.Types.Config
@@ -16,7 +17,7 @@ import Text.StringTemplate.GenericStandard ()
 -- only import instances
 
 doGenBackend ::
-  (Show env, HasRunner env, HasDirPrototype env) =>
+  (Show env, HasRunner env, HasDirPrototype env, HasGenerateOpenAPI env) =>
   FSpec ->
   RIO env ()
 doGenBackend fSpec = do
@@ -35,4 +36,8 @@ doGenBackend fSpec = do
   writeFile (dir </> "views" <.> "json") $ viewsToJSON env fSpec
   writeFile (dir </> "roles" <.> "json") $ rolesToJSON env fSpec
   writeFile (dir </> "populations" <.> "json") $ populationToJSON env fSpec
+  generateOpenAPI <- view generateOpenAPIL
+  if generateOpenAPI
+    then writeFile (dir </> "openapi" <.> "json") $ openAPIToJSON env fSpec
+    else logDebug "  Skipping generating openapi.json"
   logInfo "Backend generated"
