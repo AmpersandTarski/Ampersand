@@ -206,9 +206,6 @@ library:
     - Ampersand.Test.Parser.ParserTest
     - Ampersand.Test.Parser.QuickChecks
     - Ampersand.Test.Regression
-    - Ampersand.Test.RuleTest.Core
-    - Ampersand.Test.RuleTest.SelfCheck
-    - Ampersand.Test.RuleTest.Types
     - MainApps
     - Options.Applicative.Builder.Extra
   generated-exposed-modules:
