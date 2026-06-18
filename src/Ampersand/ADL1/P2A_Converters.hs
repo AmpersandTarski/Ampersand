@@ -185,6 +185,55 @@ checkSingletonAtomValues ctx =
   where
     ci = ctxInfo ctx
 
+-- | Check that comparison operators (@<@, @>@, @<=@, @>=@) are only applied to
+--   concepts whose representation type (TTYPE) supports ordering. Comparing
+--   atoms of a non-ordered type (e.g. BOOLEAN, BINARY, PASSWORD, OBJECT) is a
+--   type error.
+--
+--   This is a post-pass over the fully typed context: it inspects every 'EBin'
+--   node that survives type-checking, via 'expressionsIn'. Keeping it as an
+--   independent pass (rather than embedding it inside the disambiguation
+--   algorithm) means it cannot be silently lost when that algorithm is
+--   refactored — the property is asserted on the final A-structure. See issue
+--   #1542.
+checkValidComparisonOperators :: A_Context -> Guarded ()
+checkValidComparisonOperators ctx =
+  case [ mkOperatorError OriginUnknown oper cpt typ
+       | EBin oper sgn <- toList (expressionsIn ctx),
+         let cpt = source sgn,
+         let typ = reprType ci cpt,
+         not (isValidOperator oper typ)
+       ] of
+    [] -> return ()
+    x : xs -> Errors (x NE.:| xs)
+  where
+    ci = ctxInfo ctx
+    isValidOperator :: PBinOp -> TType -> Bool
+    isValidOperator oper typ = case oper of
+      LessThan -> hasORD typ
+      GreaterThan -> hasORD typ
+      LessThanOrEqual -> hasEQ typ && hasORD typ
+      GreaterThanOrEqual -> hasEQ typ && hasORD typ
+      where
+        hasEQ, hasORD :: TType -> Bool
+        hasEQ Float = True -- This must hold as long as I is valid on a concept with TTYPE Float
+        hasEQ _ = True
+        hasORD tt = case tt of
+          Alphanumeric -> True
+          BigAlphanumeric -> True
+          HugeAlphanumeric -> True
+          Password -> False
+          Binary -> False
+          BigBinary -> False
+          HugeBinary -> False
+          Date -> True
+          DateTime -> True
+          Boolean -> False
+          Integer -> True
+          Float -> True
+          Object -> False
+          TypeOfOne -> True
+
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx =
   case [ mkOtherAtomInSessionError atom
@@ -400,6 +449,7 @@ pCtx2aCtx env
                 ctxEnforces = enforces'
               }
       checkSingletonAtomValues actx  -- Check singleton atom values match their concept's representation type
+      checkValidComparisonOperators actx -- Check comparison operators (<, >, <=, >=) are used only on orderable representation types
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared

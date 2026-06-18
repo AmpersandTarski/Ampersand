@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 ## not yet released
 - [Issue #1417](https://github.com/AmpersandTarski/Ampersand/issues/1417) Refactoring the type checker.
+- **Restored the comparison-operator type check**: comparison operators (`<`, `>`, `<=`, `>=`) are again rejected on concepts whose representation type does not support ordering (e.g. `BOOLEAN`, `BINARY`, `PASSWORD`, `OBJECT`). The check (lost during the type-checker refactor) is reinstated as an independent post-pass over the final typed context, so it cannot be silently dropped by future refactors. (Re-enables `ComparisonTest2.adl`; see issue #1542.)
 - **Improved disambiguation in type hierarchy**: This represents a significant improvement to the type checker that resolves a long-standing limitation that was previously marked as "won't fix" due to design constraints.
 - **Enhanced concept lattice completeness**: The `completeLattice` function generates missing meet and join concepts to ensure proper lattice structure. If a set of nodes in the concept graph has a join, the system now guarantees that a corresponding meet concept exists. This is necessary for correct type checking.
 - Enhanced type analysis debugging: Improved `showOpTree` visualization with structured tree formatting using proper indentation and tree-drawing characters for better readability of type analysis results
