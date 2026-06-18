@@ -1,7 +1,7 @@
 module Ampersand.Classes.Relational
   ( HasProps (..),
     Relational (..),
-    Flippable(..),
+    Flippable (..),
     hasAttributes,
     isSESSION,
   )
@@ -62,9 +62,9 @@ instance HasProps Expression where
         $
         -- NOT totaal
         -- NOT surjective
-        [Inj | source sgn==ONE]
-        ++ [Uni | target sgn==ONE]
-        ++ [Asy | isEndo sgn, source sgn==ONE]
+        [Inj | source sgn == ONE]
+        ++ [Uni | target sgn == ONE]
+        ++ [Asy | isEndo sgn, source sgn == ONE]
         ++ [Sym | isEndo sgn]
         ++ [Rfx | isEndo sgn]
         ++ [Trn | isEndo sgn]
@@ -95,7 +95,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl1 e -> isTrue e
       EFlp e -> isTrue e
       ECpl e -> isFalse e
-      EDcI c -> c==ONE
+      EDcI c -> c == ONE
       EDcV {} -> True
       EBrk e -> isTrue e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
@@ -128,7 +128,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       ECpl e -> isImin e
       EDcD _ -> False -- was: name dcl == "="
       EDcI {} -> True
-      EDcV sgn -> isEndo sgn && source sgn==ONE
+      EDcV sgn -> isEndo sgn && source sgn == ONE
       EBrk f -> isIdent f
       EFlp f -> isIdent f
       _ -> False -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad

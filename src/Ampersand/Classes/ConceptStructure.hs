@@ -34,11 +34,11 @@ instance PConceptStructure (Term TermPrim) where
   pConcs (Prim (Patm _ _ Nothing)) = Set.empty
   pConcs (Prim (Pfull _ src tgt)) = Set.fromList [src, tgt]
   pConcs (Prim (PBind _ _ c)) = Set.singleton c
-  pConcs (Prim (PBin _ _)) = Set.empty  -- PBin will become PBind during type checking
-  pConcs (Prim PI{}) = Set.empty
-  pConcs (Prim PVee{}) = Set.empty
-  pConcs (Prim PNamedR{}) = Set.empty
-  pConcs (Prim PFlipped{}) = Set.empty
+  pConcs (Prim (PBin _ _)) = Set.empty -- PBin will become PBind during type checking
+  pConcs (Prim PI {}) = Set.empty
+  pConcs (Prim PVee {}) = Set.empty
+  pConcs (Prim PNamedR {}) = Set.empty
+  pConcs (Prim PFlipped {}) = Set.empty
   pConcs (PEqu _ a b) = pConcs a `Set.union` pConcs b
   pConcs (PInc _ a b) = pConcs a `Set.union` pConcs b
   pConcs (PIsc _ a b) = pConcs a `Set.union` pConcs b
@@ -57,13 +57,13 @@ instance PConceptStructure (Term TermPrim) where
   pConcs (PBrk _ e) = pConcs e
 
 instance PConceptStructure (P_BoxItem TermPrim) where
-  pConcs P_BoxItemTerm{obj_term = term, obj_msub = mSub} = 
+  pConcs P_BoxItemTerm {obj_term = term, obj_msub = mSub} =
     pConcs term `Set.union` pConcs mSub
-  pConcs P_BxTxt{} = Set.empty
+  pConcs P_BxTxt {} = Set.empty
 
 instance PConceptStructure (P_SubIfc TermPrim) where
-  pConcs P_Box{si_box = boxItems} = pConcs boxItems
-  pConcs P_InterfaceRef{} = Set.empty  -- Interface refs will be checked when that interface is processed
+  pConcs P_Box {si_box = boxItems} = pConcs boxItems
+  pConcs P_InterfaceRef {} = Set.empty -- Interface refs will be checked when that interface is processed
 
 instance PConceptStructure P_Interface where
   pConcs pIfc = pConcs (ifc_Obj pIfc)
@@ -104,7 +104,7 @@ instance PConceptStructure (P_IdentDf TermPrim) where
 -- P_Population extracts concept from P_CptPopu case
 instance PConceptStructure P_Population where
   pConcs (P_CptPopu _ cpt _) = Set.singleton cpt
-  pConcs pop@P_RelPopu{} = (pConcs . p_nmdr) pop  -- Relations are validated separately
+  pConcs pop@P_RelPopu {} = (pConcs . p_nmdr) pop -- Relations are validated separately
 
 instance PConceptStructure P_NamedRel where
   pConcs pnRel = pConcs (p_mbSign pnRel)
@@ -117,7 +117,6 @@ instance PConceptStructure PRef2Obj where
 -- PPurpose extracts concepts from the reference object
 instance PConceptStructure PPurpose where
   pConcs purp = pConcs (pexObj purp)
-
 
 class ConceptStructure a where
   concs ::
@@ -268,8 +267,8 @@ instance ConceptStructure AConceptDef where
 
 instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
-  concs (ISgn c)   = Set.singleton c
-  expressionsIn _  = Set.empty
+  concs (ISgn c) = Set.singleton c
+  expressionsIn _ = Set.empty
 
 instance ConceptStructure BoxItem where
   concs (BxExpr obj) = concs obj

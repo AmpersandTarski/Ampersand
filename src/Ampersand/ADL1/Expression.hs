@@ -164,7 +164,6 @@ isMp1 :: Expression -> Bool
 isMp1 EMp1 {} = True
 isMp1 _ = False
 
-
 isEDcD :: Expression -> Bool
 isEDcD EDcD {} = True
 isEDcD _ = False

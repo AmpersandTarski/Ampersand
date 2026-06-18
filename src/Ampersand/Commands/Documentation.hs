@@ -10,7 +10,7 @@ import Ampersand.Output.FSpec2Pandoc
 import Ampersand.Output.PandocAux
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Directory (createDirectoryIfMissing)
-import RIO.FilePath ((-<.>), (</>), takeDirectory)
+import RIO.FilePath (takeDirectory, (-<.>), (</>))
 import qualified RIO.Text as T
 import RIO.Time
 import Text.Pandoc.Class (getPOSIXTime, runIO)

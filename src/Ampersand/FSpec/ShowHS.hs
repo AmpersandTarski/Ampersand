@@ -759,7 +759,7 @@ instance ShowHS Expression where
 
 instance ShowHS Signature where
   showHS _ _ (Sign src tgt) = "Sign " <> showHSName src <> " " <> showHSName tgt
-  showHS _ _ (ISgn cpt)     = "ISgn " <> showHSName cpt
+  showHS _ _ (ISgn cpt) = "ISgn " <> showHSName cpt
 
 instance ShowHS AClassify where
   showHS _ _ gen =

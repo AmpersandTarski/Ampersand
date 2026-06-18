@@ -86,16 +86,18 @@ genComponentFileFromTemplate fSpec interf templateFunction templateFilePath targ
           . setAttribute "exprIsTot" (exprIsTot . feiObj $ interf)
           . setAttribute "source" (text1ToText . idWithoutType' . source . ifcExp $ interf)
           . setAttribute "target" (text1ToText . idWithoutType' . target . ifcExp $ interf)
-          . setAttribute "sourceLabel"
-               ( case conceptLabelInFSpec fSpec (source . ifcExp $ interf) of
-                   Just (Label lbl) -> lbl
-                   Nothing -> (text1ToText . idWithoutType' . source . ifcExp $ interf)
-               )
-          . setAttribute "targetLabel"
-               ( case conceptLabelInFSpec fSpec (target . ifcExp $ interf) of
-                   Just (Label lbl) ->  lbl
-                   Nothing -> (text1ToText . idWithoutType' . target . ifcExp $ interf)
-               )
+          . setAttribute
+            "sourceLabel"
+            ( case conceptLabelInFSpec fSpec (source . ifcExp $ interf) of
+                Just (Label lbl) -> lbl
+                Nothing -> (text1ToText . idWithoutType' . source . ifcExp $ interf)
+            )
+          . setAttribute
+            "targetLabel"
+            ( case conceptLabelInFSpec fSpec (target . ifcExp $ interf) of
+                Just (Label lbl) -> lbl
+                Nothing -> (text1ToText . idWithoutType' . target . ifcExp $ interf)
+            )
           . setAttribute "crudC" (objCrudC . feiObj $ interf)
           . setAttribute "crudR" (objCrudR . feiObj $ interf)
           . setAttribute "crudU" (objCrudU . feiObj $ interf)
@@ -138,16 +140,18 @@ objectAttributes fSpec obj loglevel =
     . setAttribute "expAdl" (showA . toExpr . objExp $ obj)
     . setAttribute "source" (text1ToText . idWithoutType' . source . objExp $ obj)
     . setAttribute "target" (text1ToText . idWithoutType' . target . objExp $ obj)
-    . setAttribute "sourceLabel"
-        ( case conceptLabelInFSpec fSpec (source . objExp $ obj) of
-            Just (Label lbl) -> lbl
-            Nothing -> text1ToText . idWithoutType' . source . objExp $ obj
-        )
-    . setAttribute "targetLabel"
-        ( case conceptLabelInFSpec fSpec (target . objExp $ obj) of
-            Just (Label lbl) -> lbl
-            Nothing -> text1ToText . idWithoutType' . target . objExp $ obj
-        )
+    . setAttribute
+      "sourceLabel"
+      ( case conceptLabelInFSpec fSpec (source . objExp $ obj) of
+          Just (Label lbl) -> lbl
+          Nothing -> text1ToText . idWithoutType' . source . objExp $ obj
+      )
+    . setAttribute
+      "targetLabel"
+      ( case conceptLabelInFSpec fSpec (target . objExp $ obj) of
+          Just (Label lbl) -> lbl
+          Nothing -> text1ToText . idWithoutType' . target . objExp $ obj
+      )
     . setAttribute "crudC" (objCrudC obj)
     . setAttribute "crudR" (objCrudR obj)
     . setAttribute "crudU" (objCrudU obj)

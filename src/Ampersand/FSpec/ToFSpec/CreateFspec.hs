@@ -22,7 +22,7 @@ import Ampersand.Core.ParseTree (mkPConcept)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
 import Ampersand.FSpec.Oscillation (warnOscillationRisk)
-import Ampersand.FSpec.SQL (prettySQLQuery, SqlQuery(..))
+import Ampersand.FSpec.SQL (SqlQuery (..), prettySQLQuery)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Transformers
@@ -34,7 +34,6 @@ import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-
 
 -- | creating an FSpec is based on command-line options.
 --   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
@@ -133,8 +132,8 @@ checkFormalAmpersandTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["Formal Ampersand script does not compile:"]
-        <> concatMap (T.lines . tshow) (NE.toList err) <>
-        [ tshow (length (NE.toList err)) <> " errors found in checkFormalAmpersandTransformers." ]
+        <> concatMap (T.lines . tshow) (NE.toList err)
+        <> [tshow (length (NE.toList err)) <> " errors found in checkFormalAmpersandTransformers."]
     Checked fSpecOfx _ -> compareSync (transformersFormalAmpersand fSpecOfx) (instanceList fSpecOfx)
 
 -- | make sure that the relations defined in prototypecontext.adl are in sync with the transformers of prototypecontext.
@@ -145,8 +144,8 @@ checkPrototypeContextTransformers env x =
       fatal
         . T.intercalate "\n  "
         $ ["The relations defined in prototypecontext.adl are not in sync with the transformers of prototypecontext:"]
-        <> concatMap (T.lines . tshow) (NE.toList err) <>
-        [ tshow (length (NE.toList err)) <> " errors found in checkPrototypeContextTransformers." ]
+        <> concatMap (T.lines . tshow) (NE.toList err)
+        <> [tshow (length (NE.toList err)) <> " errors found in checkPrototypeContextTransformers."]
     Checked fSpecOfx _ -> compareSync (transformersPrototypeContext fSpecOfx) (instanceList fSpecOfx)
 
 compareSync :: [Transformer] -> [Relation] -> Guarded ()
@@ -299,15 +298,15 @@ findCartesianSubexprs expr = case expr of
     findCartesianSubexprs y <> findCartesianSubexprs x
   EDcV (Sign s t)
     | s /= ONE && t /= ONE -> [expr]
-    | otherwise            -> []
+    | otherwise -> []
   -- V on a single concept (ISgn c) is V[c*c]; a cross join unless c is ONE.
   EDcV (ISgn c)
-    | c /= ONE  -> [expr]
+    | c /= ONE -> [expr]
     | otherwise -> []
   EPrd (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
   ECpl e -> case e of
-    EDcV _ -> findCartesianSubexprs e   -- -V is the empty set, no cartesian
-    _      -> expr : findCartesianSubexprs e
+    EDcV _ -> findCartesianSubexprs e -- -V is the empty set, no cartesian
+    _ -> expr : findCartesianSubexprs e
   ERrs (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
   ELrs (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
   EDia (l, r) -> expr : findCartesianSubexprs l <> findCartesianSubexprs r
@@ -319,14 +318,14 @@ findCartesianSubexprs expr = case expr of
   EUni (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
   EDif (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
   ECps (l, r) -> findCartesianSubexprs l <> findCartesianSubexprs r
-  EKl0 e      -> findCartesianSubexprs e
-  EKl1 e      -> findCartesianSubexprs e
-  EFlp e      -> findCartesianSubexprs e
-  EBrk e      -> findCartesianSubexprs e
-  EDcD {}     -> []
-  EDcI {}     -> []
-  EBin {}     -> []
-  EMp1 {}     -> []
+  EKl0 e -> findCartesianSubexprs e
+  EKl1 e -> findCartesianSubexprs e
+  EFlp e -> findCartesianSubexprs e
+  EBrk e -> findCartesianSubexprs e
+  EDcD {} -> []
+  EDcI {} -> []
+  EBin {} -> []
+  EMp1 {} -> []
 
 -- | Warn about every user-defined rule whose expression will cause the SQL
 --   generator to compute a Cartesian product.
@@ -351,8 +350,8 @@ warnCartesianProducts ::
   FSpec ->
   Guarded ()
 warnCartesianProducts env fSpec
-  | not verbose = pure ()                    -- silent unless --verbose
-  | otherwise   = addWarnings warnings $ pure ()
+  | not verbose = pure () -- silent unless --verbose
+  | otherwise = addWarnings warnings $ pure ()
   where
     -- The default log level is LevelInfo; using --verbose lowers it to LevelDebug.
     verbose :: Bool
@@ -367,19 +366,19 @@ warnCartesianProducts env fSpec
           origExpr
           sub
           (Just (normExpr, prettySQL normExpr))
-      | rule <- Set.toList (vrules fSpec)
-      , let origExpr = formalExpression rule
-      , let normExpr = conjNF env origExpr
-      -- Search the *normalized* expression, so that rewrites in normStep
-      -- (e.g. eliminating the cross join in  x |- I[A]#r  when r is a PROP
-      -- relation) actually silence the warning.
-      , sub <- findCartesianSubexprs normExpr
+        | rule <- Set.toList (vrules fSpec),
+          let origExpr = formalExpression rule,
+          let normExpr = conjNF env origExpr,
+          -- Search the *normalized* expression, so that rewrites in normStep
+          -- (e.g. eliminating the cross join in  x |- I[A]#r  when r is a PROP
+          -- relation) actually silence the warning.
+          sub <- findCartesianSubexprs normExpr
       ]
 
-    -- | Render the SQL query that 'selectExpr' will produce for the
+    -- \| Render the SQL query that 'selectExpr' will produce for the
     --   normalized expression, in a human-readable form.
     prettySQL :: Expression -> Text
     prettySQL expr = case prettySQLQuery 6 fSpec expr of
-      SqlQueryPlain t   -> t
+      SqlQueryPlain t -> t
       SqlQueryPretty ls -> T.intercalate "\n" ls
-      SqlQuerySimple t  -> t
+      SqlQuerySimple t -> t

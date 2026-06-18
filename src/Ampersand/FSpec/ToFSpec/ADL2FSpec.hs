@@ -8,7 +8,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree (sessionConcept, largerConcepts, smallerConcepts, geq)
+import Ampersand.Core.AbstractSyntaxTree (geq, largerConcepts, sessionConcept, smallerConcepts)
 import qualified Ampersand.Core.AbstractSyntaxTree as AST
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
@@ -148,14 +148,14 @@ makeFSpec env context =
       x : _ -> getLargestConcept x
     handleType :: A_Concept -> A_Concept -> Expression
     handleType gen spc = EDcI gen .:. EDcI spc .:. EDcI gen -- TODO: check if this is correct
-     -- Purpose: to be able to handle types when computing atom values of a concept including smaller concepts.
+    -- Purpose: to be able to handle types when computing atom values of a concept including smaller concepts.
     fMaintains' :: Role -> Rules
     fMaintains' role' = Set.filter f (allRules context)
       where
         f rule = role' `elem` maintainersOf rule
     pairsinexpr :: Expression -> AAtomPairs
     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
-    
+
     -- Purpose: to write a rule violation in Text as specified in the user's script,
     -- to be used in error messages too.
     apply_viol_text :: Rule -> AAtomPair -> Text
@@ -179,17 +179,18 @@ makeFSpec env context =
                 [] -> ""
                 xs -> "{" <> T.intercalate ", " xs <> "}"
     ruleviolations :: Rule -> AAtomPairs
-    ruleviolations r = 
+    ruleviolations r =
       case formalExpression r of
-        EEqu (antExpr, consExpr) -> 
+        EEqu (antExpr, consExpr) ->
           let cra = pairsinexpr antExpr
               crc = pairsinexpr consExpr
-          in (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
+           in (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
         EInc (antExpr, consExpr) ->
           let cra = pairsinexpr antExpr
               crc = pairsinexpr consExpr
-          in cra Set.\\ crc
-        expr -> -- Rule without |- or =, treat as invariant: expr must be empty
+           in cra Set.\\ crc
+        expr ->
+          -- Rule without |- or =, treat as invariant: expr must be empty
           pairsinexpr (notCpl expr)
     contextinfo = ctxInfo context
     fSpecAllEnforces = ctxEnforces context ++ concatMap ptenfs (patterns context)
@@ -210,13 +211,13 @@ makeFSpec env context =
                 popdcl = dcl,
                 popps = Set.unions [popps pop | pop <- NE.toList eqclass]
               }
-      | eqclass <- eqCl popdcl [pop | pop@ARelPopu {} <- populations]
+        | eqclass <- eqCl popdcl [pop | pop@ARelPopu {} <- populations]
       ]
         <> [ ACptPopu
                { popcpt = popcpt (NE.head eqclass),
                  popas = (L.nub . concat) [popas pop | pop <- NE.toList eqclass]
                }
-           | eqclass <- eqCl popcpt [pop | pop@ACptPopu {} <- populations]
+             | eqclass <- eqCl popcpt [pop | pop@ACptPopu {} <- populations]
            ]
       where
         populations = ctxpopus context <> concatMap ptups (patterns context)
@@ -275,7 +276,7 @@ makeFSpec env context =
     -- get all views for a specific concept and all larger concepts.
     getAllViewsForConcept' :: A_Concept -> [ViewDef]
     getAllViewsForConcept' concpt =
-      [ vd | cpt <- concpt : largerConcepts concpt, vd <- viewDefs context, fromMaybe False (vdcpt vd `geq` cpt) ]
+      [vd | cpt <- concpt : largerConcepts concpt, vd <- viewDefs context, fromMaybe False (vdcpt vd `geq` cpt)]
 
     -- viewsOfThisConcept :: A_Concept -> [ViewDef]
     -- viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
@@ -288,14 +289,13 @@ makeFSpec env context =
     -- TODO: needs refactoring due to overcomplication caused by bitrot.
     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
     getDefaultViewForConcept' concpt =
-      case [ vd | cpt <- sortSpecific2Generic (concpt : largerConcepts concpt)
-                , vd <- viewDefs context, vdIsDefault vd
-                , fromMaybe False (vdcpt vd `geq` cpt)
-           ] <> getAllViewsForConcept' concpt of
-        vd:_ -> Just vd
+      case [ vd | cpt <- sortSpecific2Generic (concpt : largerConcepts concpt), vd <- viewDefs context, vdIsDefault vd, fromMaybe False (vdcpt vd `geq` cpt)
+           ]
+        <> getAllViewsForConcept' concpt of
+        vd : _ -> Just vd
         [] -> Nothing
       where
-        -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the
+        -- \| This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the
         --   list, if a is more specific than b, a will be to the left of b in the resulting list.
         sortSpecific2Generic :: [A_Concept] -> [A_Concept]
         sortSpecific2Generic = go []

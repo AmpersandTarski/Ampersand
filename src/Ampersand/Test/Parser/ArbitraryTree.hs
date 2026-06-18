@@ -483,8 +483,10 @@ instance Arbitrary P_IdentDef where
       <$> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary `suchThat` notIsONE
-      <*> arbitrary `suchThat` notIsRuleTerm
+      <*> arbitrary
+      `suchThat` notIsONE
+      <*> arbitrary
+      `suchThat` notIsRuleTerm
 
 instance Arbitrary P_ViewDef where
   arbitrary =
@@ -589,9 +591,9 @@ notIsRuleTerm = all noRule . NE.toList
   where
     noRule :: Term a -> Bool
     noRule trm = case trm of
-                   PEqu {} -> False
-                   PInc {} -> False
-                   _ -> True
+      PEqu {} -> False
+      PInc {} -> False
+      _ -> True
 
 safePlainName :: Gen Text1
 safePlainName =

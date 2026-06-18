@@ -38,16 +38,16 @@ evaluateExpSQL fSpec dbNm expr = do
   env <- ask
   let violationsExpr = conjNF env expr
       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
-{- The following is for debugging purposes. Don't forget to switch on showA in the imports.
-      sqlText = queryAsSQL violationsQuery
-  logInfo ""
-  logInfo $ "=== Original expression: " <> display (showA expr) <> " ==="
-  logInfo $ "=== Normalized (conjNF): " <> display (showA violationsExpr) <> " ==="
-  logInfo $ "=== Generated SQL: ==="
-  logInfo $ display sqlText
-  logInfo "=== END SQL ==="
-  logInfo ""
--}
+  {- The following is for debugging purposes. Don't forget to switch on showA in the imports.
+        sqlText = queryAsSQL violationsQuery
+    logInfo ""
+    logInfo $ "=== Original expression: " <> display (showA expr) <> " ==="
+    logInfo $ "=== Normalized (conjNF): " <> display (showA violationsExpr) <> " ==="
+    logInfo $ "=== Generated SQL: ==="
+    logInfo $ display sqlText
+    logInfo "=== END SQL ==="
+    logInfo ""
+  -}
   performQuery dbNm violationsQuery
 
 performQuery ::
@@ -125,16 +125,16 @@ executePHP phpPath = do
         return "ERROR"
   execResult <- liftIO (readCreateProcess cp "") `catch` errorHandler
   -- Check if PHP execution failed
-  when (execResult == "ERROR") $
-    exitWith
-      . PHPExecutionFailed
-      $ [ "PHP execution failed:",
-          "  The PHP interpreter could not execute the script.",
-          "  Possible causes:",
-          "  - PHP is not installed or not in PATH",
-          "  - The generated PHP script has syntax errors",
-          "  - File permissions issue"
-        ]
+  when (execResult == "ERROR")
+    $ exitWith
+    . PHPExecutionFailed
+    $ [ "PHP execution failed:",
+        "  The PHP interpreter could not execute the script.",
+        "  Possible causes:",
+        "  - PHP is not installed or not in PATH",
+        "  - The generated PHP script has syntax errors",
+        "  - File permissions issue"
+      ]
   result <- readFileUtf8 outputFile
   case result of
     Right content -> do

@@ -227,17 +227,18 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
   case cpt of
-    PlainConcept {} -> PCpt { p_cptnm = name cpt }
-    ONE             -> P_ONE
-    DISJT cs        -> toPcpt "><"  cs
-    UNION cs        -> toPcpt "\\/" cs
-    ISECT cs        -> toPcpt "/\\" cs
+    PlainConcept {} -> PCpt {p_cptnm = name cpt}
+    ONE -> P_ONE
+    DISJT cs -> toPcpt "><" cs
+    UNION cs -> toPcpt "\\/" cs
+    ISECT cs -> toPcpt "/\\" cs
   where
-    toPcpt sep cs
-     = PCpt {p_cptnm = case try2Name ConceptName (T.intercalate sep . map tshow . toList $ cs) of
-                         Left err -> fatal $ "Not a proper concept name: " <> T.intercalate sep (map tshow . toList $ cs) <> ". " <> err
-                         Right (nm, _) -> nm
-            }
+    toPcpt sep cs =
+      PCpt
+        { p_cptnm = case try2Name ConceptName (T.intercalate sep . map tshow . toList $ cs) of
+            Left err -> fatal $ "Not a proper concept name: " <> T.intercalate sep (map tshow . toList $ cs) <> ". " <> err
+            Right (nm, _) -> nm
+        }
 
 aPurpose2pPurpose :: Purpose -> PPurpose
 aPurpose2pPurpose p =
@@ -311,7 +312,7 @@ aExpression2pTermPrim expr =
     EBrk e -> PBrk o (aExpression2pTermPrim e)
     EDcD dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
-    EBin oper sgn -> Prim . PBind o oper . aConcept2pConcept $ source sgn  -- TODO enhance PBind to full signature.
+    EBin oper sgn -> Prim . PBind o oper . aConcept2pConcept $ source sgn -- TODO enhance PBind to full signature.
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where
@@ -390,20 +391,20 @@ aAtomValue2pAtomValue :: AAtomValue -> PAtomValue
 aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conversion to P-structure"
 aAtomValue2pAtomValue val =
   case (aavtyp val, val) of
-    (Alphanumeric,     AAVString {}) -> ScriptString o (aavtxt val)
-    (BigAlphanumeric,  AAVString {}) -> ScriptString o (aavtxt val)
+    (Alphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
+    (BigAlphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
     (HugeAlphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
-    (Password,         AAVString {}) -> ScriptString o (aavtxt val)
-    (Binary, _)                      -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    (BigBinary, _)                   -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    (HugeBinary, _)                  -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    (Date,               AAVDate {}) -> ScriptString o (showValADL val)  -- TODO: Needs rethinking. A string or a double?
-    (DateTime,       AAVDateTime {}) -> ScriptString o (showValADL val)  -- TODO: Needs rethinking. A string or a double?
-    (Integer,         AAVInteger {}) -> XlsxDouble o (fromInteger (aavint val))
-    (Float,             AAVFloat {}) -> XlsxDouble o (aavflt val)
-    (Boolean,         AAVBoolean {}) -> ComnBool o (aavbool val)
-    (Object,           AAVString {}) -> ScriptString o (aavtxt val)
-    _ -> fatal ("Unexpected combination of value types in aAtomValue2pAtomValue: val=" <> tshow val<> " and type=" <> tshow (aavtyp val))
+    (Password, AAVString {}) -> ScriptString o (aavtxt val)
+    (Binary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (BigBinary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (HugeBinary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (Date, AAVDate {}) -> ScriptString o (showValADL val) -- TODO: Needs rethinking. A string or a double?
+    (DateTime, AAVDateTime {}) -> ScriptString o (showValADL val) -- TODO: Needs rethinking. A string or a double?
+    (Integer, AAVInteger {}) -> XlsxDouble o (fromInteger (aavint val))
+    (Float, AAVFloat {}) -> XlsxDouble o (aavflt val)
+    (Boolean, AAVBoolean {}) -> ComnBool o (aavbool val)
+    (Object, AAVString {}) -> ScriptString o (aavtxt val)
+    _ -> fatal ("Unexpected combination of value types in aAtomValue2pAtomValue: val=" <> tshow val <> " and type=" <> tshow (aavtyp val))
   where
     o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 

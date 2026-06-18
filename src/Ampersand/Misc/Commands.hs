@@ -89,7 +89,7 @@ commandLineHandler currentDir _progName args =
       addCommand''
         Check
         ( "Use ampersand to check your model for syntactical errors, type errors, and population errors."
-        <> "This generates nothing, except when you run it with an .archimate file (from Archi)."
+            <> "This generates nothing, except when you run it with an .archimate file (from Archi)."
         )
         checkCmd
         (fSpecGenOptsParser False)

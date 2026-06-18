@@ -12,12 +12,13 @@ import Ampersand.Graphic.ClassDiag2Dot
 import Ampersand.Graphic.ClassDiagram (ClassDiag)
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Misc.HasClasses
-    ( visualsOutputFormat2graphvizOutput,
-      FSpecFormat(Fhtml, Fpdf, Fdocx),
-      FocusOfVisual(..),
-      HasBlackWhite,
-      HasDirOutput(..),
-      HasDocumentOpts(fspecFormatL, visualsOutputFormatsL) )
+  ( FSpecFormat (Fdocx, Fhtml, Fpdf),
+    FocusOfVisual (..),
+    HasBlackWhite,
+    HasDirOutput (..),
+    HasDocumentOpts (fspecFormatL, visualsOutputFormatsL),
+    visualsOutputFormat2graphvizOutput,
+  )
 import Ampersand.Output.PandocAux (outputLang)
 import Data.GraphViz as GV
 import Data.GraphViz.Attributes.Complete

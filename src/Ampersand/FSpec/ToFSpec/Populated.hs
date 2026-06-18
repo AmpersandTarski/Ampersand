@@ -12,8 +12,8 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree ( smallerConcepts )
 import Ampersand.Classes hiding (gens)
+import Ampersand.Core.AbstractSyntaxTree (smallerConcepts)
 -- import Ampersand.Core.ShowAStruct (showA)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
@@ -36,14 +36,15 @@ atomValuesOf pt c =
     ONE -> Set.singleton AtomValueOfONE
     PlainConcept {} ->
       let smallerconcs = c : smallerConcepts c
-          result = Set.fromList
-            $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-            ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
-            ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+          result =
+            Set.fromList
+              $ [apLeft p | pop@ARelPopu {} <- pt, source (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+              ++ [apRight p | pop@ARelPopu {} <- pt, target (popdcl pop) `elem` smallerconcs, p <- toList $ popps pop]
+              ++ [a | pop@ACptPopu {} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
        in -- trace ("TRACE atomValuesOf: concept=" <> tshow c <> ", smallerconcs=" <> tshow smallerconcs <> ", result size=" <> tshow (Set.size result) <> ", atoms=" <> tshow result)
           result
     DISJT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts -- needs to be computed to check that it is empty.
-    UNION cpts -> (L.foldl    Set.union     Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts
+    UNION cpts -> (L.foldl Set.union Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts
     ISECT cpts -> (L.foldl Set.intersection Set.empty . fmap (atomValuesOf pt) . Set.toList) cpts
 
 pairsOf :: [Population] -> Relation -> Map.Map AAtomValue AAtomValues
@@ -58,12 +59,15 @@ pairsOf ps dcl =
     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
-fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <> " ===") $
-                        Set.fromList result
+fullContents ci ps e =
+  -- trace ("\n=== fullContents called for: " <> showA e <> " ===") $
+  Set.fromList result
   where
-    result = -- trace ("  Result pairs: " <> tshow resultPairs)
-             resultPairs
-      where resultPairs = [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
+    result =
+      -- trace ("  Result pairs: " <> tshow resultPairs)
+      resultPairs
+      where
+        resultPairs = [mkAtomPair a b | let pairMap = contents e, (a, bs) <- Map.toList pairMap, b <- Set.toList bs]
     unions = Map.unionWith Set.union
     inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
       where
@@ -75,18 +79,18 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
           lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> Set.Set a
           lkp = Map.findWithDefault Set.empty
        in case expr of
-            EEqu (l, r) -> contents ((l .|-. r) .\/. (r .|-. l))  -- compute the symmetric difference
+            EEqu (l, r) -> contents ((l .|-. r) .\/. (r .|-. l)) -- compute the symmetric difference
             EInc (l, r) -> contents (notCpl l .\/. r)
             EUni (l, r) -> unions (contents l) (contents r)
             EIsc (l, r) -> inters (contents l) (contents r)
-            EDif (l, r) -> 
+            EDif (l, r) ->
               -- trace ("\n  EDif case: " <> showA l <> " - " <> showA r <>
               --        "\n    left contents: " <> tshow (Map.toList $ contents l) <>
               --        "\n    right contents: " <> tshow (Map.toList $ contents r) <>
               --        "\n    result: " <> tshow resultMap)
-               resultMap
-                where
-                  resultMap = differ (contents l) (contents r)
+              resultMap
+              where
+                resultMap = differ (contents l) (contents r)
             -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
             ELrs (l, r) ->
               Map.fromListWith
@@ -127,12 +131,13 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
               --        "\n    right contents: " <> tshow (Map.toList $ contents r) <>
               --        "\n    result map: " <> tshow resultMap)
               resultMap
-               where
-                 flipr = contents (EFlp r)
-                 resultMap = Map.fromListWith
-                   Set.union
-                   [ (x, Set.singleton y) | (x, xv) <- Map.toList (contents l), (y, yv) <- Map.toList flipr, (not . Set.null) (xv `Set.intersection` yv)
-                   ]
+              where
+                flipr = contents (EFlp r)
+                resultMap =
+                  Map.fromListWith
+                    Set.union
+                    [ (x, Set.singleton y) | (x, xv) <- Map.toList (contents l), (y, yv) <- Map.toList flipr, (not . Set.null) (xv `Set.intersection` yv)
+                    ]
             EKl0 x ->
               if source x == target x -- see #166
                 then transClosureMap (Map.unionWith Set.union (contents x) (contents (EDcI (source x))))
@@ -146,35 +151,39 @@ fullContents ci ps e = -- trace ("\n=== fullContents called for: " <> showA e <>
             EBrk x -> contents x
             EDcD dcl -> pairsOf ps dcl
             EDcI c -> Map.fromList [(a, Set.singleton a) | a <- toList $ aVals c]
-            EBin oper sgn -> -- trace ("EBin "<>tshow oper<>" "<>tshow sgn<>" "<>tshow result) $
-                           Map.fromList binOpPop
-             where
-               binOpPop =
-                [ (s, Set.fromList cod)
-                  | s <- toList $ aVals (source sgn),
-                    let cod = filter (binaryFunction oper s) . toList $ aVals (target sgn),
-                    not (null cod)
-                ]
+            EBin oper sgn ->
+              -- trace ("EBin "<>tshow oper<>" "<>tshow sgn<>" "<>tshow result) $
+              Map.fromList binOpPop
+              where
+                binOpPop =
+                  [ (s, Set.fromList cod)
+                    | s <- toList $ aVals (source sgn),
+                      let cod = filter (binaryFunction oper s) . toList $ aVals (target sgn),
+                      not (null cod)
+                  ]
             EDcV sgn ->
               -- trace ("\n  EDcV case: " <> tshow sgn <>
               --        "\n    source atoms: " <> tshow (toList $ aVals (source sgn)) <>
               --        "\n    target atoms: " <> tshow (toList $ aVals (target sgn)) <>
               --        "\n    result map: " <> tshow resultMap)
               resultMap
-               where
-                 resultMap = Map.fromList
-                   [ (s, Set.fromList cod)
-                     | let cod = toList $ aVals (target sgn),
-                       not (null cod),
-                       s <- toList $ aVals (source sgn)
-                   ]
+              where
+                resultMap =
+                  Map.fromList
+                    [ (s, Set.fromList cod)
+                      | let cod = toList $ aVals (target sgn),
+                        not (null cod),
+                        s <- toList $ aVals (source sgn)
+                    ]
             EMp1 val c ->
               -- trace ("\n  EMp1 case: atom " <> tshow val <> " in concept " <> tshow c <>
               --        "\n    result: " <> tshow resultMap)
               resultMap
-               where
-                 resultMap = if isSESSION c -- prevent populating SESSION with "_SESSION"
-                               && tshow val == tshow ("_SESSION" :: Text)
-                             then Map.empty
-                             else Map.singleton av (Set.singleton av)
-                 av = safePSingleton2AAtomVal ci c val
+              where
+                resultMap =
+                  if isSESSION c -- prevent populating SESSION with "_SESSION"
+                    && tshow val
+                    == tshow ("_SESSION" :: Text)
+                    then Map.empty
+                    else Map.singleton av (Set.singleton av)
+                av = safePSingleton2AAtomVal ci c val

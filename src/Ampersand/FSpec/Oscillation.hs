@@ -90,9 +90,12 @@ data Write = WriteRel !Sign !Text !(Maybe Text) !(Maybe Text)
 
 -- | A negative (non-monotone) triggering edge, kept for the report.
 data NegEdge = NegEdge
-  { neFrom :: !Text, -- ^ rule whose repair does the opposing write
-    neTo :: !Text, -- ^ rule whose violation set the write can grow
-    neShared :: !Text -- ^ the relation on which they collide
+  { -- | rule whose repair does the opposing write
+    neFrom :: !Text,
+    -- | rule whose violation set the write can grow
+    neTo :: !Text,
+    -- | the relation on which they collide
+    neShared :: !Text
   }
 
 -- | Run the Stage-1 analysis and accumulate a 'Warning' for each detected risk
@@ -110,7 +113,7 @@ oscillationWarnings fSpec =
       [ neFrom e <> "'s repair deletes or merges " <> neShared e <> ", which is read by " <> neTo e
         | e <- negEdgesOf comp
       ]
-  | comp <- riskyComponents
+    | comp <- riskyComponents
   ]
   where
     -- Automated rules, deterministically ordered so warnings are stable.
@@ -139,18 +142,18 @@ oscillationWarnings fSpec =
     edges :: [(Int, Int, Sign, Text)]
     edges =
       [ (i, j, sgn, shared)
-      | (i, ws) <- writesByIdx,
-        (j, pol) <- polByIdx,
-        w <- ws,
-        (sgn, shared) <- triggerOf w pol
+        | (i, ws) <- writesByIdx,
+          (j, pol) <- polByIdx,
+          w <- ws,
+          (sgn, shared) <- triggerOf w pol
       ]
 
     -- Strongly-connected components of the graph, as non-empty lists of rules.
     components :: [NE.NonEmpty Rule]
     components =
       [ comp
-      | scc <- G.stronglyConnComp [(i, i, succsOf i) | (i, _) <- indexed],
-        Just comp <- [sccToRules scc]
+        | scc <- G.stronglyConnComp [(i, i, succsOf i) | (i, _) <- indexed],
+          Just comp <- [sccToRules scc]
       ]
       where
         succsOf i = L.nub [j | (i', j, _, _) <- edges, i' == i]
@@ -164,11 +167,12 @@ oscillationWarnings fSpec =
     -- Internal negative edges of a component, rendered for the report.
     negEdgesOf :: NE.NonEmpty Rule -> [NegEdge]
     negEdgesOf comp =
-      L.nubBy sameEdge
+      L.nubBy
+        sameEdge
         [ NegEdge (fullName (ruleAt i)) (fullName (ruleAt j)) shared
-        | (i, j, Neg, shared) <- edges,
-          ruleAt i `elem` comp,
-          ruleAt j `elem` comp
+          | (i, j, Neg, shared) <- edges,
+            ruleAt i `elem` comp,
+            ruleAt j `elem` comp
         ]
       where
         sameEdge a b = (neFrom a, neTo a, neShared a) == (neFrom b, neTo b, neShared b)
@@ -185,13 +189,14 @@ oscillationWarnings fSpec =
 triggerOf :: Write -> Map.Map Relation (Set.Set Sign) -> [(Sign, Text)]
 triggerOf (WriteRel sgn nm mSrc mTgt) pol =
   [ (sgn, "relation " <> nm)
-  | (rel, signs) <- Map.toList pol,
-    matchesRel rel,
-    sgn `Set.member` signs
+    | (rel, signs) <- Map.toList pol,
+      matchesRel rel,
+      sgn `Set.member` signs
   ]
   where
     matchesRel rel =
-      fullName rel == nm
+      fullName rel
+        == nm
         && maybe True (== fullName (source rel)) mSrc
         && maybe True (== fullName (target rel)) mTgt
 
@@ -200,8 +205,8 @@ execEngineRules :: FSpec -> [Rule]
 execEngineRules fSpec =
   L.nub
     [ rule
-    | (role', rule) <- fRoleRuls fSpec,
-      fullName role' == fullName nameOfExecEngineRole
+      | (role', rule) <- fRoleRuls fSpec,
+        fullName role' == fullName nameOfExecEngineRole
     ]
 
 -- * Repair scripts → writes
@@ -264,7 +269,7 @@ repairWrites readRels rule = case rrviol rule of
 exInstructions :: PairView Expression -> [[Text]]
 exInstructions (PairView segs) =
   [ map T.strip (Partial.splitOn ";" (T.strip instr))
-  | instr <- drop 1 (Partial.splitOn "{EX}" flat) -- drop the text before the first {EX}
+    | instr <- drop 1 (Partial.splitOn "{EX}" flat) -- drop the text before the first {EX}
   ]
   where
     flat = T.concat (map segText (NE.toList segs))

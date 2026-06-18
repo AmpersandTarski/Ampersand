@@ -531,7 +531,8 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             Dutch -> text "de relatie "
             English -> text "the relation "
             <> math ((mathEscape . showWlabel fSpec . source) d <> " \\rightarrow {" <> (mathEscape . label) d <> "} " <> (mathEscape . showWlabel fSpec . target) d)
-        (EFlp (EDcD d)) -> -- text ()
+        (EFlp (EDcD d)) ->
+          -- text ()
           case lang of
             Dutch -> text "de relatie "
             English -> text "the relation "

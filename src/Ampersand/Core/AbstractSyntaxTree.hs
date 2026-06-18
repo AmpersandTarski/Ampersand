@@ -5,8 +5,9 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-spec-constr #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# OPTIONS_GHC -fno-spec-constr #-}
+
 {-# HLINT ignore "Eta reduce" #-}
 
 module Ampersand.Core.AbstractSyntaxTree
@@ -80,14 +81,25 @@ module Ampersand.Core.AbstractSyntaxTree
     showValSQL,
     showSign,
     SignOrd (..),
-    AliasGraph, makeAliasGraph,
-    topCpt, botCpt, -- oneCpt,
-    geq, join, meet, meetIsect, MeetOrJoin (..),
+    AliasGraph,
+    makeAliasGraph,
+    topCpt,
+    botCpt, -- oneCpt,
+    geq,
+    join,
+    meet,
+    meetIsect,
+    MeetOrJoin (..),
     conceptLabel,
-    smallerConcepts, largerConcepts,
-    joinSig, meetSig, geqSig, isConcreteSignature,
+    smallerConcepts,
+    largerConcepts,
+    joinSig,
+    meetSig,
+    geqSig,
+    isConcreteSignature,
     makeTypologies,
-    singletonTypology, oneTypology,
+    singletonTypology,
+    oneTypology,
     sortGeneric2Specific,
     -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
     (.==.),
@@ -103,14 +115,20 @@ module Ampersand.Core.AbstractSyntaxTree
     (.*.),
     -- makeConceptMap,
     ConceptMap,
-    makeGraph, makePGraph, synonym
+    makeGraph,
+    makePGraph,
+    synonym,
   )
 where
+
 import Algebra.Graph.AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alga
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import Ampersand.Basics hiding (join)
 import Ampersand.Core.ParseTree
   ( DefinitionContainer (..),
     EnforceOperator,
+    Flippable (..),
     HTMLtemplateCall (..),
     MetaData (..),
     Origin (..),
@@ -127,26 +145,23 @@ import Ampersand.Core.ParseTree
     TType (..),
     Traced (..),
     ViewHtmlTemplate (..),
-    Flippable (..),
     maybeOrdering,
   )
-import Data.Data (Constr, DataType, mkConstr, mkDataType, constrIndex, Fixity(Prefix))
+import Ampersand.Input.ADL1.FilePos (FilePos (..))
+import Ampersand.Input.ADL1.LexerMessage (LexerError (..))
+import Data.Data (Constr, DataType, Fixity (Prefix), constrIndex, mkConstr, mkDataType)
 import Data.Default (Default (..))
-import qualified Data.Tree
 import qualified Data.Text1 as T1
+import qualified Data.Tree
 import Data.Typeable (typeOf)
 import RIO.Char (toLower, toUpper)
-import RIO.Time
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alga
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
-import Text.Parsec (ParseError, errorPos, sourceName, sourceLine, sourceColumn)
-import Ampersand.Input.ADL1.LexerMessage (LexerError(..))
-import Ampersand.Input.ADL1.FilePos (FilePos(..))
+import RIO.Time
+import Text.Parsec (ParseError, errorPos, sourceColumn, sourceLine, sourceName)
 
 -- =====================================================================
 -- Guarded type and error handling (defined here to break circular dependency)
@@ -1064,11 +1079,11 @@ data AAtomValue
         aavtyp :: !TType,
         aavtxt :: !Text
       }
-  | AAVInteger { aavtyp :: !TType, aavint :: !Integer }
-  | AAVFloat { aavtyp :: !TType, aavflt :: !Double }
-  | AAVBoolean { aavtyp :: !TType, aavbool :: !Bool }
-  | AAVDate { aavtyp :: !TType, aadateDay :: !Day }
-  | AAVDateTime { aavtyp :: !TType, aadatetime :: !UTCTime }
+  | AAVInteger {aavtyp :: !TType, aavint :: !Integer}
+  | AAVFloat {aavtyp :: !TType, aavflt :: !Double}
+  | AAVBoolean {aavtyp :: !TType, aavbool :: !Bool}
+  | AAVDate {aavtyp :: !TType, aadateDay :: !Day}
+  | AAVDateTime {aavtyp :: !TType, aadatetime :: !UTCTime}
   | AtomValueOfONE
   deriving (Show, Data)
 
@@ -1292,16 +1307,26 @@ infixl 8 .*. -- cartesian product
 
 -- Useful shorthands:
 l .==. r = EEqu (l, r)
+
 l .|-. r = EInc (l, r)
+
 l ./\. r = EIsc (l, r)
+
 l .\/. r = EUni (l, r)
-l .-. r  = EDif (l, r)
-l ./. r  = ELrs (l, r)
-l .\. r  = ERrs (l, r)
+
+l .-. r = EDif (l, r)
+
+l ./. r = ELrs (l, r)
+
+l .\. r = ERrs (l, r)
+
 l .<>. r = EDia (l, r)
-l .:. r  = ECps (l, r)
-l .!. r  = ERad (l, r)
-l .*. r  = EPrd (l, r)
+
+l .:. r = ECps (l, r)
+
+l .!. r = ERad (l, r)
+
+l .*. r = EPrd (l, r)
 
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says CLASSIFY Student ISA Person and CLASSIFY Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
@@ -1342,12 +1367,18 @@ instance HasSignature Expression where
   sign (EEqu (l, _)) = sign l
   sign (EInc (l, _)) = sign l
   -- You might expect "sign l `meetSig` sign r" in the subexpression sign (EIsc (l, r)), but that would inhibit manipulations such as De Morgan. To keep type checking closed, EIs, EUni, and EDif all require a joinSig.
-  sign (EIsc (l, r)) = fromMaybe (fatal ("Incompatible signatures in intersection: "<> tshow (sign l) <> " /\\ " <> tshow (sign r)))
-                                 (sign l `joinSig` sign r)
-  sign (EUni (l, r)) = fromMaybe (fatal ("Incompatible signatures in union: "<> tshow (sign l) <> " \\/ " <> tshow (sign r)))
-                                 (sign l `joinSig` sign r)
-  sign (EDif (l, r)) = fromMaybe (fatal ("Incompatible signatures in difference: "<> tshow (sign l) <> " - " <> tshow (sign r)))
-                                 (sign l `joinSig` sign r)
+  sign (EIsc (l, r)) =
+    fromMaybe
+      (fatal ("Incompatible signatures in intersection: " <> tshow (sign l) <> " /\\ " <> tshow (sign r)))
+      (sign l `joinSig` sign r)
+  sign (EUni (l, r)) =
+    fromMaybe
+      (fatal ("Incompatible signatures in union: " <> tshow (sign l) <> " \\/ " <> tshow (sign r)))
+      (sign l `joinSig` sign r)
+  sign (EDif (l, r)) =
+    fromMaybe
+      (fatal ("Incompatible signatures in difference: " <> tshow (sign l) <> " - " <> tshow (sign r)))
+      (sign l `joinSig` sign r)
   sign (ELrs (l, r)) = Sign (source l) (source r)
   sign (ERrs (l, r)) = Sign (target l) (target r)
   sign (EDia (l, r)) = Sign (source l) (target r)
@@ -1367,32 +1398,32 @@ instance HasSignature Expression where
 
 -- Compute meet of two signatures
 meetSig :: Signature -> Signature -> Maybe Signature
-meetSig (ISgn c1) (ISgn c2)               = ISgn <$> meet c1 c2
-meetSig (ISgn c) (Sign src tgt)           = ISgn <$> (meet c =<< meet src tgt)
-meetSig (Sign src tgt) (ISgn c)           = ISgn <$> (meet c =<< meet src tgt)
+meetSig (ISgn c1) (ISgn c2) = ISgn <$> meet c1 c2
+meetSig (ISgn c) (Sign src tgt) = ISgn <$> (meet c =<< meet src tgt)
+meetSig (Sign src tgt) (ISgn c) = ISgn <$> (meet c =<< meet src tgt)
 meetSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> meet src1 src2 <*> meet tgt1 tgt2
 
 -- Compute join of two signatures
 joinSig :: Signature -> Signature -> Maybe Signature
-joinSig (ISgn c1) (ISgn c2)               = ISgn <$> join c1 c2
-joinSig (ISgn c) (Sign src tgt)           = Sign <$> join c src <*> join c tgt
-joinSig (Sign src tgt) (ISgn c)           = Sign <$> join src c <*> join tgt c
+joinSig (ISgn c1) (ISgn c2) = ISgn <$> join c1 c2
+joinSig (ISgn c) (Sign src tgt) = Sign <$> join c src <*> join c tgt
+joinSig (Sign src tgt) (ISgn c) = Sign <$> join src c <*> join tgt c
 joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt1 tgt2
 
 {- Note on Signature Ordering: Ord vs SignOrd vs geqSig
    ======================================================
-   
+
    There are THREE different ways to compare signatures in Ampersand:
-   
+
    1. SignOrd - Structural comparison (total order)
       Purpose: Used as Map keys in DeclMap = Map.Map Name (Map.Map SignOrd Relation)
-      Properties: 
+      Properties:
         - Simple lexicographic comparison of concepts
         - Always comparable (total order)
         - No semantic meaning regarding concept hierarchy
         - Fast and predictable
       Example: SignOrd (Sign A B) `compare` SignOrd (Sign C D) compares (A,B) with (C,D)
-   
+
    2. Ord Signature - Semantic comparison (total order with fallback)
       Purpose: Used when Relations are stored in Set.Set Relation
       Properties:
@@ -1401,7 +1432,7 @@ joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt
         - Falls back to lexicographic ordering for incomparable signatures
         - This fallback is necessary because Ord must provide a total order
       Example: When comparing relations with same name but different signatures
-   
+
    3. geqSig - Partial order based on concept hierarchy
       Purpose: Type-checking and semantic analysis
       Properties:
@@ -1410,12 +1441,12 @@ joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt
         - Just True means first signature is more generic or equal
         - Nothing means signatures belong to different typologies
       Example: geqSig [Person*Project] [Student*Project] might be Just True if Student ISA Person
-   
+
    Relationship between Ord and geqSig:
    - When signatures ARE comparable (same typology), Ord MUST respect geqSig's ordering
    - When signatures are NOT comparable (different typologies), Ord uses lexicographic fallback
    - This design allows Relations with incomparable signatures to coexist in Set.Set
-   
+
    Example from testIssue1183.adl:
      RELATION foo[A123 * A123L]   -- typology 1
      RELATION foo[A133 * A13L]    -- typology 2 (A133 undeclared, separate typology)
@@ -1425,10 +1456,11 @@ joinSig (Sign src1 tgt1) (Sign src2 tgt2) = Sign <$> join src1 src2 <*> join tgt
 
 -- Compute geq of two signatures (applicative style)
 geqSig :: Signature -> Signature -> Maybe Bool
-geqSig (ISgn c1) (ISgn c2)               = geq c1 c2
-geqSig (ISgn c) (Sign src tgt)           = (&&) <$> geq c src <*> geq c tgt
-geqSig (Sign src tgt) (ISgn c)           = (&&) <$> geq src c <*> geq tgt c
+geqSig (ISgn c1) (ISgn c2) = geq c1 c2
+geqSig (ISgn c) (Sign src tgt) = (&&) <$> geq c src <*> geq c tgt
+geqSig (Sign src tgt) (ISgn c) = (&&) <$> geq src c <*> geq tgt c
 geqSig (Sign src1 tgt1) (Sign src2 tgt2) = (&&) <$> geq src1 src2 <*> geq tgt1 tgt2
+
 -- Compute geq of two signatures (monadic style), just for the fun of it:
 -- geqSig (ISgn c1) (ISgn c2)               = geq c1 c2
 -- geqSig (ISgn c) (Sign src tgt)           = do
@@ -1445,13 +1477,13 @@ geqSig (Sign src1 tgt1) (Sign src2 tgt2) = (&&) <$> geq src1 src2 <*> geq tgt1 t
 --   Just (g1 && g2)
 
 isConcreteSignature :: Signature -> Bool
-isConcreteSignature (Sign src tgt) = src/=topCpt && src/=botCpt && tgt/=topCpt && tgt/=botCpt
-isConcreteSignature (ISgn cpt)     = cpt/=topCpt && cpt/=botCpt
+isConcreteSignature (Sign src tgt) = src /= topCpt && src /= botCpt && tgt /= topCpt && tgt /= botCpt
+isConcreteSignature (ISgn cpt) = cpt /= topCpt && cpt /= botCpt
 
 showSign :: (HasSignature a) => a -> Text1
 showSign x = case sign x of
-               Sign s t -> Text1 '[' $ fullName s <> "*" <> fullName t <> "]"
-               ISgn c   -> Text1 '[' $ fullName c <> "]"
+  Sign s t -> Text1 '[' $ fullName s <> "*" <> fullName t <> "]"
+  ISgn c -> Text1 '[' $ fullName c <> "]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
@@ -1508,7 +1540,7 @@ data A_Concept
 
 -- | Equality for A_Concept ignores the typology field
 instance Eq A_Concept where
-  PlainConcept {aliases = a1} == PlainConcept {aliases = a2} = (not.null) (a1 `Set.intersection` a2)
+  PlainConcept {aliases = a1} == PlainConcept {aliases = a2} = (not . null) (a1 `Set.intersection` a2)
   DISJT c1 == DISJT c2 = c1 == c2
   UNION c1 == UNION c2 = c1 == c2
   ISECT c1 == ISECT c2 = c1 == c2
@@ -1529,7 +1561,6 @@ instance Ord A_Concept where
   compare (ISECT _) ONE = LT
   compare ONE (ISECT _) = GT
   compare ONE ONE = EQ
-
 
 -- | Data instance for A_Concept that skips the typology field
 instance Data A_Concept where
@@ -1563,8 +1594,10 @@ intersectConstr = mkConstr aConceptDataType "ISECT" [] Prefix
 oneConstr = mkConstr aConceptDataType "ONE" [] Prefix
 
 aConceptDataType :: DataType
-aConceptDataType = mkDataType "Ampersand.Core.AbstractSyntaxTree.A_Concept"
-  [plainConceptConstr, disjunctConstr, unionConstr, intersectConstr, oneConstr]
+aConceptDataType =
+  mkDataType
+    "Ampersand.Core.AbstractSyntaxTree.A_Concept"
+    [plainConceptConstr, disjunctConstr, unionConstr, intersectConstr, oneConstr]
 
 -- | The reason that SESSION is a plain concept (so not added as a data type variant SESSION, next to ONE)
 --   is that we want it to be treated as any other plain concept, for instance when generating code.
@@ -1574,29 +1607,33 @@ sessionConcept = PlainConcept {aliases = Set.singleton nameOfSESSION, typology =
 type A_Concepts = Set.Set A_Concept
 
 makeGraph :: [AClassify] -> Set.Set A_Concept -> AdjacencyMap A_Concept
-makeGraph conceptPairs concepts
- = overlays ([vertex spc `connect` vertex gen | (spc,gen) <- pairs]<>
-             [vertex cpt | cpt <- Set.toList concepts])
+makeGraph conceptPairs concepts =
+  overlays
+    ( [vertex spc `connect` vertex gen | (spc, gen) <- pairs]
+        <> [vertex cpt | cpt <- Set.toList concepts]
+    )
   where
-    pairs = [ (genspc isa, gengen isa) | isa@(Isa{})<-conceptPairs]<>
-            [ (genspc ise, c) | ise@(IsE{})<-conceptPairs, c<-toList (genrhs ise)]
+    pairs =
+      [(genspc isa, gengen isa) | isa@(Isa {}) <- conceptPairs]
+        <> [(genspc ise, c) | ise@(IsE {}) <- conceptPairs, c <- toList (genrhs ise)]
 
 makePGraph :: [PClassify] -> Set.Set P_Concept -> AdjacencyMap P_Concept
-makePGraph conceptPairs concepts
- = overlays ([vertex spc `connect` vertex gen | (spc,gen) <- pairs]<>
-             [vertex cpt | cpt <- Set.toList concepts])
+makePGraph conceptPairs concepts =
+  overlays
+    ( [vertex spc `connect` vertex gen | (spc, gen) <- pairs]
+        <> [vertex cpt | cpt <- Set.toList concepts]
+    )
   where
-    pairs = [ (specific classify, c) | classify <- conceptPairs, c <- toList (generics classify)]
+    pairs = [(specific classify, c) | classify <- conceptPairs, c <- toList (generics classify)]
 
-synonym :: Ord a => AdjacencyMap a -> a -> a -> Bool
-synonym g a b = a==b || (hasEdge a b g && hasEdge b a g)
+synonym :: (Ord a) => AdjacencyMap a -> a -> a -> Bool
+synonym g a b = a == b || (hasEdge a b g && hasEdge b a g)
 
 -- | Test function that validates the meet property of concept graphs.
 -- If edges (a,j) and (b,j) both exist in the graph, then a `meet` b should exist.
--- When the meet does NOT exist, this function creates a concept with name "a/\\b" 
+-- When the meet does NOT exist, this function creates a concept with name "a/\\b"
 -- and returns the missing edges (m,a) and (m,b) that should connect this meet to a and b.
 -- Returns an AdjacencyMap containing the missing edges that violate this property.
-
 instance Unique AConceptDef where
   showUnique = toText1Unsafe . fullName
 
@@ -1616,7 +1653,7 @@ instance Hashable A_Concept where
 
 instance Named A_Concept where
   name PlainConcept {aliases = names} = case Set.toList names of nm : _ -> nm; _ -> fatal "This A_Concept has no name"
-  name (DISJT cpts) = toConceptName "><"  cpts
+  name (DISJT cpts) = toConceptName "><" cpts
   name (UNION cpts) = toConceptName "\\/" cpts
   name (ISECT cpts) = toConceptName "/\\" cpts
   name ONE = nameOfONE
@@ -1636,10 +1673,10 @@ class (Show a) => ShowWithAliases a where
   showWithAliases :: a -> Text
 
 instance ShowWithAliases A_Concept where
-  showWithAliases cpt@PlainConcept {aliases=names} =
+  showWithAliases cpt@PlainConcept {aliases = names} =
     case Set.toList names of
-      []  -> fatal "2This A_Concept has no name"
-      [nm] -> fullName nm  -- Use name if no label
+      [] -> fatal "2This A_Concept has no name"
+      [nm] -> fullName nm -- Use name if no label
       xs -> fullName cpt <> "(alias: " <> T.intercalate ", " (fmap fullName xs) <> ")"
   showWithAliases _ = fullName ONE
 
@@ -1648,15 +1685,17 @@ instance Unique (A_Concept, PAtomValue) where
     where
       readable = tshow val <> "[" <> text1ToText (showUnique c) <> "]"
 
-data Signature = Sign !A_Concept  !A_Concept
-               | ISgn !A_Concept deriving (Typeable, Generic, Data)
+data Signature
+  = Sign !A_Concept !A_Concept
+  | ISgn !A_Concept
+  deriving (Typeable, Generic, Data)
 
 -- | Custom Eq instance that treats ISgn c and Sign c c as equivalent
 instance Eq Signature where
   (Sign s1 t1) == (Sign s2 t2) = s1 == s2 && t1 == t2
   (ISgn c1) == (ISgn c2) = c1 == c2
-  (ISgn c) == (Sign s t) = c == s && c == t  -- ISgn c is equivalent to Sign c c
-  (Sign s t) == (ISgn c) = s == c && t == c  -- Symmetric
+  (ISgn c) == (Sign s t) = c == s && c == t -- ISgn c is equivalent to Sign c c
+  (Sign s t) == (ISgn c) = s == c && t == c -- Symmetric
 
 -- | Simple Ord instance for Signature using lexicographic comparison.
 -- This is purely structural - it does NOT consider concept hierarchies.
@@ -1664,9 +1703,9 @@ instance Eq Signature where
 -- See "Note on Signature Ordering" below for detailed explanation.
 instance Ord Signature where
   compare (Sign a b) (Sign c d) = compare (a, b) (c, d)
-  compare (ISgn _)   (Sign _ _) = GT
-  compare (Sign _ _) (ISgn _)   = LT
-  compare (ISgn a)   (ISgn b)   = compare a b
+  compare (ISgn _) (Sign _ _) = GT
+  compare (Sign _ _) (ISgn _) = LT
+  compare (ISgn a) (ISgn b) = compare a b
 
 instance Hashable Signature
 
@@ -1676,33 +1715,35 @@ instance Show Signature where
 
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) = "[" <> showWithAliases s <> "*" <> showWithAliases t <> "]"
-  showWithAliases (ISgn c)   = "[" <> showWithAliases c <>  "]"
+  showWithAliases (ISgn c) = "[" <> showWithAliases c <> "]"
 
 instance Unique Signature where
   showUnique (Sign s t) = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ "[" <> text1ToText (showUnique s) <> "*" <> text1ToText (showUnique t) <> "]")
-  showUnique (ISgn c)   = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ "[" <> text1ToText (showUnique c) <> "]")
+  showUnique (ISgn c) = toText1Unsafe $ "Signature" <> (tshow . abs . hash $ "[" <> text1ToText (showUnique c) <> "]")
 
 instance HasSignature Signature where
   source (Sign s _) = s
-  source (ISgn c)   = c
+  source (ISgn c) = c
   target (Sign _ t) = t
-  target (ISgn c)   = c
+  target (ISgn c) = c
   sign sgn = sgn
 
 instance Flippable Signature where
   flp (Sign s t) = Sign t s
-  flp sgn        = sgn
+  flp sgn = sgn
 
 class HasSignature a where
   source, target :: a -> A_Concept
   source = source . sign
   target = target . sign
   sign :: a -> Signature
+
   -- | Compute the signature using the concept graph for proper join/meet calculations.
   --   This is needed for inter-type operations (EEqu, EInc, EIsc, EUni, EDif) where
   --   the signature depends on the concept hierarchy.
   signWithGraph :: a -> Signature
-  signWithGraph a = sign a  -- default implementation: ignore graph, use simple sign
+  signWithGraph a = sign a -- default implementation: ignore graph, use simple sign
+
   isEndo :: a -> Bool
   isEndo s = source s == target s
 
@@ -1736,9 +1777,9 @@ newtype SignOrd = SignOrd Signature
 
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
-  compare (SignOrd (ISgn _))   (SignOrd (Sign _ _)) = GT
-  compare (SignOrd (Sign _ _)) (SignOrd (ISgn _))   = LT
-  compare (SignOrd (ISgn a))   (SignOrd (ISgn b))   = compare a b
+  compare (SignOrd (ISgn _)) (SignOrd (Sign _ _)) = GT
+  compare (SignOrd (Sign _ _)) (SignOrd (ISgn _)) = LT
+  compare (SignOrd (ISgn a)) (SignOrd (ISgn b)) = compare a b
 
 instance Eq SignOrd where
   a == b = compare a b == EQ
@@ -1756,7 +1797,7 @@ safePSingleton2AAtomVal ci c val =
         . T.intercalate "\n  "
         $ [ "Manufacturing error in the compiler: after checking everything I still found an unhandled singleton value!",
             "Concept: " <> tshow c,
-            "TType: " <> tshow typ <> (if origin val==OriginUnknown then "" else "\n  Origin: " <> tshow (origin val)),
+            "TType: " <> tshow typ <> (if origin val == OriginUnknown then "" else "\n  Origin: " <> tshow (origin val)),
             "PAtomValue: " <> case val of
               (PSingleton _ _ v) -> "PSingleton (" <> tshow v <> ")"
               (ScriptString _ v) -> "ScriptString (" <> tshow v <> ")"
@@ -2006,20 +2047,24 @@ makeAliasGraph graph = overlay (edges dagEdges) (vertices sccReps)
     sccToRep = Map.fromList (zip sccs sccReps)
     -- Edges between alias sets based on original SCC graph edges
     dagEdges :: [(Set.Set Name, Set.Set Name)]
-    dagEdges = [ (Map.findWithDefault (fatal "SCC not found") fromScc sccToRep,
-                  Map.findWithDefault (fatal "SCC not found") toScc sccToRep)
-               | (fromScc, toScc) <- edgeList sccGraph ]
+    dagEdges =
+      [ ( Map.findWithDefault (fatal "SCC not found") fromScc sccToRep,
+          Map.findWithDefault (fatal "SCC not found") toScc sccToRep
+        )
+        | (fromScc, toScc) <- edgeList sccGraph
+      ]
 
 -- | The typology of a context is the partioning of the concepts in that context into
 --   sets such that (isa\/isa~)*;typology |- typology
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements,
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
 data Typology = Typology
-  { tyroot :: !P_Concept              -- This is the P_Concept because an A_Concept has a typology and we don't want to have a circular definition.
-  , tyCpts :: ![Set.Set Name]              -- all concepts from the alias graph, from generic to specific, used in the database table for this typology.
-  , tyGrph :: AliasGraph  -- the subgraph of the alias graph that represents this typology, used for join/meet calculations.
+  { tyroot :: !P_Concept, -- This is the P_Concept because an A_Concept has a typology and we don't want to have a circular definition.
+    tyCpts :: ![Set.Set Name], -- all concepts from the alias graph, from generic to specific, used in the database table for this typology.
+    tyGrph :: AliasGraph -- the subgraph of the alias graph that represents this typology, used for join/meet calculations.
   }
   deriving (Show)
+
 -- Invariants. For any Typology t:
 --   - t is a subgraph of the concept graph: tyGrph t `isSubgraphOf` aliasGraph
 --   - tyGrph and tyCpts contain the same set of concepts: Set.fromList (tyCpts t) == concs (tyGrph t)
@@ -2027,48 +2072,49 @@ data Typology = Typology
 
 -- | Empty typology used as a placeholder when typology is not relevant
 emptyTypology :: Typology
-emptyTypology = Typology
-  { tyroot = P_ONE
-  , tyCpts = []
-  , tyGrph = vertex (Set.singleton nameOfONE)
-  }
+emptyTypology =
+  Typology
+    { tyroot = P_ONE,
+      tyCpts = [],
+      tyGrph = vertex (Set.singleton nameOfONE)
+    }
 
 oneTypology :: Typology
-oneTypology = Typology
-  { tyroot = P_ONE
-  , tyCpts = [Set.singleton nameOfONE]
-  , tyGrph = vertex (Set.singleton nameOfONE)
-  }
+oneTypology =
+  Typology
+    { tyroot = P_ONE,
+      tyCpts = [Set.singleton nameOfONE],
+      tyGrph = vertex (Set.singleton nameOfONE)
+    }
 
 singletonTypology :: Name -> Typology
-singletonTypology nm = Typology
-  { tyroot = P_ONE
-  , tyCpts = [Set.singleton nm]
-  , tyGrph = vertex (Set.singleton nm)
-  }
+singletonTypology nm =
+  Typology
+    { tyroot = P_ONE,
+      tyCpts = [Set.singleton nm],
+      tyGrph = vertex (Set.singleton nm)
+    }
 
 instance Eq Typology where
   (==) :: Typology -> Typology -> Bool
-  t == t'  =  tyroot t == tyroot t'
-
+  t == t' = tyroot t == tyroot t'
 
 -- Helper: for sorting alias sets from generic to specific
-sortGeneric2Specific :: (Ord a) =>AdjacencyMap a -> [a] -> [a]
+sortGeneric2Specific :: (Ord a) => AdjacencyMap a -> [a] -> [a]
 sortGeneric2Specific graph xs =
   L.sortBy (compare `on` specificityLevel) xs
   where
     tc = transitiveClosure graph
     specificityLevel x = Set.size (postSet x tc)
+
 -- alternative, with a different algorithm:
-        -- sortSpecific2Generic :: [A_Concept] -> [A_Concept]
-        -- sortSpecific2Generic = go []
-        --   where
-        --     go xs [] = xs
-        --     go xs (y : ys) = case [y' | y' <- L.nub ys, y' `elem` Set.fromList (smallerConcepts y)] of
-        --       [] -> go (xs ++ [y]) ys
-        --       _ : _ -> go xs (ys ++ [y])
-
-
+-- sortSpecific2Generic :: [A_Concept] -> [A_Concept]
+-- sortSpecific2Generic = go []
+--   where
+--     go xs [] = xs
+--     go xs (y : ys) = case [y' | y' <- L.nub ys, y' `elem` Set.fromList (smallerConcepts y)] of
+--       [] -> go (xs ++ [y]) ys
+--       _ : _ -> go xs (ys ++ [y])
 
 -- | Create typologies from alias graph
 --   Pre: the alias graph is acyclic
@@ -2080,19 +2126,26 @@ makeTypologies aliasGraph = traverse createTypology wcComponents
       let aliasSets = vertexList subGraph
           -- Find roots: nodes with no outgoing edges (most generic)
           roots = [as | as <- aliasSets, null (postSet as subGraph)]
-      in case roots of
-           [r] -> pure Typology
-                    { tyroot = if r == Set.singleton nameOfONE then P_ONE else case Set.toList r of nm:_ -> PCpt nm; _ -> fatal "makeTypologies: This should not happen: alias set without names"
-                    , tyCpts = sortGeneric2Specific subGraph aliasSets
-                    , tyGrph = subGraph
-                    }
-           []  -> fatal ("No root found in typology " <> tshow aliasSets) -- cannot occur if subGraph is acyclic
-           _   -> Errors (CTXE (Origin "Internal")
-                    ("Multiple roots found in typology: " <> T.intercalate ", " (map tshow roots)) NE.:| [])
+       in case roots of
+            [r] ->
+              pure
+                Typology
+                  { tyroot = if r == Set.singleton nameOfONE then P_ONE else case Set.toList r of nm : _ -> PCpt nm; _ -> fatal "makeTypologies: This should not happen: alias set without names",
+                    tyCpts = sortGeneric2Specific subGraph aliasSets,
+                    tyGrph = subGraph
+                  }
+            [] -> fatal ("No root found in typology " <> tshow aliasSets) -- cannot occur if subGraph is acyclic
+            _ ->
+              Errors
+                ( CTXE
+                    (Origin "Internal")
+                    ("Multiple roots found in typology: " <> T.intercalate ", " (map tshow roots))
+                    NE.:| []
+                )
 
-    -- | To compute typologies, we need the weakly connected components (WCCs) of the alias graph, which is a directed acyclic graph (DAG).
+    -- \| To compute typologies, we need the weakly connected components (WCCs) of the alias graph, which is a directed acyclic graph (DAG).
     -- A weakly connected component is a maximal set of vertices such that for every pair
-    -- of vertices u and v, there is an undirected path between u and v in the underlying 
+    -- of vertices u and v, there is an undirected path between u and v in the underlying
     -- undirected graph (ignoring edge directions). This path is found in the symmetric closure of the graph.
     --
     -- This function converts the directed graph to an undirected graph by overlaying it
@@ -2106,34 +2159,44 @@ makeTypologies aliasGraph = traverse createTypology wcComponents
         createSubgraph :: AliasGraph -> Data.Tree.Tree (Set.Set Name) -> AliasGraph
         createSubgraph originalGraph conceptTree =
           let verticesInComponent = Set.fromList (flattenTree conceptTree)
-              componentEdges = filter (\(from, tgt) -> from `Set.member` verticesInComponent &&
-                                                         tgt `Set.member` verticesInComponent)
-                                      (edgeList originalGraph)
-          in overlay (edges componentEdges) (vertices (Set.toList verticesInComponent))
+              componentEdges =
+                filter
+                  ( \(from, tgt) ->
+                      from
+                        `Set.member` verticesInComponent
+                        && tgt
+                        `Set.member` verticesInComponent
+                  )
+                  (edgeList originalGraph)
+           in overlay (edges componentEdges) (vertices (Set.toList verticesInComponent))
         flattenTree :: Data.Tree.Tree a -> [a]
         flattenTree (Data.Tree.Node x children) = x : concatMap flattenTree children
 
 -- | The TOP concept - universal upper bound for all concepts. It is more generic than every other concept.
 topCpt :: A_Concept
-topCpt = PlainConcept
-  { aliases = Set.fromList
-      [case try2Name ConceptName "_TOP" of
-          Left err -> fatal $ "Not a proper concept name: _TOP. " <> err
-          Right (nm, _) -> nm
-      ]
-  , typology = emptyTypology
-  }
+topCpt =
+  PlainConcept
+    { aliases =
+        Set.fromList
+          [ case try2Name ConceptName "_TOP" of
+              Left err -> fatal $ "Not a proper concept name: _TOP. " <> err
+              Right (nm, _) -> nm
+          ],
+      typology = emptyTypology
+    }
 
 -- | The BOT concept - universal lower bound for all concepts. It is more specific than every other concept.
 botCpt :: A_Concept
-botCpt = PlainConcept
-  { aliases = Set.fromList
-      [case try2Name ConceptName "_BOT" of
-          Left err -> fatal $ "Not a proper concept name: _BOT. " <> err
-          Right (nm, _) -> nm
-      ]
-  , typology = emptyTypology
-  }
+botCpt =
+  PlainConcept
+    { aliases =
+        Set.fromList
+          [ case try2Name ConceptName "_BOT" of
+              Left err -> fatal $ "Not a proper concept name: _BOT. " <> err
+              Right (nm, _) -> nm
+          ],
+      typology = emptyTypology
+    }
 
 -- | The ONE concept - universal lower bound for all concepts. It is more specific than every other concept.
 -- oneCpt :: A_Concept
@@ -2149,80 +2212,66 @@ botCpt = PlainConcept
 {- Design decision:
 topCpt and botCpt are universal bottom and top elements.
 -}
+
 -- | smallerConcepts delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
 smallerConcepts :: A_Concept -> [A_Concept]
 smallerConcepts ONE = []
-smallerConcepts cpt@PlainConcept{} =
+smallerConcepts cpt@PlainConcept {} =
   let rtc = (transitiveClosure . tyGrph . typology) cpt
       -- preSet gives all predecessors (more specific concepts)
       moreSpecific = Set.toList $ preSet (aliases cpt) rtc
-      -- Convert back to A_Concepts, excluding self
-  in [PlainConcept als (typology cpt) | als <- moreSpecific, als /= aliases cpt]
-smallerConcepts _ = []  -- DISJT, UNION, ISECT
+   in -- Convert back to A_Concepts, excluding self
+      [PlainConcept als (typology cpt) | als <- moreSpecific, als /= aliases cpt]
+smallerConcepts _ = [] -- DISJT, UNION, ISECT
 
 -- | this function delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: A_Concept -> [A_Concept]
 largerConcepts ONE = []
-largerConcepts cpt@PlainConcept{} =
+largerConcepts cpt@PlainConcept {} =
   let rtc = (transitiveClosure . tyGrph . typology) cpt
       -- postSet gives all successors (more generic concepts)
       moreGeneric = Set.toList $ postSet (aliases cpt) rtc
-      -- Convert back to A_Concepts, excluding self
-  in [PlainConcept als (typology cpt) | als <- moreGeneric, als /= aliases cpt]
-largerConcepts _ = []  -- DISJT, UNION, ISECT
+   in -- Convert back to A_Concepts, excluding self
+      [PlainConcept als (typology cpt) | als <- moreGeneric, als /= aliases cpt]
+largerConcepts _ = [] -- DISJT, UNION, ISECT
 
 -- | geq for A_Concepts using embedded typology (no external graph needed!)
 geq :: A_Concept -> A_Concept -> Maybe Bool
-geq a@PlainConcept{} b@PlainConcept{}
-  | a == b                   = Just True
-  | a == topCpt              = Just True
-  | b == topCpt              = Just False
-  | b == botCpt              = Just True
-  | a == botCpt              = Just False
-  | typology a /= typology b = Nothing  -- Different typologies, no geq
+geq a@PlainConcept {} b@PlainConcept {}
+  | a == b = Just True
+  | a == topCpt = Just True
+  | b == topCpt = Just False
+  | b == botCpt = Just True
+  | a == botCpt = Just False
+  | typology a /= typology b = Nothing -- Different typologies, no geq
   | otherwise = (Just . hasEdge (aliases b) (aliases a) . transitiveClosure . tyGrph . typology) a
-geq a b | a==b = Just True
-geq _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
+geq a b | a == b = Just True
+geq _ _ = Nothing -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 data MeetOrJoin = Meet | Join deriving (Show) -- for preventing code duplication in the type checker
 
 -- | join for A_Concepts using embedded typology (no external graph needed!)
 join :: A_Concept -> A_Concept -> Maybe A_Concept
-join a@PlainConcept{} b@PlainConcept{}
-  | a == b                   = Just a
-  | a == topCpt              = Just topCpt
-  | b == topCpt              = Just topCpt
-  | a == botCpt              = Just b
-  | b == botCpt              = Just a
-  | typology a /= typology b = Nothing  -- Different typologies, no join
+join a@PlainConcept {} b@PlainConcept {}
+  | a == b = Just a
+  | a == topCpt = Just topCpt
+  | b == topCpt = Just topCpt
+  | a == botCpt = Just b
+  | b == botCpt = Just a
+  | typology a /= typology b = Nothing -- Different typologies, no join
   | otherwise = case joinX (tyGrph (typology a)) a b of
-                  Just result | Set.null result || nameOfONE `Set.member` result -> 
-                    fatal $ tshow a <> " `join` " <> tshow b <> " produced alias set: " <> tshow result
-                  Just result -> Just (PlainConcept result (typology a))
-                  Nothing -> Nothing
-join a b | a==b = Just a
-join _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
+      Just result
+        | Set.null result || nameOfONE `Set.member` result ->
+            fatal $ tshow a <> " `join` " <> tshow b <> " produced alias set: " <> tshow result
+      Just result -> Just (PlainConcept result (typology a))
+      Nothing -> Nothing
+join a b | a == b = Just a
+join _ _ = Nothing -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 -- | meet for A_Concepts using embedded typology
 meet :: A_Concept -> A_Concept -> Maybe A_Concept
-meet a@PlainConcept{} b@PlainConcept{}
-  | a == b                   = Just a
-  | a == topCpt              = Just b
-  | b == topCpt              = Just a
-  | a == botCpt              = Just botCpt
-  | b == botCpt              = Just botCpt
-  | typology a /= typology b = Nothing
-  | otherwise = case meetX (tyGrph (typology a)) a b of
-                  Just result | Set.null result || nameOfONE `Set.member` result -> 
-                    fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
-                  Just result -> Just (PlainConcept result (typology a))
-                  Nothing -> Nothing
-meet a b | a==b = Just a
-meet _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
-
-meetIsect :: A_Concept -> A_Concept -> Maybe A_Concept
-meetIsect a@PlainConcept{} b@PlainConcept{}
+meet a@PlainConcept {} b@PlainConcept {}
   | a == b = Just a
   | a == topCpt = Just b
   | b == topCpt = Just a
@@ -2230,12 +2279,30 @@ meetIsect a@PlainConcept{} b@PlainConcept{}
   | b == botCpt = Just botCpt
   | typology a /= typology b = Nothing
   | otherwise = case meetX (tyGrph (typology a)) a b of
-                  Just result | Set.null result || nameOfONE `Set.member` result -> 
-                    fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
-                  Just result -> Just (PlainConcept result (typology a))
-                  Nothing -> Just (ISECT (Set.fromList [a, b]))  -- Fallback to disjunction
-meetIsect a b | a==b = Just a
-meetIsect _ _ = Nothing  -- DISJT, UNION, ISECT    TODO: handle these cases?
+      Just result
+        | Set.null result || nameOfONE `Set.member` result ->
+            fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
+      Just result -> Just (PlainConcept result (typology a))
+      Nothing -> Nothing
+meet a b | a == b = Just a
+meet _ _ = Nothing -- DISJT, UNION, ISECT    TODO: handle these cases?
+
+meetIsect :: A_Concept -> A_Concept -> Maybe A_Concept
+meetIsect a@PlainConcept {} b@PlainConcept {}
+  | a == b = Just a
+  | a == topCpt = Just b
+  | b == topCpt = Just a
+  | a == botCpt = Just botCpt
+  | b == botCpt = Just botCpt
+  | typology a /= typology b = Nothing
+  | otherwise = case meetX (tyGrph (typology a)) a b of
+      Just result
+        | Set.null result || nameOfONE `Set.member` result ->
+            fatal $ tshow a <> " `meet` " <> tshow b <> " produced alias set: " <> tshow result
+      Just result -> Just (PlainConcept result (typology a))
+      Nothing -> Just (ISECT (Set.fromList [a, b])) -- Fallback to disjunction
+meetIsect a b | a == b = Just a
+meetIsect _ _ = Nothing -- DISJT, UNION, ISECT    TODO: handle these cases?
 
 findNode :: (Named a) => AliasGraph -> a -> Maybe (Set.Set Name)
 findNode aliasGraph x = L.find (Set.member (name x)) (vertexList aliasGraph)
@@ -2245,19 +2312,19 @@ joinX :: (Named a) => AliasGraph -> a -> a -> Maybe (Set.Set Name)
 joinX aliasGraph a b =
   case (a', b') of
     (Just aSet, Just bSet)
-      | aSet == bSet -> a'  -- Same alias set, mathematical identity: join(x, x) = x
-      | hasEdge aSet bSet rtc -> b'  -- b is more generic
-      | hasEdge bSet aSet rtc -> a'  -- a is more generic
+      | aSet == bSet -> a' -- Same alias set, mathematical identity: join(x, x) = x
+      | hasEdge aSet bSet rtc -> b' -- b is more generic
+      | hasEdge bSet aSet rtc -> a' -- a is more generic
       | otherwise ->
           case Set.toList (postSet aSet rtc `Set.intersection` postSet bSet rtc) L.\\ [aSet, bSet] of
             [] -> Nothing
-            x:xs -> Just (L.foldr minimum x xs) -- find the minimum of the upper bounds
-    _ -> Nothing  -- One or both not found in graph
-    where
-      rtc = reflexiveClosure (transitiveClosure aliasGraph)
-      a' = findNode aliasGraph (name a)
-      b' = findNode aliasGraph (name b)
-      minimum x y = if hasEdge x y rtc then x else y
+            x : xs -> Just (L.foldr minimum x xs) -- find the minimum of the upper bounds
+    _ -> Nothing -- One or both not found in graph
+  where
+    rtc = reflexiveClosure (transitiveClosure aliasGraph)
+    a' = findNode aliasGraph (name a)
+    b' = findNode aliasGraph (name b)
+    minimum x y = if hasEdge x y rtc then x else y
 
 -- | This meet function includes some Ampersand-specific features, that deviate from the mathematical definition of meet.
 --   The purpose is to enable disjunctions.
@@ -2265,19 +2332,19 @@ meetX :: (Named a) => AliasGraph -> a -> a -> Maybe (Set.Set Name)
 meetX aliasGraph a b =
   case (a', b') of
     (Just aSet, Just bSet)
-      | aSet == bSet -> a'  -- Same alias set, mathematical identity: meet(x, x) = x
-      | hasEdge aSet bSet rtc -> a'  -- a is more specific
-      | hasEdge bSet aSet rtc -> b'  -- b is more specific
+      | aSet == bSet -> a' -- Same alias set, mathematical identity: meet(x, x) = x
+      | hasEdge aSet bSet rtc -> a' -- a is more specific
+      | hasEdge bSet aSet rtc -> b' -- b is more specific
       | otherwise ->
           case Set.toList (preSet aSet rtc `Set.intersection` preSet bSet rtc) L.\\ [aSet, bSet] of
             [] -> Nothing
-            x:xs -> Just (L.foldr maximum x xs) -- find the maximum of the lower bounds
-    _ -> Nothing  -- One or both not found in graph
-    where
-      rtc = reflexiveClosure (transitiveClosure aliasGraph)
-      a' = findNode aliasGraph (name a)
-      b' = findNode aliasGraph (name b)
-      maximum x y = if hasEdge x y rtc then y else x
+            x : xs -> Just (L.foldr maximum x xs) -- find the maximum of the lower bounds
+    _ -> Nothing -- One or both not found in graph
+  where
+    rtc = reflexiveClosure (transitiveClosure aliasGraph)
+    a' = findNode aliasGraph (name a)
+    b' = findNode aliasGraph (name b)
+    maximum x y = if hasEdge x y rtc then y else x
 
 {- Should we distinguish between ISgn and Sign here?
   geq aliasGraph a b =
@@ -2332,7 +2399,7 @@ conceptLabel :: A_Context -> A_Concept -> Maybe Label
 conceptLabel ctx cpt =
   case [acdlabel cd | cd <- ctxcds ctx, acdcpt cd == cpt] of
     [] -> Nothing
-    lbl:_ -> lbl
+    lbl : _ -> lbl
 
 -- | Since we can have concepts with several aliases, we need to have a
 --   way to resolve these aliases. In the A-structure, we do not want to
@@ -2361,7 +2428,7 @@ makeConceptMap cds gs nameToGraph = mapFunction
     mkConcept pCpt aliass =
       case pCpt of
         P_ONE  -> ONE
-        PCpt{} -> 
+        PCpt{} ->
           let als = Set.fromList . fmap toTuple . (pCpt:) $ aliass
               typoGraph = Map.findWithDefault empty (name pCpt) nameToGraph
           in PlainConcept { aliases = als, typology = typoGraph }

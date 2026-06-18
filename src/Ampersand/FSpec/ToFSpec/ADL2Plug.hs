@@ -11,13 +11,13 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree (Guarded (..))
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import Ampersand.Core.AbstractSyntaxTree (Guarded(..))
 
 maxLengthOfDatabaseTableName :: Int
 maxLengthOfDatabaseTableName = 64
@@ -39,7 +39,6 @@ attributesOfConcept fSpec c =
         expr = attExpr att
 
 -- was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
-
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
@@ -99,13 +98,15 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
     candidateTables :: [PlugSQL]
     candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
-    components = -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
-                 comps
+    components =
+      -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
+      comps
       where
         -- Orphan relations are relations that cause link tables in the database,
         -- i.e relation that are neither univalent nor injective.
-        comps = map componentsForTypology (multiKernels (ctxInfo context))
-          <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+        comps =
+          map componentsForTypology (multiKernels (ctxInfo context))
+            <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
         componentsForTypology typol =
           (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
         componentsForOrphanRelation rel = (Nothing, [rel])
@@ -113,7 +114,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
         relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
-            Just x@(PlainConcept{}) -> aliases x `elem` tyCpts typol
+            Just x@(PlainConcept {}) -> aliases x `elem` tyCpts typol
             Just ONE -> True -- ONE is in every typology, but does not belong to any concept table. However, it has no attributes, so this clause is only here for theorecal completeness.
             Just _ -> False
             Nothing -> False
@@ -127,7 +128,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
       (Just typol, _) -> makeConceptTable typol rels
     allKeyConcepts :: [A_Concept]
-    allKeyConcepts = [ cpt | typol<-multiKernels (ctxInfo context), Checked cpt _warning<-[pCpt2aCpt (tyroot typol)] ]
+    allKeyConcepts = [cpt | typol <- multiKernels (ctxInfo context), Checked cpt _warning <- [pCpt2aCpt (tyroot typol)]]
     pCpt2aCpt :: P_Concept -> Guarded A_Concept
     pCpt2aCpt = conceptMap (ctxInfo context) OriginUnknown
     allLinkTableRelations :: [Relation]
@@ -145,15 +146,16 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
         }
       where
         allConceptsInTable :: [A_Concept]
-        allConceptsInTable = 
+        allConceptsInTable =
           map aliasSetToConcept (tyCpts typol)
-        aliasSetToConcept :: Set.Set Name -> A_Concept  
-        aliasSetToConcept aliasSet
-         = -- if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
-           case Set.toList aliasSet of
-             [] -> fatal "Empty alias set in concept table"
-             nm:_ | nm == nameOfONE -> ONE
-                  | otherwise       -> PlainConcept { aliases = aliasSet, typology = typol }
+        aliasSetToConcept :: Set.Set Name -> A_Concept
+        aliasSetToConcept aliasSet =
+          -- if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
+          case Set.toList aliasSet of
+            [] -> fatal "Empty alias set in concept table"
+            nm : _
+              | nm == nameOfONE -> ONE
+              | otherwise -> PlainConcept {aliases = aliasSet, typology = typol}
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
@@ -162,7 +164,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
         tableKey = case pCpt2aCpt (tyroot typol) of
           Checked cpt _warning -> cpt
-          _ -> fatal ("The root of a typology "<>tshow (tyroot typol) <> " should always be a PlainConcept, so this should not happen.")
+          _ -> fatal ("The root of a typology " <> tshow (tyroot typol) <> " should always be a PlainConcept, so this should not happen.")
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
@@ -411,7 +413,7 @@ instance TableArtefact A_Concept where
 instance TableArtefact Relation where
   toConceptOrRelation = Right
 
-determineSqlName :: HasCallStack => [ConceptOrRelation] -> ConceptOrRelation -> SqlName
+determineSqlName :: (HasCallStack) => [ConceptOrRelation] -> ConceptOrRelation -> SqlName
 determineSqlName scope conceptOrRelation =
   text1ToSqlName
     . (if mustBeDisambiguated then disambiguatedName else fullName1)

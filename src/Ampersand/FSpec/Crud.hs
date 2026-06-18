@@ -29,7 +29,7 @@ mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where
-    allConcs = [c | c <- toList allConceptsPrim, not $ c==ONE || isSESSION c]
+    allConcs = [c | c <- toList allConceptsPrim, not $ c == ONE || isSESSION c]
     nonCrudConcpts =
       (map source . filter isUni . filter isSur . map EDcD . toList $ decls)
         <> (map target . filter isInj . filter isTot . map EDcD . toList $ decls)

@@ -81,7 +81,7 @@ extractDiagnostics lang fSpec =
     rolesFor :: Rule -> [Text]
     rolesFor r = L.nub [fullName rol | (rol, r') <- fRoleRuls fSpec, r == r']
 
-    -- | Synthetic pattern name used to group every definition that
+    -- \| Synthetic pattern name used to group every definition that
     -- lives in the CONTEXT outside any user-declared PATTERN.  The
     -- diagnostic spreadsheet treats this as a "real" pattern row so
     -- that all concepts, relations and rules belong to exactly one
@@ -144,7 +144,7 @@ extractDiagnostics lang fSpec =
     ruleComplexity :: Rule -> Int
     ruleComplexity = exprRelOccurrences . formalExpression
 
-    -- | Internal references in a rule, given the relations the
+    -- \| Internal references in a rule, given the relations the
     -- enclosing pattern declares.  Only @EDcD@ leaves can be
     -- attributed to a specific relation; the other leaf kinds
     -- (identity, V, binop, singleton) are counted as cross-cutting
@@ -245,7 +245,7 @@ extractDiagnostics lang fSpec =
         (n : _) -> n
         [] -> 0
 
-    -- | F4: pick up to three offending pairs and render them as
+    -- \| F4: pick up to three offending pairs and render them as
     -- @(left, right)@ for inclusion in the spreadsheet.  Showing
     -- "samples" rather than all of them keeps the cell readable in
     -- production-sized scripts.

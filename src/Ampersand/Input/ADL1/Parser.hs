@@ -299,18 +299,30 @@ pPatternDef =
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population | Enforce
 pPatElem :: AmpParser PatElem
 pPatElem =
-  Pr   <$> pRuleDef        <|>
-  Py   <$> pClassify       <|>
-  Pd   <$> pRelationDef    <|>
-  Pm   <$> pRoleRule       <|>
-  Pm   <$> pServiceRule    <|>
-  Pc   <$> pConceptDef     <|>
-  Prep <$> pRepresentation <|>
-  Pk   <$> pIdentDef       <|>
-  Pv   <$> pViewDef        <|>
-  Pe   <$> pPurpose        <|>
-  Pp   <$> pPopulation     <|>
-  Penf <$> pEnforce
+  Pr
+    <$> pRuleDef
+    <|> Py
+    <$> pClassify
+    <|> Pd
+    <$> pRelationDef
+    <|> Pm
+    <$> pRoleRule
+    <|> Pm
+    <$> pServiceRule
+    <|> Pc
+    <$> pConceptDef
+    <|> Prep
+    <$> pRepresentation
+    <|> Pk
+    <$> pIdentDef
+    <|> Pv
+    <$> pViewDef
+    <|> Pe
+    <$> pPurpose
+    <|> Pp
+    <$> pPopulation
+    <|> Penf
+    <$> pEnforce
 
 data PatElem
   = Pr (P_Rule TermPrim)
@@ -330,7 +342,7 @@ pEnforce :: AmpParser (P_Enforce TermPrim)
 pEnforce =
   P_Enforce
     <$> currPos
-    <*  (pKey . toText1Unsafe) "ENFORCE"
+    <* (pKey . toText1Unsafe) "ENFORCE"
     <*> (PNamedR <$> pNamedRel)
     <*> pIsThere ((pOperator . toText1Unsafe) "~")
     <*> pEnforceOperator
@@ -365,8 +377,7 @@ pClassify =
     <*> ( is
             <$ (pKey . toText1Unsafe) "IS"
             <*> pCterm
-          <|>
-          isa
+            <|> isa
             <$ (pKey . toText1Unsafe) "ISA"
             <*> pConceptRef
         )
@@ -515,7 +526,7 @@ pRelDefaults = do
   _ <- (pKey . toText1Unsafe) "DEFAULT"
   defaults <- toList <$> many1 pRelDefault
   -- trace ("PARSER: pRelDefaults parsed " <> tshow (length defaults) <> " defaults: " <> tshow defaults) $
-  pure defaults          
+  pure defaults
 
 --- RelDefault ::= ( 'SRC' | 'TGT' ) ( ('VALUE' AtomValue (',' AtomValue)*) | ('EVALPHP' '<DoubleQuotedString>') )
 pRelDefault :: AmpParser PRelationDefault
@@ -610,18 +621,18 @@ pProps = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 --         <* pDash
 --         <*> optSet (pMult (P_Tot, P_Uni))
 
-    --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
-    -- TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-    -- pMult :: (PProp, PProp) -> AmpParser PProps
-    -- pMult (ts, ui) =
-    --   Set.union
-    --     <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
-    --     <* (pOperator . toText1Unsafe) ".."
-    --     <*> (Set.singleton ui <$ try pOne <|> Set.empty <$ (pOperator . toText1Unsafe) "*")
-    --     <|> Set.empty
-    --     <$ (pOperator . toText1Unsafe) "*"
-    --     <|> Set.fromList [ts, ui]
-    --     <$ try pOne
+--- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
+-- TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
+-- pMult :: (PProp, PProp) -> AmpParser PProps
+-- pMult (ts, ui) =
+--   Set.union
+--     <$> (Set.empty <$ pZero <|> Set.singleton ts <$ try pOne)
+--     <* (pOperator . toText1Unsafe) ".."
+--     <*> (Set.singleton ui <$ try pOne <|> Set.empty <$ (pOperator . toText1Unsafe) "*")
+--     <|> Set.empty
+--     <$ (pOperator . toText1Unsafe) "*"
+--     <|> Set.fromList [ts, ui]
+--     <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
 pConceptDef :: AmpParser (DefinitionContainer -> PConceptDef)

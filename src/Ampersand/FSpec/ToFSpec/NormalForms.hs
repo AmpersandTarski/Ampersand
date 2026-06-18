@@ -14,13 +14,13 @@ where
 
 import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (ConceptMap)
-import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Basics
 import Ampersand.Classes.Relational
 import Ampersand.Core.AbstractSyntaxTree (geq, meet)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
+import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -1288,7 +1288,7 @@ normStep
         where
           (t, steps, equ') = nM posCpl l []
           (f, steps', equ'') = nM (not posCpl) r []
-      nM posCpl (EInc (ECpl l, r)) _  = (t .\/. f, steps <> steps', fEqu [equ', equ''])
+      nM posCpl (EInc (ECpl l, r)) _ = (t .\/. f, steps <> steps', fEqu [equ', equ''])
         where
           (t, steps, equ') = nM (not posCpl) l []
           (f, steps', equ'') = nM posCpl r []
@@ -1304,11 +1304,13 @@ normStep
       -- eliminated: since r ⊆ I[B] for a PROP relation r, we have
       --   x |- I[A] # r   <=>   x |- x;r
       -- This removes the V (cross join) that EPrd would otherwise produce in SQL.
-      nM _ (EInc (x, EPrd (l, r))) _ | isIdent l && isProp r =
-        (EInc (x, x .:. r), ["x |- I[A]#r with r PROP <=> x |- x;r"], "<=>")
+      nM _ (EInc (x, EPrd (l, r))) _
+        | isIdent l && isProp r =
+            (EInc (x, x .:. r), ["x |- I[A]#r with r PROP <=> x |- x;r"], "<=>")
       -- Symmetric variant: x |- r # I[B]  with r ⊆ I[A]   <=>   x |- r;x
-      nM _ (EInc (x, EPrd (l, r))) _ | isIdent r && isProp l =
-        (EInc (x, l .:. x), ["x |- l#I[A] with l PROP <=> x |- l;x"], "<=>")
+      nM _ (EInc (x, EPrd (l, r))) _
+        | isIdent r && isProp l =
+            (EInc (x, l .:. x), ["x |- l#I[A] with l PROP <=> x |- l;x"], "<=>")
       nM _ (EInc (l, r)) _ = (notCpl l .\/. r, ["remove |-"], "<=>")
       --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
       --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
@@ -1337,7 +1339,7 @@ normStep
       nM _ (ECps (x, ERrs (y, z))) _ | x == y && x == z = (x, ["Jipsen&Tsinakis: x;(x\\x) = x"], "<=>")
       nM _ (ECps (ELrs (x, y), z)) _ | x == z && y == z = (x, ["Jipsen&Tsinakis: (x/x);x = x"], "<=>")
       nM _ (ECps (l, ECps (r, s))) _ | isIdent l && isIdent r, Just c <- meet (target l) (source r) = (ECps (EDcI c, s), ["I[A];I[B] = I[meet(A,B)]"], "<=>")
-      nM _ (ECps (l, r)) _           | isIdent l && isIdent r, Just c <- meet (target l) (source r) = (EDcI c, ["I[A];I[B] = I[meet(A,B)]"], "<=>")
+      nM _ (ECps (l, r)) _ | isIdent l && isIdent r, Just c <- meet (target l) (source r) = (EDcI c, ["I[A];I[B] = I[meet(A,B)]"], "<=>")
       nM _ (ECps (l, r)) _ | isIdent l && (target l `geq` source l == Just True) = (r, ["I;x = x"], "<=>")
       nM _ (ECps (l, r)) _ | isIdent r && (source r `geq` target l == Just True) = (l, ["x;I = x"], "<=>")
       nM True (ECps (r, ERad (s, q))) _ | not eq = ((r .:. s) .!. q, ["Peirce: r;(s!q) |- (r;s)!q"], "==>")

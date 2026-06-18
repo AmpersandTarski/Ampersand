@@ -841,7 +841,7 @@ nonSpecialSelectExpr fSpec expr =
                 where
                   first' = uName "fst"
                   secnd = uName "snd"
-       where
+      where
         one :: BinQueryExpr
         one =
           BinQEComment
@@ -867,7 +867,6 @@ nonSpecialSelectExpr fSpec expr =
                   ],
                 bseWhr = Nothing
               }
-
     (EDcI c) -> traceComment ["case: EDcI c"]
       $ case c of
         ONE ->
@@ -1146,8 +1145,8 @@ nonSpecialSelectExpr fSpec expr =
             bseWhr = Nothing
           }
     (EDif (EDcV sgn, x)) ->
-      traceComment ["case: EDif (EDcV _,x)"] $
-        case x of
+      traceComment ["case: EDif (EDcV _,x)"]
+        $ case x of
           ECpl _ ->
             -- EDcV - (-y) = y: bestaande aanpak (notCpl verwijdert dubbel complement efficiënt)
             selectExpr fSpec (notCpl x)
@@ -1157,8 +1156,8 @@ nonSpecialSelectExpr fSpec expr =
             case maybeSpecialCase fSpec (EIsc (EDcV sgn, ECpl x)) of
               Just q -> q -- efficiënte LEFT JOIN
               Nothing -> selectExpr fSpec (notCpl x) -- fallback (defensief, kan in theorie niet voorkomen)
-    -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
-    -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
+              -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
+              -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l, r) ->
       traceComment ["case: EEqu (l,r) "]
         $ selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))

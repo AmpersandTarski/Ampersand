@@ -44,7 +44,7 @@ copyTemplates = do
   logDebug "Start copy templates"
   let tempDir = dirSource env </> "templates"
       toDir = getTemplateDir env
-  absTempDir <- liftIO $ makeAbsolute tempDir   -- <-- nieuw
+  absTempDir <- liftIO $ makeAbsolute tempDir -- <-- nieuw
   logDebug . display $ "  From: " <> T.pack absTempDir
   logDebug . display $ "  To:   " <> T.pack toDir
   tempDirExists <- liftIO $ doesDirectoryExist absTempDir

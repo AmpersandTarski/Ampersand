@@ -6,7 +6,7 @@ module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 
 import Ampersand.ADL1
 import qualified Ampersand.Basics.Name as Name
-import Ampersand.Core.AbstractSyntaxTree ( smallerConcepts, largerConcepts )
+import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
@@ -81,8 +81,8 @@ instance JSON A_Concept Concept where
     Concept
       { cptJSONname = fullName cpt,
         cptJSONlabel = case conceptLabel fSpec cpt of
-            Nothing -> localNameOf cpt
-            Just (Name.Label t) -> t,
+          Nothing -> localNameOf cpt
+          Just (Name.Label t) -> t,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
         cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts $ cpt,
         cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts $ cpt,
@@ -115,7 +115,7 @@ instance JSON A_Concept TableCols where
       cptTable = case lookupCpt fSpec cpt of
         [(table, _)] -> table
         [] -> fatal ("Concept `" <> fullName cpt <> "` not found in a table.")
-        _  -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
+        _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

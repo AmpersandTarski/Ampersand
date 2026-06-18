@@ -366,7 +366,7 @@ plugAttributes plug = case plug of
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
 lookupCpt :: FSpec -> A_Concept -> [(PlugSQL, SqlAttribute)]
-lookupCpt fSpec cpt = 
+lookupCpt fSpec cpt =
   [ (plug, att)
     | InternalPlug plug <- plugInfos fSpec,
       (c, att) <- cLkpTbl plug,

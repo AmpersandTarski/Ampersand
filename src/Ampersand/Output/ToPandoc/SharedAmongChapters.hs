@@ -228,7 +228,7 @@ class Identifyble a where
   mkId :: a -> Ident
 
 instance Identifyble Relation where
-  mkId rel = IdentRel (fullName rel) ("["<>tshow (source rel)<>"*") (tshow (target rel)<>"]")
+  mkId rel = IdentRel (fullName rel) ("[" <> tshow (source rel) <> "*") (tshow (target rel) <> "]")
 
 instance Identifyble AConceptDef where
   mkId = IdentByName . label

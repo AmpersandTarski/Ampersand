@@ -120,8 +120,12 @@ mkContextOfPops ctxName pops1 =
           rel <-
             [ P_Relation
                 { dec_nm = name pop,
-                  dec_sign = (fromMaybe (fatal ("Manufacturing error in Ampersand: relation "<>tshow (name pop)<>" ("<>tshow (origin pop)<>") has no signature.")) .
-                              p_mbSign . p_nmdr) pop,
+                  dec_sign =
+                    ( fromMaybe (fatal ("Manufacturing error in Ampersand: relation " <> tshow (name pop) <> " (" <> tshow (origin pop) <> ") has no signature."))
+                        . p_mbSign
+                        . p_nmdr
+                    )
+                      pop,
                   dec_label = Nothing,
                   dec_prps = mempty,
                   dec_defaults = mempty,
@@ -617,6 +621,7 @@ freshAtomId file sheet r =
   "_NEW_" <> T.pack (takeBaseName file) <> "_" <> sheet <> "_" <> tshow (unRowIndex r)
 
 -- * The INTERFACE approach
+
 --
 -- A worksheet whose title equals an interface label is imported through that interface,
 -- exactly like the runtime importer's @parseWorksheetWithIfc@. Because the INTERFACE
@@ -751,32 +756,50 @@ xlsxIfcSheet2pops doTrim ifcs rels sheet =
       case conceptNameWithOptionalDelimiter [] (xisA1 sheet) of
         Nothing ->
           mkGenericParserError orig
-            $ "Cell A1 of sheet '" <> title <> "' must contain the target concept of interface '" <> label ifc <> "'."
+            $ "Cell A1 of sheet '"
+            <> title
+            <> "' must contain the target concept of interface '"
+            <> label ifc
+            <> "'."
         Just (a1nm, _) ->
           case ifcSrcTgt (obj_term (ifc_Obj ifc)) of
             Nothing ->
               mkGenericParserError (origin ifc)
-                $ "Cannot determine the target concept of interface '" <> label ifc <> "' for use as an import interface."
+                $ "Cannot determine the target concept of interface '"
+                <> label ifc
+                <> "' for use as an import interface."
             Just (mSrc, tgt) -> do
               -- Best-effort SESSION check: only when the source is syntactically known.
               case mSrc of
                 Just s
                   | name s /= nameOfSESSION ->
                       mkGenericParserError (origin ifc)
-                        $ "Source concept of interface '" <> label ifc <> "' must be SESSION in order to be used as import interface."
+                        $ "Source concept of interface '"
+                        <> label ifc
+                        <> "' must be SESSION in order to be used as import interface."
                 _ -> pure ()
               if sameConcept (mkPConcept a1nm) tgt
                 then pure tgt
                 else
                   mkGenericParserError orig
-                    $ "Target concept of interface '" <> label ifc <> "' does not match the concept in cell A1 of sheet '" <> title <> "'."
+                    $ "Target concept of interface '"
+                    <> label ifc
+                    <> "' does not match the concept in cell A1 of sheet '"
+                    <> title
+                    <> "'."
 
     resolveColumn :: P_Interface -> P_Concept -> (ColumnIndex, Text, Maybe Char) -> Guarded ResolvedCol
     resolveColumn ifc cpt (col, lbl, delim) =
       case L.find ((== Just lbl) . boxItemLabel) (topBoxItems ifc) of
         Nothing ->
           mkGenericParserError orig
-            $ "Sheet '" <> title <> "' has a column '" <> lbl <> "' that is not a sub-interface of interface '" <> label ifc <> "'."
+            $ "Sheet '"
+            <> title
+            <> "' has a column '"
+            <> lbl
+            <> "' that is not a sub-interface of interface '"
+            <> label ifc
+            <> "'."
         Just P_BxTxt {} -> notEditable lbl
         Just item@P_BoxItemTerm {} ->
           case editableRel (obj_term item) of
@@ -796,7 +819,13 @@ xlsxIfcSheet2pops doTrim ifcs rels sheet =
       where
         notEditable l =
           mkGenericParserError orig
-            $ "Column '" <> l <> "' in sheet '" <> title <> "' does not correspond to an editable relation in interface '" <> label ifc <> "'."
+            $ "Column '"
+            <> l
+            <> "' in sheet '"
+            <> title
+            <> "' does not correspond to an editable relation in interface '"
+            <> label ifc
+            <> "'."
 
     -- Resolve a relation name (from a box item) against the declared relations, using the
     -- interface's target concept to disambiguate. Returns the declared signature.

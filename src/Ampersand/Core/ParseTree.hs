@@ -353,15 +353,15 @@ data PCDDef
   deriving (Show, Typeable)
 
 -- P_Representation binds a technical type to one or more concepts.
-data P_Representation
+data P_Representation =
   -- The REPRESENTATION statement in the syntax translates to Repr:
-  = Repr
-      { pos :: !Origin,
-        -- | the concepts
-        reprcpts :: !(NE.NonEmpty P_Concept),
-        -- | the type of the concept the atom is in
-        reprdom :: !TType
-      }
+  Repr
+  { pos :: !Origin,
+    -- | the concepts
+    reprcpts :: !(NE.NonEmpty P_Concept),
+    -- | the type of the concept the atom is in
+    reprdom :: !TType
+  }
   deriving (Show)
 
 instance Traced P_Representation where
@@ -489,7 +489,7 @@ mergeRels rs = map fun (eqCl signat rs)
       where
         (r0 :| _) = rels
     signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
-  
+
 data PAtomPair = PPair
   { pos :: Origin,
     ppLeft :: PAtomValue,
@@ -699,25 +699,24 @@ instance Traversable Term where
     where
       f = traverse f'
 
-
 class Flippable a where
   flp :: a -> a
 
-instance Flippable a => Flippable [a] where
+instance (Flippable a) => Flippable [a] where
   flp = fmap flp
 
-instance Flippable TermPrim where 
+instance Flippable TermPrim where
   flp (PI o) = PI o
   flp (Pid o c) = Pid o c
   flp (Patm o v mC) = Patm o v mC
   flp (PVee o) = PVee o
   flp (Pfull o c1 c2) = Pfull o c2 c1
-  flp t@PBin{} = PFlipped t
-  flp t@PBind{} = PFlipped t
-  flp t@PNamedR{} = PFlipped t
+  flp t@PBin {} = PFlipped t
+  flp t@PBind {} = PFlipped t
+  flp t@PNamedR {} = PFlipped t
   flp (PFlipped r) = r
 
-instance Flippable a => Flippable (Term a) where
+instance (Flippable a) => Flippable (Term a) where
   flp (Prim a) = Prim (flp a)
   flp (PEqu o a b) = PEqu o (flp a) (flp b)
   flp (PInc o a b) = PInc o (flp a) (flp b)
@@ -812,8 +811,6 @@ instance Flippable SrcOrTgt where
 --   For example:
 --     RULE ExampleRule: expression1 |- expression2
 --     VIOLATION (TXT "Custom violation display: ", SRC expression3, TXT " conflicts with ", TGT expression4)
-
-
 newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance (Hashable a) => Hashable (PairView a)
@@ -1487,9 +1484,11 @@ mergeContexts ctx1 ctx2 =
         groupCondition a b =
           case (a, b) of
             (P_RelPopu {}, P_RelPopu {}) ->
-              p_src a == p_src b &&
-              p_tgt a == p_tgt b &&
-              sameNamedRels (p_nmdr a) (p_nmdr b)
+              p_src a
+                == p_src b
+                && p_tgt a
+                == p_tgt b
+                && sameNamedRels (p_nmdr a) (p_nmdr b)
             (P_CptPopu {}, P_CptPopu {}) -> p_cpt a == p_cpt b
             _ -> False
           where

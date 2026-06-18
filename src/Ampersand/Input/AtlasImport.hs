@@ -53,7 +53,7 @@ import Ampersand.Core.ParseTree
     TType (..),
     TemplateKeyValue (..),
     Term,
-    TermPrim (PNamedR)
+    TermPrim (PNamedR),
   )
 import Ampersand.Input.ADL1.CtxError (Guarded (..), mkGenericParserError)
 import Ampersand.Input.ADL1.Parser (pTerm)
@@ -648,7 +648,7 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
       parseIdentTerm formexp = case parseTerm ("Json file from Atlas, at an ident expression.") formexp of
         Errors err -> fail $ T.unpack $ "Parse error in " <> formexp <> ":\n   " <> tshow err
         Checked term _ -> return term
-        
+
       build :: Text -> Maybe Text -> Guarded P_Concept -> Term TermPrim -> (Guarded (P_IdentDf TermPrim))
       build txt lbl gCpt term = do
         nm <- textToNameInJSON IdentName txt

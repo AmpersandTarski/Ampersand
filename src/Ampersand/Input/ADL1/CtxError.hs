@@ -84,7 +84,7 @@ import Ampersand.ADL1
 -- import Ampersand.ADL1.Disambiguate (DisambPrim (..))
 import Ampersand.Basics
 import Ampersand.Core.A2P_Converters (aExpression2pTermPrim)
-import Ampersand.Core.AbstractSyntaxTree (showWithAliases, Guarded(..), CtxError(..), Warning(..))
+import Ampersand.Core.AbstractSyntaxTree (CtxError (..), Guarded (..), Warning (..), showWithAliases)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.FilePos ()
@@ -277,8 +277,13 @@ uniqueLabels orig toLabel items thing = uniqueBy toLabel (messageFor . fmap toLa
     messageFor x =
       CTXE orig
         . T.intercalate "\n    "
-        $ [ "The label `" <> text1ToText (NE.head x) <> "` occurs " <> tshow (NE.length x) <>
-            " times in the " <> thing <> " defined at: ",
+        $ [ "The label `"
+              <> text1ToText (NE.head x)
+              <> "` occurs "
+              <> tshow (NE.length x)
+              <> " times in the "
+              <> thing
+              <> " defined at: ",
             tshow orig <> "."
           ]
 
@@ -397,14 +402,14 @@ mkInterfaceRefCycleError cyclicIfcs =
 
 mkIncompatibleInterfaceError :: Origin -> A_Concept -> A_Concept -> Name -> CtxError
 mkIncompatibleInterfaceError orig expTgt refSrc ref =
-      CTXE orig
-        $ "Incompatible reference to interface "
-        <> fullName ref
-        <> ".\n   It has type "
-        <> showWithAliases refSrc
-        <> ", which is not comparable to the target "
-        <> showWithAliases expTgt
-        <> " of the term at this field."
+  CTXE orig
+    $ "Incompatible reference to interface "
+    <> fullName ref
+    <> ".\n   It has type "
+    <> showWithAliases refSrc
+    <> ", which is not comparable to the target "
+    <> showWithAliases expTgt
+    <> " of the term at this field."
 
 mkInterfaceRefNarrowerError :: Origin -> Name -> Expression -> A_Concept -> CtxError
 mkInterfaceRefNarrowerError refOrigin ifcName parentExpr ifcConcept =
@@ -473,33 +478,38 @@ mkOtherTupleInSessionError r pr =
 --   converted to the required representation type of its concept.
 mkSingletonRepresentationError :: PAtomValue -> A_Concept -> TType -> CtxError
 mkSingletonRepresentationError pav cpt typ =
-  CTXE (origin pav) $
-    "The target of " <> atomValueText pav
-    <> " is " <> tshow cpt
-    <> ", which requires representation as " <> T.toLower (tshow typ)
-    <> ". However, " <> atomValueKind pav <> " is encountered."
+  CTXE (origin pav)
+    $ "The target of "
+    <> atomValueText pav
+    <> " is "
+    <> tshow cpt
+    <> ", which requires representation as "
+    <> T.toLower (tshow typ)
+    <> ". However, "
+    <> atomValueKind pav
+    <> " is encountered."
   where
     atomValueText :: PAtomValue -> Text
     atomValueText v = case v of
-      PSingleton _ str _   -> "\"" <> str <> "\""
-      ScriptString _ str   -> "\"" <> str <> "\""
-      XlsxString _ str     -> "\"" <> str <> "\""
-      ScriptInt _ i        -> tshow i
-      ScriptFloat _ f      -> tshow f
-      XlsxDouble _ d       -> tshow d
-      ComnBool _ b         -> tshow b
-      ScriptDate _ d       -> tshow d
-      ScriptDateTime _ dt  -> tshow dt
+      PSingleton _ str _ -> "\"" <> str <> "\""
+      ScriptString _ str -> "\"" <> str <> "\""
+      XlsxString _ str -> "\"" <> str <> "\""
+      ScriptInt _ i -> tshow i
+      ScriptFloat _ f -> tshow f
+      XlsxDouble _ d -> tshow d
+      ComnBool _ b -> tshow b
+      ScriptDate _ d -> tshow d
+      ScriptDateTime _ dt -> tshow dt
     atomValueKind :: PAtomValue -> Text
     atomValueKind v = case v of
-      PSingleton {}     -> "a singleton string"
-      ScriptString {}   -> "a string"
-      XlsxString {}     -> "a string"
-      ScriptInt {}      -> "an integer"
-      ScriptFloat {}    -> "a float"
-      XlsxDouble {}     -> "a number"
-      ComnBool {}       -> "a boolean"
-      ScriptDate {}     -> "a date"
+      PSingleton {} -> "a singleton string"
+      ScriptString {} -> "a string"
+      XlsxString {} -> "a string"
+      ScriptInt {} -> "an integer"
+      ScriptFloat {} -> "a float"
+      XlsxDouble {} -> "a number"
+      ComnBool {} -> "a boolean"
+      ScriptDate {} -> "a date"
       ScriptDateTime {} -> "a date/time"
 
 mkConceptNotInSchemaError :: Origin -> Name -> Text -> CtxError
@@ -514,10 +524,15 @@ mkConceptNotInSchemaError orig cptName contextName =
 mkRelationTooNarrowForViewError :: Origin -> Expression -> A_Concept -> CtxError
 mkRelationTooNarrowForViewError orig expr viewConcept =
   CTXE orig
-    $ "The expression " <> showA expr<>
-      " in the VIEW segment on "<>tshow orig<>
-      " has source " <> (showWithAliases . source) expr <> 
-      ", which is too specific for the VIEW concept " <> showWithAliases viewConcept <> "."
+    $ "The expression "
+    <> showA expr
+    <> " in the VIEW segment on "
+    <> tshow orig
+    <> " has source "
+    <> (showWithAliases . source) expr
+    <> ", which is too specific for the VIEW concept "
+    <> showWithAliases viewConcept
+    <> "."
 
 mkViewTooSpecificError :: Origin -> P_ViewDef -> Expression -> CtxError
 mkViewTooSpecificError orig vd objExpr =
@@ -563,16 +578,28 @@ mkConstrainedExpressionTooNarrowError orig srcOrTgt expr requiredConcept =
         "Expression: " <> showA expr,
         "Expression " <> tshow srcOrTgt <> ": " <> showWithAliases actualConcept,
         "Required " <> tshow srcOrTgt <> ": " <> showWithAliases requiredConcept,
-        "Atoms of type " <> showWithAliases requiredConcept <> " that are not " <> 
-          showWithAliases actualConcept <> " will be excluded.",
-        "Solution: use " <> tshow srcOrTgt <> " I[" <> fullName requiredConcept <> "]" <>
-          " or explicitly " <> tshow srcOrTgt <> " I[" <> fullName requiredConcept <> 
-          "];I[" <> fullName actualConcept <> "] if you want to filter."
+        "Atoms of type "
+          <> showWithAliases requiredConcept
+          <> " that are not "
+          <> showWithAliases actualConcept
+          <> " will be excluded.",
+        "Solution: use "
+          <> tshow srcOrTgt
+          <> " I["
+          <> fullName requiredConcept
+          <> "]"
+          <> " or explicitly "
+          <> tshow srcOrTgt
+          <> " I["
+          <> fullName requiredConcept
+          <> "];I["
+          <> fullName actualConcept
+          <> "] if you want to filter."
       ]
   where
     actualConcept = case srcOrTgt of
-                      Src -> source expr
-                      Tgt -> target expr
+      Src -> source expr
+      Tgt -> target expr
 
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
@@ -739,26 +766,30 @@ mkUnusedCptDefWarning cptDef =
 --   which they collide — the static twin of the runtime's
 --   /Maximum reruns exceeded. Rules fixed in last run: .../ message.
 mkOscillationWarning ::
-  Origin ->   -- ^ Origin to attach the warning to (a rule in the cycle)
-  [Text] ->   -- ^ The names of the automated rules in the cycle
-  [Text] ->   -- ^ Descriptions of the non-monotone (negative) edges in the cycle
+  -- | Origin to attach the warning to (a rule in the cycle)
+  Origin ->
+  -- | The names of the automated rules in the cycle
+  [Text] ->
+  -- | Descriptions of the non-monotone (negative) edges in the cycle
+  [Text] ->
   Warning
 mkOscillationWarning orig ruleNames negEdges =
   Warning orig
     . T.intercalate "\n    "
     $ [ "Possible oscillation risk among the ExecEngine rules: "
-          <> T.intercalate ", " ruleNames <> ".",
+          <> T.intercalate ", " ruleNames
+          <> ".",
         "These automated rules can re-trigger each other in a cycle, and at least one",
         "repair in that cycle deletes or merges what another repair creates. Such a",
         "non-monotone cycle may never reach a fixpoint, so the ExecEngine can abort with",
         "\"Maximum reruns exceeded\" on some populations."
       ]
-      <> ["Opposing writes:"]
-      <> map ("  - " <>) negEdges
-      <> [ "This is a static over-approximation: a flagged cycle need not oscillate on every",
-           "population, but an insert-only (monotone) cycle is never flagged. See the guide",
-           "docs/guides/oscillations/README.md for how to make the rules jointly satisfiable."
-         ]
+    <> ["Opposing writes:"]
+    <> map ("  - " <>) negEdges
+    <> [ "This is a static over-approximation: a flagged cycle need not oscillate on every",
+         "population, but an insert-only (monotone) cycle is never flagged. See the guide",
+         "docs/guides/oscillations/README.md for how to make the rules jointly satisfiable."
+       ]
 
 -- | Warning emitted when the SQL generator will produce a query that computes
 --   a Cartesian product. The warning shows the rule (or interface) it occurs in,
@@ -775,62 +806,69 @@ mkOscillationWarning orig ruleNames negEdges =
 --   so the user can see how their term is transformed in three steps
 --   (term2Expr ▸ conjNF ▸ selectExpr).
 mkCartesianProductWarning ::
-  Origin ->    -- ^ Origin of the rule/object containing the offending expression
-  Text ->      -- ^ Description of the context (e.g. "RULE foo" or "INTERFACE bar")
-  Text ->      -- ^ The original term, as written by the user, before type checking
-  Expression -> -- ^ The complete (original) expression (output of term2Expr)
-  Expression -> -- ^ The offending subexpression that forces a Cartesian product
-  Maybe (Expression, Text) -> -- ^ When --verbose: (normalized expression, pretty SQL)
+  -- | Origin of the rule/object containing the offending expression
+  Origin ->
+  -- | Description of the context (e.g. "RULE foo" or "INTERFACE bar")
+  Text ->
+  -- | The original term, as written by the user, before type checking
+  Text ->
+  -- | The complete (original) expression (output of term2Expr)
+  Expression ->
+  -- | The offending subexpression that forces a Cartesian product
+  Expression ->
+  -- | When --verbose: (normalized expression, pretty SQL)
+  Maybe (Expression, Text) ->
   Warning
 mkCartesianProductWarning orig context originalTerm fullExpr offending verboseExtras =
   Warning orig
     $ T.intercalate "\n    " (basicLines <> tipLines)
-   <> case verboseExtras of
-        Nothing -> ""
-        Just (normalized, sql) ->
-          "\n    " <> T.intercalate "\n    " (verboseLines normalized sql)
+    <> case verboseExtras of
+      Nothing -> ""
+      Just (normalized, sql) ->
+        "\n    " <> T.intercalate "\n    " (verboseLines normalized sql)
   where
     basicLines =
-      [ "SQL will compute a Cartesian product for " <> context
-      , "Term: " <> originalTerm
-      , "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
-      -- , "(reason: " <> _reasonFor offending <> ")"
+      [ "SQL will compute a Cartesian product for " <> context,
+        "Term: " <> originalTerm,
+        "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
+        -- , "(reason: " <> _reasonFor offending <> ")"
       ]
     -- Pattern-specific advice.  Currently only one situation is recognised:
     -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
     -- type bridge.  In that case the rule can usually be reformulated on an
     -- endo-relation, which removes the cross join.
     tipLines = case (offending, fullExpr) of
-      (EDcV _, EInc (_lhs, rhs)) | endsInV rhs ->
-        [ "tip: the V[A*B] sits at the tail of the right-hand side as a"
-        , "     type bridge.  Try reformulating the rule on type A*A, e.g."
-        , "         (I[A] /\\ lhs;lhs~) |- r;r~"
-        , "     where r;r~ replaces the prefix that precedes the V."
-        ]
+      (EDcV _, EInc (_lhs, rhs))
+        | endsInV rhs ->
+            [ "tip: the V[A*B] sits at the tail of the right-hand side as a",
+              "     type bridge.  Try reformulating the rule on type A*A, e.g.",
+              "         (I[A] /\\ lhs;lhs~) |- r;r~",
+              "     where r;r~ replaces the prefix that precedes the V."
+            ]
       _ -> []
     verboseLines normalized _sql =
-      [ "--- verbose ---"
-      , "Normalized (as offered to selectExpr):"
-      , "  " <> (showP . aExpression2pTermPrim) normalized
-      -- , "Generated SQL:"
+      [ "--- verbose ---",
+        "Normalized (as offered to selectExpr):",
+        "  " <> (showP . aExpression2pTermPrim) normalized
+        -- , "Generated SQL:"
       ]
-      -- <> map ("  " <>) (T.lines sql)
+    -- <> map ("  " <>) (T.lines sql)
     _reasonFor e = case e of
-      EDcV  _      -> "V[A*B] generates a cross join of two concept tables"
-      EPrd  _      -> "the cartesian product operator (#) is rewritten to l;V;r, which uses V"
-      ECpl  _      -> "computing the complement requires the full domain V, hence a cross join"
-      ERrs  _      -> "the right residual (\\) generates a cross join of two concept tables"
-      ELrs  _      -> "the left residual (/) is rewritten via the right residual, which uses a cross join"
-      EDia  _      -> "the diamond (<>) is rewritten using residuals, which use cross joins"
-      ERad  _      -> "relative addition (!) is rewritten using complement/residuals, which use cross joins"
-      _            -> "this construct introduces a cross join in SQL"
-    -- | True when the expression is an ECps-chain whose right-most leaf is V.
+      EDcV _ -> "V[A*B] generates a cross join of two concept tables"
+      EPrd _ -> "the cartesian product operator (#) is rewritten to l;V;r, which uses V"
+      ECpl _ -> "computing the complement requires the full domain V, hence a cross join"
+      ERrs _ -> "the right residual (\\) generates a cross join of two concept tables"
+      ELrs _ -> "the left residual (/) is rewritten via the right residual, which uses a cross join"
+      EDia _ -> "the diamond (<>) is rewritten using residuals, which use cross joins"
+      ERad _ -> "relative addition (!) is rewritten using complement/residuals, which use cross joins"
+      _ -> "this construct introduces a cross join in SQL"
+    -- \| True when the expression is an ECps-chain whose right-most leaf is V.
     --   Recurses to the right because ECps is right-associative in Ampersand.
     endsInV :: Expression -> Bool
     endsInV (ECps (_, r)) = endsInV r
-    endsInV (EBrk e)      = endsInV e
-    endsInV (EDcV _)      = True
-    endsInV _             = False
+    endsInV (EBrk e) = endsInV e
+    endsInV (EDcV _) = True
+    endsInV _ = False
 
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =
