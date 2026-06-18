@@ -27,7 +27,6 @@ import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
-import Ampersand.Input.ADL1.CtxError (mkCartesianProductWarning, addWarnings)
 import Ampersand.Misc.HasClasses
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)

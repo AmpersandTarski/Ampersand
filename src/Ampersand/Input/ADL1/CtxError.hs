@@ -794,28 +794,28 @@ mkCartesianProductWarning orig context originalTerm fullExpr offending verboseEx
       [ "SQL will compute a Cartesian product for " <> context
       , "Term: " <> originalTerm
       , "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
-      -- , "(reason: " <> reasonFor offending <> ")"
+      -- , "(reason: " <> _reasonFor offending <> ")"
       ]
     -- Pattern-specific advice.  Currently only one situation is recognised:
     -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
     -- type bridge.  In that case the rule can usually be reformulated on an
     -- endo-relation, which removes the cross join.
     tipLines = case (offending, fullExpr) of
-      (EDcV _, EInc (lhs, rhs)) | endsInV rhs ->
+      (EDcV _, EInc (_lhs, rhs)) | endsInV rhs ->
         [ "tip: the V[A*B] sits at the tail of the right-hand side as a"
         , "     type bridge.  Try reformulating the rule on type A*A, e.g."
         , "         (I[A] /\\ lhs;lhs~) |- r;r~"
         , "     where r;r~ replaces the prefix that precedes the V."
         ]
       _ -> []
-    verboseLines normalized sql =
+    verboseLines normalized _sql =
       [ "--- verbose ---"
       , "Normalized (as offered to selectExpr):"
       , "  " <> (showP . aExpression2pTermPrim) normalized
       -- , "Generated SQL:"
       ]
       -- <> map ("  " <>) (T.lines sql)
-    reasonFor e = case e of
+    _reasonFor e = case e of
       EDcV  _      -> "V[A*B] generates a cross join of two concept tables"
       EPrd  _      -> "the cartesian product operator (#) is rewritten to l;V;r, which uses V"
       ECpl  _      -> "computing the complement requires the full domain V, hence a cross join"
